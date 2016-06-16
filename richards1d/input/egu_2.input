@@ -1,0 +1,58 @@
+[TimeManager]
+DtInitial =  1 # [s]
+TEnd = 36000 #86400 # [s]
+MaxTimeStepSize = 3600 # [s]
+Episodes = 9000 18000 27000
+
+[Grid]
+File = ./grids/mybenchmark100_2.dgf # nodse [m], initial data [cm] pressure head
+
+[Problem]
+Name = egu_2
+EnableGravity = 1 # enable gravity
+
+[VanGenuchten] 
+# silt	
+Qr = 0.034 
+Qs = 0.46
+alpha = 0.016
+n = 1.37
+Ks = 6.94444e-7
+
+## loam
+#Qr = 0.078 	
+#Qs = 0.43 
+#alpha = 0.036 # [1/cm] 
+#n = 1.56
+#Ks = 2.88889e-006 # m/s 	
+
+[BC_Top]
+Type = 2
+Value = 0 # [cm] field capacity, or [kg / (m² s)]
+# type: (same as in Hydrus1D) 1, 2 & 4 are implemented yet
+# 1 constant pressure head
+# 2 constant flux
+# 3 atmospheric BC with surface layer
+# 4 atmospheric BC with surface run off
+# 5 variable pressure head
+# 6 variable pressure head/flux
+
+[BC_Bot]
+Type = 2
+Value = 0 # [cm] field capacity, or [kg / (m² s)]
+# type: (same as in Hydrus1D) 1, 2 & 5 are implemented yet
+# 1 constant pressure head
+# 2 constant flux
+# 3 variable pressure head
+# 4 variable flux
+# 5 free drainage
+# 6 deep drainage
+# 7 seepage face
+# 8 horizontal drains
+
+[Implicit]
+EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
+EnableJacobianRecycling = 1 #
+
+[Newton]
+TargetSteps = 18 # set the "desireable" number of newton iterations of a time step

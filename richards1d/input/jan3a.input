@@ -1,0 +1,59 @@
+[TimeManager]
+DtInitial =  1 # [s]
+TEnd = 25920 # 0.3 days [s] 
+MaxTimeStepSize = 3600 # an hour [s] 
+Episodes = 8640 17280  
+
+[Grid]
+File = ./grids/jan3.dgf # [m], initial data [cm] pressure head
+
+[Problem]
+Name = jan3a
+EnableGravity = 1 # enable gravity
+
+[VanGenuchten] 
+# Vanderborght 2005 Sand: 
+Qr = 0.045 
+Qs = 0.43 
+alpha = 0.15  # [1/cm] 
+n = 3
+Ks = 1.1574e-04 # [m/s] 
+
+[BC_Top]
+Type = 4
+Value = 0 # unused [cm day-1]
+# type: (same as in Hydrus1D)
+# 1 constant pressure head
+# 2 constant flux
+# 3 atmospheric BC with surface layer
+# 4 atmospheric BC with surface run off
+# 5 variable pressure head
+# 6 variable pressure head/flux
+
+[BC_Bot]
+Type = 5
+Value = 0 # unused [cm] fully saturated
+# type: (same as in Hydrus1D)
+# 1 constant pressure head
+# 2 constant flux
+# 3 variable pressure head
+# 4 variable flux
+# 5 free drainage
+# 6 deep drainage
+# 7 seepage face
+# 8 horizontal drains
+
+[Implicit]
+EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
+EnableJacobianRecycling = 1 #
+
+[Newton]
+TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
+
+
+[Climate]
+Times = 1e10 # const value 
+Precipitation = -16.6667 # [kg/(s m²)] (100 cm/day)
+
+
+
