@@ -17,23 +17,17 @@
 
 #include <vector>
 
-using namespace std;
-
-
 
 
 namespace Dumux
 {
 
-// forward declaration
-template<class TypeTag>
-class RichardsParams;
+template<class TypeTag> class RichardsParams; // forward declaration
 
 
 
-/*
- *  RegularizedVanGenuchten is not working!
- *  VanGenuchten is not working, but this does...
+/**
+ *  RegularizedVanGenuchten is not working! VanGenuchten is not working, but this does...
  */
 template <class ScalarT, class ParamsT = VanGenuchtenParams<ScalarT> >
 class MyVanGenuchten : public VanGenuchten<ScalarT,ParamsT>
@@ -62,25 +56,22 @@ NEW_TYPE_TAG(RichardsParams);
 // Set the spatial parameters defined as TTAG of type RichardsParams and attached to TTAG RichardsParam
 SET_TYPE_PROP(RichardsParams, SpatialParams, Dumux::RichardsParams<TypeTag>);
 
- // Set the material law
+// Set the material law
 SET_PROP(RichardsParams, MaterialLaw)
 {
 private:
-    // define the material law which is parameterized by effective
-    // saturations
+    // define the material law which is parameterized by effective saturations
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
     typedef MyVanGenuchten<Scalar> EffectiveLaw; //RegularizedVanGenuchten
 public:
-    // define the material law parameterized by absolute saturations
-    typedef EffToAbsLaw<EffectiveLaw> type;
+    typedef EffToAbsLaw<EffectiveLaw> type; // define the material law parameterized by absolute saturations
 };
 
 }
 
 
 
-
-/*
+/**
  * Solves the Richard equation in 1D with Van Genuchten model
  *
  * Van Genuchten parameters are passed using the .input file:
@@ -106,8 +97,7 @@ public:
  * [TimeManager]
  * Episodes = 60 120 2000 # s
  */
-template<class TypeTag>
-class RichardsParams : public ImplicitSpatialParams<TypeTag>
+template<class TypeTag> class RichardsParams : public ImplicitSpatialParams<TypeTag>
 {
     typedef ImplicitSpatialParams<TypeTag> ParentType;
     typedef typename GET_PROP_TYPE(TypeTag, Grid) Grid; // defined in myrichards problem
@@ -126,11 +116,10 @@ class RichardsParams : public ImplicitSpatialParams<TypeTag>
     static const bool useHead = GET_PROP_VALUE(TypeTag, UseHead); // head is still not working...
     typedef typename GET_PROP_TYPE(TypeTag, GridCreator) GridCreator; //typedef Dumux::GridCreator<TypeTag> GridCreator;  // not too sure about that
 
-public:
-
     typedef typename GET_PROP_TYPE(TypeTag, MaterialLaw) MaterialLaw; // defined above
     typedef typename MaterialLaw::Params MaterialLawParams; // type of MaterialLaw
 
+public:
 
     /*!
      * \brief Constructor
@@ -138,8 +127,7 @@ public:
      * \param gridView The DUNE GridView representing the spatial domain of the problem
      *
      */
-    RichardsParams(const GridView& gridView)
-    : ParentType(gridView)
+    RichardsParams(const GridView& gridView) : ParentType(gridView)
     {
         phi_ = 1; // Richards equation is independent of phi
         const double g = 9.81; // TODO fetch values from problem class
@@ -149,32 +137,32 @@ public:
         const double mu = WP::viscosity(temp,pnRef); // h2o: Dynamic viscosity of water 0.001 Pa·s (independent of temp and p)
         const double rho = WP::density(temp,pnRef);  // h2o: 1000 kg/m³ (independent of temp and p)
 
-        // from input file
-        vector<double> Qr = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, vector<double>, VanGenuchten, Qr);
-        vector<double> Qs = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, vector<double>, VanGenuchten, Qs);
-        vector<double> alpha = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, vector<double>, VanGenuchten, alpha);
-        vector<double> n = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, vector<double>, VanGenuchten, n);
-        Kc_ = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, vector<double> , VanGenuchten, Ks); // hydraulic conductivity
+        // get van genuchten parameters from the input file
+        std::vector<double> Qr = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::vector<double>, VanGenuchten, Qr);
+        std::vector<double> Qs = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::vector<double>, VanGenuchten, Qs);
+        std::vector<double> alpha = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::vector<double>, VanGenuchten, alpha);
+        std::vector<double> n = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::vector<double>, VanGenuchten, n);
+        Kc_ = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::vector<double> , VanGenuchten, Ks); // hydraulic conductivity
 
         more_ = Qr.size()>1; // more than one set of VG parameters?
 
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
         for (int i=0; i<Qr.size(); i++) {
             materialParams_.push_back(MaterialLawParams());
+            // QR
             materialParams_.at(i).setSwr(Qr.at(i)/phi_);
-            materialParams_.at(i).setSnr(1.-Qs.at(i)/this->phi_);
-            if (useHead) {
-                materialParams_.at(i).setVgAlpha(alpha.at(i));
-            } else {
-                double a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
-                materialParams_.at(i).setVgAlpha(a/(rho*g)); //  psi*(rho*g) = p
-            }
+            // QS
+            materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_);
+            // ALPHA
+            double a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
+            materialParams_.at(i).setVgAlpha(a/(rho*g)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
+            // N
             materialParams_.at(i).setVgn(n.at(i));
+            // Kc
+            K_.push_back(Kc_.at(i)*mu/(rho*g)); // convert to intrinsic permeability (from the hydraulic conductivity)
+            // Debug
             std::cout << "\nVan Genuchten Parameters are " << Qr.at(i) << ", " << Qs.at(i) <<
                     ", "<< alpha.at(i) << ", "<< n.at(i) << ", "<< Kc_.at(i) << "\n";
-
-            // set the intrinsic permeability (calculate from the hydraulic conductivity)
-            K_.push_back(Kc_.at(i)*mu/(rho*g));
         }
     }
 
@@ -190,7 +178,7 @@ public:
     }
 
     /*
-     * \brief Function for defining the intrinsic (absolute) permeability. [m/s]
+     * \brief Function for defining the (absolute) hydraulic conductivity. [m/s]
      */
     const DimWorldMatrix hydraulicConductivity(const Element &element, const FVElementGeometry &fvGeometry, int scvIdx) const
     {
@@ -219,18 +207,16 @@ public:
         return materialParams_.at(getDI(element));
     }
 
-
-
 private:
 
-    /*
+    /**
      * returns the domain index
      */
     int getDI(const Element &element) const
     {
         if (more_) {
-           int i = GridCreator::parameters(element).at(1)-1; // starting from 1
-           return i;
+            int i = GridCreator::parameters(element).at(1)-1; // starting from 1
+            return i;
         } else {
             return 0;
         }
@@ -238,9 +224,9 @@ private:
 
     bool more_;
     double phi_;
-    vector<double> K_; // permeability [m²]
-    vector<double> Kc_; // hydraulic conductivity [m/s]
-    vector<MaterialLawParams> materialParams_;
+    std::vector<double> K_; // permeability [m²]
+    std::vector<double> Kc_; // hydraulic conductivity [m/s]
+    std::vector<MaterialLawParams> materialParams_;
 
 };
 
