@@ -6,7 +6,7 @@
  */
 #include <config.h> // from cmake
 
-#include "richardsproblem1d.hh"  // all relevant is in here
+#include "richardsproblem3d.hh"  // all relevant is in here
 
 #include <dumux/common/start.hh> // start function and processing of input file
 
@@ -39,6 +39,6 @@ void usage(const char *progName, const std::string &errorMsg)
 int main(int argc, char** argv)
 {
     // use RichardsBoxProblem1d, or RichardsCCProblem1d
-    typedef TTAG(RichardsBoxProblem1d) PTT;
+    typedef TTAG(RichardsBoxProblem3d) PTT;
     return Dumux::start<PTT>(argc, argv, usage);
 }

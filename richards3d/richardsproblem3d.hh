@@ -20,7 +20,7 @@
 namespace Dumux
 {
 
-template <class TypeTag> class RichardsProblem1d;
+template <class TypeTag> class RichardsProblem3d;
 
 /*
  * the property definitions are distributed over various header files.
@@ -29,20 +29,17 @@ template <class TypeTag> class RichardsProblem1d;
 namespace Properties
 {
 
-NEW_TYPE_TAG(RichardsProblem1d, INHERITS_FROM(Richards, RichardsParams));
-NEW_TYPE_TAG(RichardsBoxProblem1d, INHERITS_FROM(BoxModel, RichardsProblem1d));   // box is the discretisation method
-NEW_TYPE_TAG(RichardsCCProblem1d, INHERITS_FROM(CCModel, RichardsProblem1d));     // cc = cell centered is the discretisation method
+NEW_TYPE_TAG(RichardsProblem3d, INHERITS_FROM(Richards, RichardsParams));
+NEW_TYPE_TAG(RichardsBoxProblem3d, INHERITS_FROM(BoxModel, RichardsProblem3d));   // box is the discretisation method
+NEW_TYPE_TAG(RichardsCCProblem3d, INHERITS_FROM(CCModel, RichardsProblem3d));     // cc = cell centered is the discretisation method
 
-SET_TYPE_PROP(RichardsProblem1d, Grid, Dune::FoamGrid<1,1>); // start with 1D FoamGrid<1,1>
-// apparently Dune::OneDGrid does not read the simplex parameters from the dgf (and that without warning),
-// no idea how to pass initial conditions otherwise. FoamGrid works fine!
-// SGrid is no longer available, or I don't know how to use it
+SET_TYPE_PROP(RichardsProblem3d, Grid, Dune::YaspGrid<3>);
 
 // attach the type class Dumux::MyRichardsProblem to the tag Properties::MyRichardsProblem
-SET_TYPE_PROP(RichardsProblem1d, Problem, Dumux::RichardsProblem1d<TypeTag>);
+SET_TYPE_PROP(RichardsProblem3d, Problem, Dumux::RichardsProblem3d<TypeTag>);
 
 // Set the wetting phase
-SET_PROP(RichardsProblem1d, WettingPhase)
+SET_PROP(RichardsProblem3d, WettingPhase)
 {
 private:
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
@@ -51,9 +48,9 @@ public:
 };
 
 // Enable gravity
-SET_BOOL_PROP(RichardsProblem1d, ProblemEnableGravity, true);
+SET_BOOL_PROP(RichardsProblem3d, ProblemEnableGravity, true);
 
-SET_BOOL_PROP(RichardsProblem1d, UseHead, false); // head is not working, i dont know why
+SET_BOOL_PROP(RichardsProblem3d, UseHead, false); // head is not working, i dont know why
 
 }
 
@@ -86,7 +83,7 @@ SET_BOOL_PROP(RichardsProblem1d, UseHead, false); // head is not working, i dont
  * Episodes = 60 120 2000 # s
  */
 template <class TypeTag>
-class RichardsProblem1d : public RichardsProblem<TypeTag>
+class RichardsProblem3d : public RichardsProblem<TypeTag>
 {
     typedef RichardsProblem<TypeTag> ParentType;
     typedef typename GET_PROP_TYPE(TypeTag, GridView) GridView;
@@ -126,7 +123,7 @@ public:
      * \param timeManager The Dumux TimeManager for simulation management.
      * \param gridView The grid view on the spatial domain of the problem
      */
-    RichardsProblem1d(TimeManager &timeManager, const GridView &gridView) : ParentType(timeManager, gridView)
+    RichardsProblem3d(TimeManager &timeManager, const GridView &gridView) : ParentType(timeManager, gridView)
 {
         pnRef_ = 1e5; // reference pressure if Pascal are used
 

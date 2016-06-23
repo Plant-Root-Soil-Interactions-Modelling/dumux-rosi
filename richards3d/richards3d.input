@@ -4,7 +4,7 @@ TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
-File = ./grids/jan1.dgf # [m], initial data [cm] pressure head
+File = ./grids/test.dgf # [m], initial data [cm] pressure head
 
 [Problem]
 Name = jan1a

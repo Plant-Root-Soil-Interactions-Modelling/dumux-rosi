@@ -180,7 +180,7 @@ public:
     /*
      * \brief Function for defining the (absolute) hydraulic conductivity. [m/s]
      */
-    const DimWorldMatrix hydraulicConductivity(const Element &element, const FVElementGeometry &fvGeometry, int scvIdx) const
+    const Scalar hydraulicConductivity(const Element &element, const FVElementGeometry &fvGeometry, int scvIdx) const
     {
         return Kc_.at(getDI(element));
     }
