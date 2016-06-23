@@ -22,6 +22,8 @@ dune_enable_all_packages()
 #add_subdirectory("dune")
 add_subdirectory("richards1d")
 add_subdirectory("richards3d")
+add_subdirectory("growingrootsystem")
+add_subdirectory("richardsrootsystem")
 add_subdirectory("doc")
 add_subdirectory("cmake/modules")
 
