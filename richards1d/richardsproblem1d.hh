@@ -112,7 +112,6 @@ class RichardsProblem1d : public RichardsProblem<TypeTag>
     };
     typedef typename GridView::template Codim<0>::Entity Element;
     typedef Dune::FieldVector<Scalar, dimWorld> GlobalPosition;
-    static const bool useHead = GET_PROP_VALUE(TypeTag, UseHead); // false, because true is not working
     typedef typename GET_PROP_TYPE(TypeTag, GridCreator) GridCreator; //typedef Dumux::GridCreator<TypeTag> GridCreator;  // not too sure about that
     typedef typename GridView::template Codim<dim>::Entity Vertex;
     typedef typename GridView::Intersection Intersection;
@@ -273,15 +272,6 @@ public:
         values = 0;
     }
 
-    /**
-     * before each time step
-     */
-    void preTimeStep()
-    {
-       ParentType::preTimeStep();
-       std::cout << "\npreTimeStep()\n\n";
-    }
-
     /*!
      * \brief Specifies which kind of boundary condition should be
      *        used for which equation on a given boundary segment.
@@ -293,7 +283,7 @@ public:
     {
 //        cout << "\n\nBoundariesAtPos\n\n";
 
-        if (globalPos[2]==0) { // top bc
+        if (globalPos[0]==0) { // top bc
             switch (bcTop_) {
             case 1: // constant pressure head
                 values.setAllDirichlet();
@@ -335,14 +325,10 @@ public:
      */
     void dirichletAtPos(PrimaryVariables &values, const GlobalPosition &globalPos) const
     {
-        if (globalPos[2]==0) { // top bc
+        if (globalPos[0]==0) { // top bc
             switch (bcTop_) {
             case 1: // constant pressure
-                if (useHead) {
-                    values[hIdx] = bcTopValue_;
-                } else {
-                    values[hIdx] = pnRef_ - toPa_(bcTopValue_);
-                }
+                values[hIdx] = pnRef_ - toPa_(bcTopValue_);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type Dirichlet: unknown error");
@@ -350,11 +336,7 @@ public:
         } else { // bot bc
             switch (bcBot_) {
             case 1: // constant pressure
-                if (useHead) {
-                    values[hIdx] = bcBotValue_;
-                } else {
-                    values[hIdx] = pnRef_ - toPa_(bcBotValue_);
-                }
+                values[hIdx] = pnRef_ - toPa_(bcBotValue_);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Dirichlet: unknown error");
@@ -394,7 +376,7 @@ public:
 
         GlobalPosition pos = fvGeometry.boundaryFace[boundaryFaceIdx].ipGlobal;
 
-        if ((pos[2]!=0) && (bcBot_==5)) { // free drainage at bottom boundary
+        if ((pos[0]!=0) && (bcBot_==5)) { // free drainage at bottom boundary
 
             double Kc = this->spatialParams().hydraulicConductivity(element,fvGeometry,scvIdx);
             VolumeVariables  v0 = elemVolVars[0];
@@ -403,7 +385,7 @@ public:
             double krw = MaterialLaw::krw(this->spatialParams().materialLawParams(element,fvGeometry,scvIdx), swe);
             values[contiEqIdx] = krw*Kc*rho; // * 1 [m]
 
-        } else if((pos[2]==0) && (bcTop_==4)) { // atmospheric boundary condition (with surface run-off) at top
+        } else if((pos[0]==0) && (bcTop_==4)) { // atmospheric boundary condition (with surface run-off) at top
 
             double Kc = this->spatialParams().hydraulicConductivity(element,fvGeometry,scvIdx);
             VolumeVariables  v0 = elemVolVars[0];
@@ -447,10 +429,10 @@ public:
      */
     void neumannAtPos(PrimaryVariables &values, const GlobalPosition &globalPos) const
     {
-        if (globalPos[2]==0) { // top bc
+        if (globalPos[0]==0) { // top bc
             switch (bcTop_) {
             case 2: // constant flux
-                std::cout << " top flux " << bcTopValue_ << " ";
+                //std::cout << " top flux " << bcTopValue_ << " ";
                 values[contiEqIdx] = -10*bcTopValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
                 break;
             default:
@@ -459,7 +441,7 @@ public:
         } else { // bot bc
             switch (bcBot_) {
             case 2: // constant flux
-                std::cout << " bot flux " << bcBotValue_<< " ";
+                //std::cout << " bot flux " << bcBotValue_<< " ";
                 values[contiEqIdx] = -10*bcBotValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] *rho
                 break;
             default:
@@ -484,11 +466,7 @@ public:
     void initial(PrimaryVariables &values, const Element &element, const FVElementGeometry &fvGeometry, const int scvIdx) const
     {
         double iv = GridCreator::parameters(element).at(0);
-        if (useHead) {
-            values[hIdx] = iv;
-        } else {
-            values[hIdx] = pnRef_ - toPa_(iv);
-        }
+        values[hIdx] = pnRef_ - toPa_(iv);
         //std::cout << values[hIdx] << "\n";
     }
 
@@ -496,10 +474,14 @@ public:
 
 private:
 
-    // pressure head to pascal
+    /**
+     *  pressure head to pascal
+     *
+     *  @param ph           pressure head [cm]
+     */
     double toPa_(double ph) const
     {
-        return -ph*10.*abs(this->gravity()[0]); // 1D
+        return -ph*10.*abs(this->gravity()[0]); // 1D -ph*rho/100*abs(g)
     }
 
     /*
