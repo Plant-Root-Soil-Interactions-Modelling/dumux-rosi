@@ -11,12 +11,12 @@ Name = jan1a
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
-# loam over sand 
-Qr = 0.08  0.045	
-Qs = 0.43 0.43
-alpha = 0.04  0.15 # [1/cm] 
-n = 1.6  3
-Ks = 5.7870e-06 1.1574e-04 # m/s 	
+# loam  
+Qr = 0.08  
+Qs = 0.43 
+alpha = 0.04  
+n = 1.6 
+Ks = 5.7870e-06 
 
 # # Vanderborght 2005 Sand: 
 # Qr = 0.045 

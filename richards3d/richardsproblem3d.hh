@@ -290,29 +290,35 @@ public:
     {
 //        cout << "\n\nBoundariesAtPos\n\n";
 
-        if (globalPos[2]==0) { // top bc
+        if (globalPos[2]==topZ) { // top bc
             switch (bcTop_) {
             case 1: // constant pressure head
+                //std::cout << "top Dirichlet \n";
                 values.setAllDirichlet();
                 break;
             case 2: // constant flux
+                //std::cout << "top constant flux \n";
                 values.setAllNeumann();
                 break;
             case 4: // atmospheric boundary condition (with surface run-off)
+                //std::cout << "top atmospheric \n";
                 values.setAllNeumann();
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
             }
-        } else { // bot bc
+        } else if (globalPos[2]==botZ) { // bot bc
             switch (bcBot_) {
             case 1: // constant pressure head
+                //std::cout << "bot Dirichlet \n";
                 values.setAllDirichlet();
                 break;
             case 2: // constant flux
+                //std::cout << "bot constant flux \n";
                 values.setAllNeumann();
                 break;
             case 5: // free drainage
+                //std::cout << "bot free drainage \n";
                 values.setAllNeumann();
                 break;
             default:
@@ -332,26 +338,18 @@ public:
      */
     void dirichletAtPos(PrimaryVariables &values, const GlobalPosition &globalPos) const
     {
-        if (globalPos[2]==0) { // top bc
+        if (globalPos[2]==topZ) { // top bc
             switch (bcTop_) {
             case 1: // constant pressure
-                if (useHead) {
-                    values[hIdx] = bcTopValue_;
-                } else {
-                    values[hIdx] = pnRef_ - toPa_(bcTopValue_);
-                }
+                values[hIdx] = pnRef_ - toPa_(bcTopValue_);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type Dirichlet: unknown error");
             }
-        } else { // bot bc
+        } else if (globalPos[2]==botZ) { // bot bc
             switch (bcBot_) {
             case 1: // constant pressure
-                if (useHead) {
-                    values[hIdx] = bcBotValue_;
-                } else {
-                    values[hIdx] = pnRef_ - toPa_(bcBotValue_);
-                }
+                values[hIdx] = pnRef_ - toPa_(bcBotValue_);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Dirichlet: unknown error");
@@ -391,7 +389,7 @@ public:
 
         GlobalPosition pos = fvGeometry.boundaryFace[boundaryFaceIdx].ipGlobal;
 
-        if ((pos[2]!=0) && (bcBot_==5)) { // free drainage at bottom boundary
+        if ((pos[2]!=botZ) && (bcBot_==5)) { // free drainage at bottom boundary
 
             double Kc = this->spatialParams().hydraulicConductivity(element,fvGeometry,scvIdx);
             VolumeVariables  v0 = elemVolVars[0];
@@ -400,7 +398,7 @@ public:
             double krw = MaterialLaw::krw(this->spatialParams().materialLawParams(element,fvGeometry,scvIdx), swe);
             values[contiEqIdx] = krw*Kc*rho; // * 1 [m]
 
-        } else if((pos[2]==0) && (bcTop_==4)) { // atmospheric boundary condition (with surface run-off) at top
+        } else if((pos[2]==topZ) && (bcTop_==4)) { // atmospheric boundary condition (with surface run-off) at top
 
             double Kc = this->spatialParams().hydraulicConductivity(element,fvGeometry,scvIdx);
             VolumeVariables  v0 = elemVolVars[0];
@@ -444,6 +442,9 @@ public:
      */
     void neumannAtPos(PrimaryVariables &values, const GlobalPosition &globalPos) const
     {
+
+        values[contiEqIdx] = 0; return;
+
         if (globalPos[2]==0) { // top bc
             switch (bcTop_) {
             case 2: // constant flux
@@ -480,6 +481,9 @@ public:
      */
     void initial(PrimaryVariables &values, const Element &element, const FVElementGeometry &fvGeometry, const int scvIdx) const
     {
+
+        values[hIdx] = 0.5; return;
+
         double iv = GridCreator::parameters(element).at(0);
         if (useHead) {
             values[hIdx] = iv;
@@ -523,6 +527,9 @@ private:
             }
         }
     }
+
+    double topZ = 1;
+    double botZ = 0;
 
     int bcTop_;
     int bcBot_;
