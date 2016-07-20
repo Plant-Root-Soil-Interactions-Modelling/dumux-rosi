@@ -1,6 +1,3 @@
-# path to UG modeule
-UGDIR=/home/h.mai/PROGRAM/DUMUX5/external
-
 GXX_RELEASE_WARNING_OPTS=" \
     -Wall \
     -Wunused \
@@ -16,12 +13,6 @@ GXX_RELEASE_OPTS=" \
     -march=native \
     -funroll-loops \
     -g0"
-
-# configure flags 
-CMAKE_FLAGS=" \
-  -DUG_DIR=$UGDIR/ug-3.12.1\
-  -DCMAKE_CXX_FLAGS=\"$GXX_WARNING_OPTS $GXX_OPTS\" \
-  "
 
 CMAKE_FLAGS="
 -DCMAKE_C_COMPILER=/usr/bin/clang
