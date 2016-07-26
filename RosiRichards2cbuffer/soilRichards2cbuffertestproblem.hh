@@ -21,70 +21,78 @@
  *
  * \brief A sub problem for the richards problem
  */
-#ifndef DUMUX_RICHARDS_TEST_PROBLEM_HH
-#define DUMUX_RICHARDS_TEST_PROBLEM_HH
+#ifndef DUMUX_SOIL_RICHARD2C_BUFFER_TEST_PROBLEM_HH
+#define DUMUX_SOIL_RICHARD2C_BUFFER_TEST_PROBLEM_HH
 
 #include <cmath>
 
 // explicitly set the fvgeometry as we currently use another one as in stable
 #include <dumux/multidimension/cellcentered/fvelementgeometry.hh>
 #include <dumux/multidimension/box/fvelementgeometry.hh>
+#include <dumux/porousmediumflow/implicit/problem.hh>
+#include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 
-#include <dumux/porousmediumflow/richards/implicit/model.hh>
-
-#include <dumux/material/components/simpleh2o.hh>
-#include <dumux/material/fluidsystems/liquidphase.hh>
+#include <dumux/material/fluidsystems/h2ono3.hh>
 
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
 
-#include "richardstestspatialparams.hh"
+//#include "soiltestspatialparams1p2c.hh"
+ #include "richardsbuffertestspatialparams.hh"
+
+#define NONISOTHERMAL 0
 
 namespace Dumux
 {
 template <class TypeTag>
-class RichardsTestProblem;
+class SoilRichardsTwoCBufferTestProblem;
 
 namespace Properties
 {
-NEW_TYPE_TAG(RichardsTestProblem, INHERITS_FROM(Richards, RichardsTestSpatialParams));
-NEW_TYPE_TAG(RichardsTestBoxProblem, INHERITS_FROM(BoxModel, RichardsTestProblem));
-NEW_TYPE_TAG(RichardsTestCCProblem, INHERITS_FROM(CCModel, RichardsTestProblem));
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestProblem, INHERITS_FROM(RichardsTwoCBuffer, RichardsBufferTestSpatialParams)); //RichardsTwoC from properties file
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestBoxProblem, INHERITS_FROM(BoxModel, SoilRichardsTwoCBufferTestProblem));
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsTwoCBufferTestProblem));
 
 // Set the wetting phase
-SET_PROP(RichardsTestProblem, WettingPhase)
-{
-private:
-    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-public:
-    typedef Dumux::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
-};
+//SET_PROP(RichardsTestProblem, WettingPhase)
+//{
+//private:
+//    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
+//public:
+//    typedef Dumux::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
+//};
+// Set fluid configuration
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem,
+              FluidSystem,
+              Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
 
 // Set the grid type
-SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
 //SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::UGGrid<3>);
 //SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::ALUGrid<3, 3, Dune::cube, Dune::conforming>);
 
 // explicitly set the fvgeometry as we currently use another one as in stable
-SET_TYPE_PROP(RichardsTestBoxProblem, FVElementGeometry, Dumux::MultiDimensionBoxFVElementGeometry<TypeTag>);
-SET_TYPE_PROP(RichardsTestCCProblem, FVElementGeometry, Dumux::MultiDimensionCCFVElementGeometry<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestBoxProblem, FVElementGeometry, Dumux::MultiDimensionBoxFVElementGeometry<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, FVElementGeometry, Dumux::MultiDimensionCCFVElementGeometry<TypeTag>);
 
 // Set the problem property
-SET_TYPE_PROP(RichardsTestProblem, Problem, Dumux::RichardsTestProblem<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Problem, Dumux::SoilRichardsTwoCBufferTestProblem<TypeTag>);
 
 // Set the spatial parameters
-SET_TYPE_PROP(RichardsTestProblem, SpatialParams, Dumux::RichardsTestSpatialParams<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, SpatialParams, Dumux::RichardsBufferTestSpatialParams<TypeTag>);
 
 // Enable gravity
-SET_BOOL_PROP(RichardsTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, ProblemEnableGravity, false);
 
 // Enable velocity output
-SET_BOOL_PROP(RichardsTestProblem, VtkAddVelocity, true);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, VtkAddVelocity, true);
 
 // Set the grid parameter group
-SET_STRING_PROP(RichardsTestProblem, GridParameterGroup, "SoilGrid");
+SET_STRING_PROP(SoilRichardsTwoCBufferTestProblem, GridParameterGroup, "SoilGrid");
 
-SET_BOOL_PROP(RichardsTestProblem, UseHead, false);
+//SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseHead, false);
+//SET_BOOL_PROP(SoilOnePTwoCTestProblem, UseMoles, true);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, UseMoles, false);
 
 }
 
@@ -111,11 +119,12 @@ SET_BOOL_PROP(RichardsTestProblem, UseHead, false);
  * and use <tt>1p_3d.dgf</tt> in the parameter file.
  */
 template <class TypeTag>
-class RichardsTestProblem : public RichardsProblem<TypeTag>
+class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<TypeTag>
 {
-    typedef RichardsProblem<TypeTag> ParentType;
+    typedef ImplicitPorousMediaProblem<TypeTag> ParentType;
 
     typedef typename GET_PROP_TYPE(TypeTag, GridView) GridView;
+    typedef typename GET_PROP_TYPE(TypeTag, FluidSystem) FluidSystem;
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
 
     // copy some indices for convenience
@@ -127,18 +136,37 @@ class RichardsTestProblem : public RichardsProblem<TypeTag>
     };
     enum {
         // indices of the primary variables
-        contiEqIdx = Indices::contiEqIdx,
-        hIdx = Indices::hIdx,
+        //contiEqIdx = Indices::contiEqIdx,
+        //hIdx = Indices::hIdx,
+        pressureIdx = Indices::pwIdx,
+        massOrMoleFracIdx = Indices::massOrMoleFracIdx,
+#if NONISOTHERMAL
+        temperatureIdx = Indices::temperatureIdx
+#endif
     };
+     enum {
+        // index of the transport equation
+        conti0EqIdx = Indices::contiEqIdx,
+        transportEqIdx = Indices::transportEqIdx,
+        wPhaseIdx = Indices::wPhaseIdx,
+#if NONISOTHERMAL
+        energyEqIdx = Indices::energyEqIdx
+#endif
+    };
+
     enum { isBox = GET_PROP_VALUE(TypeTag, ImplicitIsBox) };
     enum { dofCodim = isBox ? dim : 0 };
+    //! property that defines whether mole or mass fractions are used
+    static const bool useMoles = GET_PROP_VALUE(TypeTag, UseMoles);
 
     typedef typename GET_PROP_TYPE(TypeTag, PrimaryVariables) PrimaryVariables;
+    typedef typename GET_PROP_TYPE(TypeTag, MaterialLaw) MaterialLaw;
     typedef typename GET_PROP_TYPE(TypeTag, BoundaryTypes) BoundaryTypes;
     typedef typename GET_PROP_TYPE(TypeTag, TimeManager) TimeManager;
     typedef typename GET_PROP_TYPE(TypeTag, SolutionVector) SolutionVector;
     typedef typename GridView::template Codim<0>::Iterator ElementIterator;
     typedef typename GET_PROP_TYPE(TypeTag, PointSource) PointSource;
+    //typedef typename GET_PROP_TYPE(TypeTag, PointSource) IntegrationPointSourve<TypeTag, unsigned int>
 
     typedef typename GridView::template Codim<0>::Entity Element;
     typedef typename GridView::template Codim<dim>::Entity Vertex;
@@ -153,10 +181,28 @@ class RichardsTestProblem : public RichardsProblem<TypeTag>
     typedef typename GET_PROP_TYPE(GlobalProblemTypeTag, CouplingManager) CouplingManager;
 
 public:
-    RichardsTestProblem(TimeManager &timeManager, const GridView &gridView)
+    SoilRichardsTwoCBufferTestProblem(TimeManager &timeManager, const GridView &gridView)
     : ParentType(timeManager, gridView)
     {
+        //initialize fluid system
+        FluidSystem::init();
         name_ = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::string, Problem, Name) + "-soil";
+        //stating in the console whether mole or mass fractions are used
+        //episodeTime = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag,
+        //                                           Scalar,
+        //                                           TimeManager,
+        //                                           EpisodeTime);
+        //this->timeManager().startNextEpisode(episodeTime);// time episode
+
+        if(useMoles)
+        {
+            std::cout<<"problem uses mole fractions"<<std::endl;
+        }
+        else
+        {
+            std::cout<<"problem uses mass fractions"<<std::endl;
+        }
+        pnRef_ = 1e5;
     }
 
     /*!
@@ -179,8 +225,14 @@ public:
      *
      * This problem assumes a temperature of 10 degrees Celsius.
      */
+//#if !NONISOTHERMAL
+//
     Scalar temperature() const
-    { return 273.15 + 10; } // 10C
+    {   Scalar soilTemp_;
+        soilTemp_ = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.SoilTemperature);
+    return soilTemp_ ; } // 10C
+//
+//#endif
     /*
       * \brief Returns the reference pressure [Pa] of the non-wetting
      *        fluid phase within a finite volume
@@ -196,7 +248,7 @@ public:
     Scalar referencePressure(const Element &element,
                              const FVElementGeometry &fvGeometry,
                              const int scvIdx) const
-    { return 1e5; }
+    { return pnRef_; }
 
 
     // TODO identify source term
@@ -242,26 +294,68 @@ public:
      * the absolute rate mass generated or annihilate in kg/s. Positive values mean
      * that mass is created, negative ones mean that it vanishes.
      */
-    void solDependentPointSource(PointSource& source,
+    void solDependentPointSource( PointSource& source,//PrimaryVariables &source, ///
                                   const Element &element,
                                   const FVElementGeometry &fvGeometry,
                                   const int scvIdx,
                                   const ElementVolumeVariables &elemVolVars) const
     {
-        // compute source at every integration point
-        // needs convertion of  units of 1d pressure if pressure head in richards is used
-        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[hIdx];
-        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[hIdx] ;
+        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[conti0EqIdx];
+        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[conti0EqIdx] ;
 
         const auto& spatialParams = this->couplingManager().lowDimProblem().spatialParams();
         const unsigned int rootEIdx = this->couplingManager().pointSourceData(source.id()).lowDimElementIdx();
         const Scalar Kr = spatialParams.Kr(rootEIdx);
         const Scalar rootRadius = spatialParams.radius(rootEIdx);
 
+        PrimaryVariables sourceValues;
+        sourceValues=0.0;
         // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-        const Scalar sourceValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(/*phaseIdx=*/0);
-        source = sourceValue*source.quadratureWeight()*source.integrationElement();
+        sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+                                   *elemVolVars[scvIdx].density(wPhaseIdx);
+        // sourceValues positive mean flow from root to soil
+        // needs concentrations in soil and root
+        Scalar c1D;
+        if(useMoles)
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+        else
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+        //std::cout << "concentrations c1D " <<c1D<< std::endl;
+        Scalar c3D;
+        if(useMoles)
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+        else
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+        //std::cout << "concentrations c3D " <<c3D<< std::endl;
+        //Diffussive flux term of transport
+        const Scalar DiffValue = 0.0;
+        //2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(/*phaseIdx=*/0);
+
+        //Advective flux term of transport
+        Scalar AdvValue;
+        if (sourceValues[conti0EqIdx]>0) // flow from root to soil
+            //AdvValue = 0;
+            AdvValue = sourceValues[conti0EqIdx]*c1D;
+        else // flow from soil to root
+            AdvValue = sourceValues[conti0EqIdx]*c3D;
+
+        //Active flux - active uptake based on Michaeles Menten
+        Scalar ActiveValue;
+        ActiveValue = 0;
+        const Scalar Vmax = spatialParams.Vmax();
+        const Scalar Km = spatialParams.Km();
+        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D/(Km+c3D);
+    //    std::cout << "c3D " << c3D <<" "<<std::endl;
+    //    std::cout << "ActiveValue " << ActiveValue <<" "<<std::endl;
+        Scalar sigma;
+        sigma = spatialParams.PartitionCoeff();
+
+        sourceValues[transportEqIdx] = (sigma*(AdvValue + DiffValue) + (1-sigma)*ActiveValue)*source.quadratureWeight()*source.integrationElement();
+        //std::cout << "SOIL transportEqIdx " << transportEqIdx <<" " << sourceValues[transportEqIdx]<< std::endl;
+        sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
+        //std::cout << "SOIL conti0EqIdx " << conti0EqIdx <<" " << sourceValues[conti0EqIdx]<< std::endl;
+        //sourceValues[transportEqIdx] =-1e-9*source.quadratureWeight()*source.integrationElement();
+        source =  sourceValues;
     }
 
     // \}
@@ -280,14 +374,18 @@ public:
     void boundaryTypesAtPos(BoundaryTypes &values,
             const GlobalPosition &globalPos) const
     {
-         if(globalPos[2] > this->bBoxMax()[2]-eps_)
-         {
+        //values.setAllNeumann();
+
+        //values.setAllDirichlet();
+        if(globalPos[2] > this->bBoxMax()[2] - eps_)
+        {
             values.setAllNeumann();
-         }
-         else
-         {
+        }
+        else
+        {
             values.setAllDirichlet();
-         }
+            //values.setOutflow(transportEqIdx);
+        }
     }
 
     /*!
@@ -299,13 +397,20 @@ public:
      *
      * For this method, the \a values parameter stores primary variables.
      */
-    void dirichletAtPos(PrimaryVariables &values,
+    void dirichletAtPos(PrimaryVariables &priVars,
                         const GlobalPosition &globalPos) const
     {
-        values[hIdx] = GET_RUNTIME_PARAM(TypeTag,
+    //    initial_(values, globalPos);
+        Scalar sw_ = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
-                                        BoundaryConditions.InitialSoilPressure);
+                                        BoundaryConditions.InitialSoilSaturation);
+        Scalar pc_ = MaterialLaw::pc(this->spatialParams().materialLawParams(globalPos),sw_);
 
+        priVars[pressureIdx] = pnRef_ - pc_;
+
+        priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
+                                        Scalar,
+                                        BoundaryConditions.InitialSoilFracNO3);
     }
 
     /*!
@@ -324,7 +429,8 @@ public:
                  const int scvIdx,
                  const int boundaryFaceIdx) const
     {
-        priVars[contiEqIdx] = 0;
+        priVars[conti0EqIdx] = 0.0;
+        priVars[transportEqIdx] = 0.0;
     }
 
     // \}
@@ -346,10 +452,7 @@ public:
     void initialAtPos(PrimaryVariables &values,
                  const GlobalPosition &globalPos) const
     {
-        values = GET_RUNTIME_PARAM(TypeTag,
-                                   Scalar,
-                                   BoundaryConditions.InitialSoilPressure);
-
+      initial_(values, globalPos);
     }
 
     bool shouldWriteRestartFile() const
@@ -363,10 +466,10 @@ public:
         unsigned numDofs = this->model().numDofs();
 
         // create required scalar fields for the vtk output
-        ScalarField& source = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& rootFraction = *(this->resultWriter().allocateManagedBuffer(nomDofs));
-        source = 0.0;
-        rootFraction = 0.0;
+        ScalarField& sourceP = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        sourceP = 0.0;
+        sourceC = 0.0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -383,20 +486,27 @@ public:
                 auto dofGlobalIdx = this->model().dofMapper().subIndex(element, scvIdx, dofCodim);
 
                 // only call the source function if we are not initializing
-                if (!(this->timeManager().time() < 0))
+                if (!(this->timeManager().time() < 0.0))
                 {
                     PrimaryVariables values;
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
-                    source[dofGlobalIdx] += values[hIdx] * fvGeometry.subContVol[scvIdx].volume
+                    sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    rootFraction[dofGlobalIdx] += couplingManager().lowDimVolumeFraction(element);
+                    sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
+                                            * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
                 }
             }
         }
 
+        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
+        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
+
+        std::cout << "Integrated mass source (3D): " << totalSourceP << std::endl;
+        std::cout << "Integrated concentration source (3D): " << totalSourceC << std::endl;
+
         // attach data to the vtk output
-        this->resultWriter().attachDofData(source, "source", isBox);
-        this->resultWriter().attachDofData(rootFraction, "root volume fraction [-]", isBox);
+        this->resultWriter().attachDofData(sourceP, "mass source (kg/s)", isBox);
+        this->resultWriter().attachDofData(sourceC, "concentration source (kg/s)", isBox);
     }
 
     //! Set the coupling manager
@@ -408,9 +518,37 @@ public:
     { return *couplingManager_; }
 
 private:
+    void initial_(PrimaryVariables &priVars,
+                  const GlobalPosition &globalPos) const
+    {
+        Scalar sw_ = GET_RUNTIME_PARAM(TypeTag,
+                                        Scalar,
+                                        BoundaryConditions.InitialSoilSaturation);
+        Scalar pc_ = MaterialLaw::pc(this->spatialParams().materialLawParams(globalPos),sw_);
+
+        priVars[pressureIdx] = pnRef_ - pc_;
+
+        priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
+                                   Scalar,
+                                   BoundaryConditions.InitialSoilFracNO3);
+
+//        priVars[pressureIdx] = GET_RUNTIME_PARAM(TypeTag,
+//                                   Scalar,
+//                                   BoundaryConditions.InitialSoilPressure); // initial condition for the pressure
+//
+//        priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
+//                                   Scalar,
+//                                   BoundaryConditions.InitialSoilFracN2);  // initial condition for the N2 molefraction
+//    //    #if !NONISOTHERMAL
+//    //        priVars[temperatureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Temperature);
+//    //    #endif
+};
+
+    const Scalar eps_ = 1e-9;
+    Scalar episodeTime, temperature_, pnRef_, pc_, sw_;
     std::string name_;
     std::shared_ptr<CouplingManager> couplingManager_;
-    const Scalar eps_ = 1e-9;
+    //Scalar DiffCoef_;
 };
 
 } //end namespace
