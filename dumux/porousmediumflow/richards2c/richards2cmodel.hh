@@ -66,8 +66,6 @@ class RichardsTwoCModel : public GET_PROP_TYPE(TypeTag, BaseModel)
     enum { isBox = GET_PROP_VALUE(TypeTag, ImplicitIsBox) };
     enum { dofCodim = isBox ? dim : 0 };
 
-    static const bool usePH = GET_PROP_VALUE(TypeTag, UsePH);
-
 public:
     /*!
      * \brief All relevant primary and secondary of a given

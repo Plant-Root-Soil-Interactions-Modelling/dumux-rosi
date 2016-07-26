@@ -73,7 +73,6 @@ NEW_PROP_TAG(ImplicitMassUpwindWeight); //!< The value of the weight of the upwi
 NEW_PROP_TAG(ImplicitMobilityUpwindWeight); //!< The value of the weight for the upwind mobility in the velocity calculation
 NEW_PROP_TAG(SpatialParamsForchCoeff); //!< Property for the forchheimer coefficient
 NEW_PROP_TAG(VtkAddVelocity); //!< Returns whether velocity vectors are written into the vtk output
-NEW_PROP_TAG(UsePH); //!< Defines whether pressure [Pa] (false) or pressure head [cm] (ture) is used
 NEW_PROP_TAG(UseMoles); //!< Defines whether mole (true) or mass (false) fractions are used
 NEW_PROP_TAG(Scaling); //!< Defines Scaling of the model
 NEW_PROP_TAG(EffectiveDiffusivityModel); //!< The employed model for the computation of the effective diffusivity

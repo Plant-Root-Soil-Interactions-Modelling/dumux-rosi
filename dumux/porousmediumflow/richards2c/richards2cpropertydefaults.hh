@@ -61,9 +61,6 @@ SET_INT_PROP(RichardsTwoC, NumComponents, 2); //!< The number of components in t
 SET_SCALAR_PROP(RichardsTwoC, Scaling, 1); //!< Scaling of the model is set to 1 by default
 SET_BOOL_PROP(RichardsTwoC, UseMoles, false); //!< Define that mole fractions are used in the balance equations
 
-//! Use pressure [Pa] by default
-SET_BOOL_PROP(RichardsTwoC, UsePH, false);
-
 //! The local residual operator
 SET_TYPE_PROP(RichardsTwoC,
               LocalResidual,

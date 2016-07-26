@@ -54,7 +54,6 @@ class RichardsTwoCVolumeVariables : public ImplicitVolumeVariables<TypeTag>
     typedef typename GET_PROP_TYPE(TypeTag, FVElementGeometry) FVElementGeometry;
     typedef typename GET_PROP_TYPE(TypeTag, PrimaryVariables) PrimaryVariables;
 
-    static const bool usePH = GET_PROP_VALUE(TypeTag, UsePH);
     static const bool useMoles = GET_PROP_VALUE(TypeTag, UseMoles);
 
     typedef typename GET_PROP_TYPE(TypeTag, Indices) Indices;
@@ -157,30 +156,18 @@ public:
         const MaterialLawParams &matParams =
                 problem.spatialParams().materialLawParams(element, fvGeometry, scvIdx);
 
-        // pressure head formulation
-        if (usePH){
-            Scalar pw = (0.01*priVars[hIdx])*1000.0 * 9.81 ;
-            fluidState.setPressure(wPhaseIdx, pw);
-            fluidState.setPressure(nPhaseIdx, 0.0);
+        //pressure formulation
+        Scalar pnRef = problem.referencePressure(element, fvGeometry, scvIdx);
 
-            // saturations
-            Scalar sw = MaterialLaw::sw(matParams,-fluidState.pressure(wPhaseIdx));
-            fluidState.setSaturation(wPhaseIdx, sw);
-            fluidState.setSaturation(nPhaseIdx, 1 - sw);
-        }
-        else{ //pressure formulation
+        Scalar minPc = MaterialLaw::pc(matParams, 1.0);
+        fluidState.setPressure(wPhaseIdx, priVars[pwIdx]);
+        fluidState.setPressure(nPhaseIdx, std::max(pnRef, priVars[pwIdx] + minPc));
 
-            Scalar pnRef = problem.referencePressure(element, fvGeometry, scvIdx);
+        // saturations
+        Scalar sw = MaterialLaw::sw(matParams, fluidState.pressure(nPhaseIdx) - fluidState.pressure(wPhaseIdx));
+        fluidState.setSaturation(wPhaseIdx, sw);
+        fluidState.setSaturation(nPhaseIdx, 1 - sw);
 
-            Scalar minPc = MaterialLaw::pc(matParams, 1.0);
-            fluidState.setPressure(wPhaseIdx, priVars[pwIdx]);
-            fluidState.setPressure(nPhaseIdx, std::max(pnRef, priVars[pwIdx] + minPc));
-
-            // saturations
-            Scalar sw = MaterialLaw::sw(matParams, fluidState.pressure(nPhaseIdx) - fluidState.pressure(wPhaseIdx));
-            fluidState.setSaturation(wPhaseIdx, sw);
-            fluidState.setSaturation(nPhaseIdx, 1 - sw);
-        }
         // density and viscosity
         typename FluidSystem::ParameterCache paramCache;
         paramCache.updateAll(fluidState);
@@ -358,11 +345,8 @@ public:
      */
     Scalar capillaryPressure() const
     {
-        // pressure head formulation
-        if (usePH)
-            return -fluidState_.pressure(wPhaseIdx);
-        else // pressure  formulation
-            return fluidState_.pressure(nPhaseIdx) - fluidState_.pressure(wPhaseIdx);
+        //pressure  formulation
+        return fluidState_.pressure(nPhaseIdx) - fluidState_.pressure(wPhaseIdx);
     }
 
     /*!
@@ -378,11 +362,8 @@ public:
      */
     Scalar pressureHead(const int phaseIdx) const
     {
-        // pressure head formulation
-        if (usePH)
-            return (100.) *(fluidState_.pressure(phaseIdx))/ fluidState_.density(phaseIdx)/ 9.81;
-        else // pressure  formulation
-            return (100.) *(fluidState_.pressure(phaseIdx) -1e5)/ fluidState_.density(phaseIdx)/ 9.81;
+        // pressure  formulation
+        return (100.) *(fluidState_.pressure(phaseIdx) -1e5)/ fluidState_.density(phaseIdx)/ 9.81;
     }
 
     /*!

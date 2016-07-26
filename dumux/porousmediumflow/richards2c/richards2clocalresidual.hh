@@ -59,7 +59,6 @@ class RichardsTwoCLocalResidual : public GET_PROP_TYPE(TypeTag, BaseLocalResidua
     typedef Dune::FieldVector<Scalar, dim> DimVector;
     typedef Dune::FieldVector<Scalar, dimWorld> GlobalPosition;
 
-    static const bool usePH = GET_PROP_VALUE(TypeTag, UsePH);
     static const bool useMoles = GET_PROP_VALUE(TypeTag, UseMoles);
 
 public:
@@ -105,25 +104,16 @@ public:
         // pressure head formulation
         storage[contiEqIdx] =
                 volVars.saturation(wPhaseIdx)
-                * volVars.porosity();
+                * volVars.porosity()* volVars.density(wPhaseIdx);
 
         if(!useMoles) //mass-fraction formulation
         {
-            // storage term of continuity equation - massfractions
-            if (!usePH)
-                storage[contiEqIdx] *= volVars.density(wPhaseIdx);
-
-            //storage term of the transport equation - massfractions
+	        //storage term of the transport equation - massfractions
             storage[transportEqIdx] +=
                 volVars.density(wPhaseIdx) * volVars.massFraction(transportCompIdx) * volVars.porosity()*volVars.saturation(wPhaseIdx);
         }
         else //mole-fraction formulation
         {
-            // storage term of continuity equation- molefractions
-            //careful: molarDensity changes with moleFrac!
-            if (!usePH)
-                storage[contiEqIdx] *= volVars.molarDensity();
-
             // storage term of the transport equation - molefractions
             storage[transportEqIdx] +=
                 volVars.molarDensity()*volVars.moleFraction(transportCompIdx) *
@@ -177,17 +167,13 @@ public:
         //pressure head formulation
         flux[contiEqIdx] =
             fluxVars.volumeFlux(wPhaseIdx);
-
-        if(!useMoles) //mass-fraction formulation
-        {
-            // total mass flux - massfraction
-            //KmvpNormal is the Darcy velocity multiplied with the normal vector, calculated in 1p2cfluxvariables.hh
-            if (!usePH)
-                flux[contiEqIdx] *=
+            flux[contiEqIdx] *=
                     ((     massUpwindWeight_)*up.density(wPhaseIdx)/up.viscosity(wPhaseIdx)
                      +
                      ((1 - massUpwindWeight_)*dn.density(wPhaseIdx)/dn.viscosity(wPhaseIdx)));
 
+        if(!useMoles) //mass-fraction formulation
+        {
             // advective flux of the second component - massfraction
             flux[transportEqIdx] +=
                 fluxVars.volumeFlux(wPhaseIdx) *
@@ -197,14 +183,6 @@ public:
         }
         else //mole-fraction formulation
         {
-            // total mass flux - molefraction
-            //KmvpNormal is the Darcy velocity multiplied with the normal vector, calculated in 1p2cfluxvariables.hh
-            if (!usePH)
-                flux[contiEqIdx] *=
-                    ((      massUpwindWeight_)*up.molarDensity()/up.viscosity(wPhaseIdx)
-                     +
-                     ((1 - massUpwindWeight_)*dn.molarDensity()/dn.viscosity(wPhaseIdx)));
-
             // advective flux of the second component -molefraction
             flux[transportEqIdx] +=
                 fluxVars.volumeFlux(wPhaseIdx) *
