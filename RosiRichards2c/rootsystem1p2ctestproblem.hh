@@ -329,9 +329,7 @@ public:
 
         // convert units of 3d pressure if pressure head is used !!!
         const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
-        //std::cout << "pressure 3D " <<pressure3D<< std::endl;
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx];
-        //std::cout << "pressure 1D " <<pressure1D<< std::endl;
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
@@ -339,19 +337,17 @@ public:
         sourceValues[conti0EqIdx] = 2 * M_PI *rootRadius * Kr *(pressure3D - pressure1D)
                                    * elemVolVars[scvIdx].density();
 
-        // needs concentrations in soil and root
+        // take mass/mole fraction in soil and root
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "mass fraction c1D " <<c1D<< std::endl;
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "      mass fraction c3D " <<c3D<< std::endl;
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
 
         //Difussive flux term of transport
         Scalar DiffValue;
@@ -363,16 +359,11 @@ public:
         if (sourceValues[conti0EqIdx]>0)
             AdvValue = sourceValues[conti0EqIdx]*c3D;
         else
-            //AdvValue = 0;
+
             AdvValue = sourceValues[conti0EqIdx]*c1D;
 
         sourceValues[transportEqIdx] = (AdvValue + DiffValue)*source.quadratureWeight()*source.integrationElement();
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-
-        //std::cout << "ROOT transportEqIdx " << transportEqIdx <<" "<< sourceValues[transportEqIdx]<< std::endl;
-        //std::cout << "ROOT conti0EqIdx " << conti0EqIdx <<" "<< sourceValues[conti0EqIdx]<< std::endl;
-
-        //sourceValues[transportEqIdx] =1e-9*source.quadratureWeight()*source.integrationElement();
         source = sourceValues;
     }
 

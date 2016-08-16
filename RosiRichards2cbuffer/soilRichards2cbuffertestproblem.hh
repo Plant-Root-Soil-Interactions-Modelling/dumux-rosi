@@ -310,23 +310,22 @@ public:
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
-        // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+        // sink defined as radial flow Jr * density [m] [m s-1 Pa-1] * [Pa]* [kg m-3] = [kg s-1 m-1]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
                                    *elemVolVars[scvIdx].density(wPhaseIdx);
         // sourceValues positive mean flow from root to soil
-        // needs concentrations in soil and root
+        // needs mass/mole fraction in soil and root
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c1D " <<c1D<< std::endl;
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c3D " <<c3D<< std::endl;
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
+
         //Diffussive flux term of transport
         const Scalar DiffValue = 0.0;
         //2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(/*phaseIdx=*/0);
@@ -334,27 +333,24 @@ public:
         //Advective flux term of transport
         Scalar AdvValue;
         if (sourceValues[conti0EqIdx]>0) // flow from root to soil
-            //AdvValue = 0;
-            AdvValue = sourceValues[conti0EqIdx]*c1D;
+            AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+                                   *elemVolVars[scvIdx].density(wPhaseIdx)*c1D;
         else // flow from soil to root
-            AdvValue = sourceValues[conti0EqIdx]*c3D;
+            AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+                                   *elemVolVars[scvIdx].density(wPhaseIdx)*c3D;
 
         //Active flux - active uptake based on Michaeles Menten
         Scalar ActiveValue;
         ActiveValue = 0;
         const Scalar Vmax = spatialParams.Vmax();
         const Scalar Km = spatialParams.Km();
-        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D/(Km+c3D);
-    //    std::cout << "c3D " << c3D <<" "<<std::endl;
-    //    std::cout << "ActiveValue " << ActiveValue <<" "<<std::endl;
+        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D*elemVolVars[scvIdx].density(wPhaseIdx)/(Km+c3D*elemVolVars[scvIdx].density(wPhaseIdx));
+
         Scalar sigma;
         sigma = spatialParams.PartitionCoeff();
 
         sourceValues[transportEqIdx] = (sigma*(AdvValue + DiffValue) + (1-sigma)*ActiveValue)*source.quadratureWeight()*source.integrationElement();
-        //std::cout << "SOIL transportEqIdx " << transportEqIdx <<" " << sourceValues[transportEqIdx]<< std::endl;
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-        //std::cout << "SOIL conti0EqIdx " << conti0EqIdx <<" " << sourceValues[conti0EqIdx]<< std::endl;
-        //sourceValues[transportEqIdx] =-1e-9*source.quadratureWeight()*source.integrationElement();
         source =  sourceValues;
     }
 

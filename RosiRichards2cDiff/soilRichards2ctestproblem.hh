@@ -320,22 +320,23 @@ public:
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
+
         // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
                                    *elemVolVars[scvIdx].density(wPhaseIdx);
-        // needs concentrations in soil and root
+
+        // take mass/mole fraction in soil and root
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c1D " <<c1D<< std::endl;
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c3D " <<c3D<< std::endl;
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
+
         //Diffussive flux term of transport
         Scalar DiffValue;
         Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
@@ -345,9 +346,11 @@ public:
         Scalar AdvValue;
         //if (sourceValues[conti0EqIdx]>0)
         //    //AdvValue = 0;
-        //    AdvValue = sourceValues[conti0EqIdx]*c1D;
+        //    AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+        //                           *elemVolVars[scvIdx].density(wPhaseIdx)*c1D;
         //else
-        //    AdvValue = sourceValues[conti0EqIdx]*c3D;
+        //    AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+        //                           *elemVolVars[scvIdx].density(wPhaseIdx)*c3D;
         AdvValue = 0;
 
         sourceValues[transportEqIdx] = (AdvValue + DiffValue)*source.quadratureWeight()*source.integrationElement();

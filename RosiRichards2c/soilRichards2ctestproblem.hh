@@ -309,7 +309,7 @@ public:
                                   const ElementVolumeVariables &elemVolVars) const
     {
         // compute source at every integration point
-        // needs convertion of  units of 1d pressure if pressure head in richards is used
+        // take pressure in soil voxel and root segment
         const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx] ;
 
@@ -320,40 +320,37 @@ public:
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
-        // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+        // SOURCE/SINK FOR RICHARDS EQUATION
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
                                    *elemVolVars[scvIdx].density(wPhaseIdx);
-        // needs concentrations in soil and root
+        // take mass/mole fraction in soil voxel and root segment
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c1D " <<c1D<< std::endl;
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c3D " <<c3D<< std::endl;
-        //Diffussive flux term of transport
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
+
+        //Diffussive flux of root-soil interaction
         Scalar DiffValue;
         Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
         DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(wPhaseIdx);
 
-        //Advective flux term of transport
+        //Advective flux of root-soil interaction
         Scalar AdvValue;
         if (sourceValues[conti0EqIdx]>0)
-            //AdvValue = 0;
-            AdvValue = sourceValues[conti0EqIdx]*c1D;
+            AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+                       *elemVolVars[scvIdx].density(wPhaseIdx)*c1D;
         else
-            AdvValue = sourceValues[conti0EqIdx]*c3D;
-
+            AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
+                       *elemVolVars[scvIdx].density(wPhaseIdx)*c3D;
+        // SOURCE/SINK FOR TRANSPORT EQUATION
         sourceValues[transportEqIdx] = (AdvValue + DiffValue)*source.quadratureWeight()*source.integrationElement();
-        //std::cout << "SOIL transportEqIdx " << transportEqIdx <<" " << sourceValues[transportEqIdx]<< std::endl;
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-        //std::cout << "SOIL conti0EqIdx " << conti0EqIdx <<" " << sourceValues[conti0EqIdx]<< std::endl;
-        //sourceValues[transportEqIdx] =-1e-9*source.quadratureWeight()*source.integrationElement();
         source =  sourceValues;
     }
 

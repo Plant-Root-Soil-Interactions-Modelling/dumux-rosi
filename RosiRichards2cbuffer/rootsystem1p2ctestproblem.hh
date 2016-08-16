@@ -347,15 +347,15 @@ public:
         // needs concentrations in soil and root
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];
         //std::cout << "concentrations c1D " <<c1D<< std::endl;
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
 
         //Difussive flux term of transport
         const Scalar DiffValue = 0.0;
@@ -364,10 +364,11 @@ public:
         //Advective flux term of transport
         Scalar AdvValue;
         if (sourceValues[conti0EqIdx]>0)
-            AdvValue = sourceValues[conti0EqIdx]*c3D;
+            AdvValue = 2 * M_PI *rootRadius * Kr *(pressure3D - pressure1D)
+                                   * elemVolVars[scvIdx].density()*c3D;
         else
-            //AdvValue = 0;
-            AdvValue = sourceValues[conti0EqIdx]*c1D;
+            AdvValue = 2 * M_PI *rootRadius * Kr *(pressure3D - pressure1D)
+                                   * elemVolVars[scvIdx].density()*c1D;
 
 
         //Active flux - active uptake based on Michaeles Menten
@@ -375,7 +376,7 @@ public:
         ActiveValue = 0;
         const Scalar Vmax = spatialParams.Vmax();
         const Scalar Km = spatialParams.Km();
-        ActiveValue = 2 * M_PI*rootRadius*Vmax*c3D/(Km+c3D);
+        ActiveValue = 2 * M_PI*rootRadius*Vmax*c3D*elemVolVars[scvIdx].density()/(Km+c3D* elemVolVars[scvIdx].density());
 
         Scalar sigma;
         sigma = spatialParams.PartitionCoeff();
