@@ -111,9 +111,10 @@ class RootsystemOnePTwoCTestProblem : public RootsystemOnePTwoCProblem<TypeTag>
     };
     enum {
         // indices of the primary variables
-        conti0EqIdx = Indices::conti0EqIdx,
         pressureIdx = Indices::pressureIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
+        // indices of the equations
+        conti0EqIdx = Indices::conti0EqIdx,
         transportEqIdx = Indices::transportEqIdx,
     };
 
@@ -146,7 +147,13 @@ public:
     {
         name_ = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::string, Problem, Name) + "-root";
         this->spatialParams().setParams();
+        pnRef_ = 1e5;
     }
+
+    Scalar referencePressure(const Element &element,
+                             const FVElementGeometry &fvGeometry,
+                             const int scvIdx) const
+    { return pnRef_; }
     /*!
      * \name Problem parameters
      */
@@ -175,7 +182,6 @@ public:
 //    Scalar temperature() const
 //    { temperatureRoot_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.TemperatureRoot);
 //    return temperatureRoot_; } // 10C
-
     // \}
     /*!
      * \name Boundary conditions
@@ -215,23 +221,10 @@ public:
      *
      * For this method, the \a values parameter stores primary variables.
      */
-
-//    void dirichlet(PrimaryVariables &values,
-//                   const Intersection &intersection) const
-//    {
-//        GlobalPosition globalPos = intersection.geometry().center();
-//        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
-//              values[pIdx] = GET_RUNTIME_PARAM(TypeTag,
-//                                               Scalar,
-//                                               BoundaryConditions.CriticalCollarPressure);
-//
-//          //values[pIdx] *= 1.01;
-//    }
-
     void dirichletAtPos(PrimaryVariables &values,
                         const GlobalPosition &globalPos) const
     {
-        values[pressureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
+        values[pressureIdx] = pnRef_ + GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
         values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialRootFracNO3);
     }
     /*!
@@ -285,7 +278,7 @@ public:
                  const FVElementGeometry &fvGeometry,
                  const int scvIdx) const
     {
-        priVars[pressureIdx] =  GET_RUNTIME_PARAM(TypeTag,
+        priVars[pressureIdx] =  pnRef_ + GET_RUNTIME_PARAM(TypeTag,
                                            Scalar,
                                            BoundaryConditions.InitialRootPressure);
         priVars[massOrMoleFracIdx] = 0.0;
@@ -336,7 +329,9 @@ public:
 
         // convert units of 3d pressure if pressure head is used !!!
         const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
+        //std::cout << "pressure 3D " <<pressure3D<< std::endl;
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx];
+        //std::cout << "pressure 1D " <<pressure1D<< std::endl;
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
@@ -347,19 +342,21 @@ public:
         // needs concentrations in soil and root
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
-        //std::cout << "concentrations c1D " <<c1D<< std::endl;
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
+        //std::cout << "mass fraction c1D " <<c1D<< std::endl;
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
+        //std::cout << "      mass fraction c3D " <<c3D<< std::endl;
 
         //Difussive flux term of transport
-        const Scalar DiffValue = 0.0;
-        //2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(/*phaseIdx=*/0);
+        Scalar DiffValue;
+        Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
+        DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c3D - c1D)*elemVolVars[scvIdx].density();
 
         //Advective flux term of transport
         Scalar AdvValue;
@@ -472,7 +469,7 @@ public:
 private:
     std::string name_;
 
-    Scalar sinkSum;
+    Scalar sinkSum, pnRef_;
     const Scalar eps_ = 1e-9;
     std::shared_ptr<CouplingManager> couplingManager_;
 };

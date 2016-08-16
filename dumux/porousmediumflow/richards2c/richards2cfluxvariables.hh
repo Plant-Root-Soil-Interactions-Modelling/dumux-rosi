@@ -165,7 +165,15 @@ public:
                 "the second component!"); }
        return moleFractionGrad_;
     };
-
+    const GlobalPosition &massFractionGrad(int compIdx) const
+    {
+       if (compIdx != 1)
+       { DUNE_THROW(Dune::InvalidStateException,
+                "The 1p2c model is supposed to need "
+                "only the concentration gradient of "
+                "the second component!"); }
+       return massFractionGrad_;
+    };
     /*!
     * \brief The binary diffusion coefficient for each fluid phase in the porous medium \f$\mathrm{[m^2/s]}\f$.
     */
@@ -316,6 +324,28 @@ protected:
                 potentialGrad_[phaseIdx] -= f;
             } // gravity
         } // loop over all phases
+
+        // calculate mole gradient
+        GlobalPosition tmp(0.0);
+        for (unsigned int idx = 0;
+             idx < this->face().numFap;
+             idx++) // loop over adjacent vertices
+        {
+            // FE gradient at vertex idx
+            const GlobalPosition &feGrad = this->face().grad[idx];
+
+            // index for the element volume variables
+            int volVarsIdx = this->face().fapIndices[idx];
+
+            // the mole fraction gradient of the wetting phase
+            tmp = feGrad;
+            tmp *= elemVolVars[volVarsIdx].moleFraction(transportCompIdx);
+            moleFractionGrad_ += tmp;
+
+            tmp = feGrad;
+            tmp *= elemVolVars[volVarsIdx].massFraction(transportCompIdx);
+            massFractionGrad_ += tmp;
+        }
      }
 
     /*!
@@ -487,6 +517,8 @@ protected:
     GlobalPosition potentialGrad_[numPhases] ;
     //! mole-fraction gradient
     GlobalPosition moleFractionGrad_;
+    //! mole-fraction gradient
+    GlobalPosition massFractionGrad_;
     //! the effective diffusion coefficent in the porous medium
     Scalar porousDiffCoeff_;
 

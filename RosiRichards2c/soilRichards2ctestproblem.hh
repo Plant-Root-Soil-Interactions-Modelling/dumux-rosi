@@ -310,8 +310,8 @@ public:
     {
         // compute source at every integration point
         // needs convertion of  units of 1d pressure if pressure head in richards is used
-        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[conti0EqIdx];
-        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[conti0EqIdx] ;
+        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
+        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx] ;
 
         const auto& spatialParams = this->couplingManager().lowDimProblem().spatialParams();
         const unsigned int rootEIdx = this->couplingManager().pointSourceData(source.id()).lowDimElementIdx();
@@ -326,19 +326,20 @@ public:
         // needs concentrations in soil and root
         Scalar c1D;
         if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
         else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
         //std::cout << "concentrations c1D " <<c1D<< std::endl;
         Scalar c3D;
         if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*elemVolVars[0].molarDensity();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
         else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx]*1000;//elemVolVars[0].density();
+            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
         //std::cout << "concentrations c3D " <<c3D<< std::endl;
         //Diffussive flux term of transport
-        const Scalar DiffValue = 0.0;
-        //2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(/*phaseIdx=*/0);
+        Scalar DiffValue;
+        Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
+        DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(wPhaseIdx);
 
         //Advective flux term of transport
         Scalar AdvValue;

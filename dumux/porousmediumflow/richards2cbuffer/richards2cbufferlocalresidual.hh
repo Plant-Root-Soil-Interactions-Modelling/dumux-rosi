@@ -115,8 +115,8 @@ public:
 
             //storage term of the transport equation - massfractions
             storage[transportEqIdx] +=
-                volVars.density(wPhaseIdx) * volVars.massFraction(transportCompIdx) * volVars.saturation(wPhaseIdx)*
-                (volVars.porosity()+volVars.buffer());
+                volVars.density(wPhaseIdx) * volVars.massFraction(transportCompIdx) *
+                (volVars.saturation(wPhaseIdx)*volVars.porosity()+volVars.buffer());
         }
         else //mole-fraction formulation
         {
@@ -127,8 +127,8 @@ public:
 
             // storage term of the transport equation - molefractions
             storage[transportEqIdx] +=
-                volVars.molarDensity()*volVars.moleFraction(transportCompIdx) * volVars.saturation(wPhaseIdx)*
-                (volVars.porosity()+volVars.buffer());
+                volVars.molarDensity()*volVars.moleFraction(transportCompIdx) *
+                (volVars.saturation(wPhaseIdx)*volVars.porosity()+volVars.buffer());
         }
 
     }

@@ -213,17 +213,16 @@ public:
         if(!useMoles) //mass-fraction formulation
         {
             // diffusive flux of the second component - massfraction
-            tmp = -(fluxVars.moleFractionGrad(transportCompIdx)*fluxVars.face().normal);
-            tmp *= fluxVars.porousDiffCoeff() * fluxVars.molarDensity();
+            tmp = -(fluxVars.massFractionGrad(transportCompIdx)*fluxVars.face().normal);
+            tmp *= fluxVars.porousDiffCoeff() * fluxVars.density();
 
             // dispersive flux of second component - massfraction
             GlobalPosition normalDisp;
             fluxVars.dispersionTensor().mv(fluxVars.face().normal, normalDisp);
-            tmp -= fluxVars.molarDensity()*
-                (normalDisp * fluxVars.moleFractionGrad(transportCompIdx));
+            tmp -= normalDisp * fluxVars.massFractionGrad(transportCompIdx) * fluxVars.density();
 
             // convert it to a mass flux and add it
-            flux[transportEqIdx] += tmp * FluidSystem::molarMass(transportCompIdx);
+            flux[transportEqIdx] += tmp;
         }
         else //mole-fraction formulation
         {
