@@ -245,7 +245,7 @@ public:
 
         if (velocityOutput.enableOutput())
         {
-            writer.attachCellData(*velocity,  "velocity (m/s)", dimWorld);
+        //    writer.attachCellData(*velocity,  "velocity (m/s)", dimWorld);
             writer.attachCellData(*volumeFlux,  "volumeFlux (m^3/s)");
         }
         writer.attachCellData(*rank, "process rank");
