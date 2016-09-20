@@ -99,6 +99,7 @@ public:
     {
         permeability_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Permeability);
         porosity_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Porosity);
+        buffer_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.BufferPower);
         Swr_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Swr);
         VgAlpha_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.VgAlpha);
         Vgn_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Vgn);
@@ -138,7 +139,17 @@ public:
                     const FVElementGeometry &fvGeometry,
                     int scvIdx) const
     { return porosity_; }
-
+    /*!
+     * \brief Returns the porosity [] at a given location
+     *
+     * \param element An arbitrary DUNE Codim<0> entity of the grid view
+     * \param fvGeometry The current finite volume geometry of the element
+     * \param scvIdx The index of the sub-control volume
+     */
+    Scalar buffer(const Element &element,
+                    const FVElementGeometry &fvGeometry,
+                    int scvIdx) const
+    { return buffer_; }
     /*!
      * \brief Returns the parameters for the material law at a given location
      *
@@ -183,7 +194,7 @@ public:
 
 private:
     MaterialLawParams materialParams_;
-    Scalar permeability_, VgAlpha_, Vgn_, Swr_, porosity_;
+    Scalar permeability_, VgAlpha_, Vgn_, Swr_, porosity_, buffer_;
 
 };
 

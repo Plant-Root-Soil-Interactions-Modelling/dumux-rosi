@@ -74,8 +74,7 @@ class RootsystemSpatialParamsDGF
         massIdx = 4,
         axialPermIdx = 5,
         radialPermIdx = 6,
-        timeCreatedIdx = 7,
-        ageIdx =8
+        creationTimeIdx = 7
     };
 
 public:
@@ -119,9 +118,7 @@ public:
             // root mass
             rootParameter_[elemIdx][Root::massIdx] = GridCreator::parameters(level0eIt)[3];
             // root timeCreated
-            rootParameter_[elemIdx][Root::timeCreatedIdx] = GridCreator::parameters(level0eIt)[4];
-            if (RootSystemAge_<GridCreator::parameters(level0eIt)[4])
-                RootSystemAge_ = GridCreator::parameters(level0eIt)[4];
+            rootParameter_[elemIdx][Root::creationTimeIdx] = GridCreator::parameters(level0eIt)[4]*24*3600;
 
             if ((int)rootParameter_[elemIdx][Root::orderIdx] == 1){
                 rootParameter_[elemIdx][Root::axialPermIdx] = Kx_; //Kx
@@ -206,24 +203,17 @@ public:
         return rootParameter_[elemIdx][Root::surfaceIdx];
     }
 
-    Scalar rootTimeCreatedIdx(const Element &element,
+    Scalar rootcreationTime(const Element &element,
             const FVElementGeometry &fvGeometry,
             int scvIdx) const
     {
         int elemIdx = gridView_.indexSet().index(element);
-        return rootParameter_[elemIdx][Root::timeCreatedIdx];
+        return rootParameter_[elemIdx][Root::creationTimeIdx];
     }
 
-    Scalar rootAge(const Element &element,
-                    const FVElementGeometry &fvGeometry,
-                    const int scvIdx) const
+    Scalar rootcreationTime(int idx) const
     {
-        int elemIdx = gridView_.indexSet().index(element);
-        return RootSystemAge_-rootParameter_[elemIdx][Root::timeCreatedIdx];
-    }
-    Scalar rootAge(int idx) const
-    {
-        return RootSystemAge_-rootParameter_[idx][Root::timeCreatedIdx];;
+        return rootParameter_[idx][Root::creationTimeIdx];;
     }
     /*!
      * \brief Function for defining the axial conductance (K_x).

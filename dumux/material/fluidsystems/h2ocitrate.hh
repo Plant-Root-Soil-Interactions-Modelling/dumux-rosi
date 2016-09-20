@@ -19,10 +19,10 @@
 /*!
  * \file
  *
- * \brief @copybrief Dumux::FluidSystems::H2ON2
+ * \brief @copybrief Dumux::FluidSystems::H2OC6H5O7
  */
-#ifndef DUMUX_H2O_NO3_FLUID_SYSTEM_HH
-#define DUMUX_H2O_NO3_FLUID_SYSTEM_HH
+#ifndef DUMUX_H2O_C6H5O7_FLUID_SYSTEM_HH
+#define DUMUX_H2O_C6H5O7_FLUID_SYSTEM_HH
 
 #include <cassert>
 
@@ -246,7 +246,49 @@ public:
     static Scalar density(const FluidState &fluidState,
                           int phaseIdx)
     {
-        return 1000;
+        assert(0 <= phaseIdx  && phaseIdx < numPhases);
+
+        Scalar T = fluidState.temperature(phaseIdx);
+        Scalar p = fluidState.pressure(phaseIdx);
+
+        Scalar sumMoleFrac = 0;
+        for (int compIdx = 0; compIdx < numComponents; ++compIdx)
+            sumMoleFrac += fluidState.moleFraction(phaseIdx, compIdx);
+
+        // liquid phase
+        if (phaseIdx == wPhaseIdx) {
+            if (!useComplexRelations)
+                // assume pure water
+                return H2O::liquidDensity(T, p);
+            else
+            {
+                // See: Eq. (7) in Class et al. (2002a)
+                Scalar rholH2O = H2O::liquidDensity(T, p);
+                Scalar clH2O = rholH2O/H2O::molarMass();
+
+                // this assumes each nitrogen molecule displaces exactly one
+                // water molecule in the liquid
+                return
+                    clH2O
+                    * (H2O::molarMass()*fluidState.moleFraction(wPhaseIdx, H2OIdx)
+                       +
+                       C6H5O7::molarMass()*fluidState.moleFraction(wPhaseIdx, C6H5O7Idx))
+                    / sumMoleFrac;
+            }
+        }
+
+        // gas phase
+        if (!useComplexRelations)
+            // for the gas phase assume an ideal gas
+            return
+                IdealGas::molarDensity(T, p)
+                * fluidState.averageMolarMass(nPhaseIdx)
+                / std::max(1e-5, sumMoleFrac);
+
+        // assume ideal mixture: steam and nitrogen don't "see" each other
+        Scalar rho_gH2O = H2O::gasDensity(T, p*fluidState.moleFraction(nPhaseIdx, H2OIdx));
+        Scalar rho_gC6H5O7 = C6H5O7::gasDensity(T, p*fluidState.moleFraction(nPhaseIdx, C6H5O7Idx));
+        return (rho_gH2O + rho_gC6H5O7) / std::max(1e-5, sumMoleFrac);
     }
 
     /*!
@@ -328,7 +370,7 @@ public:
 /*!
  * \brief A two-phase fluid system with water and nitrogen as components.
  *
- * This is an adapter to use Dumux::H2ON2FluidSystem<TypeTag>, as is
+ * This is an adapter to use Dumux::H2OC6H5O7FluidSystem<TypeTag>, as is
  * done with most other classes in Dumux.
  */
 template<class TypeTag>

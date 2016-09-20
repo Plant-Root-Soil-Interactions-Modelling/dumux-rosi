@@ -35,7 +35,8 @@
 //#include <dumux/material/components/simpleh2o.hh>
 //#include <dumux/material/fluidsystems/liquidphase.hh>
 //#include <dumux/material/fluidsystems/h2on2.hh>
-#include <dumux/material/fluidsystems/h2ono3.hh>
+//#include <dumux/material/fluidsystems/h2ono3.hh>
+#include <dumux/material/fluidsystems/h2ocitrate.hh>
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
 
@@ -56,7 +57,7 @@ NEW_TYPE_TAG(RootsystemOnePTwoCTestCCProblem, INHERITS_FROM(CCModel, RootsystemO
 
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OC6H5O7<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
 
 // Set the grid type
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Grid, Dune::FoamGrid<1, 3>);
@@ -224,7 +225,7 @@ public:
     void dirichletAtPos(PrimaryVariables &values,
                         const GlobalPosition &globalPos) const
     {
-        values[pressureIdx] = pnRef_ + GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
+        values[pressureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
         values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialRootFracExud);
     }
     /*!
@@ -278,7 +279,7 @@ public:
                  const FVElementGeometry &fvGeometry,
                  const int scvIdx) const
     {
-        priVars[pressureIdx] =  pnRef_ + GET_RUNTIME_PARAM(TypeTag,
+        priVars[pressureIdx] =  GET_RUNTIME_PARAM(TypeTag,
                                            Scalar,
                                            BoundaryConditions.InitialRootPressure);
         priVars[massOrMoleFracIdx] = 0.0;
@@ -446,7 +447,7 @@ public:
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
                     sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    rootAge[dofGlobalIdx] += spatialParams.rootAge(element,
+                    rootAge[dofGlobalIdx] += this->timeManager().time() - spatialParams.rootcreationTime(element,
                                                                 fvGeometry,
                                                                 scvIdx);
                 }

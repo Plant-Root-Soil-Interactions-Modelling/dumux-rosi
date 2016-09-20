@@ -36,11 +36,11 @@
 //#include <dumux/material/fluidsystems/liquidphase.hh>
 
 //#include <dumux/porousmediumflow/1p2c/implicit/model.hh>
-#include <dumux/porousmediumflow/richards2c/richards2cmodel.hh>
+#include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 #include <dumux/porousmediumflow/implicit/problem.hh>
 
 //#include <dumux/material/fluidsystems/h2on2.hh>
-#include <dumux/material/fluidsystems/h2ono3.hh>
+#include <dumux/material/fluidsystems/h2ocitrate.hh>
 
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
@@ -57,7 +57,7 @@ class SoilRichardsTwoCTestProblem;
 
 namespace Properties
 {
-NEW_TYPE_TAG(SoilRichardsTwoCTestProblem, INHERITS_FROM(RichardsTwoC, RichardsTestSpatialParams)); //RichardsTwoC from properties file
+NEW_TYPE_TAG(SoilRichardsTwoCTestProblem, INHERITS_FROM(RichardsTwoCBuffer, RichardsTestSpatialParams)); //RichardsTwoC from properties file
 NEW_TYPE_TAG(SoilRichardsTwoCTestBoxProblem, INHERITS_FROM(BoxModel, SoilRichardsTwoCTestProblem));
 NEW_TYPE_TAG(SoilRichardsTwoCTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsTwoCTestProblem));
 
@@ -72,7 +72,7 @@ NEW_TYPE_TAG(SoilRichardsTwoCTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsT
 // Set fluid configuration
 SET_TYPE_PROP(SoilRichardsTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OC6H5O7<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
 
 // Set the grid type
 SET_TYPE_PROP(SoilRichardsTwoCTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
@@ -146,7 +146,7 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
         // indices of the primary variables
         //contiEqIdx = Indices::contiEqIdx,
         //hIdx = Indices::hIdx,
-        pressureIdx = Indices::pwIdx,
+        pressureIdx = Indices::pressureIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
 #if NONISOTHERMAL
         temperatureIdx = Indices::temperatureIdx
@@ -154,9 +154,8 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
     };
      enum {
         // index of the transport equation
-        conti0EqIdx = Indices::contiEqIdx,
+        conti0EqIdx = Indices::conti0EqIdx,
         transportEqIdx = Indices::transportEqIdx,
-        wPhaseIdx = Indices::wPhaseIdx,
 #if NONISOTHERMAL
         energyEqIdx = Indices::energyEqIdx
 #endif
@@ -323,12 +322,16 @@ public:
 
         // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx);
+                                   *elemVolVars[scvIdx].density();
 
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-        Scalar rootAge = spatialParams.rootAge(rootEIdx);
-        Scalar MaxValue = 1e-3;
-        Scalar Exdudation_value = 2* M_PI *rootRadius * MaxValue* exp(-rootAge*0.05); //random function
+        Scalar rootAge = this->timeManager().time()-spatialParams.rootcreationTime(rootEIdx);
+        Scalar MaxValue = 1e-6;
+        Scalar Exdudation_value;
+        if (rootAge >= 0)
+            Exdudation_value = 2* M_PI *rootRadius * MaxValue * exp(-rootAge*1e-5); //random function
+        else
+            Exdudation_value = 0;
         sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement();
         source =  sourceValues;
     }
@@ -375,13 +378,10 @@ public:
     void dirichletAtPos(PrimaryVariables &priVars,
                         const GlobalPosition &globalPos) const
     {
-    //    initial_(values, globalPos);
-        Scalar sw_ = GET_RUNTIME_PARAM(TypeTag,
-                                        Scalar,
-                                        BoundaryConditions.InitialSoilSaturation);
-        Scalar pc_ = MaterialLaw::pc(this->spatialParams().materialLawParams(globalPos),sw_);
+        priVars[pressureIdx] = GET_RUNTIME_PARAM(TypeTag,
+                                   Scalar,
+                                   BoundaryConditions.InitialSoilPressure); // initial condition for the pressure
 
-        priVars[pressureIdx] = pnRef_ - pc_;
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
@@ -496,27 +496,13 @@ private:
     void initial_(PrimaryVariables &priVars,
                   const GlobalPosition &globalPos) const
     {
-        Scalar sw_ = GET_RUNTIME_PARAM(TypeTag,
-                                        Scalar,
-                                        BoundaryConditions.InitialSoilSaturation);
-        Scalar pc_ = MaterialLaw::pc(this->spatialParams().materialLawParams(globalPos),sw_);
-
-        priVars[pressureIdx] = pnRef_ - pc_;
+        priVars[pressureIdx] = GET_RUNTIME_PARAM(TypeTag,
+                                   Scalar,
+                                   BoundaryConditions.InitialSoilPressure); // initial condition for the pressure
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                    Scalar,
                                    BoundaryConditions.InitialSoilFracExud);
-
-//        priVars[pressureIdx] = GET_RUNTIME_PARAM(TypeTag,
-//                                   Scalar,
-//                                   BoundaryConditions.InitialSoilPressure); // initial condition for the pressure
-//
-//        priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
-//                                   Scalar,
-//                                   BoundaryConditions.InitialSoilFracN2);  // initial condition for the N2 molefraction
-//    //    #if !NONISOTHERMAL
-//    //        priVars[temperatureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Temperature);
-//    //    #endif
 };
 
     const Scalar eps_ = 1e-9;
