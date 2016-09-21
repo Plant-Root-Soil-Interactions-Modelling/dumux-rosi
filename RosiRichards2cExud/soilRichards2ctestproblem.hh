@@ -329,7 +329,7 @@ public:
         Scalar MaxValue = 1e-6;
         Scalar Exdudation_value;
         if (rootAge >= 0)
-            Exdudation_value = 2* M_PI *rootRadius * MaxValue * exp(-rootAge*1e-5); //random function
+            Exdudation_value = 2* M_PI *rootRadius * MaxValue * exp(-rootAge*5e-5); //random function
         else
             Exdudation_value = 0;
         sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement();
