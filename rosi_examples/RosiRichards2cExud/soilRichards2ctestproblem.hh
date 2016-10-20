@@ -258,9 +258,7 @@ public:
     { return pnRef_; }
 
 
-    // TODO identify source term
-    // for example by reading from a vector that contains the source term for
-    // each element
+    // Compute solution dependent volumetric source term
     void source(PrimaryVariables &values,
                 const Element &element,
                 const FVElementGeometry &fvGeometry,
@@ -311,6 +309,7 @@ public:
         // needs convertion of  units of 1d pressure if pressure head in richards is used
         const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx] ;
+        const Scalar c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
 
         const auto& spatialParams = this->couplingManager().lowDimProblem().spatialParams();
         const unsigned int rootEIdx = this->couplingManager().pointSourceData(source.id()).lowDimElementIdx();
@@ -332,7 +331,7 @@ public:
             Exdudation_value = 2* M_PI *rootRadius * MaxValue * exp(-rootAge*5e-5); //random function
         else
             Exdudation_value = 0;
-        sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement();
+        sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement() -c3D*5e-5*elemVolVars[scvIdx].density();
         source =  sourceValues;
     }
 
