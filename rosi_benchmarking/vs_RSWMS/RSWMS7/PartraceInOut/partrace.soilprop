@@ -1,0 +1,20 @@
+#partrace soil properties file
+# version number
+1
+# elements x y z
+20 10 15
+#  soil properties model number:
+#  1 = alphaL, alphaT, diffusion, porosity, bulk density
+1
+# number of parameter per set
+5
+# number of parameter sets ( 0 means no indexing )
+1
+# alphaL, alphaT, diffusion, porosity, bulk density
+ 1       0.1     1       0.40           1.44
+# distribution
+# distribution included (1) or from file (2)
+2
+# distribution file name
+PartraceInOut/partrace.index
+# included distribution

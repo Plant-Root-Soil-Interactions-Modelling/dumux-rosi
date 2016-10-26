@@ -1,0 +1,18 @@
+*** Mesh generator parameters ***
+
+dx	dy 	dz	nex	ney	nez	xmin	ymin	zmax
+.5	.5	.5     20	20 	20	-5.	-5     0
+
+ICtype	htop
+2	-96.13
+
+geom	
+2
+param_geom
+4
+
+conctr
+0.
+
+
+

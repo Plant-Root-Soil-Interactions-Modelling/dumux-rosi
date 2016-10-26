@@ -1,0 +1,9 @@
+***** SOIL PARAMETERS *****
+
+nMat	hTab1[L]  hTab2[L]
+1	100000.      100000.1  100
+
+NMod (1=VGM, 2=Durn)	thr[L3/L3]  ths[L3/L3]  a[1/L]    n     Ks[L/T]  lambda		w2	a2[1/L]	n2	ssMAx[P]
+1			.02 	     .4  	0.0289884574   	  1.5  	217.3200617964
+      0.5		0	0		0	1.2
+

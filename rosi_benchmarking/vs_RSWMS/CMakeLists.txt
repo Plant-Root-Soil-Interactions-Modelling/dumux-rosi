@@ -1,0 +1,2 @@
+add_subdirectory(richardsrootsystem)
+dune_symlink_to_source_files(FILES "RSWMS7" "comparision.pvsm")

@@ -1,0 +1,41 @@
+# define coupling with Partrace (0 = no, 1 = yes)
+PARTRACE = 0
+
+# define compiler
+# AGROCLUSTER
+F90C = mpif90
+# ICG4LTS
+#F90C = gfortran
+CC = gcc
+CXX = g++
+CPP = cpp
+LD = $(F90C)
+
+# define compiler flags
+F90FLAGS =-g -O0 -Wtabs -ffree-line-length-none -fimplicit-none -frange-check -Wall -Wtabs  -Wno-unused -fbounds-check -Wno-conversion
+#F90FLAGS = -O3 -g  -ffree-line-length-none -fimplicit-none -Wno-unused  -fdump-ipa-inline -finline-functions-called-once -fearly-inlining -fipa-matrix-reorg -findirect-inlining -mstringop-strategy=unrolled_loop --param large-function-insns=120000 --param large-unit-insns=120000 --param large-function-growth=1000 --param inline-unit-growth=1000 --param max-inline-insns-recursive-auto=120000 --param max-inline-recursive-depth-auto=5000 -finline-limit=150
+CFLAGS = -O0 -g
+CXXFLAGS = -O0
+CPPFLAGS = -P -Wno-trigraphs
+
+# define linker flags
+#LDFLAGS = -O0 -fhole-program -fnews-linker-plugin 
+LDFLAGS = 
+
+# define additional libs to link
+# JSC
+#LDLIBS = -lstdc++ -L../sparskit/ -lskit -lblas -pthread -L../Lib/ -lmumps_common -ldmumps -lmumps_common -lpord -lmpiseq  -L/usr/lib64/atlas/ -latlas	
+# AGROCLUSTER
+LDLIBS = -lstdc++ -L../sparskit/ -lskit -lblas -pthread -lmumps_common -ldmumps -lpord -lmpi -llapack
+#LDLIBS = -lstdc++ -L../sparskit/ -lskit -lblas -pthread -L/usr/lib64 -lmumps_common  -ldmumps -lpord -L/usr/lib -lmpi -L/usr/lib64/openmpi/lib/ -lscalapack -lmpiblacsCinit -lmpiblacsF77init  -lmpiblacs -L/usr/lib -llapack
+# ICG4LTS
+#LDLIBS = -lstdc++ -L../sparskit/ -lskit -lblas -pthread  -lmumps_common_seq  -ldmumps_seq -lpord -lmpiseq_seq  -llapack
+
+# makefile variables
+SRC_RSWMS = src_rswms
+SRC_PARTRACE = src_partrace
+BUILDDIR = .build
+LIBRSWMS = $(BUILDDIR)/librswms.a
+LIBPARTRACE = $(BUILDDIR)/libpartrace.a
+
+PROGRAM = rswms

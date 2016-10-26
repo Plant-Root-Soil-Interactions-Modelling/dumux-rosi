@@ -1,0 +1,135 @@
+*** Begin of Partrace-Input File V10 ***
+PartraceInOut/
+PartraceInOut/
+PrintMass
+out.velocity.00001
+savcon
+btc
+moments
+1 simulation time
+.1 save distance for concentration
+10 no of elements x
+10 no of elements y
+20 no of elements z
+2.0 side length x
+2.0 side length y
+4.0 side length z
+2 use soil field 1=no/2=yes
+0 dispersion mean x
+0 dispersion mean y
+partrace.soilprop
+1 dispersion weight x
+1 dispersion weight y
+1 dispersion weight z
+0 diffusion coeff
+2 use velocity field 1=no/2=yes
+0 velocity mean x
+0 velocity mean y
+0 velocity mean z
+0 x-velocity variance
+0 y-velocity variance
+0 z-velocity variance
+0.1 factor for scaling the calculated time step size
+1.0 MaxTime
+2 Diffusion model  1=simple  2=watercontent based
+2 read watercontent defined on: 1=elements  2=nodes
+0.3308 porosity
+1.2 bulk density
+partrace
+2 velocity on elements or nodes 1/2
+1 distribute data over PEs: 1=no 2=yes
+1 no of processors
+
+1 cpu time
+1 jobmode interactive/batch 1/2
+job1
+1 auto init random 1/2
+1 seed for random generator
+
+.1 save distance for moments
+10000 save distance for restart file
+10000 first time for restart file
+20000 save distance for particle positions
+particles
+out.water_content.00001
+4 geometry type: 1=regular  2=xy regular,z not  3=irregular  4=rectilinear
+Geometry_4.in
+2 read water content from file: 1=no 2=yes
+1 no of particle types
+particlename
+p
+
+1 sorption type 1-9
+1 use sorption field 1=no/2=yes
+1 weight kd
+1 weight n
+1 number of injections
+5 startmodel dirace/cube/sphere/ellipse/Init.conc. 1/2/3/4/5
+0.0000 start position x
+0.0 start position y
+-0.00001 start position z
+0.00000001 start radius x
+0.00000001 start radius y
+0.00000001 start radius z
+0.0 injection start
+0.0001 injection end
+10. number of particles to inject or initial concentration
+0.0001 particle mass
+1 particle c0
+0.52 sorption kd
+0.82 sorption n
+0 sorption b
+1 decay order
+1 use decay field 1=no/2=yes
+-1 decay rate
+decay.in
+4 uptake order
+1 use uptake field 1=no/2=yes
+0 uptake rate
+
+0 no of BTCs
+0 no of interactions
+6 no of boundaries
+1  boundary type  1=reflection  2=concentration  3=injection 5=periodic
+1  boundary side  1=bottom 2=top 3=front 4=back 5=left 6=right
+1  starting element for first dimension
+10  last element for first dimension
+1  starting element for second dimension
+10  last element for second dimension
+1  boundary type  1=reflection  2=concentration  3=injection 5=periodic
+2  boundary side  1=bottom 2=top 3=front 4=back 5=left 6=right
+1  starting element for first dimension
+10  last element for first dimension
+1  starting element for second dimension
+10  last element for second dimension
+1  boundary type  1=reflection  2=concentration  3=injection 5=periodic
+3  boundary side  1=bottom 2=top 3=front 4=back 5=left 6=right
+1  starting element for first dimension
+10  last element for first dimension
+1  starting element for second dimension
+20  last element for second dimension
+1  boundary type  1=reflection  2=concentration  3=injection 5=periodic
+4  boundary side  1=bottom 2=top 3=front 4=back 5=left 6=right
+1  starting element for first dimension
+10  last element for first dimension
+1  starting element for second dimension
+20  last element for second dimension
+1  boundary type  1=reflection  2=concentration  3=injection 5=periodic
+5  boundary side  1=bottom 2=top 3=front 4=back 5=left 6=right
+1  starting element for first dimension
+10  last element for first dimension
+1  starting element for second dimension
+20  last element for second dimension
+1  boundary type  1=reflection  2=concentration  3=injection 5=periodic
+6  boundary side  1=bottom 2=top 3=front 4=back 5=left 6=right
+1  starting element for first dimension
+10  last element for first dimension
+1  starting element for second dimension
+20  last element for second dimension
+0 no of element sequences
+OutputType = 1  1=text  2=HDF5  3=both
+RestartType = 1  1=full 2=particles only
+ConvectionMethod = 0 Integration of velocity, Pollock, 0=off, 1=on // on, equations work only for finite volume velocity field
+DispersionMethod = 3  Accounting for discontinuous dispersion, 1=off, 2=reflection method, 3=interpolation method // reflection method implemented for velocities defined on elements or coming from finite volume
+sub = 1 Subdivision/Refinement along one axes // implemented only for finite volume velocity field
+*** End of Partrace-Input File ***

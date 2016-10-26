@@ -1,0 +1,49 @@
+***** BC INFORMATION *****
+* Water flux boundary conditions *********************
+  *UNIFORM*
+  qfun (0-4)  ltop
+    0		t	
+  if qfun=0,1: ---; if qfun=2: xqmin,xqmax ; if qfun=4: xqmin1,xqmax1,xqmin2,xqmax2
+    ----
+  nQbcCh  
+    0		
+  tQbcCh  Qbcrec
+  ---
+
+  *IRRIGATORS*
+   nIrrig(nI)
+    0
+   nIrrig>0: xIrrig	yIrrig	zIrrig
+     ----
+   nIBcCh
+    0
+   nIBcCh>0: tIbcCh	Irbc
+    ----
+		   
+* Head boundary conditions *****************************    
+  hfun (0-2)	ltop
+    0		t
+  if hfun>1: xhmin, xhmax	
+   ----
+  nhBcCh
+    0
+  nhBcCh>0: thbcCh	hbc
+    ----     
+
+* Free drainage****************************************
+  lFrdr
+    f
+
+* Solute Transport - FEM Solution *********************
+  assCode
+    -1  
+
+  nCBnd1	nCBnd2
+    0		0
+  nCBnd1>0:	tCBnd1	CBnd1
+    ---- 
+  nCBnd2>0:	tCBnd2	CBnd2
+    ---- 
+
+* tPulse
+    .0

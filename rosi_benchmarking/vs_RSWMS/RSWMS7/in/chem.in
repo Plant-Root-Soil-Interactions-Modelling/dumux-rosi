@@ -1,0 +1,24 @@
+***** Solute transport parameters *****
+
+Temporal weighing coefficient (1.=implicit, 0.=explicit, .5=Crank-Nicholson)
+.5
+PeCr
+1.5
+Bulk d.		Diff.		Disper.		Adsorp.		SinkL1	SinkS1	SinkL0 	SinkS0
+[M/L3]		[L2/T]		[L]		[L3/M]		[1/T]	[1/T]	[M/L3T]	[1/T]
+1.56      	0.3         .0   .0          0.7             .0   .0        .0        .0
+
+***************************************************
+*SOLUTE UPTAKE PARAMETERS
+* Parameters for active solute uptake
+  CMm[M/L3]  VMax[M/L2T]  xin[-]  SpWgt[M/L3]  fk[L/T]
+  1          4000	  1.0     0.0679       0.0
+
+* Water and solute Uptake Reduction Factors (URF) = f(age)
+  for the first three branching orders
+  Number of (age;URF)-points:
+  2 2 2
+  List of (age;URF)-points [T];[-]:
+  0. 400.	1. 1.
+  0. 400.	1. 1.      
+  0. 400.	1. 1.

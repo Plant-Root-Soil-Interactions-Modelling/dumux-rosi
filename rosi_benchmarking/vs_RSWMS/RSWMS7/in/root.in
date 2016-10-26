@@ -1,0 +1,80 @@
+***** ROOT GROWTH PARAMETERS - SOMMA MODEL *****
+
+*** Axis information ***
+* naxemg
+  3
+* tnewax(naxemg) [T] nnewax(naxemg) [-]  inaxs(naxemg) [DEG]
+  3 8  -75
+  10 8  -50
+  20 8  -40
+
+* geoaxs(naxemg) [-]
+          0.008 0.005 0.005
+* nangax(naxemg) [-]
+          1 1 1
+* tempax(naxemg,nangax) [DEG] angaxs(naxemg,nangax) [DEG]
+	  20. -90. 
+	  20. -90. 
+	  20. -90. 
+
+*** Information for laterals ***
+* geolat[-]
+  0.001
+* nanglt [-]
+  1
+* templt(nanglt) [DEG] anglat(nanglt)[DEG]
+  20.  -90.
+
+**** Growth information ***
+* norder
+  3
+
+* nVch(norder) [-]
+  1 2 2
+* ageVch(norder,nVch)[T] Vch(norder,nVch)[L/T]:
+  0  2.123   
+  0  0.399    10  0.1152
+  0  1.43    10  0.37
+
+* SpWgt [M/L3]
+  0.0679
+
+*** Environmental influences on growth ***
+* nMPLch(norder) [-]
+  2 2 2 
+* sMPLch(norder,nMPLch) [P] MPLch(norder,nMPLch) [M/L]
+             0  .00053     1.75 .005
+             0  .00019     1.75 .001
+             0  .00008     1.75 .0001
+
+* if l_conduc: 
+	t
+* strsen(norder) [-]
+ 1 1 1
+
+* rdmang(norder) [DEG]
+30 45 45
+  
+* tempermin [DEG]  top[DEG]  tempermax[DEG]
+  0        20       35 
+
+* ltoxi
+  f
+* if ltoxi: cmin[N/L3] coptmi[N/L3] coptma[N/L3] cmax[N/L3]
+  0.000  0.1  1.5  2.0
+
+*** Branching information ***
+* brlmax(norder) [L]
+  200. 200. 200.  
+* brspac(norder-1)[L]
+  1.56  1.16
+* brnang(norder-1)[DEG]
+  78. 77.
+* dtbrch(norder-1) [T]
+  2.1  5.0  
+
+*** Secondary radial growth ***
+*l_secrad  
+  f			
+* if l_secrad: f_rad(norder) [-]
+  1.6  1  1 

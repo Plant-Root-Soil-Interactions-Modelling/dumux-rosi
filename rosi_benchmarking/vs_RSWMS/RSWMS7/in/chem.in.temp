@@ -1,0 +1,10 @@
+***** Solute transport parameters *****
+
+Temporal weighing coefficient (1.=implicit, 0.=explicit, .5=Crank-Nicholson)
+.5
+PeCr
+1.5
+Bulk d.		Diff.		Disper.		Adsorp.		SinkL1	SinkS1	SinkL0	SinkS0
+[M/L3]		[L2/T]		[L]		[L3/M]		[1/T]	[1/T]	[M/L3T]	[1/T]
+1.53      	1.   		1.    .1   	.0      .0   	.0    	.0   	.0
+
