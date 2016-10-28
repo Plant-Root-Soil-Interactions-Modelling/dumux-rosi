@@ -1,0 +1,34 @@
+Conversion factors					
+rho[kg/m^3]   mu[Pa s]    g[m/s^2]
+1000	1.00E-03	9.81E+00	
+					
+DuMuX			
+TimeStep[s]	TimeEnd[s]	EpisodeTime[s]
+8640	86400			8640
+					
+GRID					
+Root	RootSysMRI_1times.dgf				
+Soil	
+lower left	[m]
+-0.05	-0.05	-0.1
+upper right	[m]
+0.05	0.05	0
+cells[-]
+20	20	20	
+					
+Van Genuchten Parameters	
+Swr[-] 		alpha[1/m]		n[-]
+0.05		2.96E-04		1.5		
+					
+permeability[m^2] 	porosity	
+2.57E-12			0.4	
+
+Root parameters	
+Kx[m^4/s/Pa]	Kr[m/s/Pa]
+5.10E-17	2.04E-13
+					
+BoundaryConditions					
+initial soil pressure[Pa]	initial root pressure[Pa]	transpiration rate[kg/s]
+-9.43E+03					-1.20E+06					2.15E-08	
+	
+
