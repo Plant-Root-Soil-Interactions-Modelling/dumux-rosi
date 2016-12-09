@@ -127,7 +127,7 @@ SET_PROP(RichardsTwoC, WettingPhase)
 { private:
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
 public:
-    typedef Dumux::LiquidPhase<Scalar, Dumux::NullComponent<Scalar> > type;
+    typedef FluidSystems::LiquidPhase<Scalar, Dumux::NullComponent<Scalar> > type;
 };
 
 /*!
@@ -142,7 +142,7 @@ SET_PROP(RichardsTwoC, NonwettingPhase)
 { private:
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
 public:
-    typedef Dumux::GasPhase<Scalar, Dumux::NullComponent<Scalar> > type;
+    typedef FluidSystems::GasPhase<Scalar, Dumux::NullComponent<Scalar> > type;
 };
 
 /*!

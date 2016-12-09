@@ -1,0 +1,81 @@
+###############################################################
+# Parameter file for test_1p.
+# Everything behind a '#' is a comment.
+# Type "./test_1p --help" for more information.
+###############################################################
+
+###############################################################
+# Mandatory arguments
+###############################################################
+
+[MultiDimension]
+UseIterativeSolver = 0
+
+[TimeManager]
+DtInitial = 50.625#259.2#3240#12960#1620##50.625 #810 #3240 # 12960 # 259.2 # 864 # [s] 810 #3240 # 6480 #
+#DtInitialBulkProblem = 8640 # [s]
+#DtInitialLowDimProblem = 8640 # [s]
+MaxTimeStepSize = 50.625#259.2#3240#12960#1620#
+TEnd = 2592000 #2592000 # [s]129.6# 
+EpisodeTime = 12960 #810 # #2.592 # 864 # [s]
+
+[Grid]
+File = ./grids/RootSysMini1.dgf
+RootSysMini1y
+Refinement = 0
+
+[SoilGrid]
+File = ./grids/SoilCol_5.msh
+
+#LowerLeft = -0.015 -0.015 -0.03
+#UpperRight = 0.015 0.015 0
+#Cells = 101 101 1
+#CellType = Cube
+
+[Problem]
+Name = ./simulation/SingleRootDiffusiveUptake_5
+
+[materialParams]
+VgAlpha = 0.03e-2
+Vgn = 2
+Swr = 0.03
+
+[NutrientParams]
+Name = K
+MolarMass = 39e-3
+#DiffCoeff = 1e-9 # m2/s
+
+[SpatialParams]
+Porosity= 0.45
+Permeability = 1.e-12
+BufferPower = 39 #[-]
+### root parameters ###
+rootRadius = 2e-4 #1.e-4# 2e-4
+Kx = 5.0968e-10
+Kr = 2.04e-13
+Vmax = 1.17e-8 #[kg/(m2s)] 3e-5 mirco-mol/(cm2s) -> 3e-5*e-6*39e-3*e4 =117e-10=1.17e-8
+Km = 5.46e-4 #0.975e-9 # [kg/m3] 14e-3 micro-mol/cm3 -> 14e-3*e-6*39e-3*e6 =540.6e-6=5.46e-4
+PartitionCoeff = 0 #just active uptake
+
+[BoundaryConditions]
+InitialWaterContent=0.32
+#InitialSoilSaturation = 0.6
+InitialSoilPressure = 96620
+InitialRootPressure = 96620
+
+CollarPressure = 96620 # -14e5 # -1.5e6 # [Pa] sd -1.5e5
+InitialSoilFracK =1.794e-5 #1.794e-6 # [-] 0.046 micro-mol/cm3 -> 0.046*e-6*39e-3*e6/1e3 = 1.794e-6
+InitialRootFracK = 0 # 2e-5
+SoilTemperature = 283
+RootTemperature = 283
+
+[IterativeAlgorithm]
+MaxIterations = 100
+Tolerance = 1.0e-14
+Verbose = 1
+IntegrationOrder = 1
+
+[Newton]
+MaxRelativeShift = 1e-4
+
+

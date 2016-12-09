@@ -185,16 +185,16 @@ public:
             //KmvpNormal is the Darcy velocity multiplied with the normal vector, calculated in 1p2cfluxvariables.hh
             if (!usePH)
                 flux[contiEqIdx] *=
-                    ((     massUpwindWeight_)*up.density()/up.viscosity()
+                    ((     massUpwindWeight_)*up.density()
                      +
-                     ((1 - massUpwindWeight_)*dn.density()/dn.viscosity()));
+                     ((1 - massUpwindWeight_)*dn.density()));
 
             // advective flux of the second component - massfraction
             flux[transportEqIdx] +=
                 fluxVars.volumeFlux(phaseIdx) *
-                ((    massUpwindWeight_)*up.density() * up.massFraction(transportCompIdx)/up.viscosity()
+                ((    massUpwindWeight_)*up.density() * up.massFraction(transportCompIdx)
                  +
-                 (1 - massUpwindWeight_)*dn.density()*dn.massFraction(transportCompIdx)/dn.viscosity());
+                 (1 - massUpwindWeight_)*dn.density()*dn.massFraction(transportCompIdx));
         }
         else //mole-fraction formulation
         {
@@ -202,16 +202,16 @@ public:
             //KmvpNormal is the Darcy velocity multiplied with the normal vector, calculated in 1p2cfluxvariables.hh
             if (!usePH)
                 flux[contiEqIdx] *=
-                    ((      massUpwindWeight_)*up.molarDensity()/up.viscosity()
+                    ((      massUpwindWeight_)*up.molarDensity()
                      +
-                     ((1 - massUpwindWeight_)*dn.molarDensity()/dn.viscosity()));
+                     ((1 - massUpwindWeight_)*dn.molarDensity()));
 
             // advective flux of the second component -molefraction
             flux[transportEqIdx] +=
                 fluxVars.volumeFlux(phaseIdx) *
-                ((    massUpwindWeight_)*up.molarDensity() * up.moleFraction(transportCompIdx)/up.viscosity()
+                ((    massUpwindWeight_)*up.molarDensity() * up.moleFraction(transportCompIdx)
                  +
-                 (1 - massUpwindWeight_)*dn.molarDensity() * dn.moleFraction(transportCompIdx)/dn.viscosity());
+                 (1 - massUpwindWeight_)*dn.molarDensity() * dn.moleFraction(transportCompIdx));
         }
 
     }

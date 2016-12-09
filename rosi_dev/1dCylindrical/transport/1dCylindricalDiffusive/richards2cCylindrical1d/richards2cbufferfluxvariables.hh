@@ -444,8 +444,15 @@ protected:
             //phase density
             density_ += elemVolVars[volVarsIdx].density()*face().shapeValue[idx];
 
-            radialConcentrationGrad_ -= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
+
+            if(onBoundary_)
+                {}
+                //radialConcentrationGrad_ = elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
+                //                        *face().shapeValue[idx];
+            else
+                radialConcentrationGrad_ -= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
                                         *face().shapeValue[idx];
+
             //radialPotentialGrad_ -= elemVolVars[volVarsIdx].pressure()*face().shapeValue[idx];
         }
 

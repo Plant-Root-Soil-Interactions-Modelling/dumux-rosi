@@ -1,0 +1,13 @@
+DGF
+Vertex
+0.00000 0.00000 0.01000
+0.00000 0.00000 -1.0000
+#
+SIMPLEX
+parameters 2
+0 1 1 1 
+#
+BOUNDARYDOMAIN
+default 1
+#
+# point point order surface mass

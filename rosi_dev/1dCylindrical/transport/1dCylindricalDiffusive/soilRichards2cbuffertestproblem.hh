@@ -379,11 +379,10 @@ public:
             c3D = elemVolVars[scvIdx].massFraction(1);
 
         Scalar active_uptake = 0;
-        if (this->timeManager().time()>0)
-            active_uptake =  Vmax*c3D*elemVolVars[scvIdx].density()
+        active_uptake = 0;
+        active_uptake =  Vmax*c3D*elemVolVars[scvIdx].density()
                                 /(Km+c3D*elemVolVars[scvIdx].density())
                                 *elemVolVars[scvIdx].coordinatesCenter();
-                                ///elemVolVars[scvIdx].porousDiffCoeff();
 
         std::cout<<"        "<<this->timeManager().time()<<" Active_uptake "<< active_uptake <<" "<<c3D
                 <<" "<<elemVolVars[scvIdx].coordinatesCenter()[0]<<std::endl;
@@ -452,6 +451,8 @@ public:
         ScalarField& advFlux = *(this->resultWriter().allocateManagedBuffer(numDofs));
         ScalarField& storage = *(this->resultWriter().allocateManagedBuffer(numDofs));
         ScalarField& storageAna = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& timeSim  = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& absErrC = *(this->resultWriter().allocateManagedBuffer(numDofs));
 
         sourceP = 0.0;
         sourceC = 0.0;
@@ -473,12 +474,16 @@ public:
         advFlux = 0.0;
         storage = 0.0;
         storageAna = 0.0;
+        absErrC = 0.0;
 
         Scalar Km_=GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Km);
         Scalar Vmax_=GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Vmax);
         Scalar rootRadius_=GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.rootRadius);
         Scalar Frac0=GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialSoilFracK);
 
+        Scalar Uptake_num, Uptake_ana;
+        Uptake_num = 0.0;
+        Uptake_ana = 0.0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -534,15 +539,16 @@ public:
                     Scalar lambda = Vmax_*rootRadius_/(elemVolVars[scvIdx].effDiffCoeff()*Km_);
                             lambda /=(elemVolVars[scvIdx].saturation(phaseIdx)* elemVolVars[scvIdx].porosity()+elemVolVars[scvIdx].buffer());
 
-                    Scalar L = lambda/2*log(4*exp(-0.5772)*elemVolVars[scvIdx].effDiffCoeff()*pow(rootRadius_,(-2))*this->timeManager().time()+1);
+                    Scalar L = lambda/2*log(4*exp(-0.5772)*elemVolVars[scvIdx].effDiffCoeff()*pow(rootRadius_,(-2))*(this->timeManager().time()+this->timeManager().timeStepSize())+1);
 
                     AnalyticalC[dofGlobalIdx] += (Cinf_-Cinf_*lambda/(1+Cinf_dl+L+sqrt(4*Cinf_dl+pow((1-Cinf_dl+L),2)))*
-                                                boost::math::expint(1,pow(x,2)/(4*elemVolVars[scvIdx].effDiffCoeff()*this->timeManager().time())))
+                                                boost::math::expint(1,pow(x,2)/(4*elemVolVars[scvIdx].effDiffCoeff()*(this->timeManager().time()+this->timeManager().timeStepSize()))))
                                                 /elemVolVars[scvIdx].density();
 
                     ratioCAna[dofGlobalIdx] += AnalyticalC[dofGlobalIdx]/Frac0;
                     if (AnalyticalC[dofGlobalIdx] != 0)
-                        relErrC=std::abs((elemVolVars[scvIdx].massFraction(transportCompIdx)-AnalyticalC[dofGlobalIdx])/AnalyticalC[dofGlobalIdx]);
+                        relErrC[dofGlobalIdx]=std::abs((elemVolVars[scvIdx].massFraction(transportCompIdx)-AnalyticalC[dofGlobalIdx])/AnalyticalC[dofGlobalIdx]);
+                    absErrC[dofGlobalIdx]=std::abs(elemVolVars[scvIdx].massFraction(transportCompIdx)-AnalyticalC[dofGlobalIdx]);
 
                     //if (sourceC[dofGlobalIdx] != 0)
                     AnalyticalS[dofGlobalIdx] += 2*Vmax_*Cinf_dl/(1+Cinf_dl+L+sqrt(4*Cinf_dl+pow((1-Cinf_dl+L),2)));
@@ -557,6 +563,11 @@ public:
 
                     ut_ana[dofGlobalIdx] = Vmax*AnalyticalC[dofGlobalIdx]*elemVolVars[scvIdx].density()
                                 /(Km+AnalyticalC[dofGlobalIdx]*elemVolVars[scvIdx].density());
+
+                    if (Uptake_num < ut_num[dofGlobalIdx])
+                        Uptake_num = ut_num[dofGlobalIdx];
+                    if (Uptake_ana < ut_ana[dofGlobalIdx])
+                        Uptake_ana = ut_ana[dofGlobalIdx];
 
                     diffFlux[dofGlobalIdx] = -(fluxVars.moleFractionGrad(transportCompIdx)*fluxVars.face().normal)
                                             *fluxVars.porousDiffCoeff() * fluxVars.molarDensity();
@@ -573,6 +584,7 @@ public:
                                             (elemVolVars[scvIdx].saturation(phaseIdx)*elemVolVars[scvIdx].porosity()+elemVolVars[scvIdx].buffer());
                     storageAna[dofGlobalIdx] = elemVolVars[scvIdx].density() * AnalyticalC[dofGlobalIdx] *
                                             (elemVolVars[scvIdx].saturation(phaseIdx)*elemVolVars[scvIdx].porosity()+elemVolVars[scvIdx].buffer());
+                    timeSim[dofGlobalIdx]= this->timeManager().time();
 
                 //    std::cout <<" TIME !!! "<< this->timeManager().time() <<" "<< elemVolVars[scvIdx].massFraction(1)
                 //            <<" "<< AnalyticalC[dofGlobalIdx]<<" "<<ut_num[dofGlobalIdx]
@@ -622,6 +634,7 @@ public:
         this->resultWriter().attachDofData(DiffCoeff, "DiffCoeff", isBox);
         this->resultWriter().attachDofData(EffDiffCoeff, "EffDiffCoeff", isBox);
         this->resultWriter().attachDofData(AnalyticalC, "AnalyticalC", isBox);
+        this->resultWriter().attachDofData(absErrC, "absErrC", isBox);
         this->resultWriter().attachDofData(relErrC, "relErrC", isBox);
         this->resultWriter().attachDofData(relErrS, "relErrS", isBox);
         this->resultWriter().attachDofData(AnalyticalS, "uptake_analytical(kg/s)", isBox);
@@ -633,6 +646,12 @@ public:
         this->resultWriter().attachDofData(diffFluxMass, "diffFluxMass", isBox);
         this->resultWriter().attachDofData(storage, "storage", isBox);
         this->resultWriter().attachDofData(storageAna, "storageAna", isBox);
+        this->resultWriter().attachDofData(timeSim, "timeSim", isBox);
+
+        logFile_.open(this->name() + ".log", std::ios::app);
+        logFile_ << "time = " << this->timeManager().time()+this->timeManager().timeStepSize() << " uptake_num = " << ut_num[0]
+                << " uptake_ana = " << ut_ana[0] << std::endl;
+        logFile_.close();
     }
 
     //! Set the coupling manager
@@ -668,7 +687,7 @@ private:
         //std::cout << "Pressure  " << pnRef_-pc_ << std::endl;
         //std::cin.ignore(100000, '\n');
 };
-
+    std::ofstream logFile_;
     const Scalar eps_ = 1e-9;
     Scalar episodeTime, temperature_, pnRef_, pc_, sw_, pw_;
     std::string name_;
