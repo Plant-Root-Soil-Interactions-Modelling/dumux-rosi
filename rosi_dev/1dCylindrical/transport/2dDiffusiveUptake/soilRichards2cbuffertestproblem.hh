@@ -390,8 +390,8 @@ public:
         active_uptake =  Vmax*c3D*elemVolVars[scvIdx].density()
                                 /(Km+c3D*elemVolVars[scvIdx].density());
 
-        std::cout<<"        "<<this->timeManager().time()<<" Active_uptake "<< active_uptake <<" "<<c3D
-                <<" "<<std::endl;
+        //std::cout<<"        "<<this->timeManager().time()<<" Active_uptake "<< active_uptake <<" "<<c3D
+        //        <<" "<<std::endl;
         values[conti0EqIdx] = 0.0;
         values[transportEqIdx] = active_uptake;
     }
