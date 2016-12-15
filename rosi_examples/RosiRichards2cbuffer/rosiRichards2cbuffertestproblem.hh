@@ -31,7 +31,7 @@
 //#include <dumux/multidimension/embeddedcoupling/cellcentered/couplingmanager.hh>
 #include <dumux/multidimension/embeddedcoupling/cellcentered/bboxtreecouplingmanager.hh>
 #include <dumux/multidimension/embeddedcoupling/integrationpointsource.hh>
-#include <dumux/multidimension/linear/directsolverbackend.hh>
+//#include <dumux/multidimension/linear/directsolverbackend.hh>
 
 namespace Dumux
 {
@@ -68,9 +68,9 @@ SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, PointSourceHelper, Dumux::Int
 
 
 
-#if HAVE_UMFPACK
-SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LinearSolver, Dumux::MultiDimensionUMFPackBackend<TypeTag>);
-#endif
+//#if HAVE_UMFPACK
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
+//#endif
 
 }//end namespace properties
 

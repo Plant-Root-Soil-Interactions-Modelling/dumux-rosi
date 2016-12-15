@@ -146,15 +146,16 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
         // indices of the primary variables
         //contiEqIdx = Indices::contiEqIdx,
         //hIdx = Indices::hIdx,
-        pressureIdx = Indices::pressureIdx,
+        pressureIdx = Indices::pwIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
+        wPhaseIdx=Indices::wPhaseIdx,
 #if NONISOTHERMAL
         temperatureIdx = Indices::temperatureIdx
 #endif
     };
      enum {
         // index of the transport equation
-        conti0EqIdx = Indices::conti0EqIdx,
+        conti0EqIdx = Indices::contiEqIdx,
         transportEqIdx = Indices::transportEqIdx,
 #if NONISOTHERMAL
         energyEqIdx = Indices::energyEqIdx
@@ -321,7 +322,7 @@ public:
 
         // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density();
+                                   *elemVolVars[scvIdx].density(wPhaseIdx);
 
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
         Scalar rootAge = this->timeManager().time()-spatialParams.rootcreationTime(rootEIdx);
@@ -331,7 +332,7 @@ public:
             Exdudation_value = 2* M_PI *rootRadius * MaxValue * exp(-rootAge*5e-5); //random function
         else
             Exdudation_value = 0;
-        sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement() -c3D*5e-5*elemVolVars[scvIdx].density();
+        sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement() -c3D*5e-5*elemVolVars[scvIdx].density(wPhaseIdx);
         source =  sourceValues;
     }
 

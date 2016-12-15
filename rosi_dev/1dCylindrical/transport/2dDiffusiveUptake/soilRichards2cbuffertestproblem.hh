@@ -27,22 +27,15 @@
 #include <cmath>
 #include <stdlib.h>
 #include <math.h>
-//#include "math_expint.hh"
+
 #include <boost/math/special_functions/expint.hpp>
 
 // explicitly set the fvgeometry as we currently use another one as in stable
-//#include <dumux/multidimension/cellcentered/fvelementgeometry.hh>
-//#include <dumux/multidimension/box/fvelementgeometry.hh>
-#include <dumux/porousmediumflow/implicit/problem.hh>
-//#include "./richards2cCylindrical1d/richards2cbuffermodel.hh"
-#include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
+
+#include "./richards2cbuffer/richards2cbuffermodel.hh"
 
 #include <dumux/material/fluidsystems/h2ok.hh>
-//#include "h2oX.hh"
-//! get the properties needed for subproblems
-//#include <dumux/multidimension/subproblemproperties.hh>
 
-//#include "soiltestspatialparams1p2c.hh"
 #include "richardsbuffertestspatialparams.hh"
 #include <dumux/linear/amgbackend.hh>
 
@@ -389,9 +382,6 @@ public:
         active_uptake = 0;
         active_uptake =  Vmax*c3D*elemVolVars[scvIdx].density()
                                 /(Km+c3D*elemVolVars[scvIdx].density());
-
-        //std::cout<<"        "<<this->timeManager().time()<<" Active_uptake "<< active_uptake <<" "<<c3D
-        //        <<" "<<std::endl;
         values[conti0EqIdx] = 0.0;
         values[transportEqIdx] = active_uptake;
     }

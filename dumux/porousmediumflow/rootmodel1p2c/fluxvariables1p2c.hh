@@ -186,11 +186,13 @@ protected:
     {
         transmissibility_ = 0.0;
         transmissibilityC_ = 0.0;
+        density_ = 0.0;
 
         const VolumeVariables &volVarsI = elemVolVars[face().i];
         const VolumeVariables &volVarsJ = elemVolVars[face().j];
         const SpatialParams &spatialParams = problem.spatialParams();
-
+        
+        std::vector<Scalar> density(face().numFap);
         // to calcluate the integration point pressure we also need all the permeabilities
         //std::cout << faceIdx_ << std::endl;
         std::vector<Scalar> transmissibilitiesP(this->face().numFap);
@@ -207,53 +209,71 @@ protected:
                 {
                     if(onBoundary_)
                         {
-                            transmissibilitiesP[fapIdx] = spatialParams.Kx(fvGeometry_().neighbors[0], fvGeometry_(), 0)
-                                                                                      /face().fapDistances[fapIdx];
+                            transmissibilitiesP[fapIdx] = spatialParams.Kx(fvGeometry_().neighbors[0], fvGeometry_(), 0)/face().fapDistances[fapIdx];
                             transmissibilitiesC[fapIdx] = elemVolVars[0].diffCoeff()/this->face().fapDistances[fapIdx];
                         }
                     else
                         {
-                            transmissibilitiesP[fapIdx] = spatialParams.Kx(fvGeometry_().neighbors[face().fapIndices[fapIdx]], fvGeometry_(), 0)
-                                                                                      /face().fapDistances[fapIdx];
-                            transmissibilitiesC[fapIdx] = elemVolVars[this->face().fapIndices[fapIdx]].diffCoeff()/this->face().fapDistances[fapIdx];
+                            transmissibilitiesP[fapIdx] = spatialParams.Kx(fvGeometry_().neighbors[face().fapIndices[fapIdx]], fvGeometry_(), 0)/face().fapDistances[fapIdx];
+                            transmissibilitiesC[fapIdx] = elemVolVars[face().fapIndices[fapIdx]].diffCoeff()/face().fapDistances[fapIdx];
                         }
                 }
                 else
                 {
                     transmissibilitiesP[fapIdx] = spatialParams.Kx(element, fvGeometry_(), 0)
                                                                                       /face().fapDistances[fapIdx];
-                    transmissibilitiesC[fapIdx] = elemVolVars[this->face().fapIndices[fapIdx]].diffCoeff()/this->face().fapDistances[fapIdx];
+                    transmissibilitiesC[fapIdx] = elemVolVars[face().fapIndices[fapIdx]].diffCoeff()/face().fapDistances[fapIdx];
                 }
             }
             tPSum += transmissibilitiesP[fapIdx];
             tCSum += transmissibilitiesC[fapIdx];
+            int volVarsIdx = face().fapIndices[fapIdx];
+            density[fapIdx] = elemVolVars[volVarsIdx].density();
         }
 
         if(onBoundary_)
         {
             transmissibility_ = transmissibilitiesP[0];
             transmissibilityC_ = transmissibilitiesC[0];
+            density_ = density[0];
         }
         else
         {
             transmissibility_ = transmissibilitiesP[0]*transmissibilitiesP[1]/tPSum;
             transmissibilityC_ = transmissibilitiesC[0]*transmissibilitiesC[1]/tCSum;
+            density_ = std::accumulate(density.begin(), density.end(), 0.0)/density.size();
         }
 
         // calculate the pressure gradient
         diffP_ = volVarsI.pressure() - volVarsJ.pressure();
+
+        // correct the pressure diffrence by the gravitational acceleration
+        if (GET_PARAM_FROM_GROUP(TypeTag, bool, Problem, EnableGravity))
+        {   // calculate the density
+            const Element& elementI = fvGeometry_().neighbors[face().i];
+            const Element& elementJ = fvGeometry_().neighbors[face().j];
+            auto globalPosI = elementI.geometry().center();
+            auto globalPosJ = elementJ.geometry().center();
+            Scalar gravitationalTermI = density_*(problem.gravityAtPos(globalPosI)*globalPosI);
+            Scalar gravitationalTermJ;
+            if (onBoundary_)
+            {
+                gravitationalTermJ = density_*(problem.gravityAtPos(face().ipGlobal)*face().ipGlobal);
+            }
+            else
+            {
+                gravitationalTermJ = density_*(problem.gravityAtPos(globalPosJ)*globalPosJ);
+            }
+            diffP_ -= (gravitationalTermI - gravitationalTermJ);
+        }
+
         // calculate the conc. gradient
         if(useMoles)
             diffC_ = volVarsI.moleFraction(transportCompIdx)*volVarsI.molarDensity() - volVarsJ.moleFraction(transportCompIdx)*volVarsJ.molarDensity();
         else
             diffC_ = volVarsI.massFraction(transportCompIdx)*volVarsI.density() - volVarsJ.massFraction(transportCompIdx)*volVarsJ.density();
-        //TODO Implement gravity
-        // correct the pressure gradient by the gravitational acceleration
-        /*if (GET_PARAM_FROM_GROUP(TypeTag, bool, Problem, EnableGravity))
-        {
-            DUNE_THROW(Dune::NotImplemented, "Gravity");
-        }
-        */
+
+
     }
 
     /*!
@@ -306,6 +326,7 @@ protected:
     Scalar diffusiveFlux_;                      //!< Diffusive flux fo the transported component
     Scalar diffC_;                              //!< Concentration gradient
     Scalar transmissibilityC_ ;                 //!< Concentration on the face
+    Scalar density_ ;
 
 private:
     const FVElementGeometry* fvGeometryPtr_; //!< Information about the geometry of discretization

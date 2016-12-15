@@ -73,7 +73,7 @@ SET_TYPE_PROP(RootsystemTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
 #endif
 
 // Enable gravity
-SET_BOOL_PROP(RootsystemTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(RootsystemTestProblem, ProblemEnableGravity, true);
 
 // write newton convergence to vtk
 SET_BOOL_PROP(RootsystemTestProblem, NewtonWriteConvergence, false);

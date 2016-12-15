@@ -59,24 +59,24 @@ NEW_TYPE_TAG(CCRichardsTwoCBufferNI, INHERITS_FROM(CCModel, RichardsTwoCBufferNI
 //////////////////////////////////////////////////////////////////
 
 NEW_PROP_TAG(NumPhases);   //!< Number of fluid phases in the system
-NEW_PROP_TAG(PhaseIdx); //!< A phase index in to allow that a two-phase fluidsystem is used
 NEW_PROP_TAG(NumComponents);   //!< Number of fluid components in the system
-NEW_PROP_TAG(Indices); //!< Enumerations for the model
+NEW_PROP_TAG(Indices); //!< Enumerations used by the model
 NEW_PROP_TAG(SpatialParams); //!< The type of the spatial parameters
-NEW_PROP_TAG(EffectiveDiffusivityModel); //!< The employed model for the computation of the effective diffusivity
-NEW_PROP_TAG(FluidSystem); //!< Type of the multi-component relations
-NEW_PROP_TAG(FluidState); //!< Type of the fluid state to be used
-NEW_PROP_TAG(ImplicitMassUpwindWeight);   //!< The default value of the upwind weight
-NEW_PROP_TAG(ImplicitMobilityUpwindWeight); //!< Weight for the upwind mobility in the velocity calculation
-NEW_PROP_TAG(ProblemEnableGravity); //!< Returns whether gravity is considered in the problem
-NEW_PROP_TAG(UseMoles); //!< Defines whether mole (true) or mass (false) fractions are used
-NEW_PROP_TAG(Scaling); //!< Defines Scaling of the model
-NEW_PROP_TAG(SpatialParamsForchCoeff); //!< Property for the forchheimer coefficient
-NEW_PROP_TAG(VtkAddVelocity); //!< Returns whether velocity vectors are written into the vtk output
-
 NEW_PROP_TAG(MaterialLaw);   //!< The material law which ought to be used (by default extracted from the spatial parameters)
 NEW_PROP_TAG(MaterialLawParams); //!< The type of the parameter object for the material law (by default extracted from the spatial parameters)
+NEW_PROP_TAG(EffectiveDiffusivityModel); //!< The employed model for the computation of the effective diffusivity
+NEW_PROP_TAG(FluidSystem); //!< The fluid system to be used for the RichardsTwoC model
+NEW_PROP_TAG(WettingPhase); //!< Fluid which represents the wetting phase
+NEW_PROP_TAG(NonwettingPhase); //!< Fluid which represents the non-wetting phase
+NEW_PROP_TAG(ProblemEnableGravity); //!< Returns whether gravity is considered in the problem
+NEW_PROP_TAG(ImplicitMassUpwindWeight); //!< The value of the weight of the upwind direction in the mass conservation equations
+NEW_PROP_TAG(ImplicitMobilityUpwindWeight); //!< The value of the weight for the upwind mobility in the velocity calculation
+NEW_PROP_TAG(SpatialParamsForchCoeff); //!< Property for the forchheimer coefficient
+NEW_PROP_TAG(VtkAddVelocity); //!< Returns whether velocity vectors are written into the vtk output
 NEW_PROP_TAG(UsePH); //!< Defines whether pressure [Pa] (false) or pressure head [cm] (ture) is used
+NEW_PROP_TAG(UseMoles); //!< Defines whether mole (true) or mass (false) fractions are used
+NEW_PROP_TAG(Scaling); //!< Defines Scaling of the model
+NEW_PROP_TAG(EffectiveDiffusivityModel); //!< The employed model for the computation of the effective diffusivity
 
 // \}
 }

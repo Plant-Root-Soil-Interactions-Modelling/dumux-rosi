@@ -29,7 +29,7 @@ Cells = 20 20 20
 CellType = Cube
 
 [Problem]
-Name = rosi_20_with_gravity
+Name = rosi_20_GSCGBackend
 
 [SpatialParams]
 Permeability = 2.57e-12 # [m^2]

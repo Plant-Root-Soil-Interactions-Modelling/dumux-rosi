@@ -37,13 +37,16 @@
 #include "richards2cbuffernewtoncontroller.hh"
 #include "richards2cbufferlocalresidual.hh"
 
-#include <dumux/porousmediumflow/implicit/darcyfluxvariables.hh>
+//#include <dumux/porousmediumflow/implicit/darcyfluxvariables.hh>
 #include <dumux/porousmediumflow/nonisothermal/implicit/propertydefaults.hh>
 #include <dumux/material/components/nullcomponent.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/thermalconductivitysomerton.hh>
 #include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
-#include <dumux/material/fluidsystems/2pimmiscible.hh>
-#include <dumux/material/spatialparams/implicit.hh>
+//#include <dumux/material/fluidsystems/2pimmiscible.hh>
+#include <dumux/material/fluidstates/compositional.hh>
+//#include <dumux/material/spatialparams/implicit.hh>
+#include <dumux/material/spatialparams/implicit1p.hh>
+#include <dumux/porousmediumflow/nonisothermal/implicit/propertydefaults.hh>
 
 namespace Dumux
 {
@@ -54,9 +57,9 @@ namespace Properties {
 // Properties values
 //////////////////////////////////////////////////////////////////
 //! Number of equations required by the model
-SET_INT_PROP(RichardsTwoCBuffer, NumEq, GET_PROP_VALUE(TypeTag, IsothermalNumEq));
+SET_INT_PROP(RichardsTwoCBuffer, NumEq, 2);
 //! Number of fluid phases considered
-SET_INT_PROP(RichardsTwoCBuffer, NumPhases, 2);
+SET_INT_PROP(RichardsTwoCBuffer, NumPhases, 1);
 SET_INT_PROP(RichardsTwoCBuffer, NumComponents, 2); //!< The number of components in the 1p2c model is 2
 SET_SCALAR_PROP(RichardsTwoCBuffer, Scaling, 1); //!< Scaling of the model is set to 1 by default
 SET_BOOL_PROP(RichardsTwoCBuffer, UseMoles, false); //!< Define that mole fractions are used in the balance equations
@@ -67,16 +70,16 @@ SET_BOOL_PROP(RichardsTwoCBuffer, UsePH, false);
 //! The local residual operator
 SET_TYPE_PROP(RichardsTwoCBuffer,
               LocalResidual,
-              typename GET_PROP_TYPE(TypeTag, IsothermalLocalResidual));
+              RichardsTwoCBufferLocalResidual<TypeTag>);
 
 //! The global model used
-SET_TYPE_PROP(RichardsTwoCBuffer, Model, typename GET_PROP_TYPE(TypeTag, IsothermalModel));
+SET_TYPE_PROP(RichardsTwoCBuffer, Model, RichardsTwoCBufferModel<TypeTag>);
 
 //! The class for the volume averaged quantities
-SET_TYPE_PROP(RichardsTwoCBuffer, VolumeVariables, typename GET_PROP_TYPE(TypeTag, IsothermalVolumeVariables));
+SET_TYPE_PROP(RichardsTwoCBuffer, VolumeVariables, RichardsTwoCBufferVolumeVariables<TypeTag>);
 
 //! The class for the quantities required for the flux calculation
-SET_TYPE_PROP(RichardsTwoCBuffer, FluxVariables, typename GET_PROP_TYPE(TypeTag, IsothermalFluxVariables));
+SET_TYPE_PROP(RichardsTwoCBuffer, FluxVariables, RichardsTwoCBufferFluxVariables<TypeTag>);
 
 //! The class of the newton controller
 SET_TYPE_PROP(RichardsTwoCBuffer, NewtonController, RichardsTwoCBufferNewtonController<TypeTag>);
@@ -88,11 +91,11 @@ SET_SCALAR_PROP(RichardsTwoCBuffer, ImplicitMassUpwindWeight, 1.0);
 SET_SCALAR_PROP(RichardsTwoCBuffer, ImplicitMobilityUpwindWeight, 1.0);
 
 //! The class with all index definitions for the model
-SET_TYPE_PROP(RichardsTwoCBuffer, Indices, typename GET_PROP_TYPE(TypeTag, IsothermalIndices));
+SET_TYPE_PROP(RichardsTwoCBuffer, Indices, RichardsTwoCBufferIndices<TypeTag>);
 
 //! The spatial parameters to be employed.
 //! Use ImplicitSpatialParams by default.
-SET_TYPE_PROP(RichardsTwoCBuffer, SpatialParams, ImplicitSpatialParams<TypeTag>);
+SET_TYPE_PROP(RichardsTwoCBuffer, SpatialParams, ImplicitSpatialParamsOneP<TypeTag>);
 
 //! The model after Millington (1961) is used for the effective diffusivity
 SET_PROP(RichardsTwoCBuffer, EffectiveDiffusivityModel)
@@ -117,57 +120,21 @@ public:
 };
 
 /*!
- * \brief The wetting phase used.
- *
- * By default we use the null-phase, i.e. this has to be defined by
- * the problem for the program to work. Please be aware that you
- * should be careful to use the RichardsTwoC model in conjunction with
- * liquid non-wetting phases. This is only meaningful if the viscosity
- * of the liquid phase is _much_ lower than the viscosity of the
- * wetting phase.
+ * \brief The fluid state which is used by the volume variables to
+ *        store the thermodynamic state. This should be chosen
+ *        appropriately for the model ((non-)isothermal, equilibrium, ...).
+ *        This can be done in the problem.
  */
-SET_PROP(RichardsTwoCBuffer, WettingPhase)
-{ private:
-    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-public:
-    typedef FluidSystems::LiquidPhase<Scalar, Dumux::NullComponent<Scalar> > type;
+SET_PROP(RichardsTwoCBuffer, FluidState){
+    private:
+        typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
+        typedef typename GET_PROP_TYPE(TypeTag, FluidSystem) FluidSystem;
+    public:
+        typedef Dumux::CompositionalFluidState<Scalar, FluidSystem> type;
 };
 
-/*!
- * \brief The wetting phase used.
- *
- * By default we use the null-phase, i.e. this has to be defined by
- * the problem for the program to work. This doed not need to be
- * specified by the problem for the RichardsTwoC model to work because the
- * RichardsTwoC model does not conserve the non-wetting phase.
- */
-SET_PROP(RichardsTwoCBuffer, NonwettingPhase)
-{ private:
-    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-public:
-    typedef FluidSystems::GasPhase<Scalar, Dumux::NullComponent<Scalar> > type;
-};
-
-/*!
- *\brief The fluid system used by the model.
- *
- * By default this uses the immiscible twophase fluid system. The
- * actual fluids used are specified using in the problem definition by
- * the WettingPhase and NonwettingPhase properties. Be aware that
- * using different fluid systems in conjunction with the RichardsTwoC
- * model only makes very limited sense.
- */
-SET_PROP(RichardsTwoCBuffer, FluidSystem)
-{ private:
-    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-    typedef typename GET_PROP_TYPE(TypeTag, WettingPhase) WettingPhase;
-    typedef typename GET_PROP_TYPE(TypeTag, NonwettingPhase) NonwettingPhase;
-
-public:
-    typedef Dumux::FluidSystems::TwoPImmiscible<Scalar,
-                                                WettingPhase,
-                                                NonwettingPhase> type;
-};
+//! Set the phaseIndex per default to zero (important for two-phase fluidsystems).
+SET_INT_PROP(RichardsTwoCBuffer, PhaseIdx, 0);
 
 // disable velocity output by default
 SET_BOOL_PROP(RichardsTwoCBuffer, VtkAddVelocity, false);
@@ -180,10 +147,10 @@ SET_BOOL_PROP(RichardsTwoCBuffer, ProblemEnableGravity, true);
 //        Actually the Forchheimer coefficient is also a function of the dimensions of the
 //        porous medium. Taking it as a constant is only a first approximation
 //        (Nield, Bejan, Convection in porous media, 2006, p. 10)
-SET_SCALAR_PROP(BoxModel, SpatialParamsForchCoeff, 0.55);
+SET_SCALAR_PROP(RichardsTwoCBuffer, SpatialParamsForchCoeff, 0.55);
 
 //! Somerton is used as default model to compute the effective thermal heat conductivity
-SET_PROP(NonIsothermal, ThermalConductivityModel)
+SET_PROP(RichardsTwoCBufferNI, ThermalConductivityModel)
 {
 private:
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
@@ -191,9 +158,6 @@ private:
 public:
     typedef ThermalConductivitySomerton<Scalar, Indices> type;
 };
-
-//! temperature is already written by the isothermal model
-SET_BOOL_PROP(RichardsTwoCBufferNI, NiOutputLevel, 0);
 
 //////////////////////////////////////////////////////////////////
 // Property values for isothermal model required for the general non-isothermal model

@@ -25,11 +25,11 @@ Refinement = 0
 [SoilGrid]
 LowerLeft = -0.05 -0.05 -0.1
 UpperRight = 0.05 0.05 0
-Cells = 20 20 20
+Cells = 100 100 100
 CellType = Cube
 
 [Problem]
-Name = rosi_20
+Name = rosi_100
 
 [SpatialParams]
 Permeability = 2.57e-12 # [m^2]

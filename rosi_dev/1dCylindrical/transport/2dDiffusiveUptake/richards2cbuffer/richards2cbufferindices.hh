@@ -18,33 +18,46 @@
  *****************************************************************************/
 /*!
  * \file
- *
- * \brief test for the rootsystem coupled model
+ * \brief Index names for the RichardsTwoC model.
  */
-#include "config.h"
-#include "rositestproblem.hh"
-#include <dumux/multidimension/embeddedcoupling/start.hh>
+#ifndef DUMUX_RICHARDS_2C_BUFFER_INDICES_HH
+#define DUMUX_RICHARDS_2C_BUFFER_INDICES_HH
+
+#include "richards2cbufferproperties.hh"
+
+namespace Dumux
+{
+// \{
 
 /*!
- * \brief Provides an interface for customizing error messages associated with
- *        reading in parameters.
- *
- * \param progName  The name of the program, that was tried to be started.
- * \param errorMsg  The error message that was issued by the start function.
- *                  Comprises the thing that went wrong and a general help message.
+ * \ingroup RichardsTwoCModel
+ * \ingroup ImplicitIndices
+ * \brief Index names for the RichardsTwoC model.
  */
-void usage(const char *progName, const std::string &errorMsg)
+
+template <class TypeTag, int PVOffset = 0>
+struct RichardsTwoCBufferIndices
 {
-    // TODO
+
+    //! Set the default phase used by the fluid system to the first one
+    static const int phaseIdx = 0;
+
+    //! Component indices
+    static const int phaseCompIdx = phaseIdx;//!< The index of the main component of the considered phase
+    //! The index of the transported (minor) component; ASSUMES phase indices of 0 and 1
+    static const int transportCompIdx = (unsigned int)(1-phaseIdx);
+
+    // Equation indices
+   static const int conti0EqIdx = PVOffset + 0; //!< continuity equation index
+   static const int transportEqIdx = PVOffset + 1; //!< transport equation index
+
+    // primary variable indices
+    static const int pressureIdx = PVOffset + 0; //!< pressure
+    static const int massOrMoleFracIdx = PVOffset + 1; //!< mole fraction of the second component
+};
+
+// \}
 }
 
-int main(int argc, char** argv)
-{
-#if HAVE_UMFPACK
-    typedef TTAG(RosiTestProblem) ProblemTypeTag;
-    return Dumux::start<ProblemTypeTag>(argc, argv, usage);
-#else
-#warning "You need to have the UMFPack solver library installed to run this test!"
-    std::cout << "This test needs the UMFPack solver library to run!" << std::endl;
 #endif
-}
+

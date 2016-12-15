@@ -19,23 +19,24 @@
 /*!
  * \ingroup Properties
  * \ingroup ImplicitProperties
- * \ingroup RootsystemModel
+ * \ingroup RichardsTwoCModel
  * \file
  *
- * \brief Defines the properties required for the one-phase fully implicit model.
+ * \brief Contains the property declarations for the RichardsTwoC
+ *        model.
  */
-#ifndef DUMUX_ROOTSYSTEM_PROPERTIES_DATA_HH
-#define DUMUX_ROOTSYSTEM_PROPERTIES_DATA_HH
+#ifndef DUMUX_RICHARDS_2C_BUFFER_PROPERTIES_HH
+#define DUMUX_RICHARDS_2C_BUFFER_PROPERTIES_HH
 
 #include <dumux/implicit/box/properties.hh>
 #include <dumux/implicit/cellcentered/properties.hh>
-#include <dumux/implicit/growth/gridgrowthproperties.hh>
+#include <dumux/porousmediumflow/nonisothermal/implicit/properties.hh>
 
 namespace Dumux
 {
 // \{
 ///////////////////////////////////////////////////////////////////////////
-// properties for the isothermal single phase model
+// properties for the isothermal richards model
 ///////////////////////////////////////////////////////////////////////////
 namespace Properties {
 
@@ -43,24 +44,40 @@ namespace Properties {
 // Type tags
 //////////////////////////////////////////////////////////////////
 
-//! The type tags for the implicit single-phase problems
-NEW_TYPE_TAG(Rootsystem, INHERITS_FROM(GridGrowth));
-NEW_TYPE_TAG(BoxRootsystem, INHERITS_FROM(BoxModel, Rootsystem));
-NEW_TYPE_TAG(CCRootsystem, INHERITS_FROM(CCModel, Rootsystem));
+//! The type tags for the implicit isothermal one-phase two-component problems
+NEW_TYPE_TAG(RichardsTwoCBuffer);
+NEW_TYPE_TAG(BoxRichardsTwoCBuffer, INHERITS_FROM(BoxModel, RichardsTwoCBuffer));
+NEW_TYPE_TAG(CCRichardsTwoCBuffer, INHERITS_FROM(CCModel, RichardsTwoCBuffer));
+
+//! The type tags for the corresponding non-isothermal problems
+NEW_TYPE_TAG(RichardsTwoCBufferNI, INHERITS_FROM(RichardsTwoCBuffer, NonIsothermal));
+NEW_TYPE_TAG(BoxRichardsTwoCBufferNI, INHERITS_FROM(BoxModel, RichardsTwoCBufferNI));
+NEW_TYPE_TAG(CCRichardsTwoCBufferNI, INHERITS_FROM(CCModel, RichardsTwoCBufferNI));
 
 //////////////////////////////////////////////////////////////////
 // Property tags
 //////////////////////////////////////////////////////////////////
 
 NEW_PROP_TAG(NumPhases);   //!< Number of fluid phases in the system
+NEW_PROP_TAG(PhaseIdx); //!< A phase index in to allow that a two-phase fluidsystem is used
+NEW_PROP_TAG(NumComponents);   //!< Number of fluid components in the system
 NEW_PROP_TAG(Indices); //!< Enumerations for the model
-NEW_PROP_TAG(SpatialParams); //!< The type of the spatial parameters object
-NEW_PROP_TAG(FluidSystem); //!< The type of the fluid system to use
-NEW_PROP_TAG(Fluid); //!< The fluid used for the default fluid system
-NEW_PROP_TAG(ProblemEnableGravity); //!< Returns whether gravity is considered in the problem
-NEW_PROP_TAG(ImplicitMassUpwindWeight); //!< Returns weight of the upwind cell when calculating fluxes
+NEW_PROP_TAG(SpatialParams); //!< The type of the spatial parameters
+NEW_PROP_TAG(EffectiveDiffusivityModel); //!< The employed model for the computation of the effective diffusivity
+NEW_PROP_TAG(FluidSystem); //!< Type of the multi-component relations
+NEW_PROP_TAG(FluidState); //!< Type of the fluid state to be used
+NEW_PROP_TAG(ImplicitMassUpwindWeight);   //!< The default value of the upwind weight
 NEW_PROP_TAG(ImplicitMobilityUpwindWeight); //!< Weight for the upwind mobility in the velocity calculation
+NEW_PROP_TAG(ProblemEnableGravity); //!< Returns whether gravity is considered in the problem
+NEW_PROP_TAG(UseMoles); //!< Defines whether mole (true) or mass (false) fractions are used
+NEW_PROP_TAG(Scaling); //!< Defines Scaling of the model
 NEW_PROP_TAG(SpatialParamsForchCoeff); //!< Property for the forchheimer coefficient
+NEW_PROP_TAG(VtkAddVelocity); //!< Returns whether velocity vectors are written into the vtk output
+
+NEW_PROP_TAG(MaterialLaw);   //!< The material law which ought to be used (by default extracted from the spatial parameters)
+NEW_PROP_TAG(MaterialLawParams); //!< The type of the parameter object for the material law (by default extracted from the spatial parameters)
+NEW_PROP_TAG(UsePH); //!< Defines whether pressure [Pa] (false) or pressure head [cm] (ture) is used
+
 // \}
 }
 

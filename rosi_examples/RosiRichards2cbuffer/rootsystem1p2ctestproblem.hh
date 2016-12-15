@@ -73,7 +73,7 @@ SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, LinearSolver, UMFPackBackend<TypeTa
 #endif
 
 // Enable gravity
-SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, ProblemEnableGravity, true);
 
 // write newton convergence to vtk
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, NewtonWriteConvergence, false);
@@ -455,15 +455,15 @@ public:
                 {
                     PrimaryVariables values;
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
-                    sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
+                    sourceP[dofGlobalIdx] += values[pressureIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
+                    sourceC[dofGlobalIdx] += values[massOrMoleFracIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
                 }
             }
         }
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
+        auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
+        auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
 
         std::cout << "Integrated mass source (1D): " << totalSourceP << std::endl;
         std::cout << "Integrated concentration source (1D): " << totalSourceC << std::endl;

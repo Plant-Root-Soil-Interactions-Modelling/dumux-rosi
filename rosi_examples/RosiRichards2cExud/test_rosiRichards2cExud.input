@@ -19,8 +19,8 @@ TEnd = 2268000# 2160000 #25920 # 86400 # [s]
 EpisodeTime = 21600 # 864 # [s]
 
 [Grid]
-File = ./grids/Maize.dgf
-#File = ./grids/myGrid.dgf
+#File = ./grids/Maize.dgf
+File = ./grids/myGrid.dgf
 Refinement = 0
 
 [SoilGrid]
@@ -30,8 +30,8 @@ Cells = 20 20 20
 CellType = Cube
 
 [Problem]
-Name = rosi4
-#Name = myGrid
+#Name = rosi4
+Name = myGrid
 
 [materialParams]
 VgAlpha = 2.956e-4

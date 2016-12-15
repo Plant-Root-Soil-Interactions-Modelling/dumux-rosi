@@ -82,7 +82,7 @@ SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Problem, Dumux::SoilRichardsTwo
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, SpatialParams, Dumux::RichardsBufferTestSpatialParams<TypeTag>);
 
 // Enable gravity
-SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, ProblemEnableGravity, true);
 
 // Enable velocity output
 SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, VtkAddVelocity, true);
@@ -138,7 +138,7 @@ class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<Type
         // indices of the primary variables
         //contiEqIdx = Indices::contiEqIdx,
         //hIdx = Indices::hIdx,
-        pressureIdx = Indices::pwIdx,
+        pressureIdx = Indices::pressureIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
 #if NONISOTHERMAL
         temperatureIdx = Indices::temperatureIdx
@@ -146,9 +146,9 @@ class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<Type
     };
      enum {
         // index of the transport equation
-        conti0EqIdx = Indices::contiEqIdx,
+        conti0EqIdx = Indices::conti0EqIdx,
         transportEqIdx = Indices::transportEqIdx,
-        wPhaseIdx = Indices::wPhaseIdx,
+        wPhaseIdx = Indices::phaseIdx,
 #if NONISOTHERMAL
         energyEqIdx = Indices::energyEqIdx
 #endif
@@ -312,7 +312,7 @@ public:
         sourceValues=0.0;
         // sink defined as radial flow Jr * density [m] [m s-1 Pa-1] * [Pa]* [kg m-3] = [kg s-1 m-1]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx);
+                                   *elemVolVars[scvIdx].density();
         // sourceValues positive mean flow from root to soil
         // needs mass/mole fraction in soil and root
         Scalar c1D;
@@ -334,17 +334,17 @@ public:
         Scalar AdvValue;
         if (sourceValues[conti0EqIdx]>0) // flow from root to soil
             AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx)*c1D;
+                                   *elemVolVars[scvIdx].density()*c1D;
         else // flow from soil to root
             AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx)*c3D;
+                                   *elemVolVars[scvIdx].density()*c3D;
 
         //Active flux - active uptake based on Michaeles Menten
         Scalar ActiveValue;
         ActiveValue = 0;
         const Scalar Vmax = spatialParams.Vmax();
         const Scalar Km = spatialParams.Km();
-        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D*elemVolVars[scvIdx].density(wPhaseIdx)/(Km+c3D*elemVolVars[scvIdx].density(wPhaseIdx));
+        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D*elemVolVars[scvIdx].density()/(Km+c3D*elemVolVars[scvIdx].density());
 
         Scalar sigma;
         sigma = spatialParams.PartitionCoeff();
@@ -486,9 +486,9 @@ public:
                 {
                     PrimaryVariables values;
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
-                    sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
+                    sourceP[dofGlobalIdx] += values[pressureIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
+                    sourceC[dofGlobalIdx] += values[massOrMoleFracIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
                 }
             }

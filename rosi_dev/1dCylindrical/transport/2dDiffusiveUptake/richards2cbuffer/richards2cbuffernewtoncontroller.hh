@@ -51,7 +51,7 @@ class RichardsTwoCBufferNewtonController : public NewtonController<TypeTag>
     typedef typename GET_PROP_TYPE(TypeTag, Problem) Problem;
 
     typedef typename GET_PROP_TYPE(TypeTag, Indices) Indices;
-    enum { pwIdx = Indices::pwIdx };
+    enum { pwIdx = Indices::pressureIdx };
 
     typedef typename GET_PROP_TYPE(TypeTag, GridView) GridView;
     typedef typename GridView::template Codim<0>::Iterator ElementIterator;
