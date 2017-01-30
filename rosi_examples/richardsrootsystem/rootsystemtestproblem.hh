@@ -55,7 +55,7 @@ SET_PROP(RootsystemTestProblem, Fluid)
 private:
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
 public:
-    typedef Dumux::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
+    typedef FluidSystems::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
 };
 
 // Set the grid type
@@ -73,7 +73,7 @@ SET_TYPE_PROP(RootsystemTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
 #endif
 
 // Enable gravity
-SET_BOOL_PROP(RootsystemTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(RootsystemTestProblem, ProblemEnableGravity, true);
 
 // write newton convergence to vtk
 SET_BOOL_PROP(RootsystemTestProblem, NewtonWriteConvergence, false);
