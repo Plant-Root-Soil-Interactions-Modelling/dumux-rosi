@@ -30,9 +30,6 @@
 #include <dumux/multidimension/problem.hh>
 #include <dumux/multidimension/embeddedcoupling/cellcentered/bboxtreecouplingmanager.hh>
 #include <dumux/multidimension/embeddedcoupling/integrationpointsource.hh>
-//#include <dumux/multidimension/linear/directsolverbackend.hh>
-//#include <dumux/multidimension/linear/iterativesolverbackend.hh>
-
 
 namespace Dumux
 {
@@ -67,13 +64,9 @@ SET_TYPE_PROP(RootsystemTestCCProblem, PointSourceHelper, Dumux::IntegrationPoin
 SET_TYPE_PROP(RichardsTestCCProblem, PointSource, Dumux::IntegrationPointSource<TTAG(RichardsTestCCProblem), unsigned int>);
 SET_TYPE_PROP(RichardsTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(RichardsTestCCProblem)>);
 
-//#if HAVE_UMFPACK
-//SET_TYPE_PROP(RosiTestProblem, LinearSolver, Dumux::MultiDimensionUMFPackBackend<TypeTag>);
-//#endif
-//SET_TYPE_PROP(RosiTestProblem, LinearSolver, Dumux::MultiDimensionIterativeSolverBackend<TypeTag>);
-SET_TYPE_PROP(RosiTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
 //SET_TYPE_PROP(RosiTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
-//SET_TYPE_PROP(RosiTestProblem, LinearSolver, SuperLUBackend<TypeTag>);
+SET_TYPE_PROP(RosiTestProblem, LinearSolver, SuperLUBackend<TypeTag>);
 
 }//end namespace properties
 

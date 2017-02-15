@@ -29,12 +29,6 @@
 #include <dumux/porousmediumflow/rootmodel1p2c/model1p2c.hh>
 #include <dumux/porousmediumflow/rootmodel1p2c/problem1p2c.hh>
 
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-// fluidsystem
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-//#include <dumux/material/fluidsystems/h2on2.hh>
 #include <dumux/material/fluidsystems/h2ono3.hh>
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
@@ -67,13 +61,8 @@ SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Problem, Dumux::RootsystemOnePTwoCT
 // Set the spatial parameters
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, SpatialParams, Dumux::RootsystemTestSpatialParams<TypeTag>);
 
-// Linear solver settings
-#if HAVE_UMFPACK
-SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
-#endif
-
 // Enable gravity
-SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, ProblemEnableGravity, true);
 
 // write newton convergence to vtk
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, NewtonWriteConvergence, false);
