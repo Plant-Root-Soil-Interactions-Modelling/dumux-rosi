@@ -29,7 +29,7 @@ Cells = 20 20 20
 CellType = Cube
 
 [Problem]
-Name = ./simulation/rosi
+Name = ./results/rosi
 
 [materialParams]
 VgAlpha = 0.03e-2 #[1/Pa] 2.956e-4 # range [0.1e-3 - 0.8e-3] median 0.3e-3 sd 0.1e-3 http://www.pc-progress.com/Documents/RVGenugten/2010_Ghanbarian_Water_retention_PS.pdf

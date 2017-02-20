@@ -31,6 +31,7 @@
 #include <dumux/multidimension/embeddedcoupling/cellcentered/bboxtreecouplingmanager.hh>
 //#include <dumux/multidimension/embeddedcoupling/cellcentered/gridgluecouplingmanager.hh>
 #include <dumux/multidimension/embeddedcoupling/integrationpointsource.hh>
+#include <dumux/linear/amgbackend.hh>
 
 namespace Dumux
 {
@@ -66,7 +67,24 @@ SET_TYPE_PROP(RootsystemOnePTwoCTestCCProblem, PointSourceHelper, Dumux::Integra
 SET_TYPE_PROP(SoilRichardsTwoCTestCCProblem, PointSource, Dumux::IntegrationPointSource<TTAG(SoilRichardsTwoCTestCCProblem), unsigned int>);
 SET_TYPE_PROP(SoilRichardsTwoCTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(SoilRichardsTwoCTestCCProblem)>);
 
-SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILU0SolverBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILUnBiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, SORBiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, SSORBiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, GSBiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, JacBiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILUnCGBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, SORCGBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, SSORCGBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, GSCGBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, JacCGBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, SSORRestartedGMResBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILU0CGBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILU0RestartedGMResBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILUnRestartedGMResBackend<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
+SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, SuperLUBackend<TypeTag>);
 
 }//end namespace properties
 
