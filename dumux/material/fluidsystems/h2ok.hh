@@ -249,7 +249,7 @@ public:
         Scalar sumMoleFrac = 0;
         for (int compIdx = 0; compIdx < numComponents; ++compIdx)
             sumMoleFrac += fluidState.moleFraction(phaseIdx, compIdx);
-//
+
         Scalar rholH2O = 1000;
         Scalar clH2O = rholH2O/H2O::molarMass();
         Scalar density_ =clH2O*
@@ -258,14 +258,6 @@ public:
             fluidState.moleFraction(phaseIdx, KIdx)*K::molarMass())
                     / sumMoleFrac;;
         return density_;
-        //std::cout<<density_<<" "<<fluidState.moleFraction(phaseIdx, H2OIdx)<<" "<<fluidState.moleFraction(phaseIdx, KIdx)<<std::endl;
-
-        Scalar densityH2O = 1000;
-        Scalar moleH2O = densityH2O/H2O::molarMass();
-        Scalar totalMole = moleH2O/fluidState.moleFraction(phaseIdx, H2OIdx);
-        Scalar moleK = totalMole*fluidState.moleFraction(phaseIdx, KIdx);
-        Scalar densityK = moleK*K::molarMass();
-        return densityK + densityH2O;
     }
 
     /*!

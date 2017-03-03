@@ -246,7 +246,19 @@ public:
     static Scalar density(const FluidState &fluidState,
                           int phaseIdx)
     {
-        return 1000;
+
+        Scalar sumMoleFrac = 0;
+        for (int compIdx = 0; compIdx < numComponents; ++compIdx)
+            sumMoleFrac += fluidState.moleFraction(phaseIdx, compIdx);
+
+        Scalar rholH2O = 1000;
+        Scalar clH2O = rholH2O/H2O::molarMass();
+        Scalar density_ =clH2O*
+            (fluidState.moleFraction(phaseIdx, H2OIdx)*H2O::molarMass()
+            +
+            fluidState.moleFraction(phaseIdx, NO3Idx)*NO3::molarMass())
+                    / sumMoleFrac;;
+        return density_;
     }
 
     /*!
