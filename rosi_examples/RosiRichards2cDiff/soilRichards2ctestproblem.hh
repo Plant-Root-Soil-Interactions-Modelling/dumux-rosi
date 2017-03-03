@@ -36,7 +36,7 @@
 //#include <dumux/material/fluidsystems/liquidphase.hh>
 
 //#include <dumux/porousmediumflow/1p2c/implicit/model.hh>
-#include <dumux/porousmediumflow/richards2c/richards2cmodel.hh>
+#include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 #include <dumux/porousmediumflow/implicit/problem.hh>
 
 //#include <dumux/material/fluidsystems/h2on2.hh>
@@ -53,13 +53,13 @@
 namespace Dumux
 {
 template <class TypeTag>
-class SoilRichardsTwoCTestProblem;
+class SoilRichardsTwoCBufferTestProblem;
 
 namespace Properties
 {
-NEW_TYPE_TAG(SoilRichardsTwoCTestProblem, INHERITS_FROM(RichardsTwoC, RichardsTestSpatialParams)); //RichardsTwoC from properties file
-NEW_TYPE_TAG(SoilRichardsTwoCTestBoxProblem, INHERITS_FROM(BoxModel, SoilRichardsTwoCTestProblem));
-NEW_TYPE_TAG(SoilRichardsTwoCTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsTwoCTestProblem));
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestProblem, INHERITS_FROM(RichardsTwoCBuffer, RichardsTestSpatialParams)); //RichardsTwoCBuffer from properties file
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestBoxProblem, INHERITS_FROM(BoxModel, SoilRichardsTwoCBufferTestProblem));
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsTwoCBufferTestProblem));
 
 // Set the wetting phase
 //SET_PROP(RichardsTestProblem, WettingPhase)
@@ -70,37 +70,37 @@ NEW_TYPE_TAG(SoilRichardsTwoCTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsT
 //    typedef Dumux::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
 //};
 // Set fluid configuration
-SET_TYPE_PROP(SoilRichardsTwoCTestProblem,
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem,
               FluidSystem,
               Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
 
 // Set the grid type
-SET_TYPE_PROP(SoilRichardsTwoCTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
 //SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::UGGrid<3>);
 //SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::ALUGrid<3, 3, Dune::cube, Dune::conforming>);
 
 // explicitly set the fvgeometry as we currently use another one as in stable
-SET_TYPE_PROP(SoilRichardsTwoCTestBoxProblem, FVElementGeometry, Dumux::MultiDimensionBoxFVElementGeometry<TypeTag>);
-SET_TYPE_PROP(SoilRichardsTwoCTestCCProblem, FVElementGeometry, Dumux::MultiDimensionCCFVElementGeometry<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestBoxProblem, FVElementGeometry, Dumux::MultiDimensionBoxFVElementGeometry<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, FVElementGeometry, Dumux::MultiDimensionCCFVElementGeometry<TypeTag>);
 
 // Set the problem property
-SET_TYPE_PROP(SoilRichardsTwoCTestProblem, Problem, Dumux::SoilRichardsTwoCTestProblem<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Problem, Dumux::SoilRichardsTwoCBufferTestProblem<TypeTag>);
 
 // Set the spatial parameters
-SET_TYPE_PROP(SoilRichardsTwoCTestProblem, SpatialParams, Dumux::RichardsTestSpatialParams<TypeTag>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, SpatialParams, Dumux::RichardsTestSpatialParams<TypeTag>);
 
 // Enable gravity
-SET_BOOL_PROP(SoilRichardsTwoCTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, ProblemEnableGravity, false);
 
 // Enable velocity output
-SET_BOOL_PROP(SoilRichardsTwoCTestProblem, VtkAddVelocity, true);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, VtkAddVelocity, true);
 
 // Set the grid parameter group
-SET_STRING_PROP(SoilRichardsTwoCTestProblem, GridParameterGroup, "SoilGrid");
+SET_STRING_PROP(SoilRichardsTwoCBufferTestProblem, GridParameterGroup, "SoilGrid");
 
-//SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseHead, false);
+//SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, UseHead, false);
 //SET_BOOL_PROP(SoilOnePTwoCTestProblem, UseMoles, true);
-SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseMoles, false);
+SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, UseMoles, false);
 
 }
 
@@ -127,7 +127,7 @@ SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseMoles, false);
  * and use <tt>1p_3d.dgf</tt> in the parameter file.
  */
 template <class TypeTag>
-class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
+class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<TypeTag>
 {
     typedef ImplicitPorousMediaProblem<TypeTag> ParentType;
 
@@ -146,7 +146,7 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
         // indices of the primary variables
         //contiEqIdx = Indices::contiEqIdx,
         //hIdx = Indices::hIdx,
-        pressureIdx = Indices::pwIdx,
+        pressureIdx = Indices::pressureIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
 #if NONISOTHERMAL
         temperatureIdx = Indices::temperatureIdx
@@ -154,9 +154,9 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
     };
      enum {
         // index of the transport equation
-        conti0EqIdx = Indices::contiEqIdx,
+        conti0EqIdx = Indices::conti0EqIdx,
         transportEqIdx = Indices::transportEqIdx,
-        wPhaseIdx = Indices::wPhaseIdx,
+        wPhaseIdx = Indices::phaseIdx,
 #if NONISOTHERMAL
         energyEqIdx = Indices::energyEqIdx
 #endif
@@ -189,7 +189,7 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
     typedef typename GET_PROP_TYPE(GlobalProblemTypeTag, CouplingManager) CouplingManager;
 
 public:
-    SoilRichardsTwoCTestProblem(TimeManager &timeManager, const GridView &gridView)
+    SoilRichardsTwoCBufferTestProblem(TimeManager &timeManager, const GridView &gridView)
     : ParentType(timeManager, gridView)
     {
         //initialize fluid system
@@ -323,7 +323,7 @@ public:
 
         // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx);
+                                   *elemVolVars[scvIdx].density();
 
         // take mass/mole fraction in soil and root
         Scalar c1D;
@@ -340,7 +340,7 @@ public:
         //Diffussive flux term of transport
         Scalar DiffValue;
         Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
-        DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density(wPhaseIdx);
+        DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c1D - c3D)*elemVolVars[scvIdx].density();
 
         //Advective flux term of transport
         Scalar AdvValue;
@@ -473,6 +473,10 @@ public:
         ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
         sourceP = 0.0;
         sourceC = 0.0;
+        Scalar totalSourceP;
+        Scalar totalSourceC;
+        totalSourceP = 0.0;
+        totalSourceC = 0.0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -495,14 +499,13 @@ public:
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
                     sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceP += sourceP[dofGlobalIdx];
                     sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceC += sourceC[dofGlobalIdx];
                 }
             }
         }
-
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
 
         std::cout << "Integrated mass source (3D): " << totalSourceP << std::endl;
         std::cout << "Integrated concentration source (3D): " << totalSourceC << std::endl;

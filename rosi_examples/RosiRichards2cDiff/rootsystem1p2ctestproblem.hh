@@ -328,9 +328,9 @@ public:
         const Scalar rootRadius = spatialParams.rootRadius(element, fvGeometry, scvIdx);
 
         // convert units of 3d pressure if pressure head is used !!!
-        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
+        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[conti0EqIdx];
         //std::cout << "pressure 3D " <<pressure3D<< std::endl;
-        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx];
+        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[conti0EqIdx];
         //std::cout << "pressure 1D " <<pressure1D<< std::endl;
 
         PrimaryVariables sourceValues;
@@ -420,6 +420,10 @@ public:
         ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
         sourceP = 0.0;
         sourceC = 0.0;
+        Scalar totalSourceP;
+        Scalar totalSourceC;
+        totalSourceP = 0;
+        totalSourceC = 0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -442,13 +446,13 @@ public:
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
                     sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceP += sourceP[dofGlobalIdx];
                     sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceC += sourceC[dofGlobalIdx];
                 }
             }
         }
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
 
         std::cout << "Integrated mass source (1D): " << totalSourceP << std::endl;
         std::cout << "Integrated concentration source (1D): " << totalSourceC << std::endl;

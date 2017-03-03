@@ -1,3 +1,4 @@
+
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
 /*****************************************************************************
@@ -138,7 +139,7 @@ class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<Type
         // indices of the primary variables
         //contiEqIdx = Indices::contiEqIdx,
         //hIdx = Indices::hIdx,
-        pressureIdx = Indices::pwIdx,
+        pressureIdx = Indices::pressureIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
 #if NONISOTHERMAL
         temperatureIdx = Indices::temperatureIdx
@@ -146,9 +147,9 @@ class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<Type
     };
      enum {
         // index of the transport equation
-        conti0EqIdx = Indices::contiEqIdx,
+        conti0EqIdx = Indices::conti0EqIdx,
         transportEqIdx = Indices::transportEqIdx,
-        wPhaseIdx = Indices::wPhaseIdx,
+        wPhaseIdx = Indices::phaseIdx,
 #if NONISOTHERMAL
         energyEqIdx = Indices::energyEqIdx
 #endif
@@ -312,7 +313,7 @@ public:
         sourceValues=0.0;
         // sink defined as radial flow Jr * density [m] [m s-1 Pa-1] * [Pa]* [kg m-3] = [kg s-1 m-1]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx);
+                                   *elemVolVars[scvIdx].density();
         // sourceValues positive mean flow from root to soil
         // needs mass/mole fraction in soil and root
         Scalar c1D;
@@ -334,17 +335,17 @@ public:
         Scalar AdvValue;
         if (sourceValues[conti0EqIdx]>0) // flow from root to soil
             AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx)*c1D;
+                                   *elemVolVars[scvIdx].density()*c1D;
         else // flow from soil to root
             AdvValue = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx)*c3D;
+                                   *elemVolVars[scvIdx].density()*c3D;
 
         //Active flux - active uptake based on Michaeles Menten
         Scalar ActiveValue;
         ActiveValue = 0;
         const Scalar Vmax = spatialParams.Vmax();
         const Scalar Km = spatialParams.Km();
-        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D*elemVolVars[scvIdx].density(wPhaseIdx)/(Km+c3D*elemVolVars[scvIdx].density(wPhaseIdx));
+        ActiveValue = -2 * M_PI*rootRadius*Vmax*c3D*elemVolVars[scvIdx].density()/(Km+c3D*elemVolVars[scvIdx].density());
 
         Scalar sigma;
         sigma = spatialParams.PartitionCoeff();
@@ -466,6 +467,10 @@ public:
         ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
         sourceP = 0.0;
         sourceC = 0.0;
+        Scalar totalSourceP;
+        Scalar totalSourceC;
+        totalSourceP = 0.0;
+        totalSourceC = 0.0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -488,14 +493,13 @@ public:
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
                     sourceP[dofGlobalIdx] += values[pressureIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceP += sourceP[dofGlobalIdx];
                     sourceC[dofGlobalIdx] += values[massOrMoleFracIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceC += sourceC[dofGlobalIdx];
                 }
             }
         }
-
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
 
         std::cout << "Integrated mass source (3D): " << totalSourceP << std::endl;
         std::cout << "Integrated concentration source (3D): " << totalSourceC << std::endl;

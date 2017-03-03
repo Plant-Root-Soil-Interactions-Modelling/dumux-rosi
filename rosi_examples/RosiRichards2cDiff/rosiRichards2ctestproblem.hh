@@ -35,43 +35,43 @@
 namespace Dumux
 {
 template <class TypeTag>
-class RosiRichardsTwoCTestProblem;
+class RosiRichardsTwoCBufferTestProblem;
 
 namespace Properties
 {
-NEW_TYPE_TAG(RosiRichardsTwoCTestProblem, INHERITS_FROM(MultiDimension));
+NEW_TYPE_TAG(RosiRichardsTwoCBufferTestProblem, INHERITS_FROM(MultiDimension));
 
 // Set the problem property
-SET_TYPE_PROP(RosiRichardsTwoCTestProblem, Problem, Dumux::RosiRichardsTwoCTestProblem<TypeTag>);
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, Problem, Dumux::RosiRichardsTwoCBufferTestProblem<TypeTag>);
 
 // Set the coupling manager
-//SET_TYPE_PROP(RosiRichardsTwoCTestProblem, CouplingManager, Dumux::CCEmbeddedCouplingManager<TypeTag>);
-SET_TYPE_PROP(RosiRichardsTwoCTestProblem, CouplingManager, Dumux::CCBBoxTreeEmbeddedCouplingManager<TypeTag>);
+//SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, CouplingManager, Dumux::CCEmbeddedCouplingManager<TypeTag>);
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, CouplingManager, Dumux::CCBBoxTreeEmbeddedCouplingManager<TypeTag>);
 
 // Set the two sub-problems of the global problem
-SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LowDimProblemTypeTag, TTAG(RootsystemOnePTwoCTestCCProblem));
-SET_TYPE_PROP(RosiRichardsTwoCTestProblem, BulkProblemTypeTag, TTAG(SoilRichardsTwoCTestCCProblem));
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LowDimProblemTypeTag, TTAG(RootsystemOnePTwoCTestCCProblem));
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, BulkProblemTypeTag, TTAG(SoilRichardsTwoCBufferTestCCProblem));
 
 // publish this problem in the sub problems
-SET_TYPE_PROP(RootsystemOnePTwoCTestCCProblem, GlobalProblemTypeTag, TTAG(RosiRichardsTwoCTestProblem));
-SET_TYPE_PROP(SoilRichardsTwoCTestCCProblem, GlobalProblemTypeTag, TTAG(RosiRichardsTwoCTestProblem));
+SET_TYPE_PROP(RootsystemOnePTwoCTestCCProblem, GlobalProblemTypeTag, TTAG(RosiRichardsTwoCBufferTestProblem));
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, GlobalProblemTypeTag, TTAG(RosiRichardsTwoCBufferTestProblem));
 
 // The subproblems inherit the parameter tree from this problem
-SET_PROP(RootsystemOnePTwoCTestCCProblem, ParameterTree) : GET_PROP(TTAG(RosiRichardsTwoCTestProblem), ParameterTree) {};
-SET_PROP(SoilRichardsTwoCTestCCProblem, ParameterTree) : GET_PROP(TTAG(RosiRichardsTwoCTestProblem), ParameterTree) {};
+SET_PROP(RootsystemOnePTwoCTestCCProblem, ParameterTree) : GET_PROP(TTAG(RosiRichardsTwoCBufferTestProblem), ParameterTree) {};
+SET_PROP(SoilRichardsTwoCBufferTestCCProblem, ParameterTree) : GET_PROP(TTAG(RosiRichardsTwoCBufferTestProblem), ParameterTree) {};
 
 // Set the point source type of the subproblems to an integration point source
 SET_TYPE_PROP(RootsystemOnePTwoCTestCCProblem, PointSource, Dumux::IntegrationPointSource<TTAG(RootsystemOnePTwoCTestCCProblem), unsigned int>);
 SET_TYPE_PROP(RootsystemOnePTwoCTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(RootsystemOnePTwoCTestCCProblem)>);
-SET_TYPE_PROP(SoilRichardsTwoCTestCCProblem, PointSource, Dumux::IntegrationPointSource<TTAG(SoilRichardsTwoCTestCCProblem), unsigned int>);
-SET_TYPE_PROP(SoilRichardsTwoCTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(SoilRichardsTwoCTestCCProblem)>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, PointSource, Dumux::IntegrationPointSource<TTAG(SoilRichardsTwoCBufferTestCCProblem), unsigned int>);
+SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(SoilRichardsTwoCBufferTestCCProblem)>);
 
-SET_TYPE_PROP(RosiRichardsTwoCTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
 
 }//end namespace properties
 
 template <class TypeTag>
-class RosiRichardsTwoCTestProblem : public MultiDimensionProblem<TypeTag>
+class RosiRichardsTwoCBufferTestProblem : public MultiDimensionProblem<TypeTag>
 {
     typedef MultiDimensionProblem<TypeTag> ParentType;
     typedef typename GET_PROP_TYPE(TypeTag, TimeManager) TimeManager;
@@ -89,7 +89,7 @@ class RosiRichardsTwoCTestProblem : public MultiDimensionProblem<TypeTag>
     typedef typename GET_PROP_TYPE(LowDimProblemTypeTag, GridView) LowDimGridView;
 
 public:
-    RosiRichardsTwoCTestProblem(TimeManager &timeManager, const BulkGridView &bulkGridView, const LowDimGridView &lowDimgridView)
+    RosiRichardsTwoCBufferTestProblem(TimeManager &timeManager, const BulkGridView &bulkGridView, const LowDimGridView &lowDimgridView)
     : ParentType(timeManager, bulkGridView, lowDimgridView)
     {}
 };

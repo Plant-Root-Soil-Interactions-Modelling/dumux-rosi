@@ -102,6 +102,7 @@ public:
         Swr_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Swr);
         VgAlpha_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.VgAlpha);
         Vgn_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Vgn);
+        buffer_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.BufferPower);
 
        // residual saturations
         materialParams_.setSwr(Swr_);
@@ -111,6 +112,19 @@ public:
         // alpha and n
         materialParams_.setVgAlpha(VgAlpha_);
         materialParams_.setVgn(Vgn_);
+    }
+    /*!
+     * \brief Returns the buffer power at a given location
+     *
+     * \param element An arbitrary DUNE Codim<0> entity of the grid view
+     * \param fvGeometry The current finite volume geometry of the element
+     * \param scvIdx The index of the sub-control volume
+     */
+    Scalar buffer(const Element &element,
+                                 const FVElementGeometry &fvGeometry,
+                                 int scvIdx) const
+    {
+        return buffer_;
     }
 
     /*!
@@ -183,7 +197,7 @@ public:
 
 private:
     MaterialLawParams materialParams_;
-    Scalar permeability_, VgAlpha_, Vgn_, Swr_, porosity_;
+    Scalar permeability_, VgAlpha_, Vgn_, Swr_, porosity_,  buffer_;
 
 };
 

@@ -333,41 +333,42 @@ public:
         //std::cout << "pressure 3D " <<pressure3D<< std::endl;
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx];
         //std::cout << "pressure 1D " <<pressure1D<< std::endl;
+        const Scalar density3D = this->couplingManager().bulkVolVars(source.id()).density();
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
         // sink defined as radial flow Jr [m^3 s-1]*density
         sourceValues[conti0EqIdx] = 2 * M_PI *rootRadius * Kr *(pressure3D - pressure1D)
-                                   * elemVolVars[scvIdx].density();
+                                   *density3D;//* elemVolVars[scvIdx].density();
 
-        // needs concentrations in soil and root
-        Scalar c1D;
-        if(useMoles)
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
-        else
-            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "mass fraction c1D " <<c1D<< std::endl;
-        Scalar c3D;
-        if(useMoles)
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
-        else
-            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "      mass fraction c3D " <<c3D<< std::endl;
-
-        //Difussive flux term of transport
-        Scalar DiffValue;
-        Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
-        DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c3D - c1D)*elemVolVars[scvIdx].density();
-
-        //Advective flux term of transport
-        Scalar AdvValue;
-        //if (sourceValues[conti0EqIdx]>0)
-        //    AdvValue = sourceValues[conti0EqIdx]*c3D;
-        //else
-        //    AdvValue = sourceValues[conti0EqIdx]*c1D;
-
-        AdvValue = 0;
-        sourceValues[transportEqIdx] = (AdvValue + DiffValue)*source.quadratureWeight()*source.integrationElement();
+//        // needs concentrations in soil and root
+//        Scalar c1D;
+//        if(useMoles)
+//            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+//        else
+//            c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
+//        //std::cout << "mass fraction c1D " <<c1D<< std::endl;
+//        Scalar c3D;
+//        if(useMoles)
+//            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
+//        else
+//            c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
+//        //std::cout << "      mass fraction c3D " <<c3D<< std::endl;
+//
+//        //Difussive flux term of transport
+//        Scalar DiffValue;
+//        Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
+//        DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c3D - c1D)*elemVolVars[scvIdx].density();
+//
+//        //Advective flux term of transport
+//        Scalar AdvValue;
+//        //if (sourceValues[conti0EqIdx]>0)
+//        //    AdvValue = sourceValues[conti0EqIdx]*c3D;
+//        //else
+//        //    AdvValue = sourceValues[conti0EqIdx]*c1D;
+//
+//        AdvValue = 0;
+//        sourceValues[transportEqIdx] = (AdvValue + DiffValue)*source.quadratureWeight()*source.integrationElement();
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
 
         //std::cout << "ROOT transportEqIdx " << transportEqIdx <<" "<< sourceValues[transportEqIdx]<< std::endl;
@@ -422,6 +423,10 @@ public:
         ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
         sourceP = 0.0;
         sourceC = 0.0;
+        Scalar totalSourceP;
+        Scalar totalSourceC;
+        totalSourceP = 0;
+        totalSourceC = 0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -445,16 +450,16 @@ public:
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
                     sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceP += sourceP[dofGlobalIdx];
                     sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
                                              * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceC += sourceC[dofGlobalIdx];
                     rootAge[dofGlobalIdx] += this->timeManager().time() - spatialParams.rootcreationTime(element,
                                                                 fvGeometry,
                                                                 scvIdx);
                 }
             }
         }
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
 
         std::cout << "Integrated mass source (1D): " << totalSourceP << std::endl;
         std::cout << "Integrated concentration source (1D): " << totalSourceC << std::endl;

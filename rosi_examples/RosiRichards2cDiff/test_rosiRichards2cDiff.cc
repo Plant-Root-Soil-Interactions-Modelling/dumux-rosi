@@ -41,7 +41,7 @@ void usage(const char *progName, const std::string &errorMsg)
 int main(int argc, char** argv)
 {
 #if HAVE_UMFPACK
-    typedef TTAG(RosiRichardsTwoCTestProblem) ProblemTypeTag;
+    typedef TTAG(RosiRichardsTwoCBufferTestProblem) ProblemTypeTag;
     return Dumux::start<ProblemTypeTag>(argc, argv, usage);
 #else
 #warning "You need to have the UMFPack solver library installed to run this test!"

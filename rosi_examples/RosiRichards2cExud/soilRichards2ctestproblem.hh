@@ -146,16 +146,16 @@ class SoilRichardsTwoCTestProblem : public ImplicitPorousMediaProblem<TypeTag>
         // indices of the primary variables
         //contiEqIdx = Indices::contiEqIdx,
         //hIdx = Indices::hIdx,
-        pressureIdx = Indices::pwIdx,
+        pressureIdx = Indices::pressureIdx,
         massOrMoleFracIdx = Indices::massOrMoleFracIdx,
-        wPhaseIdx=Indices::wPhaseIdx,
+        wPhaseIdx=Indices::phaseIdx,
 #if NONISOTHERMAL
         temperatureIdx = Indices::temperatureIdx
 #endif
     };
      enum {
         // index of the transport equation
-        conti0EqIdx = Indices::contiEqIdx,
+        conti0EqIdx = Indices::conti0EqIdx,
         transportEqIdx = Indices::transportEqIdx,
 #if NONISOTHERMAL
         energyEqIdx = Indices::energyEqIdx
@@ -308,9 +308,8 @@ public:
     {
         // compute source at every integration point
         // needs convertion of  units of 1d pressure if pressure head in richards is used
-        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
-        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx] ;
-        const Scalar c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];
+        const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[conti0EqIdx];
+        const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[conti0EqIdx];
 
         const auto& spatialParams = this->couplingManager().lowDimProblem().spatialParams();
         const unsigned int rootEIdx = this->couplingManager().pointSourceData(source.id()).lowDimElementIdx();
@@ -322,7 +321,7 @@ public:
 
         // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
         sourceValues[conti0EqIdx] = 2* M_PI *rootRadius * Kr *(pressure1D - pressure3D)
-                                   *elemVolVars[scvIdx].density(wPhaseIdx);
+                                   *elemVolVars[scvIdx].density();
 
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
         Scalar rootAge = this->timeManager().time()-spatialParams.rootcreationTime(rootEIdx);
@@ -332,7 +331,8 @@ public:
             Exdudation_value = 2* M_PI *rootRadius * MaxValue * exp(-rootAge*5e-5); //random function
         else
             Exdudation_value = 0;
-        sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement() -c3D*5e-5*elemVolVars[scvIdx].density(wPhaseIdx);
+        sourceValues[transportEqIdx] = Exdudation_value*source.quadratureWeight()*source.integrationElement();
+                        //-c3D*5e-5*elemVolVars[scvIdx].density();
         source =  sourceValues;
     }
 
@@ -445,6 +445,10 @@ public:
         ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
         sourceP = 0.0;
         sourceC = 0.0;
+        Scalar totalSourceP;
+        Scalar totalSourceC;
+        totalSourceP = 0;
+        totalSourceC = 0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -467,14 +471,13 @@ public:
                     this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
                     sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceP += sourceP[dofGlobalIdx];
                     sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
                                             * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
+                    totalSourceC += sourceC[dofGlobalIdx];
                 }
             }
         }
-
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
 
         std::cout << "Integrated mass source (3D): " << totalSourceP << std::endl;
         std::cout << "Integrated concentration source (3D): " << totalSourceC << std::endl;

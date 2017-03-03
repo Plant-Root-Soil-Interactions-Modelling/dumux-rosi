@@ -29,7 +29,7 @@ Cells = 20 20 20
 CellType = Cube
 
 [Problem]
-Name = ./results/rosi
+Name = rosi
 
 [materialParams]
 VgAlpha = 0.03e-2 #[1/Pa] 2.956e-4 # range [0.1e-3 - 0.8e-3] median 0.3e-3 sd 0.1e-3 http://www.pc-progress.com/Documents/RVGenugten/2010_Ghanbarian_Water_retention_PS.pdf
@@ -45,7 +45,7 @@ Kx = 5.0968e-10 # [m/s] 5.0968e-17
 Kr = 2.04e-13 # [m/(sPa)]
 Vmax = 6.2e-11 #[kg/(m2s)] e-5 mol/(cm2s) -> e-5*e-4**62.0049e-3 =6.2e-11
 Km = 3.1e-9 #[kg/m3] 0.05 mol/cm3 ->  0.05e-6*62.0049e-3 = 3.1e-9
-PartitionCoeff = 0.5
+PartitionCoeff = 1
 
 [BoundaryConditions]
 InitialSoilSaturation = 0.6 #[-]

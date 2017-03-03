@@ -42,6 +42,7 @@ Porosity = 0.4 #sd 0.1
 ### root parameters ###
 Kx = 5.0968e-10 # 5.0968e-17
 Kr = 2.04e-13
+BufferPower = 0
 DiffCoeffRootSurface = 1e-9
 
 [BoundaryConditions]
