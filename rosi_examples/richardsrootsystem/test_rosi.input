@@ -19,7 +19,8 @@ TEnd = 86400 # [s]
 EpisodeTime = 21700 # [s]
 
 [Grid]
-File = ./grids/RootSysMRI_1times.dgf
+#File = ./grids/RootSysMRI_1times.dgf
+File = ./grids/Anagallis_femina_Leitner_2010.dgf
 Refinement = 0
 
 [SoilGrid]
