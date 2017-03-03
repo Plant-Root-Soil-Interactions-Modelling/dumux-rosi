@@ -32,7 +32,7 @@
 
 // explicitly set the fvgeometry as we currently use another one as in stable
 
-#include "./richards2cbuffer/richards2cbuffermodel.hh"
+#include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 
 #include <dumux/material/fluidsystems/h2ok.hh>
 

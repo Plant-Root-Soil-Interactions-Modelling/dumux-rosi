@@ -190,7 +190,7 @@ public:
         {
             // setMassFraction() has only to be called 1-numComponents times
             fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
-            //fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+            fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
         }
 
     //    Scalar x1 = priVars[massOrMoleFracIdx]; //mole or mass fraction of component 1
