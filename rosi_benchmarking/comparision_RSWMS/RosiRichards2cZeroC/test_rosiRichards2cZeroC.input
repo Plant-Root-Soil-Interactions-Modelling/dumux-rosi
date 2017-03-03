@@ -1,0 +1,73 @@
+###############################################################
+# Parameter file for test_1p.
+# Everything behind a '#' is a comment.
+# Type "./test_1p --help" for more information.
+###############################################################
+
+###############################################################
+# Mandatory arguments
+###############################################################
+
+[MultiDimension]
+UseIterativeSolver = 0
+
+[TimeManager]
+DtInitial = 8640 #259.2 # 864 # [s]
+#DtInitialBulkProblem = 8640 # [s]
+#DtInitialLowDimProblem = 8640 # [s]
+TEnd = 86400 # 5184 #25920 # 86400 # [s]
+EpisodeTime = 8640# 259.2 # 864 # [s]
+
+[Grid]
+File = ./grids/RootSysMRI_1times.dgf
+Refinement = 0
+
+[SoilGrid]
+LowerLeft = -0.05 -0.05 -0.1 #[m]
+UpperRight = 0.05 0.05 0 #[m]
+Cells = 20 20 20
+CellType = Cube
+
+[Problem]
+Name = rosi2cbuffer_20_ZeroC
+
+[materialParams]
+VgAlpha = 2.956e-4# 0.03e-2 #[1/Pa] 2.956e-4 # range [0.1e-3 - 0.8e-3] median 0.3e-3 sd 0.1e-3 http://www.pc-progress.com/Documents/RVGenugten/2010_Ghanbarian_Water_retention_PS.pdf
+Vgn = 1.5#2 #[-] 1.5 #range 1.1- 6.7 mean 2 sd 0.3
+Swr = 0.05#0.03 #[-] 0.05
+
+[SpatialParams]
+Permeability = 2.57e-12#1.e-12 # [m^2] https://en.wikipedia.org/wiki/Permeability_%28earth_sciences%29 sd 3e-13
+Porosity = 0.4 # [-] sd 0.1
+BufferPower = 0 #[-]
+### root parameters ###
+Kx = 5.0968e-17#5.0968e-10 # [m/s] 5.0968e-17 
+Kr = 2.04e-13# 2.04e-13 # [m/(sPa)]
+Vmax = 6.2e-11 #[kg/(m2s)] e-5 mol/(cm2s) -> e-5*e-4**62.0049e-3 =6.2e-11
+Km = 3.1e-9 #[kg/m3] 0.05 mol/cm3 ->  0.05e-6*62.0049e-3 = 3.1e-9
+PartitionCoeff = 1 # 1: just passive uptake
+
+[BoundaryConditions]
+InitialSoilSaturation = 0.6 #[-]
+InitialSoilPressure = -0.9429e4 #[Pa] -3e4 #-0.3e6 #-0.9429e4 #  -300.0 # [cm]used as Dirichlet BC and IC  sd -0.2e3
+InitialRootPressure = 1e5 #[Pa] -0.6e6 #-1.2e6 # [Pa]
+
+TranspirationRate = 2.15e-8#2.15e-5 # [kg / s]
+CollarPressure = -14e5 #[Pa] -1.5e6 # [Pa] sd -1.5e5
+InitialSoilFracNO3 = 0#1.24e-6 #[-] http://water.usgs.gov/edu/nitrogen.html 1.24mg/l 0.02mmol/l 1.24e-6
+InitialRootFracNO3 = 0 #[-] 2e-5
+SoilTemperature = 283
+RootTemperature = 283
+
+
+[IterativeAlgorithm]
+MaxIterations = 100
+Tolerance = 1.0e-5
+Verbose = 1
+IntegrationOrder = 1
+
+[Newton]
+EnableResidualCriterion	=	1
+ResidualReduction	=	0.980665
+
+
