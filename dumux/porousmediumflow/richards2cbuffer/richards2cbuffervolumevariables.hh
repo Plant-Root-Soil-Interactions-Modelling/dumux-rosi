@@ -51,6 +51,7 @@ class RichardsTwoCBufferVolumeVariables : public ImplicitVolumeVariables<TypeTag
     typedef typename GET_PROP_TYPE(TypeTag, FluidSystem) FluidSystem;
     typedef typename GET_PROP_TYPE(TypeTag, MaterialLaw) MaterialLaw;
     typedef typename GET_PROP_TYPE(TypeTag, MaterialLawParams) MaterialLawParams;
+    typedef typename GET_PROP_TYPE(TypeTag, EffectiveDiffusivityModel) EffectiveDiffusivityModel;
     typedef typename GET_PROP_TYPE(TypeTag, FVElementGeometry) FVElementGeometry;
     typedef typename GET_PROP_TYPE(TypeTag, PrimaryVariables) PrimaryVariables;
 
@@ -58,16 +59,16 @@ class RichardsTwoCBufferVolumeVariables : public ImplicitVolumeVariables<TypeTag
     static const bool useMoles = GET_PROP_VALUE(TypeTag, UseMoles);
 
     typedef typename GET_PROP_TYPE(TypeTag, Indices) Indices;
-
+    //! The type returned by the fluidState() method
+    typedef typename GET_PROP_TYPE(TypeTag, FluidState) FluidState;
     //indices of primary variables
-    enum{hIdx = Indices::hIdx,
-         pwIdx = Indices::pwIdx,
-         massOrMoleFracIdx = Indices::massOrMoleFracIdx
+    enum{
+        pressureIdx = Indices::pressureIdx,
+        massOrMoleFracIdx = Indices::massOrMoleFracIdx
     };
 
     enum{
-         wPhaseIdx = Indices::wPhaseIdx,
-         nPhaseIdx = Indices::nPhaseIdx,
+         phaseIdx = Indices::phaseIdx,
          phaseCompIdx = Indices::phaseCompIdx,
          transportCompIdx = Indices::transportCompIdx
     };
@@ -82,8 +83,7 @@ class RichardsTwoCBufferVolumeVariables : public ImplicitVolumeVariables<TypeTag
     typedef Dune::FieldVector<Scalar,dimWorld> GlobalPosition;
 
 public:
-    //! The type returned by the fluidState() method
-    typedef Dumux::CompositionalFluidState<Scalar, FluidSystem> FluidState;
+
 
     /*!
      * \copydoc ImplicitVolumeVariables::update
@@ -95,44 +95,38 @@ public:
                 const int scvIdx,
                 const bool isOldSol)
     {
-        assert(!FluidSystem::isLiquid(nPhaseIdx));
+        ParentType::update(priVars, problem, element, fvGeometry, scvIdx, isOldSol);
 
-        ParentType::update(priVars,
-                           problem,
-                           element,
-                           fvGeometry,
-                           scvIdx,
-                           isOldSol);
-
+        //calculate all secondary variables from the primary variables and store results in fluidstate
         completeFluidState(priVars, problem, element, fvGeometry, scvIdx, fluidState_);
 
-        //////////
-        // specify the other parameters
-        //////////
         const MaterialLawParams &matParams =
             problem.spatialParams().materialLawParams(element, fvGeometry, scvIdx);
         relativePermeabilityWetting_ =
             MaterialLaw::krw(matParams,
-                             fluidState_.saturation(wPhaseIdx));
+                             fluidState_.saturation(phaseIdx));
 
         porosity_ = problem.spatialParams().porosity(element, fvGeometry, scvIdx);
 
         dispersivity_ = problem.spatialParams().dispersivity(element, fvGeometry, scvIdx);
-
         buffer_ = problem.spatialParams().buffer(element, fvGeometry, scvIdx);
+
 
         // Second instance of a parameter cache.
         // Could be avoided if diffusion coefficients also
         // became part of the fluid state.
         typename FluidSystem::ParameterCache paramCache;
-        paramCache.updatePhase(fluidState_, wPhaseIdx);
+        paramCache.updatePhase(fluidState_, phaseIdx);
 
         diffCoeff_ = FluidSystem::binaryDiffusionCoefficient(fluidState_,
                                                              paramCache,
-                                                             wPhaseIdx,
+                                                             phaseIdx,
                                                              phaseCompIdx,
                                                              transportCompIdx);
-
+        effDiffCoeff_=EffectiveDiffusivityModel::effectiveDiffusivity(porosity_,
+                                                                     fluidState_.saturation(phaseIdx),
+                                                                     diffCoeff_)
+                        /(fluidState_.saturation(phaseIdx)* porosity_+buffer_);
         Valgrind::CheckDefined(porosity_);
         Valgrind::CheckDefined(dispersivity_);
         Valgrind::CheckDefined(diffCoeff_);
@@ -159,57 +153,55 @@ public:
         const MaterialLawParams &matParams =
                 problem.spatialParams().materialLawParams(element, fvGeometry, scvIdx);
 
-        // pressure head formulation
-        if (usePH){
-            Scalar pw = (0.01*priVars[hIdx])*1000.0 * 9.81 ;
-            fluidState.setPressure(wPhaseIdx, pw);
-            fluidState.setPressure(nPhaseIdx, 0.0);
+        fluidState.setPressure(phaseIdx, priVars[pressureIdx]);
 
-            // saturations
-            Scalar sw = MaterialLaw::sw(matParams,-fluidState.pressure(wPhaseIdx));
-            fluidState.setSaturation(wPhaseIdx, sw);
-            fluidState.setSaturation(nPhaseIdx, 1 - sw);
+        //Scalar minPc = MaterialLaw::pc(matParams, 1.0);
+
+        //fluidState.setPressure(nPhaseIdx, std::max(pnRef, priVars[pwIdx] + minPc));
+
+        // saturations
+        Scalar pnRef = problem.referencePressure(element, fvGeometry, scvIdx);
+        Scalar sw = MaterialLaw::sw(matParams, pnRef - fluidState.pressure(phaseIdx));
+        fluidState.setSaturation(phaseIdx, sw);
+
+        if(useMoles)
+        {
+            fluidState.setMoleFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+            fluidState.setMoleFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
         }
-        else{ //pressure formulation
-
-            Scalar pnRef = problem.referencePressure(element, fvGeometry, scvIdx);
-
-            Scalar minPc = MaterialLaw::pc(matParams, 1.0);
-            fluidState.setPressure(wPhaseIdx, priVars[pwIdx]);
-            fluidState.setPressure(nPhaseIdx, std::max(pnRef, priVars[pwIdx] + minPc));
-
-            // saturations
-            Scalar sw = MaterialLaw::sw(matParams, fluidState.pressure(nPhaseIdx) - fluidState.pressure(wPhaseIdx));
-            fluidState.setSaturation(wPhaseIdx, sw);
-            fluidState.setSaturation(nPhaseIdx, 1 - sw);
+        else
+        {
+            // setMassFraction() has only to be called 1-numComponents times
+            fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+            //fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
         }
+
         // density and viscosity
         typename FluidSystem::ParameterCache paramCache;
         paramCache.updateAll(fluidState);
-        fluidState.setDensity(wPhaseIdx, FluidSystem::density(fluidState, paramCache, wPhaseIdx));
-        fluidState.setDensity(nPhaseIdx, 1e-10);
 
-        fluidState.setViscosity(wPhaseIdx, FluidSystem::viscosity(fluidState, paramCache, wPhaseIdx));
-        fluidState.setViscosity(nPhaseIdx, 1e-10);
-
+        Scalar value;
+        value = FluidSystem::density(fluidState, paramCache, phaseIdx);
+        fluidState.setDensity(phaseIdx, value);
+        value = FluidSystem::viscosity(fluidState, paramCache, phaseIdx);
+        fluidState.setViscosity(phaseIdx, value);
         // compute and set the enthalpy
-        fluidState.setEnthalpy(wPhaseIdx, Implementation::enthalpy_(fluidState, paramCache, wPhaseIdx));
-        fluidState.setEnthalpy(nPhaseIdx, Implementation::enthalpy_(fluidState, paramCache, nPhaseIdx));
+        Scalar h = Implementation::enthalpy_(fluidState, paramCache, phaseIdx);
+        fluidState.setEnthalpy(phaseIdx, h);
 
-        Scalar x1 = priVars[massOrMoleFracIdx]; //mole or mass fraction of component 1
-        if(!useMoles) //mass-fraction formulation
-        {
-            // convert mass to mole fractions
-            Scalar M0 = FluidSystem::molarMass(phaseCompIdx);
-            Scalar M1 = FluidSystem::molarMass(transportCompIdx);
-            //meanMolarMass if x1_ is a massfraction
-            Scalar meanMolarMass = M0*M1/(M1 + x1*(M0 - M1));
 
-            x1 *= meanMolarMass/M1;
-        }
-        fluidState.setMoleFraction(wPhaseIdx, phaseCompIdx, 1 - x1);
-        fluidState.setMoleFraction(wPhaseIdx, transportCompIdx, x1);
-
+    //    Scalar x1 = priVars[massOrMoleFracIdx]; //mole or mass fraction of component 1
+    //    if(!useMoles) //mass-fraction formulation
+    //    {
+    //        // convert mass to mole fractions
+    //        Scalar M0 = FluidSystem::molarMass(phaseCompIdx);
+    //        Scalar M1 = FluidSystem::molarMass(transportCompIdx);
+    //        //meanMolarMass if x1_ is a massfraction
+    //        Scalar meanMolarMass = M0*M1/(M1 + x1*(M0 - M1));
+    //        x1 *= meanMolarMass/M1;
+    //    }
+    //    fluidState.setMoleFraction(phaseIdx, phaseCompIdx, 1 - x1);
+    //    fluidState.setMoleFraction(phaseIdx, transportCompIdx, x1);
     }
 
     /*!
@@ -223,7 +215,7 @@ public:
      * \brief Return molar density \f$\mathrm{[mol/m^3]}\f$ the of the fluid phase.
      */
     Scalar molarDensity() const
-    { return fluidState_.molarDensity(wPhaseIdx);}
+    { return fluidState_.molarDensity(phaseIdx);}
 
     /*!
      * \brief Return mole fraction \f$\mathrm{[mol/mol]}\f$ of a component in the phase.
@@ -231,7 +223,7 @@ public:
      * \param compIdx The index of the component
      */
     Scalar moleFraction(int compIdx) const
-    { return fluidState_.moleFraction(wPhaseIdx, (compIdx==0)?phaseCompIdx:transportCompIdx); }
+    { return fluidState_.moleFraction(phaseIdx, (compIdx==0)?phaseCompIdx:transportCompIdx); }
 
     /*!
      * \brief Return mass fraction \f$\mathrm{[kg/kg]}\f$ of a component in the phase.
@@ -239,7 +231,7 @@ public:
      * \param compIdx The index of the component
      */
     Scalar massFraction(int compIdx) const
-    { return fluidState_.massFraction(wPhaseIdx, (compIdx==0)?phaseCompIdx:transportCompIdx); }
+    { return fluidState_.massFraction(phaseIdx, (compIdx==0)?phaseCompIdx:transportCompIdx); }
 
     /*!
      * \brief Return concentration \f$\mathrm{[mol/m^3]}\f$  of a component in the phase.
@@ -247,13 +239,18 @@ public:
      * \param compIdx The index of the component
      */
     Scalar molarity(int compIdx) const
-    { return fluidState_.molarity(wPhaseIdx, (compIdx==0)?phaseCompIdx:transportCompIdx); }
+    { return fluidState_.molarity(phaseIdx, (compIdx==0)?phaseCompIdx:transportCompIdx); }
 
     /*!
      * \brief Return the binary diffusion coefficient \f$\mathrm{[m^2/s]}\f$ in the fluid.
      */
     Scalar diffCoeff() const
     { return diffCoeff_; }
+
+    Scalar effDiffCoeff() const
+    {
+        return effDiffCoeff_;
+    }
 
     /*!
      * \brief Returns the dispersivity of the fluid's streamlines.
@@ -289,8 +286,11 @@ public:
      *
      * \param phaseIdx The index of the fluid phase
      */
-    Scalar density(const int phaseIdx) const
+    Scalar density() const
     { return fluidState_.density(phaseIdx); }
+    //{   //std::cout<<1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx))<<std::endl;
+    //{ return 1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx)); }
+    //{ return 1000;}
 
     /*!
      * \brief Returns the effective pressure \f$\mathrm{[Pa]}\f$ of a given phase within
@@ -303,7 +303,7 @@ public:
      *
      * \param phaseIdx The index of the fluid phase
      */
-    Scalar pressure(const int phaseIdx) const
+    Scalar pressure() const
     { return fluidState_.pressure(phaseIdx); }
 
     /*!
@@ -334,7 +334,7 @@ public:
      * \brief Return the dynamic viscosity \f$\mathrm{[Pa*s]}\f$ of a given phase
      *        within the control volume.
      */
-    Scalar viscosity(const int phaseIdx) const
+    Scalar viscosity() const
     { return fluidState_.viscosity(phaseIdx); }
 
     /*!
@@ -345,46 +345,7 @@ public:
      */
     Scalar relativePermeability(const int phaseIdx) const
     {
-        if (phaseIdx == wPhaseIdx)
-            return relativePermeabilityWetting_;
-        return 1;
-    }
-
-    /*!
-     * \brief Returns the effective capillary pressure \f$\mathrm{[Pa]}\f$ within the
-     *        control volume.
-     *
-     * The capillary pressure is defined as the difference in
-     * pressures of the non-wetting and the wetting phase, i.e.
-     * \f[ p_c = p_n - p_w \f]
-     */
-    Scalar capillaryPressure() const
-    {
-        // pressure head formulation
-        if (usePH)
-            return -fluidState_.pressure(wPhaseIdx);
-        else // pressure  formulation
-            return fluidState_.pressure(nPhaseIdx) - fluidState_.pressure(wPhaseIdx);
-    }
-
-    /*!
-     * \brief Returns the pressureHead \f$\mathrm{[cm]}\f$ of a given phase within
-     *        the control volume.
-     *
-     * For the non-wetting phase (i.e. the gas phase), we assume
-     * infinite mobility, which implies that the non-wetting phase
-     * pressure is equal to the finite volume's reference pressure
-     * defined by the problem.
-     *
-     * \param phaseIdx The index of the fluid phase
-     */
-    Scalar pressureHead(const int phaseIdx) const
-    {
-        // pressure head formulation
-        if (usePH)
-            return (100.) *(fluidState_.pressure(phaseIdx))/ fluidState_.density(phaseIdx)/ 9.81;
-        else // pressure  formulation
-            return (100.) *(fluidState_.pressure(phaseIdx) -1e5)/ fluidState_.density(phaseIdx)/ 9.81;
+        return relativePermeabilityWetting_;
     }
 
     /*!
@@ -441,6 +402,7 @@ protected:
     GlobalPosition dispersivity_;
     Scalar diffCoeff_;
     Scalar buffer_;
+    Scalar effDiffCoeff_;
 
 
 private:

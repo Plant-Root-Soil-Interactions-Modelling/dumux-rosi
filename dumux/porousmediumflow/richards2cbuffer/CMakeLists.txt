@@ -9,4 +9,4 @@ richards2cbuffernewtoncontroller.hh
 richards2cbufferproperties.hh
 richards2cbufferproblem.hh
 richards2cbuffermodel.hh
-DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rosi/soilmatrix/singlenutrient)
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/porousmediumflow/richards2cbuffer)

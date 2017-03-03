@@ -109,7 +109,7 @@ public:
 
 
         Scalar radius = this->problem_().spatialParams().rootRadius(this->element_(),this->fvGeometry_(),scvIdx);
-
+        storage[conti0EqIdx] += M_PI*radius*radius*volVars.density()*volVars.porosity();
         storage = 0;
         if(!useMoles) //mass-fraction formulation
         {
@@ -121,7 +121,7 @@ public:
             // storage term of the transport equation - molefractions
             storage[transportEqIdx] += M_PI*radius*radius*volVars.molarDensity()*volVars.moleFraction(transportCompIdx)*volVars.porosity();
         }
-        storage[conti0EqIdx] += M_PI*radius*radius*volVars.density()*volVars.porosity();
+
     }
 
     /*!
@@ -166,6 +166,11 @@ public:
         const VolumeVariables &dn =
             this->curVolVars_(fluxVars.downstreamIdx(phaseIdx));
 
+        // total mass flux
+        flux[conti0EqIdx] += fluxVars.volumeFlux(phaseIdx)*
+            ((upwindWeight_)*up.density()
+            + (1-upwindWeight_)*dn.density());
+
         if(!useMoles) //mass-fraction formulation
         {
             // advective flux of the second component - massfraction
@@ -185,10 +190,6 @@ public:
             Valgrind::CheckDefined(flux[transportEqIdx]);
         }
 
-        // total mass flux
-        flux[conti0EqIdx] += fluxVars.volumeFlux(phaseIdx)*
-            ((upwindWeight_)*up.density()
-            + (1-upwindWeight_)*dn.density());
         Valgrind::CheckDefined(flux[conti0EqIdx]);
     }
 

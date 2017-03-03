@@ -38,38 +38,26 @@ namespace Dumux
 template <class TypeTag, int PVOffset = 0>
 struct RichardsTwoCBufferIndices
 {
-    typedef typename GET_PROP_TYPE(TypeTag, FluidSystem) FluidSystem;
 
-    //////////
-    // primary variable indices
-    //////////
-
-    //! Primary variable index for the wetting phase pressure
-    static const int pwIdx = PVOffset + 0;
-    //! Primary variable index for the wetting phase pressure head (used for pressure head formulation
-    static const int hIdx = PVOffset + 0;
-    static const int massOrMoleFracIdx = PVOffset + 1; //!< mole fraction of the second component
-
-    //////////
-    // equation indices
-    //////////
-    static const int contiEqIdx = PVOffset + 0;//!< continuity equation index
-    static const int transportEqIdx = PVOffset + 1; //!< transport equation index
-
-    //////////
-    // phase indices
-    //////////
-    static const int wPhaseIdx = FluidSystem::wPhaseIdx; //!< Index of the wetting phase;
-    static const int nPhaseIdx = FluidSystem::nPhaseIdx; //!< Index of the non-wetting phase;
+    //! Set the default phase used by the fluid system to the first one
+    static const int phaseIdx = 0;
 
     //! Component indices
-    static const int phaseCompIdx = wPhaseIdx;//!< The index of the main component of the considered phase
+    static const int phaseCompIdx = phaseIdx;//!< The index of the main component of the considered phase
     //! The index of the transported (minor) component; ASSUMES phase indices of 0 and 1
-    static const int transportCompIdx = (unsigned int)(1-wPhaseIdx);
+    static const int transportCompIdx = (unsigned int)(1-phaseIdx);
 
+    // Equation indices
+   static const int conti0EqIdx = PVOffset + 0; //!< continuity equation index
+   static const int transportEqIdx = PVOffset + 1; //!< transport equation index
+
+    // primary variable indices
+    static const int pressureIdx = PVOffset + 0; //!< pressure
+    static const int massOrMoleFracIdx = PVOffset + 1; //!< mole fraction of the second component
 };
-// \}
 
-} // end namespace
+// \}
+}
 
 #endif
+

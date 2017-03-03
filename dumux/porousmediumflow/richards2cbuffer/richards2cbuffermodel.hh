@@ -25,11 +25,11 @@
 #ifndef DUMUX_RICHARDS_2C_BUFFER_MODEL_HH
 #define DUMUX_RICHARDS_2C_BUFFER_MODEL_HH
 
-#include <dune/common/version.hh>
-#include <dumux/implicit/model.hh>
+//#include <dune/common/version.hh>
+//#include <dumux/implicit/model.hh>
 #include <dumux/porousmediumflow/implicit/velocityoutput.hh>
 
-#include "richards2cbufferproblem.hh"
+//#include "richards2cbufferproblem.hh"
 #include "richards2cbufferproperties.hh"
 
 namespace Dumux
@@ -54,8 +54,7 @@ class RichardsTwoCBufferModel : public GET_PROP_TYPE(TypeTag, BaseModel)
 
     typedef typename GET_PROP_TYPE(TypeTag, Indices) Indices;
     enum {
-        nPhaseIdx = Indices::nPhaseIdx,
-        wPhaseIdx = Indices::wPhaseIdx
+        phaseIdx = Indices::phaseIdx
     };
 
     typedef typename GET_PROP_TYPE(TypeTag, GridView) GridView;
@@ -87,19 +86,20 @@ public:
 
         // create the required scalar fields
         ScalarField *pw = writer.allocateManagedBuffer(numDofs);
-        ScalarField *pn = writer.allocateManagedBuffer(numDofs);
-        ScalarField *pc = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *pn = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *pc = writer.allocateManagedBuffer(numDofs);
         ScalarField *sw = writer.allocateManagedBuffer(numDofs);
-        ScalarField *sn = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *sn = writer.allocateManagedBuffer(numDofs);
         ScalarField *rhoW = writer.allocateManagedBuffer(numDofs);
-        ScalarField *rhoN = writer.allocateManagedBuffer(numDofs);
-        ScalarField *mobW = writer.allocateManagedBuffer(numDofs);
-        ScalarField *mobN = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *rhoN = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *mobW = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *mobN = writer.allocateManagedBuffer(numDofs);
         ScalarField *poro = writer.allocateManagedBuffer(numDofs);
         ScalarField *Te = writer.allocateManagedBuffer(numDofs);
-        ScalarField *ph = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *ph = writer.allocateManagedBuffer(numDofs);
         ScalarField *wc = writer.allocateManagedBuffer(numDofs);
         ScalarField *buffer = writer.allocateManagedBuffer(numDofs);
+        ScalarField *molarDensity = writer.allocateManagedBuffer(numDofs);
 
         ScalarField *moleFraction0 = writer.allocateManagedBuffer(numDofs);
         ScalarField *moleFraction1 = writer.allocateManagedBuffer(numDofs);
@@ -150,20 +150,21 @@ public:
 #else
                     int dofIdxGlobal = this->dofMapper().map(*eIt, scvIdx, dofCodim);
 #endif
-                    (*pw)[dofIdxGlobal] = elemVolVars[scvIdx].pressure(wPhaseIdx);
-                    (*pn)[dofIdxGlobal] = elemVolVars[scvIdx].pressure(nPhaseIdx);
-                    (*pc)[dofIdxGlobal] = elemVolVars[scvIdx].capillaryPressure();
-                    (*sw)[dofIdxGlobal] = elemVolVars[scvIdx].saturation(wPhaseIdx);
-                    (*sn)[dofIdxGlobal] = elemVolVars[scvIdx].saturation(nPhaseIdx);
-                    (*rhoW)[dofIdxGlobal] = elemVolVars[scvIdx].density(wPhaseIdx);
-                    (*rhoN)[dofIdxGlobal] = elemVolVars[scvIdx].density(nPhaseIdx);
-                    (*mobW)[dofIdxGlobal] = elemVolVars[scvIdx].mobility(wPhaseIdx);
-                    (*mobN)[dofIdxGlobal] = elemVolVars[scvIdx].mobility(nPhaseIdx);
+                    (*pw)[dofIdxGlobal] = elemVolVars[scvIdx].pressure();
+                    //(*pn)[dofIdxGlobal] = elemVolVars[scvIdx].pressure(nPhaseIdx);
+                    //(*pc)[dofIdxGlobal] = elemVolVars[scvIdx].capillaryPressure();
+                    (*sw)[dofIdxGlobal] = elemVolVars[scvIdx].saturation(phaseIdx);
+                    //(*sn)[dofIdxGlobal] = elemVolVars[scvIdx].saturation(nPhaseIdx);
+                    (*rhoW)[dofIdxGlobal] = elemVolVars[scvIdx].density();
+                    //(*rhoN)[dofIdxGlobal] = elemVolVars[scvIdx].density(nPhaseIdx);
+                    //(*mobW)[dofIdxGlobal] = elemVolVars[scvIdx].mobility(phaseIdx);
+                    //(*mobN)[dofIdxGlobal] = elemVolVars[scvIdx].mobility(nPhaseIdx);
                     (*poro)[dofIdxGlobal] = elemVolVars[scvIdx].porosity();
                     (*Te)[dofIdxGlobal] = elemVolVars[scvIdx].temperature();
-                    (*ph)[dofIdxGlobal] = elemVolVars[scvIdx].pressureHead(wPhaseIdx);
-                    (*wc)[dofIdxGlobal] = elemVolVars[scvIdx].waterContent(wPhaseIdx);
+                    //(*ph)[dofIdxGlobal] = elemVolVars[scvIdx].pressureHead(phaseIdx);
+                    (*wc)[dofIdxGlobal] = elemVolVars[scvIdx].waterContent(phaseIdx);
                     (*buffer)[dofIdxGlobal] = elemVolVars[scvIdx].buffer();
+                    (*molarDensity)[dofIdxGlobal] = elemVolVars[scvIdx].molarDensity();
 
                     (*moleFraction0)[dofIdxGlobal] = elemVolVars[scvIdx].moleFraction(0);
                     (*moleFraction1)[dofIdxGlobal] = elemVolVars[scvIdx].moleFraction(1);
@@ -176,20 +177,21 @@ public:
             }
         }
 
-        writer.attachDofData(*sn, "Sn", isBox);
+        //writer.attachDofData(*sn, "Sn", isBox);
         writer.attachDofData(*sw, "Sw", isBox);
-        writer.attachDofData(*pn, "pn", isBox);
+        //writer.attachDofData(*pn, "pn", isBox);
         writer.attachDofData(*pw, "pw", isBox);
-        writer.attachDofData(*pc, "pc", isBox);
+        //writer.attachDofData(*pc, "pc", isBox);
         writer.attachDofData(*rhoW, "rhoW", isBox);
-        writer.attachDofData(*rhoN, "rhoN", isBox);
-        writer.attachDofData(*mobW, "mobW", isBox);
-        writer.attachDofData(*mobN, "mobN", isBox);
+        //writer.attachDofData(*rhoN, "rhoN", isBox);
+        //writer.attachDofData(*mobW, "mobW", isBox);
+        //writer.attachDofData(*mobN, "mobN", isBox);
         writer.attachDofData(*poro, "porosity", isBox);
         writer.attachDofData(*Te, "temperature", isBox);
-        writer.attachDofData(*ph, "pressure head", isBox);
+        //writer.attachDofData(*ph, "pressure head", isBox);
         writer.attachDofData(*wc, "water content", isBox);
         writer.attachDofData(*buffer, "buffer power", isBox);
+        writer.attachDofData(*molarDensity, "molar Density", isBox);
 
         char nameMoleFraction0[42], nameMoleFraction1[42];
         snprintf(nameMoleFraction0, 42, "x_%s", FluidSystem::componentName(0));
@@ -198,8 +200,8 @@ public:
         writer.attachDofData(*moleFraction1, nameMoleFraction1, isBox);
 
         char nameMassFraction0[42], nameMassFraction1[42];
-        snprintf(nameMassFraction0, 42, "X_%s", FluidSystem::componentName(0));
-        snprintf(nameMassFraction1, 42, "X_%s", FluidSystem::componentName(1));
+        snprintf(nameMassFraction0, 42, "w_%s", FluidSystem::componentName(0));
+        snprintf(nameMassFraction1, 42, "w_%s", FluidSystem::componentName(1));
         writer.attachDofData(*massFraction0, nameMassFraction0, isBox);
         writer.attachDofData(*massFraction1, nameMassFraction1, isBox);
 
@@ -210,44 +212,7 @@ public:
         writer.attachCellData(*rank, "process rank");
     }
 
-    /*!
-     * \brief returns source/sink values of the model - used by coupled approaches
-     *
-     * \param sourceValues The current source values which are returned
-     */
-    void sourceValues(SolutionVector& sourcevalues)
-    {
-        int gridsize = this->gridView_().size(0);
-        sourcevalues.resize(gridsize);
 
-        ElementIterator eIt = this->gridView_().template begin<0>();
-        ElementIterator eEndIt = this->gridView_().template end<0>();
-        for (; eIt != eEndIt; ++eIt)
-            {
-            int eIdx = this->problem_().model().elementMapper().index(*eIt);
-
-            FVElementGeometry fvGeometry;
-            fvGeometry.update(this->gridView_(), *eIt);
-
-            ElementVolumeVariables elemVolVars;
-            elemVolVars.update(this->problem_(),
-                               *eIt,
-                               fvGeometry,
-                               false /* oldSol? */);
-
-            PrimaryVariables values;
-
-            for (int scvIdx = 0; scvIdx < fvGeometry.numScv; ++scvIdx)
-                {
-                    this->problem_().solDependentSource(values,
-                                                        *eIt,
-                                                        fvGeometry,
-                                                        scvIdx,
-                                                        elemVolVars);
-                }
-            sourcevalues[eIdx][0] = values;
-            }
-    }
 };
 }
 
