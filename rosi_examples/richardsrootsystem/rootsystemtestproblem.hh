@@ -166,6 +166,10 @@ public:
     Scalar temperature() const
     { return 273.15 + 10; } // 10C
 
+    void preTimeStep()
+    {
+        preSol_ = this->model().curSol();
+    }
 
     // \}
     /*!
@@ -176,18 +180,45 @@ public:
     void boundaryTypesAtPos (BoundaryTypes &values,
                              const GlobalPosition &globalPos ) const
     {
-        values.setAllNeumann();
+        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
+        {
+            Scalar Hcrit = GET_RUNTIME_PARAM(TypeTag,
+                                         Scalar,
+                                         BoundaryConditions.CriticalCollarPressure);
+            //get element index Eid of root segment at root colar
+            int Eid=-1;
+            for (const auto& element : elements(this->gridView()))
+            {
+                Eid ++;
+                auto posZ = std::max(element.geometry().corner(0)[2],element.geometry().corner(1)[2]);
+                if (posZ + eps_ > this->bBoxMax()[2])
+                    break;
+            }
+            if (this->timeManager().time()>=0)
+            {
+                if ((preSol_[Eid] < Hcrit ))
+                {
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" < " <<Hcrit<<"\n";
+                    std::cout<<"WATER STRESS !! SET BC at collar as Dirichlet !!"<<"\n";
+                    values.setDirichlet(conti0EqIdx);
+                }
+                else
+                {
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Hcrit<<"\n";
+                    std::cout<<"NO water stress !! SET BC at collar as Neumann !!"<<"\n";
+                    values.setNeumann(conti0EqIdx);
+                }
+            }
+            else
+            {
+                std::cout<<"SET BC at collar as Neumann !!"<<"\n";
+                values.setNeumann(conti0EqIdx);
+            }
+
+        }
+        else
+            values.setAllNeumann();
     }
-
-
-    /*!
-     * \brief Specifies which kind of boundary condition should be
-     *        used for which equation on a given boundary control volume.
-     *
-     * \param values The boundary types for the conservation equations
-     * \param globalPos The position of the center of the finite volume
-     */
-
     /*!
      * \brief Evaluate the boundary conditions for a dirichlet
      *        control volume.
@@ -197,16 +228,10 @@ public:
      *
      * For this method, the \a values parameter stores primary variables.
      */
-    void dirichlet(PrimaryVariables &values,
-                   const Intersection &intersection) const
+    void dirichletAtPos(PrimaryVariables &values,
+                        const GlobalPosition &globalPos) const
     {
-        GlobalPosition globalPos = intersection.geometry().center();
-        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
-              values[pIdx] = GET_RUNTIME_PARAM(TypeTag,
-                                               Scalar,
-                                               BoundaryConditions.CriticalCollarPressure);
-
-          //values[pIdx] *= 1.01;
+        values[pIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
     }
 
     /*!
@@ -215,26 +240,27 @@ public:
      *
      * For this method, the \a priVars parameter stores the mass flux
      * in normal direction of each component. Negative values mean
-     * influx.
-     */
-    void neumann(PrimaryVariables &values,
-                 const Element &element,
-                 const FVElementGeometry &fvGeometry,
-                 const Intersection &intersection,
-                 const int scvIdx,
-                 const int boundaryFaceIdx) const
+     * influx.*/
+    //void neumann(PrimaryVariables &values,
+    //             const Element &element,
+    //             const FVElementGeometry &fvGeometry,
+    //             const Intersection &intersection,
+    //             const int scvIdx,
+    //             const int boundaryFaceIdx) const
+    void neumannAtPos(PrimaryVariables &values,
+                        const GlobalPosition &globalPos) const
     {
-        GlobalPosition globalPos = fvGeometry.boundaryFace[boundaryFaceIdx].ipGlobal;
-
-        if (globalPos[2] + eps_ > this->bBoxMax()[2] ){
-             values = GET_RUNTIME_PARAM(TypeTag,
-                                        Scalar,
-                                        BoundaryConditions.TranspirationRate);
-         }
+        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
+        {
+            Scalar TransRate = GET_RUNTIME_PARAM(TypeTag,
+                                         Scalar,
+                                         BoundaryConditions.TranspirationRate);
+            values[conti0EqIdx] = TransRate;
+        }
         else
-            values = 0.0;
-
+            values[conti0EqIdx] = 0.0;
     }
+
 
     // \}
 
@@ -399,6 +425,7 @@ private:
     const Scalar eps_ = 1e-9;
 
     std::shared_ptr<CouplingManager> couplingManager_;
+    SolutionVector preSol_;
 };
 
 } //end namespace
