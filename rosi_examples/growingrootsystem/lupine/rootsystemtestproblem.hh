@@ -131,6 +131,7 @@ class RootsystemTestProblem : public RootsystemProblem<TypeTag>
     typedef typename GET_PROP_TYPE(TypeTag, FVElementGeometry) FVElementGeometry;
 
     typedef Dune::FieldVector<Scalar, dimWorld> GlobalPosition;
+    typedef typename GET_PROP_TYPE(TypeTag, SolutionVector) SolutionVector;
 
 public:
     RootsystemTestProblem(TimeManager &timeManager, const GridView &gridView)
@@ -162,20 +163,87 @@ public:
     Scalar temperature() const
     { return 273.15 + 10; } // 10C
 
+//    // \}
+//    /*!
+//     * \name Boundary conditions
+//     */
+//    void boundaryTypes(BoundaryTypes &values,
+//                        const Intersection &intersection) const
+//    {
+//
+//        double pos = intersection.geometry().center()[2];
+//        if ( pos +eps_ >  -0.000290 )
+//            values.setAllDirichlet();
+//        else
+//            values.setAllNeumann();
+//    }
+    void preTimeStep()
+    {
+        preSol_ = this->model().curSol();
+    }
+
     // \}
     /*!
      * \name Boundary conditions
      */
-    void boundaryTypes(BoundaryTypes &values,
-                        const Intersection &intersection) const
+    // \{
+
+    void boundaryTypesAtPos (BoundaryTypes &values,
+                             const GlobalPosition &globalPos ) const
     {
-        double pos = intersection.geometry().center()[2];
-        if ( pos +eps_ >  -0.000290 )
-            values.setAllDirichlet();
+        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
+        {
+            //const SolutionVector& curSol = this->model().curSol();
+            Scalar Hcrit = GET_RUNTIME_PARAM(TypeTag,
+                                         Scalar,
+                                         BoundaryConditions.CriticalCollarPressure);
+            //get element index Eid from globalPos
+            int Eid=-1;
+            for (const auto& element : elements(this->gridView()))
+            {
+                Eid ++;
+                auto rootGeometry = element.geometry();
+                auto pos= rootGeometry.center();
+                if (pos==globalPos)
+                    break;
+
+            }
+                //    int id=0;
+                //    for (const auto& preS : preSol_)
+                //    {
+                //        std::cout<<"preSol_[Eid]: "<<preS<<" - " <<id<<"\n";
+                //        id ++;
+                //    }
+            if (this->timeManager().time()>0)
+            {
+                //std::cout<<"this->timeManager(): "<<this->timeManager().time()<<"\n";
+                //std::cout<<"Boundary Element Index: "<<Eid<<"\n";
+                //std::cout<<"preSol_[Eid]: "<<preSol_[Eid]<<" - " <<Hcrit<<"\n";
+                //std::cout<<"values.isNeumann(conti0EqIdx): "<<values.isNeumann(conti0EqIdx)<<"\n";
+                if ((preSol_[Eid] > Hcrit))
+                {
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Hcrit<<"\n";
+                    std::cout<<"WATER STRESS !! SET BC at collar as Dirichlet !!"<<"\n";
+                    values.setDirichlet(conti0EqIdx);
+                }
+                else
+                {
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" < " <<Hcrit<<"\n";
+                    std::cout<<"NO water stress !! SET BC at collar as Neumann !!"<<"\n";
+                    values.setNeumann(conti0EqIdx);
+                }
+            }
+            else
+            {
+                std::cout<<"SET BC at collar as Neumann !!"<<"\n";
+                values.setNeumann(conti0EqIdx);
+            }
+
+        }
         else
+            //std::cout<<"SET BC as Neumann !!"<<"\n";
             values.setAllNeumann();
     }
-
     /*!
      * \brief Evaluate the boundary conditions for a dirichlet
      *        control volume.
@@ -198,14 +266,24 @@ public:
      * For this method, the \a priVars parameter stores the mass flux
      * in normal direction of each component. Negative values mean
      * influx.*/
-    void neumann(PrimaryVariables &values,
-                 const Element &element,
-                 const FVElementGeometry &fvGeometry,
-                 const Intersection &intersection,
-                 const int scvIdx,
-                 const int boundaryFaceIdx) const
+    //void neumann(PrimaryVariables &values,
+    //             const Element &element,
+    //             const FVElementGeometry &fvGeometry,
+    //             const Intersection &intersection,
+    //             const int scvIdx,
+    //             const int boundaryFaceIdx) const
+    void neumannAtPos(PrimaryVariables &values,
+                        const GlobalPosition &globalPos) const
     {
-        values[conti0EqIdx] = 0.0;
+        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
+        {
+            Scalar TransRate = GET_RUNTIME_PARAM(TypeTag,
+                                         Scalar,
+                                         BoundaryConditions.TranspirationRate);
+            values[conti0EqIdx] = TransRate;
+        }
+        else
+            values[conti0EqIdx] = 0.0;
     }
 
 
@@ -241,6 +319,7 @@ public:
 private:
     std::string name_;
     const double eps_ = 1e-8;
+    SolutionVector preSol_;
 
 };
 } //end namespace

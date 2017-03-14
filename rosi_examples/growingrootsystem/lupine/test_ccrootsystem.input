@@ -1,6 +1,6 @@
 [TimeManager]
 DtInitial = 1 # [s]
-TEnd = 1 # [s]
+TEnd = 10 # [s]
 
 [Grid]
 File = ./grids/rootsys_mri.dgf
@@ -20,4 +20,4 @@ Kr = 2.04e-13
 [BoundaryConditions]
 SoilPressure = -2.9429e4 # [Pa]
 TranspirationRate = 2.3148e-9 # [m^3 s-1]
-CriticalCollarPressure = -1.2e6 # [Pa]
+CriticalCollarPressure = -32000#-1.2e6 # [Pa]
