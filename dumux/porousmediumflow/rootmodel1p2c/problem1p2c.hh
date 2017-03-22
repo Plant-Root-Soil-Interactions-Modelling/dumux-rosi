@@ -161,6 +161,57 @@ public:
             this->gridGrowth().growGrid();
             this->resultWriter().gridChanged();
         }
+        preSol_ = this->model().curSol();
+    }
+
+    // \}
+    /*!
+     * \name Boundary conditions
+     */
+    // \{
+
+    void boundaryTypesAtPos (BoundaryTypes &values,
+                             const GlobalPosition &globalPos ) const
+    {
+        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
+        {
+            values.setOutflow(transportEqIdx);
+            Scalar Hcrit = GET_RUNTIME_PARAM(TypeTag,
+                                         Scalar,
+                                         BoundaryConditions.CriticalCollarPressure);
+            //get element index Eid of root segment at root colar
+            int Eid=-1;
+            for (const auto& element : elements(this->gridView()))
+            {
+                Eid ++;
+                auto posZ = std::max(element.geometry().corner(0)[2],element.geometry().corner(1)[2]);
+                if (posZ + eps_ > this->bBoxMax()[2])
+                    break;
+            }
+            if (this->timeManager().time()>=0)
+            {
+                if ((preSol_[Eid] < Hcrit ))
+                {
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" < " <<Hcrit<<"\n";
+                    std::cout<<"WATER STRESS !! SET BC at collar as Dirichlet !!"<<"\n";
+                    values.setDirichlet(conti0EqIdx);
+                }
+                else
+                {
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Hcrit<<"\n";
+                    std::cout<<"NO water stress !! SET BC at collar as Neumann !!"<<"\n";
+                    values.setNeumann(conti0EqIdx);
+                }
+            }
+            else
+            {
+                std::cout<<"SET BC at collar as Neumann !!"<<"\n";
+                values.setNeumann(conti0EqIdx);
+            }
+
+        }
+        else
+            values.setAllNeumann();
     }
 
     void setWaterStress()
@@ -251,6 +302,7 @@ private:
     bool switchBC_ = false;
     const Scalar eps_ = 1e-6;
     Dune::shared_ptr<GridGrowthModel> gridGrowth_;
+    SolutionVector preSol_;
 };
 
 }
