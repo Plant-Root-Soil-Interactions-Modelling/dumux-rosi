@@ -13,9 +13,9 @@ UseIterativeSolver = 0
 
 [TimeManager]
 DtInitial = 8640 # [s]
-#DtInitialBulkProblem = 8640 # [s]
-#DtInitialLowDimProblem = 8640 # [s]
-TEnd = 86400 # [s]
+DtInitialBulkProblem = 864 # [s]
+DtInitialLowDimProblem = 864 # [s]
+TEnd = 604800 # [s]
 EpisodeTime = 21700 # [s]
 
 [Grid]
@@ -24,9 +24,9 @@ File = ./grids/Anagallis_femina_Leitner_2010.dgf
 Refinement = 0
 
 [SoilGrid]
-LowerLeft = -0.05 -0.05 -0.1
-UpperRight = 0.05 0.05 0
-Cells = 20 20 20
+LowerLeft = -0.25 -0.25 -0.5
+UpperRight = 0.25 0.25 0
+Cells = 30 30 30
 CellType = Cube
 
 [Problem]
