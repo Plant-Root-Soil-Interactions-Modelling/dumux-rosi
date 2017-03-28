@@ -280,14 +280,14 @@ public:
     void boundaryTypesAtPos(BoundaryTypes &values,
             const GlobalPosition &globalPos) const
     {
-         if(globalPos[2] > this->bBoxMax()[2]-eps_)
-         {
+         //if(globalPos[2] > this->bBoxMax()[2]-eps_)
+         //{
             values.setAllNeumann();
-         }
-         else
-         {
-            values.setAllDirichlet();
-         }
+         //}
+         //else
+         //{
+           // values.setAllDirichlet();
+         //}
     }
 
     /*!
