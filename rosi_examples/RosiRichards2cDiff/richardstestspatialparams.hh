@@ -25,7 +25,7 @@
 #define DUMUX_RICHARDS_TEST_SPATIAL_PARAMETERS_HH
 
 #include <dumux/material/spatialparams/implicit.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/linearmaterial.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
@@ -51,7 +51,7 @@ private:
     // define the material law which is parameterized by effective
     // saturations
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-    typedef RegularizedVanGenuchten<Scalar> EffectiveLaw;
+    typedef VanGenuchten<Scalar> EffectiveLaw;
 public:
     // define the material law parameterized by absolute saturations
     typedef EffToAbsLaw<EffectiveLaw> type;
@@ -100,13 +100,15 @@ public:
         permeability_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Permeability);
         porosity_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Porosity);
         Swr_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Swr);
+        Snr_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Snr);
         VgAlpha_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.VgAlpha);
         Vgn_ = GET_RUNTIME_PARAM(TypeTag, Scalar, materialParams.Vgn);
         buffer_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.BufferPower);
+        dispersivity_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Dispersivity);
 
        // residual saturations
         materialParams_.setSwr(Swr_);
-        materialParams_.setSnr(0.0);
+        materialParams_.setSnr(Snr_);
 
         // parameters for the Van Genuchten law
         // alpha and n
@@ -191,13 +193,13 @@ public:
                     const FVElementGeometry &fvGeometry,
                     const int scvIdx) const
     {
-        return 0;
+        return dispersivity_;
     }
 
 
 private:
     MaterialLawParams materialParams_;
-    Scalar permeability_, VgAlpha_, Vgn_, Swr_, porosity_,  buffer_;
+    Scalar permeability_, VgAlpha_, Vgn_, Swr_,Snr_, porosity_,  buffer_, dispersivity_;
 
 };
 

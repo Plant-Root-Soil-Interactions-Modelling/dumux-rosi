@@ -176,7 +176,7 @@ public:
         if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
         {
             values.setOutflow(transportEqIdx);
-            Scalar Hcrit = GET_RUNTIME_PARAM(TypeTag,
+            Scalar criticalCollarPressure = GET_RUNTIME_PARAM(TypeTag,
                                          Scalar,
                                          BoundaryConditions.CriticalCollarPressure);
             //get element index Eid of root segment at root colar
@@ -190,16 +190,16 @@ public:
             }
             if (this->timeManager().time()>=0)
             {
-                if ((preSol_[Eid] < Hcrit ))
+                if ((preSol_[Eid][conti0EqIdx] < criticalCollarPressure ))
                 {
-                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" < " <<Hcrit<<"\n";
+                    std::cout<<"Collar pressure: "<<preSol_[Eid][conti0EqIdx]<<" < " <<criticalCollarPressure<<"\n";
                     std::cout<<"WATER STRESS !! SET BC at collar as Dirichlet !!"<<"\n";
                     values.setDirichlet(conti0EqIdx);
                 }
                 else
                 {
-                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Hcrit<<"\n";
-                    std::cout<<"NO water stress !! SET BC at collar as Neumann !!"<<"\n";
+                    //std::cout<<"Collar pressure: "<<preSol_[Eid][conti0EqIdx]<<" > " <<criticalCollarPressure<<"\n";
+                    //std::cout<<"NO water stress !! SET BC at collar as Neumann !!"<<"\n";
                     values.setNeumann(conti0EqIdx);
                 }
             }

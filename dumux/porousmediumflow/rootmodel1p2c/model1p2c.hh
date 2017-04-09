@@ -238,8 +238,8 @@ public:
         writer.attachDofData(*moleFraction1, nameMoleFraction1, isBox);
 
         char nameMassFraction0[42], nameMassFraction1[42];
-        snprintf(nameMassFraction0, 42, "X_%s", FluidSystem::componentName(0));
-        snprintf(nameMassFraction1, 42, "X_%s", FluidSystem::componentName(1));
+        snprintf(nameMassFraction0, 42, "w_%s", FluidSystem::componentName(0));
+        snprintf(nameMassFraction1, 42, "w_%s", FluidSystem::componentName(1));
         writer.attachDofData(*massFraction0, nameMassFraction0, isBox);
         writer.attachDofData(*massFraction1, nameMassFraction1, isBox);
 

@@ -29,13 +29,7 @@
 #include <dumux/porousmediumflow/rootmodel1p2c/model1p2c.hh>
 #include <dumux/porousmediumflow/rootmodel1p2c/problem1p2c.hh>
 
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-// fluidsystem
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-//#include <dumux/material/fluidsystems/h2on2.hh>
-#include <dumux/material/fluidsystems/h2ono3.hh>
+#include <dumux/material/fluidsystems/h2oc20h12.hh>
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
 
@@ -56,7 +50,7 @@ NEW_TYPE_TAG(RootsystemOnePTwoCTestCCProblem, INHERITS_FROM(CCModel, RootsystemO
 
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OC20H12<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
 
 // Set the grid type
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Grid, Dune::FoamGrid<1, 3>);
@@ -67,13 +61,8 @@ SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Problem, Dumux::RootsystemOnePTwoCT
 // Set the spatial parameters
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, SpatialParams, Dumux::RootsystemTestSpatialParams<TypeTag>);
 
-// Linear solver settings
-#if HAVE_UMFPACK
-SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
-#endif
-
 // Enable gravity
-SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, ProblemEnableGravity, false);
+SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, ProblemEnableGravity, true);
 
 // write newton convergence to vtk
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, NewtonWriteConvergence, false);
@@ -81,8 +70,6 @@ SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, NewtonWriteConvergence, false);
 // Enable velocity output
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, VtkAddVelocity, true);
 
-//SET_BOOL_PROP(RootsystemTestProblem, GrowingGrid, false);
-//SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, UseMoles, true);
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, UseMoles, false);
 }
 
@@ -126,7 +113,6 @@ class RootsystemOnePTwoCTestProblem : public RootsystemOnePTwoCProblem<TypeTag>
     typedef typename GET_PROP_TYPE(TypeTag, TimeManager) TimeManager;
     typedef typename GET_PROP_TYPE(TypeTag, SpatialParams) SpatialParams;
     typedef typename GET_PROP_TYPE(TypeTag, PointSource) PointSource;
-    //typedef typename GET_PROP_TYPE(TypeTag, IntegrationPointSource) PointSource;
     typedef typename GridView::template Codim<0>::Entity Element;
     typedef typename GridView::Intersection Intersection;
 
@@ -183,27 +169,11 @@ public:
 //    { temperatureRoot_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.TemperatureRoot);
 //    return temperatureRoot_; } // 10C
     // \}
-    /*!
-     * \name Boundary conditions
-     */
-    // \{
-
     void boundaryTypesAtPos (BoundaryTypes &values,
                              const GlobalPosition &globalPos ) const
     {
-
-        //////GlobalPosition globalPos = intersection.geometry().center();
-        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
-            {
-                values.setAllDirichlet();
-        ////         outflow condition for the transport equation at upper boundary
-        ////        values.setOutflow(transportEqIdx);
-            }
-        else
-            values.setAllNeumann();
+        ParentType::boundaryTypesAtPos(values, globalPos);
     }
-
-
     /*!
      * \brief Specifies which kind of boundary condition should be
      *        used for which equation on a given boundary control volume.
@@ -225,7 +195,7 @@ public:
                         const GlobalPosition &globalPos) const
     {
         values[pressureIdx] = pnRef_ + GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
-        values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialRootFracNO3);
+        values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialRootFracC20H12);
     }
     /*!
      * \brief Evaluate the boundary conditions for a neumann
@@ -235,29 +205,22 @@ public:
      * in normal direction of each component. Negative values mean
      * influx.
      */
-    void neumann(PrimaryVariables &values,
-                 const Element &element,
-                 const FVElementGeometry &fvGeometry,
-                 const Intersection &intersection,
-                 const int scvIdx,
-                 const int boundaryFaceIdx) const
+    void neumannAtPos(PrimaryVariables &values,
+                        const GlobalPosition &globalPos) const
     {
-    //    ElementVolumeVariables elemVolVars;
-    //    elemVolVars.update(*this, element, fvGeometry, false /* oldSol? */);
-//
-    //    GlobalPosition globalPos = intersection.geometry().center();
-    //   if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
-    //       {
-    //       values[conti0EqIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.TranspirationRate);
-    //       values[transportEqIdx] = values[conti0EqIdx]*elemVolVars[scvIdx].moleFraction(massOrMoleFracIdx);
-    //       }
-    //   else
-    //       {
-    //       values[conti0EqIdx] = 0;
-    //       values[transportEqIdx] = 0;
-    //       }
-        values[conti0EqIdx] = 0;
-        values[transportEqIdx] = 0;
+        if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
+        {
+            Scalar TranspirationRate = GET_RUNTIME_PARAM(TypeTag,
+                                         Scalar,
+                                         BoundaryConditions.TranspirationRate);
+            values[conti0EqIdx] = TranspirationRate;
+        }
+        else
+        {
+            values[conti0EqIdx] = 0;
+            values[transportEqIdx] = 0;
+        }
+
     }
 
     // \}
@@ -278,7 +241,7 @@ public:
                  const FVElementGeometry &fvGeometry,
                  const int scvIdx) const
     {
-        priVars[pressureIdx] =  pnRef_ + GET_RUNTIME_PARAM(TypeTag,
+        priVars[pressureIdx] =  GET_RUNTIME_PARAM(TypeTag,
                                            Scalar,
                                            BoundaryConditions.InitialRootPressure);
         priVars[massOrMoleFracIdx] = 0.0;
@@ -327,11 +290,8 @@ public:
         const Scalar Kr = spatialParams.Kr(element, fvGeometry, scvIdx);
         const Scalar rootRadius = spatialParams.rootRadius(element, fvGeometry, scvIdx);
 
-        // convert units of 3d pressure if pressure head is used !!!
         const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[conti0EqIdx];
-        //std::cout << "pressure 3D " <<pressure3D<< std::endl;
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[conti0EqIdx];
-        //std::cout << "pressure 1D " <<pressure1D<< std::endl;
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
@@ -345,34 +305,23 @@ public:
             c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
         else
             c1D = this->couplingManager().lowDimPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "mass fraction c1D " <<c1D<< std::endl;
+
         Scalar c3D;
         if(useMoles)
             c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*elemVolVars[0].molarDensity();
         else
             c3D = this->couplingManager().bulkPriVars(source.id())[massOrMoleFracIdx];//*1000;//elemVolVars[0].density();
-        //std::cout << "      mass fraction c3D " <<c3D<< std::endl;
 
         //Difussive flux term of transport
         Scalar DiffValue;
-        Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffCoeffRootSurface);
+        Scalar DiffCoef_ = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.DiffussiveCoefficientMembraneRoot);
         DiffValue = 2* M_PI *rootRadius *DiffCoef_*(c3D - c1D)*elemVolVars[scvIdx].density();
 
         //Advective flux term of transport
         Scalar AdvValue;
-        //if (sourceValues[conti0EqIdx]>0)
-        //    AdvValue = sourceValues[conti0EqIdx]*c3D;
-        //else
-        //    AdvValue = sourceValues[conti0EqIdx]*c1D;
-
         AdvValue = 0;
         sourceValues[transportEqIdx] = (AdvValue + DiffValue)*source.quadratureWeight()*source.integrationElement();
         sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-
-        //std::cout << "ROOT transportEqIdx " << transportEqIdx <<" "<< sourceValues[transportEqIdx]<< std::endl;
-        //std::cout << "ROOT conti0EqIdx " << conti0EqIdx <<" "<< sourceValues[conti0EqIdx]<< std::endl;
-
-        //sourceValues[transportEqIdx] =1e-9*source.quadratureWeight()*source.integrationElement();
         source = sourceValues;
     }
 
