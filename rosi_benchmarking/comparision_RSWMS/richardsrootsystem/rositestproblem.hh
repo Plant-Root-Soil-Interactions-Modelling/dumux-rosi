@@ -65,8 +65,8 @@ SET_TYPE_PROP(RichardsTestCCProblem, PointSource, Dumux::IntegrationPointSource<
 SET_TYPE_PROP(RichardsTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(RichardsTestCCProblem)>);
 
 //SET_TYPE_PROP(RosiTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
-//SET_TYPE_PROP(RosiTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
-SET_TYPE_PROP(RosiTestProblem, LinearSolver, SuperLUBackend<TypeTag>);
+SET_TYPE_PROP(RosiTestProblem, LinearSolver, UMFPackBackend<TypeTag>);
+//SET_TYPE_PROP(RosiTestProblem, LinearSolver, SuperLUBackend<TypeTag>);
 
 }//end namespace properties
 

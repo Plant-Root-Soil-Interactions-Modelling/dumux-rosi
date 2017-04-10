@@ -339,7 +339,7 @@ public:
     void initialAtPos(PrimaryVariables &values,
                  const GlobalPosition &globalPos) const
     {
-        values = 1e5 + (GET_RUNTIME_PARAM(TypeTag,
+        values = (GET_RUNTIME_PARAM(TypeTag,
                                    Scalar,
                                    BoundaryConditions.InitialSoilPressure)
                - 1000*9.81*globalPos[2]);
