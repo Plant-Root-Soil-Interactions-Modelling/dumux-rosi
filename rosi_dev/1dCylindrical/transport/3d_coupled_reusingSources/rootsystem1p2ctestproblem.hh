@@ -339,6 +339,7 @@ public:
         {
             DUNE_THROW(Dune::NotImplemented,"  The coupling sources are still not evaluated in soil problem ");
         }
+        source = sourceValues;
     }
 
     /*!
