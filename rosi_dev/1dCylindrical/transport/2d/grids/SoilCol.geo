@@ -26,7 +26,7 @@ Line(11) = {4,8};
 Line(12) = {5,9};
 
 Transfinite Line{1,2,3,4,5,6,7,8} = Ceil(10) Using Progression 1;
-Transfinite Line{9,10,11,12} = Ceil(5) Using Progression 0.8;
+Transfinite Line{9,10,11,12} = Ceil(500) Using Progression 1;
 
 Line Loop(13) = {1,10,-5,-9};
 Line Loop(14) = {2,11,-6,-10};

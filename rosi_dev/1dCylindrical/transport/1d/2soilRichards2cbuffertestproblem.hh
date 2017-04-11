@@ -27,23 +27,11 @@
 #include <cmath>
 #include <stdlib.h>
 #include <math.h>
-//#include "math_expint.hh"
 #include <boost/math/special_functions/expint.hpp>
-
-// explicitly set the fvgeometry as we currently use another one as in stable
-//#include <dumux/multidimension/cellcentered/fvelementgeometry.hh>
-//#include <dumux/multidimension/box/fvelementgeometry.hh>
 #include <dumux/porousmediumflow/implicit/problem.hh>
-#include "./richards2cCylindrical1d/richards2cbuffermodel.hh"
-//#include <rosi/soilmatrix/singlenutrient/richards2cbuffermodel.hh>
-
+#include <dumux/porousmediumflow/richards2cCylindrical1d/richards2cbuffermodel.hh>
 #include <dumux/material/fluidsystems/h2ok.hh>
-//#include "h2oX.hh"
-//! get the properties needed for subproblems
-//#include <dumux/multidimension/subproblemproperties.hh>
-
-//#include "soiltestspatialparams1p2c.hh"
-#include "richardsbuffertestspatialparams.hh"
+#include "2richardsbuffertestspatialparams.hh"
 
 #define NONISOTHERMAL 0
 
@@ -54,34 +42,17 @@ class SoilRichardsTwoCBufferTestProblem;
 
 namespace Properties
 {
-NEW_TYPE_TAG(SoilRichardsTwoCBufferTestProblem, INHERITS_FROM(RichardsTwoCBuffer, RichardsBufferTestSpatialParams)); //RichardsTwoC from properties file
+NEW_TYPE_TAG(SoilRichardsTwoCBufferTestProblem, INHERITS_FROM(RichardsTwoCBufferRadiallySymmetric, RichardsBufferTestSpatialParams)); //RichardsTwoC from properties file
 NEW_TYPE_TAG(SoilRichardsTwoCBufferTestBoxProblem, INHERITS_FROM(BoxModel, SoilRichardsTwoCBufferTestProblem));
 NEW_TYPE_TAG(SoilRichardsTwoCBufferTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsTwoCBufferTestProblem));
 
 // Set the wetting phase
-//SET_PROP(RichardsTestProblem, WettingPhase)
-//{
-//private:
-//    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-//public:
-//    typedef Dumux::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
-//};
-// Set fluid configuration
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem,
               FluidSystem,
               Dumux::FluidSystems::H2OK<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
-              //Dumux::H2OXFluidSystem<TypeTag>);
 
 // Set the grid type
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Grid, Dune::YaspGrid<1, Dune::TensorProductCoordinates<typename GET_PROP_TYPE(TypeTag, Scalar), 1> >);
-//SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
-//SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::UGGrid<3>);
-//SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::ALUGrid<3, 3, Dune::cube, Dune::conforming>);
-
-// explicitly set the fvgeometry as we currently use another one as in stable
-//SET_TYPE_PROP(SoilRichardsTwoCBufferTestBoxProblem, FVElementGeometry, Dumux::MultiDimensionBoxFVElementGeometry<TypeTag>);
-//SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, FVElementGeometry, Dumux::MultiDimensionCCFVElementGeometry<TypeTag>);
-
 
 // Set the problem property
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Problem, Dumux::SoilRichardsTwoCBufferTestProblem<TypeTag>);
@@ -101,7 +72,6 @@ SET_STRING_PROP(SoilRichardsTwoCBufferTestProblem, GridParameterGroup, "SoilGrid
 //SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseHead, false);
 //SET_BOOL_PROP(SoilOnePTwoCTestProblem, UseMoles, true);
 SET_BOOL_PROP(SoilRichardsTwoCBufferTestProblem, UseMoles, false);
-
 }
 
 /*!
@@ -174,7 +144,6 @@ class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<Type
     typedef typename GET_PROP_TYPE(TypeTag, SolutionVector) SolutionVector;
     typedef typename GridView::template Codim<0>::Iterator ElementIterator;
     typedef typename GET_PROP_TYPE(TypeTag, PointSource) PointSource;
-    //typedef typename GET_PROP_TYPE(TypeTag, PointSource) IntegrationPointSourve<TypeTag, unsigned int>
 
     typedef typename GridView::template Codim<0>::Entity Element;
     typedef typename GridView::template Codim<dim>::Entity Vertex;
@@ -186,9 +155,6 @@ class SoilRichardsTwoCBufferTestProblem : public ImplicitPorousMediaProblem<Type
 
     typedef Dune::FieldVector<Scalar, dimWorld> GlobalPosition;
 
-    //typedef typename GET_PROP_TYPE(TypeTag, GlobalProblemTypeTag) GlobalProblemTypeTag;
-    //typedef typename GET_PROP_TYPE(GlobalProblemTypeTag, CouplingManager) CouplingManager;
-
 public:
     SoilRichardsTwoCBufferTestProblem(TimeManager &timeManager, const GridView &gridView)
     : ParentType(timeManager, gridView)
@@ -196,12 +162,6 @@ public:
         //initialize fluid system
         FluidSystem::init();
         name_ = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::string, Problem, Name) + "-soil";
-        //stating in the console whether mole or mass fractions are used
-        //episodeTime = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag,
-        //                                           Scalar,
-        //                                           TimeManager,
-        //                                           EpisodeTime);
-        //this->timeManager().startNextEpisode(episodeTime);// time episode
 
         if(useMoles)
         {
@@ -212,6 +172,9 @@ public:
             std::cout<<"problem uses mass fractions"<<std::endl;
         }
         pnRef_ = 1e5;
+        uptakeC_ana_= 0;
+        uptakeC_num_= 0;
+        lastTime_=0;
     }
 
     /*!
@@ -320,15 +283,9 @@ public:
     void dirichletAtPos(PrimaryVariables &priVars,
                         const GlobalPosition &globalPos) const
     {
-    //    initial_(values, globalPos);
-        //Scalar sw_ = GET_RUNTIME_PARAM(TypeTag,
-        //                                Scalar,
-        //                                BoundaryConditions.InitialSoilSaturation);
-        //Scalar pc_ = MaterialLaw::pc(this->spatialParams().materialLawParams(globalPos),sw_);
         Scalar pw_ = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
                                         BoundaryConditions.InitialSoilPressure);
-        //priVars[pressureIdx] = pnRef_ - pc_;
         priVars[pressureIdx] = pw_;
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
@@ -383,9 +340,6 @@ public:
         active_uptake =  Vmax*c3D*elemVolVars[scvIdx].density()
                                 /(Km+c3D*elemVolVars[scvIdx].density())
                                 *elemVolVars[scvIdx].coordinatesCenter();
-
-        std::cout<<"        "<<this->timeManager().time()<<" Active_uptake "<< active_uptake <<" "<<c3D
-                <<" "<<elemVolVars[scvIdx].coordinatesCenter()[0]<<std::endl;
         values[conti0EqIdx] = 0.0;
         values[transportEqIdx] = active_uptake;
     }
@@ -419,71 +373,32 @@ public:
 
     void addOutputVtkFields()
     {
-
         typedef Dune::BlockVector<Dune::FieldVector<double, 1> > ScalarField;
         unsigned numDofs = this->model().numDofs();
-
-        Scalar Vmax = GET_RUNTIME_PARAM(TypeTag,
-                                        Scalar,
-                                        SpatialParams.Vmax);
-        Scalar Km = GET_RUNTIME_PARAM(TypeTag,
-                                        Scalar,
-                                        SpatialParams.Km);
-
-        // create required scalar fields for the vtk output
-        ScalarField& sourceP = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& sourceC = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& ratioCNum = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& ratioCAna = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& relErrC = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& relErrS = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& Neumann = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& Dirichlet = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& DiffCoeff = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& EffDiffCoeff = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& AnalyticalC = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& AnalyticalS = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& Distance = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& ut_num = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& ut_ana = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& diffFlux = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& diffFluxMass = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& advFlux = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& storage = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& storageAna = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& timeSim  = *(this->resultWriter().allocateManagedBuffer(numDofs));
-        ScalarField& absErrC = *(this->resultWriter().allocateManagedBuffer(numDofs));
-
-        sourceP = 0.0;
-        sourceC = 0.0;
-        ratioCNum = 0.0;
-        ratioCAna = 0.0;
-        relErrC = 0.0;
-        relErrS = 0.0;
-        Neumann = 0.0;
-        Dirichlet = 0.0;
-        DiffCoeff = 0.0;
-        EffDiffCoeff = 0.0;
-        AnalyticalC = 0.0;
-        AnalyticalS = 0.0;
-        Distance = 0.0;
-        ut_ana = 0.0;
-        ut_num = 0.0;
-        diffFlux = 0.0;
-        diffFluxMass = 0.0;
-        advFlux = 0.0;
-        storage = 0.0;
-        storageAna = 0.0;
-        absErrC = 0.0;
 
         Scalar Km_=GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Km);
         Scalar Vmax_=GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Vmax);
         Scalar rootRadius_=GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.rootRadius);
         Scalar Frac0=GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialSoilFracK);
 
-        Scalar Uptake_num, Uptake_ana;
-        Uptake_num = 0.0;
-        Uptake_ana = 0.0;
+        // create required scalar fields for the vtk output
+        ScalarField& relErrC = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& AnalyticalC = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& AnalyticalS = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& NumericalS = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& Distance = *(this->resultWriter().allocateManagedBuffer(numDofs));
+        ScalarField& absErrC = *(this->resultWriter().allocateManagedBuffer(numDofs));
+
+        AnalyticalC = 0.0;
+        NumericalS = 0.0;
+        absErrC = 0.0;
+        relErrC = 0.0;
+        AnalyticalS = 0.0;
+        Distance = 0.0;
+
+        Scalar totalSourceP, totalSourceC;
+        totalSourceP = 0.0;
+        totalSourceC = 0.0;
 
         // iterate over all elements
         for (const auto& element : elements(this->gridView()))
@@ -500,9 +415,6 @@ public:
             FluxVariables fluxVars;
             fluxVars.update(*this, element, fvGeometry, 0, elemVolVars, false /* oldSol? */);
 
-            //FluxVariables fluxVars;
-            //fluxVars.update(*this, element, fvGeometry);
-
             // output pressure
             for (int scvIdx = 0; scvIdx < fvGeometry.numScv; ++scvIdx)
             {
@@ -511,27 +423,9 @@ public:
                 Scalar Cinf_ = Frac0*elemVolVars[scvIdx].density();
                 Scalar Cinf_dl  = Cinf_/Km_;
 
-                if (!(this->timeManager().time() < 0.0))
+                if ((this->timeManager().time()+this->timeManager().timeStepSize()) >= 0.0)
                 {
-                    PrimaryVariables values;
-                    this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
-                    sourceP[dofGlobalIdx] += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
-                                            * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    sourceC[dofGlobalIdx] += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
-                                            * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    ratioCNum[dofGlobalIdx] += elemVolVars[scvIdx].massFraction(1)/Frac0;
-                    //const BoundaryTypes &bcTypes = this->bcTypes_(scvIdx);
-                    if (bcTypes.hasNeumann())
-                        Neumann[dofGlobalIdx] = 1;
-                    if (bcTypes.hasDirichlet())
-                        Dirichlet[dofGlobalIdx] = 1;
-                    DiffCoeff[dofGlobalIdx] += elemVolVars[scvIdx].diffCoeff();
-                    EffDiffCoeff[dofGlobalIdx] += elemVolVars[scvIdx].effDiffCoeff();
-
-                    //Scalar x = pow((pow(element.geometry().center()[0],2) + pow(element.geometry().center()[1],2)),0.5); 2D
                     Scalar x = pow(pow(element.geometry().center()[0],2),0.5);
-                    //Scalar x = pow(pow(element.geometry().corner(0)[0],2),0.5);
-                    //std::cout << element.geometry().center() << std::endl;
                     if (x<rootRadius_)
                         x=rootRadius_;
                     Distance[dofGlobalIdx] = x;
@@ -539,128 +433,55 @@ public:
                     Scalar lambda = Vmax_*rootRadius_/(elemVolVars[scvIdx].effDiffCoeff()*Km_);
                             lambda /=(elemVolVars[scvIdx].saturation(phaseIdx)* elemVolVars[scvIdx].porosity()+elemVolVars[scvIdx].buffer());
 
-                    Scalar L = lambda/2*log(4*exp(-0.5772)*elemVolVars[scvIdx].effDiffCoeff()*pow(rootRadius_,(-2))*(this->timeManager().time()+this->timeManager().timeStepSize())+1);
+                    Scalar L = lambda/2.0*log(4.0*exp(-0.5772)*elemVolVars[scvIdx].effDiffCoeff()*pow(rootRadius_,(-2.0))*
+                                (this->timeManager().time()+this->timeManager().timeStepSize())+1.0);
 
-                    AnalyticalC[dofGlobalIdx] += (Cinf_-Cinf_*lambda/(1+Cinf_dl+L+sqrt(4*Cinf_dl+pow((1-Cinf_dl+L),2)))*
-                                                boost::math::expint(1,pow(x,2)/(4*elemVolVars[scvIdx].effDiffCoeff()*(this->timeManager().time()+this->timeManager().timeStepSize()))))
+                    AnalyticalC[dofGlobalIdx] += (Cinf_-Cinf_*lambda/(1.0+Cinf_dl+L+sqrt(4.0*Cinf_dl+pow((1.0-Cinf_dl+L),2.0)))*
+                                                boost::math::expint(1.0,pow(x,2.0)/(4.0*elemVolVars[scvIdx].effDiffCoeff()*
+                                                (this->timeManager().time()+this->timeManager().timeStepSize()))))
                                                 /elemVolVars[scvIdx].density();
 
-                    ratioCAna[dofGlobalIdx] += AnalyticalC[dofGlobalIdx]/Frac0;
                     if (AnalyticalC[dofGlobalIdx] != 0)
                         relErrC[dofGlobalIdx]=std::abs((elemVolVars[scvIdx].massFraction(transportCompIdx)-AnalyticalC[dofGlobalIdx])/AnalyticalC[dofGlobalIdx]);
                     absErrC[dofGlobalIdx]=std::abs(elemVolVars[scvIdx].massFraction(transportCompIdx)-AnalyticalC[dofGlobalIdx]);
 
-                    //if (sourceC[dofGlobalIdx] != 0)
-                    AnalyticalS[dofGlobalIdx] += 2*Vmax_*Cinf_dl/(1+Cinf_dl+L+sqrt(4*Cinf_dl+pow((1-Cinf_dl+L),2)));
-                    //AnalyticalS[dofGlobalIdx] +=-2*Vmax_*Cinf_dl/
-                    //                                        (1+Cinf_dl+(lambda/2*log(4*exp(-0.5772)*elemVolVars[scvIdx].effDiffCoeff()*pow(rootRadius_,(-2))*this->timeManager().time()+1))
-                    //                                    +sqrt(4*Cinf_dl+pow((1-Cinf_dl+(lambda/2*log(4*exp(-0.5772)*elemVolVars[scvIdx].effDiffCoeff()*pow(rootRadius_,(-2))*this->timeManager().time()+1))),2)));
-                    if (AnalyticalS[dofGlobalIdx] != 0)
-                    relErrS=std::abs((sourceC[dofGlobalIdx])/AnalyticalS[dofGlobalIdx]);
-
-                    ut_num[dofGlobalIdx] = Vmax*elemVolVars[scvIdx].massFraction(1)*elemVolVars[scvIdx].density()
-                                /(Km+elemVolVars[scvIdx].massFraction(1)*elemVolVars[scvIdx].density());
-
-                    ut_ana[dofGlobalIdx] = Vmax*AnalyticalC[dofGlobalIdx]*elemVolVars[scvIdx].density()
-                                /(Km+AnalyticalC[dofGlobalIdx]*elemVolVars[scvIdx].density());
-
-                    if (Uptake_num < ut_num[dofGlobalIdx])
-                        Uptake_num = ut_num[dofGlobalIdx];
-                    if (Uptake_ana < ut_ana[dofGlobalIdx])
-                        Uptake_ana = ut_ana[dofGlobalIdx];
-
-                    diffFlux[dofGlobalIdx] = -(fluxVars.moleFractionGrad(transportCompIdx)*fluxVars.face().normal)
-                                            *fluxVars.porousDiffCoeff() * fluxVars.molarDensity();
-                    diffFlux[dofGlobalIdx] =std::abs(diffFlux[dofGlobalIdx]);
-
-
-                    diffFluxMass[dofGlobalIdx] = -(fluxVars.massFractionGrad(transportCompIdx)*fluxVars.face().normal)
-                                            *fluxVars.porousDiffCoeff()*elemVolVars[scvIdx].density();
-                    diffFluxMass[dofGlobalIdx] =std::abs(diffFluxMass[dofGlobalIdx]);
-
-                    advFlux[dofGlobalIdx] = fluxVars.volumeFlux(phaseIdx) * fluxVars.molarDensity() *
-                                            elemVolVars[scvIdx].moleFraction(transportCompIdx) / elemVolVars[scvIdx].viscosity();
-                    storage[dofGlobalIdx] = elemVolVars[scvIdx].density() * elemVolVars[scvIdx].massFraction(transportCompIdx) *
-                                            (elemVolVars[scvIdx].saturation(phaseIdx)*elemVolVars[scvIdx].porosity()+elemVolVars[scvIdx].buffer());
-                    storageAna[dofGlobalIdx] = elemVolVars[scvIdx].density() * AnalyticalC[dofGlobalIdx] *
-                                            (elemVolVars[scvIdx].saturation(phaseIdx)*elemVolVars[scvIdx].porosity()+elemVolVars[scvIdx].buffer());
-                    timeSim[dofGlobalIdx]= this->timeManager().time();
-
-                //    std::cout <<" TIME !!! "<< this->timeManager().time() <<" "<< elemVolVars[scvIdx].massFraction(1)
-                //            <<" "<< AnalyticalC[dofGlobalIdx]<<" "<<ut_num[dofGlobalIdx]
-                //            <<" "<<ut_ana[dofGlobalIdx]<<" "<<AnalyticalS[dofGlobalIdx]<<" "<< x<<  std::endl;
-                //    std::cout<<"      lambda "<<lambda<<" L "<< L <<" "<<
-                //            (1+Cinf_dl+L+sqrt(4*Cinf_dl+pow((1-Cinf_dl+L),2)))<<" "<<
-                //            boost::math::expint(1,pow(x,2)/(4*elemVolVars[scvIdx].effDiffCoeff()*this->timeManager().time()))<<" "<<std::endl;
-                //    std::cout <<"               "<< elemVolVars[scvIdx].density()<<" "<<elemVolVars[scvIdx].saturation(phaseIdx)<<" "
-                //                <<elemVolVars[scvIdx].porosity()<<" "<<elemVolVars[scvIdx].buffer()<<" "<<fluxVars.porousDiffCoeff()<<std::endl;
+                    AnalyticalS[dofGlobalIdx] += 2.0*Vmax_*Cinf_dl/(1.0+Cinf_dl+L+sqrt(4.0*Cinf_dl+pow((1.0-Cinf_dl+L),2.0)));
+                    NumericalS[dofGlobalIdx] = Vmax_*elemVolVars[scvIdx].massFraction(1)*elemVolVars[scvIdx].density()
+                                /(Km_+elemVolVars[scvIdx].massFraction(1)*elemVolVars[scvIdx].density());
                 }
             }
-
-    //        //print flux.vols
-    //        int fIdxInner = 0;
-    //        for (const auto& intersection : intersections(this->gridView(), element))
-    //            {
-    //                int fIdx = intersection.indexInInside();
-	//				if (intersection.boundary())
-    //                {
-    //
-    //                    FluxVariables fluxVars;
-    //                    fluxVars.update(*this,
-    //                                    element,
-    //                                    fvGeometry,
-    //                                    fIdx,
-    //                                    elemVolVars,true);
-    //                    std::cout<< fIdxInner<< " Results: moleFractionGrad_ bound"<<fluxVars.moleFractionGrad(transportCompIdx) << std::endl;
-    //                    //scvfFluxes[fIdx] = fluxVars.volumeFlux(phaseIdx);
-    //                }
-    //            }
-    //    std::cout<< " " << std::endl;
         }
 
-        const auto totalSourceP = std::accumulate(sourceP.begin(), sourceP.end(), 0);
-        const auto totalSourceC = std::accumulate(sourceC.begin(), sourceC.end(), 0);
-
-        std::cout << "Integrated mass source (3D): " << totalSourceP << std::endl;
-        std::cout << "Integrated concentration source (3D): " << totalSourceC << std::endl;
-
         // attach data to the vtk output
-        this->resultWriter().attachDofData(sourceP, "water_uptake(kg/s)", isBox);
-        this->resultWriter().attachDofData(sourceC, "uptake_num(kg/s)", isBox);
-        this->resultWriter().attachDofData(ratioCNum, "ratioCNum", isBox);
-        this->resultWriter().attachDofData(ratioCAna, "ratioCAna", isBox);
-        this->resultWriter().attachDofData(Neumann, "BC_Neumann", isBox);
-        this->resultWriter().attachDofData(Dirichlet, "BC_Dirichlet", isBox);
-        this->resultWriter().attachDofData(DiffCoeff, "DiffCoeff", isBox);
-        this->resultWriter().attachDofData(EffDiffCoeff, "EffDiffCoeff", isBox);
-        this->resultWriter().attachDofData(AnalyticalC, "AnalyticalC", isBox);
+        this->resultWriter().attachDofData(AnalyticalC, "Analytical_C", isBox);
         this->resultWriter().attachDofData(absErrC, "absErrC", isBox);
         this->resultWriter().attachDofData(relErrC, "relErrC", isBox);
-        this->resultWriter().attachDofData(relErrS, "relErrS", isBox);
-        this->resultWriter().attachDofData(AnalyticalS, "uptake_analytical(kg/s)", isBox);
         this->resultWriter().attachDofData(Distance, "Distance", isBox);
-        this->resultWriter().attachDofData(ut_num, "ut_num", isBox);
-        this->resultWriter().attachDofData(ut_ana, "ut_ana", isBox);
-        //this->resultWriter().attachDofData(advFlux, "advFlux", isBox);
-        //this->resultWriter().attachDofData(diffFlux, "diffFlux", isBox);
-        this->resultWriter().attachDofData(diffFluxMass, "diffFluxMass", isBox);
-        this->resultWriter().attachDofData(storage, "storage", isBox);
-        this->resultWriter().attachDofData(storageAna, "storageAna", isBox);
-        this->resultWriter().attachDofData(timeSim, "timeSim", isBox);
 
+        uptakeC_ana_ +=AnalyticalS[0]*(this->timeManager().timeStepSize());
+        uptakeC_num_ +=NumericalS[0]*(this->timeManager().timeStepSize());
         logFile_.open(this->name() + ".log", std::ios::app);
-        logFile_ << "time = " << this->timeManager().time()+this->timeManager().timeStepSize() << " uptake_num = " << ut_num[0]
-                << " uptake_ana = " << ut_ana[0] << std::endl;
+        logFile_ << "time = " << this->timeManager().time()+this->timeManager().timeStepSize()
+                << " uptakeRate_num = " << NumericalS[0]
+                << " uptakeRate_ana = "<< AnalyticalS[0]
+                << " cummulativeUptake_num = "<< uptakeC_num_
+                << " cummulativeUptake_ana = "<< uptakeC_ana_
+                << " ratioRate = " << NumericalS[0]/AnalyticalS[0]
+                << " ratioUptake = " << uptakeC_num_/uptakeC_ana_
+                << std::endl;
+        logFile_.close();
+
+        logFile_.open(this->name() + "_value.log", std::ios::app);
+        logFile_ << this->timeManager().time()+this->timeManager().timeStepSize()
+                << " " << NumericalS[0]
+                << " "<< AnalyticalS[0]
+                << " "<< uptakeC_num_
+                << " "<< uptakeC_ana_
+                << " " << NumericalS[0]/AnalyticalS[0]
+                << " " << uptakeC_num_/uptakeC_ana_
+                << std::endl;
         logFile_.close();
     }
-
-    //! Set the coupling manager
-//    void setCouplingManager(std::shared_ptr<CouplingManager> cm)
-//    { couplingManager_ = cm; }
-
-    //! Get the coupling manager
-//    const CouplingManager& couplingManager() const
-//    { return *couplingManager_; }
 
 private:
     void initial_(PrimaryVariables &priVars,
@@ -669,30 +490,17 @@ private:
         Scalar pw_ = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
                                         BoundaryConditions.InitialSoilPressure);
-        //priVars[pressureIdx] = pnRef_ - pc_;
+
         priVars[pressureIdx] = pw_;
 
-        //priVars[massOrMoleFracIdx] = 0;
-        //if((globalPos[0] < this->bBoxMin()[0] + eps_))
         priVars[massOrMoleFracIdx]= GET_RUNTIME_PARAM(TypeTag,
                                        Scalar,
                                        BoundaryConditions.InitialSoilFracK);
-        //Scalar sw_ = GET_RUNTIME_PARAM(TypeTag,
-        //                                Scalar,
-        //                                BoundaryConditions.InitialWaterContent)/
-        //             GET_RUNTIME_PARAM(TypeTag,
-        //                                Scalar,
-        //                                SpatialParams.Porosity);
-        //Scalar pc_ = MaterialLaw::pc(this->spatialParams().materialLawParams(globalPos),sw_);
-        //std::cout << "Pressure  " << pnRef_-pc_ << std::endl;
-        //std::cin.ignore(100000, '\n');
-};
+    };
     std::ofstream logFile_;
     const Scalar eps_ = 1e-9;
-    Scalar episodeTime, temperature_, pnRef_, pc_, sw_, pw_;
+    Scalar episodeTime, temperature_, pnRef_, pc_, sw_, pw_, uptakeC_ana_, uptakeC_num_, lastTime_;
     std::string name_;
-//    std::shared_ptr<CouplingManager> couplingManager_;
-    //Scalar DiffCoef_;
 };
 
 } //end namespace

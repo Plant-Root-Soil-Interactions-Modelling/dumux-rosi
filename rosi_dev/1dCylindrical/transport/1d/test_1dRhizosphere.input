@@ -12,30 +12,24 @@
 UseIterativeSolver = 0
 
 [TimeManager]
-DtInitial = 202.5#810# 3240#12960# 50.625#259.2#3240#12960#1620##50.625 #810 #3240 # 12960 # 259.2 # 864 # [s] 810 #3240 # 6480 #
+DtInitial = 1#25920#50.625#1#25920# 50.625#259.2#50.625#810# 25920#50.625 #810 #3240 # 12960 # 259.2 # 864 # [s] 810 #3240 # 6480 #
 #DtInitialBulkProblem = 8640 # [s]
 #DtInitialLowDimProblem = 8640 # [s]
-MaxTimeStepSize = 202.5#810#3240#50.625#259.2#3240#12960#1620#
-TEnd = 2592000 #2592000 # [s]129.6# 
-EpisodeTime = 12960 #810 # #2.592 # 864 # [s]
+MaxTimeStepSize = 17280#50.625#259.2#50.625#810#25920#
+TEnd = 1728000 #2592000 # [s]129.6#
+EpisodeTime = 17280#12960 #810 # #2.592 # 864 # [s]
 
 [Grid]
 File = ./grids/RootSysMini1.dgf
 Refinement = 0
 
 [SoilGrid]
-Cells0 = 41 #25 15 25
-Cells1 = 41
-Cells2 = 1
+Cells0 = 500 #25 15 25
 Grading0 = 1
-Grading1 = 1
-Grading2 = 1
-Positions0 = -0.02 0.02
-Positions1 = -0.02 0.02
-Positions2 = -1 0.0
+Positions0 = 2e-4 0.015
 
 [Problem]
-Name = ./simulation/SingleRootDiffusiveUptake2Coupled_40_1
+Name = ./simulation/1dRhizosphere_500
 
 [materialParams]
 VgAlpha = 0.03e-2
@@ -66,7 +60,7 @@ InitialSoilPressure = 96620
 InitialRootPressure = 96620
 
 CollarPressure = 96620 # -14e5 # -1.5e6 # [Pa] sd -1.5e5
-InitialSoilFracK =1.794e-5 #1.794e-6 # [-] 0.046 micro-mol/cm3 -> 0.046*e-6*39e-3*e6/1e3 = 1.794e-6
+InitialSoilFracK =1.794e-6 # [-] 0.046 micro-mol/cm3 -> 0.046*e-6*39e-3*e6/1e3 = 1.794e-6
 InitialRootFracK = 0 # 2e-5
 SoilTemperature = 283
 RootTemperature = 283

@@ -66,11 +66,10 @@ SET_TYPE_PROP(RootsystemOnePTwoCTestCCProblem, PointSourceHelper, Dumux::Integra
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, PointSource, Dumux::IntegrationPointSource<TTAG(SoilRichardsTwoCBufferTestCCProblem), unsigned int>);
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestCCProblem, PointSourceHelper, Dumux::IntegrationPointSourceHelper<TTAG(SoilRichardsTwoCBufferTestCCProblem)>);
 
-
-
-#if HAVE_UMFPACK
-SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LinearSolver, Dumux::MultiDimensionUMFPackBackend<TypeTag>);
-#endif
+//#if HAVE_UMFPACK
+//SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LinearSolver, Dumux::MultiDimensionUMFPackBackend<TypeTag>);
+SET_TYPE_PROP(RosiRichardsTwoCBufferTestProblem, LinearSolver, ILU0BiCGSTABBackend<TypeTag>);
+//#endif
 
 }//end namespace properties
 

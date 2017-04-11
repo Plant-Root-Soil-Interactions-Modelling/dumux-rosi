@@ -328,7 +328,14 @@ public:
         const SpatialParams &spatialParams = this->spatialParams();
         const Scalar Kr = spatialParams.Kr(element, fvGeometry, scvIdx);
         const Scalar rootRadius = spatialParams.rootRadius(element, fvGeometry, scvIdx);
-
+        unsigned int rootEIdx = this->couplingManager().pointSourceData(source.id()).lowDimElementIdx();
+        unsigned int soilEIdx = this->couplingManager().pointSourceData(source.id()).bulkElementIdx();
+        std::cout << "\033[1;33m" << "SOIL - rootEIdx: " << rootEIdx << " - soilEIdx: " << soilEIdx <<
+                     " - Position: " << source.position()<< "\033[0m" << '\n';
+        Scalar rootLength = element.geometry().volume();
+        //Scalar rhizosphereRadius = pow(element.geometry().volume()/rootLength/M_PI,0.5);
+        std::cout<<"rootLength = "<<rootLength<<"\n";
+        //std::cout<<"rhizosphereRadius = "<<rhizosphereRadius<<"\n";
         // convert units of 3d pressure if pressure head is used !!!
         const Scalar pressure3D = this->couplingManager().bulkPriVars(source.id())[pressureIdx];
         const Scalar pressure1D = this->couplingManager().lowDimPriVars(source.id())[pressureIdx];
@@ -469,6 +476,58 @@ public:
         this->resultWriter().attachDofData(sourceC, "concentration source (kg/s)", isBox);
     }
 
+    /*!
+     * \brief Called by the time manager after the time integration to
+     *        do some post processing on the solution.
+     */
+    void postTimeStep()
+    {
+        if (this->timeManager().willBeFinished())
+        {
+            //std::vector<PointSource> pointSourcesVector;
+            //pointSourcesVector = this->couplingManager().lowDimPointSources();
+            //logFile_.open(this->name() + "_pointsource.log", std::ios::app);
+            logFile_.open(this->name() + "_pointsource.log", std::ofstream::out | std::ofstream::trunc);
+            logFile_<< "rootEIdx"<<"\t" <<"soilEIdx"<<"\t"<<"Position"<<"\t"<<"Length"<<"\t"<<"Radius"<<"\t"<<"Vector"<<'\n';
+            //auto& elements = elements(this->gridView());
+            //auto& elements = this->gridView();
+            for (auto& pointSource : this->couplingManager().lowDimPointSources())
+                {
+                    unsigned int rootEIdx = this->couplingManager().pointSourceData(pointSource.id()).lowDimElementIdx();
+                    unsigned int soilEIdx = this->couplingManager().pointSourceData(pointSource.id()).bulkElementIdx();
+                    auto radius = this->spatialParams().radius(rootEIdx);
+                    int i=0;
+                    for (const auto& element : elements(this->gridView()))
+                    {
+                        if (i==rootEIdx)
+                        {
+                            auto rootGeometry = element.geometry();
+                            auto vector= rootGeometry.corner(1)-rootGeometry.corner(0);
+                            logFile_<< rootEIdx << "\t" <<  soilEIdx << "\t" <<  pointSource.position() << "\t"
+                                    << pointSource.quadratureWeight()*pointSource.integrationElement() << "\t" << radius
+                                    << "\t"<<vector<<'\n';
+                            break;
+                        }
+                        //logFile_<<i<<" "<<vector<<"\n";
+                        i++;
+                    }
+                }
+            logFile_.close();
+
+        //    // iterate over all root element to get normal vector
+        //    logFile_.open(this->name() + "_vectors.log", std::ios::app);
+        //    int i=0;
+        //    for (const auto& element : elements(this->gridView()))
+        //    {
+        //        auto rootGeometry = element.geometry();
+        //        auto vector= rootGeometry.corner(1)-rootGeometry.corner(0);
+        //        logFile_<<i<<" "<<vector<<"\n";
+        //        i++;
+        //    }
+        //    logFile_.close();
+        }
+    }
+
     //! Set the coupling manager
     void setCouplingManager(std::shared_ptr<CouplingManager> cm)
     { couplingManager_ = cm; }
@@ -479,7 +538,7 @@ public:
 
 private:
     std::string name_;
-
+    std::ofstream logFile_;
     Scalar sinkSum;
     const Scalar eps_ = 1e-9;
     std::shared_ptr<CouplingManager> couplingManager_;

@@ -152,31 +152,12 @@ std::string radialreadOptions_(int argc, char **argv, Dune::ParameterTree &param
             }
 
             paramValue = argv[i+1];
-            //std::cout<<"paramName "<<paramName<<" paramValue "<<paramValue<<std::endl;
             ++i; // In the case of '-MyOpt VALUE' each pair counts as two arguments
         }
 
         // Put the key=value pair into the parameter tree
         paramTree[paramName] = paramValue;
     }
-    //paramTree["Restart"] = argv[2];
-    //paramTree["TEnd"] = argv[4];
-    //paramTree["DtInitial"] = argv[6];
-    //paramTree["EpisodeTime"] = argv[8];
-    //paramTree["Positions0"] = argv[10];
-    //paramTree["VgAlpha"] = argv[12];
-    //paramTree["Vgn"] = argv[14];
-    //paramTree["Swr"] = argv[16];
-    //paramTree["Porosity"] = argv[18];
-    //paramTree["Permeability"] = argv[20];
-    //paramTree["BufferPower"] = argv[22];
-    //paramTree["Kr"] = argv[24];
-    //paramTree["Vmax"] = argv[26];
-    //paramTree["Km"] = argv[28];
-    //paramTree["PartitionCoeff"] = argv[30];
-    //paramTree["InitialSoilFracK"] = argv[32];
-    //paramTree["InitialSoilPressure"] = argv[34];;
-
     return "";
 }
 
@@ -196,12 +177,6 @@ template <class TypeTag>
 double radialStart_(int argc,
            char **argv)
 {
-    //for(int i = 0; i < argc; ++i)
-    //{
-    //    //    argvector[i] = new char[argv[i].size() + 1];
-    //    //    std::strcpy(argvector[i], argv[i].c_str());
-    //    std::cout<<argv[i]<<" ";
-    //}
     // some aliases for better readability
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using radialGridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
@@ -221,7 +196,6 @@ double radialStart_(int argc,
     ////////////////////////////////////////////////////////////
     // fill the parameter tree with the options from the command line
     std::string s = radialreadOptions_(argc, argv, radialParameterTree::tree());
-    //std::cout<<" S: "<<s<<std::endl;
     // parse the input file into the parameter tree
     // check first if the user provided an input file through the command line, if not use the default
     const auto radialParameterFileName = radialParameterTree::tree().hasKey("ParameterFile") ? radialParameterTree::tree().template get<std::string>("ParameterFile") : "";
@@ -262,9 +236,7 @@ double radialStart_(int argc,
 
     bool printParams = false; // per default print all properties
     if (radialParameterTree::tree().hasKey("PrintParameters") || radialParameterTree::tree().hasKey("radialTimeManager.PrintParameters"))
-        //printParams = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, bool, radialTimeManager, PrintParameters);
         printParams = radialParameterTree::tree().template get<bool>("radialTimeManager.PrintParameters");
-    //bool printParams = false;
     //////////////////////////////////////////////////////////////////////
     // try to create a grid (from the given grid file or the input file)
     /////////////////////////////////////////////////////////////////////
@@ -286,39 +258,19 @@ double radialStart_(int argc,
     Scalar restartTime = 0;
     if (radialParameterTree::tree().hasKey("Restart") || radialParameterTree::tree().hasKey("radialTimeManager.Restart"))
     {
-        //restartTime = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, Scalar, radialTimeManager, Restart);
         restartTime = radialParameterTree::tree().template get<Scalar>("radialTimeManager.Restart");
         if (restartTime != 0) restart = true;
     }
 
     // read the initial time step and the end time (mandatory parameters)
-    Scalar tEnd = radialParameterTree::tree().template get<Scalar>("radialTimeManager.TEnd"); //= GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, Scalar, radialTimeManager, TEnd);
-    Scalar dt = radialParameterTree::tree().template get<Scalar>("radialTimeManager.DtInitial");//= GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, Scalar, radialTimeManager, DtInitial);
-
-    //std::cout<<"tEnd: "<<tEnd<<std::endl;
-    //std::cout<<"restartTime: "<<restartTime<<std::endl;
-    //std::cout<<"dt: "<<dt<<std::endl;
-    //restartTime= std::stod(radialParameterTree::tree()["radialTimeManager.Restart"]);
-    //tEnd= std::stod(radialParameterTree::tree()["radialTimeManager.TEnd"]);
-    //dt= std::stod(radialParameterTree::tree()["radialTimeManager.DtInitial"]);
-
-    //std::string problemName(argv[4]);
-    //std::cout<<"problemName: "<<problemName<<std::endl;
-    //radialParameterTree::tree()["Name"] = problemName;
-    //std::cout<<"problemName: "<<radialParameterTree::tree()["Name"]<<std::endl;
-
-    //if (restartTime != 0) restart = true;
-    //std::cout<<"tEnd: "<<tEnd<<std::endl;
-    //std::cout<<"restartTime: "<<restartTime<<std::endl;
-    //std::cout<<"dt: "<<dt<<std::endl;
+    Scalar tEnd = radialParameterTree::tree().template get<Scalar>("radialTimeManager.TEnd");
+    Scalar dt = radialParameterTree::tree().template get<Scalar>("radialTimeManager.DtInitial");
 
     std::cout << "\033[1;33m" << "The radially symmetric simulation is called in time range: " << restartTime <<" - "
                 << tEnd << " with inital timestep = " << dt << "\033[0m" << '\n';
 
     // instantiate and run the problem
     radialTimeManager radialtimeManager;
-    //radialtimeManager.setTimeStepSize(6);
-    //radialtimeManager.setEndTime(36);
     radialProblem radialproblem(radialtimeManager, radialGridCreator::grid().leafGridView());
     radialtimeManager.init(radialproblem, restartTime, dt, tEnd, restart);
     radialtimeManager.run();
@@ -331,10 +283,9 @@ double radialStart_(int argc,
         if (printParams)
             Parameters::print<TypeTag>();
     }
-    //std::cout<<"problem.uptake() "<< problemRadial.uptake() <<std::cin.ignore();
+
     std::cout << "\033[1;33m" << "The radially symmetric simulation is done !" << "\033[0m" << '\n';
     return radialproblem.uptakeRate();
-    //return radialproblem.cumulativeUptake()/(tEnd-restartTime);
 }
 
 /*!
