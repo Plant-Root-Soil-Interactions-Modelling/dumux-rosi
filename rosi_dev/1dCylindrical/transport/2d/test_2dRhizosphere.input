@@ -27,7 +27,7 @@ Refinement = 0
 File = ./grids/SoilCol_10_500.msh
 
 [Problem]
-Name = ./simulation/2d_10_500
+Name = 2d_10_500
 
 [materialParams]
 VgAlpha = 0.03e-2

@@ -30,8 +30,8 @@
 #include <dumux/multidimension/cellcentered/fvelementgeometry.hh>
 #include <dumux/multidimension/box/fvelementgeometry.hh>
 #include <dumux/porousmediumflow/implicit/problem.hh>
-#include <rosi_dev/1dCylindrical/transport/2dDiffusiveUptake/richards2cbuffer/richards2cbuffermodel.hh>
-
+//#include <rosi_dev/1dCylindrical/transport/2dDiffusiveUptake/richards2cbuffer/richards2cbuffermodel.hh>
+#include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 #include <dumux/material/fluidsystems/h2ono3.hh>
 
 //! get the properties needed for subproblems

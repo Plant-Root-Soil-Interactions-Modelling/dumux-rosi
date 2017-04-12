@@ -29,7 +29,7 @@ Grading0 = 1
 Positions0 = 2e-4 0.015
 
 [Problem]
-Name = ./simulation/1dRhizosphere_500
+Name = 1dRhizosphere_500
 
 [materialParams]
 VgAlpha = 0.03e-2

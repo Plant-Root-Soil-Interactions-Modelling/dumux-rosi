@@ -18,10 +18,6 @@ TEnd = 1728000 # [s] = 20 days
 EpisodeTime = 17280 # [s] 
 PrintParameter = false
 
-[radialTimeManager]
-TimeStepRatio = 4
-PrintParameter = false
-
 [Grid]
 File = ./grids/SingleRoot5cm.dgf
 Refinement = 0
@@ -37,15 +33,8 @@ Positions0 = -0.025 0.025
 Positions1 = -0.025 0.025
 Positions2 = -0.05 0.0
 
-[radialSoilGrid]
-Cells0 = 10 #25 15 25
-Grading0 = 2
-Positions0 =  2e-4 0.015
-
 [Problem]
-Name = ./SingleRootCoupled5cm_1cm
-
-[radialProblem]
+Name = SingleRootCoupled5cm_1cm
 
 [materialParams]
 VgAlpha = 0.03e-2
@@ -80,6 +69,21 @@ InitialSoilFracK =1.794e-6 #1.794e-6 # [-] 0.046 micro-mol/cm3 -> 0.046*e-6*39e-
 InitialRootFracK = 0 # 2e-5
 SoilTemperature = 283
 RootTemperature = 283
+
+[radialCoupling] # reuse coupling source/sink value in root-soil
+UseAnalytical = false # Roose2001
+UseDirichletBC = false #
+UseNeumannBC = false #
+
+[radialTimeManager]
+TimeStepRatio = 4
+PrintParameter = false
+
+[radialSoilGrid]
+Cells0 = 10 #25 15 25
+Grading0 = 2
+Positions0 =  2e-4 0.015
+
 
 [IterativeAlgorithm]
 MaxIterations = 100

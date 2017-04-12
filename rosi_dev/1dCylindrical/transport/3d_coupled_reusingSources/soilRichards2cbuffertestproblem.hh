@@ -406,10 +406,10 @@ public:
             Scalar TransportValue = (sigma*(AdvValue + DiffValue) + (1-sigma)*ActiveValue)*source.quadratureWeight()*source.integrationElement();
             sourceValues[transportEqIdx] = TransportValue;
             sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-            source =  sourceValues;
             this->couplingManager().setCouplingSources(Intersection, TransportValue);
             this->couplingManager().setReuseCouplingSources(Intersection);
         }
+        source =  sourceValues;
     }
 
     // \}

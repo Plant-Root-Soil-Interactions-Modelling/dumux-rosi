@@ -45,7 +45,7 @@ Grading0 = 1.00
 Positions0 =  2e-4 0.015
 
 [Problem]
-Name = ./simulation/SingleRoot101
+Name = SingleRoot101
 
 [radialProblem]
 

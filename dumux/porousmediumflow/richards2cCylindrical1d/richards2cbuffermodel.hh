@@ -190,17 +190,11 @@ public:
         writer.attachDofData(*wc, "water content", isBox);
         writer.attachDofData(*buffer, "buffer power", isBox);
 
-        char nameMoleFraction0[42], nameMoleFraction1[42];
-        snprintf(nameMoleFraction0, 42, "x_%s", FluidSystem::componentName(0));
-        snprintf(nameMoleFraction1, 42, "x_%s", FluidSystem::componentName(1));
-        writer.attachDofData(*moleFraction0, nameMoleFraction0, isBox);
-        writer.attachDofData(*moleFraction1, nameMoleFraction1, isBox);
+        writer.attachDofData(*moleFraction0, "x_" + FluidSystem::componentName(0), isBox);
+        writer.attachDofData(*moleFraction1, "x_" + FluidSystem::componentName(1), isBox);
 
-        char nameMassFraction0[42], nameMassFraction1[42];
-        snprintf(nameMassFraction0, 42, "w_%s", FluidSystem::componentName(0));
-        snprintf(nameMassFraction1, 42, "w_%s", FluidSystem::componentName(1));
-        writer.attachDofData(*massFraction0, nameMassFraction0, isBox);
-        writer.attachDofData(*massFraction1, nameMassFraction1, isBox);
+        writer.attachDofData(*massFraction0, "w_" + FluidSystem::componentName(0), isBox);
+        writer.attachDofData(*massFraction1, "w_" + FluidSystem::componentName(1), isBox);
 
         if (velocityOutput.enableOutput())
         {

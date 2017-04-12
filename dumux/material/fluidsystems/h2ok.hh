@@ -96,14 +96,13 @@ public:
      *
      * \param phaseIdx The index of the fluid phase to consider
      */
-    static const char *phaseName(int phaseIdx)
+    static std::string phaseName(int phaseIdx)
     {
-        static const char *name[] = {
-            "w",
-            "n"
-        };
-
         assert(0 <= phaseIdx && phaseIdx < numPhases);
+        static const std::string name[] = {
+            std::string("w"),
+            std::string("n")
+        };
         return name[phaseIdx];
     }
 
@@ -131,15 +130,14 @@ public:
      *
      * \param compIdx The index of the component to consider
      */
-    static const char *componentName(int compIdx)
+    static std::string componentName(int compIdx)
     {
-        static const char *name[] = {
-            H2O::name(),
-            K::name()
-        };
-
-        assert(0 <= compIdx && compIdx < numComponents);
-        return name[compIdx];
+        switch (compIdx)
+        {
+            case H2OIdx: return H2O::name();
+            case KIdx: return K::name();
+        }
+        DUNE_THROW(Dune::InvalidStateException, "Invalid component index " << compIdx);
     }
 
     /*!

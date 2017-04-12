@@ -220,7 +220,7 @@ public:
                 //std::cout<<"Boundary Element Index: "<<Eid<<"\n";
                 //std::cout<<"preSol_[Eid]: "<<preSol_[Eid]<<" - " <<Hcrit<<"\n";
                 //std::cout<<"values.isNeumann(conti0EqIdx): "<<values.isNeumann(conti0EqIdx)<<"\n";
-                if ((preSol_[Eid] > Hcrit))
+                if ((preSol_[Eid] < Hcrit))
                 {
                     std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Hcrit<<"\n";
                     std::cout<<"WATER STRESS !! SET BC at collar as Dirichlet !!"<<"\n";

@@ -352,7 +352,7 @@ public:
                                 /(Km+c3D*elemVolVars[scvIdx].density());
         values[conti0EqIdx] = 0.0;
         values[transportEqIdx] = active_uptake;
-        std::cout<< "active_uptake: "<< active_uptake<< "\n";
+        //std::cout<< "active_uptake: "<< active_uptake<< "\n";
     }
 
     // \}
@@ -456,12 +456,12 @@ public:
                     absErrC[dofGlobalIdx]=std::abs(elemVolVars[scvIdx].massFraction(transportCompIdx)-AnalyticalC[dofGlobalIdx]);
 
                     AnalyticalS[dofGlobalIdx] += 2.0*Vmax_*Cinf_dl/(1.0+Cinf_dl+L+sqrt(4.0*Cinf_dl+pow((1.0-Cinf_dl+L),2.0)));
-                    if (AnalyticalS[dofGlobalIdx] < anaUptake)
+                    if (AnalyticalS[dofGlobalIdx] < anaUptakeRate)
                         anaUptakeRate = AnalyticalS[dofGlobalIdx];
 
                     NumericalS[dofGlobalIdx] = Vmax_*elemVolVars[scvIdx].massFraction(1)*elemVolVars[scvIdx].density()
                                 /(Km_+elemVolVars[scvIdx].massFraction(1)*elemVolVars[scvIdx].density());
-                    if (NumericalS[dofGlobalIdx] < numUptake)
+                    if (NumericalS[dofGlobalIdx] < numUptakeRate)
                         numUptakeRate = NumericalS[dofGlobalIdx];
                 }
             }
@@ -473,8 +473,8 @@ public:
         this->resultWriter().attachDofData(relErrC, "relErrC", isBox);
         this->resultWriter().attachDofData(Distance, "Distance", isBox);
 
-        uptakeC_num_ +=numUptake*(this->timeManager().timeStepSize());
-        uptakeC_ana_ +=anaUptake*(this->timeManager().timeStepSize());
+        uptakeC_num_ +=numUptakeRate*(this->timeManager().timeStepSize());
+        uptakeC_ana_ +=anaUptakeRate*(this->timeManager().timeStepSize());
 
         logFile_.open(this->name() + ".log", std::ios::app);
         logFile_ << "time = " << this->timeManager().time()+this->timeManager().timeStepSize()
@@ -482,7 +482,7 @@ public:
                 << " uptakeRate_ana = "<< anaUptakeRate
                 << " cummulativeUptake_num = "<< uptakeC_num_
                 << " cummulativeUptake_ana = "<< uptakeC_ana_
-                << " ratioRate = " << numUptake/anaUptake
+                << " ratioRate = " << numUptakeRate/anaUptakeRate
                 << " ratioUptake = " << uptakeC_num_/uptakeC_ana_
                 << std::endl;
         logFile_.close();
@@ -493,7 +493,7 @@ public:
                 << " " << anaUptakeRate
                 << " " << uptakeC_num_
                 << " " << uptakeC_ana_
-                << " " << numUptake/anaUptake
+                << " " << numUptakeRate/anaUptakeRate
                 << " " << uptakeC_num_/uptakeC_ana_
                 << std::endl;
         logFile_.close();
