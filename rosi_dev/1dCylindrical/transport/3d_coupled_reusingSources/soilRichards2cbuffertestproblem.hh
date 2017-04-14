@@ -302,10 +302,9 @@ public:
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
-        if (this->couplingManager().reuseCouplingSources_[Intersection])
+        if (this->couplingManager().reuseCouplingSources(Intersection))
         {
-            sourceValues[conti0EqIdx] = 0;
-            sourceValues[transportEqIdx] = this->couplingManager().couplingSources_[Intersection];
+            sourceValues = this->couplingManager().couplingSources(Intersection);
             //std::cout<<" Reuse sources in SOIL system : "<<this->couplingManager().couplingSources_[Intersection]<<"\n";
         }
         else
@@ -406,7 +405,7 @@ public:
             Scalar TransportValue = (sigma*(AdvValue + DiffValue) + (1-sigma)*ActiveValue)*source.quadratureWeight()*source.integrationElement();
             sourceValues[transportEqIdx] = TransportValue;
             sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
-            this->couplingManager().setCouplingSources(Intersection, TransportValue);
+            this->couplingManager().setCouplingSources(Intersection, sourceValues);
             this->couplingManager().setReuseCouplingSources(Intersection);
         }
         source =  sourceValues;

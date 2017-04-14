@@ -12,7 +12,7 @@
 UseIterativeSolver = 0
 
 [TimeManager]
-DtInitial = 17280 # [s]
+DtInitial = 1 # [s]
 MaxTimeStepSize = 17280#17280 # [s]
 TEnd = 1728000 # [s] = 20 days
 EpisodeTime = 17280 # [s] 

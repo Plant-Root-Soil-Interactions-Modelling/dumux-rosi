@@ -330,10 +330,10 @@ public:
 
         PrimaryVariables sourceValues;
         sourceValues=0.0;
-        if (this->couplingManager().reuseCouplingSources_[Intersection])
+        if (this->couplingManager().reuseCouplingSources(Intersection))
         {
-            sourceValues[conti0EqIdx] = 0;
-            sourceValues[transportEqIdx] = -this->couplingManager().couplingSources_[Intersection];
+            sourceValues[conti0EqIdx] = -this->couplingManager().couplingSources(Intersection)[conti0EqIdx];
+            sourceValues[transportEqIdx] = -this->couplingManager().couplingSources(Intersection)[transportEqIdx];
         }
         else
         {
