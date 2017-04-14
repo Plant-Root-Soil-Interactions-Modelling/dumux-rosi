@@ -189,7 +189,6 @@ public:
         Scalar h = Implementation::enthalpy_(fluidState, paramCache, phaseIdx);
         fluidState.setEnthalpy(phaseIdx, h);
 
-
     //    Scalar x1 = priVars[massOrMoleFracIdx]; //mole or mass fraction of component 1
     //    if(!useMoles) //mass-fraction formulation
     //    {
