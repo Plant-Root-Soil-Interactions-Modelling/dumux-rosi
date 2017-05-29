@@ -287,9 +287,6 @@ public:
      */
     Scalar density() const
     { return fluidState_.density(phaseIdx); }
-    //{   //std::cout<<1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx))<<std::endl;
-    //{ return 1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx)); }
-    //{ return 1000;}
 
     /*!
      * \brief Returns the effective pressure \f$\mathrm{[Pa]}\f$ of a given phase within

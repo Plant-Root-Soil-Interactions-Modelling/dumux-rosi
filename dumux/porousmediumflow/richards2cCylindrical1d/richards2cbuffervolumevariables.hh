@@ -297,13 +297,7 @@ public:
      * \param phaseIdx The index of the fluid phase
      */
     Scalar density() const
-    {
-        //std::cout<<1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx))<<std::endl;
-        //std::cout<<fluidState_.density(phaseIdx)<<std::endl;
-        //return fluidState_.density(phaseIdx); }
-    //{   //std::cout<<1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx))<<std::endl;
-     return 1000/(1-fluidState_.massFraction(phaseIdx, transportCompIdx)); }
-    //{ return 1000;}
+    { return fluidState_.density(phaseIdx); }
 
     /*!
      * \brief Returns the effective pressure \f$\mathrm{[Pa]}\f$ of a given phase within
