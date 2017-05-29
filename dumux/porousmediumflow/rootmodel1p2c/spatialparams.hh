@@ -116,14 +116,14 @@ public:
      * \param scvIdx The index of the sub-control volume.
      * \return rootRadius
      */
-    Scalar rootRadius(const Element &element,
-            const FVElementGeometry &fvGeometry,
-            int scvIdx) const
-    {
-        return GET_RUNTIME_PARAM(TypeTag,
-                                  Scalar,
-                                  SpatialParams.rootRadius);
-    }
+    //Scalar rootRadius(const Element &element,
+    //        const FVElementGeometry &fvGeometry,
+    //        int scvIdx) const
+    //{
+    //    return GET_RUNTIME_PARAM(TypeTag,
+    //                              Scalar,
+    //                              SpatialParams.rootRadius);
+    //}
 
     Scalar rootSurface(const Element &element,
             const FVElementGeometry &fvGeometry,
