@@ -35,6 +35,11 @@ Vgn = 2
 Swr = 0.03
 Snr = 0
 
+[Solute]
+Name = C20H12 #benzo[a]pyren
+MolarMass = 252.32e-3 #[kg/mol]
+liquidDiffCoeff = 4.48e-10
+
 [SpatialParams]
 Permeability = 1.e-12 # [m^2]
 Porosity = 0.4 #

@@ -29,7 +29,7 @@
 #include <dumux/porousmediumflow/rootmodel1p2c/model1p2c.hh>
 #include <dumux/porousmediumflow/rootmodel1p2c/problem1p2c.hh>
 
-#include <dumux/material/fluidsystems/h2oc20h12.hh>
+#include <dumux/material/fluidsystems/h2osolute.hh>
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
 
@@ -50,7 +50,7 @@ NEW_TYPE_TAG(RootsystemOnePTwoCTestCCProblem, INHERITS_FROM(CCModel, RootsystemO
 
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2OC20H12<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OSOLUTE<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
 
 // Set the grid type
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Grid, Dune::FoamGrid<1, 3>);

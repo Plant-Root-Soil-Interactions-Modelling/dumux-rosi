@@ -25,7 +25,8 @@
 #define DUMUX_RICHARDS_BUFFER_TEST_SPATIAL_PARAMETERS_HH
 
 #include <dumux/material/spatialparams/implicit.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+//#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/linearmaterial.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
@@ -51,7 +52,8 @@ private:
     // define the material law which is parameterized by effective
     // saturations
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-    typedef RegularizedVanGenuchten<Scalar> EffectiveLaw;
+    //typedef RegularizedVanGenuchten<Scalar> EffectiveLaw;
+    typedef VanGenuchten<Scalar> EffectiveLaw;
 public:
     // define the material law parameterized by absolute saturations
     typedef EffToAbsLaw<EffectiveLaw> type;

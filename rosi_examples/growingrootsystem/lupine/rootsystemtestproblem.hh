@@ -194,7 +194,7 @@ public:
         if (globalPos[2] + eps_ >  this->bBoxMax()[2] )
         {
             //const SolutionVector& curSol = this->model().curSol();
-            Scalar Hcrit = GET_RUNTIME_PARAM(TypeTag,
+            Scalar Pcrit = GET_RUNTIME_PARAM(TypeTag,
                                          Scalar,
                                          BoundaryConditions.CriticalCollarPressure);
             //get element index Eid from globalPos
@@ -218,17 +218,17 @@ public:
             {
                 //std::cout<<"this->timeManager(): "<<this->timeManager().time()<<"\n";
                 //std::cout<<"Boundary Element Index: "<<Eid<<"\n";
-                //std::cout<<"preSol_[Eid]: "<<preSol_[Eid]<<" - " <<Hcrit<<"\n";
+                //std::cout<<"preSol_[Eid]: "<<preSol_[Eid]<<" - " <<Pcrit<<"\n";
                 //std::cout<<"values.isNeumann(conti0EqIdx): "<<values.isNeumann(conti0EqIdx)<<"\n";
-                if ((preSol_[Eid] < Hcrit))
+                if ((preSol_[Eid] < Pcrit))
                 {
-                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Hcrit<<"\n";
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" > " <<Pcrit<<"\n";
                     std::cout<<"WATER STRESS !! SET BC at collar as Dirichlet !!"<<"\n";
                     values.setDirichlet(conti0EqIdx);
                 }
                 else
                 {
-                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" < " <<Hcrit<<"\n";
+                    std::cout<<"Collar pressure: "<<preSol_[Eid]<<" < " <<Pcrit<<"\n";
                     std::cout<<"NO water stress !! SET BC at collar as Neumann !!"<<"\n";
                     values.setNeumann(conti0EqIdx);
                 }

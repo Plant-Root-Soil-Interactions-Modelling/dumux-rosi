@@ -34,7 +34,7 @@ Name = rosi
 [materialParams]
 VgAlpha = 0.03e-2 #[1/Pa] 2.956e-4 # range [0.1e-3 - 0.8e-3] median 0.3e-3 sd 0.1e-3 http://www.pc-progress.com/Documents/RVGenugten/2010_Ghanbarian_Water_retention_PS.pdf
 Vgn = 2 #[-] 1.5 #range 1.1- 6.7 mean 2 sd 0.3
-Swr = 0.03 #[-] 0.05
+Swr = 0.05 #[-] 0.05
 
 [SpatialParams]
 Permeability = 1.e-12 # [m^2] https://en.wikipedia.org/wiki/Permeability_%28earth_sciences%29 sd 3e-13
