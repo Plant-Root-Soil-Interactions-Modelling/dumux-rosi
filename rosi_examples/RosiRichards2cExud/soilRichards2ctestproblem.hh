@@ -30,17 +30,10 @@
 #include <dumux/multidimension/cellcentered/fvelementgeometry.hh>
 #include <dumux/multidimension/box/fvelementgeometry.hh>
 
-//#include <dumux/porousmediumflow/richards/implicit/model.hh>
-
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-
-//#include <dumux/porousmediumflow/1p2c/implicit/model.hh>
 #include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 #include <dumux/porousmediumflow/implicit/problem.hh>
 
-//#include <dumux/material/fluidsystems/h2on2.hh>
-#include <dumux/material/fluidsystems/h2ocitrate.hh>
+#include <dumux/material/fluidsystems/h2osolute.hh>
 
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
@@ -61,23 +54,13 @@ NEW_TYPE_TAG(SoilRichardsTwoCTestProblem, INHERITS_FROM(RichardsTwoCBuffer, Rich
 NEW_TYPE_TAG(SoilRichardsTwoCTestBoxProblem, INHERITS_FROM(BoxModel, SoilRichardsTwoCTestProblem));
 NEW_TYPE_TAG(SoilRichardsTwoCTestCCProblem, INHERITS_FROM(CCModel, SoilRichardsTwoCTestProblem));
 
-// Set the wetting phase
-//SET_PROP(RichardsTestProblem, WettingPhase)
-//{
-//private:
-//    typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
-//public:
-//    typedef Dumux::LiquidPhase<Scalar, Dumux::SimpleH2O<Scalar> > type;
-//};
 // Set fluid configuration
 SET_TYPE_PROP(SoilRichardsTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2OC6H5O7<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OSOLUTE<TypeTag>);
 
 // Set the grid type
 SET_TYPE_PROP(SoilRichardsTwoCTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
-//SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::UGGrid<3>);
-//SET_TYPE_PROP(RichardsTestProblem, Grid, Dune::ALUGrid<3, 3, Dune::cube, Dune::conforming>);
 
 // explicitly set the fvgeometry as we currently use another one as in stable
 SET_TYPE_PROP(SoilRichardsTwoCTestBoxProblem, FVElementGeometry, Dumux::MultiDimensionBoxFVElementGeometry<TypeTag>);
@@ -98,8 +81,6 @@ SET_BOOL_PROP(SoilRichardsTwoCTestProblem, VtkAddVelocity, true);
 // Set the grid parameter group
 SET_STRING_PROP(SoilRichardsTwoCTestProblem, GridParameterGroup, "SoilGrid");
 
-//SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseHead, false);
-//SET_BOOL_PROP(SoilOnePTwoCTestProblem, UseMoles, true);
 SET_BOOL_PROP(SoilRichardsTwoCTestProblem, UseMoles, false);
 
 }
@@ -195,12 +176,6 @@ public:
         //initialize fluid system
         FluidSystem::init();
         name_ = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag, std::string, Problem, Name) + "-soil";
-        //stating in the console whether mole or mass fractions are used
-        //episodeTime = GET_RUNTIME_PARAM_FROM_GROUP(TypeTag,
-        //                                           Scalar,
-        //                                           TimeManager,
-        //                                           EpisodeTime);
-        //this->timeManager().startNextEpisode(episodeTime);// time episode
 
         if(useMoles)
         {
@@ -385,7 +360,7 @@ public:
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
-                                        BoundaryConditions.InitialSoilFracExud);
+                                        BoundaryConditions.InitialSoluteMassFracInSoil);
     }
 
     /*!
@@ -485,6 +460,13 @@ public:
         // attach data to the vtk output
         this->resultWriter().attachDofData(sourceP, "mass source (kg/s)", isBox);
         this->resultWriter().attachDofData(sourceC, "concentration source (kg/s)", isBox);
+
+        logFile_.open(this->name() + "_uptakeRate.log", std::ios::app);
+        logFile_ << this->timeManager().time()
+                << " " << -totalSourceP
+                << " " << -totalSourceC
+                << std::endl;
+        logFile_.close();
     }
 
     //! Set the coupling manager
@@ -505,9 +487,9 @@ private:
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                    Scalar,
-                                   BoundaryConditions.InitialSoilFracExud);
+                                   BoundaryConditions.InitialSoluteMassFracInSoil);
 };
-
+    std::ofstream logFile_;
     const Scalar eps_ = 1e-9;
     Scalar episodeTime, temperature_, pnRef_, pc_, sw_;
     std::string name_;

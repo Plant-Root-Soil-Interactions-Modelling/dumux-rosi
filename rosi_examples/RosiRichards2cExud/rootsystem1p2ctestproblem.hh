@@ -29,14 +29,7 @@
 #include <dumux/porousmediumflow/rootmodel1p2c/model1p2c.hh>
 #include <dumux/porousmediumflow/rootmodel1p2c/problem1p2c.hh>
 
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-// fluidsystem
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/liquidphase.hh>
-//#include <dumux/material/fluidsystems/h2on2.hh>
-//#include <dumux/material/fluidsystems/h2ono3.hh>
-#include <dumux/material/fluidsystems/h2ocitrate.hh>
+#include <dumux/material/fluidsystems/h2osolute.hh>
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
 
@@ -57,7 +50,7 @@ NEW_TYPE_TAG(RootsystemOnePTwoCTestCCProblem, INHERITS_FROM(CCModel, RootsystemO
 
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2OC6H5O7<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OSOLUTE<TypeTag>);
 
 // Set the grid type
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Grid, Dune::FoamGrid<1, 3>);
@@ -82,8 +75,6 @@ SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, NewtonWriteConvergence, false);
 // Enable velocity output
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, VtkAddVelocity, false);
 
-//SET_BOOL_PROP(RootsystemTestProblem, GrowingGrid, false);
-//SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, UseMoles, true);
 SET_BOOL_PROP(RootsystemOnePTwoCTestProblem, UseMoles, false);
 }
 
@@ -226,7 +217,7 @@ public:
                         const GlobalPosition &globalPos) const
     {
         values[pressureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CriticalCollarPressure);
-        values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialRootFracExud);
+        values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialSoluteMassFracInRoot);
     }
     /*!
      * \brief Evaluate the boundary conditions for a neumann

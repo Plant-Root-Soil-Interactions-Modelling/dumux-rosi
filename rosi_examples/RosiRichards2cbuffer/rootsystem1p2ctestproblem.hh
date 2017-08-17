@@ -35,7 +35,7 @@
 //#include <dumux/material/components/simpleh2o.hh>
 //#include <dumux/material/fluidsystems/liquidphase.hh>
 //#include <dumux/material/fluidsystems/h2on2.hh>
-#include <dumux/material/fluidsystems/h2ono3.hh>
+#include <dumux/material/fluidsystems/h2osolute.hh>
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
 
@@ -56,7 +56,7 @@ NEW_TYPE_TAG(RootsystemOnePTwoCTestCCProblem, INHERITS_FROM(CCModel, RootsystemO
 
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OSOLUTE<TypeTag>);
 
 // Set the grid type
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Grid, Dune::FoamGrid<1, 3>);

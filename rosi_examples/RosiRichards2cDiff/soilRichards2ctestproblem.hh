@@ -348,7 +348,7 @@ public:
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
-                                        BoundaryConditions.InitialSoilFracC20H12);
+                                        BoundaryConditions.InitialSoluteMassFracInSoil);
     }
 
     /*!
@@ -448,54 +448,13 @@ public:
         // attach data to the vtk output
         this->resultWriter().attachDofData(sourceP, "mass source (kg/s)", isBox);
         this->resultWriter().attachDofData(sourceC, "concentration source (kg/s)", isBox);
-    }
 
-    /*!
-     * \brief Called by the time manager after the time integration to
-     *        do some post processing on the solution.
-     */
-    void postTimeStep()
-    {
-        if (!(this->timeManager().time() < 0.0))
-        {
-            Scalar totalSourceC, totalSourceP;
-            totalSourceC = 0.0;
-            totalSourceP = 0.0;
-
-            // iterate over all elements
-            for (const auto& element : elements(this->gridView()))
-            {
-                FVElementGeometry fvGeometry;
-                fvGeometry.update(this->gridView(), element);
-
-                ElementBoundaryTypes bcTypes;
-                bcTypes.update(*this, element, fvGeometry);
-
-                ElementVolumeVariables elemVolVars;
-                elemVolVars.update(*this, element, fvGeometry, false /* oldSol? */);
-
-                // output pressure
-                for (int scvIdx = 0; scvIdx < fvGeometry.numScv; ++scvIdx)
-                {
-                    auto dofGlobalIdx = this->model().dofMapper().subIndex(element, scvIdx, dofCodim);
-                    // only call the source function if we are not initializing
-                    {
-                        PrimaryVariables values;
-                        this->scvPointSources(values, element, fvGeometry, scvIdx, elemVolVars);
-                        totalSourceP += values[conti0EqIdx] * fvGeometry.subContVol[scvIdx].volume
-                                                * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                        totalSourceC += values[transportEqIdx] * fvGeometry.subContVol[scvIdx].volume
-                                                * this->boxExtrusionFactor(element, fvGeometry, scvIdx);
-                    }
-                }
-            }
-            logFile_.open(this->name() + "_sourcesValues.log", std::ios::app);
-            logFile_ << this->timeManager().time()
-                    << " " << -totalSourceP
-                    << " " << -totalSourceC
-                    << std::endl;
-            logFile_.close();
-        }
+        logFile_.open(this->name() + "_uptakeRate.log", std::ios::app);
+        logFile_ << this->timeManager().time()
+                << " " << -totalSourceP
+                << " " << -totalSourceC
+                << std::endl;
+        logFile_.close();
     }
 
     //! Set the coupling manager
@@ -519,7 +478,7 @@ private:
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                    Scalar,
-                                   BoundaryConditions.InitialSoilFracC20H12);
+                                   BoundaryConditions.InitialSoluteMassFracInSoil);
 };
     std::ofstream logFile_;
     const Scalar eps_ = 1e-9;

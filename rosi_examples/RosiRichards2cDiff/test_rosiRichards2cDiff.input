@@ -55,8 +55,8 @@ InitialSoilSaturation = 0.6
 InitialRootPressure = 9.4e4
 TranspirationRate = 1.65e-09 # [kg / s]
 CriticalCollarPressure = -14e5 #
-InitialSoilFracC20H12 = 1e-8 # http://healthycanadians.gc.ca/publications/healthy-living-vie-saine/water-benzo-a-pyrene-eau/alt/water-benzo-a-pyrene-eau-eng.pdf 
-InitialRootFracC20H12 = 0 #
+InitialSoluteMassFracInSoil = 1e-8 # http://healthycanadians.gc.ca/publications/healthy-living-vie-saine/water-benzo-a-pyrene-eau/alt/water-benzo-a-pyrene-eau-eng.pdf 
+InitialSoluteMassFracInRoot = 0 #
 SoilTemperature = 283
 RootTemperature = 283
 

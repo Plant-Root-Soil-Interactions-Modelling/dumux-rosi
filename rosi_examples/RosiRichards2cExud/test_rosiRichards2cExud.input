@@ -33,6 +33,11 @@ CellType = Cube
 #Name = rosi4
 Name = myGrid
 
+[Solute]
+Name = C6H5O7
+MolarMass = 189.101e-3 #[kg/mol]
+liquidDiffCoeff = 6.23e-10
+
 [materialParams]
 VgAlpha = 2.956e-4
 Vgn = 1.5
@@ -54,8 +59,8 @@ InitialRootPressure = 9.5e4 #-5e5 #-0.6e6 #-1.2e6 # [Pa]
 
 TranspirationRate = 2.15e-5 # [kg / s]
 CriticalCollarPressure = 7e4#-14e5 # -1.5e6 # [Pa] sd -1.5e5
-InitialSoilFracExud = 0
-InitialRootFracExud = 0
+InitialSoluteMassFracInSoil = 0
+InitialSoluteMassFracInRoot = 0
 SoilTemperature = 283
 RootTemperature = 283
 

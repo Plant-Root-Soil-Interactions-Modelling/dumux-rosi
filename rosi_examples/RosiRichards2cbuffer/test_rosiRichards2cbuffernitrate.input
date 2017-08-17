@@ -31,6 +31,11 @@ CellType = Cube
 [Problem]
 Name = rosi
 
+[Solute]
+Name = NO3
+MolarMass = 62.0049e-3 #[kg/mol]
+liquidDiffCoeff = 1.7e-9
+
 [materialParams]
 VgAlpha = 0.03e-2 #[1/Pa] 2.956e-4 # range [0.1e-3 - 0.8e-3] median 0.3e-3 sd 0.1e-3 http://www.pc-progress.com/Documents/RVGenugten/2010_Ghanbarian_Water_retention_PS.pdf
 Vgn = 2 #[-] 1.5 #range 1.1- 6.7 mean 2 sd 0.3
@@ -54,8 +59,8 @@ InitialRootPressure = -5e5 #[Pa] -0.6e6 #-1.2e6 # [Pa]
 
 TranspirationRate = 2.15e-5 # [kg / s]
 CollarPressure = -14e5 #[Pa] -1.5e6 # [Pa] sd -1.5e5
-InitialSoilFracNO3 = 1.24e-6 #[-] http://water.usgs.gov/edu/nitrogen.html 1.24mg/l 0.02mmol/l 1.24e-6
-InitialRootFracNO3 = 0 #[-] 2e-5
+InitialSoluteMassFracInSoil = 1.24e-6 #[-] http://water.usgs.gov/edu/nitrogen.html 1.24mg/l 0.02mmol/l 1.24e-6
+InitialSoluteMassFracInRoot = 0 #[-] 2e-5
 SoilTemperature = 283
 RootTemperature = 283
 

@@ -33,7 +33,7 @@
 #include <dumux/porousmediumflow/implicit/problem.hh>
 #include <dumux/porousmediumflow/richards2cbuffer/richards2cbuffermodel.hh>
 
-#include <dumux/material/fluidsystems/h2ono3.hh>
+#include <dumux/material/fluidsystems/h2osolute.hh>
 
 //! get the properties needed for subproblems
 #include <dumux/multidimension/subproblemproperties.hh>
@@ -65,7 +65,7 @@ NEW_TYPE_TAG(SoilRichardsTwoCBufferTestCCProblem, INHERITS_FROM(CCModel, SoilRic
 // Set fluid configuration
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2ONO3<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OSOLUTE<TypeTag>);
 
 // Set the grid type
 SET_TYPE_PROP(SoilRichardsTwoCBufferTestProblem, Grid, Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3> >);
@@ -507,6 +507,13 @@ public:
         // attach data to the vtk output
         this->resultWriter().attachDofData(sourceP, "mass source (kg/s)", isBox);
         this->resultWriter().attachDofData(sourceC, "concentration source (kg/s)", isBox);
+
+        logFile_.open(this->name() + "_uptakeRate.log", std::ios::app);
+        logFile_ << this->timeManager().time()
+                << " " << -totalSourceP
+                << " " << -totalSourceC
+                << std::endl;
+        logFile_.close();
     }
 
     //! Set the coupling manager
@@ -543,7 +550,7 @@ private:
 //    //        priVars[temperatureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, SpatialParams.Temperature);
 //    //    #endif
 };
-
+    std::ofstream logFile_;
     const Scalar eps_ = 1e-9;
     Scalar episodeTime, temperature_, pnRef_, pc_, sw_;
     std::string name_;
