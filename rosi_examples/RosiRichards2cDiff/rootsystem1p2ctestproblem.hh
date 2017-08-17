@@ -50,7 +50,7 @@ NEW_TYPE_TAG(RootsystemOnePTwoCTestCCProblem, INHERITS_FROM(CCModel, RootsystemO
 
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem,
               FluidSystem,
-              Dumux::FluidSystems::H2OSOLUTE<typename GET_PROP_TYPE(TypeTag, Scalar), false>);
+              Dumux::FluidSystems::H2OSOLUTE<TypeTag>);
 
 // Set the grid type
 SET_TYPE_PROP(RootsystemOnePTwoCTestProblem, Grid, Dune::FoamGrid<1, 3>);
