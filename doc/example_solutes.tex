@@ -196,20 +196,19 @@ diffusive terms:
 To model the transport process, it requires to set up a fluid system
 with 2 components: the main component of the fluid - water and the
 transport component - a solute (in this case: NO3).
- All the chemo - physical properties of the component
-nitrate is set in file
+All the chemo - physical properties of the solutes are set in the file
 
 \begin{lstlisting}
-/dumux-rosi/dumux/material/components/anions/no3.hh 
+/dumux-rosi/dumux/material/components/solute.hh
 \end{lstlisting}
 
-in which the molar mass and diffusive coefficient can be found
-\lstinputlisting[firstline=38,lastline=48, language=C++, caption=component]{dumux-rosi/dumux/material/components/anions/no3.hh}
+\lstinputlisting[firstline=41,lastline=49, language=C++, caption=component]{dumux-rosi/dumux/material/components/solute.hh}
+The values of the molar mass and the liquid diffusion coefficient of the solute are provided in the input file. 
 
-The fluidsystem of water and NO3 is set in file
+The fluidsystem of water and solute is set in file
 
 \begin{lstlisting}
-/dumux-rosi/dumux/material/fluidsystems/h2ono3.hh
+/dumux-rosi/dumux/material/fluidsystems/h2OSOLUTE.hh
 \end{lstlisting}
 
 and must be included in both soil problem and root problem

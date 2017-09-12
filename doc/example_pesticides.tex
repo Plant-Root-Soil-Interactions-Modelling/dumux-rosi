@@ -199,27 +199,19 @@ diffusive terms:
 
 \subsection*{Fluidsystem}
 
-To model the transport process, we require to set up a fluid system with 2 components: the main component of the fluid - water and the transport component - a nutrient or contaminant (in this case: benzo{[}a{]}pyrene $C_{20}H_{12}$). All the chemo - physical properties of the component
-benzo{[}a{]}pyrene $C_{20}H_{12}$ is set in file
+To model the transport process, we require to set up a fluid system with 2 components: the main component of the fluid - water and the transport component - a nutrient or contaminant (in this case: benzo{[}a{]}pyrene $C_{20}H_{12}$). All the chemo - physical properties of the component benzo{[}a{]}pyrene $C_{20}H_{12}$ is set in file
 
 \begin{lstlisting}
-/dumux-rosi/dumux/material/components/benzo[a]pyren.hh
+/dumux-rosi/dumux/material/components/solute.hh
 \end{lstlisting}
 
-in which the molar mass and diffusive coefficient can be found
-
-\begin{lstlisting}
-    static Scalar molarMass()
-    { return 252.32e-3; } // kg/mol
-
-    static Scalar liquidDiffCoeff()
-    { return 4.48e-10 ; }
-\end{lstlisting}
+\lstinputlisting[firstline=41,lastline=49, language=C++, caption=component]{dumux-rosi/dumux/material/components/solute.hh}
+The values of the molar mass and the liquid diffusion coefficient of the solute are provided in the input file. 
 
 The fluidsystem of water and benzo{[}a{]}pyrene is set in file
 
 \begin{lstlisting}
-/dumux-rosi/dumux/material/fluidsystems/h2oc20h12.hh
+/dumux-rosi/dumux/material/fluidsystems/h2OSOLUTE.hh
 \end{lstlisting}
 
 and must be included in both soil problem and root problem
