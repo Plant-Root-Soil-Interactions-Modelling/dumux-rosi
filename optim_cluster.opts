@@ -1,0 +1,41 @@
+GXX_RELEASE_WARNING_OPTS=" \
+    -Wall \
+    -Wunused \
+    -Wmissing-include-dirs \
+    -Wcast-align \
+    -pthread\
+    -Wno-sign-compare"
+
+GXX_RELEASE_OPTS=" \
+    -fno-strict-aliasing \
+    -fstrict-overflow \
+    -fno-finite-math-only \
+    -O3 \
+    -pthread\
+    -march=native \
+    -funroll-loops \
+    -g0"
+BUILD="/opt/dumux"
+CMAKE="$BUILD/bin/cmake"
+MAKE="$BUILD/bin/make"
+#LD_LIBRARY_PATH=$HOME/COMPILERS/gcc-6.3.0/lib64:$LD_LIBRARY_PATH
+STDTHREAD_LINK_FLAGS="-pthread"
+# configure flags
+CMAKE_FLAGS=" 
+-DUG_DIR=dune-uggrid
+-DCMAKE_C_COMPILER=$BUILD/bin/clang
+-DCMAKE_CXX_COMPILER=$BUILD/bin/clang++
+-DCMAKE_CXX_FLAGS_RELEASE='$GXX_RELEASE_OPTS $GXX_RELEASE_WARNING_OPTS'
+-DCMAKE_CXX_FLAGS_DEBUG='-O0 -ggdb -Wall'
+-DCMAKE_BUILD_TYPE=Release
+-DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS:BOOL=TRUE
+-DDUNE_REENABLE_ADD_TEST:BOOL=TRUE
+-DSUPERLU_ROOT=$BUILD \
+-DSuiteSparse_ROOT=$BUILD \
+-DPARMETIS_ROOT=$BUILD \
+-DMETIS_ROOT=$BUILD \
+-DZOLTAN_ROOT=$BUILD \
+-DPTSCOTCH_ROOT=$BUILD \
+-DPETSC_DIR=/opt/dumux/share/petsc \
+-DEigen3_DIR=$BUILD
+"

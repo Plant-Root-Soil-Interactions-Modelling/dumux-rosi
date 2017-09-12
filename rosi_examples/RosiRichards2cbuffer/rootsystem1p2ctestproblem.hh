@@ -232,7 +232,7 @@ public:
                         const GlobalPosition &globalPos) const
     {
         values[pressureIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.CollarPressure);
-        values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialRootFracNO3);
+        values[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag, Scalar, BoundaryConditions.InitialSoluteMassFracInRoot);
     }
     /*!
      * \brief Evaluate the boundary conditions for a neumann
