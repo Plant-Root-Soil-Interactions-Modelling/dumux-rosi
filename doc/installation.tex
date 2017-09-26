@@ -1,0 +1,68 @@
+\chapter*{Installation}
+\section*{Required compilers and tools}
+%
+- Install cmake:\\
+\lstinline{sudo apt-get install cmake}\\
+-Install clang:\\
+\lstinline{sudo apt-get install clang}\\
+- Install git\\
+\lstinline{sudo apt-get install git-all}\\
+
+\section*{DuMu$^x$ installation}
+- Create a DUMUX folder\\
+\lstinline{mkdir DUMUX}\\
+\lstinline{cd DUMUX}\\
+- Download DUNE core modules:\\
+\texttt{git clone https://gitlab.dune-project.org/core/dune-common.git}\\
+\texttt{git clone https://gitlab.dune-project.org/core/dune-geometry.git}\\
+\texttt{git clone https://gitlab.dune-project.org/core/dune-grid.git}\\
+\texttt{git clone https://gitlab.dune-project.org/core/dune-istl.git}\\
+\texttt{git clone https://gitlab.dune-project.org/core/dune-localfunctions.git}\\
+- Download DUNE external modules:\\
+\texttt{git clone https://gitlab.dune-project.org/extensions/dune-foamgrid.git}\\
+\texttt{git clone https://gitlab.dune-project.org/extensions/dune-grid-glue.git}\\
+-Download Dumux and Dumux-multidimension:\\
+\texttt{git clone https://git.iws.uni-stuttgart.de/dumux-repositories/dumux.git}\\
+\texttt{git clone https://git.iws.uni-stuttgart.de/dumux-appl/dumux-multidimension.git}\\
+(An account is necessary to download dumux-multidimension module. Please go to https://git.iws.uni-stuttgart.de/ to create an account.)\\
+We currently do not use the master branch of dumux-multidimension: \\
+\texttt{git checkout feature/embeddedcoupling-Reuse-source-sink-value}\\
+
+
+
+-The configuration file \lstinline{optim_cluster.opts} is stored in the dumux-rosi folder. Move a copy of this file to your DuMu$^x$ working folder (one level up)\\
+
+- To build all downloaded modules and check whether all dependencies and prerequisites are met, run dunecontrol:\\
+\lstinline{./dune-common/bin/dunecontrol --opts=optim_cluster.opts all -std=c++14}\\
+
+Installation done! Good luck!
+
+\section*{Running an example on the agrocluster}
+- Create a pbs file in your working folder that will put your job in the cluster queue
+
+For example \lstinline{queue_AS_dumux_buffer.pbs}
+
+\begin{lstlisting}
+#!/bin/sh
+#
+#This is an example script example.sh
+#
+#These commands set up the Grid Environment for your job:
+#PBS -N DUMUX 
+#PBS -l nodes=1:ppn=1,walltime=200:00:00,pvmem=200gb
+#PBS -q batch\\
+#PBS -M a.schnepf@fz-juelich.de
+#PBS -m abe
+
+module load dumux 
+cd  $HOME/DUMUX/dumux-rosi/build-cmake/rosi_examples/RosiRichards2cbuffer
+make test_rosiRichards2cbuffernitrate
+./test_rosiRichards2cbuffernitrate
+\end{lstlisting}$
+
+
+To start the job, run this file in your working folder with the command \\
+\lstinline{qsub queue_AS_dumux_buffer.pbs}
+
+Use Filezilla to move the results to your local machine and use Paraview to visualize them. 
+

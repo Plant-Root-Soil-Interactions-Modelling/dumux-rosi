@@ -172,23 +172,16 @@ with 2 components: the main component of the fluid - water and the
 transport component - a solute (in this case citrate). All the chemo - physical properties of the component citrate are set in the file
 
 \begin{lstlisting}
-/dumux-rosi/dumux/material/components/anions/citrate.hh
+/dumux-rosi/dumux/material/components/solute.hh
 \end{lstlisting}
 
-in which the molar mass and diffusive coefficient can be found
-
-\lstinputlisting[firstline=43,lastline=44, language=C++, caption={}]{dumux-rosi/dumux/material/components/anions/citrate.hh}
-
-\lstinputlisting[firstline=43,lastline=44, language=C++, caption={}]{dumux-rosi/dumux/material/components/anions/citrate.hh}
-
-\lstinputlisting[firstline=46,lastline=51, language=C++, caption={}]{dumux-rosi/dumux/material/components/anions/citrate.hh}
-
-\todo[inline]{Replace with diffusion coefficient of citrate}
+\lstinputlisting[firstline=41,lastline=49, language=C++, caption=component]{dumux-rosi/dumux/material/components/solute.hh}
+The values of the molar mass and the liquid diffusion coefficient of the solute are provided in the input file. 
 
 The fluidsystem of water and citrate is set in file
 
 \begin{lstlisting}
-/dumux-rosi/dumux/material/fluidsystems/h2ocitrate.hh
+/dumux-rosi/dumux/material/fluidsystems/h2OSOLUTE.hh
 \end{lstlisting}
 
 and must be included in both soil problem and root problem
@@ -210,28 +203,6 @@ In this subsection, we summarize the required model parameters. All
 parameter units are based on on absolute pressure and DuMu$^{x}$
 standard units (SI).
 
-%\begin{table}[h!]
-%\caption{Model input parameters}
-%\label{tab:inputs} %
-%\begin{tabular}{l|c||r}
-%\textbf{Parameter}  & \textbf{Units}  & \textbf{File number}\tabularnewline
-%\hline
-%Water density  & kg m$^{-3}$  & 1\tabularnewline
-%Dynamic viscosity  & kg s$^{-1}$ m$^{-1}$ & 1\tabularnewline
-%Molar mass of BaP & kg mol$^{-1}$ & 2\tabularnewline
-%Diffusive coefficient of BaP & m$^{2}$s$^{-1}$ & 2\tabularnewline
-%Soil porosity  & m$^{3}$ m$^{-3}$  & 4\tabularnewline
-%Intrinsic soil permeability  & m$^{2}$  & 4\tabularnewline
-%Residual saturation  & -  & 4\tabularnewline
-%Van Genuchten $\alpha$  & Pa  & 4\tabularnewline
-%Van Genuchten $n$  & -  & 4\tabularnewline
-%Dispersion coefficient & m$^{2}$s$^{-1}$ & 4\tabularnewline
-%Root porosity  & m$^{3}$ m$^{-3}$  & 3\tabularnewline
-%Root axial conductance  & m$^{5}$ s kg$^{-1}$  & 4\tabularnewline
-%Root radial conductivity  & m$^{2}$ s kg$^{-1}$  & 4\tabularnewline
-%\end{tabular}
-%\end{table}
-
 \begin{enumerate}
 \item \verb+dumux/dumux/material/components/simpleh2o.hh+
 \item \verb+dumux-rosi/dumux/material/components/anions/citrate.hh+
@@ -239,7 +210,7 @@ standard units (SI).
 \item \verb+dumux-rosi/rosi_examples/RosiRichards2cExud/test_rosiRichards2cExud.input+
 \end{enumerate}
 Here is the listing of the .input-file:
-\lstinputlisting[firstline=7,lastline=69, language={}, caption=input file]{dumux-rosi/rosi_examples/RosiRichards2cExud/test_rosiRichards2cExud.input}
+\lstinputlisting[firstline=7,lastline=70, language={}, caption=input file]{dumux-rosi/rosi_examples/RosiRichards2cExud/test_rosiRichards2cExud.input}
 
 
 \subsection*{Simulation}

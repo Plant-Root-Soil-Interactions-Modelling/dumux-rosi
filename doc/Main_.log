@@ -1,4 +1,4 @@
-This is LuaTeX, Version beta-0.70.2-2012060719 (MiKTeX 2.9)  (format=lualatex 2013.7.26)  4 JUL 2017 13:39
+This is LuaTeX, Version beta-0.70.2-2012060719 (MiKTeX 2.9)  (format=lualatex 2013.7.26)  12 SEP 2017 14:26
 **Main_.tex
 (C:/Data/Software/DuMux/Documentation/Main_.tex
 LaTeX2e <2011/06/27>
@@ -961,23 +961,18 @@ Underfull \hbox (badness 10000) in paragraph at lines 4--10
  []
 
 
-Overfull \hbox (40.63252pt too wide) in paragraph at lines 12--28
+Overfull \hbox (40.63252pt too wide) in paragraph at lines 12--30
 \OT1/cmtt/m/n/12 git clone https://git.iws.uni-stuttgart.de/dumux-appl/dumux-mu
 ltidimension.git 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 12--28
+Underfull \hbox (badness 10000) in paragraph at lines 12--30
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 29--30
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 31--33
+Underfull \hbox (badness 10000) in paragraph at lines 33--34
 
  []
 
@@ -985,22 +980,26 @@ Underfull \hbox (badness 10000) in paragraph at lines 31--33
 
 
 ]
+Underfull \hbox (badness 10000) in paragraph at lines 35--37
+
+ []
+
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.58 
+l.62 
      
 I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
 
 ) [4] (C:/Data/Software/DuMux/Documentation/grids.tex
-<./Figs/grids.jpg, id=52, 2372.865pt x 1422.31375pt>
+<./Figs/grids.jpg, id=53, 2372.865pt x 1422.31375pt>
 File: ./Figs/grids.jpg Graphic file (type jpg)
  <use ./Figs/grids.jpg>
 Package pdftex.def Info: ./Figs/grids.jpg used on input line 7.
 (pdftex.def)             Requested size: 220.50885pt x 132.16963pt.
 
-<./Figs/merged.jpg, id=54, 1434.35875pt x 1422.31375pt>
+<./Figs/merged.jpg, id=55, 1434.35875pt x 1422.31375pt>
 File: ./Figs/merged.jpg Graphic file (type jpg)
 
 <use ./Figs/merged.jpg>
@@ -1204,15 +1203,26 @@ Overfull \hbox (45.81636pt too wide) in paragraph at lines 187--188
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 133--134
+
+ []
+
 [30]
+Overfull \hbox (36.22105pt too wide) in paragraph at lines 134--135
+[][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/richardsrootsystem/richardstest
+spatialparams.hh\OT1/cmr/m/n/12 . 
+ []
+
+
 Underfull \hbox (badness 10000) in paragraph at lines 134--135
 
  []
 
 
-Overfull \hbox (36.22105pt too wide) in paragraph at lines 135--136
-[][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/richardsrootsystem/richardstest
-spatialparams.hh\OT1/cmr/m/n/12 . 
+Overfull \hbox (48.57106pt too wide) in paragraph at lines 135--136
+[][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/richardsrootsystem/rootsystemte
+stspatialparams.hh\OT1/cmr/m/n/12 . 
  []
 
 
@@ -1221,24 +1231,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 135--136
  []
 
 
-Overfull \hbox (48.57106pt too wide) in paragraph at lines 136--137
-[][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/richardsrootsystem/rootsystemte
-stspatialparams.hh\OT1/cmr/m/n/12 . 
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 136--137
-
- []
-
-
-Overfull \hbox (97.97108pt too wide) in paragraph at lines 137--138
+Overfull \hbox (97.97108pt too wide) in paragraph at lines 136--137
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/richardsrootsystem/grid/Anagall
 is_femina_Leitner_2010.dgf\OT1/cmr/m/n/12 . 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 137--138
+Underfull \hbox (badness 10000) in paragraph at lines 136--137
 
  []
 
@@ -1264,19 +1263,18 @@ Overfull \hbox (25.81636pt too wide) in paragraph at lines 9--11
 [][][][][] 
  []
 
-[31] [32])
-Overfull \hbox (21.21017pt too wide) in paragraph at lines 147--149
+[31])
+Overfull \hbox (21.21017pt too wide) in paragraph at lines 146--148
 []\OT1/cmr/m/n/12 The de-fault solver of all dumux-rosi ex-am-ples is an it-er-
 a-tive solver. In []\OT1/cmtt/m/n/12 rositestproblem.hh
  []
 
-[33] <./Figs/RWU.png, id=929, 995.72pt x 628.3475pt>
+[32] [33] <./Figs/RWU.png, id=927, 995.72pt x 628.3475pt>
 File: ./Figs/RWU.png Graphic file (type png)
  <use ./Figs/RWU.png>
-Package pdftex.def Info: ./Figs/RWU.png used on input line 163.
+Package pdftex.def Info: ./Figs/RWU.png used on input line 162.
 (pdftex.def)             Requested size: 352.8155pt x 222.64784pt.
-)
-[34
+) [34
 
  <C:/Data/Software/DuMux/Documentation/Figs/RWU.png (PNG copy)>]
 (C:/Data/Software/DuMux/Documentation/example_solutes.tex [35
@@ -1303,19 +1301,18 @@ calresidual1p2c.hh [43])
 calresidual1p2c.hh [44])
 (C:/Data/Software/DuMux/code/dumux-rosi/dumux/porousmediumflow/rootmodel1p2c/lo
 calresidual1p2c.hh) [45]
-(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/anions/no3.hh
-)
+(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/solute.hh)
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cbuffer/soil
 Richards2cbuffertestproblem.hh [46] [47])
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cbuffer/root
 system1p2ctestproblem.hh [48] [49] [50])
-Overfull \hbox (57.65721pt too wide) in paragraph at lines 260--261
+Overfull \hbox (57.65721pt too wide) in paragraph at lines 259--260
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/RosiRichards2cbuffer/rootsystem
 testspatialparams.hh 
  []
 
 
-Overfull \hbox (107.05724pt too wide) in paragraph at lines 261--262
+Overfull \hbox (107.05724pt too wide) in paragraph at lines 260--261
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/RosiRichards2cbuffer/test_rosiR
 ichards2cbuffernitrate.input 
  []
@@ -1329,14 +1326,14 @@ Overfull \hbox (45.81636pt too wide) in paragraph at lines 181--182
 [][] 
  []
 
-[53]) <./Figs/solutes.jpg, id=1476, 225.84375pt x 297.36093pt>
+[53]) <./Figs/solutes.jpg, id=1472, 225.84375pt x 297.36093pt>
 File: ./Figs/solutes.jpg Graphic file (type jpg)
 
 <use ./Figs/solutes.jpg>
-Package pdftex.def Info: ./Figs/solutes.jpg used on input line 307.
+Package pdftex.def Info: ./Figs/solutes.jpg used on input line 306.
 (pdftex.def)             Requested size: 396.91324pt x 522.6717pt.
  [54]
-Overfull \hbox (7.35356pt too wide) in paragraph at lines 314--316
+Overfull \hbox (7.35356pt too wide) in paragraph at lines 313--315
 []\OT1/cmr/m/n/12 The de-fault solver of all dumux-rosi ex-am-ples is an it-er-
 a-tive solver. In rosiRichards2ctest-
  []
@@ -1365,27 +1362,29 @@ calresidual1p2c.hh [65])
 (C:/Data/Software/DuMux/code/dumux-rosi/dumux/porousmediumflow/rootmodel1p2c/lo
 calresidual1p2c.hh [66])
 (C:/Data/Software/DuMux/code/dumux-rosi/dumux/porousmediumflow/rootmodel1p2c/lo
-calresidual1p2c.hh [67]) [68]
+calresidual1p2c.hh [67])
+(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/solute.hh)
+[68]
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cDiff/soilRi
-chards2ctestproblem.hh [69])
+chards2ctestproblem.hh [69] [70])
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cDiff/rootsy
-stem1p2ctestproblem.hh [70] [71] [72])
+stem1p2ctestproblem.hh [71] [72])
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-
-Overfull \hbox (45.3072pt too wide) in paragraph at lines 268--269
+[73]
+Overfull \hbox (45.3072pt too wide) in paragraph at lines 260--261
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/RosiRichards2cDiff/rootsystemte
 stspatialparams.hh 
  []
 
 
-Overfull \hbox (39.1322pt too wide) in paragraph at lines 269--270
+Overfull \hbox (39.1322pt too wide) in paragraph at lines 261--262
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/RosiRichards2cDiff/test_rosiRic
 hards2cDiff.input 
  []
 
-[73]
+
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cDiff/test_r
 osiRichards2cDiff.input
 Overfull \hbox (25.81636pt too wide) in paragraph at lines 7--8
@@ -1397,18 +1396,13 @@ Overfull \hbox (25.81636pt too wide) in paragraph at lines 9--11
 [][][][][] 
  []
 
-[74]) [75]
+[74] [75])
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cDiff/soilRi
 chards2ctestproblem.hh)
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cDiff/soilRi
-chards2ctestproblem.hh
-Overfull \hbox (30.99623pt too wide) in paragraph at lines 515--516
-[][] 
- []
-
-)
+chards2ctestproblem.hh)
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cDiff/rootsy
-stem1p2ctestproblem.hh [76]
+stem1p2ctestproblem.hh
 Overfull \hbox (10.99623pt too wide) in paragraph at lines 246--247
 [][][][][][] 
  []
@@ -1418,21 +1412,21 @@ Overfull \hbox (38.4063pt too wide) in paragraph at lines 246--247
 [][] 
  []
 
-)
+) [76]
 (C:/Data/Software/DuMux/code/dumux-rosi/dumux/porousmediumflow/rootmodel1p2c/pr
 oblem1p2c.hh
 Overfull \hbox (45.81636pt too wide) in paragraph at lines 181--182
 [][] 
  []
 
-[77]) [78] <./Figs/example_pesticides.jpg, id=2167, 277.035pt x 342.78062pt>
+[77]) <./Figs/example_pesticides.jpg, id=2128, 277.035pt x 342.78062pt>
 File: ./Figs/example_pesticides.jpg Graphic file (type jpg)
 
 <use ./Figs/example_pesticides.jpg>
-Package pdftex.def Info: ./Figs/example_pesticides.jpg used on input line 304.
+Package pdftex.def Info: ./Figs/example_pesticides.jpg used on input line 296.
 (pdftex.def)             Requested size: 396.91324pt x 491.1088pt.
-
-Overfull \hbox (7.35356pt too wide) in paragraph at lines 311--313
+ [78]
+Overfull \hbox (7.35356pt too wide) in paragraph at lines 303--305
 []\OT1/cmr/m/n/12 The de-fault solver of all dumux-rosi ex-am-ples is an it-er-
 a-tive solver. In rosiRichards2ctest-
  []
@@ -1463,23 +1457,18 @@ calresidual1p2c.hh [89])
 calresidual1p2c.hh)
 (C:/Data/Software/DuMux/code/dumux-rosi/dumux/porousmediumflow/rootmodel1p2c/lo
 calresidual1p2c.hh) [90]
-(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/anions/citrat
-e.hh)
-(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/anions/citrat
-e.hh)
-(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/anions/citrat
-e.hh)
+(C:/Data/Software/DuMux/code/dumux-rosi/dumux/material/components/solute.hh)
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cExud/soilRi
-chards2ctestproblem.hh [91]) [92]
+chards2ctestproblem.hh [91])
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cExud/rootsy
-stem1p2ctestproblem.hh [93] [94])
-Overfull \hbox (45.3072pt too wide) in paragraph at lines 238--239
+stem1p2ctestproblem.hh [92] [93]) [94]
+Overfull \hbox (45.3072pt too wide) in paragraph at lines 209--210
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/RosiRichards2cExud/rootsystemte
 stspatialparams.hh 
  []
 
 
-Overfull \hbox (39.1322pt too wide) in paragraph at lines 239--240
+Overfull \hbox (39.1322pt too wide) in paragraph at lines 210--211
 [][][]\OT1/cmtt/m/n/12 dumux-rosi/rosi_examples/RosiRichards2cExud/test_rosiRic
 hards2cExud.input 
  []
@@ -1496,9 +1485,14 @@ Overfull \hbox (25.81636pt too wide) in paragraph at lines 9--11
 [][][][][] 
  []
 
-[95] [96])
+[95]) [96]
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cExud/soilRi
-chards2ctestproblem.hh)
+chards2ctestproblem.hh
+Overfull \hbox (75.45662pt too wide) in paragraph at lines 363--364
+[][] 
+ []
+
+)
 (C:/Data/Software/DuMux/code/dumux-rosi/rosi_examples/RosiRichards2cExud/soilRi
 chards2ctestproblem.hh [97])
 (C:/Data/Software/DuMux/code/dumux-rosi/dumux/porousmediumflow/rootmodel1p2c/pr
@@ -1507,14 +1501,14 @@ Overfull \hbox (45.81636pt too wide) in paragraph at lines 181--182
 [][] 
  []
 
-[98]) <./Figs/example_exudates.jpg, id=2704, 430.31451pt x 395.67825pt>
+[98]) <./Figs/example_exudates.jpg, id=2689, 430.31451pt x 395.67825pt>
 File: ./Figs/example_exudates.jpg Graphic file (type jpg)
 
 <use ./Figs/example_exudates.jpg>
-Package pdftex.def Info: ./Figs/example_exudates.jpg used on input line 270.
+Package pdftex.def Info: ./Figs/example_exudates.jpg used on input line 241.
 (pdftex.def)             Requested size: 396.91324pt x 364.96422pt.
  [99]
-Overfull \hbox (7.35356pt too wide) in paragraph at lines 277--279
+Overfull \hbox (7.35356pt too wide) in paragraph at lines 248--250
 []\OT1/cmr/m/n/12 The de-fault solver of all dumux-rosi ex-am-ples is an it-er-
 a-tive solver. In rosiRichards2ctest-
  []
@@ -1542,12 +1536,12 @@ Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 111.
  )
 
 Here is how much of LuaTeX's memory you used:
- 25969 strings out of 495011
- 381550,794899 words of node,token memory allocated
- 638 words of node memory still in use:
+ 25948 strings out of 495011
+ 381554,794899 words of node,token memory allocated
+ 639 words of node memory still in use:
     nodes
-   avail lists: 1:1,2:35,3:437,4:5457,5:7081,6:2171,7:24945,8:42,9:7683,10:456
- 25339 multiletter control sequences out of 65536+200000
+   avail lists: 1:2,2:36,3:373,4:5440,5:7080,6:2171,7:24764,8:42,9:7683,10:456
+ 25347 multiletter control sequences out of 65536+200000
  96 fonts using 2692843 bytes
  74i,21n,97p,8848b,918s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C
@@ -1572,9 +1566,9 @@ s/type1/public/amsfonts/cm/cmssbx10.pfb><C:/Program Files (x86)/MiKTeX 2.9/font
 s/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/
 type1/public/amsfonts/cm/cmsy8.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/typ
 e1/public/amsfonts/cm/cmtt12.pfb>
-Output written on Main_.pdf (100 pages, 3461559 bytes).
+Output written on Main_.pdf (100 pages, 3458201 bytes).
 
-PDF statistics: 2897 PDF objects out of 2984 (max. 8388607)
- 2375 named destinations out of 2487 (max. 131072)
+PDF statistics: 2879 PDF objects out of 2984 (max. 8388607)
+ 2358 named destinations out of 2487 (max. 131072)
  16 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -407,7 +407,7 @@ public:
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                         Scalar,
-                                        BoundaryConditions.InitialSoilFracNO3);
+                                        BoundaryConditions.InitialSoluteMassFracInSoil);
     }
 
     /*!
@@ -537,7 +537,7 @@ private:
 
         priVars[massOrMoleFracIdx] = GET_RUNTIME_PARAM(TypeTag,
                                    Scalar,
-                                   BoundaryConditions.InitialSoilFracNO3);
+                                   BoundaryConditions.InitialSoluteMassFracInSoil);
 
 //        priVars[pressureIdx] = GET_RUNTIME_PARAM(TypeTag,
 //                                   Scalar,
