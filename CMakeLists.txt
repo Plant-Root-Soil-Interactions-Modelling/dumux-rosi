@@ -23,6 +23,7 @@ dune_enable_all_packages()
 add_subdirectory("rosi_benchmarking")
 add_subdirectory("rosi_dev")
 add_subdirectory("rosi_examples")
+add_subdirectory("rosi_exudation")
 add_subdirectory("doc")
 add_subdirectory("cmake/modules")
 
