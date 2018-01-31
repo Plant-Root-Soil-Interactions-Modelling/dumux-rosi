@@ -294,7 +294,7 @@ public:
 				double Kc = this->spatialParams().hydraulicConductivity(element);
 				VolumeVariables  v0 = elemVolVars[0];
 				VolumeVariables  v1 = elemVolVars[1];
-				double swe = 0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
+				double swe =  0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
 				ElementSolutionVector esv;
 				SubControlVolume scv;
 				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
@@ -355,11 +355,9 @@ public:
     template<class Entity>
     PrimaryVariables initial(const Entity& entity) const
 	{
-    	std::cout << "initial()\n";
 		PrimaryVariables values;
-		double iv = GridCreator::parameters(entity).at(0); // todo thats wrong, is it? wahts entity and how i get my element from it
+		double iv = GridCreator::parameters(entity).at(0); // todo thats wrong, is it? whats entity and how i get my element from it
 		values[pressureIdx] = pnRef_ - toPa_(iv);
-		std::cout << values[pressureIdx] << "\n";
         values.setState(bothPhases); // wtf?
 		return values;
 	}
@@ -373,7 +371,7 @@ private:
 	 *  @param ph           pressure head [cm]
 	 */
 	double toPa_(double ph) const {
-		return -ph*10.*abs(this->gravity()[0]);
+		return -ph*10.*std::abs(this->gravity()[0]);
 	}
 
 	/**

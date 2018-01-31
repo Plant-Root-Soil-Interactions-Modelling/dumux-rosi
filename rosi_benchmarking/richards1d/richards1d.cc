@@ -75,7 +75,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = TTAG(RichardsCCProblem1d);
+    using TypeTag = TTAG(RichardsBoxProblem1d);
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -197,7 +197,7 @@ int main(int argc, char** argv) try
         timeLoop->advanceTimeStep();
 
         // write vtk output (only at check points)
-        if (timeLoop->isCheckPoint()) {
+        if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
         	vtkWriter.write(timeLoop->time());
         }
 

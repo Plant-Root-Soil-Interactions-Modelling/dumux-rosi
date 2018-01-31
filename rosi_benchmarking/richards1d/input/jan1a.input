@@ -1,4 +1,4 @@
-[TimeManager]
+[TimeLoop]
 DtInitial =  1 # [s]
 TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
@@ -71,9 +71,12 @@ Value = 0 #-1 # [cm] field capacity
 # 7 seepage face
 # 8 horizontal drains
 
-[Implicit]
-EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
-EnableJacobianRecycling = 1 #
-
 [Newton]
 TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
+EnableChop = true # chop for better convergence
+
+# old
+# [Implicit]
+# EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
+# EnableJacobianRecycling = 1 #
+

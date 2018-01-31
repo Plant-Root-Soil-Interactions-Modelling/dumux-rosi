@@ -1,5 +1,5 @@
 dune_add_test(SOURCES richards1d.cc)
-dune_symlink_to_source_files(FILES "grids" "richards1d.input" )
+dune_symlink_to_source_files(FILES "grids" "input" "richards1d.input" )
 
 #install sources
 install(FILES
