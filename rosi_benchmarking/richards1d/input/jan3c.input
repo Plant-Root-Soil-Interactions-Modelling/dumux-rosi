@@ -1,6 +1,6 @@
-[TimeManager]
+[TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 43200 # a day [s] 
+TEnd = 43200 # half a day [s] 
 MaxTimeStepSize = 3600 # an hour [s] 
 Episodes = 8640 17280 
 
@@ -21,8 +21,8 @@ Ks = 1.1574e-06 # [m/s]
 
 
 [BC_Top]
-Type = 4
-Value = 0 # unused [cm day-1]
+Type = 1 #1
+Value = -0.0001 # unused [cm day-1]
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -44,17 +44,13 @@ Value = 0 # unused [cm] fully saturated
 # 7 seepage face
 # 8 horizontal drains
 
-[Implicit]
-EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
-EnableJacobianRecycling = 1 #
-
 [Newton]
 TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
-
+EnableChop = true # chop for better convergence
 
 [Climate]
 Times = 1e10 # const value 
-Precipitation = -16.6667 # [kg/(s m²)] (100 cm/day)
+Precipitation =  -0.01157407407 # [kg/(s m²)] (100 cm/day)
 
 
 

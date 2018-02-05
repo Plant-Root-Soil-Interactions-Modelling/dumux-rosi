@@ -167,6 +167,8 @@ int main(int argc, char** argv) try
     // time loop
     timeLoop->start(); do
     {
+    	problem->setTime(timeLoop->time());
+
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
 

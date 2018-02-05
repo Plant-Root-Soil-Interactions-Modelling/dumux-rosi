@@ -42,24 +42,7 @@ namespace Dumux
 template<class TypeTag>
 class RichardsParams;
 
-/**
- *  RegularizedVanGenuchten is not working! VanGenuchten is not working, but this does...
- */
-template <class ScalarT, class ParamsT = VanGenuchtenParams<ScalarT> >
-class MyVanGenuchten : public VanGenuchten<ScalarT,ParamsT>
-{
-public:
-    static double pc(const ParamsT &params, double swe)
-    {
-        if (swe<=0) {
-            return HUGE_VAL; // something reasonable
-        }
-        if (swe>=1) {
-            return 0;
-        }
-        return pow(pow(swe, -1.0/params.vgm()) - 1, 1.0/params.vgn())/params.vgAlpha();
-    }
-};
+
 
 namespace Properties
 {
@@ -78,7 +61,7 @@ private:
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
 public:
     // define the material law parameterized by absolute saturations
-    using type = EffToAbsLaw<MyVanGenuchten<Scalar>>;
+    using type = EffToAbsLaw<VanGenuchten<Scalar>>;
 };
 }
 
@@ -121,20 +104,21 @@ public:
      * \brief Constructor
      */
     RichardsParams(const Problem& problem) : ParentType(problem)  {
-        phi_ = 1; // Richards equation is independent of phi
-        const double g = 9.81; // TODO fetch values from problem class
 
-        const double temp =  273.15 + 10;  // -> 10°C
-        const double pnRef = 1e5;
-        const double mu = Water::liquidViscosity(temp,pnRef); // h2o: 1e-3 Pa·s Dynamic viscosity of water(independent of temp and p)
-        const double rho = Water::liquidDensity(temp,pnRef);  // h2o: 1000 kg/m³ Density of water(independent of temp and p)
+    	phi_ = 1; // Richards equation is independent of phi
+
+        Scalar g =  abs(problem.gravity()[dimWorld-1]);
+        Scalar temp =  problem.temperature();
+        Scalar pnRef = problem.nonWettingReferencePressure();
+        Scalar mu = Water::liquidViscosity(temp,pnRef); // h2o: 1e-3 Pa·s Dynamic viscosity of water(independent of temp and p)
+        Scalar rho = Water::liquidDensity(temp,pnRef);  // h2o: 1000 kg/m³ Density of water(independent of temp and p)
 
         // get van genuchten parameters from the input file
-        std::vector<double> Qr = getParam<std::vector<double>>("VanGenuchten.Qr");
-        std::vector<double> Qs = getParam<std::vector<double>>("VanGenuchten.Qs");
-        std::vector<double> alpha = getParam<std::vector<double>>("VanGenuchten.alpha");
-        std::vector<double> n = getParam<std::vector<double>>("VanGenuchten.n");
-        Kc_ = getParam<std::vector<double>>("VanGenuchten.Ks"); // hydraulic conductivity
+        std::vector<Scalar> Qr = getParam<std::vector<Scalar>>("VanGenuchten.Qr");
+        std::vector<Scalar> Qs = getParam<std::vector<Scalar>>("VanGenuchten.Qs");
+        std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("VanGenuchten.alpha");
+        std::vector<Scalar> n = getParam<std::vector<Scalar>>("VanGenuchten.n");
+        Kc_ = getParam<std::vector<Scalar>>("VanGenuchten.Ks"); // hydraulic conductivity
 
         more_ = Qr.size()>1; // more than one set of VG parameters?
 
@@ -146,7 +130,7 @@ public:
             // QS
             materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_);
             // ALPHA
-            double a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
+            Scalar a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
             materialParams_.at(i).setVgAlpha(a/(rho*g)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
             // N
             materialParams_.at(i).setVgn(n.at(i));
@@ -175,7 +159,7 @@ public:
     /*
      * \brief Function for defining the (absolute) hydraulic conductivity. [m/s] (todo Who uses that?)
      */
-    const double hydraulicConductivity(const Element &element) const
+    const Scalar hydraulicConductivity(const Element &element) const
     {
         return Kc_.at(getDI(element));
     }
@@ -219,7 +203,7 @@ private:
     }
 
     bool more_;
-    double phi_;
+    Scalar phi_;
     std::vector<Scalar> K_; // permeability [m²]
     std::vector<Scalar> Kc_; // hydraulic conductivity [m/s]
     std::vector<MaterialLawParams> materialParams_;

@@ -1,5 +1,5 @@
 #
-# compares the dumux solution to the analytical solution (,Figure 2abc, Vanderborght et al 2004)
+# compares the dumux solution to the analytical solution (Figure 2abc Vanderborght et al 2005)
 #
 # D. Leitner, 2018
 #
@@ -13,11 +13,11 @@ import van_genuchten as vg
 # manually set absolute path
 path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/richards1d/"
 
-# run dumux 
-os.chdir( path )
-os.system( "./richards1d input/jan1a.input")
-os.system( "./richards1d input/jan1b.input")
-os.system( "./richards1d input/jan1c.input")
+# # run dumux 
+# os.chdir( path )
+# os.system( "./richards1d input/jan1a.input")
+# os.system( "./richards1d input/jan1b.input")
+# os.system( "./richards1d input/jan1c.input")
 
 # result dumux jan1 (Figure 2a)
 s_, p_ = read1D_vtp_data(path+"jan1a-00001.vtp", False)

@@ -1,10 +1,9 @@
 #
 # produces the analytical solution Figure 2abc
-# from Vanderborght et al 2004
+# from Vanderborght et al 2005
 #
 # D. Leitner, 2018
 #
-
 import numpy as np
 from scipy import optimize
 from scipy import integrate
@@ -17,7 +16,7 @@ clay = vg.Parameters(0.1, 0.4, 0.01, 1.1, 1.1574e-06*100*3600*24)
 
 Jw = 0.5;  # constant downward flow rate [cm/d]
 
- #
+#
 # The lower part (constant pressure)
 #
 Ks = lambda psi: vg.hydraulic_conductivity(psi,sand)-Jw
@@ -88,6 +87,8 @@ ax3.set_xlabel('$\psi$ (cm)')
 ax3.set_xlim(-28,-8)
 ax3.set_ylim(-100,0)
 
+if __name__ == "__main__":
+    plt.show()
 
 
 

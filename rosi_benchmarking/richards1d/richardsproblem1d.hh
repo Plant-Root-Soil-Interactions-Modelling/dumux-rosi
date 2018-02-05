@@ -34,8 +34,9 @@
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/liquidphase.hh>
 #include <rosi_benchmarking/richards1d/richardsparams.hh>
-#include <dune/foamgrid/foamgrid.hh>
 
+#include <dune/foamgrid/foamgrid.hh>
+#include <dumux/common/timeloop.hh>
 
 namespace Dumux
 {
@@ -128,28 +129,24 @@ public:
      * \param gridView The grid view on the spatial domain of the problem
      */
     RichardsProblem1d(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
-		pnRef_ = 1e5; // reference pressure if Pascal are used
 
-		/*
-		 * read relevant run time parameter
-		 */
-		name_ = getParam<std::string>("Problem.Name");
+    	name_ = getParam<std::string>("Problem.Name");
 		bcTop_ = getParam<int>("BC_Top.Type");
 		bcBot_ = getParam<int>("BC_Bot.Type");
 
 		bcTopValue_ = 0; // default value
 		if ((bcTop_==1) || (bcTop_==2)) { // read constant pressure if dirchlet head (in [cm]) or constant flux (in [ kg/(m² s)])
-			bcTopValue_ = getParam<double>("BC_Top.Value");
+			bcTopValue_ = getParam<Scalar>("BC_Top.Value");
 		}
 
 		bcBotValue_ = 0; // default value
 		if ((bcBot_==1) || (bcBot_==2)) { // read constant pressure head (in [cm]) or constant flux (in [ kg/(m² s)])
-			bcBotValue_ = getParam<double>("BC_Bot.Value");
+			bcBotValue_ = getParam<Scalar>("BC_Bot.Value");
 		}
 
 		if (bcTop_==4) {
-			precTime_ = getParam<std::vector<double>>("Climate.Times");
-			precData_ = getParam<std::vector<double>>("Climate.Precipitation"); // in [cm / s]
+			precTime_ = getParam<std::vector<Scalar>>("Climate.Times");
+			precData_ = getParam<std::vector<Scalar>>("Climate.Precipitation"); // in [cm / s]
 		}
     }
 
@@ -250,7 +247,7 @@ public:
 		if (globalPos[0]==0) { // top bc
 			switch (bcTop_) {
 			case 1: // constant pressure
-				values[pressureIdx] = pnRef_ - toPa_(bcTopValue_);
+				values[pressureIdx] = nonWettingReferencePressure() - toPa_(bcTopValue_);
 				break;
 			default:
 				DUNE_THROW(Dune::InvalidStateException,"Top boundary type Dirichlet: unknown error");
@@ -258,7 +255,7 @@ public:
 		} else { // bot bc
 			switch (bcBot_) {
 			case 1: // constant pressure
-				values[pressureIdx] = pnRef_ - toPa_(bcBotValue_);
+				values[pressureIdx] = nonWettingReferencePressure() - toPa_(bcBotValue_);
 				break;
 			default:
 				DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Dirichlet: unknown error");
@@ -276,9 +273,9 @@ public:
                            const ElementVolumeVariables& elemVolVars,
                            const SubControlVolumeFace& scvf) const
 	{
-		const double rho = Water::liquidDensity(this->temperature(),pnRef_); // h2o: 1000 kg/m³ Density of water(independent of temp and p)
-//		const double g = abs(this->gravity()[0]); // 1D
-//		double const atm = 1e5/(rho*g); // atmospheric pressure [Pa]
+		const Scalar rho = Water::liquidDensity(this->temperature(),nonWettingReferencePressure()); // h2o: 1000 kg/m³ Density of water(independent of temp and p)
+		const Scalar g = abs(this->gravity()[dimWorld-1]);
+		Scalar const atm = nonWettingReferencePressure()/(rho*g); // atmospheric pressure [Pa]
 
 		GlobalPosition pos = scvf.ipGlobal();
 
@@ -291,14 +288,14 @@ public:
 				break;
 			}
 			case 5: {// free drainage
-				double Kc = this->spatialParams().hydraulicConductivity(element);
+				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
 				VolumeVariables  v0 = elemVolVars[0];
 				VolumeVariables  v1 = elemVolVars[1];
-				double swe =  0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
+				Scalar swe =  0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
 				ElementSolutionVector esv;
 				SubControlVolume scv;
 				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
-				double krw = MaterialLaw::krw(params, swe);
+				Scalar krw = MaterialLaw::krw(params, swe);
 				values[conti0EqIdx] = krw*Kc*rho; // * 1 [m]
 				break;
 			}
@@ -314,32 +311,29 @@ public:
 				break;
 			}
 			case 4: { // atmospheric boundary condition (with surface run-off)
-//				double Kc = this->spatialParams().hydraulicConductivity(element);
-//				ElementVolumeVariables  v0 = elemVolVars[0];
-//				ElementVolumeVariables  v1 = elemVolVars[1];
-//				double swe;
-//				//swe = 0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
-//				swe = v0.saturation(0); // todo is it wPhaseIdx?
-//
-//				double krw = MaterialLaw::krw(this->spatialParams().materialLawParams(element), swe);
-//				double h = MaterialLaw::pc(this->spatialParams().materialLawParams(element), swe);
-//				h = - h/(rho*g); // from Pa -> m pressure head
-//				double dz = 0.01; // m // todo no idea how this works ... fvGeometry.elementVolume; // 1D
-//
-//				double prec = getPrec_(0); // precipitation or evaporation  todo how do I get the time?
-//				if (prec<0) { // precipitation
-//					double imax = rho*Kc*((h-0.)/dz -1.); // maximal infiltration
-//					double v = (std::max(prec,imax));
-//					values[conti0EqIdx] = v;
-//					std::cout << "\n its precipitation: "<< prec << ", max inf " << imax << " Swe "<< swe << " Pressurehead "<< h << " values " << v
-//							<< " at time " << 0 <<"\n"; // todo time
-//				} else { // evaporation
-//					double emax = rho*krw*Kc*((h-atm)/dz -1.); // maximal evaporation
-//					double v  = std::min(prec,emax);
-//					values[conti0EqIdx] = v;
-//					std::cout << "\n its evaporation: "<< prec << ", max eva " << emax << " Swe "<< swe << " Pressurehead "<< h <<" values " << v
-//							<< " at time " << 0 << "\n"; // todo time
-//				}
+				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
+				VolumeVariables  v0 = elemVolVars[0];
+				VolumeVariables  v1 = elemVolVars[1];
+				Scalar swe = 0.5* (v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
+				ElementSolutionVector esv;
+				SubControlVolume scv;
+				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
+				Scalar krw = MaterialLaw::krw(params, swe);
+				Scalar h = MaterialLaw::pc(params, swe);
+				h = - h/(rho*g); // from Pa -> m pressure head
+				Scalar dz = 0.01; // m // todo no idea how this works ... fvGeometry.elementVolume; // 1D
+				Scalar prec = getPrec_(time_); // precipitation or evaporation
+				if (prec<0) { // precipitation
+					Scalar imax = rho*Kc*((h-0.)/dz -1.); // maximal infiltration
+					Scalar v = std::max(prec,imax);
+					values[conti0EqIdx] = v;
+					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " Swe "<< swe << " Pressurehead "<< h << " values " << v << " at time " << time_ ;
+				} else { // evaporation
+					Scalar emax = rho*krw*Kc*((h-atm)/dz -1.); // maximal evaporation
+					Scalar v  = std::min(prec,emax);
+					values[conti0EqIdx] = v;
+					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " Swe "<< swe << " Pressurehead "<< h <<" values " << v << " at time " << time_;
+				}
 				break;
 			}
 			default:
@@ -356,12 +350,18 @@ public:
     PrimaryVariables initial(const Entity& entity) const
 	{
 		PrimaryVariables values;
-		double iv = GridCreator::parameters(entity).at(0); // todo thats wrong, is it? whats entity and how i get my element from it
-		values[pressureIdx] = pnRef_ - toPa_(iv);
-        values.setState(bothPhases); // wtf?
+		Scalar iv = GridCreator::parameters(entity).at(0);
+		values[pressureIdx] = nonWettingReferencePressure() - toPa_(iv);
+        values.setState(bothPhases);
 		return values;
 	}
 
+    /**
+     * Set current simulation time (within the simulation loop)
+     */
+    void setTime(Scalar t) {
+    	time_ = t;
+    }
 
 private:
 
@@ -370,7 +370,7 @@ private:
 	 *
 	 *  @param ph           pressure head [cm]
 	 */
-	double toPa_(double ph) const {
+	Scalar toPa_(Scalar ph) const {
 		return -ph*10.*std::abs(this->gravity()[0]);
 	}
 
@@ -379,18 +379,18 @@ private:
 	 * e.g. (day_n, prec_n), means $t \in [day_{n-1}..day_n]$ will return prec_n
 	 * this makes sense, since normally data are given as mean precipitation per day
 	 */
-	double getPrec_(double t) const {
+	Scalar getPrec_(Scalar t) const {
 		return getPrec_(t,0,precData_.size()-1);
 	}
 
 	/**
 	 * table look up (binary search O(log(n)))
 	 */
-	double getPrec_(double t, int l, int r) const {
+	Scalar getPrec_(Scalar t, int l, int r) const {
 		if ((t<=precTime_.at(l))||(l==r)) {
 			return precData_.at(l);
 		} else {
-			int i = ceil((double(l)+double(r))/2.);
+			int i = ceil((Scalar(l)+Scalar(r))/2.);
 			if (t<=precTime_.at(i)) {
 				return getPrec_(t,l+1,i);
 			} else {
@@ -401,14 +401,14 @@ private:
 
 	int bcTop_;
 	int bcBot_;
-	double bcTopValue_;
-	double bcBotValue_;
-	std::vector<double> precTime_;
-	std::vector<double> precData_;
-
-	double pnRef_; // reference pressure
+	Scalar bcTopValue_;
+	Scalar bcBotValue_;
+	std::vector<Scalar> precTime_;
+	std::vector<Scalar> precData_;
 
 	std::string name_; // problem name
+
+	Scalar time_ = 0.;
 };
 
 } //end namespace Dumux
