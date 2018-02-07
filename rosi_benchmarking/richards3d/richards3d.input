@@ -1,10 +1,12 @@
-[TimeManager]
+[TimeLoop]
 DtInitial =  1 # [s]
 TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
 File = ./grids/test.dgf # [m], initial data [cm] pressure head
+Initial = -200
+Depth = -1
 
 [Problem]
 Name = jan1a
@@ -33,23 +35,9 @@ Ks = 5.7870e-06
 # Ks = 5.7870e-06 # [m/s] hydrus verdoppelt (!)
 
 
-# Hydrus VG parameters are: 
-#sand 
-#Qr = 0.045
-#Qs = 0.43
-#alpha = 0.145
-#n = 2.68
-#Ks = 8.25e-5
-## silt	
-#Qr = 0.034 
-#Qs = 0.46
-#alpha = 0.016
-#n = 1.37
-#Ks = 6.94444e-7
-
 [BC_Top]
-Type = 2
-Value = 0.5 # [cm day-1]
+Type = 1
+Value = -200 # [cm day-1]
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -59,8 +47,8 @@ Value = 0.5 # [cm day-1]
 # 6 variable pressure head/flux
 
 [BC_Bot]
-Type = 5
-Value = 0 #-1 # [cm] field capacity
+Type = 1
+Value = -200 #-1 # [cm] field capacity
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -71,9 +59,14 @@ Value = 0 #-1 # [cm] field capacity
 # 7 seepage face
 # 8 horizontal drains
 
-[Implicit]
-EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
-EnableJacobianRecycling = 1 #
-
 [Newton]
 TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
+EnableChop = true # chop for better convergence
+
+
+
+
+# old
+# [Implicit]
+# EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
+# EnableJacobianRecycling = 1 #
