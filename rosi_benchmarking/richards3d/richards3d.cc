@@ -63,7 +63,18 @@
 void usage(const char *progName, const std::string &errorMsg)
 {
     if (errorMsg.size() > 0) {
-        std::cout << errorMsg << "\n";
+        std::string errorMessageOut = "\nUsage: ";
+                    errorMessageOut += progName;
+                    errorMessageOut += " [options]\n";
+                    errorMessageOut += errorMsg;
+                    errorMessageOut += "\n\nThe list of mandatory options for this program is:\n"
+                                        "\t-TimeManager.TEnd      End of the simulation [s] \n"
+                                        "\t-TimeManager.DtInitial Initial timestep size [s] \n"
+                                        "\t-Grid.File             Name of the file containing the grid \n"
+                                        "\t                       definition in DGF format\n";
+
+        std::cout << errorMessageOut
+                  << "\n";
     }
 }
 
@@ -167,8 +178,6 @@ int main(int argc, char** argv) try
     // time loop
     timeLoop->start(); do
     {
-    	problem->setTime(timeLoop->time());
-
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
 

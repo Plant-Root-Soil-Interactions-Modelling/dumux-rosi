@@ -40,6 +40,8 @@ def createDGF_1D(filename, N, depth, top, bot, domainId, vertex3d = False):
 
 
 
+
+
 if __name__ == "__main__":
     
     # Jan 1 (Figure 2abc)

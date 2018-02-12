@@ -33,13 +33,17 @@
 #include <dumux/porousmediumflow/richards/model.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/liquidphase.hh>
-#include <rosi_benchmarking/richards3d/richardsparams.hh>
 
-#include <dune/foamgrid/foamgrid.hh>
-#include <dumux/common/timeloop.hh>
+#include <rosi_benchmarking/richards3d/richardsparams.hh>
 
 namespace Dumux
 {
+/*!
+ * \ingroup RichardsTests
+ * \brief A water infiltration problem with a low-permeability lens
+ *        embedded into a high-permeability domain which uses the
+ *        Richards box model.
+ */
 template <class TypeTag>
 class RichardsProblem3d;
 
@@ -51,41 +55,39 @@ NEW_TYPE_TAG(RichardsProblem3d, INHERITS_FROM(Richards, RichardsParams));
 NEW_TYPE_TAG(RichardsBoxProblem3d, INHERITS_FROM(BoxModel, RichardsProblem3d));
 NEW_TYPE_TAG(RichardsCCProblem3d, INHERITS_FROM(CCTpfaModel, RichardsProblem3d));
 
-// Set the grid type
+// Use 2d YaspGrid
 SET_TYPE_PROP(RichardsProblem3d, Grid, Dune::YaspGrid<3>);
-// apparently Dune::OneDGrid does not read the simplex parameters from the dgf (without warning),
-// no idea how to pass initial conditions otherwise. FoamGrid works fine!
-// SGrid is no longer available, or I don't know how to use it
 
 // Set the physical problem to be solved
 SET_TYPE_PROP(RichardsProblem3d, Problem, RichardsProblem3d<TypeTag>);
-}
+} // end namespace Dumux
 
-/**
- * Solves the Richard equation in 1D with Van Genuchten model
+/*!
+ * \ingroup RichardsModel
+ * \ingroup ImplicitTestProblems
  *
- * Van Genuchten parameters are passed using the .input file:
- * [VanGenuchten] # silt
- * Qr = 0.034
- * Qs = 0.46
- * alpha = 0.016 # [1/cm]
- * n = 1.37
- * Ks = 6.94444e-7 # [m/s]
+ * \brief A water infiltration problem with a low-permeability lens
+ *        embedded into a high-permeability domain which uses the
+ *        Richards model.
  *
- * Initial values are passed by the .dgf file. The file can be produced by the Matlab script create1Ddgf
+ * The domain is box shaped. Left and right boundaries are Dirichlet
+ * boundaries with fixed water pressure (fixed Saturation \f$S_w = 0\f$),
+ * bottom boundary is closed (Neumann 0 boundary), the top boundary
+ * (Neumann 0 boundary) is also closed except for infiltration
+ * section, where water is infiltrating into an initially unsaturated
+ * porous medium. This problem is very similar the the LensProblem
+ * which uses the TwoPBoxModel, with the main difference being that
+ * the domain is initally fully saturated by gas instead of water and
+ * water instead of a %DNAPL infiltrates from the top.
  *
- * Boundary values can be chosen in the .input file:
- * [BC_Top]
- * type = 2 # 1 constant pressure head, 2 constant flux, more will follow
- * value = 0
+ * This problem uses the \ref RichardsModel
  *
- * [BC_Bot]
- * type = 2 # 1 constant pressure head, 2 constant flux, more will follow
- * value = 0
+ * To run the simulation execute the following line in shell:
+ * <tt>./test_boxrichards -parameterFile test_boxrichards.input -TimeManager.TEnd 10000000</tt>
+ * <tt>./test_ccrichards -parameterFile test_ccrichards.input -TimeManager.TEnd 10000000</tt>
  *
- * Output times can be chosen in the .input file:
- * [TimeLoop]
- * Episodes = 60 120 2000 # s
+ * where the initial time step is 100 seconds, and the end of the
+ * simulation time is 10,000,000 seconds (115.7 days)
  */
 template <class TypeTag>
 class RichardsProblem3d : public PorousMediumFlowProblem<TypeTag>
@@ -98,28 +100,17 @@ class RichardsProblem3d : public PorousMediumFlowProblem<TypeTag>
 	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
 	using Indices = typename GET_PROP_TYPE(TypeTag, Indices);
 	using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
-	using Element = typename GridView::template Codim<0>::Entity;
 	enum {
 		// copy some indices for convenience
 		pressureIdx = Indices::pressureIdx,
 		conti0EqIdx = Indices::conti0EqIdx,
-		wPhaseIdx = Indices::wPhaseIdx,
-		bothPhases = Indices::bothPhases
+		bothPhases = Indices::bothPhases,
+
+		// Grid and world dimension
+		dimWorld = GridView::dimensionworld
 	};
-	using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVElementGeometry);
-	using SubControlVolume = typename GET_PROP_TYPE(TypeTag, SubControlVolume);
-	using NeumannFluxes = typename GET_PROP_TYPE(TypeTag, NumEqVector);
-	using SourceValues = typename GET_PROP_TYPE(TypeTag, NumEqVector);
-	static constexpr int dimWorld = GridView::dimensionworld;
+
 	using GlobalPosition = Dune::FieldVector<Scalar, dimWorld>;
-	using Water = SimpleH2O<Scalar>;
-	using ResidualVector = typename GET_PROP_TYPE(TypeTag, NumEqVector);
-	using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, ElementVolumeVariables); // from fvproblem.hh
-	using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
-	using SubControlVolumeFace = typename GET_PROP_TYPE(TypeTag, SubControlVolumeFace); // from fvproblem.hh
-	using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
-	using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
-	using MaterialLawParams = typename MaterialLaw::Params;
 
 public:
 	/*!
@@ -128,11 +119,9 @@ public:
 	 * \param timeManager The Dumux TimeManager for simulation management.
 	 * \param gridView The grid view on the spatial domain of the problem
 	 */
-	RichardsProblem3d(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
-
+	RichardsProblem3d(std::shared_ptr<const FVGridGeometry> fvGridGeometry) : ParentType(fvGridGeometry) {
 		name_ = getParam<std::string>("Problem.Name");
 		initial_ = getParam<Scalar>("Grid.Initial");
-		depth_ = getParam<Scalar>("Grid.Depth");
 		bcTop_ = getParam<int>("BC_Top.Type");
 		bcBot_ = getParam<int>("BC_Bot.Type");
 
@@ -173,7 +162,7 @@ public:
 	 */
 	Scalar temperature() const {
 		return 273.15 + 10; // -> 10°C
-	};
+	}
 
 	/*!
 	 * \brief Returns the reference pressure [Pa] of the non-wetting
@@ -182,183 +171,70 @@ public:
 	 * This problem assumes a constant reference pressure of 1 bar.
 	 */
 	Scalar nonWettingReferencePressure() const {
-		return 1.0e5; // [Pa]
-	};
+		return 1.0e5;
+	}
 
 	// \}
 
-	// \}
 	/*!
 	 * \name Boundary conditions
 	 */
 	// \{
 
 	/*!
-	 * \copydoc FVProblem::sourceAtPos
+	 * \brief Specifies which kind of boundary condition should be
+	 *        used for which equation on a given boundary segment.
+	 *
+	 * \param globalPos The position for which the boundary type is set
 	 */
-	ResidualVector sourceAtPos(const GlobalPosition &globalPos) const {
-		//! As a default, i.e. if the user's problem does not overload any source method
-		//! return 0.0 (no source terms)
-		return ResidualVector(0.0);
-	}
-
-	/*!
-	 * \copydoc FVProblem::boundaryTypesAtPos
-	 */
-	BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const	{
-		//        cout << "\n\nBoundariesAtPos\n\n";
+	BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
+	{
 		BoundaryTypes bcTypes;
-		Scalar z = pos[dimWorld-1];
-		if (z+eps_>=-depth_) { // top bc
-			std::cout << "\nboundaryTypesAtPos: " << pos << ":";
-			std::cout << " top ";
-			switch (bcTop_) {
-			case 1: // constant pressure head
-				bcTypes.setAllDirichlet();
-				std::cout << " dirichlet ";
-				break;
-			case 2: // constant flux
-				bcTypes.setAllNeumann();
-				std::cout << " neumann ";
-				break;
-			case 4: // atmospheric boundary condition (with surface run-off)
-				bcTypes.setAllNeumann();
-				std::cout << " neumann ";
-				break;
-			default:
-				DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
-			}
-		} else if (z-eps_<=0) { // bot bc
-			std::cout << "\nboundaryTypesAtPos: " << pos << ":";
-			std::cout << " bot ";
-			switch (bcBot_) {
-			case 1: // constant pressure head
-				bcTypes.setAllDirichlet();
-				std::cout << " dirichlet ";
-				break;
-			case 2: // constant flux
-				bcTypes.setAllNeumann();
-				std::cout << " neumann ";
-				break;
-			case 5: // free drainage
-				bcTypes.setAllNeumann();
-				std::cout << " neumann ";
-				break;
-			default:
-				DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type not implemented");
-			}
-		} else {
+		if (onLowerBoundary_(globalPos) || onUpperBoundary_(globalPos)) {
 			bcTypes.setAllNeumann();
+		} else {
+			bcTypes.setAllDirichlet();
 		}
 		return bcTypes;
 	}
 
 	/*!
-	 * \copydoc FVProblem::dirichletAtPos
+	 * \brief Evaluate the boundary conditions for a dirichlet
+	 *        boundary segment.
+	 *
+	 * \param globalPos The position for which the Dirichlet value is set
+	 *
+	 * For this method, the \a values parameter stores primary variables.
 	 */
-	PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const
+	PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const
 	{
-		Scalar z = pos[dimWorld-1];
+		// use initial values as boundary conditions
 		PrimaryVariables values;
-		if (z+eps_>=-depth_) { // top bc
-			switch (bcTop_) {
-			case 1: // constant pressure
-				values[pressureIdx] = nonWettingReferencePressure() - toPa_(bcTopValue_);
-				break;
-			default:
-				DUNE_THROW(Dune::InvalidStateException,"Top boundary type Dirichlet: unknown error");
-			}
-		} else if (z-eps_<=0) { // bot bc
-			switch (bcBot_) {
-			case 1: // constant pressure
-				values[pressureIdx] = nonWettingReferencePressure() - toPa_(bcBotValue_);
-				break;
-			default:
-				DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Dirichlet: unknown error");
-			}
-		}
-		values.setState(bothPhases); // wtf?
+		//Scalar iv = GridCreator::parameters(entity).at(0);
+		Scalar iv = initial_;
+		values[pressureIdx] = nonWettingReferencePressure() - toPa_(iv);
 		return values;
 	}
 
 	/*!
-	 * see FVProblem::neumann
+	 * \brief Evaluate the boundary conditions for a neumann
+	 *        boundary segment.
+	 *
+	 * For this method, the \a values parameter stores the mass flux
+	 * in normal direction of each phase. Negative values mean influx.
+	 *
+	 * \param globalPos The position for which the Neumann value is set
 	 */
-	ResidualVector neumann(const Element& element,
-			const FVElementGeometry& fvGeometry,
-			const ElementVolumeVariables& elemVolVars,
-			const SubControlVolumeFace& scvf) const
+	PrimaryVariables neumannAtPos(const GlobalPosition &globalPos) const
 	{
-		const Scalar rho = Water::liquidDensity(this->temperature(),nonWettingReferencePressure()); // h2o: 1000 kg/m³ Density of water(independent of temp and p)
-		const Scalar g = abs(this->gravity()[dimWorld-1]);
-		Scalar const atm = nonWettingReferencePressure()/(rho*g); // atmospheric pressure [Pa]
-		GlobalPosition pos = scvf.ipGlobal();
-		ResidualVector values;
-		Scalar z = pos[dimWorld-1];
-
-		if (z+eps_>=-depth_) { // top boundary
-			switch (bcTop_) {
-			case 2: { // constant flux
-				//std::cout << " top flux " << bcTopValue_ << " ";
-				values[conti0EqIdx] = -10*bcTopValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
-				break;
-			}
-			case 4: { // atmospheric boundary condition (with surface run-off)
-				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
-				VolumeVariables  v0 = elemVolVars[0];
-				VolumeVariables  v1 = elemVolVars[1];
-				Scalar swe = 0.5* (v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
-				ElementSolutionVector esv;
-				SubControlVolume scv;
-				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
-				Scalar krw = MaterialLaw::krw(params, swe);
-				Scalar h = MaterialLaw::pc(params, swe);
-				h = - h/(rho*g); // from Pa -> m pressure head
-				Scalar dz = 0.01; // m // todo no idea how this works ... fvGeometry.elementVolume; // 1D
-				Scalar prec = getPrec_(time_); // precipitation or evaporation
-				if (prec<0) { // precipitation
-					Scalar imax = rho*Kc*((h-0.)/dz -1.); // maximal infiltration
-					Scalar v = std::max(prec,imax);
-					values[conti0EqIdx] = v;
-					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " Swe "<< swe << " Pressurehead "<< h << " values " << v << " at time " << time_ ;
-				} else { // evaporation
-					Scalar emax = rho*krw*Kc*((h-atm)/dz -1.); // maximal evaporation
-					Scalar v  = std::min(prec,emax);
-					values[conti0EqIdx] = v;
-					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " Swe "<< swe << " Pressurehead "<< h <<" values " << v << " at time " << time_;
-				}
-				break;
-			}
-			default:
-				DUNE_THROW(Dune::InvalidStateException,"Top boundary type Neumann: unknown error");
-			}
-		} else if (z-eps_<=0)  { // bottom boundary
-			switch (bcBot_) {
-			case 2: { // constant flux
-				//std::cout << " bot flux " << bcBotValue_<< " ";
-				values[conti0EqIdx] = -10*bcBotValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] *rho
-				break;
-			}
-			case 5: {// free drainage
-				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
-				VolumeVariables  v0 = elemVolVars[0];
-				VolumeVariables  v1 = elemVolVars[1];
-				Scalar swe =  0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
-				ElementSolutionVector esv;
-				SubControlVolume scv;
-				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
-				Scalar krw = MaterialLaw::krw(params, swe);
-				values[conti0EqIdx] = krw*Kc*rho; // * 1 [m]
-				break;
-			}
-			default:
-				DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Neumann: unknown error");
-			}
-		} else {
-			values[conti0EqIdx] = 0.;
-		}
+		PrimaryVariables values(0.0);
 		return values;
 	}
+
+	/*!
+	 * \name Volume terms
+	 */
+	// \{
 
 	/*!
 	 * see FVProblem::initial
@@ -374,12 +250,7 @@ public:
 		return values;
 	}
 
-	/**
-	 * Set current simulation time (within the simulation loop)
-	 */
-	void setTime(Scalar t) {
-		time_ = t;
-	}
+	// \}
 
 private:
 
@@ -390,6 +261,16 @@ private:
 	 */
 	Scalar toPa_(Scalar ph) const {
 		return -ph*10.*std::abs(this->gravity()[0]);
+	}
+
+	bool onLowerBoundary_(const GlobalPosition &globalPos) const
+	{
+		return globalPos[dimWorld-1] < this->fvGridGeometry().bBoxMin()[dimWorld-1] + eps_;
+	}
+
+	bool onUpperBoundary_(const GlobalPosition &globalPos) const
+	{
+		return globalPos[dimWorld-1] > this->fvGridGeometry().bBoxMax()[dimWorld-1] - eps_;
 	}
 
 	/**
@@ -429,8 +310,9 @@ private:
 	Scalar time_ = 0.;
 
 	Scalar initial_ = -200; // cm pressure head
-	Scalar depth_ = -1; // m
+	Scalar depth_ = -1; // m // todo useg gridview. bBoxMin Max instead
 	Scalar eps_ = 1.e-5; // m
+
 };
 
 } //end namespace Dumux

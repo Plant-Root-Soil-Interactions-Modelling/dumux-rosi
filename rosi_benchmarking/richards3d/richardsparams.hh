@@ -107,7 +107,9 @@ public:
 
     	phi_ = 1; // Richards equation is independent of phi
 
-        Scalar g =  abs(problem.gravity()[dimWorld-1]);
+        Scalar g =  -9.81; // std::abs(problem.gravity()[dimWorld-1]);
+        std::cout << "gravity " << problem.gravity() << "\n";
+
         Scalar temp =  problem.temperature();
         Scalar pnRef = problem.nonWettingReferencePressure();
         Scalar mu = Water::liquidViscosity(temp,pnRef); // h2o: 1e-3 Pa·s Dynamic viscosity of water(independent of temp and p)
@@ -137,8 +139,8 @@ public:
             // Kc
             K_.push_back(Kc_.at(i)*mu/(rho*g)); // convert to intrinsic permeability (from the hydraulic conductivity)
             // Debug
-            std::cout << "\nVan Genuchten Parameters are " << Qr.at(i) << ", " << Qs.at(i) <<
-                    ", "<< alpha.at(i) << ", "<< n.at(i) << ", "<< Kc_.at(i) << "\n";
+            std::cout << "\nVan Genuchten Parameters are " << Qr.at(i) << ", " << 1.-Qs.at(i)/phi_ <<
+                    ", "<< a << ", " << a/(rho*g)<< ", "<< n.at(i) << ", "<< Kc_.at(i)*mu/(rho*g) << ", " << rho << ", "<< g <<"\n";
         }
     }
 
@@ -184,8 +186,14 @@ public:
                                                const SubControlVolume& scv,
                                                const ElementSolutionVector& elemSol) const
     {
-        return materialParams_.at(getDI(element));
+        return materialParams_.at(0); // getDI(element)
     }
+
+    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition &globalPos) const
+    {
+    	 return materialParams_.at(0);
+    }
+
 
 private:
 
