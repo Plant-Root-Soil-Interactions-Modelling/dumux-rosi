@@ -33,12 +33,13 @@
 #include <dumux/porousmediumflow/richards/model.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/liquidphase.hh>
-#include <rosi_benchmarking/richards1d/richardsparams.hh>
 
 #include <dune/foamgrid/foamgrid.hh>
 #include <dumux/common/timeloop.hh>
 
-namespace Dumux
+#include "richardsparams.hh"  // #include <rosi_benchmarking/richards1d/richardsparams.hh>
+
+namespace Dumux //
 {
 template <class TypeTag>
 class RichardsProblem1d;
@@ -106,8 +107,8 @@ class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
 		wPhaseIdx = Indices::wPhaseIdx,
         bothPhases = Indices::bothPhases
     };
-    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVElementGeometry);
-    using SubControlVolume = typename GET_PROP_TYPE(TypeTag, SubControlVolume);
+    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
+    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using NeumannFluxes = typename GET_PROP_TYPE(TypeTag, NumEqVector);
     using SourceValues = typename GET_PROP_TYPE(TypeTag, NumEqVector);
     static constexpr int dimWorld = GridView::dimensionworld;
@@ -116,7 +117,7 @@ class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
     using ResidualVector = typename GET_PROP_TYPE(TypeTag, NumEqVector);
     using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, ElementVolumeVariables); // from fvproblem.hh
     using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
-    using SubControlVolumeFace = typename GET_PROP_TYPE(TypeTag, SubControlVolumeFace); // from fvproblem.hh
+    using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace; // from fvproblem.hh
     using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
     using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
     using MaterialLawParams = typename MaterialLaw::Params;
@@ -183,7 +184,6 @@ public:
     	return 1.0e5; // [Pa]
     };
 
-    // \}
 
     // \}
     /*!
@@ -274,7 +274,7 @@ public:
                            const SubControlVolumeFace& scvf) const
 	{
 		const Scalar rho = Water::liquidDensity(this->temperature(),nonWettingReferencePressure()); // h2o: 1000 kg/m³ Density of water(independent of temp and p)
-		const Scalar g = abs(this->gravity()[dimWorld-1]);
+		const Scalar g = 9.81; // abs(this->gravity()[dimWorld-1]);
 		Scalar const atm = nonWettingReferencePressure()/(rho*g); // atmospheric pressure [Pa]
 
 		GlobalPosition pos = scvf.ipGlobal();
@@ -409,6 +409,7 @@ private:
 	std::string name_; // problem name
 
 	Scalar time_ = 0.;
+
 };
 
 } //end namespace Dumux

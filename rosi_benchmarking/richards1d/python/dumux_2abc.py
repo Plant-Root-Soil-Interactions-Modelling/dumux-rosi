@@ -14,10 +14,10 @@ import van_genuchten as vg
 path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/richards1d/"
 
 # # run dumux 
-# os.chdir( path )
-# os.system( "./richards1d input/jan1a.input")
-# os.system( "./richards1d input/jan1b.input")
-# os.system( "./richards1d input/jan1c.input")
+os.chdir( path )
+os.system( "./richards1d input/jan1a.input")
+os.system( "./richards1d input/jan1b.input")
+os.system( "./richards1d input/jan1c.input")
 
 # result dumux jan1 (Figure 2a)
 s_, p_ = read1D_vtp_data(path+"jan1a-00001.vtp", False)

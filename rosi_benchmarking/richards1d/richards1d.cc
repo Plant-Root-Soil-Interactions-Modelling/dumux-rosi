@@ -41,9 +41,9 @@
 #include <dumux/common/defaultusagemessage.hh> // nothing
 
 #include <dumux/linear/amgbackend.hh> // adaptive multigrid? rly? based on what?
-#include <dumux/nonlinear/newtonmethod.hh>
-#include <dumux/nonlinear/newtoncontroller.hh>
-#include <dumux/porousmediumflow/richards/newtoncontroller.hh>
+//#include <dumux/nonlinear/newtonmethod.hh>
+//#include <dumux/nonlinear/newtoncontroller.hh>
+#include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
 #include <dumux/assembly/fvassembler.hh> // TimeLoop include is hidden here
 // #include <dumux/assembly/diffmethod.hh> // defined in the fvassembler, what should I do with the enum?
@@ -145,7 +145,7 @@ int main(int argc, char** argv) try
     	// insert check points
     	for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
     		timeLoop->setCheckPoint(p);
-    	}
+    	} //
     } catch(std::exception& e) {
     	std::cout<< "richards1d.cc: no check times defined in the input file\n";
     }
@@ -159,10 +159,8 @@ int main(int argc, char** argv) try
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
     // the non-linear solver
-    using NewtonController = Dumux::RichardsNewtonController<TypeTag>;
-    using NewtonMethod = Dumux::NewtonMethod<NewtonController, Assembler, LinearSolver>;
-    auto newtonController = std::make_shared<NewtonController>(leafGridView.comm(), timeLoop);
-    NewtonMethod nonLinearSolver(newtonController, assembler, linearSolver);
+    using NewtonSolver = Dumux::RichardsNewtonSolver<TypeTag, Assembler, LinearSolver>;
+    NewtonSolver nonLinearSolver(assembler, linearSolver, timeLoop);
 
     // time loop
     timeLoop->start(); do
@@ -207,7 +205,7 @@ int main(int argc, char** argv) try
         timeLoop->reportTimeStep();
 
         // set new dt as suggested by newton controller
-        timeLoop->setTimeStepSize(newtonController->suggestTimeStepSize(timeLoop->timeStepSize()));
+        timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
 
     } while (!timeLoop->finished());
 
