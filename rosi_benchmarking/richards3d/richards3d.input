@@ -1,11 +1,11 @@
 [TimeLoop]
-DtInitial =  1 # [s]
+DtInitial =  100 # [s]
 TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
 UpperRight = 0.1 0.1 1
-Cells = 3 3 100 # File = ./grids/test_1p_3d.dgf # [m], initial data [cm] pressure head
+Cells = 10 10 100 # File = ./grids/test_1p_3d.dgf # [m], initial data [cm] pressure head
 Initial = -200 # cm pressure head
 
 [Problem]
@@ -60,6 +60,6 @@ Value = -200 #-1 # [cm] field capacity
 # 8 horizontal drains
 
 [Newton]
-TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
+TargetSteps = 5 # set the "desireable" number of newton iterations of a time step
 EnableChop = true # chop for better convergence
 

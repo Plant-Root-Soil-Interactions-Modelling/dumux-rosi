@@ -32,7 +32,7 @@
 
 #include <dumux/porousmediumflow/richards/model.hh>
 
-namespace Dumux
+namespace Dumux //
 {
 /*!
  * \ingroup RichardsTests
@@ -78,10 +78,10 @@ class RichardsParams : public FVSpatialParams<TypeTag>
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
     using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
     using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
-    using SubControlVolume = typename GET_PROP_TYPE(TypeTag, SubControlVolume);
-    using IndexSet = typename GridView::IndexSet;
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
-
+    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
+    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    using IndexSet = typename GridView::IndexSet;
     using Water = SimpleH2O<Scalar>;
 
     enum {
@@ -107,9 +107,7 @@ public:
 
     	phi_ = 1; // Richards equation is independent of phi
 
-        Scalar g =  -9.81; // std::abs(problem.gravity()[dimWorld-1]);
-        std::cout << "gravity " << problem.gravity() << "\n";
-
+        Scalar g =  9.81; // std::abs(problem.gravity()[dimWorld-1]);
         Scalar temp =  problem.temperature();
         Scalar pnRef = problem.nonWettingReferencePressure();
         Scalar mu = Water::liquidViscosity(temp,pnRef); // h2o: 1e-3 Pa·s Dynamic viscosity of water(independent of temp and p)
@@ -129,19 +127,25 @@ public:
             materialParams_.push_back(MaterialLawParams());
             // QR
             materialParams_.at(i).setSwr(Qr.at(i)/phi_);
+            // materialParams_.at(i).setSwr(0.05);
             // QS
             materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_);
+            // materialParams_.at(i).setSnr(0.);
             // ALPHA
             Scalar a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
             materialParams_.at(i).setVgAlpha(a/(rho*g)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
+            // materialParams_.at(i).setVgAlpha(0.0037);
             // N
             materialParams_.at(i).setVgn(n.at(i));
+            // materialParams_.at(i).setVgn(4.7);
             // Kc
             K_.push_back(Kc_.at(i)*mu/(rho*g)); // convert to intrinsic permeability (from the hydraulic conductivity)
+            // K_.push_back(5.e-12);
             // Debug
             std::cout << "\nVan Genuchten Parameters are " << Qr.at(i) << ", " << 1.-Qs.at(i)/phi_ <<
                     ", "<< a << ", " << a/(rho*g)<< ", "<< n.at(i) << ", "<< Kc_.at(i)*mu/(rho*g) << ", " << rho << ", "<< g <<"\n";
         }
+        // while(std::cin.get()!='\n');
     }
 
     /*!
@@ -186,13 +190,13 @@ public:
                                                const SubControlVolume& scv,
                                                const ElementSolutionVector& elemSol) const
     {
-        return materialParams_.at(0); // getDI(element)
+        return materialParams_.at(getDI(element));
     }
 
-    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition &globalPos) const
-    {
-    	 return materialParams_.at(0);
-    }
+//    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
+//    {
+//        return materialParams_.at(0);
+//    }
 
 
 private:
