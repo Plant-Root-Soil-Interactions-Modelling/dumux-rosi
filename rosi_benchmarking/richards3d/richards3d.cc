@@ -176,6 +176,9 @@ int main(int argc, char** argv) try
     // time loop
     timeLoop->start(); do
     {
+    	// set time within problem
+    	problem->setTime(timeLoop->time());
+
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
 

@@ -66,6 +66,7 @@ public:
 }
 
 
+
 /*!
  * \ingroup Richards
  * \brief The spatial parameters class for the Richards problem
@@ -159,15 +160,32 @@ public:
     PermeabilityType permeability(const Element& element,
                                   const SubControlVolume& scv,
                                   const ElementSolutionVector& elemSol) const {
-    	 return K_.at(getDI(element));
+    	GlobalPosition pos = scv.center();
+    	if (more_) {
+    		if (pos[2]>1.5) { // hard coded for specific example
+    			return K_.at(0);
+    		} else {
+    			return K_.at(1);
+    		}
+    	} else {
+    		return K_.at(0);
+    	}
     }
 
     /*
-     * \brief Function for defining the (absolute) hydraulic conductivity. [m/s] (todo Who uses that?)
+     * \brief my own function for defining the (absolute) hydraulic conductivity. [m/s], called by the problem
      */
-    const Scalar hydraulicConductivity(const Element &element) const
+    const Scalar hydraulicConductivity(const GlobalPosition& pos) const
     {
-        return Kc_.at(getDI(element));
+    	if (more_) {
+    		if (pos[2]>1.5) { // hard coded for specific example
+    			return Kc_.at(0);
+    		} else {
+    			return Kc_.at(1);
+    		}
+    	} else {
+    		return Kc_.at(0);
+    	}
     }
 
     /*! \brief Define the porosity in [-].
@@ -190,29 +208,19 @@ public:
                                                const SubControlVolume& scv,
                                                const ElementSolutionVector& elemSol) const
     {
-        return materialParams_.at(getDI(element));
+    	GlobalPosition pos = scv.center();
+    	if (more_) {
+    		if (pos[2]>1.5) { // hard coded for specific example
+    			return materialParams_.at(0);
+    		} else {
+    			return materialParams_.at(1);
+    		}
+    	} else {
+    		return materialParams_.at(0);
+    	}
     }
-
-//    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
-//    {
-//        return materialParams_.at(0);
-//    }
-
 
 private:
-
-    /**
-     * returns the domain index
-     */
-    int getDI(const Element &element) const
-    {
-        if (more_) {
-            int i = (GridCreator::parameters(element)).at(1)-1; // starting from 1
-            return i;
-        } else {
-            return 0;
-        }
-    }
 
     bool more_;
     Scalar phi_;

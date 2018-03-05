@@ -290,7 +290,7 @@ public:
 				break;
 			}
 			case 4: { // atmospheric boundary condition (with surface run-off)
-				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
+				Scalar Kc = this->spatialParams().hydraulicConductivity(pos);
 				VolumeVariables  v0 = elemVolVars[0];
 				VolumeVariables  v1 = elemVolVars[1];
 				Scalar swe = 0.5* (v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
@@ -328,7 +328,7 @@ public:
 				break;
 			}
 			case 5: {// free drainage
-				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
+				Scalar Kc = this->spatialParams().hydraulicConductivity(pos);
 				VolumeVariables  v0 = elemVolVars[0];
 				VolumeVariables  v1 = elemVolVars[1];
 				Scalar swe =  0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
@@ -347,63 +347,6 @@ public:
 		return values;
 	}
 
-//	// \}
-//
-//	/*!
-//	 * \name Boundary conditions
-//	 */
-//	// \{
-//
-//	/*!
-//	 * \brief Specifies which kind of boundary condition should be
-//	 *        used for which equation on a given boundary segment.
-//	 *
-//	 * \param globalPos The position for which the boundary type is set
-//	 */
-//	BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
-//	{
-//		BoundaryTypes bcTypes;
-//		if (onLowerBoundary_(globalPos) || onUpperBoundary_(globalPos)) {
-//			bcTypes.setAllNeumann();
-//		} else {
-//			bcTypes.setAllDirichlet();
-//		}
-//		return bcTypes;
-//	}
-//
-//	/*!
-//	 * \brief Evaluate the boundary conditions for a dirichlet
-//	 *        boundary segment.
-//	 *
-//	 * \param globalPos The position for which the Dirichlet value is set
-//	 *
-//	 * For this method, the \a values parameter stores primary variables.
-//	 */
-//	PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const
-//	{
-//		// use initial values as boundary conditions
-//		PrimaryVariables values;
-//		//Scalar iv = GridCreator::parameters(entity).at(0);
-//		Scalar iv = initial_;
-//		values[pressureIdx] = nonWettingReferencePressure() - toPa_(iv);
-//		return values;
-//	}
-//
-//	/*!
-//	 * \brief Evaluate the boundary conditions for a neumann
-//	 *        boundary segment.
-//	 *
-//	 * For this method, the \a values parameter stores the mass flux
-//	 * in normal direction of each phase. Negative values mean influx.
-//	 *
-//	 * \param globalPos The position for which the Neumann value is set
-//	 */
-//	PrimaryVariables neumannAtPos(const GlobalPosition &globalPos) const
-//	{
-//		PrimaryVariables values(0.0);
-//		return values;
-//	}
-
 	/*!
 	 * \name Volume terms
 	 */
@@ -416,12 +359,23 @@ public:
 	PrimaryVariables initial(const Entity& entity) const
 	{
 		PrimaryVariables values;
-		//Scalar iv = GridCreator::parameters(entity).at(0);
-		Scalar iv = initial_;
-		values[pressureIdx] = nonWettingReferencePressure() - toPa_(iv);
-		values.setState(bothPhases);
+		if (initial_<0) {
+			Scalar iv = initial_;
+			values[pressureIdx] = nonWettingReferencePressure() - toPa_(iv);
+			values.setState(bothPhases);
+		} else {
+			GlobalPosition pos = entity.geometry().center();
+			Scalar iv = -54 + pos[2]; // hard coded for example jan2
+			values[pressureIdx] = nonWettingReferencePressure() - toPa_(iv);
+			values.setState(bothPhases);
+		}
 		return values;
 	}
+
+	void setTime(Scalar t) {
+		time_ = t;
+	}
+
 
 	// \}
 
