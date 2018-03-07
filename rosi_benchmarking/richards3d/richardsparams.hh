@@ -196,21 +196,17 @@ public:
     	return phi_; // porosity*saturation = watercontent
     }
 
+
     /*!
      * \brief Function for defining the parameters needed by constitutive relationships (kr-sw, pc-sw, etc.).
      *
-     * \param element The current element
-     * \param scv The sub-control volume inside the element.
-     * \param elemSol The solution at the dofs connected to the element.
      * \return the material parameters object
+     * \param globalPos The position of the center of the element
      */
-    const MaterialLawParams& materialLawParams(const Element& element,
-                                               const SubControlVolume& scv,
-                                               const ElementSolutionVector& elemSol) const
+    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
     {
-    	GlobalPosition pos = scv.center();
     	if (more_) {
-    		if (pos[2]>1.5) { // hard coded for specific example
+    		if (globalPos[2]>1.5) { // hard coded for specific example
     			return materialParams_.at(0);
     		} else {
     			return materialParams_.at(1);
@@ -219,6 +215,7 @@ public:
     		return materialParams_.at(0);
     	}
     }
+
 
 private:
 

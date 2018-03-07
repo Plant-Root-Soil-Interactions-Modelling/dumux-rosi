@@ -34,8 +34,8 @@ plt.ylim(-60,0)
 path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/richards1d/"
 
 # run dumux 
-# os.chdir(path)
-# os.system( "./richards1d input/jan2.input")
+os.chdir(path)
+os.system( "./richards1d input/jan2.input")
 
 # result dumux jan1 (Figure 2a)
 s_, p_ = read1D_vtp_data(path+"jan2-00001.vtp", False)

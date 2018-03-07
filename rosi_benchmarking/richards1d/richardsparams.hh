@@ -149,7 +149,7 @@ public:
     }
 
     /*!
-     * \brief Function for defining the (intrinsic) permeability \f$[m^2]\f$. (todo Who uses that?)
+     * \brief Function for defining the (intrinsic) permeability \f$[m^2]\f$. override from FVSpatialParamsOneP
      *
      * \param element The element
      * \param scv The sub control volume
@@ -163,23 +163,23 @@ public:
     }
 
     /*
-     * \brief Function for defining the (absolute) hydraulic conductivity. [m/s] (todo Who uses that?)
+     * My own function for defining the (absolute) hydraulic conductivity. [m/s] called by the problem class
      */
     const Scalar hydraulicConductivity(const Element &element) const
     {
         return Kc_.at(getDI(element));
     }
 
-    /*! \brief Define the porosity in [-].
+    /*! \brief Define the porosity in [-]. ovveride from FVSpatialParamsOneP
    *
-   * \param globalPos The global position where we evaluate (todo Who uses that?)
+   * \param globalPos The global position where we evaluate
    */
     Scalar porosityAtPos(const GlobalPosition& globalPos) const {
     	return phi_; // porosity*saturation = watercontent
     }
 
     /*!
-     * \brief Function for defining the parameters needed by constitutive relationships (kr-sw, pc-sw, etc.).
+     * \brief Function for defining the parameters needed by constitutive relationships (kr-sw, pc-sw, etc.). override from FVSpatialParams
      *
      * \param element The current element
      * \param scv The sub-control volume inside the element.
@@ -192,12 +192,6 @@ public:
     {
         return materialParams_.at(getDI(element));
     }
-
-    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
-    {
-        return materialParams_.at(0);
-    }
-
 
 private:
 

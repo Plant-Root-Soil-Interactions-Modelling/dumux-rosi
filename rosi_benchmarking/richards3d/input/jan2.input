@@ -48,7 +48,3 @@ Value = 0 # [cm] fully saturated
 TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
 EnableChop = true # chop for better convergence
 
-# old
-# [Implicit]
-# EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
-# EnableJacobianRecycling = 1 #

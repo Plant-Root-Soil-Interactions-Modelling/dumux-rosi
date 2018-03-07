@@ -20,7 +20,7 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ri
 # os.system( "./richards3d input/jan1c.input")
 
 # result dumux jan1 (Figure 2a)
-s_, p_, z_ = read3D_vtp_data(path+"jan1a-00001.vtu", False)
+s_, p_, z_ = read3D_vtp_data(path+"jan1a-00000.vtu", False)
 z_ = z_*100 - 200  # m -> cm,  - offset 200 cm
 h_ = vg.pa2head(p_) 
 ax1.plot(h_,z_, "r+")
