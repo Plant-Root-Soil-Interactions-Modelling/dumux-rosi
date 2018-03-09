@@ -78,7 +78,7 @@ class RichardsParams : public FVSpatialParams<TypeTag>
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
     using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
-    using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
+//    using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
     using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
@@ -157,9 +157,10 @@ public:
      * \param elemSol The element solution vector
      * \return the intrinsic permeability
      */
-    PermeabilityType permeability(const Element& element,
-                                  const SubControlVolume& scv,
-                                  const ElementSolutionVector& elemSol) const {
+    template<class ElementSolution>
+    decltype(auto) permeability(const Element& element,
+                                const SubControlVolume& scv,
+                                const ElementSolution& elemSol) const {
     	GlobalPosition pos = scv.center();
     	if (more_) {
     		if (pos[2]>1.5) { // hard coded for specific example
