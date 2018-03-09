@@ -119,7 +119,6 @@ class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
     using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace; // from fvproblem.hh
     using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
-    using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
     using MaterialLawParams = typename MaterialLaw::Params;
 
 public:
@@ -277,7 +276,7 @@ public:
 		const Scalar g = 9.81; // abs(this->gravity()[dimWorld-1]);
 		Scalar const atm = nonWettingReferencePressure()/(rho*g); // atmospheric pressure [Pa]
 
-		GlobalPosition pos = scvf.ipGlobal();
+		GlobalPosition pos = scvf.center();
 
 		ResidualVector values;
 		if (pos[0]!=0) { // bottom boundary
@@ -289,13 +288,13 @@ public:
 			}
 			case 5: {// free drainage
 				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
-				VolumeVariables  v0 = elemVolVars[0];
-				VolumeVariables  v1 = elemVolVars[1];
-				Scalar swe =  0.5*(v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
-				ElementSolutionVector esv;
-				SubControlVolume scv;
-				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
-				Scalar krw = MaterialLaw::krw(params, swe);
+				Scalar mS = 0;
+				auto numScv = fvGeometry.numScv();
+				for (auto i = 0; i<numScv; i++) {
+					mS += (elemVolVars[i].saturation(wPhaseIdx)/numScv);
+				}
+				MaterialLawParams params = this->spatialParams().materialLawParamsAtPos(pos);
+				Scalar krw = MaterialLaw::krw(params, mS);
 				values[conti0EqIdx] = krw*Kc*rho; // * 1 [m]
 				break;
 			}
@@ -312,27 +311,29 @@ public:
 			}
 			case 4: { // atmospheric boundary condition (with surface run-off)
 				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
-				VolumeVariables  v0 = elemVolVars[0];
-				VolumeVariables  v1 = elemVolVars[1];
-				Scalar swe = 0.5* (v0.saturation(wPhaseIdx) + v1.saturation(wPhaseIdx)); // TODO i take the mean because i don't know better
-				ElementSolutionVector esv;
-				SubControlVolume scv;
-				MaterialLawParams params = this->spatialParams().materialLawParams(element, scv, esv);
-				Scalar krw = MaterialLaw::krw(params, swe);
-				Scalar h = MaterialLaw::pc(params, swe);
-				h = - h/(rho*g); // from Pa -> m pressure head
-				Scalar dz = 0.01; // m // todo no idea how this works ... fvGeometry.elementVolume; // 1D
+				Scalar mS = 0;
+				auto numScv = fvGeometry.numScv();
+				for (auto i = 0; i<numScv; i++) {
+					mS += (elemVolVars[i].saturation(wPhaseIdx)/numScv);
+				}
+				MaterialLawParams params = this->spatialParams().materialLawParamsAtPos(pos);
+				Scalar krw = MaterialLaw::krw(params, mS);
+				Scalar p = MaterialLaw::pc(params, mS);
+				Scalar h = - p/(rho*g); // from Pa -> m pressure head
+
+				GlobalPosition ePos = element.geometry().center();
+				Scalar dz = 2 * std::abs(ePos[2]- pos[2]); // 0.01; // m // fvGeometry.geometry().volume()?;
 				Scalar prec = getPrec_(time_); // precipitation or evaporation
 				if (prec<0) { // precipitation
 					Scalar imax = rho*Kc*((h-0.)/dz -1.); // maximal infiltration
 					Scalar v = std::max(prec,imax);
 					values[conti0EqIdx] = v;
-					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " Swe "<< swe << " Pressurehead "<< h << " values " << v << " at time " << time_ ;
+					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " S "<< mS << " Pressurehead "<< h << " values " << v << " at time " << time_ ;
 				} else { // evaporation
 					Scalar emax = rho*krw*Kc*((h-atm)/dz -1.); // maximal evaporation
 					Scalar v  = std::min(prec,emax);
 					values[conti0EqIdx] = v;
-					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " Swe "<< swe << " Pressurehead "<< h <<" values " << v << " at time " << time_;
+					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " S "<< mS << " Pressurehead "<< h <<" values " << v << " at time " << time_;
 				}
 				break;
 			}

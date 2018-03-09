@@ -77,7 +77,6 @@ class RichardsParams : public FVSpatialParams<TypeTag>
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
     using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
-    using ElementSolutionVector = typename GET_PROP_TYPE(TypeTag, ElementSolutionVector);
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
     using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
@@ -156,9 +155,10 @@ public:
      * \param elemSol The element solution vector
      * \return the intrinsic permeability
      */
-    PermeabilityType permeability(const Element& element,
-                                  const SubControlVolume& scv,
-                                  const ElementSolutionVector& elemSol) const {
+    template<class ElementSolution>
+    decltype(auto) permeability(const Element& element,
+                                const SubControlVolume& scv,
+                                const ElementSolution& elemSol) const {
     	 return K_.at(getDI(element));
     }
 
@@ -179,19 +179,24 @@ public:
     }
 
     /*!
-     * \brief Function for defining the parameters needed by constitutive relationships (kr-sw, pc-sw, etc.). override from FVSpatialParams
+     * \brief Function for defining the parameters needed by constitutive relationships (kr-sw, pc-sw, etc.).
      *
-     * \param element The current element
-     * \param scv The sub-control volume inside the element.
-     * \param elemSol The solution at the dofs connected to the element.
      * \return the material parameters object
+     * \param globalPos The position of the center of the element
      */
-    const MaterialLawParams& materialLawParams(const Element& element,
-                                               const SubControlVolume& scv,
-                                               const ElementSolutionVector& elemSol) const
+    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
     {
-        return materialParams_.at(getDI(element));
+    	if (more_) {
+    		if (globalPos[2]>1.5) { // hard coded for specific example
+    			return materialParams_.at(0);
+    		} else {
+    			return materialParams_.at(1);
+    		}
+    	} else {
+    		return materialParams_.at(0);
+    	}
     }
+
 
 private:
 
