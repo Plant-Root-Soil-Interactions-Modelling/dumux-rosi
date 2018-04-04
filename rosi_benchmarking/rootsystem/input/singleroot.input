@@ -1,0 +1,16 @@
+[TimeLoop]
+DtInitial = 1 # [s]
+TEnd = 1 # [s]
+
+[Grid]
+File = grids/singleroot.dgf
+
+[Parameter]
+SoilP = -200 # cm pressure head
+Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
+Kz = 5.e-13 # axial conductivity (m^5 s / kg)
+Radius = 2.e-3 # radius (m)  
+
+[Problem]
+Name = roots # name passed to the output routines
+EnableGravity = 1
