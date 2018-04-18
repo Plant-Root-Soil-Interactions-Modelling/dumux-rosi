@@ -12,8 +12,8 @@ Kz = 5.e-13 # axial conductivity (m^5 s / kg)
 Radius = 2.e-3 # radius (m) 
 P0 = -1000 # cm pressure head
 PL = -500 # cm pressure head
-Scenario = 1 # 1 or 2 
+Scenario = 2 # 1 or 2 
 
 [Problem]
-Name = roots # name passed to the output routines
+Name = singleroot_S2 # name passed to the output routines
 EnableGravity = 1

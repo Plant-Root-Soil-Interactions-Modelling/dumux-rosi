@@ -22,8 +22,8 @@
  * \brief A test problem for the 1p model. A pipe system with circular cross-section
  *        and a branching point embedded in a three-dimensional world
  */
-#ifndef DUMUX_ONEP_TUBES_TEST_SPATIALPARAMS_HH
-#define DUMUX_ONEP_TUBES_TEST_SPATIALPARAMS_HH
+#ifndef ROOTS_PARAMS_HH
+#define ROOTS_PARAMS_HH
 
 #include <dumux/material/spatialparams/fv1p.hh>
 
@@ -46,7 +46,7 @@ class RootsParams : public FVSpatialParamsOneP<TypeTag>
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
     using Element = typename GridView::template Codim<0>::Entity;
-    using Water = SimpleH2O<Scalar>;
+    using Water = Components::SimpleH2O<Scalar>;
 
 public:
 
@@ -58,30 +58,29 @@ public:
         kz_ = getParam<Scalar>("Parameter.Kz");
     }
 
-    /*!
-     * \brief Return the radius of the circular pipe for the current sub-control volume in [m].
-     *
-     * \param scv The sub control volume
+    /**
+     * Root radius (m)
      */
     Scalar radius(const SubControlVolume &scv) const {
     	return radius_;
     }
 
     /**
-     * The root radial conductivity (m^2 s / kg)
+     * Root radial conductivity (m^2 s / kg)
      */
     Scalar radialConductivity(const SubControlVolume &scv) const {
     	return kr_;
     }
 
+    /**
+     * Root axial conductivity (m^5 s / kg)
+     */
+    Scalar axialConductivity(const SubControlVolume &scv) const {
+    	return kz_;
+    }
 
     /*!
      * \brief Function for defining the (intrinsic) permeability \f$[m^2]\f$.
-     *
-     * \param element The element
-     * \param scv The sub control volume
-     * \param elemSol The element solution vector
-     * \return the intrinsic permeability
      */
     template<class ElementSolution>
     Scalar permeability(const Element& element,
@@ -95,11 +94,6 @@ public:
 
     /*!
      * \brief Returns the porosity \f$[-]\f$
-     *
-     * \param element The element
-     * \param scv The sub control volume
-     * \param elemSol The element solution vector
-     * \return the porosity
      */
     template<class ElementSolution>
     Scalar porosity(const Element& element,

@@ -15,5 +15,5 @@ PL = -500 # cm pressure head
 Scenario = 1 # 1 or 2 
 
 [Problem]
-Name = roots # name passed to the output routines
+Name = singleroot_S1 # name passed to the output routines
 EnableGravity = 1
