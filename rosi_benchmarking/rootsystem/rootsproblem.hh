@@ -233,7 +233,6 @@ private:
     static constexpr Scalar rho_ = 1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
 
-
 	static constexpr Scalar eps_ = 1e-8;
 
 	Scalar scenario_;

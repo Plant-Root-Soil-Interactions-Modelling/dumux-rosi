@@ -32,81 +32,87 @@
 namespace Dumux {
 
 /*!
- * \ingroup OnePTests
- * \brief A test problem for the 1p model. A pipe system with circular cross-section
- *        and a branching point embedded in a three-dimensional world
+ * Managing the root parameters
  */
 template<class TypeTag>
 class RootsParams : public FVSpatialParamsOneP<TypeTag>
 {
-    using ParentType = FVSpatialParamsOneP<TypeTag>;
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-    using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
-    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
-    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-    using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
-    using Element = typename GridView::template Codim<0>::Entity;
-    using Water = Components::SimpleH2O<Scalar>;
+	using ParentType = FVSpatialParamsOneP<TypeTag>;
+	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+	using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
+	using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
+	using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+	using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
+	using Element = typename GridView::template Codim<0>::Entity;
+	using Water = Components::SimpleH2O<Scalar>;
 
 public:
 
-    using PermeabilityType = Scalar;
+	using PermeabilityType = Scalar;
 
-    RootsParams(const Problem& problem) : ParentType(problem) {
-        radius_ = getParam<Scalar>("Parameter.Radius");
-        kr_ = getParam<Scalar>("Parameter.Kr");
-        kz_ = getParam<Scalar>("Parameter.Kz");
-    }
+	RootsParams(const Problem& problem) : ParentType(problem) {
+		try { // parameters are constant for all elements
+			radius_ = getParam<Scalar>("Parameter.Radius");
+			kr_ = getParam<Scalar>("Parameter.Kr");
+			kz_ = getParam<Scalar>("Parameter.Kz");
+		} catch  (const std::exception& e) {
+			params_=true; // parameters are set by element
 
-    /**
-     * Root radius (m)
-     */
-    Scalar radius(const SubControlVolume &scv) const {
-    	return radius_;
-    }
+			//todo reads all parameters
 
-    /**
-     * Root radial conductivity (m^2 s / kg)
-     */
-    Scalar radialConductivity(const SubControlVolume &scv) const {
-    	return kr_;
-    }
+		}
+	}
 
-    /**
-     * Root axial conductivity (m^5 s / kg)
-     */
-    Scalar axialConductivity(const SubControlVolume &scv) const {
-    	return kz_;
-    }
+	/**
+	 * Root radius (m)
+	 */
+	Scalar radius(const SubControlVolume &scv) const {
+		return radius_;
+	}
 
-    /*!
-     * \brief Function for defining the (intrinsic) permeability \f$[m^2]\f$.
-     */
-    template<class ElementSolution>
-    Scalar permeability(const Element& element,
-                                  const SubControlVolume& scv,
-                                  const ElementSolution& elemSol) const {
+	/**
+	 * Root radial conductivity (m^2 s / kg)
+	 */
+	Scalar radialConductivity(const SubControlVolume &scv) const {
+		return kr_;
+	}
 
-    	// a^2 * k / mu = kz  --> k = kz/a^2*mu
-    	Scalar mu = Water::liquidViscosity(0.,0.); // temperature, pressure
-        return kz_*mu/(radius_*radius_*M_PI);
-    }
+	/**
+	 * Root axial conductivity (m^5 s / kg)
+	 */
+	Scalar axialConductivity(const SubControlVolume &scv) const {
+		return kz_;
+	}
 
-    /*!
-     * \brief Returns the porosity \f$[-]\f$
-     */
-    template<class ElementSolution>
-    Scalar porosity(const Element& element,
-                    const SubControlVolume& scv,
-                    const ElementSolution& elemSol) const {
-    	return 1.0;
-    }
+	/*!
+	 * \brief Function for defining the (intrinsic) permeability \f$[m^2]\f$.
+	 */
+	template<class ElementSolution>
+	Scalar permeability(const Element& element,
+			const SubControlVolume& scv,
+			const ElementSolution& elemSol) const {
+
+		// a^2 * k / mu = kz  --> k = kz/a^2*mu
+		Scalar mu = Water::liquidViscosity(0.,0.); // temperature, pressure
+		return kz_*mu/(radius_*radius_*M_PI);
+	}
+
+	/*!
+	 * \brief Returns the porosity \f$[-]\f$
+	 */
+	template<class ElementSolution>
+	Scalar porosity(const Element& element,
+			const SubControlVolume& scv,
+			const ElementSolution& elemSol) const {
+		return 1.0;
+	}
 
 private:
 
-    Scalar radius_;
+	Scalar radius_;
 	Scalar kr_;
-    Scalar kz_;
+	Scalar kz_;
+	bool params_ = false;
 
 };
 
