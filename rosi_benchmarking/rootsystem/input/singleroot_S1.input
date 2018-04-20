@@ -17,3 +17,6 @@ EnableGravity = true # optionally turn on/off gravity
 [TimeLoop]
 DtInitial = 1 # [s]
 TEnd = 1 # [s]
+
+[Assembly.NumericDifference]
+PriVarMagnitude = 1e5

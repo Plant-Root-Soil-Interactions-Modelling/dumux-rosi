@@ -78,74 +78,54 @@ def vtp2dgf(name):
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file 
 #
 def read1D_vtp_data(name, cell = True):
-    polydata = read_polydata(name) 
+    polydata = read_polydata(name)     
     
     if cell: 
         data = polydata.GetCellData()
     else:
-        data = polydata.GetPointData()
-        
-    nocd = data.GetNumberOfArrays()
-#     print("Number of arrays", nocd)
-#     for i in range(0,nocd):
-#         print(data.GetArrayName(i))
- 
-    sw = data.GetArray(0) # saturation   
-    # pw = data.GetArray(2) # pressure
-
-    noa = sw.GetNumberOfTuples()
-    # print("number of data points", noa)
+        data = polydata.GetPointData()        
     
-    sw_ = np.ones(noa,)
-    # pw_ = np.ones(noa,)
+    nocd = data.GetNumberOfArrays()
+    p = data.GetArray(0) # pressure   
+    noa = p.GetNumberOfTuples()    
+    
+    p_ = np.ones(noa,)
     for i in range(0,noa):    
-        d = sw.GetTuple(i)
-        sw_[i] = d[0]
-#         d = pw.GetTuple(i)
-#         pw_[i] = d[0]
-            
-    return sw_
+        d = p.GetTuple(i)
+        p_[i] = d[0]            
+    
+    return p_
 
 
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file 
 #
 def read3D_vtp_data(name, cell = True):
-    polydata = read_polydata(name) 
+    polydata = read_polydata(name)     
     
     if cell: 
         data = polydata.GetCellData()
     else:
-        data = polydata.GetPointData()
-        
-    nocd = data.GetNumberOfArrays()
-#     print("Number of arrays", nocd)
-#     for i in range(0,nocd):
-#         print(data.GetArrayName(i))
-    sw = data.GetArray(0) # saturation   
-    pw = data.GetArray(2) # pressure
-
-    noa = sw.GetNumberOfTuples()
-    # print("number of data points", noa)    
-    sw_ = np.ones(noa,)
-    pw_ = np.ones(noa,)
+        data = polydata.GetPointData()        
+    
+    nocd = data.GetNumberOfArrays() 
+    p = data.GetArray(0) # pressure
+    noa = p.GetNumberOfTuples()
+    
+    p_ = np.ones(noa,)
     for i in range(0,noa):    
-        d = sw.GetTuple(i)
-        sw_[i] = d[0]
-        d = pw.GetTuple(i)
-        pw_[i] = d[0]
-        
-    # vertex (makes actually only sense for vertex data)
-    Np = pd.GetNumberOfPoints()
-    z_ = np.ones(Np,)    
-    points = pd.GetPoints()    
+        d = p.GetTuple(i)
+        p_[i] = d[0]
+    
+    Np = polydata.GetNumberOfPoints()
+    z_ = np.zeros((Np,3))   
+    points = polydata.GetPoints()    
     for i in range(0,Np):
         p = np.zeros(3,)
         points.GetPoint(i,p)
-        z_[i] = p[2]
-                    
-    return sw_, pw_, z_
-
+        z_[i,:] = p                    
+    
+    return p_, z_
 
 if __name__ == "__main__":
     # manually set absolute path

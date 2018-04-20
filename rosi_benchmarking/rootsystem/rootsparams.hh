@@ -41,10 +41,12 @@ class RootsParams : public FVSpatialParamsOneP<TypeTag>
 	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
 	using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
 	using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
+	using ElementMapper = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::ElementMapper;
 	using SubControlVolume = typename FVElementGeometry::SubControlVolume;
 	using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
 	using Element = typename GridView::template Codim<0>::Entity;
 	using Water = Components::SimpleH2O<Scalar>;
+	using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
 
 public:
 
@@ -57,31 +59,54 @@ public:
 			kz_ = getParam<Scalar>("Parameter.Kz");
 		} catch  (const std::exception& e) {
 			params_=true; // parameters are set by element
-
-			//todo reads all parameters
-
+	        const auto& gridView = this->problem().fvGridGeometry().gridView();
+	        radii_.resize(gridView.size(0));
+	        krs_.resize(gridView.size(0));
+	        kzs_.resize(gridView.size(0));
+	        for (const auto& element : elements(gridView)) {
+	            const auto eIdx = elementMapper_.index(element);
+	            auto p = GridCreator::parameters(element);
+	            radii_[eIdx] = p.at(0);
+	            krs_[eIdx] = p.at(1);
+	            kzs_[eIdx] = p.at(2);
+	        }
 		}
 	}
 
 	/**
 	 * Root radius (m)
 	 */
-	Scalar radius(const SubControlVolume &scv) const {
-		return radius_;
+	Scalar radius(const Element &element) const {
+		if (params_) {
+			auto eIdx = elementMapper_.index(element);
+			return radii_[eIdx];
+		} else {
+			return radius_;
+		}
 	}
 
 	/**
 	 * Root radial conductivity (m^2 s / kg)
 	 */
-	Scalar radialConductivity(const SubControlVolume &scv) const {
-		return kr_;
+	Scalar radialConductivity(const Element &element) const {
+		if (params_) {
+			auto eIdx = elementMapper_.index(element);
+			return krs_[eIdx];
+		} else {
+			return kr_;
+		}
 	}
 
 	/**
 	 * Root axial conductivity (m^5 s / kg)
 	 */
-	Scalar axialConductivity(const SubControlVolume &scv) const {
-		return kz_;
+	Scalar axialConductivity(const Element &element) const {
+		if (params_) {
+			auto eIdx = elementMapper_.index(element);
+			return kzs_[eIdx];
+		} else {
+			return kz_;
+		}
 	}
 
 	/*!
@@ -91,10 +116,10 @@ public:
 	Scalar permeability(const Element& element,
 			const SubControlVolume& scv,
 			const ElementSolution& elemSol) const {
-
-		// a^2 * k / mu = kz  --> k = kz/a^2*mu
 		Scalar mu = Water::liquidViscosity(0.,0.); // temperature, pressure
-		return kz_*mu/(radius_*radius_*M_PI);
+		Scalar a = this->radius(element);
+		Scalar kz = this->axialConductivity(element);
+		return kz*mu/(a*a*M_PI); 		// a^2 * k / mu = kz  --> k = kz/a^2*mu
 	}
 
 	/*!
@@ -112,7 +137,12 @@ private:
 	Scalar radius_;
 	Scalar kr_;
 	Scalar kz_;
+
 	bool params_ = false;
+    const ElementMapper& elementMapper_ = this->problem().fvGridGeometry().elementMapper();
+    std::vector<Scalar> radii_ = std::vector<Scalar>(0);
+	std::vector<Scalar> krs_ = std::vector<Scalar>(0);
+	std::vector<Scalar> kzs_ = std::vector<Scalar>(0);
 
 };
 

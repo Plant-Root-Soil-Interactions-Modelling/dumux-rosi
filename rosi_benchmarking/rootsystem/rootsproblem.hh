@@ -177,8 +177,8 @@ public:
                         const SubControlVolumeFace& scvf) const
 	{
 	    const RootsParams<TypeTag>& params = this->spatialParams();
-		Scalar r = params.radius(SubControlVolume()); // root radius (m)
-	 	Scalar kz = params.axialConductivity(SubControlVolume()); // (m^5 s / kg) == ( m^4 / (s Pa) )
+		Scalar r = params.radius(element); // root radius (m)
+	 	Scalar kz = params.axialConductivity(element); // (m^5 s / kg) == ( m^4 / (s Pa) )
 	    ResidualVector values;
 	    values[conti0EqIdx] = rho_*g_*kz; // m^3 / s
 	    values[conti0EqIdx] /= (r*r*M_PI);
@@ -201,8 +201,8 @@ public:
 		ResidualVector values;
 		const RootsParams<TypeTag>& params = this->spatialParams();
 		Scalar l = element.geometry().volume(); // length of element (m)
-		Scalar r = params.radius(scv); // root radius (m)
-		Scalar kr = params.radialConductivity(scv); //  radial conductivity (m^2 s / kg)
+		Scalar r = params.radius(element); // root radius (m)
+		Scalar kr = params.radialConductivity(element); //  radial conductivity (m^2 s / kg)
 		Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
 		Scalar phs = soilP_; // kg/m/s^2
 		values[conti0EqIdx] = kr * 2*r*M_PI*l * (phs - phx); // m^3/s
@@ -219,7 +219,7 @@ public:
                            const SubControlVolume& scv,
                            const ElementSolution& elemSol) const
     {
-        Scalar r = this->spatialParams().radius(scv); // root radius (m)
+        Scalar r = this->spatialParams().radius(element); // root radius (m)
         return M_PI * r * r;
     }
 
