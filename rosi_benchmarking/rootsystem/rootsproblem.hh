@@ -104,7 +104,7 @@ public:
 
 	RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) : ParentType(fvGridGeometry) {
 
-		scenario_ = getParam<Scalar>("Parameter.Scenario");
+		scenario_ = getParam<int>("Parameter.Scenario");
 		soilP_ = toPa_(getParam<Scalar>("Parameter.SoilP"));
 		if (scenario_==1) { // dirichlet top and at tips
 			p0_ = toPa_(getParam<Scalar>("Parameter.P0"));
@@ -183,6 +183,7 @@ public:
 	    values[conti0EqIdx] = rho_*g_*kz; // m^3 / s
 	    values[conti0EqIdx] /= (r*r*M_PI);
 	    values[conti0EqIdx] *= rho_;
+	    values[conti0EqIdx] = 0.;
 	    return values[conti0EqIdx];
 	}
 
@@ -210,6 +211,18 @@ public:
 		return values;
 	}
 
+    /*!
+     * \brief Return how much the domain is extruded at a given sub-control volume.
+     */
+    template<class ElementSolution>
+    Scalar extrusionFactor(const Element& element,
+                           const SubControlVolume& scv,
+                           const ElementSolution& elemSol) const
+    {
+        Scalar r = this->spatialParams().radius(scv); // root radius (m)
+        return M_PI * r * r;
+    }
+
 	/*!
 	 * \brief Evaluate the initial value for a control volume.
 	 */
@@ -235,7 +248,7 @@ private:
 
 	static constexpr Scalar eps_ = 1e-8;
 
-	Scalar scenario_;
+	int scenario_;
 	Scalar soilP_;
 	Scalar p0_;
 	Scalar pL_;
