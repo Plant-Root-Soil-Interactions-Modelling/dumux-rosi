@@ -8,6 +8,7 @@ File = grids/rootsystem.dgf
 [Parameter]
 SoilP = -200 # cm pressure head
 P0 = -1000 # cm pressure head
+PL = -500 # cm pressure head
 Scenario = 2 # 1 or 2  
 
 [Problem]

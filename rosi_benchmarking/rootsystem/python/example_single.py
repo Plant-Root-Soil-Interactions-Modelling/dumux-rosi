@@ -51,7 +51,7 @@ c = 2*a*pi*kr/kz
 # bot: qz(L) = 0, -> d/dz p_r (L) = rho*g 
 
 AA = np.array([[1,1], [sqrt(c)*exp(-sqrt(c)*L), -sqrt(c)*exp(sqrt(c)*L)] ]) # dirichlet top, neumann bot
-bb = np.array([p0-p_s, -rho*g]) #
+bb = np.array([p0-p_s, 0.*-rho*g]) #
 
 # AA = np.array([[1,1], [exp(-sqrt(c)*L), exp(sqrt(c)*L)] ]) # dirichlet top & bot
 # bb = np.array([p0-p_s, pL-p_s]) #
@@ -76,8 +76,8 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ro
 os.chdir( path )
 # os.system( "./rootsystem input/singleroot_S1.input")
 # p_ = read1D_vtp_data(path+"singleroot_S1-00001.vtp", False)
-os.system( "./rootsystem input/singleroot_S2.input")
-p_ = read1D_vtp_data(path+"singleroot_S2-00001.vtp", False)
+os.system( "./rootsystem input/singleroot_h.input")
+p_ = read1D_vtp_data(path+"singleroot_h-00001.vtp", False)
 z_ = np.linspace(0,-0.5,len(p_))
 h_ = vg.pa2head(p_) 
 plt.plot(h_,z_, "r+")

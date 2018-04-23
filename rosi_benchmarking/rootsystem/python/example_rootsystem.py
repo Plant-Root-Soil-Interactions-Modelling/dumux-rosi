@@ -30,16 +30,16 @@ def toHead(pa): # Pascal (kg/ (m s^2)) to cm pressure head
 path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/rootsystem/"
 
 # run dumux 
-# os.chdir( path )
-# os.system( "./rootsystem input/rootsystem.input")
+os.chdir( path )
+os.system( "./rootsystem input/rootsystem.input")
 
 
 x, nodes = read3D_vtp_data(path+"rootsystem-00001.vtp", False)
 x = toHead(x)
-# plt.plot(h_,z_, "r+")
-# plt.ylabel("Depth (m)")
-# plt.xlabel("Xylem pressure (cm)")
-# plt.show()
+plt.plot(x,nodes[:,2], "r+")
+plt.ylabel("Depth (m)")
+plt.xlabel("Xylem pressure (cm)")
+plt.show()
 
 
 xmin = min(x)

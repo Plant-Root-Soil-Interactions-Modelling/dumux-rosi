@@ -96,6 +96,7 @@ if __name__ == "__main__":
 
     # create grid
     nodes = np.zeros((nnz,3))
+    nodesH = np.zeros((nnz,3))    
     seg = np.zeros(((nnz-1),2), dtype=int) 
     c = 0
     for i in range(1, nnz):
@@ -103,15 +104,14 @@ if __name__ == "__main__":
         seg[c,1] = i
         c += 1    
         nodes[i,:] = [0.,0.,-i*L/(nnz-1)]  
+        nodesH[i,:] = [-i*L/(nnz-1),0.,-1.e-4] # for boundary condition 
         
     sn = len(seg)
     nn = len(nodes) 
 
-    createDGF_1Droots("roots.dgf", nodes, seg)
+    createDGF_1Droots("../grids/singleroot.dgf", nodes, seg)
+    createDGF_1Droots("../grids/singleroot_h.dgf", nodesH, seg)
 
     print("its done.")
-    
-    
-    
     
     

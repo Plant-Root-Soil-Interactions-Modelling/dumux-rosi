@@ -7,16 +7,16 @@ import numpy as np
 #
 # pascal to pressure head, converts a numpy array 
 #
-def pa2head(pa_, pnref = 1.e5, g = -9.81):
+def pa2head(pa_, pnref = 1.e5, g = 9.81):
     h = np.zeros(len(pa_))
     for i,p in enumerate(pa_):
-        h[i] = (pa-ref) * 100/1000/g
+        h[i] = (p-pnref) * 100/1000/g
     return h
    
 #
 # pressure to pascal, converts a numpy array 
 #      
-def head2pa(h_, pnref = 1.e5, g = -9.81):
+def head2pa(h_, pnref = 1.e5, g = 9.81):
     pa = np.zeros(len(h_))
     for i,h in enumerate(h_):
         pa[i] =  ref + h/100.*1000.*g
