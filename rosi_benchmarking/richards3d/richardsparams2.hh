@@ -83,6 +83,7 @@ class RichardsParams : public FVSpatialParams<TypeTag>
     using GlobalPosition = Dune::FieldVector<Scalar, dimWorld>;
     using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
     using MaterialLawParams = typename MaterialLaw::Params;
+    using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
 
 public:
     // export permeability type
