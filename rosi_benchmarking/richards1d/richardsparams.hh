@@ -28,9 +28,10 @@
 #include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
+#include <dumux/porousmediumflow/richards/model.hh>
 #include <dumux/material/components/simpleh2o.hh>
 
-#include <dumux/porousmediumflow/richards/model.hh>
+
 
 namespace Dumux //
 {
@@ -73,6 +74,7 @@ public:
 template<class TypeTag>
 class RichardsParams : public FVSpatialParams<TypeTag>
 {
+
     using ParentType = FVSpatialParams<TypeTag>;
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
@@ -81,31 +83,26 @@ class RichardsParams : public FVSpatialParams<TypeTag>
     using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using IndexSet = typename GridView::IndexSet;
-    using Water = SimpleH2O<Scalar>;
-
+    using Water = Components::SimpleH2O<Scalar>;
     enum {
         dim=GridView::dimension,
         dimWorld=GridView::dimensionworld
     };
-
     using GlobalPosition = Dune::FieldVector<Scalar,dimWorld>;
     using Element = typename GridView::template Codim<0>::Entity;
-
     using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);  //  todo make sure thats the right grid (set somewhere else)
-    using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
-    using MaterialLawParams = typename MaterialLaw::Params;
 
 public:
-    // export permeability type
+
+    using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
+    using MaterialLawParams = typename MaterialLaw::Params;
     using PermeabilityType = Scalar;
 
     /*!
      * \brief Constructor
      */
     RichardsParams(const Problem& problem) : ParentType(problem)  {
-
     	phi_ = 1; // Richards equation is independent of phi
-
         Scalar g =  9.81; // std::abs(problem.gravity()[dimWorld-1]);
         Scalar temp =  problem.temperature();
         Scalar pnRef = problem.nonWettingReferencePressure();
@@ -118,42 +115,22 @@ public:
         std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("VanGenuchten.alpha");
         std::vector<Scalar> n = getParam<std::vector<Scalar>>("VanGenuchten.n");
         Kc_ = getParam<std::vector<Scalar>>("VanGenuchten.Ks"); // hydraulic conductivity
-
         more_ = Qr.size()>1; // more than one set of VG parameters?
 
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
         for (int i=0; i<Qr.size(); i++) {
             materialParams_.push_back(MaterialLawParams());
-            // QR
-            materialParams_.at(i).setSwr(Qr.at(i)/phi_);
-            // materialParams_.at(i).setSwr(0.05);
-            // QS
-            materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_);
-            // materialParams_.at(i).setSnr(0.);
-            // ALPHA
-            Scalar a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
+            materialParams_.at(i).setSwr(Qr.at(i)/phi_); // Qr
+            materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_); // Qs
+            Scalar a = alpha.at(i) * 100.; // alpha, from [1/cm] to [1/m]
             materialParams_.at(i).setVgAlpha(a/(rho*g)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
-            // materialParams_.at(i).setVgAlpha(0.0037);
-            // N
-            materialParams_.at(i).setVgn(n.at(i));
-            // materialParams_.at(i).setVgn(4.7);
-            // Kc
-            K_.push_back(Kc_.at(i)*mu/(rho*g)); // convert to intrinsic permeability (from the hydraulic conductivity)
-            // K_.push_back(5.e-12);
-            // Debug
-            std::cout << "\nVan Genuchten Parameters are " << Qr.at(i) << ", " << 1.-Qs.at(i)/phi_ <<
-                    ", "<< a << ", " << a/(rho*g)<< ", "<< n.at(i) << ", "<< Kc_.at(i)*mu/(rho*g) << ", " << rho << ", "<< g <<"\n";
+            materialParams_.at(i).setVgn(n.at(i)); // n
+            K_.push_back(Kc_.at(i)*mu/(rho*g)); // Kc, convert to intrinsic permeability (from the hydraulic conductivity)
         }
-        // while(std::cin.get()!='\n');
     }
 
     /*!
      * \brief Function for defining the (intrinsic) permeability \f$[m^2]\f$. override from FVSpatialParamsOneP
-     *
-     * \param element The element
-     * \param scv The sub control volume
-     * \param elemSol The element solution vector
-     * \return the intrinsic permeability
      */
     template<class ElementSolution>
     decltype(auto) permeability(const Element& element,
@@ -162,39 +139,34 @@ public:
     	 return K_.at(getDI(element));
     }
 
-    /*
-     * My own function for defining the (absolute) hydraulic conductivity. [m/s] called by the problem class
+    /*!
+     * The (absolute) hydraulic conductivity. [m/s] called by the problem class
      */
     const Scalar hydraulicConductivity(const Element &element) const
     {
         return Kc_.at(getDI(element));
     }
 
-    /*! \brief Define the porosity in [-]. ovveride from FVSpatialParamsOneP
-   *
-   * \param globalPos The global position where we evaluate
-   */
+   /*!
+    * \brief Define the porosity in [-]. ovveride from FVSpatialParamsOneP
+    */
     Scalar porosityAtPos(const GlobalPosition& globalPos) const {
     	return phi_; // porosity*saturation = watercontent
     }
 
     /*!
      * \brief Function for defining the parameters needed by constitutive relationships (kr-sw, pc-sw, etc.).
-     *
-     * \return the material parameters object
-     * \param globalPos The position of the center of the element
      */
-    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
-    {
-    	if (more_) {
-    		if (globalPos[2]>1.5) { // hard coded for specific example
-    			return materialParams_.at(0);
-    		} else {
-    			return materialParams_.at(1);
-    		}
-    	} else {
-    		return materialParams_.at(0);
-    	}
+    template<class ElementSolution>
+    const MaterialLawParams& materialLawParams(const Element& element,
+                                               const SubControlVolume& scv,
+                                               const ElementSolution& elemSol) const    {
+    	return materialParams_.at(getDI(element));
+    }
+
+    // why
+    const MaterialLawParams& materialLawParams(const Element& element) const    {
+    	return materialParams_.at(getDI(element));
     }
 
 
@@ -203,8 +175,7 @@ private:
     /**
      * returns the domain index
      */
-    int getDI(const Element &element) const
-    {
+    int getDI(const Element &element) const {
         if (more_) {
             int i = (GridCreator::parameters(element)).at(1)-1; // starting from 1
             return i;

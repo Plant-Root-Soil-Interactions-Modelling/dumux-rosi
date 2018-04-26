@@ -25,7 +25,7 @@ for i in range(0, len(psi_)):
 z1 = dz + (-53); # this value is not clear to me any more 
 plt.plot(psi_, z1)
 
-plt.xlabel('\psi (cm)');
+plt.xlabel('$\psi$ (cm)');
 plt.ylabel('Depth (cm)');
 plt.xlim(-300,0)
 plt.ylim(-60,0)

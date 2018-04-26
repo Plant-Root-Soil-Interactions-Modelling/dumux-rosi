@@ -206,7 +206,7 @@ public:
 		Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
 		Scalar phs = soilP_; // kg/m/s^2
 		values[conti0EqIdx] = kr * 2*r*M_PI*l * (phs - phx); // m^3/s
-		values[conti0EqIdx] /= (r*r*M_PI)*l; // 1/s <-- volume?
+		values[conti0EqIdx] /= (r*r*M_PI)*l; // 1/s
 		values[conti0EqIdx] *= rho_; // (kg/s/m^3)
 		return values;
 	}

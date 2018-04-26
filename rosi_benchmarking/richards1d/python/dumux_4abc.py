@@ -15,13 +15,13 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ri
 
 # run dumux 
 os.chdir( path )
-os.system( "./richards1d input/jan3a.input")
-os.system( "./richards1d input/jan3b.input")
-os.system( "./richards1d input/jan3c.input")
+os.system( "./richards1d input/b3a.input")
+os.system( "./richards1d input/b3b.input")
+os.system( "./richards1d input/b3c.input")
 
 # result dumux jan3a (Figure 4a)
 for i in range(0,3):
-    s_, p_ = read1D_vtp_data(path+"jan3a-0000"+str(i+1)+".vtp", False)
+    s_, p_ = read1D_vtp_data(path+"benchmark3a-0000"+str(i+1)+".vtp", False)
     z_ = np.linspace(0,-200,len(s_))
     h_ = vg.pa2head(p_) 
     theta_ = vg.water_content(h_, sand)
@@ -29,7 +29,7 @@ for i in range(0,3):
   
 # result dumux jan3b (Figure 4b)
 for i in range(0,3):
-    s_, p_ = read1D_vtp_data(path+"jan3b-0000"+str(i+1)+".vtp", False)
+    s_, p_ = read1D_vtp_data(path+"benchmark3b-0000"+str(i+1)+".vtp", False)
     z_ = np.linspace(0,-200,len(s_))
     h_ = vg.pa2head(p_) 
     theta_ = vg.water_content(h_, loam)
@@ -37,7 +37,7 @@ for i in range(0,3):
  
 # # result dumux jan3c (Figure 4c)
 for i in range(0,3):
-    s_, p_ = read1D_vtp_data(path+"jan3c-0000"+str(i+1)+".vtp", False)
+    s_, p_ = read1D_vtp_data(path+"benchmark3c-0000"+str(i+1)+".vtp", False)
     z_ = np.linspace(0,-200,len(s_))
     h_ = vg.pa2head(p_) 
     theta_ = vg.water_content(h_, clay)

@@ -79,16 +79,8 @@ for i, soil in enumerate([sand, loam, clay]): # make three subplots
     ax[i].set_xlim(0,0.5)
 
 ax1.set_ylabel('Depth (cm)')
-ax1.set_xlabel(r'$\theta$')
-ax1.set_xlim(0,0.5)
 ax1.set_ylim(-150,0)
-
-ax2.set_xlabel(r'$\theta$')
-ax2.set_xlim(0,0.5)
 ax2.set_ylim(-200,0)
-
-ax3.set_xlabel(r'$\theta$')
-ax3.set_xlim(0,0.5)
 ax3.set_ylim(-120,0)
 
 if __name__ == "__main__":

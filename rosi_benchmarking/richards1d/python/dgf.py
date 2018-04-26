@@ -2,40 +2,30 @@ import numpy as np
 
 def createDGF_1D(filename, N, depth, top, bot, domainId, vertex3d = False):
 
-    # prepare arrays
     z_ = np.linspace(0,-depth,N)
     initial = np.linspace(top,bot,N) # per node
     initialC = np.linspace(top,bot,N-1) # per cell    
     id = range(0,N)               
-    
-    # write file     
+        
     file = open(filename,"w") 
- 
-    file.write("DGF\n") 
-    file.write('Vertex\n')
-    file.write('parameters 2\n'); 
+    
+    file.write("DGF\nVertex\n") 
+    file.write('parameters 2\n') # initial data, domain index 
     for i in range(0,N):
         if vertex3d: 
             file.write('{:g} {:g} {:g} {:g} {:g}\n'.format(np.zeros(N,), np.zeros(N,), z_[i], initialC[i], domainId[i]))
         else:        
             file.write('{:g} {:g} {:g}\n'.format(z_[i], initial[i], domainId[i]))
              
-    file.write('#\n');
-    file.write('Simplex\n'); 
-    file.write('parameters 2\n'); 
+    file.write('#\nSimplex\n') 
+    file.write('parameters 2\n') # initial data, domain index 
     for i in range(0,N-1):
         file.write('{:g} {:g} {:g} {:g}\n'.format(id[i], id[i+1], initialC[i], domainId[i]));
-        
-    # not used...        
-    file.write('#\n')
-    file.write('BOUNDARYSEGMENTS\n') # how do i get the boundary segments into DUMUX ?
+                   
+    file.write('#\nBOUNDARYSEGMENTS\n') # not used... 
     file.write('2 0\n')            
-    file.write('3 {:g}\n'.format(N-1)) # vertex id, but index starts with 0
-    file.write('#\n');
-    file.write('BOUNDARYDOMAIN\n')
-    file.write('default 1\n');
-    file.write('#\n')
-
+    file.write('3 {:g}\n'.format(N-1)) # vertex id, index starts with 0
+    file.write('#\nBOUNDARYDOMAIN\ndefault 1\n#\n')
     file.close() 
 
 

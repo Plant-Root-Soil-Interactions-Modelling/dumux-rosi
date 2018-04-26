@@ -10,8 +10,7 @@ File = ./grids/jan1.dgf # [m], initial data [cm] pressure head
 Name = jan1c
 EnableGravity = 1 # enable gravity
 
-[VanGenuchten] 
-# clay over sand 
+[VanGenuchten] # Clay over sand 
 Qr =  0.1 0.045	
 Qs = 0.4 0.43
 alpha = 0.01  0.15 # [1/cm] 
