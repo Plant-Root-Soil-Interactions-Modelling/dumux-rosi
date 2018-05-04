@@ -8,5 +8,6 @@ dune_symlink_to_source_files(FILES
 "singleRootLoamKb80_theta0.2.input"
 "singleRootDryingLoamKb20.input"
 "singleRootDryingLoamKb40.input"
-"singleRootDryingLoamKb80.input")
+"singleRootDryingLoamKb80.input"
+"run_rosi1d.sh")
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/results)
