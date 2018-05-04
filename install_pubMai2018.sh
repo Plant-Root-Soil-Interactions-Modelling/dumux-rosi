@@ -74,7 +74,6 @@ cd ../3d
 make rosi3d
 cd ../3dMultiscale
 make rosiMultiscale
-cd ..
 cd ../3dRhizoRoot
 make 3dRhizoRoot
 cd ..
