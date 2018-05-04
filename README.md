@@ -1,6 +1,6 @@
 The `dumux-rosi` module
 =================================
-This is the DuMux-ROSI module containing the code for the manuscript:
+This is the DuMuX-ROSI module containing the code for the manuscript:
 
 "Continuum multiscale model of root water and nutrient uptake from soil with explicit consideration of the 3D root architecture and the rhizosphere" Mai et al. 2018 (submitted to the Journal of Plant and Soil) 
 
