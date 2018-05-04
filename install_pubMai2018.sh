@@ -40,9 +40,6 @@ else
     cd ..
 fi
 
-# dumux-rosi multiscale Mai2018
-git clone -b pub/Mai2018 https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi.git
-
 if [ $? -ne 0 ]; then
     echo "*********************************************************************************************"
     echo "Failed to clone the repositories."
