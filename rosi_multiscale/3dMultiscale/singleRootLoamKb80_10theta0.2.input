@@ -1,0 +1,96 @@
+###############################################################
+# Parameter file for test_1p.
+# Everything behind a '#' is a comment.
+# Type "./test_1p --help" for more information.
+###############################################################
+
+###############################################################
+# Mandatory arguments
+###############################################################
+
+[MultiDimension]
+UseIterativeSolver = 0
+
+[TimeManager]
+DtInitial = 1 # [s]
+MaxTimeStepSize = 1800#17280 # [s]
+TEnd = 1728000 # [s]
+EpisodeTime = 1800#17280 # [s]
+
+[Grid]
+File = ./grids/SingleRoot3cm.dgf
+Refinement = 0
+
+[SoilGrid]
+Cells0 = 3
+Cells1 = 3
+Cells2 = 1
+Grading0 = 1
+Grading1 = 1
+Grading2 = 1
+Positions0 = -0.015 0.015
+Positions1 = -0.015 0.015
+Positions2 = -0.015 0.015
+
+[radialSoilGrid]
+Cells0 = 10
+Grading0 = 1.5
+Positions0 =  2e-4 0.015
+Z = 0
+
+[radialTimeManager]
+TimeStepRatio = 1
+PrintParameter = false
+
+[Problem]
+Name = ./results/singleRoot/multiLK80_10theta0.2
+
+[materialParams]
+VgAlpha = 0.04e-2 #[1/m] Vanderborght 2005 Loam
+Vgn = 1.6 #[-] Vanderborght 2005 Loam
+Swr = 0.08 #[-] Vanderborght 2005 Loam
+
+[Solute]
+Name = K
+MolarMass = 39e-3 #[kg/mol]
+liquidDiffCoeff = 1.96e-9 # [m2 s-1] http://www.aqion.de/site/194
+
+[SpatialParams]
+Porosity= 0.43 # [-] Vanderborght 2005 Loam
+Permeability = 5.89908256880734E-13 #[m2] 5.7870e-06[m/s] *mu/(rho*g) -> 5.7870e-06[m/s]*0.001[Pa.s]/(1000[kg m-3]* 9.81 [m s-2])  # Vanderborght 2005 Loam
+BufferPower = 40 #[-]
+### root parameters ###
+rootRadius = 2e-4 #
+Kx = 5e-17 #[m4 s-1 Pa-1] (Frensch and Steudle 1989)
+Kr = 2.1e-13 #[m s-1 Pa-1] (Frensch and Steudle 1989)
+Vmax = 1.17e-8 #[kg/(m2s)] 3e-5 mirco-mol/(cm2s) -> 3e-5*e-6*39e-3*e4 =117e-10=1.17e-8 (Baber 1986)
+Km = 5.46e-4 #0.975e-9 # [kg/m3] 14e-3 micro-mol/cm3 -> 14e-3*e-6*39e-3*e6 =540.6e-6=5.46e-4 (Baber 1986)
+DiffCoeffRootMembrane = 0
+PartitionCoeff = 0 #just active uptake
+
+[BoundaryConditions]
+ZeroNeumannSoil = false
+DirichletRootCollar = false
+MultiRoot = false
+TranspirationRate = 0#3.0159289474462E-09#1.2e-7
+InitialSoilWaterContent = 0.2
+InitialSoilPressure = 90340#96620 water content 0.2
+InitialRootPressure = 90340#96620
+
+CollarPressure = 90340#96620 # -14e5 # -1.5e6 # [Pa] sd -1.5e5
+CriticalCollarPressure = -1.5e6
+InitialSoluteMassFracInSoil = 9.87037037037037E-07#1.95e-6 # [-]
+InitialSoluteMassFracInRoot = 0 #
+SoilTemperature = 283
+RootTemperature = 283
+
+[IterativeAlgorithm]
+MaxIterations = 100
+Tolerance = 1.0e-14
+Verbose = 1
+IntegrationOrder = 1
+
+[Newton]
+MaxRelativeShift = 1e-4
+
+

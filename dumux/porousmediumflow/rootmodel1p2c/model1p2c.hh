@@ -139,6 +139,8 @@ public:
         ScalarField *massFraction0 = writer.allocateManagedBuffer(numDofs);
         ScalarField *massFraction1 = writer.allocateManagedBuffer(numDofs);
 
+        ScalarField *molarConcentration = writer.allocateManagedBuffer(numDofs);
+
         //ScalarField *ph = writer.allocateManagedBuffer(numDofs);
         ScalarField *volumeFlux = writer.allocateManagedBuffer(numElements);
         VectorField *velocity = writer.template allocateManagedBuffer<Scalar, dimWorld>(numElements);
@@ -209,6 +211,8 @@ public:
                 (*moleFraction1)[globalIdx] = elemVolVars[scvIdx].moleFraction(1);
                 (*massFraction0)[globalIdx] = elemVolVars[scvIdx].massFraction(0);
                 (*massFraction1)[globalIdx] = elemVolVars[scvIdx].massFraction(1);
+
+                (*molarConcentration)[globalIdx] = elemVolVars[scvIdx].molarity(1);
             }
 
 
@@ -237,9 +241,13 @@ public:
         writer.attachDofData(*massFraction0, "w_" + FluidSystem::componentName(0), isBox);
         writer.attachDofData(*massFraction1, "w_" + FluidSystem::componentName(1), isBox);
 
+
+        writer.attachDofData(*molarConcentration, "molar concentration " + FluidSystem::componentName(1), isBox);
+
+
         if (velocityOutput.enableOutput())
         {
-        //    writer.attachCellData(*velocity,  "velocity (m/s)", dimWorld);
+            writer.attachCellData(*velocity,  "velocity (m/s)", dimWorld);
             writer.attachCellData(*volumeFlux,  "volumeFlux (m^3/s)");
         }
         writer.attachCellData(*rank, "process rank");
@@ -267,7 +275,7 @@ public:
                             0,
                             elemVolVars);
             auto flux = fluxVars.volumeFlux(0);
-            volumeFluxVector[eIdx] = (element.geometry().corner(1) - element.geometry().corner(0)).two_norm();
+            volumeFluxVector[eIdx] = (element.geometry().corner(0) - element.geometry().corner(1)).two_norm();
             volumeFluxVector[eIdx] *= flux;
         }
         else // cell-centered models use the standard output

@@ -1,0 +1,12 @@
+#install headers
+install(FILES
+gridgrowthboundaryindicator.hh
+gridgrowthhelperdefault.hh
+gridgrowthhelper.hh
+gridgrowth.hh
+gridgrowthindicatorbranches.hh
+gridgrowthindicatordefault.hh
+gridgrowthindicatorrandom.hh
+gridgrowthproperties.hh
+gridgrowthpropertydefaults.hh
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/implicit/growth)

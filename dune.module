@@ -7,4 +7,4 @@ Module: dumux-rosi
 Version: 0.01
 Maintainer: t.mai@fz-juelich.de
 #depending on
-Depends: dumux dumux-multidimension
+Depends: dumux

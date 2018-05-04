@@ -27,11 +27,7 @@ dune_enable_all_packages()
 dune_require_cxx_standard(MODULE "DuMuX" VERSION 14)
 
 add_subdirectory("cmake/modules")
-add_subdirectory("rosi_benchmarking")
-add_subdirectory("rosi_dev")
-add_subdirectory("rosi_examples")
-add_subdirectory("rosi_exudation")
-add_subdirectory("doc")
+add_subdirectory("rosi_multiscale")
 
 # finalize the dune project, e.g. generating config.h etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)

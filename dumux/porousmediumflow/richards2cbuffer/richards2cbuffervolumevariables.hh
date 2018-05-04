@@ -27,7 +27,7 @@
 #include "richards2cbufferproperties.hh"
 
 #include <dumux/implicit/volumevariables.hh>
-#include <dumux/material/fluidstates/compositional.hh>
+//#include <dumux/material/fluidstates/compositional.hh>
 
 namespace Dumux
 {
@@ -172,8 +172,8 @@ public:
         else
         {
             // setMassFraction() has only to be called 1-numComponents times
-            fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
-            //fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+            //fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+            fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
         }
 
         // density and viscosity
@@ -188,6 +188,18 @@ public:
         // compute and set the enthalpy
         Scalar h = Implementation::enthalpy_(fluidState, paramCache, phaseIdx);
         fluidState.setEnthalpy(phaseIdx, h);
+//
+//        if(useMoles)
+//        {
+//            fluidState.setMoleFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+//            fluidState.setMoleFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+//        }
+//        else
+//        {
+//            // setMassFraction() has only to be called 1-numComponents times
+//            fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+//            //fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+//        }
 
     //    Scalar x1 = priVars[massOrMoleFracIdx]; //mole or mass fraction of component 1
     //    if(!useMoles) //mass-fraction formulation

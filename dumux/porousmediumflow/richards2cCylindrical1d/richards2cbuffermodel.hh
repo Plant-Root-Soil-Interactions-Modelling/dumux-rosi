@@ -95,7 +95,7 @@ public:
         //ScalarField *mobW = writer.allocateManagedBuffer(numDofs);
         //ScalarField *mobN = writer.allocateManagedBuffer(numDofs);
         ScalarField *poro = writer.allocateManagedBuffer(numDofs);
-        ScalarField *Te = writer.allocateManagedBuffer(numDofs);
+        //ScalarField *Te = writer.allocateManagedBuffer(numDofs);
         //ScalarField *ph = writer.allocateManagedBuffer(numDofs);
         ScalarField *wc = writer.allocateManagedBuffer(numDofs);
         ScalarField *buffer = writer.allocateManagedBuffer(numDofs);
@@ -104,6 +104,7 @@ public:
         ScalarField *moleFraction1 = writer.allocateManagedBuffer(numDofs);
         ScalarField *massFraction0 = writer.allocateManagedBuffer(numDofs);
         ScalarField *massFraction1 = writer.allocateManagedBuffer(numDofs);
+        ScalarField *molarConcentration = writer.allocateManagedBuffer(numDofs);
 
         VectorField *velocity = writer.template allocateManagedBuffer<double, dimWorld>(numDofs);
         ImplicitVelocityOutput<TypeTag> velocityOutput(this->problem_());
@@ -159,7 +160,7 @@ public:
                     //(*mobW)[dofIdxGlobal] = elemVolVars[scvIdx].mobility(phaseIdx);
                     //(*mobN)[dofIdxGlobal] = elemVolVars[scvIdx].mobility(nPhaseIdx);
                     (*poro)[dofIdxGlobal] = elemVolVars[scvIdx].porosity();
-                    (*Te)[dofIdxGlobal] = elemVolVars[scvIdx].temperature();
+                    //(*Te)[dofIdxGlobal] = elemVolVars[scvIdx].temperature();
                     //(*ph)[dofIdxGlobal] = elemVolVars[scvIdx].pressureHead(phaseIdx);
                     (*wc)[dofIdxGlobal] = elemVolVars[scvIdx].waterContent(phaseIdx);
                     (*buffer)[dofIdxGlobal] = elemVolVars[scvIdx].buffer();
@@ -168,6 +169,7 @@ public:
                     (*moleFraction1)[dofIdxGlobal] = elemVolVars[scvIdx].moleFraction(1);
                     (*massFraction0)[dofIdxGlobal] = elemVolVars[scvIdx].massFraction(0);
                     (*massFraction1)[dofIdxGlobal] = elemVolVars[scvIdx].massFraction(1);
+                    (*molarConcentration)[dofIdxGlobal] = elemVolVars[scvIdx].molarity(1);
                 }
 
                 // velocity output
@@ -185,7 +187,7 @@ public:
         //writer.attachDofData(*mobW, "mobW", isBox);
         //writer.attachDofData(*mobN, "mobN", isBox);
         writer.attachDofData(*poro, "porosity", isBox);
-        writer.attachDofData(*Te, "temperature", isBox);
+        //writer.attachDofData(*Te, "temperature", isBox);
         //writer.attachDofData(*ph, "pressure head", isBox);
         writer.attachDofData(*wc, "water content", isBox);
         writer.attachDofData(*buffer, "buffer power", isBox);
@@ -195,6 +197,8 @@ public:
 
         writer.attachDofData(*massFraction0, "w_" + FluidSystem::componentName(0), isBox);
         writer.attachDofData(*massFraction1, "w_" + FluidSystem::componentName(1), isBox);
+
+        writer.attachDofData(*molarConcentration, "molar concentration " + FluidSystem::componentName(1), isBox);
 
         if (velocityOutput.enableOutput())
         {

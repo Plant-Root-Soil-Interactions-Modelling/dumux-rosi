@@ -1,0 +1,5 @@
+add_subdirectory("1dRhizosphere")
+add_subdirectory("2d")
+add_subdirectory("3d")
+add_subdirectory("3dMultiscale")
+add_subdirectory("3dRhizoRoot")
