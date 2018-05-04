@@ -7,7 +7,10 @@ This is the DuMux-ROSI module containing the code for the manuscript:
 Installation
 --------------------------
 
-The easiest way to install this module is to create a new folder and to execute the file [install_pubMai2018.sh](https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi/blob/pub/Mai2018/install_pubMai2018.sh) in this folder.
+The easiest way to install this module is to create a new folder and run these commands:
+
+git clone -b pub/Mai2018 https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi.git
+./dumux-rosi/install_pubMai2018.sh
 
 Contact
 --------------------------
