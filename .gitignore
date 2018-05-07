@@ -1,5 +1,22 @@
-build-cmake/
-richards1d/.cproject
-richards1d/.project
-richards3d/.cproject
-richards3d/.project
+# build system clutter
+build-*
+Testing
+
+# auto-saved files
+*~
+
+# hidden files
+.cproject
+.project
+
+# latex clutter
+*.pdf
+*.aux
+*.blg
+*.log
+*.bbl
+*.dvi
+*.idx
+*.out
+*.tdo
+*.toc
