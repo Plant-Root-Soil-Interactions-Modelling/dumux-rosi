@@ -20,3 +20,8 @@ Testing
 *.out
 *.tdo
 *.toc
+
+
+# something pythoon related
+__pycache__
+*.pyc
