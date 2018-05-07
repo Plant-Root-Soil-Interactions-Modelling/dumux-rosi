@@ -35,10 +35,10 @@ namespace Dumux {
  * Managing the root parameters
  */
 template<class TypeTag>
-class RootsParams : public FVSpatialParamsOneP<TypeTag>
+class RootsParams : public FVSpatialParamsOneP<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar), RootsParams<TypeTag>>
 {
-	using ParentType = FVSpatialParamsOneP<TypeTag>;
-	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+    using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
 	using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
 	using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
 	using ElementMapper = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::ElementMapper;
@@ -47,24 +47,25 @@ class RootsParams : public FVSpatialParamsOneP<TypeTag>
 	using Element = typename GridView::template Codim<0>::Entity;
 	using Water = Components::SimpleH2O<Scalar>;
 	using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
+	using ParentType = FVSpatialParamsOneP<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar), RootsParams<TypeTag>>;
 
 public:
 
 	using PermeabilityType = Scalar;
 
-	RootsParams(const Problem& problem) : ParentType(problem) {
+	RootsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry) : ParentType(fvGridGeometry) {
 		try { // parameters are constant for all elements
 			radius_ = getParam<Scalar>("Parameter.Radius");
 			kr_ = getParam<Scalar>("Parameter.Kr");
 			kz_ = getParam<Scalar>("Parameter.Kz");
 		} catch  (const std::exception& e) {
 			params_=true; // parameters are set by element
-	        const auto& gridView = this->problem().fvGridGeometry().gridView();
+	        const auto& gridView = fvGridGeometry->gridView();
 	        radii_.resize(gridView.size(0));
 	        krs_.resize(gridView.size(0));
 	        kzs_.resize(gridView.size(0));
 	        for (const auto& element : elements(gridView)) {
-	            const auto eIdx = elementMapper_.index(element);
+	            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
 	            auto p = GridCreator::parameters(element);
 	            radii_[eIdx] = p.at(0);
 	            krs_[eIdx] = p.at(1);
@@ -78,7 +79,7 @@ public:
 	 */
 	Scalar radius(const Element &element) const {
 		if (params_) {
-			auto eIdx = elementMapper_.index(element);
+			auto eIdx = this->fvGridGeometry().elementMapper().index(element);
 			return radii_[eIdx];
 		} else {
 			return radius_;
@@ -90,7 +91,7 @@ public:
 	 */
 	Scalar radialConductivity(const Element &element) const {
 		if (params_) {
-			auto eIdx = elementMapper_.index(element);
+			auto eIdx = this->fvGridGeometry().elementMapper().index(element);
 			return krs_[eIdx];
 		} else {
 			return kr_;
@@ -102,7 +103,7 @@ public:
 	 */
 	Scalar axialConductivity(const Element &element) const {
 		if (params_) {
-			auto eIdx = elementMapper_.index(element);
+			auto eIdx = this->fvGridGeometry().elementMapper().index(element);
 			return kzs_[eIdx];
 		} else {
 			return kz_;
@@ -137,9 +138,7 @@ private:
 	Scalar radius_;
 	Scalar kr_;
 	Scalar kz_;
-
 	bool params_ = false;
-    const ElementMapper& elementMapper_ = this->problem().fvGridGeometry().elementMapper();
     std::vector<Scalar> radii_ = std::vector<Scalar>(0);
 	std::vector<Scalar> krs_ = std::vector<Scalar>(0);
 	std::vector<Scalar> kzs_ = std::vector<Scalar>(0);

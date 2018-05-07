@@ -5,35 +5,39 @@
 #
 import numpy as np
 import matplotlib.pyplot as plt
-import van_genuchten as vg
+from van_genuchten import *
 from scipy import integrate
 from math import *
 
-sand = vg.Parameters(0.045, 0.43, 0.15, 3, 1.1574e-04*100*3600*24)
-loam = vg.Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06*100*3600*24)
-clay = vg.Parameters(0.1, 0.4, 0.01, 1.1, 1.1574e-06*100*3600*24)
+sand = Parameters(0.045, 0.43, 0.15, 3, 1.1574e-04*100*3600*24)
+loam = Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06*100*3600*24)
+clay = Parameters(0.1, 0.4, 0.01, 1.1, 1.1574e-06*100*3600*24)
 
 jwpot_ = [-0.1, -0.1, -0.3, -0.3]
+
+jwpot_ = [-0.1, -0.1, -0.3, -0.3]
+head_i_ = [-40,-200,-200,-200]
 
 N = 1000
 y = np.zeros((N,4))
 t = np.linspace(0,10,N) # days
 
 for i,soil in enumerate([sand, loam, loam, clay]):
+    head_i = head_i_[i]
+    theta_i = water_content(head_i,soil) # initial theta  
+    theta_sur = water_content(-10000,soil) # critical vaule 
+    jwpot = jwpot_[i]   
     
-    theta_i = vg.water_content(-200,soil) # initial theta  
-    theta_sur = vg.water_content(-10000,soil) # critical vaule 
-    jwpot = jwpot_[i]      
-    
-    dw = lambda theta: vg.water_diffusivity(vg.pressure_head(theta,soil), soil)    
-    int_dw, err = integrate.quad(dw,soil.theta_R,soil.theta_S)    
+    #TH = (theta-theta_sur)/(theta_i-theta_sur)
+    dw = lambda TH: water_diffusivity(TH,theta_i, theta_sur, soil)    
+    int_dw, err = integrate.quad(dw,0,1)    
 
-    theta_dw = lambda theta: ((theta-soil.theta_R)/(soil.theta_S-soil.theta_R))*vg.water_diffusivity(vg.pressure_head(theta,soil), soil)       
-    int_theta_dw, err = integrate.quad(theta_dw,soil.theta_R,soil.theta_S)
+    theta_dw = lambda TH: TH*water_diffusivity(TH,theta_i, theta_sur, soil)       
+    int_theta_dw, err = integrate.quad(theta_dw,0,1)
     beta = pow(int_theta_dw/int_dw,2) # 43
 
-    fun_dw = lambda theta: pow(1-(theta-soil.theta_R)/(soil.theta_S-soil.theta_R)*beta,2)*dw(theta)
-    alpha, err = integrate.quad(fun_dw,soil.theta_R,soil.theta_S)
+    fun_dw = lambda TH: pow(1-TH*beta,2)*dw(TH)
+    alpha, err = integrate.quad(fun_dw,0,1)
     alpha /= int_dw # 42
 
     mu = ( 3*beta*(1+sqrt(1-(14/9)*(1-alpha/pow(1-beta,2)) ) ) ) / ( 2*(1-beta)*(alpha/pow(1-beta,2)-1) ) # eq 41
@@ -65,7 +69,7 @@ ax2.set_title("Loam")
 ax3.plot(t,abs(y[:,2]),'b')
 ax3.set_xlabel('$t$ (days)')
 ax3.set_ylabel('$E_{act}$ (cm day$^{-1}$)')
-# ax3.set_xlim(0,2)
+ax3.set_xlim(0,2)
 ax3.set_title("Loam")
 
 ax4.plot(t,abs(y[:,3]),'b')

@@ -85,7 +85,7 @@ SET_TYPE_PROP(RichardsProblem1d, Problem, RichardsProblem1d<TypeTag>);
  *
  * Output times can be chosen in the .input file:
  * [TimeLoop]
- * Episodes = 60 120 2000 # s
+ * Episodes = 60 120 2000
  */
 template <class TypeTag>
 class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
@@ -93,7 +93,7 @@ class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
 	using ParentType = PorousMediumFlowProblem<TypeTag>;
 	using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
 	using PrimaryVariables = typename GET_PROP_TYPE(TypeTag, PrimaryVariables);
-	using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
+	using MaterialLaw = typename RichardsParams<TypeTag>::MaterialLaw;
 	using BoundaryTypes = typename GET_PROP_TYPE(TypeTag, BoundaryTypes);
 	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
 	using Indices = typename GET_PROP_TYPE(TypeTag, ModelTraits)::Indices;
@@ -238,9 +238,8 @@ public:
 			const ElementVolumeVariables& elemVolVars,
 			const SubControlVolumeFace& scvf) const {
 
-		Scalar const atm = pRef_/(rho_*g_); // m pressure head
-		GlobalPosition pos = scvf.center();
 		ResidualVector values;
+		GlobalPosition pos = scvf.center();
 
 		if (onUpperBoundary_(pos)) { // top boundary
 			switch (bcTop_) {
@@ -249,6 +248,8 @@ public:
 				break;
 			}
 			case 4: { // atmospheric boundary condition (with surface run-off)
+				Scalar const atm = - pRef_/(rho_*g_); // m pressure head
+
 				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
 				Scalar mS = 0;
 				auto numScv = fvGeometry.numScv();
@@ -267,11 +268,13 @@ public:
 					Scalar imax = rho_*Kc*((h-0)/dz -1.); // maximal infiltration
 					Scalar v = std::max(prec,imax);
 					values[conti0EqIdx] = v;
+
 					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " S "<< mS << " Pressurehead "<< h << " values " << v << " at time " << time_ ;
 				} else { // evaporation
 					Scalar emax = rho_*krw*Kc*((h-atm)/dz -1.); // maximal evaporation
 					Scalar v  = std::min(prec,emax);
 					values[conti0EqIdx] = v;
+
 					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " S "<< mS << " Pressurehead "<< h <<" values " << v << " at time " << time_;
 				}
 				break;
@@ -330,6 +333,11 @@ private:
 	Scalar toPa_(Scalar ph) const {
 		return pRef_ +  ph/100.*rho_*g_;
 	}
+
+	Scalar toHead_(Scalar p) const {
+		return (p-pRef_) * 100./rho_/g_;
+	}
+
 
 	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
 		return globalPos[dimWorld-1] > this->fvGridGeometry().bBoxMax()[dimWorld-1] - eps_;

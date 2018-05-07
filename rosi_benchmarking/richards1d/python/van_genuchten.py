@@ -19,7 +19,7 @@ def pa2head(pa_, pnref = 1.e5, g = 9.81):
 def head2pa(h_, pnref = 1.e5, g = 9.81):
     pa = np.zeros(len(h_))
     for i,h in enumerate(h_):
-        pa[i] =  ref + h/100.*1000.*g
+        pa[i] =  pnref + h/100.*1000.*g
     return pnref+pa
 
 #
@@ -77,4 +77,14 @@ def hydraulic_conductivity(h,sp):
 def specific_moisture_storage(h,sp):
     C = -sp.alpha*sp.n*np.sign(h)*(1. / sp.n - 1.) * pow(sp.alpha*abs(h), sp.n-1.) * (sp.theta_R-sp.theta_S) * pow(pow(sp.alpha*abs(h),sp.n) + 1., 1./sp.n-2.)
     return C
+#
+# returns the water diffusivity (Eqn 11)
+#
+def water_diffusivity(TH,theta_i,theta_sur, sp):
+    theta=TH*(theta_i-theta_sur) + theta_sur
+    Se = (theta-sp.theta_R)/(sp.theta_S-sp.theta_R)
+    m = sp.m
+    D=(1-m)*sp.Ksat/(sp.alpha*m*(sp.theta_S-sp.theta_R)) * pow(Se,0.5-1./m) * (pow(1-pow(Se,1./m),-m) + pow(1-pow(Se,1/m),m)-2)
+    return D
+
 

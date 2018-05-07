@@ -52,6 +52,10 @@
 
 #include <dumux/io/vtkoutputmodule.hh>
 
+#include <iostream>
+#include <fstream>
+
+
 /*!
  * \brief Provides an interface for customizing error messages associated with
  *        reading in parameters.
@@ -162,9 +166,17 @@ int main(int argc, char** argv) try
     using NewtonSolver = Dumux::RichardsNewtonSolver<TypeTag, Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
+
+	 std::ofstream myfile(problem->name()+".txt");
+
     // time loop
     timeLoop->start(); do
     {
+
+    	// hack for benchmark 4
+    	myfile << timeLoop->time() << ", ";
+    	myfile << x[0] << "\n";
+
     	// set time within problem
     	problem->setTime(timeLoop->time());
 
@@ -206,6 +218,8 @@ int main(int argc, char** argv) try
         Parameters::print();
         DumuxMessage::print(/*firstCall=*/false);
     }
+
+    myfile.close();
 
     return 0;
 }

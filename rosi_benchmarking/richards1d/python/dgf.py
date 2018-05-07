@@ -34,20 +34,25 @@ def createDGF_1D(filename, N, depth, top, bot, domainId, vertex3d = False):
 
 if __name__ == "__main__":
     
-    # Jan 1 (Figure 2abc)
-    domain_jan1 = np.hstack((np.ones(50,), 2*np.ones(151,)))
-    createDGF_1D("jan1.dgf",201,2.,-200,-200.,domain_jan1)
+    # Benchmark 1, for Figure 2abc
+    domain_b1 = np.hstack((np.ones(50,), 2*np.ones(151,)))
+    createDGF_1D("../grids/b1.dgf",201,2.,-200,-200.,domain_b1)
     
-    # Jan 2 (Figure 3)
-    domain_jan2 = np.ones(55,)
-    createDGF_1D("jan2.dgf",55,.54,-0,-54,domain_jan2)
-    domain_jan2 = np.ones(109,)  # same with resolution of 0.5 cm
-    createDGF_1D("jan2b.dgf",109,.54,-0,-54,domain_jan2)
-    domain_jan2 = np.ones(217,)  # same with resolution of 0.25 cm
-    createDGF_1D("jan2c.dgf",217,.54,-0,-54,domain_jan2)
+    # Benchmark 2, for Figure 3
+    domain_b2 = np.ones(55,)
+    createDGF_1D("../grids/b2.dgf",55,.54,-0,-54,domain_b2)
+    domain_b2 = np.ones(109,)  # same with resolution of 0.5 cm
+    createDGF_1D("../grids/b2b.dgf",109,.54,-0,-54,domain_b2)
+    domain_b2 = np.ones(217,)  # same with resolution of 0.25 cm
+    createDGF_1D("../grids/b2c.dgf",217,.54,-0,-54,domain_b2)
     
-    # Jan 3 (Figure 4)
-    domain_jan1 = np.ones(201,)
-    createDGF_1D("jan3.dgf",201,2.,-400,-400.,domain_jan1)
+    # Benchmark 3, for Figure 4abc
+    domain_b3 = np.ones(201,)
+    createDGF_1D("../grids/b3.dgf",201,2.,-400,-400.,domain_b3)
+
+    # Benchmark 4, for Figure 5abcd
+    createDGF_1D("../grids/b4.dgf",201,2.,-200,-200.,domain_b3)
+    createDGF_1D("../grids/b4sand.dgf",201,2.,-40,-40.,domain_b3)
+
 
     print("its done.")

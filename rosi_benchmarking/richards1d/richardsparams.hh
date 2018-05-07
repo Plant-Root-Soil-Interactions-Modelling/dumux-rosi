@@ -53,17 +53,17 @@ NEW_TYPE_TAG(RichardsParams);
 // Set the spatial parameters
 SET_TYPE_PROP(RichardsParams, SpatialParams, RichardsParams<TypeTag>);
 
-// Set the material law
-SET_PROP(RichardsParams, MaterialLaw)
-{
-private:
-    // define the material law which is parameterized by effective
-    // saturations
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-public:
-    // define the material law parameterized by absolute saturations
-    using type = EffToAbsLaw<VanGenuchten<Scalar>>;
-};
+//// Set the material law
+//SET_PROP(RichardsParams, MaterialLaw)
+//{
+//private:
+//    // define the material law which is parameterized by effective
+//    // saturations
+//    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+//public:
+//    // define the material law parameterized by absolute saturations
+//    using type = EffToAbsLaw<VanGenuchten<Scalar>>;
+//};
 }
 
 
@@ -72,14 +72,13 @@ public:
  * \brief The spatial parameters class for the Richards problem
  */
 template<class TypeTag>
-class RichardsParams : public FVSpatialParams<TypeTag>
+class RichardsParams : public FVSpatialParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar), RichardsParams<TypeTag>>
 {
-
-    using ParentType = FVSpatialParams<TypeTag>;
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-    using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
-    using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
+    using GridView = typename FVGridGeometry::GridView;
+    using ParentType = FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<TypeTag>>;
+    using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
     using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using IndexSet = typename GridView::IndexSet;
@@ -92,20 +91,22 @@ class RichardsParams : public FVSpatialParams<TypeTag>
     using Element = typename GridView::template Codim<0>::Entity;
     using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);  //  todo make sure thats the right grid (set somewhere else)
 
+    using EffectiveLaw = EffToAbsLaw<VanGenuchten<Scalar>>;
+
 public:
 
-    using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
+    using MaterialLaw = EffToAbsLaw<EffectiveLaw>;
     using MaterialLawParams = typename MaterialLaw::Params;
     using PermeabilityType = Scalar;
 
     /*!
      * \brief Constructor
      */
-    RichardsParams(const Problem& problem) : ParentType(problem)  {
+    RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry) : ParentType(fvGridGeometry)  {
     	phi_ = 1; // Richards equation is independent of phi
         Scalar g =  9.81; // std::abs(problem.gravity()[dimWorld-1]);
-        Scalar temp =  problem.temperature();
-        Scalar pnRef = problem.nonWettingReferencePressure();
+        Scalar temp =  0.;
+        Scalar pnRef = 0.;
         Scalar mu = Water::liquidViscosity(temp,pnRef); // h2o: 1e-3 Pa·s Dynamic viscosity of water(independent of temp and p)
         Scalar rho = Water::liquidDensity(temp,pnRef);  // h2o: 1000 kg/m³ Density of water(independent of temp and p)
 
