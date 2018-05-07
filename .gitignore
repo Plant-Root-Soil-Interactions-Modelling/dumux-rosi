@@ -21,7 +21,11 @@ Testing
 *.tdo
 *.toc
 
-
 # something pythoon related
 __pycache__
 *.pyc
+
+# CMake
+*.cmake
+CMakeFiles
+Makefile
