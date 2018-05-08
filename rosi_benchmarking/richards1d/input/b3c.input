@@ -20,8 +20,8 @@ n = 1.1
 Ks = 1.1574e-06 # [m/s]
 
 [BC_Top]
-Type = 4 # atmospheric BC with surface run off
-Value = -0.001
+Type = 0 # atmospheric BC with surface run off
+Value = -0.0001
 
 [BC_Bot]
 Type = 5 # free drainage

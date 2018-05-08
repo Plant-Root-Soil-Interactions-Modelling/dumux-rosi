@@ -22,8 +22,8 @@ Testing
 *.toc
 
 # something pythoon related
-__pycache__
 *.pyc
+__pycache__
 
 # CMake
 *.cmake

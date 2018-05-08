@@ -14,10 +14,10 @@ import van_genuchten as vg
 path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/richards1d/"
 
 # run dumux 
-# os.chdir( path )
-# os.system( "./richards1d input/b3a.input")
-# os.system( "./richards1d input/b3b.input")
-# os.system( "./richards1d input/b3c.input")
+os.chdir( path )
+os.system( "./richards1d input/b3a.input")
+os.system( "./richards1d input/b3b.input")
+os.system( "./richards1d input/b3c.input")
 
 # result dumux jan3a (Figure 4a)
 for i in range(0,3):
@@ -34,6 +34,16 @@ for i in range(0,3):
     h_ = vg.pa2head(p_) 
     theta_ = vg.water_content(h_, loam)
     ax2.plot(theta_,z_, "r+")
+ 
+ 
+
+print("Fully saturated at ", vg.head2pa([0.]), " Pa")
+print("Fully saturated at ", vg.pa2head([1.e5]), " cm")
+print("-200 cm at ", vg.head2pa([-200]), "Pa ")
+print("-10000 cm", vg.head2pa([-10000]))
+
+print(vg.pa2head([0.]), "cm")
+print(vg.water_content(0, loam))
  
 # # # result dumux jan3c (Figure 4c)
 # for i in range(0,3):

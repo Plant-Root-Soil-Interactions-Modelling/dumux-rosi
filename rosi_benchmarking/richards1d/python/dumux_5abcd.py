@@ -6,10 +6,11 @@
 
 import os
 import matplotlib.pyplot as plt
-# from analytic_5abcd import *
+from analytic_5abcd import *
 from vtk_tools import *
 from van_genuchten import *
 import numpy as np
+from math import *
 
 sand = Parameters(0.045, 0.43, 0.15, 3, 1.1574e-04*100*3600*24)
 loam = Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06*100*3600*24)
@@ -59,28 +60,31 @@ g = 9.81
 
 Eact1 = np.zeros(len(h1_))
 for i,h in enumerate(h1_):    
-     Eact1[i] = min(0.1,hydraulic_conductivity(h,soil[0]) * (-h + 1))
+     Eact1[i] = min(0.1,abs(hydraulic_conductivity(h,soil[0]) * ((h-(-10000.)) - 1 )))
 
 Eact2 = np.zeros(len(h2_))
 for i,h in enumerate(h2_):    
-    Eact2[i] = min(0.1,hydraulic_conductivity(h,soil[1]) * (-h + 1))
+    Eact2[i] = min(0.1,abs(hydraulic_conductivity(h,soil[1]) * ((h-(-10000.)) - 1 )))
 
 Eact3 = np.zeros(len(h3_))
 for i,h in enumerate(h3_):    
-    Eact3[i] = min(0.3,hydraulic_conductivity(h,soil[2]) * (-h + 1)) 
+    Eact3[i] = min(0.3,abs(hydraulic_conductivity(h,soil[2]) * ((h-(-10000.)) - 1 ))) 
 
 Eact4 = np.zeros(len(h4_))
 for i,h in enumerate(h4_):    
-    Eact4[i] = hydraulic_conductivity(h,soil[3]) * (-h - 1) 
+    Eact4[i] = min(0.3,abs(hydraulic_conductivity(h,soil[3]) * ((h-(-10000.)) - 1 ))) 
 
-# ax1.plot(t1_,Eact1,"r:")
-# ax2.plot(t2_,Eact2,"r:")
-# ax3.plot(t3_,Eact3,"r:")
-# ax4.plot(t4_,Eact4,"r:")
+ax1.plot(t1_,Eact1,"r:")
+ax2.plot(t2_,Eact2,"r:")
+ax3.plot(t3_,Eact3,"r:")
+ax4.plot(t4_,Eact4,"r:")
 
+print(h1_)
 
-plt.plot(t4_,Eact4,"r:")
 plt.show()
+
+# plt.plot(t1_,Eact1,"r:")
+# plt.show()
 
 
 # os.system( "./richards1d input/b4b.input")

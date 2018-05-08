@@ -248,8 +248,6 @@ public:
 				break;
 			}
 			case 4: { // atmospheric boundary condition (with surface run-off)
-				Scalar const atm = - pRef_/(rho_*g_); // m pressure head
-
 				Scalar Kc = this->spatialParams().hydraulicConductivity(element);
 				Scalar mS = 0;
 				auto numScv = fvGeometry.numScv();
@@ -258,24 +256,23 @@ public:
 				}
 				MaterialLawParams params = this->spatialParams().materialLawParams(element);
 				Scalar krw = MaterialLaw::krw(params, mS);
-				Scalar p = MaterialLaw::pc(params, mS);
-				Scalar h = - p/(rho_*g_); // from Pa -> m pressure head
+				Scalar p = MaterialLaw::pc(params, mS)+pRef_;
+				Scalar h = - toHead_(p)/100.; // from Pa -> m pressure head
 
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = 2 * std::abs(ePos[2]- pos[2]); // 0.01; // m // fvGeometry.geometry().volume()?;
 				Scalar prec = getPrec_(time_); // precipitation or evaporation
+
 				if (prec<0) { // precipitation
-					Scalar imax = rho_*Kc*((h-0)/dz -1.); // maximal infiltration
+					Scalar imax = rho_*Kc*((h-0.)/dz -1.); // maximal infiltration
 					Scalar v = std::max(prec,imax);
 					values[conti0EqIdx] = v;
-
-					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " S "<< mS << " Pressurehead "<< h << " values " << v << " at time " << time_ ;
+					std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " S "<< mS << " Pressurehead "<< h << " values " << v << " at time " << time_ << "dz" << dz;
 				} else { // evaporation
-					Scalar emax = rho_*krw*Kc*((h-atm)/dz -1.); // maximal evaporation
+					Scalar emax = rho_*krw*Kc*((h-(-100))/dz -1.); // maximal evaporation (-100 m = -10.000 cm)
 					Scalar v  = std::min(prec,emax);
 					values[conti0EqIdx] = v;
-
-					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " S "<< mS << " Pressurehead "<< h <<" values " << v << " at time " << time_;
+					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " S "<< mS << " Pressurehead "<< h <<" values " << v << " at time " << time_<< "dz" << dz;
 				}
 				break;
 			}
