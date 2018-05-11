@@ -39,6 +39,10 @@
 
 #include "richardsparams.hh"  // #include <rosi_benchmarking/richards1d/richardsparams.hh>
 
+#include <iostream>
+#include <fstream>
+
+
 namespace Dumux //
 {
 template <class TypeTag>
@@ -145,6 +149,12 @@ public:
 			precTime_ = getParam<std::vector<Scalar>>("Climate.Times");
 			precData_ = getParam<std::vector<Scalar>>("Climate.Precipitation"); // in [cm / s]
 		}
+
+		 myfile_.open(this->name()+".txt");
+	}
+
+	~RichardsProblem1d() {
+	    myfile_.close();
 	}
 
 	/*!
@@ -231,7 +241,7 @@ public:
 	}
 
 	/*!
-	 * \copydoc FVProblem::neumann
+	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
 	 */
 	ResidualVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
@@ -274,6 +284,9 @@ public:
 					values[conti0EqIdx] = v;
 					std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " S "<< mS << " Pressurehead "<< h <<" values " << v << " at time " << time_<< "dz" << dz;
 				}
+		    	// hack for benchmark 4
+		    	myfile_ << time_ << ", "; //
+		    	myfile_ << values[conti0EqIdx] << "\n";
 				break;
 			}
 			default:
@@ -377,6 +390,8 @@ private:
 	std::vector<Scalar> precData_;
 
 	Scalar time_ = 0.;
+
+	mutable std::ofstream myfile_; // file for flux over time
 
 };
 

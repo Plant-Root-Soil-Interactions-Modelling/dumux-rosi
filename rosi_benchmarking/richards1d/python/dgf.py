@@ -54,5 +54,9 @@ if __name__ == "__main__":
     createDGF_1D("../grids/b4.dgf",201,2.,-200,-200.,domain_b3)
     createDGF_1D("../grids/b4sand.dgf",201,2.,-40,-40.,domain_b3)
 
+    # Benchmark 4, for Figure 5abcd
+    domain_b4hr = np.ones(801,)
+    createDGF_1D("../grids/b4hr.dgf",801,2.,-200,-200.,domain_b4hr)
+    createDGF_1D("../grids/b4hr_sand.dgf",801,2.,-40,-40.,domain_b4hr)
 
     print("its done.")

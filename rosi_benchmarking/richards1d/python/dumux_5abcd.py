@@ -21,85 +21,34 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ri
 
 # run dumux 
 os.chdir( path )
+# os.system( "./richards1d input/b4a_hr.input")
+# os.system( "./richards1d input/b4b_hr.input")
+# os.system( "./richards1d input/b4c_hr.input")
+# os.system( "./richards1d input/b4d_hr.input")
 # os.system( "./richards1d input/b4a.input")
 # os.system( "./richards1d input/b4b.input")
 # os.system( "./richards1d input/b4c.input")
 # os.system( "./richards1d input/b4d.input")
 
-file = open("benchmark4a.txt",'r')
-d = np.loadtxt(file, delimiter=',')
-t1_ = d[:,0]/(24*3600)
-h1_= pa2head(d[:,1])
-file.close()
+# open results
+num = ['a','b','c','d', 'ahr','bhr','chr','dhr']
+t = []
+y = []
 
-file = open("benchmark4b.txt",'r')
-d = np.loadtxt(file, delimiter=',')
-t2_ = d[:,0]/(24*3600)
-h2_= pa2head(d[:,1])
-file.close()
-soil = loam
 
-file = open("benchmark4c.txt",'r')
-d = np.loadtxt(file, delimiter=',')
-t3_ = d[:,0]/(24*3600)
-h3_= pa2head(d[:,1])
-file.close()
-soil = loam
+for n in num: 
+    with open("benchmark4"+n+".txt",'r') as f: 
+        d = np.loadtxt(f, delimiter=',')
+    t_ = d[:,0]/(24*3600)
+    f_ = d[:,1]*(24*3600)/1000*100; # from kg/(s m²) to cm/day
+    t.append(t_)
+    y.append(f_)
 
-file = open("benchmark4d.txt",'r')
-d = np.loadtxt(file, delimiter=',')
-t4_ = d[:,0]/(24*3600)
-h4_= pa2head(d[:,1])
-file.close()
-soil = clay
-
-soil = [sand, loam, loam, clay]
-
-rho = 1000
-g = 9.81
-
-Eact1 = np.zeros(len(h1_))
-for i,h in enumerate(h1_):    
-     Eact1[i] = min(0.1,abs(hydraulic_conductivity(h,soil[0]) * ((h-(-10000.)) - 1 )))
-
-Eact2 = np.zeros(len(h2_))
-for i,h in enumerate(h2_):    
-    Eact2[i] = min(0.1,abs(hydraulic_conductivity(h,soil[1]) * ((h-(-10000.)) - 1 )))
-
-Eact3 = np.zeros(len(h3_))
-for i,h in enumerate(h3_):    
-    Eact3[i] = min(0.3,abs(hydraulic_conductivity(h,soil[2]) * ((h-(-10000.)) - 1 ))) 
-
-Eact4 = np.zeros(len(h4_))
-for i,h in enumerate(h4_):    
-    Eact4[i] = min(0.3,abs(hydraulic_conductivity(h,soil[3]) * ((h-(-10000.)) - 1 ))) 
-
-ax1.plot(t1_,Eact1,"r:")
-ax2.plot(t2_,Eact2,"r:")
-ax3.plot(t3_,Eact3,"r:")
-ax4.plot(t4_,Eact4,"r:")
-
-print(h1_)
+# prepare plot
+axis = [ax1, ax2, ax3, ax4, ax1, ax2, ax3, ax4]
+lt = ["r:","r:","r:","r:","r--","r--","r--","r--"]
+for i,a in enumerate(axis):
+        a.plot(t[i],y[i],lt[i])
 
 plt.show()
-
-# plt.plot(t1_,Eact1,"r:")
-# plt.show()
-
-
-# os.system( "./richards1d input/b4b.input")
-# os.system( "./richards1d input/b4c.input")
-# os.system( "./richards1d input/b4d.input")
-
-
-# # Figure 5a
-# s_, p_ = read1D_vtp_data(path+"benchmark4a-0000"+str(i+1)+".vtp", False)
-# z_ = np.linspace(0,-200,len(s_))
-# h_ = vg.pa2head(p_) 
-# theta_ = vg.water_content(h_, sand)
-# ax1.plot(theta_,z_, "r+")   
-#     
-# 
-# 
-# plt.show()
 
