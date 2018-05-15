@@ -9,9 +9,11 @@ Installation
 
 The easiest way to install this module is to create a new folder and run these commands:
 ```
+mkdir -p Mai2018 && cd Mai2018
+
 git clone -b pub/Mai2018 https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi.git
 
-./dumux-rosi/install_pubMai2018.sh
+sh ./dumux-rosi/install_pubMai2018.sh
 ```
 
 Contact
