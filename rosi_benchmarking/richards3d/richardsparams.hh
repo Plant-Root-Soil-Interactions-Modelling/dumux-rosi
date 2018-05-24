@@ -28,9 +28,10 @@
 #include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
+#include <dumux/porousmediumflow/richards/model.hh>
 #include <dumux/material/components/simpleh2o.hh>
 
-#include <dumux/porousmediumflow/richards/model.hh>
+
 
 namespace Dumux //
 {
@@ -52,17 +53,6 @@ NEW_TYPE_TAG(RichardsParams);
 // Set the spatial parameters
 SET_TYPE_PROP(RichardsParams, SpatialParams, RichardsParams<TypeTag>);
 
-// Set the material law
-SET_PROP(RichardsParams, MaterialLaw)
-{
-private:
-    // define the material law which is parameterized by effective
-    // saturations
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-public:
-    // define the material law parameterized by absolute saturations
-    using type = EffToAbsLaw<VanGenuchten<Scalar>>;
-};
 }
 
 
@@ -72,17 +62,17 @@ public:
  * \brief The spatial parameters class for the Richards problem
  */
 template<class TypeTag>
-class RichardsParams : public FVSpatialParams<TypeTag>
+class RichardsParams : public FVSpatialParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar), RichardsParams<TypeTag>>
 {
-    using ParentType = FVSpatialParams<TypeTag>;
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
     using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
+    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
+    using ParentType = FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<TypeTag>>;
     using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using IndexSet = typename GridView::IndexSet;
-    using Water = SimpleH2O<Scalar>;
+    using Water = Components::SimpleH2O<Scalar>;
 
     enum {
         dim=GridView::dimension,
@@ -91,25 +81,25 @@ class RichardsParams : public FVSpatialParams<TypeTag>
 
     using GlobalPosition = Dune::FieldVector<Scalar,dimWorld>;
     using Element = typename GridView::template Codim<0>::Entity;
-
     using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);  //  todo make sure thats the right grid (set somewhere else)
-    using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
-    using MaterialLawParams = typename MaterialLaw::Params;
+    using EffectiveLaw = EffToAbsLaw<VanGenuchten<Scalar>>;
 
 public:
-    // export permeability type
+
+    using MaterialLaw = EffToAbsLaw<EffectiveLaw>;
+    using MaterialLawParams = typename MaterialLaw::Params;
     using PermeabilityType = Scalar;
 
     /*!
      * \brief Constructor
      */
-    RichardsParams(const Problem& problem) : ParentType(problem)  {
+    RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry) : ParentType(fvGridGeometry) {
 
     	phi_ = 1; // Richards equation is independent of phi
 
         Scalar g =  9.81; // std::abs(problem.gravity()[dimWorld-1]);
-        Scalar temp =  problem.temperature();
-        Scalar pnRef = problem.nonWettingReferencePressure();
+        Scalar temp = 0.;
+        Scalar pnRef = 0.;
         Scalar mu = Water::liquidViscosity(temp,pnRef); // h2o: 1e-3 Pa·s Dynamic viscosity of water(independent of temp and p)
         Scalar rho = Water::liquidDensity(temp,pnRef);  // h2o: 1000 kg/m³ Density of water(independent of temp and p)
 

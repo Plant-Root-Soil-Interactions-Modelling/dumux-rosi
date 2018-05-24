@@ -11,11 +11,11 @@ from vtk_tools import *
 import van_genuchten as vg
 
 # manually set absolute path
-path = "/home/daniel/Workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/richards3d/"
+path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/richards3d/"
 
 # # # run dumux 
-# os.chdir( path )
-# os.system( "./richards3d input/jan1a.input")
+os.chdir( path )
+os.system( "./richards3d input/jan1a.input")
 # os.system( "./richards3d input/jan1b.input")
 # os.system( "./richards3d input/jan1c.input")
 

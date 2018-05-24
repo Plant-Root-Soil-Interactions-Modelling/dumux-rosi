@@ -1,11 +1,11 @@
 [TimeLoop]
-DtInitial =  100 # [s]
+DtInitial =  1 # [s]
 TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
-UpperRight = 0.1 0.1 1
-Cells = 10 10 100 # File = ./grids/test_1p_3d.dgf # [m], initial data [cm] pressure head
+UpperRight = 0.1 0.2 2
+Cells = 10 20 200
 Initial = -200 # cm pressure head
 
 [Problem]
@@ -13,12 +13,12 @@ Name = jan1a
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
-# loam  
-Qr = 0.08  
-Qs = 0.43 
-alpha = 0.04  
-n = 1.6 
-Ks = 5.7870e-06 
+# loam over sand 
+Qr = 0.08  0.045	
+Qs = 0.43 0.43
+alpha = 0.04  0.15 # [1/cm] 
+n = 1.6  3
+Ks = 5.7870e-06 1.1574e-04 # m/s 	
 
 # # Vanderborght 2005 Sand: 
 # Qr = 0.045 
@@ -35,9 +35,23 @@ Ks = 5.7870e-06
 # Ks = 5.7870e-06 # [m/s] hydrus verdoppelt (!)
 
 
+# Hydrus VG parameters are: 
+#sand 
+#Qr = 0.045
+#Qs = 0.43
+#alpha = 0.145
+#n = 2.68
+#Ks = 8.25e-5
+## silt	
+#Qr = 0.034 
+#Qs = 0.46
+#alpha = 0.016
+#n = 1.37
+#Ks = 6.94444e-7
+
 [BC_Top]
-Type = 1
-Value = -200 # [cm day-1]
+Type = 2
+Value = 0.5 # [cm day-1]
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -47,8 +61,8 @@ Value = -200 # [cm day-1]
 # 6 variable pressure head/flux
 
 [BC_Bot]
-Type = 1
-Value = -200 #-1 # [cm] field capacity
+Type = 5
+Value = 0 #-1 # [cm] field capacity
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -60,6 +74,8 @@ Value = -200 #-1 # [cm] field capacity
 # 8 horizontal drains
 
 [Newton]
-TargetSteps = 5 # set the "desireable" number of newton iterations of a time step
+TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
 EnableChop = true # chop for better convergence
+
+
 

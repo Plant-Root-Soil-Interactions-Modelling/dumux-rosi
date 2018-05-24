@@ -32,9 +32,9 @@
 
 #include <dumux/porousmediumflow/richards/model.hh>
 #include <dumux/material/components/simpleh2o.hh>
-#include <dumux/material/fluidsystems/liquidphase.hh>
+#include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include <rosi_benchmarking/richards3d/richardsparams.hh>
+#include "richardsparams.hh"
 
 namespace Dumux
 {
@@ -95,17 +95,15 @@ class RichardsProblem3d : public PorousMediumFlowProblem<TypeTag>
     using ParentType = PorousMediumFlowProblem<TypeTag>;
     using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
     using PrimaryVariables = typename GET_PROP_TYPE(TypeTag, PrimaryVariables);
-    using MaterialLaw = typename GET_PROP_TYPE(TypeTag, MaterialLaw);
     using BoundaryTypes = typename GET_PROP_TYPE(TypeTag, BoundaryTypes);
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-    using Indices = typename GET_PROP_TYPE(TypeTag, Indices);
+	using Indices = typename GET_PROP_TYPE(TypeTag, ModelTraits)::Indices;
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
     using Element = typename GridView::template Codim<0>::Entity;
     enum {
         // copy some indices for convenience
         pressureIdx = Indices::pressureIdx,
         conti0EqIdx = Indices::conti0EqIdx,
-		wPhaseIdx = Indices::wPhaseIdx,
         bothPhases = Indices::bothPhases
     };
     using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
@@ -114,13 +112,14 @@ class RichardsProblem3d : public PorousMediumFlowProblem<TypeTag>
     using SourceValues = typename GET_PROP_TYPE(TypeTag, NumEqVector);
     static constexpr int dimWorld = GridView::dimensionworld;
     using GlobalPosition = Dune::FieldVector<Scalar, dimWorld>;
-    using Water = SimpleH2O<Scalar>;
+    using Water = Components::SimpleH2O<Scalar>;
     using ResidualVector = typename GET_PROP_TYPE(TypeTag, NumEqVector);
-    using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, ElementVolumeVariables); // from fvproblem.hh
+	using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, GridVolumeVariables)::LocalView;
     using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace; // from fvproblem.hh
     using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
-    using MaterialLawParams = typename MaterialLaw::Params;
+	using MaterialLaw = typename RichardsParams<TypeTag>::MaterialLaw;
+	using MaterialLawParams = typename MaterialLaw::Params;
 
 public:
 	/*!
@@ -298,7 +297,7 @@ public:
 				Scalar mS = 0;
 				auto numScv = fvGeometry.numScv();
 				for (auto i = 0; i<numScv; i++) {
-					mS += (elemVolVars[i].saturation(wPhaseIdx)/numScv);
+					mS += (elemVolVars[i].saturation()/numScv);
 				}
 				MaterialLawParams params = this->spatialParams().materialLawParamsAtPos(pos);
 				Scalar krw = MaterialLaw::krw(params, mS);
@@ -347,7 +346,7 @@ public:
 				Scalar mS = 0;
 				auto numScv = fvGeometry.numScv();
 				for (auto i = 0; i<numScv; i++) {
-					mS += (elemVolVars[i].saturation(wPhaseIdx)/numScv);
+					mS += (elemVolVars[i].saturation()/numScv);
 				}
 				MaterialLawParams params = this->spatialParams().materialLawParamsAtPos(pos);
 				Scalar krw = MaterialLaw::krw(params, mS);

@@ -4,8 +4,8 @@ TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
-UpperRight = 1 0.5 2
-Cells = 100 10 200
+UpperRight = 0.1 0.2 2
+Cells = 10 20 200
 Initial = -200 # cm pressure head
 
 [Problem]
