@@ -21,14 +21,14 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ri
 
 # run dumux 
 os.chdir( path )
-# os.system( "./richards1d input/b4a_hr.input")
-# os.system( "./richards1d input/b4b_hr.input")
-# os.system( "./richards1d input/b4c_hr.input")
-# os.system( "./richards1d input/b4d_hr.input")
-# os.system( "./richards1d input/b4a.input")
-# os.system( "./richards1d input/b4b.input")
-# os.system( "./richards1d input/b4c.input")
-# os.system( "./richards1d input/b4d.input")
+os.system( "./richards1d input/b4a_hr.input")
+os.system( "./richards1d input/b4b_hr.input")
+os.system( "./richards1d input/b4c_hr.input")
+os.system( "./richards1d input/b4d_hr.input")
+os.system( "./richards1d input/b4a.input")
+os.system( "./richards1d input/b4b.input")
+os.system( "./richards1d input/b4c.input")
+os.system( "./richards1d input/b4d.input")
 
 # open results
 num = ['a','b','c','d', 'ahr','bhr','chr','dhr']
