@@ -10,7 +10,7 @@ Cells = 10 10 200
 Initial = -400 # cm pressure head
 
 [Problem]
-Name = jan3c
+Name = b3c
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 

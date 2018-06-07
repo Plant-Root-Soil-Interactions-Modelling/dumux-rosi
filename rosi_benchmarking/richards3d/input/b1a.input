@@ -9,7 +9,7 @@ Cells = 10 20 200
 Initial = -200 # cm pressure head
 
 [Problem]
-Name = jan1a
+Name = b1a
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
@@ -33,7 +33,6 @@ Ks = 5.7870e-06 1.1574e-04 # m/s
 # alpha = 0.04  # [1/cm] 
 # n = 1.6 
 # Ks = 5.7870e-06 # [m/s] hydrus verdoppelt (!)
-
 
 # Hydrus VG parameters are: 
 #sand 

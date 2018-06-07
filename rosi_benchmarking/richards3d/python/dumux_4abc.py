@@ -15,13 +15,18 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ri
 
 # run dumux 
 os.chdir( path )
-os.system( "./richards3d input/jan3a.input")
-os.system( "./richards3d input/jan3b.input")
-os.system( "./richards3d input/jan3c.input")
+os.system( "mpirun -n 8 ./richards3d input/b3a.input")
+os.system( "mpirun -n 8 ./richards3d_ug input/b3a_ug.input")
+
+os.system( "mpirun -n 8 ./richards3d input/b3b.input")
+os.system( "mpirun -n 8 ./richards3d_ug input/b3b_ug.input")
+
+os.system( "mpirun -n 8 ./richards3d input/b3c.input")
+os.system( "mpirun -n 8 ./richards3d_ug input/b3c_ug.input")
 
 # result dumux jan3a (Figure 4a)
 for i in range(0,1):
-    s_, p_, z_ = read3D_vtp_data(path+"jan3a-0000"+str(i)+".vtu", False)
+    s_, p_, z_ = read3Dp_vtp_data(path+"s0008-p000","-b3a-0000"+str(i), 8)   
     z_ = z_*100 - 200  # m -> cm,  - offset 200 cm
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, sand)
@@ -29,7 +34,7 @@ for i in range(0,1):
   
 # result dumux jan3b (Figure 4b)
 for i in range(0,3):
-    s_, p_, z_ = read3D_vtp_data(path+"jan3b-0000"+str(i+1)+".vtu", False)
+    s_, p_, z_ = read3D_vtp_data(path+"b3b-0000"+str(i+1)+".vtu", False)
     z_ = z_*100 - 200  # m -> cm,  - offset 200 cm    
     h_ = vg.pa2head(p_) 
     theta_ = vg.water_content(h_, loam)
@@ -37,11 +42,15 @@ for i in range(0,3):
    
 # # result dumux jan3c (Figure 4c)
 for i in range(0,3):
-    s_, p_, z_ = read3D_vtp_data(path+"jan3c-0000"+str(i+1)+".vtu", False)
+    s_, p_, z_ = read3D_vtp_data(path+"b3c-0000"+str(i+1)+".vtu", False)
     z_ = z_*100 - 200  # m -> cm,  - offset 200 cm    
     h_ = vg.pa2head(p_) 
     theta_ = vg.water_content(h_, clay)
     ax3.plot(theta_,z_, "r+")
 
 plt.show()
+
+
+# os.system( "mpirun -n 8 ./richards3d_ug input/b2_ug.input")  
+# s_, p_, z_  = read3Dp_vtp_data(path+"s0008-p000","-b2_ug-00001", 8)
 

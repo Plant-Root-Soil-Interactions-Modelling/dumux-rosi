@@ -1,30 +1,28 @@
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 86400 # a day [s] 
+TEnd = 43200 # half a day [s] 
 MaxTimeStepSize = 3600 # an hour [s] 
-Episodes = 17280 43200 
+Episodes = 8640 17280 
 
 [Grid]
-UpperRight = 0.5 0.5 2
-Cells = 10 10 200
+File = ./grids/b1_ug.msh
 Initial = -400 # cm pressure head
 
 [Problem]
-Name = b3b
+Name = b3c_ug
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
-# Vanderborght 2005 Loam: 
-Qr = 0.08 
-Qs = 0.43 
-alpha = 0.04  # [1/cm] 
-n = 1.6 
-Ks = 5.7870e-06 # [m/s] hydrus verdoppelt
-
+# Vanderborght 2005 Clay: 
+Qr = 0.1 
+Qs = 0.4 
+alpha = 0.01  # [1/cm] 
+n = 1.1 
+Ks = 1.1574e-06 # [m/s]
 
 [BC_Top]
-Type = 4
-Value = 0 # unused [cm day-1]
+Type = 1 #1
+Value = -0.0001 # unused [cm day-1]
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux

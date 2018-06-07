@@ -22,7 +22,7 @@ for i in range(0, len(psi_)):
     ans,err = integrate.quad(F,0,psi_[i])
     dz[i] = ans
 
-z1 = dz + (-53); # this value is not clear to me any more 
+z1 = dz + (-53.5); # this value is not clear to me any more 
 plt.plot(psi_, z1)
 
 plt.xlabel('\psi (cm)');
@@ -35,12 +35,20 @@ path = "/home/daniel/workspace/DUMUX/dumux-rosi/build-cmake/rosi_benchmarking/ri
 
 # run dumux 
 os.chdir(path)
-os.system( "./richards3d input/jan2.input")
+# os.system( "./richards3d_steadystate input/b2.input") 
+# os.system( "./richards3d_steadystate input/b2_ug.input") 
+# os.system( "./richards3d_steadystate input/b2_ug2.input") # does not work!
+# os.system( "mpirun -n 8 ./richards3d_ug input/b2_ug2.input")# does work
 
-# result dumux jan1 (Figure 2a)
-s_, p_, z_ = read3D_vtp_data(path+"jan2-00001.vtu", False)
+# results (Figure 3)
+# s_, p_, z_ = read3D_vtp_data(path+"b2-00001.vtu", False)
+# s_, p_, z_ = read3D_vtp_data(path+"b2_ug-00001.vtu", False)
+s_, p_, z_  = read3Dp_vtp_data(path+"s0008-p000","-b2_ug-00001", 8)
+
 z_ = z_*100 - 54  # m -> cm,  - offset 200 cm
 h_ = vg.pa2head(p_) 
 plt.plot(h_,z_, "r+")
  
+print("dof : ", len(z_)) # in the parallel code this value is not correct
+
 plt.show()

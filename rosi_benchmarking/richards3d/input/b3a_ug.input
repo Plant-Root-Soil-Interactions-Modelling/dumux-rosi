@@ -1,27 +1,28 @@
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 31536000 # a year [s] hopefully steady steate is reached after 1 year
-MaxTimeStepSize = 86400 # a day [s] 
+TEnd = 25920 # 0.3 days [s] 
+MaxTimeStepSize = 3600 # an hour [s] 
+Episodes = 8640 17280  
 
 [Grid]
-File = ./grids/cube.msh # [m], initial data [cm] pressure head
-Initial = 200 # cm pressure head # positive numbers invoke special linear gradient for example jan 2
+File = ./grids/b1_ug.msh
+Initial = -400 # cm pressure head
 
 [Problem]
-Name = jan2
+Name = b3a_ug
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
-# Vanderborght 2005 Loam: 
-Qr = 0.08 
+# Vanderborght 2005 Sand: 
+Qr = 0.045 
 Qs = 0.43 
-alpha = 0.04  # [1/cm] 
-n = 1.6 
-Ks = 5.7870e-06 # [m/s] hydrus verdoppelt
+alpha = 0.15  # [1/cm] 
+n = 3
+Ks = 1.1574e-04 # [m/s] 
 
 [BC_Top]
-Type = 2
-Value = -0.5 # [cm day-1]
+Type = 4
+Value = 0 # unused [cm day-1]
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -31,8 +32,8 @@ Value = -0.5 # [cm day-1]
 # 6 variable pressure head/flux
 
 [BC_Bot]
-Type = 1
-Value = 0 # [cm] fully saturated
+Type = 5
+Value = 0 # unused [cm] fully saturated
 # type: (same as in Hydrus1D)
 # 1 constant pressure head
 # 2 constant flux
@@ -46,4 +47,15 @@ Value = 0 # [cm] fully saturated
 [Newton]
 TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
 EnableChop = true # chop for better convergence
+
+# old
+# [Implicit]
+# EnablePartialReassemble = 1 # enable partial reassembly of the Jacobian matrix
+# EnableJacobianRecycling = 1 #
+
+[Climate]
+Times = 1e10 # const value 
+Precipitation = -0.01157407407 # [kg/(s m²)] (100 cm/day)
+
+
 

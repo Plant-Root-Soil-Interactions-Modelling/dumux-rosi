@@ -207,6 +207,8 @@ public:
     }
 
 
+    // TODO invoke steady state by setting phi = 0
+
 private:
 
     bool more_;

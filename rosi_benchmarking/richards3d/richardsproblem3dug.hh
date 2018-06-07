@@ -55,9 +55,9 @@ NEW_TYPE_TAG(RichardsProblem3d, INHERITS_FROM(Richards, RichardsParams));
 NEW_TYPE_TAG(RichardsBoxProblem3d, INHERITS_FROM(BoxModel, RichardsProblem3d));
 NEW_TYPE_TAG(RichardsCCProblem3d, INHERITS_FROM(CCTpfaModel, RichardsProblem3d));
 
-// Use 3d YaspGrid
-SET_TYPE_PROP(RichardsProblem3d, Grid, Dune::YaspGrid<3>);
-// SET_TYPE_PROP(RichardsProblem3d, Grid, Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>);
+// Use 3d ALUGrid
+//SET_TYPE_PROP(RichardsProblem3d, Grid, Dune::UGGrid<3>);
+SET_TYPE_PROP(RichardsProblem3d, Grid, Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>);
 
 
 

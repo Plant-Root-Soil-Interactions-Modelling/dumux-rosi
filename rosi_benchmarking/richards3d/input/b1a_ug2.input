@@ -4,21 +4,20 @@ TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
-UpperRight = 0.1 0.2 2
-Cells = 10 20 200
+File = ./grids/b1_ug2.msh # ./grids/b1gmsh20K.msh # ./grids/untitled.msh
 Initial = -200 # cm pressure head
 
 [Problem]
-Name = b1b
+Name = b1a_ug2
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
-# sand over loam 
-Qr = 0.045 0.08  	 
+# loam over sand 
+Qr = 0.08  0.045	
 Qs = 0.43 0.43
-alpha =  0.15 0.04 # [1/cm] 
-n =  3 1.6
-Ks = 1.1574e-04 5.7870e-06 # m/s 	
+alpha = 0.04  0.15 # [1/cm] 
+n = 1.6  3
+Ks = 5.7870e-06 1.1574e-04 # m/s 	
 
 # # Vanderborght 2005 Sand: 
 # Qr = 0.045 

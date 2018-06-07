@@ -5,12 +5,11 @@ MaxTimeStepSize = 3600 # an hour [s]
 Episodes = 17280 43200 
 
 [Grid]
-UpperRight = 0.5 0.5 2
-Cells = 10 10 200
+File = ./grids/b1_ug.msh
 Initial = -400 # cm pressure head
 
 [Problem]
-Name = b3b
+Name = b3b_ug
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
@@ -20,7 +19,6 @@ Qs = 0.43
 alpha = 0.04  # [1/cm] 
 n = 1.6 
 Ks = 5.7870e-06 # [m/s] hydrus verdoppelt
-
 
 [BC_Top]
 Type = 4

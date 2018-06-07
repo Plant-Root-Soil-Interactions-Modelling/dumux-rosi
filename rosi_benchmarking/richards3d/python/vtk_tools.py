@@ -118,7 +118,7 @@ def read3D_vtp_data(name, cell = False):
     else:
         data = pd.GetPointData()
         
-    nocd = data.GetNumberOfArrays()
+#     nocd = data.GetNumberOfArrays()
 #     print("Number of arrays", nocd)
 #     for i in range(0,nocd):
 #         print(data.GetArrayName(i))
@@ -146,6 +146,22 @@ def read3D_vtp_data(name, cell = False):
                     
     return sw_, pw_, z_
 
+
+def read3Dp_vtp_data(prename,postname, n, cell = False):
+    z_ = np.ones(0,)
+    sw_ = np.ones(0,)
+    pw_ = np.ones(0,)
+    for i in range(0,n):
+        n_ = prename + str(i) + postname+".vtu"
+        print("opening: ",n_)
+        sw, pw, z = read3D_vtp_data(n_, cell)
+        # print(sw.shape)
+        z_ = np.hstack((z_,z))
+        sw_ = np.hstack((sw_,sw))
+        pw_ = np.hstack((pw_,pw))
+        # print(sw_.shape)        
+
+    return sw_, pw_, z_
 
 if __name__ == "__main__":
     # manually set absolute path

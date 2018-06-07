@@ -4,12 +4,12 @@ TEnd = 31536000 # a year [s] hopefully steady steate is reached after 1 year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Grid]
-UpperRight = 0.5 0.5 0.54
-Cells = 50 10 54
-Initial = 200 # cm pressure head # positive numbers invoke special linear gradient for example jan 2
+UpperRight = 0.1 0.1 0.54
+Cells = 10 10 100
+Initial = 1 # positive numbers invoke special linear gradient for example jan 2
 
 [Problem]
-Name = jan2
+Name = b2
 EnableGravity = 1 # enable gravity
 
 [VanGenuchten] 
