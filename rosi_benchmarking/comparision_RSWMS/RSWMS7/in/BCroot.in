@@ -1,9 +1,0 @@
-**********UPPER BOUNDARY CONDITIONS FOR ROOT*************
-
-funBC
-2
-nBCr 
-2	 		
-tBCr typeBCr BCroot
-0.	2    1.8576
-10	2    1.8576
