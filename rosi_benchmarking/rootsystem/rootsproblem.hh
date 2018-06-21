@@ -40,32 +40,6 @@ namespace Dumux {
 template <class TypeTag>
 class RootsProblem;
 
-namespace Properties {
-
-NEW_TYPE_TAG(RootsTypeTag, INHERITS_FROM(OneP));
-NEW_TYPE_TAG(RootsCCTpfaTypeTag, INHERITS_FROM(CCTpfaModel, RootsTypeTag));
-NEW_TYPE_TAG(RootsBoxTypeTag, INHERITS_FROM(BoxModel, RootsTypeTag));
-
-// Set the grid type
-SET_TYPE_PROP(RootsTypeTag, Grid, Dune::FoamGrid<1, 3>);
-
-// Set the problem property
-SET_TYPE_PROP(RootsTypeTag, Problem, RootsProblem<TypeTag>);
-
-// Set the spatial parameters
-SET_TYPE_PROP(RootsTypeTag, SpatialParams, RootsParams<TypeTag>);
-
-// the fluid system
-SET_PROP(RootsTypeTag, FluidSystem)
-{
-	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-	using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
-};
-} // end namespace Properties
-
-
-
-
 /*!
  * \ingroup RootsProblem
  * \brief A test problem for roots

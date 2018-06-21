@@ -53,6 +53,9 @@
 
 #include <dumux/io/vtkoutputmodule.hh>
 
+#include <dumux/growth/rootsystemgridfactory.hh> // timo new
+
+
 // Set properties
 namespace Dumux {
 namespace Properties {
@@ -79,11 +82,10 @@ SET_PROP(RootsTypeTag, FluidSystem)
 } // end namespace Properties
 } // end namespace Dumux
 
-
-
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
+    using namespace GrowthModule;
 
     // define the type tag for this problem
     using TypeTag = TTAG(RootsBoxTypeTag);
