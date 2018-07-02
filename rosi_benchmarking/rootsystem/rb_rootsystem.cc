@@ -35,12 +35,13 @@
 // CRootBox
 #include <RootSystem.h>
 
-#include "rootsproblem.hh"
+#include "rb_rootsproblem.hh"
 
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
 #include <dumux/common/valgrind.hh>
 #include <dumux/common/dumuxmessage.hh>
+// Set the spatial parameters
 #include <dumux/common/defaultusagemessage.hh>
 
 #include <dumux/linear/amgbackend.hh>
@@ -71,7 +72,7 @@ SET_TYPE_PROP(RootsTypeTag, Grid, Dune::FoamGrid<1, 3>);
 SET_TYPE_PROP(RootsTypeTag, Problem, RootsProblem<TypeTag>);
 
 // Set the spatial parameters
-SET_TYPE_PROP(RootsTypeTag, SpatialParams, RootsParams<TypeTag>);
+SET_TYPE_PROP(RootsTypeTag, SpatialParams, RootSpatialParams<TypeTag>);
 
 // the fluid system
 SET_PROP(RootsTypeTag, FluidSystem)
@@ -81,6 +82,7 @@ SET_PROP(RootsTypeTag, FluidSystem)
 };
 } // end namespace Properties
 } // end namespace Dumux
+
 
 int main(int argc, char** argv) try
 {
@@ -103,11 +105,15 @@ int main(int argc, char** argv) try
     // create a croot box rootsystem
     auto rootSystem = std::make_shared<::RootSystem>();
     rootSystem->openFile(getParam<std::string>("RootSystem.File"), "params/");
+    auto box = new SDF_PlantBox(80,10,140);
+    rootSystem->setGeometry(box);
     rootSystem->initialize(); // intialize the root system
     rootSystem->simulate(getParam<double>("RootSystem.DtInitial"));
+
     // write out the initial grids for debugging
     rootSystem->write("rb_rootsystem.vtp");
 
+    // create grid
     auto grid = RootSystemGridFactory::makeGrid(*rootSystem);
 
 //    // try to create a grid (from the given grid file or the input file)
