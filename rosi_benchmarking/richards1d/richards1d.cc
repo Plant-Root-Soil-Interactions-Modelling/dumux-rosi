@@ -23,8 +23,6 @@
  */
 #include <config.h> // macro definitions
 
-#include "richardsproblem1d.hh"
-
 #include <ctime>
 #include <iostream>
 
@@ -51,6 +49,9 @@
 #include <dumux/common/timeloop.hh> // flatten the includes
 
 #include <dumux/io/vtkoutputmodule.hh>
+#include <dumux/io/grid/gridmanager.hh>
+
+#include "richardsproblem1d.hh"
 
 
 /*!
@@ -89,16 +90,15 @@ int main(int argc, char** argv) try
     Parameters::init(argc, argv, usage);
 
     // try to create a grid (from the given grid file or the input file)
-    using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
-    GridCreator::makeGrid();
-    GridCreator::loadBalance();
+    GridManager<typename GET_PROP_TYPE(TypeTag, Grid)> gridManager;
+    gridManager.init();
 
     ////////////////////////////////////////////////////////////
     // run instationary non-linear problem on this grid
     ////////////////////////////////////////////////////////////
 
-    // we compute on the leaf grid view
-    const auto& leafGridView = GridCreator::grid().leafGridView();
+    // we compute on the leaf grid view;
+    const auto& leafGridView = gridManager.grid().leafGridView();
 
     // create the finite volume grid geometry
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
@@ -107,7 +107,7 @@ int main(int argc, char** argv) try
 
     // the problem (initial and boundary conditions)
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
-    auto problem = std::make_shared<Problem>(fvGridGeometry);
+    auto problem = std::make_shared<Problem>(fvGridGeometry, &gridManager);
 
     // the solution vector
     using SolutionVector = typename GET_PROP_TYPE(TypeTag, SolutionVector);

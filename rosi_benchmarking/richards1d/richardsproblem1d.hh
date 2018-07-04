@@ -120,8 +120,8 @@ class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
 	using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, GridVolumeVariables)::LocalView;
 	using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
 	using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace; // from fvproblem.hh
-	using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
 	using MaterialLawParams = typename MaterialLaw::Params;
+	using Grid = typename GET_PROP_TYPE(TypeTag, Grid);
 
 public:
 	/*!
@@ -130,7 +130,9 @@ public:
 	 * \param timeManager The Dumux TimeManager for simulation management.
 	 * \param gridView The grid view on the spatial domain of the problem
 	 */
-	RichardsProblem1d(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
+	RichardsProblem1d(std::shared_ptr<const FVGridGeometry> fvGridGeometry, GridManager<Grid>* gm): ParentType(fvGridGeometry) {
+
+	    gridmanager_ = gm;
 
 		bcTop_ = getParam<int>("BC_Top.Type");
 		bcBot_ = getParam<int>("BC_Bot.Type");
@@ -323,7 +325,7 @@ public:
 	template<class Entity>
 	PrimaryVariables initial(const Entity& entity) const {
 		PrimaryVariables values;
-		Scalar iv = GridCreator::parameters(entity).at(0);
+		Scalar iv = gridmanager_->getGridData()->parameters(entity).at(0); // TODO
 		values[pressureIdx] = toPa_(iv);
 		values.setState(bothPhases);
 		return values;
@@ -356,7 +358,7 @@ private:
 	/*
 	 * returns the precipitation of the following data point.
 	 * e.g. (day_n, prec_n), means $t \in [day_{n-1}..day_n]$ will return prec_n
-	 * this makes sense, since normally data are given as mean precipitation per day
+	 * this makes sense, since normally data are given as gridmanager_mean precipitation per day
 	 */
 	Scalar getPrec_(Scalar t) const {
 		return getPrec_(t,0,precData_.size()-1);
@@ -392,6 +394,8 @@ private:
 	Scalar time_ = 0.;
 
 	mutable std::ofstream myfile_; // file for flux over time
+
+	GridManager<Grid>* gridmanager_;
 
 };
 
