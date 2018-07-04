@@ -81,7 +81,6 @@ class RichardsParams : public FVSpatialParams<typename GET_PROP_TYPE(TypeTag, FV
 
     using GlobalPosition = Dune::FieldVector<Scalar,dimWorld>;
     using Element = typename GridView::template Codim<0>::Entity;
-    using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);  //  todo make sure thats the right grid (set somewhere else)
     using EffectiveLaw = EffToAbsLaw<VanGenuchten<Scalar>>;
 
 public:

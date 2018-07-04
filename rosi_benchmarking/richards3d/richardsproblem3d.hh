@@ -120,7 +120,6 @@ class RichardsProblem3d : public PorousMediumFlowProblem<TypeTag>
 	using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, GridVolumeVariables)::LocalView;
     using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace; // from fvproblem.hh
-    using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
 	using MaterialLaw = typename RichardsParams<TypeTag>::MaterialLaw;
 	using MaterialLawParams = typename MaterialLaw::Params;
 
