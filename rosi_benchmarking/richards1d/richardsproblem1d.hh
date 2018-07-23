@@ -26,6 +26,8 @@
 #ifndef RICHARDS_PROBLEM1D_HH
 #define RICHARDS_PROBLEM1D_HH
 
+#include <dune/foamgrid/foamgrid.hh>
+
 #include <dumux/discretization/cellcentered/tpfa/properties.hh>
 #include <dumux/discretization/box/properties.hh>
 #include <dumux/porousmediumflow/problem.hh>
@@ -34,11 +36,9 @@
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include <dune/foamgrid/foamgrid.hh>
-#include <dumux/common/timeloop.hh>
-
 #include "richardsparams.hh"  // #include <rosi_benchmarking/richards1d/richardsparams.hh>
 
+#include <dumux/common/timeloop.hh>
 #include <iostream>
 #include <fstream>
 
@@ -57,12 +57,12 @@ NEW_TYPE_TAG(RichardsCCProblem1d, INHERITS_FROM(CCTpfaModel, RichardsProblem1d))
 
 // Set the grid type
 SET_TYPE_PROP(RichardsProblem1d, Grid, Dune::FoamGrid<1,1>);
-// apparently Dune::OneDGrid does not read the simplex parameters from the dgf (without warning),
-// no idea how to pass initial conditions otherwise. FoamGrid works fine!
-// SGrid is no longer available, or I don't know how to use it
 
 // Set the physical problem to be solved
 SET_TYPE_PROP(RichardsProblem1d, Problem, RichardsProblem1d<TypeTag>);
+
+// Set the spatial parameters
+SET_TYPE_PROP(RichardsProblem1d, SpatialParams, RichardsParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar)>);
 }
 
 /**

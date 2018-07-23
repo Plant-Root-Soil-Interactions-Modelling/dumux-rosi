@@ -39,35 +39,15 @@
 #include <dumux/common/defaultusagemessage.hh> // nothing
 
 #include <dumux/linear/amgbackend.hh> // adaptive multigrid? rly? based on what?
-//#include <dumux/nonlinear/newtonmethod.hh>
-//#include <dumux/nonlinear/newtoncontroller.hh>
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
 #include <dumux/assembly/fvassembler.hh> // TimeLoop include is hidden here
-// #include <dumux/assembly/diffmethod.hh> // defined in the fvassembler, what should I do with the enum?
-// #include <dumux/discretization/methods.hh> // defined in the fvassembler, would be a great place to document the methods, what should I do with the enum?
 #include <dumux/common/timeloop.hh> // flatten the includes
 
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
 #include "richardsproblem1d.hh"
-
-
-/*!
- * \brief Provides an interface for customizing error messages associated with
- *        reading in parameters.
- *
- * \param progName  The name of the program, that was tried to be started.
- * \param errorMsg  The error message that was issued by the start function.
- *                  Comprises the thing that went wrong and a general help message.
- */
-void usage(const char *progName, const std::string &errorMsg)
-{
-    if (errorMsg.size() > 0) {
-        std::cout << errorMsg << "\n";
-    }
-}
 
 ////////////////////////
 // the main function
@@ -87,7 +67,7 @@ int main(int argc, char** argv) try
         DumuxMessage::print(/*firstCall=*/true);
 
     // parse command line arguments and input file
-    Parameters::init(argc, argv, usage);
+    Parameters::init(argc, argv);
 
     // try to create a grid (from the given grid file or the input file)
     GridManager<typename GET_PROP_TYPE(TypeTag, Grid)> gridManager;
@@ -123,7 +103,6 @@ int main(int argc, char** argv) try
     // get some time loop parameters
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-    const auto maxDivisions = getParam<int>("TimeLoop.MaxTimeStepDivisions");
     const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
     auto dt = getParam<Scalar>("TimeLoop.DtInitial");
 
@@ -141,6 +120,7 @@ int main(int argc, char** argv) try
     // instantiate time loop
     auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(restartTime, dt, tEnd);
     timeLoop->setMaxTimeStepSize(maxDt);
+
     try { // Episodes defined
     	std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.Episodes");
     	// insert check points

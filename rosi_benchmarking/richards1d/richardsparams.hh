@@ -33,54 +33,21 @@
 
 
 
-namespace Dumux //
-{
-/*!
- * \ingroup RichardsTests
- * \brief spatial parameters for the RichardsLensProblem
- */
-// forward declaration
-template<class TypeTag>
-class RichardsParams;
-
-
-
-namespace Properties
-{
-// The spatial parameters TypeTag
-NEW_TYPE_TAG(RichardsParams);
-
-// Set the spatial parameters
-SET_TYPE_PROP(RichardsParams, SpatialParams, RichardsParams<TypeTag>);
-
-//// Set the material law
-//SET_PROP(RichardsParams, MaterialLaw)
-//{
-//private:
-//    // define the material law which is parameterized by effective
-//    // saturations
-//    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-//public:
-//    // define the material law parameterized by absolute saturations
-//    using type = EffToAbsLaw<VanGenuchten<Scalar>>;
-//};
-}
-
+namespace Dumux {
 
 /*!
  * \ingroup Richards
  * \brief The spatial parameters class for the Richards problem
  */
-template<class TypeTag>
-class RichardsParams : public FVSpatialParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar), RichardsParams<TypeTag>>
+template<class FVGridGeometry, class Scalar>
+class RichardsParams
+    : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+
 {
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-    using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
+    using ThisType = RichardsParams<FVGridGeometry, Scalar>;
+    using ParentType = FVSpatialParams<FVGridGeometry, Scalar, ThisType>;
     using GridView = typename FVGridGeometry::GridView;
-    using ParentType = FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<TypeTag>>;
-    using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
-    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
-    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    using SubControlVolume = typename FVGridGeometry::SubControlVolume;
     using IndexSet = typename GridView::IndexSet;
     using Water = Components::SimpleH2O<Scalar>;
     enum {
@@ -89,7 +56,6 @@ class RichardsParams : public FVSpatialParams<typename GET_PROP_TYPE(TypeTag, FV
     };
     using GlobalPosition = Dune::FieldVector<Scalar,dimWorld>;
     using Element = typename GridView::template Codim<0>::Entity;
-
     using EffectiveLaw = EffToAbsLaw<VanGenuchten<Scalar>>;
 
 public:
