@@ -43,15 +43,15 @@
 #include <fstream>
 
 
-namespace Dumux //
-{
+namespace Dumux {
+
 template <class TypeTag>
 class RichardsProblem1d;
 
 // Specify the properties for the lens problem
-namespace Properties
-{
-NEW_TYPE_TAG(RichardsProblem1d, INHERITS_FROM(Richards, RichardsParams));
+namespace Properties {
+
+NEW_TYPE_TAG(RichardsProblem1d, INHERITS_FROM(Richards));
 NEW_TYPE_TAG(RichardsBoxProblem1d, INHERITS_FROM(BoxModel, RichardsProblem1d));
 NEW_TYPE_TAG(RichardsCCProblem1d, INHERITS_FROM(CCTpfaModel, RichardsProblem1d));
 
@@ -62,7 +62,8 @@ SET_TYPE_PROP(RichardsProblem1d, Grid, Dune::FoamGrid<1,1>);
 SET_TYPE_PROP(RichardsProblem1d, Problem, RichardsProblem1d<TypeTag>);
 
 // Set the spatial parameters
-SET_TYPE_PROP(RichardsProblem1d, SpatialParams, RichardsParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar)>);
+SET_TYPE_PROP(RichardsProblem1d, SpatialParams, RichardsParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry),
+                                                               typename GET_PROP_TYPE(TypeTag, Scalar)>);
 }
 
 /**
@@ -97,7 +98,7 @@ class RichardsProblem1d : public PorousMediumFlowProblem<TypeTag>
 	using ParentType = PorousMediumFlowProblem<TypeTag>;
 	using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
 	using PrimaryVariables = typename GET_PROP_TYPE(TypeTag, PrimaryVariables);
-	using MaterialLaw = typename RichardsParams<TypeTag>::MaterialLaw;
+	using MaterialLaw = typename GET_PROP_TYPE(TypeTag, SpatialParams)::MaterialLaw;
 	using BoundaryTypes = typename GET_PROP_TYPE(TypeTag, BoundaryTypes);
 	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
 	using Indices = typename GET_PROP_TYPE(TypeTag, ModelTraits)::Indices;
