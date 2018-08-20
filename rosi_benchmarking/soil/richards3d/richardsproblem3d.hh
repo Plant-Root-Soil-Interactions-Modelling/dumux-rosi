@@ -290,8 +290,11 @@ public:
 
 			switch (bcTop_) {
 			case 2: { // constant flux
-				//std::cout << " top flux " << bcTopValue_ << " ";
-				values[conti0EqIdx] = -10*bcTopValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
+                if (pos[0]<0.05) {
+                    values[conti0EqIdx] = -10*bcTopValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
+                } else {
+                    values[conti0EqIdx] = 0.;
+                }
 				break;
 			}
 			case 4: { // atmospheric boundary condition (with surface run-off)
