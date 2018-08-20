@@ -152,13 +152,13 @@ int main(int argc, char** argv) try
     auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(restartTime, dt, tEnd);
     timeLoop->setMaxTimeStepSize(maxDt);
     try { // Episodes defined
-    	std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.Episodes");
+    	std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
     	// insert check points
     	for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
     		timeLoop->setCheckPoint(p);
     	}
     } catch(std::exception& e) {
-    	std::cout<< "richards3d.cc: no check times defined in the input file\n";
+    	std::cout<< "richards3d.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
     }
 
     // the assembler with time loop for instationary problem

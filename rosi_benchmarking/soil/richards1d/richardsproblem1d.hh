@@ -36,7 +36,7 @@
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include "richardsparams.hh"  // #include <rosi_benchmarking/richards1d/richardsparams.hh>
+#include "richardsparams.hh"
 
 #include <dumux/common/timeloop.hh>
 #include <iostream>
@@ -275,7 +275,7 @@ public:
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = 2 * std::abs(ePos[2]- pos[2]); // 0.01; // m // fvGeometry.geometry().volume()?;
 				Scalar prec = getPrec_(time_); // precipitation or evaporation
-
+				gridmanager_
 				if (prec<0) { // precipitation
 					Scalar imax = rho_*Kc*((h-0.)/dz -1.); // maximal infiltration
 					Scalar v = std::max(prec,imax);

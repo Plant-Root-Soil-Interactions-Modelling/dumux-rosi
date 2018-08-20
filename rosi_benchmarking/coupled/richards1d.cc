@@ -21,33 +21,33 @@
  *
  * \brief Test for the Richards box model.
  */
-#include <config.h> // macro definitions
+#include <config.h>
 
 #include <ctime>
 #include <iostream>
 
-#include <dune/common/parallel/mpihelper.hh>CheckPointTimeLoop
+#include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/timer.hh>
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
 
-#include <dumux/common/properties.hh> // type tags for the mysterious property system
-#include <dumux/common/parameters.hh> // parsing input file parameters
-#include <dumux/common/valgrind.hh> // debug
-#include <dumux/common/dumuxmessage.hh> // nothing
-#include <dumux/common/defaultusagemessage.hh> // nothing
+#include <dumux/common/properties.hh>
+#include <dumux/common/parameters.hh>
+#include <dumux/common/valgrind.hh>
+#include <dumux/common/dumuxmessage.hh>
+#include <dumux/common/defaultusagemessage.hh>
 
-#include <dumux/linear/amgbackend.hh> // adaptive multigrid? rly? based on what?
+#include <dumux/linear/amgbackend.hh>
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
-#include <dumux/assembly/fvassembler.hh> // TimeLoop include is hidden here
-#include <dumux/common/timeloop.hh> // flatten the includes
+#include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
+#include <dumux/io/loadsolution.hh>
 
-#include "richardsproblem1d.hh"
+#include "richardsproblem.hh"
 
 ////////////////////////
 // the main function
@@ -57,7 +57,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = TTAG(RichardsBoxProblem1d);
+    using TypeTag = TTAG(RichardsBoxTypeTag);
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -77,7 +77,7 @@ int main(int argc, char** argv) try
     // run instationary non-linear problem on this grid
     ////////////////////////////////////////////////////////////
 
-    // we compute on the leaf grid view;
+    // we compute on the leaf grid view
     const auto& leafGridView = gridManager.grid().leafGridView();
 
     // create the finite volume grid geometry
@@ -87,12 +87,26 @@ int main(int argc, char** argv) try
 
     // the problem (initial and boundary conditions)
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
-    auto problem = std::make_shared<Problem>(fvGridGeometry, &gridManager);
+    auto problem = std::make_shared<Problem>(fvGridGeometry);
+
+//    // check if we are about to restart a previously interrupted simulation
+//    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+//    const auto restartTime = getParam<Scalar>("Restart.Time", 0);
 
     // the solution vector
     using SolutionVector = typename GET_PROP_TYPE(TypeTag, SolutionVector);
     SolutionVector x(fvGridGeometry->numDofs());
+//    if (restartTime > 0)
+//    {
+//        using ModelTraits = typename GET_PROP_TYPE(TypeTag, ModelTraits);
+//        const auto fileName = getParam<std::string>("Restart.File");
+//        loadSolution(x, fileName, createPVNameFunction<ModelTraits>(), *fvGridGeometry);
+//    }
+//    else
+//    {
     problem->applyInitialSolution(x);
+//    }
+
     auto xOld = x;
 
     // the grid variables
@@ -100,35 +114,28 @@ int main(int argc, char** argv) try
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x, xOld);
 
+    //  instantiate time loop & intialize the vtk output module
+    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
+    VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
+    using VelocityOutput = typename GET_PROP_TYPE(TypeTag, VelocityOutput);
+    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
+    vtkWriter.write(restartTime);
+
     // get some time loop parameters
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
-    auto dt = getParam<Scalar>("TimeLoop.DtInitial");
-
-    // check if we are about to restart a previously interrupted simulation
-    Scalar restartTime = 0;
-    if (Parameters::getTree().hasKey("Restart") || Parameters::getTree().hasKey("TimeLoop.Restart"))
-        restartTime = getParam<Scalar>("TimeLoop.Restart");
-
-    // intialize the vtk output module
-    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
-    VtkOutputModule<TypeTag> vtkWriter(*problem, *fvGridGeometry, *gridVariables, x, problem->name());
-    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(0.0);
-
-    // instantiate time loop
-    auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(restartTime, dt, tEnd);
+    auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
+    auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(restartTime, initialDt, tEnd);
     timeLoop->setMaxTimeStepSize(maxDt);
-
     try { // Episodes defined
-    	std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.Episodes");
-    	// insert check points
-    	for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
-    		timeLoop->setCheckPoint(p);
-    	} //
+        std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
+        // insert check points
+        for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
+            timeLoop->setCheckPoint(p);
+        }
     } catch(std::exception& e) {
-    	std::cout<< "richards1d.cc: no check times defined in the input file\n";
+        std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
     }
 
     // the assembler with time loop for instationary problem
@@ -146,9 +153,6 @@ int main(int argc, char** argv) try
     // time loop
     timeLoop->start(); do
     {
-    	// set time within problem
-    	problem->setTime(timeLoop->time());
-
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
 
@@ -164,13 +168,13 @@ int main(int argc, char** argv) try
 
         // write vtk output (only at check points)
         if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-        	vtkWriter.write(timeLoop->time());
+            vtkWriter.write(timeLoop->time());
         }
 
         // report statistics of this time step
         timeLoop->reportTimeStep();
 
-        // set new dt as suggested by newton controller
+        // set new dt as suggested by the newton solver
         timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
 
     } while (!timeLoop->finished());

@@ -1,0 +1,14 @@
+# create a link to the grid file and the input file in the build directory
+dune_symlink_to_source_files(FILES "grids" "python")
+
+add_executable(richards3d EXCLUDE_FROM_ALL richards.cc)
+
+add_executable(richards1d EXCLUDE_FROM_ALL richards.cc)
+target_compile_definitions(richards1d PUBLIC GRIDTYPE=Dune::YaspGrid<1>)
+
+# optionally set cmake build type (Release / Debug / RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Release)
+
+
+
+

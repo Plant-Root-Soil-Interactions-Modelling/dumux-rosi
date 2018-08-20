@@ -204,40 +204,39 @@ public:
 	 * \copydoc FVProblem::boundaryTypesAtPos
 	 */
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const	{
+		//        cout << "\n\nBoundariesAtPos\n\n";
         BoundaryTypes bcTypes;
-        if (onUpperBoundary_(globalPos))
-        { // top bc
-            switch (bcTop_) {
-            case constantPressure: // constant pressure head
-                bcTypes.setAllDirichlet();
-                break;
-            case constantFlux: // constant flux
-                bcTypes.setAllNeumann();
-                break;
-            case atmospheric: // atmospheric boundary condition (with surface run-off)
-                bcTypes.setAllNeumann();
-                break;
-            default:
-                DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
-            }
-        }
-        else
-        { // bot bc
-            switch (bcBot_) {
-            case constantPressure: // constant pressure head
-                bcTypes.setAllDirichlet();
-                break;
-            case constantFlux: // constant flux
-                bcTypes.setAllNeumann();
-                break;
-            case freeDrainage: // free drainage
-                bcTypes.setAllNeumann();
-                break;
-            default:
-                DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type not implemented");
-            }
-        }
-        return bcTypes;
+        bcTypes.setAllNeumann(); // default
+    	if (onUpperBoundary_(pos)) { // top bc
+			switch (bcTop_) {
+			case 1: // constant pressure head
+				bcTypes.setAllDirichlet();
+				break;
+			case 2: // constant flux
+				bcTypes.setAllNeumann();
+				break;
+			case 4: // atmospheric boundary condition (with surface run-off)
+				bcTypes.setAllNeumann();
+				break;
+			default:
+				DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
+			}
+		} else if (onLowerBoundary_(pos)) { // bot bc
+			switch (bcBot_) {
+			case 1: // constant pressure head
+				bcTypes.setAllDirichlet();
+				break;
+			case 2: // constant flux
+				bcTypes.setAllNeumann();
+				break;
+			case 5: // free drainage
+				bcTypes.setAllNeumann();
+				break;
+			default:
+				DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type not implemented");
+			}
+		}
+    	return bcTypes;
 	}
 
 	/*!
