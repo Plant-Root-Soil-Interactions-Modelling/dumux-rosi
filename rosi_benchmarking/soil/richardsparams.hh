@@ -25,7 +25,7 @@
 #define DUMUX_RICHARDS_LENS_SPATIAL_PARAMETERS_HH
 
 #include <dumux/material/spatialparams/fv.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh> // TODO kick
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
 #include <dumux/porousmediumflow/richards/model.hh>
@@ -38,10 +38,10 @@ namespace Dumux {
  * \ingroup ImplicitTestProblems
  * \brief The spatial parameters for the RichardsLensProblem
  */
-template<class FVGridGeometry, class Scalar>
-class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+template<class Grid, class FVGridGeometry, class Scalar>
+class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<Grid, FVGridGeometry, Scalar>>
 {
-    using ThisType = RichardsParams<FVGridGeometry, Scalar>;
+    using ThisType = RichardsParams<Grid, FVGridGeometry, Scalar>;
     using ParentType = FVSpatialParams<FVGridGeometry, Scalar, ThisType>;
     using GridView = typename FVGridGeometry::GridView;
     using FVElementGeometry = typename FVGridGeometry::LocalView;
@@ -55,6 +55,10 @@ class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsPa
     };
 
 public:
+
+    enum GridParameterIndex {
+        layerNumber = 0
+    };
 
     using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
     using MaterialLawParams = typename MaterialLaw::Params;
@@ -77,10 +81,8 @@ public:
         std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N");
         Kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity
         homogeneous_ = Qr.size()==1; // more than one set of VG parameters?
-
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
-        for (int i=0; i<Qr.size(); i++)
-        {
+        for (int i=0; i<Qr.size(); i++) {
             materialParams_.push_back(MaterialLawParams());
             materialParams_.at(i).setSwr(Qr.at(i)/phi_); // Qr
             materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_); // Qs
@@ -89,52 +91,25 @@ public:
             materialParams_.at(i).setVgn(n.at(i)); // N
             K_.push_back(Kc_.at(i)*mu/(rho*g_)); // Convert to intrinsic permeability
         }
+
+        // check if there is a layer look up table
+        try {
+            z_ = getParam<std::vector<Scalar>>("Soil.LayerZ");
+            layer_ = getParam<std::vector<Scalar>>("Soil.LayerNumber");
+            layerTable_ = true;
+        } catch(std::exception& e) {
+            layerTable_ = false;
+        }
+
     }
 
     /*!
-     * \brief \copydoc FVSpatialParamsOneP::permeability
+     * \brief Grid manager is needed for layer number look up
      */
-    template<class ElementSolution>
-    decltype(auto) permeability(const Element& element, const SubControlVolume& scv, const ElementSolution& elemSol) const
+    void setGridManager(GridManager<Grid>* gm)
     {
-        if (homogeneous_)
-        {
-            return K_.at(0);
-        }
-        else // TODO we need the grid manager to look up stuff
-        {
-            GlobalPosition pos = scv.center();
-            if (pos[dimWorld-1]>1.5)
-            { // hard coded for specific example
-                return K_.at(0);
-            } else
-            {
-                return K_.at(1);
-            }
-        }
+        gridManager_ = gm;
     }
-
-    /*
-     * \brief Hydraulic conductivites [m/s], called by the problem for conversions
-     */
-    const Scalar hydraulicConductivity(const GlobalPosition& pos) const
-    {
-        if (homogeneous_)
-        {
-            return Kc_.at(0);
-        }
-        else // TODO we need the grid manager to look up stuff
-        {
-            if (pos[dimWorld-1]>1.5)
-            { // hard coded for specific example
-                return Kc_.at(0);
-            } else
-            {
-                return Kc_.at(1);
-            }
-        }
-    }
-
 
     /*!
      * \brief \copydoc FVGridGeometry::porosity
@@ -145,38 +120,88 @@ public:
     }
 
     /*!
+     * \brief \copydoc FVSpatialParamsOneP::permeability
+     */
+    template<class ElementSolution>
+    decltype(auto) permeability(const Element& element, const SubControlVolume& scv, const ElementSolution& elemSol) const
+    {
+        return K_.at(index_(element));
+    }
+
+    /*
+     * \brief Hydraulic conductivites [m/s], called by the problem for conversions
+     */
+    const Scalar hydraulicConductivity(const Element& element) const
+    {
+        return Kc_.at(index_(element));
+    }
+
+    /*!
      * \brief \copydoc FVSpatialParamsOneP::materialLawParams
      */
     template<class ElementSolution>
     const MaterialLawParams& materialLawParams(const Element& element,
-                                               const SubControlVolume& scv,
-                                               const ElementSolution& elemSol) const
+        const SubControlVolume& scv,
+        const ElementSolution& elemSol) const
     {
-        const auto& globalPos = scv.dofPosition();
-        return materialLawParamsAtPos(globalPos);
+        return materialParams_.at(index_(element));
     }
 
-    const MaterialLawParams& materialLawParamsAtPos(const GlobalPosition& globalPos) const
+    const MaterialLawParams& materialLawParams2(const Element& element) const
     {
-        if (homogeneous_)
-        {
-            return materialParams_.at(0);
+        return materialParams_.at(index_(element));
+    }
+
+    //! 1d table look up: xx is ascending, returns the index i , so that x>=xx[i] and x<xx[i+1]
+    static size_t locate(Scalar x, const std::vector<Scalar>& xx)
+    {
+        unsigned int jr,jm,jl;
+        jl = 0;
+        jr = xx.size();
+        while (jr-jl > 1) {
+            jm=(jr+jl) >> 1; // thats a divided by two
+            if (x >= xx[jm])
+                jl=jm;
+            else
+                jr=jm;
         }
-        else // TODO we need the grid manager to look up stuff
-        {
-            if (globalPos[dimWorld-1]>1.5) { // hard coded for specific example
-                return materialParams_.at(0);
-            } else {
-                return materialParams_.at(1);
+        return jl; // left index
+    }
+
+    //! returns linearly interpolated values of a 1-D function at specific query point x. Vector xx contains the sample points, and vv contains the corresponding values
+    static Scalar interp1(Scalar x, const std::vector<Scalar>& vv, const std::vector<Scalar>& xx)
+    {
+        size_t i = locate(x, xx);
+        Scalar t = (x - xx[i])/(xx[i+1] - xx[i]);
+        t = std::min(std::max(t,0.),1.);
+        Scalar v = vv[i]*(1.-t) + vv[i+1]*t;
+        return v;
+    }
+
+
+private:
+
+    //! returns the index of the soil layer
+    size_t index_(const Element& element) const {
+        if (homogeneous_) {
+            return 0;
+        } else {
+            if (layerTable_) { // obtain from look up table
+                double z = element.geometry().center()[dimWorld-1];
+                return (size_t) (interp1(z,layer_, z_) + 0.5); // round
+            } else { // obtain from grid
+                return (size_t)( gridManager_->getGridData()->parameters(element).at(layerNumber)+0.5 );
             }
         }
     }
 
-private:
-
     bool homogeneous_; // soil is homogeneous
-
+    bool layerTable_; // layer data in look up table
+    std::vector<Scalar> z_;
+    std::vector<Scalar> layer_;
     Scalar phi_; // porosity
+
+    GridManager<Grid>* gridManager_ = nullptr;
 
     std::vector<Scalar> K_; // permeability [m²]
     std::vector<Scalar> Kc_; // hydraulic conductivity [m/s]

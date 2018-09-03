@@ -71,8 +71,9 @@ SET_TYPE_PROP(RichardsTypeTag, Grid, GRIDTYPE);
 SET_TYPE_PROP(RichardsTypeTag, Problem, RichardsProblem<TypeTag>);
 
 // Set the spatial parameters
-SET_TYPE_PROP(RichardsTypeTag, SpatialParams, RichardsParams<typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar)>);
+SET_TYPE_PROP(RichardsTypeTag, SpatialParams, RichardsParams<typename GET_PROP_TYPE(TypeTag, Grid), typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar)>);
 } // end namespace Dumux
+
 
 /*!
  * \ingroup RichardsModel
@@ -94,20 +95,20 @@ class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
     using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, GridVolumeVariables)::LocalView;
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     using Indices = typename GET_PROP_TYPE(TypeTag, ModelTraits)::Indices;
-    enum {
-        // copy some indices for convenience
-        pressureIdx = Indices::pressureIdx,
-        conti0EqIdx = Indices::conti0EqIdx,
-        bothPhases = Indices::bothPhases,
-
-        // world dimension
-        dimWorld = GridView::dimensionworld
-    };
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Grid = typename GET_PROP_TYPE(TypeTag, Grid);
     using MaterialLaw = typename GET_PROP_TYPE(TypeTag, SpatialParams)::MaterialLaw;
     using MaterialLawParams = typename MaterialLaw::Params;
+
+    enum {
+        // copy some indices for convenience
+        pressureIdx = Indices::pressureIdx,
+        conti0EqIdx = Indices::conti0EqIdx,
+        bothPhases = Indices::bothPhases,
+        // world dimension
+        dimWorld = GridView::dimensionworld
+    };
 
 public:
 
@@ -129,32 +130,28 @@ public:
     : ParentType(fvGridGeometry)
     {
         gridManager_ = gridManager;
+        this->spatialParams().setGridManager(gridManager); // SpatialParams constructor is hidden in parent class, and can not be modified
+
         name_ = getParam<std::string>("Problem.Name");
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value");
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value");
-        if (bcTopType_==atmospheric)
-        {
+        if (bcTopType_==atmospheric) {
             precData_ = getParam<std::vector<Scalar>>("Soil.Precipitation"); // in [cm/s]
             precTime_ = getParam<std::vector<Scalar>>("Soil.PrecTime");
-        }
-        else
-        {
+        } else {
             precData_ = std::vector<Scalar>(0); // not used
             precTime_ = std::vector<Scalar>(0);
         }
         // IC
         initialPressure_ = getParam<std::vector<Scalar>>("Soil.IC.Pressure");
-        if (initialPressure_.size() == 1) // constant pressure
-        {
+        if (initialPressure_.size() == 1) { // constant pressure
             constInitial_ = true;
             gridInitial_ = false;
             initialZ_ = std::vector<Scalar>(0); // not used
-        }
-        else
-        {
+        } else {
             constInitial_ = false;
             try {
                 initialZ_ = getParam<std::vector<Scalar>>("Soil.IC.Z"); // table look up
@@ -189,38 +186,35 @@ public:
         return 1.0e5;
     };
 
-    /*!
+    /*!readGridData
      * \copydoc FVProblem::boundaryTypesAtPos
      */
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
     {
         BoundaryTypes bcTypes;
-        if (onUpperBoundary_(globalPos))
-        { // top bc
+        if (onUpperBoundary_(globalPos)) { // top bc
             switch (bcTopType_) {
-            case constantPressure: // constant pressure head
+            case constantPressure:
                 bcTypes.setAllDirichlet();
                 break;
-            case constantFlux: // constant flux
+            case constantFlux:
                 bcTypes.setAllNeumann();
                 break;
-            case atmospheric: // atmospheric boundary condition (with surface run-off)
+            case atmospheric:
                 bcTypes.setAllNeumann();
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
             }
-        }
-        else
-        { // bot bc
+        } else { // bot bc
             switch (bcBotType_) {
-            case constantPressure: // constant pressure head
+            case constantPressure:
                 bcTypes.setAllDirichlet();
                 break;
-            case constantFlux: // constant flux
+            case constantFlux:
                 bcTypes.setAllNeumann();
                 break;
-            case freeDrainage: // free drainage
+            case freeDrainage:
                 bcTypes.setAllNeumann();
                 break;
             default:
@@ -236,22 +230,17 @@ public:
     PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const
     {
         PrimaryVariables values;
-        if (onUpperBoundary_(globalPos))
-        { // top bc
-            switch (bcTopType_)
-            {
-            case constantPressure: // constant pressure
+        if (onUpperBoundary_(globalPos)) { // top bc
+            switch (bcTopType_) {
+            case constantPressure:
                 values[Indices::pressureIdx] =toPa_(bcTopValue_);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type Dirichlet: unknown boundary type");
             }
-        }
-        else
-        { // bot bc
-            switch (bcBotType_)
-            {
-            case constantPressure: // constant pressure
+        } else { // bot bc
+            switch (bcBotType_) {
+            case constantPressure:
                 values[Indices::pressureIdx] = toPa_(bcBotValue_);
                 break;
             default:
@@ -270,25 +259,23 @@ public:
         const ElementVolumeVariables& elemVolVars,
         const SubControlVolumeFace& scvf) const
     {
-
         NumEqVector values;
         GlobalPosition pos = scvf.center();
 
-        if (onUpperBoundary_(pos))
-        { // top bc
+        if (onUpperBoundary_(pos)) { // top bc
             switch (bcTopType_) {
             case constantFlux: {
                 values[conti0EqIdx] = -10*bcTopValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(element.geometry().center());
+                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
                 Scalar mS = 0;
                 auto numScv = fvGeometry.numScv();
                 for (auto i = 0; i<numScv; i++) {
                     mS += (elemVolVars[i].saturation()/numScv);
                 }
-                MaterialLawParams params = this->spatialParams().materialLawParamsAtPos(element.geometry().center());
+                MaterialLawParams params = this->spatialParams().materialLawParams2(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
                 Scalar p = MaterialLaw::pc(params, mS)+nonWettingReferencePressure();
                 Scalar h = -toHead_(p)/100.; // from Pa -> m pressure head
@@ -317,22 +304,20 @@ public:
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type Neumann: unknown error");
             }
-        }
-        else // bot bc
-        {
+        } else  { // bot bc
             switch (bcBotType_) {
             case constantFlux: {
                 values[conti0EqIdx] = -10*bcBotValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] *rho
                 break;
             }
             case freeDrainage: { // TODO needs improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(element.geometry().center());
+                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
                 Scalar mS = 0; // mean saturation
                 auto numScv = fvGeometry.numScv();
                 for (auto i = 0; i<numScv; i++) {
                     mS += (elemVolVars[i].saturation()/numScv);
                 }
-                MaterialLawParams params = this->spatialParams().materialLawParamsAtPos(element.geometry().center());
+                MaterialLawParams params = this->spatialParams().materialLawParams2(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
                 values[conti0EqIdx] = krw*Kc*rho_; // * 1 [m]
                 break;
@@ -351,20 +336,15 @@ public:
     PrimaryVariables initial(const Entity& entity) const
     {
         PrimaryVariables values;
-        if (constInitial_) // constant initial data
-        {
+        if (constInitial_) { // constant initial data
             values[pressureIdx] = toPa_(initialPressure_[0]);
-        }
-        else {
-            if (gridInitial_) // obtain layer number from grid data
-            {
-                int i = (int)gridManager_->getGridData()->parameters(entity).at(layerNumber)+0.5; // round to int
+        } else {
+            if (gridInitial_) { // obtain layer number from grid data
+                size_t i = (size_t)( gridManager_->getGridData()->parameters(entity).at(layerNumber)+0.5 ); // round to size_t
                 values[pressureIdx] = toPa_(initialPressure_.at(i));
-            }
-            else // obtain pressure by table look up and linear interpolation
-            {
+            } else { // obtain pressure by table look up and linear interpolation
                 Scalar z = entity.geometry().center()[dimWorld-1];
-                values[pressureIdx] = toPa_(interp1(z,initialPressure_, initialZ_));
+                values[pressureIdx] = toPa_(this->spatialParams().interp1(z,initialPressure_, initialZ_));
             }
         }
         values.setState(bothPhases);
@@ -377,33 +357,6 @@ public:
     void setTime(Scalar t)
     {
         time_ = t;
-    }
-
-    //! 1d table look up: xx is ascending, returns the index i , so that x>=xx[i] and x<xx[i+1]
-    static size_t locate(Scalar x, const std::vector<Scalar>& xx)
-    {
-        unsigned int jr,jm,jl;
-        jl = 0;
-
-        jr = xx.size();
-        while (jr-jl > 1) {
-            jm=(jr+jl) >> 1; // thats a divided by two
-            if (x >= xx[jm])
-                jl=jm;
-            else
-                jr=jm;
-        }
-        return jl; // left index
-    }
-
-    //! returns linearly interpolated values of a 1-D function at specific query point x. Vector xx contains the sample points, and vv contains the corresponding values
-    static Scalar interp1(Scalar x, const std::vector<Scalar>& vv, const std::vector<Scalar>& xx)
-    {
-        size_t i = locate(x, xx);
-        Scalar t = (x - xx[i])/(xx[i+1] - xx[i]);
-        t = std::min(std::max(t,0.),1.);
-        Scalar v = vv[i]*(1.-t) + vv[i+1]*t;
-        return v;
     }
 
 private:
