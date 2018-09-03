@@ -136,8 +136,8 @@ public:
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
-        bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value");
-        bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value");
+        bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
+        bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
         if (bcTopType_==atmospheric) {
             precData_ = getParam<std::vector<Scalar>>("Soil.Precipitation"); // in [cm/s]
             precTime_ = getParam<std::vector<Scalar>>("Soil.PrecTime");

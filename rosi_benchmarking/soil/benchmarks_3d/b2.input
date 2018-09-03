@@ -1,0 +1,50 @@
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 31536000 # a year [s] hopefully steady steate is reached after 1 year
+MaxTimeStepSize = 86400 # a day [s] 
+
+[Grid]
+UpperRight = 0.1 0.1 0.54
+Cells = 10 10 100
+Initial = 1 # positive numbers invoke special linear gradient for example jan 2
+
+[Problem]
+Name = b2
+EnableGravity = 1 # enable gravity
+
+[VanGenuchten] 
+# Vanderborght 2005 Loam: 
+Qr = 0.08 
+Qs = 0.43 
+alpha = 0.04  # [1/cm] 
+n = 1.6 
+Ks = 5.7870e-06 # [m/s] hydrus verdoppelt
+
+[BC_Top]
+Type = 2
+Value = -0.5 # [cm day-1]
+# type: (same as in Hydrus1D)
+# 1 constant pressure head
+# 2 constant flux
+# 3 atmospheric BC with surface layer
+# 4 atmospheric BC with surface run off
+# 5 variable pressure head
+# 6 variable pressure head/flux
+
+[BC_Bot]
+Type = 1
+Value = 0 # [cm] fully saturated
+# type: (same as in Hydrus1D)
+# 1 constant pressure head
+# 2 constant flux
+# 3 variable pressure head
+# 4 variable flux
+# 5 free drainage
+# 6 deep drainage
+# 7 seepage face
+# 8 horizontal drains
+
+[Newton]
+TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
+EnableChop = true # chop for better convergence
+
