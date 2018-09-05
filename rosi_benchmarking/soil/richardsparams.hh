@@ -94,12 +94,13 @@ public:
 
         // check if there is a layer look up table
         try {
-            z_ = getParam<std::vector<Scalar>>("Soil.LayerZ");
-            layer_ = getParam<std::vector<Scalar>>("Soil.LayerNumber");
+            z_ = getParam<std::vector<Scalar>>("Soil.Layer.Z");
+            layer_ = getParam<std::vector<Scalar>>("Soil.Layer.Number");
             layerTable_ = true;
         } catch(std::exception& e) {
             layerTable_ = false;
         }
+        std::cout << "Table " << layerTable_ << "\n";
 
     }
 
@@ -147,7 +148,7 @@ public:
         return materialParams_.at(index_(element));
     }
 
-    const MaterialLawParams& materialLawParams2(const Element& element) const
+    const MaterialLawParams& materialLawParams(const Element& element) const
     {
         return materialParams_.at(index_(element));
     }

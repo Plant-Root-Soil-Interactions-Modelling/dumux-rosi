@@ -5,8 +5,8 @@ Name = benchmark1d_1a
 File = ./grids/b1.dgf 
 
 [TimeLoop]
-DtInitial =  1 # [s]
 TEnd = 3000000 # steady state
+DtInitial =  1 # [s]
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Soil.BC.Top]
@@ -16,10 +16,17 @@ Value = 0.5 # [cm day-1]
 [Soil.BC.Bot]
 Type = 5 # free drainage
 
-[Soil.VanGenuchten] # Loam over sand 
+[Soil.VanGenuchten] 
+# Loam over sand 
 Qr = 0.08  0.045	
 Qs = 0.43 0.43
-alpha = 0.04  0.15 # [1/cm] 
-n = 1.6  3
-Ks = 5.7870e-06 1.1574e-04 # [m/s] 	
+Alpha = 0.04  0.15 # [1/cm] 
+N = 1.6  3
+Ks = 5.7870e-06 1.1574e-04 # [m/s] 
+
+[Soil.Layer]
+Z = 0 -50 -50 -200
+Number = 1 1 2 2 
+
+	
 

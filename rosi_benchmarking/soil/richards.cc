@@ -111,23 +111,34 @@ int main(int argc, char** argv) try
     // get some time loop parameters
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-    const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
-    auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
-    auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
-    timeLoop->setMaxTimeStepSize(maxDt);
-    try { // Episodes defined
-        std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-        // insert check points
-        for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
-            timeLoop->setCheckPoint(p);
+
+    CheckPointTimeLoop<Scalar> timeLoop;
+    if (tEnd>0) { // dynamic problem
+        const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
+        auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
+        timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
+        timeLoop->setMaxTimeStepSize(maxDt);
+        try { // CheckPoints defined
+            std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
+            // insert check points
+            for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
+                timeLoop->setCheckPoint(p);
+            }
+        } catch(std::exception& e) {
+            std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
-    } catch(std::exception& e) {
-        std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+    } else { // static
     }
 
-    // the assembler with time loop for instationary problem
+
+    // the assembler with time loop for instationary or stationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
-    auto assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop);
+    std::make_shared<Assembler> assembler;
+    if (tEnd>0) {
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+    } else {
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
+    }
 
     // the linear solver
     using LinearSolver = Dumux::AMGBackend<TypeTag>;
@@ -137,38 +148,37 @@ int main(int argc, char** argv) try
     using NewtonSolver = Dumux::RichardsNewtonSolver<TypeTag, Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
-    // time loop
-    timeLoop->start(); do
-    {
+
+    if (tEnd>0)  { // dynamic
+        timeLoop->start();
+        do {
+            // set previous solution for storage evaluations
+            assembler->setPreviousSolution(xOld);
+            // solve the non-linear system with time step control
+            nonLinearSolver.solve(x, *timeLoop);
+            // make the new solution the old solution
+            xOld = x;
+            gridVariables->advanceTimeStep();
+            // advance to the time loop to the next step
+            timeLoop->advanceTimeStep();
+            // write vtk output (only at check points)
+            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+                vtkWriter.write(timeLoop->time());
+            }
+            // report statistics of this time step
+            timeLoop->reportTimeStep();
+            // set new dt as suggested by the newton solver
+            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
+            // pass current time to the problem
+            problem->setTime(timeLoop->time());
+        } while (!timeLoop->finished());
+        timeLoop->finalize(leafGridView.comm());
+    } else { // static
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
-
-        // solve the non-linear system with time step control
-        nonLinearSolver.solve(x, *timeLoop);
-
-        // make the new solution the old solution
-        xOld = x;
-        gridVariables->advanceTimeStep();
-
-        // advance to the time loop to the next step
-        timeLoop->advanceTimeStep();
-
-        // write vtk output (only at check points)
-        if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-            vtkWriter.write(timeLoop->time());
-        }
-
-        // report statistics of this time step
-        timeLoop->reportTimeStep();
-
-        // set new dt as suggested by the newton solver
-        timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
-
-        problem->setTime(timeLoop->time());
-
-    } while (!timeLoop->finished());
-
-    timeLoop->finalize(leafGridView.comm());
+        // solve the non-linear system
+        nonLinearSolver.solve(x);
+    }
 
     ////////////////////////////////////////////////////////////
     // finalize, print dumux message to say goodbye
@@ -203,8 +213,8 @@ catch (Dune::Exception &e)
     std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
     return 3;
 }
-catch (...)
+catch (std::exception &e)
 {
-    std::cerr << "Unknown exception thrown! ---> Abort!" << std::endl;
+    std::cerr << "Unknown exception thrown: " <<  e.what() << " ---> Abort!" << std::endl;
     return 4;
 }

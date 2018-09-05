@@ -146,7 +146,9 @@ public:
             precTime_ = std::vector<Scalar>(0);
         }
         // IC
-        initialPressure_ = getParam<std::vector<Scalar>>("Soil.IC.Pressure");
+        initialPressure_ = getParam<std::vector<Scalar>>("Soil.IC.Pressure", std::vector<Scalar>{-100.});
+        std::cout << "iniital P : " << initialPressure_.size() << "\n";
+        std::cout << "iniital P : " << initialPressure_[0] << "\n";
         if (initialPressure_.size() == 1) { // constant pressure
             constInitial_ = true;
             gridInitial_ = false;
@@ -275,7 +277,7 @@ public:
                 for (auto i = 0; i<numScv; i++) {
                     mS += (elemVolVars[i].saturation()/numScv);
                 }
-                MaterialLawParams params = this->spatialParams().materialLawParams2(element);
+                MaterialLawParams params = this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
                 Scalar p = MaterialLaw::pc(params, mS)+nonWettingReferencePressure();
                 Scalar h = -toHead_(p)/100.; // from Pa -> m pressure head
@@ -317,7 +319,7 @@ public:
                 for (auto i = 0; i<numScv; i++) {
                     mS += (elemVolVars[i].saturation()/numScv);
                 }
-                MaterialLawParams params = this->spatialParams().materialLawParams2(element);
+                MaterialLawParams params = this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
                 values[conti0EqIdx] = krw*Kc*rho_; // * 1 [m]
                 break;
