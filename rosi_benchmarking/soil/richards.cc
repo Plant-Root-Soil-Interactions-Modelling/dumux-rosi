@@ -112,8 +112,8 @@ int main(int argc, char** argv) try
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
 
-    CheckPointTimeLoop<Scalar> timeLoop;
-    if (tEnd>0) { // dynamic problem
+    std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
+    if (tEnd > 0) { // dynamic problem
         const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
         auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
         timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
@@ -133,7 +133,7 @@ int main(int argc, char** argv) try
 
     // the assembler with time loop for instationary or stationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
-    std::make_shared<Assembler> assembler;
+    std::shared_ptr<Assembler> assembler;
     if (tEnd>0) {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
     } else {
