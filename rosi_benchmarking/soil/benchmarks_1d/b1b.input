@@ -1,30 +1,34 @@
-[TimeLoop]
-DtInitial =  1 # [s]
-TEnd = 31536000 # a year [s] hopefully steady steate is reached after a year
-MaxTimeStepSize = 86400 # a day [s] 
+[Problem]
+Name = benchmark1d_1b
 
 [Grid]
-File = ./grids/b1.dgf # [m], initial data [cm] pressure head
+UpperRight = -2
+LowerLeft = 0
+Cells = 200
 
-[Problem]
-Name = benchmark1b
-EnableGravity = 1 # enable gravity
+[TimeLoop]
+TEnd = 31536000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 86400 # a day [s] 
 
-[VanGenuchten] 
-# Sand over Loam 
-Qr = 0.045 0.08  	 
-Qs = 0.43 0.43
-alpha =  0.15 0.04 # [1/cm] 
-n =  3 1.6
-Ks = 1.1574e-04 5.7870e-06 # m/s 	
-
-[BC_Top]
+[Soil.BC.Top]
 Type = 2 # constant flux
 Value = 0.5 # [cm day-1]
 
-[BC_Bot]
+[Soil.BC.Bot]
 Type = 5 # free drainage
 
-[Newton]
-TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
-EnableChop = true # chop for better convergence
+[Soil.IC]
+Pressure = -200 # cm pressure head (initial guess)
+
+[Soil.VanGenuchten] 
+# Sand over Loam 
+Qr = 0.045 0.08  	 
+Qs = 0.43 0.43
+Alpha =  0.15 0.04 # [1/cm] 
+N =  3 1.6
+Ks = 1.1574e-04 5.7870e-06 # m/s 	
+
+[Soil.Layer]
+Z = 0 -0.5 -0.5 -2
+Number = 1 1 2 2 

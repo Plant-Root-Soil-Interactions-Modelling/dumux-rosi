@@ -25,7 +25,8 @@
 #define DUMUX_RICHARDS_LENS_SPATIAL_PARAMETERS_HH
 
 #include <dumux/material/spatialparams/fv.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh> // TODO kick
+#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh> // TODO kick
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
 #include <dumux/porousmediumflow/richards/model.hh>
@@ -57,7 +58,7 @@ class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsPa
 public:
 
     enum GridParameterIndex {
-        layerNumber = 0
+        materialLayerNumber = 1
     };
 
     using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
@@ -100,8 +101,8 @@ public:
         } catch(std::exception& e) {
             layerTable_ = false;
         }
-        std::cout << "Table " << layerTable_ << "\n";
-
+//        std::cout << "Homogeneous " << homogeneous_ << "\n";
+//        std::cout << "Layer Table " << layerTable_ << "\n";
     }
 
     /*!
@@ -189,9 +190,13 @@ private:
         } else {
             if (layerTable_) { // obtain from look up table
                 double z = element.geometry().center()[dimWorld-1];
-                return (size_t) (interp1(z,layer_, z_) + 0.5); // round
+                size_t i = size_t(interp1(z, layer_, z_) + 0.5); // round
+                // std::cout << "(" << z << ", " << i << ") ";
+                return i;
             } else { // obtain from grid
-                return (size_t)( gridManager_->getGridData()->parameters(element).at(layerNumber)+0.5 );
+                size_t i = (size_t) (gridManager_->getGridData()->parameters(
+                    element).at(materialLayerNumber) - 1); // layer number starts at 1
+                return i;
             }
         }
     }

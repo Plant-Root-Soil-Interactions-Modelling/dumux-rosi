@@ -120,7 +120,7 @@ public:
     };
 
     enum GridParameterIndex {
-        layerNumber = 0
+        materialLayerNumber = 0
     };
 
     /*!
@@ -139,16 +139,16 @@ public:
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
         if (bcTopType_==atmospheric) {
-            precData_ = getParam<std::vector<Scalar>>("Soil.Precipitation"); // in [cm/s]
-            precTime_ = getParam<std::vector<Scalar>>("Soil.PrecTime");
+            std::string filestr = name_ + ".csv";
+            myfile_.open(filestr.c_str());
+            precData_ = getParam<std::vector<Scalar>>("Climate.Precipitation"); // in [kg/(s m²)] , todo better [cm/day]?
+            precTime_ = getParam<std::vector<Scalar>>("Climate.Time");
         } else {
             precData_ = std::vector<Scalar>(0); // not used
             precTime_ = std::vector<Scalar>(0);
         }
         // IC
         initialPressure_ = getParam<std::vector<Scalar>>("Soil.IC.Pressure", std::vector<Scalar>{-100.});
-        std::cout << "iniital P : " << initialPressure_.size() << "\n";
-        std::cout << "iniital P : " << initialPressure_[0] << "\n";
         if (initialPressure_.size() == 1) { // constant pressure
             constInitial_ = true;
             gridInitial_ = false;
@@ -161,6 +161,18 @@ public:
                 initialZ_ = std::vector<Scalar>(0); // not used
                 gridInitial_ = true;
             }
+        }
+        //        std::cout << "Grid boundarys " << this->fvGridGeometry().bBoxMax()
+        //            << "\n";
+    }
+
+    /**
+     * eventually close file
+     */
+    ~RichardsProblem() {
+        if (bcTopType_==atmospheric) {
+            std::cout << "closing file \n";
+            myfile_.close();
         }
     }
 
@@ -284,23 +296,20 @@ public:
 
                 GlobalPosition ePos = element.geometry().center();
                 Scalar dz = 2 * std::abs(ePos[dimWorld-1]- pos[dimWorld-1]); // 0.01; // m // fvGeometry.geometry().volume()?; TODO
-                Scalar prec = 0.; // getPrec_(time_); // precipitation or evaporation TODO
+                Scalar prec = getPrec_(time_); // precipitation or evaporation TODO
 
                 if (prec<0) { // precipitation
                     Scalar imax = rho_*Kc*((h-0.)/dz -1.); // maximal infiltration
                     Scalar v = std::max(prec,imax);
                     values[conti0EqIdx] = v;
-                    //std::cout << "\nprecipitation: "<< prec << ", max inf " << imax << " S "<< mS << " Pressurehead "<< h << " values " << v << " at time " << time_ << "dz" << dz;
                 } else { // evaporation
                     Scalar emax = rho_*krw*Kc*((h-(-100))/dz -1.); // maximal evaporation (-100 m = -10.000 cm) // TODO make a parameter
                     Scalar v  = std::min(prec,emax);
                     values[conti0EqIdx] = v;
-                    //std::cout << "\nevaporation: "<< prec << ", max eva " << emax << " S "<< mS << " Pressurehead "<< h <<" values " << v << " at time " << time_<< "dz" << dz;
                 }
-
-//                // hack for benchmark 4 TODO some concept for output
-//                myfile_ << time_ << ", "; //
-//                myfile_ << values[conti0EqIdx] << "\n";
+                // hack for benchmark 4 TODO some better concept for output
+                myfile_ << time_ << ", "; //
+                myfile_ << values[conti0EqIdx] << "\n";
                 break;
             }
             default:
@@ -342,7 +351,9 @@ public:
             values[pressureIdx] = toPa_(initialPressure_[0]);
         } else {
             if (gridInitial_) { // obtain layer number from grid data
-                size_t i = (size_t)( gridManager_->getGridData()->parameters(entity).at(layerNumber)+0.5 ); // round to size_t
+                size_t i = size_t(
+                    gridManager_->getGridData()->parameters(entity).at(
+                        materialLayerNumber));
                 values[pressureIdx] = toPa_(initialPressure_.at(i));
             } else { // obtain pressure by table look up and linear interpolation
                 Scalar z = entity.geometry().center()[dimWorld-1];
@@ -380,7 +391,14 @@ private:
         return globalPos[dimWorld-1] > this->fvGridGeometry().bBoxMax()[dimWorld-1] - eps_;
     }
 
+    //! returns dynamic precipitation from table from input time
+    Scalar getPrec_(Scalar t) const {
+        return this->spatialParams().interp1(t, precData_, precTime_);
+    }
+
     std::string name_;
+    mutable std::ofstream myfile_;
+
     GridManager<Grid>* gridManager_;
 
     Scalar time_ = 0.;

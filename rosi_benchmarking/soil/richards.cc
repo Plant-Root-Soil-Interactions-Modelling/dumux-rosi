@@ -58,6 +58,7 @@ int main(int argc, char** argv) try
 
     // define the type tag for this problem
     using TypeTag = TTAG(RichardsBoxTypeTag);
+    // RichardsCCTypeTag, RichardsBoxTypeTag
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -148,6 +149,7 @@ int main(int argc, char** argv) try
     using NewtonSolver = Dumux::RichardsNewtonSolver<TypeTag, Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
+    // std::cin.ignore();  // wait for key (debugging)
 
     if (tEnd>0)  { // dynamic
         timeLoop->start();
@@ -178,6 +180,7 @@ int main(int argc, char** argv) try
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
         nonLinearSolver.solve(x);
+        vtkWriter.write(1);
     }
 
     ////////////////////////////////////////////////////////////

@@ -1,33 +1,33 @@
+[Problem]
+Name = benchmark1d_4a
+
+[Grid]
+UpperRight = -1
+LowerLeft = 0
+Cells = 100
+
 [TimeLoop]
 DtInitial =  1 # [s]
 TEnd = 86400 # 1 days [s] 
 MaxTimeStepSize = 60 # a minute [s] 
 
-[Grid]
-File = ./grids/b4sand.dgf # [m], initial data [cm] pressure head
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
 
-[Problem]
-Name = benchmark4a
-EnableGravity = 1 # enable gravity
+[Soil.BC.Bot]
+Type = 5 # free drainage
 
-[VanGenuchten] 
+[Soil.IC]
+Pressure = -40 # cm pressure head 
+
+[Soil.VanGenuchten] 
 # Sand: 
 Qr = 0.045 
 Qs = 0.43 
-alpha = 0.15  # [1/cm] 
-n = 3
+Alpha = 0.15  # [1/cm] 
+N = 3
 Ks = 1.1574e-04 # [m/s] 
 
-[BC_Top]
-Type = 4 # atmospheric BC with surface run off
-
-[BC_Bot]
-Type = 5 # free drainage
-
 [Climate]
-Times = 1e10 # const value 
+Time = 1e10 # const value 
 Precipitation = 0.00001157407 # [kg/(s m²)] (-0.1 cm/day)
-
-[Newton]
-TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
-EnableChop = true # chop for better convergence

@@ -1,31 +1,32 @@
-[TimeLoop]
-DtInitial =  1 # [s]
-TEnd = 31536000 # a year [s] hopefully steady steate is reached after 1 year
-MaxTimeStepSize = 86400 # a day [s] 
+[Problem]
+Name = benchmark1d_2
 
 [Grid]
-File = ./grids/b2.dgf # [m], initial data [cm] pressure head
+UpperRight = -0.54
+LowerLeft = 0
+Cells = 54
 
-[Problem]
-Name = benchmark2
-EnableGravity = 1 # enable gravity
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 0 # a year [s] hopefully steady steate is reached after 1 year
+MaxTimeStepSize = 86400 # a day [s] 
 
-[VanGenuchten] 
-# Loam: 
-Qr = 0.08 
-Qs = 0.43 
-alpha = 0.04  # [1/cm] 
-n = 1.6 
-Ks = 5.7870e-06 # [m/s] hydrus verdoppelt
-
-[BC_Top]
+[Soil.BC.Top]
 Type = 2 # constant flux
 Value = -0.5 # [cm day-1]
 
-[BC_Bot]
+[Soil.BC.Bot]
 Type = 1 # constant pressure head
 Value = 0 # [cm] fully saturated
 
-[Newton]
-TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
-EnableChop = true # chop for better convergence
+[Soil.IC]
+Z = 0 -.54
+Pressure = -54 0 # cm pressure head (initial guess)
+
+[Soil.VanGenuchten] 
+# Loam: 
+Qr = 0.08 
+Qs = 0.43 
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 5.7870e-06 # [m/s] hydrus verdoppelt

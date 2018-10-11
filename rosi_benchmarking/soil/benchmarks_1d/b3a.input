@@ -1,34 +1,35 @@
+[Problem]
+Name = benchmark1d_3a
+
+[Grid]
+UpperRight = -2
+LowerLeft = 0
+Cells = 200 
+# File = ./grids/b3.dgf # [m], initial data [cm] pressure head
+
 [TimeLoop]
 DtInitial =  1 # [s]
 TEnd = 25920 # 0.3 days [s] 
-MaxTimeStepSize = 3600 # an hour [s] 
-Episodes = 8640 17280  
+MaxTimeStepSize = 1800 # 3600 # an hour [s] 
+CheckTimes = 8640 17280  
 
-[Grid]
-File = ./grids/b3.dgf # [m], initial data [cm] pressure head
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
 
-[Problem]
-Name = benchmark3a
-EnableGravity = 1 # enable gravity
+[Soil.BC.Bot]
+Type = 5 # free drainage
 
-[VanGenuchten] 
+[Soil.IC]
+Pressure = -400
+
+[Soil.VanGenuchten] 
 # Sand: 
 Qr = 0.045 
 Qs = 0.43 
-alpha = 0.15  # [1/cm] 
-n = 3
+Alpha = 0.15  # [1/cm] 
+N = 3
 Ks = 1.1574e-04 # [m/s] 
 
-[BC_Top]
-Type = 4 # atmospheric BC with surface run off
-
-[BC_Bot]
-Type = 5 # free drainage
-
 [Climate]
-Times = 1e10 # const value 
-Precipitation = -0.01157407407 # [kg/(s m²)] (100 cm/day)
-
-[Newton]
-TargetSteps = 18 # set the "desireable" number of newton iterations of a time step
-EnableChop = true # chop for better convergence
+Time = 0 1e10 # const value 
+Precipitation = -0.01157407407 -0.01157407407 # [kg/(s m²)] (100 cm/day)
