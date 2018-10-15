@@ -24,4 +24,6 @@ z_ = np.linspace(0, -54, len(s_))
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_, "r+")
 
+np.savetxt("dumux1d", np.vstack((z_ / 100, h_)), delimiter = ",")
+
 plt.show()

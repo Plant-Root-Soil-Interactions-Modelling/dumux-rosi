@@ -22,9 +22,9 @@ Jw = 0.5;  # constant downward flow rate [cm/d]
 Ks = lambda psi: vg.hydraulic_conductivity(psi, sand) - Jw
 Kl = lambda psi: vg.hydraulic_conductivity(psi, loam) - Jw
 Kc = lambda psi: vg.hydraulic_conductivity(psi, clay) - Jw
-psi_s = optimize.brentq(Ks, -100, 0);
-psi_l = optimize.brentq(Kl, -100, 0);
-psi_c = optimize.brentq(Kc, -100, 0);
+psi_s = optimize.brentq(Ks, -100, 0)
+psi_l = optimize.brentq(Kl, -100, 0)
+psi_c = optimize.brentq(Kc, -100, 0)
 
  #
 # The upper part
@@ -42,21 +42,18 @@ dz = np.ones(N,)
 
 psiA = np.linspace(-45, psi_s, N)  # Loam (on sand)
 for i in range(0, N):
-    ans, err = integrate.quad(Fl, psi_s, psiA[i])
-    dz[i] = ans
+    dz[i], err = integrate.quad(Fl, psi_s, psiA[i])
 zA = dz - 50.
 
 psiB = np.linspace(psi_l, psi_s - 1e-10, N)  # Sand (on loam)
 for  i in range(0, N):
-    ans, err = integrate.quad(Fs, psi_l, psiB[i]);
-    dz[i] = ans
-zB = dz + -50;
+    dz[i], err = integrate.quad(Fs, psi_l, psiB[i]);
+zB = dz - 50;
 
 psiC = np.linspace(psi_s, psi_c - 1e-3, 100);  # Clay (on sand)
 for  i in range(0, N):
-    ans, err = integrate.quad(Fc, psi_s, psiC[i]);
-    dz[i] = ans
-zC = dz + (-50);
+    dz[i] , err = integrate.quad(Fc, psi_s, psiC[i]);
+zC = dz - 50;
 
 #
 # prepare plot
