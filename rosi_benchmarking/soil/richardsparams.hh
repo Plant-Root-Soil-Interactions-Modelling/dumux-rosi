@@ -167,7 +167,7 @@ public:
     {
         unsigned int jr,jm,jl;
         jl = 0;
-        jr = xx.size();
+        jr = xx.size() - 1;
         while (jr-jl > 1) {
             jm=(jr+jl) >> 1; // thats a divided by two
             if (x >= xx[jm])
@@ -175,16 +175,23 @@ public:
             else
                 jr=jm;
         }
+        // std::cout << "locate(" << x << ", " << xx[0] << ", " << xx[1] << ") = " << jl << "\n";
         return jl; // left index
     }
 
     //! returns linearly interpolated values of a 1-D function at specific query point x. Vector xx contains the sample points, and vv contains the corresponding values
     static Scalar interp1(Scalar x, const std::vector<Scalar>& vv, const std::vector<Scalar>& xx)
     {
+        assert(xx.size() == vv.size());
+        if (xx.size() == 1) {
+            return vv[0];
+        }
         size_t i = locate(x, xx);
-        Scalar t = (x - xx[i])/(xx[i+1] - xx[i]);
+        i = std::min(i, xx.size() - 1);
+        Scalar t = (x - xx[i]) / (xx[i + 1] - xx[i]);
         t = std::min(std::max(t,0.),1.);
         Scalar v = vv[i]*(1.-t) + vv[i+1]*t;
+        // std::cout << "interp1(" << x << ", " << vv[0] << ", " << vv[1] << ", " << xx[0] << ", " << xx[1] << ")=" << v << ", " << t << "\n";
         return v;
     }
 
@@ -200,7 +207,7 @@ private:
                 double z = element.geometry().center()[dimWorld-1];
                 size_t i = size_t(interp1(z, layer_, z_) + 0.5); // round
                 // std::cout << "(" << z << ", " << i << ") ";
-                return i;
+                return i - 1;
             } else { // obtain from grid
                 size_t i = (size_t) (gridManager_->getGridData()->parameters(
                     element).at(materialLayerNumber) - 1); // layer number starts at 1

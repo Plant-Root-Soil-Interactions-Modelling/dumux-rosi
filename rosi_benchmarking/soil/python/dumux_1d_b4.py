@@ -14,10 +14,6 @@ import numpy as np
 from math import *
 from scipy.interpolate import interp1d
 
-sand = Parameters(0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24)
-loam = Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06 * 100 * 3600 * 24)
-clay = Parameters(0.1, 0.4, 0.01, 1.1, 1.1574e-06 * 100 * 3600 * 24)
-
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
@@ -28,10 +24,10 @@ os.system("./richards1d benchmarks_1d/b4a.input")
 os.system("./richards1d benchmarks_1d/b4b.input")
 os.system("./richards1d benchmarks_1d/b4c.input")
 os.system("./richards1d benchmarks_1d/b4d.input")
-os.system("./richards1d benchmarks_1d/b4a.input -Grid.Cells 400 -Problem.Name benchmark1d_4a_hr")
-os.system("./richards1d benchmarks_1d/b4b.input -Grid.Cells 400 -Problem.Name benchmark1d_4b_hr")
-os.system("./richards1d benchmarks_1d/b4c.input -Grid.Cells 400 -Problem.Name benchmark1d_4c_hr")
-os.system("./richards1d benchmarks_1d/b4d.input -Grid.Cells 400 -Problem.Name benchmark1d_4d_hr")
+os.system("./richards1d benchmarks_1d/b4a.input -Grid.Cells 399 -Problem.Name benchmark1d_4a_hr")
+os.system("./richards1d benchmarks_1d/b4b.input -Grid.Cells 399 -Problem.Name benchmark1d_4b_hr")
+os.system("./richards1d benchmarks_1d/b4c.input -Grid.Cells 399 -Problem.Name benchmark1d_4c_hr")
+os.system("./richards1d benchmarks_1d/b4d.input -Grid.Cells 399 -Problem.Name benchmark1d_4d_hr")
 
 # open results
 num = ['a', 'c', 'b', 'd', 'a_hr', 'c_hr', 'b_hr', 'd_hr']

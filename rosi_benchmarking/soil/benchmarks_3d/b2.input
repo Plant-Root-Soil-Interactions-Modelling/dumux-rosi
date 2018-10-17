@@ -2,8 +2,11 @@
 Name = benchmark3d_2
 
 [Grid]
+# LowerLeft = 0.05 0.05 0
+# UpperRight = -0.05 -0.05 -0.53
+# Cells = 9 9 52
 UpperRight = 0.1 0.1 0.53
-Cells = 10 10 100
+Cells = 9 9 52
 
 [TimeLoop]
 DtInitial =  1 # [s]
@@ -19,8 +22,8 @@ Type = 1 # constant pressure head
 Value = 0 # [cm] fully saturated
 
 [Soil.IC]
-Z = 0 -.53
-Pressure = -53 0 # cm pressure head (initial guess)
+Z = 0 0.53
+Pressure = 0 -53 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
 # Loam: 

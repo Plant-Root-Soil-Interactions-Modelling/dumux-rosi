@@ -24,6 +24,6 @@ s_, p_, z_ = read1D_vtp_data("benchmark1d_2-00001.vtp", False)
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_ * 100, "r+")
 
-np.savetxt("dumux1d_b2", np.vstack((z_ / 100, h_)), delimiter = ",")
+np.savetxt("dumux1d_b2", np.vstack((z_, h_)), delimiter = ",")
 
 plt.show()

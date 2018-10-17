@@ -2,14 +2,16 @@
 Name = benchmark3d_1c
 
 [Grid]
-UpperRight = 0.1 0.2 2
-Cells = 5 10 100
-# Cells = 10 10 199
+# UpperRight = 0.05 0.05 0
+# LowerLeft = -0.05 -0.05 -2
+# Cells = 9 9 199
+UpperRight = 0.1 0.1 2
+Cells = 9 9 199
 
 [TimeLoop]
-TEnd = 31536000 # 720000 # 72000 # 31536000  # 0 is steady state 31536000
+TEnd = 31536000 # 0 is steady state 31536000
 DtInitial =  1 # [s]
-MaxTimeStepSize = 86400 # 3600 # 86400 # a day [s] 
+MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -30,5 +32,6 @@ N = 1.1  3
 Ks = 1.1574e-06 1.1574e-04 # m/s 	
 
 [Soil.Layer]
-Z = 0 -0.5 -0.5 -2
-Number = 1 1 2 2 
+Z = 0 1.5 1.5 2 
+Number = 2 2 1 1	
+	

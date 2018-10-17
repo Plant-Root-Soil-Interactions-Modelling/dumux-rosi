@@ -163,8 +163,6 @@ public:
                 gridInitial_ = true;
             }
         }
-        //        std::cout << "Grid boundarys " << this->fvGridGeometry().bBoxMax()
-        //            << "\n";
     }
 
     /**
@@ -365,14 +363,11 @@ public:
         } else {
             if (gridInitial_) { // obtain layer number from grid data
                 size_t i = size_t(
-                    gridManager_->getGridData()->parameters(entity).at(
-                        materialLayerNumber));
+                    gridManager_->getGridData()->parameters(entity).at(materialLayerNumber));
                 values[pressureIdx] = toPa_(initialPressure_.at(i));
             } else { // obtain pressure by table look up and linear interpolation
                 Scalar z = entity.geometry().center()[dimWorld - 1];
-                values[pressureIdx] = toPa_(
-                    this->spatialParams().interp1(z, initialPressure_,
-                        initialZ_));
+                values[pressureIdx] = toPa_(this->spatialParams().interp1(z, initialPressure_, initialZ_));
             }
         }
         values.setState(bothPhases);

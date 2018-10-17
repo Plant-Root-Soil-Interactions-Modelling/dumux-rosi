@@ -1,11 +1,10 @@
 [Problem]
-Name = benchmark1d_3c
+Name = benchmark3d_3c
 
 [Grid]
-UpperRight = -2
-LowerLeft = 0
-Cells = 200
-# File = ./grids/b3.dgf # [m], initial data [cm] pressure head
+[Grid]
+UpperRight = 0.1 0.1 2
+Cells = 9 9 199 
 
 [TimeLoop]
 DtInitial =  1 # [s]

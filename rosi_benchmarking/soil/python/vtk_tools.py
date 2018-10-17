@@ -81,11 +81,11 @@ def read3D_vtp_data(name, cell = True):
         data = pd.GetPointData()
 
     nocd = data.GetNumberOfArrays()
-    print("Number of arrays", nocd)
-    for i in range(0, nocd):
-        print(data.GetArrayName(i))
-    sw = data.GetArray(10)  # saturation
-    pw = data.GetArray(9)  # pressure
+#     print("Number of arrays", nocd)
+#     for i in range(0, nocd):
+#         print(data.GetArrayName(i))
+    sw = data.GetArray(0)  # saturation
+    pw = data.GetArray(2)  # pressure
 
     noa = sw.GetNumberOfTuples()
     # print("number of data points", noa)
@@ -107,4 +107,32 @@ def read3D_vtp_data(name, cell = True):
         z_[i] = p[2]
 
     return sw_, pw_, z_
+
+
+#
+# returns the cell or vertex data (index 0 and 2 hard coded)) of parallel vtp files
+#
+def read3Dp_vtp_data(prename, postname, n, cell = False):
+    z_ = np.ones(0,)
+    sw_ = np.ones(0,)
+    pw_ = np.ones(0,)
+    for i in range(0, n):
+        n_ = prename + "{:04d}-".format(i) + postname + ".vtu"
+        print("opening: ", n_)
+        sw, pw, z = read3D_vtp_data(n_, cell)
+        z_ = np.hstack((z_, z))
+        sw_ = np.hstack((sw_, sw))
+        pw_ = np.hstack((pw_, pw))
+
+    return sw_, pw_, z_
+
+
+#
+# reads a dumux output style vtu
+#
+def read3D_vtp(name, np = 1):
+    if np == 1:
+        return read3d_vtp_data(name + ".vtu", False)
+    else:
+        return read3Dp_vtp_data("s{:04d}-p".format(np), name, np, False)
 

@@ -36,7 +36,6 @@ s_, p_, z3_ = read1D_vtp_data("benchmark1d_1c-00001.vtp", False)
 h3_ = vg.pa2head(p_)
 ax3.plot(h3_, z3_ * 100, "r+")
 
-np.savetxt("dumux1d_b1", np.vstack((z1_ / 100, h1_, z2_ / 100, h2_, z3_ / 100, h3_)), delimiter = ",")
+np.savetxt("dumux1d_b1", np.vstack((z1_, h1_, z2_, h2_, z3_, h3_)), delimiter = ",")
 
 plt.show()
-

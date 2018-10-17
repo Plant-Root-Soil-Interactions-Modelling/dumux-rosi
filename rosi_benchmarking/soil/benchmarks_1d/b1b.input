@@ -9,7 +9,7 @@ Cells = 199
 [TimeLoop]
 TEnd = 31536000 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
-MaxTimeStepSize = 86400 # a day [s] 
+MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -30,5 +30,5 @@ N =  3 1.6
 Ks = 1.1574e-04 5.7870e-06 # m/s 	
 
 [Soil.Layer]
-Z = 0 -0.5 -0.5 -2
-Number = 1 1 2 2 
+Z = -2 -0.5 -0.5 0
+Number = 2 2 1 1

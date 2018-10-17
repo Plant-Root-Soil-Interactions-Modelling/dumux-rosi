@@ -1,10 +1,9 @@
 [Problem]
-Name = benchmark1d_4b
+Name = benchmark3d_4b
 
 [Grid]
-UpperRight = -1
-LowerLeft = 0
-Cells = 100
+UpperRight = 0.1 0.1 1
+Cells = 9 9 99
 
 [TimeLoop]
 DtInitial =  1 # [s]
