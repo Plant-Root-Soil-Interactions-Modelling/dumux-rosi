@@ -2,10 +2,9 @@
 Name = benchmark1d_3b
 
 [Grid]
-UpperRight = -2
-LowerLeft = 0
-Cells = 200
-#File = ./grids/b3.dgf # [m], initial data [cm] pressure head
+UpperRight = 0
+LowerLeft = -2
+Cells = 199
 
 [TimeLoop]
 DtInitial =  1 # [s]
@@ -15,8 +14,6 @@ CheckTimes = 17280 43200
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off
-# Type = 1 
-# Value = 0
 
 [Soil.BC.Bot]
 Type = 5 # free drainage
@@ -33,6 +30,7 @@ N = 1.6
 Ks = 5.7870e-06 # [m/s]
 
 [Climate]
-Time = 0 1e10 # const value 
-Precipitation = -0.01157407407 -0.01157407407 # [kg/(s m²)] (100 cm/day)
+Time = 1e10 # const value 
+Precipitation = -0.01157407407 # [kg/(s m²)] (100 cm/day)
+
 

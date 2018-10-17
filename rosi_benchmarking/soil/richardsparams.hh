@@ -84,6 +84,7 @@ public:
         homogeneous_ = Qr.size()==1; // more than one set of VG parameters?
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
         for (int i=0; i<Qr.size(); i++) {
+
             materialParams_.push_back(MaterialLawParams());
             materialParams_.at(i).setSwr(Qr.at(i)/phi_); // Qr
             materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_); // Qs
@@ -91,6 +92,13 @@ public:
             materialParams_.at(i).setVgAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
             materialParams_.at(i).setVgn(n.at(i)); // N
             K_.push_back(Kc_.at(i)*mu/(rho*g_)); // Convert to intrinsic permeability
+
+            double eps = 1.e-4;
+            materialParams_.at(i).setPcLowSw(eps);
+            materialParams_.at(i).setPcHighSw(1. - eps);
+            materialParams_.at(i).setKrnLowSw(eps);
+            materialParams_.at(i).setKrwHighSw(1 - eps);
+
         }
 
         // check if there is a layer look up table

@@ -2,10 +2,9 @@
 Name = benchmark1d_3a
 
 [Grid]
-UpperRight = -2
-LowerLeft = 0
-Cells = 200 
-# File = ./grids/b3.dgf # [m], initial data [cm] pressure head
+UpperRight = 0
+LowerLeft = -2
+Cells = 199 
 
 [TimeLoop]
 DtInitial =  1 # [s]
@@ -31,5 +30,6 @@ N = 3
 Ks = 1.1574e-04 # [m/s] 
 
 [Climate]
-Time = 0 1e10 # const value 
-Precipitation = -0.01157407407 -0.01157407407 # [kg/(s m²)] (100 cm/day)
+Time = 1e10 # const value 
+Precipitation = -0.01157407407 # [kg/(s m²)] (100 cm/day)
+

@@ -2,9 +2,9 @@
 Name = benchmark1d_4b
 
 [Grid]
-UpperRight = -1
-LowerLeft = 0
-Cells = 100
+UpperRight = 0
+LowerLeft = -1
+Cells = 99
 
 [TimeLoop]
 DtInitial =  1 # [s]

@@ -24,14 +24,14 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
 # # run dumux
-# os.system("./richards1d benchmarks_1d/b4a.input")
-# os.system("./richards1d benchmarks_1d/b4b.input")
-# os.system("./richards1d benchmarks_1d/b4c.input")
-# os.system("./richards1d benchmarks_1d/b4d.input")
-# os.system("./richards1d benchmarks_1d/b4a.input -Grid.Cells 400 -Problem.Name benchmark1d_4a_hr")
-# os.system("./richards1d benchmarks_1d/b4b.input -Grid.Cells 400 -Problem.Name benchmark1d_4b_hr")
-# os.system("./richards1d benchmarks_1d/b4c.input -Grid.Cells 400 -Problem.Name benchmark1d_4c_hr")
-# os.system("./richards1d benchmarks_1d/b4d.input -Grid.Cells 400 -Problem.Name benchmark1d_4d_hr")
+os.system("./richards1d benchmarks_1d/b4a.input")
+os.system("./richards1d benchmarks_1d/b4b.input")
+os.system("./richards1d benchmarks_1d/b4c.input")
+os.system("./richards1d benchmarks_1d/b4d.input")
+os.system("./richards1d benchmarks_1d/b4a.input -Grid.Cells 400 -Problem.Name benchmark1d_4a_hr")
+os.system("./richards1d benchmarks_1d/b4b.input -Grid.Cells 400 -Problem.Name benchmark1d_4b_hr")
+os.system("./richards1d benchmarks_1d/b4c.input -Grid.Cells 400 -Problem.Name benchmark1d_4c_hr")
+os.system("./richards1d benchmarks_1d/b4d.input -Grid.Cells 400 -Problem.Name benchmark1d_4d_hr")
 
 # open results
 num = ['a', 'c', 'b', 'd', 'a_hr', 'c_hr', 'b_hr', 'd_hr']
@@ -70,11 +70,11 @@ for i in range(0, len(t)):
 
 # prepare plot
 axis = [ax1, ax2, ax3, ax4, ax1, ax2, ax3, ax4]
-lt = ["r:", "r:", "r:", "r:", "r-", "r-", "r-", "r-"]
+lt = ["r", "r", "r", "r", "r--", "r--", "r--", "r--"]
 for i in range(0, len(t)):
         axis[i].plot(t[i], y[i], lt[i])
 
-np.savetxt("dumux1d", np.vstack(ex), delimiter = ",")
+np.savetxt("dumux1d_b4", np.vstack(ex), delimiter = ",")
 
 plt.show()
 

@@ -2,10 +2,9 @@
 Name = benchmark1d_3c
 
 [Grid]
-UpperRight = -2
-LowerLeft = 0
-Cells = 200
-# File = ./grids/b3.dgf # [m], initial data [cm] pressure head
+UpperRight = 0
+LowerLeft = -2
+Cells = 199
 
 [TimeLoop]
 DtInitial =  1 # [s]
@@ -15,8 +14,6 @@ CheckTimes = 8640 17280
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off
-# Type = 1 
-# Value = 0
 
 [Soil.BC.Bot]
 Type = 5 # free drainage

@@ -16,14 +16,15 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
 # run dumux
-os.system("./richards1d benchmarks_1d/b2.input")
+# os.system("./richards3d benchmarks_3d/b2.input")
+# os.system("mpirun -n 8 ./richards3d benchmarks_3d/b2.input -Grid.Overlap 0")
 # os.system("./richards1d benchmarks_1d/b2.input -Grid.Cells 1000") // high res looks nice
 
 # result dumux jan1 (Figure 2a)
-s_, p_, z_ = read1D_vtp_data("benchmark1d_2-00001.vtp", False)
-h_ = vg.pa2head(p_)
-plt.plot(h_, z_ * 100, "r+")
+s_, h_, z_ = read3D_vtp_data("benchmark3d_2-00001.vtu", False)
+# h_ = vg.pa2head(p_)
+plt.plot(h_, z_, "r+")
 
-np.savetxt("dumux1d_b2", np.vstack((z_ / 100, h_)), delimiter = ",")
+# np.savetxt("dumux3d_b2", np.vstack((z_ / 100, h_)), delimiter = ",")
 
 plt.show()

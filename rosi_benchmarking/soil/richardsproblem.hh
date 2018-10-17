@@ -157,6 +157,7 @@ public:
             constInitial_ = false;
             try {
                 initialZ_ = getParam<std::vector<Scalar>>("Soil.IC.Z"); // table look up
+                gridInitial_ = false;
             } catch (std::exception& e) { // grid parameter look up
                 initialZ_ = std::vector<Scalar>(0); // not used
                 gridInitial_ = true;
@@ -220,7 +221,7 @@ public:
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
             }
-        } else { // bot bc
+        } else if (onLowerBoundary_(globalPos)) { // bot bc
             switch (bcBotType_) {
             case constantPressure:
                 bcTypes.setAllDirichlet();
@@ -234,31 +235,35 @@ public:
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type not implemented");
             }
+        } else {
+            bcTypes.setAllNeumann(); // no top not bottom is no flux
         }
+
         return bcTypes;
     }
 
     /*!
      * \copydoc FVProblem::dirichletAtPos
      */
-    PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const
-    {
+    PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const {
         PrimaryVariables values;
         if (onUpperBoundary_(globalPos)) { // top bc
             switch (bcTopType_) {
             case constantPressure:
-                values[Indices::pressureIdx] =toPa_(bcTopValue_);
+                values[Indices::pressureIdx] = toPa_(bcTopValue_);
                 break;
             default:
-                DUNE_THROW(Dune::InvalidStateException,"Top boundary type Dirichlet: unknown boundary type");
+                DUNE_THROW(Dune::InvalidStateException,
+                    "Top boundary type Dirichlet: unknown boundary type");
             }
-        } else { // bot bc
+        } else if (onLowerBoundary_(globalPos)) { // bot bc
             switch (bcBotType_) {
             case constantPressure:
                 values[Indices::pressureIdx] = toPa_(bcBotValue_);
                 break;
             default:
-                DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Dirichlet: unknown boundary type");
+                DUNE_THROW(Dune::InvalidStateException,
+                    "Bottom boundary type Dirichlet: unknown boundary type");
             }
         }
         values.setState(Indices::bothPhases);
@@ -271,40 +276,43 @@ public:
     NumEqVector neumann(const Element& element,
         const FVElementGeometry& fvGeometry,
         const ElementVolumeVariables& elemVolVars,
-        const SubControlVolumeFace& scvf) const
-    {
+        const SubControlVolumeFace& scvf) const {
         NumEqVector values;
         GlobalPosition pos = scvf.center();
 
         if (onUpperBoundary_(pos)) { // top bc
             switch (bcTopType_) {
             case constantFlux: {
-                values[conti0EqIdx] = -10*bcTopValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
+                values[conti0EqIdx] = -10 * bcTopValue_ / (24. * 60. * 60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(
+                    element);
                 Scalar mS = 0;
                 auto numScv = fvGeometry.numScv();
-                for (auto i = 0; i<numScv; i++) {
-                    mS += (elemVolVars[i].saturation()/numScv);
+                for (auto i = 0; i < numScv; i++) {
+                    mS += (elemVolVars[i].saturation() / numScv);
                 }
-                MaterialLawParams params = this->spatialParams().materialLawParams(element);
+                MaterialLawParams params =
+                    this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
-                Scalar p = MaterialLaw::pc(params, mS)+nonWettingReferencePressure();
-                Scalar h = -toHead_(p)/100.; // from Pa -> m pressure head
+                Scalar p = MaterialLaw::pc(params, mS)
+                + nonWettingReferencePressure();
+                Scalar h = -toHead_(p) / 100.; // from Pa -> m pressure head
 
                 GlobalPosition ePos = element.geometry().center();
-                Scalar dz = 2 * std::abs(ePos[dimWorld-1]- pos[dimWorld-1]); // 0.01; // m // fvGeometry.geometry().volume()?; TODO
+                Scalar dz = 2
+                    * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // 0.01; // m // fvGeometry.geometry().volume()?; TODO
                 Scalar prec = getPrec_(time_); // precipitation or evaporation TODO
 
-                if (prec<0) { // precipitation
-                    Scalar imax = rho_*Kc*((h-0.)/dz -1.); // maximal infiltration
-                    Scalar v = std::max(prec,imax);
+                if (prec < 0) { // precipitation
+                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal infiltration
+                    Scalar v = std::max(prec, imax);
                     values[conti0EqIdx] = v;
                 } else { // evaporation
-                    Scalar emax = rho_*krw*Kc*((h-(-100))/dz -1.); // maximal evaporation (-100 m = -10.000 cm) // TODO make a parameter
-                    Scalar v  = std::min(prec,emax);
+                    Scalar emax = rho_ * krw * Kc * ((h - (-100)) / dz - 1.); // maximal evaporation (-100 m = -10.000 cm) // TODO make a parameter
+                    Scalar v = std::min(prec, emax);
                     values[conti0EqIdx] = v;
                 }
                 // hack for benchmark 4 TODO some better concept for output
@@ -313,29 +321,35 @@ public:
                 break;
             }
             default:
-                DUNE_THROW(Dune::InvalidStateException,"Top boundary type Neumann: unknown error");
+                DUNE_THROW(Dune::InvalidStateException,
+                    "Top boundary type Neumann: unknown error");
             }
-        } else  { // bot bc
+        } else if (onLowerBoundary_(pos)) { // bot bc
             switch (bcBotType_) {
             case constantFlux: {
-                values[conti0EqIdx] = -10*bcBotValue_/(24.*60.*60.); // [kg/(m²*s)] = 1/10 [cm/s] *rho
+                values[conti0EqIdx] = -10 * bcBotValue_ / (24. * 60. * 60.); // [kg/(m²*s)] = 1/10 [cm/s] *rho
                 break;
             }
             case freeDrainage: { // TODO needs improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(
+                    element);
                 Scalar mS = 0; // mean saturation
                 auto numScv = fvGeometry.numScv();
-                for (auto i = 0; i<numScv; i++) {
-                    mS += (elemVolVars[i].saturation()/numScv);
+                for (auto i = 0; i < numScv; i++) {
+                    mS += (elemVolVars[i].saturation() / numScv);
                 }
-                MaterialLawParams params = this->spatialParams().materialLawParams(element);
+                MaterialLawParams params =
+                    this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
-                values[conti0EqIdx] = krw*Kc*rho_; // * 1 [m]
+                values[conti0EqIdx] = krw * Kc * rho_; // * 1 [m]
                 break;
             }
             default:
-                DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type Neumann: unknown error");
+                DUNE_THROW(Dune::InvalidStateException,
+                    "Bottom boundary type Neumann: unknown error");
             }
+        } else {
+            values[conti0EqIdx] = 0.;
         }
         return values;
     }
@@ -344,8 +358,7 @@ public:
      * \copydoc FVProblem::initial
      */
     template<class Entity>
-    PrimaryVariables initial(const Entity& entity) const
-    {
+    PrimaryVariables initial(const Entity& entity) const {
         PrimaryVariables values;
         if (constInitial_) { // constant initial data
             values[pressureIdx] = toPa_(initialPressure_[0]);
@@ -356,8 +369,10 @@ public:
                         materialLayerNumber));
                 values[pressureIdx] = toPa_(initialPressure_.at(i));
             } else { // obtain pressure by table look up and linear interpolation
-                Scalar z = entity.geometry().center()[dimWorld-1];
-                values[pressureIdx] = toPa_(this->spatialParams().interp1(z,initialPressure_, initialZ_));
+                Scalar z = entity.geometry().center()[dimWorld - 1];
+                values[pressureIdx] = toPa_(
+                    this->spatialParams().interp1(z, initialPressure_,
+                        initialZ_));
             }
         }
         values.setState(bothPhases);
@@ -367,28 +382,32 @@ public:
     /**
      * Sets the current simulation time (within the simulation loop) for atmospheric look up
      */
-    void setTime(Scalar t)
-    {
+    void setTime(Scalar t) {
         time_ = t;
     }
 
 private:
 
     //! cm pressure head -> Pascal
-    Scalar toPa_(Scalar ph) const
-    {
-        return nonWettingReferencePressure() +  ph/100.*rho_*g_;
+    Scalar toPa_(Scalar ph) const {
+        return nonWettingReferencePressure() + ph / 100. * rho_ * g_;
     }
 
     //! Pascal -> cm pressure head
-    Scalar toHead_(Scalar p) const
-    {
-        return (p-nonWettingReferencePressure()) * 100./rho_/g_;
+    Scalar toHead_(Scalar p) const {
+        return (p - nonWettingReferencePressure()) * 100. / rho_ / g_;
     }
 
     //! true if on the point lies on the upper boundary
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {
-        return globalPos[dimWorld-1] > this->fvGridGeometry().bBoxMax()[dimWorld-1] - eps_;
+        return globalPos[dimWorld - 1]
+            > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+    }
+
+    //! true if on the point lies on the upper boundary
+    bool onLowerBoundary_(const GlobalPosition &globalPos) const {
+        return globalPos[dimWorld - 1]
+            < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
     }
 
     //! returns dynamic precipitation from table from input time

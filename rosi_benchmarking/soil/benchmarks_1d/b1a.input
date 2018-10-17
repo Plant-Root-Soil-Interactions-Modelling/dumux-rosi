@@ -2,12 +2,12 @@
 Name = benchmark1d_1a
 
 [Grid]
-UpperRight = -2
-LowerLeft = 0
-Cells = 200
+UpperRight = 0
+LowerLeft = -2
+Cells = 199
 
 [TimeLoop]
-TEnd = 31536000 # 0 is steady state
+TEnd = 31536000 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 86400 # a day [s] 
 
