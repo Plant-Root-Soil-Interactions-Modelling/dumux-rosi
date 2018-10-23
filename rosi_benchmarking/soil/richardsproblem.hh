@@ -314,8 +314,11 @@ public:
                     values[conti0EqIdx] = v;
                 }
                 // hack for benchmark 4 TODO some better concept for output
-                myfile_ << time_ << ", "; //
-                myfile_ << values[conti0EqIdx] << "\n";
+                if (time_ > last_time_) { // once per time step
+                    myfile_ << time_ << ", "; //
+                    myfile_ << values[conti0EqIdx] << "\n";
+                    last_time_ = time_;
+                }
                 break;
             }
             default:
@@ -416,6 +419,7 @@ private:
     GridManager<Grid>* gridManager_;
 
     Scalar time_ = 0.;
+    mutable Scalar last_time_ = -1.;
 
     // IC
     bool constInitial_;
@@ -434,6 +438,7 @@ private:
     static constexpr Scalar eps_ = 1.e-7;
     static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
     static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
+
 
 };
 

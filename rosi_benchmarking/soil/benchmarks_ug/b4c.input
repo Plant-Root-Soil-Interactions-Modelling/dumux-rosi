@@ -1,0 +1,32 @@
+[Problem]
+Name = benchmark3d_4c
+
+[Grid]
+UpperRight = 0.1 0.1 1
+Cells = 9 9 99
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 864000 # 10 days [s] 
+MaxTimeStepSize = 60 # a minute [s] 
+
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+Pressure = -200 # cm pressure head 
+
+[Soil.VanGenuchten] 
+# Loam: 
+Qr = 0.08 
+Qs = 0.43 
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 5.7870e-06 # [m/s]
+
+[Climate]
+Time = 1e10 # const value 
+Precipitation = 0.00001157407 # [kg/(s m²)] (-0.1 cm/day)
