@@ -49,7 +49,7 @@ public:
     using Grid = Dune::FoamGrid<1, 3>;
 
     //! make the grid from the initial crootbox growth step
-    static std::shared_ptr<Grid> makeGrid(const ::RootSystem& rs, bool verbose = false)
+    static std::shared_ptr<Grid> makeGrid(const CRootBox::RootSystem& rs, bool verbose = false)
     {
         // the grid factory creates the grid
         if (verbose) std::cout << "RootSystemGridFactory: " << std::endl;

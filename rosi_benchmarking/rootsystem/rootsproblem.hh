@@ -32,13 +32,126 @@
 #include <dumux/porousmediumflow/problem.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
+#include <dune/localfunctions/lagrange/pqkfactory.hh>
+#include <dune/geometry/quadraturerules.hh>
+#include <dumux/common/reorderingdofmapper.hh>
 
-#include "rootsparams.hh"
+#include <math.h>
+
+#include "rootspatialparams.hh"
 
 namespace Dumux {
 
 template <class TypeTag>
 class RootsProblem;
+
+namespace Properties {
+
+NEW_TYPE_TAG(RootsTypeTag, INHERITS_FROM(OneP));
+
+NEW_TYPE_TAG(RootsCCTpfaTypeTag, INHERITS_FROM(CCTpfaModel, RootsTypeTag));
+
+NEW_TYPE_TAG(RootsBoxTypeTag, INHERITS_FROM(BoxModel, RootsTypeTag));
+
+// Set the grid type
+#if HAVE_DUNE_FOAMGRID
+SET_TYPE_PROP(RootsTypeTag, Grid, Dune::FoamGrid<1, 3>);
+#endif
+
+// reordering dof mapper to optimally sort the dofs (cc)
+SET_PROP(RootsCCTpfaTypeTag, FVGridGeometry){
+private:
+static constexpr bool enableCache = GET_PROP_VALUE(TypeTag, EnableFVGridGeometryCache);
+using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
+
+using ElementMapper = ReorderingDofMapper<GridView>;
+using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+public:
+using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
+};
+
+// reordering dof mapper to optimally sort the dofs (box)
+SET_PROP(RootsBoxTypeTag, FVGridGeometry){
+private:
+static constexpr bool enableCache = GET_PROP_VALUE(TypeTag, EnableFVGridGeometryCache);
+using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
+using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+using VertexMapper = ReorderingDofMapper<GridView>;
+using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+public:
+using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
+};
+
+// Set the problem property
+SET_TYPE_PROP(RootsTypeTag, Problem, RootsProblem<TypeTag>);
+
+// Set the spatial parameters
+SET_PROP(RootsTypeTag, SpatialParams){
+using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
+using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+using type = RootSpatialParams<FVGridGeometry, Scalar>;
+};
+
+// the fluid system
+SET_PROP(RootsTypeTag, FluidSystem){
+using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
+};
+}
+ // end namespace Properties
+
+
+
+//namespace Properties {
+//
+//// Create new type tags
+//namespace TTag {
+//struct Roots {
+//    using InheritsFrom = std::tuple<OneP>;
+//};
+//struct RootsBox {
+//    using InheritsFrom = std::tuple<Roots, BoxModel>;
+//};
+//struct RootsCCTpfa {
+//    using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
+//};
+//struct RootsCCMpfa {
+//    using InheritsFrom = std::tuple<Roots, CCMpfaModel>;
+//};
+//} // end namespace TTag
+//
+//// Specialize the fluid system type for this type tag
+//template<class TypeTag>
+//struct FluidSystem<TypeTag, TTag::Roots> {
+//    using Scalar = GetPropType<TypeTag, Scalar>;
+//    using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
+//};
+//
+//// Specialize the grid type for this type tag
+//template<class TypeTag>
+//struct Grid<TypeTag, TTag::Roots> {
+//    using type = Dune::FoamGrid<1,3>;
+//};
+//
+//// Specialize the problem type for this type tag
+//template<class TypeTag>
+//struct Problem<TypeTag, TTag::Roots> {
+//    using type = RootsProblem<TypeTag>;
+//};
+//
+//// Specialize the spatial params type for this type tag
+//template<class TypeTag>
+//struct SpatialParams<TypeTag, TTag::Roots> {
+//    using FVGridGeometry = GetPropType<TypeTag, FVGridGeometry>;
+//    using Scalar = GetPropType<TypeTag, Scalar>;
+//    using type = RootSpatialParams<FVGridGeometry, Scalar>;
+//};
+//
+//}
+// // end namespace Properties
+
 
 /*!
  * \ingroup RootsProblem
@@ -78,14 +191,17 @@ public:
 
 	RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) : ParentType(fvGridGeometry) {
 
-		scenario_ = getParam<int>("Parameter.Scenario");
-		soilP_ = toPa_(getParam<Scalar>("Parameter.SoilP"));
-		if (scenario_==1) { // dirichlet top and at tips
-			p0_ = toPa_(getParam<Scalar>("Parameter.P0"));
-			pL_ = toPa_(getParam<Scalar>("Parameter.PL"));
+        soilP_ = toPa_(getParam<std::vector<Scalar>>("RootSystem.Soil.P"));
+		soilTable_ = soilP_.size()>1;
+		if (soilTable_) {
+            soilZ_ = getParam<std::vector<Scalar>>("RootSystem.Soil.Z");
 		}
-		if (scenario_==2) { // dirichlet top, neumann tips
-			p0_ = toPa_(getParam<Scalar>("Parameter.P0"));
+
+        p0_ = toPa_(getParam<std::vector<Scalar>>("RootSystem.Collar.P0"));
+		collarTable_ = p0_.size()>2;
+		collarSine_ = p0_.size() == 2;
+		if (collarTable_) {
+            pT_ = getParam<std::vector<Scalar>>("RootSystem.Collar.PT");
 		}
 
 	}
@@ -110,11 +226,8 @@ public:
 	    if (onUpperBoundary_(pos)) { // root collar
 	        bcTypes.setAllDirichlet();
 	    } else { // for all other (i.e. root tips)
-	        if (scenario_==1) {
-	            bcTypes.setAllDirichlet();
-	        } else {
-	            bcTypes.setAllNeumann();
-	        }
+
+	    	bcTypes.setAllNeumann();
 	    }
 	    return bcTypes;
 	}
@@ -129,12 +242,7 @@ public:
 	 */
 	PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const
 	{
-	    Scalar p = 0.;
-	    if (onUpperBoundary_(pos)) { // root collar
-	        p = p0_;
-	    } else { // for all other (i.e. root tips)
-	        p = pL_;
-	    }
+	    Scalar p = getCollarP_(0.); // TODO time is an issue
 	    return PrimaryVariables(p);
 	}
 
@@ -150,13 +258,7 @@ public:
                         const ElementVolumeVariables& elemVolVars,
                         const SubControlVolumeFace& scvf) const
 	{
-	    const RootsParams<TypeTag>& params = this->spatialParams();
-		Scalar r = params.radius(element); // root radius (m)
-	 	Scalar kz = params.axialConductivity(element); // (m^5 s / kg) == ( m^4 / (s Pa) )
 	    ResidualVector values;
-	    values[conti0EqIdx] = rho_*g_*kz; // m^3 / s
-	    values[conti0EqIdx] /= (r*r*M_PI);
-	    values[conti0EqIdx] *= rho_;
 	    values[conti0EqIdx] = 0.;
 	    return values[conti0EqIdx];
 	}
@@ -173,12 +275,13 @@ public:
                        const SubControlVolume &scv) const
 	{
 		ResidualVector values;
-		const RootsParams<TypeTag>& params = this->spatialParams();
+		auto& params = this->spatialParams();
 		Scalar l = element.geometry().volume(); // length of element (m)
 		Scalar r = params.radius(element); // root radius (m)
 		Scalar kr = params.radialConductivity(element); //  radial conductivity (m^2 s / kg)
 		Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
-		Scalar phs = soilP_; // kg/m/s^2
+		Scalar z = 0.; // TODO how to I get the (mid) z coordinate from the element?
+		Scalar phs = getSoilP_(z); // kg/m/s^2
 		values[conti0EqIdx] = kr * 2*r*M_PI*l * (phs - phx); // m^3/s
 		values[conti0EqIdx] /= (r*r*M_PI)*l; // 1/s
 		values[conti0EqIdx] *= rho_; // (kg/s/m^3)
@@ -201,8 +304,15 @@ public:
 	 * \brief Evaluate the initial value for a control volume.
 	 */
 	PrimaryVariables initialAtPos(const GlobalPosition& globalPos) const {
-		return PrimaryVariables(soilP_);
+		return PrimaryVariables(getSoilP_(globalPos[2]));
 	}
+
+    /**
+     * Sets the current simulation time (within the simulation loop) for atmospheric look up
+     */
+    void setTime(Scalar t) {
+        time_ = t;
+    }
 
 private:
 
@@ -211,21 +321,73 @@ private:
 		return pRef_ +  ph/100.*rho_*g_;
 	}
 
+	std::vector<Scalar> toPa_(const std::vector<Scalar>& ph) const {
+		std::vector<Scalar> np = ph;
+		for (auto& p : np) {
+			p = toPa_(p);
+		}
+		return np;
+	}
+
 	// on root collar
 	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
 		return globalPos[dimWorld-1] > this->fvGridGeometry().bBoxMax()[dimWorld-1] - eps_;
 	}
 
+	// table look up
+	size_t map_(double x, const std::vector<double>& x_) const {
+		unsigned int jr,jm,jl;
+		jl = 0;
+		jr = x_.size();
+		while (jr-jl > 1) {
+			jm=(jr+jl) >> 1; // thats a divided by two
+			if (x >= x_[jm])
+				jl=jm;
+			else
+				jr=jm;
+		}
+		return jl; // left index
+	}
+
+	// soil table look up
+	Scalar getSoilP_(const Scalar z) const {
+		if (soilTable_) {
+			size_t i = map_(z, soilZ_);
+			return soilP_.at(i);
+		} else {
+			return soilP_[0];
+		}
+	}
+
+	Scalar getCollarP_(const Scalar t) const {
+		if (collarTable_) { // table
+			size_t i = map_(t, pT_);
+			return p0_.at(i);
+		} else  if (collarSine_) { // daily sine
+			auto d = t/24/3600; // s -> days
+			d = d - floor(d);
+			d *= 3.1415/2.; // day -> pi/2
+			return p0_[0] + cos(d)*(p0_[1]-p0_[0]);
+		} else { // const
+			return p0_[0];
+		}
+	}
     static constexpr Scalar g_ = 9.81; // cm / s^2
     static constexpr Scalar rho_ = 1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
 
 	static constexpr Scalar eps_ = 1e-8;
 
-	int scenario_;
-	Scalar soilP_;
-	Scalar p0_;
-	Scalar pL_;
+	std::vector<Scalar> soilP_;
+	std::vector<Scalar> soilZ_ = std::vector<Scalar> (0);
+	bool soilTable_;
+
+	std::vector<Scalar> p0_;
+	std::vector<Scalar> pT_= std::vector<Scalar> (0);;
+	bool collarTable_;
+	bool collarSine_;
+
+    Scalar time_ = 0.;
 
 };
 

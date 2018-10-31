@@ -1,3 +1,6 @@
+[Problem]
+Name = rootsystem # name passed to the output routines
+
 [TimeLoop]
 DtInitial = 1 # [s]
 TEnd = 1 # [s]
@@ -15,6 +18,3 @@ Radius = 0.01
 Kr = 1.e-15
 Kz = 1.e-15
 
-[Problem]
-Name = rootsystem # name passed to the output routines
-EnableGravity = 1

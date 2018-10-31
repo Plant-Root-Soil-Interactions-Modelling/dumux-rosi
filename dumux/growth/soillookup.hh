@@ -36,7 +36,7 @@ namespace GrowthModule {
  * \brief A croot box soillookup implementation for dumux using vertex data
  */
 template<class Grid>
-class SoilLookUpBBoxTree : public ::SoilLookUp
+class SoilLookUpBBoxTree : public CRootBox::SoilLookUp
 {
     using FeCache = Dune::PQkLocalFiniteElementCache<typename Grid::ctype, double, 3, 1>;
     using ShapeValue = typename Dune::FieldVector<double, 1>;
@@ -54,7 +54,7 @@ public:
     {}
 
     //! Returns a scalar property of the soil scaled from 0..1
-    double getValue(const ::Vector3d& pos, const ::Root* root = nullptr) const final
+    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final
     {
         const auto globalPos = GrowthModule::CRootBoxInterface::convert(pos);
         const auto entities = intersectingEntities(globalPos, bBoxTree_);

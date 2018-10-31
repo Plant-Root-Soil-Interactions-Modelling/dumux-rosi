@@ -19,20 +19,26 @@
 /*!
  * \file
  *
- * \brief test for the one-phase CC model
+ * \brief Apply one-phase CC model to a root system given per DGF, or created by RootBox
  */
 #include <config.h>
 
 #include <ctime>
 #include <iostream>
 
+// Dune
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/timer.hh>
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
-//
-#include "rootsproblem.hh"
+
+// CRootBox
+#include <RootSystem.h>
+
+// Dumux
+#include <dumux/linear/amgbackend.hh>
+#include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
@@ -40,49 +46,26 @@
 #include <dumux/common/dumuxmessage.hh>
 #include <dumux/common/defaultusagemessage.hh>
 
-#include <dumux/linear/amgbackend.hh>
-#include <dumux/nonlinear/newtonsolver.hh>
+#include <dumux/io/vtkoutputmodule.hh>
+#include <dumux/io/grid/gridmanager.hh>
 
 #include <dumux/assembly/fvassembler.hh>
-#include <dumux/assembly/diffmethod.hh>
 
-#include <dumux/discretization/methods.hh>
+#include <dumux/growth/rootsystemgridfactory.hh>
+#include <dumux/io/grid/gridmanager.hh>
+#include <dune/foamgrid/foamgrid.hh>
 
-#include <dumux/io/vtkoutputmodule.hh>
-
-// Set properties
-namespace Dumux {
-namespace Properties {
-
-NEW_TYPE_TAG(RootsTypeTag, INHERITS_FROM(OneP));
-NEW_TYPE_TAG(RootsCCTpfaTypeTag, INHERITS_FROM(CCTpfaModel, RootsTypeTag));
-NEW_TYPE_TAG(RootsBoxTypeTag, INHERITS_FROM(BoxModel, RootsTypeTag));
-
-// Set the grid type
-SET_TYPE_PROP(RootsTypeTag, Grid, Dune::FoamGrid<1, 3>);
-
-// Set the problem property
-SET_TYPE_PROP(RootsTypeTag, Problem, RootsProblem<TypeTag>);
-
-// Set the spatial parameters
-SET_TYPE_PROP(RootsTypeTag, SpatialParams, RootsParams<TypeTag>);
-
-// the fluid system
-SET_PROP(RootsTypeTag, FluidSystem)
-{
-	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-	using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
-};
-} // end namespace Properties
-} // end namespace Dumux
+// Problem
+#include "rootsproblem.hh"
 
 
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
+    using namespace GrowthModule;
 
     // define the type tag for this problem
-    using TypeTag = TTAG(RootsBoxTypeTag);
+    using TypeTag = TTAG(RootsCCTpfaTypeTag);
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -94,26 +77,53 @@ int main(int argc, char** argv) try
     // parse command line arguments and input file
     Parameters::init(argc, argv);
 
-    // try to create a grid (from the given grid file or the input file)
-    using GridCreator = typename GET_PROP_TYPE(TypeTag, GridCreator);
-    GridCreator::makeGrid();
-    GridCreator::loadBalance();
+    // create a croot box rootsystem or read dgf
+    using Grid = Dune::FoamGrid<1,3>;
+    std::shared_ptr<Grid> grid;
+    auto fileName = getParam<std::string>("RootSystem.Grid.File");
+
+    std::cout << "Try to simulate a new Crootbox root system" << "\n" << std::flush;
+    auto rootSystem = std::make_shared<CRootBox::RootSystem>();
+    rootSystem->openFile(fileName);
+    rootSystem->initialize();
+    rootSystem->simulate(getParam<double>("RootSystem.Grid.DtInitial"));
+    rootSystem->write("rb_rootsystem.vtp");
+    grid = RootSystemGridFactory::makeGrid(*rootSystem);
+    std::cout << "created the thing \n" << "\n" << std::flush;
+
+    // std::string dgf = ".dgf";
+    //    if (std::equal(dgf.rbegin(), dgf.rend(), fileName.rbegin())) { // dgf
+    //        std::cout << "try to open dgf" << "\n" << std::flush;
+    //        GridManager<Grid> gridManager;
+    //        gridManager.init("RootSystem");  // pass parameter group (see input file)
+    //        Grid& grid_ = gridManager.grid();
+    //        Grid* pgrid = &grid_;
+    //        grid.reset(pgrid);
+    //        std::cout << "opened dgf\n" << "\n" << std::flush;
+    //    } else { // create new
+
 
     ////////////////////////////////////////////////////////////
     // run instationary non-linear problem on this grid
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
-    const auto& leafGridView = GridCreator::grid().leafGridView();
+    const auto& leafGridView = grid->leafGridView();
+
+    std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
     using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
     fvGridGeometry->update();
 
+    std::cout << "i have the geometry \n" << "\n" << std::flush;
+
     // the problem (initial and boundary conditions)
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
     auto problem = std::make_shared<Problem>(fvGridGeometry);
+
+    std::cout << "and i have a problem \n" << "\n" << std::flush;
 
     // the solution vector
     using SolutionVector = typename GET_PROP_TYPE(TypeTag, SolutionVector);
@@ -121,36 +131,57 @@ int main(int argc, char** argv) try
     problem->applyInitialSolution(x);
     auto xOld = x;
 
+    std::cout << "no solution yet \n" << "\n" << std::flush;
+
     // the grid variables
     using GridVariables = typename GET_PROP_TYPE(TypeTag, GridVariables);
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x, xOld);
 
+    std::cout << "... but variables \n" << "\n" << std::flush;
+
     // get some time loop parameters
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-    const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
-    auto dt = getParam<Scalar>("TimeLoop.DtInitial");
+    std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
+    if (tEnd > 0) { // dynamic problem
+        const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
+        auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
+        timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
+        timeLoop->setMaxTimeStepSize(maxDt);
+        try { // CheckPoints defined
+            std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
+            // insert check points
+            for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
+                timeLoop->setCheckPoint(p);
+            }
+        } catch (std::exception& e) {
+            std::cout << "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+        }
+    } else { // static
+    }
 
-    // check if we are about to restart a previously interrupted simulation
-    Scalar restartTime = 0;
-    if (Parameters::getTree().hasKey("Restart") || Parameters::getTree().hasKey("TimeLoop.Restart"))
-        restartTime = getParam<Scalar>("TimeLoop.Restart");
+    std::cout << "time might be an issue \n" << "\n" << std::flush;
 
     // intialize the vtk output module
-    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
-    VtkOutputModule<TypeTag> vtkWriter(*problem, *fvGridGeometry, *gridVariables, x, problem->name());
-    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
 
+    VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
+    using VelocityOutput = typename GET_PROP_TYPE(TypeTag, VelocityOutput);
+    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
+    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
 
-    // instantiate time loop
-    auto timeLoop = std::make_shared<TimeLoop<Scalar>>(restartTime, dt, tEnd);
-    timeLoop->setMaxTimeStepSize(maxDt);
+    std::cout << "vtk writer module initialized" << "\n" << std::flush;
 
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
-    auto assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop);
+    std::shared_ptr<Assembler> assembler;
+    if (tEnd > 0) {
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+    } else {
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
+    }
 
     // the linear solver
     using LinearSolver = AMGBackend<TypeTag>;
@@ -160,34 +191,41 @@ int main(int argc, char** argv) try
     using NewtonSolver = Dumux::NewtonSolver<Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
-    // time loop
-    timeLoop->start(); do
-    {
+    std::cout << "i plan to actually start \n" << "\n" << std::flush;
+
+    if (tEnd > 0) { // dynamic
+        std::cout << "a time dependent model" << "\n" << std::flush;
+        timeLoop->start();
+        do {
+            // set previous solution for storage evaluations
+            assembler->setPreviousSolution(xOld);
+            // solve the non-linear system with time step control
+            nonLinearSolver.solve(x, *timeLoop);
+            // make the new solution the old solution
+            xOld = x;
+            gridVariables->advanceTimeStep();
+            // advance to the time loop to the next step
+            timeLoop->advanceTimeStep();
+            // write vtk output (only at check points)
+            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+                vtkWriter.write(timeLoop->time());
+            }
+            // report statistics of this time step
+            timeLoop->reportTimeStep();
+            // set new dt as suggested by the newton solver
+            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
+            // pass current time to the problem
+            problem->setTime(timeLoop->time());
+        } while (!timeLoop->finished());
+        timeLoop->finalize(leafGridView.comm());
+    } else { // static
+        std::cout << "a static model" << "\n" << std::flush;
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
-
-        // linearize & solve
-        nonLinearSolver.solve(x, *timeLoop);
-
-        // make the new solution the old solution
-        xOld = x;
-        gridVariables->advanceTimeStep();
-
-        // advance to the time loop to the next step
-        timeLoop->advanceTimeStep();
-
-        // write vtk output
-        vtkWriter.write(timeLoop->time());
-
-        // report statistics of this time step
-        timeLoop->reportTimeStep();
-
-        // set new dt as suggested by the newton solver
-        timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
-
-    } while (!timeLoop->finished());
-
-    timeLoop->finalize(leafGridView.comm());
+        // solve the non-linear system
+        nonLinearSolver.solve(x);
+        // vtkWriter.write(1);
+    }
 
     ////////////////////////////////////////////////////////////
     // finalize, print dumux message to say goodbye
@@ -210,10 +248,9 @@ catch (Dumux::ParameterException &e)
 catch (Dune::DGFException & e)
 {
     std::cerr << "DGF exception thrown (" << e <<
-                 "). Most likely, the DGF file name is wrong "
-                 "or the DGF file is corrupted, "
-                 "e.g. missing hash at end of file or wrong number (dimensions) of entries."
-                 << " ---> Abort!" << std::endl;
+        "). Most likely, the DGF file name is wrong "
+        "or the DGF file is corrupted, "
+        "e.g. missing hash at end of file or wrong number (dimensions) of entries." << " ---> Abort!" << std::endl;
     return 2;
 }
 catch (Dune::Exception &e)
@@ -221,9 +258,9 @@ catch (Dune::Exception &e)
     std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
     return 3;
 }
-catch (...)
+catch (std::exception &e)
 {
-    std::cerr << "Unknown exception thrown! ---> Abort!" << std::endl;
+    std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
 

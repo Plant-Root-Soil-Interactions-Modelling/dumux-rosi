@@ -31,14 +31,11 @@ namespace GrowthModule {
 template <class Scalar>
 struct RootParams
 {
-    Scalar radius; //! segment radius
-    Scalar axialPerm; //! permeability in axial direction
-    Scalar radialPerm; //! permeability in radial direction
+    Scalar radius; //! root base radius
     int order; //! the order if the root
     int rootId; //! which branch this segment is belonging to
     int plantId; //! which plant this segment is belonging to
     bool isInitialized = false; //! if at least some of the parameters have been set
-    bool isUpdated = false; //! if all parameters are set
 };
 
 //! Indices to access the parameters in the dgf file

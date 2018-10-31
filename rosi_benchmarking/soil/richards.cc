@@ -114,7 +114,6 @@ int main(int argc, char** argv) try
     // get some time loop parameters
     using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
     if (tEnd > 0) { // dynamic problem
         const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");

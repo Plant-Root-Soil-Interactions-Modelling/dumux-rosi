@@ -54,6 +54,7 @@ class CRootBoxGrowthAlgorithm : public GrowthAlgorithm
         PrimaryVariables priVars;
         unsigned int rootId;
         unsigned int rootOrder;
+        double age;
         double previousLength;
     };
 
@@ -65,7 +66,7 @@ public:
     //! contruct the rootbox interface growth algorithm with a root system
     CRootBoxGrowthAlgorithm(std::shared_ptr<Grid> grid,
                             std::shared_ptr<FVGridGeometry> fvGridGeometry,
-                            std::shared_ptr<::RootSystem> rs,
+                            std::shared_ptr<CRootBox::RootSystem> rs,
                             Problem& problem,
                             SolutionVector& sol)
     : grid_(grid)
@@ -112,7 +113,7 @@ public:
         //! change their position in dune-foamgrid too
         if (!updatedNodes.empty())
         {
-            for (std::size_t nIdx = 0; nIdx < updatedNodeIndices.size(); ++nIdx)
+            for (unsigned int nIdx = 0; nIdx < updatedNodeIndices.size(); ++nIdx)
                 grid_->setPosition(indexToVertex_[getDuneIndex_(updatedNodeIndices[nIdx])],
                                    CRB::convert(updatedNodes[nIdx]));
             // log how many have been moved
@@ -125,13 +126,14 @@ public:
         const auto newSegments = rootSystem_->getNewSegments();
         // for each segment we have a point to the root they belong to
         const auto newSegmentRoots = rootSystem_->getNewSegmentsOrigin();
+        const auto newSegmentAges = rootSystem_->getNewNETimes();
 
         //! add them to the dune-foamgrid too
         if (!newSegments.empty())
         {
             // register new vertices
             std::vector<unsigned int> newNodeIndicesDune(newNodes.size());
-            for (std::size_t nIdx = 0; nIdx < newNodes.size(); ++nIdx)
+            for (unsigned int nIdx = 0; nIdx < newNodes.size(); ++nIdx)
             {
                 newNodeIndicesDune[nIdx] = grid_->insertVertex(CRB::convert(newNodes[nIdx]));
 
@@ -143,10 +145,12 @@ public:
             // register the new segments and their parameters and their parent root params if non-existent
             problem_.spatialParams().rootParamsResize(rootSystem_->getNumberOfRoots(/*allRoots=*/true));
             newSegmentRootIds_.resize(newSegments.size());
-            for (std::size_t sIdx = 0; sIdx < newSegments.size(); ++sIdx)
+            newSegmentAges_.resize(newSegments.size());
+            for (unsigned int sIdx = 0; sIdx < newSegments.size(); ++sIdx)
             {
                 const auto* root = newSegmentRoots[sIdx];
                 newSegmentRootIds_[sIdx] = root->id;
+                newSegmentAges_[sIdx] = std::max(0.0, rootSystem_->getSimTime()-newSegmentAges[sIdx]);
                 const auto& s = newSegments[sIdx];
                 grid_->insertElement(Dune::GeometryTypes::line, {getDuneIndex_(s.x), getDuneIndex_(s.y)});
 
@@ -193,7 +197,7 @@ public:
             problem_.clearIsNewMarkers();
 
             // restore the old grid data and initialize new data
-            reconstructData_();
+            reconstructData_(dt);
 
             // cleanup grid after growth
             grid_->postGrow();
@@ -230,6 +234,7 @@ private:
             const auto& rp = problem_.spatialParams().rootParams(element);
             auto& data = data_[element];
             data.priVars = sol_[eIdx];
+            data.age = problem_.spatialParams().age(eIdx);
             data.rootId = rp.rootId;
             data.rootOrder = rp.order;
             data.previousLength = problem_.spatialParams().previousLength(eIdx);
@@ -240,7 +245,7 @@ private:
      * Reconstruct missing primary variables (where elements are created/deleted)
      * \param problem The current problem
      */
-    void reconstructData_()
+    void reconstructData_(double dt)
     {
         data_.resize();
         const auto& gv = grid_->leafGridView();
@@ -260,6 +265,8 @@ private:
                 problem_.spatialParams().setRootId(eIdx, data.rootId);
                 // set the previous length of the old element
                 problem_.spatialParams().setPreviousLength(eIdx, data.previousLength);
+                // set the age
+                problem_.spatialParams().setAge(eIdx, data.age + dt*CRB::sToDays);
             }
 
             // initialize new elements with the pressure of the closest old element
@@ -269,10 +276,13 @@ private:
                 const auto newEIdx = fvGridGeometry_->elementMapper().index(element);
                 const auto insertionIdx = grid_->growthInsertionIndex(element);
                 const auto newRootId = newSegmentRootIds_[insertionIdx];
+                const auto newRootAge = newSegmentAges_[insertionIdx];
                 // set the root id of the new element
                 problem_.spatialParams().setRootId(newEIdx, newRootId);
                 // set the previous length to zero
                 problem_.spatialParams().setPreviousLength(newEIdx, 0.0);
+                // set the age
+                problem_.spatialParams().setAge(newEIdx, newRootAge);
 
                 // initialize the oldElement to be found with the new element and walk up the
                 // root hierarchy until an old element is found
@@ -338,14 +348,16 @@ private:
 
         // clear the root id container for the newt growth step
         newSegmentRootIds_.clear();
+        newSegmentAges_.clear();
     }
 
     std::shared_ptr<Grid> grid_; //! the dune-foamgrid
     std::shared_ptr<FVGridGeometry> fvGridGeometry_; //! fv grid geometry
-    std::shared_ptr<::RootSystem> rootSystem_; //! the croot box root system
+    std::shared_ptr<CRootBox::RootSystem> rootSystem_; //! the croot box root system
 
     // list of root ids for new roots
     std::vector<unsigned int> newSegmentRootIds_;
+    std::vector<double> newSegmentAges_;
 
     // index mapping stuff
     EntityMap<Grid, Grid::dimension> indexToVertex_; //! a map from dune vertex indices to vertex entitites

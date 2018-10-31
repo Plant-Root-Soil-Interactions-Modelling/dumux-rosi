@@ -4,18 +4,15 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CROOTBOX_INCLUDE_DI
 endif()
 
 # create a link to the grid file and the input file in the build directory
-dune_symlink_to_source_files(FILES "grids" "input")
+dune_symlink_to_source_files(FILES "grids" "input" "modelparameter")
 
 # add the test executable (if CRootBox was found)
-dune_add_test(NAME rb_rootsystem
-              SOURCES rb_rootsystem.cc
+dune_add_test(NAME rootsystem
+              SOURCES rootsystem.cc
               CMAKE_GUARD HAVE_CROOTBOX)
 
-dune_add_test(NAME rootsystem
-              SOURCES rootsystem.cc)
-
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 
 

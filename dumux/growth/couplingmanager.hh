@@ -18,34 +18,47 @@
  *****************************************************************************/
 /*!
  * \file
- * \brief Some helper classes to interface crootbox
+ * \ingroup EmbeddedCoupling
+ * \ingroup CCModel
+ * \brief Coupling manager for soil-root interaction
  */
-#ifndef DUMUX_CROOTBOX_INTERFACE_HH
-#define DUMUX_CROOTBOX_INTERFACE_HH
 
-#include <mymath.h>
-#include <dune/common/fvector.hh>
+#ifndef DUMUX_GROWTH_SOILROOT_COUPLINGMANAGER_HH
+#define DUMUX_GROWTH_SOILROOT_COUPLINGMANAGER_HH
+
+#include <dumux/common/properties.hh>
+#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
 namespace Dumux {
 
-namespace GrowthModule {
-
-class CRootBoxInterface
+/*!
+ * \ingroup EmbeddedCoupling
+ * \brief Coupled root and soil domain
+ */
+template<class MDTraits>
+class SoilRootCouplingManager
+: public EmbeddedCouplingManager1d3d<MDTraits, EmbeddedCouplingMode::average>
 {
-    using GlobalPosition = Dune::FieldVector<double, 3>;
+    using ParentType = EmbeddedCouplingManager1d3d<MDTraits, EmbeddedCouplingMode::average>;
+    using Scalar = typename MDTraits::Scalar;
+
+    template<std::size_t i> using SubDomainTypeTag = typename MDTraits::template SubDomainTypeTag<i>;
+    template<std::size_t i> using Problem = typename GET_PROP_TYPE(SubDomainTypeTag<i>, Problem);
+
+    static constexpr auto bulkIdx = typename MDTraits::template DomainIdx<0>();
+
 public:
-    //! scaling: default assumes cm units in CRootBox and m units in Dumux
-    static GlobalPosition convert(const CRootBox::Vector3d& v, double scale = 0.01)
-    { return GlobalPosition({v.x*scale, v.y*scale, v.z*scale}); }
+    using ParentType::ParentType;
 
-    static std::vector<unsigned int> convert(const CRootBox::Vector2i& v)
-    { return {static_cast<unsigned int>(v.x), static_cast<unsigned int>(v.y)}; }
-
-    //! conversion factor from seconds to days
-    static constexpr double sToDays = 1.0/86400.0;
+    Scalar relPermSoil(Scalar p) const
+    {
+        using MaterialLaw = typename Problem<bulkIdx>::SpatialParams::MaterialLaw;
+        const Scalar pc = std::max(0.0, this->problem(bulkIdx).nonWettingReferencePressure() - p);
+        const auto& materialParams = this->problem(bulkIdx).spatialParams().materialLawParams();
+        const Scalar sw = MaterialLaw::sw(materialParams, pc);
+        return MaterialLaw::krw(materialParams, sw);
+    }
 };
-
-} // end namespace GridGrowth
 
 } // end namespace Dumux
 

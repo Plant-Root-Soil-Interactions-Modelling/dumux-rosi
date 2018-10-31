@@ -1,11 +1,10 @@
 [Problem]
-Name = roots # name passed to the output routines
+Name = singleroot_S1 # name passed to the output routines
 
 [TimeLoop]
-DtInitial = 1 # [s]
-TEnd = 1 # [s]
+TEnd = 0 # [s]
 
-[RootSystem]
+[RootSystem.Grid]
 File = grids/singleroot.dgf
 
 [RootSystem.Conductivity]
