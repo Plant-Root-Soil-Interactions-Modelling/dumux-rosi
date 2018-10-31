@@ -365,8 +365,7 @@ public:
             values[pressureIdx] = toPa_(initialPressure_[0]);
         } else {
             if (gridInitial_) { // obtain layer number from grid data
-                size_t i = size_t(
-                    gridManager_->getGridData()->parameters(entity).at(materialLayerNumber));
+                size_t i = size_t(gridManager_->getGridData()->parameters(entity).at(materialLayerNumber));
                 values[pressureIdx] = toPa_(initialPressure_.at(i));
             } else { // obtain pressure by table look up and linear interpolation
                 Scalar z = entity.geometry().center()[dimWorld - 1];

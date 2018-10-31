@@ -195,7 +195,6 @@ public:
         return v;
     }
 
-
 private:
 
     //! returns the index of the soil layer
