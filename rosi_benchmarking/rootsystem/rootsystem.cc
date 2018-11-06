@@ -78,29 +78,30 @@ int main(int argc, char** argv) try
     Parameters::init(argc, argv);
 
     // create a croot box rootsystem or read dgf
-    using Grid = Dune::FoamGrid<1,3>;
-    std::shared_ptr<Grid> grid;
+    using Grid = typename GET_PROP_TYPE(TypeTag, Grid);
+    // Dune::FoamGrid<1,3>;
+    // std::shared_ptr<Grid> grid;
     auto fileName = getParam<std::string>("RootSystem.Grid.File");
 
-    std::cout << "Try to simulate a new Crootbox root system" << "\n" << std::flush;
-    auto rootSystem = std::make_shared<CRootBox::RootSystem>();
-    rootSystem->openFile(fileName);
-    rootSystem->initialize();
-    rootSystem->simulate(getParam<double>("RootSystem.Grid.DtInitial"));
-    rootSystem->write("rb_rootsystem.vtp");
-    grid = RootSystemGridFactory::makeGrid(*rootSystem);
-    std::cout << "created the thing \n" << "\n" << std::flush;
+//    std::cout << "Try to simulate a new Crootbox root system" << "\n" << std::flush;
+//    auto rootSystem = std::make_shared<CRootBox::RootSystem>();
+//    rootSystem->openFile(fileName);
+//    rootSystem->initialize();
+//    rootSystem->simulate(getParam<double>("RootSystem.Grid.DtInitial"));
+//    rootSystem->write("rb_rootsystem.vtp");
+//    grid = RootSystemGridFactory::makeGrid(*rootSystem);
+//    std::cout << "created the thing \n" << "\n" << std::flush;
 
-    // std::string dgf = ".dgf";
-    //    if (std::equal(dgf.rbegin(), dgf.rend(), fileName.rbegin())) { // dgf
-    //        std::cout << "try to open dgf" << "\n" << std::flush;
-    //        GridManager<Grid> gridManager;
-    //        gridManager.init("RootSystem");  // pass parameter group (see input file)
-    //        Grid& grid_ = gridManager.grid();
-    //        Grid* pgrid = &grid_;
-    //        grid.reset(pgrid);
-    //        std::cout << "opened dgf\n" << "\n" << std::flush;
-    //    } else { // create new
+    std::string dgf = ".dgf";
+    //if (std::equal(dgf.rbegin(), dgf.rend(), fileName.rbegin())) { // dgf
+        std::cout << "try to open dgf" << "\n" << std::flush;
+        GridManager<Grid> gridManager;
+        gridManager.init("RootSystem");  // pass parameter group (see input file)
+    auto& grid = gridManager.grid();
+    //Grid* pgrid = &grid_;
+    //grid.reset(pgrid);
+        std::cout << "opened dgf\n" << "\n" << std::flush;
+    //}
 
 
     ////////////////////////////////////////////////////////////
@@ -108,7 +109,7 @@ int main(int argc, char** argv) try
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
-    const auto& leafGridView = grid->leafGridView();
+    const auto& leafGridView = grid.leafGridView();
 
     std::cout << "i have the view \n" << "\n" << std::flush;
 
@@ -166,11 +167,11 @@ int main(int argc, char** argv) try
     // intialize the vtk output module
 
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
-    using VelocityOutput = typename GET_PROP_TYPE(TypeTag, VelocityOutput);
-    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
-    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(0.0);
+//    using VelocityOutput = typename GET_PROP_TYPE(TypeTag, VelocityOutput);
+//    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+//    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
+//    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
+    // vtkWriter.write(0.0);
 
     std::cout << "vtk writer module initialized" << "\n" << std::flush;
 
@@ -208,7 +209,7 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-                vtkWriter.write(timeLoop->time());
+                //  vtkWriter.write(timeLoop->time());
             }
             // report statistics of this time step
             timeLoop->reportTimeStep();

@@ -5,8 +5,9 @@ Name = benchmark1
 TEnd = 0 # [s]
 
 [RootSystem.Grid]
-File = Anagallis_femina_Leitner_2010
-DtInitial = 30
+File =  grids/singleroot.dgf
+# Anagallis_femina_Leitner_2010
+# DtInitial = 30
 
 
 [RootSystem.Conductivity]
