@@ -1,0 +1,46 @@
+[RootSystem]
+InitialGrowthTime = 60 #43 # 60 # days
+EnableGrowth = false
+
+[SoilLookup]
+Weight = 10000
+Power = 0.16
+
+[Output]
+PlotVanGenuchtenCurves = true
+PlotTranspiration = true
+PlotRootConductivities = true
+
+[TimeLoop]
+DtInitial = 7200 #1000 # [s]
+TEnd = 604800 # [s] -> 7 days
+MaxTimeStepSize = 3600
+
+# 75 x 15 x 126 cm
+[Soil.Grid]
+LowerLeft = -0.375 -0.075 -1.26
+UpperRight = 0.375 0.075 0.0
+Cells = 74 14 125
+# Cells = 37 8 63
+
+[Problem]
+Name = test_soilroot
+EnableGravity = true
+TopPressure = -2e5
+BottomPressure = 0.9e5
+
+[Parameters]
+File = maize_p1 # phenotypes p1,p2,p3
+
+[Soil.SpatialParams]
+Permeability = 1.27e-13 # [m^2] 10.8 cm/day
+Porosity = 0.45 # [-]
+
+[BoundaryConditions]
+InitialRootPressure = 1e5 # [Pa]
+
+[LinearSolver]
+MaxIterations = 20000
+
+[MixedDimension]
+NumCircleSegments = 20
