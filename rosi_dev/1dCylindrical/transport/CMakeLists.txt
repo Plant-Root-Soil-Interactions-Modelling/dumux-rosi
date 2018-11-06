@@ -1,5 +1,0 @@
-add_subdirectory("1d")
-add_subdirectory("2d")
-add_subdirectory("3d")
-add_subdirectory("3d_coupled_reusingSources")
-add_subdirectory("3d_coupled_full")
