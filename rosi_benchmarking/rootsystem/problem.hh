@@ -154,13 +154,23 @@ class TubesTestProblem : public PorousMediumFlowProblem<TypeTag>
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
     enum { isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box };
+    enum {
+        bcDirichlet = 0, bcNeumann = 1
+    };
 
 public:
     TubesTestProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : ParentType(fvGridGeometry)
+:
+        ParentType(fvGridGeometry)
     {
         soilP_ = toPa_(getParam<Scalar>("RootSystem.Soil.P"));
-        collarP_ = toPa_(getParam<Scalar>("RootSystem.Collar.P"));
+        try {
+            collarP_ = toPa_(getParam<Scalar>("RootSystem.Collar.P"));
+            type_ = bcDirichlet;
+        } catch (std::exception &e) {
+            trans_ = toPa_(getParam<Scalar>("RootSystem.Collar.Transpirationb")) / 100. * 1000. / (3600 * 24); // cm/day *rho -> [ kg / (m^2 \cdot s)]
+            type_ = bcNeumann;
+        }
     }
 
     /*!
@@ -183,8 +193,7 @@ public:
      */
     template<class ElementSolution>
     Scalar extrusionFactor(const Element &element,
-                           const SubControlVolume &scv,
-                           const ElementSolution& elemSol) const
+        const SubControlVolume &scv, const ElementSolution& elemSol) const
     {
         const auto a = this->spatialParams().radius(element);
         // std::cout << "extrusion factor radius " << a;
@@ -208,8 +217,11 @@ public:
         BoundaryTypes bcTypes;
         bcTypes.setAllNeumann(); // default
         if (onUpperBoundary_(pos)) { // root collar
-            std::cout << "Set collar bc \n";
-            bcTypes.setAllDirichlet();
+            if (type_ == bcDirichlet) {
+                bcTypes.setAllDirichlet();
+            } else {
+                bcTypes.setAllNeumann();
+            }
         } else { // for all other (i.e. root tips)
             std::cout << "Set noflux bc \n";
             bcTypes.setAllNeumann();
@@ -237,11 +249,12 @@ public:
      * Negative values mean influx.
      * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot s)] \f$.
      */
-    NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
-        const SubControlVolumeFace& scvf) const {
-        NumEqVector values;
-        values[conti0EqIdx] = 0.;
-        return values[conti0EqIdx];
+    NumEqVector neumannAtPos(const GlobalPosition &pos) const {
+        if (onUpperBoundary_(pos)) {
+            return NumEqVector(trans_);
+        } else {
+            return NumEqVector(0.);
+        }
     }
 
     // \}
@@ -270,9 +283,8 @@ public:
      * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f$.
      */
     NumEqVector source(const Element &element,
-                       const FVElementGeometry& fvGeometry,
-                       const ElementVolumeVariables& elemVolVars,
-                       const SubControlVolume &scv) const
+        const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
+        const SubControlVolume &scv) const
     {
         NumEqVector values;
         Scalar l = element.geometry().volume(); // length of element (m)
@@ -303,7 +315,9 @@ public:
 private:
 
     Scalar soilP_;
-    Scalar collarP_;
+    int type_ = 0;
+    Scalar collarP_ = 0.; // pa
+    Scalar trans_ = 0.; // m/s
 
     Scalar toPa_(Scalar ph) const { // cm -> Pa
         return pRef_ + ph / 100. * rho_ * g_;

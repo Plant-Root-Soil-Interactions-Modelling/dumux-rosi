@@ -39,8 +39,7 @@ namespace Dumux {
  */
 template<class FVGridGeometry, class Scalar>
 class RootSpatialParamsDGF
-: public FVSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParamsDGF<FVGridGeometry, Scalar>>
-{
+    : public FVSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParamsDGF<FVGridGeometry, Scalar>> {
     using ThisType = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
     using ParentType = FVSpatialParamsOneP<FVGridGeometry, Scalar, ThisType>;
     using GridView = typename FVGridGeometry::GridView;
@@ -49,7 +48,11 @@ class RootSpatialParamsDGF
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
     using RootParams = GrowthModule::RootParams<Scalar>;
-    using DGFParamIndices = GrowthModule::DGFParamIndices;
+
+    enum {
+        orderIdx = 0, radiusIdx = 1, ageIdx = 2, krIdx = 3, kxIdx = 4
+    };
+
 public:
     // export permeability type
     using PermeabilityType = Scalar;
@@ -57,28 +60,6 @@ public:
     RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : ParentType(fvGridGeometry)
     {
-        porosity_ = getParam<Scalar>("Root.SpatialParams.Porosity", 0.4);
-
-        // read the tabularized root conductivities
-        axialRootConductivity_.resize(2);
-        radialRootConductivity_.resize(2);
-        axialRootConductivity_[0] = {getParam<std::vector<Scalar>>("RootSystem.Conductivity.KxAge"),
-            getParam<std::vector<Scalar>>("RootSystem.Conductivity.Kx")};
-        axialRootConductivity_[1] = {getParam<std::vector<Scalar>>("RootSystem.Conductivity.KxAge"),
-            getParam<std::vector<Scalar>>("RootSystem.Conductivity.Kx")};
-        radialRootConductivity_[0] = {getParam<std::vector<Scalar>>("RootSystem.Conductivity.KrAge"),
-            getParam<std::vector<Scalar>>("RootSystem.Conductivity.Kr")};
-        radialRootConductivity_[1] = {getParam<std::vector<Scalar>>("RootSystem.Conductivity.KrAge"),
-            getParam<std::vector<Scalar>>("RootSystem.Conductivity.Kr")};
-
-        // sanity checks
-        for (const auto& k : axialRootConductivity_)
-            if (k.first.size() != k.second.size())
-                DUNE_THROW(Dune::IOError, "Conductivites.Age and Conductivites.Kx have to have the same length!");
-
-        for (const auto& k : radialRootConductivity_)
-            if (k.first.size() != k.second.size())
-                DUNE_THROW(Dune::IOError, "Conductivites.Age and Conductivites.Kr have to have the same length!");
     }
 
     /*!
@@ -90,16 +71,14 @@ public:
      */
     template<class ElementSolution>
     PermeabilityType permeability(const Element& element,
-                                  const SubControlVolume& scv,
-                                  const ElementSolution& elemSol) const
+        const SubControlVolume& scv, const ElementSolution& elemSol) const
     { return permeability(element); }
 
     //! simpler interface
     PermeabilityType permeability(const Element& element) const
     {
-        // const Scalar r = rootParams(element).radius;
-        const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-        const Scalar r = radii_[eIdx];
+        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        Scalar r = radii_[eIdx];
         return this->Kx(eIdx) / (M_PI*r*r) * Components::SimpleH2O<Scalar>::liquidViscosity(285.15, 1e5);
     }
 
@@ -110,22 +89,21 @@ public:
      */
     Scalar porosityAtPos(const GlobalPosition& globalPos) const
     {
-        return porosity_;
+        return 1.;
     }
 
-    Scalar previousLength(std::size_t eIdx) const
+    Scalar order(std::size_t eIdx) const
     {
-        return previousLength_[eIdx];
-    }
-
-    Scalar age(std::size_t eIdx) const
-    {
-        return ages_[eIdx];
+        return orders_[eIdx];
     }
 
     Scalar radius(std::size_t eIdx) const
     {
         return radii_[eIdx];
+    }
+
+    Scalar age(std::size_t eIdx) const {
+        return ages_[eIdx];
     }
 
     Scalar Kr(std::size_t eIdx) const
@@ -138,40 +116,17 @@ public:
         return Kx_[eIdx];
     }
 
-    //! Access to the radii vector for output
-    const std::vector<Scalar>& radii() const
-    { return radii_; }
-
-    //! Access to the orders vector for output
-    const std::vector<Scalar>& orders() const
-    { return orders_; }
-
-    //! Access to the ages vector for output
-    const std::vector<Scalar>& ages() const
-    { return ages_; }
-
-    //! Access to the axial conductivities vector for output
-    const std::vector<Scalar>& axialConductivities() const
-    { return Kx_; }
-
-    //! Access to the radial conductivities vector for output
-    const std::vector<Scalar>& radialConductivities() const
-    { return Kr_; }
-
     //! Read initial parameters from grid data object
     template<class GridData>
     void initParameters(const GridData& gridData)
     {
         // extrac the segment params
         const auto& gridView = this->fvGridGeometry().gridView();
-        rootId_.resize(gridView.size(0));
         radii_.resize(gridView.size(0));
         orders_.resize(gridView.size(0));
-        previousLength_.resize(gridView.size(0));
         ages_.resize(gridView.size(0));
         Kx_.resize(gridView.size(0));
         Kr_.resize(gridView.size(0));
-
         const auto& elementMapper = this->fvGridGeometry().elementMapper();
         for (const auto& element : elements(gridView))
         {
@@ -179,26 +134,20 @@ public:
             const auto& elemParams = gridData.parameters(element);
 
             // initialize the previous length to the current length
-            previousLength_[eIdx] = element.geometry().volume();
-            rootId_[eIdx] = elemParams[1];
-            ages_[eIdx] = elemParams[7]/86400;
-            radii_[eIdx] = elemParams[4]*0.01;
-            orders_[eIdx] = elemParams[0];
-
-            // compute conductivities
-            // Kx: very high value for shoots to not contribute to resistance
-            // Kr: 0.0 for shoots so that shoot element do not exchange mass with the soil
+            ages_[eIdx] = elemParams[ageIdx] / 86400;
+            radii_[eIdx] = elemParams[radiusIdx];
+            orders_[eIdx] = elemParams[orderIdx];
             const auto& order = orders_[eIdx];
             if (order < 0)
             {
-                Kx_[eIdx] = 1.0e-10;
-                Kr_[eIdx] = 0.0;
+                Kx_[eIdx] = 1.0e-10; // Kx: very high value for shoots to not contribute to resistance
+                Kr_[eIdx] = 0.0; // Kr: 0.0 for shoots so that shoot element do not exchange mass with the soil
                 radii_[eIdx] = 0.01;
             }
             else
             {
-                Kx_[eIdx] = computeAxialConductivity(order, ages_[eIdx]);
-                Kr_[eIdx] = computeRadialConductivity(order, ages_[eIdx]);
+                Kx_[eIdx] = elemParams[kxIdx];
+                Kr_[eIdx] = elemParams[krIdx];
             }
         }
     }
@@ -214,7 +163,7 @@ public:
         for (const auto& element : elements(this->fvGridGeometry().gridView()))
         {
             const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            if (rootId_[eIdx] >= 0) // exclude shoot
+            if (orders_[eIdx] >= 0) // exclude shoot
             {
                 const auto geo = element.geometry();
                 const auto length = geo.volume();
@@ -236,28 +185,11 @@ public:
         }
 
         std::cout << ".........................................................\n"
-                  << "-- Root system age:            " << totalAge << " days\n"
-                  << "-- Total length:               " << totalLength << " m\n"
-                  << "-- Total length (top 42 cm):   " << totalLengthTop << " m\n"
-                  << "-- Total length (below 42 cm): " << totalLengthBottom << " m\n"
-                  << "-- Total length (primary):     " << totalLengthPrimary << " m\n"
-                  << "-- Total length (secondary):   " << totalLengthSecondary << " m\n"
-                  << "-- Total volume:               " << rootVolume << " m³\n"
-                  << ".........................................................\n";
-    }
-
-    //! compute the radial conductivity (m/Pa/s) given the segment age in days
-    double computeRadialConductivity(int order, double age) const
-    {
-        constexpr double conversion = 1e-4/86400; // from cm/hPa/day to m/Pa/s
-        return interpolate<InterpolationPolicy::LinearTable>(age, radialRootConductivity_[order])*conversion;
-    }
-
-    //! compute the axial conductivity in (m^4/Pa/s) given the segment age in days
-    double computeAxialConductivity(int order, double age) const
-    {
-        constexpr double conversion = 1e-10/86400; // from cm^4/hPa/day to m^4/Pa/s
-        return interpolate<InterpolationPolicy::LinearTable>(age, axialRootConductivity_[order])*conversion;
+            << "-- Root system age:            " << totalAge << " days\n"
+            << "-- Total length:               " << totalLength << " m\n" << "-- Total length (top 42 cm):   " << totalLengthTop << " m\n"
+            << "-- Total length (below 42 cm): " << totalLengthBottom << " m\n" << "-- Total length (primary):     " << totalLengthPrimary << " m\n"
+            << "-- Total length (secondary):   " << totalLengthSecondary << " m\n" << "-- Total volume:               " << rootVolume << " m³\n"
+            << ".........................................................\n";
     }
 
 private:
@@ -266,17 +198,13 @@ private:
     std::vector<std::pair<std::vector<double>, std::vector<double>>> axialRootConductivity_;
     std::vector<std::pair<std::vector<double>, std::vector<double>>> radialRootConductivity_;
 
-    //! Segment paramters
-    std::vector<int> rootId_; //! the root id for each segment
-    std::vector<Scalar> previousLength_; //! the length of the element at the last time step (new elements return 0 length)
+    //! Segment parameters
+    std::vector<Scalar> orders_;  //! root orders for output
+    std::vector<Scalar> radii_; //! radii for output
     std::vector<Scalar> ages_; //! the current age of the element
     std::vector<Scalar> Kx_;  //! axial conductivities
     std::vector<Scalar> Kr_;  //! radial conductivities
 
-    std::vector<Scalar> radii_; //! radii for output
-    std::vector<Scalar> orders_;  //! root orders for output
-
-    Scalar porosity_;
 };
 
 } // end namespace Dumux

@@ -1,0 +1,15 @@
+[Problem]
+Name = benchmark2 
+
+[TimeLoop]
+TEnd = 1e9 # [s]
+DtInitial = 1 # [s]
+
+[RootSystem.Grid]
+File =  grids/rootsystem.dgf
+
+[RootSystem.Collar]
+P = -1000 # cm pressure head
+
+[RootSystem.Soil]
+P = -200 # cm pressure head

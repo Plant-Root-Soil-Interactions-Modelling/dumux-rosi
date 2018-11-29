@@ -119,7 +119,7 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 template<class TypeTag>
 struct FluidSystem<TypeTag, TTag::Roots> {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = FluidSystems::OnePLiquid<Scalar, Components::Constant<1, Scalar> >;
+    using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
 };
 } // end namespace Properties
 
@@ -172,7 +172,7 @@ public:
             soilZ_ = getParam<std::vector<Scalar>>("RootSystem.Soil.Z");
 		}
 
-        p0_ = toPa_(getParam<std::vector<Scalar>>("RootSystem.Collar.P0"));
+        p0_ = toPa_(getParam<std::vector<Scalar>>("RootSystem.Collar.P"));
 		collarTable_ = p0_.size()>2;
 		collarSine_ = p0_.size() == 2;
 		if (collarTable_) {

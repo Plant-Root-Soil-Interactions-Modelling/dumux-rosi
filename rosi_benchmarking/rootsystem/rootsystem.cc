@@ -74,62 +74,24 @@ int main(int argc, char** argv) try
     // parse command line arguments and input file
     Parameters::init(argc, argv);
 
-    // create a croot box rootsystem or read dgf
-    using Grid = GetPropType<TypeTag, Properties::Grid>;
-    // Dune::FoamGrid<1,3>;
-    // std::shared_ptr<Grid> grid;
-    auto fileName = getParam<std::string>("RootSystem.Grid.File");
-
-//    std::cout << "Try to simulate a new Crootbox root system" << "\n" << std::flush;
-//    auto rootSystem = std::make_shared<CRootBox::RootSystem>();
-//    rootSystem->openFile(fileName);
-//    rootSystem->initialize();
-//    rootSystem->simulate(getParam<double>("RootSystem.Grid.DtInitial"));
-//    rootSystem->write("rb_rootsystem.vtp");
-//    grid = RootSystemGridFactory::makeGrid(*rootSystem);
-//    std::cout << "created the thing \n" << "\n" << std::flush;
-
-    std::string dgf = ".dgf";
-    //if (std::equal(dgf.rbegin(), dgf.rend(), fileName.rbegin())) { // dgf
-    std::cout << "try to open dgf" << "\n" << std::flush;
-
-    auto periodic = std::bitset<3>("110");
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    using GlobalCoordinate = typename GridView::template Codim<0>::Entity::Geometry::GlobalCoordinate;
-    auto ll = GlobalCoordinate();
-    auto ur = GlobalCoordinate();
-    for (size_t i = 0; i < 3; i++) {
-        ll[i] = -100;
-        ur[i] = 100;
-    }
-    PeriodicNetworkGridManager<3> gridManager(ll, ur, periodic);
-    // GridManager<Grid> gridManager;
-
-    gridManager.init("RootSystem");  // pass parameter group (see input file)
-    auto& grid = gridManager.grid();
+    // try to create a grid (from the given grid file or the input file)
+    GridManager<GetPropType<TypeTag, Properties::Grid>> gridManager;
+    gridManager.init("RootSystem");
     const auto gridData = gridManager.getGridData();
-    //Grid* pgrid = &grid_;
-    //grid.reset(pgrid);
-    std::cout << "opened dgf\n" << "\n" << std::flush;
-    //}
-
 
     ////////////////////////////////////////////////////////////
     // run instationary non-linear problem on this grid
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
-    const auto& leafGridView = grid.leafGridView();
+    const auto& leafGridView = gridManager.grid().leafGridView();
 
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
-    const auto periodicConnectivity = gridData->createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
-    fvGridGeometry->setExtraConnectivity(periodicConnectivity);
     fvGridGeometry->update();
-
 
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
@@ -137,7 +99,7 @@ int main(int argc, char** argv) try
     using Problem = GetPropType<TypeTag, Properties::Problem>;
     auto problem = std::make_shared<Problem>(fvGridGeometry);
     problem->spatialParams().initParameters(*gridData);
-    problem->spatialParams().analyseRootSystem();
+    // problem->spatialParams().analyseRootSystem();
 
     std::cout << "and i have a problem \n" << "\n" << std::flush;
 
@@ -241,7 +203,8 @@ int main(int argc, char** argv) try
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
         nonLinearSolver.solve(x);
-        // vtkWriter.write(1);
+        // write vtk output
+        vtkWriter.write(1);
     }
 
     ////////////////////////////////////////////////////////////
