@@ -19,26 +19,21 @@
 /*!
  * \file
  *
- * \brief Apply one-phase CC model to a root system given per DGF, or created by RootBox
+ * \brief test for the one-phase CC model
  */
 #include <config.h>
 
 #include <ctime>
 #include <iostream>
 
-// Dune
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/timer.hh>
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
 
-// CRootBox
 #include <RootSystem.h>
-
-// Dumux
-#include <dumux/linear/amgbackend.hh>
-#include <dumux/porousmediumflow/richards/newtonsolver.hh>
+#include "rootsproblem.hh"
 
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
@@ -46,26 +41,28 @@
 #include <dumux/common/dumuxmessage.hh>
 #include <dumux/common/defaultusagemessage.hh>
 
+#include <dumux/linear/amgbackend.hh>
+#include <dumux/nonlinear/newtonsolver.hh>
+
+#include <dumux/assembly/fvassembler.hh>
+#include <dumux/assembly/diffmethod.hh>
+
+#include <dumux/discretization/method.hh>
+
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
-#include <dumux/assembly/fvassembler.hh>
-
-#include <dumux/growth/rootsystemgridfactory.hh>
-#include <dumux/io/grid/gridmanager.hh>
-#include <dune/foamgrid/foamgrid.hh>
-
-// Problem
-#include "rootsproblem.hh"
-
+#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
-    using namespace GrowthModule;
+    // using namespace GrowthModule;
 
     // define the type tag for this problem
-    using TypeTag = TTAG(RootsCCTpfaTypeTag);
+    using TypeTag = Properties::TTag::RootsCCTpfa;
+    // RootsCCTpfa RootsBox
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -78,7 +75,7 @@ int main(int argc, char** argv) try
     Parameters::init(argc, argv);
 
     // create a croot box rootsystem or read dgf
-    using Grid = typename GET_PROP_TYPE(TypeTag, Grid);
+    using Grid = GetPropType<TypeTag, Properties::Grid>;
     // Dune::FoamGrid<1,3>;
     // std::shared_ptr<Grid> grid;
     auto fileName = getParam<std::string>("RootSystem.Grid.File");
@@ -94,13 +91,26 @@ int main(int argc, char** argv) try
 
     std::string dgf = ".dgf";
     //if (std::equal(dgf.rbegin(), dgf.rend(), fileName.rbegin())) { // dgf
-        std::cout << "try to open dgf" << "\n" << std::flush;
-        GridManager<Grid> gridManager;
-        gridManager.init("RootSystem");  // pass parameter group (see input file)
+    std::cout << "try to open dgf" << "\n" << std::flush;
+
+    auto periodic = std::bitset<3>("110");
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using GlobalCoordinate = typename GridView::template Codim<0>::Entity::Geometry::GlobalCoordinate;
+    auto ll = GlobalCoordinate();
+    auto ur = GlobalCoordinate();
+    for (size_t i = 0; i < 3; i++) {
+        ll[i] = -100;
+        ur[i] = 100;
+    }
+    PeriodicNetworkGridManager<3> gridManager(ll, ur, periodic);
+    // GridManager<Grid> gridManager;
+
+    gridManager.init("RootSystem");  // pass parameter group (see input file)
     auto& grid = gridManager.grid();
+    const auto gridData = gridManager.getGridData();
     //Grid* pgrid = &grid_;
     //grid.reset(pgrid);
-        std::cout << "opened dgf\n" << "\n" << std::flush;
+    std::cout << "opened dgf\n" << "\n" << std::flush;
     //}
 
 
@@ -114,20 +124,25 @@ int main(int argc, char** argv) try
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
-    using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
+    const auto periodicConnectivity = gridData->createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
+    fvGridGeometry->setExtraConnectivity(periodicConnectivity);
     fvGridGeometry->update();
+
 
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
     // the problem (initial and boundary conditions)
-    using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
+    using Problem = GetPropType<TypeTag, Properties::Problem>;
     auto problem = std::make_shared<Problem>(fvGridGeometry);
+    problem->spatialParams().initParameters(*gridData);
+    problem->spatialParams().analyseRootSystem();
 
     std::cout << "and i have a problem \n" << "\n" << std::flush;
 
     // the solution vector
-    using SolutionVector = typename GET_PROP_TYPE(TypeTag, SolutionVector);
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
     SolutionVector x(fvGridGeometry->numDofs());
     problem->applyInitialSolution(x);
     auto xOld = x;
@@ -135,14 +150,14 @@ int main(int argc, char** argv) try
     std::cout << "no solution yet \n" << "\n" << std::flush;
 
     // the grid variables
-    using GridVariables = typename GET_PROP_TYPE(TypeTag, GridVariables);
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
-    gridVariables->init(x, xOld);
+    gridVariables->init(x);
 
     std::cout << "... but variables \n" << "\n" << std::flush;
 
-    // get some time loop parameters
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+    // get some time loop parameters & instantiate time loop
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
     if (tEnd > 0) { // dynamic problem
@@ -165,13 +180,12 @@ int main(int argc, char** argv) try
     std::cout << "time might be an issue \n" << "\n" << std::flush;
 
     // intialize the vtk output module
-
+    using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
-//    using VelocityOutput = typename GET_PROP_TYPE(TypeTag, VelocityOutput);
-//    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-//    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
-//    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
-    // vtkWriter.write(0.0);
+    using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
+    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
+    vtkWriter.write(0.0);
 
     std::cout << "vtk writer module initialized" << "\n" << std::flush;
 
@@ -194,7 +208,8 @@ int main(int argc, char** argv) try
 
     std::cout << "i plan to actually start \n" << "\n" << std::flush;
 
-    if (tEnd > 0) { // dynamic
+    if (tEnd > 0) // dynamic
+        {
         std::cout << "a time dependent model" << "\n" << std::flush;
         timeLoop->start();
         do {
@@ -209,17 +224,18 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-                //  vtkWriter.write(timeLoop->time());
+                vtkWriter.write(timeLoop->time());
             }
             // report statistics of this time step
             timeLoop->reportTimeStep();
             // set new dt as suggested by the newton solver
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
-            problem->setTime(timeLoop->time());
+            // problem->setTime(timeLoop->time());
         } while (!timeLoop->finished());
         timeLoop->finalize(leafGridView.comm());
-    } else { // static
+    } else // static
+    {
         std::cout << "a static model" << "\n" << std::flush;
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);

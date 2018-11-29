@@ -30,6 +30,7 @@
 #include <dune/common/fvector.hh>
 #include <dune/grid/common/mcmgmapper.hh>
 #include <dumux/io/grid/gridmanager.hh>
+#include <dumux/periodic/periodicnetworktransform.hh>
 
 namespace Dumux {
 
@@ -104,13 +105,8 @@ public:
     PeriodicNetworkGridManager(const GlobalCoordinate& lowerLeft,
                                const GlobalCoordinate& upperRight,
                                const std::bitset<dimWorld>& periodic)
-    : lowerLeft_(lowerLeft)
-    , upperRight_(upperRight)
-    , periodic_(periodic)
-    {
-        shift_ = upperRight - lowerLeft;
-        eps_ = shift_; eps_ *= 1e-7;
-    }
+    : transformation_(lowerLeft, upperRight, periodic)
+    {}
 
     /*!
      * \brief Make the grid. This is implemented by specializations of this method.
@@ -121,10 +117,8 @@ public:
      */
     void init(const std::string& paramGroup = "")
     {
-        if (periodic_.none())
+        if (transformation_.periodic().none())
             DUNE_THROW(Dune::InvalidStateException, "No periodic boundary was specified! Set at least one bit to true.");
-
-        std::cout << "Creating periodic grid in a periodic with bounds " << lowerLeft_ << " to " << upperRight_ << std::endl;
 
         // first create the host grid
         GridManager<Grid> gridManager;
@@ -158,7 +152,7 @@ public:
         {
             const auto vIdx = vertexMapper.index(vertex);
             verts[vIdx] = vertex.geometry().corner(0);
-            vertexMarker[vIdx] = getVertexMarker_(verts[vIdx]);
+            vertexMarker[vIdx] = transformation_.getVertexMarker(verts[vIdx]);
             faceIndices[vIdx] = vIdx;
         }
 
@@ -187,8 +181,8 @@ public:
             {
                 // find out if one of the vertices is exactly on the boundary,
                 // if yes, add only one vertex with the marker of the other vertex
-                bool v0OnBoundary = onBoundary_(verts[corner0Idx] - getShift_(vertexMarker[corner0Idx]));
-                bool v1OnBoundary = onBoundary_(verts[corner1Idx] - getShift_(vertexMarker[corner1Idx]));
+                bool v0OnBoundary = transformation_.onBoundary(verts[corner0Idx] - transformation_.getShift(vertexMarker[corner0Idx]));
+                bool v1OnBoundary = transformation_.onBoundary(verts[corner1Idx] - transformation_.getShift(vertexMarker[corner1Idx]));
 
                 if (v0OnBoundary && v1OnBoundary)
                     DUNE_THROW(Dune::InvalidStateException, "Element is too large");
@@ -218,10 +212,9 @@ public:
                 else
                 {
                     // get periodic box of corner 0
-                    auto lowerLeft = lowerLeft_ + getShift_(vertexMarker[corner0Idx]);
-                    const auto upperRight = lowerLeft + shift_;
-
-                    const auto iPos = intersectRayBox_(lowerLeft, upperRight, verts[corner0Idx], verts[corner1Idx]-verts[corner0Idx]);
+                    const auto box = transformation_.getPeriodicBBox(vertexMarker[corner0Idx]);
+                    // find intersection point
+                    const auto iPos = transformation_.intersectRayBox(box.first, box.second, verts[corner0Idx], verts[corner1Idx]-verts[corner0Idx]);
 
                     verts.emplace_back(iPos);
                     vertexMarker.emplace_back(vertexMarker[corner0Idx]);
@@ -272,7 +265,7 @@ public:
 
         // move all vertices by periodic shift
         for (unsigned int vIdx = 0; vIdx < verts.size(); ++vIdx)
-            factory.insertVertex(verts[vIdx] - getShift_(vertexMarker[vIdx]));
+            factory.insertVertex(verts[vIdx] - transformation_.getShift(vertexMarker[vIdx]));
 
         for (const auto& element : elems)
             factory.insertElement(Dune::GeometryTypes::line, element);
@@ -297,85 +290,7 @@ public:
     { return gridData_; }
 
 private:
-
-    //! sanity check if a point is still in the periodic domain
-    bool inPeriodicDomain_(const GlobalCoordinate& point)
-    {
-        for (int dimIdx = 0; dimIdx < dimWorld; ++dimIdx)
-            if (!periodic_[dimIdx])
-                if (point[dimIdx] >= upperRight_[dimIdx] - eps_[dimIdx]
-                    || point[dimIdx] <= lowerLeft_[dimIdx] + eps_[dimIdx])
-                    return false;
-        return true;
-    }
-
-    bool onBoundary_(const GlobalCoordinate& point)
-    {
-        using std::abs;
-        for (int dimIdx = 0; dimIdx < dimWorld; ++dimIdx)
-            if (periodic_[dimIdx])
-                if (abs(point[dimIdx] - lowerLeft_[dimIdx]) < eps_[dimIdx])
-                    return true;
-        return false;
-    }
-
-    VertexMarker getVertexMarker_(const GlobalCoordinate& vertexPos)
-    {
-        if (!inPeriodicDomain_(vertexPos))
-            DUNE_THROW(Dune::InvalidStateException, "Vertex with pos " << vertexPos << " not in periodic domain!");
-
-        auto pos = vertexPos - lowerLeft_; // make lower left the origin
-
-        using std::floor;
-        VertexMarker marker;
-        for (int dimIdx = 0; dimIdx < dimWorld; ++dimIdx)
-            marker[dimIdx] = static_cast<int>(floor(pos[dimIdx]/shift_[dimIdx]));
-
-
-        // sanity check
-        // const auto shift = getShift_(marker);
-        // const auto lowerLeft = lowerLeft_ + shift;
-        // const auto upperRight = upperRight_ + shift;
-        // if (lowerLeft[0] > vertexPos[0] || lowerLeft[1] > vertexPos[1] || lowerLeft[2] > vertexPos[2] ||
-        //     upperRight[0] < vertexPos[0] || upperRight[1] < vertexPos[1] || upperRight[2] < vertexPos[2])
-        //     DUNE_THROW(Dune::InvalidStateException, "Point " << vertexPos << " is not within bounds " << lowerLeft << " to " << upperRight);
-
-        return marker;
-    }
-
-    GlobalCoordinate getShift_(const VertexMarker& v)
-    {
-        auto shift = shift_;
-        for (int i = 0; i < dimWorld; ++i)
-            shift[i] *= v[i];
-        return shift;
-    }
-
-    // intersect a directional ray with a periodic aabb
-    GlobalCoordinate intersectRayBox_(const GlobalCoordinate& lowerLeft, const GlobalCoordinate& upperRight,
-                                      const GlobalCoordinate& origin, const GlobalCoordinate& dir) const
-    {
-        using std::signbit;
-        auto t = signbit(dir[0]) ? (lowerLeft[0]-origin[0])/dir[0] : (upperRight[0]-origin[0])/dir[0];
-        const auto ty = signbit(dir[1]) ? (lowerLeft[1]-origin[1])/dir[1] : (upperRight[1]-origin[1])/dir[1];
-        const auto tz = signbit(dir[2]) ? (lowerLeft[2]-origin[2])/dir[2] : (upperRight[2]-origin[2])/dir[2];
-
-        using std::min;
-        t = min({t, ty, tz});
-
-        if (t <= 0)
-            DUNE_THROW(Dune::InvalidStateException, "parameter has to be greater than zero!");
-
-        auto iPos = origin;
-        iPos.axpy(t, dir);
-        return iPos;
-    }
-
-    GlobalCoordinate lowerLeft_;
-    GlobalCoordinate upperRight_;
-    GlobalCoordinate eps_, shift_;
-    std::bitset<dimWorld> periodic_;
-
+    PeriodicNetworkTransform<GlobalCoordinate> transformation_;
     std::shared_ptr<Grid> grid_;
     std::shared_ptr<GridData> gridData_;
 };

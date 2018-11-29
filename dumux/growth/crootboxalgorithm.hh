@@ -60,7 +60,7 @@ class CRootBoxGrowthAlgorithm : public GrowthAlgorithm
 
     using PersistentContainer = Dune::PersistentContainer<Grid, Data>;
     using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
-    using CRB = Dumux::GrowthModule::CRootBoxInterface;
+    using CRB = Dumux::CRootBoxInterface;
 
 public:
     //! contruct the rootbox interface growth algorithm with a root system

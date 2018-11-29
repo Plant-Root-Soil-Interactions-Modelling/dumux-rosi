@@ -30,41 +30,16 @@
 #include <algorithm>
 
 #include <dumux/common/defaultmappertraits.hh>
-#include <dumux/discretization/methods.hh>
+#include <dumux/discretization/method.hh>
 #include <dumux/discretization/basefvgridgeometry.hh>
 #include <dumux/discretization/checkoverlapsize.hh>
 #include <dumux/discretization/cellcentered/subcontrolvolume.hh>
 #include <dumux/discretization/cellcentered/connectivitymap.hh>
+#include <dumux/discretization/cellcentered/tpfa/fvgridgeometry.hh>
 #include <dumux/discretization/cellcentered/tpfa/fvelementgeometry.hh>
 #include <dumux/discretization/cellcentered/tpfa/subcontrolvolumeface.hh>
 
 namespace Dumux {
-
-/*!
- * \ingroup CCTpfaDiscretization
- * \brief The default traits for the tpfa finite volume grid geometry
- *        Defines the scv and scvf types and the mapper types
- * \tparam the grid view type
- */
-template<class GridView, class MapperTraits = DefaultMapperTraits<GridView>>
-struct TpfaDefaultPeriodicGGTraits
-: public MapperTraits
-{
-    using SubControlVolume = CCSubControlVolume<GridView>;
-    using SubControlVolumeFace = CCTpfaSubControlVolumeFace<GridView>;
-
-    template<class FVGridGeometry>
-    using ConnectivityMap = CCSimpleConnectivityMap<FVGridGeometry>;
-
-    template<class FVGridGeometry, bool enableCache>
-    using LocalView = CCTpfaFVElementGeometry<FVGridGeometry, enableCache>;
-
-    //! State the maximum admissible number of neighbors per scvf
-    //! Per default, we allow for 8 branches on network/surface grids, where
-    //! conformity is assumed. For normal grids, we allow a maximum of one
-    //! hanging node per scvf. Use different traits if you need more.
-    static constexpr int maxNumScvfNeighbors = int(GridView::dimension)<int(GridView::dimensionworld) ? 8 : 1<<(GridView::dimension-1);
-};
 
 /*!
  * \ingroup CCTpfaDiscretization

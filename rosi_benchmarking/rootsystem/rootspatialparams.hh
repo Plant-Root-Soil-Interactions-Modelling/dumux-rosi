@@ -26,8 +26,8 @@
 
 #include <dumux/porousmediumflow/properties.hh>
 #include <dumux/material/spatialparams/fv1p.hh>
-#include <dumux/material/components/simpleh2o.hh>
 
+#include <dumux/material/components/simpleh2o.hh>
 #include <dumux/growth/rootparameters.hh>
 
 #include <RootSystem.h>
@@ -40,15 +40,14 @@ namespace Dumux {
 template<class FVGridGeometry, class Scalar>
 class RootSpatialParams: public FVSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParams<FVGridGeometry, Scalar>>
 {
-
-    using GridView = typename FVGridGeometry::GridView;
     using FVElementGeometry = typename FVGridGeometry::LocalView;
-    using ElementMapper = typename FVGridGeometry::ElementMapper;
-	using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-	using Element = typename GridView::template Codim<0>::Entity;
-	using Water = Components::SimpleH2O<Scalar>;
+    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    using GridView = typename FVGridGeometry::GridView;
+    using Element = typename GridView::template Codim<0>::Entity;
     using ParentType = FVSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParams<FVGridGeometry, Scalar>>;
 
+    using ElementMapper = typename FVGridGeometry::ElementMapper;
+    using Water = Components::SimpleH2O<Scalar>;
 	using DGFParamIndices = GrowthModule::DGFParamIndices;
 	using RootParams = GrowthModule::RootParams<Scalar>;
 
@@ -57,7 +56,8 @@ public:
     // export permeability type
     using PermeabilityType = Scalar;
 
-    RootSpatialParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry)
+    RootSpatialParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
+        ParentType(fvGridGeometry)
     {
         kr_ = getParam<std::vector<Scalar>>("RootSystem.Conductivity.Kr");
 		krTable_ = kr_.size()>1;
@@ -316,7 +316,7 @@ private:
     std::vector<RootParams> rootParams_;
     RootParams shootParams_;
 
-    //! Paramters per segment
+    //! Parameters per segment
     std::vector<int> rootId_; //! the root id for each segment
     std::vector<Scalar> previousLength_; //! the length of the element at the last time step (new elements return 0 length)
     std::vector<Scalar> radii_; //! radii for output

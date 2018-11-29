@@ -25,20 +25,26 @@
 #ifndef ROOTS_PROBLEM_HH
 #define ROOTS_PROBLEM_HH
 
-#include <dumux/discretization/cellcentered/tpfa/properties.hh>
-#include <dumux/discretization/cellcentered/mpfa/properties.hh>
-#include <dumux/discretization/box/properties.hh>
-#include <dumux/porousmediumflow/1p/model.hh>
-#include <dumux/porousmediumflow/problem.hh>
-#include <dumux/material/components/simpleh2o.hh>
-#include <dumux/material/fluidsystems/1pliquid.hh>
 #include <dune/localfunctions/lagrange/pqkfactory.hh>
 #include <dune/geometry/quadraturerules.hh>
+
+#if HAVE_DUNE_FOAMGRID
+#include <dune/foamgrid/foamgrid.hh>
+#endif
+
 #include <dumux/common/reorderingdofmapper.hh>
+#include <dumux/discretization/cellcentered/tpfa/properties.hh>
+#include <dumux/discretization/box/properties.hh>
+#include <dumux/discretization/method.hh>
+#include <dumux/discretization/elementsolution.hh>
+#include <dumux/porousmediumflow/1p/model.hh>
+#include <dumux/porousmediumflow/problem.hh>
+#include <dumux/material/components/constant.hh>
+#include <dumux/material/fluidsystems/1pliquid.hh>
 
 #include <math.h>
 
-#include "rootspatialparams.hh"
+#include "rootspatialparams_dgf.hh"
 
 namespace Dumux {
 
@@ -47,111 +53,75 @@ class RootsProblem;
 
 namespace Properties {
 
-NEW_TYPE_TAG(RootsTypeTag, INHERITS_FROM(OneP));
-
-NEW_TYPE_TAG(RootsCCTpfaTypeTag, INHERITS_FROM(CCTpfaModel, RootsTypeTag));
-
-NEW_TYPE_TAG(RootsBoxTypeTag, INHERITS_FROM(BoxModel, RootsTypeTag));
+// Create new type tags
+namespace TTag {
+struct Roots {
+    using InheritsFrom = std::tuple<OneP>;
+};
+struct RootsCCTpfa {
+    using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
+};
+struct RootsBox {
+    using InheritsFrom = std::tuple<Roots, BoxModel>;
+};
+} // end namespace TTag
 
 // Set the grid type
 #if HAVE_DUNE_FOAMGRID
-SET_TYPE_PROP(RootsTypeTag, Grid, Dune::FoamGrid<1, 3>);
+template<class TypeTag>
+struct Grid<TypeTag, TTag::Roots> {using type = Dune::FoamGrid<1, 3>;};
 #endif
 
-// reordering dof mapper to optimally sort the dofs (cc)
-SET_PROP(RootsCCTpfaTypeTag, FVGridGeometry){
+// if we have pt scotch use the reordering dof mapper to optimally sort the dofs (cc)
+template<class TypeTag>
+struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
 private:
-static constexpr bool enableCache = GET_PROP_VALUE(TypeTag, EnableFVGridGeometryCache);
-using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
 
-using ElementMapper = ReorderingDofMapper<GridView>;
-using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+    using ElementMapper = ReorderingDofMapper<GridView>;
+    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
 };
 
-// reordering dof mapper to optimally sort the dofs (box)
-SET_PROP(RootsBoxTypeTag, FVGridGeometry){
+// if we have pt scotch use the reordering dof mapper to optimally sort the dofs (box)
+template<class TypeTag>
+struct FVGridGeometry<TypeTag, TTag::RootsBox> {
 private:
-static constexpr bool enableCache = GET_PROP_VALUE(TypeTag, EnableFVGridGeometryCache);
-using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
-using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-using VertexMapper = ReorderingDofMapper<GridView>;
-using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+
+    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+    using VertexMapper = ReorderingDofMapper<GridView>;
+    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
 };
 
 // Set the problem property
-SET_TYPE_PROP(RootsTypeTag, Problem, RootsProblem<TypeTag>);
+template<class TypeTag>
+struct Problem<TypeTag, TTag::Roots> {
+    using type = RootsProblem<TypeTag>;
+};
 
 // Set the spatial parameters
-SET_PROP(RootsTypeTag, SpatialParams){
-using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
-using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-using type = RootSpatialParams<FVGridGeometry, Scalar>;
+template<class TypeTag>
+struct SpatialParams<TypeTag, TTag::Roots> {
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
 
 // the fluid system
-SET_PROP(RootsTypeTag, FluidSystem){
-using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
+template<class TypeTag>
+struct FluidSystem<TypeTag, TTag::Roots> {
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using type = FluidSystems::OnePLiquid<Scalar, Components::Constant<1, Scalar> >;
 };
-}
- // end namespace Properties
-
-
-
-//namespace Properties {
-//
-//// Create new type tags
-//namespace TTag {
-//struct Roots {
-//    using InheritsFrom = std::tuple<OneP>;
-//};
-//struct RootsBox {
-//    using InheritsFrom = std::tuple<Roots, BoxModel>;
-//};
-//struct RootsCCTpfa {
-//    using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
-//};
-//struct RootsCCMpfa {
-//    using InheritsFrom = std::tuple<Roots, CCMpfaModel>;
-//};
-//} // end namespace TTag
-//
-//// Specialize the fluid system type for this type tag
-//template<class TypeTag>
-//struct FluidSystem<TypeTag, TTag::Roots> {
-//    using Scalar = GetPropType<TypeTag, Scalar>;
-//    using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
-//};
-//
-//// Specialize the grid type for this type tag
-//template<class TypeTag>
-//struct Grid<TypeTag, TTag::Roots> {
-//    using type = Dune::FoamGrid<1,3>;
-//};
-//
-//// Specialize the problem type for this type tag
-//template<class TypeTag>
-//struct Problem<TypeTag, TTag::Roots> {
-//    using type = RootsProblem<TypeTag>;
-//};
-//
-//// Specialize the spatial params type for this type tag
-//template<class TypeTag>
-//struct SpatialParams<TypeTag, TTag::Roots> {
-//    using FVGridGeometry = GetPropType<TypeTag, FVGridGeometry>;
-//    using Scalar = GetPropType<TypeTag, Scalar>;
-//    using type = RootSpatialParams<FVGridGeometry, Scalar>;
-//};
-//
-//}
-// // end namespace Properties
-
+} // end namespace Properties
 
 /*!
  * \ingroup RootsProblem
@@ -161,31 +131,36 @@ template <class TypeTag>
 class RootsProblem : public PorousMediumFlowProblem<TypeTag>
 {
 	using ParentType = PorousMediumFlowProblem<TypeTag>;
-	using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
-	using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-    using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, GridVolumeVariables)::LocalView;
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
 
 	static const int dim = GridView::dimension;
 	static const int dimWorld = GridView::dimensionworld;
 
-    using Indices = typename GET_PROP_TYPE(TypeTag, ModelTraits)::Indices;
-	enum { // indices of the primary variables
+    using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+    enum {
+        // indices of the primary variables
 		conti0EqIdx = Indices::conti0EqIdx,
 		pressureIdx = Indices::pressureIdx
 	};
 
-	using PrimaryVariables = typename GET_PROP_TYPE(TypeTag, PrimaryVariables);
-	using BoundaryTypes = typename GET_PROP_TYPE(TypeTag, BoundaryTypes);
-	using NumEqVector = typename GET_PROP_TYPE(TypeTag, NumEqVector);
+    using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+    using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
+    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
     using Element = typename GridView::template Codim<0>::Entity;
-	using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
-	using SolutionVector = typename GET_PROP_TYPE(TypeTag, SolutionVector);
-    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
-	using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-	using GlobalPosition = Dune::FieldVector<Scalar, dimWorld>;
-	using PointSource = typename GET_PROP_TYPE(TypeTag, PointSource);
-	using ResidualVector = typename GET_PROP_TYPE(TypeTag, NumEqVector);
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+    using FVElementGeometry = typename GetPropType<TypeTag, Properties::FVGridGeometry>::LocalView;
+    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+
+    using PointSource = GetPropType<TypeTag, Properties::PointSource>;
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
+
+    enum {
+        isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
+    };
 
 public:
 
@@ -258,7 +233,7 @@ public:
                         const ElementVolumeVariables& elemVolVars,
                         const SubControlVolumeFace& scvf) const
 	{
-	    ResidualVector values;
+        NumEqVector values;
 	    values[conti0EqIdx] = 0.;
 	    return values[conti0EqIdx];
 	}
@@ -274,12 +249,14 @@ public:
                        const ElementVolumeVariables& elemVolVars,
                        const SubControlVolume &scv) const
 	{
-		ResidualVector values;
-		auto& params = this->spatialParams();
-		Scalar l = element.geometry().volume(); // length of element (m)
-		Scalar r = params.radius(element); // root radius (m)
-		Scalar kr = params.radialConductivity(element); //  radial conductivity (m^2 s / kg)
-		Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
+        NumEqVector values;
+        Scalar l = element.geometry().volume(); // length of element (m)
+        auto params = this->spatialParams();
+        const auto& elementMapper = params.fvGridGeometry().elementMapper();
+        const auto eIdx = elementMapper.index(element);
+        Scalar r = params.radius(eIdx); // root radius (m)
+        Scalar kr = params.Kr(eIdx); //  radial conductivity (m^2 s / kg)
+        Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
 		Scalar z = 0.; // TODO how to I get the (mid) z coordinate from the element?
 		Scalar phs = getSoilP_(z); // kg/m/s^2
 		values[conti0EqIdx] = kr * 2*r*M_PI*l * (phs - phx); // m^3/s
@@ -296,7 +273,9 @@ public:
                            const SubControlVolume& scv,
                            const ElementSolution& elemSol) const
     {
-        Scalar r = this->spatialParams().radius(element); // root radius (m)
+        const auto& elementMapper = this->spatialParams_->fvGridGeometry().elementMapper();
+        const auto eIdx = elementMapper.index(element);
+        Scalar r = this->spatialParams_->radius(eIdx); // root radius (m)
         return M_PI * r * r;
     }
 

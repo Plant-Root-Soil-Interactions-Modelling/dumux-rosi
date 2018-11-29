@@ -2,20 +2,21 @@
 Name = benchmark1 
 
 [TimeLoop]
-TEnd = 0 # [s]
+TEnd = 1e9 # [s]
+DtInitial = 1 # [s]
 
 [RootSystem.Grid]
 File =  grids/singleroot.dgf
-# Anagallis_femina_Leitner_2010
-# DtInitial = 30
-
 
 [RootSystem.Conductivity]
 Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
 Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
 
+[RootSystem]
+Radius = 0.2 # cm
+
 [RootSystem.Collar]
-P0 = -1000 # cm pressure head
+P = -1000 # cm pressure head
 
 [RootSystem.Soil]
 P = -200 # cm pressure head

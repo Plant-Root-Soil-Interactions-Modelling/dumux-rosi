@@ -25,10 +25,9 @@
 
 #include <mymath.h>
 #include <dune/common/fvector.hh>
+#include <dune/common/deprecated.hh>
 
 namespace Dumux {
-
-namespace GrowthModule {
 
 class CRootBoxInterface
 {
@@ -45,6 +44,8 @@ public:
     static constexpr double sToDays = 1.0/86400.0;
 };
 
+namespace GrowthModule {
+using CRootBoxInterface DUNE_DEPRECATED_MSG("Use CRootBoxInterface from Dumux namespace") = Dumux::CRootBoxInterface;
 } // end namespace GridGrowth
 
 } // end namespace Dumux
