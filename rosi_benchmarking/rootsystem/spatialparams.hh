@@ -58,7 +58,7 @@ public:
     {
         radius_ = getParam<Scalar>("RootSystem.Radius") / 100.; // cm-> m
         kr_ = getParam<Scalar>("RootSystem.Conductivity.Kr");
-        kz_ = getParam<Scalar>("RootSystem.Conductivity.Kx");
+        kx_ = getParam<Scalar>("RootSystem.Conductivity.Kx");
     }
 
     /*!
@@ -72,7 +72,7 @@ public:
     }
 
     Scalar axialConductivity(const Element& element) const {
-        return kz_;
+        return kx_;
     }
 
     Scalar radialConductivity(const Element&element) const {
@@ -95,8 +95,9 @@ public:
 
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
         Scalar a = this->radius(element);
-        Scalar kz = this->axialConductivity(element);
-        return kz * mu / (a * a * M_PI);        // a^2 * k / mu = kz  --> k = kz/a^2*mu
+        Scalar kx = this->axialConductivity(element);
+        // std::cout << "params " << kx * 1e13 << ", " << a << ", " << mu << "\n";
+        return kx * mu / (a * a * M_PI);        // a^2 * k / mu = kz  --> k = kz/a^2*mu
     }
 
     /*!
@@ -113,7 +114,7 @@ private:
 
     Scalar radius_;
     Scalar kr_;
-    Scalar kz_;
+    Scalar kx_;
 
 };
 

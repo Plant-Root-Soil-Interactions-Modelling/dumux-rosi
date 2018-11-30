@@ -287,15 +287,16 @@ public:
         const SubControlVolume &scv) const
     {
         NumEqVector values;
-        Scalar l = element.geometry().volume(); // length of element (m)
         auto params = this->spatialParams();
         Scalar a = params.radius(element); // root radius (m)
         Scalar kr = params.radialConductivity(element); //  radial conductivity (m^2 s / kg)
         Scalar phx = elemVolVars[0].pressure(); // Pa, kg/m/s^2
         Scalar phs = soilP_; // Pa, kg/m/s^2
-        values[conti0EqIdx] = kr * 2 * a * M_PI * l * (phs - phx); // m^3/s
-        values[conti0EqIdx] /= (a * a * M_PI) * l; // 1/s
+        // std::cout << "problem " << phs << ", " << a << ", " << kr * 1.e9 << "\n";
+        values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+        values[conti0EqIdx] /= (a * a * M_PI); // 1/s
         values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+        std::cout << values << "\n";
         return values;
     }
 

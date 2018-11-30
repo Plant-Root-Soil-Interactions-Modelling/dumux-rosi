@@ -200,9 +200,10 @@ public:
 	    bcTypes.setAllNeumann(); // default
 	    if (onUpperBoundary_(pos)) { // root collar
 	        bcTypes.setAllDirichlet();
+            std::cout << "boudary Type drichlet" << pos << "\n";
 	    } else { // for all other (i.e. root tips)
-
 	    	bcTypes.setAllNeumann();
+            std::cout << "boudnaryType neumann" << pos << "\n";
 	    }
 	    return bcTypes;
 	}
@@ -233,9 +234,7 @@ public:
                         const ElementVolumeVariables& elemVolVars,
                         const SubControlVolumeFace& scvf) const
 	{
-        NumEqVector values;
-	    values[conti0EqIdx] = 0.;
-	    return values[conti0EqIdx];
+        return NumEqVector(0.);
 	}
 
 	/*!
@@ -254,15 +253,18 @@ public:
         auto params = this->spatialParams();
         const auto& elementMapper = params.fvGridGeometry().elementMapper();
         const auto eIdx = elementMapper.index(element);
-        Scalar r = params.radius(eIdx); // root radius (m)
-        Scalar kr = params.Kr(eIdx); //  radial conductivity (m^2 s / kg)
+        Scalar a = params.radius(eIdx); // root radius (m)
+        Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
         Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
 		Scalar z = 0.; // TODO how to I get the (mid) z coordinate from the element?
 		Scalar phs = getSoilP_(z); // kg/m/s^2
-		values[conti0EqIdx] = kr * 2*r*M_PI*l * (phs - phx); // m^3/s
-		values[conti0EqIdx] /= (r*r*M_PI)*l; // 1/s
+        // std::cout << "problem " << phs << ", " << a << ", " << kr * 1.e9 << "\n";
+        values[conti0EqIdx] = kr * 2 * a * M_PI * l * (phs - phx); // m^3/s
+        values[conti0EqIdx] /= (a * a * M_PI) * l; // 1/s
 		values[conti0EqIdx] *= rho_; // (kg/s/m^3)
-		return values;
+        std::cout << values[conti0EqIdx] << "\n";
+
+        return values;
 	}
 
     /*!
@@ -351,11 +353,6 @@ private:
 			return p0_[0];
 		}
 	}
-    static constexpr Scalar g_ = 9.81; // cm / s^2
-    static constexpr Scalar rho_ = 1.e3; // kg / m^3
-    static constexpr Scalar pRef_ = 1.e5; // Pa
-
-	static constexpr Scalar eps_ = 1e-8;
 
 	std::vector<Scalar> soilP_;
 	std::vector<Scalar> soilZ_ = std::vector<Scalar> (0);
@@ -367,6 +364,11 @@ private:
 	bool collarSine_;
 
     Scalar time_ = 0.;
+
+    static constexpr Scalar g_ = 9.81; // cm / s^2
+    static constexpr Scalar rho_ = 1.e3; // kg / m^3
+    static constexpr Scalar pRef_ = 1.e5; // Pa
+    static constexpr Scalar eps_ = 1e-8;
 
 };
 

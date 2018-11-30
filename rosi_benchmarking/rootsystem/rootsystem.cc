@@ -61,7 +61,7 @@ int main(int argc, char** argv) try
     // using namespace GrowthModule;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsCCTpfa;
+    using TypeTag = Properties::TTag::RootsBox;
     // RootsCCTpfa RootsBox
 
     // initialize MPI, finalize is done automatically on exit

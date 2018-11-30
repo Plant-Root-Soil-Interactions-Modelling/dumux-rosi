@@ -46,8 +46,7 @@ class RootSpatialParamsDGF
     using Element = typename GridView::template Codim<0>::Entity;
     using SubControlVolume = typename FVGridGeometry::SubControlVolume;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-
-    using RootParams = GrowthModule::RootParams<Scalar>;
+    using Water = Components::SimpleH2O<Scalar>;
 
     enum {
         orderIdx = 0, radiusIdx = 1, ageIdx = 2, krIdx = 3, kxIdx = 4
@@ -77,9 +76,12 @@ public:
     //! simpler interface
     PermeabilityType permeability(const Element& element) const
     {
+        Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
         auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-        Scalar r = radii_[eIdx];
-        return this->Kx(eIdx) / (M_PI*r*r) * Components::SimpleH2O<Scalar>::liquidViscosity(285.15, 1e5);
+        Scalar a = radii_[eIdx];
+        Scalar kx = kx_[eIdx];
+        // std::cout << "params " << kx * 1e13 << ", " << a << ", " << mu << "\n";
+        return kx * mu / (M_PI * a * a);
     }
 
     /*!
@@ -106,14 +108,14 @@ public:
         return ages_[eIdx];
     }
 
-    Scalar Kr(std::size_t eIdx) const
+    Scalar kr(std::size_t eIdx) const
     {
-        return Kr_[eIdx];
+        return kr_[eIdx];
     }
 
-    Scalar Kx (std::size_t eIdx) const
+    Scalar kx(std::size_t eIdx) const
     {
-        return Kx_[eIdx];
+        return kx_[eIdx];
     }
 
     //! Read initial parameters from grid data object
@@ -125,8 +127,8 @@ public:
         radii_.resize(gridView.size(0));
         orders_.resize(gridView.size(0));
         ages_.resize(gridView.size(0));
-        Kx_.resize(gridView.size(0));
-        Kr_.resize(gridView.size(0));
+        kx_.resize(gridView.size(0));
+        kr_.resize(gridView.size(0));
         const auto& elementMapper = this->fvGridGeometry().elementMapper();
         for (const auto& element : elements(gridView))
         {
@@ -140,14 +142,14 @@ public:
             const auto& order = orders_[eIdx];
             if (order < 0)
             {
-                Kx_[eIdx] = 1.0e-10; // Kx: very high value for shoots to not contribute to resistance
-                Kr_[eIdx] = 0.0; // Kr: 0.0 for shoots so that shoot element do not exchange mass with the soil
+                kx_[eIdx] = 1.0e-10; // Kx: very high value for shoots to not contribute to resistance
+                kr_[eIdx] = 0.0; // Kr: 0.0 for shoots so that shoot element do not exchange mass with the soil
                 radii_[eIdx] = 0.01;
             }
             else
             {
-                Kx_[eIdx] = elemParams[kxIdx];
-                Kr_[eIdx] = elemParams[krIdx];
+                kx_[eIdx] = elemParams[kxIdx];
+                kr_[eIdx] = elemParams[krIdx];
             }
         }
     }
@@ -194,16 +196,12 @@ public:
 
 private:
 
-    //! Tabularized root conductivity functions (pairs of x, y) for each order
-    std::vector<std::pair<std::vector<double>, std::vector<double>>> axialRootConductivity_;
-    std::vector<std::pair<std::vector<double>, std::vector<double>>> radialRootConductivity_;
-
     //! Segment parameters
-    std::vector<Scalar> orders_;  //! root orders for output
+    std::vector<int> orders_;  //! root orders for output
     std::vector<Scalar> radii_; //! radii for output
     std::vector<Scalar> ages_; //! the current age of the element
-    std::vector<Scalar> Kx_;  //! axial conductivities
-    std::vector<Scalar> Kr_;  //! radial conductivities
+    std::vector<Scalar> kx_;  //! axial conductivities
+    std::vector<Scalar> kr_;  //! radial conductivities
 
 };
 

@@ -55,8 +55,8 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
-os.system("./main input/b1.input")
-p_ = read1D_vtp_data("benchmark1-00001.vtp", False)
+os.system("./rootsystem input/b1.input")
+p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! False
 z_ = np.linspace(0, -0.5, len(p_))
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_, "r+")
