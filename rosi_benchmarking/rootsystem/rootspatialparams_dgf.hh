@@ -31,6 +31,7 @@
 #include <dumux/material/components/simpleh2o.hh>
 
 #include <dumux/growth/rootparameters.hh>
+#include <dumux/io/inputfilefunction.hh>
 
 namespace Dumux {
 
