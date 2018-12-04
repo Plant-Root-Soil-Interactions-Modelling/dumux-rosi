@@ -147,9 +147,9 @@ int main(int argc, char** argv) try
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
     // the non-linear solver
-    using NewtonSolver = Dumux::RichardsNewtonSolver<TypeTag, Assembler, LinearSolver>;
+    // the non-linear solver
+    using NewtonSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);
-
     // std::cin.ignore();  // wait for key (debugging)
 
     if (tEnd>0)  { // dynamic
