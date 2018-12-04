@@ -17,9 +17,9 @@ os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
 os.system("./rootsystem input/b2.input")
-p_, z_ = read3D_vtp_data("benchmark2-00001.vtp", True)
+p_, z_ = read3D_vtp_data("benchmark2-00001.vtp", False)
 h_ = vg.pa2head(p_)
-plt.plot(h_, z_[1:, 2], "r+")  # cell data
+plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
 plt.show()
