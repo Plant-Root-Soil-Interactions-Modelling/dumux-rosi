@@ -9,22 +9,25 @@ namespace Dumux {
 /**
  * Auxiliary class to pass a function via the input file, or via the grid file. The type is chosen automatically
  *
- * Constant:    returns one constant value
- *              y is set to one value
+ * The type is determined from y, and x, that are read from the input file:
  *
- * Table:       the value is calculated by linear interpolaton
- *              y and x are set to the sampling points
+ * Constant:    returns one constant value
+ *              y is set to a single value, x is not set
+ *
+ * Table:       the value is calculated by linear interpolation from a table (y,x) given in the input file
+ *              y and x are set to multiple sampling points
  *
  * Data:        the value is taken from the grid file
  *              y and x are not set
  *
- * Per Type     value is given per type (e.g. soil layer, root order), where type is taken from the grid data.
- *              y is set to multiple value (>= max(types)).
+ * Per Type     the value is given per type (e.g. soil layer, root order), where type is taken from the grid file.
+ *              y is set to multiple values, x is not set (within the input file).
  *
  * Periodic     (optional). Periodic over one day, e.g. for root collar.
- *              y is set to exactly two values determining min and max
+ *              y is set to two values determining min and max, x is not set
  *
- * If grid data is used (Data, or Per Type), the data must be set with InputFileFunction::setData.
+ * If grid data is used (Data, or Per Type), the data must be set with InputFileFunction::setData, before calling InputFileFunction::f
+ *
  */
 class InputFileFunction {
 public:
