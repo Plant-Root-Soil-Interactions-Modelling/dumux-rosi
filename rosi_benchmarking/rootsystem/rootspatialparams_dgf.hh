@@ -33,10 +33,17 @@
 #include <dumux/growth/rootparameters.hh>
 #include <dumux/io/inputfilefunction.hh>
 
+
+
 namespace Dumux {
 
+
+
 /*!
- * \brief Root spatial params
+ * \brief Root spatial parameters class for grid files.
+ *
+ * use initParameters to initialize the class with data from the grid file
+ *
  */
 template<class FVGridGeometry, class Scalar>
 class RootSpatialParamsDGF
@@ -57,108 +64,77 @@ public:
     // export permeability type
     using PermeabilityType = Scalar;
 
-    RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : ParentType(fvGridGeometry)
-    {
+    RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
+        ParentType(fvGridGeometry) {
+        kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", krIdx, orderIdx);
+        kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", kxIdx, orderIdx);
+        radius_ = InputFileFunction("RootSystem.Radius", "RootSystem.RadiusAge", radiusIdx, orderIdx);
+        age_ = InputFileFunction("RootSystem.Age", ageIdx, orderIdx);
+        order_ = InputFileFunction("RootSystem.Order", orderIdx, orderIdx); //
     }
 
     /*!
      * \brief Return the intrinsic permeability for the current sub-control volume in [m^2].
      *
-     * \param ipGlobal The integration point
      * \note Kx has units [m^4/(Pa*s)] so we have to divide by the cross-section area
      *       and multiply with a characteristic viscosity
      */
     template<class ElementSolution>
     PermeabilityType permeability(const Element& element,
-        const SubControlVolume& scv, const ElementSolution& elemSol) const
-    { return permeability(element); }
+        const SubControlVolume& scv, const ElementSolution& elemSol) const {
+        return permeability(element);
+    }
 
     //! simpler interface
-    PermeabilityType permeability(const Element& element) const
-    {
+    PermeabilityType permeability(const Element& element) const {
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
         auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-        Scalar a = radii_[eIdx];
-        Scalar kx = kx_[eIdx];
+        Scalar a = this->radius(eIdx);
+        Scalar kx = this->kx(eIdx);
         // std::cout << "params " << kx * 1e13 << ", " << a << ", " << mu << "\n";
         return kx * mu / (M_PI * a * a);
     }
 
-    /*!
-     * \brief Returns the porosity \f$[-]\f$
-     *
-     * \param globalPos the scv center
-     */
-    Scalar porosityAtPos(const GlobalPosition& globalPos) const
-    {
+    //! \brief returns the porosity \f$[-]\f$
+    Scalar porosityAtPos(const GlobalPosition& globalPos) const {
         return 1.;
     }
 
-    Scalar order(std::size_t eIdx) const
-    {
-        return orders_[eIdx];
+    Scalar order(std::size_t eIdx) const {
+        return order_.f(eIdx);
     }
 
-    Scalar radius(std::size_t eIdx) const
-    {
-        return radii_[eIdx];
+    Scalar radius(std::size_t eIdx) const {
+        return radius_.f(this->age(eIdx), eIdx);
     }
 
     Scalar age(std::size_t eIdx) const {
-        return ages_[eIdx];
+        return age_.f(eIdx);
     }
 
-    Scalar kr(std::size_t eIdx) const
-    {
-        return kr_[eIdx];
+    Scalar kr(std::size_t eIdx) const {
+        return kr_.f(this->age(eIdx), eIdx);
     }
 
-    Scalar kx(std::size_t eIdx) const
-    {
-        return kx_[eIdx];
+    Scalar kx(std::size_t eIdx) const {
+        return kx_.f(this->age(eIdx), eIdx);
     }
 
     //! Read initial parameters from grid data object
     template<class GridData>
     void initParameters(const GridData& gridData)
     {
-        // extrac the segment params
-        const auto& gridView = this->fvGridGeometry().gridView();
-        radii_.resize(gridView.size(0));
-        orders_.resize(gridView.size(0));
-        ages_.resize(gridView.size(0));
-        kx_.resize(gridView.size(0));
-        kr_.resize(gridView.size(0));
-        const auto& elementMapper = this->fvGridGeometry().elementMapper();
-        for (const auto& element : elements(gridView))
-        {
-            const auto eIdx = elementMapper.index(element);
-            const auto& elemParams = gridData.parameters(element);
-
-            // initialize the previous length to the current length
-            ages_[eIdx] = elemParams[ageIdx] / 86400;
-            radii_[eIdx] = elemParams[radiusIdx];
-            orders_[eIdx] = elemParams[orderIdx];
-            const auto& order = orders_[eIdx];
-            if (order < 0)
-            {
-                kx_[eIdx] = 1.0e-10; // Kx: very high value for shoots to not contribute to resistance
-                kr_[eIdx] = 0.0; // Kr: 0.0 for shoots so that shoot element do not exchange mass with the soil
-                radii_[eIdx] = 0.01;
-            }
-            else
-            {
-                kx_[eIdx] = elemParams[kxIdx];
-                kr_[eIdx] = elemParams[krIdx];
-            }
-        }
+        const auto& fvGridGeometry = this->fvGridGeometry();
+        kr_.setGridData(gridData, fvGridGeometry);
+        kx_.setGridData(gridData, fvGridGeometry);
+        order_.setGridData(gridData, fvGridGeometry);
+        radius_.setGridData(gridData, fvGridGeometry);
+        age_.setGridData(gridData, fvGridGeometry);
     }
 
-    //! Output an analysis of the root system
+    //! Output and analysis of the root system
     void analyseRootSystem() const
     {
-        // compute some statistics of the initial root system
         Scalar totalLength = 0.0, totalLengthTop = 0.0, totalLengthBottom = 0.0;
         Scalar totalLengthPrimary = 0.0, totalLengthSecondary = 0.0;
         Scalar rootVolume = 0.0;
@@ -166,27 +142,27 @@ public:
         for (const auto& element : elements(this->fvGridGeometry().gridView()))
         {
             const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            if (orders_[eIdx] >= 0) // exclude shoot
+            if (this->order(eIdx) >= 0) // exclude shoot
             {
                 const auto geo = element.geometry();
                 const auto length = geo.volume();
-                const auto r = radii_[eIdx];
+                const auto r = this->radius(eIdx);
                 totalLength += length;
                 rootVolume += length*M_PI*r*r;
-                totalAge = std::max(totalAge, ages_[eIdx]);
-
-                if (geo.center()[2] > -0.42)
+                totalAge = std::max(totalAge, this->age(eIdx));
+                if (geo.center()[2] > -0.42) {
                     totalLengthTop += length;
-                else
+                } else {
                     totalLengthBottom += length;
-
-                if (orders_[eIdx] == 0)
+                }
+                if (this->order(eIdx) == 0) {
                     totalLengthPrimary += length;
-                else
+                } else {
                     totalLengthSecondary += length;
+                }
             }
-        }
 
+        }
         std::cout << ".........................................................\n"
             << "-- Root system age:            " << totalAge << " days\n"
             << "-- Total length:               " << totalLength << " m\n" << "-- Total length (top 42 cm):   " << totalLengthTop << " m\n"
@@ -196,13 +172,11 @@ public:
     }
 
 private:
-
-    //! Segment parameters
-    std::vector<int> orders_;  //! root orders for output
-    std::vector<Scalar> radii_; //! radii for output
-    std::vector<Scalar> ages_; //! the current age of the element
-    std::vector<Scalar> kx_;  //! axial conductivities
-    std::vector<Scalar> kr_;  //! radial conductivities
+    InputFileFunction kr_;
+    InputFileFunction kx_;
+    InputFileFunction order_;
+    InputFileFunction radius_;
+    InputFileFunction age_;
 
 };
 
