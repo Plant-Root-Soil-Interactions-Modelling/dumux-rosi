@@ -30,24 +30,24 @@ namespace Dumux {
 namespace GrowthModule {
 
 /**
- * Implement this abstract class to let the FoamGrid<1,3> grow
+ * Implement this abstract class to let the FoamGrid<1,3> grow with GridGowth::grow
  */
 template<class GlobalPosition>
 class GrowInterface {
 public:
     virtual ~GrowInterface() { };
-    virtual std::vector<size_t> updatedNodeIndices() = 0; ///< Indices of nodes that were updated in the previous time step
-    virtual std::vector<GlobalPosition> updatedNodes() = 0; ///< Values of the updated nodes
-    virtual std::vector<int> newNodeIndices() = 0; ///< Node indices that were created in the previous time step
-    virtual std::vector<GlobalPosition> newNodes() = 0; ///< Nodes created in the previous time step
-    virtual std::vector<std::vector<size_t>> newSegments() = 0; ///< Segments created in the previous time step
-    virtual std::vector<int> newSegmentOrders() = 0;
-    virtual std::vector<double> newSegmentCreationTimes() = 0; ///< Copies a pointer to the root containing the new segments
-    virtual std::vector<double> newSegmentRadii() = 0; ///< node ermergence times of segments created in the previous time step
+    virtual std::vector<size_t> updatedNodeIndices() = 0; // Indices of nodes that were updated in the previous time step
+    virtual std::vector<GlobalPosition> updatedNodes() = 0; // Values of the updated nodes
+    virtual std::vector<size_t> newNodeIndices() = 0; // Node indices that were created in the previous time step
+    virtual std::vector<GlobalPosition> newNodes() = 0; // Nodes created in the previous time step
+    virtual std::vector<std::vector<size_t>> newSegments() = 0; // Segments created in the previous time step
+    virtual std::vector<int> newSegmentOrders() = 0; // segment orders of segments created in the previous time step
+    virtual std::vector<double> newSegmentCreationTimes() = 0; // segment emergence times of segments created in the previous time step
+    virtual std::vector<double> newSegmentRadii() = 0; // segment radii of segments created in the previous time step
 };
 
 /**
- * Implementation for CRootBox
+ * Implementation for CRootBox: Converts types, units, and naming conventions
  */
 template<class GlobalPosition>
 class CRootBoxInterface :public GrowInterface<GlobalPosition> {
@@ -56,7 +56,7 @@ public:
     virtual ~CRootBoxInterface() { }; // nothing to do, rootsystem_ is someone elses problem
     virtual std::vector<size_t> updatedNodeIndices() {
         auto nodes = rootsystem->getUpdatedNodeIndices();
-        // todo write converter
+        // todo write converter, dont forget the units
         return nodes; // todo
     };
     // for all
