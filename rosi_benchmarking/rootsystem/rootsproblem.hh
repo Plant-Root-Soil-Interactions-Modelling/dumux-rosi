@@ -44,7 +44,8 @@
 
 #include <math.h>
 
-#include "rootspatialparams_dgf.hh"
+// #include "rootspatialparams_dgf.hh"
+#include "rootspatialparams_rb.hh"
 
 namespace Dumux {
 
@@ -93,7 +94,6 @@ private:
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using VertexMapper = ReorderingDofMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
@@ -107,24 +107,23 @@ struct Problem<TypeTag, TTag::Roots> {
     using type = RootsProblem<TypeTag>;
 };
 
-// Set the spatial parameters
-template<class TypeTag>
-struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
-};
-
 // the fluid system
 template<class TypeTag>
 struct FluidSystem<TypeTag, TTag::Roots> {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
 };
+
+// Set the spatial parameters
+template<class TypeTag>
+struct SpatialParams<TypeTag, TTag::Roots> {
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
+    // using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+};
+
 } // end namespace Properties
-
-
-
 
 
 /*!

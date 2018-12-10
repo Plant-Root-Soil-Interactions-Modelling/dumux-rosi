@@ -4,6 +4,10 @@ dune_symlink_to_source_files(FILES "grids" "input" "modelparameter" "python")
 dune_add_test(NAME rootsystem
               SOURCES rootsystem.cc
               CMAKE_GUARD HAVE_CROOTBOX)
+              
+dune_add_test(NAME rootsystem_rb
+              SOURCES rootsystem_rb.cc
+              CMAKE_GUARD HAVE_CROOTBOX)              
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)

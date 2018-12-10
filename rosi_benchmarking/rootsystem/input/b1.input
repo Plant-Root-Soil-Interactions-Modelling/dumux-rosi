@@ -8,7 +8,7 @@ DtInitial = 1 # [s]
 [RootSystem.Grid]
 File =  grids/singleroot.dgf
 
-# [RootSystem.Conductivity]
+[RootSystem.Conductivity]
 Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
 Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
 
