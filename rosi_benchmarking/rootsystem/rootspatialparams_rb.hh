@@ -204,8 +204,7 @@ public:
     }
 
     //! Output and analysis of the root system
-    void analyseRootSystem() const
-    {
+    void analyseRootSystem() const {
         Scalar totalLength = 0.0, totalLengthTop = 0.0, totalLengthBottom = 0.0;
         Scalar totalLengthPrimary = 0.0, totalLengthSecondary = 0.0;
         Scalar rootVolume = 0.0;
