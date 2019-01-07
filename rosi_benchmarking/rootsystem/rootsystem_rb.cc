@@ -59,6 +59,19 @@
 
 
 
+namespace Dumux {
+namespace Properties {
+
+template<class TypeTag> // Set the spatial parameters
+struct SpatialParams<TypeTag, TTag::Roots> {
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
+};
+
+} // end namespace Properties
+}
+
 
 
 int main(int argc, char** argv) try
@@ -84,8 +97,8 @@ int main(int argc, char** argv) try
     rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
     auto grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem);
 
-//    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
-//    rootSystem->setSoil(&soilLookup);
+    //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
+    //    rootSystem->setSoil(&soilLookup);
 
     ////////////////////////////////////////////////////////////
     // run stationary or dynamic problem on this grid

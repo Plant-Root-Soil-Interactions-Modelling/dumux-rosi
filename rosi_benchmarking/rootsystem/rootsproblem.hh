@@ -44,7 +44,7 @@
 
 #include <math.h>
 
-// #include "rootspatialparams_dgf.hh"
+#include "rootspatialparams_dgf.hh"
 #include "rootspatialparams_rb.hh"
 
 namespace Dumux {
@@ -112,15 +112,6 @@ template<class TypeTag>
 struct FluidSystem<TypeTag, TTag::Roots> {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
-};
-
-// Set the spatial parameters
-template<class TypeTag>
-struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
-    // using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
 
 } // end namespace Properties

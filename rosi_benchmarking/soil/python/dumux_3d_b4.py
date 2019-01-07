@@ -31,15 +31,14 @@ if np_ == 1:
     os.system("./richards3d benchmarks_3d/b4c.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr")
     os.system("./richards3d benchmarks_3d/b4d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr")
 else:
-    pass
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4a.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4b.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4c.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4d.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4a.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4a_hr -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4b.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4b_hr -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4c.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4a.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4b.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4c.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4d.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4a.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4a_hr -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4b.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4b_hr -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4c.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b4d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr -Grid.Overlap 0")
 
 # open results
 num = ['a', 'c', 'b', 'd', 'a_hr', 'c_hr', 'b_hr', 'd_hr']

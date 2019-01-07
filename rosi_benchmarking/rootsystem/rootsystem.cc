@@ -55,6 +55,21 @@
 #include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
+namespace Dumux {
+namespace Properties {
+
+template<class TypeTag> // Set the spatial parameters
+struct SpatialParams<TypeTag, TTag::Roots> {
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+};
+
+} // end namespace Properties
+}
+
+
+
 int main(int argc, char** argv) try
 {
     using namespace Dumux;

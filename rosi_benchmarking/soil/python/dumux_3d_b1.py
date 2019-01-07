@@ -23,10 +23,9 @@ if np_ == 1:
     os.system("./richards3d benchmarks_3d/b1b.input")
     os.system("./richards3d benchmarks_3d/b1c.input")
 else:
-    pass
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1a.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1b.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1c.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1a.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1b.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1c.input -Grid.Overlap 0")
 
 # Figure 2a
 s_, p_, z1_ = read3D_vtp("benchmark3d_1a-00001", np_)
