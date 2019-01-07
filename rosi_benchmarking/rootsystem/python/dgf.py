@@ -1,37 +1,8 @@
 import numpy as np
 
-
-def createDGF_1Dsoil(filename, N, depth, top, bot, domainId, vertex3d = False):
-
-    # prepare arrays
-    z_ = np.linspace(0, -depth, N)
-    initial = np.linspace(top, bot, N)  # per node
-    initialC = np.linspace(top, bot, N - 1)  # per cell
-    id = range(0, N)
-
-    # write file
-    file = open(filename, "w")
-
-    file.write("DGF\n")
-    file.write('Vertex\n')
-    file.write('parameters 2\n');
-    for i in range(0, N):
-        if vertex3d:
-            file.write('{:g} {:g} {:g} {:g} {:g}\n'.format(0., 0., z_[i], initialC[i], domainId[i]))
-        else:
-            file.write('{:g} {:g} {:g}\n'.format(z_[i], initial[i], domainId[i]))
-
-    file.write('#\n');
-    file.write('Simplex\n');
-    file.write('parameters 2\n');
-    for i in range(0, N - 1):
-        file.write('{:g} {:g} {:g} {:g}\n'.format(id[i], id[i + 1], initialC[i], domainId[i]));
-
-    file.write('#\nBOUNDARYSEGMENTS\n2 0\n')  # how do i get the boundary segments into DUMUX ?
-    file.write('3 {:g}\n'.format(N - 1))  # vertex id, but index starts with 0
-    file.write('#\nBOUNDARYDOMAIN\ndefault 1\n#\n')
-
-    file.close()
+'''
+Creates dgf files for the root system benchmarks 1, 2 and 3
+'''
 
 
 def createDGF_1Droots(filename, nodes, seg, params = np.zeros((0, 0))):
@@ -89,8 +60,8 @@ if __name__ == "__main__":
     a_lateral = 0.1  # lateral root radius (cm)
     kz0, kz1 = 0.5e-19, 1.e-18  # m^4 / (Pa s)
     kr0, kr1 = 1.7e-13, 0.2e-13  # m / (Pa s)
-    kz = lambda age: 5.e-13  # kz0*(age<=3)+kz1*(age>3)
-    kr = lambda age: 2.e-9  # kr0*(age<=3)+kr1*(age>3)
+    kz = lambda age: kz1  # kz0 * (age <= 3) + kz1 * (age > 3)
+    kr = lambda age: kr1  #  * (age <= 3) + kr1 * (age > 3)
     a = lambda t: 1.e-2 * (a_tap * (t == 1) + a_lateral * (t == 2))  # cm->m
     a_ = list(map(a, types))
     kr_ = list(map(kr, age))  # m / (Pa s)
@@ -100,7 +71,14 @@ if __name__ == "__main__":
     seg = np.array(seg)  # convert from list to numpy array
     order = np.array(types) - 1;
     params = np.vstack((order, a_, age, kr_, kz_))
-    createDGF_1Droots("../grids/rootsystem.dgf", nodes, seg, params)
+    createDGF_1Droots("../grids/rootsystem_b2.dgf", nodes, seg, params)
+
+    kz = lambda age: kz0 * (age <= 3) + kz1 * (age > 3)
+    kr = lambda age: kr1 * (age <= 3) + kr1 * (age > 3)
+    kr_ = list(map(kr, age))  # m / (Pa s)
+    kz_ = list(map(kz, age))  # m^4 / (Pa s)
+    params = np.vstack((order, a_, age, kr_, kz_))
+    createDGF_1Droots("../grids/rootsystem_b3.dgf", nodes, seg, params)
 
     print("its done.")
 

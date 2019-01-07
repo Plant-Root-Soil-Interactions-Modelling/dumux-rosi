@@ -63,5 +63,6 @@ plt.plot(h_, z_, "r+")
 plt.plot(pr, za_)
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
+np.savetxt("dumux_b1", np.vstack((z_, h_)), delimiter = ',')
 plt.show()
 
