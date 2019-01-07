@@ -30,7 +30,6 @@
 #include <dumux/material/spatialparams/fv1p.hh>
 #include <dumux/material/components/simpleh2o.hh>
 
-#include <dumux/growth/rootparameters.hh>
 #include <dumux/io/inputfilefunction.hh>
 
 

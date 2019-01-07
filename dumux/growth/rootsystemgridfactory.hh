@@ -23,10 +23,8 @@
 #ifndef DUMUX_ROOTSYSTEM_GRIDFACTORY_HH
 #define DUMUX_ROOTSYSTEM_GRIDFACTORY_HH
 
-#include <dune/common/version.hh>
 #include <dune/foamgrid/foamgrid.hh>
 #include <dune/grid/common/gridfactory.hh>
-#include <dumux/growth/crootboxinterface.hh>
 #include <RootSystem.h>
 
 namespace Dumux {
@@ -34,7 +32,7 @@ namespace Dumux {
 namespace GrowthModule {
 
 /**
- * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (RootSystem)RootSystemRootSystem
+ * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CRoot'Box::RootSystem)RootSystemRootSystem
  *
  * use static member function: RootSystemGridFactory::makeGrid(RootSystem)
  */
@@ -48,43 +46,46 @@ public:
     //! export grid type
     using Grid = Dune::FoamGrid<1, 3>;
 
-    //! make the grid from the initial crootbox growth step
+    //! make the grid from the initial root system
     static std::shared_ptr<Grid> makeGrid(const CRootBox::RootSystem& rs, bool verbose = false)
     {
         // the grid factory creates the grid
         if (verbose) std::cout << "RootSystemGridFactory: " << std::endl;
         Dune::GridFactory<Grid> factory;
-
-        // we have always the same geometry type
-#if DUNE_VERSION_NEWER(DUNE_COMMON,2,6)
         constexpr auto line = Dune::GeometryTypes::line;
-#else
-        const auto line = Dune::GeometryType(1);
-#endif
+
         const auto nodes = rs.getNodes();
         int counter = 0;
-        for (const auto& n : nodes)
-        {
+        for (const auto& n : nodes) {
             if (verbose) std::cout << "-- add vertex " << counter++ <<  " at " << n.toString() << std::endl;
-            factory.insertVertex(CRootBoxInterface::convert(n));
+            factory.insertVertex(convert_(n));
         }
 
         const auto shootSegments = rs.getShootSegments();
-        for(const auto& s : shootSegments)
-        {
+        for (const auto& s : shootSegments) {
             if (verbose) std::cout << "-- add element with vertices " << s.toString() << std::endl;
-            factory.insertElement(line, CRootBoxInterface::convert(s));
+            factory.insertElement(line, convert_(s));
         }
 
         const auto segments = rs.getSegments();
-        for(const auto& s : segments)
-        {
+        for (const auto& s : segments) {
             if (verbose) std::cout << "-- add element with vertices " << s.toString() << std::endl;
-            factory.insertElement(line, CRootBoxInterface::convert(s));
+            factory.insertElement(line, convert_(s));
         }
 
         return std::shared_ptr<Grid>(factory.createGrid());
     }
+
+private:
+
+    static GlobalPosition convert_(const CRootBox::Vector3d& v, double scale = 0.01) {
+        return GlobalPosition( { v.x * scale, v.y * scale, v.z * scale });
+    }
+
+    static std::vector<unsigned int> convert_(const CRootBox::Vector2i& v) {
+        return {static_cast<unsigned int>(v.x), static_cast<unsigned int>(v.y)};
+    }
+
 };
 
 } // end namespace GridGrowth

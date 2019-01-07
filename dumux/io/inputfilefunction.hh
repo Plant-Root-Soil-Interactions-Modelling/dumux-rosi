@@ -149,7 +149,7 @@ public:
     }
 
     //! type
-    int type() {
+    int type() const {
         return type_;
     }
 

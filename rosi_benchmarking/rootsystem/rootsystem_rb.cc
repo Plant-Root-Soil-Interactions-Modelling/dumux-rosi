@@ -64,46 +64,41 @@
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
-    // using namespace GrowthModule;
+    using namespace GrowthModule;
 
+    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // initialize MPI, finalize is done automatically on exit
+
+    if (mpiHelper.rank() == 0) { // print dumux start message
+        DumuxMessage::print(/*firstCall=*/true);
+    }
     // define the type tag for this problem
     using TypeTag = Properties::TTag::RootsBox;
     // RootsCCTpfa RootsBox
 
-    // initialize MPI, finalize is done automatically on exit
-    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
+    Parameters::init(argc, argv); // parse command line arguments and input file
 
-    // print dumux start message
-    if (mpiHelper.rank() == 0)
-        DumuxMessage::print(/*firstCall=*/true);
-
-    // parse command line arguments and input file
-    Parameters::init(argc, argv);
-
-    // create a croot box rootsystem
+    // create a grid from a CRootBox root system
     auto rootSystem = std::make_shared<CRootBox::RootSystem>();
     rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
     rootSystem->initialize();
     rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
+    auto grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem);
 
-    // try to create a grid (from the given grid file or the input file)
-    std::vector<size_t> map;
-    auto grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, map);
+//    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
+//    rootSystem->setSoil(&soilLookup);
 
     ////////////////////////////////////////////////////////////
-    // run instationary non-linear problem on this grid
+    // run stationary or dynamic problem on this grid
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
     const auto& leafGridView = grid->leafGridView();
-
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
     fvGridGeometry->update();
-
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
     // the problem (initial and boundary conditions)
@@ -111,7 +106,6 @@ int main(int argc, char** argv) try
     auto problem = std::make_shared<Problem>(fvGridGeometry);
     problem->spatialParams().initParameters(*rootSystem);
     // problem->spatialParams().analyseRootSystem();
-
     std::cout << "... and, i have a problem \n" << "\n" << std::flush;
 
     // the solution vector
@@ -119,14 +113,12 @@ int main(int argc, char** argv) try
     SolutionVector x(fvGridGeometry->numDofs());
     problem->applyInitialSolution(x);
     auto xOld = x;
-
     std::cout << "no solution, yet \n" << "\n" << std::flush;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x);
-
     std::cout << "... but variables \n" << "\n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
@@ -151,7 +143,6 @@ int main(int argc, char** argv) try
     }
 
     std::cout << "time might be an issue \n" << "\n" << std::flush;
-
     // intialize the vtk output module
     using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
@@ -161,7 +152,6 @@ int main(int argc, char** argv) try
     vtkWriter.write(0.0);
 
     std::cout << "vtk writer module initialized (how convenient)" << "\n" << std::flush;
-
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
@@ -180,7 +170,6 @@ int main(int argc, char** argv) try
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
     std::cout << "planning to actually start \n" << "\n" << std::flush;
-
     if (tEnd > 0) // dynamic
         {
         std::cout << "a time dependent model" << "\n" << std::flush;
@@ -222,35 +211,29 @@ int main(int argc, char** argv) try
     // finalize, print dumux message to say goodbye
     ////////////////////////////////////////////////////////////
 
-    // print dumux end message
-    if (mpiHelper.rank() == 0)
-    {
+    if (mpiHelper.rank() == 0) { // print dumux end message
         Parameters::print();
         DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
 } // end main
-catch (Dumux::ParameterException &e)
-{
+catch (Dumux::ParameterException &e) {
     std::cerr << std::endl << e << " ---> Abort!" << std::endl;
     return 1;
 }
-catch (Dune::DGFException & e)
-{
+catch (Dune::DGFException & e) {
     std::cerr << "DGF exception thrown (" << e <<
         "). Most likely, the DGF file name is wrong "
         "or the DGF file is corrupted, "
         "e.g. missing hash at end of file or wrong number (dimensions) of entries." << " ---> Abort!" << std::endl;
     return 2;
 }
-catch (Dune::Exception &e)
-{
+catch (Dune::Exception &e) {
     std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
     return 3;
 }
-catch (std::exception &e)
-{
+catch (std::exception &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }

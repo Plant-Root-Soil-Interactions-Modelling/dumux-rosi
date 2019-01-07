@@ -29,11 +29,15 @@
 #include <dune/grid/common/mcmgmapper.hh>
 #include <RootSystem.h>
 
+#include <dumux/io/inputfilefunction.hh>
+
 namespace Dumux {
 namespace GrowthModule {
 
 /*!
- * \brief A croot box soillookup implementation for dumux using vertex data
+ * A CRootBox soillookup implementation for Dumux
+ * using a BoundingBoxTree to obtain the soil element,
+ * and linear finite elements for interpolation of the point
  */
 template<class Grid>
 class SoilLookUpBBoxTree : public CRootBox::SoilLookUp
@@ -43,23 +47,21 @@ class SoilLookUpBBoxTree : public CRootBox::SoilLookUp
     using GridView = typename Grid::LeafGridView;
     using Mapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using BBoxTree = BoundingBoxTree< GridViewGeometricEntitySet<GridView, 0> >;
-public:
-    SoilLookUpBBoxTree(const GridView& gridView, const BBoxTree& tree, const std::vector<double>& sat)
-    : mapper_(gridView, Dune::mcmgVertexLayout())
-    , gridView_(gridView)
-    , bBoxTree_(tree)
-    , sat_(sat)
-    , weight_(getParam<double>("SoilLookup.Weight", 1.0))
-    , power_(getParam<double>("SoilLookup.Power", 1.0))
-    {}
 
-    //! Returns a scalar property of the soil scaled from 0..1
-    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final
-    {
-        const auto globalPos = GrowthModule::CRootBoxInterface::convert(pos);
-        const auto entities = intersectingEntities(globalPos, bBoxTree_);
-        if (entities.empty())
+public:
+
+    SoilLookUpBBoxTree(const GridView& gridView, const BBoxTree& tree, const std::vector<double>& sat) :
+        mapper_(gridView, Dune::mcmgVertexLayout()), gridView_(gridView), bBoxTree_(tree), sat_(sat)
+{
+    }
+
+    //! Returns the interpolated saturation, pos [cm]
+    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
+        const auto globalPos = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
+        const auto entities = intersectingEntities(globalPos, bBoxTree_); // function from <dumux/common/geometry/intersectingentities.hh>
+        if (entities.empty()) {
             return 0.0;
+        }
 
         const auto element = bBoxTree_.entitySet().entity(entities[0]);
         const auto geo = element.geometry();
@@ -69,14 +71,16 @@ public:
         const auto ipLocal = geo.local(globalPos);
         localBasis.evaluateFunction(ipLocal, shapeValues_);
 
-        for (int i = 0; i < geo.corners(); ++i)
+        for (int i = 0; i < geo.corners(); ++i) {
             sat += shapeValues_[i][0]*sat_[mapper_.subIndex(element, i, Grid::dimension)];
+        }
 
-        return std::pow(sat, power_)*weight_;
+        return sat;
     }
 
-    std::string toString() const final
-    { return "SoilLookUp with bounding box tree"; }
+    std::string toString() const final {
+        return "SoilLookUpBBoxTree, linear interpolation with bounding box tree";
+    }
 
 private:
     const FeCache feCache_;
@@ -85,8 +89,50 @@ private:
     const GridView gridView_;
     const BBoxTree& bBoxTree_;
     const std::vector<double>& sat_;
-    double weight_;
-    double power_;
+};
+
+/*!
+ * A soillookup implementation for Dumux
+ * using a static soil, passed via the input file or grid file
+ * see, InputFileFunction
+ */
+template<class BBoxTree, class FVGridGeometry>
+class SoilLookTable: public CRootBox::SoilLookUp {
+
+public:
+
+    SoilLookTable(const InputFileFunction& iff, const FVGridGeometry* fvGridGeometry, const BBoxTree* tree = nullptr) :
+        iff_(iff), fvGridGeometry_(fvGridGeometry), bBoxTree_(tree) {
+        if (((iff_.type() == iff_.data) || (iff_.type() == iff_.perType)) && (tree == nullptr)) {
+            std::cout << "SoilLookTable: grid data is only available if box tree is set ";
+        }
+    }
+
+    //! Returns the saturation, pos [cm]
+    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
+        const auto p = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
+        size_t eIdx = 0;
+        if (bBoxTree_ != nullptr) {
+            const auto entities = intersectingEntities(p, bBoxTree_); // function from <dumux/common/geometry/intersectingentities.hh>
+            if (!entities.empty()) {
+                eIdx = fvGridGeometry_().elementMapper().index(entities);
+            } else {
+                std::cout << "SoilLookTable: no element found at " << p;
+            }
+        }
+        return iff_.f(p[2], eIdx);
+    }
+
+    std::string toString() const final {
+        return "SoilLookTable";
+    }
+
+private:
+
+    const BBoxTree* bBoxTree_;
+    const FVGridGeometry* fvGridGeometry_;
+    const InputFileFunction& iff_;
+
 };
 
 } // end namespace GrowthModule
