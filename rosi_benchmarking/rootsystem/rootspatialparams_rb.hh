@@ -127,7 +127,6 @@ public:
         time_ = t;
     }
 
-
     //! Read parameters from the a CRootBox rootsystem (assuming that indices correspond)
     void initParameters(const CRootBox::RootSystem& rs) {
 
@@ -170,7 +169,7 @@ public:
         // std::cout << "END INIT PARAMS!";
     }
 
-    //! Update new parameters parameters, after the root system has grown
+    //! Update new parameters, after the root system has grown
     void updateParameters(const CRootBox::RootSystem& rs) {
 
         const auto& gridView = this->fvGridGeometry().gridView();
@@ -248,7 +247,6 @@ private:
     std::vector<double> ctimes_;
 
     double time_ = 0.;
-
 };
 
 } // end namespace Dumux

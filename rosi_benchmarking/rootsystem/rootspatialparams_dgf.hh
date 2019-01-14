@@ -55,6 +55,7 @@ class RootSpatialParamsDGF
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
 
+    // parameter indices, where the parameter (if used) is located the dgf file
     enum {
         orderIdx = 0, radiusIdx = 1, ageIdx = 2, krIdx = 3, kxIdx = 4
     };
@@ -108,7 +109,7 @@ public:
     }
 
     Scalar age(std::size_t eIdx) const {
-        return age_.f(eIdx);
+        return age_.f(eIdx)+time_;
     }
 
     Scalar kr(std::size_t eIdx) const {
@@ -117,6 +118,10 @@ public:
 
     Scalar kx(std::size_t eIdx) const {
         return kx_.f(this->age(eIdx), eIdx);
+    }
+
+    void setTime(double t) {
+        time_ = t;
     }
 
     //! Read initial parameters from grid data object
@@ -177,6 +182,7 @@ private:
     InputFileFunction radius_;
     InputFileFunction age_;
 
+    double time_ = 0.;
 };
 
 } // end namespace Dumux

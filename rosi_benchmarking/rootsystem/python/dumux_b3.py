@@ -24,4 +24,3 @@ plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
 np.savetxt("dumux_b3", np.vstack((z_[:, 2], h_)), delimiter = ',')
 plt.show()
-
