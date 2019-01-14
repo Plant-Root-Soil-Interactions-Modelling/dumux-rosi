@@ -49,294 +49,294 @@
 
 namespace Dumux {
 
-    template <class TypeTag>
-    class RootsProblem;
+template<class TypeTag>
+class RootsProblem;
 
-    namespace Properties {
+namespace Properties {
 
-        // Create new type tags
-        namespace TTag {
-            struct Roots {
-                using InheritsFrom = std::tuple<OneP>;
-            };
-            struct RootsCCTpfa {
-                using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
-            };
-            struct RootsBox {
-                using InheritsFrom = std::tuple<Roots, BoxModel>;
-            };
-        } // end namespace TTag
+// Create new type tags
+namespace TTag {
+struct Roots {
+    using InheritsFrom = std::tuple<OneP>;
+};
+struct RootsCCTpfa {
+    using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
+};
+struct RootsBox {
+    using InheritsFrom = std::tuple<Roots, BoxModel>;
+};
+} // end namespace TTag
 
-        // Set the grid type
+// Set the grid type
 #if HAVE_DUNE_FOAMGRID
-        template<class TypeTag>
-        struct Grid<TypeTag, TTag::Roots> {using type = Dune::FoamGrid<1, 3>;};
+template<class TypeTag>
+struct Grid<TypeTag, TTag::Roots> {using type = Dune::FoamGrid<1, 3>;};
 #endif
 
-        // if we have pt scotch use the reordering dof mapper to optimally sort the dofs (cc)
-        template<class TypeTag>
-        struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
-        private:
-            static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-            using GridView = GetPropType<TypeTag, Properties::GridView>;
+// if we have pt scotch use the reordering dof mapper to optimally sort the dofs (cc)
+template<class TypeTag>
+struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
+private:
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
 
-            using ElementMapper = ReorderingDofMapper<GridView>;
-            using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-            using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
-        public:
-            using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
-        };
+    using ElementMapper = ReorderingDofMapper<GridView>;
+    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+public:
+    using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
+};
 
-        // if we have pt scotch use the reordering dof mapper to optimally sort the dofs (box)
-        template<class TypeTag>
-        struct FVGridGeometry<TypeTag, TTag::RootsBox> {
-        private:
-            static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-            using GridView = GetPropType<TypeTag, Properties::GridView>;
-            using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-            using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-            using VertexMapper = ReorderingDofMapper<GridView>;
-            using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
-        public:
-            using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
-        };
+// if we have pt scotch use the reordering dof mapper to optimally sort the dofs (box)
+template<class TypeTag>
+struct FVGridGeometry<TypeTag, TTag::RootsBox> {
+private:
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+    using VertexMapper = ReorderingDofMapper<GridView>;
+    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+public:
+    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
+};
 
-        // Set the problem property
-        template<class TypeTag>
-        struct Problem<TypeTag, TTag::Roots> {
-            using type = RootsProblem<TypeTag>;
-        };
+// Set the problem property
+template<class TypeTag>
+struct Problem<TypeTag, TTag::Roots> {
+    using type = RootsProblem<TypeTag>;
+};
 
-        // the fluid system
-        template<class TypeTag>
-        struct FluidSystem<TypeTag, TTag::Roots> {
-            using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-            using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
-        };
+// the fluid system
+template<class TypeTag>
+struct FluidSystem<TypeTag, TTag::Roots> {
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
+};
 
-    } // end namespace Properties
+} // end namespace Properties
+
+
+/*!
+ * \ingroup RootsProblem
+ * \brief A test problem for roots
+ */
+template<class TypeTag>
+class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
+    using ParentType = PorousMediumFlowProblem<TypeTag>;
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+
+    static const int dim = GridView::dimension;
+    static const int dimWorld = GridView::dimensionworld;
+
+    using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+    enum {
+        // indices of the primary variables
+        conti0EqIdx = Indices::conti0EqIdx,
+        pressureIdx = Indices::pressureIdx
+    };
+
+    using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+    using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
+    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+    using Element = typename GridView::template Codim<0>::Entity;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+    using FVElementGeometry = typename GetPropType<TypeTag, Properties::FVGridGeometry>::LocalView;
+    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+
+    using PointSource = GetPropType<TypeTag, Properties::PointSource>;
+    using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
+
+    enum {
+        isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
+    };
+
+    enum {
+        bcDirichlet = 0, bcNeumann = 1
+    };
+
+public:
+
+    RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
+        ParentType(fvGridGeometry) {
+        soil_ = InputFileFunction("RootSystem.Soil.P", "RootSystem.Soil.Z");
+        try {
+            collar_ = InputFileFunction("RootSystem.Collar.P", "RootSystem.Collar.PT", true);
+            bcType_ = bcDirichlet;
+        } catch (...) {
+            collar_ = InputFileFunction("RootSystem.Collar.Transpiration", "RootSystem.Collar.TranspirationT", true);
+            bcType_ = bcNeumann;
+        }
+    }
+
+    /*
+     * \brief Return the temperature within the domain in [K]. (actually needed? why?)
+     */
+    Scalar temperature() const {
+        return 273.15 + 10; // 10C
+    }
+
+    // calculate axial fluxes (todo)
+    std::vector<Scalar> axialFlux() {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        size_t n = gridView.size(0);
+        std::vector<Scalar> v = std::vector<Scalar>(n);
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        auto vMapper = this->fvGridGeometry().vertexMapper();
+        for (const auto& element : elements(gridView)) {
+            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            auto geo = element.geometry();
+            auto length = geo.volume();
+            std::cout << "element " << eIdx << " has " << geo.corners() << " corners \n";
+            for (size_t i = 0; i < geo.corners(); i++) {
+                auto vIdx = vMapper.subIndex(element, i, 1);
+                std::cout << "   vertex Index " << vIdx << "\n";
+            }
+        }
+        return v;
+    }
+
+    // evaluates a spatialparams function given for an element eIdx for all elements
+    std::vector<Scalar> exportVtkField(std::function<Scalar(size_t)> f) {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        size_t n = gridView.size(0);
+        std::vector<Scalar> v = std::vector<Scalar>(n);
+        for (size_t i = 0; i < n; i++) {
+            v[i] = f(i);
+        }
+        return v;
+    }
 
 
     /*!
-     * \ingroup RootsProblem
-     * \brief A test problem for roots
+     * \brief Specifies which kind of boundary condition should be
+     *        used for which equation on a given boundary control volume.
      */
-    template <class TypeTag>
-    class RootsProblem : public PorousMediumFlowProblem<TypeTag>
-    {
-        using ParentType = PorousMediumFlowProblem<TypeTag>;
-        using GridView = GetPropType<TypeTag, Properties::GridView>;
-        using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-        using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
-
-        static const int dim = GridView::dimension;
-        static const int dimWorld = GridView::dimensionworld;
-
-        using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
-        enum {
-            // indices of the primary variables
-            conti0EqIdx = Indices::conti0EqIdx,
-            pressureIdx = Indices::pressureIdx
-        };
-
-        using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-        using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-        using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-        using Element = typename GridView::template Codim<0>::Entity;
-        using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-        using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-        using FVElementGeometry = typename GetPropType<TypeTag, Properties::FVGridGeometry>::LocalView;
-        using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-        using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-
-        using PointSource = GetPropType<TypeTag, Properties::PointSource>;
-        using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
-
-        enum {
-            isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
-        };
-
-        enum {
-            bcDirichlet = 0, bcNeumann = 1
-        };
-
-    public:
-
-        RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
-            ParentType(fvGridGeometry) {
-            soil_ = InputFileFunction("RootSystem.Soil.P", "RootSystem.Soil.Z");
-            try {
-                    collar_ = InputFileFunction("RootSystem.Collar.P", "RootSystem.Collar.PT", true);
-                    bcType_ = bcDirichlet;
-            } catch (...) {
-                    collar_ = InputFileFunction("RootSystem.Collar.Transpiration", "RootSystem.Collar.TranspirationT", true);
-                    bcType_ = bcNeumann;
-            }
-        }
-
-        /*
-         * \brief Return the temperature within the domain in [K]. (actually needed? why?)
-         */
-        Scalar temperature() const {
-            return 273.15 + 10; // 10C
-        }
-
-        void axialFlux() {
-            const auto& gridView = this->fvGridGeometry().gridView();
-            auto eMapper = this->fvGridGeometry().elementMapper();
-            auto vMapper = this->fvGridGeometry().vertexMapper();
-            for (const auto& element :elements(gridView)) {
-                    const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-                    auto geo = element.geometry();
-                    auto length = geo.volume();
-                    std::cout << "element " << eIdx << " has " << geo.corners() << " corners \n";
-                    for (size_t i = 0; i<geo.corners() ; i++) {
-                            auto vIdx = vMapper.subIndex(element, i, 1);
-                            std::cout << "   vertex Index " << vIdx << "\n";
-                    }
-            }
-        }
-
-        // evaluates a spatialparams function given for an element eIdx for all elements
-        std::vector<Scalar> exportVtkField(std::function<Scalar(size_t)> f) {
-            size_t n = gridView.size(0);
-            std::vector<Scalar> v = std::vector<Scalar>(n);
-            for (size_t i=0; i<n; i++) {
-                    v[i] = f(i);
-            }
-            return v;
-        }
-
-
-        /*!
-         * \brief Specifies which kind of boundary condition should be
-         *        used for which equation on a given boundary control volume.
-         */
-        BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const {
-            BoundaryTypes bcTypes;
-            bcTypes.setAllNeumann(); // default
-            if (onUpperBoundary_(pos)) { // root collar
-                    if (bcType_ == bcDirichlet) {
-                            bcTypes.setAllDirichlet();
-                    } else {
-                            bcTypes.setAllNeumann();
-                    }
-            } else { // for all other (i.e. root tips)
-                    bcTypes.setAllNeumann();
-            }
-            return bcTypes;
-        }
-
-        /*!
-         * \brief Evaluate the boundary conditions for a dirichlet
-         *        control volume.
-         */
-        PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const {
-            return PrimaryVariables(collar());
-        }
-
-        /*
-         * This is the method for the case where the Neumann condition is
-         * potentially solution dependent
-         *
-         * Negative values mean influx.
-         * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot s)] \f$.
-         */
-        NumEqVector neumann(const Element& element,
-                            const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
-                            const SubControlVolumeFace& scvf) const {
-            if (onUpperBoundary_(scvf.center())) {
-                    return NumEqVector(collar());
-            } else {
-                    return NumEqVector(0.);
-            }
-        }
-
-        /*!
-         * For this method, the return parameter stores the conserved quantity rate
-         * generated or annihilate per volume unit. Positive values mean
-         * that the conserved quantity is created, negative ones mean that it vanishes.
-         * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f$.
-         */
-        NumEqVector source(const Element &element,
-                           const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
-                           const SubControlVolume &scv) const {
-            NumEqVector values;
-            auto params = this->spatialParams();
-            const auto eIdx = params.fvGridGeometry().elementMapper().index(element);
-            Scalar a = params.radius(eIdx); // root radius (m)
-            Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-            Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
-            Scalar z = scv.center()[dimWorld - 1]; //
-            Scalar phs = soil(z); // kg/m/s^2
-            // std::cout << "problem " << phs << ", " << a << ", " << kr * 1.e9 << "\n";
-            values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
-            values[conti0EqIdx] /= (a * a * M_PI); // 1/s
-            values[conti0EqIdx] *= rho_; // (kg/s/m^3)
-            // std::cout << values[conti0EqIdx] << "\n";
-            return values;
-        }
-
-        /*!
-         * \brief Return how much the domain is extruded at a given sub-control volume.
-         */
-        template<class ElementSolution>
-        Scalar extrusionFactor(const Element& element,
-                               const SubControlVolume& scv, const ElementSolution& elemSol) const
-        {
-            const auto eIdx = this->spatialParams_->fvGridGeometry().elementMapper().index(element);
-            Scalar r = this->spatialParams_->radius(eIdx); // root radius (m)
-            return M_PI * r * r;
-        }
-
-        /*!
-         * \brief Evaluate the initial value for a control volume.
-         */
-        PrimaryVariables initialAtPos(const GlobalPosition& globalPos) const {
-            return PrimaryVariables(soil(globalPos[dimWorld - 1]));
-        }
-
-        //! soil pressure (called by initial, and source term)
-        Scalar soil(Scalar z) const {
-            return toPa_(soil_.f(z));
-        }
-
-        //! sets the current simulation time (within the simulation loop) for collar boundary look up
-        void setTime(Scalar t) {
-            time_ = t;
-        }
-
-        //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
-        Scalar collar() const {
+    BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const {
+        BoundaryTypes bcTypes;
+        bcTypes.setAllNeumann(); // default
+        if (onUpperBoundary_(pos)) { // root collar
             if (bcType_ == bcDirichlet) {
-                    return toPa_(collar_.f(time_));
+                bcTypes.setAllDirichlet();
             } else {
-                    return collar_.f(time_); // TODO: conversions?
+                bcTypes.setAllNeumann();
             }
+        } else { // for all other (i.e. root tips)
+            bcTypes.setAllNeumann();
         }
+        return bcTypes;
+    }
 
+    /*!
+     * \brief Evaluate the boundary conditions for a dirichlet
+     *        control volume.
+     */
+    PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const {
+        return PrimaryVariables(collar());
+    }
 
-    private:
-
-        InputFileFunction soil_;
-        InputFileFunction collar_;
-        int bcType_;
-        Scalar time_ = 0.;
-
-        Scalar toPa_(Scalar ph) const {     // cm -> Pa
-            return pRef_ + ph / 100. * rho_ * g_;
+    /*
+     * This is the method for the case where the Neumann condition is
+     * potentially solution dependent
+     *
+     * Negative values mean influx.
+     * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot s)] \f$.
+     */
+    NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
+        const SubControlVolumeFace& scvf) const {
+        if (onUpperBoundary_(scvf.center())) {
+            return NumEqVector(collar());
+        } else {
+            return NumEqVector(0.);
         }
+    }
 
-        bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
-            return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+    /*!
+     * For this method, the return parameter stores the conserved quantity rate
+     * generated or annihilate per volume unit. Positive values mean
+     * that the conserved quantity is created, negative ones mean that it vanishes.
+     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f$.
+     */
+    NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
+        const SubControlVolume &scv) const {
+        NumEqVector values;
+        auto params = this->spatialParams();
+        const auto eIdx = params.fvGridGeometry().elementMapper().index(element);
+        Scalar a = params.radius(eIdx); // root radius (m)
+        Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
+        Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
+        Scalar z = scv.center()[dimWorld - 1]; //
+        Scalar phs = soil(z); // kg/m/s^2
+        // std::cout << "problem " << phs << ", " << a << ", " << kr * 1.e9 << "\n";
+        values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+        values[conti0EqIdx] /= (a * a * M_PI); // 1/s
+        values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+        // std::cout << values[conti0EqIdx] << "\n";
+        return values;
+    }
+
+    /*!
+     * \brief Return how much the domain is extruded at a given sub-control volume.
+     */
+    template<class ElementSolution>
+    Scalar extrusionFactor(const Element& element, const SubControlVolume& scv, const ElementSolution& elemSol) const {
+        const auto eIdx = this->spatialParams_->fvGridGeometry().elementMapper().index(element);
+        Scalar r = this->spatialParams_->radius(eIdx); // root radius (m)
+        return M_PI * r * r;
+    }
+
+    /*!
+     * \brief Evaluate the initial value for a control volume.
+     */
+    PrimaryVariables initialAtPos(const GlobalPosition& globalPos) const {
+        return PrimaryVariables(soil(globalPos[dimWorld - 1]));
+    }
+
+    //! soil pressure (called by initial, and source term)
+    Scalar soil(Scalar z) const {
+        return toPa_(soil_.f(z));
+    }
+
+    //! sets the current simulation time (within the simulation loop) for collar boundary look up
+    void setTime(Scalar t) {
+        time_ = t;
+    }
+
+    //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
+    Scalar collar() const {
+        if (bcType_ == bcDirichlet) {
+            return toPa_(collar_.f(time_));
+        } else {
+            return collar_.f(time_); // TODO: conversions?
         }
+    }
 
-        static constexpr Scalar g_ = 9.81; // cm / s^2
-        static constexpr Scalar rho_ = 1.e3; // kg / m^3
-        static constexpr Scalar pRef_ = 1.e5; // Pa
-        static constexpr Scalar eps_ = 1e-8;
 
-    };
+private:
+
+    InputFileFunction soil_;
+    InputFileFunction collar_;
+    int bcType_;
+    Scalar time_ = 0.;
+
+    Scalar toPa_(Scalar ph) const {     // cm -> Pa
+        return pRef_ + ph / 100. * rho_ * g_;
+    }
+
+    bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
+        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+    }
+
+    static constexpr Scalar g_ = 9.81; // cm / s^2
+    static constexpr Scalar rho_ = 1.e3; // kg / m^3
+    static constexpr Scalar pRef_ = 1.e5; // Pa
+    static constexpr Scalar eps_ = 1e-8;
+
+};
 
 } //end namespace Dumux
 

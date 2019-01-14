@@ -21,3 +21,8 @@ Z = -1.26 -.43 -.41 0
 # [RootSystem.Conductivity]
 # Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
 # Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
+
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
