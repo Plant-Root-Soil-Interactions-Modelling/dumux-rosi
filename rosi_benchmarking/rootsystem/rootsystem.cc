@@ -222,6 +222,8 @@ int main(int argc, char** argv) try
         vtkWriter.write(1);
     }
 
+    problem->axialFlux();
+
     ////////////////////////////////////////////////////////////
     // finalize, print dumux message to say goodbye
     ////////////////////////////////////////////////////////////

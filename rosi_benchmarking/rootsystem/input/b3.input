@@ -13,3 +13,8 @@ P = -1000 # cm pressure head
 
 [RootSystem.Soil]
 P = -200 # cm pressure head
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+
