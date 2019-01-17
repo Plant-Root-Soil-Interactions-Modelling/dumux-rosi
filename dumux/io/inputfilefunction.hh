@@ -71,7 +71,7 @@ public:
         }
     }
 
-    //! constructor 2: class handles one parameter of type constant, perType, or data
+    //! constructor 2 (no tables): class handles one parameter of type constant, perType, or data
     InputFileFunction(std::string nameY, int dataIdx, int typeIdx = 0) {
         dataIdx_ = dataIdx;
         typeIdx_ = typeIdx;
@@ -90,7 +90,7 @@ public:
         }
     }
 
-    //! constructor 3: class handles one parameter of type constant, table, or periodic
+    //! constructor 3 (no grid data): class handles one parameter of type constant, table, or periodic
     InputFileFunction(std::string nameY, std::string nameX, bool enablePeriodic = false) {
         yy_ = Dumux::getParam<std::vector<double>>(nameY);
         if (yy_.size() == 1) {
@@ -129,7 +129,8 @@ public:
             return yy_.at(size_t(data_.at(eIdx)));
         }
         case periodic: {
-            return sin(x / (24. * 3600.) * 2. * M_PI) * (yy_[1] - yy_[0]) + 0.5 * (yy_[0] + yy_[1]);
+            double a = 0.5 * (yy_[1] - yy_[0]);
+            return sin(x / (24. * 3600.) * 2. * M_PI - 0.5 * M_PI) * a + a + yy_[0];
         }
         default:
             throw Dumux::ParameterException("InputFileFunction: unknown function type");

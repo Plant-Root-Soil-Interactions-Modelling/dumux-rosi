@@ -200,6 +200,7 @@ int main(int argc, char** argv) try
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
                 vtkWriter.write(timeLoop->time());
+                problem->writeTranspirationRate();
             }
             // report statistics of this time step
             timeLoop->reportTimeStep();

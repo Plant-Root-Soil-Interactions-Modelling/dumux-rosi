@@ -1,7 +1,7 @@
 [Problem]
 Name = benchmark3d_1c
 
-[Grid]
+[Soil.Grid]
 # UpperRight = 0.05 0.05 0
 # LowerLeft = -0.05 -0.05 -2
 # Cells = 9 9 199

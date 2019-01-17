@@ -13,7 +13,7 @@ File =  grids/RootSys/Reference/RootSys1.dgf
 [RootSystem.Collar]
 P = -10000 # cm pressure head
 
-[RootSystem.Soil]
+[Soil.IC]
 P = -1121.3 -1121.3 -4077.47 -4077.47
 Z = -1.26 -.43 -.41 0
 # P = -1121.3
@@ -21,7 +21,6 @@ Z = -1.26 -.43 -.41 0
 # [RootSystem.Conductivity]
 # Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
 # Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
-
 
 [Vtk]
 AddProcessRank = "false"

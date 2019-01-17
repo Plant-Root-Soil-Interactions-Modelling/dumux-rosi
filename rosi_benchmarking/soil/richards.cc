@@ -73,8 +73,8 @@ int main(int argc, char** argv) try
     Parameters::init(argc, argv);
 
     // try to create a grid (from the given grid file or the input file)
-    GridManager<typename GET_PROP_TYPE(TypeTag, Grid)> gridManager;
-    gridManager.init();
+    GridManager<GetPropType<TypeTag, Properties::Grid>> gridManager;
+    gridManager.init("Soil");
 
     ////////////////////////////////////////////////////////////
     // run instationary non-linear problem on this grid
@@ -84,35 +84,27 @@ int main(int argc, char** argv) try
     const auto& leafGridView = gridManager.grid().leafGridView();
 
     // create the finite volume grid geometry
-    using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
     fvGridGeometry->update();
 
     // the problem (initial and boundary conditions)
-    using Problem = typename GET_PROP_TYPE(TypeTag, Problem);
+    using Problem = GetPropType<TypeTag, Properties::Problem>;
     auto problem = std::make_shared<Problem>(fvGridGeometry, &gridManager);
 
     // the solution vector
-    using SolutionVector = typename GET_PROP_TYPE(TypeTag, SolutionVector);
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
     SolutionVector x(fvGridGeometry->numDofs());
     problem->applyInitialSolution(x);
     auto xOld = x;
 
     // the grid variables
-    using GridVariables = typename GET_PROP_TYPE(TypeTag, GridVariables);
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x, xOld);
 
-    //  instantiate time loop & intialize the vtk output module
-    using VtkOutputFields = typename GET_PROP_TYPE(TypeTag, VtkOutputFields);
-    VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
-    using VelocityOutput = typename GET_PROP_TYPE(TypeTag, VelocityOutput);
-    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    VtkOutputFields::init(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(0.);
-
-    // get some time loop parameters
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
+    // get some time loop parameters  & instantiate time loop
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
     if (tEnd > 0) { // dynamic problem
@@ -132,6 +124,13 @@ int main(int argc, char** argv) try
     } else { // static
     }
 
+    // instantiate time loop & intialize the vtk output module
+    using IOFields = GetPropType<TypeTag, Properties::IOFields>;
+    VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
+    using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
+    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
+    vtkWriter.write(0.0);
 
     // the assembler with time loop for instationary or stationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;

@@ -73,7 +73,6 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
-    // using namespace GrowthModule;
 
     // define the type tag for this problem
     using TypeTag = Properties::TTag::RootsBox;
@@ -100,14 +99,12 @@ int main(int argc, char** argv) try
 
     // we compute on the leaf grid view
     const auto& leafGridView = gridManager.grid().leafGridView();
-
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
     fvGridGeometry->update();
-
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
     // the problem (initial and boundary conditions)
@@ -115,7 +112,6 @@ int main(int argc, char** argv) try
     auto problem = std::make_shared<Problem>(fvGridGeometry);
     problem->spatialParams().initParameters(*gridData);
     // problem->spatialParams().analyseRootSystem();
-
     std::cout << "and i have a problem \n" << "\n" << std::flush;
 
     // the solution vector
@@ -123,14 +119,12 @@ int main(int argc, char** argv) try
     SolutionVector x(fvGridGeometry->numDofs());
     problem->applyInitialSolution(x);
     auto xOld = x;
-
     std::cout << "no solution yet \n" << "\n" << std::flush;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x);
-
     std::cout << "... but variables \n" << "\n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
@@ -149,22 +143,33 @@ int main(int argc, char** argv) try
                 timeLoop->setCheckPoint(p);
             }
         } catch (std::exception& e) {
-            std::cout << "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout << "rootsysstem.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
-
     std::cout << "time might be an issue \n" << "\n" << std::flush;
 
     // intialize the vtk output module
+
     using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    problem->axialFlux(x); // prepare fields
+    problem->radialFlux(x); // prepare fields
+    vtkWriter.addField(problem->axialFlux(), "axial flux");
+    vtkWriter.addField(problem->radialFlux(), "radial flux");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
-
     std::cout << "vtk writer module initialized" << "\n" << std::flush;
+
+//    using GridView = GetPropType<TypeTag, Properties::GridView>;
+//    auto numDofs = fvGridGeometry->vertexMapper().size();
+//    auto numVert = fvGridGeometry->gridView().size(GridView::dimension);
+//    std::cout << "gridview dimension  " << GridView::dimension << "\n";
+//    std::cout << "numDofs " << numDofs << "\n";
+//    std::cout << "numVert  " << numVert << "\n";
+//    return 0; // help
 
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
@@ -201,14 +206,19 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+                problem->axialFlux(x); // prepare fields
+                problem->radialFlux(x); // prepare fields
                 vtkWriter.write(timeLoop->time());
+            }
+            if (mpiHelper.rank() == 0) {
+                problem->writeTranspirationRate();
             }
             // report statistics of this time step
             timeLoop->reportTimeStep();
             // set new dt as suggested by the newton solver
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
-            // problem->setTime(timeLoop->time());
+            problem->setTime(timeLoop->time());
         } while (!timeLoop->finished());
         timeLoop->finalize(leafGridView.comm());
     } else // static
@@ -219,10 +229,11 @@ int main(int argc, char** argv) try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         // write vtk output
+        problem->axialFlux(x); // prepare fields
+        problem->radialFlux(x); // prepare fields
+        problem->writeTranspirationRate();
         vtkWriter.write(1);
     }
-
-    problem->axialFlux();
 
     ////////////////////////////////////////////////////////////
     // finalize, print dumux message to say goodbye

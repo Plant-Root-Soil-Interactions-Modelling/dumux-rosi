@@ -121,7 +121,9 @@ public:
 //                std::cout << "SoilLookTable: no element found at " << p;
 //            }
 //        }
-        return iff_.f(p[2], eIdx);
+        double v = iff_.f(p[2], eIdx);
+        // std::cout << "soil " << p[2] << ", " << v << "\n";
+        return v;
     }
 
     std::string toString() const final {
@@ -131,8 +133,8 @@ public:
 private:
 
     // const BBoxTree* bBoxTree_;
-    std::shared_ptr<const FVGridGeometry> fvGridGeometry_;
     const InputFileFunction iff_;
+    std::shared_ptr<const FVGridGeometry> fvGridGeometry_;
 
 };
 

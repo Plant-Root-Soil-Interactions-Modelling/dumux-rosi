@@ -45,6 +45,9 @@ AA = np.array([[1, 1], [sqrt(c) * exp(sqrt(c) * (-L)), -sqrt(c) * exp(-sqrt(c) *
 bb = np.array([p0 - p_s, -rho * g])  #
 d = np.linalg.solve(AA, bb)  # compute constants d_1 and d_2 from bc
 
+print("analytic transpiration rate", 1000 * kz * (d[0] - d[1]) * sqrt(c), "kg/s")
+print("= ", 1000 * kz * (d[0] - d[1]) * sqrt(c) / .75 / .15 * 86400, "mm day-1")
+
 # Prepare plot
 za_ = np.linspace(0, -L, 100)
 pr = list(map(p_r, za_))
@@ -56,7 +59,7 @@ os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
 os.system("./rootsystem input/b1.input")
-p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! False
+p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 z_ = np.linspace(0, -0.5, len(p_))
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_, "r+")

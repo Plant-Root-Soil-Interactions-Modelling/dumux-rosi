@@ -42,6 +42,8 @@
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
+#include <dumux/growth/soillookup.hh>
+
 #include <math.h>
 
 #include "rootspatialparams_dgf.hh"
@@ -163,7 +165,8 @@ public:
 
     RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
-        soil_ = InputFileFunction("RootSystem.Soil.P", "RootSystem.Soil.Z");
+        auto sf = InputFileFunction("Soil.IC.P", "Soil.IC.Z");
+        soil_ = new SoilLookUpTable<FVGridGeometry>(sf, fvGridGeometry);
         try {
             collar_ = InputFileFunction("RootSystem.Collar.P", "RootSystem.Collar.PT", true);
             bcType_ = bcDirichlet;
@@ -171,37 +174,58 @@ public:
             collar_ = InputFileFunction("RootSystem.Collar.Transpiration", "RootSystem.Collar.TranspirationT", true);
             bcType_ = bcNeumann;
         }
+        file_at_.open(this->name() + "_actual_transpiration.txt");
     }
 
-    /*
-     * \brief Return the temperature within the domain in [K]. (actually needed? why?)
-     */
-    Scalar temperature() const {
-        return 273.15 + 10; // 10C
+    ~RootsProblem() {
+        std::cout << "closing file \n";
+        file_at_.close();
     }
 
-    // calculate axial fluxes (todo)
-    std::vector<Scalar> axialFlux() {
+    //! calculates axial fluxes from a given solution (for vtk output)
+    void axialFlux(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
-        size_t n = gridView.size(0);
-        std::vector<Scalar> v = std::vector<Scalar>(n);
+        axialFlux_ = std::vector<Scalar>(gridView.size(0));
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
         for (const auto& element : elements(gridView)) {
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            const auto eIdx = eMapper.index(element);
             auto geo = element.geometry();
             auto length = geo.volume();
-            std::cout << "element " << eIdx << " has " << geo.corners() << " corners \n";
-            for (size_t i = 0; i < geo.corners(); i++) {
-                auto vIdx = vMapper.subIndex(element, i, 1);
-                std::cout << "   vertex Index " << vIdx << "\n";
-            }
+            auto kx = this->spatialParams().kx(eIdx);
+            auto i0 = vMapper.subIndex(element, 0, 1);
+            auto i1 = vMapper.subIndex(element, 1, 1);
+            axialFlux_[eIdx] = kx * (sol[i1] - sol[i0]) / length; // m^3 / s
+            //            std::cout << "element " << eIdx << " has " << geo.corners() << " corners \n";
+            //            for (size_t i = 0; i < geo.corners(); i++) {
+            //                auto vIdx = vMapper.subIndex(element, i, 1);
+            //                std::cout << "   vertex Index " << vIdx << "\n";
+            //            }
+            // std::cout << " kx " << kx; // 1e-18
         }
-        return v;
+        // std::cout << "axial flux vector is " << axialFlux_.size() << "\n";
     }
 
-    // evaluates a spatialparams function given for an element eIdx for all elements
-    std::vector<Scalar> exportVtkField(std::function<Scalar(size_t)> f) {
+    //! calculates the radial fluxes from a given solution (for vtk output)
+    void radialFlux(const SolutionVector& sol) {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        radialFlux_ = std::vector<Scalar>(gridView.size(0));
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        auto vMapper = this->fvGridGeometry().vertexMapper();
+        for (const auto& element : elements(gridView)) {
+            auto eIdx = eMapper.index(element);
+            auto kr = this->spatialParams().kr(eIdx);
+            auto i0 = vMapper.subIndex(element, 0, 1);
+            auto i1 = vMapper.subIndex(element, 1, 1);
+            auto p = element.geometry().center();
+            radialFlux_[eIdx] = kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
+            // std::cout << " kr " << kr;
+        }
+        // std::cout << "radial flux vector is " << radialFlux_.size() << "\n";
+    }
+
+    //! evaluates a spatialparams function given for an element eIdx for all elements
+    std::vector<Scalar> vtkField(std::function<Scalar(size_t)> f) {
         const auto& gridView = this->fvGridGeometry().gridView();
         size_t n = gridView.size(0);
         std::vector<Scalar> v = std::vector<Scalar>(n);
@@ -211,6 +235,41 @@ public:
         return v;
     }
 
+    std::vector<Scalar>& radialFlux() {
+        return radialFlux_;
+    }
+    std::vector<Scalar>& axialFlux() {
+        return axialFlux_;
+    }
+
+    // calculates transpiraton, as the netflux of first element (m^3 /s)
+    Scalar transpiration(const SolutionVector& sol) {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        auto vMapper = this->fvGridGeometry().vertexMapper();
+        // indices
+        auto& e = std::begin(elements(gridView)); // first element
+        auto geo = e.geometry();
+        auto eIdx = eMapper.index(e);
+        auto i0 = vMapper.subIndex(e, 0, 1);
+        auto i1 = vMapper.subIndex(e, 1, 1);
+        // axial flux
+        auto length = geo.volume();
+        auto kx = this->spatialParams().kx(eIdx);
+        Scalar axialFlux = kx * (sol[i1] - sol[i0]) / length; // m^3 / s
+        // radial flux
+        auto kr = this->spatialParams().kr(eIdx);
+        auto p = geo.center();
+        Scalar radialFlux = kr * (soil(p) - (sol[i1] + sol[i0]) / 2);
+        return axialFlux + radialFlux;
+    }
+
+    /*
+     * \brief Return the temperature within the domain in [K]. (actually needed? why?)
+     */
+    Scalar temperature() const {
+        return 273.15 + 10; // 10C
+    }
 
     /*!
      * \brief Specifies which kind of boundary condition should be
@@ -248,8 +307,30 @@ public:
      */
     NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolumeFace& scvf) const {
-        if (onUpperBoundary_(scvf.center())) {
-            return NumEqVector(collar());
+        const auto globalPos = scvf.center();
+        if (onUpperBoundary_(globalPos)) {
+            auto& volVars = elemVolVars[scvf.insideScvIdx()];
+            auto p = volVars.pressure(0);
+            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            Scalar kx = this->spatialParams().kx(eIdx);
+            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+            Scalar maxTrans = volVars.density(0) / volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / (dist);
+            Scalar trans;
+            if (bcType_ == bcDirichlet) {
+                trans = volVars.density(0) / volVars.viscosity(0) * kx * (p - collar()) / (dist); //  / volVars.viscosity(0)
+                // std::cout << "\nweak dirichlet " << trans << ", max " << maxTrans << " \n";
+            } else { // neumann
+                trans = collar(); // kg/s
+            }
+            Scalar v = std::min(trans, maxTrans);
+            lastTrans_ = v;
+            v /= volVars.extrusionFactor(); // * scvf.area(); // convert from kg/s to kg/(s*m^2)
+//            std::cout << "dist: " << dist << "\n";
+//            std::cout << "scvf.area(): " << scvf.area() << "\n";
+//            std::cout << "viscosity: " << volVars.viscosity(0) << "\n";
+//            std::cout << "density(): " << volVars.density(0) << "\n";
+//            std::cout << "extrusionFactor(): " << volVars.extrusionFactor() << "\n";
+            return NumEqVector(v);;
         } else {
             return NumEqVector(0.);
         }
@@ -268,14 +349,11 @@ public:
         const auto eIdx = params.fvGridGeometry().elementMapper().index(element);
         Scalar a = params.radius(eIdx); // root radius (m)
         Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-        Scalar phx = elemVolVars[0].pressure(); // kg/m/s^2
-        Scalar z = scv.center()[dimWorld - 1]; //
-        Scalar phs = soil(z); // kg/m/s^2
-        // std::cout << "problem " << phs << ", " << a << ", " << kr * 1.e9 << "\n";
+        Scalar phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
+        Scalar phs = soil(scv.center()); // kg/m/s^2
         values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
         values[conti0EqIdx] /= (a * a * M_PI); // 1/s
         values[conti0EqIdx] *= rho_; // (kg/s/m^3)
-        // std::cout << values[conti0EqIdx] << "\n";
         return values;
     }
 
@@ -292,18 +370,32 @@ public:
     /*!
      * \brief Evaluate the initial value for a control volume.
      */
-    PrimaryVariables initialAtPos(const GlobalPosition& globalPos) const {
-        return PrimaryVariables(soil(globalPos[dimWorld - 1]));
+    PrimaryVariables initialAtPos(const GlobalPosition& p) const {
+        // std::cout << "initial pos " << p[2] << ": " << soil(p) << "\n";
+        return PrimaryVariables(soil(p)); // soil(p)
+    }
+
+    void setSoil(CRootBox::SoilLookUp* s) {
+        std::cout << "manually changed soil to " << s->toString() << "\n";
+        soil_ = s;
     }
 
     //! soil pressure (called by initial, and source term)
-    Scalar soil(Scalar z) const {
-        return toPa_(soil_.f(z));
+    Scalar soil(const GlobalPosition& p) const {
+        return toPa_(soil_->getValue(CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100)));
     }
 
     //! sets the current simulation time (within the simulation loop) for collar boundary look up
     void setTime(Scalar t) {
+        this->spatialParams().setTime(t);
         time_ = t;
+    }
+
+    //! writes the transpiration file
+    void writeTranspirationRate() {
+        file_at_ << time_ << ", "; //
+        file_at_ << lastTrans_ << "\n";
+        std::cout << "\nlast transpiration = " << lastTrans_ << " kg/s \n";
     }
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
@@ -313,15 +405,16 @@ public:
         } else {
             return collar_.f(time_); // TODO: conversions?
         }
-    }
 
+    }
 
 private:
 
-    InputFileFunction soil_;
+    CRootBox::SoilLookUp* soil_; // todo make shared
     InputFileFunction collar_;
     int bcType_;
     Scalar time_ = 0.;
+    Scalar criticalCollarPressure_ = toPa_(-1e4);
 
     Scalar toPa_(Scalar ph) const {     // cm -> Pa
         return pRef_ + ph / 100. * rho_ * g_;
@@ -335,6 +428,13 @@ private:
     static constexpr Scalar rho_ = 1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
     static constexpr Scalar eps_ = 1e-8;
+
+    std::ofstream file_at_; // file for actual transpiration
+    mutable Scalar lastTrans_ = 0.;
+
+    // vtk fields
+    std::vector<Scalar> axialFlux_;
+    std::vector<Scalar> radialFlux_;
 
 };
 

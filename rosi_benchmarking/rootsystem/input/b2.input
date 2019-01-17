@@ -11,7 +11,7 @@ File =  grids/rootsystem_b2.dgf
 [RootSystem.Collar]
 P = -1000 # cm pressure head
 
-[RootSystem.Soil]
+[Soil.IC]
 P = -200 # cm pressure head
 
 [Vtk]

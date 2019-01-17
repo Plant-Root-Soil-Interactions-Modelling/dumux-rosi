@@ -6,8 +6,7 @@ TEnd = 0 # 1e9 # [s]
 DtInitial = 1 # [s]
 
 [RootSystem.Grid]
-File =  Triticum_aestivum_a_Bingham_2011 
-# Anagallis_femina_Leitner_2010
+File =  Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
 InitialT = 10 # days
 
 [RootSystem.Conductivity]
@@ -17,7 +16,7 @@ Kx = 5.e-14 # axial conductivity (m^5 s / kg)
 [RootSystem.Collar]
 P = -1000 # cm pressure head
 
-[RootSystem.Soil]
+[Soil.IC]
 P = -100 # cm pressure head
 
 [Vtk]

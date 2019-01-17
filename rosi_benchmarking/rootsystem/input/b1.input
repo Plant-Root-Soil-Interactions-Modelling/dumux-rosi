@@ -18,7 +18,7 @@ Radius = 0.002 # m
 [RootSystem.Collar]
 P = -1000 # cm pressure head
 
-[RootSystem.Soil]
+[Soil.IC]
 P = -200 # cm pressure head
 
 [Vtk]
