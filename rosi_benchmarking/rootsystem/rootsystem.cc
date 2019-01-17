@@ -159,6 +159,7 @@ int main(int argc, char** argv) try
     problem->radialFlux(x); // prepare fields
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
+    vtkWriter.addField(problem->initialPressure(), "initialSoilPressure");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized" << "\n" << std::flush;

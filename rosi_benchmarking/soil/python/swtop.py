@@ -13,14 +13,14 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 # run dumux
 np_ = 1  # number of processors
 if np_ == 1:
-    os.system("./richards3d benchmarks_3d/swtop.input")
+    os.system("./richards1d benchmarks_3d/swtop.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/swtop.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards1d benchmarks_3d/swtop.input -Grid.Overlap 0")
 
-# Figure 2a
-s_, p_, z1_ = read3D_vtp("swtop-00000", np_)
+# Figure
+s_, p_, z1_ = read1D_vtp_data("swtop-00000.vtp", False)
 h1_ = vg.pa2head(p_)
-ax1.plot(h1_, (z1_ - 2) * 100, "r+")
+plt.plot(h1_, (z1_ - 2) * 100, "r+")
 
 plt.show()
 

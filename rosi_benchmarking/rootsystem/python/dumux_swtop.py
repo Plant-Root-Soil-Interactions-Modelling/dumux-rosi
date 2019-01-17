@@ -25,7 +25,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 print("wet", toHead(-10000))
-print("dery", toHead(-300000))
+print("dry", toHead(-300000))
 print("a week ", 7 * 24 * 3600)
 
 trans = 5.33 * .75 * .15 / 86400

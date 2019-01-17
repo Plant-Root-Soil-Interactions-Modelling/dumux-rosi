@@ -1,5 +1,5 @@
 [Problem]
-Name = swtop3d
+Name = swtop
 
 [TimeLoop]
 TEnd = 30 # 31536000 # 0 is steady state
@@ -7,9 +7,9 @@ DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.Grid]
-LowerLeft = -0.375 -0.075 -1.26
-UpperRight = 0.375 0.075 0.0
-Cells = 75 15 126
+LowerLeft = -1.26 #-0.375 -0.075 -1.26
+UpperRight = 0 #0.375 0.075 0.0
+Cells = 126 #75 15 126
 
 [Soil.BC.Top]
 Type = 2 # constant flux

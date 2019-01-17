@@ -175,6 +175,7 @@ public:
             bcType_ = bcNeumann;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
+        initialPressure_(); // prepare vtk field
     }
 
     ~RootsProblem() {
@@ -224,22 +225,14 @@ public:
         // std::cout << "radial flux vector is " << radialFlux_.size() << "\n";
     }
 
-    //! evaluates a spatialparams function given for an element eIdx for all elements
-    std::vector<Scalar> vtkField(std::function<Scalar(size_t)> f) {
-        const auto& gridView = this->fvGridGeometry().gridView();
-        size_t n = gridView.size(0);
-        std::vector<Scalar> v = std::vector<Scalar>(n);
-        for (size_t i = 0; i < n; i++) {
-            v[i] = f(i);
-        }
-        return v;
-    }
-
     std::vector<Scalar>& radialFlux() {
         return radialFlux_;
     }
     std::vector<Scalar>& axialFlux() {
         return axialFlux_;
+    }
+    std::vector<Scalar>& initialPressure() {
+        return initialP_;
     }
 
     // calculates transpiraton, as the netflux of first element (m^3 /s)
@@ -424,6 +417,16 @@ private:
         return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
 
+    void initialPressure_() {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        initialP_ = std::vector<Scalar>(gridView.size(0));
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        for (const auto& element : elements(gridView)) {
+            auto eIdx = eMapper.index(element);
+            initialP_[eIdx] = initialAtPos(element.geometry().center());
+        }
+    }
+
     static constexpr Scalar g_ = 9.81; // cm / s^2
     static constexpr Scalar rho_ = 1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
@@ -435,6 +438,7 @@ private:
     // vtk fields
     std::vector<Scalar> axialFlux_;
     std::vector<Scalar> radialFlux_;
+    std::vector<Scalar> initialP_;
 
 };
 
