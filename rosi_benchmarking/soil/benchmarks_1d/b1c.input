@@ -19,7 +19,7 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-Pressure = -200 # cm pressure head (initial guess)
+P = -200 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
 # Clay over sand 

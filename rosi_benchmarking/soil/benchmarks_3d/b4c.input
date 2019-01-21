@@ -17,7 +17,7 @@ Type = 4 # atmospheric BC with surface run off
 Type = 5 # free drainage
 
 [Soil.IC]
-Pressure = -200 # cm pressure head 
+P = -200 # cm pressure head 
 
 [Soil.VanGenuchten] 
 # Loam: 

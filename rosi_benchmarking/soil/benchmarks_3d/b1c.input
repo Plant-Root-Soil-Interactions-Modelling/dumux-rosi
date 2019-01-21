@@ -9,7 +9,7 @@ UpperRight = 0.1 0.1 2
 Cells = 9 9 199
 
 [TimeLoop]
-TEnd = 31536000 # 0 is steady state 31536000
+TEnd = 0 # 0 is steady state 31536000
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
@@ -21,7 +21,7 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-Pressure = -200 # cm pressure head (initial guess)
+P = -15 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
 # Clay over sand 

@@ -132,7 +132,7 @@ def read3Dp_vtp_data(prename, postname, n, cell = False):
 #
 def read3D_vtp(name, np = 1):
     if np == 1:
-        return read3d_vtp_data(name + ".vtu", False)
+        return read3D_vtp_data(name + ".vtu", False)
     else:
         return read3Dp_vtp_data("s{:04d}-p".format(np), name, np, False)
 

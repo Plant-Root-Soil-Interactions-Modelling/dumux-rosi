@@ -19,7 +19,7 @@ Type = 4 # atmospheric BC with surface run off
 Type = 5 # free drainage
 
 [Soil.IC]
-Pressure = -400
+P = -400
 
 [Soil.VanGenuchten] 
 # Clay: 

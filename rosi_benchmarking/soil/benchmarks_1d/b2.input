@@ -20,8 +20,8 @@ Type = 1 # constant pressure head
 Value = 0 # [cm] fully saturated
 
 [Soil.IC]
+P = 0 -53 # cm pressure head (initial guess)
 Z = -.53  0
-Pressure = 0 -53 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
 # Loam: 

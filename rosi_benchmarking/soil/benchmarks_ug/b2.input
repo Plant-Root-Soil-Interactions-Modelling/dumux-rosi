@@ -23,7 +23,7 @@ Value = 0 # [cm] fully saturated
 
 [Soil.IC]
 Z = 0 0.53
-Pressure = 0 -53 # cm pressure head (initial guess)
+P = 0 -53 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
 # Loam: 

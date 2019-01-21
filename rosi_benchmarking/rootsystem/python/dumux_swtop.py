@@ -33,8 +33,8 @@ mtrans = 2 * trans
 print("daily rate ", 5.33, "mm/day = ", trans, " kg/s, maximum ", mtrans)  #
 
 # run dumux
-os.system("./rootsystem input/swtop.input")  # mpirun -n 8
-p_, z_ = read3D_vtp_data("swtop-00001.vtp", False)
+# os.system("./rootsystem input/swtop.input")  # mpirun -n 8
+p_, z_ = read3D_vtp_data("swtop-00000.vtp", False)
 h_ = vg.pa2head(p_)
 plt.plot(p_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")

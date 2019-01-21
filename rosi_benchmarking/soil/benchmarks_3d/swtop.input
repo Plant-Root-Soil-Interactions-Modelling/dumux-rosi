@@ -23,8 +23,7 @@ Value = 0 # [cm day-1]
 P = -4077.47 -4077.47 -1121.3 -1121.3 
 Z = -1.26 -.43 -.41 0
 
-[Soil.VanGenuchten] 
-# Loam over sand 
+[Soil.VanGenuchten]  # Loam
 Qr = 0.08 
 Qs = 0.43
 Alpha = 0.04  

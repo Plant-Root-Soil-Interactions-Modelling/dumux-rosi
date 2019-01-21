@@ -85,22 +85,22 @@ template <class TypeTag>
 class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
 {
     using ParentType = PorousMediumFlowProblem<TypeTag>;
-    using GridView = typename GET_PROP_TYPE(TypeTag, GridView);
-    using PrimaryVariables = typename GET_PROP_TYPE(TypeTag, PrimaryVariables);
-    using BoundaryTypes = typename GET_PROP_TYPE(TypeTag, BoundaryTypes);
-    using NumEqVector = typename GET_PROP_TYPE(TypeTag, NumEqVector);
-    using FVGridGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry);
-    using FVElementGeometry = typename GET_PROP_TYPE(TypeTag, FVGridGeometry)::LocalView;
-    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-    using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
-    using VolumeVariables = typename GET_PROP_TYPE(TypeTag, VolumeVariables);
-    using ElementVolumeVariables = typename GET_PROP_TYPE(TypeTag, GridVolumeVariables)::LocalView;
-    using Scalar = typename GET_PROP_TYPE(TypeTag, Scalar);
-    using Indices = typename GET_PROP_TYPE(TypeTag, ModelTraits)::Indices;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+    using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
+    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+    using FVElementGeometry = typename FVGridGeometry::LocalView;
+    using SubControlVolume = typename FVGridGeometry::SubControlVolume;
+    using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
+    using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
+    using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using Grid = typename GET_PROP_TYPE(TypeTag, Grid);
-    using MaterialLaw = typename GET_PROP_TYPE(TypeTag, SpatialParams)::MaterialLaw;
+    using Grid = GetPropType<TypeTag, Properties::Grid>;
+    using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
     using MaterialLawParams = typename MaterialLaw::Params;
 
     enum {
@@ -129,42 +129,21 @@ public:
      * \brief Constructor
      */
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry, GridManager<Grid>* gridManager)
-    : ParentType(fvGridGeometry)
-    {
-        gridManager_ = gridManager;
-        this->spatialParams().setGridManager(gridManager); // SpatialParams constructor is hidden in parent class, and can not be modified
-
+    : ParentType(fvGridGeometry) {
         name_ = getParam<std::string>("Problem.Name");
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
+        // precipitation
         if (bcTopType_==atmospheric) {
             std::string filestr = name_ + ".csv";
             myfile_.open(filestr.c_str());
-            precData_ = getParam<std::vector<Scalar>>("Climate.Precipitation"); // in [kg/(s m²)] , todo better [cm/day]?
-            precTime_ = getParam<std::vector<Scalar>>("Climate.Time");
-        } else {
-            precData_ = std::vector<Scalar>(0); // not used
-            precTime_ = std::vector<Scalar>(0);
+            precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // in [kg/(s m²)] , todo better [cm/day]?
         }
         // IC
-        initialPressure_ = getParam<std::vector<Scalar>>("Soil.IC.Pressure", std::vector<Scalar>{-100.});
-        if (initialPressure_.size() == 1) { // constant pressure
-            constInitial_ = true;
-            gridInitial_ = false;
-            initialZ_ = std::vector<Scalar>(0); // not used
-        } else {
-            constInitial_ = false;
-            try {
-                initialZ_ = getParam<std::vector<Scalar>>("Soil.IC.Z"); // table look up
-                gridInitial_ = false;
-            } catch (std::exception& e) { // grid parameter look up
-                initialZ_ = std::vector<Scalar>(0); // not used
-                gridInitial_ = true;
-            }
-        }
+        initialSoil_ = InputFileFunction("Soil.IC.P","Soil.IC.Z", this->spatialParams().layerIFF());
     }
 
     /**
@@ -180,28 +159,25 @@ public:
     /*!
      * \brief The problem name.
      */
-    const std::string& name() const
-    {
+    const std::string& name() const {
         return name_;
     }
 
     /*!
      * \brief Temperature [K] within a finite volume. This problem assumes a temperature of 10 degrees Celsius.
      */
-    Scalar temperature() const
-    {
+    Scalar temperature() const {
         return 273.15 + 10; // -> 10°C
     };
 
     /*!
      * \brief Reference pressure [Pa] of the non-wetting. This problem assumes a constant reference pressure of 1 bar.
      */
-    Scalar nonWettingReferencePressure() const
-    {
+    Scalar nonWettingReferencePressure() const {
         return 1.0e5;
     };
 
-    /*!readGridData
+    /*!
      * \copydoc FVProblem::boundaryTypesAtPos
      */
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
@@ -287,24 +263,19 @@ public:
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(
-                    element);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
                 Scalar mS = 0;
                 auto numScv = fvGeometry.numScv();
                 for (auto i = 0; i < numScv; i++) {
                     mS += (elemVolVars[i].saturation() / numScv);
                 }
-                MaterialLawParams params =
-                    this->spatialParams().materialLawParams(element);
+                MaterialLawParams params = this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
-                Scalar p = MaterialLaw::pc(params, mS)
-                + nonWettingReferencePressure();
+                Scalar p = MaterialLaw::pc(params, mS) + nonWettingReferencePressure();
                 Scalar h = -toHead_(p) / 100.; // from Pa -> m pressure head
-
                 GlobalPosition ePos = element.geometry().center();
-                Scalar dz = 2
-                    * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // 0.01; // m // fvGeometry.geometry().volume()?; TODO
-                Scalar prec = getPrec_(time_); // precipitation or evaporation TODO
+                Scalar dz = 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // 0.01; // m // fvGeometry.geometry().volume()?; TODO
+                Scalar prec = precipitation_.f(time_);
 
                 if (prec < 0) { // precipitation
                     Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal infiltration
@@ -362,20 +333,12 @@ public:
      */
     template<class Entity>
     PrimaryVariables initial(const Entity& entity) const {
-        PrimaryVariables values;
-        if (constInitial_) { // constant initial data
-            values[pressureIdx] = toPa_(initialPressure_[0]);
-        } else {
-            if (gridInitial_) { // obtain layer number from grid data
-                size_t i = size_t(gridManager_->getGridData()->parameters(entity).at(materialLayerNumber));
-                values[pressureIdx] = toPa_(initialPressure_.at(i));
-            } else { // obtain pressure by table look up and linear interpolation
-                Scalar z = entity.geometry().center()[dimWorld - 1];
-                values[pressureIdx] = toPa_(this->spatialParams().interp1(z, initialPressure_, initialZ_));
-            }
-        }
-        values.setState(bothPhases);
-        return values;
+        auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+        Scalar z = entity.geometry().center()[dimWorld - 1];
+        PrimaryVariables v(0.0);
+        v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
+        v.setState(bothPhases);
+        return v;
     }
 
     /**
@@ -409,37 +372,24 @@ private:
             < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
     }
 
-    //! returns dynamic precipitation from table from input time
-    Scalar getPrec_(Scalar t) const {
-        return this->spatialParams().interp1(t, precData_, precTime_);
-    }
+    InputFileFunction initialSoil_;
+    InputFileFunction precipitation_;
 
     std::string name_;
-    mutable std::ofstream myfile_;
-
-    GridManager<Grid>* gridManager_;
-
     Scalar time_ = 0.;
-    mutable Scalar last_time_ = -1.;
-
-    // IC
-    bool constInitial_;
-    bool gridInitial_;
-    std::vector<Scalar> initialPressure_;
-    std::vector<Scalar> initialZ_;
 
     // BC
     int bcTopType_;
     int bcBotType_;
     Scalar bcTopValue_;
     Scalar bcBotValue_;
-    std::vector<Scalar> precTime_; // climatic data for atmospheric bc
-    std::vector<Scalar> precData_; // climatic data for atmospheric bc
+
+    mutable std::ofstream myfile_;
+    mutable Scalar last_time_ = -1.;
 
     static constexpr Scalar eps_ = 1.e-7;
     static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
     static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-
 
 };
 
