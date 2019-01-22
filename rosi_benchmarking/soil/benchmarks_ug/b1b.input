@@ -1,7 +1,7 @@
 [Problem]
 Name = benchmarkUG_1b
 
-[Grid]
+[Soil.Grid]
 File = grids/b1_ug2.msh
 
 [TimeLoop]
@@ -17,7 +17,8 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-P = -200 # cm pressure head (initial guess)
+P = -40 -40 -40 -20 # cm pressure head (initial guess)
+Z = 0 1 1 2
 
 [Soil.VanGenuchten] 
 # Sand over Loam 

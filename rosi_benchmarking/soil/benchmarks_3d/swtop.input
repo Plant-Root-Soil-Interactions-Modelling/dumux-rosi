@@ -2,14 +2,13 @@
 Name = swtop
 
 [TimeLoop]
-TEnd = 30 # 31536000 # 0 is steady state
+TEnd = 31536000 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
-MaxTimeStepSize = 864000 # 10 days [s] 
+MaxTimeStepSize = 864000 # 10 days [s]  
 
 [Soil.Grid]
-LowerLeft = 0 #-0.375 -0.075 -1.26
-UpperRight = 1.26 #0.375 0.075 0.0
-Cells = 126 #75 15 126
+UpperRight = 0.75 0.15 1.26 
+Cells = 75 15 126 # 75 15 126
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -21,9 +20,9 @@ Value = 0 # [cm day-1]
 
 [Soil.IC]
 P = -4077.47 -4077.47 -1121.3 -1121.3 
-Z = 0 .41 .43 1.26
+Z = 0 .83 .84 1.26
 
-[Soil.VanGenuchten]  # Loam
+[Soil.VanGenuchten]  
 Qr = 0.08 
 Qs = 0.43
 Alpha = 0.04  

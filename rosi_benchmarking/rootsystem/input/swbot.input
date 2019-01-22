@@ -14,7 +14,7 @@ File =  grids/RootSys/Reference/RootSys1.dgf
 P = -10000 # cm pressure head
 
 [Soil.IC]
-P = -1121.3 -1121.3 -4077.47 -4077.47
+P = -1121.3 -1121.3 -4077.47 -4077.47 
 Z = -1.26 -.43 -.41 0
 # P = -1121.3
 
