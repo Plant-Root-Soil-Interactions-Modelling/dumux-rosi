@@ -200,7 +200,9 @@ int main(int argc, char** argv) try
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
                 vtkWriter.write(timeLoop->time());
-                problem->writeTranspirationRate();
+            }
+            if (mpiHelper.rank() == 0) {
+                problem->writeTranspirationRate(x);
             }
             // report statistics of this time step
             timeLoop->reportTimeStep();
@@ -218,6 +220,7 @@ int main(int argc, char** argv) try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         // write vtk output
+        problem->writeTranspirationRate(x);
         vtkWriter.write(1);
     }
 

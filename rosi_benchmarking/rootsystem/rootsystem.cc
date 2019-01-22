@@ -212,7 +212,7 @@ int main(int argc, char** argv) try
                 vtkWriter.write(timeLoop->time());
             }
             if (mpiHelper.rank() == 0) {
-                problem->writeTranspirationRate();
+                problem->writeTranspirationRate(x);
             }
             // report statistics of this time step
             timeLoop->reportTimeStep();
@@ -232,7 +232,7 @@ int main(int argc, char** argv) try
         // write vtk output
         problem->axialFlux(x); // prepare fields
         problem->radialFlux(x); // prepare fields
-        problem->writeTranspirationRate();
+        problem->writeTranspirationRate(x);
         vtkWriter.write(1);
     }
 

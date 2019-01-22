@@ -2,7 +2,7 @@
 Name = swtop 
 
 [TimeLoop]
-TEnd = 3600 # 604800 # # a week [s]
+TEnd = 86400 # 604800 a week [s] # 86400 # a day
 DtInitial = 1 # [s]
 MaxTimeStepSize = 3600 # 1 h
 
@@ -12,7 +12,7 @@ File =  grids/RootSys/Reference/RootSys1.dgf
 # File =  grids/RootSys/Genotype_volumes/RootSys1.dgf
 
 [RootSystem.Collar]
-Transpiration = 0 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
+Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
 
 [Soil.IC]
 P = -4077.47 -4077.47 -1121.3 -1121.3 

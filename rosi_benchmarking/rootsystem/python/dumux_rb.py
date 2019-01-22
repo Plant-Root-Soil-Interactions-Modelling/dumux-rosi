@@ -17,6 +17,8 @@ os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
 os.system("./rootsystem_rb input/rb_rootsystem.input")
+
+# plot
 p_, z_ = read3D_vtp_data("rb_rootsystem-00001.vtp", False)
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data

@@ -82,7 +82,7 @@ private:
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
     using GridView = GetPropType<TypeTag, Properties::GridView>;
 
-    using ElementMapper = ReorderingDofMapper<GridView>;
+    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
@@ -97,7 +97,7 @@ private:
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-    using VertexMapper = ReorderingDofMapper<GridView>;
+    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
     using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
@@ -189,13 +189,13 @@ public:
         axialFlux_ = std::vector<Scalar>(gridView.size(0));
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
-        for (const auto& element : elements(gridView)) {
-            const auto eIdx = eMapper.index(element);
-            auto geo = element.geometry();
+        for (const auto& e : elements(gridView)) {
+            const auto eIdx = eMapper.index(e);
+            auto geo = e.geometry();
             auto length = geo.volume();
             auto kx = this->spatialParams().kx(eIdx);
-            auto i0 = vMapper.subIndex(element, 0, 1);
-            auto i1 = vMapper.subIndex(element, 1, 1);
+            auto i0 = vMapper.subIndex(e, 0, 1);
+            auto i1 = vMapper.subIndex(e, 1, 1);
             axialFlux_[eIdx] = kx * (sol[i1] - sol[i0]) / length; // m^3 / s
             //            std::cout << "element " << eIdx << " has " << geo.corners() << " corners \n";
             //            for (size_t i = 0; i < geo.corners(); i++) {
@@ -213,12 +213,12 @@ public:
         radialFlux_ = std::vector<Scalar>(gridView.size(0));
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
-        for (const auto& element : elements(gridView)) {
-            auto eIdx = eMapper.index(element);
+        for (const auto& e : elements(gridView)) {
+            auto eIdx = eMapper.index(e);
             auto kr = this->spatialParams().kr(eIdx);
-            auto i0 = vMapper.subIndex(element, 0, 1);
-            auto i1 = vMapper.subIndex(element, 1, 1);
-            auto p = element.geometry().center();
+            auto i0 = vMapper.subIndex(e, 0, 1);
+            auto i1 = vMapper.subIndex(e, 1, 1);
+            auto p = e.geometry().center();
             radialFlux_[eIdx] = kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
             // std::cout << " kr " << kr;
         }
@@ -235,13 +235,13 @@ public:
         return initialP_;
     }
 
-    // calculates transpiraton, as the netflux of first element (m^3 /s)
+    // calculates transpiraton, as the netflux of first element (m^3 /s),
+    // assuming first element is collar (todo adjust to reordering...)
     Scalar transpiration(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
-        // indices
-        auto& e = std::begin(elements(gridView)); // first element
+        const auto& e = *elements(gridView).begin(); // hope its the collar (todo)
         auto geo = e.geometry();
         auto eIdx = eMapper.index(e);
         auto i0 = vMapper.subIndex(e, 0, 1);
@@ -307,14 +307,8 @@ public:
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar maxTrans = volVars.density(0) / volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / (dist);
-            Scalar trans;
-            if (bcType_ == bcDirichlet) {
-                trans = volVars.density(0) / volVars.viscosity(0) * kx * (p - collar()) / (dist); //  / volVars.viscosity(0)
-                // std::cout << "\nweak dirichlet " << trans << ", max " << maxTrans << " \n";
-            } else { // neumann
-                trans = collar(); // kg/s
-            }
+            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2 * dist); // / volVars.viscosity(0)
+            Scalar trans = collar();
             Scalar v = std::min(trans, maxTrans);
             lastTrans_ = v;
             v /= volVars.extrusionFactor(); // * scvf.area(); // convert from kg/s to kg/(s*m^2)
@@ -323,7 +317,15 @@ public:
 //            std::cout << "viscosity: " << volVars.viscosity(0) << "\n";
 //            std::cout << "density(): " << volVars.density(0) << "\n";
 //            std::cout << "extrusionFactor(): " << volVars.extrusionFactor() << "\n";
-            return NumEqVector(v);;
+            return NumEqVector(v);
+
+            //            if (bcType_ == bcDirichlet) {
+            //                trans = volVars.density(0) / volVars.viscosity(0) * kx * (p - collar()) / (2 * dist); //  / volVars.viscosity(0)
+            //                // std::cout << "\nweak dirichlet " << trans << ", max " << maxTrans << " \n";
+            //            } else { // neumann
+            //                trans = collar(); // kg/s
+            //            }
+
         } else {
             return NumEqVector(0.);
         }
@@ -385,10 +387,10 @@ public:
     }
 
     //! writes the transpiration file
-    void writeTranspirationRate() {
-        file_at_ << time_ << ", "; //
-        file_at_ << lastTrans_ << "\n";
-        std::cout << "\nlast transpiration = " << lastTrans_ << " kg/s \n";
+    void writeTranspirationRate(const SolutionVector& sol) {
+        Scalar trans = 0; //transpiration(sol);
+        file_at_ << time_ << ", " << lastTrans_ << ", " << trans << " \n";
+        std::cout << "\nlast transpiration = " << lastTrans_ << ", " << trans << ", " << " kg/s \n";
     }
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
