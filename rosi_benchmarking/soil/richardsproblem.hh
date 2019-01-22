@@ -163,6 +163,11 @@ public:
         return name_;
     }
 
+    //! change problem name
+    void setName(std::string str) {
+        name_= str;
+    }
+
     /*!
      * \brief Temperature [K] within a finite volume. This problem assumes a temperature of 10 degrees Celsius.
      */

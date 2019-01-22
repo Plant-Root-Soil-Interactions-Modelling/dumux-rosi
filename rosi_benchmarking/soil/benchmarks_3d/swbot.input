@@ -1,5 +1,5 @@
 [Problem]
-Name = swtop
+Name = swbot
 
 [TimeLoop]
 TEnd = 30 # 31536000 # 0 is steady state
@@ -20,7 +20,7 @@ Type = 2 # constant flux
 Value = 0 # [cm day-1]
 
 [Soil.IC]
-P = -4077.47 -4077.47 -1121.3 -1121.3 
+P = -1121.3 -1121.3 -4077.47 -4077.47 
 Z = 0 .41 .43 1.26
 
 [Soil.VanGenuchten]  # Loam
