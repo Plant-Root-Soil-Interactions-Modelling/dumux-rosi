@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from analytic_b1 import *
 from vtk_tools import *
 import van_genuchten as vg
+import time
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -17,7 +18,8 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
 # run dumux
-np_ = 1  # number of processors
+t = time.time()
+np_ = 8  # number of processors
 if np_ == 1:
     pass
     os.system("./richards3d benchmarks_3d/b1a.input")
@@ -27,6 +29,9 @@ else:
     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1a.input -Grid.Overlap 0")
     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1b.input -Grid.Overlap 0")
     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b1c.input -Grid.Overlap 0")
+
+elapsed = time.time() - t
+print("Time elapsed", elapsed)
 
 # Figure 2a
 s_, p_, z1_ = read3D_vtp("benchmark3d_1a-00001", np_)

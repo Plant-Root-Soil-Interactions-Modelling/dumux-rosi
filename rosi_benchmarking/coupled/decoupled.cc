@@ -19,7 +19,7 @@
 /*!
  * \file
  *
- * \brief test for the one-phase CC model
+ * \brief Coupling
  */
 #include <config.h>
 
@@ -32,8 +32,15 @@
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
 
+#include <dumux/io/vtkoutputmodule.hh>
+#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+#include <dumux/io/grid/gridmanager.hh>
+#include <dumux/io/loadsolution.hh>
+
 #include <RootSystem.h>
-#include "rootsproblem.hh"
+#include "../rootsystem/rootsproblem.hh"
+#include "../soil/richardsproblem.hh"
 
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
@@ -49,16 +56,11 @@
 
 #include <dumux/discretization/method.hh>
 
-#include <dumux/io/vtkoutputmodule.hh>
-#include <dumux/io/grid/gridmanager.hh>
-
-#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
-#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 namespace Dumux {
 namespace Properties {
 
-template<class TypeTag> // Set the spatial parameters
+template<class TypeTag> // Set the spatial parameters for the root problem
 struct SpatialParams<TypeTag, TTag::Roots> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;

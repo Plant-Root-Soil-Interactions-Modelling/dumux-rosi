@@ -2,8 +2,14 @@
 Name = swbot 
 
 [TimeLoop]
-TEnd = 0 # 1e9 # [s]
+TEnd = 86400 # 604800 a week [s] # 86400 # a day
+CheckTimes = 43200
 DtInitial = 1 # [s]
+MaxTimeStepSize = 3600 # 1 h
+
+# [RootSystem.Conductivity]
+# Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
+# Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
 
 [RootSystem.Grid]
 File =  grids/RootSys/Reference/RootSys1.dgf
@@ -11,16 +17,11 @@ File =  grids/RootSys/Reference/RootSys1.dgf
 # File =  grids/RootSys/Genotype_volumes/RootSys1.dgf
 
 [RootSystem.Collar]
-P = -10000 # cm pressure head
+Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
 
 [Soil.IC]
 P = -1121.3 -1121.3 -4077.47 -4077.47 
 Z = -1.26 -.43 -.41 0
-# P = -1121.3
-
-# [RootSystem.Conductivity]
-# Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
-# Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
 
 [Vtk]
 AddProcessRank = "false"

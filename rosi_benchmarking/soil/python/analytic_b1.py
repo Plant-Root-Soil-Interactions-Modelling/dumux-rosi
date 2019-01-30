@@ -65,7 +65,7 @@ ax1.plot([psi_s, psi_s], z_, 'b')  # sand
 ax1.plot(psiA, zA, 'b');
 ax1.set_xlabel('$\psi$ (cm)')
 ax1.set_ylabel('Depth (cm)')
-ax1. set_xlim(-50, -10)
+ax1.set_xlim(-50, -10)
 ax1.set_ylim(-100, 0)
 
 z_ = np.linspace(-50, -100, 2)
