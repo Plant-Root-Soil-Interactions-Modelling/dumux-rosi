@@ -287,7 +287,7 @@ public:
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2 * dist); // / volVars.viscosity(0)
             Scalar trans = collar();
-            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa\n ";
+            // std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa\n ";
             Scalar v = std::min(trans, maxTrans);
             lastActualTrans_ = v; // the one we return
             lastTrans_ = trans;  // potential transpiration
