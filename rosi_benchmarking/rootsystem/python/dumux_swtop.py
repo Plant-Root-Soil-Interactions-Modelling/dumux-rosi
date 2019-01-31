@@ -1,5 +1,5 @@
 #
-# Wet top scenario
+# Wet top scenario for 3 phenotypes in static soil
 #
 
 import os
@@ -46,6 +46,11 @@ with open("swtop_b_actual_transpiration.txt", 'r') as f:
 with open("swtop_c_actual_transpiration.txt", 'r') as f:
     d3 = np.loadtxt(f, delimiter = ',')
 
+#
+# 0    , 1               , 2         , 3            , 4                                 , 5
+# time_, lastActualTrans_, lastTrans_, lastMaxTrans_, (sol[0] - pRef_) * 100 / rho_ / g_, trans
+#
+
 days = 1
 t_ = np.linspace(0, days, 6 * 24 * days)
 y_ = np.sin(t_ * 2.*pi - 0.5 * pi) * trans + trans
@@ -53,20 +58,29 @@ y_ = np.sin(t_ * 2.*pi - 0.5 * pi) * trans + trans
 # Plot collar transpiration & pressure
 fig, ax1 = plt.subplots()
 
-ax1.plot(t_, y_ * (24 * 3600), 'k')
-ax1.plot(d[:, 0] / (24 * 3600), d[:, 1] * (24 * 3600), 'b')  # reference
-ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 1] * (24 * 3600), 'r')  # lateral
-ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600), 'g')  # volume
-# ax1.plot(d[:, 0] / (24 * 3600), d[:, 2] * (24 * 3600), 'r')
+# ax1.plot(t_, y_ * (24 * 3600), 'k')
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 2] * (24 * 3600), 'k')  # potential transpiration
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 1] * (24 * 3600), 'r')  # reference, actual transpiration
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 3] * (24 * 3600), 'r:')
+ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 1] * (24 * 3600), 'g')  # lateral
+ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 3] * (24 * 3600), 'g:')  # lateral
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600), 'b')  # volume
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600), 'b:')  # volume
+ax1.legend(['Pot trans', 'actual trans P1', 'max trans P1', 'actual trans P2', 'max trans P2', 'actual trans P3', 'max trans P3'], loc = 'upper left')
+
+ax1.axis((0, days, 0, 1.3))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[kg d^{-1}]$")
 
 ax2 = ax1.twinx()
-ax2.plot(d[:, 0] / (24 * 3600), d[:, 4], 'b:')
-ax2.plot(d2[:, 0] / (24 * 3600), d2[:, 4], 'r:')
-ax2.plot(d3[:, 0] / (24 * 3600), d3[:, 4], 'g:')
+ax2.plot(d[:, 0] / (24 * 3600), d[:, 4], 'r--')
+ax2.plot(d2[:, 0] / (24 * 3600), d2[:, 4], 'g--')
+ax2.plot(d3[:, 0] / (24 * 3600), d3[:, 4], 'b--')
+ax2.legend(['pressure P1', 'pressure P2', 'pressure P3'], loc = 'upper right')
 
 ax2.set_ylabel("Pressure at root collar (cm)")
+print(np.min(d[:, 4]))
+
 plt.show()
 
 i = np.argmax(d[:, 1] == d[:, 3])

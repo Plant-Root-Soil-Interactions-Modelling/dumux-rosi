@@ -289,8 +289,10 @@ public:
             Scalar trans = collar();
             std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa\n ";
             Scalar v = std::min(trans, maxTrans);
-            lastTrans_ = v;
-            lastMaxTrans_ = maxTrans;
+            lastActualTrans_ = v; // the one we return
+            lastTrans_ = trans;  // potential transpiration
+            lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
+            lastP_ = p;
             v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
             // std::cout << volVars.extrusionFactor() << " cm2, " << scvf.area() << " cm2 "; // scvf.area() == 1
             return NumEqVector(v);
@@ -357,7 +359,8 @@ public:
     //! writes the transpiration file
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol);
-        file_at_ << time_ << ", " << lastTrans_ << ", " << trans << ", " << lastMaxTrans_ << ", " << (sol[0] - pRef_) * 100 / rho_ / g_ << " \n";
+        file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << (lastP_ - pRef_) * 100 / rho_ / g_ << ", "
+            << trans << " \n";
     }
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
@@ -392,22 +395,24 @@ private:
     static constexpr Scalar eps_ = 1e-8;
 
     std::ofstream file_at_; // file for actual transpiration
+    mutable Scalar lastActualTrans_ = 0;
     mutable Scalar lastTrans_ = 0.;
     mutable Scalar lastMaxTrans_ = 0.;
+    mutable Scalar lastP_ = 0.;
 
     // vtk fields
     std::vector<Scalar> axialFlux_;
     std::vector<Scalar> radialFlux_;
 
-//    void initialPressure_() {
-//        const auto& gridView = this->fvGridGeometry().gridView();
-//        initialP_ = std::vector<Scalar>(gridView.size(0));
-//        auto eMapper = this->fvGridGeometry().elementMapper();
-//        for (const auto& element : elements(gridView)) {
-//            auto eIdx = eMapper.index(element);
-//            initialP_[eIdx] = initialAtPos(element.geometry().center());
-//        }
-//    }
+    //    void initialPressure_() {
+    //        const auto& gridView = this->fvGridGeometry().gridView();
+    //        initialP_ = std::vector<Scalar>(gridView.size(0));
+    //        auto eMapper = this->fvGridGeometry().elementMapper();
+    //        for (const auto& element : elements(gridView)) {
+    //            auto eIdx = eMapper.index(element);
+    //            initialP_[eIdx] = initialAtPos(element.geometry().center());
+    //        }
+    //    }
     // std::vector<Scalar> initialP_;
 
 };
