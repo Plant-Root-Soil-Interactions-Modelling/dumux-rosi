@@ -287,7 +287,8 @@ public:
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2 * dist); // / volVars.viscosity(0)
             Scalar trans = collar();
-            // std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa\n ";
+            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
+                << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
             Scalar v = std::min(trans, maxTrans);
             lastActualTrans_ = v; // the one we return
             lastTrans_ = trans;  // potential transpiration
@@ -359,7 +360,9 @@ public:
     //! writes the transpiration file
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol);
-        file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << (lastP_ - pRef_) * 100 / rho_ / g_ << ", "
+        Scalar p = lastP_;
+        Scalar dp = lastP_ - criticalCollarPressure_;
+        file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << dp << ", "
             << trans << " \n";
     }
 

@@ -7,15 +7,6 @@ CheckTimes = 43200
 DtInitial = 1 # [s]
 MaxTimeStepSize = 3600 # 1 h
 
-# [RootSystem.Conductivity]
-# Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
-# Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
-
-[RootSystem.Grid]
-File =  grids/RootSys/Reference/RootSys1.dgf
-# File =  grids/RootSys/Genotype_laterals/RootSys1.dgf
-# File =  grids/RootSys/Genotype_volumes/RootSys1.dgf
-
 [RootSystem.Collar]
 Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
 
