@@ -175,7 +175,8 @@ int main(int argc, char** argv) try
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // dynamic
+        // assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
     }
@@ -198,10 +199,10 @@ int main(int argc, char** argv) try
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(xOld);
             // solve the non-linear system with time step control
-            nonLinearSolver.solve(x, *timeLoop);
+            nonLinearSolver.solve(x); // , *timeLoop
             // make the new solution the old solution
             xOld = x;
-            gridVariables->advanceTimeStep();
+            // gridVariables->advanceTimeStep();
             // advance to the time loop to the next step
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)

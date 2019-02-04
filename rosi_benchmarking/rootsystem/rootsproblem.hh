@@ -285,7 +285,7 @@ public:
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2 * dist); // / volVars.viscosity(0)
+            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (dist); // / volVars.viscosity(0)
             Scalar trans = collar();
             std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
                 << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
@@ -363,7 +363,7 @@ public:
         Scalar p = lastP_;
         Scalar dp = lastP_ - criticalCollarPressure_;
         file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << dp << ", "
-            << trans << " \n";
+                << std::setprecision (17) << sol[0] << ", " << std::setprecision (17) << sol[1] << "\n";
     }
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)

@@ -38,7 +38,7 @@ os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 t = time.time()
 os.system("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf")  # mpirun -n 8
 # os.system("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swtop_b")  # mpirun -n 8
-os.system("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swtop_c")  # mpirun -n 8
+# os.system("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swtop_c")  # mpirun -n 8
 print("elapsed time is ", time.time() - t)
 
 with open("swtop_actual_transpiration.txt", 'r') as f:
@@ -84,9 +84,9 @@ print("stress after ", d[i, 0] / (24 * 3600), "days")
 mid1 = np.argmax(d[:, 0] / (24 * 3600) > 0.5)
 mid2 = np.argmax(d2[:, 0] / (24 * 3600) > 0.5)
 mid3 = np.argmax(d3[:, 0] / (24 * 3600) > 0.5)
-print("transpiration during stress", d[mid1, 1], "kg/s at", d[mid1, 4], "Pa, p-crit ", d[mid1, 5], "Pa, max trans", d[mid1, 3])
+# print("transpiration during stress", d[mid1, 1], "kg/s at", d[mid1, 4], "Pa, p-crit ", d[mid1, 5], "Pa, max trans", d[mid1, 3])
 print("transpiration during stress", d2[mid2, 1], "kg/s at", d2[mid2, 4], "Pa, p-crit ", d2[mid2, 5], "Pa, max trans", d2[mid2, 3])
-print("transpiration during stress", d3[mid3, 1], "kg/s at", d3[mid3, 4], "Pa, p-crit ", d3[mid3, 5], "Pa, max trans", d3[mid3, 3])
+# print("transpiration during stress", d3[mid3, 1], "kg/s at", d3[mid3, 4], "Pa, p-crit ", d3[mid3, 5], "Pa, max trans", d3[mid3, 3])
 
 plt.show()
 
@@ -113,6 +113,10 @@ plt.show()
 # transpiration during stress 1.16697e-05 kg/s at -881000.0 Pa, p-crit  0.468517 Pa, max trans 1.16697e-05
 # transpiration during stress 0.0 kg/s at -10132.0 Pa, p-crit  870868.0 Pa, max trans 13.5454
 # transpiration during stress 1.07872e-06 kg/s at -881000.0 Pa, p-crit  0.0692282 Pa, max trans 1.07872e-06
+
+# Dirichlet -881000.0 -880875.1515273888
+# Neumann (1*dist)-880999.7657413137 -880874.9172689939
+# Neumann (2*dist)-880999.5314827756 -880874.683010747
 
 # days = 1
 # t_ = np.linspace(0, days, 6 * 24 * days)

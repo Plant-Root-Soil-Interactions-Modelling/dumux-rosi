@@ -4,8 +4,8 @@ Name = swbot
 [TimeLoop]
 TEnd = 86400 # 604800 a week [s] # 86400 # a day
 CheckTimes = 43200
-DtInitial = 1 # [s]
-MaxTimeStepSize = 3600 # 1 h
+DtInitial = 360 # [s]
+MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Collar]
 Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 

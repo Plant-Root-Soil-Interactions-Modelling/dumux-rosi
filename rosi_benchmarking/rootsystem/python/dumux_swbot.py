@@ -36,9 +36,9 @@ os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # Run dumux
 t = time.time()
-os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf")  # mpirun -n 8
-os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swbot_b")  # mpirun -n 8
-os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swbot_c")  # mpirun -n 8
+# os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf")  # mpirun -n 8
+# os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swbot_b")  # mpirun -n 8
+# os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swbot_c")  # mpirun -n 8
 print("elapsed time is ", time.time() - t)
 
 with open("swbot_actual_transpiration.txt", 'r') as f:
