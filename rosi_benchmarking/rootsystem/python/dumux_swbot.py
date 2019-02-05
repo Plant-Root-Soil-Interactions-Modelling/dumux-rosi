@@ -6,11 +6,23 @@ import matplotlib.pyplot as plt
 from vtk_tools import *
 from math import *
 import van_genuchten as vg
+import threading
 import time
 
 g = 9.81  # gravitational acceleration (m/s^2)
 rho = 1.e3  # density of water, (kg/m^3)
 ref = 1.e5
+
+
+class myThread(threading.Thread):
+
+    def __init__(self, name):
+        threading.Thread.__init__(self)
+        self.name = name
+
+    def run(self):
+        print("Starting:" + self.name)
+        os.system(self.name)
 
 
 def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
@@ -35,11 +47,16 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # Run dumux
-t = time.time()
-# os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf")  # mpirun -n 8
-# os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swbot_b")  # mpirun -n 8
-# os.system("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swbot_c")  # mpirun -n 8
-print("elapsed time is ", time.time() - t)
+# t0 = time.time()
+# threads_ = []
+# threads_.append(myThread("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf"))
+# threads_.append(myThread("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swbot_b"))
+# threads_.append(myThread("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swbot_c"))
+# for t in threads_:  # start threads
+#     t.start()
+# for t in threads_:  # and for all of them to finish
+#      t.join()
+# print("elapsed time is ", time.time() - t0)
 
 with open("swbot_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
@@ -47,6 +64,7 @@ with open("swbot_b_actual_transpiration.txt", 'r') as f:
     d2 = np.loadtxt(f, delimiter = ',')
 with open("swbot_c_actual_transpiration.txt", 'r') as f:
     d3 = np.loadtxt(f, delimiter = ',')
+
 # Format of txt file:
 # time_, lastActualTrans_, lastTrans_, lastMaxTrans_, p, dp, trans
 # 0    , 1               , 2         , 3            , 4, 5 , 6
@@ -55,17 +73,17 @@ with open("swbot_c_actual_transpiration.txt", 'r') as f:
 # Plot collar transpiration & pressure
 fig, ax1 = plt.subplots()
 
-ax1.plot(d[:, 0] / (24 * 3600), d[:, 2] * (24 * 3600), 'k')  # potential transpiration
-ax1.plot(d[:, 0] / (24 * 3600), d[:, 1] * (24 * 3600), 'r')  # reference, actual transpiration
-ax1.plot(d[:, 0] / (24 * 3600), d[:, 3] * (24 * 3600), 'r:')  # reference, maximal transpiration
-ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 1] * (24 * 3600), 'g')  # lateral
-ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 3] * (24 * 3600), 'g:')  # lateral
-ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600), 'b')  # volume
-ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600), 'b:')  # volume
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 2] * (24 * 3600) / (.75 * .15), 'k')  # potential transpiration
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 1] * (24 * 3600) / (.75 * .15), 'r')  # reference, actual transpiration
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 3] * (24 * 3600) / (.75 * .15), 'r:')  # reference, maximal transpiration
+ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 1] * (24 * 3600) / (.75 * .15), 'g')  # lateral
+ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 3] * (24 * 3600) / (.75 * .15), 'g:')  # lateral
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600) / (.75 * .15), 'b')  # volume
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600) / (.75 * .15), 'b:')  # volume
 ax1.legend(['Pot trans', 'actual trans P1', 'max trans P1', 'actual trans P2', 'max trans P2', 'actual trans P3', 'max trans P3'], loc = 'upper left')
-ax1.axis((0, d[-1, 0] / (24 * 3600), 0, 1.3))
+ax1.axis((0, d[-1, 0] / (24 * 3600), 0, 12))
 ax1.set_xlabel("Time $[d]$")
-ax1.set_ylabel("Transpiration rate $[kg d^{-1}]$")
+ax1.set_ylabel("Transpiration rate $[mm \ d^{-1}]$")
 
 ax2 = ax1.twinx()
 ax2.plot(d[:, 0] / (24 * 3600), d[:, 4], 'r--')
@@ -90,21 +108,13 @@ print("transpiration during stress", d3[mid3, 1], "kg/s at", d3[mid3, 4], "Pa, p
 
 plt.show()
 
-# for 1 hour time step (2 dist)
-# stress after  0.366133101852 days
-# stress after  0.0744668981481 days
-# stress after  0.0744668981481 days
-# transpiration during stress 1.10783e-05 kg/s at -881000.0 Pa, p-crit  0.444771 Pa, max trans 1.10783e-05
-# transpiration during stress 7.8026e-07 kg/s at -881000.0 Pa, p-crit  0.0501648 Pa, max trans 7.8026e-07
-# transpiration during stress 7.19507e-07 kg/s at -881000.0 Pa, p-crit  0.0461752 Pa, max trans 7.19507e-07
-
 # for 1 hour time step (1 dist)
-# stress after  0.366133101852 days
-# stress after  0.0744668981481 days
-# stress after  0.0744668981481 days
-# transpiration during stress 1.10783e-05 kg/s at -881000.0 Pa, p-crit  0.222386 Pa, max trans 1.10783e-05
-# transpiration during stress 7.8026e-07 kg/s at -881000.0 Pa, p-crit  0.0250824 Pa, max trans 7.8026e-07
-# transpiration during stress 7.19507e-07 kg/s at -881000.0 Pa, p-crit  0.0230876 Pa, max trans 7.19507e-07
+# stress after  0.345833333333 days
+# stress after  0.3125 days
+# stress after  0.316666666667 days
+# transpiration during stress 1.07743732989e-05 kg/s at -880999.783715 Pa, p-crit  0.216285442468 Pa, max trans 1.07743732989e-05
+# transpiration during stress 9.5668974017e-06 kg/s at -880999.791469 Pa, p-crit  0.20853099192 Pa, max trans 9.5668974017e-06
+# transpiration during stress 9.72600943435e-06 kg/s at -880999.787169 Pa, p-crit  0.212831314537 Pa, max trans 9.72600943435e-06
 
 # days = 1
 # t_ = np.linspace(0, days, 6 * 24 * days)

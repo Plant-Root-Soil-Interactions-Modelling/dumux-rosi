@@ -362,8 +362,8 @@ public:
         Scalar trans = this->transpiration(sol);
         Scalar p = lastP_;
         Scalar dp = lastP_ - criticalCollarPressure_;
-        file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << dp << ", "
-                << std::setprecision (17) << sol[0] << ", " << std::setprecision (17) << sol[1] << "\n";
+        file_at_ << std::setprecision(17) << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << dp << ", "
+            << std::setprecision(17) << sol[0] << ", " << std::setprecision(17) << sol[1] << "\n";
     }
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
