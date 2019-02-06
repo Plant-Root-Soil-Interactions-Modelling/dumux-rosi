@@ -49,7 +49,6 @@
 
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/assembly/diffmethod.hh>
-
 #include <dumux/discretization/method.hh>
 
 #include <dumux/io/vtkoutputmodule.hh>
@@ -95,9 +94,9 @@ int main(int argc, char** argv) try
     rootSystem->initialize();
     rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
     using Grid = std::shared_ptr<Dune::FoamGrid<1, 3>>;
-    Grid grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem);
+    Grid grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem); // in dumux/growth/rootsystemgridfactory.hh
     //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
-    //    rootSystem->setSoil(&soilLookup);
+    //    rootSystem->setSoil(&soilLookup); todo
 
     ////////////////////////////////////////////////////////////
     // run stationary or dynamic problem on this grid
@@ -117,14 +116,13 @@ int main(int argc, char** argv) try
     // problem->spatialParams().analyseRootSystem();
     std::cout << "... and, i have a problem \n" << "\n" << std::flush;
 
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // the solution vector type?
-    SolutionVector x(fvGridGeometry->numDofs());
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // in dumux/discretization/fvproperties.hh
     problem->applyInitialSolution(x);
     auto xOld = x;
     std::cout << "no solution, yet \n" << "\n" << std::flush;
 
     // the grid variables
-    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>; // where
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x);
     std::cout << "... but variables \n" << "\n" << std::flush;
@@ -145,12 +143,12 @@ int main(int argc, char** argv) try
                 timeLoop->setCheckPoint(p);
             }
         } catch (std::exception& e) {
-            std::cout << "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout << "rootsystem_rb.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
-
     std::cout << "time might be an issue \n" << "\n" << std::flush;
+
     // intialize the vtk output module
     using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
@@ -158,8 +156,8 @@ int main(int argc, char** argv) try
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
-
     std::cout << "vtk writer module initialized (how convenient)" << "\n" << std::flush;
+
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;

@@ -51,7 +51,6 @@
 
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/assembly/diffmethod.hh>
-
 #include <dumux/discretization/method.hh>
 
 #include <dumux/io/vtkoutputmodule.hh>
@@ -146,7 +145,7 @@ int main(int argc, char** argv) try
                 timeLoop->setCheckPoint(p);
             }
         } catch (std::exception& e) {
-            std::cout << "rootsysstem.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout << "rootsystem.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
