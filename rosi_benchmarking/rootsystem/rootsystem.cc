@@ -5,7 +5,11 @@
  *                                                                           *
  *   This program is free software: you can redistribute it and/or modify    *
  *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
+ *   the Free Software Foundation, ei-- Checking for module 'dune-uggrid>=2.6'
+--   No package 'dune-uggrid' found
+-- Could NOT find dune-uggrid (missing: dune-uggrid_DIR)
+-- No full CMake package configuration support available. Falling back to pkg-config.
+ *   ther version 2 of the License, or       *
  *   (at your option) any later version.                                     *
  *                                                                           *
  *   This program is distributed in the hope that it will be useful,         *
@@ -32,6 +36,7 @@
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
 
+#include <dune/foamgrid/foamgrid.hh>
 #include <RootSystem.h>
 #include "rootsproblem.hh"
 
@@ -52,8 +57,8 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
-#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
-#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+//#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+//#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 namespace Dumux {
 namespace Properties {
@@ -74,31 +79,30 @@ int main(int argc, char** argv) try
 {
     using namespace Dumux;
 
-    // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsBox;
-    // RootsCCTpfa RootsBox
-
-    // initialize MPI, finalize is done automatically on exit
-    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
-
-    // print dumux start message
-    if (mpiHelper.rank() == 0)
+    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // initialize MPI, finalize is done automatically on exit
+    if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
+    }
 
-    // parse command line arguments and input file
-    Parameters::init(argc, argv);
+    // define the type tag for this problem
+    using TypeTag = Properties::TTag::RootsBox; // RootsCCTpfa RootsBox
 
-    // try to create a grid (from the given grid file or the input file)
+    Parameters::init(argc, argv); // parse command line arguments and input file
+
+    // Create the grid from the given grid file or the input file
     GridManager<GetPropType<TypeTag, Properties::Grid>> gridManager;
     gridManager.init("RootSystem");
+    using Grid = std::shared_ptr<Dune::FoamGrid<1, 3>>;
+    auto& g = gridManager.grid();
+    Grid grid = Grid(&g);
     const auto gridData = gridManager.getGridData();
 
     ////////////////////////////////////////////////////////////
-    // run instationary non-linear problem on this grid
+    // run stationary or dynamic problem on this grid
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
-    const auto& leafGridView = gridManager.grid().leafGridView();
+    const auto& leafGridView = grid->leafGridView();
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
@@ -108,8 +112,7 @@ int main(int argc, char** argv) try
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
     // the problem (initial and boundary conditions)
-    using Problem = GetPropType<TypeTag, Properties::Problem>;
-    auto problem = std::make_shared<Problem>(fvGridGeometry);
+    auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
     problem->spatialParams().initParameters(*gridData);
     // problem->spatialParams().analyseRootSystem();
     std::cout << "and i have a problem \n" << "\n" << std::flush;
@@ -163,13 +166,13 @@ int main(int argc, char** argv) try
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized" << "\n" << std::flush;
 
-//    using GridView = GetPropType<TypeTag, Properties::GridView>;
-//    auto numDofs = fvGridGeometry->vertexMapper().size();
-//    auto numVert = fvGridGeometry->gridView().size(GridView::dimension);
-//    std::cout << "gridview dimension  " << GridView::dimension << "\n";
-//    std::cout << "numDofs " << numDofs << "\n";
-//    std::cout << "numVert  " << numVert << "\n";
-//    return 0; // help
+    //    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    //    auto numDofs = fvGridGeometry->vertexMapper().size();
+    //    auto numVert = fvGridGeometry->gridView().size(GridView::dimension);
+    //    std::cout << "gridview dimension  " << GridView::dimension << "\n";
+    //    std::cout << "numDofs " << numDofs << "\n";
+    //    std::cout << "numVert  " << numVert << "\n";
+    //    return 0; // help
 
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
@@ -192,7 +195,7 @@ int main(int argc, char** argv) try
     std::cout << "i plan to actually start \n" << "\n" << std::flush;
 
     if (tEnd > 0) // dynamic
-        {
+    {
         std::cout << "a time dependent model" << "\n" << std::flush;
         timeLoop->start();
         do {

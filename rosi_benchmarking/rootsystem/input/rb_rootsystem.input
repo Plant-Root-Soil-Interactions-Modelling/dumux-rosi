@@ -6,7 +6,7 @@ TEnd = 1.e9 # 1e9 # [s]
 DtInitial = 1 # [s]
 
 [RootSystem.Grid]
-File =  Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
+File =  maize_p1_zero_std # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
 InitialT = 10 # days
 
 [RootSystem.Conductivity]

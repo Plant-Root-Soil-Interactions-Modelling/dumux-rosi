@@ -32,6 +32,7 @@
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
 
+#include <dune/foamgrid/foamgrid.hh>
 #include <RootSystem.h>
 #include <dumux/growth/rootsystemgridfactory.hh>
 
@@ -54,8 +55,8 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
-#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
-#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+//#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+//#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 
 
@@ -77,16 +78,14 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
-    using namespace GrowthModule;
 
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // initialize MPI, finalize is done automatically on exit
-
     if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
     }
+
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsBox;
-    // RootsCCTpfa RootsBox
+    using TypeTag = Properties::TTag::RootsBox; // RootsCCTpfa RootsBox
 
     Parameters::init(argc, argv); // parse command line arguments and input file
 
@@ -95,8 +94,8 @@ int main(int argc, char** argv) try
     rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
     rootSystem->initialize();
     rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
-    auto grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem);
-
+    using Grid = std::shared_ptr<Dune::FoamGrid<1, 3>>;
+    Grid grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem);
     //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
     //    rootSystem->setSoil(&soilLookup);
 
@@ -104,25 +103,21 @@ int main(int argc, char** argv) try
     // run stationary or dynamic problem on this grid
     ////////////////////////////////////////////////////////////
 
-    // we compute on the leaf grid view
-    const auto& leafGridView = grid->leafGridView();
+    const auto& leafGridView = grid->leafGridView(); // we compute on the leaf grid view
     std::cout << "i have the view \n" << "\n" << std::flush;
 
-    // create the finite volume grid geometry
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
+    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView); // create the finite volume grid geometry
     fvGridGeometry->update();
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
-    // the problem (initial and boundary conditions)
-    using Problem = GetPropType<TypeTag, Properties::Problem>;
+    using Problem = GetPropType<TypeTag, Properties::Problem>; // the problem (initial and boundary conditions)
     auto problem = std::make_shared<Problem>(fvGridGeometry);
     problem->spatialParams().initParameters(*rootSystem);
     // problem->spatialParams().analyseRootSystem();
     std::cout << "... and, i have a problem \n" << "\n" << std::flush;
 
-    // the solution vector
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // the solution vector type?
     SolutionVector x(fvGridGeometry->numDofs());
     problem->applyInitialSolution(x);
     auto xOld = x;

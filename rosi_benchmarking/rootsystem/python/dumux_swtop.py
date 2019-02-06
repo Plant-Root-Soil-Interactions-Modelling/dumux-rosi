@@ -47,16 +47,16 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # Run dumux
-# t0 = time.time()
-# threads_ = []
-# threads_.append(myThread("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf"))
-# threads_.append(myThread("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swtop_b"))
-# threads_.append(myThread("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swtop_c"))
-# for t in threads_:  # start threads
-#     t.start()
-# for t in threads_:  # and for all of them to finish
-#      t.join()
-# print("elapsed time is ", time.time() - t0)
+t0 = time.time()
+threads_ = []
+threads_.append(myThread("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf"))
+threads_.append(myThread("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swtop_b"))
+threads_.append(myThread("./rootsystem input/swtop.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swtop_c"))
+for t in threads_:  # start threads
+    t.start()
+for t in threads_:  # and for all of them to finish
+     t.join()
+print("elapsed time is ", time.time() - t0)
 
 with open("swtop_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
@@ -65,8 +65,8 @@ with open("swtop_b_actual_transpiration.txt", 'r') as f:
 with open("swtop_c_actual_transpiration.txt", 'r') as f:
     d3 = np.loadtxt(f, delimiter = ',')
 # Format of txt file:
-# time_, lastActualTrans_, lastTrans_, lastMaxTrans_, (p - pRef_) * 100 / rho_ / g_, dp, trans
-# 0    , 1               , 2         , 3            , 4                            , 5 , 6
+# time_, lastActualTrans_, lastTrans_, lastMaxTrans_, p, dp, sol[0], sol[1], trans
+# 0    , 1               , 2         , 3            , 4, 5,  6,      7,      8
 #
 
 # Plot collar transpiration & pressure
@@ -111,11 +111,19 @@ plt.show()
 # y_ = np.sin(t_ * 2.*pi - 0.5 * pi) * trans + trans
 # ax1.plot(t_, y_ * (24 * 3600), 'k')
 
-# Time step: 1/10 h (1dist)
+# Time step: 1/10 h (1 dist)
 # stress after  0.358333333333 days
 # stress after  0.3375 days
 # stress after  0.3125 days
 # transpiration during stress 1.12141295795e-05 kg/s at -880999.774887 Pa, p-crit  0.225113137509 Pa, max trans 1.12141295795e-05
 # transpiration during stress 1.04586327942e-05 kg/s at -880999.772032 Pa, p-crit  0.227968272171 Pa, max trans 1.04586327942e-05
 # transpiration during stress 9.52087489404e-06 kg/s at -880999.791658 Pa, p-crit  0.208342417609 Pa, max trans 9.52087489404e-06
+
+# Time step: 1/10 h (2 dist)
+# stress after  0.358333333333 days
+# stress after  0.3375 days
+# stress after  0.3125 days
+# transpiration during stress 1.1214126155e-05 kg/s at -880999.549774 Pa, p-crit  0.450226137531 Pa, max trans 1.1214126155e-05
+# transpiration during stress 1.04586296324e-05 kg/s at -880999.544064 Pa, p-crit  0.455936406506 Pa, max trans 1.04586296324e-05
+# transpiration during stress 9.52087211702e-06 kg/s at -880999.583315 Pa, p-crit  0.41668471368 Pa, max trans 9.52087211702e-06
 

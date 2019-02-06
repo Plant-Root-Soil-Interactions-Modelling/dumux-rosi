@@ -106,6 +106,11 @@ at1 = np.loadtxt("benchmark1_actual_transpiration.txt", delimiter = ',')
 at2 = np.loadtxt("benchmark1b_actual_transpiration.txt", delimiter = ',')
 at3 = np.loadtxt("benchmark1c_actual_transpiration.txt", delimiter = ',')
 
+# Format of txt file:
+# time_, lastActualTrans_, lastTrans_, lastMaxTrans_, p, dp, sol[0], sol[1], trans
+# 0    , 1               , 2         , 3            , 4, 5,  6,      7,      8
+#
+
 print("Analytic transpiration rate (kg/s):")
 print("=", 1000 * kz * ((d[0] - d[1]) * sqrt(c) + rho * g))
 print("=", 1000 * kz * ((d2[0] - d2[1]) * sqrt(c) + rho * g))
@@ -120,9 +125,9 @@ print(p_r(0))
 print(p_r2(0))
 print(p_r3(0))
 print("Numeric pressure (cm)")
-print(at1[3])
-print(at2[3])
-print(at3[3])
+print(toHead(at1[6]))
+print(toHead(at2[6]))
+print(toHead(at3[6]))
 
 # save benchmark 1
 np.savetxt("dumux_b1", np.vstack((z_, h_)), delimiter = ',')
