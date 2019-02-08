@@ -161,7 +161,7 @@ public:
     RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
         auto sf = InputFileFunction("Soil.IC.P", "Soil.IC.Z");
-        soil_ = new SoilLookUpTable<FVGridGeometry>(sf, fvGridGeometry);
+        soil_ = new GrowthModule::SoilLookUpTable<FVGridGeometry>(sf, fvGridGeometry);
         try {
             collar_ = InputFileFunction("RootSystem.Collar.Transpiration", "RootSystem.Collar.TranspirationT", true);
             bcType_ = bcNeumann;
@@ -177,7 +177,7 @@ public:
         file_at_.close();
     }
 
-    //! calculates axial fluxes from a given solution (for vtk output)
+    //! calculates axial fluxes from a given solution (for vtk output) [m^3 / s]
     void axialFlux(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         axialFlux_ = std::vector<Scalar>(gridView.size(0));
@@ -194,7 +194,7 @@ public:
         }
     }
 
-    //! calculates the radial fluxes from a given solution (for vtk output)
+    //! calculates the radial fluxes from a given solution (for vtk output) [m^3 / s]
     void radialFlux(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         radialFlux_ = std::vector<Scalar>(gridView.size(0));

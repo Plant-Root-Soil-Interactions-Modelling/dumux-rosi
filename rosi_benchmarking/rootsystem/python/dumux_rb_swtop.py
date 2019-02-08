@@ -36,17 +36,21 @@ def toPa(ph):
 print("wet", toHead(-10000))
 print("dry", toHead(-300000))
 print("a week ", 7 * 24 * 3600)
-trans = 5.33 * .75 * .15 / 86400
+trans = 5.33 * .75 * .15 / 86400  #  kg/s
 maxtrans = 2 * trans
 print("daily rate ", 5.33, "mm/day = ", trans, " kg/s, maximum ", maxtrans)  #
 print("Critical collar pressure = ", toPa(-1.e4))
+print("kr0", np.array([1.8e-4, 1.8e-4, 0.6e-4, 0.6e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
+print("kr1", np.array([1.8e-4, 1.8e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
+print("kx0", np.array([0.01, 0.3, 0.3, 4.3, 4.3]) * 1.e-4 / 86400)
+print("kx1", np.array([0.01e-3, 0.01e-3, 0.1e-3, 0.6e-3, 0.6e-3, 1.7e-3, 1.7e-3]) * 1.e-4 / 86400)
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
-p1 = "-RootSystem.Grid.InitialT 10 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5
+p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5
 p2 = "-RootSystem.Grid.InitialT 55.5 -RootSystem.Grid.File maize_p2_zero_std"
 p3 = "-RootSystem.Grid.InitialT 58.5 -RootSystem.Grid.File maize_p3_zero_std"
 
@@ -54,8 +58,8 @@ p3 = "-RootSystem.Grid.InitialT 58.5 -RootSystem.Grid.File maize_p3_zero_std"
 t0 = time.time()
 threads_ = []
 threads_.append(myThread("./rootsystem_rb input/rb_swtop.input " + p1 + " -Problem.Name rb_swtop_a"))
-# threads_.append(myThread("./rootsystem_rb input/rb_swtop.input " + p2 + " -Problem.Name rb_swtop_b"))
-# threads_.append(myThread("./rootsystem_rb input/rb_swtop.input " + p3 + " -Problem.Name rb_swtop_c"))
+threads_.append(myThread("./rootsystem_rb input/rb_swtop.input " + p2 + " -Problem.Name rb_swtop_b"))
+threads_.append(myThread("./rootsystem_rb input/rb_swtop.input " + p3 + " -Problem.Name rb_swtop_c"))
 for t in threads_:  # start threads
     t.start()
 for t in threads_:  # and for all of them to finish
@@ -114,19 +118,3 @@ plt.show()
 # t_ = np.linspace(0, days, 6 * 24 * days)
 # y_ = np.sin(t_ * 2.*pi - 0.5 * pi) * trans + trans
 # ax1.plot(t_, y_ * (24 * 3600), 'k')
-
-# Time step: 1/10 h (1 dist)
-# stress after  0.358333333333 days
-# stress after  0.3375 days
-# stress after  0.3125 days
-# transpiration during stress 1.12141295795e-05 kg/s at -880999.774887 Pa, p-crit  0.225113137509 Pa, max trans 1.12141295795e-05
-# transpiration during stress 1.04586327942e-05 kg/s at -880999.772032 Pa, p-crit  0.227968272171 Pa, max trans 1.04586327942e-05
-# transpiration during stress 9.52087489404e-06 kg/s at -880999.791658 Pa, p-crit  0.208342417609 Pa, max trans 9.52087489404e-06
-
-# Time step: 1/10 h (2 dist)
-# stress after  0.358333333333 days
-# stress after  0.3375 days
-# stress after  0.3125 days
-# transpiration during stress 1.1214126155e-05 kg/s at -880999.549774 Pa, p-crit  0.450226137531 Pa, max trans 1.1214126155e-05
-# transpiration during stress 1.04586296324e-05 kg/s at -880999.544064 Pa, p-crit  0.455936406506 Pa, max trans 1.04586296324e-05
-# transpiration during stress 9.52087211702e-06 kg/s at -880999.583315 Pa, p-crit  0.41668471368 Pa, max trans 9.52087211702e-06

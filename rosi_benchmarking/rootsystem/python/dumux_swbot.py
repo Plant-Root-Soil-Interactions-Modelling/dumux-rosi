@@ -36,35 +36,42 @@ def toPa(ph):
 print("wet", toHead(-10000))
 print("dry", toHead(-300000))
 print("a week ", 7 * 24 * 3600)
-trans = 5.33 * .75 * .15 / 86400
+trans = 5.33 * .75 * .15 / 86400  #  kg/s
 maxtrans = 2 * trans
 print("daily rate ", 5.33, "mm/day = ", trans, " kg/s, maximum ", maxtrans)  #
 print("Critical collar pressure = ", toPa(-1.e4))
+print("kr0", np.array([1.8e-4, 1.8e-4, 0.6e-4, 0.6e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
+print("kr1", np.array([1.8e-4, 1.8e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
+print("kx0", np.array([0.01, 0.3, 0.3, 4.3, 4.3]) * 1.e-4 / 86400)
+print("kx1", np.array([0.01e-3, 0.01e-3, 0.1e-3, 0.6e-3, 0.6e-3, 1.7e-3, 1.7e-3]) * 1.e-4 / 86400)
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
+p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5
+p2 = "-RootSystem.Grid.InitialT 55.5 -RootSystem.Grid.File maize_p2_zero_std"
+p3 = "-RootSystem.Grid.InitialT 58.5 -RootSystem.Grid.File maize_p3_zero_std"
+
 # Run dumux
 t0 = time.time()
 threads_ = []
-threads_.append(myThread("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Reference/RootSys1.dgf"))
-threads_.append(myThread("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_laterals/RootSys1.dgf -Problem.Name swbot_b"))
-threads_.append(myThread("./rootsystem input/swbot.input -RootSystem.Grid.File grids/RootSys/Genotype_volume/RootSys1.dgf -Problem.Name swbot_c"))
+threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p1 + " -Problem.Name rb_swbot_a"))
+threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p2 + " -Problem.Name rb_swbot_b"))
+threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p3 + " -Problem.Name rb_swbot_c"))
 for t in threads_:  # start threads
     t.start()
 for t in threads_:  # and for all of them to finish
      t.join()
 print("elapsed time is ", time.time() - t0)
 
-with open("swbot_actual_transpiration.txt", 'r') as f:
+with open("rb_swbot_a_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
-with open("swbot_b_actual_transpiration.txt", 'r') as f:
+with open("rb_swbot_b_actual_transpiration.txt", 'r') as f:
     d2 = np.loadtxt(f, delimiter = ',')
-with open("swbot_c_actual_transpiration.txt", 'r') as f:
+with open("rb_swbot_c_actual_transpiration.txt", 'r') as f:
     d3 = np.loadtxt(f, delimiter = ',')
-
 # Format of txt file:
 # time_, lastActualTrans_, lastTrans_, lastMaxTrans_, p, dp, sol[0], sol[1], trans
 # 0    , 1               , 2         , 3            , 4, 5,  6,      7,      8
@@ -108,23 +115,6 @@ print("transpiration during stress", d3[mid3, 1], "kg/s at", d3[mid3, 4], "Pa, p
 
 plt.show()
 
-# for 1 hour time step (1 dist)
-# stress after  0.345833333333 days
-# stress after  0.3125 days
-# stress after  0.316666666667 days
-# transpiration during stress 1.07743732989e-05 kg/s at -880999.783715 Pa, p-crit  0.216285442468 Pa, max trans 1.07743732989e-05
-# transpiration during stress 9.5668974017e-06 kg/s at -880999.791469 Pa, p-crit  0.20853099192 Pa, max trans 9.5668974017e-06
-# transpiration during stress 9.72600943435e-06 kg/s at -880999.787169 Pa, p-crit  0.212831314537 Pa, max trans 9.72600943435e-06
-
-# for 1 hour time step (2 dist)
-# stress after  0.345833333333 days
-# stress after  0.3125 days
-# stress after  0.316666666667 days
-# transpiration during stress 1.07743700078e-05 kg/s at -880999.567429 Pa, p-crit  0.432570752804 Pa, max trans 1.07743700078e-05
-# transpiration during stress 9.5668945123e-06 kg/s at -880999.582938 Pa, p-crit  0.417061857879 Pa, max trans 9.5668945123e-06
-# transpiration during stress 9.72600659614e-06 kg/s at -880999.574337 Pa, p-crit  0.425662504858 Pa, max trans 9.72600659614e-06
-
-# days = 1
 # t_ = np.linspace(0, days, 6 * 24 * days)
 # y_ = np.sin(t_ * 2.*pi - 0.5 * pi) * trans + trans
 # ax1.plot(t_, y_ * (24 * 3600), 'k')

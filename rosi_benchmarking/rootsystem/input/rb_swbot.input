@@ -1,14 +1,24 @@
 [Problem]
-Name = rb_swbot 
+Name = rb_swbot
 
 [TimeLoop]
 TEnd = 86400 # 604800 a week [s] # 86400 # a day
-CheckTimes = 43200
+CheckTimes = 43200 # half a day
 DtInitial = 360 # [s]
 MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Collar]
 Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
+
+[RootSystem.Conductivity]
+KrAge0 = 0 5 10 15 20 1e20 
+Kr0 = 2.08333333e-13 2.08333333e-13 6.94444444e-14 6.94444444e-14 2.08333333e-14 2.08333333e-14 # radial conductivity (m^2 s / kg) 
+KrAge1 = 0 10 15 1e20
+Kr1 = 2.08333333e-13 2.08333333e-13 2.08333333e-14 2.08333333e-14
+KxAge0 = 0 3 4 5 1e20 
+Kx0 = 1.15740741e-11 3.47222222e-10 3.47222222e-10 4.97685185e-09 4.97685185e-09 # axial conductivity (m^5 s / kg)  
+KxAge1 = 0 5 10 12 20 22 1e20
+Kx1 = 1.15740741e-14 1.15740741e-14 1.15740741e-13 6.94444444e-13 6.94444444e-13 1.96759259e-12 1.96759259e-12
 
 [Soil.IC]
 P = -1121.3 -1121.3 -4077.47 -4077.47 
@@ -16,4 +26,4 @@ Z = -1.26 -.43 -.41 0
 
 [Vtk]
 AddProcessRank = "false"
-AddVelocity = "true"
+AddVelocity = "true" 

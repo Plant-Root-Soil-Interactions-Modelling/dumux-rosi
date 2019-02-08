@@ -46,7 +46,6 @@
 
 #include <dumux/linear/amgbackend.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
-
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/assembly/diffmethod.hh>
 #include <dumux/discretization/method.hh>
@@ -77,10 +76,11 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
-
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // initialize MPI, finalize is done automatically on exit
     if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
+    } else {
+        throw Dumux::ParameterException("Care! Foamgrid does not support parallel computation");
     }
 
     // define the type tag for this problem
@@ -105,29 +105,30 @@ int main(int argc, char** argv) try
     const auto& leafGridView = grid->leafGridView(); // we compute on the leaf grid view
     std::cout << "i have the view \n" << "\n" << std::flush;
 
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView); // create the finite volume grid geometry
+    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>; // I assume BoxFVElementGeometry from fvelementgeometry.hh in dumux/discretization/box
+    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView); // but where is the property defined?
     fvGridGeometry->update();
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
-    using Problem = GetPropType<TypeTag, Properties::Problem>; // the problem (initial and boundary conditions)
-    auto problem = std::make_shared<Problem>(fvGridGeometry);
+    auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
     problem->spatialParams().initParameters(*rootSystem);
-    // problem->spatialParams().analyseRootSystem();
+    // problem->spatialParams().updateParameters(*rootSystem); // use if it grows
+    // problem->spatialParams().analyseRootSystem(); // use for debugging
+    // problem->spatialParams().initParameters(*gridData); // in case of grid
     std::cout << "... and, i have a problem \n" << "\n" << std::flush;
 
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // in dumux/discretization/fvproperties.hh
+    SolutionVector x(fvGridGeometry->numDofs());
     problem->applyInitialSolution(x);
     auto xOld = x;
     std::cout << "no solution, yet \n" << "\n" << std::flush;
 
-    // the grid variables
-    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>; // where
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>; // FVGridVariables, from dumux/discretization/fvproperties.hh
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x);
     std::cout << "... but variables \n" << "\n" << std::flush;
+    // grid variable knows the problem, the geometry and the solutionv vector
 
-    // get some time loop parameters & instantiate time loop
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
@@ -143,89 +144,91 @@ int main(int argc, char** argv) try
                 timeLoop->setCheckPoint(p);
             }
         } catch (std::exception& e) {
-            std::cout << "rootsystem_rb.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout << "rootsystem.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
     std::cout << "time might be an issue \n" << "\n" << std::flush;
 
-    // intialize the vtk output module
     using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    problem->axialFlux(x); // prepare fields
+    problem->radialFlux(x); // prepare fields
+    vtkWriter.addField(problem->axialFlux(), "axial flux");
+    vtkWriter.addField(problem->radialFlux(), "radial flux");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized (how convenient)" << "\n" << std::flush;
 
     // the assembler with time loop for instationary problem
-    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
+    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; // dumux/assembly/fvassembler.hh
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
-    }
+    } // ? gridVariables already knows fvGridGeometry, and problem ?
 
     // the linear solver
-    using LinearSolver = AMGBackend<TypeTag>;
+    using LinearSolver = AMGBackend<TypeTag>; // dumux/linear/amgbackend.hh
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
     // the non-linear solver
-    using NewtonSolver = Dumux::NewtonSolver<Assembler, LinearSolver>;
+    using NewtonSolver = Dumux::NewtonSolver<Assembler, LinearSolver>; // dumux/nonlinear/newtonsolver.hh
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
     std::cout << "planning to actually start \n" << "\n" << std::flush;
     if (tEnd > 0) // dynamic
-        {
+    {
         std::cout << "a time dependent model" << "\n" << std::flush;
+
         timeLoop->start();
         do {
-            // set previous solution for storage evaluations
-            assembler->setPreviousSolution(xOld);
-            // solve the non-linear system with time step control
-            nonLinearSolver.solve(x, *timeLoop);
+            assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
+
+            nonLinearSolver.solve(x, *timeLoop); // solve the non-linear system with time step control
+
             // make the new solution the old solution
             xOld = x;
             gridVariables->advanceTimeStep();
-            // advance to the time loop to the next step
-            timeLoop->advanceTimeStep();
-            // write vtk output (only at check points)
-            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+
+            timeLoop->advanceTimeStep(); // advance to the time loop to the next step
+
+            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) { // write vtk output (only at check points)
+                problem->axialFlux(x); // prepare fields
+                problem->radialFlux(x); // prepare fields
                 vtkWriter.write(timeLoop->time());
             }
-            if (mpiHelper.rank() == 0) {
-                problem->writeTranspirationRate(x);
-            }
-            // report statistics of this time step
-            timeLoop->reportTimeStep();
-            // set new dt as suggested by the newton solver
-            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
-            // pass current time to the problem
-            // problem->setTime(timeLoop->time());
+            problem->writeTranspirationRate(x); // always add transpiration data in the text file
+
+            timeLoop->reportTimeStep(); // report statistics of this time step
+
+            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
+
+            problem->setTime(timeLoop->time()); // pass current time to the problem
         } while (!timeLoop->finished());
+
         timeLoop->finalize(leafGridView.comm());
+
     } else // static
     {
         std::cout << "a static model" << "\n" << std::flush;
-        // set previous solution for storage evaluations
-        assembler->setPreviousSolution(xOld);
-        // solve the non-linear system
-        nonLinearSolver.solve(x);
-        // write vtk output
+
+        assembler->setPreviousSolution(xOld);  // set previous solution for storage evaluations
+
+        nonLinearSolver.solve(x); // solve the non-linear system
+
+        // write outputs
         problem->writeTranspirationRate(x);
-        vtkWriter.write(1);
+        problem->axialFlux(x); // prepare fields
+        problem->radialFlux(x); // prepare fields
+        vtkWriter.write(1); // write vtk output
     }
 
-    ////////////////////////////////////////////////////////////
-    // finalize, print dumux message to say goodbye
-    ////////////////////////////////////////////////////////////
-
-    if (mpiHelper.rank() == 0) { // print dumux end message
-        Parameters::print();
-        DumuxMessage::print(/*firstCall=*/false);
-    }
-
+    Parameters::print();
+    DumuxMessage::print(/*firstCall=*/false);
     return 0;
 } // end main
 catch (Dumux::ParameterException &e) {

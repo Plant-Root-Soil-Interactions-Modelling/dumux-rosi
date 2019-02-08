@@ -64,8 +64,9 @@ public:
         ParentType(fvGridGeometry) {
         kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", -1, -1);
         kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", -1, -1);
-        assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems");
+        assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems"); // todo use kr_.setData(...) by hand
         assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems");
+        time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600*24; // root system initial time
     }
 
     /*!
@@ -104,23 +105,15 @@ public:
     }
 
     Scalar age(std::size_t eIdx) const {
-        return time_ - ctimes_[eIdx];
+        return time0_ - ctimes_[eIdx] + time_;
     }
 
     Scalar kr(std::size_t eIdx) const {
-        if (eIdx == 0) { // shoot element
-            return 0.; //kr_.f(this->age(eIdx), eIdx);
-        } else {
-            return kr_.f(this->age(eIdx), eIdx);
-        }
+        return kr_.f(this->age(eIdx), eIdx);
     }
 
     Scalar kx(std::size_t eIdx) const {
-        if (eIdx == 0) {  // shoot element
-            return 1.; //kx_.f(this->age(eIdx), eIdx);
-        } else {
-            return kx_.f(this->age(eIdx), eIdx);
-        }
+        return kr_.f(this->age(eIdx), eIdx);
     }
 
     void setTime(double t) {
@@ -135,14 +128,21 @@ public:
         orders_.resize(gridView.size(0));
         ctimes_.resize(gridView.size(0));
 
-        // std::cout << "START INIT PARAMS!" << "foam grid nodes " << gridView.size(0) << ", " << rs.getNumberOfNodes() << "\n";
         auto baseRoots = rs.getBaseRoots();
+        double sum_a = 0.;
+        for (auto& br : baseRoots) {
+            sum_a += br->param.a;
+        }
+        std::cout << "START INIT PARAMS!" << "foam grid nodes " << gridView.size(0) << ", " << rs.getNumberOfNodes() <<
+            " base roots " << baseRoots.size() << " summed radius" << sum_a << " cm\n";
+        //std::cin.ignore();
+
         for (auto& br : baseRoots) {
             size_t eIdx = br->getNodeId(0) - 1; // rootbox node index - 1 == rootbox segment index
-            // std::cout << " eIdx " << eIdx << ", ";
-            radii_[eIdx] = 0.01; // shoot node
+            std::cout << " eIdx " << eIdx << ", ";
+            radii_[eIdx] = sum_a/100.; // shoot node:
             orders_[eIdx] = 0;
-            ctimes_[eIdx] = 1.e9;
+            ctimes_[eIdx] = 0;
         }
 
         auto roots = rs.getRoots();
@@ -155,15 +155,15 @@ public:
             for (size_t j = 1; j < r->getNumberOfNodes(); j++) { // start at first segment, second node
                 size_t eIdx = r->getNodeId(j) - 1; // rootbox node index - 1 == rootbox segment index
                 // std::cout << eIdx << ", ";
-                radii_.at(eIdx) = radii[i];
+                radii_.at(eIdx) = radii[i]/100.;
                 orders_.at(eIdx) = orders[i];
-                ctimes_.at(eIdx) = rs.getSimTime() - r->getNodeETime(j);
+                ctimes_.at(eIdx) = r->getNodeETime(j)*3600*24;
             }
         }
-        if (kr_.type() == InputFileFunction::perType) {
+        if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
             kr_.setData(orders_);
         }
-        if (kx_.type() == InputFileFunction::perType) {
+        if ((kx_.type() == InputFileFunction::perType) || (kx_.type() == InputFileFunction::tablePerType)) {
             kx_.setData(orders_);
         }
         // std::cout << "END INIT PARAMS!";
@@ -190,14 +190,14 @@ public:
                 r_ = r_->parent;
             }
             orders_.at(eIdx) = o;
-            radii_.at(eIdx) = segO[i]->param.a;
-            ctimes_.at(eIdx) = segCT[i];
+            radii_.at(eIdx) = segO[i]->param.a / 100.;
+            ctimes_.at(eIdx) = segCT[i] *3600*24;
         }
 
-        if (kr_.type() == InputFileFunction::perType) {
+        if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
             kr_.setData(orders_);
         }
-        if (kx_.type() == InputFileFunction::perType) {
+        if ((kx_.type() == InputFileFunction::perType) || (kx_.type() == InputFileFunction::tablePerType)) {
             kx_.setData(orders_);
         }
     }
@@ -242,11 +242,12 @@ private:
     InputFileFunction kr_;
     InputFileFunction kx_;
 
-    std::vector<double> orders_;
-    std::vector<double> radii_;
-    std::vector<double> ctimes_;
+    std::vector<double> orders_; // root order, or root type
+    std::vector<double> radii_; // [cm]
+    std::vector<double> ctimes_; // [s]
 
-    double time_ = 0.;
+    double time_ = 0.; // [s]
+    double time0_ = 0; // initial time [s]
 };
 
 } // end namespace Dumux
