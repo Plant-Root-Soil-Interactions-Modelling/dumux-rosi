@@ -131,6 +131,7 @@ public:
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry, GridManager<Grid>* gridManager)
     : ParentType(fvGridGeometry) {
         name_ = getParam<std::string>("Problem.Name");
+        std::cout << "NAAMMEEE" << name_ << ", "<< this->name() << "\n";
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
@@ -159,7 +160,7 @@ public:
     /*!
      * \brief The problem name.
      */
-    const std::string& name() const {
+    const std::string& name2() const {
         return name_;
     }
 

@@ -50,7 +50,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
-p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5
+p1 = "-RootSystem.Grid.InitialT 10 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5
 p2 = "-RootSystem.Grid.InitialT 55.5 -RootSystem.Grid.File maize_p2_zero_std"
 p3 = "-RootSystem.Grid.InitialT 58.5 -RootSystem.Grid.File maize_p3_zero_std"
 

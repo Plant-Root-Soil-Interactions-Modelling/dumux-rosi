@@ -5,11 +5,7 @@
  *                                                                           *
  *   This program is free software: you can redistribute it and/or modify    *
  *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, ei-- Checking for module 'dune-uggrid>=2.6'
---   No package 'dune-uggrid' found
--- Could NOT find dune-uggrid (missing: dune-uggrid_DIR)
--- No full CMake package configuration support available. Falling back to pkg-config.
- *   ther version 2 of the License, or       *
+ *   the Free Software Foundation, either version 2 of the License, or       *
  *   (at your option) any later version.                                     *
  *                                                                           *
  *   This program is distributed in the hope that it will be useful,         *
@@ -20,11 +16,9 @@
  *   You should have received a copy of the GNU General Public License       *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
-/*!
- * \file
- *
- * \brief test for the one-phase CC model
- */
+
+
+
 #include <config.h>
 
 #include <ctime>
@@ -38,6 +32,7 @@
 
 #include <dune/foamgrid/foamgrid.hh>
 #include <RootSystem.h>
+
 #include "rootsproblem.hh"
 
 #include <dumux/common/properties.hh>
@@ -56,8 +51,7 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
-//#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
-//#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+
 
 namespace Dumux {
 namespace Properties {
@@ -79,6 +73,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // initialize MPI, finalize is done automatically on exit
+
     if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
     }
@@ -92,8 +87,8 @@ int main(int argc, char** argv) try
     GridManager<GetPropType<TypeTag, Properties::Grid>> gridManager;
     gridManager.init("RootSystem");
     using Grid = std::shared_ptr<Dune::FoamGrid<1, 3>>;
-    auto& g = gridManager.grid();
-    Grid grid = Grid(&g);
+    auto& grid = gridManager.grid();
+    //Grid grid = Grid(&g);
     const auto gridData = gridManager.getGridData();
 
     ////////////////////////////////////////////////////////////
@@ -101,7 +96,7 @@ int main(int argc, char** argv) try
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
-    const auto& leafGridView = grid->leafGridView();
+    const auto& leafGridView = grid.leafGridView();
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
@@ -114,7 +109,7 @@ int main(int argc, char** argv) try
     auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
     problem->spatialParams().initParameters(*gridData);
     // problem->spatialParams().analyseRootSystem();
-    std::cout << "and i have a problem \n" << "\n" << std::flush;
+    std::cout << "... and i have a problem \n" << "\n" << std::flush;
 
     // the solution vector
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
@@ -127,7 +122,7 @@ int main(int argc, char** argv) try
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x);
-    std::cout << "... but variables \n" << "\n" << std::flush;
+    std::cout << "but variables \n" << "\n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
@@ -149,7 +144,7 @@ int main(int argc, char** argv) try
         }
     } else { // static
     }
-    std::cout << "time might be an issue \n" << "\n" << std::flush;
+    std::cout << "\ntime might be an issue \n" << "\n" << std::flush;
 
     // intialize the vtk output module
 
@@ -232,9 +227,9 @@ int main(int argc, char** argv) try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         // write vtk output
-        problem->axialFlux(x); // prepare fields
-        problem->radialFlux(x); // prepare fields
-        problem->writeTranspirationRate(x);
+        //        problem->axialFlux(x); // prepare fields
+        //        problem->radialFlux(x); // prepare fields
+        //        problem->writeTranspirationRate(x);
         vtkWriter.write(1);
     }
 

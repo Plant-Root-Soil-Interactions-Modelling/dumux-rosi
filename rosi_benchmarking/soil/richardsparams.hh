@@ -112,6 +112,7 @@ namespace Dumux {
 
         /*!
          * \brief \copydoc FVSpatialParamsOneP::permeability
+         * [m^2]\
          */
         template<class ElementSolution>
         decltype(auto) permeability(const Element& element, const SubControlVolume& scv, const ElementSolution& elemSol) const {

@@ -59,8 +59,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = TTAG(RichardsBoxTypeTag);
-    // RichardsCCTypeTag, RichardsBoxTypeTag
+    using TypeTag = TTAG(RichardsBoxTypeTag); // RichardsCCTypeTag, RichardsBoxTypeTag
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -77,7 +76,7 @@ int main(int argc, char** argv) try
     gridManager.init("Soil");
 
     ////////////////////////////////////////////////////////////
-    // run instationary non-linear problem on this grid
+    // run steady state or dynamic non-linear problem on this grid
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
@@ -145,7 +144,6 @@ int main(int argc, char** argv) try
     using LinearSolver = Dumux::AMGBackend<TypeTag>;
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
-    // the non-linear solver
     // the non-linear solver
     using NewtonSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);

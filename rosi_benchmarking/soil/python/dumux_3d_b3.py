@@ -17,16 +17,16 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
 # run dumux
-np_ = 1  # number of processors
+np_ = 8  # number of processors
 if np_ == 1:
     os.system("./richards3d benchmarks_3d/b3a.input")
     os.system("./richards3d benchmarks_3d/b3b.input")
     os.system("./richards3d benchmarks_3d/b3c.input")
 else:
     pass
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3a.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3b.input -Grid.Overlap 0")
-#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3c.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3a.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3b.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3c.input -Grid.Overlap 0")
 
 ex = []  # list for data for export
 

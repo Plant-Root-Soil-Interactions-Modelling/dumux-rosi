@@ -2,7 +2,7 @@
 Name = benchmark1 
 
 [TimeLoop]
-TEnd = 0 # 1e9 # [s]
+TEnd = 1e9 # 1e9 # [s]
 DtInitial = 1 # [s]
 
 [RootSystem.Grid]

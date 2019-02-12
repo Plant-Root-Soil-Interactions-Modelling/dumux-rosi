@@ -16,11 +16,9 @@
  *   You should have received a copy of the GNU General Public License       *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
-/*!
- * \file
- *
- * \brief test for the one-phase CC model
- */
+
+
+
 #include <config.h>
 
 #include <ctime>
@@ -34,6 +32,7 @@
 
 #include <dune/foamgrid/foamgrid.hh>
 #include <RootSystem.h>
+
 #include <dumux/growth/rootsystemgridfactory.hh>
 #include <dumux/growth/growthinterface.hh>
 #include <dumux/growth/crootboxadapter.hh>
@@ -49,6 +48,7 @@
 
 #include <dumux/linear/amgbackend.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
+
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/assembly/diffmethod.hh>
 #include <dumux/discretization/method.hh>
@@ -76,7 +76,9 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
+
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // initialize MPI, finalize is done automatically on exit
+
     if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
     } else {
