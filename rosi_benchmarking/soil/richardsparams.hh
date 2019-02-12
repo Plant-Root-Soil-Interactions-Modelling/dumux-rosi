@@ -16,13 +16,11 @@
  *   You should have received a copy of the GNU General Public License       *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
-/*!
- * \file
- * \ingroup RichardsTests
- * \brief spatial parameters for the RichardsLensProblem
- */
-#ifndef DUMUX_RICHARDS_LENS_SPATIAL_PARAMETERS_HH
-#define DUMUX_RICHARDS_LENS_SPATIAL_PARAMETERS_HH
+
+
+
+#ifndef DUMUX_RICHARDS_PARAMETERS_HH
+#define DUMUX_RICHARDS_PARAMETERS_HH
 
 #include <dumux/material/spatialparams/fv.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
@@ -30,6 +28,7 @@
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
 #include <dumux/porousmediumflow/richards/model.hh>
+
 #include <dumux/material/components/simpleh2o.hh>
 
 #include <dumux/io/inputfilefunction.hh>
@@ -41,10 +40,10 @@ namespace Dumux {
      * \ingroup ImplicitTestProblems
      * \brief The spatial parameters for the RichardsLensProblem
      */
-    template<class Grid, class FVGridGeometry, class Scalar>
-    class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<Grid, FVGridGeometry, Scalar>>
+    template<class FVGridGeometry, class Scalar>
+    class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
     {
-        using ThisType = RichardsParams<Grid, FVGridGeometry, Scalar>;
+        using ThisType = RichardsParams<FVGridGeometry, Scalar>;
         using ParentType = FVSpatialParams<FVGridGeometry, Scalar, ThisType>;
         using GridView = typename FVGridGeometry::GridView;
         using FVElementGeometry = typename FVGridGeometry::LocalView;

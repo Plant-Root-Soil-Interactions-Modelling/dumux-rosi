@@ -46,38 +46,39 @@
 
 namespace Dumux {
 
-/*!
- * \ingroup RichardsTests
- * \brief A water infiltration problem with a low-permeability lens
- *        embedded into a high-permeability domain which uses the
- *        Richards box model.
- */
 template <class TypeTag>
 class RichardsProblem;
 
-// Specify the properties for the lens problem
 namespace Properties {
-NEW_TYPE_TAG(RichardsTypeTag, INHERITS_FROM(Richards));
-NEW_TYPE_TAG(RichardsBoxTypeTag, INHERITS_FROM(BoxModel, RichardsTypeTag));
-NEW_TYPE_TAG(RichardsCCTypeTag, INHERITS_FROM(CCTpfaModel, RichardsTypeTag));
+// Create new type tags
+namespace TTag {
+struct RichardsTT { using InheritsFrom = std::tuple<Richards>; };
+struct RichardsBox { using InheritsFrom = std::tuple<RichardsTT, BoxModel>; };
+struct RichardsCC { using InheritsFrom = std::tuple<RichardsTT, CCTpfaModel>; };
+} // end namespace TTag
 
+// Set grid type
 #ifndef GRIDTYPE
-// Use 3d YaspGrid per default
-SET_TYPE_PROP(RichardsTypeTag, Grid, Dune::YaspGrid<3>);
+template<class TypeTag>
+struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::YaspGrid<3>; }; // Use 3d YaspGrid per default
 #else
-// Use GRIDTYPE from CMakeLists.txt
-SET_TYPE_PROP(RichardsTypeTag, Grid, GRIDTYPE);
+template<class TypeTag>
+struct Grid<TypeTag, TTag::RichardsTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
 #endif
 
 // Set the physical problem to be solved
-SET_TYPE_PROP(RichardsTypeTag, Problem, RichardsProblem<TypeTag>);
+template<class TypeTag>
+struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag>; };
 
 // Set the spatial parameters
-SET_TYPE_PROP(RichardsTypeTag, SpatialParams, RichardsParams<typename GET_PROP_TYPE(TypeTag, Grid), typename GET_PROP_TYPE(TypeTag, FVGridGeometry), typename GET_PROP_TYPE(TypeTag, Scalar)>);
-} // end namespace Dumux
-
+template<class TypeTag>
+struct SpatialParams<TypeTag, TTag::RichardsTT> {
+    using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
+};
+} // end namespace properties
 
 /*!
+ *
  * \ingroup RichardsModel
  *
  */
@@ -130,8 +131,6 @@ public:
      */
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry, GridManager<Grid>* gridManager)
     : ParentType(fvGridGeometry) {
-        name_ = getParam<std::string>("Problem.Name");
-        std::cout << "NAAMMEEE" << name_ << ", "<< this->name() << "\n";
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
@@ -139,7 +138,7 @@ public:
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
         // precipitation
         if (bcTopType_==atmospheric) {
-            std::string filestr = name_ + ".csv";
+            std::string filestr = this->name() + ".csv";
             myfile_.open(filestr.c_str());
             precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // in [kg/(s m²)] , todo better [cm/day]?
         }
@@ -148,25 +147,13 @@ public:
     }
 
     /**
-     * eventually close file
+     * eventually, close file
      */
     ~RichardsProblem() {
         if (bcTopType_==atmospheric) {
             std::cout << "closing file \n";
             myfile_.close();
         }
-    }
-
-    /*!
-     * \brief The problem name.
-     */
-    const std::string& name2() const {
-        return name_;
-    }
-
-    //! change problem name
-    void setName(std::string str) {
-        name_= str;
     }
 
     /*!
@@ -220,7 +207,6 @@ public:
         } else {
             bcTypes.setAllNeumann(); // no top not bottom is no flux
         }
-
         return bcTypes;
     }
 
@@ -259,9 +245,9 @@ public:
         const FVElementGeometry& fvGeometry,
         const ElementVolumeVariables& elemVolVars,
         const SubControlVolumeFace& scvf) const {
+
         NumEqVector values;
         GlobalPosition pos = scvf.center();
-
         if (onUpperBoundary_(pos)) { // top bc
             switch (bcTopType_) {
             case constantFlux: {
@@ -348,7 +334,7 @@ public:
     }
 
     /**
-     * Sets the current simulation time (within the simulation loop) for atmospheric look up
+     * Sets the current simulation time (within the simulation loop) for atmospheric look up [s]
      */
     void setTime(Scalar t) {
         time_ = t;
@@ -369,19 +355,21 @@ private:
     //! true if on the point lies on the upper boundary
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {
         return globalPos[dimWorld - 1]
-            > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+                         > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
+    /*!
+     * \file
+
+     */
 
     //! true if on the point lies on the upper boundary
     bool onLowerBoundary_(const GlobalPosition &globalPos) const {
         return globalPos[dimWorld - 1]
-            < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+                         < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
     }
 
     InputFileFunction initialSoil_;
     InputFileFunction precipitation_;
-
-    std::string name_;
     Scalar time_ = 0.;
 
     // BC

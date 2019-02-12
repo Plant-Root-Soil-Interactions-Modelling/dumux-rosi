@@ -86,9 +86,10 @@ int main(int argc, char** argv) try
     // Create the grid from the given grid file or the input file
     GridManager<GetPropType<TypeTag, Properties::Grid>> gridManager;
     gridManager.init("RootSystem");
-    using Grid = std::shared_ptr<Dune::FoamGrid<1, 3>>;
-    auto& grid = gridManager.grid();
-    //Grid grid = Grid(&g);
+
+    using Grid = Dune::FoamGrid<1, 3>*; //std::shared_ptr<>
+    auto& g = gridManager.grid();
+    Grid grid = Grid(&g);
     const auto gridData = gridManager.getGridData();
 
     ////////////////////////////////////////////////////////////
@@ -96,7 +97,7 @@ int main(int argc, char** argv) try
     ////////////////////////////////////////////////////////////
 
     // we compute on the leaf grid view
-    const auto& leafGridView = grid.leafGridView();
+    const auto& leafGridView = grid->leafGridView();
     std::cout << "i have the view \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
