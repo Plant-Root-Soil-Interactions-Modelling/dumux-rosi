@@ -33,6 +33,8 @@
 
 namespace Dumux {
 
+namespace GrowthModule {
+
 /*!
  * A CRootBox soillookup implementation for Dumux
  * using a BoundingBoxTree to obtain the soil element,
@@ -75,6 +77,17 @@ public:
         }
 
         return sat;
+    }
+
+    //! Returns the element index, -1 if no element was found in tree
+    int pick(const CRootBox::Vector3d& pos) {
+        const auto globalPos = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
+        const auto entities = intersectingEntities(globalPos, bBoxTree_);
+        if (entities.empty()) {
+            return -1;
+        }
+        const auto element = bBoxTree_.entitySet().entity(entities[0]);
+        return element.index();
     }
 
     std::string toString() const final {
@@ -137,6 +150,8 @@ private:
     std::shared_ptr<const FVGridGeometry> fvGridGeometry_;
 
 };
+
+} // namespace Growth module
 
 } // end namespace Dumux
 

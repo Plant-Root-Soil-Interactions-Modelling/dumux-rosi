@@ -32,7 +32,7 @@ namespace Dumux {
 namespace GrowthModule {
 
 /**
- * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CRoot'Box::RootSystem)RootSystemRootSystem
+ * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CRootBox::RootSystem)
  *
  * use static member function: RootSystemGridFactory::makeGrid(RootSystem)
  */

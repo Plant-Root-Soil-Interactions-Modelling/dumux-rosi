@@ -33,7 +33,6 @@
 #include <dumux/io/inputfilefunction.hh>
 #include <dumux/growth/soillookup.hh>
 
-#include <RootSystem.h>
 
 
 
@@ -56,6 +55,8 @@ class RootSpatialParamsRB
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
 
+    using RootSystem = typename GrowthModule::GrowthInterface<GlobalPosition>; // decoupled from CRootBox
+
 public:
     // export permeability type
     using PermeabilityType = Scalar;
@@ -67,6 +68,9 @@ public:
         assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems"); // todo use kr_.setData(...) by hand
         assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems");
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600*24; // root system initial time
+        radii_ = { 1.17/100. };
+        orders_ = { 0 };
+        ctimes_ = { 0. };
     }
 
     /*!
@@ -109,7 +113,11 @@ public:
     }
 
     Scalar kr(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx), eIdx);
+        if (eIdx == 0) {
+            return 0;
+        } else {
+            return kr_.f(this->age(eIdx), eIdx);
+        }
     }
 
     Scalar kx(std::size_t eIdx) const {
@@ -120,78 +128,23 @@ public:
         time_ = t;
     }
 
-    //! Read parameters from the a CRootBox rootsystem (assuming that indices correspond)
-    void initParameters(const CRootBox::RootSystem& rs) {
+    //! Update the Root System Parameters (root system must implement GrowthModule::GrowthInterface)
+    void updateParameters(const RootSystem& rs) {
 
         const auto& gridView = this->fvGridGeometry().gridView();
         radii_.resize(gridView.size(0));
         orders_.resize(gridView.size(0));
         ctimes_.resize(gridView.size(0));
 
-        auto baseRoots = rs.getBaseRoots();
-        double sum_a = 0.;
-        for (auto& br : baseRoots) {
-            sum_a += br->param.a;
-        }
-        std::cout << "START INIT PARAMS!" << "foam grid nodes " << gridView.size(0) << ", " << rs.getNumberOfNodes() <<
-            " base roots " << baseRoots.size() << " summed radius" << sum_a << " cm\n";
-        //std::cin.ignore();
-
-        for (auto& br : baseRoots) {
-            size_t eIdx = br->getNodeId(0) - 1; // rootbox node index - 1 == rootbox segment index
-            std::cout << " eIdx " << eIdx << ", ";
-            radii_[eIdx] = sum_a/100.; // shoot node:
-            orders_[eIdx] = 0;
-            ctimes_[eIdx] = 0;
-        }
-
-        auto roots = rs.getRoots();
-        auto orders = rs.getScalar(CRootBox::RootSystem::st_order); // per root
-        auto radii = rs.getScalar(CRootBox::RootSystem::st_radius); // per root
-
-        for (size_t i = 0; i < roots.size(); i++) {
-            // std::cout << "root " << i << "\n";
-            CRootBox::Root* r = roots[i];
-            for (size_t j = 1; j < r->getNumberOfNodes(); j++) { // start at first segment, second node
-                size_t eIdx = r->getNodeId(j) - 1; // rootbox node index - 1 == rootbox segment index
-                // std::cout << eIdx << ", ";
-                radii_.at(eIdx) = radii[i]/100.;
-                orders_.at(eIdx) = orders[i];
-                ctimes_.at(eIdx) = r->getNodeETime(j)*3600*24;
-            }
-        }
-        if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
-            kr_.setData(orders_);
-        }
-        if ((kx_.type() == InputFileFunction::perType) || (kx_.type() == InputFileFunction::tablePerType)) {
-            kx_.setData(orders_);
-        }
-        // std::cout << "END INIT PARAMS!";
-    }
-
-    //! Update new parameters, after the root system has grown
-    void updateParameters(const CRootBox::RootSystem& rs) {
-
-        const auto& gridView = this->fvGridGeometry().gridView();
-        radii_.resize(gridView.size(0));
-        orders_.resize(gridView.size(0));
-        ctimes_.resize(gridView.size(0));
-
-        auto segs = rs.getNewSegments();
-        auto segO = rs.getNewSegmentsOrigin();
-        auto segCT = rs.getNewNETimes();
+        auto segs = rs.newSegments();
+        auto segCT = rs.segmentCreationTimes();
+        auto segO = rs.segmentOrders();
+        auto segRadii = rs.segmentRadii();
         for (size_t i = 0; i < segs.size(); i++) {
-            auto& s = segs[i];
-            size_t eIdx = s.y - 1;
-            int o = 0; // calculate order
-            auto* r_ = segO[i];
-            while (r_->parent != nullptr) {
-                o++;
-                r_ = r_->parent;
-            }
-            orders_.at(eIdx) = o;
-            radii_.at(eIdx) = segO[i]->param.a / 100.;
-            ctimes_.at(eIdx) = segCT[i] *3600*24;
+            size_t eIdx = segs[i][1] - 1; // rootbox node index - 1 == rootbox segment index
+            orders_.at(eIdx) = segO[i];
+            radii_.at(eIdx) = segRadii[i];
+            ctimes_.at(eIdx) = segCT[i];
         }
 
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {

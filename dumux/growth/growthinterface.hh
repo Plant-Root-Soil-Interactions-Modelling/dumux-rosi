@@ -23,52 +23,40 @@
 #ifndef DUMUX_GROWTH_INTERFACE_HH
 #define DUMUX_GROWTH_INTERFACE_HH
 
-#include <RootSystem.h>
-
 namespace Dumux {
 
 namespace GrowthModule {
 
 /**
- * Implement this abstract class to let the FoamGrid<1,3> grow with GridGowth::grow
+ * Implement this abstract class to let the FoamGrid<1,3> grow via GridGrowth::grow
  */
 template<class GlobalPosition>
 class GrowthInterface {
 public:
     virtual ~GrowthInterface() { };
-    virtual std::vector<size_t> updatedNodeIndices() = 0; ///< Indices of nodes that were updated in the previous time step
-    virtual std::vector<GlobalPosition> updatedNodes() = 0; ///< Values of the updated nodes [m]
-    virtual std::vector<size_t> newNodeIndices() = 0; ///< Node indices that were created in the previous time step
-    virtual std::vector<GlobalPosition> newNodes() = 0; ///< Nodes created in the previous time step [m]
-    virtual std::vector<std::vector<size_t>> newSegments() = 0; ///< Segments created in the previous time step
-    virtual std::vector<int> newSegmentOrders() = 0; ///< Segment orders of segments created in the previous time step
-    virtual std::vector<double> newSegmentCreationTimes() = 0; ///< Segment emergence times of segments created in the previous time step [s]
-    virtual std::vector<double> newSegmentRadii() = 0; ///< Segment radii of segments created in the previous time step [m]
+
+    // run simulation
+    virtual void simulate(double dt) = 0; ///< simulate the next dt seconds [s]
+
+    // nodes that moved
+    virtual std::vector<size_t> updatedNodeIndices() const = 0; ///< Indices of nodes that were updated in the previous time step
+    virtual std::vector<GlobalPosition> updatedNodes() const = 0; ///< Values of the updated nodes [m]
+
+    // new nodes
+    virtual std::vector<size_t> newNodeIndices() const = 0; ///< Node indices that were created in the previous time step
+    virtual std::vector<GlobalPosition> newNodes() const = 0; ///< Nodes created in the previous time step [m]
+
+    // new segments
+    virtual std::vector<std::array<size_t, 2>> newSegments() const = 0; ///< Segments created in the previous time step
+
+    virtual std::vector<double> segmentCreationTimes() const = 0; ///< Segment emergence time of segment sIdx created in the previous time step [s]
+    virtual std::vector<int> segmentOrders() const = 0; ///< Segment orders of segment created in the previous time step
+    virtual std::vector<double> segmentRadii() const = 0; ///< Segment radius of segment sIdx created in the previous time step [m]
+
+    // Mapper
+    std::vector<size_t> indexMapper; ///< Maps a dune element index to the growth model index (todo)
+
 };
-
-/**
- * Implementation for CRootBox: Converts types, units, and naming conventions
- */
-template<class GlobalPosition>
-class CRootBoxInterface :public GrowthInterface<GlobalPosition> {
-public:
-    CRootBoxInterface(CRootBox::RootSystem& rs) :rootsystem_(rs) { };
-    virtual ~CRootBoxInterface() { }; // nothing to do, rootsystem_ is someone elses problem
-    virtual std::vector<size_t> updatedNodeIndices() {
-        auto nodes = rootsystem->getUpdatedNodeIndices();
-        // todo write converter, dont forget the units
-        return nodes; // todo
-    };
-    // for all
-
-
-private:
-    CRootBox::RootSystem& rootsystem_;
-};
-
-
-
-
 
 } // end namespace GridGrowth
 

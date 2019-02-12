@@ -35,6 +35,9 @@
 #include <dune/foamgrid/foamgrid.hh>
 #include <RootSystem.h>
 #include <dumux/growth/rootsystemgridfactory.hh>
+#include <dumux/growth/growthinterface.hh>
+#include <dumux/growth/crootboxadapter.hh>
+#include <dumux/growth/gridgrowth.hh>
 
 #include "rootsproblem.hh"
 
@@ -52,9 +55,6 @@
 
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
-
-//#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
-//#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 
 
@@ -88,15 +88,24 @@ int main(int argc, char** argv) try
 
     Parameters::init(argc, argv); // parse command line arguments and input file
 
-    // create a grid from a CRootBox root system
+    // initialize the CRootBox root system
     auto rootSystem = std::make_shared<CRootBox::RootSystem>();
     rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
     rootSystem->initialize();
     rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
+
+    // create a grid from a CRootBox root system
     using Grid = std::shared_ptr<Dune::FoamGrid<1, 3>>;
     Grid grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem); // in dumux/growth/rootsystemgridfactory.hh
     //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
     //    rootSystem->setSoil(&soilLookup); todo
+
+    //    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    //    using Element = typename GridView::template Codim<0>::Entity;
+    //    using GlobalPosition = typename Element::Geometry::GlobalCoordinate; // the beauty
+
+    using GlobalPosition = Dune::FieldVector<double, 3>;
+    auto dumuxRootSystem = GrowthModule::CRootBoxAdapter<GlobalPosition>(*rootSystem);
 
     ////////////////////////////////////////////////////////////
     // run stationary or dynamic problem on this grid
@@ -111,8 +120,7 @@ int main(int argc, char** argv) try
     std::cout << "i have the geometry \n" << "\n" << std::flush;
 
     auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
-    problem->spatialParams().initParameters(*rootSystem);
-    // problem->spatialParams().updateParameters(*rootSystem); // use if it grows
+    problem->spatialParams().updateParameters(dumuxRootSystem);
     // problem->spatialParams().analyseRootSystem(); // use for debugging
     // problem->spatialParams().initParameters(*gridData); // in case of grid
     std::cout << "... and, i have a problem \n" << "\n" << std::flush;
@@ -129,10 +137,12 @@ int main(int argc, char** argv) try
     std::cout << "... but variables \n" << "\n" << std::flush;
     // grid variable knows the problem, the geometry and the solutionv vector
 
+    bool grow = false;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
     if (tEnd > 0) { // dynamic problem
+        grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
         const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
         auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
         timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
@@ -162,6 +172,10 @@ int main(int argc, char** argv) try
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized (how convenient)" << "\n" << std::flush;
 
+    // class controlling the root growth
+    // using Growth = typename GrowthModule::GridGrowth<TypeTag>;
+    GrowthModule::GridGrowth<TypeTag> gridGrowth = GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, &dumuxRootSystem, x);
+
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; // dumux/assembly/fvassembler.hh
     std::shared_ptr<Assembler> assembler;
@@ -186,12 +200,28 @@ int main(int argc, char** argv) try
 
         timeLoop->start();
         do {
+
+            if (grow) {
+                std::cout << "grow() \n"<< std::flush;
+                double dt = timeLoop->timeStepSize();
+                gridGrowth.grow(dt);
+                problem->spatialParams().updateParameters(dumuxRootSystem);
+                std::cout << "grew \n"<< std::flush;
+
+                gridVariables->updateAfterGridAdaption(x); // update the secondary variables
+                assembler->setResidualSize(); // resize residual vector
+                assembler->setJacobianPattern(); // resize and set Jacobian pattern
+                assembler->setPreviousSolution(x);
+                assembler->assembleJacobianAndResidual(x);
+                std::cout << "hopefully modified assembler" << std::endl<< std::flush;;
+
+                xOld = x;
+            }
+
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
 
-            nonLinearSolver.solve(x, *timeLoop); // solve the non-linear system with time step control
+            nonLinearSolver.solve(x); // solve the non-linear system with time step control // , *timeLoop
 
-            // make the new solution the old solution
-            xOld = x;
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -208,6 +238,7 @@ int main(int argc, char** argv) try
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
 
             problem->setTime(timeLoop->time()); // pass current time to the problem
+
         } while (!timeLoop->finished());
 
         timeLoop->finalize(leafGridView.comm());

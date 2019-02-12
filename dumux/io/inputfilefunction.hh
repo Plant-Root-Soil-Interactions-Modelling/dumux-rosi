@@ -20,7 +20,7 @@ namespace Dumux {
  * Data         the value is taken from the grid file
  *              y and x are not set
  *
- * Per Type     the value is given per type (e.g. soil layer, root order), where type is taken from the grid file.
+ * Per Type     the value is constant and given per type (e.g. soil layer, root order), where type is taken from the grid file.
  *              y is set to multiple values, x is not set (within the input file).
  *
  * TablePerType Multiple tables, named x0, x1, ... and y0, y1, ... The table number is chosen per type. (e.g. conductivities per root type)
@@ -38,6 +38,7 @@ public:
     enum {
         constant = 0, table = 1, data = 2, perType = 3, perTypeIFF = 4, periodic = 5, tablePerType = 6, empty = -1
     };
+    // todo I forgot what I wanted exactly with perTypeIFF, something like constant per type from an input file function
 
     //! don't know why it does not compile without it
     InputFileFunction() {
@@ -65,7 +66,7 @@ public:
                         type_ = periodic;
                         std::cout << "InputFileFunction: Periodic (" << nameY << ")\n";
                     } else {
-                        if ((typeF != nullptr) && (typeF->type() == table)) {
+                        if ((typeF != nullptr) && (typeF->type() == table)) { // todo: why only tables?
                             type_ = perTypeIFF;
                             iff = typeF;
                             std::cout << "InputFileFunction: Constant per Type from InputFileFunction (" << nameY << ")\n";
@@ -78,6 +79,8 @@ public:
             }
         } catch (...) {
             try { // multiple tables
+                std::vector<std::string> names = {"0","1","2","3","4","5"};
+                std::cout << "searching for " << nameY + std::to_string(0);
                 yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(0));
                 table_.resize(0);
                 int m = 0;
@@ -90,11 +93,12 @@ public:
                     }
                 }
                 for (int i = 0; i < m; i++) {
-                    xx_ = Dumux::getParam<std::vector<double>>(nameX + std::to_string(m));
-                    yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(m));
+                    xx_ = Dumux::getParam<std::vector<double>>(nameX + std::to_string(i));
+                    yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(i));
                     table_.push_back( { xx_, yy_ });
                 }
                 type_ = tablePerType;
+                std::cout << "InputFileFunction: Table per Type from Grid (" << nameY << ")\n";
             } catch (...) {
                 type_ = data;
                 std::cout << "InputFileFunction: Data from Grid (" << nameY << ")\n";
@@ -112,7 +116,7 @@ public:
                 type_ = constant;
                 std::cout << "InputFileFunction: Constant (" << nameY << ")\n";
             } else {
-                if ((typeF != nullptr) && (typeF->type() == table)) {
+                if ((typeF != nullptr) && (typeF->type() == table)) { // todo: why only tables?
                     type_ = perTypeIFF;
                     iff = typeF;
                     std::cout << "InputFileFunction: Constant per Type from InputFileFunction (" << nameY << ")\n";
@@ -166,7 +170,7 @@ public:
             return yy_.at(size_t(data_.at(eIdx)));
         }
         case perTypeIFF: {
-            return yy_.at(size_t(iff->f(x, eIdx) - 1));
+            return yy_.at(size_t(iff->f(x, eIdx) - 1)); // todo ?
         }
         case tablePerType: {
             size_t t = size_t(data_.at(eIdx));

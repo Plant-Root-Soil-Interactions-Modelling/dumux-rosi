@@ -138,11 +138,12 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-    using Element = typename GridView::template Codim<0>::Entity;
+
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
     using FVElementGeometry = typename GetPropType<TypeTag, Properties::FVGridGeometry>::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
     using PointSource = GetPropType<TypeTag, Properties::PointSource>;
