@@ -255,7 +255,7 @@ public:
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
                 Scalar mS = 0;
                 auto numScv = fvGeometry.numScv();
                 for (auto i = 0; i < numScv; i++) {
@@ -297,15 +297,14 @@ public:
                 break;
             }
             case freeDrainage: { // TODO needs improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(
-                    element);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(element);
                 Scalar mS = 0; // mean saturation
                 auto numScv = fvGeometry.numScv();
                 for (auto i = 0; i < numScv; i++) {
                     mS += (elemVolVars[i].saturation() / numScv);
                 }
                 MaterialLawParams params =
-                    this->spatialParams().materialLawParams(element);
+                this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
                 values[conti0EqIdx] = krw * Kc * rho_; // * 1 [m]
                 break;

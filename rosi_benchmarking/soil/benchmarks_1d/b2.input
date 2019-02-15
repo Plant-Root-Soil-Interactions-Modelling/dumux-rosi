@@ -1,15 +1,15 @@
 [Problem]
 Name = benchmark1d_2
 
-[Grid]
-UpperRight = 0
-LowerLeft = -0.53
-Cells = 52
-
 [TimeLoop]
 DtInitial =  1 # [s]
 TEnd = 0 # a year [s] hopefully steady steate is reached after 1 year
 MaxTimeStepSize = 86400 # a day [s] 
+
+[Soil.Grid]
+UpperRight = 0
+LowerLeft = -0.53
+Cells = 52
 
 [Soil.BC.Top]
 Type = 2 # constant flux

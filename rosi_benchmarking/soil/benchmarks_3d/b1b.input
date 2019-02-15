@@ -1,17 +1,17 @@
 [Problem]
 Name = benchmark3d_1b
 
+[TimeLoop]
+TEnd = 0 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+
 [Soil.Grid]
 # UpperRight = 0.05 0.05 0
 # LowerLeft = -0.05 -0.05 -2
 # Cells = 9 9 199
 UpperRight = 0.1 0.1 2
 Cells = 9 9 199
-
-[TimeLoop]
-TEnd = 0 # 0 is steady state
-DtInitial =  1 # [s]
-MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.BC.Top]
 Type = 2 # constant flux

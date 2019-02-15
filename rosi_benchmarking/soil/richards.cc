@@ -141,12 +141,12 @@ int main(int argc, char** argv) try
     }
 
     // the linear solver
-    using LinearSolver = Dumux::AMGBackend<TypeTag>;
+    using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only parallel linear solver available
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
     // the non-linear solver
-    using NewtonSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
-    NewtonSolver nonLinearSolver(assembler, linearSolver);
+    using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>; //Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
+    NonLinearSolver nonLinearSolver = NonLinearSolver(assembler, linearSolver);
     // std::cin.ignore();  // wait for key (debugging)
 
     if (tEnd>0)  { // dynamic
@@ -177,7 +177,7 @@ int main(int argc, char** argv) try
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
-        nonLinearSolver.solve(x);
+        nonLinearSolver.solve(x, *timeLoop); // todo remove again!
         vtkWriter.write(1);
     }
 

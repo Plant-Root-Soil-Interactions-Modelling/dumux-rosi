@@ -1,15 +1,15 @@
 [Problem]
 Name = benchmark3d_3c
 
-[Soil.Grid]
-UpperRight = 0.1 0.1 2
-Cells = 9 9 199 
-
 [TimeLoop]
 DtInitial =  1 # [s]
 TEnd = 43200 # half a day [s] 
 MaxTimeStepSize = 3600 # an hour [s] 
 CheckTimes = 8640 17280 
+
+[Soil.Grid]
+UpperRight = 0.1 0.1 2
+Cells = 9 9 199 
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off
