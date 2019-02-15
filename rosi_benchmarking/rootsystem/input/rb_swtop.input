@@ -2,7 +2,7 @@
 Name = rb_swtop 
 
 [TimeLoop]
-TEnd = 604800 # 604800 a week [s] # 86400 # a day
+TEnd = 86400 # 604800 a week [s] # 86400 # a day
 CheckTimes = 43200 # half a day
 DtInitial = 360 # [s]
 MaxTimeStepSize = 3600 # 1 h

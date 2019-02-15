@@ -130,8 +130,7 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
 
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
     enum {
-        // indices of the primary variables
-        conti0EqIdx = Indices::conti0EqIdx,
+        conti0EqIdx = Indices::conti0EqIdx, // indices of the primary variables
         pressureIdx = Indices::pressureIdx
     };
 
@@ -219,16 +218,18 @@ public:
     }
 
     //! calculates transpiraton, as the netflux of first element (m^3 /s), assuming first element is collar
-    Scalar transpiration(const SolutionVector& sol) const {
-        auto vMapper = this->fvGridGeometry().vertexMapper();
-        auto eIdx = 0; // collar index
-        const auto& e = this->fvGridGeometry().element(eIdx);
-        auto i0 = vMapper.subIndex(e, 0, 1);
-        auto i1 = vMapper.subIndex(e, 1, 1);
-        // std::cout << "vertex index" << i0 << ", " << i1 << "\n";
-        auto length = e.geometry().volume();
-        auto kx = this->spatialParams().kx(eIdx);
-        return rho_ * kx * ((sol[i1] - sol[i0]) / length); // kg / s ; + rho_ * g_
+    Scalar transpiration(const SolutionVector& sol) {
+//        auto vMapper = this->fvGridGeometry().vertexMapper();
+//        auto eIdx = 0; // collar index
+//        const auto& e = this->fvGridGeometry().element(eIdx);
+//        auto i0 = vMapper.subIndex(e, 0, 1);
+//        auto i1 = vMapper.subIndex(e, 1, 1);
+//        // std::cout << "vertex index" << i0 << ", " << i1 << "\n";
+//        auto length = e.geometry().volume();
+//        auto kx = this->spatialParams().kx(eIdx);
+//        return rho_ * kx * ((sol[i1] - sol[i0]) / length); // kg / s ; + rho_ * g_
+        radialFlux(sol);
+        return std::accumulate(radialFlux_.begin(), radialFlux_.end(), 0.);
     }
 
     /*
@@ -249,7 +250,11 @@ public:
             if (bcType_ == bcDirichlet) {
                 bcTypes.setAllDirichlet();
             } else {
-                bcTypes.setAllNeumann();
+                if (!critical_) {
+                    bcTypes.setAllNeumann();
+                } else {
+                    bcTypes.setAllDirichlet();
+                }
             }
         } else { // for all other (i.e. root tips)
             bcTypes.setAllNeumann();
@@ -262,7 +267,11 @@ public:
      *        control volume.
      */
     PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const {
-        return PrimaryVariables(collar());
+        if (critical_) {
+            return criticalCollarPressure_;
+        } else {
+            return PrimaryVariables(collar());
+        }
     }
 
     /*
@@ -277,22 +286,25 @@ public:
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
-            auto p = volVars.pressure(0);
-            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            Scalar kx = this->spatialParams().kx(eIdx);
-            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2*dist); // / volVars.viscosity(0)
+//            auto p = volVars.pressure(0);
+//            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+//            Scalar kx = this->spatialParams().kx(eIdx);
+//            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+//            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2*dist); // / volVars.viscosity(0)
+//            Scalar trans = collar();
+////            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
+////                << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
+//            Scalar v = std::min(trans, maxTrans);
+//            lastActualTrans_ = v; // the one we return
+//            lastTrans_ = trans;  // potential transpiration
+//            lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
+//            lastP_ = p;
+//            v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
+//            // std::cout << volVars.extrusionFactor() << " cm2, " << scvf.area() << " cm2 "; // scvf.area() == 1
+//            return NumEqVector(v);
             Scalar trans = collar();
-            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
-                << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
-            Scalar v = std::min(trans, maxTrans);
-            lastActualTrans_ = v; // the one we return
-            lastTrans_ = trans;  // potential transpiration
-            lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
-            lastP_ = p;
-            v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
-            // std::cout << volVars.extrusionFactor() << " cm2, " << scvf.area() << " cm2 "; // scvf.area() == 1
-            return NumEqVector(v);
+            lastTrans_ = trans;
+            return NumEqVector(trans/volVars.extrusionFactor());
         } else {
             return NumEqVector(0.); // no flux at root tips
         }
@@ -306,6 +318,7 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
+
         NumEqVector values;
         auto params = this->spatialParams();
         const auto eIdx = params.fvGridGeometry().elementMapper().index(element);
@@ -316,6 +329,7 @@ public:
         values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
         values[conti0EqIdx] /= (a * a * M_PI); // 1/s
         values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+
         return values;
     }
 
@@ -369,16 +383,21 @@ public:
         } else {
             return collar_.f(time_); // kg/s (?)
         }
+    }
 
+    void setCritical(bool b) {
+        critical_ = b;
     }
 
 private:
 
-    CRootBox::SoilLookUp* soil_; // todo make shared
+    CRootBox::SoilLookUp* soil_;
     InputFileFunction collar_;
     int bcType_;
     Scalar time_ = 0.;
     Scalar criticalCollarPressure_ = toPa_(-1e4);
+
+    bool critical_ = false;
 
     Scalar toPa_(Scalar ph) const {     // cm -> Pa
         return pRef_ + ph / 100. * rho_ * g_;

@@ -180,7 +180,7 @@ int main(int argc, char** argv) try
     }
 
     // the linear solver
-    using LinearSolver = AMGBackend<TypeTag>;
+    using LinearSolver = AMGBackend<TypeTag>; // how do i choose umfpack
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
     // the non-linear solver
@@ -197,7 +197,25 @@ int main(int argc, char** argv) try
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(xOld);
             // solve the non-linear system with time step control
-            nonLinearSolver.solve(x); // , *timeLoop
+
+//            try {
+                nonLinearSolver.solve(x);
+//            } catch(...) {
+//                std::cout << "\n\nSWITCH\n\n";
+//                problem->setCritical(true);
+//                continue;
+//            }
+//
+//            if (x[0]<-881000.-1.) {
+//                std::cout << "\n\nSWITCH\n\n";
+//                problem->setCritical(true);
+//                continue;
+//            } else {
+//                problem->setCritical(false);
+//            }
+
+            std::cout << "pressure at collar : " << x[0] <<  " \n";
+
             // make the new solution the old solution
             xOld = x;
             // gridVariables->advanceTimeStep();
