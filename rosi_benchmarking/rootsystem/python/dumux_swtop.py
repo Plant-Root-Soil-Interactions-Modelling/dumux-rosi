@@ -57,7 +57,7 @@ os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 # for t in threads_:  # and for all of them to finish
 #      t.join()
 # print("elapsed time is ", time.time() - t0)
-#
+
 with open("swtop_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 with open("swtop_b_actual_transpiration.txt", 'r') as f:
@@ -73,12 +73,12 @@ with open("swtop_c_actual_transpiration.txt", 'r') as f:
 fig, ax1 = plt.subplots()
 
 ax1.plot(d[:, 0] / (24 * 3600), d[:, 2] * (24 * 3600) / (.75 * .15), 'k')  # potential transpiration
-ax1.plot(d[:, 0] / (24 * 3600), d[:, 8] * (24 * 3600) / (.75 * .15) / 50, 'r')  # reference, actual transpiration
+ax1.plot(d[:, 0] / (24 * 3600), d[:, 8] * (24 * 3600) / (.75 * .15) * 1000, 'r')  # reference, actual transpiration
 ax1.plot(d[:, 0] / (24 * 3600), d[:, 3] * (24 * 3600) / (.75 * .15), 'r:')  # reference, maximal transpiration
-ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 1] * (24 * 3600) / (.75 * .15), 'g')  # lateral
+ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 8] * (24 * 3600) / (.75 * .15) * 1000, 'g')  # lateral
 ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 3] * (24 * 3600) / (.75 * .15), 'g:')  # lateral
-ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600) / (.75 * .15), 'b')  # volume
-ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 1] * (24 * 3600) / (.75 * .15), 'b:')  # volume
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 8] * (24 * 3600) / (.75 * .15) * 1000, 'b')  # volume
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 3] * (24 * 3600) / (.75 * .15), 'b:')  # volume
 ax1.legend(['Pot trans', 'actual trans P1', 'max trans P1', 'actual trans P2', 'max trans P2', 'actual trans P3', 'max trans P3'], loc = 'upper left')
 ax1.axis((0, d[-1, 0] / (24 * 3600), 0, 12))
 ax1.set_xlabel("Time $[d]$")
@@ -101,9 +101,9 @@ print("stress after ", d[i, 0] / (24 * 3600), "days")
 mid1 = np.argmax(d[:, 0] / (24 * 3600) > 0.5)
 mid2 = np.argmax(d2[:, 0] / (24 * 3600) > 0.5)
 mid3 = np.argmax(d3[:, 0] / (24 * 3600) > 0.5)
-print("transpiration during stress", d[mid1, 1], "kg/s at", d[mid1, 4], "Pa, p-crit ", d[mid1, 5], "Pa, max trans", d[mid1, 3])
-print("transpiration during stress", d2[mid2, 1], "kg/s at", d2[mid2, 4], "Pa, p-crit ", d2[mid2, 5], "Pa, max trans", d2[mid2, 3])
-print("transpiration during stress", d3[mid3, 1], "kg/s at", d3[mid3, 4], "Pa, p-crit ", d3[mid3, 5], "Pa, max trans", d3[mid3, 3])
+print("transpiration during stress", d[mid1, 8], "kg/s at", d[mid1, 4], "Pa, p-crit ", d[mid1, 5], "Pa, max trans", d[mid1, 3])
+print("transpiration during stress", d2[mid2, 8], "kg/s at", d2[mid2, 4], "Pa, p-crit ", d2[mid2, 5], "Pa, max trans", d2[mid2, 3])
+print("transpiration during stress", d3[mid3, 8], "kg/s at", d3[mid3, 4], "Pa, p-crit ", d3[mid3, 5], "Pa, max trans", d3[mid3, 3])
 
 plt.show()
 
@@ -126,4 +126,9 @@ plt.show()
 # transpiration during stress 1.1214126155e-05 kg/s at -880999.549774 Pa, p-crit  0.450226137531 Pa, max trans 1.1214126155e-05
 # transpiration during stress 1.04586296324e-05 kg/s at -880999.544064 Pa, p-crit  0.455936406506 Pa, max trans 1.04586296324e-05
 # transpiration during stress 9.52087211702e-06 kg/s at -880999.583315 Pa, p-crit  0.41668471368 Pa, max trans 9.52087211702e-06
+
+# INCLUDING SWITCH
+# transpiration during stress 1.12141603037e-08 kg/s at 0.0 Pa, p-crit  881000.0 Pa, max trans 0.0
+# transpiration during stress 1.04586075392e-08 kg/s at 0.0 Pa, p-crit  881000.0 Pa, max trans 0.0
+# transpiration during stress 9.5208533841e-09 kg/s at 0.0 Pa, p-crit  881000.0 Pa, max trans 0.0
 

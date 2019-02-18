@@ -64,7 +64,7 @@ for t in threads_:  # start threads
     t.start()
 for t in threads_:  # and for all of them to finish
      t.join()
-print("elapsed time is ", time.time() - t0)
+# print("elapsed time is ", time.time() - t0)
 
 with open("rb_swtop_a_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
@@ -81,6 +81,8 @@ with open("rb_swtop_c_actual_transpiration.txt", 'r') as f:
 fig, ax1 = plt.subplots()
 
 ax1.plot(d[:, 0] / (24 * 3600), d[:, 2] * (24 * 3600) / (.75 * .15), 'k')  # potential transpiration
+ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 2] * (24 * 3600) / (.75 * .15), 'k')  # potential transpiration
+ax1.plot(d3[:, 0] / (24 * 3600), d3[:, 2] * (24 * 3600) / (.75 * .15), 'k')  # potential transpiration
 ax1.plot(d[:, 0] / (24 * 3600), d[:, 1] * (24 * 3600) / (.75 * .15), 'r')  # reference, actual transpiration
 ax1.plot(d[:, 0] / (24 * 3600), d[:, 3] * (24 * 3600) / (.75 * .15), 'r:')  # reference, maximal transpiration
 ax1.plot(d2[:, 0] / (24 * 3600), d2[:, 1] * (24 * 3600) / (.75 * .15), 'g')  # lateral

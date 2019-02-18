@@ -198,23 +198,24 @@ int main(int argc, char** argv) try
             assembler->setPreviousSolution(xOld);
             // solve the non-linear system with time step control
 
-//            try {
+            try {
                 nonLinearSolver.solve(x);
-//            } catch(...) {
-//                std::cout << "\n\nSWITCH\n\n";
-//                problem->setCritical(true);
-//                continue;
-//            }
-//
-//            if (x[0]<-881000.-1.) {
-//                std::cout << "\n\nSWITCH\n\n";
-//                problem->setCritical(true);
-//                continue;
-//            } else {
-//                problem->setCritical(false);
-//            }
+                std::cout << "\npressure at collar : " << x[0] <<  " \n";
+            } catch(...) {
+                std::cout << "\nSWITCH critical true\n\n";
+                problem->setCritical(true);
+                continue;
+            }
 
-            std::cout << "pressure at collar : " << x[0] <<  " \n";
+            if (x[0]<-881000.-1.) {
+                std::cout << "SWITCH true \n\n";
+                xOld = x; // better initial guess
+                problem->setCritical(true);
+                continue;
+            } else {
+                std::cout << "SWITCH false \n\n";
+                problem->setCritical(false);
+            }
 
             // make the new solution the old solution
             xOld = x;
@@ -236,6 +237,7 @@ int main(int argc, char** argv) try
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
             problem->setTime(timeLoop->time());
+
         } while (!timeLoop->finished());
         timeLoop->finalize(leafGridView.comm());
     } else // static

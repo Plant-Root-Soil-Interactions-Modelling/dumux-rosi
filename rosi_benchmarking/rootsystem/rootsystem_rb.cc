@@ -177,6 +177,7 @@ int main(int argc, char** argv) try
     // class controlling the root growth
     // using Growth = typename GrowthModule::GridGrowth<TypeTag>;
     GrowthModule::GridGrowth<TypeTag> gridGrowth = GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, &dumuxRootSystem, x);
+//     gridGrowth.grow(1);
 
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; // dumux/assembly/fvassembler.hh
@@ -204,13 +205,17 @@ int main(int argc, char** argv) try
         do {
 
             if (grow) {
+
                 std::cout << "grow() \n"<< std::flush;
                 double dt = timeLoop->timeStepSize();
                 gridGrowth.grow(dt);
                 problem->spatialParams().updateParameters(dumuxRootSystem);
+                problem->applyInitialSolution(x); // reset
                 std::cout << "grew \n"<< std::flush;
 
+                fvGridGeometry->update();
                 gridVariables->updateAfterGridAdaption(x); // update the secondary variables
+
                 assembler->setResidualSize(); // resize residual vector
                 assembler->setJacobianPattern(); // resize and set Jacobian pattern
                 assembler->setPreviousSolution(x);

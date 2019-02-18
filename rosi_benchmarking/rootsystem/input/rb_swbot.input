@@ -2,7 +2,7 @@
 Name = rb_swbot
 
 [RootSystem.Grid]
-Grow = False
+Grow = True
 
 [TimeLoop]
 TEnd = 86400 # 604800 a week [s] # 86400 # a day

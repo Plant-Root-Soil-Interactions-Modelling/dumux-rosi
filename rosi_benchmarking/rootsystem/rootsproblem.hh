@@ -109,7 +109,7 @@ template<class TypeTag>
 struct FluidSystem<TypeTag, TTag::Roots> {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
-};
+};    bool grow = false;
 
 } // end namespace Properties
 
@@ -190,7 +190,7 @@ public:
             auto kx = this->spatialParams().kx(eIdx);
             auto i0 = vMapper.subIndex(e, 0, 1);
             auto i1 = vMapper.subIndex(e, 1, 1);
-            axialFlux_[eIdx] = rho_ * kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
+            axialFlux_[eIdx] = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
         }
     }
 
@@ -201,12 +201,15 @@ public:
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
         for (const auto& e : elements(gridView)) {
+            auto geo = e.geometry();
+            auto length = geo.volume();
             auto eIdx = eMapper.index(e);
             auto kr = this->spatialParams().kr(eIdx);
+            auto a = this->spatialParams().radius(eIdx);
             auto i0 = vMapper.subIndex(e, 0, 1);
             auto i1 = vMapper.subIndex(e, 1, 1);
-            auto p = e.geometry().center();
-            radialFlux_[eIdx] = kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
+            auto p = geo.center();
+            radialFlux_[eIdx] =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
         }
     }
 
@@ -229,7 +232,7 @@ public:
 //        auto kx = this->spatialParams().kx(eIdx);
 //        return rho_ * kx * ((sol[i1] - sol[i0]) / length); // kg / s ; + rho_ * g_
         radialFlux(sol);
-        return std::accumulate(radialFlux_.begin(), radialFlux_.end(), 0.);
+        return std::accumulate(radialFlux_.begin(), radialFlux_.end(), 0.); // slow but accurate
     }
 
     /*
@@ -286,25 +289,25 @@ public:
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
-//            auto p = volVars.pressure(0);
-//            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-//            Scalar kx = this->spatialParams().kx(eIdx);
-//            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-//            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2*dist); // / volVars.viscosity(0)
-//            Scalar trans = collar();
-////            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
-////                << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
-//            Scalar v = std::min(trans, maxTrans);
-//            lastActualTrans_ = v; // the one we return
-//            lastTrans_ = trans;  // potential transpiration
-//            lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
-//            lastP_ = p;
-//            v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
-//            // std::cout << volVars.extrusionFactor() << " cm2, " << scvf.area() << " cm2 "; // scvf.area() == 1
-//            return NumEqVector(v);
+            auto p = volVars.pressure(0);
+            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            Scalar kx = this->spatialParams().kx(eIdx);
+            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2*dist); // / volVars.viscosity(0)
             Scalar trans = collar();
-            lastTrans_ = trans;
-            return NumEqVector(trans/volVars.extrusionFactor());
+//            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
+//                << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
+            Scalar v = std::min(trans, maxTrans);
+            lastActualTrans_ = v; // the one we return
+            lastTrans_ = trans;  // potential transpiration
+            lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
+            lastP_ = p;
+            v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
+            // std::cout << volVars.extrusionFactor() << " cm2, " << scvf.area() << " cm2 "; // scvf.area() == 1
+            return NumEqVector(v);
+//            Scalar trans = collar();
+//            lastTrans_ = trans;
+//            return NumEqVector(trans/volVars.extrusionFactor());
         } else {
             return NumEqVector(0.); // no flux at root tips
         }
