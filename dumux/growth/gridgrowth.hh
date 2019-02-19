@@ -20,8 +20,8 @@
  * \file
  * \brief This file contains a growth algorithm using crootbox as a backend
  */
-#ifndef DUMUX_CROOTBOX_GROWTH_ALGORITHM_HH
-#define DUMUX_CROOTBOX_GROWTH_ALGORITHM_HH
+#ifndef DUMUX_GRIDGROWTH_HH
+#define DUMUX_GRIDGROWTH_HH
 
 #include <memory>
 
@@ -130,6 +130,9 @@ public:
                 if (fvGridGeometry_->vertexMapper().index(vertex) >= oldNumVertices)
                     indexMap_[grid_->growthInsertionIndex(vertex)] = fvGridGeometry_->vertexMapper().index(vertex);
             }
+            for (const auto& e : elements(gv)) {
+                auto eIdx = grid_->growthInsertionIndex(e);
+            }
 
             // also update the index to vertex map
             indexToVertex_.update(fvGridGeometry_->vertexMapper());
@@ -140,7 +143,7 @@ public:
             // cleanup grid after growth
             grid_->postGrow();
 
-            std::cout << "addded " <<  newSegments.size() << "segments \n";
+            std::cout << "addded " <<  newSegments.size() << " segments \n";
         }
 
         // check if all segments could be inserted
@@ -151,10 +154,16 @@ public:
 
     }
 
+    //! TODO dune element index from a root model node index
+    size_t duneIndex(size_t rIdx) const {
+        return indexMap_.at(rIdx);
+    }
+
+
 private:
 
-    /**
-     *
+    /*!
+     * for debugging
      */
     void checkIndex() {
         int uneq = 0;
@@ -163,12 +172,12 @@ private:
                 uneq++;
             }
         }
-        std::cout << "indexMap : " << uneq << " unequal entries \n";
+        std::cout << "indexMap: " << uneq << " unequal entries \n";
     }
 
 
     /*!
-     * dune vertex index from a crootbox node index
+     * dune vertex index from a root model node index
      */
     unsigned int getDuneIndex_(int cRootBoxIdx) {
         if (cRootBoxIdx >= indexMap_.size()) {

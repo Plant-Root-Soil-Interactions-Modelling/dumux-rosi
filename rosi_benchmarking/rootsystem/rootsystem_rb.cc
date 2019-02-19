@@ -168,8 +168,10 @@ int main(int argc, char** argv) try
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     problem->axialFlux(x); // prepare fields
     problem->radialFlux(x); // prepare fields
+    problem->initialPressure(x); // prepare fields
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
+    vtkWriter.addField(problem->initialPressure(), "initial pressure");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized (how convenient)" << "\n" << std::flush;
@@ -218,8 +220,8 @@ int main(int argc, char** argv) try
 
                 assembler->setResidualSize(); // resize residual vector
                 assembler->setJacobianPattern(); // resize and set Jacobian pattern
-                assembler->setPreviousSolution(x);
-                assembler->assembleJacobianAndResidual(x);
+//                assembler->setPreviousSolution(x);
+//                assembler->assembleJacobianAndResidual(x);
                 std::cout << "hopefully modified assembler" << std::endl<< std::flush;;
 
                 xOld = x;
@@ -236,6 +238,7 @@ int main(int argc, char** argv) try
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) { // write vtk output (only at check points)
                 problem->axialFlux(x); // prepare fields
                 problem->radialFlux(x); // prepare fields
+                problem->initialPressure(x); // prepare fields
                 vtkWriter.write(timeLoop->time());
             }
             problem->writeTranspirationRate(x); // always add transpiration data in the text file
@@ -243,6 +246,8 @@ int main(int argc, char** argv) try
             timeLoop->reportTimeStep(); // report statistics of this time step
 
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
+
+            std::cout << "\ntime is " << timeLoop->time() << " with " << timeLoop->timeStepSize() <<  std::endl <<  std::endl << std::flush;;
 
             problem->setTime(timeLoop->time()); // pass current time to the problem
 

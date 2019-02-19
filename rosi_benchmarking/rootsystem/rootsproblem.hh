@@ -213,11 +213,24 @@ public:
         }
     }
 
+    void initialPressure(const SolutionVector& sol) {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        initialP_ = std::vector<Scalar>(gridView.size(0));
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        for (const auto& element : elements(gridView)) {
+            auto eIdx = eMapper.index(element);
+            initialP_[eIdx] = initialAtPos(element.geometry().center());
+        }
+    }
+
     std::vector<Scalar>& radialFlux() {
         return radialFlux_;
     }
     std::vector<Scalar>& axialFlux() {
         return axialFlux_;
+    }
+    std::vector<Scalar>& initialPressure() {
+        return initialP_;
     }
 
     //! calculates transpiraton, as the netflux of first element (m^3 /s), assuming first element is collar
@@ -424,17 +437,7 @@ private:
     // vtk fields
     std::vector<Scalar> axialFlux_;
     std::vector<Scalar> radialFlux_;
-
-    //    void initialPressure_() {
-    //        const auto& gridView = this->fvGridGeometry().gridView();
-    //        initialP_ = std::vector<Scalar>(gridView.size(0));
-    //        auto eMapper = this->fvGridGeometry().elementMapper();
-    //        for (const auto& element : elements(gridView)) {
-    //            auto eIdx = eMapper.index(element);
-    //            initialP_[eIdx] = initialAtPos(element.geometry().center());
-    //        }
-    //    }
-    // std::vector<Scalar> initialP_;
+    std::vector<Scalar> initialP_;
 
 };
 

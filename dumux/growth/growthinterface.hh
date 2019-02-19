@@ -36,25 +36,30 @@ public:
     virtual ~GrowthInterface() { };
 
     // run simulation
-    virtual void simulate(double dt) = 0; ///< simulate the next dt seconds [s]
+    virtual void simulate(double dt) = 0; //< simulate the next dt seconds [s]
 
     // nodes that moved
-    virtual std::vector<size_t> updatedNodeIndices() const = 0; ///< Indices of nodes that were updated in the previous time step
-    virtual std::vector<GlobalPosition> updatedNodes() const = 0; ///< Values of the updated nodes [m]
+    virtual std::vector<size_t> updatedNodeIndices() const = 0; //< Indices of nodes that were updated in the previous time step
+    virtual std::vector<GlobalPosition> updatedNodes() const = 0; //< Values of the updated nodes [m]
 
     // new nodes
-    virtual std::vector<size_t> newNodeIndices() const = 0; ///< Node indices that were created in the previous time step
-    virtual std::vector<GlobalPosition> newNodes() const = 0; ///< Nodes created in the previous time step [m]
+    virtual std::vector<size_t> newNodeIndices() const = 0; //< Node indices that were created in the previous time step
+    virtual std::vector<GlobalPosition> newNodes() const = 0; //< Nodes created in the previous time step [m]
 
     // new segments
-    virtual std::vector<std::array<size_t, 2>> newSegments() const = 0; ///< Segments created in the previous time step
+    virtual std::vector<std::array<size_t, 2>> newSegments() const = 0; //< Segments created in the previous time step
 
-    virtual std::vector<double> segmentCreationTimes() const = 0; ///< Segment emergence time of segment sIdx created in the previous time step [s]
-    virtual std::vector<int> segmentOrders() const = 0; ///< Segment orders of segment created in the previous time step
-    virtual std::vector<double> segmentRadii() const = 0; ///< Segment radius of segment sIdx created in the previous time step [m]
+    virtual std::vector<double> segmentCreationTimes() const = 0; //< Segment emergence time of segment sIdx created in the previous time step [s]
+    virtual std::vector<int> segmentOrders() const = 0; //< Segment orders of segment created in the previous time step
+    virtual std::vector<double> segmentRadii() const = 0; //< Segment radius of segment sIdx created in the previous time step [m]
 
     // Mapper
-    std::vector<size_t> indexMapper; ///< Maps a dune element index to the growth model index (todo)
+    std::vector<size_t> indexMap; ///< Maps a growth model index to the dune element index
+
+    //! returns the dune element index of the root model index
+    size_t map(size_t rIdx) const {
+        return indexMap.at(rIdx);
+    }
 
 };
 

@@ -42,7 +42,10 @@ class CRootBoxAdapter :public GrowthInterface<GlobalPosition> {
 
 public:
 
-    CRootBoxAdapter(CRootBox::RootSystem& rs) :rootsystem_(rs) { };
+    CRootBoxAdapter(CRootBox::RootSystem& rs) :rootsystem_(rs) {
+        this->indexMap = std::vector<size_t>(rs.getNewNodes().size());  // we assume that in the beginning the node indices are the same
+        std::iota(this->indexMap.begin(), this->indexMap.end(), 0);
+    };
 
     virtual ~CRootBoxAdapter() { }; // nothing to do, rootsystem_ is someone elses problem
 

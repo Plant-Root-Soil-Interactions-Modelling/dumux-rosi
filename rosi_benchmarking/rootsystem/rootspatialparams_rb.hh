@@ -31,6 +31,7 @@
 #include <dumux/material/components/simpleh2o.hh>
 
 #include <dumux/growth/growthinterface.hh>
+#include <dumux/growth/gridgrowth.hh>
 
 #include <dumux/io/inputfilefunction.hh>
 #include <dumux/growth/soillookup.hh>
@@ -55,7 +56,6 @@ class RootSpatialParamsRB
     using SubControlVolume = typename FVGridGeometry::SubControlVolume;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
-
     using RootSystem = typename GrowthModule::GrowthInterface<GlobalPosition>; // decoupled from CRootBox
 
 public:
@@ -142,7 +142,8 @@ public:
         auto segO = rs.segmentOrders();
         auto segRadii = rs.segmentRadii();
         for (size_t i = 0; i < segs.size(); i++) {
-            size_t eIdx = segs[i][1] - 1; // rootbox node index - 1 == rootbox segment index
+            size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==
+            size_t eIdx = rIdx; // gg.duneIndex(rIdx);
             orders_.at(eIdx) = segO[i];
             radii_.at(eIdx) = segRadii[i];
             ctimes_.at(eIdx) = segCT[i];
