@@ -17,17 +17,17 @@ os.system("./richards1d benchmarks_1d/b1a.input")
 
 \subsection*{The input file}
 Here is an example of an input file,\\
-\verb+/dumux-rosi-master/rosi_benchmarking/soil/benchmarks_1d/b1a.input+:
-\lstinputlisting[firstline=1,lastline=34, language=C++, caption=Example input file]{dumux-rosi-master/rosi_benchmarking/soil/benchmarks_1d/b1a.input}	\\
+\verb+/dumux-rosi/rosi_benchmarking/soil/benchmarks_1d/b1a.input+:
+\lstinputlisting[firstline=1,lastline=34, language=C++, caption=Example input file]{dumux-rosi/rosi_benchmarking/soil/benchmarks_1d/b1a.input}	\\
 
 Todo: periodic boundary conditions
 
 \section*{The post-processing}
 3D simulation results are stored in form of vtk files. If not specified otherwise, vtk files are stored for the initial and the final time point of the simulation. Using the key word ``CheckTimes" under the category ``Time loop" in the input file, additional output times can be specified. Time series, such as transpiration flux or pressure at the root collar over time, are stored as txt files. At the moment, this is specified within the problem file of the C++ code, see for example\\
-\verb+/dumux-rosi-master/rosi_benchmarking/rootsystem/rootsproblem.hh+:
-\lstinputlisting[firstline=172,lastline=172, language=C++, caption=Transpiration output]{dumux-rosi-master/rosi_benchmarking/rootsystem/rootsproblem.hh}	 
+\verb+/dumux-rosi/rosi_benchmarking/rootsystem/rootsproblem.hh+:
+\lstinputlisting[firstline=172,lastline=172, language=C++, caption=Transpiration output]{dumux-rosi/rosi_benchmarking/rootsystem/rootsproblem.hh}	 
 and
-\lstinputlisting[firstline=360,lastline=361, language=C++, caption=Transpiration output]{dumux-rosi-master/rosi_benchmarking/rootsystem/rootsproblem.hh}	  
+\lstinputlisting[firstline=360,lastline=361, language=C++, caption=Transpiration output]{dumux-rosi/rosi_benchmarking/rootsystem/rootsproblem.hh}	  
 
 Here, results are read and plotted or further analysed, like in the following example. 
 Using the \lstinline{vtk_tools} is particularly helpful for creating 1D plots such as depth profiles or time series in Python rather than using Paraview (Paraview of course is helpful for 3D visualisation).  
