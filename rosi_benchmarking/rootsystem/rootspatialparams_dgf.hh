@@ -136,45 +136,6 @@ public:
         age_.setGridData(gridData, fvGridGeometry);
     }
 
-    //! Output and analysis of the root system
-    void analyseRootSystem() const
-    {
-        Scalar totalLength = 0.0, totalLengthTop = 0.0, totalLengthBottom = 0.0;
-        Scalar totalLengthPrimary = 0.0, totalLengthSecondary = 0.0;
-        Scalar rootVolume = 0.0;
-        Scalar totalAge = 0.0;
-        for (const auto& element : elements(this->fvGridGeometry().gridView()))
-        {
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            if (this->order(eIdx) >= 0) // exclude shoot
-            {
-                const auto geo = element.geometry();
-                const auto length = geo.volume();
-                const auto r = this->radius(eIdx);
-                totalLength += length;
-                rootVolume += length*M_PI*r*r;
-                totalAge = std::max(totalAge, this->age(eIdx));
-                if (geo.center()[2] > -0.42) {
-                    totalLengthTop += length;
-                } else {
-                    totalLengthBottom += length;
-                }
-                if (this->order(eIdx) == 0) {
-                    totalLengthPrimary += length;
-                } else {
-                    totalLengthSecondary += length;
-                }
-            }
-
-        }
-        std::cout << ".........................................................\n"
-            << "-- Root system age:            " << totalAge << " days\n"
-            << "-- Total length:               " << totalLength << " m\n" << "-- Total length (top 42 cm):   " << totalLengthTop << " m\n"
-            << "-- Total length (below 42 cm): " << totalLengthBottom << " m\n" << "-- Total length (primary):     " << totalLengthPrimary << " m\n"
-            << "-- Total length (secondary):   " << totalLengthSecondary << " m\n" << "-- Total volume:               " << rootVolume << " m³\n"
-            << ".........................................................\n";
-    }
-
 private:
     InputFileFunction kr_;
     InputFileFunction kx_;

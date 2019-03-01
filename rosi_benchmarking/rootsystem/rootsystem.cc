@@ -76,6 +76,8 @@ int main(int argc, char** argv) try
 
     if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
+    } else {
+        throw Dumux::ParameterException("Care! Foamgrid does not support parallel computation");
     }
 
     // define the type tag for this problem
@@ -194,64 +196,47 @@ int main(int argc, char** argv) try
         std::cout << "a time dependent model" << "\n" << std::flush;
         timeLoop->start();
         do {
-            // set previous solution for storage evaluations
-            assembler->setPreviousSolution(xOld);
-            // solve the non-linear system with time step control
 
-            try {
-                nonLinearSolver.solve(x);
-                std::cout << "\npressure at collar : " << x[0] <<  " \n";
-            } catch(...) {
-                std::cout << "\nSWITCH critical true\n\n";
-                problem->setCritical(true);
-                continue;
-            }
+            assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
 
-            if (x[0]<-881000.-1.) {
-                std::cout << "SWITCH true \n\n";
-                xOld = x; // better initial guess
-                problem->setCritical(true);
-                continue;
-            } else {
-                std::cout << "SWITCH false \n\n";
-                problem->setCritical(false);
-            }
+            nonLinearSolver.solve(x); // solve the non-linear system with time step control
 
-            // make the new solution the old solution
-            xOld = x;
-            // gridVariables->advanceTimeStep();
-            // advance to the time loop to the next step
-            timeLoop->advanceTimeStep();
-            // write vtk output (only at check points)
-            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+            xOld = x; // make the new solution the old solution
+
+            gridVariables->advanceTimeStep();
+
+            timeLoop->advanceTimeStep(); // advance to the time loop to the next step
+
+            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) { // write vtk output (only at check points)
                 problem->axialFlux(x); // prepare fields
                 problem->radialFlux(x); // prepare fields
                 vtkWriter.write(timeLoop->time());
             }
-            if (mpiHelper.rank() == 0) {
-                problem->writeTranspirationRate(x);
-            }
-            // report statistics of this time step
-            timeLoop->reportTimeStep();
-            // set new dt as suggested by the newton solver
-            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
-            // pass current time to the problem
-            problem->setTime(timeLoop->time());
+            problem->writeTranspirationRate(x); // always add transpiration data into the text file
+
+            timeLoop->reportTimeStep();  // report statistics of this time step
+
+            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
+
+            problem->setTime(timeLoop->time()); // pass current time to the problem
 
         } while (!timeLoop->finished());
+
         timeLoop->finalize(leafGridView.comm());
-    } else // static
-    {
+
+    } else { // static
+
         std::cout << "a static model" << "\n" << std::flush;
-        // set previous solution for storage evaluations
-        assembler->setPreviousSolution(xOld);
-        // solve the non-linear system
-        nonLinearSolver.solve(x);
-        // write vtk output
-        //        problem->axialFlux(x); // prepare fields
-        //        problem->radialFlux(x); // prepare fields
-        //        problem->writeTranspirationRate(x);
-        vtkWriter.write(1);
+
+        assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
+
+        nonLinearSolver.solve(x); // solve the non-linear system
+
+        // write outputs
+        problem->writeTranspirationRate(x);
+        problem->axialFlux(x); // prepare fields
+        problem->radialFlux(x); // prepare fields
+        vtkWriter.write(1); // write vtk output
     }
 
     ////////////////////////////////////////////////////////////

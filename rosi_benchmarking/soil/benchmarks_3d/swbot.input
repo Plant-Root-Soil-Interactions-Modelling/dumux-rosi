@@ -5,10 +5,11 @@ Name = swbot
 TEnd = 31536000 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
+CheckTimes = 86400 864000  
 
 [Soil.Grid]
 UpperRight = 0.75 0.15 1.26 
-Cells = 75 15 126 #75 15 126
+Cells = 75 15 126 # 75 15 126
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -19,7 +20,7 @@ Type = 2 # constant flux
 Value = 0 # [cm day-1]
 
 [Soil.IC]
-P = -1121.3 -1121.3 -4077.47 -4077.47 
+P = -101.937 -101.937 -3058.104 -3058.104  # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa
 Z = 0 .83 .84 1.26
 
 [Soil.VanGenuchten]  

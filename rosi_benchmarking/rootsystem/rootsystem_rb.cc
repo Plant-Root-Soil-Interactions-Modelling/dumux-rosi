@@ -220,8 +220,8 @@ int main(int argc, char** argv) try
 
                 assembler->setResidualSize(); // resize residual vector
                 assembler->setJacobianPattern(); // resize and set Jacobian pattern
-//                assembler->setPreviousSolution(x);
-//                assembler->assembleJacobianAndResidual(x);
+                assembler->setPreviousSolution(x);
+                assembler->assembleJacobianAndResidual(x);
                 std::cout << "hopefully modified assembler" << std::endl<< std::flush;;
 
                 xOld = x;
@@ -241,13 +241,11 @@ int main(int argc, char** argv) try
                 problem->initialPressure(x); // prepare fields
                 vtkWriter.write(timeLoop->time());
             }
-            problem->writeTranspirationRate(x); // always add transpiration data in the text file
+            problem->writeTranspirationRate(x); // always add transpiration data into the text file
 
             timeLoop->reportTimeStep(); // report statistics of this time step
 
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
-
-            std::cout << "\ntime is " << timeLoop->time() << " with " << timeLoop->timeStepSize() <<  std::endl <<  std::endl << std::flush;;
 
             problem->setTime(timeLoop->time()); // pass current time to the problem
 
@@ -255,8 +253,8 @@ int main(int argc, char** argv) try
 
         timeLoop->finalize(leafGridView.comm());
 
-    } else // static
-    {
+    } else { // static
+
         std::cout << "a static model" << "\n" << std::flush;
 
         assembler->setPreviousSolution(xOld);  // set previous solution for storage evaluations

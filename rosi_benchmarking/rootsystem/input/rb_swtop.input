@@ -2,13 +2,13 @@
 Name = rb_swtop 
 
 [RootSystem.Grid]
-Grow = True
+Grow = False
 
 [TimeLoop]
 TEnd = 86400 # 604800 a week [s] # 86400 # a day
 CheckTimes = 43200 # half a day
 DtInitial = 360 # [s]
-MaxTimeStepSize = 3600 # 1 h
+MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Collar]
 Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
@@ -24,7 +24,7 @@ KxAge1 = 0 5 10 12 20 22 1e20
 Kx1 = 1.15740741e-14 1.15740741e-14 1.15740741e-13 6.94444444e-13 6.94444444e-13 1.96759259e-12 1.96759259e-12
 
 [Soil.IC]
-P = -4077.47 -4077.47 -1121.3 -1121.3 
+P = -3058.104 -3058.104 -101.937 -101.937 # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa
 Z = -1.26 -.43 -.41 0
 
 [Vtk]

@@ -59,15 +59,17 @@ public:
 
     //! constructs the grow
     GridGrowth(std::shared_ptr<Grid> grid, std::shared_ptr<FVGridGeometry> fvGridGeometry, Growth growth, SolutionVector& sol) :
-            grid_(grid),
-            fvGridGeometry_(fvGridGeometry),
-            growth_(growth),
-            indexToVertex_(*grid, fvGridGeometry->vertexMapper()),
-            data_(*grid, 0),
-            sol_(sol) {
+        grid_(grid),
+        fvGridGeometry_(fvGridGeometry),
+        growth_(growth),
+        indexToVertex_(*grid, fvGridGeometry->vertexMapper()),
+        data_(*grid, 0),
+        sol_(sol) {
         const auto& gv = grid->leafGridView();
         indexMap_.resize(gv.size(Grid::dimension));  // TODO: we assume that in the beginning the node indices are the same
+        indexElementMap_.resize(gv.size(Grid::dimension));
         std::iota(indexMap_.begin(), indexMap_.end(), 0);
+        std::iota(indexElementMap_.begin(), indexElementMap_.end(), 0);
     }
 
     //! \param dt the time step size in seconds
@@ -91,6 +93,7 @@ public:
         for (unsigned int i = 0; i < updatedNodeIndices.size(); i++) {
             grid_->setPosition(indexToVertex_[getDuneIndex_(updatedNodeIndices[i])], updatedNodes[i]);
         }
+
 
         //! nodes and segments that have be added
         auto newNodes = growth_->newNodes();
@@ -117,21 +120,24 @@ public:
             }
 
             // this actually inserts the new vertices and segments
+
             grid_->preGrow();
             grid_->grow();
 
             // update grid geometry (updates the mappers)
             fvGridGeometry_->update();
 
-            // update the index map
+            // update the index maps
             indexMap_.resize(gv.size(Grid::dimension));
+            indexElementMap_.resize(gv.size(Grid::dimension));
+
             // update the actual index the new vertices got in the grid in the growth model index to dune index map
             for (const auto& vertex : vertices(gv)) {
-                if (fvGridGeometry_->vertexMapper().index(vertex) >= oldNumVertices)
-                    indexMap_[grid_->growthInsertionIndex(vertex)] = fvGridGeometry_->vertexMapper().index(vertex);
-            }
-            for (const auto& e : elements(gv)) {
-                auto eIdx = grid_->growthInsertionIndex(e);
+                if (fvGridGeometry_->vertexMapper().index(vertex) >= oldNumVertices) {
+                    std::cout << " element: growth insertion index " << grid_->growthInsertionIndex(vertex)<< ", final index " << fvGridGeometry_->vertexMapper().index(vertex) << "\n"<< std::flush;
+                    indexMap_[grid_->growthInsertionIndex(vertex)] = fvGridGeometry_->vertexMapper().index(vertex); // indexMap[rIdx] = vIdx, indexMap[eIdx] = rIdx
+                    indexElementMap_[fvGridGeometry_->vertexMapper().index(vertex)-1] = grid_->growthInsertionIndex(vertex)-1;
+                }
             }
 
             // also update the index to vertex map
@@ -143,7 +149,9 @@ public:
             // cleanup grid after growth
             grid_->postGrow();
 
-            std::cout << "addded " <<  newSegments.size() << " segments \n";
+            // todo update instead of copy
+            growth_->root2dune = indexElementMap_;
+
         }
 
         // check if all segments could be inserted
@@ -154,9 +162,9 @@ public:
 
     }
 
-    //! TODO dune element index from a root model node index
+    //! dune element index from a root model node index
     size_t duneIndex(size_t rIdx) const {
-        return indexMap_.at(rIdx);
+        return indexElementMap_.at(rIdx);
     }
 
 
@@ -231,7 +239,8 @@ private:
 
     // index mapping stuff
     EntityMap<Grid, Grid::dimension> indexToVertex_; //! a map from dune vertex indices to vertex entitites (?)
-    std::vector<size_t> indexMap_; //! a map from crootbox node indices to foamgrid indices
+    std::vector<size_t> indexMap_; //! a map from crootbox node indices to foamgrid vertex indices
+    std::vector<size_t> indexElementMap_; //! a map foamgrid element indices to root model segment indices to
 
     PersistentContainer data_; //! data container with persistent ids as key to transfer element data from old to new grid
 

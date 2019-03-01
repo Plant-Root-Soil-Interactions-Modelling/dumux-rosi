@@ -109,7 +109,7 @@ template<class TypeTag>
 struct FluidSystem<TypeTag, TTag::Roots> {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
-};    bool grow = false;
+};
 
 } // end namespace Properties
 
@@ -120,41 +120,36 @@ struct FluidSystem<TypeTag, TTag::Roots> {
  */
 template<class TypeTag>
 class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
+
     using ParentType = PorousMediumFlowProblem<TypeTag>;
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
-
-    static const int dim = GridView::dimension;
-    static const int dimWorld = GridView::dimensionworld;
-
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
-    enum {
-        conti0EqIdx = Indices::conti0EqIdx, // indices of the primary variables
-        pressureIdx = Indices::pressureIdx
-    };
-
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
     using FVElementGeometry = typename GetPropType<TypeTag, Properties::FVGridGeometry>::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-
     using PointSource = GetPropType<TypeTag, Properties::PointSource>;
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
 
     enum {
+        conti0EqIdx = Indices::conti0EqIdx, // indices of the primary variables
+        pressureIdx = Indices::pressureIdx
+    };
+    enum {
         isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
     };
-
     enum {
         bcDirichlet = 0, bcNeumann = 1
     };
+
+    static const int dimWorld = GridView::dimensionworld;
 
 public:
 
@@ -302,25 +297,19 @@ public:
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
-            auto p = volVars.pressure(0);
+            Scalar p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / (2*dist); // / volVars.viscosity(0)
+            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; //
             Scalar trans = collar();
-//            std::cout << trans << " kg/s, " << maxTrans << " kg/s, " << p << " Pa " << ", diff " << (p - criticalCollarPressure_) << " scale "
-//                << volVars.density(0) * kx / (2 * dist) << " crit " << criticalCollarPressure_ << ", p= " << (p - pRef_) * 100 / rho_ / g_ << "\n";
             Scalar v = std::min(trans, maxTrans);
             lastActualTrans_ = v; // the one we return
             lastTrans_ = trans;  // potential transpiration
             lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
             lastP_ = p;
             v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
-            // std::cout << volVars.extrusionFactor() << " cm2, " << scvf.area() << " cm2 "; // scvf.area() == 1
             return NumEqVector(v);
-//            Scalar trans = collar();
-//            lastTrans_ = trans;
-//            return NumEqVector(trans/volVars.extrusionFactor());
         } else {
             return NumEqVector(0.); // no flux at root tips
         }
@@ -334,7 +323,6 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
-
         NumEqVector values;
         auto params = this->spatialParams();
         const auto eIdx = params.fvGridGeometry().elementMapper().index(element);
@@ -345,18 +333,7 @@ public:
         values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
         values[conti0EqIdx] /= (a * a * M_PI); // 1/s
         values[conti0EqIdx] *= rho_; // (kg/s/m^3)
-
         return values;
-    }
-
-    /*!
-     * \brief Return how much the domain is extruded at a given sub-control volume.
-     */
-    template<class ElementSolution>
-    Scalar extrusionFactor(const Element& element, const SubControlVolume& scv, const ElementSolution& elemSol) const {
-        const auto eIdx = this->spatialParams_->fvGridGeometry().elementMapper().index(element);
-        Scalar r = this->spatialParams_->radius(eIdx); // root radius (m)
-        return M_PI * r * r;
     }
 
     /*!
@@ -383,13 +360,15 @@ public:
         time_ = t;
     }
 
-    //! writes the transpiration file
+    /*!
+     * writes the actual transpiration into a text file:
+     * 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration,
+     * 1 - 4 work only for neuman bc
+     */
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol);
         Scalar p = lastP_;
-        Scalar dp = lastP_ - criticalCollarPressure_;
-        file_at_ << std::setprecision(17) << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << dp << ", "
-            << std::setprecision(17) << sol[0] << ", " << std::setprecision(17) << sol[1] << ", " << trans << "\n";
+        file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << trans << "\n"; // << std::setprecision(17)
     }
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
@@ -401,17 +380,42 @@ public:
         }
     }
 
+    //! if true, sets bc to dirichlet at criticalCollarPressure (false per default)
     void setCritical(bool b) {
         critical_ = b;
     }
+
+    //! sets the criticalCollarPressure [Pa]
+    void criticalCollarPressure(Scalar p) {
+        criticalCollarPressure_ = p;
+    }
+
+    /*!
+     * \brief Return how much the domain is extruded at a given sub-control volume.
+     *
+     * The extrusion factor here makes extrudes the 1d line to a circular tube with
+     * cross-section area pi*r^2.
+     *
+     * called by volumevariables (why there?), no error if you remove it
+     */
+    template<class ElementSolution>
+    Scalar extrusionFactor(const Element &element,
+                           const SubControlVolume &scv,
+                           const ElementSolution& elemSol) const
+    {
+        const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        const auto radius = this->spatialParams().radius(eIdx);
+        return M_PI*radius*radius;
+    }
+
 
 private:
 
     CRootBox::SoilLookUp* soil_;
     InputFileFunction collar_;
-    int bcType_;
+    size_t bcType_;
     Scalar time_ = 0.;
-    Scalar criticalCollarPressure_ = toPa_(-1e4);
+    Scalar criticalCollarPressure_ = -1.4e6;
 
     bool critical_ = false;
 

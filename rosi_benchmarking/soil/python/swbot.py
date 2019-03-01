@@ -12,15 +12,16 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
-# run dumux
 np_ = 8  # number of processors
-if np_ == 1:
-    os.system("./richards3d benchmarks_3d/swbot.input")
-else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/swbot.input -Grid.Overlap 0")
 
-# Figure
-s_, p_, z1_ = read1D_vtp_data("swbot-00001.vtp", False)
+# # run dumux
+# if np_ == 1:
+#     os.system("./richards3d benchmarks_3d/swbot.input")
+# else:
+#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/swbot.input -Grid.Overlap 0")
+
+# Figure (care
+s_, p_, z1_ = read3D_vtp("swbot-00000", np_)
 h1_ = vg.pa2head(p_)
 plt.plot(h1_, (z1_ - 1.26) * 100, "r+")
 plt.xlabel('$\psi$ (cm)')

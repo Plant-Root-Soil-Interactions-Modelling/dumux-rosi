@@ -43,14 +43,14 @@ class CRootBoxAdapter :public GrowthInterface<GlobalPosition> {
 public:
 
     CRootBoxAdapter(CRootBox::RootSystem& rs) :rootsystem_(rs) {
-        this->indexMap = std::vector<size_t>(rs.getNewNodes().size());  // we assume that in the beginning the node indices are the same
-        std::iota(this->indexMap.begin(), this->indexMap.end(), 0);
+        this->root2dune = std::vector<size_t>(rs.getNewNodes().size()+1);  // we assume that in the beginning the node indices are the same, +1 because of the shoot node
+        std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
 
     virtual ~CRootBoxAdapter() { }; // nothing to do, rootsystem_ is someone elses problem
 
     void simulate(double dt) override {
-        rootsystem_.simulate(dt/3600/24, true);
+        rootsystem_.simulate(dt/3600/24, false);
     }
 
     std::vector<size_t> updatedNodeIndices() const override {

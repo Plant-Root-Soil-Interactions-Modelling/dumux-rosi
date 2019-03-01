@@ -32,6 +32,7 @@ namespace GrowthModule {
  */
 template<class GlobalPosition>
 class GrowthInterface {
+
 public:
     virtual ~GrowthInterface() { };
 
@@ -49,16 +50,21 @@ public:
     // new segments
     virtual std::vector<std::array<size_t, 2>> newSegments() const = 0; //< Segments created in the previous time step
 
+    // virtual double getModelData(size_t rIdx, size_t type) = 0;
+
     virtual std::vector<double> segmentCreationTimes() const = 0; //< Segment emergence time of segment sIdx created in the previous time step [s]
     virtual std::vector<int> segmentOrders() const = 0; //< Segment orders of segment created in the previous time step
     virtual std::vector<double> segmentRadii() const = 0; //< Segment radius of segment sIdx created in the previous time step [m]
 
     // Mapper
-    std::vector<size_t> indexMap; ///< Maps a growth model index to the dune element index
+    std::vector<size_t> root2dune; ///< Maps a growth model index to the dune element index
 
     //! returns the dune element index of the root model index
-    size_t map(size_t rIdx) const {
-        return indexMap.at(rIdx);
+    size_t map2dune(size_t rIdx) const {
+        if (rIdx>root2dune.size()) {
+            std::cout << "mapping problmes";
+        }
+        return root2dune.at(rIdx);
     }
 
 };

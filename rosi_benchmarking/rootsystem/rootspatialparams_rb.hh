@@ -69,6 +69,7 @@ public:
         assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems"); // todo use kr_.setData(...) by hand
         assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems");
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600*24; // root system initial time
+        // shoot
         radii_ = { 1.17/100. };
         orders_ = { 0 };
         ctimes_ = { 0. };
@@ -143,7 +144,8 @@ public:
         auto segRadii = rs.segmentRadii();
         for (size_t i = 0; i < segs.size(); i++) {
             size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==
-            size_t eIdx = rIdx; // gg.duneIndex(rIdx);
+            std::cout << segs[i][0] << ", "<< segs[i][1] << "; ";
+            size_t eIdx = rs.map2dune(rIdx);
             orders_.at(eIdx) = segO[i];
             radii_.at(eIdx) = segRadii[i];
             ctimes_.at(eIdx) = segCT[i];
@@ -155,42 +157,6 @@ public:
         if ((kx_.type() == InputFileFunction::perType) || (kx_.type() == InputFileFunction::tablePerType)) {
             kx_.setData(orders_);
         }
-    }
-
-    //! Output and analysis of the root system
-    void analyseRootSystem() const {
-        Scalar totalLength = 0.0, totalLengthTop = 0.0, totalLengthBottom = 0.0;
-        Scalar totalLengthPrimary = 0.0, totalLengthSecondary = 0.0;
-        Scalar rootVolume = 0.0;
-        Scalar totalAge = 0.0;
-        for (const auto& element : elements(this->fvGridGeometry().gridView())) {
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            if (this->order(eIdx) >= 0) { // exclude shoot
-                const auto geo = element.geometry();
-                const auto length = geo.volume();
-                const auto r = this->radius(eIdx);
-                totalLength += length;
-                rootVolume += length*M_PI*r*r;
-                totalAge = std::max(totalAge, this->age(eIdx));
-                if (geo.center()[2] > -0.42) {
-                    totalLengthTop += length;
-                } else {
-                    totalLengthBottom += length;
-                }
-                if (this->order(eIdx) == 0) {
-                    totalLengthPrimary += length;
-                } else {
-                    totalLengthSecondary += length;
-                }
-            }
-
-        }
-        std::cout << ".........................................................\n"
-            << "-- Root system age:            " << totalAge << " days\n"
-            << "-- Total length:               " << totalLength << " m\n" << "-- Total length (top 42 cm):   " << totalLengthTop << " m\n"
-            << "-- Total length (below 42 cm): " << totalLengthBottom << " m\n" << "-- Total length (primary):     " << totalLengthPrimary << " m\n"
-            << "-- Total length (secondary):   " << totalLengthSecondary << " m\n" << "-- Total volume:               " << rootVolume << " m³\n"
-            << ".........................................................\n";
     }
 
 private:
