@@ -1,4 +1,4 @@
-\chapter*{Example 1: Water flow in the soil-root system}
+\chapter*{Benchmarking example 1: Water flow in the soil-root system}
 
 \section*{The model}
 \subsection*{The soil sub-problem}
@@ -53,7 +53,7 @@ In this chapter, we explain where the different terms of the model equations can
 
 \subsection*{The soil subproblem}
 The storage and flux terms are defined in the file \\
-\verb+/dumux/dumux/porousmediumflow/Richards/implicit/localresidual.hh+.\\
+\verb+/dumux/dumux/porousmediumflow/Richards/localresidual.hh+.\\
 The storage term is computed as
 \lstinputlisting[firstline=78,lastline=98, language=C++, caption=storage term]{dumux/dumux/porousmediumflow/Richards/implicit/localresidual.hh}		
 
@@ -120,7 +120,7 @@ Currently, there is a method “Neumann” in which the flux trough the tips is 
     Soil porosity & m$^3$ m$^{-3}$ & 2\\		
 		Intrinsic soil permeability & m$^2$ & 1\\
 		Residual saturation & - & 2\\	
-		Van Genuchten $\alpha$ & Pa & 2\\
+		Van Genuchten $\alpha$ & Pa$^{-1}$ & 2\\
 		Van Genuchten $n$ & - & 2\\		
     Root porosity & m$^3$ m$^{-3}$ & 3\\	
 		Root axial conductance & m$^5$ s kg$^{-1}$ & 1\\

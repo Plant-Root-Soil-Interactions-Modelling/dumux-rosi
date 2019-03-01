@@ -1,0 +1,127 @@
+\documentclass[a4paper,12pt]{scrreprt}
+\usepackage[within=none]{caption}
+% Für deutsche Überschriften, usw. dieses Paket aktivieren
+% \usepackage[ngerman]{babel}
+
+%% REQUIRED PACKAGES
+\usepackage{amsfonts,amsmath,amssymb} % math stuff
+\usepackage{booktabs} % better layout for tables
+\usepackage{color} % enable use of colors
+\usepackage{fancyhdr} % definition of own headers/footers
+\usepackage{graphicx} % for including pictures
+\usepackage{units} % for giving quantities the right surrounding
+\usepackage{xspace} % correct spacing behind DuMuX command
+\usepackage{here} %to force graphic to be exactly HERE
+\usepackage{epstopdf} %to include eps 
+
+
+%% OPTIONAL PACKAGES
+\usepackage{array,caption} % needed for the new column type
+\usepackage{lipsum} % dummy text with \lipsum[1]
+\usepackage{subcaption} % multiple figures in one row
+\usepackage{rotating} % rotating of figures
+\usepackage{listings}
+\lstset{inputpath=../../../}
+\usepackage{chngcntr}
+\counterwithout{equation}{chapter}
+\usepackage[shortlabels]{enumitem}
+\setlist[enumerate]{noitemsep}
+
+\usepackage[bookmarks=true,bookmarksopen=true,bookmarksopenlevel=2]{hyperref} % enable links
+\hypersetup{
+%  pdfpagemode=None,
+  pdfpagemode=UseOutlines,
+  pdfstartview=Fit,
+  pdftitle={},
+  pdfsubject={},
+  pdfauthor={},
+  pdfkeywords={},
+  pdfcreator={pdflatex}
+}
+
+%\usepackage{todonotes} % for colorful todo notes
+\usepackage[disable]{todonotes} % for colorful todo notes
+\usepackage{trackchanges}
+
+%% PAGE SETUP
+\textheight 22.5cm
+\textwidth 15.5cm
+\oddsidemargin 0.5cm
+\evensidemargin 0.5cm
+\parindent 0cm
+\topmargin 0cm
+
+%% NUMERATION OF ELEMENTS
+\setcounter{secnumdepth}{5} % depth of numeration, including \subparagraph
+%\renewcommand{\theequation}{\thechapter.\arabic{equation}} % numeration for equations
+%\numberwithin{equation}{chapter}
+%\renewcommand{\thefigure}{\thechapter.\arabic{figure}} % numeration for figures
+%\numberwithin{figure}{chapter}
+%\renewcommand{\thetable}{\thechapter.\arabic{table}} % numeration for tables
+%\numberwithin{table}{chapter}
+
+%% TEXT APPEARANCE
+\renewcommand{\labelitemi}{$-$} % char for itemize environments
+\renewcommand{\baselinestretch}{1.05} % line spacing
+
+%% USER DEFINED SETUP
+\newcolumntype{V}[1]{>{\raggedright\hspace{0pt}}p{#1}} % columntype with word wrap
+\graphicspath{{./Figs/}}
+\newcommand{\DuMuX}{DuMu$^\textrm{x}$\xspace}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92} 
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+} 
+
+\lstset{language={C++},
+style=mystyle,
+breaklines=true,
+frame=single}
+
+\title{The new version of DuMu$^x$ including the modules ``CRootBox" and ``dumux-rosi"}
+\subtitle{Documentation}
+
+\author{Manual written by A. Schnepf}
+\date{\today} 
+
+\begin{document}
+
+\maketitle
+
+%\begin{figure}[ht]
+	%\centering
+  %\includegraphics[width=0.9\textwidth]{Overview.png}
+	%\captionsetup{labelformat=empty}
+	%\caption{Overview of the link between CRootBox and DuMu$^x$}
+	%\label{Overview}
+%\end{figure}
+
+\include{installation_V3_rosi}
+
+\include{grids}
+
+\include{python_layer}
+
+\include{benchmark1}
+
+\end{document}
