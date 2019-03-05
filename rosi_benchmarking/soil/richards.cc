@@ -177,7 +177,7 @@ int main(int argc, char** argv) try
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
-        nonLinearSolver.solve(x, *timeLoop); // todo remove again!
+        nonLinearSolver.solve(x);
         vtkWriter.write(1);
     }
 

@@ -29,4 +29,4 @@ Qr = 0.08
 Qs = 0.43 
 Alpha = 0.04  # [1/cm] 
 N = 1.6 
-Ks = 5.7870e-06 # [m/s] hydrus verdoppelt
+Ks = 50 # [cm/d]  hydrus verdoppelt

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import van_genuchten as vg
 from scipy import integrate
 
-loam = vg.Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06 * 100 * 3600 * 24)  # Ksat = 50
+loam = vg.Parameters(0.08, 0.43, 0.04, 1.6, 50)
 
 Jw = -0.5  # cm/day
 

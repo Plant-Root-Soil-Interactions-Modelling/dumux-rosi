@@ -25,7 +25,7 @@ Qr = 0.1
 Qs = 0.4 
 Alpha = 0.01  # [1/cm] 
 N = 1.1 
-Ks = 1.1574e-06 # [m/s]
+Ks = 10 # [cm/d] 
 
 [Climate]
 Time = 1e10 # const value 

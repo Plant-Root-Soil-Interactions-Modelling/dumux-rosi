@@ -13,7 +13,7 @@ Cells = 199
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = 0.5 # [cm day-1]
+Value = 0.5 # [cm/d]
 
 [Soil.BC.Bot]
 Type = 5 # free drainage
@@ -27,7 +27,7 @@ Qr = 0.08  0.045
 Qs = 0.43 0.43
 Alpha = 0.04  0.15 # [1/cm] 
 N = 1.6  3
-Ks = 5.7870e-06 1.1574e-04 # [m/s] 
+Ks = 50 1000 # [cm/d] 
 
 [Soil.Layer]
 Z = -2 -0.5 -0.5 0

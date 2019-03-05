@@ -81,6 +81,7 @@ namespace Dumux {
             std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");
             std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N");
             Kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity
+            std::transform(Kc_.begin (), Kc_.end (), Kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from cm/day to m/s
             homogeneous_ = Qr.size()==1; // more than one set of VG parameters?
             materialParams_.resize(0);
             // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
@@ -98,6 +99,7 @@ namespace Dumux {
                     materialParams_.at(i).setPcHighSw(1. - eps);
                     materialParams_.at(i).setKrnLowSw(eps);
                     materialParams_.at(i).setKrwHighSw(1 - eps);
+                    // std::cout << "Qr (swr)" <<  Qr.at(i)/phi_ << "Qs (snr) " << 1.-Qs.at(i)/phi_ << " alpha " << alpha.at(i) * 100. /(rho*g_) << "Ks (K_) " << Kc_.at(i)*mu/(rho*g_) << "\n";
             }
             layer_ = InputFileFunction("Soil.Layer.Number", "Soil.Layer.Z", materialLayerNumber);
         }
