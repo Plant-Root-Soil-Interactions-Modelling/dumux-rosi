@@ -34,7 +34,7 @@
 
 #include <dumux/discretization/cctpfa.hh>
 #include <dumux/discretization/box.hh>
-#include <dumux/porousmediumflow/problem.hh>
+#include <dumux/porousmediumflow/problem.hh> // base class
 
 #include <dumux/porousmediumflow/richards/model.hh>
 #include <dumux/material/components/simpleh2o.hh>

@@ -1,0 +1,22 @@
+[Problem]
+Name = small 
+
+[TimeLoop]
+TEnd = 86400 # 604800 a week [s] # 86400 # a day
+CheckTimes = 43200 # half a day
+DtInitial = 360 # [s]
+MaxTimeStepSize = 360 # 1 h
+
+[RootSystem.Grid]
+File =  grids/singlerootC.dgf
+
+[RootSystem.Collar]
+Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
+
+[Soil.IC]
+P = -101.937 -101.937 -3058.104 -3058.104  # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa 
+Z = -1.26 -.43 -.41 0
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

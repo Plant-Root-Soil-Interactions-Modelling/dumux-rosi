@@ -44,11 +44,11 @@ if __name__ == "__main__":
         seg[i - 1, 1] = i
         nodes[i, :] = [0., 0., -i * L / (nnz - 1)]
     order = np.zeros((1, nnz))
-    a_ = np.ones((1, nnz)) * 0.1 / 100.;  # 0.2 cm
+    a_ = np.ones((1, nnz)) * 0.1;  # 0.2 cm
     age = np.zeros((1, nnz))
     kr_ = np.ones((1, nnz)) * 1.8e-5  # cm hPa-1 d-1 #
     kz_ = np.ones((1, nnz)) * 4.3;  #  cm4 hPa-1 d-1  # not used by dumux root-growth
-    params = np.vstack((order, order, kr_, kz_, a_, age, age, age))
+    params = np.vstack((order, order, age, age, a_, age, age, age))  # ONLY put 0 and radius (a_)
     createDGF_1Droots("../grids/singlerootC.dgf", nodes, seg, params)
 
     print("its done.")

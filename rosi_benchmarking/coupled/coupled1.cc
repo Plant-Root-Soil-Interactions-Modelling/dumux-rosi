@@ -19,10 +19,9 @@
 /*!
  * \file
  *
- * \brief Coupling (not)
+ * \brief Coupling
  *
- * A soil and a root model are run in one simulation loop,
- * completely independent of each other (as first step)
+ * We couple root and soil model sequentially (naive approach).
  *
  */
 #include <config.h>
@@ -100,14 +99,14 @@ int main(int argc, char** argv) try
     Parameters::init(0, argv, soilName);
     Parameters::init(argc, argv);
 
-//    // print dumux end message
-//    if (mpiHelper.rank() == 0)
-//    {
-//        Parameters::print();
-//        DumuxMessage::print(/*firstCall=*/false);
-//    }
-//
-//    return 0;
+    // print dumux end message
+    if (mpiHelper.rank() == 0)
+    {
+        Parameters::print();
+        DumuxMessage::print(/*firstCall=*/false);
+    }
+
+    return 0;
 
     // try to create a grid (from the given grid file or the input file)
     GridManager<GetPropType<RootsTag, Properties::Grid>> rootGridManager;

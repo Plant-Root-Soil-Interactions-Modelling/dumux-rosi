@@ -34,17 +34,22 @@ def toPa(ph):
     return ref + ph / 100. * rho * g;
 
 
+print("wet", toPa(-100))
+print("dry", toPa(-1000))
+
 print("wet", toHead(-10000))
 print("dry", toHead(-300000))
 print("a week ", 7 * 24 * 3600)
 trans = 5.33 * .75 * .15 / 86400  #  kg/s
 maxtrans = 2 * trans
 print("daily rate ", 5.33, "mm/day = ", trans, " kg/s, maximum ", maxtrans)  #
-print("Critical collar pressure = ", toPa(-1.e4))
+print("Critical collar pressure = ", toPa(-1.5e4))
 print("kr0", np.array([1.8e-4, 1.8e-4, 0.6e-4, 0.6e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
 print("kr1", np.array([1.8e-4, 1.8e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
 print("kx0", np.array([0.01, 0.3, 0.3, 4.3, 4.3]) * 1.e-4 / 86400)
 print("kx1", np.array([0.01e-3, 0.01e-3, 0.1e-3, 0.6e-3, 0.6e-3, 1.7e-3, 1.7e-3]) * 1.e-4 / 86400)
+
+a
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))

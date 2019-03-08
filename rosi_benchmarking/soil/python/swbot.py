@@ -1,7 +1,5 @@
 # Wet Bot Scenario Felicien
 
-# todo check VG paramter
-
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *

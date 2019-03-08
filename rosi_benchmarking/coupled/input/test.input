@@ -1,0 +1,4 @@
+[Problem]
+Name = Test
+RootName = ../rootsystem/input/rb_swbot.input
+SoilName = ../soil/benchmarks_3d/small.input
