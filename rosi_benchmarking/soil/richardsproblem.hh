@@ -320,6 +320,19 @@ public:
     }
 
     /*!
+     *
+     */
+    NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
+        const SubControlVolume &scv) const {
+        const auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+        if (source_ != nullptr) {
+            return source_->at(eIdx);
+        } else {
+            return 0.;
+        }
+    }
+
+    /*!
      * \copydoc FVProblem::initial
      */
     template<class Entity>
@@ -339,6 +352,13 @@ public:
         time_ = t;
     }
 
+    /**
+     * source per element index \f$ [ kg / (m^3 \cdot s)] \f$
+     */
+    void setSource(std::vector<double>* s) {
+        source_ = s;
+    }
+
 private:
 
     //! cm pressure head -> Pascal
@@ -356,10 +376,6 @@ private:
         return globalPos[dimWorld - 1]
                          > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
-    /*!
-     * \file
-
-     */
 
     //! true if on the point lies on the upper boundary
     bool onLowerBoundary_(const GlobalPosition &globalPos) const {
@@ -367,15 +383,21 @@ private:
                          < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
     }
 
+    // Initial
     InputFileFunction initialSoil_;
-    InputFileFunction precipitation_;
-    Scalar time_ = 0.;
 
     // BC
     int bcTopType_;
     int bcBotType_;
     Scalar bcTopValue_;
     Scalar bcBotValue_;
+
+    // Source
+    std::vector<double>* source_ = nullptr;
+
+    InputFileFunction precipitation_;
+    Scalar time_ = 0.;
+
 
     mutable std::ofstream myfile_;
     mutable Scalar last_time_ = -1.;

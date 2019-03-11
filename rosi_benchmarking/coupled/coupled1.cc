@@ -99,20 +99,12 @@ int main(int argc, char** argv) try
     Parameters::init(0, argv, soilName);
     Parameters::init(argc, argv);
 
-    // print dumux end message
-    if (mpiHelper.rank() == 0)
-    {
-        Parameters::print();
-        DumuxMessage::print(/*firstCall=*/false);
-    }
-
-    return 0;
-
     // try to create a grid (from the given grid file or the input file)
     GridManager<GetPropType<RootsTag, Properties::Grid>> rootGridManager;
     rootGridManager.init("RootSystem");
     const auto rootGridData = rootGridManager.getGridData();
-    GridManager<GetPropType<SoilTag, Properties::Grid>> soilGridManager;
+    using SoilGridType = Dune::YaspGrid<3>; // pick soil grid here (its in compile definition in the soil model)
+    GridManager<SoilGridType> soilGridManager;
     soilGridManager.init("Soil");
 
     ////////////////////////////////////////////////////////////

@@ -7,8 +7,8 @@ DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.Grid]
-LowerLeft = -0.04 -0.02 -0.24
 UpperRight = 0.04 0.02 0.0
+LowerLeft = -0.04 -0.02 -0.24
 Cells = 8 4 24
 
 [Soil.BC.Top]

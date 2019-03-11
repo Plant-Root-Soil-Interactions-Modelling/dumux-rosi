@@ -10,7 +10,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
-np_ = 8  # number of processors
+np_ = 1  # number of processors
 
 # run dumux
 if np_ == 1:
