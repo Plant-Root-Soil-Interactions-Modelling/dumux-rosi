@@ -10,12 +10,18 @@ MaxTimeStepSize = 360 # 1 h
 [RootSystem.Grid]
 File =  grids/singlerootC.dgf
 
+[RootSystem.Conductivity]
+Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
+Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
+
+[RootSystem]
+Radius = 0.002 # m
+
 [RootSystem.Collar]
-Transpiration = 0 1.38802083e-05 # -4077.47 # 1.38802083e-05 # min, max # Transpiration 
+Transpiration = 0 1.38802083e-05 #
 
 [Soil.IC]
-P = -101.937 -101.937 -3058.104 -3058.104  # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa 
-Z = -1.26 -.43 -.41 0
+P = -1000  
 
 [Vtk]
 AddProcessRank = "false"

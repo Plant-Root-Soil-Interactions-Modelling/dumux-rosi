@@ -1,5 +1,5 @@
 # create a link to the grid file and the input file in the build directory
-dune_symlink_to_source_files(FILES "python" "input")
+dune_symlink_to_source_files(FILES "python" "input" "grids")
 
 add_executable(decoupled EXCLUDE_FROM_ALL decoupled.cc)
 

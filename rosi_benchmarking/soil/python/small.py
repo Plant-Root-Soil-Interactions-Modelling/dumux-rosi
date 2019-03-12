@@ -1,4 +1,4 @@
-# Wet Top Scenario Felicien
+# Small benchmark box
 
 import os
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ else:
 # Figure
 s_, p_, z1_ = read3D_vtp("small-00001", np_)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, (z1_ - 1.26) * 100, "r+")
+plt.plot(h1_, (z1_ - 0.24) * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

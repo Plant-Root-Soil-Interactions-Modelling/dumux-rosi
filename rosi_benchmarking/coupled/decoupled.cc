@@ -94,29 +94,18 @@ int main(int argc, char** argv) try
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
-    std::string rootName = getParam<std::string>("Problem.RootName");
-    Parameters::init(0, argv, rootName);
     std::string soilName = getParam<std::string>("Problem.SoilName");
     Parameters::init(0, argv, soilName);
-    Parameters::init(argc, argv);
-
-    // print dumux end message
-
-//
-//    return 0;
+    std::string rootName = getParam<std::string>("Problem.RootName");
+    Parameters::init(0, argv, rootName);
 
     // try to create a grid (from the given grid file or the input file)
     GridManager<GetPropType<RootsTag, Properties::Grid>> rootGridManager;
     rootGridManager.init("RootSystem");
     const auto rootGridData = rootGridManager.getGridData();
 
-    if (mpiHelper.rank() == 0) {
-        Parameters::print();
-        DumuxMessage::print(/*firstCall=*/false);
-    }
-
     using SoilGridType = Dune::YaspGrid<3>; // pick soil grid here (its in compile definition in the soil model)
-    GridManager<Dune::YaspGrid<3>> soilGridManager;
+    GridManager<SoilGridType> soilGridManager;
     soilGridManager.init("Soil");
 
     ////////////////////////////////////////////////////////////
@@ -200,10 +189,10 @@ int main(int argc, char** argv) try
     RootIOFields::initOutputModule(rootVTKWriter); //!< Add model specific output fields
     rootVTKWriter.write(0.0);
     using SoilIOFields = GetPropType<SoilTag, Properties::IOFields>;
-    VtkOutputModule<SoilGridVariables, SoilSolutionVector> soilVTKWriter(*soilGridVariables, s, "s_"+soilProblem->name()+"S");
-    using SoilVelocityOutput = GetPropType<SoilTag, Properties::VelocityOutput>;
-    soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
-    SoilIOFields::initOutputModule(soilVTKWriter); //!< Add model specific output fields
+    VtkOutputModule<SoilGridVariables, SoilSolutionVector> soilVTKWriter(*soilGridVariables, s, soilProblem->name()+"S");
+//    using SoilVelocityOutput = GetPropType<SoilTag, Properties::VelocityOutput>;
+//    soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
+    SoilIOFields::initOutputModule(soilVTKWriter); //!< Add model specific output fields // TODO not workin...
     soilVTKWriter.write(0.0);
     std::cout << "vtk writer module initialized (in less than 20 lines)" << "\n" << std::flush;
 
@@ -243,15 +232,15 @@ int main(int argc, char** argv) try
         do {
             // set previous solution for storage evaluations
             rootAssembler->setPreviousSolution(rOld);
-            soilAssembler->setPreviousSolution(sOld);
+            // soilAssembler->setPreviousSolution(sOld);
             // solve the non-linear system with time step control
             rootNonlinearSolver.solve(r, *timeLoop);
-            soilNonlinearSolver.solve(s, *timeLoop);
+            // soilNonlinearSolver.solve(s, *timeLoop);
             // make the new solution the old solution
             rOld = r;
-            sOld = s;
+            // sOld = s;
             rootGridVariables->advanceTimeStep();
-            soilGridVariables->advanceTimeStep();
+            // soilGridVariables->advanceTimeStep();
             // advance to the time loop to the next step
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
@@ -259,7 +248,7 @@ int main(int argc, char** argv) try
                 rootProblem->axialFlux(r); // prepare fields
                 rootProblem->radialFlux(r); // prepare fields
                 rootVTKWriter.write(timeLoop->time());
-                soilVTKWriter.write(timeLoop->time());
+//                soilVTKWriter.write(timeLoop->time());
             }
             if (mpiHelper.rank() == 0) {
                 rootProblem->writeTranspirationRate(r);
@@ -270,7 +259,7 @@ int main(int argc, char** argv) try
             timeLoop->setTimeStepSize(rootNonlinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
             rootProblem->setTime(timeLoop->time());
-            soilProblem->setTime(timeLoop->time());
+  //           soilProblem->setTime(timeLoop->time());
         } while (!timeLoop->finished());
         timeLoop->finalize(rootLGV.comm());
     } else // static

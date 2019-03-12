@@ -1,11 +1,4 @@
 [Problem]
-Name = Test
-RootName = ../rootsystem/input/rb_swbot.input
+Name = test
+RootName = ../rootsystem/input/small.input
 SoilName = ../soil/benchmarks_3d/small.input
-
-
-[Grid]
-LowerLeft = -0.04 -0.02 -0.24
-UpperRight = 0.04 0.02 0.0
-Cells = 8 4 24
-

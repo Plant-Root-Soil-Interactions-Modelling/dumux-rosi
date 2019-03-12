@@ -19,7 +19,7 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
 # run dumux
 t = time.time()
-np_ = 8  # number of processors
+np_ = 1  # number of processors
 if np_ == 1:
     pass
     os.system("./richards3d benchmarks_3d/b1a.input")
