@@ -137,10 +137,12 @@ namespace Dumux {
             return materialParams_.at(index_(element));
         }
 
+        //! set of VG parameters for the element
         const MaterialLawParams& materialLawParams(const Element& element) const {
             return materialParams_.at(index_(element));
         }
 
+        //! reference to the soils layer input file function
         InputFileFunction* layerIFF() {
             return &layer_;
         }

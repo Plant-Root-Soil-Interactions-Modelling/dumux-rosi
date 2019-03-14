@@ -31,6 +31,6 @@ Ks = 50 # [cm/d]
 
 [Climate]
 Time = 1e10 # const value 
-Precipitation = -0.01157407407 # [kg/(s m²)] (100 cm/day)
+Precipitation = 100 # [cm/day]
 
 

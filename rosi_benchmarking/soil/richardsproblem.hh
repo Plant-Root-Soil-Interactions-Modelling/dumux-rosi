@@ -140,7 +140,7 @@ public:
         if (bcTopType_==atmospheric) {
             std::string filestr = this->name() + ".csv";
             myfile_.open(filestr.c_str());
-            precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // in [kg/(s m²)] , todo better [cm/day]?
+            precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // cm/day
         }
         // IC
         initialSoil_ = InputFileFunction("Soil.IC.P","Soil.IC.Z", this->spatialParams().layerIFF());
@@ -251,7 +251,7 @@ public:
         if (onUpperBoundary_(pos)) { // top bc
             switch (bcTopType_) {
             case constantFlux: {
-                values[conti0EqIdx] = -10 * bcTopValue_ / (24. * 60. * 60.); // [kg/(m²*s)] = 1/10 [cm/s] * rho
+                values[conti0EqIdx] = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
@@ -262,20 +262,22 @@ public:
                     mS += (elemVolVars[i].saturation() / numScv);
                 }
                 MaterialLawParams params = this->spatialParams().materialLawParams(element);
-                Scalar krw = MaterialLaw::krw(params, mS);
                 Scalar p = MaterialLaw::pc(params, mS) + nonWettingReferencePressure();
-                Scalar h = -toHead_(p) / 100.; // from Pa -> m pressure head
+                Scalar h = -toHead_(p); // todo why minus -pc?
                 GlobalPosition ePos = element.geometry().center();
-                Scalar dz = 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // 0.01; // m // fvGeometry.geometry().volume()?; TODO
-                Scalar prec = precipitation_.f(time_);
+                Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
+                Scalar t = time_/(24.*60.*60.); // s -> day
+                Scalar prec = -precipitation_.f(t)*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 
                 if (prec < 0) { // precipitation
                     Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal infiltration
                     Scalar v = std::max(prec, imax);
                     values[conti0EqIdx] = v;
                 } else { // evaporation
-                    Scalar emax = rho_ * krw * Kc * ((h - (-100)) / dz - 1.); // maximal evaporation (-100 m = -10.000 cm) // TODO make a parameter
+                    Scalar krw = MaterialLaw::krw(params, mS);
+                    Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - 1.); // maximal evaporation
                     Scalar v = std::min(prec, emax);
+                    // std::cout << prec << ", " << emax << ", " << h << "\n";
                     values[conti0EqIdx] = v;
                 }
                 // hack for benchmark 4 TODO some better concept for output
@@ -293,18 +295,17 @@ public:
         } else if (onLowerBoundary_(pos)) { // bot bc
             switch (bcBotType_) {
             case constantFlux: {
-                values[conti0EqIdx] = -10 * bcBotValue_ / (24. * 60. * 60.); // [kg/(m²*s)] = 1/10 [cm/s] *rho
+                values[conti0EqIdx] = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
                 break;
             }
-            case freeDrainage: { // TODO needs improvement
+            case freeDrainage: { // TODO needs testing & improvement
                 Scalar Kc = this->spatialParams().hydraulicConductivity(element);
                 Scalar mS = 0; // mean saturation
                 auto numScv = fvGeometry.numScv();
                 for (auto i = 0; i < numScv; i++) {
                     mS += (elemVolVars[i].saturation() / numScv);
                 }
-                MaterialLawParams params =
-                this->spatialParams().materialLawParams(element);
+                MaterialLawParams params = this->spatialParams().materialLawParams(element);
                 Scalar krw = MaterialLaw::krw(params, mS);
                 values[conti0EqIdx] = krw * Kc * rho_; // * 1 [m]
                 break;
@@ -320,7 +321,7 @@ public:
     }
 
     /*!
-     *
+     * \copydoc FVProblem::source
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
@@ -357,6 +358,11 @@ public:
      */
     void setSource(std::vector<double>* s) {
         source_ = s;
+    }
+
+    //! sets the critical pressure for evaporation [cm] (default = -10000 cm)
+    void criticalPressure(Scalar p) {
+        criticalPressure_ = p;
     }
 
 private:
@@ -396,8 +402,8 @@ private:
     std::vector<double>* source_ = nullptr;
 
     InputFileFunction precipitation_;
+    Scalar criticalPressure_ = -1.e4; // cm
     Scalar time_ = 0.;
-
 
     mutable std::ofstream myfile_;
     mutable Scalar last_time_ = -1.;
