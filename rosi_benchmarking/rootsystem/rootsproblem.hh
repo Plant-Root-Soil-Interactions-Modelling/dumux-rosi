@@ -228,17 +228,8 @@ public:
         return initialP_;
     }
 
-    //! calculates transpiraton, as the netflux of first element (m^3 /s), assuming first element is collar
+    //! calculates transpiraton, as the sum of radial fluxes
     Scalar transpiration(const SolutionVector& sol) {
-//        auto vMapper = this->fvGridGeometry().vertexMapper();
-//        auto eIdx = 0; // collar index
-//        const auto& e = this->fvGridGeometry().element(eIdx);
-//        auto i0 = vMapper.subIndex(e, 0, 1);
-//        auto i1 = vMapper.subIndex(e, 1, 1);
-//        // std::cout << "vertex index" << i0 << ", " << i1 << "\n";
-//        auto length = e.geometry().volume();
-//        auto kx = this->spatialParams().kx(eIdx);
-//        return rho_ * kx * ((sol[i1] - sol[i0]) / length); // kg / s ; + rho_ * g_
         radialFlux(sol);
         return std::accumulate(radialFlux_.begin(), radialFlux_.end(), 0.); // slow but accurate
     }
@@ -302,7 +293,7 @@ public:
             Scalar kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; //
-            Scalar trans = collar();
+            Scalar trans = collar(); // kg/s
             Scalar v = std::min(trans, maxTrans);
             lastActualTrans_ = v; // the one we return
             lastTrans_ = trans;  // potential transpiration
@@ -325,7 +316,7 @@ public:
         const SubControlVolume &scv) const {
         NumEqVector values;
         auto params = this->spatialParams();
-        const auto eIdx = params.fvGridGeometry().elementMapper().index(element);
+        const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         Scalar a = params.radius(eIdx); // root radius (m)
         Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
         Scalar phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
@@ -340,12 +331,11 @@ public:
      * \brief Evaluate the initial value for a control volume.
      */
     PrimaryVariables initialAtPos(const GlobalPosition& p) const {
-        // std::cout << "initial pos " << p[2] << ": " << soil(p) << "\n";
         return PrimaryVariables(soil(p)); // soil(p)
     }
 
     void setSoil(CRootBox::SoilLookUp* s) {
-        std::cout << "manually changed soil to " << s->toString() << "\n";
+        std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
         soil_ = s;
     }
 
@@ -354,7 +344,7 @@ public:
         return toPa_(soil_->getValue(CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100)));
     }
 
-    //! sets the current simulation time (within the simulation loop) for collar boundary look up
+    //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
     void setTime(Scalar t) {
         this->spatialParams().setTime(t);
         time_ = t;
@@ -373,10 +363,11 @@ public:
 
     //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
     Scalar collar() const {
+        Scalar t = time_/24./3600; // s -> day
         if (bcType_ == bcDirichlet) {
-            return toPa_(collar_.f(time_)); // Pa
+            return toPa_(collar_.f(t)); // Pa
         } else {
-            return collar_.f(time_); // kg/s (?)
+            return collar_.f(t)/24./3600.; // kg/day -> kg/s
         }
     }
 
@@ -396,7 +387,7 @@ public:
      * The extrusion factor here makes extrudes the 1d line to a circular tube with
      * cross-section area pi*r^2.
      *
-     * called by volumevariables (why there?), no error if you remove it
+     * called by volumevariables (why there?), no compilation error if you remove it, just wrong results
      */
     template<class ElementSolution>
     Scalar extrusionFactor(const Element &element,

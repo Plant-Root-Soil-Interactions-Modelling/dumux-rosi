@@ -1,7 +1,7 @@
 import numpy as np
 
 '''
-Creates dgf files for the root system benchmarks 1, 2 and 3
+Creates a single root dgf files for dumux-rootgrowth module
 '''
 
 

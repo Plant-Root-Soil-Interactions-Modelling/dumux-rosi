@@ -33,7 +33,7 @@ kr = 2.e-9  # radial conductivity per root type (m^2 s / kg)
 kz = 5.e-13  # axial conductivity (m^5 s / kg) (mal rho ergibt die alten einheiten)
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
-t0 = -2e-4  # kg /s
+t0 = -2e-4  # kg /s =) 17.28 kg /d
 c = 2 * a * pi * kr / kz
 
 # Boundary conditions
@@ -69,7 +69,7 @@ os.system("./rootsystem input/b1.input")
 p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_ = read1D_vtp_data("benchmark1b-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
-os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration 2.e-4 -Problem.Name benchmark1c")
+os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration 17.28 -Problem.Name benchmark1c")
 p3_ = read1D_vtp_data("benchmark1c-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 
 # plot

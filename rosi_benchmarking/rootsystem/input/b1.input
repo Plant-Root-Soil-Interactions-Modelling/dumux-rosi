@@ -9,11 +9,11 @@ DtInitial = 1 # [s]
 File =  grids/singleroot.dgf
 
 [RootSystem.Conductivity]
-Kr = 2.e-9  # radial conductivity (m^2 s / kg) 
-Kx = 5.e-13 # axial conductivity (m^5 s / kg)  
+Kr = 1.728 # radial conductivity [cm/hPa/day] 
+Kx = 432 # axial conductivity [cm^4/hPa/day]
 
 [RootSystem]
-Radius = 0.002 # m
+Radius = 0.2 # cm
 
 [RootSystem.Collar]
 P = -1000 # cm pressure head

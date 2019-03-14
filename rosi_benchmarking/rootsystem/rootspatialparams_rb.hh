@@ -114,16 +114,14 @@ public:
         return time0_ - ctimes_[eIdx]; //  + time_;
     }
 
+    //! radial conductivity [m / Pa /s]
     Scalar kr(std::size_t eIdx) const {
-        if (eIdx == 0) {
-            return 0;
-        } else {
-            return kr_.f(this->age(eIdx), eIdx);
-        }
+        return kr_.f(this->age(eIdx), eIdx)*1e-4/(24*3600); // cm / hPa / day -> m / Pa /s
     }
 
+    //! axial conductivity [m^4 / Pa /s]
     Scalar kx(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx), eIdx);
+        return kr_.f(this->age(eIdx), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
     }
 
     void setTime(double t) {

@@ -44,10 +44,10 @@ if __name__ == "__main__":
         seg[i - 1, 1] = i
         nodes[i, :] = [0., 0., -i * L / (nnz - 1)]
     order = np.zeros((1, nnz))
-    a_ = np.ones((1, nnz)) * 0.2 / 100.;  # 0.2 cm
+    a_ = np.ones((1, nnz)) * 0.2;  # 0.2 cm
     age = np.zeros((1, nnz))
-    kr_ = np.ones((1, nnz)) * 2.e-9;
-    kz_ = np.ones((1, nnz)) * 5.e-13;
+    kr_ = np.ones((1, nnz)) * 1.728;  # cm/hPa/day, = 2.e-9 m/Pa/s;
+    kz_ = np.ones((1, nnz)) * 432;  # cm^4/hPa/day, = 5.e-13 m/Pa/s;
     params = np.vstack((order, a_, age, kr_, kz_))
     createDGF_1Droots("../grids/singleroot.dgf", nodes, seg, params)
     nodes2 = np.transpose(np.vstack((nodes[:, 2], nodes[:, 0], nodes[:, 1] - 1.e-4)))  # 1e.-4 to make it easier with the BC
@@ -61,11 +61,11 @@ if __name__ == "__main__":
     types = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 ]
     a_tap = 0.2  # tap root radius (cm)
     a_lateral = 0.1  # lateral root radius (cm)
-    kz0, kz1 = 0.5e-19, 1.e-18  # m^4 / (Pa s)
-    kr0, kr1 = 1.7e-13, 0.2e-13  # m / (Pa s)
+    kz0, kz1 = 4.32e-5, 8.64e-4  # cm^4 / hPa / day
+    kr0, kr1 = 1.4688e-4, 1.728e-5  # cm / hPa / day
     kz = lambda age: kz1  # kz0 * (age <= 3) + kz1 * (age > 3)
     kr = lambda age: kr1  #  * (age <= 3) + kr1 * (age > 3)
-    a = lambda t: 1.e-2 * (a_tap * (t == 1) + a_lateral * (t == 2))  # cm->m
+    a = lambda t: (a_tap * (t == 1) + a_lateral * (t == 2))
     a_ = list(map(a, types))
     kr_ = list(map(kr, age))  # m / (Pa s)
     kz_ = list(map(kz, age))  # m^4 / (Pa s)
