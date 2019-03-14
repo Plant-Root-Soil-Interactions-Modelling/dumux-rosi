@@ -22,7 +22,7 @@
  * \brief Coupling (not)
  *
  * A soil and a root model are run in one simulation loop,
- * completely independent of each other (as first step)
+ * completely independent of each other (as first step) very boring...
  *
  */
 #include <config.h>
@@ -190,8 +190,8 @@ int main(int argc, char** argv) try
     rootVTKWriter.write(0.0);
     using SoilIOFields = GetPropType<SoilTag, Properties::IOFields>;
     VtkOutputModule<SoilGridVariables, SoilSolutionVector> soilVTKWriter(*soilGridVariables, s, soilProblem->name()+"S");
-//    using SoilVelocityOutput = GetPropType<SoilTag, Properties::VelocityOutput>;
-//    soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
+    using SoilVelocityOutput = GetPropType<SoilTag, Properties::VelocityOutput>;
+    soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
     SoilIOFields::initOutputModule(soilVTKWriter); //!< Add model specific output fields // TODO not workin...
     soilVTKWriter.write(0.0);
     std::cout << "vtk writer module initialized (in less than 20 lines)" << "\n" << std::flush;
@@ -232,15 +232,15 @@ int main(int argc, char** argv) try
         do {
             // set previous solution for storage evaluations
             rootAssembler->setPreviousSolution(rOld);
-            // soilAssembler->setPreviousSolution(sOld);
+            soilAssembler->setPreviousSolution(sOld);
             // solve the non-linear system with time step control
             rootNonlinearSolver.solve(r, *timeLoop);
-            // soilNonlinearSolver.solve(s, *timeLoop);
+            soilNonlinearSolver.solve(s, *timeLoop);
             // make the new solution the old solution
             rOld = r;
             // sOld = s;
             rootGridVariables->advanceTimeStep();
-            // soilGridVariables->advanceTimeStep();
+            soilGridVariables->advanceTimeStep();
             // advance to the time loop to the next step
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)

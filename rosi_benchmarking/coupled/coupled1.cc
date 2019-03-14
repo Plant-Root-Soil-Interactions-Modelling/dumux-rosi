@@ -60,6 +60,8 @@
 #include <dumux/assembly/diffmethod.hh>
 #include <dumux/discretization/method.hh>
 
+#include <dumux/growth/soillookup.hh> // for coupling
+
 namespace Dumux {
 namespace Properties {
 
@@ -71,6 +73,65 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 };
 
 } // end namespace Properties
+
+/*!
+ * \brief Helper function to update a vector of saturations
+ * \param saturation the vector to update
+ * \param gridGeometry the grid geometry
+ * \param gridVariables the current grid variables
+ * \param sol the current solution vector
+ */
+template<class SoilFVGridGeometry, class SoilGridVariables, class SoilSolution>
+void updateSaturation(std::vector<double>& saturation, const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
+    const SoilSolution& sol)
+{
+    const auto& gridView = gridGeometry.gridView();
+    for (const auto& element : elements(gridView))
+    {
+        auto fvGeometry = localView(gridGeometry);
+        fvGeometry.bindElement(element);
+
+        auto elemVolVars = localView(gridVariables.curGridVolVars());
+        elemVolVars.bindElement(element, fvGeometry, sol);
+
+        for (const auto& scv : scvs(fvGeometry))
+            saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0);
+    }
+}
+
+} // end namespace Dumux
+
+/*!
+ * move to RootProlbem...
+ */
+template<class RootFVGridGeometry, class RootGridVariables, class RootSolution, class RootProlem>
+void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& gridGeometry, const RootGridVariables& gridVariables,
+    const RootSolution& r, const RootProlem& rootProblem) {
+
+    std::fill(source.begin(), source.end(), 0);
+    const auto& gridView = gridGeometry.gridView();
+
+    for (const auto& element : elements(gridView)) {
+
+        auto fvGeometry = localView(gridGeometry);
+        fvGeometry.bindElement(element);
+
+        auto elemVolVars = localView(gridVariables.curGridVolVars());
+        elemVolVars.bindElement(element, fvGeometry, r);
+
+        double s = 0;
+        for (const auto& scv : scvs(fvGeometry)) {
+            double s = rootProblem.source(element, gridGeometry, elemVolVars, scv);
+            // NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv)
+
+            auto pos = scv.center();
+            size_t eIdx = pick(pos); // find element index of soil, for root each root element
+            source.at(eIdx) += s; // accumulate source term
+
+        }
+
+    }
+
 }
 
 
@@ -83,7 +144,7 @@ int main(int argc, char** argv) try
     using RootsTag = Properties::TTag::RootsBox;
     using SoilTag = Properties::TTag::RichardsBox;
 
-    // initialize MPI, finalize is done automatically on exit
+    // initialize MPI, finalize is done automatically#include <dumux/growth/soillookup.hh> on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
 
     // print dumux start message
@@ -123,6 +184,7 @@ int main(int argc, char** argv) try
     rootFVGridGeometry->update();
     using SoilFVGridGeometry = GetPropType<SoilTag, Properties::FVGridGeometry>;
     auto soilFVGridGeometry = std::make_shared<SoilFVGridGeometry>(soilLGV);
+    auto psoilLGV = std::make_shared<SoilFVGridGeometry>(soilLGV);
     soilFVGridGeometry->update();
     std::cout << "i have two geometries built from the views \n" << "\n" << std::flush;
 
@@ -154,6 +216,13 @@ int main(int argc, char** argv) try
     auto soilGridVariables = std::make_shared<SoilGridVariables>(soilProblem, soilFVGridGeometry);
     soilGridVariables->init(s);
     std::cout << "... but variables \n" << "\n" << std::flush;
+
+    // couple root to soil
+    static constexpr int soilDim = SoilFVGridGeometry::GridView::dimension;
+    std::vector<double> saturation(soilLGV.size(soilDim), 1.0);
+    updateSaturation(saturation, *soilFVGridGeometry, *soilGridVariables, s); // just for fun, we are not using it
+    auto soilLookUp = GrowthModule::SoilLookUpBBoxTree<SoilGridType>(soilLGV, psoilLGV->boundingBoxTree(), saturation);
+    rootProblem->setSoil(&soilLookUp);
 
     // get some time loop parameters & instantiate time loop
     using Scalar = GetPropType<RootsTag, Properties::Scalar>;
