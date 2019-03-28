@@ -8,7 +8,7 @@ add_executable(richards1d EXCLUDE_FROM_ALL richards.cc)
 target_compile_definitions(richards1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
 add_executable(richardsUG EXCLUDE_FROM_ALL richards.cc)
-target_compile_definitions(richardsUG PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::nonconforming>)
+target_compile_definitions(richardsUG PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)

@@ -26,81 +26,139 @@
 #include <ctime>
 #include <iostream>
 
-#include <dune/common/parallel/mpihelper.hh>
-#include <dune/common/timer.hh>
+#include <dune/common/parallel/mpihelper.hh> // ind dune parallelisation is realised with mpi
+#include <dune/common/timer.hh> // to compute wall times
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
 
-#include <dumux/common/properties.hh>
-#include <dumux/common/parameters.hh>
-#include <dumux/common/valgrind.hh>
-#include <dumux/common/dumuxmessage.hh>
-#include <dumux/common/defaultusagemessage.hh>
+// #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system
+#include <dumux/common/properties/propertysystem.hh>
+#include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from agrs and .input file
+#include <dumux/common/valgrind.hh> // for debugging
+#include <dumux/common/dumuxmessage.hh> // for fun (a static class)
+#include <dumux/common/defaultusagemessage.hh> // for information (a global function)
 
-#include <dumux/linear/amgbackend.hh>
+#include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
-
-#include <dumux/assembly/fvassembler.hh>
+/**
+ * Some small adaption to <dumux/nonlinear/newtonsolver.hh>, which is the only nonlinear solver available.
+ * The adaption is disabled per default (parameter EnableChop = false)
+ */
+#include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
 
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
-#include <dumux/io/loadsolution.hh>
+#include <dumux/io/loadsolution.hh> // global functions to resume a simulation
 
-#include "richardsproblem.hh"
+#include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 
 
 
-////////////////////////
-// the main function
-////////////////////////
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RichardsBox; // RichardsCC, RichardsBox
+    using TypeTag = Properties::TTag::RichardsBox; // RichardsCC, RichardsBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
-    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
+    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
 
     // print dumux start message
-    if (mpiHelper.rank() == 0)
+    if (mpiHelper.rank() == 0) { // rank is the process number
         DumuxMessage::print(/*firstCall=*/true);
+    }
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
+    /*
+     * Parses the parameters from the .input file into a static data member of the static class Parameters,
+     * the parameter tree can then be accessed with Parameters::paramTree() .
+     * Furthermore, global auxiliary functions are defined e.g. getParam, setParam, and haveParam
+     * (in parameters.hh).
+     *
+     * All Dumux classes access the global parameter tree when considered appropriate.
+     */
 
     // try to create a grid (from the given grid file or the input file)
-    GridManager<GetPropType<TypeTag, Properties::Grid>> gridManager;
-    gridManager.init("Soil");
+    using SoilGridType = GetPropType<TypeTag, Properties::Grid>;
+    /**
+     * Properties::Grid is defined in the problem class richardsproblem.hh to Dune::YaspGrid<3>,
+     * or if available to the compile definition GRIDTYPE that is given in CMakeLists, and is
+     * YaspGrid<3> (for richards3d), Dune::FoamGrid<1,1> (for richards1d),
+     * or Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming> (for richardsUG)
+     */
+    GridManager<SoilGridType> gridManager;
+    gridManager.init("Soil"); // "Soil" is the parameter group name
+    /**
+     * Opens the grid file, or constructs the grid form the .input file parameters
+     * YaspGrid bug? if the parameter Grid.LowerLeft is negative (e.g. -1 -1 -1 ), YaspGrid does not work in 3D
+     * (in gridmanager.hh)
+     */
 
-    ////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
     // run steady state or dynamic non-linear problem on this grid
-    ////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
 
     // we compute on the leaf grid view
     const auto& leafGridView = gridManager.grid().leafGridView();
+    /**
+     * we work only on the leafGridView and do not need the grid ever again,
+     * leafGridView.grid() returns a const reference to the grid (in case we need data attached to the grid).
+     *
+     * Of dune type: GridFamily::Traits::LeafGridView
+     *
+     * Have not found where the type is set (grid dependent),
+     * but probably implements DefaultLeafGridView (in dune/grid/common/defaultgridview.hh)
+     */
 
     // create the finite volume grid geometry
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    /**
+     * The type is dependent on the discretization (e.g. box, tpfa, ...),
+     *
+     * For Box method:
+     * Properties::FVGridGeometry is defined in problem.hh -> discretization/box.hh
+     * The type is BoxFVGridGeometry (in discretization/box/fvgridgeometry.hh)
+     * specialization of BaseFVGridGeometry (discretization/basefvgridgeometry.hh)
+     *
+     */
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
-    fvGridGeometry->update();
+    /**
+     * holds the vertexMapper() and elementMapper().
+     *
+     * ??? copies the leafGridView (but, how does it know when its updated?)
+     * it seems i am only allowed to use fvGridGeometry->gridView() in the following
+     * rendering leafGridView defined above, pointless
+     */
+    fvGridGeometry->update(); // update all fvElementGeometries (do this again after grid adaption)
 
     // the problem (initial and boundary conditions)
-    using Problem = GetPropType<TypeTag, Properties::Problem>;
-    auto problem = std::make_shared<Problem>(fvGridGeometry, &gridManager);
+    auto problem = std::make_shared<RichardsProblem<TypeTag>>(fvGridGeometry);
 
     // the solution vector
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-    SolutionVector x(fvGridGeometry->numDofs());
-    problem->applyInitialSolution(x);
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+    problem->applyInitialSolution(x); // dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+    /**
+     * The type is defined GridVariables in discretization/fvproperties.hh, as
+     * FVGridVariables<FVGridGeometry, GVV, GFVC>
+     * where GVV = grid volume variables, and GFVC = grid flux variables cache. I have not found where these are set,
+     * but I assume for box method types are BoxGridFluxVariablesCache.
+     *
+     * FVGridVariables is defined in fvgridvariables.hh.
+     *
+     * Manages the grid volume variables, and the flux variable cache, stores a pointer to problem (why?)
+     */
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
-    gridVariables->init(x);
+    gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
 
     // get some time loop parameters  & instantiate time loop
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
@@ -141,16 +199,17 @@ int main(int argc, char** argv) try
     }
 
     // the linear solver
-    using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only parallel linear solver available
-    auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
+    using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available
+    auto linearSolver = std::make_shared<LinearSolver>(fvGridGeometry->gridView(), fvGridGeometry->dofMapper());
 
     // the non-linear solver
-    using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>; //Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
+    using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
     NonLinearSolver nonLinearSolver = NonLinearSolver(assembler, linearSolver);
-    // std::cin.ignore();  // wait for key (debugging)
 
+    // std::cin.ignore();  // wait for key (debugging)
     if (tEnd>0)  { // dynamic
         timeLoop->start();
+
         do {
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(xOld);
@@ -172,7 +231,9 @@ int main(int argc, char** argv) try
             // pass current time to the problem
             problem->setTime(timeLoop->time());
         } while (!timeLoop->finished());
-        timeLoop->finalize(leafGridView.comm());
+
+        timeLoop->finalize(fvGridGeometry->gridView().comm());
+
     } else { // static
         // set previous solution for storage evaluations
         assembler->setPreviousSolution(xOld);
