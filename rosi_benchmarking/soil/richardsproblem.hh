@@ -127,7 +127,7 @@ public:
     };
 
     /*!
-     * \brief Constructor
+     * \brief Constructor: constructed in the main file
      */
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : ParentType(fvGridGeometry) {
@@ -147,7 +147,7 @@ public:
     }
 
     /**
-     * eventually, close file
+     * \brief Eventually, closes output file
      */
     ~RichardsProblem() {
         if (bcTopType_==atmospheric) {
@@ -158,20 +158,33 @@ public:
 
     /*!
      * \brief Temperature [K] within a finite volume. This problem assumes a temperature of 10 degrees Celsius.
+     *
+     * called EnergyVolumeVariablesImplementation::updateTemperature(...) in porousmediumflow/nonisothermal/volumevariables.hh,
+     * included by porousmediumflow/volumevariables.hh,
+     *
+     * todo this makes very little sense for isothermal !
+     *
+     * overwrites PorousMediumFlowProblem::temperature (compiles without, throws exception of base class)
      */
     Scalar temperature() const {
+        // std::cout << "\n\n dont dont dont \n\n";
         return 273.15 + 10; // -> 10°C
-    };
+    }
 
     /*!
      * \brief Reference pressure [Pa] of the non-wetting. This problem assumes a constant reference pressure of 1 bar.
+     *
+     * called by porousmediumflow/richards/volumevariables.hh
      */
     Scalar nonWettingReferencePressure() const {
-        return 1.0e5;
-    };
+        return pRef_;
+    }
 
     /*!
      * \copydoc FVProblem::boundaryTypesAtPos
+     *
+     * discretization dependent, e.g. called by BoxElementBoundaryTypes::boundaryTypes(...)
+     * when?
      */
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
     {
@@ -212,6 +225,8 @@ public:
 
     /*!
      * \copydoc FVProblem::dirichletAtPos
+     *
+     * dirchlet(...) is called by the local assembler, e.g. BoxLocalAssembler::evalDirichletBoundaries
      */
     PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const {
         PrimaryVariables values;
@@ -240,6 +255,8 @@ public:
 
     /*!
      * \copydoc FVProblem::neumann // [kg/(m²*s)]
+     *
+     * called by BoxLocalResidual::evalFlux
      */
     NumEqVector neumann(const Element& element,
         const FVElementGeometry& fvGeometry,
@@ -262,7 +279,7 @@ public:
                     mS += (elemVolVars[i].saturation() / numScv);
                 }
                 MaterialLawParams params = this->spatialParams().materialLawParams(element);
-                Scalar p = MaterialLaw::pc(params, mS) + nonWettingReferencePressure();
+                Scalar p = MaterialLaw::pc(params, mS) + pRef_;
                 Scalar h = -toHead_(p); // todo why minus -pc?
                 GlobalPosition ePos = element.geometry().center();
                 Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
@@ -322,6 +339,8 @@ public:
 
     /*!
      * \copydoc FVProblem::source
+     *
+     * called by FVLocalResidual:computeSource(...)
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
@@ -335,6 +354,8 @@ public:
 
     /*!
      * \copydoc FVProblem::initial
+     *
+     * called by FVProblem::applyInitialSolution(...)
      */
     template<class Entity>
     PrimaryVariables initial(const Entity& entity) const {
@@ -346,21 +367,29 @@ public:
         return v;
     }
 
-    /**
+    /*!
      * Sets the current simulation time (within the simulation loop) for atmospheric look up [s]
+     *
+     * eventually, called in the main file (example specific, richards.cc)
      */
     void setTime(Scalar t) {
         time_ = t;
     }
 
-    /**
-     * source per element index \f$ [ kg / (m^3 \cdot s)] \f$
+    /*!
+     * Source per element index \f$ [ kg / (m^3 \cdot s)] \f$
+     *
+     * eventually, called in the main file (example specific, richards.cc)
      */
     void setSource(std::vector<double>* s) {
         source_ = s;
     }
 
-    //! sets the critical pressure for evaporation [cm] (default = -10000 cm)
+    /*!
+     * sets the critical pressure for evaporation [cm] (default = -10000 cm)
+     *
+     *  eventually, called in the main file (example specific, richards.cc)
+     */
     void criticalPressure(Scalar p) {
         criticalPressure_ = p;
     }
@@ -369,12 +398,12 @@ private:
 
     //! cm pressure head -> Pascal
     Scalar toPa_(Scalar ph) const {
-        return nonWettingReferencePressure() + ph / 100. * rho_ * g_;
+        return pRef_ + ph / 100. * rho_ * g_;
     }
 
     //! Pascal -> cm pressure head
     Scalar toHead_(Scalar p) const {
-        return (p - nonWettingReferencePressure()) * 100. / rho_ / g_;
+        return (p - pRef_) * 100. / rho_ / g_;
     }
 
     //! true if on the point lies on the upper boundary
@@ -411,6 +440,7 @@ private:
     static constexpr Scalar eps_ = 1.e-7;
     static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
     static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
+    static constexpr Scalar pRef_ = 1.e5; // Pa
 
 };
 

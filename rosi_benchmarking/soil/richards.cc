@@ -45,6 +45,7 @@
  * Some small adaption to <dumux/nonlinear/newtonsolver.hh>, which is the only nonlinear solver available.
  * The adaption is disabled per default (parameter EnableChop = false)
  */
+#include <dumux/common/timeloop.hh>
 #include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
 
 #include <dumux/io/vtkoutputmodule.hh>
@@ -142,7 +143,7 @@ int main(int argc, char** argv) try
     // the solution vector
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
-    problem->applyInitialSolution(x); // dumux way of saying x = problem->applyInitialSolution()
+    problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
 
     // the grid variables
@@ -163,7 +164,7 @@ int main(int argc, char** argv) try
     // get some time loop parameters  & instantiate time loop
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-    std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
+    std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop; // defined in common/timeloop.hh, everything clear, easy to use.
     if (tEnd > 0) { // dynamic problem
         const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
         auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
@@ -188,9 +189,12 @@ int main(int argc, char** argv) try
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
+    /**
+     * home grown vkt output, rather uninteresting
+     */
 
-    // the assembler with time loop for instationary or stationary problem
-    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
+    // the assembler with time loop for instationary or stationary problem (assembles resdiual, and Jacobian for Newton)
+    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; //  FVAssembler (in fvassembler.hh)
     std::shared_ptr<Assembler> assembler;
     if (tEnd>0) {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
@@ -199,7 +203,7 @@ int main(int argc, char** argv) try
     }
 
     // the linear solver
-    using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available
+    using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available, files located in located in dumux/linear/*
     auto linearSolver = std::make_shared<LinearSolver>(fvGridGeometry->gridView(), fvGridGeometry->dofMapper());
 
     // the non-linear solver
@@ -211,6 +215,7 @@ int main(int argc, char** argv) try
         timeLoop->start();
 
         do {
+
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(xOld);
             // solve the non-linear system with time step control
@@ -230,6 +235,7 @@ int main(int argc, char** argv) try
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
             problem->setTime(timeLoop->time());
+
         } while (!timeLoop->finished());
 
         timeLoop->finalize(fvGridGeometry->gridView().comm());
