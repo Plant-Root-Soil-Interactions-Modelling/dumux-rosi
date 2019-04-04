@@ -233,7 +233,7 @@ int main(int argc, char** argv) try
 
     GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
     if (simtype==rootbox) {
-        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, &growth, x); // in growth/gridgrowth.hh
+        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
         std::cout << "grid grower initialized \n" << std::flush;
     }
 
