@@ -1,55 +1,15 @@
-Preparing the Sources
-=========================
-
-Additional to the software mentioned in README you'll need the
-following programs installed on your system:
-
-  cmake >= 2.8.12
-
 Getting started
 ---------------
 
-If these preliminaries are met, you should run
-
-  dunecontrol all
-
-which will find all installed dune modules as well as all dune modules
-(not installed) which sources reside in a subdirectory of the current
-directory. Note that if dune is not installed properly you will either
-have to add the directory where the dunecontrol script resides (probably
-./dune-common/bin) to your path or specify the relative path of the script.
-
-Most probably you'll have to provide additional information to dunecontrol
-(e. g. compilers, configure options) and/or make options.
-
-The most convenient way is to use options files in this case. The files
-define four variables:
-
-CMAKE_FLAGS      flags passed to cmake (during configure)
-MAKE_FLAGS       flags passed to make
-
-An example options file might look like this:
-
-#use this options to autogen, configure and make if no other options are given
-CMAKE_FLAGS=" \
--DCMAKE_CXX_COMPILER=g++-4.9 \
--DCMAKE_CXX_FLAGS='-Wall -pedantic' \
--DCMAKE_INSTALL_PREFIX=/install/path" #Force g++-4.9 and set compiler flags
-MAKE_FLAGS=install #Per default run make install instead of simply make
-
-If you save this information into example.opts you can pass the opts file to
-dunecontrol via the --opts option, e. g.
-
-  dunecontrol --opts=example.opts all
-
-More info
----------
-
-See
-
-     dunecontrol --help
-
-for further options.
+Please read the manual (Manual.pdf on this repository) 
+- for installation guidelines
+- getting started with examples
 
 
-The full build-system is described in the dune-common/doc/buildsystem (Git version) or under share/doc/dune-common/buildsystem if you installed DUNE!
+Version 3.0 version Version 2.x
+-------------------------------
+DuMux 3.0 stable release has recently been published. Therefore, we are now in the process of porting all our examples to the new 
+Version 3.0. 
+All examples in the folder rosi_benchmarking already work.
+All examples in the folder rosi_examples are still based on the old version and thus need the corresponding versions of Dune and DuMux
+modules. Working examples based on the old version can be found on the branch pub/Mai2018. 
