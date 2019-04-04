@@ -272,14 +272,10 @@ public:
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
+                Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
                 Scalar Kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
-                Scalar mS = 0;
-                auto numScv = fvGeometry.numScv();
-                for (auto i = 0; i < numScv; i++) {
-                    mS += (elemVolVars[i].saturation() / numScv);
-                }
                 MaterialLawParams params = this->spatialParams().materialLawParams(element);
-                Scalar p = MaterialLaw::pc(params, mS) + pRef_;
+                Scalar p = MaterialLaw::pc(params, s) + pRef_;
                 Scalar h = -toHead_(p); // todo why minus -pc?
                 GlobalPosition ePos = element.geometry().center();
                 Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
@@ -291,7 +287,7 @@ public:
                     Scalar v = std::max(prec, imax);
                     values[conti0EqIdx] = v;
                 } else { // evaporation
-                    Scalar krw = MaterialLaw::krw(params, mS);
+                    Scalar krw = MaterialLaw::krw(params, s);
                     Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - 1.); // maximal evaporation
                     Scalar v = std::min(prec, emax);
                     // std::cout << prec << ", " << emax << ", " << h << "\n";
@@ -315,15 +311,11 @@ public:
                 values[conti0EqIdx] = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
                 break;
             }
-            case freeDrainage: { // TODO needs testing & improvement
+            case freeDrainage: {
                 Scalar Kc = this->spatialParams().hydraulicConductivity(element);
-                Scalar mS = 0; // mean saturation
-                auto numScv = fvGeometry.numScv();
-                for (auto i = 0; i < numScv; i++) {
-                    mS += (elemVolVars[i].saturation() / numScv);
-                }
+                Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
                 MaterialLawParams params = this->spatialParams().materialLawParams(element);
-                Scalar krw = MaterialLaw::krw(params, mS);
+                Scalar krw = MaterialLaw::krw(params, s);
                 values[conti0EqIdx] = krw * Kc * rho_; // * 1 [m]
                 break;
             }
