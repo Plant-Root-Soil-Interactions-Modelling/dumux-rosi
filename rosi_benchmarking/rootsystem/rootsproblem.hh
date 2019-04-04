@@ -25,6 +25,7 @@
 #ifndef ROOTS_PROBLEM_HH
 #define ROOTS_PROBLEM_HH
 
+#include <dune/foamgrid/foamgrid.hh>
 #include <dune/localfunctions/lagrange/pqkfactory.hh>
 #include <dune/geometry/quadraturerules.hh>
 #include <dumux/common/reorderingdofmapper.hh>

@@ -130,14 +130,19 @@ public:
 
     //! Read initial parameters from grid data object
     template<class GridData>
-    void initParameters(const GridData& gridData)
-    {
+    void initParameters(const GridData& gridData) {
         const auto& fvGridGeometry = this->fvGridGeometry();
         kr_.setGridData(gridData, fvGridGeometry);
         kx_.setGridData(gridData, fvGridGeometry);
         order_.setGridData(gridData, fvGridGeometry);
         radius_.setGridData(gridData, fvGridGeometry);
         age_.setGridData(gridData, fvGridGeometry);
+    }
+
+    //! ignore (because there is no common base class with rootspatialparams_rb.hh)
+    template<class RootSystem>
+    void updateParameters(const RootSystem& rs) {
+        DUNE_THROW(Dune::InvalidStateException, "updateParameters is called for DGF");
     }
 
 private:

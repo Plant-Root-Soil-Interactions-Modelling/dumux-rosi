@@ -79,7 +79,7 @@ int main(int argc, char** argv) try
      * Furthermore, global auxiliary functions are defined e.g. getParam, setParam, and haveParam
      * (in parameters.hh).
      *
-     * All Dumux classes access the global parameter tree when considered appropriate.
+     * All Dumux classes access the global parameter tree where considered appropriate.
      */
 
     // try to create a grid (from the given grid file or the input file)
@@ -125,7 +125,6 @@ int main(int argc, char** argv) try
      * Properties::FVGridGeometry is defined in problem.hh -> discretization/box.hh
      * The type is BoxFVGridGeometry (in discretization/box/fvgridgeometry.hh)
      * specialization of BaseFVGridGeometry (discretization/basefvgridgeometry.hh)
-     *
      */
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
     /**

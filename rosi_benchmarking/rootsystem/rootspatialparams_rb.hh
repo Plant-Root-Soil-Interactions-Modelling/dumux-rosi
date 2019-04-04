@@ -157,6 +157,12 @@ public:
         }
     }
 
+    //! ignore (because there is no common base class with rootspatialparams_dgf.hh)
+    template<class GridData>
+    void initParameters(const GridData& gridData) {
+        DUNE_THROW(Dune::InvalidStateException, "initParameters is called for a root growth model");
+    }
+
 private:
     InputFileFunction kr_;
     InputFileFunction kx_;
