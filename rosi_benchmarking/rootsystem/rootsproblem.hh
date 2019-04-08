@@ -166,10 +166,11 @@ public:
             bcType_ = bcDirichlet;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
+        std::cout << "just after the stream..."<< std::flush;
     }
 
-    ~RootsProblem() {
-        std::cout << "closing file \n";
+    virtual ~RootsProblem() {
+        std::cout << "closing file \n" << std::flush;
         file_at_.close();
     }
 
@@ -392,8 +393,8 @@ public:
      */
     template<class ElementSolution>
     Scalar extrusionFactor(const Element &element,
-                           const SubControlVolume &scv,
-                           const ElementSolution& elemSol) const
+        const SubControlVolume &scv,
+        const ElementSolution& elemSol) const
     {
         const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         const auto radius = this->spatialParams().radius(eIdx);

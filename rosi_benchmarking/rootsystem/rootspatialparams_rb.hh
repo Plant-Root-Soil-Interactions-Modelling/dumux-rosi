@@ -136,14 +136,19 @@ public:
         orders_.resize(gridView.size(0));
         ctimes_.resize(gridView.size(0));
 
+
         auto segs = rs.newSegments();
         auto segCT = rs.segmentCreationTimes();
         auto segO = rs.segmentOrders();
         auto segRadii = rs.segmentRadii();
+//        std::cout << "updating " << gridView.size(0) << ": " << std::flush;
+//        std::cout << "alive with  " << segs.size() << "segments " << "\n"<< std::flush;
+
         for (size_t i = 0; i < segs.size(); i++) {
             size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==
             std::cout << segs[i][0] << ", "<< segs[i][1] << "; ";
             size_t eIdx = rs.map2dune(rIdx);
+            // std::cout << eIdx << ", " << rIdx << "\n";
             orders_.at(eIdx) = segO[i];
             radii_.at(eIdx) = segRadii[i];
             ctimes_.at(eIdx) = segCT[i];

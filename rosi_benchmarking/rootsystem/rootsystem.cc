@@ -86,7 +86,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif
@@ -130,16 +130,17 @@ int main(int argc, char** argv) try
 
     // Create the gridmanager and grid
     using Grid = Dune::FoamGrid<1, 3>;
-    GridManager<Grid> gridManager;
-    gridManager.init("RootSystem");
+    GridManager<Grid> gridManager; // only for dgf
+    std::shared_ptr<CRootBox::RootSystem> rootSystem; // only for rootbox
     std::shared_ptr<Grid> grid;
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
     if (simtype==dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
+        gridManager.init("RootSystem");
         grid = std::shared_ptr<Grid>(&gridManager.grid());
     } else if (simtype==rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
-        auto rootSystem = std::make_shared<CRootBox::RootSystem>();
+        rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         rootSystem->initialize();
         rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
@@ -169,7 +170,7 @@ int main(int argc, char** argv) try
     if (simtype==dgf) {
         problem->spatialParams().initParameters(*gridManager.getGridData());
     } else if (simtype==rootbox){
-        problem->spatialParams().updateParameters(growth);
+        problem->spatialParams().updateParameters(*growth);
     }
     std::cout << "... and i have a problem \n" << std::flush;
 
@@ -217,9 +218,10 @@ int main(int argc, char** argv) try
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     problem->axialFlux(x); // prepare fields // todo wrong
     problem->radialFlux(x); // prepare fields
+    problem->initialPressure(x); //prepare fields
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
-     vtkWriter.addField(problem->initialPressure(), "initial pressure"); // just for debugging
+    vtkWriter.addField(problem->initialPressure(), "initial pressure"); // just for debugging
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
@@ -241,7 +243,7 @@ int main(int argc, char** argv) try
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
     }
@@ -267,7 +269,7 @@ int main(int argc, char** argv) try
                 std::cout << "grow() \n"<< std::flush;
                 double dt = timeLoop->timeStepSize();
                 gridGrowth->grow(dt);
-                problem->spatialParams().updateParameters(growth);
+                problem->spatialParams().updateParameters(*growth);
                 problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                 std::cout << "grew \n"<< std::flush;
 
@@ -335,34 +337,25 @@ int main(int argc, char** argv) try
     ////////////////////////////////////////////////////////////
 
     // print dumux end message
-    if (mpiHelper.rank() == 0)
-    {
+    if (mpiHelper.rank() == 0) {
         Parameters::print();
-        DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
 } // end main
-catch (Dumux::ParameterException &e)
-{
+catch (Dumux::ParameterException &e) {
     std::cerr << std::endl << e << " ---> Abort!" << std::endl;
     return 1;
-}
-catch (Dune::DGFException & e)
-{
+} catch (Dune::DGFException & e) {
     std::cerr << "DGF exception thrown (" << e <<
         "). Most likely, the DGF file name is wrong "
         "or the DGF file is corrupted, "
         "e.g. missing hash at end of file or wrong number (dimensions) of entries." << " ---> Abort!" << std::endl;
     return 2;
-}
-catch (Dune::Exception &e)
-{
+} catch (Dune::Exception &e) {
     std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
     return 3;
-}
-catch (std::exception &e)
-{
+} catch (std::exception &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
