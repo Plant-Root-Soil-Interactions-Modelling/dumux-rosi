@@ -1,7 +1,8 @@
 #
-# compares the dumux solution of 1d root model to its analytical solution
+# compares the dumux solution of 1d geometry created by rootbox
+# to its analytical solution
 #
-# D. Leitner, 2018
+# D. Leitner, 2019
 #
 
 import os

@@ -81,13 +81,17 @@ public:
 
     //! Returns the element index, -1 if no element was found in tree
     int pick(const CRootBox::Vector3d& pos) {
-        const auto globalPos = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
-        const auto entities = intersectingEntities(globalPos, bBoxTree_);
+        return pick(Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 }));
+    }
+
+    //! Returns the element index, -1 if no element was found in tree
+    int pick(const Dune::FieldVector<double, 3>& pos) {
+        const auto entities = intersectingEntities(pos, bBoxTree_);
         if (entities.empty()) {
             return -1;
         }
         const auto element = bBoxTree_.entitySet().entity(entities[0]);
-        return element.index();
+        return element.geometry(); //mapper_.index(element);
     }
 
     std::string toString() const final {
@@ -101,11 +105,14 @@ private:
     const GridView gridView_;
     const BBoxTree& bBoxTree_;
     const std::vector<double>& sat_;
+
 };
 
+
+
+
 /*!
- * A soillookup implementation for Dumux
- * using a static soil, passed via the input file or grid file
+ * (TODO) A soillookup implementation for Dumux using a static soil, passed via the input file or grid file
  * see, InputFileFunction
  */
 template<class FVGridGeometry>

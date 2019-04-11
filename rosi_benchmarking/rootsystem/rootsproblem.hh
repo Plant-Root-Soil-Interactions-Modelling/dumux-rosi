@@ -174,7 +174,7 @@ public:
         file_at_.close();
     }
 
-    //! calculates axial fluxes from a given solution (for vtk output) [m^3 / s]
+    //! calculates axial fluxes from a given solution (for vtk output) [m^3 / s], roughly estimated
     void axialFlux(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         axialFlux_ = std::vector<Scalar>(gridView.size(0));
@@ -210,6 +210,7 @@ public:
         }
     }
 
+    //! eveluates initial values (for debugging)
     void initialPressure(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         initialP_ = std::vector<Scalar>(gridView.size(0));
@@ -220,14 +221,29 @@ public:
         }
     }
 
-    std::vector<Scalar>& radialFlux() {
-        return radialFlux_;
-    }
-    std::vector<Scalar>& axialFlux() {
-        return axialFlux_;
-    }
-    std::vector<Scalar>& initialPressure() {
-        return initialP_;
+    //! eveluates user defined data from teh spatial params (for debugging)
+    void userData(std::string name, const SolutionVector& sol) {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        userData_ = std::vector<Scalar>(gridView.size(0));
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        for (const auto& element : elements(gridView)) {
+            auto eIdx = eMapper.index(element);
+            if (name=="kr") {
+                userData_[eIdx] = this->spatialParams().kr(eIdx);
+            }
+            if (name=="kx") {
+                userData_[eIdx] = this->spatialParams().kx(eIdx);
+            }
+            if (name=="age") {
+                userData_[eIdx] = this->spatialParams().age(eIdx);
+            }
+            if (name=="order") {
+                userData_[eIdx] = this->spatialParams().order(eIdx);
+            }
+            if (name=="radius") {
+                userData_[eIdx] = this->spatialParams().radius(eIdx);
+            }
+        }
     }
 
     //! calculates transpiraton, as the sum of radial fluxes
@@ -235,6 +251,23 @@ public:
         radialFlux(sol);
         return std::accumulate(radialFlux_.begin(), radialFlux_.end(), 0.); // slow but accurate
     }
+
+    std::vector<Scalar>& radialFlux() {
+        return radialFlux_;
+    }
+
+    std::vector<Scalar>& axialFlux() {
+        return axialFlux_;
+    }
+
+    std::vector<Scalar>& initialPressure() {
+        return initialP_;
+    }
+
+    std::vector<Scalar>& userData() {
+        return userData_;
+    }
+
 
     /*
      * \brief Return the temperature within the domain in [K]. (actually needed? why?)
@@ -435,6 +468,7 @@ private:
     std::vector<Scalar> axialFlux_;
     std::vector<Scalar> radialFlux_;
     std::vector<Scalar> initialP_;
+    std::vector<Scalar> userData_;
 
 };
 

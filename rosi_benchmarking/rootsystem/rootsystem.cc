@@ -136,8 +136,7 @@ int main(int argc, char** argv) try
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         rootSystem->initialize();
         rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
-        std::cout << "thanks !!!" << std::flush;
-        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, true); // in dumux/growth/rootsystemgridfactory.hh
+        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, false); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
@@ -214,7 +213,8 @@ int main(int argc, char** argv) try
     problem->initialPressure(x); //prepare fields
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
-    vtkWriter.addField(problem->initialPressure(), "initial pressure"); // just for debugging
+    vtkWriter.addField(problem->userData(), "age");
+    vtkWriter.addField(problem->initialPressure(), "initial pressure");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
@@ -295,6 +295,7 @@ int main(int argc, char** argv) try
                 problem->axialFlux(x); // prepare fields
                 problem->radialFlux(x); // prepare fields
                 problem->initialPressure(x); // prepare fields
+                problem->userData("age", x); // prepare fields
                 vtkWriter.write(timeLoop->time());
             }
             problem->writeTranspirationRate(x); // always add transpiration data into the text file
@@ -322,6 +323,7 @@ int main(int argc, char** argv) try
         problem->axialFlux(x); // prepare fields
         problem->radialFlux(x); // prepare fields
         problem->initialPressure(x); // prepare fields
+        problem->userData("age", x); // prepare fields
         vtkWriter.write(1); // write vtk output
     }
 

@@ -40,7 +40,7 @@ namespace Dumux {
 namespace GrowthModule {
 
 /**
- * A class managing the growth of the grid (Dune::FoamGrid<1,3>) according to a some grow model GrowthInterface
+ * A class managing the growth of the grid (Dune::FoamGrid<1,3>) according to a some grow model implementing GrowthInterface
  */
 template<class TypeTag>
 class GridGrowth {
@@ -52,7 +52,7 @@ class GridGrowth {
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using PersistentContainer = Dune::PersistentContainer<Grid, PrimaryVariables>; // todo remove macros
+    using PersistentContainer = Dune::PersistentContainer<Grid, PrimaryVariables>;
     using Growth = GrowthInterface<GlobalPosition>*;
 
 public:
