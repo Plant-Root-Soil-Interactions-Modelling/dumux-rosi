@@ -211,6 +211,7 @@ int main(int argc, char** argv) try
     problem->axialFlux(x); // prepare fields // todo wrong
     problem->radialFlux(x); // prepare fields
     problem->initialPressure(x); //prepare fields
+    problem->userData("age", x); // prepare fields
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
     vtkWriter.addField(problem->userData(), "age");

@@ -126,7 +126,7 @@ public:
     //! axial conductivity [m^4 / Pa /s]
     Scalar kx(std::size_t eIdx) const {
         if (eIdx==0) { // high axial flow at the shoot element
-            return 1.e8;
+            return 1.;
         }
         return kx_.f(this->age(eIdx), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
     }
