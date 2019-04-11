@@ -132,4 +132,5 @@ print("Numeric pressure (cm)")
 # save benchmark 1
 np.savetxt("dumux_b1", np.vstack((z_, h_)), delimiter = ',')
 
-plt.show()
+if __name__ == "__main__":
+    plt.show()

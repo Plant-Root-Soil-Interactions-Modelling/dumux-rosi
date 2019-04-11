@@ -114,14 +114,6 @@ int main(int argc, char** argv) try
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
-    /*
-     * Parses the parameters from the .input file into a static data member of the static class Parameters,
-     * the parameter tree can then be accessed with Parameters::paramTree() .
-     * Furthermore, global auxiliary functions are defined e.g. getParam, setParam, and haveParam
-     * (in parameters.hh).
-     *
-     * All Dumux classes access the global parameter tree where considered appropriate.
-     */
 
     //    using GridView = GetPropType<TypeTag, Properties::GridView>;
     //    using Element = typename GridView::template Codim<0>::Entity;
@@ -137,14 +129,15 @@ int main(int argc, char** argv) try
     if (simtype==dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
         gridManager.init("RootSystem");
-        grid = std::shared_ptr<Grid>(&gridManager.grid());
+        grid = std::shared_ptr<Grid>(&gridManager.grid()); // TODO ?????
     } else if (simtype==rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         rootSystem->initialize();
         rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
-        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem); // in dumux/growth/rootsystemgridfactory.hh
+        std::cout << "thanks !!!" << std::flush;
+        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);

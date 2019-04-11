@@ -106,8 +106,9 @@ public:
         return orders_[eIdx];
     }
 
+    // m
     Scalar radius(std::size_t eIdx) const {
-        return radii_[eIdx];
+        return radii_[eIdx]; // m
     }
 
     Scalar age(std::size_t eIdx) const {
@@ -116,12 +117,18 @@ public:
 
     //! radial conductivity [m / Pa /s]
     Scalar kr(std::size_t eIdx) const {
+        if (eIdx==0) { // no radial flow at the shoot element
+            return 0.;
+        }
         return kr_.f(this->age(eIdx), eIdx)*1e-4/(24*3600); // cm / hPa / day -> m / Pa /s
     }
 
     //! axial conductivity [m^4 / Pa /s]
     Scalar kx(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
+        if (eIdx==0) { // high axial flow at the shoot element
+            return 1.e8;
+        }
+        return kx_.f(this->age(eIdx), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
     }
 
     void setTime(double t) {
@@ -146,7 +153,7 @@ public:
 
         for (size_t i = 0; i < segs.size(); i++) {
             size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==
-            std::cout << segs[i][0] << ", "<< segs[i][1] << "; ";
+            // std::cout << segs[i][0] << ", "<< segs[i][1] << "; ";
             size_t eIdx = rs.map2dune(rIdx);
             // std::cout << eIdx << ", " << rIdx << "\n";
             orders_.at(eIdx) = segO[i];
@@ -173,7 +180,7 @@ private:
     InputFileFunction kx_;
 
     std::vector<double> orders_; // root order, or root type
-    std::vector<double> radii_; // [cm]
+    std::vector<double> radii_; // [m]
     std::vector<double> ctimes_; // [s]
 
     double time_ = 0.; // [s]

@@ -1,5 +1,5 @@
 [Problem]
-Name = rb_rootsystem 
+Name = rb_single
 
 [TimeLoop]
 TEnd = 1.e9 # 1e9 # [s]
