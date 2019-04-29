@@ -12,4 +12,4 @@ DuMux 3.0 stable release has recently been published. Therefore, we are now in t
 Version 3.0. 
 All examples in the folder rosi_benchmarking already work.
 All examples in the folder rosi_examples are still based on the old version and thus need the corresponding versions of Dune and DuMux
-modules. Working examples based on the old version can be found on the branch pub/Mai2018. 
+modules. Working examples based on the old version can be found on the branch archiveDumux2. 
