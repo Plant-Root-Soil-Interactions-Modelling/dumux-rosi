@@ -178,13 +178,12 @@ public:
             if(t>=table_.size()) { // it seems assertions are not working ?????
                 std::cout << "stranger things..." << std::flush;
             }
-            x=0; // todo !!!
             return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
         }
 
         case periodic: {
             double a = 0.5 * (yy_[1] - yy_[0]);
-            return sin(x / (24. * 3600.) * 2. * M_PI - 0.5 * M_PI) * a + a + yy_[0];
+            return sin(x * 2. * M_PI - 0.5 * M_PI) * a + a + yy_[0];
         }
         default:
             throw Dumux::ParameterException("InputFileFunction: unknown function type");
