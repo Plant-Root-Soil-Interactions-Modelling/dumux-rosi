@@ -65,13 +65,12 @@
  */
 enum modelType { dgf=0, rootbox= 1 };
 
-namespace Dumux {
-namespace Properties {
-
 /**
  * Pick either RootSpatialParamsDGF (for static dgf files),
  * or RootSpatialParamsRB (for dynamic root growth) as SpatialParams.type,
  */
+namespace Dumux {
+namespace Properties {
 #if DGF
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
@@ -98,14 +97,13 @@ int simtype = rootbox;
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
-    int simtype = Properties::simtype;
 
     // define the type tag for this problem
     using TypeTag = Properties::TTag::RootsBox; // RootsCC, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
+    int simtype = Properties::simtype;
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
-
     if (mpiHelper.rank() == 0) { // print dumux start message
         DumuxMessage::print(/*firstCall=*/true);
     } else {
@@ -122,9 +120,9 @@ int main(int argc, char** argv) try
 
     // Create the gridmanager and grid
     using Grid = Dune::FoamGrid<1, 3>;
+    std::shared_ptr<Grid> grid;
     GridManager<Grid> gridManager; // only for dgf
     std::shared_ptr<CRootBox::RootSystem> rootSystem; // only for rootbox
-    std::shared_ptr<Grid> grid;
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
     if (simtype==dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
@@ -135,8 +133,7 @@ int main(int argc, char** argv) try
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         rootSystem->initialize();
-        rootSystem->simulate(getParam<double>("RootSystem.Grid.InitialT"));
-        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, false); // in dumux/growth/rootsystemgridfactory.hh
+        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
@@ -157,6 +154,20 @@ int main(int argc, char** argv) try
     fvGridGeometry->update();
     std::cout << "i have the geometry \n" << std::flush;
 
+    // the solution vector
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+
+    // root growth
+    GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
+    if (simtype==rootbox) {
+        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
+        std::cout << "...grid grower initialized \n" << std::flush;
+        gridGrowth->grow(getParam<double>("RootSystem.Grid.InitialT")*24*3600);
+        // problem->spatialParams().updateParameters(*growth);
+        std::cout << "initial growth performed... \n" << std::flush;
+    }
+
     // the problem (initial and boundary conditions)
     auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
     if (simtype==dgf) {
@@ -164,20 +175,15 @@ int main(int argc, char** argv) try
     } else if (simtype==rootbox){
         problem->spatialParams().updateParameters(*growth);
     }
-    std::cout << "... and i have a problem \n" << std::flush;
-
-    // the solution vector
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
-    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
-    std::cout << "no solution yet \n" << std::flush;
+    std::cout << "i have a problem \n" << std::flush;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
     gridVariables->init(x);
-    std::cout << "but variables \n" << std::flush;
+    std::cout << "with variables \n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
     bool grow = false;
@@ -201,17 +207,19 @@ int main(int argc, char** argv) try
         }
     } else { // static
     }
-    std::cout << "\ntime might be an issue \n" << "\n" << std::flush;
+    std::cout << "time might be an issue \n" << std::flush;
 
     // intialize the vtk output module
     using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    problem->axialFlux(x); // prepare fields // todo wrong
+    problem->radius(x); // prepare fields // todo wrong (coarse approximation)
+    problem->axialFlux(x); // prepare fields // todo wrong (coarse approximation)
     problem->radialFlux(x); // prepare fields
     problem->initialPressure(x); //prepare fields
     problem->userData("age", x); // prepare fields
+    vtkWriter.addField(problem->radius(), "radius");
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
     vtkWriter.addField(problem->userData(), "age");
@@ -219,19 +227,6 @@ int main(int argc, char** argv) try
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
-    //    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    //    auto numDofs = fvGridGeometry->vertexMapper().size();
-    //    auto numVert = fvGridGeometry->gridView().size(GridView::dimension);
-    //    std::cout << "gridview dimension  " << GridView::dimension << "\n";
-    //    std::cout << "numDofs " << numDofs << "\n";
-    //    std::cout << "numVert  " << numVert << "\n";
-    //    return 0; // help
-
-    GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
-    if (simtype==rootbox) {
-        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
-        std::cout << "grid grower initialized \n" << std::flush;
-    }
 
     // the assembler with time loop for instationary problem
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
@@ -250,11 +245,11 @@ int main(int argc, char** argv) try
     using NewtonSolver = Dumux::NewtonSolver<Assembler, LinearSolver>;
     NewtonSolver nonLinearSolver(assembler, linearSolver);
 
-    std::cout << "i plan to actually start \n" << std::flush;
+    std::cout << "\ni plan to actually start \n" << std::flush;
 
     if (tEnd > 0) // dynamic
     {
-        std::cout << "a time dependent model\n" << std::flush;
+        std::cout << "a time dependent model\n\n" << std::flush;
         timeLoop->start();
         do {
 
@@ -293,10 +288,13 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
 
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) { // write vtk output (only at check points)
-                problem->axialFlux(x); // prepare fields
-                problem->radialFlux(x); // prepare fields
-                problem->initialPressure(x); // prepare fields
-                problem->userData("age", x); // prepare fields
+                if (grow) { // prepare static fields also
+                    problem->radius(x);
+                    problem->initialPressure(x);
+                }
+                problem->axialFlux(x);
+                problem->radialFlux(x);
+                problem->userData("age", x);
                 vtkWriter.write(timeLoop->time());
             }
             problem->writeTranspirationRate(x); // always add transpiration data into the text file
@@ -313,7 +311,7 @@ int main(int argc, char** argv) try
 
     } else { // static
 
-        std::cout << "a static model" << "\n" << std::flush;
+        std::cout << "a static model \n\n" << std::flush;
 
         assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
 
@@ -323,7 +321,6 @@ int main(int argc, char** argv) try
         problem->writeTranspirationRate(x);
         problem->axialFlux(x); // prepare fields
         problem->radialFlux(x); // prepare fields
-        problem->initialPressure(x); // prepare fields
         problem->userData("age", x); // prepare fields
         vtkWriter.write(1); // write vtk output
     }

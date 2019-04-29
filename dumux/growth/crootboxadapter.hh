@@ -43,7 +43,7 @@ class CRootBoxAdapter :public GrowthInterface<GlobalPosition> {
 public:
 
     CRootBoxAdapter(CRootBox::RootSystem& rs) :rootsystem_(rs) {
-        this->root2dune = std::vector<size_t>(rs.getNewNodes().size()+1);  // we assume that in the beginning the node indices are the same, +1 because of the shoot node
+        this->root2dune = std::vector<size_t>(rs.getNumberOfNodes());
         std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
 
@@ -95,9 +95,9 @@ public:
     }
 
     std::vector<double> segmentCreationTimes() const override {
-        auto net = rootsystem_.getNewNETimes();
-        std::transform(net.begin (), net.end (), net.begin (), std::bind1st (std::multiplies<double> () , 24*3600.)); // convert to s
-        return net;
+        auto sct = rootsystem_.getNewSegmentsTimes();
+        std::transform(sct.begin(), sct.end(), sct.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
+        return sct;
     }
 
     std::vector<int> segmentOrders() const override {

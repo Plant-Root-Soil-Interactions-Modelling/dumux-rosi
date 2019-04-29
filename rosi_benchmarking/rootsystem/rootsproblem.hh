@@ -166,7 +166,6 @@ public:
             bcType_ = bcDirichlet;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
-        std::cout << "just after the stream..."<< std::flush;
     }
 
     virtual ~RootsProblem() {
@@ -210,7 +209,7 @@ public:
         }
     }
 
-    //! eveluates initial values (for debugging)
+    //! evaluates initial values (for debugging), sol not used
     void initialPressure(const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         initialP_ = std::vector<Scalar>(gridView.size(0));
@@ -221,13 +220,24 @@ public:
         }
     }
 
+    //! evaluates radii (for visualisation), sol not used
+    void radius(const SolutionVector& sol) {
+        const auto& gridView = this->fvGridGeometry().gridView();
+        radius_ = std::vector<Scalar>(gridView.size(0));
+        auto eMapper = this->fvGridGeometry().elementMapper();
+        for (const auto& e : elements(gridView)) {
+            auto eIdx = eMapper.index(e);
+            radius_[eIdx] = this->spatialParams().radius(eIdx);
+        }
+    }
+
     //! eveluates user defined data from teh spatial params (for debugging)
     void userData(std::string name, const SolutionVector& sol) {
         const auto& gridView = this->fvGridGeometry().gridView();
         userData_ = std::vector<Scalar>(gridView.size(0));
         auto eMapper = this->fvGridGeometry().elementMapper();
-        for (const auto& element : elements(gridView)) {
-            auto eIdx = eMapper.index(element);
+        for (const auto& e : elements(gridView)) {
+            auto eIdx = eMapper.index(e);
             if (name=="kr") {
                 userData_[eIdx] = this->spatialParams().kr(eIdx);
             }
@@ -236,12 +246,10 @@ public:
             }
             if (name=="age") {
                 userData_[eIdx] = this->spatialParams().age(eIdx);
+                // std::cout << "age at index " << eIdx << " = " <<  userData_[eIdx] << " s = " << userData_[eIdx]/24/3600 << " d \n";
             }
             if (name=="order") {
                 userData_[eIdx] = this->spatialParams().order(eIdx);
-            }
-            if (name=="radius") {
-                userData_[eIdx] = this->spatialParams().radius(eIdx);
             }
         }
     }
@@ -266,6 +274,10 @@ public:
 
     std::vector<Scalar>& userData() {
         return userData_;
+    }
+
+    std::vector<Scalar>& radius() {
+        return radius_;
     }
 
 
@@ -465,6 +477,7 @@ private:
     mutable Scalar lastP_ = 0.;
 
     // vtk fields
+    std::vector<Scalar> radius_;
     std::vector<Scalar> axialFlux_;
     std::vector<Scalar> radialFlux_;
     std::vector<Scalar> initialP_;

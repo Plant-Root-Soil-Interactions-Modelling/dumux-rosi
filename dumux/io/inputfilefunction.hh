@@ -80,7 +80,6 @@ public:
         } catch (...) {
             try { // multiple tables
                 std::vector<std::string> names = {"0","1","2","3","4","5"};
-                std::cout << "searching for " << nameY + std::to_string(0);
                 yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(0));
                 table_.resize(0);
                 int m = 0;
@@ -98,7 +97,7 @@ public:
                     table_.push_back( { xx_, yy_ });
                 }
                 type_ = tablePerType;
-                std::cout << "InputFileFunction: Table per Type from Grid (" << nameY << ")\n";
+                std::cout << "InputFileFunction: Table per Type from Grid (" << nameY << "), " << m << " types\n";
             } catch (...) {
                 type_ = data;
                 std::cout << "InputFileFunction: Data from Grid (" << nameY << ")\n";
@@ -174,7 +173,13 @@ public:
         }
         case tablePerType: {
             size_t t = size_t(data_.at(eIdx));
-            return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[t]);
+            assert( t>=0  && "type < 0" );
+            assert( t<table_.size() && "type > read tables" );
+            if(t>=table_.size()) { // it seems assertions are not working ?????
+                std::cout << "stranger things..." << std::flush;
+            }
+            x=0; // todo !!!
+            return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
         }
 
         case periodic: {

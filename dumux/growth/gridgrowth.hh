@@ -67,9 +67,8 @@ public:
         sol_(sol) {
         const auto& gv = grid->leafGridView();
         indexMap_.resize(gv.size(Grid::dimension));  // TODO: we assume that in the beginning the node indices are the same
-        indexElementMap_.resize(gv.size(Grid::dimension));
         std::iota(indexMap_.begin(), indexMap_.end(), 0);
-        std::iota(indexElementMap_.begin(), indexElementMap_.end(), 0);
+        std::iota(indexMapInv_.begin(), indexMapInv_.end(), 0);
     }
 
     //! \param dt the time step size in seconds
@@ -129,14 +128,34 @@ public:
 
             // update the index maps
             indexMap_.resize(gv.size(Grid::dimension));
-            indexElementMap_.resize(gv.size(Grid::dimension));
+            indexMapInv_.resize(gv.size(Grid::dimension)); // inverse map
 
-            // update the actual index the new vertices got in the grid in the growth model index to dune index map
-            for (const auto& vertex : vertices(gv)) {
-                if (fvGridGeometry_->vertexMapper().index(vertex) >= oldNumVertices) {
-                    std::cout << " element: growth insertion index " << grid_->growthInsertionIndex(vertex)<< ", final index " << fvGridGeometry_->vertexMapper().index(vertex) << "\n"<< std::flush;
-                    indexMap_[grid_->growthInsertionIndex(vertex)] = fvGridGeometry_->vertexMapper().index(vertex); // indexMap[rIdx] = vIdx, indexMap[eIdx] = rIdx
-                    indexElementMap_[fvGridGeometry_->vertexMapper().index(vertex)-1] = grid_->growthInsertionIndex(vertex)-1;
+            // update the actual index of new vertices, map growth model index to dune vertex index
+            auto vMapper = fvGridGeometry_->vertexMapper();
+            for (const auto& v : vertices(gv)) {
+                if (vMapper.index(v) >= oldNumVertices) {
+                    auto insertionIdx = grid_->growthInsertionIndex(v);
+                    auto vIdx = vMapper.index(v);
+                    indexMap_.at(insertionIdx) = vIdx; // indexMap[rIdx] = vIdx
+                    indexMapInv_.at(vIdx) = insertionIdx; // indexMapInv[vIdx] = rIdx
+                    // std::cout << " vertex: growth insertion index " << insertionIdx << ", final index " << vIdx << "\n"<< std::flush;
+                }
+            }
+
+            // update the actual index the new elements, map growth model segment index to dune element index
+            auto eMapper = fvGridGeometry_->elementMapper();
+            growth_->root2dune.resize(gv.size(0));
+            for (const auto& e : elements(gv)) {
+                if (e.isNew()) {
+                    auto eIdx = eMapper.index(e);
+                    auto insertionIdx = grid_->growthInsertionIndex(e); // not working //?
+                    auto i0 = vMapper.subIndex(e, 0, 1);
+                    auto i1 = vMapper.subIndex(e, 1, 1);
+                    auto insertionIdx2 = std::max(indexMapInv_[i0],indexMapInv_[i1])-1;
+                    // the bigger rIdx is the one created later (segment tip)
+                    // rIdx - 1  = root box segment index, where rIdx is the rootbox node index
+                    // std::cout << " element: growth insertion index " << insertionIdx << " vs. " << insertionIdx2 << ", final index " << eIdx << "\n"<< std::flush;
+                    growth_->root2dune[insertionIdx2] = eIdx; // root2dune[rIdx] = eIdx
                 }
             }
 
@@ -149,40 +168,16 @@ public:
             // cleanup grid after growth
             grid_->postGrow();
 
-            // todo update instead of copy
-            growth_->root2dune = indexElementMap_;
-
         }
 
         // check if all segments could be inserted
-        if (oldNumSegments + newSegments.size() != gv.size(0))
+        if (oldNumSegments + newSegments.size() != gv.size(0)) {
             DUNE_THROW(Dune::GridError, "Not all segments could be inserted!");
-
-        checkIndex();
+        }
 
     }
-
-    //! dune element index from a root model node index
-    size_t duneIndex(size_t rIdx) const {
-        return indexElementMap_.at(rIdx);
-    }
-
 
 private:
-
-    /*!
-     * for debugging
-     */
-    void checkIndex() {
-        int uneq = 0;
-        for (size_t i=0; i<indexMap_.size(); i++) {
-            if (indexMap_[i]!=i) {
-                uneq++;
-            }
-        }
-        std::cout << "indexMap: " << uneq << " unequal entries \n";
-    }
-
 
     /*!
      * dune vertex index from a root model node index
@@ -215,18 +210,16 @@ private:
         data_.resize();
         const auto& gv = grid_->leafGridView();
         sol_.resize(gv.size(0));
-
         for (const auto& element : elements(gv)) { // old elements get their old variables assigned
             if (!element.isNew()) { // get your primary variables from the map
                 const auto eIdx = fvGridGeometry_->elementMapper().index(element);
                 sol_[eIdx] = data_[element];
             } else { // initialize new elements with the pressure of the surrounding soil (todo)
                 const auto newEIdx = fvGridGeometry_->elementMapper().index(element);
-                const auto insertionIdx = grid_->growthInsertionIndex(element);
+                // const auto insertionIdx = grid_->growthInsertionIndex(element); // rhs
                 sol_[newEIdx] = -10000; // todo
             }
         }
-
         // reset entries in restrictionmap
         data_.resize(typename PersistentContainer::Value());
         data_.shrinkToFit();
@@ -240,7 +233,7 @@ private:
     // index mapping stuff
     EntityMap<Grid, Grid::dimension> indexToVertex_; //! a map from dune vertex indices to vertex entitites (?)
     std::vector<size_t> indexMap_; //! a map from crootbox node indices to foamgrid vertex indices
-    std::vector<size_t> indexElementMap_; //! a map foamgrid element indices to root model segment indices to
+    std::vector<size_t> indexMapInv_;
 
     PersistentContainer data_; //! data container with persistent ids as key to transfer element data from old to new grid
 

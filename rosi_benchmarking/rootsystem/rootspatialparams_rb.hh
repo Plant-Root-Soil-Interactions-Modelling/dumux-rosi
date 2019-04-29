@@ -68,7 +68,7 @@ public:
         kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", -1, -1);
         assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems"); // todo use kr_.setData(...) by hand
         assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems");
-        time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600*24; // root system initial time
+        time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
         // shoot
         radii_ = { 1.17/100. };
         orders_ = { 0 };
@@ -111,8 +111,10 @@ public:
         return radii_[eIdx]; // m
     }
 
+    // s
     Scalar age(std::size_t eIdx) const {
-        return time0_ - ctimes_[eIdx]; //  + time_;
+        double a = (time0_+time_) - ctimes_[eIdx];
+        return std::max(a,0.); // todo there is a crootbox bug, where time0_ << ctimes_ for certain tip segments (???)
     }
 
     //! radial conductivity [m / Pa /s]
@@ -143,19 +145,17 @@ public:
         orders_.resize(gridView.size(0));
         ctimes_.resize(gridView.size(0));
 
-
         auto segs = rs.newSegments();
         auto segCT = rs.segmentCreationTimes();
         auto segO = rs.segmentOrders();
         auto segRadii = rs.segmentRadii();
-//        std::cout << "updating " << gridView.size(0) << ": " << std::flush;
-//        std::cout << "alive with  " << segs.size() << "segments " << "\n"<< std::flush;
+
+        std::cout << "UPDATING " << gridView.size(0) << ": " << segs.size() << " segments " << "\n"<< std::flush;
 
         for (size_t i = 0; i < segs.size(); i++) {
             size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==
-            // std::cout << segs[i][0] << ", "<< segs[i][1] << "; ";
             size_t eIdx = rs.map2dune(rIdx);
-            // std::cout << eIdx << ", " << rIdx << "\n";
+            // std::cout << "updateParameters: age at root index " << rIdx << " element index " << eIdx << " = " <<  segCT[i] << " s = " << segCT[i]/24/3600 << " d \n";
             orders_.at(eIdx) = segO[i];
             radii_.at(eIdx) = segRadii[i];
             ctimes_.at(eIdx) = segCT[i];
