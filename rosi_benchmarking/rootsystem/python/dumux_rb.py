@@ -1,5 +1,5 @@
 #
-# compares the dumux solution of 1d root model to its analytical solution
+# Root box root sytem simulation (see rb_rootsytem.input)
 #
 # D. Leitner, 2018
 #

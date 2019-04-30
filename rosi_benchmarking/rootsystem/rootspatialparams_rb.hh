@@ -93,7 +93,6 @@ public:
         auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
-        // std::cout << "params " << kx * 1e13 << ", " << a << ", " << mu << "\n";
         return kx * mu / (M_PI * a * a);
     }
 
@@ -117,20 +116,20 @@ public:
         return std::max(a,0.); // todo there is a crootbox bug, where time0_ << ctimes_ for certain tip segments (???)
     }
 
-    //! radial conductivity [m / Pa /s]
+    //! radial conductivity [m /Pa/s]
     Scalar kr(std::size_t eIdx) const {
         if (eIdx==0) { // no radial flow at the shoot element
             return 0.;
         }
-        return kr_.f(this->age(eIdx), eIdx)*1e-4/(24*3600); // cm / hPa / day -> m / Pa /s
+        return kr_.f(this->age(eIdx)/(24.*3600.), eIdx)*1e-4/(24*3600); // cm / hPa / day -> m / Pa /s
     }
 
-    //! axial conductivity [m^4 / Pa /s]
+    //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        if (eIdx==0) { // high axial flow at the shoot element
-            return 1.;
-        }
-        return kx_.f(this->age(eIdx), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
+//        if (eIdx==0) { // high axial flow at the shoot element
+//            return 1.;
+//        }
+        return kx_.f(this->age(eIdx)/(24.*3600.), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
     }
 
     void setTime(double t) {

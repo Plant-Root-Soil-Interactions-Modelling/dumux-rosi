@@ -2,8 +2,8 @@
 Name = swtop 
 
 [TimeLoop]
-TEnd = 86400 # 604800 a week [s] # 86400 # a day
-CheckTimes = 43200 # half a day
+TEnd = 43200 # half a day
+CheckTimes = 10800 21600 32400 # 1/8 days 
 DtInitial = 360 # [s]
 MaxTimeStepSize = 360 # 1 h
 

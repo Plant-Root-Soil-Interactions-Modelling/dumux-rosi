@@ -5,14 +5,13 @@ Name = rb_swbot
 Grow = False
 
 [TimeLoop]
-TEnd = 86400 # 604800 a week [s] # 86400 # a day
-CheckTimes = 43200 # half a day
-DtInitial = 1 # [s]
-MaxTimeStepSize = 3600 # 1 h
+TEnd = 43200 # half a day
+CheckTimes = 10800 21600 32400 # 1/8 days 
+DtInitial = 360 # [s]
+MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Collar]
 Transpiration = 0 1.2 # [kg/day]
-
 
 [RootSystem.Conductivity]
 KrAge0 = 0 5 10 15 20 1e20 # days
@@ -31,10 +30,6 @@ KxAge2 = 0 5 10 12 20 22 1e20 # days
 Kx2 = 0.01e-3 0.01e-3 0.1e-3 0.6e-3 0.6e-3 1.7e-3 1.7e-3 # cm^4/hPa/day
 KxAge3 = 0 5 10 12 20 22 1e20 # days
 Kx3 = 0.01e-3 0.01e-3 0.1e-3 0.6e-3 0.6e-3 1.7e-3 1.7e-3 # cm^4/hPa/da
-
-
-# Kr = 1.728 # radial conductivity [cm/hPa/day] 
-# Kx = 432 # axial conductivity [cm^4/hPa/day]
 
 [Soil.IC]
 P = -101.937 -101.937 -3058.104 -3058.104  # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa 

@@ -1,6 +1,5 @@
 #
-# compares the dumux solution of 1d geometry created by rootbox
-# to its analytical solution
+# compares the dumux solution of 1d geometry created by rootbox to its analytical solution
 #
 # D. Leitner, 2019
 #

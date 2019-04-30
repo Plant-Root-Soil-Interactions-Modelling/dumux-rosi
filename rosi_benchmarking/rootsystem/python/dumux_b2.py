@@ -1,5 +1,5 @@
 #
-# compares the dumux solution of 1d root model to its analytical solution
+# Calcultates root system benchmark 2 (static root system, constant conductivities)
 #
 # D. Leitner, 2018
 #

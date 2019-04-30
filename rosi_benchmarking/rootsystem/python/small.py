@@ -1,5 +1,5 @@
 #
-# compares the dumux solution of 1d root model to its analytical solution
+# Small dgf root system
 #
 # D. Leitner, 2018
 #

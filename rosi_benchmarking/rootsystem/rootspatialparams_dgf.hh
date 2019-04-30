@@ -55,7 +55,11 @@ class RootSpatialParamsDGF
 
     // parameter indices, where the parameter (if used) is located the dgf file
     enum {
-        orderIdx = 0, radiusIdx = 1, ageIdx = 2, krIdx = 3, kxIdx = 4
+        orderIdx = 0,
+        radiusIdx = 1, // cm
+        ageIdx = 2, // days
+        krIdx = 3,  // cm / hPa / day
+        kxIdx = 4 // cm^4 / hPa / day
     };
 
 public:
@@ -89,7 +93,6 @@ public:
         auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
-        // std::cout << "params " << kx * 1e13 << ", " << a << ", " << mu << "\n";
         return kx * mu / (M_PI * a * a);
     }
 
@@ -105,7 +108,7 @@ public:
 
     //! segment radius [m]
     Scalar radius(std::size_t eIdx) const {
-        return radius_.f(this->age(eIdx), eIdx)/100.; // cm -> m
+        return radius_.f(this->age(eIdx), eIdx)/100.;
     }
 
     //! segment age [s]
@@ -113,14 +116,14 @@ public:
         return age_.f(eIdx)*24.*3600.+time_; // days -> s
     }
 
-    //! radial conductivity [m^4 / Pa /s]
+    //! radial conductivity [m/Pa/s]
     Scalar kr(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx), eIdx)*1.e-4/(24.*3600.); // cm / hPa / day -> m / Pa /s
+        return kr_.f(this->age(eIdx)/(24.*3600.), eIdx)*1.e-4/(24.*3600.); // cm / hPa / day -> m / Pa /s
     }
 
-    //! axial conductivity [m^4 / Pa /s]
+    //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        return kx_.f(this->age(eIdx), eIdx)*1.e-10/(24.*3600.); // cm^4 / hPa / day -> m^4 / Pa /s
+        return kx_.f(this->age(eIdx)/(24.*3600.), eIdx)*1.e-10/(24.*3600.); // cm^4 / hPa / day -> m^4 / Pa /s
     }
 
     //! set current simulation time, age is time dependent (so sad), kx and kr can be age dependent

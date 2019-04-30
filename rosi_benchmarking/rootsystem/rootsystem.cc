@@ -132,6 +132,7 @@ int main(int argc, char** argv) try
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
+        rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,-1.), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         rootSystem->initialize();
         grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
@@ -214,16 +215,22 @@ int main(int argc, char** argv) try
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    problem->radius(x); // prepare fields // todo wrong (coarse approximation)
-    problem->axialFlux(x); // prepare fields // todo wrong (coarse approximation)
-    problem->radialFlux(x); // prepare fields
-    problem->initialPressure(x); //prepare fields
+    problem->userData("radius", x); // prepare fields
+    problem->userData("order", x); // prepare fields
+    problem->userData("axialFlux", x); // prepare fields // todo wrong (coarse approximation)
+    problem->userData("radialFlux", x); // prepare fields
     problem->userData("age", x); // prepare fields
+    problem->userData("initialPressure",x); //prepare fields
+    problem->userData("kr", x); // prepare fields
+    problem->userData("kx", x); //prepare fields
     vtkWriter.addField(problem->radius(), "radius");
+    vtkWriter.addField(problem->order(), "order");
     vtkWriter.addField(problem->axialFlux(), "axial flux");
     vtkWriter.addField(problem->radialFlux(), "radial flux");
-    vtkWriter.addField(problem->userData(), "age");
+    vtkWriter.addField(problem->age(), "age");
     vtkWriter.addField(problem->initialPressure(), "initial pressure");
+    vtkWriter.addField(problem->kr(), "kr");
+    vtkWriter.addField(problem->kx(), "kx");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
@@ -289,12 +296,15 @@ int main(int argc, char** argv) try
 
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) { // write vtk output (only at check points)
                 if (grow) { // prepare static fields also
-                    problem->radius(x);
-                    problem->initialPressure(x);
+                    problem->userData("radius", x);
+                    problem->userData("order", x);
+                    problem->userData("initialPressure", x);
                 }
-                problem->axialFlux(x);
-                problem->radialFlux(x);
-                problem->userData("age", x);
+                problem->userData("axialFlux", x);
+                problem->userData("radialFlux", x);
+                problem->userData("age", x); // age changes with time
+                problem->userData("kr", x);  // conductivities change with age
+                problem->userData("kx", x);
                 vtkWriter.write(timeLoop->time());
             }
             problem->writeTranspirationRate(x); // always add transpiration data into the text file
@@ -318,11 +328,13 @@ int main(int argc, char** argv) try
         nonLinearSolver.solve(x); // solve the non-linear system
 
         // write outputs
-        problem->writeTranspirationRate(x);
-        problem->axialFlux(x); // prepare fields
-        problem->radialFlux(x); // prepare fields
+        problem->userData("axialFlux", x);
+        problem->userData("radialFlux", x);
         problem->userData("age", x); // prepare fields
+        problem->userData("kr", x);  // conductivities change with age
+        problem->userData("kx", x);
         vtkWriter.write(1); // write vtk output
+        problem->writeTranspirationRate(x);
     }
 
     ////////////////////////////////////////////////////////////
