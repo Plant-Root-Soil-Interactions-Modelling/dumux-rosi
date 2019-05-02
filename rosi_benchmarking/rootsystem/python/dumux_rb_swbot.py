@@ -55,17 +55,17 @@ p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  #
 p2 = "-RootSystem.Grid.InitialT 55.5 -RootSystem.Grid.File maize_p2_zero_std"
 p3 = "-RootSystem.Grid.InitialT 58.5 -RootSystem.Grid.File maize_p3_zero_std"
 
-# # Run dumux
-# t0 = time.time()
-# threads_ = []
-# threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p1 + " -Problem.Name rb_swbot_a"))
-# threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p2 + " -Problem.Name rb_swbot_b"))
-# threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p3 + " -Problem.Name rb_swbot_c"))
-# for t in threads_:  # start threads
-#     t.start()
-# for t in threads_:  # and for all of them to finish
-#      t.join()
-# print("elapsed time is ", time.time() - t0)
+# Run dumux
+t0 = time.time()
+threads_ = []
+threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p1 + " -Problem.Name rb_swbot_a"))
+threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p2 + " -Problem.Name rb_swbot_b"))
+threads_.append(myThread("./rootsystem_rb input/rb_swbot.input " + p3 + " -Problem.Name rb_swbot_c"))
+for t in threads_:  # start threads
+    t.start()
+for t in threads_:  # and for all of them to finish
+     t.join()
+print("elapsed time is ", time.time() - t0)
 
 with open("rb_swbot_a_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')

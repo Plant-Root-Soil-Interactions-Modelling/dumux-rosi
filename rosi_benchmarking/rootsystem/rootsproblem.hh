@@ -159,7 +159,7 @@ public:
     RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
         auto sf = InputFileFunction("Soil.IC.P", "Soil.IC.Z");
-        soil_ = new GrowthModule::SoilLookUpTable<FVGridGeometry>(sf, fvGridGeometry);
+        soil_ = new GrowthModule::SoilLookUpTable(sf);
         try {
             collar_ = InputFileFunction("RootSystem.Collar.Transpiration", "RootSystem.Collar.TranspirationT", true);
             bcType_ = bcNeumann;
@@ -322,6 +322,7 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
+
         NumEqVector values;
         auto params = this->spatialParams();
         const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
@@ -333,6 +334,7 @@ public:
         values[conti0EqIdx] /= (a * a * M_PI); // 1/s
         values[conti0EqIdx] *= rho_; // (kg/s/m^3)
         return values;
+
     }
 
     /*!
@@ -351,7 +353,7 @@ public:
     Scalar soil(const GlobalPosition& p) const {
         auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100);
         double d = soil_->getValue(p2);
-        // std::cout << "soil: " << p2.toString() << ", " << d << "\n";
+        std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
         return toPa_(d);
     }
 

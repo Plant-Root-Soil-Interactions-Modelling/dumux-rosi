@@ -2,7 +2,7 @@
 Name = rb_swtop 
 
 [RootSystem.Grid]
-Grow = False
+Grow = True
 
 [TimeLoop]
 TEnd = 43200 # half a day

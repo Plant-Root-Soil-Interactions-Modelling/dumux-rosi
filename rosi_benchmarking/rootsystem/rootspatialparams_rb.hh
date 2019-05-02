@@ -113,7 +113,7 @@ public:
     // s
     Scalar age(std::size_t eIdx) const {
         double a = (time0_+time_) - ctimes_[eIdx];
-        return std::max(a,0.); // todo there is a crootbox bug, where time0_ << ctimes_ for certain tip segments (???)
+        return a; // todo there is a crootbox bug, where time0_ << ctimes_ for certain tip segments (???)
     }
 
     //! radial conductivity [m /Pa/s]

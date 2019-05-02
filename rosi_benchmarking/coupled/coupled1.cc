@@ -37,6 +37,11 @@
 #include <dune/grid/common/rangegenerators.hh> // elements, vertices, scv, scvfs, ...
 #include <dune/istl/io.hh>
 
+#include <dumux/common/parameters.hh>
+#include <dumux/common/valgrind.hh>
+#include <dumux/common/dumuxmessage.hh>
+#include <dumux/common/defaultusagemessage.hh>
+
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
@@ -46,12 +51,6 @@
 #include <RootSystem.h>
 #include "../rootsystem/rootsproblem.hh"
 #include "../soil/richardsproblem.hh"
-
-#include <dumux/common/properties.hh>
-#include <dumux/common/parameters.hh>
-#include <dumux/common/valgrind.hh>
-#include <dumux/common/dumuxmessage.hh>
-#include <dumux/common/defaultusagemessage.hh>
 
 #include <dumux/common/timeloop.hh>
 #include <dumux/linear/amgbackend.hh>
@@ -63,16 +62,18 @@
 
 #include <dumux/growth/soillookup.hh> // for coupling
 
+
+enum modelType { dgf=0, rootbox= 1 };
+
 namespace Dumux {
 namespace Properties {
-
+int simtype = dgf;
 template<class TypeTag> // Set the spatial parameters for the root problem
 struct SpatialParams<TypeTag, TTag::Roots> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
-
 } // end namespace Properties
 
 
@@ -82,11 +83,10 @@ using SoilTag = Properties::TTag::RichardsBox;
 using SoilGridType = Dune::YaspGrid<3>; // pick soil grid here (its in compile definition in the soil model)
 using RootGridType = GetPropType<RootsTag, Properties::Grid>;
 
-using SoilLookUp = GrowthModule::SoilLookUpBBoxTree<SoilGridType>;
+using RootFVGridGeometry = GetPropType<RootsTag, Properties::FVGridGeometry>;
+using SoilFVGridGeometry = GetPropType<SoilTag, Properties::FVGridGeometry>;
 
-using RootFVGridGeometry = GetPropType<RootsTag, Properties::FVGridGeometry>; // ????
-using SoilFVGridGeometry = GetPropType<SoilTag, Properties::FVGridGeometry>; // ???
-
+using SoilLookUp = GrowthModule::SoilLookUpBBoxTree<SoilFVGridGeometry>;
 
 
 
@@ -95,47 +95,50 @@ using SoilFVGridGeometry = GetPropType<SoilTag, Properties::FVGridGeometry>; // 
  */
 template<class SoilGridVariables, class SoilSolution>
 void updateSaturation(std::vector<double>& saturation, const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
-    const SoilSolution& sol)
-{
-    const auto& gridView = gridGeometry.gridView();
-    for (const auto& element : elements(gridView))
-    {
+    const SoilSolution& sol) {
+
+    const auto& gridView = gridGeometry.gridView();  // soil
+    for (const auto& element : elements(gridView)) { // soil elements
+
+        // soil solution -> volume variable
         auto fvGeometry = localView(gridGeometry);
         fvGeometry.bindElement(element);
-
         auto elemVolVars = localView(gridVariables.curGridVolVars());
         elemVolVars.bindElement(element, fvGeometry, sol);
 
-        for (const auto& scv : scvs(fvGeometry))
+        for (const auto& scv : scvs(fvGeometry)) {
             saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0);
+        }
     }
 }
 
 /*!
- * move to RootProlbem...
+ * calculates the radial fluxes of the segments
+ * todo: move to RootProlbem...
  */
 template< class RootGridVariables, class RootSolution, class RootProlem>
 void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& gridGeometry, const RootGridVariables& gridVariables,
     const RootSolution& r, const RootProlem& rootProblem, SoilLookUp* soilLookUp) {
 
     std::fill(source.begin(), source.end(), 0);
-    const auto& gridView = gridGeometry.gridView();
+    const auto& gridView = gridGeometry.gridView(); // root
 
-    for (const auto& element : elements(gridView)) {
+    for (const auto& element : elements(gridView)) { // root elements
 
+        // root solution -> volume variable
         auto fvGeometry = localView(gridGeometry);
         fvGeometry.bindElement(element);
-
         auto elemVolVars = localView(gridVariables.curGridVolVars());
         elemVolVars.bindElement(element, fvGeometry, r);
 
-        for (const auto& scv : scvs(fvGeometry)) {
+        for (const auto& scv : scvs(fvGeometry)) {  //root sub control volumes
 
             double s = rootProblem.source(element, gridGeometry, elemVolVars, scv); // pass to problem class
 
             // define the type tag for this problem
             auto pos = scv.center();
-            size_t eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element
+            std::cout << "pick(pos) at " << pos << "\n"<<std::flush;
+            size_t eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element todo shift????
             if (eIdx>=0) {
                 std::cout << "eIdx " << eIdx << ", " << s <<"\n"<<std::flush;
                 source.at(eIdx) += s; // accumulate source term
@@ -158,6 +161,7 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
+    int simtype = Properties::simtype;
 
     // initialize MPI, finalize is done automatically#include <dumux/growth/soillookup.hh> on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -190,16 +194,15 @@ int main(int argc, char** argv) try
     // compute on the leaf grid views
     const RootGridType::LeafGridView& rootLGV = rootGridManager.grid().leafGridView();
     const SoilGridType::LeafGridView& soilLGV = soilGridManager.grid().leafGridView();
-    std::cout << "i have two views \n" << "\n" << std::flush;
+    std::cout << "i have two views \n" << std::flush;
 
     // create the finite volume grid geometry
     auto rootFVGridGeometry = std::make_shared<RootFVGridGeometry>(rootLGV);
     rootFVGridGeometry->update();
 
     auto soilFVGridGeometry = std::make_shared<SoilFVGridGeometry>(soilLGV);
-    auto psoilLGV = std::make_shared<SoilFVGridGeometry>(soilLGV);
     soilFVGridGeometry->update();
-    std::cout << "i have two geometries built from the views \n" << "\n" << std::flush;
+    std::cout << "i have two geometries built from the views \n" << std::flush;
 
     // the problem (initial and boundary conditions)
     using RootProblem = GetPropType<RootsTag, Properties::Problem>;
@@ -207,7 +210,7 @@ int main(int argc, char** argv) try
     rootProblem->spatialParams().initParameters(*rootGridData);
 
     using SoilProblem = GetPropType<SoilTag, Properties::Problem>;
-    auto soilProblem = std::make_shared<SoilProblem>(soilFVGridGeometry, &soilGridManager);
+    auto soilProblem = std::make_shared<SoilProblem>(soilFVGridGeometry);
     std::cout << "and i have two problems \n" << "\n" << std::flush;
 
     // the solution vector
@@ -220,7 +223,7 @@ int main(int argc, char** argv) try
     SoilSolutionVector s(soilFVGridGeometry->numDofs());
     soilProblem->applyInitialSolution(s);
     auto sOld = s;
-    std::cout << "no solution yet \n" << "\n" << std::flush;
+    std::cout << "no solution yet \n" << std::flush;
 
     // the grid variables
     using RootGridVariables = GetPropType<RootsTag, Properties::GridVariables>;
@@ -230,13 +233,19 @@ int main(int argc, char** argv) try
     using SoilGridVariables = GetPropType<SoilTag, Properties::GridVariables>;
     auto soilGridVariables = std::make_shared<SoilGridVariables>(soilProblem, soilFVGridGeometry);
     soilGridVariables->init(s);
-    std::cout << "... but variables \n" << "\n" << std::flush;
+    std::cout << "... but grid variables \n" << std::flush;
 
-    // couple root to soil
+    /**
+     * COUPLING
+     */
     static constexpr int soilDim = SoilFVGridGeometry::GridView::dimension;
     std::vector<double> saturation(soilLGV.size(soilDim), 1.0);
     updateSaturation(saturation, *soilFVGridGeometry, *soilGridVariables, s);
-    auto soilLookUp = SoilLookUp(soilLGV, psoilLGV->boundingBoxTree(), saturation);
+    auto soilLookUp = SoilLookUp(*soilFVGridGeometry, saturation);
+
+    auto maxsize = soilFVGridGeometry->bBoxMax(); // // YASP grid is shifted
+    soilLookUp.setShift( Dune::FieldVector<double, 3>( {maxsize[0]/2, maxsize[1]/2, maxsize[2]}));
+
     rootProblem->setSoil(&soilLookUp);
     std::cout << "roots know the soil \n" << "\n" << std::flush;
 
@@ -244,6 +253,10 @@ int main(int argc, char** argv) try
     radialFlux2soilSink(soilSink, *rootFVGridGeometry, *rootGridVariables, r, *rootProblem, &soilLookUp); // precomputes the sink for the soil problem
     soilProblem->setSource(&soilSink);
     std::cout << "and the soil knows the roots \n" << "\n" << std::flush;
+
+
+
+
 
     // get some time loop parameters & instantiate time loop
     using Scalar = GetPropType<RootsTag, Properties::Scalar>;
@@ -272,10 +285,10 @@ int main(int argc, char** argv) try
     VtkOutputModule<RootGridVariables, RootSolutionVector> rootVTKWriter(*rootGridVariables, r, rootProblem->name()+"R");
     using RootVelocityOutput = GetPropType<RootsTag, Properties::VelocityOutput>;
     rootVTKWriter.addVelocityOutput(std::make_shared<RootVelocityOutput>(*rootGridVariables));
-    rootProblem->axialFlux(r); // prepare fields
-    rootProblem->radialFlux(r); // prepare fields
-    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux");
-    rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux");
+//    rootProblem->axialFlux(r); // prepare fields
+//    rootProblem->radialFlux(r); // prepare fields
+//    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux");
+//    rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux");
     RootIOFields::initOutputModule(rootVTKWriter); //!< Add model specific output fields
     rootVTKWriter.write(0.0);
 
@@ -344,8 +357,8 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-                rootProblem->axialFlux(r); // prepare fields
-                rootProblem->radialFlux(r); // prepare fields
+//                rootProblem->axialFlux(r); // prepare fields
+//                rootProblem->radialFlux(r); // prepare fields
                 rootVTKWriter.write(timeLoop->time());
                 soilVTKWriter.write(timeLoop->time());
             }
@@ -353,12 +366,16 @@ int main(int argc, char** argv) try
                 rootProblem->writeTranspirationRate(r);
             }
             // report statistics of this time step
+
             timeLoop->reportTimeStep();
+
             // set new dt as suggested by the newton solver
             timeLoop->setTimeStepSize(rootNonlinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
+
             // pass current time to the problem
             rootProblem->setTime(timeLoop->time());
             soilProblem->setTime(timeLoop->time());
+
         } while (!timeLoop->finished());
 
         timeLoop->finalize(rootLGV.comm());
@@ -373,11 +390,12 @@ int main(int argc, char** argv) try
         rootNonlinearSolver.solve(r);
         soilNonlinearSolver.solve(s);
         // write vtk output
-        rootProblem->axialFlux(r); // prepare fields
-        rootProblem->radialFlux(r); // prepare fields
+//        rootProblem->axialFlux(r); // prepare fields
+//        rootProblem->radialFlux(r); // prepare fields
         rootProblem->writeTranspirationRate(r);
         rootVTKWriter.write(1);
         soilVTKWriter.write(1);
+
     }
 
     ////////////////////////////////////////////////////////////
@@ -385,34 +403,29 @@ int main(int argc, char** argv) try
     ////////////////////////////////////////////////////////////
 
     // print dumux end message
-    if (mpiHelper.rank() == 0)
-    {
+    if (mpiHelper.rank() == 0) {
         Parameters::print();
         DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
 } // end main
-catch (Dumux::ParameterException &e)
-{
+catch (Dumux::ParameterException &e) {
     std::cerr << std::endl << e << " ---> Abort!" << std::endl;
     return 1;
 }
-catch (Dune::DGFException & e)
-{
+catch (Dune::DGFException & e) {
     std::cerr << "DGF exception thrown (" << e <<
         "). Most likely, the DGF file name is wrong "
         "or the DGF file is corrupted, "
         "e.g. missing hash at end of file or wrong number (dimensions) of entries." << " ---> Abort!" << std::endl;
     return 2;
 }
-catch (Dune::Exception &e)
-{
+catch (Dune::Exception &e) {
     std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
     return 3;
 }
-catch (std::exception &e)
-{
+catch (std::exception &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }

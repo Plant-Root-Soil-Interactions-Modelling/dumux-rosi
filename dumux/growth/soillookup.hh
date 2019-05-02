@@ -39,27 +39,41 @@ namespace GrowthModule {
  * A CRootBox soillookup implementation for Dumux
  * using a BoundingBoxTree to obtain the soil element,
  * and linear finite elements for interpolation of the point
+ *
+ * todo: do i have to update the mappers??? better use fvGridGeometry?
  */
-template<class Grid>
+template<class FVGridGeometry>
 class SoilLookUpBBoxTree : public CRootBox::SoilLookUp
 {
+    using Grid = typename FVGridGeometry::Grid;
     using FeCache = Dune::PQkLocalFiniteElementCache<typename Grid::ctype, double, 3, 1>;
     using ShapeValue = typename Dune::FieldVector<double, 1>;
-    using GridView = typename Grid::LeafGridView;
-    using Mapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-    using BBoxTree = BoundingBoxTree< GridViewGeometricEntitySet<GridView, 0> >;
+    using BBoxTree = typename FVGridGeometry::BoundingBoxTree;
 
 public:
 
-    SoilLookUpBBoxTree(const GridView& gridView, const BBoxTree& tree, const std::vector<double>& sat) :
-        mapper_(gridView, Dune::mcmgVertexLayout()), gridView_(gridView), bBoxTree_(tree), sat_(sat)
-    {
+    SoilLookUpBBoxTree(const FVGridGeometry& fvGridGeometry, const std::vector<double>& sat, bool periodic = true) :
+        fvGridGeometry_(fvGridGeometry),
+        sat_(sat),
+        bBoxTree_(fvGridGeometry.boundingBoxTree())    {
+
+        if (periodic) {
+            const auto size = fvGridGeometry_.bBoxMax() - fvGridGeometry_.bBoxMin();
+            setPeriodicDomain(100.*-size[0]/2.,100.*size[0]/2., 100.*-size[1]/2., 100.*size[1]/2. );
+        }
+
     }
 
-    //! Returns the interpolated saturation, pos [cm]
+    /**
+     *  Returns the interpolated saturation, pos [cm]
+     */
     double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
-        const auto globalPos = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
+
+        auto p = periodic(pos.plus(shiftRB)); // periodic mapping
+        const auto globalPos = Dune::FieldVector<double, 3>( { p.x * 0.01, p.y * 0.01, p.z * 0.01 });
+
         const auto entities = intersectingEntities(globalPos, bBoxTree_); // function from <dumux/common/geometry/intersectingentities.hh>
+
         if (entities.empty()) {
             return 0.0;
         }
@@ -72,26 +86,44 @@ public:
         const auto ipLocal = geo.local(globalPos);
         localBasis.evaluateFunction(ipLocal, shapeValues_);
 
+
+        auto vMapper = fvGridGeometry_.vertexMapper();
         for (int i = 0; i < geo.corners(); ++i) {
-            sat += shapeValues_[i][0]*sat_[mapper_.subIndex(element, i, Grid::dimension)];
+            sat += shapeValues_[i][0]*sat_[vMapper.subIndex(element, i, Grid::dimension)];
         }
 
         return sat;
     }
 
-    //! Returns the element index, -1 if no element was found in tree
-    int pick(const CRootBox::Vector3d& pos) {
-        return pick(Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 }));
-    }
-
-    //! Returns the element index, -1 if no element was found in tree
+    /*
+     * Returns the element index, -1 if no element was found in tree
+     */
     int pick(const Dune::FieldVector<double, 3>& pos) {
-        const auto entities = intersectingEntities(pos, bBoxTree_);
+
+        auto p = pos + shift; // shift
+        auto pp = periodic(CRootBox::Vector3d(100*p[0], 100*p[1], 100*p[2])); // periodic mapping
+        p[0] = pp.x/100.; p[1] = pp.y/100.; p[2] = pp.z/100.;
+
+        const auto entities = intersectingEntities(p, bBoxTree_);
         if (entities.empty()) {
             return -1;
         }
         const auto element = bBoxTree_.entitySet().entity(entities[0]);
-        return element.geometry(); //mapper_.index(element);
+
+        std::cout << "\npick: " << pos << " -> " << p << std::flush; // pick is shifted and periodic
+
+        std::cout << "\nelement geometry center: " << element.geometry().center() << std::flush;
+        auto eMapper = fvGridGeometry_.elementMapper();
+        int eIdx = eMapper.index(element);
+        return eIdx;
+    }
+
+    /**
+     * shifts incoming picks
+     */
+    void setShift(Dune::FieldVector<double, 3> p) {
+        shift = p;
+        shiftRB = CRootBox::Vector3d(100.*shift[0], 100.*shift[1], 100.*shift[2]);
     }
 
     std::string toString() const final {
@@ -99,50 +131,44 @@ public:
     }
 
 private:
+
     const FeCache feCache_;
     mutable std::vector<ShapeValue> shapeValues_;
-    const Mapper mapper_;
-    const GridView gridView_;
-    const BBoxTree& bBoxTree_;
-    const std::vector<double>& sat_;
 
+    const FVGridGeometry& fvGridGeometry_;
+    const std::vector<double>& sat_;
+    const BBoxTree& bBoxTree_;
+
+    Dune::FieldVector<double, 3> shift = { 0., 0. , 0. };
+    CRootBox::Vector3d shiftRB = CRootBox::Vector3d();
 };
 
 
 
 
-/*!
- * (TODO) A soillookup implementation for Dumux using a static soil, passed via the input file or grid file
- * see, InputFileFunction
- */
-template<class FVGridGeometry>
-class SoilLookUpTable: public CRootBox::SoilLookUp {
 
-    //using BBoxTree = BoundingBoxTree< GridViewGeometricEntitySet<GridView, 0> >;
+
+
+/*!
+ * A SoilLookUp implementation for Dumux using a static soil, passed via the input file [or grid file todo]
+ * see, InputFileFunction
+ *
+ * todo periodicity
+ */
+class SoilLookUpTable: public CRootBox::SoilLookUp {
 
 public:
 
-    SoilLookUpTable(const InputFileFunction iff, std::shared_ptr<const FVGridGeometry> fvGridGeometry) : // , const BBoxTree* tree = nullptr
-        iff_(iff), fvGridGeometry_(fvGridGeometry) { // , bBoxTree_(tree)
-//        if (((iff_.type() == iff_.data) || (iff_.type() == iff_.perType)) && (tree == nullptr)) {
-//            std::cout << "SoilLookTable: grid data is only available if box tree is set ";
-//        } // TODO should be an assertion
+    SoilLookUpTable(const InputFileFunction iff):
+        iff_(iff) {
+
     }
 
     //! Returns the saturation, pos [cm]
     double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
         const auto p = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
         size_t eIdx = 0;
-//        if (bBoxTree_ != nullptr) {
-//            const auto entities = intersectingEntities(p, bBoxTree_); // function from <dumux/common/geometry/intersectingentities.hh>
-//            if (!entities.empty()) {
-//                eIdx = fvGridGeometry_().elementMapper().index(entities);
-//            } else {
-//                std::cout << "SoilLookTable: no element found at " << p;
-//            }
-//        }
         double v = iff_.f(p[2], eIdx);
-        // std::cout << "soil " << p[2] << ", " << v << "\n";
         return v;
     }
 
@@ -152,9 +178,7 @@ public:
 
 private:
 
-    // const BBoxTree* bBoxTree_;
     const InputFileFunction iff_;
-    std::shared_ptr<const FVGridGeometry> fvGridGeometry_;
 
 };
 
