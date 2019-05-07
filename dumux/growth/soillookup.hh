@@ -59,7 +59,8 @@ public:
 
         if (periodic) {
             const auto size = fvGridGeometry_.bBoxMax() - fvGridGeometry_.bBoxMin();
-            setPeriodicDomain(100.*-size[0]/2.,100.*size[0]/2., 100.*-size[1]/2., 100.*size[1]/2. );
+            // setPeriodicDomain(100.*-size[0]/2.,100.*size[0]/2., 100.*-size[1]/2., 100.*size[1]/2. );
+            setPeriodicDomain(0., 100.*size[0]/2., 0., 100.*size[1]);
         }
 
     }
@@ -69,8 +70,12 @@ public:
      */
     double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
 
+        std::cout << "shiftRB " << shiftRB.toString()<< std::flush;;
+
         auto p = periodic(pos.plus(shiftRB)); // periodic mapping
         const auto globalPos = Dune::FieldVector<double, 3>( { p.x * 0.01, p.y * 0.01, p.z * 0.01 });
+
+        std::cout << "getValue() "<< pos.toString() << "->" << p.toString() << " [cm] \n" << std::flush;
 
         const auto entities = intersectingEntities(globalPos, bBoxTree_); // function from <dumux/common/geometry/intersectingentities.hh>
 
@@ -104,17 +109,14 @@ public:
         auto pp = periodic(CRootBox::Vector3d(100*p[0], 100*p[1], 100*p[2])); // periodic mapping
         p[0] = pp.x/100.; p[1] = pp.y/100.; p[2] = pp.z/100.;
 
+        std::cout << "pick() "<< pos << "->" << p << " [m] \n" << std::flush;
+
         const auto entities = intersectingEntities(p, bBoxTree_);
         if (entities.empty()) {
             return -1;
         }
         const auto element = bBoxTree_.entitySet().entity(entities[0]);
-
-        std::cout << "\npick: " << pos << " -> " << p << std::flush; // pick is shifted and periodic
-
-        std::cout << "\nelement geometry center: " << element.geometry().center() << std::flush;
-        auto eMapper = fvGridGeometry_.elementMapper();
-        int eIdx = eMapper.index(element);
+        int eIdx = fvGridGeometry_.elementMapper().index(element);
         return eIdx;
     }
 

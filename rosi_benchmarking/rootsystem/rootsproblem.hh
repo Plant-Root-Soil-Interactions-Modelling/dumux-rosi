@@ -353,7 +353,7 @@ public:
     Scalar soil(const GlobalPosition& p) const {
         auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100);
         double d = soil_->getValue(p2);
-        std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
+        // std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
         return toPa_(d);
     }
 

@@ -92,6 +92,7 @@ using SoilLookUp = GrowthModule::SoilLookUpBBoxTree<SoilFVGridGeometry>;
 
 /*!
  * calculates saturation from the solution vector (todo which dof is associated to scv?)
+ * todo move to soil
  */
 template<class SoilGridVariables, class SoilSolution>
 void updateSaturation(std::vector<double>& saturation, const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
@@ -107,7 +108,7 @@ void updateSaturation(std::vector<double>& saturation, const SoilFVGridGeometry&
         elemVolVars.bindElement(element, fvGeometry, sol);
 
         for (const auto& scv : scvs(fvGeometry)) {
-            saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0);
+            saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0); // saturation(0);
         }
     }
 }
@@ -137,8 +138,7 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
 
             // define the type tag for this problem
             auto pos = scv.center();
-            std::cout << "pick(pos) at " << pos << "\n"<<std::flush;
-            size_t eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element todo shift????
+            int eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element
             if (eIdx>=0) {
                 std::cout << "eIdx " << eIdx << ", " << s <<"\n"<<std::flush;
                 source.at(eIdx) += s; // accumulate source term
@@ -244,8 +244,11 @@ int main(int argc, char** argv) try
     auto soilLookUp = SoilLookUp(*soilFVGridGeometry, saturation);
 
     auto maxsize = soilFVGridGeometry->bBoxMax(); // // YASP grid is shifted
-    soilLookUp.setShift( Dune::FieldVector<double, 3>( {maxsize[0]/2, maxsize[1]/2, maxsize[2]}));
+    auto minsize = soilFVGridGeometry->bBoxMin(); // // YASP grid is shifted
 
+    auto shift = Dune::FieldVector<double, 3>( {maxsize[0]/2, maxsize[1]/2, maxsize[2]});
+    std::cout << "Shift: (" << maxsize << "), ("<< minsize <<  "), (" << shift << ")\n" << std::flush;
+    soilLookUp.setShift( shift );
     rootProblem->setSoil(&soilLookUp);
     std::cout << "roots know the soil \n" << "\n" << std::flush;
 
@@ -254,7 +257,10 @@ int main(int argc, char** argv) try
     soilProblem->setSource(&soilSink);
     std::cout << "and the soil knows the roots \n" << "\n" << std::flush;
 
+    std::cout << "value = " << soilLookUp.getValue(CRootBox::Vector3d());
 
+    std::string sss = "";
+    std::getline(std::cin, sss);
 
 
 
