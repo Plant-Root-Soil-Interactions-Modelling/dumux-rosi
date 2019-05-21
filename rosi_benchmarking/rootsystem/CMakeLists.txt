@@ -9,7 +9,3 @@ target_compile_definitions(rootsystem_rb PUBLIC ROOTBOX)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-
-
-
-

@@ -140,7 +140,7 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
             auto pos = scv.center();
             int eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element
             if (eIdx>=0) {
-                std::cout << "eIdx " << eIdx << ", " << s <<"\n"<<std::flush;
+                //std::cout << "eIdx " << eIdx << ", " << s <<"\n"<<std::flush;
                 source.at(eIdx) += s; // accumulate source term
             } else {
                 std::cout << "root at position " << pos << " not within soil";
@@ -290,7 +290,7 @@ int main(int argc, char** argv) try
     using RootIOFields = GetPropType<RootsTag, Properties::IOFields>;
     VtkOutputModule<RootGridVariables, RootSolutionVector> rootVTKWriter(*rootGridVariables, r, rootProblem->name()+"R");
     using RootVelocityOutput = GetPropType<RootsTag, Properties::VelocityOutput>;
-    rootVTKWriter.addVelocityOutput(std::make_shared<RootVelocityOutput>(*rootGridVariables));
+//    rootVTKWriter.addVelocityOutput(std::make_shared<RootVelocityOutput>(*rootGridVariables));
 //    rootProblem->axialFlux(r); // prepare fields
 //    rootProblem->radialFlux(r); // prepare fields
 //    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux");
@@ -299,9 +299,9 @@ int main(int argc, char** argv) try
     rootVTKWriter.write(0.0);
 
     using SoilIOFields = GetPropType<SoilTag, Properties::IOFields>;
-    VtkOutputModule<SoilGridVariables, SoilSolutionVector> soilVTKWriter(*soilGridVariables, s, "s_"+soilProblem->name()+"S");
+    VtkOutputModule<SoilGridVariables, SoilSolutionVector> soilVTKWriter(*soilGridVariables, s, soilProblem->name()+"S");
     using SoilVelocityOutput = GetPropType<SoilTag, Properties::VelocityOutput>;
-    soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
+//    soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
     SoilIOFields::initOutputModule(soilVTKWriter); //!< Add model specific output fields
     soilVTKWriter.write(0.0);
     std::cout << "vtk writer module initialized (in less than 20 lines)" << "\n" << std::flush;

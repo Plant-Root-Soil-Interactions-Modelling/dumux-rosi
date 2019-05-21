@@ -60,7 +60,7 @@ public:
         if (periodic) {
             const auto size = fvGridGeometry_.bBoxMax() - fvGridGeometry_.bBoxMin();
             // setPeriodicDomain(100.*-size[0]/2.,100.*size[0]/2., 100.*-size[1]/2., 100.*size[1]/2. );
-            setPeriodicDomain(0., 100.*size[0]/2., 0., 100.*size[1]);
+            setPeriodicDomain(0., 100.*size[0], 0., 100.*size[1]);
         }
 
     }
@@ -69,8 +69,6 @@ public:
      *  Returns the interpolated saturation, pos [cm]
      */
     double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
-
-        std::cout << "shiftRB " << shiftRB.toString()<< std::flush;;
 
         auto p = periodic(pos.plus(shiftRB)); // periodic mapping
         const auto globalPos = Dune::FieldVector<double, 3>( { p.x * 0.01, p.y * 0.01, p.z * 0.01 });
