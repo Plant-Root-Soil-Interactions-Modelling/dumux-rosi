@@ -40,6 +40,8 @@
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
+#include "../../dumux/external/csv.h"
+
 #include <RootSystem.h>
 
 #include "richardsparams.hh"
@@ -140,7 +142,20 @@ public:
         if (bcTopType_==atmospheric) {
             std::string filestr = this->name() + ".csv";
             myfile_.open(filestr.c_str());
-            precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // cm/day
+            try {
+            	std::string filename = getParam<std::string>("Climate.File");
+            	io::CSVReader<2> csv(filename);
+            	csv.read_header(io::ignore_extra_column, "time", "net-flux");
+            	std::vector<double> t, prec;
+            	double a,b;
+            	while(csv.read_row(a,b)){
+            		t.push_back(a);
+            		prec.push_back(b);
+            	}
+            	precipitation_ = InputFileFunction(t,prec);
+            } catch(...) {
+            	precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // cm/day
+            }
         }
         // IC
         initialSoil_ = InputFileFunction("Soil.IC.P","Soil.IC.Z", this->spatialParams().layerIFF());

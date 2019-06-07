@@ -153,6 +153,15 @@ public:
         }
     }
 
+    //! don't know why it does not compile without it
+    InputFileFunction(std::vector<double> x, std::vector<double> y) {
+    	type_ = table;
+    	table_.resize(0);
+    	table_.push_back( { x, y });
+    	std::cout << "InputFileFunction: hard coded table \n";
+    }
+
+
     //! function
     double f(double x, size_t eIdx) const {
         switch (type_) {
