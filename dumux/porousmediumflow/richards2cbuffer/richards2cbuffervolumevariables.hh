@@ -27,7 +27,7 @@
 #include "richards2cbufferproperties.hh"
 
 #include <dumux/implicit/volumevariables.hh>
-#include <dumux/material/fluidstates/compositional.hh>
+//#include <dumux/material/fluidstates/compositional.hh>
 
 namespace Dumux
 {
@@ -110,6 +110,9 @@ public:
 
         dispersivity_ = problem.spatialParams().dispersivity(element, fvGeometry, scvIdx);
         buffer_ = problem.spatialParams().buffer(element, fvGeometry, scvIdx);
+        bulkDensity_ = problem.spatialParams().bulkDensity(element, fvGeometry, scvIdx);
+        FreundlichK_ = problem.spatialParams().FreundlichK(element, fvGeometry, scvIdx);
+        FreundlichN_ = problem.spatialParams().FreundlichN(element, fvGeometry, scvIdx);
 
 
         // Second instance of a parameter cache.
@@ -172,8 +175,8 @@ public:
         else
         {
             // setMassFraction() has only to be called 1-numComponents times
-            fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
-            //fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+            //fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+            fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
         }
 
         // density and viscosity
@@ -188,6 +191,18 @@ public:
         // compute and set the enthalpy
         Scalar h = Implementation::enthalpy_(fluidState, paramCache, phaseIdx);
         fluidState.setEnthalpy(phaseIdx, h);
+//
+//        if(useMoles)
+//        {
+//            fluidState.setMoleFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+//            fluidState.setMoleFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+//        }
+//        else
+//        {
+//            // setMassFraction() has only to be called 1-numComponents times
+//            fluidState.setMassFraction(phaseIdx, phaseCompIdx, 1 - priVars[massOrMoleFracIdx]);
+//            //fluidState.setMassFraction(phaseIdx, transportCompIdx, priVars[massOrMoleFracIdx]);
+//        }
 
     //    Scalar x1 = priVars[massOrMoleFracIdx]; //mole or mass fraction of component 1
     //    if(!useMoles) //mass-fraction formulation
@@ -361,7 +376,48 @@ public:
      *
      */
     Scalar buffer() const
-    { return buffer_; }
+    {
+        if (buffer_ >=0)
+            return buffer_;
+        else
+        {
+            if (fluidState_.massFraction(phaseIdx, transportCompIdx) <= 0)
+                return 0;
+            Scalar massConcentration = fluidState_.massFraction(phaseIdx, transportCompIdx)*fluidState_.density(phaseIdx);
+            return bulkDensity_*FreundlichK_*std::pow(massConcentration*1e3, FreundlichN_)*1e-6/massConcentration; //kg/m3 = 1e3 mg/l ; mg/kg = 1e-6 kg/kg
+        }
+    }
+
+    Scalar totalMassConcentration() const
+    {
+        Scalar massConcentration = fluidState_.massFraction(phaseIdx, transportCompIdx)*fluidState_.density(phaseIdx);
+        return massConcentration*(waterContent(phaseIdx)+buffer());
+    }
+
+    Scalar dissolveMassConcentration(Scalar totalMassConcentration) const
+    {
+        if (totalMassConcentration == 0) return 0;
+        if (buffer_ >=0)
+            return totalMassConcentration/(1+buffer_);
+        else
+        {
+            //totalMassConcentration = bulkDensity_*FreundlichK_*std::pow(massConcentration*1e3, FreundlichN_)*1e-6 + massConcentration
+            Scalar previousMassConcentration = 0;
+            Scalar massConcentration = fluidState_.massFraction(phaseIdx, transportCompIdx)*fluidState_.density(phaseIdx);
+            while (std::abs((massConcentration-previousMassConcentration)/previousMassConcentration)<0.01)
+            {
+                previousMassConcentration = massConcentration;
+                massConcentration = std::pow((totalMassConcentration - waterContent(phaseIdx)*previousMassConcentration)
+                                                                    /(bulkDensity_*FreundlichK_*1e-6),(1/FreundlichN_))/1e3;
+            }
+            return massConcentration;
+        }
+    }
+
+    Scalar dissolveMassFraction(Scalar totalMassConcentration) const
+    {
+        return dissolveMassConcentration(totalMassConcentration)/fluidState_.density(phaseIdx);
+    }
 
 protected:
     static Scalar temperature_(const PrimaryVariables &primaryVariables,
@@ -397,7 +453,7 @@ protected:
     Scalar porosity_;
     GlobalPosition dispersivity_;
     Scalar diffCoeff_;
-    Scalar buffer_;
+    Scalar buffer_, FreundlichN_, FreundlichK_, bulkDensity_;
     Scalar effDiffCoeff_;
 
 

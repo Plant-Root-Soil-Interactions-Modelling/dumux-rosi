@@ -1,5 +1,3 @@
-EXTDIR= path to external modules
-
 GXX_RELEASE_WARNING_OPTS=" \
     -Wall \
     -Wunused \
@@ -18,7 +16,6 @@ GXX_RELEASE_OPTS=" \
 
 # configure flags
 CMAKE_FLAGS=" 
--DUG_DIR=$EXTDIR/ug-3.12.1
 -DCMAKE_C_COMPILER=/usr/bin/clang
 -DCMAKE_CXX_COMPILER=/usr/bin/clang++
 -DCMAKE_CXX_FLAGS_RELEASE='$GXX_RELEASE_OPTS $GXX_RELEASE_WARNING_OPTS'

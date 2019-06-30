@@ -1,0 +1,112 @@
+###############################################################
+# Parameter file for test_1p.
+# Everything behind a '#' is a comment.
+# Type "./test_1p --help" for more information.
+###############################################################
+
+###############################################################
+# Mandatory arguments
+###############################################################
+
+[MultiDimension]
+UseIterativeSolver = 0
+
+[TimeManager]
+DtInitial = 86400# [s]
+MaxTimeStepSize =3600# [s]
+TEnd = 4492800# [s]
+EpisodeTime = 86400# [s]
+OutputEveryTimeStep = true
+RatioSuggestedTimeStepSize = 10
+StartEpisodeWithTimeStepSize = 1# [s]
+
+[Rhizosphere.Grid]
+EnableRhizosphereScaleModel = true
+Cells0 = 10 1
+Grading0 = 1.5 1
+Positions0 = 2e-4 0.01 0.015
+Z = 1
+
+[Grid]
+File = ./grids/test_1branch.dgf
+MimicGrowth = true
+NeglectRootCollarSegment = true
+GrowingAtEpisode = true
+Refinement = 0
+
+[Soil.Grid]
+File = ./grids/SoilColSquareInside2cm.msh
+UpperRight = 0 0 0
+
+[Problem]
+Name = ./results/N4_SubP_Drying_test1Branch
+
+[Soil.VanGenuchten]
+VgAlpha = 0.04e-2 #[1/m] Vanderborght 2005 Loam
+Vgn = 1.6 #[-] Vanderborght 2005 Loam
+Swr = 0.08 #[-] Vanderborght 2005 Loam
+
+[Solute]
+Name = P
+MolarMass = 31e-3 #[kg/mol]
+liquidDiffCoeff = 0.6e-9 # [m2 s-1] # http://www.aqion.de/site/194
+
+[Soil.SpatialParams]
+UseSoilData = true
+SoilDataFileName = BC_soilColumnSubP_V2.csv
+Porosity= 0.43  # Vanderborght 2005 Loam
+Permeability = 5.89908256880734E-13 # 5.7870e-06[m/s] *mu/(rho*g) -> 5.7870e-06[m/s]*0.001[Pa.s]/(1000[kg m-3]* 9.81 [m s-2])  # Vanderborght 2005 Loam
+BufferPower = 40 #[-]
+BulkDensity = 1280 #
+### root parameters ###
+
+[RootSystem.SpatialParams]
+rootRadius = 2e-4 #1.e-4# 2e-4
+Kx = 2e-16 #?[m4 s-1 Pa-1] (Mastsuo 2009) 2*10-8 [g g-1 RFW kPa-1 s-1] =2*e-8*e-5*
+Kr = 6.3e-14 #[m s-1 Pa-1] (Miyamoto 2001, Meng 2016)
+Vmax = 3.844e-10 #[kg/(m2s)] 12.4 nmol/(m2s) Teo 1992
+Km = 1.054e-4 #[kg/m3] 3.4 micro-mol/L Teo 1992
+Cmin = 0#4.34e-5 #[kg/m3] 1.4 micro-mol/L Teo 1992
+DiffCoeffRootMembrane = 0
+PartitionCoeff = 0 # 0 just active uptake
+
+[Soil.BoundaryConditions]
+UseWeatherData = true
+WeatherDataFileName = BC3_N4_SubP_Drying.csv
+PeriodicVerticalFlow = false#true#false
+BottomInFlow = true#true
+ZeroNeumannSoil = false
+
+[RootSystem.BoundaryConditions]
+DirichletRootCollar = false
+CollarPressure = 92340
+MultiRoot = false
+TranspirationRate = 1.4e-6 # 7.2E-05*pi*0.08^2 # 4 mmol water /s / m2 leave area = 4*18e-6 kg/s/m2
+TranspirationRateRatio = 1
+DiurnalFluctuation = true #false
+
+[Soil.InitialConditions]
+InitialSoilWaterContent = 0.34#0.25
+InitialSoilPressure = 92340
+InitialSoluteMassFracInSoil = 1.95e-6 # [-]
+SoilTemperature = 283
+
+[RootSystem.InitialConditions]
+InitialRootPressure = 1e5#90571#96620
+CriticalCollarPressure  = -1e9 #-1.4e6 # 1bar - 15bar = -14bar
+CollarPressure = 92340#96620 # [Pa] sd -1.5e5
+InitialSoluteMassFracInRoot = 0 #
+RootTemperature = 283
+
+[IterativeAlgorithm]
+MaxIterations = 100
+Tolerance = 1.0e-14
+Verbose = 1
+IntegrationOrder = 1
+
+[Newton]
+MaxRelativeShift = 1e-4
+MaxSteps = 5
+
+[Implicit]
+MaxTimeStepDivisions = 100

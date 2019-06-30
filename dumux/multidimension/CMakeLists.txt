@@ -1,0 +1,3 @@
+add_subdirectory(facetcoupling)
+add_subdirectory(boundarycoupling)
+add_subdirectory(embeddedcoupling)

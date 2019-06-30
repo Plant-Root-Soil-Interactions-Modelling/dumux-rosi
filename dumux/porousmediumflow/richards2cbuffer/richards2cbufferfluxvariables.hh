@@ -205,6 +205,12 @@ public:
     const GlobalPosition &potentialGrad() const
     { return potentialGrad_; }
 
+    /*!
+     * \brief Return the pressure pressure gradient \f$\mathrm{[Pa/m]}\f$.
+     */
+    const GlobalPosition &pressureGrad() const
+    { return pressureGrad_; }
+
 
     /*!
      * \brief Return the mole-fraction gradient of a component in a phase \f$\mathrm{[mol/mol/m)]}\f$.
@@ -342,6 +348,12 @@ public:
         return volumeFlux_;
     }
 
+    Scalar faceVolumeFlux(const unsigned int phaseIdx) const
+    {
+        assert (phaseIdx == Indices::phaseIdx);
+        return faceVolumeFlux_;
+    }
+
 protected:
     //! Returns the implementation of the flux variables (i.e. static polymorphism)
     Implementation &asImp_()
@@ -402,7 +414,7 @@ protected:
             //phase density
             density_ += elemVolVars[volVarsIdx].density()*face().shapeValue[idx];
         }
-
+        pressureGrad_ = potentialGrad_;
 
         ///////////////
         // correct the pressure gradients by the gravitational acceleration
@@ -423,6 +435,21 @@ protected:
             // calculate the final potential gradient
             potentialGrad_ -= g;
         }
+
+        facePotentialGrad_ = face().grad[0];
+        facePotentialGrad_ *=(elemVolVars[face().i].pressure() - elemVolVars[face().j].pressure());
+        Scalar rhoI = elemVolVars[face().i].density();
+        Scalar rhoJ = elemVolVars[face().j].density();
+        Scalar density = (rhoI + rhoJ)/2;
+
+        // ask for the gravitational acceleration at the given SCV face
+        GlobalPosition g(problem.gravityAtPos(face().ipGlobal));
+
+        // make it a force
+        g *= density;
+
+        // calculate the final potential gradient
+        facePotentialGrad_ -= g;
     }
 
     /*!
@@ -493,6 +520,29 @@ protected:
 
         volumeFlux_ = KmvpNormal_;
         volumeFlux_ *= mobilityUpwindWeight_/elemVolVars[upstreamIdx_].viscosity()
+                    + (1.0 - mobilityUpwindWeight_)/elemVolVars[downstreamIdx_].viscosity();
+    }
+
+
+    void calculateFaceVolumeFlux_(const Problem &problem,
+                              const Element &element,
+                              const ElementVolumeVariables &elemVolVars)
+    {
+        K_.mv(facePotentialGrad_, faceKmvp_);
+        faceKmvpNormal_ = -(faceKmvp_*face().normal);
+
+        // set the upstream and downstream vertices
+        upstreamIdx_ = face().i;
+        downstreamIdx_ = face().j;
+
+        if (faceKmvpNormal_ < 0)
+        {
+            std::swap(upstreamIdx_,
+                      downstreamIdx_);
+        }
+
+        faceVolumeFlux_ = faceKmvpNormal_;
+        faceVolumeFlux_ *= mobilityUpwindWeight_/elemVolVars[upstreamIdx_].viscosity()
                     + (1.0 - mobilityUpwindWeight_)/elemVolVars[downstreamIdx_].viscosity();
     }
     /*!
@@ -577,7 +627,7 @@ protected:
     bool onBoundary_;
     GlobalPosition feGrad_;
     //! pressure potential gradient
-    GlobalPosition potentialGrad_;
+    GlobalPosition potentialGrad_, pressureGrad_, facePotentialGrad_;
     //! mole-fraction gradient
     GlobalPosition moleFractionGrad_;
     //! mole-fraction gradient
@@ -593,9 +643,9 @@ protected:
     //! the intrinsic permeability tensor
     DimWorldMatrix K_;
     // intrinsic permeability times pressure potential gradient
-    GlobalPosition Kmvp_;
+    GlobalPosition Kmvp_, faceKmvp_;
     // projected on the face normal
-    Scalar KmvpNormal_;
+    Scalar KmvpNormal_, faceKmvpNormal_;
 
     // local index of the upwind vertex for each phase
     int upstreamIdx_;
@@ -608,7 +658,7 @@ protected:
     //! molar densities of the fluid at the integration point
     Scalar molarDensity_, density_;
 
-    Scalar volumeFlux_; //!< Velocity multiplied with normal (magnitude=area)
+    Scalar volumeFlux_, faceVolumeFlux_; //!< Velocity multiplied with normal (magnitude=area)
     Scalar mobilityUpwindWeight_; //!< Upwind weight for mobility. Set to one for full upstream weighting
 
 private:

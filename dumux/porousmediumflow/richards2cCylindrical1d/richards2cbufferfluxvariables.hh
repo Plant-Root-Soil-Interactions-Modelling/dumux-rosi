@@ -289,7 +289,7 @@ public:
 
     /*!
      * \brief Return density \f$\mathrm{[kg/m^3]}\f$ of a phase at the integration
-     *        point.
+     *        point
      */
     Scalar density() const
     { return density_; }
@@ -410,9 +410,9 @@ protected:
             tmp *= elemVolVars[volVarsIdx].pressure();
             potentialGrad_ += tmp;
 
-            feGrad_ +=feGrad;
-            tmp *= elemVolVars[volVarsIdx].pressure()*elemVolVars[volVarsIdx].coordinatesCenter();;
-            radialPotentialGrad_=tmp;
+            //tmp = feGrad;
+            //tmp *= elemVolVars[volVarsIdx].pressure()*elemVolVars[volVarsIdx].coordinatesCenter();;
+            //radialPotentialGrad_=tmp;
 
             // the mole-fraction gradient
             tmp = feGrad;
@@ -429,11 +429,11 @@ protected:
             tmp *= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density();
             concentrationGrad_ += tmp;
 
-            tmp = feGrad;
-            tmp *= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
-                    *elemVolVars[volVarsIdx].coordinatesCenter();
-            //tmp -=elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()/face().numFap;
-            radialConcentrationGrad_ += tmp;
+            //tmp = feGrad;
+            //tmp *= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
+            //        *elemVolVars[volVarsIdx].coordinatesCenter();
+            ////tmp -=elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()/face().numFap;
+            //radialConcentrationGrad_ += tmp;
 
             // phase viscosity
             viscosity_ += elemVolVars[volVarsIdx].viscosity()*face().shapeValue[idx];
@@ -444,36 +444,27 @@ protected:
             //phase density
             density_ += elemVolVars[volVarsIdx].density()*face().shapeValue[idx];
 
+            tmp = feGrad;
+            tmp *= elemVolVars[volVarsIdx].pressure()*face().ipGlobal[0];
+            radialPotentialGrad_ += tmp;
 
-            if(onBoundary_)
-                {}
-                //radialConcentrationGrad_ = elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
-                //                        *face().shapeValue[idx];
-            else
-                radialConcentrationGrad_ -= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
-                                        *face().shapeValue[idx];
+            tmp = feGrad;
+            tmp *= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
+                    *face().ipGlobal[0];
+            radialConcentrationGrad_ += tmp;
 
-            //radialPotentialGrad_ -= elemVolVars[volVarsIdx].pressure()*face().shapeValue[idx];
-        }
-
-        ///////////////
-        // correct the pressure gradients by the gravitational acceleration
-        ///////////////
-        if (GET_PARAM_FROM_GROUP(TypeTag, bool, Problem, EnableGravity)) {
-            // calculate the phase density at the integration point. we
-            // only do this if the wetting phase is present in both cells
-            Scalar rhoI = elemVolVars[face().i].density();
-            Scalar rhoJ = elemVolVars[face().j].density();
-            Scalar density = (rhoI + rhoJ)/2;
-
-            // ask for the gravitational acceleration at the given SCV face
-            GlobalPosition g(problem.gravityAtPos(face().ipGlobal));
-
-            // make it a force
-            g *= density;
-
-            // calculate the final potential gradient
-            potentialGrad_ -= g;
+//
+            //if(onBoundary_)
+            //    {}
+            //    //radialConcentrationGrad_ = elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
+            //    //                        *face().shapeValue[idx];
+            //else
+            //{
+            //    radialConcentrationGrad_ -= elemVolVars[volVarsIdx].massFraction(transportCompIdx)*elemVolVars[volVarsIdx].density()
+            //                            *face().shapeValue[idx];
+//
+            //    radialPotentialGrad_ -= elemVolVars[volVarsIdx].pressure()*face().shapeValue[idx];
+            //}
         }
     }
 

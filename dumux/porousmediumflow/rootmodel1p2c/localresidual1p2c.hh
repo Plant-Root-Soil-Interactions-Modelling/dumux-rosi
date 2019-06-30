@@ -145,7 +145,7 @@ public:
                         onBoundary);
 
         asImp_()->computeAdvectiveFlux(flux, fluxVars, faceIdx);
-        asImp_()->computeDiffusiveFlux(flux, fluxVars);
+        //asImp_()->computeDiffusiveFlux(flux, fluxVars);
     }
 
     /*!

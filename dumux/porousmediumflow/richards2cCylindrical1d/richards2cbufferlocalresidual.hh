@@ -106,7 +106,7 @@ public:
         // pressure head formulation
         storage[contiEqIdx] =
                 volVars.saturation(phaseIdx)
-                *volVars.porosity()*volVars.coordinatesCenter()[0];;
+                *volVars.porosity()*volVars.coordinatesCenter()[0];
 
         if(!useMoles) //mass-fraction formulation
         {
@@ -180,14 +180,14 @@ public:
 
         //pressure head formulation
         flux[contiEqIdx] =
-            fluxVars.volumeFlux(phaseIdx);
+            fluxVars.radialVolumeFlux(phaseIdx);
 
         if(!useMoles) //mass-fraction formulation
         {
             // total mass flux - massfraction
             //KmvpNormal is the Darcy velocity multiplied with the normal vector, calculated in 1p2cfluxvariables.hh
             if (!usePH)
-                flux[contiEqIdx] *=fluxVars.coordinatesCenter()[0]*
+                flux[contiEqIdx] *=
                     ((     massUpwindWeight_)*up.density()
                      +
                      ((1 - massUpwindWeight_)*dn.density()));
@@ -195,11 +195,10 @@ public:
             // advective flux of the second component - massfraction
 
             flux[transportEqIdx] +=
-                fluxVars.volumeFlux(phaseIdx) *
+                fluxVars.radialVolumeFlux(phaseIdx) *
                 ((    massUpwindWeight_)*up.density()*up.massFraction(transportCompIdx)
                  +
-                 (1 - massUpwindWeight_)*dn.density()*dn.massFraction(transportCompIdx))
-                 *fluxVars.coordinatesCenter()[0];
+                 (1 - massUpwindWeight_)*dn.density()*dn.massFraction(transportCompIdx));
         }
         else //mole-fraction formulation
         {
@@ -209,16 +208,14 @@ public:
                 flux[contiEqIdx] *=
                     ((      massUpwindWeight_)*up.molarDensity()
                      +
-                     ((1 - massUpwindWeight_)*dn.molarDensity()))
-                    *fluxVars.coordinatesCenter()[0];
+                     ((1 - massUpwindWeight_)*dn.molarDensity()));
 
             // advective flux of the second component -molefraction
             flux[transportEqIdx] +=
-                fluxVars.volumeFlux(phaseIdx)
+                fluxVars.radialVolumeFlux(phaseIdx)
                 *((    massUpwindWeight_)*up.molarDensity() * up.moleFraction(transportCompIdx)
                  +
-                 (1 - massUpwindWeight_)*dn.molarDensity() * dn.moleFraction(transportCompIdx))
-                * fluxVars.coordinatesCenter()[0];
+                 (1 - massUpwindWeight_)*dn.molarDensity() * dn.moleFraction(transportCompIdx));
         }
 
     }

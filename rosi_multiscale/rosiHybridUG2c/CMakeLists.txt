@@ -1,0 +1,23 @@
+dune_add_test(SOURCES rosiHybridUG2c.cc)
+dune_symlink_to_source_files(FILES "grids"
+"BC3_N4_PlusP_Drying.csv"
+"BC3_N4_SubP_Drying.csv"
+"BC3_N4_SubP_FC.csv"
+"BC3_N4_NoP_Drying.csv"
+"BC3_N4_NoP_FC.csv"
+"BC3_N4_PlusP_FC.csv"
+"BC4_N4_NoP_Drying.csv"
+"BC4_N4_PlusP_Drying.csv"
+"BC4_N4_SubP_Drying.csv"
+"rootSystemRiceFluctuationV3_.input"
+"1RootDetaT.input"
+"BC_soilColumnNoP_V2.csv"
+"BC_soilColumnSubP_V2.csv"
+"BC_soilColumnPlusP_V2.csv"
+"BC_soilColumnZeroP_V2.csv"
+"runN4.py"
+"runN4_R.py"
+"runN4_E.py"
+"runN4_noReduction.py"
+"run.pbs")
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/results)

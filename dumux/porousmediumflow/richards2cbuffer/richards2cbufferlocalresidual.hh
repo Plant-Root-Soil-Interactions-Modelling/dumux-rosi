@@ -186,7 +186,6 @@ public:
         }
         else //mole-fraction formulation
         {
-
             // advective flux of the second component -molefraction
             flux[transportEqIdx] +=
                 fluxVars.volumeFlux(phaseIdx) *
