@@ -58,6 +58,8 @@ class RichardsTwoCBufferNewtonController : public NewtonController<TypeTag>
     enum { dim = GridView::dimension };
     enum { isBox = GET_PROP_VALUE(TypeTag, ImplicitIsBox) };
     enum { dofCodim = isBox ? dim : 0 };
+    typedef typename GET_PROP(TypeTag, ParameterTree) ParameterTree;
+    const Dune::ParameterTree &tree = ParameterTree::tree();
 
 public:
     /*!
@@ -65,8 +67,85 @@ public:
      */
     RichardsTwoCBufferNewtonController(const Problem &problem)
         : ParentType(problem)
-    {}
+	{
+	   avoidNegativeValue_ = tree.template get<bool>("Newton.AvoidNegativeValue", true);
+	}
+     /*!
+     * \brief Returns true if another iteration should be done.
+     *
+     * \param uCurrentIter The solution of the current Newton iteration
+     */
+    bool newtonProceed(const SolutionVector &uCurrentIter)
+    {
+	if (avoidNegativeValue_)
+	{
+		haveNegValue_ = false;
+		for (const auto sol : uCurrentIter)
+		    if (sol[1] < 0)
+		        {
+		            haveNegValue_ = true;
+		            if (ParentType::numSteps_ >= ParentType::maxSteps_)
+		                return false;
+		            else return true;
+		        }
+	}
+        if (ParentType::numSteps_ < 2)
+            return true; // we always do at least two iterations
+        else if (ParentType::asImp_().newtonConverged()) {
+            return false; // we are below the desired tolerance
+        }
+        else if (ParentType::numSteps_ >= ParentType::maxSteps_) {
+            // We have exceeded the allowed number of steps. If the
+            // maximum relative shift was reduced by a factor of at least 4,
+            // we proceed even if we are above the maximum number of steps.
+            if (ParentType::enableShiftCriterion_)
+                return ParentType::shift_*4.0 < ParentType::lastShift_;
+            else
+                return ParentType::reduction_*4.0 < ParentType::lastReduction_;
+        }
 
+        return true;
+    }
+
+    /*!
+     * \brief Returns true if the error of the solution is below the
+     *        tolerance.
+     */
+    bool newtonConverged() const
+    {
+        if (avoidNegativeValue_ and haveNegValue_)
+        {   std::cout << "\nNegative concentrations in solution, set Newton return to be not converged !!! \n \n";
+            return false;
+        }
+        if (ParentType::enableShiftCriterion_ && !ParentType::enableResidualCriterion_)
+        {
+            return ParentType::shift_ <= ParentType::shiftTolerance_;
+        }
+        else if (!ParentType::enableShiftCriterion_ && ParentType::enableResidualCriterion_)
+        {
+            if(ParentType::enableAbsoluteResidualCriterion_)
+                return ParentType::residual_ <= ParentType::residualTolerance_;
+            else
+                return ParentType::reduction_ <= ParentType::reductionTolerance_;
+        }
+        else if (ParentType::satisfyResidualAndShiftCriterion_)
+        {
+            if(ParentType::enableAbsoluteResidualCriterion_)
+                return ParentType::shift_ <= ParentType::shiftTolerance_
+                        && ParentType::residual_ <= ParentType::residualTolerance_;
+            else
+                return ParentType::shift_ <= ParentType::shiftTolerance_
+                        && ParentType::reduction_ <= ParentType::reductionTolerance_;
+        }
+        else
+        {
+            return ParentType::shift_ <= ParentType::shiftTolerance_
+                    || ParentType::reduction_ <= ParentType::reductionTolerance_
+                    || ParentType::residual_ <= ParentType::residualTolerance_;
+        }
+
+        return false;
+    }
     /*!
      * \brief Update the current solution of the newton method
      *
@@ -129,6 +208,8 @@ public:
             }
         }
     }*/
+private:
+    bool haveNegValue_, avoidNegativeValue_;
 };
 }
 

@@ -122,7 +122,7 @@ public:
     //{
     //    return GET_RUNTIME_PARAM(TypeTag,
     //                              Scalar,
-    //                              SpatialParams.rootRadius);
+    //                              RootSystem.SpatialParams.rootRadius);
     //}
 
     Scalar rootSurface(const Element &element,
@@ -131,7 +131,7 @@ public:
     {
         return  GET_RUNTIME_PARAM(TypeTag,
                                   Scalar,
-                                  SpatialParams.rootSurface);
+                                  RootSystem.SpatialParams.rootSurface);
     }
 
     /*!
@@ -148,7 +148,7 @@ public:
     {
         return GET_RUNTIME_PARAM(TypeTag,
                                  Scalar,
-                                 SpatialParams.Kx);
+                                 RootSystem.SpatialParams.Kx);
     }
 
     /*!
@@ -165,7 +165,7 @@ public:
     {
         return  GET_RUNTIME_PARAM(TypeTag,
                                   Scalar,
-                                  SpatialParams.Kr) ;
+                                  RootSystem.SpatialParams.Kr) ;
     }
 
     /*
@@ -204,17 +204,17 @@ public:
         rootParameter.resize(7);
         rootParameter[0] = GET_RUNTIME_PARAM(TypeTag,
                                               Scalar,
-                                              SpatialParams.rootSurface);; // surface
+                                              RootSystem.SpatialParams.rootSurface);; // surface
         rootParameter[1] = element.geometry().volume(); // length
         rootParameter[2] = 1; // order
         rootParameter[3] = 1; // branch
         rootParameter[4] = 0.00; // mass
         rootParameter[5] = GET_RUNTIME_PARAM(TypeTag,
                                               Scalar,
-                                              SpatialParams.Kx); // Kx
+                                              RootSystem.SpatialParams.Kx); // Kx
         rootParameter[6] = GET_RUNTIME_PARAM(TypeTag,
                                               Scalar,
-                                              SpatialParams.Kr); // Kr
+                                              RootSystem.SpatialParams.Kr); // Kr
 
         return rootParameter;
     }
