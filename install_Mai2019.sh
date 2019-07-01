@@ -72,17 +72,6 @@ echo "**************************************************************************
 echo "Succesfully configured and built dune, dumux and ROSI"
 echo "*********************************************************************************************"
 
-export PATH="$PATH:$PWD/dumux-rosi/bin"
-#correct python path
-var=$(which python2)
-var2="#!$var"
-cd $PWD/dumux-rosi/bin
-for FILE in extractRootResultV2.py PVDtoHF5_.py extractSoilResult.py filterHF5byLayersSoilTopBottom_.py filterHF5_rootTipsUptakeMai2019V4FixedY.py HF5Data.py PVDtoHF5.py; do
-    sed -i '1d' $FILE
-    echo $var2 | cat - $FILE > temp && mv temp $FILE
-done
-cd ../..
-
 cd build/dumux-rosi/rosi_multiscale/rosiHybridUG2c/
 make rosiHybridUG2c
 
