@@ -10,4 +10,4 @@
 #PBS -m abe
 
 cd ~/workplace/MaiDissertationFinal/build-pubMai2019/dumux-rosi/rosi_multiscale/rosiHybridUG2c/
-python runN4_noReduction.py > runN4_noReduction
+python runN4_all.py > runN4_all

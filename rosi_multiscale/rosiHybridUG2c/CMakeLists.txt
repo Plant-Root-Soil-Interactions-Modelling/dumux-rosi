@@ -15,9 +15,6 @@ dune_symlink_to_source_files(FILES "grids"
 "BC_soilColumnSubP_V2.csv"
 "BC_soilColumnPlusP_V2.csv"
 "BC_soilColumnZeroP_V2.csv"
-"runN4.py"
-"runN4_R.py"
-"runN4_E.py"
-"runN4_noReduction.py"
+"runN4_all.py"
 "run.pbs")
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/results)
