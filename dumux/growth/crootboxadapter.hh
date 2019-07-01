@@ -106,9 +106,9 @@ public:
         for (size_t i=0; i<roots.size(); i++) {
             Root* r = roots[i];
             int o = 0;
-            while (r->parent != nullptr) {
+            while (r->getParent() != nullptr) {
                 o++;
-                r = r->parent;
+                r = (Root*)r->getParent();
             }
             orders[i] = o;
         }
@@ -119,7 +119,7 @@ public:
         std::vector<Root*> roots = rootsystem_.getNewSegmentsOrigin();
         auto radii = std::vector<double>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
-            radii[i] = roots[i]->param.a / 100.; // convert to m
+            radii[i] = roots[i]->param()->a / 100.; // convert to m
         }
         return radii;
     }

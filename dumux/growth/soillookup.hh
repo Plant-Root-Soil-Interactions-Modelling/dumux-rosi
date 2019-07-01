@@ -27,7 +27,7 @@
 #include <cmath>
 #include <dune/localfunctions/lagrange/pqkfactory.hh>
 #include <dune/grid/common/mcmgmapper.hh>
-#include <RootSystem.h>
+#include <soil.h>
 
 #include <dumux/io/inputfilefunction.hh>
 
@@ -68,7 +68,7 @@ public:
     /**
      *  Returns the interpolated saturation, pos [cm]
      */
-    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
+    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Organ* root = nullptr) const final {
 
         auto p = periodic(pos.plus(shiftRB)); // periodic mapping
         const auto globalPos = Dune::FieldVector<double, 3>( { p.x * 0.01, p.y * 0.01, p.z * 0.01 });
@@ -165,7 +165,7 @@ public:
     }
 
     //! Returns the saturation, pos [cm]
-    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Root* root = nullptr) const final {
+    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Organ* root = nullptr) const final {
         const auto p = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
         size_t eIdx = 0;
         double v = iff_.f(p[2], eIdx);
