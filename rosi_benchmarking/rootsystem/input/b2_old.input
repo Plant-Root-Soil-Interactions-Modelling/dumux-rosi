@@ -6,14 +6,10 @@ TEnd = 0 # [s]
 DtInitial = 1 # [s]
 
 [RootSystem.Grid]
-File =  grids/RootSystem.dgf
-
-[RootSystem.Conductivity]
-Kx = 4.32e-2      # axial conductivity (cm^3 / day) 
-Kr = 1.728e-4     # radial conductivity (1 / day) 
+File =  grids/rootsystem_b2.dgf
 
 [RootSystem.Collar]
-P = -500 # cm pressure head
+P = -1000 # cm pressure head
 
 [Soil.IC]
 P = -200 # cm pressure head

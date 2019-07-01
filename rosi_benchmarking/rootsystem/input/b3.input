@@ -8,8 +8,27 @@ DtInitial = 1 # [s]
 [RootSystem.Grid]
 File =  grids/rootsystem_b3.dgf
 
+[RootSystem.Conductivity]
+Kx0 =    1e-5 1e-5      0.43    4.3    4.3  
+KxAge0 = 0 172800 259200  432000 1e7
+
+Kr0 =    1.7e-4 1.7e-4  6e-5   6e-5    1e-5    1e-5     
+KrAge0 = 0      432000  864000 1296000 1728000 1e7     
+
+Kx1 =    1e-5  1e-5       1e-4   6e-4    7e-3    7e-3  
+KxAge1 = 0 432000 864000 1036800 1987200 1e7
+
+Kr1 =    2e-4  2e-4 0   0     
+KrAge1 = 0     10   15  1e7     
+
+Kx2 =    1e-5  1e-5       1e-4   6e-4    7e-3    7e-3  
+KxAge2 = 0 432000 864000 1036800 1987200 1e7
+
+Kr2 =    2e-4  2e-4     0        0
+KrAge2 = 0     864000   1296000  1e7
+
 [RootSystem.Collar]
-P = -1000 # cm pressure head
+P = -500 # cm pressure head
 
 [Soil.IC]
 P = -200 # cm pressure head
@@ -17,4 +36,5 @@ P = -200 # cm pressure head
 [Vtk]
 AddProcessRank = "false"
 AddVelocity = "true"
+
 

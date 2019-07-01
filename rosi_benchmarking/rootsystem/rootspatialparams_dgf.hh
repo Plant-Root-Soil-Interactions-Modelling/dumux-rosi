@@ -56,17 +56,22 @@ class RootSpatialParamsDGF
     // parameter indices, where the parameter (if used) is located the dgf file
     enum {
         orderIdx = 0,
-        radiusIdx = 1, // cm
-        ageIdx = 2, // days
-        krIdx = 3,  // cm / hPa / day
-        kxIdx = 4 // cm^4 / hPa / day
+        radiusIdx = 4, // cm
+        ageIdx = 7, // s (!!!) before days :-( that's the creation time
+        krIdx = 6,  // cm / hPa / day
+        kxIdx = 5 // cm^4 / hPa / day
+//        orderIdx = 0,
+//        radiusIdx = 1, // cm
+//        ageIdx = 2, // days
+//        krIdx = 3,  // cm / hPa / day
+//        kxIdx = 4 // cm^4 / hPa / day
     };
 
 public:
 
     using PermeabilityType = Scalar; // export permeability type
 
-    RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
+    RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
         ParentType(fvGridGeometry) {
         kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", krIdx, orderIdx); // cm / hPa / day
         kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", kxIdx, orderIdx); // cm^4 / hPa / day
@@ -113,7 +118,7 @@ public:
 
     //! segment age [s]
     Scalar age(std::size_t eIdx) const {
-        return age_.f(eIdx)*24.*3600.+time_; // days -> s
+        return (1209600. - age_.f(eIdx)) +time_; //  !!! TODO *24.*3600. days -> s
     }
 
     //! radial conductivity [m/Pa/s]
