@@ -24,6 +24,12 @@ if you are installing the model in IBG3-cluster, then run
 sh ./dumux-rosi/install_Mai2019_IBG3Cluster.sh
 ```
 
+To run a test example (multiscale simulation of Phosphorus uptake by one nodal rice root with S-type and L-type laterals)
+```
+./build-pubMai/dumux-rosi/rosi_multiscale/rosiHybridUG2c/rosiHybridUG2c -ParameterFile rootSystemRiceFluctuationV3_.input
+```
+
+
 Contact
 --------------------------
 Email of the author: t.mai@jz-juelich.de
