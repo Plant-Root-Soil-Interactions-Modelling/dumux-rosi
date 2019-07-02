@@ -32,8 +32,6 @@
 
 #include <dumux/io/inputfilefunction.hh>
 
-
-
 namespace Dumux {
 
 /*!
@@ -53,31 +51,25 @@ class RootSpatialParamsDGF
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
 
-    // parameter indices, where the parameter (if used) is located the dgf file
-    enum {
-        orderIdx = 0,
-        radiusIdx = 4, // cm
-        ageIdx = 7, // s (!!!) before days :-( that's the creation time
-        krIdx = 6,  // cm / hPa / day
-        kxIdx = 5 // cm^4 / hPa / day
-//        orderIdx = 0,
-//        radiusIdx = 1, // cm
-//        ageIdx = 2, // days
-//        krIdx = 3,  // cm / hPa / day
-//        kxIdx = 4 // cm^4 / hPa / day
-    };
-
 public:
 
     using PermeabilityType = Scalar; // export permeability type
 
     RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
         ParentType(fvGridGeometry) {
-        kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", krIdx, orderIdx); // cm / hPa / day
-        kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", kxIdx, orderIdx); // cm^4 / hPa / day
-        radius_ = InputFileFunction("RootSystem.Radius", "RootSystem.RadiusAge", radiusIdx, orderIdx); // cm
-        age_ = InputFileFunction("RootSystem.Age", ageIdx, orderIdx); // days
-        order_ = InputFileFunction("RootSystem.Order", orderIdx, orderIdx);
+        // DGF specific (where is what)
+        dgf_simtime_ = Dumux::getParam<double>("RootSystem.Grid.SimTime", 14)*24*3600; // days -> s
+        orderIdx_ = Dumux::getParam<int>("RootSystem.Grid.orderIdx", 0); // 1
+        radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 1); // cm
+        ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 2); // s
+        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3); // cm / hPa / day
+        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4); // cm^4 / hPa / day
+        //
+        kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", krIdx_, orderIdx_); // cm / hPa / day
+        kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", kxIdx_, orderIdx_); // cm^4 / hPa / day
+        radius_ = InputFileFunction("RootSystem.Radius", "RootSystem.RadiusAge", radiusIdx_, orderIdx_); // cm
+        ct_ = InputFileFunction("RootSystem.CreationTime", ctIdx_, orderIdx_); // days
+        order_ = InputFileFunction("RootSystem.Order", orderIdx_, orderIdx_);
     }
 
     /*!
@@ -107,28 +99,28 @@ public:
     }
 
     //! segment root order, or root type [1]
-    Scalar order(std::size_t eIdx) const {
-        return order_.f(eIdx);
+    int order(std::size_t eIdx) const {
+        return (int)order_.f(eIdx)-1; // TODO (starts at 1)
     }
 
     //! segment radius [m]
     Scalar radius(std::size_t eIdx) const {
-        return radius_.f(this->age(eIdx), eIdx)/100.;
+        return radius_.f(this->age(eIdx), eIdx)/100.; // cm -> m
     }
 
     //! segment age [s]
     Scalar age(std::size_t eIdx) const {
-        return (1209600. - age_.f(eIdx)) +time_; //  !!! TODO *24.*3600. days -> s
+        return (dgf_simtime_ - ct_.f(eIdx)) +time_;
     }
 
     //! radial conductivity [m/Pa/s]
     Scalar kr(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx)/(24.*3600.), eIdx)*1.e-4/(24.*3600.); // cm / hPa / day -> m / Pa /s
+        return kr_.f(this->age(eIdx)/(24.*3600.), this->order(eIdx)) *1.e-4/(24.*3600.); // cm / hPa / day -> m / Pa /s
     }
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        return kx_.f(this->age(eIdx)/(24.*3600.), eIdx)*1.e-10/(24.*3600.); // cm^4 / hPa / day -> m^4 / Pa /s
+        return kx_.f(this->age(eIdx)/(24.*3600.), this->order(eIdx)) *1.e-10/(24.*3600.); // cm^4 / hPa / day -> m^4 / Pa /s
     }
 
     //! set current simulation time, age is time dependent (so sad), kx and kr can be age dependent
@@ -144,7 +136,7 @@ public:
         kx_.setGridData(gridData, fvGridGeometry);
         order_.setGridData(gridData, fvGridGeometry);
         radius_.setGridData(gridData, fvGridGeometry);
-        age_.setGridData(gridData, fvGridGeometry);
+        ct_.setGridData(gridData, fvGridGeometry);
     }
 
     //! ignore (because there is no common base class with rootspatialparams_rb.hh)
@@ -154,11 +146,19 @@ public:
     }
 
 private:
+    // what is where in the dgf
+    int orderIdx_;
+    int radiusIdx_;
+    int ctIdx_;
+    int krIdx_;
+    int kxIdx_;
+    double dgf_simtime_ = 0.; // for calculating age from ct
+
     InputFileFunction kr_;
     InputFileFunction kx_;
     InputFileFunction order_;
     InputFileFunction radius_;
-    InputFileFunction age_;
+    InputFileFunction ct_;
 
     double time_ = 0.;
 };

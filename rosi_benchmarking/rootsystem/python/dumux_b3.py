@@ -1,5 +1,5 @@
 #
-# Calcultates root system benchmark 2 (static root system, age dependent conductivities)
+# Calcultates root system benchmark 2b (static root system, age dependent conductivities)
 #
 # D. Leitner, 2018
 #

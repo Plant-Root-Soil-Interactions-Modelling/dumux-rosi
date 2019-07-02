@@ -1,5 +1,5 @@
 #
-# Calcultates root system benchmark 2 (static root system, constant conductivities)
+# Calcultates root system benchmark 2a (static root system, constant conductivities)
 #
 # D. Leitner, 2018
 #

@@ -79,7 +79,6 @@ public:
             }
         } catch (...) {
             try { // multiple tables
-                std::vector<std::string> names = {"0","1","2","3","4","5"};
                 yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(0));
                 table_.resize(0);
                 int m = 0;
@@ -181,11 +180,11 @@ public:
             return yy_.at(size_t(iff->f(x, eIdx) - 1)); // todo ?
         }
         case tablePerType: {
-            size_t t = size_t(data_.at(eIdx));
+            size_t t = size_t(data_.at(eIdx)) - 1;
             assert( t>=0  && "type < 0" );
             assert( t<table_.size() && "type > read tables" );
-            if(t>=table_.size()) { // it seems assertions are not working ?????
-                std::cout << "stranger things..." << std::flush;
+            if(t>=table_.size() || (t<0) ) { // it seems assertions are not working ?????
+                std::cout << "stranger things..." << t << std::flush;
             }
             return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
         }
