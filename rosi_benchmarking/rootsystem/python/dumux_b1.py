@@ -130,6 +130,8 @@ print("Numeric pressure (cm)")
 # print(toHead(at3[6]))
 
 # save benchmark 1
+z_ = np.linspace(0, -0.5, len(p_))
+h_ = vg.pa2head(p_)
 np.savetxt("dumux_b1", np.vstack((z_, h_)), delimiter = ',')
 
 if __name__ == "__main__":
