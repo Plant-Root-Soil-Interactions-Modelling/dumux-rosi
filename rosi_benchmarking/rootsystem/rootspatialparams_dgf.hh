@@ -113,7 +113,7 @@ public:
         return (dgf_simtime_ - ct_.f(eIdx)) +time_;
     }
 
-    //! radial conductivity [m/Pa/s]
+    //! radial conductivity [m/Pa/s] == [m^2 s/kg]
     Scalar kr(std::size_t eIdx) const {
         return kr_.f(this->age(eIdx)/(24.*3600.), this->order(eIdx)) *1.e-4/(24.*3600.); // cm / hPa / day -> m / Pa /s
     }

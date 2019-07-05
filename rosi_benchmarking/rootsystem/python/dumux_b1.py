@@ -29,11 +29,13 @@ def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
 # Parameters
 L = 0.5  # length of single straight root (m)
 a = 2.e-3  # radius (m)
-kr = 2.e-9  # radial conductivity per root type (m^2 s / kg)
-kz = 5.e-13  # axial conductivity (m^5 s / kg) (mal rho ergibt die alten einheiten)
+kr = 2.e-13  # radial conductivity per root type (m^2 s / kg)
+kz = 5.e-17  # axial conductivity (m^5 s / kg)
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
-t0 = -2e-4  # kg /s =) 17.28 kg /d
+t0 = -2e-8  # kg /s =) 17.28 kg /d
+trans = t0 * 24 * 3600  # kg /day
+print(trans)
 c = 2 * a * pi * kr / kz
 
 # Boundary conditions
@@ -42,7 +44,7 @@ bb = np.array([p0 - p_s, -rho * g])  # benchmark 1
 bb2 = np.array([p0 - p_s, 0])  # neglecting gravitation
 
 AA3 = np.array([[sqrt(c), -sqrt(c)], [sqrt(c) * exp(sqrt(c) * (-L)), -sqrt(c) * exp(-sqrt(c) * (-L))] ])  # neumann top, neumann bot
-bb3 = np.array([-rho * g + t0 / 1000 / kz, -rho * g])  # transpiration as BC
+bb3 = np.array([-rho * g + t0 / rho / kz, -rho * g])  # transpiration as BC
 
 d = np.linalg.solve(AA, bb)  # compute constants d_1 and d_2 from bc
 d2 = np.linalg.solve(AA, bb2)  # compute constants d_1 and d_2 from bc
@@ -69,7 +71,7 @@ os.system("./rootsystem input/b1.input")
 p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_ = read1D_vtp_data("benchmark1b-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
-os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration 17.28 -Problem.Name benchmark1c")
+os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(-trans))
 p3_ = read1D_vtp_data("benchmark1c-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 
 # plot
@@ -107,18 +109,17 @@ at2 = np.loadtxt("benchmark1b_actual_transpiration.txt", delimiter = ',')
 at3 = np.loadtxt("benchmark1c_actual_transpiration.txt", delimiter = ',')
 
 # Format of txt file:
-# time_, lastActualTrans_, lastTrans_, lastMaxTrans_, p, dp, sol[0], sol[1], trans
-# 0    , 1               , 2         , 3            , 4, 5,  6,      7,      8
+# 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
 #
 
 print("Analytic transpiration rate (kg/s):")
-print("=", 1000 * kz * ((d[0] - d[1]) * sqrt(c) + rho * g))
-print("=", 1000 * kz * ((d2[0] - d2[1]) * sqrt(c) + rho * g))
-print("=", 1000 * kz * ((d3[0] - d3[1]) * sqrt(c) + rho * g))
-print("Numeric transpiration rate (kg/s):")
-# print(at1[2])
-# print(at2[2])
-# print(at3[2])
+print("=", rho * kz * ((d[0] - d[1]) * sqrt(c) + rho * g))
+print("=", rho * kz * ((d2[0] - d2[1]) * sqrt(c) + rho * g))
+print("=", rho * kz * ((d3[0] - d3[1]) * sqrt(c) + rho * g))
+print("\nNumeric transpiration rate (kg/s):")
+print(at1[-1, 2], rho * at1[-1, 5])
+print(at2[-1, 2], rho * at2[-1, 5])
+print(at3[-1, 2], rho * at3[-1, 5])
 
 print("\nAnalytic pressure at top (cm)")
 print(p_r(0))
