@@ -1,0 +1,181 @@
+\chapter*{Chemical-Hydraulic signalling}
+
+The chemical-hydraulic signalling is implemented in dumux-rootgrowth. A boolean variable "Control" is created to determine the type of signalling. Control = 1 corresponds to hydraulic control and Control = 0 corresponds to the interaction between chemical and hydraulic control. Hydraulic control corresponds to the earlier defined switch boundary conditions, i.e. at the root collar, we prescribe the water flux equal to the potential transpiration rate
+$T_{pot}$ as long as the pressure at the root collar is above a certain threshold value. When
+the pressure at the root collar reaches this threshold value, the boundary condition is
+switched to a dirichlet condition where the pressure is prescribed to be equal to the threshold value. 
+This control mechanism between hydraulic signalling and chemical-hydraulic signalling is defined in dumux-rootgrowth/appl/maize\_stomata/rootproblem\_stomata.hh
+
+
+\begin{lstlisting}[language=C++, caption={control mechanism between hydraulic and chemical-hydraulic signalling}]
+if (Control)
+{
+criticalTranspiration = volVars.density(0)/volVars.viscosity(0)*Kx*(p - criticalCollarPressure_)/dist;
+}
+else
+{
+criticalTranspiration = stomatalconductance() * potentialTranspirationRate();    
+}
+\end{lstlisting}
+
+Here, stomatalconductance() is a function defining the relative stomatal conductance. Relative stomatal conductance is relative to maximum conductance under the same conditions but when water content is optimal. It was calculated using the equation:
+
+\begin{equation}
+\alpha = \alpha_R + (1-\alpha_R)e^{-(s_cc_L)e^{-s_h(h_L-h_{crit})}}
+\label{stomatalconductance}
+\end{equation}
+
+This equation can be found in the same file under the function declaration stomatalconductance().
+
+\begin{lstlisting}[language=C++, caption={Function definition of relative stomatal conductance}]
+Scalar stomatalconductance() const
+{
+
+int alphaR  = 0;
+
+//relative stomatal conductance
+if (p < p_crit) //pressure at root collar is less than the critical pressure
+{   
+alpha = alphaR + (1-alphaR)*exp((-sC*chemicalconcentration())*exp(-1.02e-6*(p-p_crit)));
+}
+else
+{
+alpha = alphaR + (1-alphaR)*exp(-sC*chemicalconcentration());  
+}
+return alpha;  
+}
+\end{lstlisting}
+
+Since, DuMu$^x$ uses SI unit system, therefore in \eqref{stomatalconductance} we convert pressure head ($h_L$ and $h_{crit}$) to absolute pressure ($p$ and $p_{crit}$). 
+
+Relative stomatal conductance is dependent in the concentration of chemical produced by the root tips $c_L$ when they experience dryness in soil. Further, this chemical concentration is dependent on the rate of chemical produced $M_{signal}$.
+
+\begin{equation}
+M_{signal,i} = \left\{
+\begin{array}{ll}
+0  \hspace{3.3cm} h_{Root, i} > h_0 \\
+a(h_{Root,i} - h_0)m_i \hspace{0.8cm} h_{Root, i} \leq h_0 
+\end{array}\right \}
+\label{msignal}
+\end{equation}
+
+\begin{equation}
+c_L (t_j + \Delta_j) = c_L(t_j) + \frac{M_{signal,tot} \Delta t - c_L(t_j)T_{act}\Delta t}{V_{Buffer}}
+\end{equation}
+
+\noindent where, $\sum M_{signal,i} = M_{signal,tot}$. Two separate functions are made in dumux problem file to calculate the concentration of chemical and chemical production rate. 
+
+\begin{lstlisting}[language=C++, caption={Chemical concentration and chemical production rate}]
+Scalar Msignal() const
+{
+const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
+
+for (std::map<size_t, double>::iterator p_tips = tipPressureMap.begin(); p_tips != tipPressureMap.end(); p_tips++) 
+{
+p_RootTip = p_tips->second; //store pressure at the root tips in p_RootTip
+
+//compute M_signal
+if (abs(p_RootTip) >= abs(p0))
+{
+M_signal = 3.26e-16*(abs(p_RootTip) - abs(p0))*mi;     //3.2523e-16 is production rate per dry mass and pressure in mol kg-1 Pa-1 s-1
+}	
+else 
+{					   
+M_signal = 0;  
+}                                        
+M_signal_ += M_signal;
+}
+return M_signal_;
+}
+
+Scalar chemicalconcentration() const //compute concentration of chemical signal produced by roots  
+{
+if (criticalTranspiration*timestep_*1.e-3 > 0.18*7.68e-5) {
+cL += (Msignal()*timestep_ - cL*criticalTranspiration*1.e-3*timestep_)/7.68e-5; //7.68e-5 is the volume of root in m3 
+}
+else {
+cL += 0;            
+}
+return cL;
+}
+\end{lstlisting}
+
+\section*{Creating a map of pressure at the root tips}
+In order to implement the chemical-hydraulic signalling, pressure at the root tips is stored in a map, which is then used to calculate the chemical production rate $M_{signal}$. The empty map is created under private members of rootproblem.hh file as:
+
+\begin{lstlisting}[language=C++, caption={Store pressure at the root tips in a map}]
+mutable std::map<size_t, double> tipPressureMap; // create an empty map for pressure at root tips
+\end{lstlisting}
+
+In neumann function, the condition:
+
+\begin{lstlisting}[language=C++, caption={pressure at root collar}]
+if (globalPos[2] + eps_ > this->fvGridGeometry().bBoxMax()[2])
+\end{lstlisting}
+
+is true only for root collar. This obtains the pressure at the root collar and computes criticalTranspiration. If this statement is false, it records the pressure at the root tips along with it's respective element index and store it in a map like:
+
+\begin{lstlisting}[language=C++, caption={pressure at root tips}]
+//Pressure at root tips
+const auto& volVars = elemVolVars[scvf.insideScvIdx()];
+const auto p_root = volVars.pressure(0);
+const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+tipPressureMap[eIdx] = p_root; // filling the map with index as eIdx and value as pressure at root tips 
+\end{lstlisting}
+
+All the pressure values at the root tips are stored in a map. The element index is the "key" and pressure is the "values". It is now iterated over a "for" loop to compute the chemical production rate which is dependent on pressure at each root tip. Therefore,
+
+\begin{lstlisting}[language=C++, caption={iterating pressure map}]
+for (std::map<size_t, double>::iterator p_tips = tipPressureMap.begin(); p_tips != tipPressureMap.end(); p_tips++) 
+{
+p_RootTip = p_tips->second; //store pressure at the root tips in p_RootTip
+\end{lstlisting}
+
+Chemical concentration $c_L$ (described above) is dependent on current time step (in the code: timestep\_). The current time step is taken directly from the main file and defined in the rootproblem.hh as:
+
+\begin{lstlisting}[language=C++, caption={current time step}]
+//! set the current time step for evaluation of time-dependent production of chemical
+void setDt(Scalar dt)
+{ timestep_= dt; }
+\end{lstlisting}  
+
+\section*{Read weather data from CSV file}
+Our simulation model can be used as a field model to use the data from field experiments and compare the results. Data from field experiments can be recorded in a CSV file which can be directly read by DuMu$^x$. The name of the CSV file is given in the input file. In problem.hh file, a CSV reader is used to read the CSV files and use it's data appropriately. 
+
+\subsection*{Read daily transpiration rate from csv file}
+
+Daily transpiration rate is defined in the rootproblem\_stomata.hh file. The transpiration file is obtained from the input file as:
+
+\begin{lstlisting}[language=C++, caption={CSV file defined in input file}]
+[BoundaryConditions]
+Transpiration.File = transpiration.csv 
+\end{lstlisting} 
+
+This reads the csv file containing transpiration and time data. In the code, first column of the csv file is defined as "time" and second column is "transpiration". 
+
+\begin{lstlisting}[language=C++, caption={Read daily transpiration rate from csv file}]
+std::string filestr = this->name() + ".csv";
+myfile_.open(filestr.c_str());
+filename = getParam<std::string>("BoundaryConditions.Transpiration.File");
+io::CSVReader<2> csv(filename);
+csv.read_header(io::ignore_extra_column, "time", "transpiration");
+std::vector<double> t, trans;
+double a,b;
+while(csv.read_row(a,b)){
+t.push_back(a);
+trans.push_back(b);
+}
+dailyTranspirationRate_ = InputFileFunction(t,trans);  
+\end{lstlisting} 
+
+Similarly, other weather data can also be read from the CSV file. The evaporation and precipitation is defined in the soilproblem.hh.
+
+\section*{Setting random seeds}
+
+Every time DuMu$^x$ calls the CRootBox to generate a root system architecture, new root segments are generated which results in stochasticity. This can be resolved by setting the random number generator to a certain value or setting the seed number. In main.cc file, just before initializing the rootsystem, setting the seed to a certain value eg. rootSytem-> setSeed(2) will work. In the code, this will look like:
+
+\begin{lstlisting}[language=C++, caption={Setting random number generator}]
+// intialize the root system
+rootSystem->setSeed(2);
+rootSystem->initialize();
+\end{lstlisting} 
