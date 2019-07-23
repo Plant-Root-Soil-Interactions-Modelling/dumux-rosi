@@ -141,7 +141,7 @@ public:
         // precipitation
         if (bcTopType_==atmospheric) {
             std::string filestr = this->name() + ".csv";
-            myfile_.open(filestr.c_str());
+            myfile_.open(filestr.c_str()); // output file
             try {
             	std::string filename = getParam<std::string>("Climate.File");
             	io::CSVReader<2> csv(filename);

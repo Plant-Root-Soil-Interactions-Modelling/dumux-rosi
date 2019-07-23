@@ -23,7 +23,8 @@
 #ifndef DUMUX_CROOTBOX_ADAPTER_HH
 #define DUMUX_CROOTBOX_ADAPTER_HH
 
-#include <RootSystem.h>
+#include <Organism.h>
+#include <Root.h>
 #include <mymath.h>
 
 #include "growthinterface.hh"
@@ -70,8 +71,9 @@ public:
     }
 
     std::vector<size_t> newNodeIndices() const override {
-        auto ni = rootsystem_.getNewNodeIndices();
-        return std::vector<size_t>(ni.begin(), ni.end());
+        auto v = std::vector<size_t>(rootsystem_.getNumberOfNewNodes());
+        std::iota(v.begin(), v.end(), rootsystem_.getNumberOfNodes()-rootsystem_.getNumberOfNewNodes());
+        return v;
     }
 
     std::vector<GlobalPosition> newNodes() const override {
@@ -95,38 +97,41 @@ public:
     }
 
     std::vector<double> segmentCreationTimes() const override {
-        auto sct = rootsystem_.getNewSegmentsTimes();
+        auto sct = rootsystem_.getNewSegmentCTs();
         std::transform(sct.begin(), sct.end(), sct.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
         return sct;
     }
 
     std::vector<int> segmentOrders() const override {
-        std::vector<Root*> roots = rootsystem_.getNewSegmentsOrigin();
+        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
         auto orders = std::vector<int>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
-            Root* r = roots[i];
+            Organ* r = roots[i];
             int o = 0;
             while (r->getParent() != nullptr) {
                 o++;
-                r = (Root*)r->getParent();
+                r = (Organ*)r->getParent();
             }
             orders[i] = o;
         }
         return orders;
     }
 
+    /**
+     * Currently only for roots (e.g. more general to roots[i]->getParamter("radius") )
+     */
     std::vector<double> segmentRadii() const override {
-        std::vector<Root*> roots = rootsystem_.getNewSegmentsOrigin();
+        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
         auto radii = std::vector<double>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
-            radii[i] = roots[i]->param()->a / 100.; // convert to m
+            radii[i] = ((Root*)roots[i])->param()->a / 100.; // convert to m
         }
         return radii;
     }
 
 private:
 
-    CRootBox::RootSystem& rootsystem_;
+    CRootBox::Organism& rootsystem_;
 
 };
 
