@@ -43,6 +43,8 @@ namespace Dumux {
     template<class FVGridGeometry, class Scalar>
     class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
     {
+    public:
+
         using ThisType = RichardsParams<FVGridGeometry, Scalar>;
         using ParentType = FVSpatialParams<FVGridGeometry, Scalar, ThisType>;
         using GridView = typename FVGridGeometry::GridView;
@@ -51,39 +53,37 @@ namespace Dumux {
         using Element = typename GridView::template Codim<0>::Entity;
         using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
         using Water = Components::SimpleH2O<Scalar>;
+        using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
+        using MaterialLawParams = typename MaterialLaw::Params;
+        using PermeabilityType = Scalar;
 
         enum {
             dimWorld = GridView::dimensionworld
         };
 
-    public:
-
         enum GridParameterIndex {
             materialLayerNumber = 1
         };
 
-        using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
-        using MaterialLawParams = typename MaterialLaw::Params;
-        using PermeabilityType = Scalar;
 
         RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
         : ParentType(fvGridGeometry)
         {
-            phi_ = 1; // Richards equation is independent of phi
+            phi_ = 1; // Richards equation is independent of phi [1]
 
             /* SimpleH2O is constant in regard to temperature and reference pressure */
-            Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 Pa·s
-            Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 kg/m³
+            Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
+            Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
 
-            // Get Van Genuchten parameters from the input file
-            std::vector<Scalar> Qr = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qr");
-            std::vector<Scalar> Qs = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qs");
-            std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");
-            std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N");
-            Kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity
-            std::transform(Kc_.begin (), Kc_.end (), Kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from cm/day to m/s
+            /* Get Van Genuchten parameters from the input file */
+            std::vector<Scalar> Qr = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qr"); // [1]
+            std::vector<Scalar> Qs = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qs"); // [1]
+            std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");  // [1/cm]
+            std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N"); // [1]
+            Kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity [cm/day]
+            std::transform(Kc_.begin (), Kc_.end (), Kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from [cm/day] to [m/s]
             homogeneous_ = Qr.size()==1; // more than one set of VG parameters?
-            materialParams_.resize(0);
+
             // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
             for (int i=0; i<Qr.size(); i++) {
                     materialParams_.push_back(MaterialLawParams());
@@ -99,9 +99,9 @@ namespace Dumux {
                     materialParams_.at(i).setPcHighSw(1. - eps);
                     materialParams_.at(i).setKrnLowSw(eps);
                     materialParams_.at(i).setKrwHighSw(1 - eps);
-                    // std::cout << "Qr (swr)" <<  Qr.at(i)/phi_ << "Qs (snr) " << 1.-Qs.at(i)/phi_ << " alpha " << alpha.at(i) * 100. /(rho*g_) << "Ks (K_) " << Kc_.at(i)*mu/(rho*g_) << "\n";
             }
-            layer_ = InputFileFunction("Soil.Layer.Number", "Soil.Layer.Z", materialLayerNumber);
+
+            layer_ = InputFileFunction("Soil.Layer", "Number", "Z", materialLayerNumber); // [1]([m])
         }
 
         /*!

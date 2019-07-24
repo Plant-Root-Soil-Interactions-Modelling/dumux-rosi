@@ -5,6 +5,8 @@
 #include <dumux/common/math.hh>
 #include <assert.h>
 
+#include "../../dumux/external/csv.h"
+
 namespace Dumux {
 
 /**
@@ -17,7 +19,8 @@ namespace Dumux {
  *              y is set to a single value, x is not set
  *
  * Table        the value is calculated by linear interpolation from a table (y,x) given in the input file
- *              y and x are set to multiple sampling points
+ *              y and x are both set to multiple sampling points
+ *              y and x are not set, but a parameter File = example.csv, is set in the same parameter group.
  *
  * Data         the value is taken from the grid file
  *              y and x are not set
@@ -31,200 +34,214 @@ namespace Dumux {
  * TablePerType Multiple tables, named x0, x1, ... and y0, y1, ... The table number is chosen per type. (e.g. conductivities per root type)
  *              y and x are not set, x0,x1, ... , y0,y1, ... are set.
  *
- * Periodic     (optional). Periodic over one day, e.g. for root collar. // todo change this (all types can be periodic over the day)
- *              y is set to two values determining min and max, x is not set
+ * All values options can be made sinusoidal over one day, by having the parameter sinusoidal = True in the same parameter group.
  *
  * If grid data is used (Data, or Per Type), the data must be set with InputFileFunction::setData, before calling InputFileFunction::f
+ *
  */
 class InputFileFunction {
 public:
 
     enum {
-        constant = 0, table = 1, data = 2, perType = 3, perTypeIFF = 4, periodic = 5, tablePerType = 6, empty = -1
+        constant = 0, table = 1, data = 2, perType = 3, perTypeIFF = 4, tablePerType = 5, empty = -1
     };
 
-    //! don't know why it does not compile without it todo
-    InputFileFunction() {
-    }
+    InputFileFunction() {  } // empty
 
     /**
      * Constructor 1: handles one parameter of all types
      *
-     * todo passs std::string groupName, todo pass peridocity as parameter, todo move File for csv files here.
-     *
+     * call InputFileFunction::f(double x, size_t eIdx)
      */
-    InputFileFunction(std::string nameY, std::string nameX, int dataIdx, int typeIdx = 0, bool enablePeriodic = false, InputFileFunction* typeF = nullptr) {
+    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, int dataIdx, int typeIdx = 0, InputFileFunction* typeF = nullptr) {
+        nameY = groupName +"." + nameY; // full names
+        nameX = groupName +"." + nameX; // full names
         dataIdx_ = dataIdx;
         typeIdx_ = typeIdx;
         nameY_ = nameY;
-        bool hasX = Dumux::hasParam(nameY);
-        bool hasY = Dumux::hasParam(nameY);
-        if (hasY) {
+        sinusoidal_ = (hasParam(groupName +".Sinusoidal")) ? Dumux::getParam<bool>(groupName +".Sinusoidal") : false;
+        if (Dumux::hasParam(nameY)) {
             yy_ = Dumux::getParam<std::vector<double>>(nameY);
             if (yy_.size() == 1) {
                 type_ = constant;
             } else {
-                if (hasX) {
+                if (Dumux::hasParam(nameX)) {
                     type_ = table;
                     xx_ = Dumux::getParam<std::vector<double>>(nameX);
                     table_.push_back( { xx_, yy_ });
                 } else {
-                    if ((enablePeriodic) && yy_.size() == 2) { // todo change periodicity
-                        type_ = periodic;
+                    if (typeF != nullptr) {
+                        type_ = perTypeIFF;
+                        iff_ = typeF;
                     } else {
-                        if (typeF != nullptr) {
-                            type_ = perTypeIFF;
-                            iff_ = typeF;
-                        } else {
-                            type_ = perType;
-                        }
+                        type_ = perType;
                     }
                 }
             }
         } else {
-            try { // multiple tables todo remove try catch
-                yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(0));
-                table_.resize(0);
+            if (Dumux::hasParam(nameY + std::to_string(0))) {
                 int m = 0;
-                while (true) {
-                    try {
-                        yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(m));
-                        m++;
-                    } catch (...) {
-                        break;
-                    }
+                while (Dumux::hasParam(nameY + std::to_string(m))) { // count how many there are
+                    m++;
                 }
-                for (int i = 0; i < m; i++) {
+                for (int i = 0; i < m; i++) { // read them
                     xx_ = Dumux::getParam<std::vector<double>>(nameX + std::to_string(i));
                     yy_ = Dumux::getParam<std::vector<double>>(nameY + std::to_string(i));
                     table_.push_back( { xx_, yy_ });
                 }
                 type_ = tablePerType;
-            } catch (...) {
-                type_ = data;
-            }
-        }
-        cout();
-    }
-
-    //! constructor 2 (no tables): class handles one parameter of type constant, perType, or data
-    InputFileFunction(std::string nameY, int dataIdx, int typeIdx = 0, InputFileFunction* typeF = nullptr) {
-        dataIdx_ = dataIdx;
-        typeIdx_ = typeIdx;
-        try { // todo remove try catch
-            yy_ = Dumux::getParam<std::vector<double>>(nameY);
-            if (yy_.size() == 1) {
-                type_ = constant;
             } else {
-                if ((typeF != nullptr) && (typeF->type() == table)) { // todo: why only tables?
-                    type_ = perTypeIFF;
-                    iff_ = typeF;
+                if  (hasParam(groupName +".File")) {
+                    std::string name = Dumux::getParam<std::string>(groupName +".File");
+                    std::string filename = getParam<std::string>(groupName +".File");
+                    io::CSVReader<2> csv(filename);
+                    csv.read_header(io::ignore_extra_column, "x", "y");
+                    std::vector<double> x, y;
+                    double a,b;
+                    while(csv.read_row(a,b)){
+                        x.push_back(a);
+                        y.push_back(b);
+                    }
+                    table_.push_back( { x, y });
+                    type_ = table;
                 } else {
-                    type_ = perType;
-                }
-            }
-        } catch (...) {
-            type_ = data;
-        }
-        cout();
-    }
-
-    //! constructor 3 (no grid data): class handles one parameter of type constant, table, or periodic
-    InputFileFunction(std::string nameY, std::string nameX, bool enablePeriodic = false) {
-        yy_ = Dumux::getParam<std::vector<double>>(nameY);
-        if (yy_.size() == 1) {
-            type_ = constant;
-        } else {
-            try { // todo remove try catch
-                xx_ = Dumux::getParam<std::vector<double>>(nameX);
-                type_ = table;
-                table_.push_back( { xx_, yy_ });
-            } catch (...) {
-                if ((enablePeriodic) && yy_.size() == 2) {
-                    type_ = periodic;
-                } else {
-                    throw Dumux::ParameterException("InputFileFunction: Constructor 3, multiple values for parameter " + nameY);
+                    type_ = data;
                 }
             }
         }
         cout();
     }
 
-    //! don't know why it does not compile without it
+    /**
+     * Constructor 2 (no tables):   handles one parameter of type constant, perType, perTypeIFF or data
+     *                              i.e. no dependency of a variable
+     *
+     * a call to InputFileFunction::f(size_t eIdx) is sufficient
+     */
+    InputFileFunction(std::string groupName, std::string nameY, int dataIdx = 0, int typeIdx = 0, InputFileFunction* typeF = nullptr)
+        :InputFileFunction(groupName, nameY, "no_valid_name", dataIdx, typeIdx, typeF) {
+        assert(((type_==constant) || (type_==perType) || (type_==perTypeIFF) ||(type_==data)) &&
+            "InputFileFunction: wrong type in constructor 2");
+        cout();
+    }
+
+    /**
+     * Constructor 3:   handles one parameter of all types but data, perType, TablePerType
+     *                  i.e. all types without grid data
+     *
+     * a call to InputFileFunction::f(double x) is sufficient
+     */
+    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, InputFileFunction* typeF = nullptr)
+        :InputFileFunction(groupName, nameY, nameX, 0, 0, typeF) {
+        assert(((type_==constant) || (type_==table) || (type_==perTypeIFF))  &&
+            "InputFileFunction: wrong type in constructor 3");
+        cout();
+    }
+
+    /*
+     * Constructor 4:    a hard coded a look up table
+     *
+     * it should not be necessary to use this constructor
+     * a call to InputFileFunction::f(double x) is sufficient
+     */
     InputFileFunction(std::vector<double> x, std::vector<double> y) {
         type_ = table;
-        table_.resize(0);
         table_.push_back( { x, y });
         std::cout << "InputFileFunction: hard coded table \n";
     }
 
+    /**
+     * Scales the dependent variable with @param s in InputFileFunction::f calls (for unit conversions)
+     */
+    void setVariableScale(double s) {
+        vs_ = s;
+    }
+
+    /**
+     * Scales the function's return value with @param s in InputFileFunction::f calls (for unit conversions)
+     */
+    void setFunctionScale(double s) {
+        fs_ = s;
+    }
 
     /**
      * Evaluates the function
      *
-     * @param x         the variable
+     * @param x         the variable (optionally is scaled, @see setVariableScale)
      * @param eIdx      Dumux element index for grid data look up
+     *
+     * @return          the function return values (optionally is scaled, @see setFunctionScale)
      */
     double f(double x, size_t eIdx) const {
+        double fs  = fs_;
+        if (sinusoidal_)  {
+            fs = fs * (sin((x/86400.)*2.* M_PI - 0.5*M_PI) + 1);
+            // x is assumed to be in seconds, scaling later, e.g. for look up tables based on days
+        }
+        x = x*vs_;
+
         switch (type_) {
         case constant: {
-            return yy_[0];
+            return fs*yy_[0];
         }
         case table: {
-            return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
+            return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
         }
         case data: {
-            return data_.at(eIdx);
+            return fs*data_.at(eIdx);
         }
         case perType: {
-            return yy_.at(size_t(data_.at(eIdx)));
+            return fs*yy_.at(size_t(data_.at(eIdx)));
         }
         case perTypeIFF: {
-            return yy_.at(size_t(iff_->f(x, eIdx) - 1)); // todo ?
+            return fs*yy_.at(size_t(iff_->f(x, eIdx) - 1)); // we start at one, todo ?
         }
         case tablePerType: {
             size_t t = size_t(data_.at(eIdx)) - 1;
-            assert( t>=0  && "type < 0" );
-            assert( t<table_.size() && "type > read tables" );
-            if(t>=table_.size() || (t<0) ) { // it seems assertions are not working ?????
-                std::cout << "stranger things..." << t << std::flush;
-            }
+            assert( t>=0  && "InputFileFunction::f: table type < 0" );
+            assert( t<table_.size() && "InputFileFunction::f: table type > available tables" );
             return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
-        }
-        case periodic: {
-            double a = 0.5 * (yy_[1] - yy_[0]);
-            return sin(x * 2. * M_PI - 0.5 * M_PI) * a + a + yy_[0];
         }
         default:
             throw Dumux::ParameterException("InputFileFunction: unknown function type");
         }
     }
 
-    //! function (use for constructor 2)
+    /**
+     *
+     */
     double f(size_t eIdx) const {
-        assert((type_ != table && type_ != periodic && "InputFileFunction: call f(x) for table or periodic"));
+        assert((type_ != table &&  "InputFileFunction: call f(x) for table"));
         return f(0, eIdx);
     }
 
-    //! function (use for constructor 3)
+    /**
+     *
+     */
     double f(double x) const {
         assert((type_ != data && type_ != perType && "InputFileFunction: call f(eIdx) for data or perType"));
         return f(x, 0);
     }
 
-    //! type
+    /**
+     * Type index of the InputFileFunction
+     */
     int type() const {
         return type_;
     }
 
-    //! copies the data from a vector
+    /**
+     * Copies the data from a vector, it is handled the same way as grid file data
+     */
     void setData(const std::vector<double> d) {
         if ((type_ == data) || (type_ == perType) || (type_ == tablePerType)) { // otherwise, don't bother
             data_ = d;
-        }        std::cout << "InputFileFunction: hard coded table \n";
+        }
     }
 
-    // copies the data from grid file
+    /**
+     * Copies the data from the grid file
+     */
     template<class GridData, class FVGridGeometry>
     void setGridData(const GridData& gridData, const FVGridGeometry& fvGridGeometry) {
         if ((type_ == data) || (type_ == perType) || (type_ == tablePerType)) { // otherwise, don't bother
@@ -243,15 +260,13 @@ public:
         }
     }
 
-private:
-
     /**
-     * debugging output
+     * Quick info about the type of function
      */
     void cout() {
         std::string s = "";
-        if (periodic_) {
-            s = " periodic over one day ";
+        if (sinusoidal_) {
+            s = " sinusoidal over one day ";
         }
         switch (typeIdx_) {
         case(constant): std::cout << "InputFileFunction: Constant (" << nameY_ << ")"<< s << "\n"; break;
@@ -265,11 +280,15 @@ private:
         }
     }
 
+private:
+
     int type_ = empty;
     size_t dataIdx_ = -1;
     size_t typeIdx_ = -1;
     std::string nameY_;
-    bool periodic_ = false;
+    bool sinusoidal_ = false;
+    double vs_ = 1.; // for unit conversions
+    double fs_ = 1.; // for unit conversions
     InputFileFunction* iff_ = nullptr;
     std::vector<double> xx_;
     std::vector<double> yy_;

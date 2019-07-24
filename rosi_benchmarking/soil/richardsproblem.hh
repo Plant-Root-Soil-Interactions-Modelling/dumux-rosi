@@ -40,8 +40,6 @@
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include "../../dumux/external/csv.h"
-
 #include <RootSystem.h>
 
 #include "richardsparams.hh"
@@ -87,6 +85,8 @@ struct SpatialParams<TypeTag, TTag::RichardsTT> {
 template <class TypeTag>
 class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
 {
+public:
+
     using ParentType = PorousMediumFlowProblem<TypeTag>;
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using GridView = GetPropType<TypeTag, Properties::GridView>;
@@ -115,8 +115,6 @@ class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
         dimWorld = GridView::dimensionworld
     };
 
-public:
-
     enum BCTypes {
         constantPressure = 1,
         constantFlux = 2,
@@ -140,25 +138,14 @@ public:
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
         // precipitation
         if (bcTopType_==atmospheric) {
-            std::string filestr = this->name() + ".csv";
-            myfile_.open(filestr.c_str()); // output file
-            try {
-            	std::string filename = getParam<std::string>("Climate.File");
-            	io::CSVReader<2> csv(filename);
-            	csv.read_header(io::ignore_extra_column, "time", "net-flux");
-            	std::vector<double> t, prec;
-            	double a,b;
-            	while(csv.read_row(a,b)){
-            		t.push_back(a);
-            		prec.push_back(b);
-            	}
-            	precipitation_ = InputFileFunction(t,prec);
-            } catch(...) {
-            	precipitation_ = InputFileFunction("Climate.Precipitation", "Climate.Time"); // cm/day
-            }
+            precipitation_ = InputFileFunction("Climate", "Precipitation", "Time"); // cm/day (day)
+            precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
+            precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+            std::string filestr = this->name() + ".csv"; // output file
+            myfile_.open(filestr.c_str());
         }
         // IC
-        initialSoil_ = InputFileFunction("Soil.IC.P","Soil.IC.Z", this->spatialParams().layerIFF());
+        initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
     }
 
     /**
@@ -294,9 +281,7 @@ public:
                 Scalar h = -toHead_(p); // todo why minus -pc?
                 GlobalPosition ePos = element.geometry().center();
                 Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
-                Scalar t = time_/(24.*60.*60.); // s -> day
-                Scalar prec = -precipitation_.f(t)*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-
+                Scalar prec = -precipitation_.f(time_);
                 if (prec < 0) { // precipitation
                     Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal infiltration
                     Scalar v = std::max(prec, imax);

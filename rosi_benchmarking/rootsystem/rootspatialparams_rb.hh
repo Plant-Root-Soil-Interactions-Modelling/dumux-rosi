@@ -64,10 +64,14 @@ public:
 
     RootSpatialParamsRB(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
-        kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", -1, -1);
-        kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", -1, -1);
-        assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems"); // todo use kr_.setData(...) by hand
-        assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data available for CRootBox root systems");
+        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge"); // [cm / hPa / day] ([day])
+        kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        kx_ = InputFileFunction("RootSystem.Conductivity","Kx"); // [cm^4 / hPa / day] ([day])
+        kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+        assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data for radial conductivity available for CRootBox root systems"); // todo use kr_.setData(...) by hand
+        assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data for axial conductivity available for CRootBox root systems");
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
         // shoot
         radii_ = { 1.17/100. };
@@ -101,19 +105,20 @@ public:
         return 1.;
     }
 
+    // [1]
     Scalar order(std::size_t eIdx) const {
         return orders_[eIdx];
     }
 
-    // m
+    // [m]
     Scalar radius(std::size_t eIdx) const {
         return radii_[eIdx]; // m
     }
 
-    // s
+    // [s]
     Scalar age(std::size_t eIdx) const {
         double a = (time0_+time_) - ctimes_[eIdx];
-        return a; // todo there is a crootbox bug, where time0_ << ctimes_ for certain tip segments (???)
+        return a;
     }
 
     //! radial conductivity [m /Pa/s]
@@ -121,7 +126,7 @@ public:
         if (eIdx==0) { // no radial flow at the shoot element
             return 0.;
         }
-        return kr_.f(this->age(eIdx)/(24.*3600.), eIdx)*1e-4/(24*3600); // cm / hPa / day -> m / Pa /s
+        return kr_.f(this->age(eIdx), eIdx);
     }
 
     //! axial conductivity [m^4/Pa/s]
@@ -129,9 +134,10 @@ public:
 //        if (eIdx==0) { // high axial flow at the shoot element
 //            return 1.;
 //        }
-        return kx_.f(this->age(eIdx)/(24.*3600.), eIdx)*1e-10/(24*3600); // cm^4 / hPa / day -> m^4 / Pa /s
+        return kx_.f(this->age(eIdx), eIdx);
     }
 
+    //! sets the simulation time @param t [s]
     void setTime(double t) {
         time_ = t;
     }

@@ -161,10 +161,10 @@ public:
         auto sf = InputFileFunction("Soil.IC.P", "Soil.IC.Z");
         soil_ = new GrowthModule::SoilLookUpTable(sf);
         try {
-            collar_ = InputFileFunction("RootSystem.Collar.Transpiration", "RootSystem.Collar.TranspirationT", true);
+            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT");
             bcType_ = bcNeumann;
         } catch (...) {
-            collar_ = InputFileFunction("RootSystem.Collar.P", "RootSystem.Collar.PT", true);
+            collar_ = InputFileFunction("RootSystem.Collar", "P", "RootSystem.Collar.PT");
             bcType_ = bcDirichlet;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
@@ -192,7 +192,6 @@ public:
             }
             if (name=="age") {
                 d = this->spatialParams().age(eIdx);
-                // std::cout << "age at index " << eIdx << " = " <<  userData_[eIdx] << " s = " << userData_[eIdx]/24/3600 << " d \n";
             }
             if (name=="order") {
                 d = this->spatialParams().order(eIdx);
@@ -221,7 +220,6 @@ public:
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 d = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
             }
-
             userData_[name][eIdx] = d;
         }
     }

@@ -65,11 +65,17 @@ public:
         krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3); // cm / hPa / day
         kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4); // cm^4 / hPa / day
         //
-        kr_ = InputFileFunction("RootSystem.Conductivity.Kr", "RootSystem.Conductivity.KrAge", krIdx_, orderIdx_); // cm / hPa / day
-        kx_ = InputFileFunction("RootSystem.Conductivity.Kx", "RootSystem.Conductivity.KxAge", kxIdx_, orderIdx_); // cm^4 / hPa / day
-        radius_ = InputFileFunction("RootSystem.Radius", "RootSystem.RadiusAge", radiusIdx_, orderIdx_); // cm
-        ct_ = InputFileFunction("RootSystem.CreationTime", ctIdx_, orderIdx_); // days
-        order_ = InputFileFunction("RootSystem.Order", orderIdx_, orderIdx_);
+        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm / hPa / day] ([day])
+        kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        kx_ = InputFileFunction("RootSystem.Conductivity","Kx", "KxAge", kxIdx_, orderIdx_); // [cm^4 / hPa / day] ([day])
+        kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+        radius_ = InputFileFunction("RootSystem", "Radius", "RadiusAge", radiusIdx_, orderIdx_); // [cm] ([day])
+        radius_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        radius_.setFunctionScale(1.e-2); // [cm] -> [m]
+        ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [day]
+        order_ = InputFileFunction("RootSystem", "Order", orderIdx_, orderIdx_); // [1]
     }
 
     /*!
@@ -105,22 +111,22 @@ public:
 
     //! segment radius [m]
     Scalar radius(std::size_t eIdx) const {
-        return radius_.f(this->age(eIdx), eIdx)/100.; // cm -> m
+        return radius_.f(this->age(eIdx), eIdx);
     }
 
     //! segment age [s]
     Scalar age(std::size_t eIdx) const {
-        return (dgf_simtime_ - ct_.f(eIdx)) +time_;
+        return (dgf_simtime_ - ct_.f(eIdx)) + time_;
     }
 
     //! radial conductivity [m/Pa/s] == [m^2 s/kg]
     Scalar kr(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx)/(24.*3600.), this->order(eIdx)) *1.e-4/(24.*3600.); // cm / hPa / day -> m / Pa /s
+        return kr_.f(this->age(eIdx), this->order(eIdx));
     }
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        return kx_.f(this->age(eIdx)/(24.*3600.), this->order(eIdx)) *1.e-10/(24.*3600.); // cm^4 / hPa / day -> m^4 / Pa /s
+        return kx_.f(this->age(eIdx), this->order(eIdx));
     }
 
     //! set current simulation time, age is time dependent (so sad), kx and kr can be age dependent
