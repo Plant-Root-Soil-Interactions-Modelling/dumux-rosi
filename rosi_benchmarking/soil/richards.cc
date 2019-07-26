@@ -37,9 +37,9 @@
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
 #include <dumux/common/valgrind.hh> // for debugging
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
-#include <dumux/common/defaultusagemessage.hh> // for information (a global function)
+#include <dumux/common/defaultusagemessage.hh> // for information (a function)
 
-#include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
+#include <dumux/linear/amgbackend.hh> // linear solver (currently the only parallel solver available(?))
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 /**
  * Some small adaption to <dumux/nonlinear/newtonsolver.hh>, which is the only nonlinear solver available.
@@ -50,7 +50,7 @@
 
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
-// #include <dumux/io/loadsolution.hh> // global functions to resume a simulation
+// #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
 #include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 

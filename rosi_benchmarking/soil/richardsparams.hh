@@ -62,7 +62,7 @@ namespace Dumux {
         };
 
         enum GridParameterIndex {
-            materialLayerNumber = 1
+
         };
 
 
@@ -100,8 +100,8 @@ namespace Dumux {
                     materialParams_.at(i).setKrnLowSw(eps);
                     materialParams_.at(i).setKrwHighSw(1 - eps);
             }
-
-            layer_ = InputFileFunction("Soil.Layer", "Number", "Z", materialLayerNumber); // [1]([m])
+            layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
+            layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_); // [1]([m])
         }
 
         /*!
@@ -161,6 +161,8 @@ namespace Dumux {
         }
 
         Scalar phi_; // porosity
+
+        int layerIdx_;
 
         bool homogeneous_; // soil is homogeneous
         InputFileFunction layer_;

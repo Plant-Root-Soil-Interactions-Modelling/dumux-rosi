@@ -1,4 +1,4 @@
-# Wet Bot Scenario Felicien
+"""  Wet Bot Scenario Felicien, 1 cm^3 resolution """
 
 import os
 import matplotlib.pyplot as plt

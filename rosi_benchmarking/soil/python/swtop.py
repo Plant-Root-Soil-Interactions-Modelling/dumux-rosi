@@ -1,4 +1,4 @@
-# Wet Top Scenario Felicien
+""" Wet Top Scenario Felicien, 1 cm^3 resolution """
 
 import os
 import matplotlib.pyplot as plt

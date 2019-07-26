@@ -1,4 +1,4 @@
-# Small benchmark box
+""" Small 3d simulation """
 
 import os
 import matplotlib.pyplot as plt

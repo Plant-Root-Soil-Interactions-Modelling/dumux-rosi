@@ -18,8 +18,8 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 
 # run dumux
 os.system("./richards1d benchmarks_1d/b1a.input")
-os.system("./richards1d benchmarks_1d/b1b.input")
-os.system("./richards1d benchmarks_1d/b1c.input")
+# os.system("./richards1d benchmarks_1d/b1b.input")
+# os.system("./richards1d benchmarks_1d/b1c.input")
 
 # Figure 2a
 s_, p_, z1_ = read1D_vtp_data("benchmark1d_1a-00001.vtp", False)

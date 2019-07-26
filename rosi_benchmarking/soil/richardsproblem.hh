@@ -138,6 +138,7 @@ public:
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
         // precipitation
         if (bcTopType_==atmospheric) {
+            criticalPressure_ = getParam<double>("Climate.CriticalPressure", -1.e4);
             precipitation_ = InputFileFunction("Climate", "Precipitation", "Time"); // cm/day (day)
             precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
             precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
@@ -423,7 +424,7 @@ private:
     std::vector<double>* source_ = nullptr;
 
     InputFileFunction precipitation_;
-    Scalar criticalPressure_ = -1.e4; // cm
+    Scalar criticalPressure_; // cm
     Scalar time_ = 0.;
 
     mutable std::ofstream myfile_;
