@@ -94,6 +94,29 @@ int simtype = rootbox;
 
 
 
+/**
+ * to wrap a raw pointer into a shared pointer:
+ * for not deleting it twice, an empty deleter must be defined
+ */
+template <typename T>
+struct empty_delete {
+    empty_delete() /* noexcept */
+    { }
+    template <typename U>
+    empty_delete(const empty_delete<U>&,
+        typename std::enable_if<
+            std::is_convertible<U*, T*>::value
+        >::type* = nullptr) /* noexcept */
+    { }
+    void operator()(T* const) const /* noexcept */
+    { }// do nothing
+};
+
+
+
+/**
+ *
+ */
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
@@ -127,7 +150,7 @@ int main(int argc, char** argv) try
     if (simtype==dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
         gridManager.init("RootSystem");
-        grid = std::shared_ptr<Grid>(&gridManager.grid()); // TODO ?????
+        grid = std::shared_ptr<Grid>(&gridManager.grid(), empty_delete<Grid>());
     } else if (simtype==rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
@@ -165,7 +188,6 @@ int main(int argc, char** argv) try
         gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
         std::cout << "...grid grower initialized \n" << std::flush;
         gridGrowth->grow(getParam<double>("RootSystem.Grid.InitialT")*24*3600);
-        // problem->spatialParams().updateParameters(*growth);
         std::cout << "initial growth performed... \n" << std::flush;
     }
 
@@ -239,7 +261,7 @@ int main(int argc, char** argv) try
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // dynamic
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
     }
@@ -279,14 +301,15 @@ int main(int argc, char** argv) try
                 assembler->setJacobianPattern(); // resize and set Jacobian pattern
                 assembler->setPreviousSolution(x);
                 assembler->assembleJacobianAndResidual(x);
-                std::cout << "hopefully modified assembler" << std::endl<< std::flush;;
 
                 xOld = x;
             }
 
+
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
 
             nonLinearSolver.solve(x); // solve the non-linear system with time step control
+
 
             xOld = x; // make the new solution the old solution
 

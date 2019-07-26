@@ -16,6 +16,7 @@ import dumux_b1
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
+os.system("rm rb_single-00001.vtp")  # delete old results
 
 # run dumux
 os.system("./rootsystem_rb input/rb_single.input")
@@ -23,5 +24,9 @@ os.system("./rootsystem_rb input/rb_single.input")
 # plot
 p_, z_ = read3D_vtp_data("rb_single-00001.vtp", False)
 h_ = vg.pa2head(p_)
+
+# plt.plot(h_, z_[:, 2] + 0.03, "r+")  # cell data
+# plt.show()
+
 dumux_b1.ax1.plot(h_, z_[:, 2] + 0.03, "r+")  # cell data
 dumux_b1.plt.show()

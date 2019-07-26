@@ -61,8 +61,8 @@ public:
 
     //! returns the dune element index from the root model index node index
     size_t map2dune(size_t rIdx) const {
-        if (rIdx>root2dune.size()) {
-            std::cout << "GrowthInterface::map2dune mapping problems";
+        if (rIdx>=root2dune.size()) {
+            std::cout << "GrowthInterface::map2dune mapping problems" << std::flush;
         }
         return root2dune.at(rIdx);
     }

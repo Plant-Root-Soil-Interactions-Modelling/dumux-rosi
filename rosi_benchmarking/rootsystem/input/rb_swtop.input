@@ -11,7 +11,8 @@ DtInitial = 360 # [s]
 MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Collar]
-Transpiration = 0 1.2 # [kg/day]
+Transpiration = 0.6 # [kg/day]
+Sinusoidal = True
 
 [RootSystem.Conductivity]
 KrAge0 = 0 5 10 15 20 1e20 # days

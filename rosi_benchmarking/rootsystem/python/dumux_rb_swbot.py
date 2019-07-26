@@ -34,18 +34,6 @@ def toPa(ph):
     return ref + ph / 100. * rho * g;
 
 
-print("wet", toHead(ref - 10000), "cm")
-print("dry", toHead(ref - 300000), "cm ")
-print("a week ", 7 * 24 * 3600)
-trans = 5.33 * .75 * .15 / 86400  #  kg/s
-maxtrans = 2 * trans
-print("daily rate ", 5.33, "mm/day = ", trans, " kg/s, maximum ", maxtrans, " kg/day", maxtrans * 24 * 3600)  #
-print("Critical collar pressure = ", toPa(-1.e4))
-print("kr0", np.array([1.8e-4, 1.8e-4, 0.6e-4, 0.6e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
-print("kr1", np.array([1.8e-4, 1.8e-4, 0.18e-4, 0.18e-4 ]) * 1.e-4 / 86400)
-print("kx0", np.array([0.01, 0.3, 0.3, 4.3, 4.3]) * 1.e-4 / 86400)  # cm4 hPa-1 d-1->
-print("kx1", np.array([0.01e-3, 0.01e-3, 0.1e-3, 0.6e-3, 0.6e-3, 1.7e-3, 1.7e-3]) * 1.e-4 / 86400)
-
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)

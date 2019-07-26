@@ -78,7 +78,6 @@ struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
 private:
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
     using GridView = GetPropType<TypeTag, Properties::GridView>;
-
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
@@ -156,21 +155,28 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
 
 public:
 
-    RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
-        ParentType(fvGridGeometry) {
-        auto sf = InputFileFunction("Soil.IC.P", "Soil.IC.Z");
-        soil_ = new GrowthModule::SoilLookUpTable(sf);
-        try {
-            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT");
+    RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
+
+        InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z"); // [cm]([m])
+        sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
+        soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
+
+        if (Dumux::hasParam("RootSystem.Collar.Transpiration")) {
+            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT");  // [kg/day]([day])
+            collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
+            collar_.setFunctionScale(1./(24.*3600)); // [kg/day] -> [kg/s]
             bcType_ = bcNeumann;
-        } catch (...) {
-            collar_ = InputFileFunction("RootSystem.Collar", "P", "RootSystem.Collar.PT");
+        } else {
+            collar_ = InputFileFunction("RootSystem.Collar", "P", "PT"); // [cm]([day])
+            collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
+            collar_.setFunctionScale(1.e-2 * rho_ * g_); // [cm] -> [Pa], don't forget to add pRef_
             bcType_ = bcDirichlet;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
     }
 
     virtual ~RootsProblem() {
+        delete soil_;
         std::cout << "closing file \n" << std::flush;
         file_at_.close();
     }
@@ -278,7 +284,7 @@ public:
         if (critical_) {
             return criticalCollarPressure_;
         } else {
-            return PrimaryVariables(collar());
+            return PrimaryVariables(collar_.f(time_)+pRef_);
         }
     }
 
@@ -291,6 +297,7 @@ public:
      */
     NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolumeFace& scvf) const {
+
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
@@ -299,7 +306,7 @@ public:
             Scalar kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist;  // todo!!!!
-            Scalar trans = collar(); // kg/s
+            Scalar trans = collar_.f(time_); // kg/s
             Scalar v = std::min(trans, maxTrans);
             lastActualTrans_ = v; // the one we return
             lastTrans_ = trans;  // potential transpiration
@@ -332,7 +339,6 @@ public:
         values[conti0EqIdx] /= (a * a * M_PI); // 1/s
         values[conti0EqIdx] *= rho_; // (kg/s/m^3)
         return values;
-
     }
 
     /*!
@@ -342,17 +348,21 @@ public:
         return PrimaryVariables(soil(p)); // soil(p)
     }
 
+    /**
+     * deletes old soil, sets new soil, takes ownership
+     */
     void setSoil(CRootBox::SoilLookUp* s) {
-        std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
+        delete(soil);
         soil_ = s;
+        std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
     }
 
     //! soil pressure (called by initial, and source term)
     Scalar soil(const GlobalPosition& p) const {
         auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100);
         double d = soil_->getValue(p2);
-        // std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
-        return toPa_(d);
+//         std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
+        return pRef_+d;
     }
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
@@ -372,17 +382,7 @@ public:
         file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << trans << "\n"; // << std::setprecision(17)
     }
 
-    //! pressure or transpiration rate at the root collar (called by dirichletor neumann, respectively)
-    Scalar collar() const {
-        Scalar t = time_/24./3600; // s -> day
-        if (bcType_ == bcDirichlet) {
-            return toPa_(collar_.f(t)); // Pa
-        } else {
-            return collar_.f(t)/24./3600.; // kg/day -> kg/s
-        }
-    }
-
-    //! if true, sets bc to dirichlet at criticalCollarPressure (false per default)
+    //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
     void setCritical(bool b) {
         critical_ = b;
     }
@@ -403,8 +403,8 @@ public:
     template<class ElementSolution>
     Scalar extrusionFactor(const Element &element,
         const SubControlVolume &scv,
-        const ElementSolution& elemSol) const
-    {
+        const ElementSolution& elemSol) const {
+
         const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         const auto radius = this->spatialParams().radius(eIdx);
         return M_PI*radius*radius;

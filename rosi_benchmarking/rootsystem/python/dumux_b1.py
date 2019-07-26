@@ -34,7 +34,7 @@ kz = 5.e-17  # axial conductivity (m^5 s / kg)
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
 t0 = -2e-8  # kg /s =) 17.28 kg /d
-trans = t0 * 24 * 3600  # kg /day
+trans = -t0 * 24 * 3600  # kg /day
 print(trans)
 c = 2 * a * pi * kr / kz
 
@@ -66,12 +66,17 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
+# delete
+os.system("rm benchmark1-00001.vtp")
+os.system("rm benchmark1b-00001.vtp")
+os.system("rm benchmark1c-00001.vtp")
+
 # run dumux
 os.system("./rootsystem input/b1.input")
 p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_ = read1D_vtp_data("benchmark1b-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
-os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(-trans))
+os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
 p3_ = read1D_vtp_data("benchmark1c-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 
 # plot

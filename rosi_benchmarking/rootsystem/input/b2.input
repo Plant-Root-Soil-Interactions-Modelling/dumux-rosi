@@ -7,7 +7,7 @@ DtInitial = 1 # [s]
 
 [RootSystem.Grid]
 File =  grids/RootSystem.dgf
-SimTime = 14
+InitialT = 14 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
 ctIdx = 7
@@ -15,8 +15,8 @@ krIdx = 6
 kxIdx = 5
 
 [RootSystem.Conductivity]
-Kx = 4.32e-2      # axial conductivity (cm^3 / day) 
-Kr = 1.728e-4     # radial conductivity (1 / day) 
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
 
 [RootSystem.Collar]
 P = -500 # cm pressure head

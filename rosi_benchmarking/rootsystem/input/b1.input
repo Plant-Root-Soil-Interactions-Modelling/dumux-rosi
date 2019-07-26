@@ -9,7 +9,7 @@ DtInitial = 1 # [s]
 File =  grids/singleroot.dgf
 
 [RootSystem.Conductivity]
-Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day]
+Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day] 
 Kr = 1.73e-4 # radial conductivity [cm/hPa/day] 
 
 [RootSystem]

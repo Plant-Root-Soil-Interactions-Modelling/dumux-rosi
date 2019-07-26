@@ -56,25 +56,23 @@ class RootSpatialParamsRB
     using SubControlVolume = typename FVGridGeometry::SubControlVolume;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
-    using RootSystem = typename GrowthModule::GrowthInterface<GlobalPosition>; // decoupled from CRootBox
+    using GrowingSystem = typename GrowthModule::GrowthInterface<GlobalPosition>; // decoupled from CRootBox
 
 public:
-    // export permeability type
-    using PermeabilityType = Scalar;
+
+    using PermeabilityType = Scalar; // export permeability type
 
     RootSpatialParamsRB(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
-        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge"); // [cm / hPa / day] ([day])
+        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", 0, 0); // [cm / hPa / day] ([day]), indices are not used, data are set manually in updateParameters
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
-        kx_ = InputFileFunction("RootSystem.Conductivity","Kx"); // [cm^4 / hPa / day] ([day])
+        kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4 / hPa / day] ([day]), indices are not used, data are set manually in updateParameters
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
-        assert(kr_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data for radial conductivity available for CRootBox root systems"); // todo use kr_.setData(...) by hand
-        assert(kx_.type() != InputFileFunction::data && "RootSpatialParamsRB: no grid data for axial conductivity available for CRootBox root systems");
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
         // shoot
-        radii_ = { 1.17/100. };
+        radii_ = { 1.17/100. }; // vectors will incrementially grow in updateParameters
         orders_ = { 0 };
         ctimes_ = { 0. };
     }
@@ -131,9 +129,9 @@ public:
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-//        if (eIdx==0) { // high axial flow at the shoot element
-//            return 1.;
-//        }
+        if (eIdx==0) { // high axial flow at the shoot element
+            return 100.;
+        }
         return kx_.f(this->age(eIdx), eIdx);
     }
 
@@ -143,7 +141,7 @@ public:
     }
 
     //! Update the Root System Parameters (root system must implement GrowthModule::GrowthInterface)
-    void updateParameters(const RootSystem& rs) {
+    void updateParameters(const GrowingSystem& rs) {
 
         const auto& gridView = this->fvGridGeometry().gridView();
         radii_.resize(gridView.size(0));
@@ -155,7 +153,7 @@ public:
         auto segO = rs.segmentOrders();
         auto segRadii = rs.segmentRadii();
 
-        std::cout << "UPDATING " << gridView.size(0) << ": " << segs.size() << " segments " << "\n"<< std::flush;
+        std::cout << "updateParameters: " << gridView.size(0) << ": " << segs.size() << " new segments " << "\n"<< std::flush;
 
         for (size_t i = 0; i < segs.size(); i++) {
             size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==

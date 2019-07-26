@@ -102,7 +102,7 @@ public:
         return sct;
     }
 
-    std::vector<int> segmentOrders() const override {
+    std::vector<int> segmentOrders() const override { // we could switch to types
         std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
         auto orders = std::vector<int>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
@@ -118,7 +118,7 @@ public:
     }
 
     /**
-     * Currently only for roots (e.g. more general to roots[i]->getParamter("radius") )
+     * Currently only for roots (e.g. more general is roots[i]->getParamter("radius") )
      */
     std::vector<double> segmentRadii() const override {
         std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();

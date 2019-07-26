@@ -1,7 +1,7 @@
 import numpy as np
 
 '''
-Creates dgf files for the root system benchmarks 1, 2 and 3
+Creates dgf files for the root system benchmarks 1 (and old benchmark 2 and 3)
 '''
 
 

@@ -5,13 +5,14 @@ Name = rb_swbot
 Grow = True
 
 [TimeLoop]
-TEnd = 604800 # 43200 # half a day
+TEnd = 43200 # 43200 # half a day
 CheckTimes = 10800 21600 32400 # 1/8 days 
 DtInitial = 360 # [s]
 MaxTimeStepSize = 3600 # 1 h
 
 [RootSystem.Collar]
-Transpiration = 0 1.2 # [kg/day]
+Transpiration = 0.6 # [kg/day]
+Sinusoidal = True
 
 [RootSystem.Conductivity]
 KrAge0 = 0 5 10 15 20 1e20 # days

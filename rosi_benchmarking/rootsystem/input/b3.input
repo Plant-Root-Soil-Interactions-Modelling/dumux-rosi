@@ -7,7 +7,7 @@ DtInitial = 1 # [s]
 
 [RootSystem.Grid]
 File =  grids/RootSystem.dgf
-SimTime = 14
+InitialT = 14 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
 ctIdx = 7
@@ -15,7 +15,7 @@ krIdx = 6
 kxIdx = 5
 
 [RootSystem.Conductivity]
-Kx0 =    0    0    0.43 4.3 4.3 # axial conductivity (cm^3 / day) 
+Kx0 =    0    0    0.43 4.3 4.3 # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
 KxAge0 = 0    1    3    5   1e7 # days
 
 Kr0 =    1.7e-4 1.7e-4 6e-5 6e-5 1e-5 1e-5 # radial conductivity (1 / day)   

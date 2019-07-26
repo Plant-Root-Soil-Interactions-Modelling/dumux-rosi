@@ -58,24 +58,24 @@ public:
     RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
         ParentType(fvGridGeometry) {
         // DGF specific (where is what)
-        dgf_simtime_ = Dumux::getParam<double>("RootSystem.Grid.SimTime", 14)*24*3600; // days -> s
+        time0_ = Dumux::getParam<double>("RootSystem.Grid.InitialT", 14)*24*3600; // days -> s
         orderIdx_ = Dumux::getParam<int>("RootSystem.Grid.orderIdx", 0); // 1
         radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 1); // cm
         ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 2); // s
-        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3); // cm / hPa / day
-        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4); // cm^4 / hPa / day
+        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3); // cm/hPa/day
+        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4); // cm^4/hPa/day
         //
-        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm / hPa / day] ([day])
+        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm/hPa/day] ([day])
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
-        kx_ = InputFileFunction("RootSystem.Conductivity","Kx", "KxAge", kxIdx_, orderIdx_); // [cm^4 / hPa / day] ([day])
+        kx_ = InputFileFunction("RootSystem.Conductivity","Kx", "KxAge", kxIdx_, orderIdx_); // [cm^4/hPa/day] ([day])
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
         radius_ = InputFileFunction("RootSystem", "Radius", "RadiusAge", radiusIdx_, orderIdx_); // [cm] ([day])
         radius_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius_.setFunctionScale(1.e-2); // [cm] -> [m]
-        ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [day]
-        order_ = InputFileFunction("RootSystem", "Order", orderIdx_, orderIdx_); // [1]
+        ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [s], optional grid data, no variable
+        order_ = InputFileFunction("RootSystem", "Order", orderIdx_, orderIdx_); // [1], optional grid data, no variable
     }
 
     /*!
@@ -116,7 +116,7 @@ public:
 
     //! segment age [s]
     Scalar age(std::size_t eIdx) const {
-        return (dgf_simtime_ - ct_.f(eIdx)) + time_;
+        return (time0_ - ct_.f(eIdx)) + time_;
     }
 
     //! radial conductivity [m/Pa/s] == [m^2 s/kg]
@@ -152,13 +152,12 @@ public:
     }
 
 private:
-    // what is where in the dgf
+
     int orderIdx_;
     int radiusIdx_;
     int ctIdx_;
     int krIdx_;
     int kxIdx_;
-    double dgf_simtime_ = 0.; // for calculating age from ct
 
     InputFileFunction kr_;
     InputFileFunction kx_;
@@ -167,6 +166,7 @@ private:
     InputFileFunction ct_;
 
     double time_ = 0.;
+    double time0_ = 0.; // for calculating age from ct
 };
 
 } // end namespace Dumux
