@@ -66,7 +66,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
-# delete
+# delete old results
 os.system("rm benchmark1-00001.vtp")
 os.system("rm benchmark1b-00001.vtp")
 os.system("rm benchmark1c-00001.vtp")

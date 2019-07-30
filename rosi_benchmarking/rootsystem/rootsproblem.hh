@@ -191,22 +191,26 @@ public:
             auto eIdx = eMapper.index(e);
             double d = 0;
             if (name=="kr") {
-                d = this->spatialParams().kr(eIdx);
+                d = 1.e4*24.*3600.*this->spatialParams().kr(eIdx); // [m/Pa/s] -> [cm/hPa/day]
             }
             if (name=="kx") {
-                d = this->spatialParams().kx(eIdx);
+                d = 1.e10*24.*3600.*this->spatialParams().kx(eIdx); // [m^4/Pa/s] -> [cm^4/hPa/day]
             }
             if (name=="age") {
-                d = this->spatialParams().age(eIdx);
+                d = this->spatialParams().age(eIdx) / 24. / 3600.; // s -> day
             }
             if (name=="order") {
                 d = this->spatialParams().order(eIdx);
             }
+            if (name=="id") {
+                d = this->spatialParams().id(eIdx);
+            }
             if (name=="radius") {
-                d = this->spatialParams().radius(eIdx);
+                d = this->spatialParams().radius(eIdx);// m
             }
             if (name=="initialPressure") {
-                d = initialAtPos(e.geometry().center());
+                d = initialAtPos(e.geometry().center()); // Pa
+                d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
             if (name=="radialFlux") {
                 auto geo = e.geometry();
@@ -217,6 +221,7 @@ public:
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 auto p = geo.center();
                 d =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
+                d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
             if (name=="axialFlux") {
                 auto geo = e.geometry();
@@ -225,6 +230,7 @@ public:
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 d = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
+                d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
             userData_[name][eIdx] = d;
         }
@@ -239,6 +245,7 @@ public:
     std::vector<Scalar>& order() { return userData_["order"]; } // [1]
     std::vector<Scalar>& radius() { return userData_["radius"]; } // [m]
     std::vector<Scalar>& initialPressure() { return userData_["initialPressure"]; } // [Pa]
+    std::vector<Scalar>& id() { return userData_["id"]; } // [Pa]
 
     //! calculates transpiraton, as the sum of radial fluxes (slow but accurate)
     Scalar transpiration(const SolutionVector& sol) {
@@ -366,9 +373,10 @@ public:
     }
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
-    void setTime(Scalar t) {
-        this->spatialParams().setTime(t);
+    void setTime(double t, double dt) {
+        this->spatialParams().setTime(t, dt);
         time_ = t;
+        dt_ = dt;
     }
 
     /*!
@@ -410,29 +418,24 @@ public:
         return M_PI*radius*radius;
     }
 
+    bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
+        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+    }
 
 private:
 
     CRootBox::SoilLookUp* soil_;
     InputFileFunction collar_;
     size_t bcType_;
-    Scalar time_ = 0.;
+    double time_ = 0.;
+    double dt_ = 0.;
     Scalar criticalCollarPressure_ = -1.4e6;
-
-    bool critical_ = false;
-
-    Scalar toPa_(Scalar ph) const {     // cm -> Pa
-        return pRef_ + ph / 100. * rho_ * g_;
-    }
-
-    bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
-        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
-    }
+    bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
     static constexpr Scalar rho_ = 1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
-    static constexpr Scalar eps_ = 1e-8;
+    static constexpr Scalar eps_ = 1e-6;
 
     std::ofstream file_at_; // file for actual transpiration
     mutable Scalar lastActualTrans_ = 0;

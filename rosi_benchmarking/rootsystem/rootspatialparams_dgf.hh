@@ -64,6 +64,7 @@ public:
         ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 2); // s
         krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3); // cm/hPa/day
         kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4); // cm^4/hPa/day
+        idIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 0); // 1
         //
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm/hPa/day] ([day])
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
@@ -76,6 +77,7 @@ public:
         radius_.setFunctionScale(1.e-2); // [cm] -> [m]
         ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [s], optional grid data, no variable
         order_ = InputFileFunction("RootSystem", "Order", orderIdx_, orderIdx_); // [1], optional grid data, no variable
+        id_ = InputFileFunction("RootSystem", "Id", idIdx_, idIdx_);
     }
 
     /*!
@@ -104,9 +106,19 @@ public:
         return 1.;
     }
 
-    //! segment root order, or root type [1]
+    // id of the polyline the segment belongs to [1]
+    Scalar id(std::size_t eIdx) const {
+        return id_.f(0.,eIdx);
+    }
+
+    //! segment root order, or root type [1], starts at zero
     int order(std::size_t eIdx) const {
-        return (int)order_.f(eIdx)-1; // TODO (starts at 1)
+        int o = (int)order_.f(eIdx);
+        if (o<0) {
+            std::cout << "RootSpatialParams::order: warning root order is negative for element index " << eIdx <<": " << o << ", resuming with root order 0\n" << std::flush;
+            o = 0;
+        }
+        return o;
     }
 
     //! segment radius [m]
@@ -130,8 +142,9 @@ public:
     }
 
     //! set current simulation time, age is time dependent (so sad), kx and kr can be age dependent
-    void setTime(double t) {
+    void setTime(double t, double dt) {
         time_ = t;
+        dt_ = dt;
     }
 
     //! Read initial parameters from grid data object
@@ -141,6 +154,7 @@ public:
         kr_.setGridData(gridData, fvGridGeometry);
         kx_.setGridData(gridData, fvGridGeometry);
         order_.setGridData(gridData, fvGridGeometry);
+        id_.setGridData(gridData, fvGridGeometry);
         radius_.setGridData(gridData, fvGridGeometry);
         ct_.setGridData(gridData, fvGridGeometry);
     }
@@ -158,14 +172,17 @@ private:
     int ctIdx_;
     int krIdx_;
     int kxIdx_;
+    int idIdx_;
 
     InputFileFunction kr_;
     InputFileFunction kx_;
     InputFileFunction order_;
     InputFileFunction radius_;
     InputFileFunction ct_;
+    InputFileFunction id_;
 
     double time_ = 0.;
+    double dt_ = 0.;
     double time0_ = 0.; // for calculating age from ct
 };
 

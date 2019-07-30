@@ -49,15 +49,12 @@ public:
 
     // new segments
     virtual std::vector<std::array<size_t, 2>> newSegments() const = 0; //< Segments created in the previous time step
-
-    // virtual double getModelData(size_t rIdx, size_t type) = 0; //< auxilliary function for transferring general model state
-
-    virtual std::vector<double> segmentCreationTimes() const = 0; //< Segment emergence time of segments created in the previous time step [s]
-    virtual std::vector<int> segmentOrders() const = 0; //< Segment orders of segment createds in the previous time step
-    virtual std::vector<double> segmentRadii() const = 0; //< Segment radius of segments created in the previous time step [m]
+    virtual std::vector<double> segmentCreationTimes() const = 0; //< Emergence time of segments created in the previous time step [s]
+    virtual std::vector<double> segmentRadii() const = 0; //< Radius of segments created in the previous time step [m]
+    virtual std::vector<double> segmentParameter(std::string name) const = 0; //< For transferring general model parameters of segments created in the previous time step, use SI units
 
     // Mapper
-    std::vector<size_t> root2dune; ///< Maps a growth model index to the dune element index
+    std::vector<size_t> root2dune; ///< Maps a growth model index to the dune element index, managed by GridGrowth
 
     //! returns the dune element index from the root model index node index
     size_t map2dune(size_t rIdx) const {

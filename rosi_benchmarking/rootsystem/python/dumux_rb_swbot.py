@@ -39,7 +39,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
-p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5 File maize_p1_zero_std
+p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5 File maize_p1_zero_std    Anagallis_femina_Leitner_2010
 p2 = "-RootSystem.Grid.InitialT 55.5 -RootSystem.Grid.File maize_p2_zero_std"
 p3 = "-RootSystem.Grid.InitialT 58.5 -RootSystem.Grid.File maize_p3_zero_std"
 
@@ -70,18 +70,22 @@ t = d[:, 0] / (24 * 3600)
 t2 = d2[:, 0] / (24 * 3600)
 t3 = d3[:, 0] / (24 * 3600)
 
+print("read data", d.shape)
+
+print(t)
+
 # 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
-ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration
-ax1.plot(t, d[:, 1] * c, 'r-,')  # reference, actual transpiration
-ax1.plot(t, d[:, 3] * c, 'r:')  # reference, maximal transpiration
-ax1.plot(t2, d2[:, 1] * c, 'g-,')  # lateral
-ax1.plot(t2, d2[:, 3] * c, 'g:')  # lateral
-ax1.plot(t3, d3[:, 1] * c, 'b-,')  # volume
-ax1.plot(t3, d3[:, 3] * c, 'b:')  # volume
+ax1.plot(t, d[:, 2] * (24.*3600), 'k')  # potential transpiration  * c
+# ax1.plot(t, d[:, 1] * c, 'r-,')  # reference, actual transpiration
+# ax1.plot(t, d[:, 3] * c, 'r:')  # reference, maximal transpiration
+# ax1.plot(t2, d2[:, 1] * c, 'g-,')  # lateral
+# ax1.plot(t2, d2[:, 3] * c, 'g:')  # lateral
+# ax1.plot(t3, d3[:, 1] * c, 'b-,')  # volume
+# ax1.plot(t3, d3[:, 3] * c, 'b:')  # volume
 ax1.legend(['Pot trans', 'actual trans P1', 'max trans P1', 'actual trans P2', 'max trans P2', 'actual trans P3', 'max trans P3'], loc = 'upper left')
-ax1.axis((0, t[-1], 0, 12))
+# ax1.axis((0, t[-1], 0, 12))
 ax1.set_xlabel("Time $[d]$")
-ax1.set_ylabel("Transpiration rate $[mm \ d^{-1}]$")
+# ax1.set_ylabel("Transpiration rate $[mm \ d^{-1}]$")
 
 # ax2 = ax1.twinx()
 # ax2.plot(t, d[:, 4], 'r--')

@@ -75,6 +75,7 @@ public:
         radii_ = { 1.17/100. }; // vectors will incrementially grow in updateParameters
         orders_ = { 0 };
         ctimes_ = { 0. };
+        ids_ = { 0 };
     }
 
     /*!
@@ -103,7 +104,12 @@ public:
         return 1.;
     }
 
-    // [1]
+    // [1] the id of the polyline the segment belongs to
+    Scalar id(std::size_t eIdx) const {
+        return ids_[eIdx];
+    }
+
+    // [1] the order of the root the segment belongs to, starts at zero
     Scalar order(std::size_t eIdx) const {
         return orders_[eIdx];
     }
@@ -136,8 +142,9 @@ public:
     }
 
     //! sets the simulation time @param t [s]
-    void setTime(double t) {
+    void setTime(double t, double dt) {
         time_ = t;
+        dt_ = dt;
     }
 
     //! Update the Root System Parameters (root system must implement GrowthModule::GrowthInterface)
@@ -147,11 +154,17 @@ public:
         radii_.resize(gridView.size(0));
         orders_.resize(gridView.size(0));
         ctimes_.resize(gridView.size(0));
+        ids_.resize(gridView.size(0));
 
         auto segs = rs.newSegments();
         auto segCT = rs.segmentCreationTimes();
-        auto segO = rs.segmentOrders();
+        auto segO = rs.segmentParameter("order");
         auto segRadii = rs.segmentRadii();
+        auto segId = rs.segmentParameter("id");
+
+        if (segs.size()!=segCT.size() || segs.size()!=segO.size() || segs.size()!=segRadii.size() || segs.size()!=segId.size()) { // sanity check
+            throw Dumux::ParameterException("updateParameters: new segments sizes differ");
+        }
 
         std::cout << "updateParameters: " << gridView.size(0) << ": " << segs.size() << " new segments " << "\n"<< std::flush;
 
@@ -160,16 +173,29 @@ public:
             size_t eIdx = rs.map2dune(rIdx);
             // std::cout << "updateParameters: age at root index " << rIdx << " element index " << eIdx << " = " <<  segCT[i] << " s = " << segCT[i]/24/3600 << " d \n";
             orders_.at(eIdx) = segO[i];
+            ids_.at(eIdx) = segId[i];
             radii_.at(eIdx) = segRadii[i];
             ctimes_.at(eIdx) = segCT[i];
+            // segments, where the second node is moved, have wrong creation times (too early)
+            // i.e. not exact, but temporal resolution only
+            if (segCT[i]<0) { // sanity checks
+                throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
+            }
+            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
+                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
+                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
+            }
         }
-
+        std::cout << "loop done\n" << std::flush;
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
             kr_.setData(orders_);
         }
         if ((kx_.type() == InputFileFunction::perType) || (kx_.type() == InputFileFunction::tablePerType)) {
             kx_.setData(orders_);
         }
+
+        std::cout << "updateParameters done\n" << std::flush;
+
     }
 
     //! ignore (because there is no common base class with rootspatialparams_dgf.hh)
@@ -185,8 +211,10 @@ private:
     std::vector<double> orders_; // root order, or root type
     std::vector<double> radii_; // [m]
     std::vector<double> ctimes_; // [s]
+    std::vector<double> ids_; // [1]
 
     double time_ = 0.; // [s]
+    double dt_ = 0.;
     double time0_ = 0; // initial time [s]
 };
 

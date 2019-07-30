@@ -102,23 +102,9 @@ public:
         return sct;
     }
 
-    std::vector<int> segmentOrders() const override { // we could switch to types
-        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
-        auto orders = std::vector<int>(roots.size());
-        for (size_t i=0; i<roots.size(); i++) {
-            Organ* r = roots[i];
-            int o = 0;
-            while (r->getParent() != nullptr) {
-                o++;
-                r = (Organ*)r->getParent();
-            }
-            orders[i] = o;
-        }
-        return orders;
-    }
-
     /**
      * Currently only for roots (e.g. more general is roots[i]->getParamter("radius") )
+     * or we move radius to the Organ class for simplicity
      */
     std::vector<double> segmentRadii() const override {
         std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
@@ -129,8 +115,23 @@ public:
         return radii;
     }
 
-private:
+    /**
+     * radius, order, id, ...
+     */
+    std::vector<double>  segmentParameter(std::string name) const override {
+        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
+        auto param = std::vector<double>(roots.size());
+        for (size_t i=0; i<roots.size(); i++) {
+            param[i] = roots[i]->getParameter(name);
+        }
+        /* conversion */
+        if (name=="radius") {
+            std::transform(param.begin(), param.end(), param.begin(), std::bind1st(std::multiplies<double>(), 1.e-2)); // convert cm to m
+        }
+        return param;
+    }
 
+private:
     CRootBox::Organism& rootsystem_;
 
 };

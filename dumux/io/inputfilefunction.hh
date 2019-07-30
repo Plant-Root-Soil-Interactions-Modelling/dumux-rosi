@@ -191,6 +191,7 @@ public:
      * @return          the function return values (optionally is scaled, @see setFunctionScale)
      */
     double f(double x, size_t eIdx) const {
+
         double fs  = fs_;
         if (sinusoidal_)  {
             fs = fs * (sin((x/86400.)*2.* M_PI - 0.5*M_PI) + 1);
@@ -209,19 +210,27 @@ public:
             return fs*data_.at(eIdx);
         }
         case perType: {
-            size_t t = size_t(data_.at(eIdx));
+            int t = int(data_.at(eIdx));
+            if (t < 0) {
+                std::cout << "InputFileFunction::perType: warning root order is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
+                t = 0;
+            }
             return fs*yy_.at(t);
         }
         case perTypeIFF: {
-            size_t t = size_t(iff_->f(x, eIdx));
+            int t = int(iff_->f(x, eIdx));
+            if (t < 0) {
+                std::cout << "InputFileFunction::perTypeIFF: warning root order is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
+                t = 0;
+            }
             return fs*yy_.at(t);
         }
         case tablePerType: {
-            size_t t = size_t(data_.at(eIdx));
+            int t = int(data_.at(eIdx));
             //            assert( t>=0  && "InputFileFunction::f: table type < 0" );
             if (t < 0) {
-                throw Dumux::ParameterException("InputFileFunction::f("+std::to_string(x)+", "+std::to_string(eIdx)+"): "+
-                    nameY_+" table type < 0, "+ std::to_string(t)+"<0");
+                std::cout << "InputFileFunction::tablePerType: warning root order is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
+                t = 0;
             }
             //            assert( t<table_.size() && "InputFileFunction::f: table type > available tables" );
             if (t>=table_.size()) {
@@ -331,7 +340,7 @@ private:
     size_t dataIdx_ = -1;
     size_t typeIdx_ = -1;
 
-    bool sinusoidal_ = false;
+    bool sinusoidal_=false;
     double vs_ = 1.; // for unit conversions
     double fs_ = 1.; // for unit conversions
     InputFileFunction* iff_ = nullptr;

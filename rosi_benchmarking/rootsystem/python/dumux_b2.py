@@ -15,6 +15,9 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
+# delete old result
+os.system("rm benchmark2-00001.vtp")
+
 # run dumux
 os.system("./rootsystem input/b2.input")
 

@@ -63,7 +63,7 @@
 /**
  * Compile definitions are either DGF or ROOTBOX defined in CMakeLists
  */
-enum modelType { dgf=0, rootbox= 1 };
+enum modelType { dgf=0, rootbox=1 };
 
 /**
  * Pick either RootSpatialParamsDGF (for static dgf files),
@@ -155,7 +155,7 @@ int main(int argc, char** argv) try
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
-        rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,-1.), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+        // rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,1.), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         rootSystem->initialize();
         grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
@@ -233,26 +233,29 @@ int main(int argc, char** argv) try
     std::cout << "time might be an issue \n" << std::flush;
 
     // intialize the vtk output module
+    std::cout << "vtk writer module... \n" << std::flush;
     using IOFields = GetPropType<TypeTag, Properties::IOFields>;
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     problem->userData("radius", x); // prepare fields
     problem->userData("order", x); // prepare fields
+    problem->userData("id", x); // prepare fields
     problem->userData("axialFlux", x); // prepare fields // todo wrong (coarse approximation)
     problem->userData("radialFlux", x); // prepare fields
     problem->userData("age", x); // prepare fields
     problem->userData("initialPressure",x); //prepare fields
     problem->userData("kr", x); // prepare fields
     problem->userData("kx", x); //prepare fields
-    vtkWriter.addField(problem->radius(), "radius");
-    vtkWriter.addField(problem->order(), "order");
-    vtkWriter.addField(problem->axialFlux(), "axial flux");
-    vtkWriter.addField(problem->radialFlux(), "radial flux");
-    vtkWriter.addField(problem->age(), "age");
-    vtkWriter.addField(problem->initialPressure(), "initial pressure");
-    vtkWriter.addField(problem->kr(), "kr");
-    vtkWriter.addField(problem->kx(), "kx");
+    vtkWriter.addField(problem->radius(), "radius [m]"); // not in cm, because of tube plot
+    vtkWriter.addField(problem->order(), "order [1]");
+    vtkWriter.addField(problem->id(), "id [1]");
+    vtkWriter.addField(problem->axialFlux(), "axial flux [cm3/d]");
+    vtkWriter.addField(problem->radialFlux(), "radial flux [1/d]");
+    vtkWriter.addField(problem->age(), "age [d]");
+    vtkWriter.addField(problem->initialPressure(), "initial pressure [cm]");
+    vtkWriter.addField(problem->kr(), "kr [cm3/d]");
+    vtkWriter.addField(problem->kx(), "kx [cm3/d]");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
@@ -310,7 +313,6 @@ int main(int argc, char** argv) try
 
             nonLinearSolver.solve(x); // solve the non-linear system with time step control
 
-
             xOld = x; // make the new solution the old solution
 
             gridVariables->advanceTimeStep();
@@ -321,6 +323,7 @@ int main(int argc, char** argv) try
                 if (grow) { // prepare static fields also
                     problem->userData("radius", x);
                     problem->userData("order", x);
+                    problem->userData("id", x);
                     problem->userData("initialPressure", x);
                 }
                 problem->userData("axialFlux", x);
@@ -334,9 +337,10 @@ int main(int argc, char** argv) try
 
             timeLoop->reportTimeStep();  // report statistics of this time step
 
-            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
-
-            problem->setTime(timeLoop->time()); // pass current time to the problem
+            double dt = nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize());
+            timeLoop->setTimeStepSize(dt); // set new dt as suggested by the newton solver
+            double t = timeLoop->time();
+            problem->setTime(t, dt); // pass current time to the problem
 
         } while (!timeLoop->finished());
 
