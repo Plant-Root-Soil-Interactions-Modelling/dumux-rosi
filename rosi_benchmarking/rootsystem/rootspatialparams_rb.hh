@@ -175,16 +175,16 @@ public:
             orders_.at(eIdx) = segO[i];
             ids_.at(eIdx) = segId[i];
             radii_.at(eIdx) = segRadii[i];
-            ctimes_.at(eIdx) = segCT[i];
+            ctimes_.at(eIdx) = time_+time0_+dt_; // segCT[i]; // todo until the other thing works...
             // segments, where the second node is moved, have wrong creation times (too early)
             // i.e. not exact, but temporal resolution only
-            if (segCT[i]<0) { // sanity checks
-                throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
-            }
-            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
-                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
-                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
-            }
+//            if (segCT[i]<0) { // sanity checks
+//                throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
+//            }
+//            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
+//                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
+//                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
+//            }
         }
         std::cout << "loop done\n" << std::flush;
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {

@@ -97,9 +97,9 @@ public:
     }
 
     std::vector<double> segmentCreationTimes() const override {
-        auto sct = rootsystem_.getNewSegmentCTs();
-        std::transform(sct.begin(), sct.end(), sct.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
-        return sct;
+//        auto sct = rootsystem_.getNewSegmentCTs();
+//        std::transform(sct.begin(), sct.end(), sct.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
+        return segmentParameter("creationTime");
     }
 
     /**
@@ -107,12 +107,13 @@ public:
      * or we move radius to the Organ class for simplicity
      */
     std::vector<double> segmentRadii() const override {
-        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
-        auto radii = std::vector<double>(roots.size());
-        for (size_t i=0; i<roots.size(); i++) {
-            radii[i] = ((Root*)roots[i])->param()->a / 100.; // convert to m
-        }
-        return radii;
+//        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
+//        auto radii = std::vector<double>(roots.size());
+//        for (size_t i=0; i<roots.size(); i++) {
+//            radii[i] = ((Root*)roots[i])->param()->a / 100.; // convert to m
+//        }
+//        return radii;
+        return segmentParameter("radius");
     }
 
     /**
@@ -127,6 +128,9 @@ public:
         /* conversion */
         if (name=="radius") {
             std::transform(param.begin(), param.end(), param.begin(), std::bind1st(std::multiplies<double>(), 1.e-2)); // convert cm to m
+        }
+        if (name=="creationTime") {
+            std::transform(param.begin(), param.end(), param.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert day to s
         }
         return param;
     }
