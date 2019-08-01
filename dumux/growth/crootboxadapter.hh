@@ -23,8 +23,7 @@
 #ifndef DUMUX_CROOTBOX_ADAPTER_HH
 #define DUMUX_CROOTBOX_ADAPTER_HH
 
-#include <Organism.h>
-#include <Root.h>
+#include <RootSystem.h>
 #include <mymath.h>
 
 #include "growthinterface.hh"
@@ -37,6 +36,9 @@ using namespace CRootBox;
 
 /**
  * Adapter for CRootBox: Converts types, units, and naming conventions
+ *
+ * RootSystem can be replaced by template for Plant, and RootSystem
+ * base class is not enough, because we need to copy it, and I wrote only a copy constructor
  */
 template<class GlobalPosition>
 class CRootBoxAdapter :public GrowthInterface<GlobalPosition> {
@@ -52,6 +54,28 @@ public:
 
     void simulate(double dt) override {
         rootsystem_.simulate(dt/3600/24, false);
+    }
+
+    void store() override {
+        std::cout << "store root system at time " << rootsystem_.getSimTime() << "\n";
+        storedRootSystem_ = CRootBox::RootSystem(rootsystem_); // deep copy
+        // this was never checked for memory leaks
+    }
+
+    void restore() override {
+        std::cout << "restore root system failed at " << storedRootSystem_.getSimTime();
+        rootsystem_ = CRootBox::RootSystem(storedRootSystem_); // deep copy
+        std::cout << " to " << rootsystem_.getSimTime();
+    }
+
+    double simTime() const override {
+        return rootsystem_.getSimTime()*24.*3600;
+    }
+
+    // if want access to the current rootsystem (we normally don't need)
+    CRootBox::RootSystem& rootsystem()
+    {
+        return rootsystem_;
     }
 
     std::vector<size_t> updatedNodeIndices() const override {
@@ -136,7 +160,8 @@ public:
     }
 
 private:
-    CRootBox::Organism& rootsystem_;
+    CRootBox::RootSystem rootsystem_;
+    CRootBox::RootSystem storedRootSystem_;
 
 };
 

@@ -38,6 +38,10 @@ public:
 
     // run simulation
     virtual void simulate(double dt) = 0; //< simulate the next dt seconds [s]
+    virtual double simTime() const = 0;  //< returns the current simulation time of the growht model [s]
+    virtual void store()=0; // currently unused, maybe in the future...
+    virtual void restore()=0;
+
 
     // nodes that moved
     virtual std::vector<size_t> updatedNodeIndices() const = 0; //< Indices of nodes that were updated in the previous time step
@@ -53,7 +57,7 @@ public:
     virtual std::vector<double> segmentRadii() const = 0; //< Radius of segments created in the previous time step [m]
     virtual std::vector<double> segmentParameter(std::string name) const = 0; //< For transferring general model parameters of segments created in the previous time step, use SI units
 
-    // Mapper
+    // mapper
     std::vector<size_t> root2dune; ///< Maps a growth model index to the dune element index, managed by GridGrowth
 
     //! returns the dune element index from the root model index node index

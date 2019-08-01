@@ -112,6 +112,29 @@ struct empty_delete {
     { }// do nothing
 };
 
+/**
+ *
+ */
+
+//template <class Assembler, class LinearSolver>
+//class MyNewton :public Dumux::NewtonSolver<Assembler,LinearSolver> {
+//
+//    using GlobalPosition = Dune::FieldVector<double, 3>;
+//
+//public:
+//
+//    virtual ~MyNewton() { }
+//
+//    virtual void newtonFail(SolutionVector& u) {
+//        std::cout << "i failed \n";
+//        grow->restore();
+//    }
+//
+//    GrowthModule::GrowthInterface<GlobalPosition>* grow;
+//
+//
+//};
+
 
 
 /**
@@ -279,44 +302,51 @@ int main(int argc, char** argv) try
 
     std::cout << "\ni plan to actually start \n" << std::flush;
 
+    double dt2 = 3600; // root box time step todo this is NEW
+
     if (tEnd > 0) // dynamic
     {
         std::cout << "a time dependent model\n\n" << std::flush;
         timeLoop->start();
         do {
+            double t = timeLoop->time(); // dumux time
+            double dt = timeLoop->timeStepSize(); // dumux time step
+            problem->setTime(t, dt); // pass current time to the problem
 
             if (grow) {
-
                 std::cout << "grow() \n"<< std::flush;
-                double dt = timeLoop->timeStepSize();
-                gridGrowth->grow(dt);
-                problem->spatialParams().updateParameters(*growth);
-                problem->applyInitialSolution(x); // reset todo (? does this make sense)?
-                std::cout << "grew \n"<< std::flush;
+                bool didgrow = false;
+                while (growth->simTime()<t) {
+                    gridGrowth->grow(dt);
+                    didgrow=true;
+                } // now rootbox is ahead
 
-                // what shall I update?
-                fvGridGeometry->update();
-                //gridVariables->update();
-                gridVariables->updateAfterGridAdaption(x); // update the secondary variables
+                // growth->store(); // better safe than sorry
+                if (didgrow) {
+                    problem->spatialParams().updateParameters(*growth);
+                    problem->applyInitialSolution(x); // reset todo (? does this make sense)?
+                    std::cout << "grew \n"<< std::flush;
 
-                // todo? what is necessary?
-                assembler->setResidualSize(); // resize residual vector
-                assembler->setJacobianPattern(); // resize and set Jacobian pattern
-                assembler->setPreviousSolution(x);
-                assembler->assembleJacobianAndResidual(x);
+                    // what shall I update?
+                    fvGridGeometry->update();
+                    //gridVariables->update();
+                    gridVariables->updateAfterGridAdaption(x); // update the secondary variables
 
-                xOld = x;
+                    // todo? what is necessary? no clue what i am doing ...
+                    assembler->setResidualSize(); // resize residual vector
+                    assembler->setJacobianPattern(); // resize and set Jacobian pattern
+                    assembler->setPreviousSolution(x);
+                    assembler->assembleJacobianAndResidual(x);
+
+                    xOld = x;
+                }
             }
 
-
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-
             nonLinearSolver.solve(x); // solve the non-linear system with time step control
-
             xOld = x; // make the new solution the old solution
 
             gridVariables->advanceTimeStep();
-
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
 
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) { // write vtk output (only at check points)
@@ -334,13 +364,9 @@ int main(int argc, char** argv) try
                 vtkWriter.write(timeLoop->time());
             }
             problem->writeTranspirationRate(x); // always add transpiration data into the text file
-
             timeLoop->reportTimeStep();  // report statistics of this time step
 
-            double dt = nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize());
-            timeLoop->setTimeStepSize(dt); // set new dt as suggested by the newton solver
-            double t = timeLoop->time();
-            problem->setTime(t, dt); // pass current time to the problem
+            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
 
         } while (!timeLoop->finished());
 
