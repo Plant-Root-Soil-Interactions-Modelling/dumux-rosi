@@ -46,6 +46,7 @@ public:
     // nodes that moved
     virtual std::vector<size_t> updatedNodeIndices() const = 0; //< Indices of nodes that were updated in the previous time step
     virtual std::vector<GlobalPosition> updatedNodes() const = 0; //< Values of the updated nodes [m]
+    virtual std::vector<double> updatedNodeCTs() const = 0; //< the new creation time of the moved node [s]
 
     // new nodes
     virtual std::vector<size_t> newNodeIndices() const = 0; //< Node indices that were created in the previous time step

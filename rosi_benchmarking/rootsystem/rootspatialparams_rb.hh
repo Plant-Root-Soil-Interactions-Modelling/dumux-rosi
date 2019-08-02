@@ -64,17 +64,17 @@ public:
 
     RootSpatialParamsRB(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
-        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", 0, 0); // [cm / hPa / day] ([day]), indices are not used, data are set manually in updateParameters
+        kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", 0, 0); // [cm/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
         kr0_ = getParam<double>("RootSystem.Conductivity.ShootKr", 0.)*1.e-4/(24.*3600.);  // [cm/hPa/day] -> [m/Pa/s]
-        kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4 / hPa / day] ([day]), indices are not used, data are set manually in updateParameters
+        kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
         kx0_ = getParam<double>("RootSystem.Conductivity.ShootKx", 1.)*1.e-10/(24.*3600.);  // [cm^4/hPa/day] -> [m^4/Pa/s]
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
-        // shoot
-        radii_ = { 1.17/100. }; // vectors will incrementially grow in updateParameters
+        double radius0 = getParam<double>("RootSystem.Grid.ShootRadius", 1.5)/100; // [cm] -> [m]
+        radii_ = { radius0 }; // vectors will incrementially grow in updateParameters
         orders_ = { 0 };
         ctimes_ = { 0. };
         ids_ = { 0 };
@@ -171,7 +171,7 @@ public:
         std::cout << "updateParameters: " << gridView.size(0) << ": " << segs.size() << " new segments " << "\n"<< std::flush;
 
         for (size_t i = 0; i < segs.size(); i++) {
-            size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1 ==
+            size_t rIdx = segs[i][1] - 1; // rootbox segment index = second node index - 1
             size_t eIdx = rs.map2dune(rIdx);
             // std::cout << "updateParameters: age at root index " << rIdx << " element index " << eIdx << " = " <<  segCT[i] << " s = " << segCT[i]/24/3600 << " d \n";
             orders_.at(eIdx) = segO[i];
@@ -185,6 +185,15 @@ public:
                 throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
                     std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
             }
+        }
+
+        // update ctimes: when tips move, there segmentCTs need to be updated
+        auto uni = rs.updatedNodeIndices();
+        auto cts = rs.updatedNodeCTs();
+        for (int i : uni) {
+            size_t rIdx = i - 1; // rootbox segment index = node index - 1
+            size_t eIdx = rs.map2dune(rIdx);
+            ctimes_.at(eIdx) = segCT[i]; // replace time
         }
 
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {

@@ -50,19 +50,19 @@ public:
         std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
 
-    virtual ~CRootBoxAdapter() { }; // nothing to do, rootsystem_ is someone elses problem
+    virtual ~CRootBoxAdapter() { }; // nothing to do
 
     void simulate(double dt) override {
-        rootsystem_.simulate(dt/3600/24, false);
+        rootsystem_.simulate(dt/3600./24., false);
     }
 
-    void store() override {
+    void store() override { // currently unused
         std::cout << "store root system at time " << rootsystem_.getSimTime() << "\n";
         storedRootSystem_ = CRootBox::RootSystem(rootsystem_); // deep copy
         // this was never checked for memory leaks
     }
 
-    void restore() override {
+    void restore() override { // currently unused
         std::cout << "restore root system failed at " << storedRootSystem_.getSimTime();
         rootsystem_ = CRootBox::RootSystem(storedRootSystem_); // deep copy
         std::cout << " to " << rootsystem_.getSimTime();
@@ -70,12 +70,6 @@ public:
 
     double simTime() const override {
         return rootsystem_.getSimTime()*24.*3600;
-    }
-
-    // if want access to the current rootsystem (we normally don't need)
-    CRootBox::RootSystem& rootsystem()
-    {
-        return rootsystem_;
     }
 
     std::vector<size_t> updatedNodeIndices() const override {
@@ -92,6 +86,12 @@ public:
             p[i][2] = n[i].z/100.;
         }
         return p;
+    }
+
+    std::vector<double> updatedNodeCTs() const override {
+        std::vector<double> cts = rootsystem_.getUpdatedNodeCTs();
+        std::transform(cts.begin(), cts.end(), cts.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
+        return cts;
     }
 
     std::vector<size_t> newNodeIndices() const override {
@@ -120,10 +120,18 @@ public:
         return seg;
     }
 
-    std::vector<double> segmentCreationTimes() const override {
-//        auto sct = rootsystem_.getNewSegmentCTs();
-//        std::transform(sct.begin(), sct.end(), sct.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
-        return segmentParameter("creationTime");
+    std::vector<double> segmentCreationTimes() const override { // a bit tricky since RootBox uses node creation times now
+        std::vector<Vector2i> segs = rootsystem_.getNewSegments();
+        std::vector<double> nodeCTs = rootsystem_.getNewNodeCTs();
+        std::vector<double> segCTs = std::vector<double>(segs.size());
+        int i = 0;
+        for (auto& s :segs) {
+            int ni = s.y - (rootsystem_.getNumberOfNodes()-rootsystem_.getNumberOfNewNodes());
+            segCTs[i] = nodeCTs[ni];
+            i++;
+        }
+        std::transform(segCTs.begin(), segCTs.end(), segCTs.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
+        return segCTs;
     }
 
     /**
@@ -131,13 +139,13 @@ public:
      * or we move radius to the Organ class for simplicity
      */
     std::vector<double> segmentRadii() const override {
-//        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
-//        auto radii = std::vector<double>(roots.size());
-//        for (size_t i=0; i<roots.size(); i++) {
-//            radii[i] = ((Root*)roots[i])->param()->a / 100.; // convert to m
-//        }
-//        return radii;
-        return segmentParameter("radius");
+        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
+        auto radii = std::vector<double>(roots.size());
+        for (size_t i=0; i<roots.size(); i++) {
+            radii[i] = ((Root*)roots[i])->param()->a / 100.; // convert to m
+        }
+        return radii;
+//         return segmentParameter("radius");
     }
 
     /**
@@ -149,11 +157,11 @@ public:
         for (size_t i=0; i<roots.size(); i++) {
             param[i] = roots[i]->getParameter(name);
         }
-        /* conversion */
+        /* conversions to SI */
         if (name=="radius") {
             std::transform(param.begin(), param.end(), param.begin(), std::bind1st(std::multiplies<double>(), 1.e-2)); // convert cm to m
         }
-        if (name=="creationTime") {
+        if (name=="creationTime") { // will give the creation time of the root, not the segment
             std::transform(param.begin(), param.end(), param.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert day to s
         }
         return param;

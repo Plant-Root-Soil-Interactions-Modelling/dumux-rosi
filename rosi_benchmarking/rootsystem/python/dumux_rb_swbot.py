@@ -77,8 +77,10 @@ ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration  * c
 ax1.plot(t, d[:, 1] * c, 'r-,')  # reference, actual transpiration
 ax1.plot(t2, d2[:, 1] * c, 'g-,')  # lateral
 ax1.plot(t3, d3[:, 1] * c, 'b-,')  # volume
-# ax1.plot(t, d[:, 5] / 100000, 'r:,')  # calculated actual transpiration
+# ax1.plot(t, d[:, 5]  , 'r:,')  # calculated actual transpiration
 # print(d[:, 5] / 100000)
+
+print(d[:, 5])
 
 ax1.legend(['Pot trans', 'actual trans P1', 'actual trans P2', 'actual trans P3'], loc = 'upper left')
 ax1.axis((0, t[-1], 0, 1.2))
