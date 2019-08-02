@@ -273,11 +273,11 @@ public:
             if (bcType_ == bcDirichlet) {
                 bcTypes.setAllDirichlet();
             } else {
-//                if (!critical_) {
+                if (!critical_) {
                     bcTypes.setAllNeumann();
-//                } else {
-//                    bcTypes.setAllDirichlet();
-//                }
+                } else {
+                    bcTypes.setAllDirichlet();
+                }
             }
         } else { // for all other (i.e. root tips)
             bcTypes.setAllNeumann();
@@ -386,7 +386,7 @@ public:
     /*!
      * writes the actual transpiration into a text file:
      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
-     * 4 collar pressure [Pa], 5 calculated actual transpiration
+     * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day]
      *
      * 1 - 4 work only for neuman bc
      */

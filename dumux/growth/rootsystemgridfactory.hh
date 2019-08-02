@@ -47,14 +47,15 @@ public:
     using Grid = Dune::FoamGrid<1, 3>;
 
     //! make the grid from the initial root system
-    static std::shared_ptr<Grid> makeGrid(const CRootBox::RootSystem& rs, bool verbose = false)
+    static std::shared_ptr<Grid> makeGrid(const CRootBox::RootSystem& rs, double shootZ = 0., bool verbose = false)
     {
         // the grid factory creates the grid
         if (verbose) std::cout << "RootSystemGridFactory: " << std::endl;
         Dune::GridFactory<Grid> factory;
         constexpr auto line = Dune::GeometryTypes::line;
 
-        const auto nodes = rs.getNodes();
+        auto nodes = rs.getNodes();
+        nodes[0].z = shootZ; // optionally, fix depth of first node
         int counter = 0;
         for (const auto& n : nodes) {
             if (verbose) std::cout << "-- add vertex " << counter++ <<  " at " << n.toString() << std::endl;

@@ -67,9 +67,11 @@ public:
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", 0, 0); // [cm / hPa / day] ([day]), indices are not used, data are set manually in updateParameters
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        kr0_ = getParam<double>("RootSystem.Conductivity.ShootKr", 0.)*1.e-4/(24.*3600.);  // [cm/hPa/day] -> [m/Pa/s]
         kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4 / hPa / day] ([day]), indices are not used, data are set manually in updateParameters
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+        kx0_ = getParam<double>("RootSystem.Conductivity.ShootKx", 1.)*1.e-10/(24.*3600.);  // [cm^4/hPa/day] -> [m^4/Pa/s]
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
         // shoot
         radii_ = { 1.17/100. }; // vectors will incrementially grow in updateParameters
@@ -176,8 +178,6 @@ public:
             ids_.at(eIdx) = segId[i];
             radii_.at(eIdx) = segRadii[i];
             ctimes_.at(eIdx) = segCT[i];
-            // segments, where the second node is moved, have wrong creation times (too early)
-            // i.e. not exact, but temporal resolution only
             if (segCT[i]<0) { // sanity checks
                 throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
             }
@@ -215,8 +215,8 @@ private:
     double dt_ = 0.;
     double time0_ = 0; // initial time [s]
 
-    double kx0_ = 1.;
-    double kr0_ = 1.e-9;
+    double kx0_;
+    double kr0_;
 };
 
 } // end namespace Dumux
