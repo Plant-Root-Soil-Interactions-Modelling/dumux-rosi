@@ -220,6 +220,7 @@ public:
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 auto p = geo.center();
+                // kr [m /Pa/s]
                 d =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
@@ -232,22 +233,23 @@ public:
                 d = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
+            // todo pressure in cm
             userData_[name][eIdx] = d;
         }
     }
 
     //! vtk fields call back functions
-    std::vector<Scalar>& radialFlux() { return userData_["radialFlux"]; } // [m3/s]
-    std::vector<Scalar>& axialFlux() { return userData_["axialFlux"]; } // [m3/s]
-    std::vector<Scalar>& kr() { return userData_["kr"]; } // [m/Pa/s]
-    std::vector<Scalar>& kx() { return userData_["kx"]; } // [m4/Pa/s]
-    std::vector<Scalar>& age() { return userData_["age"]; } // [s]
-    std::vector<Scalar>& order() { return userData_["order"]; } // [1]
-    std::vector<Scalar>& radius() { return userData_["radius"]; } // [m]
-    std::vector<Scalar>& initialPressure() { return userData_["initialPressure"]; } // [Pa]
-    std::vector<Scalar>& id() { return userData_["id"]; } // [Pa]
+    std::vector<Scalar>& radialFlux() { return userData_["radialFlux"]; }
+    std::vector<Scalar>& axialFlux() { return userData_["axialFlux"]; } //
+    std::vector<Scalar>& kr() { return userData_["kr"]; }
+    std::vector<Scalar>& kx() { return userData_["kx"]; }
+    std::vector<Scalar>& age() { return userData_["age"]; }
+    std::vector<Scalar>& order() { return userData_["order"]; }
+    std::vector<Scalar>& radius() { return userData_["radius"]; }
+    std::vector<Scalar>& initialPressure() { return userData_["initialPressure"]; }
+    std::vector<Scalar>& id() { return userData_["id"]; }
 
-    //! calculates transpiraton, as the sum of radial fluxes (slow but accurate)
+    //! calculates transpiraton, as the sum of radial fluxes (slow but accurate) [cm^3/day]
     Scalar transpiration(const SolutionVector& sol) {
         userData("radialFlux", sol);
         return std::accumulate(userData_["radialFlux"].begin(), userData_["radialFlux"].end(), 0.);
@@ -271,11 +273,11 @@ public:
             if (bcType_ == bcDirichlet) {
                 bcTypes.setAllDirichlet();
             } else {
-                if (!critical_) {
+//                if (!critical_) {
                     bcTypes.setAllNeumann();
-                } else {
-                    bcTypes.setAllDirichlet();
-                }
+//                } else {
+//                    bcTypes.setAllDirichlet();
+//                }
             }
         } else { // for all other (i.e. root tips)
             bcTypes.setAllNeumann();
@@ -312,14 +314,15 @@ public:
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist;  // todo!!!!
+            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist;  // todo check
             Scalar trans = collar_.f(time_); // kg/s
             Scalar v = std::min(trans, maxTrans);
-            lastActualTrans_ = v; // the one we return
-            lastTrans_ = trans;  // potential transpiration
-            lastMaxTrans_ = maxTrans; // maximal transpiration at this saturation
-            lastP_ = p;
-            v /= volVars.extrusionFactor(); // convert from kg/s to kg/(s*m^2)
+            neumannTime_ = time_;
+            potentialTrans_ = trans;
+            actualTrans_ = v;
+            maxTrans_ = maxTrans;
+            collarP_ = p;
+            v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
             return NumEqVector(v);
         } else {
             return NumEqVector(0.); // no flux at root tips
@@ -366,7 +369,7 @@ public:
 
     //! soil pressure (called by initial, and source term)
     Scalar soil(const GlobalPosition& p) const {
-        auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100);
+        auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100); // m -> cm
         double d = soil_->getValue(p2);
 //         std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
         return pRef_+d;
@@ -374,6 +377,7 @@ public:
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
     void setTime(double t, double dt) {
+        std::cout << "Time " << t << " time step " << dt << "\n";
         this->spatialParams().setTime(t, dt);
         time_ = t;
         dt_ = dt;
@@ -381,13 +385,18 @@ public:
 
     /*!
      * writes the actual transpiration into a text file:
-     * 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration,
+     * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
+     * 4 collar pressure [Pa], 5 calculated actual transpiration
+     *
      * 1 - 4 work only for neuman bc
      */
     void writeTranspirationRate(const SolutionVector& sol) {
-        Scalar trans = this->transpiration(sol);
-        Scalar p = lastP_;
-        file_at_ << time_ << ", " << lastActualTrans_ << ", " << lastTrans_ << ", " << lastMaxTrans_ << ", " << p << ", " << trans << "\n"; // << std::setprecision(17)
+        Scalar trans = this->transpiration(sol); // [cm3/day]
+        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
+            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
+
+        std::cout << "Time:" << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
+            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -438,10 +447,11 @@ private:
     static constexpr Scalar eps_ = 1e-6;
 
     std::ofstream file_at_; // file for actual transpiration
-    mutable Scalar lastActualTrans_ = 0;
-    mutable Scalar lastTrans_ = 0.;
-    mutable Scalar lastMaxTrans_ = 0.;
-    mutable Scalar lastP_ = 0.;
+    mutable Scalar neumannTime_ = 0;
+    mutable Scalar actualTrans_ = 0;
+    mutable Scalar potentialTrans_ = 0;
+    mutable Scalar maxTrans_ = 0.;
+    mutable Scalar collarP_ = 0.;
 
     std::map<std::string, std::vector<Scalar>> userData_;
 

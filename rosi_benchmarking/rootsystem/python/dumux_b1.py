@@ -108,33 +108,6 @@ ax3.set_ylabel("Depth (m)")
 ax3.set_xlabel("Xylem pressure (cm)")
 ax3.set_title("Predescribed transpiration")
 
-# Plausibility checks
-at1 = np.loadtxt("benchmark1_actual_transpiration.txt", delimiter = ',')
-at2 = np.loadtxt("benchmark1b_actual_transpiration.txt", delimiter = ',')
-at3 = np.loadtxt("benchmark1c_actual_transpiration.txt", delimiter = ',')
-
-# Format of txt file:
-# 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
-#
-
-# print("Analytic transpiration rate (kg/s):")
-# print("=", rho * kz * ((d[0] - d[1]) * sqrt(c) + rho * g))
-# print("=", rho * kz * ((d2[0] - d2[1]) * sqrt(c) + rho * g))
-# print("=", rho * kz * ((d3[0] - d3[1]) * sqrt(c) + rho * g))
-# print("\nNumeric transpiration rate (kg/s):")
-# print(at1[-1, 2], rho * at1[-1, 5])
-# print(at2[-1, 2], rho * at2[-1, 5])
-# print(at3[-1, 2], rho * at3[-1, 5])
-#
-# print("\nAnalytic pressure at top (cm)")
-# print(p_r(0))
-# print(p_r2(0))
-# print(p_r3(0))
-# print("Numeric pressure (cm)")
-# # print(toHead(at1[6]))
-# # print(toHead(at2[6]))
-# # print(toHead(at3[6]))
-
 # save benchmark 1
 z_ = np.linspace(0, -0.5, len(p_))
 h_ = vg.pa2head(p_)

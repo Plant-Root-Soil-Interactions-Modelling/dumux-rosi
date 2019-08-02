@@ -18,7 +18,7 @@ Kx = 3.2 # axial conductivity [cm^4/hPa/day]
 Radius = 0.2 # cm
 
 [RootSystem.Collar]
-Transpiration = 0.00064 # [kg/day], 0.2 mm/day at 0.04*0.08
+Transpiration = 0.64 # [kg/day], 0.2 mm/day at 0.04*0.08
 Sinusoidal = True
 
 [Soil.IC]

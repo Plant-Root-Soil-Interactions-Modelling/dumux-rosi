@@ -178,7 +178,7 @@ int main(int argc, char** argv) try
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
-        // rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,1.), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+        rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         rootSystem->initialize();
         grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
@@ -207,10 +207,12 @@ int main(int argc, char** argv) try
 
     // root growth
     GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
+    double initialTime = 0.; // s
     if (simtype==rootbox) {
         gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
         std::cout << "...grid grower initialized \n" << std::flush;
-        gridGrowth->grow(getParam<double>("RootSystem.Grid.InitialT")*24*3600);
+        initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
+        gridGrowth->grow(initialTime);
         std::cout << "initial growth performed... \n" << std::flush;
     }
 
@@ -274,11 +276,11 @@ int main(int argc, char** argv) try
     vtkWriter.addField(problem->order(), "order [1]");
     vtkWriter.addField(problem->id(), "id [1]");
     vtkWriter.addField(problem->axialFlux(), "axial flux [cm3/d]");
-    vtkWriter.addField(problem->radialFlux(), "radial flux [1/d]");
+    vtkWriter.addField(problem->radialFlux(), "radial flux [cm3/d]");
     vtkWriter.addField(problem->age(), "age [d]");
     vtkWriter.addField(problem->initialPressure(), "initial pressure [cm]");
-    vtkWriter.addField(problem->kr(), "kr [cm3/d]");
-    vtkWriter.addField(problem->kx(), "kx [cm3/d]");
+    vtkWriter.addField(problem->kr(), "kr [cm/hPa/d]");
+    vtkWriter.addField(problem->kx(), "kx [cm4/hPa/day]");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
     vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
@@ -309,20 +311,18 @@ int main(int argc, char** argv) try
         std::cout << "a time dependent model\n\n" << std::flush;
         timeLoop->start();
         do {
+
             double t = timeLoop->time(); // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
             problem->setTime(t, dt); // pass current time to the problem
 
             if (grow) {
-                std::cout << "grow() \n"<< std::flush;
-                bool didgrow = false;
-                while (growth->simTime()<t) {
-                    gridGrowth->grow(dt);
-                    didgrow=true;
-                } // now rootbox is ahead
 
-                // growth->store(); // better safe than sorry
-                if (didgrow) {
+                std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
+                while (growth->simTime()<t+initialTime) {
+
+                    std::cout << "grow \n"<< std::flush;
+                    gridGrowth->grow(dt);
                     problem->spatialParams().updateParameters(*growth);
                     problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                     std::cout << "grew \n"<< std::flush;
@@ -340,6 +340,7 @@ int main(int argc, char** argv) try
 
                     xOld = x;
                 }
+
             }
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations

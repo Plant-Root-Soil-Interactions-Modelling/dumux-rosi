@@ -11,7 +11,7 @@ DtInitial = 360 # [s]
 MaxTimeStepSize = 3600 # 1 h
 
 [RootSystem.Collar]
-Transpiration = 1 # [kg/day]
+Transpiration = 0.6 # [kg/day]
 Sinusoidal = True
 
 [RootSystem.Conductivity]

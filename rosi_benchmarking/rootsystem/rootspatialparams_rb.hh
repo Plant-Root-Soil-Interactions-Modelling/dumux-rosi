@@ -128,7 +128,7 @@ public:
     //! radial conductivity [m /Pa/s]
     Scalar kr(std::size_t eIdx) const {
         if (eIdx==0) { // no radial flow at the shoot element
-            return 0.;
+            return kr0_;
         }
         return kr_.f(this->age(eIdx), eIdx);
     }
@@ -136,7 +136,7 @@ public:
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
         if (eIdx==0) { // high axial flow at the shoot element
-            return 100.;
+            return kx0_;
         }
         return kx_.f(this->age(eIdx), eIdx);
     }
@@ -175,30 +175,28 @@ public:
             orders_.at(eIdx) = segO[i];
             ids_.at(eIdx) = segId[i];
             radii_.at(eIdx) = segRadii[i];
-            ctimes_.at(eIdx) = time_+time0_+dt_; // segCT[i]; // todo until the other thing works...
+            ctimes_.at(eIdx) = segCT[i];
             // segments, where the second node is moved, have wrong creation times (too early)
             // i.e. not exact, but temporal resolution only
-//            if (segCT[i]<0) { // sanity checks
-//                throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
-//            }
-//            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
-//                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
-//                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
-//            }
+            if (segCT[i]<0) { // sanity checks
+                throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
+            }
+            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
+                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
+                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
+            }
         }
-        std::cout << "loop done\n" << std::flush;
+
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
             kr_.setData(orders_);
         }
         if ((kx_.type() == InputFileFunction::perType) || (kx_.type() == InputFileFunction::tablePerType)) {
             kx_.setData(orders_);
         }
-
-        std::cout << "updateParameters done\n" << std::flush;
-
+        // std::cout << "updateParameters done\n" << std::flush;
     }
 
-    //! ignore (because there is no common base class with rootspatialparams_dgf.hh)
+    //! ignore (used in rootspatialparams_dgf.hh)
     template<class GridData>
     void initParameters(const GridData& gridData) {
         DUNE_THROW(Dune::InvalidStateException, "initParameters is called for a root growth model");
@@ -216,6 +214,9 @@ private:
     double time_ = 0.; // [s]
     double dt_ = 0.;
     double time0_ = 0; // initial time [s]
+
+    double kx0_ = 1.;
+    double kr0_ = 1.e-9;
 };
 
 } // end namespace Dumux

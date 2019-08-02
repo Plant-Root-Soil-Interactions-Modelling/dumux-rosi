@@ -3,11 +3,13 @@ Name = rb_single
 
 [TimeLoop]
 TEnd = 1.e9 # 1e9 # [s]
-DtInitial = 1 # [s]
+DtInitial = 360 # [s]
 
 [RootSystem.Grid]
-File =  singleroot
+File = singleroot
 InitialT = 50 # days
+MaxTimeStepSize = 3600 # 1 h
+# singleroot
 
 [RootSystem.Conductivity]
 Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day] 
