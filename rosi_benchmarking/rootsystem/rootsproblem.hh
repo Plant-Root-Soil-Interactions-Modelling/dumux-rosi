@@ -362,7 +362,7 @@ public:
      * deletes old soil, sets new soil, takes ownership
      */
     void setSoil(CRootBox::SoilLookUp* s) {
-        delete(soil);
+        delete soil_;
         soil_ = s;
         std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
     }

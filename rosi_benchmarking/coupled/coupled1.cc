@@ -379,8 +379,10 @@ int main(int argc, char** argv) try
             timeLoop->setTimeStepSize(rootNonlinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
 
             // pass current time to the problem
-            rootProblem->setTime(timeLoop->time());
-            soilProblem->setTime(timeLoop->time());
+            double t = timeLoop->time();
+            double dt = timeLoop->timeStepSize();
+            rootProblem->setTime(t,dt);
+            soilProblem->setTime(t);
 
         } while (!timeLoop->finished());
 
