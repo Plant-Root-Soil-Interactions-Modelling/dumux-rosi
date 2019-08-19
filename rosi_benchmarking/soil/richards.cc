@@ -94,8 +94,6 @@ int main(int argc, char** argv) try
     gridManager.init("Soil"); // "Soil" is the parameter group name
     /**
      * Opens the grid file, or constructs the grid form the .input file parameters
-     * YaspGrid bug? if the parameter Grid.LowerLeft is negative (e.g. -1 -1 -1 ), YaspGrid does not work in 3D
-     * (in gridmanager.hh)
      */
 
 

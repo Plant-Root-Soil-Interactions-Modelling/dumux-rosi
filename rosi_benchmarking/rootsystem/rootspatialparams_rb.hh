@@ -215,10 +215,11 @@ private:
     InputFileFunction kr_;
     InputFileFunction kx_;
 
-    std::vector<double> orders_; // root order, or root type
     std::vector<double> radii_; // [m]
     std::vector<double> ctimes_; // [s]
     std::vector<double> ids_; // [1]
+    std::vector<double> orders_; // root order, or root type [1]
+
 
     double time_ = 0.; // [s]
     double dt_ = 0.;

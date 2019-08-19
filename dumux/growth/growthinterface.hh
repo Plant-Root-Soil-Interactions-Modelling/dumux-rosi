@@ -39,8 +39,8 @@ public:
     // run simulation
     virtual void simulate(double dt) = 0; //< simulate the next dt seconds [s]
     virtual double simTime() const = 0;  //< returns the current simulation time of the growht model [s]
-    virtual void store()=0; // currently unused, maybe in the future...
-    virtual void restore()=0;
+    virtual void store() = 0; // currently unused, maybe in the future...
+    virtual void restore() = 0;
 
 
     // nodes that moved
@@ -61,7 +61,7 @@ public:
     // mapper
     std::vector<size_t> root2dune; ///< Maps a growth model index to the dune element index, managed by GridGrowth
 
-    //! returns the dune element index from the root model index node index
+    //! returns the dune element index from the root model node index
     size_t map2dune(size_t rIdx) const {
         if (rIdx>=root2dune.size()) {
             std::cout << "GrowthInterface::map2dune mapping problems" << std::flush;

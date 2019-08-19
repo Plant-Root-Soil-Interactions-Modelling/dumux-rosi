@@ -156,6 +156,7 @@ namespace Dumux {
             } else {
                     auto eIdx = this->fvGridGeometry().elementMapper().index(element);
                     Scalar z = element.geometry().center()[dimWorld - 1];
+                    // std::cout << "I wonder... " << z << ", " << size_t(layer_.f(z, eIdx)-1) << "\n";
                     return size_t(layer_.f(z, eIdx)-1);
             }
         }

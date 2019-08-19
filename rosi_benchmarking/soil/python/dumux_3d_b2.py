@@ -25,8 +25,8 @@ else:
 # result dumux jan1 (Figure 2a)
 s_, p_, z_ = read3D_vtp("benchmark3d_2-00001", np_)
 h_ = vg.pa2head(p_)
-plt.plot(h_, z_ * 100 - 53, "r+")
+plt.plot(h_, z_ * 100, "r+")
 
-np.savetxt("dumux3d_b2", np.vstack((z_ - .53, h_)), delimiter = ",")
+np.savetxt("dumux3d_b2", np.vstack((z_, h_)), delimiter = ",")
 
 plt.show()
