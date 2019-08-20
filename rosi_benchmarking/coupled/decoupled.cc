@@ -43,10 +43,6 @@
 #include <dumux/io/grid/gridmanager.hh>
 #include <dumux/io/loadsolution.hh>
 
-#include <RootSystem.h>
-#include "../rootsystem/rootsproblem.hh"
-#include "../soil/richardsproblem.hh"
-
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
 #include <dumux/common/valgrind.hh>
@@ -60,6 +56,12 @@
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/assembly/diffmethod.hh>
 #include <dumux/discretization/method.hh>
+
+#include <RootSystem.h>
+#include "../rootsystem/rootsproblem.hh"
+#include "../soil/richardsproblem.hh"
+
+
 
 namespace Dumux {
 namespace Properties {
@@ -100,11 +102,12 @@ int main(int argc, char** argv) try
     Parameters::init(0, argv, rootName);
 
     // try to create a grid (from the given grid file or the input file)
+
     GridManager<GetPropType<RootsTag, Properties::Grid>> rootGridManager;
     rootGridManager.init("RootSystem");
     const auto rootGridData = rootGridManager.getGridData();
 
-    using SoilGridType = Dune::YaspGrid<3>; // pick soil grid here (its in compile definition in the soil model)
+    using SoilGridType = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>; // pick soil grid here
     GridManager<SoilGridType> soilGridManager;
     soilGridManager.init("Soil");
 
@@ -132,7 +135,7 @@ int main(int argc, char** argv) try
     rootProblem->spatialParams().initParameters(*rootGridData);
     // rootProblem->spatialParams().analyseRootSystem();
     using SoilProblem = GetPropType<SoilTag, Properties::Problem>;
-    auto soilProblem = std::make_shared<SoilProblem>(soilFVGridGeometry, &soilGridManager);
+    auto soilProblem = std::make_shared<SoilProblem>(soilFVGridGeometry);
     std::cout << "and i have two problems \n" << "\n" << std::flush;
 
     // the solution vector
@@ -182,10 +185,10 @@ int main(int argc, char** argv) try
     VtkOutputModule<RootGridVariables, RootSolutionVector> rootVTKWriter(*rootGridVariables, r, rootProblem->name()+"R");
     using RootVelocityOutput = GetPropType<RootsTag, Properties::VelocityOutput>;
     rootVTKWriter.addVelocityOutput(std::make_shared<RootVelocityOutput>(*rootGridVariables));
-    rootProblem->axialFlux(r); // prepare fields
-    rootProblem->radialFlux(r); // prepare fields
-    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux");
-    rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux");
+    rootProblem->userData("axialFlux", r); // prepare fields // todo wrong (coarse approximation)
+    rootProblem->userData("radialFlux", r); // prepare fields
+    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux [cm3/d]");
+    rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux [cm3/d]");
     RootIOFields::initOutputModule(rootVTKWriter); //!< Add model specific output fields
     rootVTKWriter.write(0.0);
     using SoilIOFields = GetPropType<SoilTag, Properties::IOFields>;
@@ -245,21 +248,23 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-                rootProblem->axialFlux(r); // prepare fields
-                rootProblem->radialFlux(r); // prepare fields
+                rootProblem->userData("axialFlux", r); // prepare fields // todo wrong (coarse approximation)
+                rootProblem->userData("radialFlux", r); // prepare fields
                 rootVTKWriter.write(timeLoop->time());
-//                soilVTKWriter.write(timeLoop->time());
+                soilVTKWriter.write(timeLoop->time());
             }
             if (mpiHelper.rank() == 0) {
                 rootProblem->writeTranspirationRate(r);
             }
-            // report statistics of this time step
-            timeLoop->reportTimeStep();
-            // set new dt as suggested by the newton solver
-            timeLoop->setTimeStepSize(rootNonlinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
-            // pass current time to the problem
-            rootProblem->setTime(timeLoop->time());
-  //           soilProblem->setTime(timeLoop->time());
+
+            timeLoop->reportTimeStep(); // report statistics of this time step
+
+            double t = timeLoop->time();
+            double dt = rootNonlinearSolver.suggestTimeStepSize(timeLoop->timeStepSize());
+            timeLoop->setTimeStepSize(dt); // set new dt as suggested by the newton solver
+            rootProblem->setTime(t, dt); // pass current time to the problem
+            soilProblem->setTime(t);
+
         } while (!timeLoop->finished());
         timeLoop->finalize(rootLGV.comm());
     } else // static
@@ -272,8 +277,8 @@ int main(int argc, char** argv) try
         rootNonlinearSolver.solve(r);
         soilNonlinearSolver.solve(s);
         // write vtk output
-        rootProblem->axialFlux(r); // prepare fields
-        rootProblem->radialFlux(r); // prepare fields
+        rootProblem->userData("axialFlux", r); // prepare fields // todo wrong (coarse approximation)
+        rootProblem->userData("radialFlux", r); // prepare fields
         rootProblem->writeTranspirationRate(r);
         rootVTKWriter.write(1);
         soilVTKWriter.write(1);

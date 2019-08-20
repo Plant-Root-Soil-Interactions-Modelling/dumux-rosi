@@ -60,7 +60,7 @@ struct RichardsCC { using InheritsFrom = std::tuple<RichardsTT, CCTpfaModel>; };
 // Set grid type
 #ifndef GRIDTYPE
 template<class TypeTag>
-struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::YaspGrid<3>; }; // Use 3d YaspGrid per default
+struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>; };
 #else
 template<class TypeTag>
 struct Grid<TypeTag, TTag::RichardsTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt

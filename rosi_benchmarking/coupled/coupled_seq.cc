@@ -49,8 +49,6 @@
 #include <dumux/io/loadsolution.hh>
 
 #include <RootSystem.h>
-#include "../rootsystem/rootsproblem.hh"
-#include "../soil/richardsproblem.hh"
 
 #include <dumux/common/timeloop.hh>
 #include <dumux/linear/amgbackend.hh>
@@ -62,25 +60,26 @@
 
 #include <dumux/growth/soillookup.hh> // for coupling
 
+#include "../rootsystem/rootsproblem.hh"
+#include "../soil/richardsproblem.hh"
+
 
 enum modelType { dgf=0, rootbox= 1 };
 
-namespace Dumux {
-namespace Properties {
+namespace Dumux { namespace Properties {
 int simtype = dgf;
 template<class TypeTag> // Set the spatial parameters for the root problem
 struct SpatialParams<TypeTag, TTag::Roots> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
-};
-} // end namespace Properties
+}; }
 
 
 using RootsTag = Properties::TTag::RootsBox;
 using SoilTag = Properties::TTag::RichardsBox;
 
-using SoilGridType = Dune::YaspGrid<3>; // pick soil grid here (its in compile definition in the soil model)
+using SoilGridType = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>; // pick soil grid here (its in compile definition in the soil model)
 using RootGridType = GetPropType<RootsTag, Properties::Grid>;
 
 using RootFVGridGeometry = GetPropType<RootsTag, Properties::FVGridGeometry>;
@@ -243,12 +242,6 @@ int main(int argc, char** argv) try
     updateSaturation(saturation, *soilFVGridGeometry, *soilGridVariables, s);
     auto soilLookUp = SoilLookUp(*soilFVGridGeometry, saturation);
 
-    auto maxsize = soilFVGridGeometry->bBoxMax(); // // YASP grid is shifted
-    auto minsize = soilFVGridGeometry->bBoxMin(); // // YASP grid is shifted
-
-    auto shift = Dune::FieldVector<double, 3>( {maxsize[0]/2, maxsize[1]/2, maxsize[2]});
-    std::cout << "Shift: (" << maxsize << "), ("<< minsize <<  "), (" << shift << ")\n" << std::flush;
-    soilLookUp.setShift( shift );
     rootProblem->setSoil(&soilLookUp);
     std::cout << "roots know the soil \n" << "\n" << std::flush;
 

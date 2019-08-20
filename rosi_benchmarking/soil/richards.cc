@@ -25,21 +25,18 @@
 
 #include <ctime>
 #include <iostream>
-
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 #include <dune/common/timer.hh> // to compute wall times
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/grid/yaspgrid/coordinates.hh>
 #include <dune/istl/io.hh>
-
 // #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system
 // #include <dumux/common/properties/propertysystem.hh>
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
 #include <dumux/common/valgrind.hh> // for debugging
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a function)
-
 #include <dumux/linear/amgbackend.hh> // linear solver (currently the only parallel solver available(?))
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 /**
@@ -48,11 +45,9 @@
  */
 #include <dumux/common/timeloop.hh>
 #include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
-
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
-
 #include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 
 
