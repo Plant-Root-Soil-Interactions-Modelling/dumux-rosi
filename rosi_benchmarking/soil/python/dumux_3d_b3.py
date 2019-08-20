@@ -35,8 +35,8 @@ for i in range(0, 3):
     s_, p_, z_ = read3D_vtp("benchmark3d_3a-0000" + str(i + 1), np_)
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, sand)
-    ax1.plot(theta_, (z_ - 2) * 100, "r+")
-    ex.append(z_ - 2)
+    ax1.plot(theta_, (z_) * 100, "r+")
+    ex.append(z_)
     ex.append(theta_)
 
 # result (Figure 4b)
@@ -44,8 +44,8 @@ for i in range(0, 3):
     s_, p_, z_ = read3D_vtp("benchmark3d_3b-0000" + str(i + 1), np_)
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, loam)
-    ax2.plot(theta_, (z_ - 2) * 100, "r+")
-    ex.append(z_ - 2)
+    ax2.plot(theta_, z_ * 100, "r+")
+    ex.append(z_)
     ex.append(theta_)
 
 # result (Figure 4c)
@@ -53,8 +53,8 @@ for i in range(0, 3):
     s_, p_, z_ = read3D_vtp("benchmark3d_3c-0000" + str(i + 1), np_)
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, clay)
-    ax3.plot(theta_, (z_ - 2) * 100, "r+")
-    ex.append(z_ - 2)
+    ax3.plot(theta_, z_ * 100, "r+")
+    ex.append(z_)
     ex.append(theta_)
 
 np.savetxt("dumux3d_b3", np.vstack(ex), delimiter = ",")

@@ -7,10 +7,8 @@ DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.Grid]
-# UpperRight = 0.05 0.05 0
-# LowerLeft = -0.05 -0.05 -2
-# Cells = 9 9 199
-UpperRight = 0.1 0.1 2
+LowerLeft = -0.05 -0.05 -2. 
+UpperRight =  0.05 0.05 0. 
 Cells = 9 9 199
 
 [Soil.BC.Top]
@@ -21,7 +19,8 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-P = -30 # cm pressure head (initial guess)
+P = -40 -20 # cm pressure head (initial guess)
+Z = -2. 0.
 
 [Soil.VanGenuchten] 
 # Sand over Loam 
@@ -32,6 +31,6 @@ N =  3 1.6
 Ks = 1000 50 # [cm/d] 		
 
 [Soil.Layer]
-Z = 0 1.5 1.5 2 
-Number = 2 2 1 1	
+Number = 2 2 1 1
+Z = -2. -0.5 -0.5 0.	
 	

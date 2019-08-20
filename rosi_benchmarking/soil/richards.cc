@@ -30,6 +30,7 @@
 #include <dune/common/timer.hh> // to compute wall times
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
+#include <dune/grid/yaspgrid/coordinates.hh>
 #include <dune/istl/io.hh>
 
 // #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system

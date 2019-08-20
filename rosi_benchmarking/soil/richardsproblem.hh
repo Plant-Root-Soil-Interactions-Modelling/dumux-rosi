@@ -337,8 +337,8 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
-        const auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
         if (source_ != nullptr) {
+            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
             return source_->at(eIdx);
         } else {
             return 0.;

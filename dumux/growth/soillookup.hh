@@ -139,7 +139,7 @@ private:
     const std::vector<double>& sat_;
     const BBoxTree& bBoxTree_;
 
-    Dune::FieldVector<double, 3> shift = { 0., 0. , 0. };
+    Dune::FieldVector<double, 3> shift = { 0., 0., 0. };
     CRootBox::Vector3d shiftRB = CRootBox::Vector3d();
 };
 

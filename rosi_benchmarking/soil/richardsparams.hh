@@ -33,6 +33,8 @@
 
 #include <dumux/io/inputfilefunction.hh>
 
+// #include <cassert>
+
 namespace Dumux {
 
     /*!
@@ -157,7 +159,7 @@ namespace Dumux {
                     auto eIdx = this->fvGridGeometry().elementMapper().index(element);
                     Scalar z = element.geometry().center()[dimWorld - 1];
                     // std::cout << "I wonder... " << z << ", " << size_t(layer_.f(z, eIdx)-1) << "\n";
-                    return size_t(layer_.f(z, eIdx)-1);
+                    return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
             }
         }
 

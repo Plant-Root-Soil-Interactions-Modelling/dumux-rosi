@@ -7,7 +7,8 @@ TEnd = 172800 # 2 days [s]
 MaxTimeStepSize = 60 # a minute [s] 
 
 [Soil.Grid]
-UpperRight = 0.1 0.1 1
+UpperRight = 0.05 0.05 0. 
+LowerLeft = -0.05 -0.05 -1. 
 Cells = 9 9 99
 
 [Soil.BC.Top]
