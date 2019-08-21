@@ -161,16 +161,16 @@ public:
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
 
-        if (Dumux::hasParam("RootSystem.Collar.Transpiration")) {
-            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT");  // [kg/day]([day])
-            collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
-            collar_.setFunctionScale(1./(24.*3600)); // [kg/day] -> [kg/s]
-            bcType_ = bcNeumann;
-        } else {
+        if (Dumux::hasParam("RootSystem.Collar.P")) {
             collar_ = InputFileFunction("RootSystem.Collar", "P", "PT"); // [cm]([day])
             collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
             collar_.setFunctionScale(1.e-2 * rho_ * g_); // [cm] -> [Pa], don't forget to add pRef_
             bcType_ = bcDirichlet;
+        } else { // ".File " gives transpiration table
+            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT");  // [kg/day]([day])
+            collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
+            collar_.setFunctionScale(1./(24.*3600)); // [kg/day] -> [kg/s]
+            bcType_ = bcNeumann;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
     }
