@@ -5,7 +5,7 @@ Name = swbot
 TEnd = 43200 # half a day
 CheckTimes = 10800 21600 32400 # 1/8 days 
 DtInitial = 360 # [s]
-MaxTimeStepSize = 360 # 1 h
+MaxTimeStepSize = 3600 # 1 h
 
 [RootSystem.Collar]
 Transpiration = 0.6 # [kg/day]

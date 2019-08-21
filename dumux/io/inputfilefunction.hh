@@ -106,7 +106,7 @@ public:
                     std::string name = Dumux::getParam<std::string>(groupName +".File");
                     std::string filename = getParam<std::string>(groupName +".File");
                     io::CSVReader<2> csv(filename);
-                    csv.read_header(io::ignore_extra_column, "x", "y");
+                    csv.read_header(io::ignore_missing_column+io::ignore_extra_column, "x", "y");
                     std::vector<double> x, y;
                     double a,b;
                     while(csv.read_row(a,b)){
