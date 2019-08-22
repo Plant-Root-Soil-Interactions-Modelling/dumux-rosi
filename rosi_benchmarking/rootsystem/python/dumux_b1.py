@@ -25,6 +25,8 @@ def toPa(ph):  # cm pressure head to Pascal (kg/ (m s^2))
 def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
     return (pa - ref) * 100 / rho / g
 
+# print("critical pressure in cm: ", toHead(-1.4e6))
+
 
 # Parameters
 L = 0.5  # length of single straight root (m)

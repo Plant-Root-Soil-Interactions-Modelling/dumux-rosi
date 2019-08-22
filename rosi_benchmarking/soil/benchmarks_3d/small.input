@@ -7,7 +7,8 @@ DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
 [Soil.Grid]
-UpperRight = 0.08 0.04 0.24
+LowerLeft = -0.04 -0.02 -0.24
+UpperRight = 0.04 0.02 0.
 Cells = 8 4 24
 
 [Soil.BC.Top]
@@ -19,7 +20,7 @@ Type = 2 # constant flux
 Value = 0 # [cm day-1]
 
 [Soil.IC]
-P = -100 # or -1000  cm 
+P = -200 # or -1000  cm 
 
 [Soil.VanGenuchten] 
 Qr = 0.067  	
