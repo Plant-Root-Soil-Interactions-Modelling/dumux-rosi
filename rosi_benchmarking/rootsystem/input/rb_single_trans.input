@@ -1,0 +1,25 @@
+[Problem]
+Name = rb_single
+
+[TimeLoop]
+TEnd = 1.e9 # 1e9 # [s]
+DtInitial = 360 # [s]
+
+[RootSystem.Grid]
+File = singleroot
+InitialT = 50 # days
+MaxTimeStepSize = 3600 # 1 h
+ShootZ = -2.99 # cm
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day] 
+Kr = 1.73e-4 # radial conductivity [cm/hPa/day] 
+ShootKx = 1 # axial conductivity [cm^4/hPa/day] 
+ShootKr = 1e-6 # radial conductivity [cm/hPa/day] 
+
+[Soil.IC]
+P = -200 # cm pressure head
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

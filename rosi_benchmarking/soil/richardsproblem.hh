@@ -1,93 +1,24 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
-/*!
- * \file
- * \ingroup Richards Equation Solver
- * \brief Uses Dumux as an easy to use Richards equation solver, where most parameters can be set dynamically.
- */
 #ifndef DUMUX_RICHARDS_PROBLEM_HH
 #define DUMUX_RICHARDS_PROBLEM_HH
 
-#include <dune/grid/yaspgrid.hh>
-#if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
-#endif
-#if HAVE_UG
-#include <dune/grid/uggrid.hh>
-#endif
-
-#include <dumux/discretization/cctpfa.hh>
-#include <dumux/discretization/box.hh>
 #include <dumux/porousmediumflow/problem.hh> // base class
-
-#include <dumux/porousmediumflow/richards/model.hh>
-#include <dumux/material/components/simpleh2o.hh>
-#include <dumux/material/fluidsystems/1pliquid.hh>
-
-#include <RootSystem.h>
 
 #include "richardsparams.hh"
 
 namespace Dumux {
 
-template <class TypeTag>
-class RichardsProblem;
-
-namespace Properties {
-// Create new type tags
-namespace TTag {
-struct RichardsTT { using InheritsFrom = std::tuple<Richards>; };
-struct RichardsBox { using InheritsFrom = std::tuple<RichardsTT, BoxModel>; };
-struct RichardsCC { using InheritsFrom = std::tuple<RichardsTT, CCTpfaModel>; };
-} // end namespace TTag
-
-// Set grid type
-#ifndef GRIDTYPE
-template<class TypeTag>
-struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>; };
-#else
-template<class TypeTag>
-struct Grid<TypeTag, TTag::RichardsTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
-#endif
-
-// Set the physical problem to be solved
-template<class TypeTag>
-struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag>; };
-
-// Set the spatial parameters
-template<class TypeTag>
-struct SpatialParams<TypeTag, TTag::RichardsTT> {
-    using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
-};
-} // end namespace properties
-
 /*!
- *
- * \ingroup RichardsModel
- *
+ * RichardsProblem:
+ * Uses Dumux as an easy to use Richards equation solver,
+ * where most parameters can be set dynamically
  */
 template <class TypeTag>
 class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
-    using ParentType = PorousMediumFlowProblem<TypeTag>;
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
@@ -105,6 +36,10 @@ public:
     using Grid = GetPropType<TypeTag, Properties::Grid>;
     using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
     using MaterialLawParams = typename MaterialLaw::Params;
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+    using PointSource = GetPropType<TypeTag, Properties::PointSource>;
+    using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
     enum {
         // copy some indices for convenience
@@ -130,7 +65,7 @@ public:
      * \brief Constructor: constructed in the main file
      */
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : ParentType(fvGridGeometry) {
+    : PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
@@ -165,7 +100,7 @@ public:
      * called EnergyVolumeVariablesImplementation::updateTemperature(...) in porousmediumflow/nonisothermal/volumevariables.hh,
      * included by porousmediumflow/volumevariables.hh,
      *
-     * todo this makes very little sense for isothermal !
+     * todo this makes very little sense for isothermal!
      *
      * overwrites PorousMediumFlowProblem::temperature (compiles without, throws exception of base class)
      */
@@ -189,8 +124,7 @@ public:
      * discretization dependent, e.g. called by BoxElementBoundaryTypes::boundaryTypes(...)
      * when?
      */
-    BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
-    {
+    BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const {
         BoundaryTypes bcTypes;
         if (onUpperBoundary_(globalPos)) { // top bc
             switch (bcTopType_) {
@@ -337,7 +271,7 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
-        if (source_ != nullptr) {
+        if ((source_ != nullptr)) {
             auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
             return source_->at(eIdx);
         } else {
@@ -387,6 +321,94 @@ public:
         criticalPressure_ = p;
     }
 
+    /*!
+     * \brief Applies a vector of point sources. The point sources
+     *        are possibly solution dependent.
+     *
+     * \param pointSources A vector of Dumux::PointSource s that contain
+              source values for all phases and space positions.
+     *
+     * For this method, the \a values method of the point source
+     * has to return the absolute mass rate in kg/s. Positive values mean
+     * that mass is created, negative ones mean that it vanishes.
+     */
+    template<class PointSource>
+    void addPointSources(std::vector<PointSource>& pointSources) const {
+        if (couplingManager_!=nullptr) {
+            pointSources = this->couplingManager().bulkPointSources();
+        }
+    }
+
+    /*!
+     * \brief Evaluate the point sources (added by addPointSources)
+     *        for all phases within a given sub-control-volume.
+     *
+     * This is the method for the case where the point source is
+     * solution dependent and requires some quantities that
+     * are specific to the fully-implicit method.
+     *
+     * \param pointSource A single point source
+     * \param element The finite element
+     * \param fvGeometry The finite-volume geometry
+     * \param elemVolVars All volume variables for the element
+     * \param scv The sub-control volume within the element
+     *
+     * For this method, the \a values() method of the point sources returns
+     * the absolute rate mass generated or annihilate in kg/s. Positive values mean
+     * that mass is created, negative ones mean that it vanishes.
+     */
+    template<class ElementVolumeVariables>
+    void pointSource(PointSource& source,
+        const Element &element,
+        const FVElementGeometry& fvGeometry,
+        const ElementVolumeVariables& elemVolVars,
+        const SubControlVolume &scv) const {
+        if (couplingManager_!=nullptr) {
+            //            // compute source at every integration point
+            const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
+            const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
+            const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
+            const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+            const Scalar kr = spatialParams.kr(lowDimElementIdx);
+            const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
+            // relative soil permeability
+            const auto krel = 1.0;
+            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+            const auto density = 1000;
+            const Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
+            source = sourceValue*source.quadratureWeight()*source.integrationElement();
+        } else {
+            source = 0;
+        }
+    }
+
+    /**
+     * debug info
+     */
+    void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
+        NumEqVector source(0.0);
+        for (const auto& element : elements(this->fvGridGeometry().gridView()))
+        {
+            auto fvGeometry = localView(this->fvGridGeometry());
+            fvGeometry.bindElement(element);
+            auto elemVolVars = localView(gridVars.curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, sol);
+            for (auto&& scv : scvs(fvGeometry))
+            {
+                auto pointSources = this->scvPointSources(element, fvGeometry, elemVolVars, scv);
+                pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
+                source += pointSources;
+            }
+        }
+        std::cout << "Global integrated source (soil): " << source << " (kg/s) / "
+            <<                           source*3600*24*1000 << " (g/day)" << '\n';
+    }
+
+    //! Set the coupling manager
+    void setCouplingManager(CouplingManager* cm) {
+        couplingManager_ = cm;
+    }
+
 private:
 
     //! cm pressure head -> Pascal
@@ -401,14 +423,12 @@ private:
 
     //! true if on the point lies on the upper boundary
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {
-        return globalPos[dimWorld - 1]
-                         > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
 
     //! true if on the point lies on the upper boundary
     bool onLowerBoundary_(const GlobalPosition &globalPos) const {
-        return globalPos[dimWorld - 1]
-                         < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+        return globalPos[dimWorld - 1] < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
     }
 
     // Initial
@@ -422,6 +442,7 @@ private:
 
     // Source
     std::vector<double>* source_ = nullptr;
+    CouplingManager* couplingManager_ = nullptr;
 
     InputFileFunction precipitation_;
     Scalar criticalPressure_; // cm

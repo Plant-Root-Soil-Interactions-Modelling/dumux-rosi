@@ -57,88 +57,10 @@
 #include <dumux/growth/gridgrowth.hh>
 
 #include "rootsproblem.hh"
-
-
-
-/**
- * Compile definitions are either DGF or ROOTBOX defined in CMakeLists
- */
-enum modelType { dgf=0, rootbox=1 };
+#include "properties.hh"
 
 /**
- * Pick either RootSpatialParamsDGF (for static dgf files),
- * or RootSpatialParamsRB (for dynamic root growth) as SpatialParams.type,
- */
-namespace Dumux {
-namespace Properties {
-#if DGF
-template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
-};
-int simtype = dgf;
-#endif
-#if ROOTBOX
-template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
-};
-int simtype = rootbox;
-#endif
-} // end namespace Properties
-} // end namespace Dumux
-
-
-
-/**
- * to wrap a raw pointer into a shared pointer:
- * for not deleting it twice, an empty deleter must be defined
- */
-template <typename T>
-struct empty_delete {
-    empty_delete() /* noexcept */
-    { }
-    template <typename U>
-    empty_delete(const empty_delete<U>&,
-        typename std::enable_if<
-            std::is_convertible<U*, T*>::value
-        >::type* = nullptr) /* noexcept */
-    { }
-    void operator()(T* const) const /* noexcept */
-    { }// do nothing
-};
-
-/**
- *
- */
-
-//template <class Assembler, class LinearSolver>
-//class MyNewton :public Dumux::NewtonSolver<Assembler,LinearSolver> {
-//
-//    using GlobalPosition = Dune::FieldVector<double, 3>;
-//
-//public:
-//
-//    virtual ~MyNewton() { }
-//
-//    virtual void newtonFail(SolutionVector& u) {
-//        std::cout << "i failed \n";
-//        grow->restore();
-//    }
-//
-//    GrowthModule::GrowthInterface<GlobalPosition>* grow;
-//
-//
-//};
-
-
-
-/**
- *
+ * and so it begins...
  */
 int main(int argc, char** argv) try
 {
@@ -170,11 +92,11 @@ int main(int argc, char** argv) try
     GridManager<Grid> gridManager; // only for dgf
     std::shared_ptr<CRootBox::RootSystem> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
-    if (simtype==dgf) { // for a static dgf grid
+    if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
         gridManager.init("RootSystem");
-        grid = std::shared_ptr<Grid>(&gridManager.grid(), empty_delete<Grid>());
-    } else if (simtype==rootbox) { // for a root model (static or dynamic)
+        grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
+    } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
@@ -209,19 +131,19 @@ int main(int argc, char** argv) try
     // root growth
     GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
     double initialTime = 0.; // s
-    if (simtype==rootbox) {
+    if (simtype==Properties::rootbox) {
         gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
         std::cout << "...grid grower initialized \n" << std::flush;
         initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
         gridGrowth->grow(initialTime);
-        std::cout << "initial growth performed... \n" << std::flush;
+        std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 
     // the problem (initial and boundary conditions)
     auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
-    if (simtype==dgf) {
+    if (simtype==Properties::dgf) {
         problem->spatialParams().initParameters(*gridManager.getGridData());
-    } else if (simtype==rootbox){
+    } else if (simtype==Properties::rootbox){
         problem->spatialParams().updateParameters(*growth);
     }
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
@@ -241,18 +163,17 @@ int main(int argc, char** argv) try
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
     if (tEnd > 0) { // dynamic problem
         grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
-        const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
         auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
         timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
-        timeLoop->setMaxTimeStepSize(maxDt);
-        try { // CheckPoints defined
+        timeLoop->setMaxTimeStepSize(getParam<Scalar>("TimeLoop.MaxTimeStepSize"));
+        if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-            // insert check points
             for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
                 timeLoop->setCheckPoint(p);
             }
-        } catch (std::exception& e) {
-            std::cout << "rootsystem.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+        }
+        if (hasParam("TimeLoop.PeriodicCheckTimes")) {
+            timeLoop->setPeriodicCheckPoint(getParam<double>("TimeLoop.PeriodicCheckTimes"));
         }
     } else { // static
     }
@@ -305,7 +226,7 @@ int main(int argc, char** argv) try
 
     std::cout << "\ni plan to actually start \n" << std::flush;
 
-    double dt2 = 3600; // root box time step todo this is NEW
+    double rbDt = 10*60; // root box time step todo this is NEW
 
     if (tEnd > 0) // dynamic
     {
@@ -319,11 +240,11 @@ int main(int argc, char** argv) try
 
             if (grow) {
 
-                std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                while (growth->simTime()<t+initialTime) {
+                // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
+                while (growth->simTime()+rbDt<t+initialTime) {
 
                     std::cout << "grow \n"<< std::flush;
-                    gridGrowth->grow(dt);
+                    gridGrowth->grow(rbDt);
                     problem->spatialParams().updateParameters(*growth);
                     problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                     std::cout << "grew \n"<< std::flush;
@@ -419,4 +340,27 @@ catch (Dumux::ParameterException &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
+
+
+/**
+ *
+ */
+//template <class Assembler, class LinearSolver>
+//class MyNewton :public Dumux::NewtonSolver<Assembler,LinearSolver> {
+//
+//    using GlobalPosition = Dune::FieldVector<double, 3>;
+//
+//public:
+//
+//    virtual ~MyNewton() { }
+//
+//    virtual void newtonFail(SolutionVector& u) {
+//        std::cout << "i failed \n";
+//        grow->restore();
+//    }
+//
+//    GrowthModule::GrowthInterface<GlobalPosition>* grow;
+//
+//
+//};
 

@@ -76,7 +76,7 @@ os.system("./rootsystem input/b1.input")
 p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_ = read1D_vtp_data("benchmark1b-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
-os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
+os.system("./rootsystem input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
 p3_ = read1D_vtp_data("benchmark1c-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 
 # plot
