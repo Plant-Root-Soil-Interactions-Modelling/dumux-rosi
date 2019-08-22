@@ -51,6 +51,7 @@
 
 #include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 #include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
  * here we go

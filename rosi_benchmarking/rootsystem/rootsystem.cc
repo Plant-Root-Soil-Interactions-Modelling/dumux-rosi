@@ -57,7 +57,8 @@
 #include <dumux/growth/gridgrowth.hh>
 
 #include "rootsproblem.hh"
-#include "properties.hh"
+#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
  * and so it begins...
@@ -158,21 +159,22 @@ int main(int argc, char** argv) try
 
     // get some time loop parameters & instantiate time loop
     bool grow = false;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-    std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
+    const auto tEnd = getParam<double>("TimeLoop.TEnd");
+    std::shared_ptr<CheckPointTimeLoop<double>> timeLoop;
     if (tEnd > 0) { // dynamic problem
         grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
-        auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
-        timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
-        timeLoop->setMaxTimeStepSize(getParam<Scalar>("TimeLoop.MaxTimeStepSize"));
+        auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
+        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
+        timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-            for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
+            std::cout << "using "<< checkPoints.size() << "check times \n";
+            for (auto p : checkPoints) {
                 timeLoop->setCheckPoint(p);
             }
         }
         if (hasParam("TimeLoop.PeriodicCheckTimes")) {
+            std::cout << "using periodic check times \n";
             timeLoop->setPeriodicCheckPoint(getParam<double>("TimeLoop.PeriodicCheckTimes"));
         }
     } else { // static
@@ -226,8 +228,6 @@ int main(int argc, char** argv) try
 
     std::cout << "\ni plan to actually start \n" << std::flush;
 
-    double rbDt = 10*60; // root box time step todo this is NEW
-
     if (tEnd > 0) // dynamic
     {
         std::cout << "a time dependent model\n\n" << std::flush;
@@ -241,10 +241,10 @@ int main(int argc, char** argv) try
             if (grow) {
 
                 // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                while (growth->simTime()+rbDt<t+initialTime) {
+                while (growth->simTime()+dt<t+initialTime) {
 
                     std::cout << "grow \n"<< std::flush;
-                    gridGrowth->grow(rbDt);
+                    gridGrowth->grow(dt);
                     problem->spatialParams().updateParameters(*growth);
                     problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                     std::cout << "grew \n"<< std::flush;

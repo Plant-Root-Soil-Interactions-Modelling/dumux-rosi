@@ -335,7 +335,7 @@ public:
     template<class PointSource>
     void addPointSources(std::vector<PointSource>& pointSources) const {
         if (couplingManager_!=nullptr) {
-            pointSources = this->couplingManager().bulkPointSources();
+            pointSources = couplingManager_->bulkPointSources();
         }
     }
 

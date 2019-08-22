@@ -343,7 +343,7 @@ public:
      * that mass is created, negative ones mean that it vanishes.
      */
     void addPointSources(std::vector<PointSource>& pointSources) const {
-        pointSources = this->couplingManager().lowDimPointSources();
+        pointSources = couplingManager_->lowDimPointSources();
     }
 
     /*!

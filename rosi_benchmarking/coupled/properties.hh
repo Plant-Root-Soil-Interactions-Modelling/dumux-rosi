@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_PROPERTIES_HH
-#define DUMUX_ROOT_PROPERTIES_HH
+#ifndef DUMUX_COUPLED_PROPERTIES_HH
+#define DUMUX_COUPLED_PROPERTIES_HH
 
 #include <dune/foamgrid/foamgrid.hh>
 
@@ -21,8 +21,8 @@
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include "../soil/properties.hh" // TypeTag: RichardsTT
-#include "../rootsystem/properties.hh" // TypeTag: Roots
+#include "../rootsystem/properties.hh" // TypeTag:Roots
+#include "../soil/properties.hh" // TypeTag:RichardsTT
 
 namespace Dumux {
 namespace Properties {
@@ -33,31 +33,31 @@ namespace Properties {
 
 // Coupling Properties for the Soil
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::RichardsTT>
+struct CouplingManager<TypeTag, TTag::RichardsBox>
 {
-    using Traits = MultiDomainTraits<TypeTag, Properties::TTag::RichardsTT>;
+    using Traits = MultiDomainTraits<TypeTag, Properties::TTag::RootsBox>;
     using type = EmbeddedCouplingManager1d3d<Traits, EmbeddedCouplingMode::line>;
 };
 // the point source type
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::RichardsTT> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<0>; };
+struct PointSource<TypeTag, TTag::RichardsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<0>; };
 // the point source locater helper class
 template<class TypeTag>
-struct PointSourceHelper<TypeTag, TTag::RichardsTT> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<0>; };
+struct PointSourceHelper<TypeTag, TTag::RichardsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<0>; };
 
 // Coupling Properties for Roots
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::Roots>
+struct CouplingManager<TypeTag, TTag::RootsBox>
 {
-    using Traits = MultiDomainTraits<Properties::TTag::Roots, TypeTag>;
+    using Traits = MultiDomainTraits<Properties::TTag::RichardsBox, TypeTag>;
     using type = EmbeddedCouplingManager1d3d<Traits, EmbeddedCouplingMode::line>;
 };
 // the point source type
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::Roots> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<1>; };
+struct PointSource<TypeTag, TTag::RootsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<1>; };
 // the point source locater helper class
 template<class TypeTag>
-struct PointSourceHelper<TypeTag, TTag::Roots> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>; };
+struct PointSourceHelper<TypeTag, TTag::RootsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>; };
 
 
 

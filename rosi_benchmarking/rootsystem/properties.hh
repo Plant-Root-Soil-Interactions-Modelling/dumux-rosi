@@ -21,21 +21,13 @@
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
-
 namespace Dumux {
 namespace Properties {
 
-// Create new type tags
-namespace TTag {
-struct Roots {
-    using InheritsFrom = std::tuple<OneP>;
-};
-struct RootsCCTpfa {
-    using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
-};
-struct RootsBox {
-    using InheritsFrom = std::tuple<Roots, BoxModel>;
-};
+namespace TTag { // Create new type tags
+struct Roots { using InheritsFrom = std::tuple<OneP>; };
+struct RootsCCTpfa { using InheritsFrom = std::tuple<Roots, CCTpfaModel>; };
+struct RootsBox { using InheritsFrom = std::tuple<Roots, BoxModel>; };
 }
 
 // Set the grid type
@@ -129,47 +121,6 @@ struct empty_delete {
     void operator()(T* const) const /* noexcept */
     { }// do nothing
 };
-
-/**
- * no functionality (but Dumux wants its bindings)
- * ugly, but I found no other option...
- */
-// The point source type (not used)
-template<class TypeTag>
-struct PointSource<TypeTag, TTag::Roots> {
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    using Element = typename GridView::template Codim<0>::Entity;
-    using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-    using type = IntegrationPointSource<GlobalPosition, NumEqVector>;
-};
-/// Dummy types
-class DummyPointSourceData {
-public:
-    double lowDimElementIdx() { throw 1; };
-};
-class DummySpatial {
-public:
-    double kr(int i) const { throw 1; };
-    double radius(int i) const { throw 1; };
-};
-class DummyProblem {
-public:
-    DummySpatial spatialParams() { throw 1; };
-};
-class DummyCouplingManager {
-public:
-    std::vector<double> bulkPriVars(int i) { throw 1; };
-    std::vector<double>  lowDimPriVars(int i) { throw 1; };
-    DummyProblem& problem(int i) { throw 1; };
-    DummyPointSourceData& pointSourceData(int i) { throw 1; };
-};
-// For a dummy manager
-template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::Roots> {
-    using type = DummyCouplingManager;
-};
-
 
 } // namespace Properties
 } // namespace Dumux

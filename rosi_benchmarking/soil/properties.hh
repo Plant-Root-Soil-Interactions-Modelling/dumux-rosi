@@ -1,3 +1,5 @@
+// -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+// vi: set et ts=4 sw=4 sts=4:
 #ifndef DUMUX_SOIL_PROPERTIES_HH
 #define DUMUX_SOIL_PROPERTIES_HH
 
@@ -45,46 +47,6 @@ struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag
 template<class TypeTag>
 struct SpatialParams<TypeTag, TTag::RichardsTT> {
     using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
-};
-
-/**
- * no functionality (but Dumux wants its bindings)
- * ugly, but I found no other option...
- */
-// The point source type (not used)
-template<class TypeTag>
-struct PointSource<TypeTag, TTag::RichardsTT> {
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    using Element = typename GridView::template Codim<0>::Entity;
-    using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-    using type = IntegrationPointSource<GlobalPosition, NumEqVector>;
-};
-/// Dummy types
-class DummyPointSourceData {
-public:
-    double lowDimElementIdx() { throw 1; };
-};
-class DummySpatial {
-public:
-    double kr(int i) const { throw 1; };
-    double radius(int i) const { throw 1; };
-};
-class DummyProblem {
-public:
-    DummySpatial spatialParams() { throw 1; };
-};
-class DummyCouplingManager {
-public:
-    std::vector<double> bulkPriVars(int i) { throw 1; };
-    std::vector<double>  lowDimPriVars(int i) { throw 1; };
-    DummyProblem& problem(int i) { throw 1; };
-    DummyPointSourceData& pointSourceData(int i) { throw 1; };
-};
-// For a dummy manager
-template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::RichardsTT> {
-    using type = DummyCouplingManager;
 };
 
 } // end namespace properties
