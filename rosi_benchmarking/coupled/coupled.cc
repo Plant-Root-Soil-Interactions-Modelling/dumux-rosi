@@ -88,6 +88,16 @@ int main(int argc, char** argv) try
     using RootTypeTag = Properties::TTag::RootsBox;
     int simtype = Properties::simtype;
 
+    // soil grid
+    GridManager<GetPropType<SoilTypeTag, Properties::Grid>> soilGridManager;
+    soilGridManager.init("Soil"); // pass parameter group (see input file)
+
+    // soil grid geometry
+    const auto& soilGridView = soilGridManager.grid().leafGridView();
+    using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
+    auto soilGridGeoemtry = std::make_shared<SoilFVGridGeometry>(soilGridView);
+    soilGridGeoemtry->update();
+
     // root gridmanager and grid
     using GlobalPosition = Dune::FieldVector<double, 3>;
     using Grid = Dune::FoamGrid<1, 3>;
@@ -103,7 +113,10 @@ int main(int argc, char** argv) try
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
-        rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+        // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
+        // rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+        const auto size = soilGridGeoemtry->bBoxMax() - soilGridGeoemtry->bBoxMin();
+        rootSystem->setGeometry(new CRootBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         rootGrid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
@@ -118,16 +131,6 @@ int main(int argc, char** argv) try
     using FVGridGeometry = GetPropType<RootTypeTag, Properties::FVGridGeometry>;
     auto rootGridGeometry = std::make_shared<FVGridGeometry>(rootGridView);
     rootGridGeometry->update();
-
-    // soil grid
-    GridManager<GetPropType<SoilTypeTag, Properties::Grid>> soilGridManager;
-    soilGridManager.init("Soil"); // pass parameter group (see input file)
-
-    // soil grid geometry
-    const auto& soilGridView = soilGridManager.grid().leafGridView();
-    using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
-    auto soilGridGeoemtry = std::make_shared<SoilFVGridGeometry>(soilGridView);
-    soilGridGeoemtry->update();
 
     ////////////////////////////////////////////////////////////
     // run stationary or dynamic problem on this grid

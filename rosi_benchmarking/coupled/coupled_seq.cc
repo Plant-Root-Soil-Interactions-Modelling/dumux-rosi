@@ -62,18 +62,10 @@
 
 #include "../rootsystem/rootsproblem.hh"
 #include "../soil/richardsproblem.hh"
-
-
-enum modelType { dgf=0, rootbox= 1 };
+#include "../rootsystem/properties.hh" // TypeTag:Roots
+#include "../soil/properties.hh" // TypeTag:RichardsTT
 
 namespace Dumux { namespace Properties {
-int simtype = dgf;
-template<class TypeTag> // Set the spatial parameters for the root problem
-struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
-}; }
 
 
 using RootsTag = Properties::TTag::RootsBox;
@@ -123,7 +115,7 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
     std::fill(source.begin(), source.end(), 0);
     const auto& gridView = gridGeometry.gridView(); // root
 
-    for (const auto& element : elements(gridView)) { // root elements
+    for (const auto& element : elements(gridView)) { // root elementsrootbox
 
         // root solution -> volume variable
         auto fvGeometry = localView(gridGeometry);

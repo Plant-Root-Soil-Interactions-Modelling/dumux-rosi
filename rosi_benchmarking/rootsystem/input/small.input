@@ -2,15 +2,16 @@
 Name = small 
 
 [TimeLoop]
-TEnd = 86400 # 604800 a week [s] # 86400 # a day
+TEnd = 604800 # 604800 a week [s] # 86400 # a day
 CheckTimes = 43200 # half a day
 DtInitial = 360 # [s]
 MaxTimeStepSize = 3600 # 1 h
 
 [RootSystem.Grid]
 File =  Anagallis_femina_Leitner_2010  # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
-InitialT = 10 # days
+InitialT = 5 # days
 Grow = True
+Confined = .08 .04 .24
 # File =  grids/singlerootC.dgf
 
 [RootSystem.Conductivity]

@@ -1,4 +1,4 @@
-# Run decoupled senarios
+# Run small coupled test senarios
 
 import os
 import matplotlib.pyplot as plt
@@ -14,14 +14,14 @@ np_ = 1  # number of processors
 
 # run dumux
 if np_ == 1:
-    os.system("./decoupled input/test.input")
+    os.system("./coupled input/test.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./decoupled input/test.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./coupled input/test.input -Grid.Overlap 0")
 
 # Figure
 s_, p_, z1_ = read3D_vtp("small-00001", np_)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, (z1_ - 0.42) * 100, "r+")
+plt.plot(h1_, (z1_ - 1.26) * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 
