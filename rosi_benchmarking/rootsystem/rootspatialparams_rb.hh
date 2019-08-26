@@ -67,14 +67,28 @@ public:
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", 0, 0); // [cm/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
-        kr0_ = getParam<double>("RootSystem.Conductivity.ShootKr", 0.)*1.e-4/(24.*3600.);  // [cm/hPa/day] -> [m/Pa/s]
+
         kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
-        kx0_ = getParam<double>("RootSystem.Conductivity.ShootKx", 1.)*1.e-10/(24.*3600.);  // [cm^4/hPa/day] -> [m^4/Pa/s]
+
+        kx0_ = InputFileFunction("RootSystem.Conductivity" , "ShootKx", "ShootKxAge", 1., 0);
+        kx0_.setVariableScale(1./(24.*3600.)); // [s] -> [day] 
+        kx0_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+
+        kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKxAge", 0., 0); 
+        kr0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kr0_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
         double radius0 = getParam<double>("RootSystem.Grid.ShootRadius", 1.5)/100; // [cm] -> [m]
         radii_ = { radius0 }; // vectors will incrementially grow in updateParameters
+        
+        /*InputFileFunction radius0 = InputFileFunction("RootSystem.Grid", "ShootRadius", 1.5);
+        radius0.setVariableScale(1./(24.*3600.)); // [s] -> [day]        
+        radius0.setFunctionScale(1.e-2); // [cm] -> [m]
+        radii_ = { radius0 };*/
+
         orders_ = { 0 };
         ctimes_ = { 0. };
         ids_ = { 0 };
@@ -130,7 +144,7 @@ public:
     //! radial conductivity [m /Pa/s]
     Scalar kr(std::size_t eIdx) const {
         if (eIdx==0) { // no radial flow at the shoot element
-            return kr0_;
+            return kr0_.f(this->age(eIdx), eIdx);
         }
         return kr_.f(this->age(eIdx), eIdx);
     }
@@ -138,7 +152,7 @@ public:
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
         if (eIdx==0) { // high axial flow at the shoot element
-            return kx0_;
+            return kx0_.f(this->age(eIdx), eIdx);
         }
         return kx_.f(this->age(eIdx), eIdx);
     }
@@ -214,6 +228,8 @@ public:
 private:
     InputFileFunction kr_;
     InputFileFunction kx_;
+    InputFileFunction kx0_;
+    InputFileFunction kr0_;
 
     std::vector<double> radii_; // [m]
     std::vector<double> ctimes_; // [s]
@@ -225,8 +241,6 @@ private:
     double dt_ = 0.;
     double time0_ = 0; // initial time [s]
 
-    double kx0_;
-    double kr0_;
 };
 
 } // end namespace Dumux
