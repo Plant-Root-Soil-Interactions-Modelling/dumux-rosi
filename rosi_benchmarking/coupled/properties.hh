@@ -45,6 +45,8 @@ struct PointSource<TypeTag, TTag::RichardsBox> { using type = typename GetPropTy
 template<class TypeTag>
 struct PointSourceHelper<TypeTag, TTag::RichardsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<0>; };
 
+
+
 // Coupling Properties for Roots
 template<class TypeTag>
 struct CouplingManager<TypeTag, TTag::RootsBox>

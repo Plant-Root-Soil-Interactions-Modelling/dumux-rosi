@@ -14,9 +14,9 @@ np_ = 1  # number of processors
 
 # run dumux
 if np_ == 1:
-    os.system("./coupled_seq_rb input/test.input")
+    os.system("./coupled_seq_rb input/small_rb.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./coupled_seq_rb input/test.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./coupled_seq_rb input/small_rb.input -Grid.Overlap 0")
 
 # Figure
 s_, p_, z1_ = read3D_vtp("small-00001", np_)

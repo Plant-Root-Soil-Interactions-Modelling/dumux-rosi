@@ -16,8 +16,8 @@ Type = 2 # constant flux
 Value = 0 # [cm day-1]
 
 [Soil.BC.Bot]
-Type = 2 # constant flux
-Value = 0 # [cm day-1]
+Type = 1 # constant pressure
+Value = 0 # [cm] pressure head, fully saturated bot
 
 [Soil.IC]
 P = -200 # or -1000  cm 

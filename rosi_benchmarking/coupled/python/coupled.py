@@ -10,13 +10,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled")
 
-np_ = 1  # number of processors
-
-# run dumux
-if np_ == 1:
-    os.system("./coupled input/test.input")
-else:
-    os.system("mpirun -n " + str(np_) + " ./coupled input/test.input -Grid.Overlap 0")
+os.system("./coupled_rb input/test.input")
 
 # Figure
 s_, p_, z1_ = read3D_vtp("small-00001", np_)

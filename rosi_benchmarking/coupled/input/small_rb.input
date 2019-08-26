@@ -1,0 +1,4 @@
+[Problem]
+Name = small_rb
+RootName = ../rootsystem/input/small_rb.input
+SoilName = ../soil/benchmarks_3d/small.input
