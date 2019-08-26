@@ -60,31 +60,21 @@
 #include <RootSystem.h>
 #include "../rootsystem/rootsproblem.hh"
 #include "../soil/richardsproblem.hh"
+#include "../rootsystem/properties.hh" // TypeTag:Roots
+#include "../rootsystem/properties_nocoupling.hh" // dummy types for replacing the coupling types
+#include "../soil/properties.hh" // TypeTag:RichardsTT
+#include "../soil/properties_nocoupling.hh" // dummy types for replacing the coupling types
 
-
-
-namespace Dumux {
-namespace Properties {
-
-template<class TypeTag> // Set the spatial parameters for the root problem
-struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
-};
-
-} // end namespace Properties
-}
-
-
-
+/**
+ * decoupled (for debugging, proof of concept)
+ */
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
 
     // define the type tag for this problem
-    using RootsTag = Properties::TTag::RootsBox;
-    using SoilTag = Properties::TTag::RichardsBox;
+    using RootTypeTag = Properties::TTag::RootsBox;
+    using SoilTypeTag = Properties::TTag::RichardsBox;
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -103,7 +93,7 @@ int main(int argc, char** argv) try
 
     // try to create a grid (from the given grid file or the input file)
 
-    GridManager<GetPropType<RootsTag, Properties::Grid>> rootGridManager;
+    GridManager<GetPropType<RootTypeTag, Properties::Grid>> rootGridManager;
     rootGridManager.init("RootSystem");
     const auto rootGridData = rootGridManager.getGridData();
 
@@ -121,45 +111,45 @@ int main(int argc, char** argv) try
     std::cout << "i have two views \n" << "\n" << std::flush;
 
     // create the finite volume grid geometry
-    using RootFVGridGeometry = GetPropType<RootsTag, Properties::FVGridGeometry>;
+    using RootFVGridGeometry = GetPropType<RootTypeTag, Properties::FVGridGeometry>;
     auto rootFVGridGeometry = std::make_shared<RootFVGridGeometry>(rootLGV);
     rootFVGridGeometry->update();
-    using SoilFVGridGeometry = GetPropType<SoilTag, Properties::FVGridGeometry>;
+    using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
     auto soilFVGridGeometry = std::make_shared<SoilFVGridGeometry>(soilLGV);
     soilFVGridGeometry->update();
     std::cout << "i have two geometries built from the views \n" << "\n" << std::flush;
 
     // the problem (initial and boundary conditions)
-    using RootProblem = GetPropType<RootsTag, Properties::Problem>;
+    using RootProblem = GetPropType<RootTypeTag, Properties::Problem>;
     auto rootProblem = std::make_shared<RootProblem>(rootFVGridGeometry);
     rootProblem->spatialParams().initParameters(*rootGridData);
     // rootProblem->spatialParams().analyseRootSystem();
-    using SoilProblem = GetPropType<SoilTag, Properties::Problem>;
+    using SoilProblem = GetPropType<SoilTypeTag, Properties::Problem>;
     auto soilProblem = std::make_shared<SoilProblem>(soilFVGridGeometry);
     std::cout << "and i have two problems \n" << "\n" << std::flush;
 
     // the solution vector
-    using RootSolutionVector = GetPropType<RootsTag, Properties::SolutionVector>;
+    using RootSolutionVector = GetPropType<RootTypeTag, Properties::SolutionVector>;
     RootSolutionVector r(rootFVGridGeometry->numDofs());
     rootProblem->applyInitialSolution(r);
     auto rOld = r;
-    using SoilSolutionVector = GetPropType<SoilTag, Properties::SolutionVector>;
+    using SoilSolutionVector = GetPropType<SoilTypeTag, Properties::SolutionVector>;
     SoilSolutionVector s(soilFVGridGeometry->numDofs());
     soilProblem->applyInitialSolution(s);
     auto sOld = s;
     std::cout << "no solution yet \n" << "\n" << std::flush;
 
     // the grid variables
-    using RootGridVariables = GetPropType<RootsTag, Properties::GridVariables>;
+    using RootGridVariables = GetPropType<RootTypeTag, Properties::GridVariables>;
     auto rootGridVariables = std::make_shared<RootGridVariables>(rootProblem, rootFVGridGeometry);
     rootGridVariables->init(r);
-    using SoilGridVariables = GetPropType<SoilTag, Properties::GridVariables>;
+    using SoilGridVariables = GetPropType<SoilTypeTag, Properties::GridVariables>;
     auto soilGridVariables = std::make_shared<SoilGridVariables>(soilProblem, soilFVGridGeometry);
     soilGridVariables->init(s);
     std::cout << "... but variables \n" << "\n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
-    using Scalar = GetPropType<RootsTag, Properties::Scalar>;
+    using Scalar = GetPropType<RootTypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop;
     if (tEnd > 0) { // dynamic problem
@@ -181,9 +171,9 @@ int main(int argc, char** argv) try
     std::cout << "time might be an issue \n" << "\n" << std::flush;
 
     // intialize the vtk output module
-    using RootIOFields = GetPropType<RootsTag, Properties::IOFields>;
+    using RootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
     VtkOutputModule<RootGridVariables, RootSolutionVector> rootVTKWriter(*rootGridVariables, r, rootProblem->name()+"R");
-    using RootVelocityOutput = GetPropType<RootsTag, Properties::VelocityOutput>;
+    using RootVelocityOutput = GetPropType<RootTypeTag, Properties::VelocityOutput>;
     rootVTKWriter.addVelocityOutput(std::make_shared<RootVelocityOutput>(*rootGridVariables));
     rootProblem->userData("axialFlux", r); // prepare fields // todo wrong (coarse approximation)
     rootProblem->userData("radialFlux", r); // prepare fields
@@ -191,23 +181,23 @@ int main(int argc, char** argv) try
     rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux [cm3/d]");
     RootIOFields::initOutputModule(rootVTKWriter); //!< Add model specific output fields
     rootVTKWriter.write(0.0);
-    using SoilIOFields = GetPropType<SoilTag, Properties::IOFields>;
+    using SoilIOFields = GetPropType<SoilTypeTag, Properties::IOFields>;
     VtkOutputModule<SoilGridVariables, SoilSolutionVector> soilVTKWriter(*soilGridVariables, s, soilProblem->name()+"S");
-    using SoilVelocityOutput = GetPropType<SoilTag, Properties::VelocityOutput>;
+    using SoilVelocityOutput = GetPropType<SoilTypeTag, Properties::VelocityOutput>;
     soilVTKWriter.addVelocityOutput(std::make_shared<SoilVelocityOutput>(*soilGridVariables));
     SoilIOFields::initOutputModule(soilVTKWriter); //!< Add model specific output fields // TODO not workin...
     soilVTKWriter.write(0.0);
     std::cout << "vtk writer module initialized (in less than 20 lines)" << "\n" << std::flush;
 
     // the assembler with time loop for instationary problem
-    using RootAssembler = FVAssembler<RootsTag, DiffMethod::numeric>;
+    using RootAssembler = FVAssembler<RootTypeTag, DiffMethod::numeric>;
     std::shared_ptr<RootAssembler> rootAssembler;
     if (tEnd > 0) {
         rootAssembler = std::make_shared<RootAssembler>(rootProblem, rootFVGridGeometry, rootGridVariables, timeLoop); // dynamic
     } else {
         rootAssembler = std::make_shared<RootAssembler>(rootProblem, rootFVGridGeometry, rootGridVariables); // static
     }
-    using SoilAssembler = FVAssembler<SoilTag, DiffMethod::numeric>;
+    using SoilAssembler = FVAssembler<SoilTypeTag, DiffMethod::numeric>;
     std::shared_ptr<SoilAssembler> soilAssembler;
     if (tEnd>0) {
         soilAssembler = std::make_shared<SoilAssembler>(soilProblem, soilFVGridGeometry, soilGridVariables, timeLoop); // dynamic
@@ -216,9 +206,9 @@ int main(int argc, char** argv) try
     }
 
     // the linear solver
-    using RootLinearSolver = AMGBackend<RootsTag>;
+    using RootLinearSolver = AMGBackend<RootTypeTag>;
     auto rootLinearSolver = std::make_shared<RootLinearSolver>(rootLGV, rootFVGridGeometry->dofMapper());
-    using SoilLinearSolver = Dumux::AMGBackend<SoilTag>; // the only parallel linear solver available
+    using SoilLinearSolver = Dumux::AMGBackend<SoilTypeTag>; // the only parallel linear solver available
     auto soilLinearSolver = std::make_shared<SoilLinearSolver>(soilLGV, soilFVGridGeometry->dofMapper());
 
     // the non-linear solver

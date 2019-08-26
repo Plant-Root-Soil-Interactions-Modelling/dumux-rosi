@@ -24,13 +24,12 @@
 #define DUMUX_ROOT_SPATIALPARAMS_DGF_HH
 
 #include <dune/common/exceptions.hh>
-
 #include <dumux/common/math.hh>
 #include <dumux/common/parameters.hh>
 #include <dumux/material/spatialparams/fv1p.hh>
 #include <dumux/material/components/simpleh2o.hh>
 
-#include <dumux/io/inputfilefunction.hh>
+#include <dumux/io/inputfilefunction.hh> // in dumux-rosi
 
 namespace Dumux {
 

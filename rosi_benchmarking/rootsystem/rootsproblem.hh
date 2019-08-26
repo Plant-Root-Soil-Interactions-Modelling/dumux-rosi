@@ -1,123 +1,28 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
-/*!
- * \file
- * \ingroup OnePTests
- * \brief A test problem for the 1p model. A pipe system with circular cross-section
- *        and a branching point embedded in a three-dimensional world
- */
 #ifndef ROOTS_PROBLEM_HH
 #define ROOTS_PROBLEM_HH
-
-#include <dune/foamgrid/foamgrid.hh>
-#include <dune/localfunctions/lagrange/pqkfactory.hh>
-#include <dune/geometry/quadraturerules.hh>
-#include <dumux/common/reorderingdofmapper.hh>
-#include <dumux/discretization/cctpfa.hh>
-#include <dumux/discretization/box.hh>
-#include <dumux/discretization/method.hh>
-#include <dumux/discretization/elementsolution.hh>
-#include <dumux/porousmediumflow/1p/model.hh>
-#include <dumux/porousmediumflow/problem.hh>
-#include <dumux/material/components/constant.hh>
-#include <dumux/material/fluidsystems/1pliquid.hh>
-
-#include <dumux/growth/soillookup.hh>
 
 #include <math.h>
 #include <map>
 
+#include <dumux/porousmediumflow/problem.hh>
+
+#include <dumux/growth/soillookup.hh>
+
+#if DGF
 #include "rootspatialparams_dgf.hh"
+#endif
+#if ROOTBOX
 #include "rootspatialparams_rb.hh"
+#endif
 
 namespace Dumux {
 
-template<class TypeTag>
-class RootsProblem;
-
-namespace Properties {
-
-// Create new type tags
-namespace TTag {
-struct Roots {
-    using InheritsFrom = std::tuple<OneP>;
-};
-struct RootsCCTpfa {
-    using InheritsFrom = std::tuple<Roots, CCTpfaModel>;
-};
-struct RootsBox {
-    using InheritsFrom = std::tuple<Roots, BoxModel>;
-};
-} // end namespace TTag
-
-// Set the grid type
-#if HAVE_DUNE_FOAMGRID
-template<class TypeTag>
-struct Grid<TypeTag, TTag::Roots> {using type = Dune::FoamGrid<1, 3>;};
-#endif
-
-// if we have pt scotch use the reordering dof mapper to optimally sort the dofs (cc)
-template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
-private:
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
-    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
-public:
-    using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
-};
-
-// if we have pt scotch use the reordering dof mapper to optimally sort the dofs (box)
-template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsBox> {
-private:
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper
-    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
-public:
-    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
-};
-
-// Set the problem property
-template<class TypeTag>
-struct Problem<TypeTag, TTag::Roots> {
-    using type = RootsProblem<TypeTag>;
-};
-
-// the fluid system
-template<class TypeTag>
-struct FluidSystem<TypeTag, TTag::Roots> {
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar>>;
-};
-
-} // end namespace Properties
-
-
 /*!
- * \ingroup RootsProblem
- * \brief A test problem for roots
+ * Root Doussan Model
+ *
+ * with optional coupling to a soil model
  */
 template<class TypeTag>
 class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
@@ -138,6 +43,8 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using PointSource = GetPropType<TypeTag, Properties::PointSource>;
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+    using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
     enum {
         conti0EqIdx = Indices::conti0EqIdx, // indices of the primary variables
@@ -371,7 +278,7 @@ public:
     Scalar soil(const GlobalPosition& p) const {
         auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100); // m -> cm
         double d = soil_->getValue(p2);
-//         std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
+        //         std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
         return pRef_+d;
     }
 
@@ -418,20 +325,99 @@ public:
      * called by volumevariables (why there?), no compilation error if you remove it, just wrong results
      */
     template<class ElementSolution>
-    Scalar extrusionFactor(const Element &element,
-        const SubControlVolume &scv,
-        const ElementSolution& elemSol) const {
-
+    Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
         const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         const auto radius = this->spatialParams().radius(eIdx);
         return M_PI*radius*radius;
     }
 
+    /*!
+     * \brief Applies a vector of point sources. The point sources
+     *        are possibly solution dependent.
+     *
+     * \param pointSources A vector of PointSource s that contain
+             source values for all phases and space positions.
+     *
+     * For this method, the \a values method of the point source
+     * has to return the absolute mass rate in kg/s. Positive values mean
+     * that mass is created, negative ones mean that it vanishes.
+     */
+    void addPointSources(std::vector<PointSource>& pointSources) const {
+        pointSources = couplingManager_->lowDimPointSources();
+    }
+
+    /*!
+     * \brief Evaluate the point sources (added by addPointSources)
+     *        for all phases within a given sub-control-volume.
+     *
+     * This is the method for the case where the point source is
+     * solution dependent and requires some quantities that
+     * are specific to the fully-implicit method.
+     *
+     * \param pointSource A single point source
+     * \param element The finite element
+     * \param fvGeometry The finite-volume geometry
+     * \param elemVolVars All volume variables for the element
+     * \param scv The sub-control volume within the element
+     *
+     * For this method, the \a values() method of the point sources returns
+     * the absolute rate mass generated or annihilate in kg/s. Positive values mean
+     * that mass is created, negative ones mean that it vanishes.
+     */
+    template<class ElementVolumeVariables>
+    void pointSource(PointSource& source, const Element &element, const FVElementGeometry& fvGeometry,
+        const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) const
+    {
+        if (couplingManager_!=nullptr) {
+            // compute source at every integration point
+            const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
+            const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
+            const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+            const Scalar kr = this->spatialParams().kr(lowDimElementIdx);
+            const Scalar rootRadius = this->spatialParams().radius(lowDimElementIdx);
+            // relative soil permeability
+            const auto krel = 1.0;//this->couplingManager().relPermSoil(pressure3D);
+            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+            const auto density = 1000;
+            const Scalar sourceValue = 2* M_PI *krel*rootRadius * kr *(pressure3D - pressure1D)*density;
+            source = sourceValue*source.quadratureWeight()*source.integrationElement();
+        } else {
+            source = 0;
+        }
+    }
+
+    /**
+     * for debugging
+     */
+    void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
+        NumEqVector source(0.0);
+        for (const auto& element : elements(this->fvGridGeometry().gridView())) {
+            auto fvGeometry = localView(this->fvGridGeometry());
+            fvGeometry.bindElement(element);
+            auto elemVolVars = localView(gridVars.curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, sol);
+            for (auto&& scv : scvs(fvGeometry)) {
+                auto pointSources = this->scvPointSources(element, fvGeometry, elemVolVars, scv);
+                pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
+                source += pointSources;
+            }
+        }
+        std::cout << "Global integrated source (root): " << source << " (kg/s) / "
+            <<                           source*3600*24*1000 << " (g/day)" << '\n';
+    }
+
+    //! Set the coupling manager
+    void setCouplingManager(CouplingManager* cm) {
+        couplingManager_ = cm;
+    }
+
+private:
+
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
         return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
 
-private:
+    CouplingManager* couplingManager_ = nullptr;
 
     CRootBox::SoilLookUp* soil_;
     InputFileFunction collar_;
@@ -456,6 +442,38 @@ private:
     std::map<std::string, std::vector<Scalar>> userData_;
 
 };
+
+/*
+    //! compute the actual transpiration rate
+    Scalar computeActualTranspirationRate(const SolutionVector& sol, const GridVariables& gridVars, bool verbose = true) const
+    {
+        NumEqVector transpirationRate(0.0);
+        for (const auto& element : elements(this->fvGridGeometry().gridView()))
+        {
+            auto fvGeometry = localView(this->fvGridGeometry());
+            fvGeometry.bindElement(element);
+
+            auto elemVolVars = localView(gridVars.curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, sol);
+
+            for (const auto& scvf : scvfs(fvGeometry))
+                if (scvf.boundary())
+                    transpirationRate += this->neumann(element, fvGeometry, elemVolVars, scvf)
+ *scvf.area()*elemVolVars[scvf.insideScvIdx()].extrusionFactor();
+        }
+        if (verbose)
+        {
+            std::cout << "Actual transpiration rate:       " << transpirationRate << " (kg/s) / "
+                << transpirationRate[0]*86400*1000 << " (g/day) / "
+                << transpirationRate[0]/domainSize_[0]/domainSize_[1]*86400 << " (mm/day)\n"
+                << "Potential transpiration rate:    " << potentialTranspirationRate() << " (kg/s) / "
+                << potentialTranspirationRate()*86400*1000 << " (g/day) / "
+                << potentialTranspirationRate()/domainSize_[0]/domainSize_[1]*86400 << " (mm/day)\n";
+        }
+        return transpirationRate[0];
+    }
+ */
+
 
 } //end namespace Dumux
 

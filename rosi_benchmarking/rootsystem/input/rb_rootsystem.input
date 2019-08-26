@@ -7,7 +7,7 @@ DtInitial = 1 # [s]
 CheckTimes = 86400 172800 259200 345600 432000 518400 604800 691200 777600
 
 [RootSystem.Grid]
-File =  Anagallis_femina_Leitner_2010 # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
+File =  Anagallis_femina_Leitner_2010  # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
 InitialT = 10 # days
 Grow = True
 

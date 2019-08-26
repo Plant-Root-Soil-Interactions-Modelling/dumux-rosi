@@ -25,6 +25,8 @@ def toPa(ph):  # cm pressure head to Pascal (kg/ (m s^2))
 def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
     return (pa - ref) * 100 / rho / g
 
+# print("critical pressure in cm: ", toHead(-1.4e6))
+
 
 # Parameters
 L = 0.5  # length of single straight root (m)
@@ -76,7 +78,7 @@ os.system("./rootsystem input/b1.input")
 p_ = read1D_vtp_data("benchmark1-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_ = read1D_vtp_data("benchmark1b-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
-os.system("./rootsystem input/b1.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
+os.system("./rootsystem input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
 p3_ = read1D_vtp_data("benchmark1c-00001.vtp", False)  # !!!! Box = False, CCTpfa = True
 
 # plot

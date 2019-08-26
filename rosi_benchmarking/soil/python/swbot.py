@@ -13,15 +13,15 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 np_ = 4  # number of processors
 
 # run dumux
-if np_ == 1:
-    os.system("./richards3d benchmarks_3d/swbot.input")
-else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/swbot.input -Grid.Overlap 0")
+# if np_ == 1:
+#     os.system("./richards3d benchmarks_3d/swbot.input")
+# else:
+#     os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/swbot.input -Grid.Overlap 0")
 
 # Figure
 s_, p_, z1_ = read3D_vtp("swbot-00000", np_)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, (z1_ - 1.26) * 100, "r+")
+plt.plot(h1_, z1_ * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

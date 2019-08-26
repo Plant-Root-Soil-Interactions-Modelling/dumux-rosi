@@ -16,7 +16,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
-os.system("./rootsystem input/small.input")
+os.system("./rootsystem_rb input/small.input")
 
 # plot
 p_, z_ = read3D_vtp_data("small-00001.vtp", False)

@@ -29,7 +29,7 @@ os.system("./rootsystem_rb input/rb_single.input")
 p_, z_ = read3D_vtp_data("rb_single-00001.vtp", False)
 h_ = vg.pa2head(p_)
 
-os.system("./rootsystem_rb input/rb_single.input -RootSystem.Collar.Transpiration {} -Problem.Name rb_singleT".format(trans))
+os.system("./rootsystem_rb input/rb_single_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name rb_singleT".format(trans))
 p2_, z2_ = read3D_vtp_data("rb_singleT-00001.vtp", False)  #
 h2_ = vg.pa2head(p2_)
 

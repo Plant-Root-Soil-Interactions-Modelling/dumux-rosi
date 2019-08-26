@@ -8,7 +8,10 @@ DtInitial = 360 # [s]
 MaxTimeStepSize = 3600 # 1 h
 
 [RootSystem.Grid]
-File =  grids/singlerootC.dgf
+File =  Anagallis_femina_Leitner_2010  # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
+InitialT = 5 # days
+Grow = True
+Confined = .08 .04 .24
 
 [RootSystem.Conductivity]
 Kr = 1.8e-4 # radial conductivity [cm/hPa/day] 

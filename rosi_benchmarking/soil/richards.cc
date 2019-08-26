@@ -48,10 +48,14 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
+
 #include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
-
-
+/**
+ * here we go
+ */
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
