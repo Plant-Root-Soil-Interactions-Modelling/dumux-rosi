@@ -24,13 +24,15 @@
 #define DUMUX_ROOT_SPATIALPARAMS_RB_HH
 
 #include <dune/common/exceptions.hh>
+
 #include <dumux/common/math.hh>
 #include <dumux/common/parameters.hh>
 #include <dumux/material/spatialparams/fv1p.hh>
 #include <dumux/material/components/simpleh2o.hh>
 
-#include <dumux/growth/growthinterface.hh> // in dumux-rosi
+#include <dumux/growth/growthinterface.hh>
 #include <dumux/growth/gridgrowth.hh>
+
 #include <dumux/io/inputfilefunction.hh>
 #include <dumux/growth/soillookup.hh>
 
@@ -39,9 +41,9 @@
 namespace Dumux {
 
 /*!
- * \brief Root spatial parameters class for a growing CRootBox root systems
+ * \brief Root spatial parameters class for static CRootBox root systems
  *
- * use updateParameters after growth
+ * use initParameters to initialize the class with data from the root system model
  *
  */
 template<class FVGridGeometry, class Scalar>
@@ -202,10 +204,10 @@ public:
         // update ctimes: when tips move, there segmentCTs need to be updated
         auto uni = rs.updatedNodeIndices();
         auto cts = rs.updatedNodeCTs();
-        for (size_t i = 0; i < uni.size(); i++) {
-            size_t rIdx = uni[i] - 1; // rootbox segment index = node index - 1
+        for (int i : uni) {
+            size_t rIdx = i - 1; // rootbox segment index = node index - 1
             size_t eIdx = rs.map2dune(rIdx);
-            ctimes_.at(eIdx) = cts[i]; // replace time
+            ctimes_.at(eIdx) = segCT[i]; // replace time
         }
 
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
