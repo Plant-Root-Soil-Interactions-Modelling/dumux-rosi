@@ -79,10 +79,10 @@ public:
         kx0_ = InputFileFunction("RootSystem.Conductivity" , "ShootKx", "ShootKxAge", 1.);
         kx0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx0_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
-        kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKxAge", 0.);
+        kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKrAge", 0.);
         kr0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr0_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
-        radius0_ = InputFileFunction("RootSystem.Grid", "ShootRadius", 1.5);
+        radius0_ = InputFileFunction("RootSystem.Conductivity", "ShootRadius", "ShootRadiusAge", 0.5);
         radius0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius0_.setFunctionScale(1.e-2); // [cm] -> [m]
 
@@ -202,13 +202,16 @@ public:
             }
         }
 
-        // update ctimes: when tips move, there segmentCTs need to be updated
+        // update creation times: when tips move, there segmentCTs need to be updated
         auto uni = rs.updatedNodeIndices();
         auto cts = rs.updatedNodeCTs();
-        for (int i : uni) {
-            size_t rIdx = i - 1; // rootbox segment index = node index - 1
+        if (uni.size()!=cts.size()) { // sanity check
+            throw Dumux::ParameterException("updateParameters: updated node sizes differ");
+        }
+        for (size_t i = 0; i < uni.size(); i++) {
+            size_t rIdx = uni[i] - 1; // rootbox segment index = node index - 1
             size_t eIdx = rs.map2dune(rIdx);
-            ctimes_.at(eIdx) = segCT[i]; // replace time
+            ctimes_.at(eIdx) = cts[i]; // replace time
         }
 
         if ((kr_.type() == InputFileFunction::perType) || (kr_.type() == InputFileFunction::tablePerType)) {
@@ -237,7 +240,6 @@ private:
     std::vector<double> ctimes_; // [s]
     std::vector<double> ids_; // [1]
     std::vector<double> orders_; // root order, or root type [1]
-
 
     double time_ = 0.; // [s]
     double dt_ = 0.;
