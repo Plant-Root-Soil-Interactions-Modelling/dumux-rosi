@@ -5,7 +5,7 @@ Name = small
 TEnd = 604800 # 604800 a week [s] # 86400 # a day
 CheckTimes = 43200 # half a day
 DtInitial = 360 # [s]
-MaxTimeStepSize = 3600 # 1 h
+MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Grid]
 File =  grids/singlerootC.dgf
@@ -16,7 +16,7 @@ Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day]
 Kr = 1.728e-4 # radial conductivity [cm/hPa/day] 
 
 [RootSystem.Collar]
-Transpiration = 1.6e-2 # [kg/day], 0.5 cm/day at 4 * 8 = 16 cm^3/day = 1.6e-2 kg/day
+Transpiration = 1e-2 # 1.6e-2 [kg/day], 0.5 cm/day at 4 * 8 = 16 cm^3/day = 1.6e-2 kg/day
 # Sinusoidal = True
 
 [Soil.IC]

@@ -10,12 +10,12 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled")
 
-os.system("./coupled_rb input/test.input")
+# os.system("./coupled input/small.input")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("small-00001", np_)
+s_, p_, z1_ = read3D_vtp("small-00002", 1)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, (z1_ - 1.26) * 100, "r+")
+plt.plot(h1_, z1_ * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

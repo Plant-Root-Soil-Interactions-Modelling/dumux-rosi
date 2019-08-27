@@ -246,15 +246,19 @@ public:
         const SubControlVolume &scv) const {
 
         NumEqVector values;
-        auto params = this->spatialParams();
-        const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-        Scalar a = params.radius(eIdx); // root radius (m)
-        Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-        Scalar phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
-        Scalar phs = soil(scv.center()); // kg/m/s^2
-        values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
-        values[conti0EqIdx] /= (a * a * M_PI); // 1/s
-        values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+        if (couplingManager_==nullptr) {
+            auto params = this->spatialParams();
+            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            Scalar a = params.radius(eIdx); // root radius (m)
+            Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
+            Scalar phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
+            Scalar phs = soil(scv.center()); // kg/m/s^2
+            values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+            values[conti0EqIdx] /= (a * a * M_PI); // 1/s
+            values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+        } else {
+            values[conti0EqIdx] = 0;
+        }
         return values;
     }
 
@@ -278,7 +282,6 @@ public:
     Scalar soil(const GlobalPosition& p) const {
         auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100); // m -> cm
         double d = soil_->getValue(p2);
-        //         std::cout << "rootsproblem::soil() " << p2.toString() << ", " << d << "\n";
         return pRef_+d;
     }
 

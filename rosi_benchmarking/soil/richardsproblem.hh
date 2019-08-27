@@ -273,7 +273,7 @@ public:
         const SubControlVolume &scv) const {
         if ((source_ != nullptr)) {
             auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-            return source_->at(eIdx);
+            return source_->at(eIdx)/scv.volume();
         } else {
             return 0.;
         }
@@ -304,7 +304,7 @@ public:
     }
 
     /*!
-     * Source per element index \f$ [ kg / (m^3 \cdot s)] \f$
+     * Source per element index \f$ [ kg / s)] \f$
      *
      * eventually, called in the main file (example specific, richards.cc)
      */

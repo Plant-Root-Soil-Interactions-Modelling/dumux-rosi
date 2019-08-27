@@ -100,14 +100,13 @@ void updateSaturation(std::vector<double>& saturation, const SoilFVGridGeometry&
         elemVolVars.bindElement(element, fvGeometry, sol);
 
         for (const auto& scv : scvs(fvGeometry)) {
-            saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0); // saturation(0);
+            saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0);
         }
     }
 }
 
 /*!
  * calculates the radial fluxes of the segments
- * todo: move to RootProlbem...
  */
 template< class RootGridVariables, class RootSolution, class RootProlem>
 void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& gridGeometry, const RootGridVariables& gridVariables,
@@ -126,13 +125,11 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
 
         for (const auto& scv : scvs(fvGeometry)) {  //root sub control volumes
 
-            double s = rootProblem.source(element, gridGeometry, elemVolVars, scv); // pass to problem class
-
-            // define the type tag for this problem
+            double s = -rootProblem.source(element, gridGeometry, elemVolVars, scv); // pass to problem class [kg/s/m^3]
+            s *=  scv.volume()*elemVolVars[scv].extrusionFactor();  // [kg / s]
             auto pos = scv.center();
             int eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element
-            if (eIdx>=0) {
-                //std::cout << "eIdx " << eIdx << ", " << s <<"\n"<<std::flush;
+            if (eIdx>=0) { // just to be sure...
                 source.at(eIdx) += s; // accumulate source term
             } else {
                 std::cout << "root at position " << pos << " not within soil";
@@ -167,7 +164,7 @@ int main(int argc, char** argv) try
     Parameters::init(0, argv, rootName);
     std::string soilName = getParam<std::string>("Problem.SoilName");
     Parameters::init(0, argv, soilName);
-    Parameters::init(argc, argv);
+    Parameters::init(argc, argv); // reread to overwrite parameters
 
     // soil grid
     GridManager<GetPropType<SoilTypeTag, Properties::Grid>> soilGridManager;
@@ -225,7 +222,7 @@ int main(int argc, char** argv) try
 
     using SoilProblem = GetPropType<SoilTypeTag, Properties::Problem>;
     auto soilProblem = std::make_shared<SoilProblem>(soilGridGeometry);
-    std::cout << "I have two problems \n" << "\n" << std::flush;
+    std::cout << "\nI have two problems " << "\n" << std::flush;
 
     // the solution vector
     using RootSolutionVector = GetPropType<RootTypeTag, Properties::SolutionVector>;
@@ -279,8 +276,7 @@ int main(int argc, char** argv) try
     radialFlux2soilSink(soilSink, *rootGridGeometry, *rootGridVariables, r, *rootProblem, &soilLookUp); // precomputes the sink for the soil problem
     soilProblem->setSource(&soilSink);
     std::cout << "and the soil knows the roots \n" << "\n" << std::flush;
-    std::cout << "value = " << soilLookUp.getValue(CRootBox::Vector3d());
-    std::string sss = "";     std::getline(std::cin, sss); // for debugging
+    std::cout << "value = " << soilLookUp.getValue(CRootBox::Vector3d()) << "\n";
 
     // get some time loop parameters & instantiate time loop
     bool grow = false;
@@ -293,7 +289,6 @@ int main(int argc, char** argv) try
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-            std::cout << "using "<< checkPoints.size() << "check times \n";
             for (auto p : checkPoints) {
                 timeLoop->setCheckPoint(p);
             }
@@ -305,6 +300,9 @@ int main(int argc, char** argv) try
     } else { // static
     }
     std::cout << "time might be an issue \n" << std::flush;
+
+    std::cout << "\npress button \n";
+    std::string sss = "";     std::getline(std::cin, sss); // for debugging
 
     // intialize the vtk output module
     using RootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
@@ -396,11 +394,13 @@ int main(int argc, char** argv) try
             rootAssembler->setPreviousSolution(rOld);
 
             // solves the soil problem
-            radialFlux2soilSink(soilSink, *rootGridGeometry, *rootGridVariables, r, *rootProblem, &soilLookUp); // precomputes the sink for the soil problem
+            radialFlux2soilSink(soilSink, *rootGridGeometry, *rootGridVariables, rOld, *rootProblem, &soilLookUp); // precomputes the sink for the soil problem
+            std::cout << "solve soil\n";
             soilNonlinearSolver.solve(s, *timeLoop);
 
             // solves the root problem
-            updateSaturation(saturation, *soilGridGeometry, *soilGridVariables, s); // updates soil look up for the root problem
+            updateSaturation(saturation, *soilGridGeometry, *soilGridVariables, sOld); // updates soil look up for the root problem#
+            std::cout << "solve roots\n";
             rootNonlinearSolver.solve(r, *timeLoop);
 
             // make the new solution the old solution
@@ -422,8 +422,8 @@ int main(int argc, char** argv) try
             if (mpiHelper.rank() == 0) {
                 rootProblem->writeTranspirationRate(r);
             }
-            // report statistics of this time step
 
+            // report statistics of this time step
             timeLoop->reportTimeStep();
 
             // set new dt as suggested by the newton solver

@@ -151,7 +151,7 @@ public:
         if (type_==data) {
             type_ = constant;
             yy_ = { defaultValue };
-            std::cout << "\e[A"; // deletes last line
+            std::cout << "\e[A"; // deletes last line (not in eclipse)
             cout();
         }
         //        assert(((type_==constant) || (type_==table) || (type_==perTypeIFF))  &&

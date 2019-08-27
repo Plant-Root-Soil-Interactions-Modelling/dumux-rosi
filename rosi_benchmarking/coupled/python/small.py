@@ -13,15 +13,18 @@ os.chdir("../../../build-cmake/rosi_benchmarking/coupled")
 np_ = 1  # number of processors
 
 # run dumux
-if np_ == 1:
-    os.system("./coupled_seq input/small.input")
-else:
-    os.system("mpirun -n " + str(np_) + " ./coupled_seq input/small.input -Grid.Overlap 0")
+# if np_ == 1:
+#     os.system("./coupled_seq input/small.input")
+# else:
+#     os.system("mpirun -n " + str(np_) + " ./coupled_seq input/small.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("small-00001", np_)
-h1_ = vg.pa2head(p_)
-plt.plot(h1_, (z1_ - 1.26) * 100, "r+")
+s_, p_, z1_ = read3D_vtp("smallS-00001", np_)
+# s2_, p2_, z2_ = read3D_vtp("smallR-00001", 1)
+p2_, z2_ = read3D_vtp_data("smallR-00001.vtp", False)
+
+h1_ = vg.pa2head(p2_)
+plt.plot(h1_, z2_ * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

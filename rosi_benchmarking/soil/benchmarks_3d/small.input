@@ -9,18 +9,18 @@ MaxTimeStepSize = 864000 # 10 days [s]
 [Soil.Grid]
 LowerLeft = -0.04 -0.02 -0.24
 UpperRight = 0.04 0.02 0.
-Cells = 8 4 24
+Cells = 32 16 24
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = 0.04 # [cm day-1]
+Value = 0 # [cm day-1]
 
 [Soil.BC.Bot]
-Type = 5 # 5 free drainage, 1 constant pressure 
+Type = 2 # 5 free drainage, 1 constant pressure 
 Value = 0 # [cm] pressure head, fully saturated bot
 
 [Soil.IC]
-P = -200 # or -1000  cm 
+P = -100 
 
 [Soil.VanGenuchten] 
 Qr = 0.067  	

@@ -73,7 +73,7 @@ public:
         auto p = periodic(pos.plus(shiftRB)); // periodic mapping
         const auto globalPos = Dune::FieldVector<double, 3>( { p.x * 0.01, p.y * 0.01, p.z * 0.01 });
 
-        std::cout << "getValue() "<< pos.toString() << "->" << p.toString() << " [cm] \n" << std::flush;
+        // std::cout << "getValue() "<< pos.toString() << "->" << p.toString() << " [cm] \n" << std::flush;
 
         const auto entities = intersectingEntities(globalPos, bBoxTree_); // function from <dumux/common/geometry/intersectingentities.hh>
 
@@ -107,7 +107,7 @@ public:
         auto pp = periodic(CRootBox::Vector3d(100*p[0], 100*p[1], 100*p[2])); // periodic mapping
         p[0] = pp.x/100.; p[1] = pp.y/100.; p[2] = pp.z/100.;
 
-        std::cout << "pick() "<< pos << "->" << p << " [m] \n" << std::flush;
+        // std::cout << "pick() "<< pos << "->" << p << " [m] \n" << std::flush;
 
         const auto entities = intersectingEntities(p, bBoxTree_);
         if (entities.empty()) {
