@@ -74,14 +74,14 @@ public:
         // precipitation
         if (bcTopType_==atmospheric) {
             criticalPressure_ = getParam<double>("Climate.CriticalPressure", -1.e4);
-            precipitation_ = InputFileFunction("Climate", "Precipitation", "Time"); // cm/day (day)
+            precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
             precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
             precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
             std::string filestr = this->name() + ".csv"; // output file
             myfile_.open(filestr.c_str());
         }
         // IC
-        initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
+        initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
     }
 
     /**

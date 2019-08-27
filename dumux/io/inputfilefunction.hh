@@ -62,7 +62,7 @@ public:
      * @param typeIdx           index, where the type/order is located in the mesh file (for perType, talbePerType) (optional)
      * @þaram typeF             an input file function determining the type (for perType, talbePerType) (optional)
      */
-    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, int dataIdx, int typeIdx = 0,
+    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, int dataIdx, int typeIdx,
         InputFileFunction* typeF = nullptr) {
 
         nameY = groupName +"." + nameY; // full names
@@ -146,7 +146,7 @@ public:
      *
      * a call to InputFileFunction::f(double x) is sufficient
      */
-    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, double defaultValue = 0, InputFileFunction* typeF = nullptr)
+    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, double defaultValue, InputFileFunction* typeF = nullptr)
     :InputFileFunction(groupName, nameY, nameX, 0, 0, typeF) {
         if (type_==data) {
             type_ = constant;

@@ -64,17 +64,17 @@ public:
 
     RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
 
-        InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z"); // [cm]([m])
+        InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
 
         if (Dumux::hasParam("RootSystem.Collar.P")) {
-            collar_ = InputFileFunction("RootSystem.Collar", "P", "PT"); // [cm]([day])
+            collar_ = InputFileFunction("RootSystem.Collar", "P", "PT", -1.e4); // [cm]([day])
             collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
             collar_.setFunctionScale(1.e-2 * rho_ * g_); // [cm] -> [Pa], don't forget to add pRef_
             bcType_ = bcDirichlet;
         } else { // ".File " gives transpiration table
-            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT");  // [kg/day]([day])
+            collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT", 0.02);  // [kg/day]([day])
             collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
             collar_.setFunctionScale(1./(24.*3600)); // [kg/day] -> [kg/s]
             bcType_ = bcNeumann;

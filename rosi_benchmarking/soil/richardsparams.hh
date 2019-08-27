@@ -90,7 +90,7 @@ public:
             materialParams_.at(i).setKrwHighSw(1 - eps);
         }
         layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
-        layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_); // [1]([m])
+        layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
     }
 
     /*!

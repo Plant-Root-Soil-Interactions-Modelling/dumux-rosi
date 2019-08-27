@@ -65,31 +65,28 @@ public:
     RootSpatialParamsRB(std::shared_ptr<const FVGridGeometry> fvGridGeometry) :
         ParentType(fvGridGeometry) {
 
+        time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
+
+        // conductivities
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", 0, 0); // [cm/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
-
         kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
 
-        kx0_ = InputFileFunction("RootSystem.Conductivity" , "ShootKx", "ShootKxAge", 1, 0);
+        // conductivities and radius of shoot
+        kx0_ = InputFileFunction("RootSystem.Conductivity" , "ShootKx", "ShootKxAge", 1.);
         kx0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx0_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
-
-        kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKxAge", 0, 0);
+        kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKxAge", 0.);
         kr0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr0_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        radius0_ = InputFileFunction("RootSystem.Grid", "ShootRadius", 1.5);
+        radius0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        radius0_.setFunctionScale(1.e-2); // [cm] -> [m]
 
-        time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
-        double radius0 = getParam<double>("RootSystem.Grid.ShootRadius", 1.5)/100; // [cm] -> [m]
-        radii_ = { radius0 }; // vectors will incrementially grow in updateParameters
-
-        /*InputFileFunction radius0 = InputFileFunction("RootSystem.Grid", "ShootRadius", 1.5);
-        radius0.setVariableScale(1./(24.*3600.)); // [s] -> [day]
-        radius0.setFunctionScale(1.e-2); // [cm] -> [m]
-        radii_ = { radius0 };*/
-
+        radii_ = { 0. }; // vectors will incrementially grow in updateParameters
         orders_ = { 0 };
         ctimes_ = { 0. };
         ids_ = { 0 };
@@ -133,6 +130,9 @@ public:
 
     // [m]
     Scalar radius(std::size_t eIdx) const {
+        if (eIdx==0) {
+            return radius0_.f(this->age(eIdx), eIdx);
+        }
         return radii_[eIdx]; // m
     }
 
@@ -231,6 +231,7 @@ private:
     InputFileFunction kx_;
     InputFileFunction kx0_;
     InputFileFunction kr0_;
+    InputFileFunction radius0_;
 
     std::vector<double> radii_; // [m]
     std::vector<double> ctimes_; // [s]
