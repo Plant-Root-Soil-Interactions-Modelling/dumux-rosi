@@ -69,7 +69,7 @@ public:
         kx_ = InputFileFunction("RootSystem.Conductivity", "Kx", "KxAge", 0, 0); // [cm^4/hPa/day] ([day]), indices are not used, data are set manually in updateParameters
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
-        kx0_ = getParam<double>("RootSystem.Conductivity.ShootKx", 1.)*1.e-10/(24.*3600.);  // [cm^4/hPa/day] -> [m^4/Pa/s]
+        kx0_ = getParam<double>("RootSystem.Conductivity.ShootKx", 10.)*1.e-10/(24.*3600.);  // [cm^4/hPa/day] -> [m^4/Pa/s]
         time0_ = getParam<double>("RootSystem.Grid.InitialT")*3600.*24.; // root system initial time
         double radius0 = getParam<double>("RootSystem.Grid.ShootRadius", 1.5)/100; // [cm] -> [m]
         radii_ = { radius0 }; // vectors will incrementially grow in updateParameters

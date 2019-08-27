@@ -146,9 +146,14 @@ public:
      *
      * a call to InputFileFunction::f(double x) is sufficient
      */
-    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, InputFileFunction* typeF = nullptr)
+    InputFileFunction(std::string groupName, std::string nameY, std::string nameX, double defaultValue = 0, InputFileFunction* typeF = nullptr)
     :InputFileFunction(groupName, nameY, nameX, 0, 0, typeF) {
-
+        if (type_==data) {
+            type_ = constant;
+            yy_ = { defaultValue };
+            std::cout << "\e[A"; // deletes last line
+            cout();
+        }
         //        assert(((type_==constant) || (type_==table) || (type_==perTypeIFF))  &&
         //            "InputFileFunction: wrong type in constructor 3");
         if (!((type_==constant) || (type_==table)|| (type_==perTypeIFF))) {
@@ -323,8 +328,8 @@ public:
         switch (type_) {
         case(constant): std::cout << "InputFileFunction: "<< nameY_ << ": Constant"<< s << "\n"; break;
         case(table): std::cout << "InputFileFunction: "<< nameY_ << ": Table" << s << "\n";  break;
-        case(data): std::cout << "InputFileFunction: "<< nameY_ << ": Data from Grid" << s << "\n"; break;
-        case(perType): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from Grid" << s << "\n"; break;
+        case(data): std::cout << "InputFileFunction: "<< nameY_ << ": Data from Grid at index "<< dataIdx_ << s << "\n"; break;
+        case(perType): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from Grid at index "<< typeIdx_ << s << "\n"; break;
         case(perTypeIFF): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from InputFileFunction" << s << "\n"; break;
         case(tablePerType): std::cout << "InputFileFunction: "<< nameY_ << ": Table per Type from Grid, " << table_.size()
                 << " types" << s << "\n"; break;

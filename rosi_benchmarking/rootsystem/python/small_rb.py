@@ -16,10 +16,10 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
-os.system("./rootsystem input/small.input")
+os.system("./rootsystem_rb input/small_rb.input")
 
 # plot
-p_, z_ = read3D_vtp_data("small-00001.vtp", False)
+p_, z_ = read3D_vtp_data("small_rb-00001.vtp", False)
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")

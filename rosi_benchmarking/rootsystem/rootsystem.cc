@@ -173,7 +173,6 @@ int main(int argc, char** argv) try
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-            std::cout << "using "<< checkPoints.size() << "check times \n";
             for (auto p : checkPoints) {
                 timeLoop->setCheckPoint(p);
             }

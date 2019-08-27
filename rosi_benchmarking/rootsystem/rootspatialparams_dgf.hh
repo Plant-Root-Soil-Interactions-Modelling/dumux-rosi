@@ -59,11 +59,11 @@ public:
         // DGF specific (where is what)
         time0_ = Dumux::getParam<double>("RootSystem.Grid.InitialT", 14)*24*3600; // days -> s
         orderIdx_ = Dumux::getParam<int>("RootSystem.Grid.orderIdx", 0); // 1
-        radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 1); // cm
-        ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 2); // s
-        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3); // cm/hPa/day
-        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4); // cm^4/hPa/day
-        idIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 0); // 1
+        radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 1);
+        ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 2);
+        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3);
+        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4);
+        idIdx_ = Dumux::getParam<int>("RootSystem.Grid.idIdx", 0);
         //
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm/hPa/day] ([day])
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]

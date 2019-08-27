@@ -13,10 +13,10 @@ Cells = 8 4 24
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = 0 # [cm day-1]
+Value = 0.04 # [cm day-1]
 
 [Soil.BC.Bot]
-Type = 1 # constant pressure
+Type = 5 # 5 free drainage, 1 constant pressure 
 Value = 0 # [cm] pressure head, fully saturated bot
 
 [Soil.IC]

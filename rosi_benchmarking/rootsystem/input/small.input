@@ -9,10 +9,11 @@ MaxTimeStepSize = 3600 # 1 h
 
 [RootSystem.Grid]
 File =  grids/singlerootC.dgf
+radiusIdx = 4
 
 [RootSystem.Conductivity]
-Kr = 1.8e-4 # radial conductivity [cm/hPa/day] 
-Kx = 3.2 # axial conductivity [cm^4/hPa/day]
+Kr = 1.728 # radial conductivity [cm/hPa/day] 
+Kx = 432 # axial conductivity [cm^4/hPa/day]
 
 [RootSystem.Collar]
 Transpiration = 0.64 # [kg/day], 0.2 mm/day at 0.04*0.08

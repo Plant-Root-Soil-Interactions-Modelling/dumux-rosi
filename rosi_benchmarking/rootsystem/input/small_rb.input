@@ -1,5 +1,5 @@
 [Problem]
-Name = small 
+Name = small_rb
 
 [TimeLoop]
 TEnd = 604800 # 604800 a week [s] # 86400 # a day
@@ -14,8 +14,9 @@ Grow = True
 Confined = .08 .04 .24
 
 [RootSystem.Conductivity]
-Kr = 1.8e-4 # radial conductivity [cm/hPa/day] 
-Kx = 3.2 # axial conductivity [cm^4/hPa/day]
+Kr = 1.728 # radial conductivity [cm/hPa/day] 
+Kx = 432 # axial conductivity [cm^4/hPa/day]
+ShootKx = 432
 
 [RootSystem.Collar]
 Transpiration = 0.64 # [kg/day], 0.2 mm/day at 0.04*0.08
