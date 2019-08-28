@@ -1,7 +1,7 @@
 import numpy as np
 
 '''
-Creates dgf files for the root system benchmarks 1 (and old benchmark 2 and 3)
+Creates dgf files for the root system benchmarks 1 (and old benchmark 2 and 3), and C11
 '''
 
 
@@ -82,6 +82,23 @@ if __name__ == "__main__":
     kz_ = list(map(kz, age))  # m^4 / (Pa s)
     params = np.vstack((order, a_, age, kr_, kz_))
     createDGF_1Droots("../grids/rootsystem_b3.dgf", nodes, seg, params)
+
+    # create grid for benchmark 1
+    L = 0.01  #  1 cm
+    nnz = 3
+    nodes = np.zeros((nnz, 3))
+    seg = np.zeros(((nnz - 1), 2), dtype = int)
+    for i in range(1, nnz):
+        seg[i - 1, 0] = i - 1
+        seg[i - 1, 1] = i
+        nodes[i, :] = [0., 0., -i * L / (nnz - 1)]
+    order = np.zeros((1, nnz))
+    a_ = np.ones((1, nnz)) * 0.02;  # 0.2 cm
+    age = np.zeros((1, nnz))
+    kr_ = np.ones((1, nnz)) * 1.;  # cm/hPa/day
+    kz_ = np.ones((1, nnz)) * 1.;  # cm^4/hPa/day
+    params = np.vstack((order, a_, age, kr_, kz_))
+    createDGF_1Droots("../grids/singleC11.dgf", nodes, seg, params)
 
     print("its done.")
 

@@ -140,7 +140,12 @@ public:
                 d = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
-            // todo pressure in cm
+            if (name=="p") {
+                auto i0 = vMapper.subIndex(e, 0, 1);
+                auto i1 = vMapper.subIndex(e, 1, 1);
+                d = 0.5 * (sol[i1] + sol[i0]);
+                d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
+            }
             userData_[name][eIdx] = d;
         }
     }
@@ -155,6 +160,7 @@ public:
     std::vector<Scalar>& radius() { return userData_["radius"]; }
     std::vector<Scalar>& initialPressure() { return userData_["initialPressure"]; }
     std::vector<Scalar>& id() { return userData_["id"]; }
+    std::vector<Scalar>& p() { return userData_["p"]; }
 
     //! calculates transpiraton, as the sum of radial fluxes (slow but accurate) [cm^3/day]
     Scalar transpiration(const SolutionVector& sol) {

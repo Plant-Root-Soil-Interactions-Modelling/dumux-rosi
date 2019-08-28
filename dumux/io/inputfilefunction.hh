@@ -102,7 +102,7 @@ public:
                 }
                 type_ = tablePerType;
             } else {
-                if  (hasParam(groupName +".File")) {
+                if  (hasParam(groupName +".CSVFile")) {
                     std::string name = Dumux::getParam<std::string>(groupName +".File");
                     std::string filename = getParam<std::string>(groupName +".File");
                     io::CSVReader<2> csv(filename);

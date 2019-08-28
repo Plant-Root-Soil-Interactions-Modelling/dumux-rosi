@@ -228,15 +228,17 @@ int main(int argc, char** argv) try
     VtkOutputModule<RootGridVariables, RootSolution> rootVtkWriter(*rootGridVariables, sol[rootDomainIdx], rootProblem->name());
     GetPropType<RootTypeTag, Properties::VtkOutputFields>::initOutputModule(rootVtkWriter);
 
-    rootProblem->userData("radius", sol[rootDomainIdx]); // prepare fields
-    rootProblem->userData("order", sol[rootDomainIdx]); // prepare fields
-    rootProblem->userData("id", sol[rootDomainIdx]); // prepare fields
-    rootProblem->userData("axialFlux", sol[rootDomainIdx]); // prepare fields // todo wrong (coarse approximation)
-    rootProblem->userData("radialFlux", sol[rootDomainIdx]); // prepare fields
-    rootProblem->userData("age", sol[rootDomainIdx]); // prepare fields
-    rootProblem->userData("initialPressure",sol[rootDomainIdx]); //prepare fields
-    rootProblem->userData("kr", sol[rootDomainIdx]); // prepare fields
-    rootProblem->userData("kx", sol[rootDomainIdx]); //prepare fields
+    rootProblem->userData("p", sol[rootDomainIdx]);
+    rootProblem->userData("radius", sol[rootDomainIdx]);
+    rootProblem->userData("order", sol[rootDomainIdx]);
+    rootProblem->userData("id", sol[rootDomainIdx]);
+    rootProblem->userData("axialFlux", sol[rootDomainIdx]); // todo wrong (coarse approximation)
+    rootProblem->userData("radialFlux", sol[rootDomainIdx]);
+    rootProblem->userData("age", sol[rootDomainIdx]);
+    rootProblem->userData("initialPressure",sol[rootDomainIdx]);
+    rootProblem->userData("kr", sol[rootDomainIdx]);
+    rootProblem->userData("kx", sol[rootDomainIdx]);
+    rootVtkWriter.addField(rootProblem->p(), "p [cm]");
     rootVtkWriter.addField(rootProblem->radius(), "radius [m]"); // not in cm, because of tube plot
     rootVtkWriter.addField(rootProblem->order(), "order [1]");
     rootVtkWriter.addField(rootProblem->id(), "id [1]");
@@ -331,6 +333,7 @@ int main(int argc, char** argv) try
                     rootProblem->userData("id", sol[rootDomainIdx]);
                     rootProblem->userData("initialPressure", sol[rootDomainIdx]);
                 }
+                rootProblem->userData("p", sol[rootDomainIdx]);
                 rootProblem->userData("axialFlux", sol[rootDomainIdx]);
                 rootProblem->userData("radialFlux", sol[rootDomainIdx]);
                 rootProblem->userData("age", sol[rootDomainIdx]); // age changes with time
@@ -358,12 +361,14 @@ int main(int argc, char** argv) try
         nonLinearSolver.solve(sol); // solve the non-linear system
 
         // write outputs
+        rootProblem->userData("p", sol[rootDomainIdx]);
         rootProblem->userData("axialFlux", sol[rootDomainIdx]);
         rootProblem->userData("radialFlux", sol[rootDomainIdx]);
         rootProblem->userData("age", sol[rootDomainIdx]); // prepare fields
         rootProblem->userData("kr", sol[rootDomainIdx]);  // conductivities change with age
         rootProblem->userData("kx", sol[rootDomainIdx]);
         rootVtkWriter.write(1); // write vtk output
+        soilVtkWriter.write(1);
         rootProblem->writeTranspirationRate(sol[rootDomainIdx]);
     }
 

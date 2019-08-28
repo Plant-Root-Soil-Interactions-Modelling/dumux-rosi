@@ -13,10 +13,10 @@ os.chdir("../../../build-cmake/rosi_benchmarking/coupled")
 np_ = 1  # number of processors
 
 # run dumux
-# if np_ == 1:
-#     os.system("./coupled_seq input/small.input")
-# else:
-#     os.system("mpirun -n " + str(np_) + " ./coupled_seq input/small.input -Grid.Overlap 0")
+if np_ == 1:
+    os.system("./coupled_seq input/small.input")
+else:
+    os.system("mpirun -n " + str(np_) + " ./coupled_seq input/small.input -Grid.Overlap 0")
 
 # Figure
 s_, p_, z1_ = read3D_vtp("smallS-00001", np_)

@@ -136,7 +136,6 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
             }
 
         }
-
     }
 }
 
@@ -308,11 +307,27 @@ int main(int argc, char** argv) try
     using RootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
     VtkOutputModule<RootGridVariables, RootSolutionVector> rootVTKWriter(*rootGridVariables, r, rootProblem->name()+"R");
     using RootVelocityOutput = GetPropType<RootTypeTag, Properties::VelocityOutput>;
-//    rootVTKWriter.addVelocityOutput(std::make_shared<RootVelocityOutput>(*rootGridVariables));
-//    rootProblem->axialFlux(r); // prepare fields
-//    rootProblem->radialFlux(r); // prepare fields
-//    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux");
-//    rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux");
+    rootProblem->userData("p", r);
+    rootProblem->userData("radius", r);
+    rootProblem->userData("order", r);
+    rootProblem->userData("id", r);
+    rootProblem->userData("axialFlux", r); // todo wrong (coarse approximation)
+    rootProblem->userData("radialFlux", r);
+    rootProblem->userData("age", r);
+    rootProblem->userData("initialPressure", r);
+    rootProblem->userData("kr", r);
+    rootProblem->userData("kx", r);
+    rootVTKWriter.addField(rootProblem->p(), "p [cm]");
+    rootVTKWriter.addField(rootProblem->radius(), "radius [m]"); // not in cm, because of tube plot
+    rootVTKWriter.addField(rootProblem->order(), "order [1]");
+    rootVTKWriter.addField(rootProblem->id(), "id [1]");
+    rootVTKWriter.addField(rootProblem->axialFlux(), "axial flux [cm3/d]");
+    rootVTKWriter.addField(rootProblem->radialFlux(), "radial flux [cm3/d]");
+    rootVTKWriter.addField(rootProblem->age(), "age [d]");
+    rootVTKWriter.addField(rootProblem->initialPressure(), "initial pressure [cm]");
+    rootVTKWriter.addField(rootProblem->kr(), "kr [cm/hPa/d]");
+    rootVTKWriter.addField(rootProblem->kx(), "kx [cm4/hPa/day]");
+    rootVTKWriter.write(0.0);
     RootIOFields::initOutputModule(rootVTKWriter); //!< Add model specific output fields
     rootVTKWriter.write(0.0);
 
@@ -414,8 +429,18 @@ int main(int argc, char** argv) try
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-//                rootProblem->axialFlux(r); // prepare fields
-//                rootProblem->radialFlux(r); // prepare fields
+                if (grow) { // prepare static fields also
+                    rootProblem->userData("radius", r);
+                    rootProblem->userData("order", r);
+                    rootProblem->userData("id", r);
+                    rootProblem->userData("initialPressure", r);
+                }
+                rootProblem->userData("p", r);
+                rootProblem->userData("axialFlux", r);
+                rootProblem->userData("radialFlux", r);
+                rootProblem->userData("age", r); // age changes with time
+                rootProblem->userData("kr", r);  // conductivities change with age
+                rootProblem->userData("kx", r);
                 rootVTKWriter.write(timeLoop->time());
                 soilVTKWriter.write(timeLoop->time());
             }
@@ -443,11 +468,15 @@ int main(int argc, char** argv) try
         rootNonlinearSolver.solve(r);
         soilNonlinearSolver.solve(s);
         // write vtk output
-//        rootProblem->axialFlux(r); // prepare fields
-//        rootProblem->radialFlux(r); // prepare fields
-        rootProblem->writeTranspirationRate(r);
-        rootVTKWriter.write(1);
+        rootProblem->userData("p", r);
+        rootProblem->userData("axialFlux", r);
+        rootProblem->userData("radialFlux", r);
+        rootProblem->userData("age", r); // prepare fields
+        rootProblem->userData("kr", r);  // conductivities change with age
+        rootProblem->userData("kx", r);
+        rootVTKWriter.write(1); // write vtk output
         soilVTKWriter.write(1);
+        rootProblem->writeTranspirationRate(r);
 
     }
 

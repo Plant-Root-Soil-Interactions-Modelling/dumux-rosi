@@ -73,7 +73,7 @@ def read1D_vtp_data(name, cell = True):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
 #
-def read3D_vtp_data(name, cell = True):
+def read3D_vtp_data(name, cell = True, axis = 2):
     pd = read_vtu(name)
     if cell:
         data = pd.GetCellData()  # vertex (makes actually only sense for vertex data)
@@ -104,7 +104,7 @@ def read3D_vtp_data(name, cell = True):
     for i in range(0, Np):
         p = np.zeros(3,)
         points.GetPoint(i, p)
-        z_[i] = p[2]
+        z_[i] = p[axis]
 
     return sw_, pw_, z_
 
@@ -130,9 +130,9 @@ def read3Dp_vtp_data(prename, postname, n, cell = False):
 #
 # reads a dumux output style vtu
 #
-def read3D_vtp(name, np = 1):
+def read3D_vtp(name, np = 1, axis = 2):
     if np == 1:
-        return read3D_vtp_data(name + ".vtu", False)
+        return read3D_vtp_data(name + ".vtu", False, axis)
     else:
         return read3Dp_vtp_data("s{:04d}-p".format(np), name, np, False)
 

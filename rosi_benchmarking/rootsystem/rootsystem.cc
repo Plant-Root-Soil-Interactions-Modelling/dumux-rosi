@@ -116,10 +116,6 @@ int main(int argc, char** argv) try
         growth = new GrowthModule::CRootBoxAdapter<GlobalPosition>(*rootSystem);
     }
 
-    ////////////////////////////////////////////////////////////
-    // run stationary or dynamic problem on this grid
-    ////////////////////////////////////////////////////////////
-
     // we compute on the leaf grid view
     const auto& leafGridView = grid->leafGridView();
     std::cout << "i have the view \n"<< std::flush;
@@ -129,6 +125,10 @@ int main(int argc, char** argv) try
     auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
     fvGridGeometry->update();
     std::cout << "i have the geometry \n" << std::flush;
+
+    ////////////////////////////////////////////////////////////
+    // run stationary or dynamic problem on this grid
+    ////////////////////////////////////////////////////////////
 
     // the solution vector
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
@@ -191,15 +191,17 @@ int main(int argc, char** argv) try
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    problem->userData("radius", x); // prepare fields
-    problem->userData("order", x); // prepare fields
-    problem->userData("id", x); // prepare fields
-    problem->userData("axialFlux", x); // prepare fields // todo wrong (coarse approximation)
-    problem->userData("radialFlux", x); // prepare fields
-    problem->userData("age", x); // prepare fields
-    problem->userData("initialPressure",x); //prepare fields
-    problem->userData("kr", x); // prepare fields
-    problem->userData("kx", x); //prepare fields
+    problem->userData("p", x);
+    problem->userData("radius", x);
+    problem->userData("order", x);
+    problem->userData("id", x);
+    problem->userData("axialFlux", x);// todo wrong (coarse approximation)
+    problem->userData("radialFlux", x);
+    problem->userData("age", x);
+    problem->userData("initialPressure",x);
+    problem->userData("kr", x);
+    problem->userData("kx", x);
+    vtkWriter.addField(problem->p(), "p [cm]"); // cm pressure head
     vtkWriter.addField(problem->radius(), "radius [m]"); // not in cm, because of tube plot
     vtkWriter.addField(problem->order(), "order [1]");
     vtkWriter.addField(problem->id(), "id [1]");
@@ -283,6 +285,7 @@ int main(int argc, char** argv) try
                     problem->userData("id", x);
                     problem->userData("initialPressure", x);
                 }
+                problem->userData("p", x);
                 problem->userData("axialFlux", x);
                 problem->userData("radialFlux", x);
                 problem->userData("age", x); // age changes with time
@@ -308,6 +311,7 @@ int main(int argc, char** argv) try
         nonLinearSolver.solve(x); // solve the non-linear system
 
         // write outputs
+        problem->userData("p", x);
         problem->userData("axialFlux", x);
         problem->userData("radialFlux", x);
         problem->userData("age", x); // prepare fields
@@ -344,27 +348,3 @@ catch (Dumux::ParameterException &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
-
-
-/**
- *
- */
-//template <class Assembler, class LinearSolver>
-//class MyNewton :public Dumux::NewtonSolver<Assembler,LinearSolver> {
-//
-//    using GlobalPosition = Dune::FieldVector<double, 3>;
-//
-//public:
-//
-//    virtual ~MyNewton() { }
-//
-//    virtual void newtonFail(SolutionVector& u) {
-//        std::cout << "i failed \n";
-//        grow->restore();
-//    }
-//
-//    GrowthModule::GrowthInterface<GlobalPosition>* grow;
-//
-//
-//};
-
