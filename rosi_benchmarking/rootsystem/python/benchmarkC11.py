@@ -1,8 +1,4 @@
-#
-# Small dgf root system
-#
-# D. Leitner, 2018
-#
+""" Benchmark C11, single root in thin soil layer, root part """
 
 import os
 import matplotlib.pyplot as plt

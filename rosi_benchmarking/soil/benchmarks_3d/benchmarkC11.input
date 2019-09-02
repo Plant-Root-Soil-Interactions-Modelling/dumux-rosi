@@ -9,7 +9,7 @@ MaxTimeStepSize = 31536000 # 10 days [s]
 [Soil.Grid]
 LowerLeft = -8.8623e-3 -8.8623e-3 -1.e-2
 UpperRight = 8.8623e-3  8.8623e-3  0.
-Cells = 101 101 1
+Cells = 20 20 1
 
 [Soil.BC.Top]
 Type = 2 # constant flux

@@ -110,6 +110,43 @@ def read3D_vtp_data(name, cell = True, axis = 2):
 
 
 #
+# returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
+#
+def read3D_vtp_data_line(name, cell = True):
+    pd = read_vtu(name)
+    if cell:
+        data = pd.GetCellData()  # vertex (makes actually only sense for vertex data)
+    else:
+        data = pd.GetPointData()
+
+    nocd = data.GetNumberOfArrays()
+    sw = data.GetArray(0)  # saturation
+    pw = data.GetArray(2)  # pressure
+
+    noa = sw.GetNumberOfTuples()
+    sw_ = np.ones(noa,)
+    pw_ = np.ones(noa,)
+    for i in range(0, noa):
+        d = sw.GetTuple(i)
+        sw_[i] = d[0]
+        d = pw.GetTuple(i)
+        pw_[i] = d[0]
+
+    # vertex (makes actually only sense for vertex data)
+    Np = pd.GetNumberOfPoints()
+    y_, p_ = [], []
+    points = pd.GetPoints()
+    for i in range(0, Np):
+        p = np.zeros(3,)
+        points.GetPoint(i, p)
+        if p[2] == 0 and p[0] == 0 and p[1] >= 0 :
+            y_.append(p[1])
+            p_.append(pw_[i])
+
+    return p_, y_
+
+
+#
 # returns the cell or vertex data (index 0 and 2 hard coded)) of parallel vtp files
 #
 def read3Dp_vtp_data(prename, postname, n, cell = False):
