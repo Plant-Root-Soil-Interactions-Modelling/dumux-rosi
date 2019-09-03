@@ -27,5 +27,5 @@ h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
-np.savetxt("dumux_b3", np.vstack((z_[:, 2], h_)), delimiter = ',')
+np.savetxt("dumux_b3", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
 plt.show()

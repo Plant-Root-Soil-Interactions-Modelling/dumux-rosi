@@ -12,16 +12,15 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled")
 
 soiltype = 2  # sand, loam, clay
-q_root = 0.1
+q_root = 0.2  # cm/day
 soils = ["Sand", "Loam", "Clay"]
 trans = q_root * (2 * 0.02 * math.pi) * 1 * 1.e-6 * 1000.  # cm/day -> kg/day
-print(trans)
 os.system("./coupled input/benchmarkC11.input -Soil.Layer.Number {} -RootSystem.Collar.Transpiration {}"
           .format(soiltype, trans))
 
-# Figure
+# Figure 1
 leg_str = [];
-for i in range(0, 7):
+for i in range(0, 9):
     p_, y_ = read3D_vtp_data_line("benchmarkC11-0000{}.vtu".format(i), False)
     h1_ = vg.pa2head(p_)
     plt.plot(np.array(y_) * 100, h1_)
@@ -31,5 +30,26 @@ plt.legend(leg_str)
 plt.ylabel('$\psi$ (cm)')
 plt.xlabel('y axis (cm)')
 plt.title(soils[soiltype] + ", q_{root}=" + str(q_root) + "d")
+plt.show()
+
+# Read results
+with open("benchmarkC11_actual_transpiration.txt", 'r') as f:
+    d = np.loadtxt(f, delimiter = ',')
+
+c = (24 * 3600)  #  kg/s -> cm^3 / per day # 1.e-3 * 1.e6 / (2 * 0.02 * math.pi) * 1
+t = d[:, 0] / (24 * 3600)
+
+fig, ax1 = plt.subplots()
+
+# 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
+ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration
+ax1.plot(t, d[:, 1] * c, 'r-,')  # reference, actual transpiration
+# ax1.plot(t, d[:, 3] * c, 'r:')  # reference, maximal transpiration
+
+ax1.legend(['Pot trans', 'actual trans'])
+# ax1.axis((0, t[-1], 0, 12))
+ax1.set_xlabel("Time $[d]$")
+ax1.set_ylabel("Transpiration rate $[mm \ d^{-1}]$")
+
 plt.show()
 

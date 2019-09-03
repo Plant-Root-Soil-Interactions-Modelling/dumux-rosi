@@ -15,8 +15,8 @@ krIdx = 6
 kxIdx = 5
 
 [RootSystem.Conductivity]
-Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
-Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+Kx = 0.173      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 2.6e-3     # radial conductivity [cm/hPa/day] similar (1 / day) 
 
 [RootSystem.Collar]
 P = -500 # cm pressure head
@@ -27,4 +27,3 @@ P = -200 # cm pressure head
 [Vtk]
 AddProcessRank = "false"
 AddVelocity = "true"
-

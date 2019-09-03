@@ -1,5 +1,5 @@
 [Problem]
-Name = benchmark3 
+Name = benchmark3
 
 [TimeLoop]
 TEnd = 0 # [s]
@@ -14,32 +14,30 @@ ctIdx = 7
 krIdx = 6
 kxIdx = 5
 
-[RootSystem.Conductivity] 
-Kx0 =    0    0    0.43 4.3 4.3 # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
-KxAge0 = 0    1    3    5   1e7 # days
+[RootSystem.Conductivity]
+Kx0 = 0.356737056 0.321442035 0.289639051 0.260982605 0.235161384 0.211894875 0.190930319 0.172039965 0.155018593 0.13968129 0.125861436 0.113408897 0.102188394 0.09207803 0.08296797 0.074759246 0.06736268      # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
+KxAge0 = 0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32 # days
 
-Kr0 =    1.7e-4 1.7e-4 6e-5 6e-5 1e-5 1e-5 # radial conductivity (1 / day)   
-KrAge0 = 0      5      10   15   20   1e7  # days      
+Kr0 = 5.17E-04 5.43E-04 5.70E-04 5.99E-04 6.30E-04 6.62E-04 6.95E-04 7.30E-04	7.67E-04 8.06E-04 8.47E-04 8.90E-04 9.35E-04 9.83E-04 1.03E-03 1.09E-03 1.14E-03  
+KrAge0 = 0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32 # days
 
-Kx1 =    0    0    0.43 4.3 4.3 # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
-KxAge1 = 0    1    3    5   1e7 # days
+Kx1 = 0.356737056 0.321442035 0.289639051 0.260982605 0.235161384 0.211894875 0.190930319 0.172039965 0.155018593 0.13968129 0.125861436 0.113408897 0.102188394 0.09207803 0.08296797 0.074759246 0.06736268      # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
+KxAge1 = 0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32 # days
 
-Kr1 =    1.7e-4 1.7e-4 6e-5 6e-5 1e-5 1e-5 # radial conductivity (1 / day)   
-KrAge1 = 0      5      10   15   20   1e7  # days
+Kr1 = 5.17E-04 5.43E-04 5.70E-04 5.99E-04 6.30E-04 6.62E-04 6.95E-04 7.30E-04 7.67E-04 8.06E-04 8.47E-04 8.90E-04 9.35E-04 9.83E-04 1.03E-03 1.09E-03 1.14E-03  
+KrAge1 = 0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32 # days
 
-# order 0 twice, since Magdalena's DGF order starts with 0     
+Kx2 = 1.36E-02 1.11E-02 9.03E-03 7.34E-03 5.97E-03 4.86E-03 3.95E-03 3.21E-03 2.61E-03 2.12E-03 1.73E-03 1.41E-03 1.14E-03 9.30E-04 7.56E-04 6.15E-04 5.00E-04 4.07E-04   
+KxAge2 = 0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 # days
 
-Kx2 =    0    0 1e-4 6e-4 7e-3 7e-3 # axial conductivity (cm^3 / day)  
-KxAge2 = 0    5    10   12   23   1e7  # days
+Kr2 = 1.58E-03 1.67E-03 1.77E-03 1.87E-03 1.98E-03 2.09E-03 2.21E-03 2.34E-03 2.48E-03 2.62E-03 2.77E-03 2.93E-03 3.10E-03 3.28E-03 3.47E-03 3.67E-03 3.89E-03 4.11E-03
+KrAge2 = 0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 # days
 
-Kr2 =    2e-4  2e-4 0   0  # radial conductivity (1 / day)      
-KrAge2 = 0     10   15  1e7  # days   
+Kx3 = 1.36E-02 1.11E-02 9.03E-03 7.34E-03 5.97E-03 4.86E-03 3.95E-03 3.21E-03 2.61E-03 2.12E-03 1.73E-03 1.41E-03 1.14E-03 9.30E-04 7.56E-04 6.15E-04 5.00E-04 4.07E-04   
+KxAge3 = 0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 # days
 
-Kx3 =    0    0 1e-4 6e-4 7e-3 7e-3 # axial conductivity (cm^3 / day)  
-KxAge3 = 0    5    10   12   23   1e7  # days
-
-Kr3 =    2e-4  2e-4 0   0  # radial conductivity (1 / day)      
-KrAge3 = 0     10   15  1e7  # days   
+Kr3 = 1.58E-03 1.67E-03 1.77E-03 1.87E-03 1.98E-03 2.09E-03 2.21E-03 2.34E-03 2.48E-03 2.62E-03 2.77E-03 2.93E-03 3.10E-03 3.28E-03 3.47E-03 3.67E-03 3.89E-03 4.11E-03
+KrAge3 = 0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 # days
 
 [RootSystem.Collar]
 P = -500 # cm pressure head
@@ -50,3 +48,4 @@ P = -200 # cm pressure head
 [Vtk]
 AddProcessRank = "false"
 AddVelocity = "true"
+

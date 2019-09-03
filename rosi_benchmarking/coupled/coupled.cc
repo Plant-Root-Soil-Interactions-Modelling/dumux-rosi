@@ -343,6 +343,8 @@ int main(int argc, char** argv) try
                 soilVtkWriter.write(timeLoop->time());
             }
             rootProblem->writeTranspirationRate(sol[rootDomainIdx]); // always add transpiration data into the text file
+            soilProblem->computeSourceIntegral(sol[soilDomainIdx], *soilGridVariables);
+            rootProblem->computeSourceIntegral(sol[rootDomainIdx], *rootGridVariables);
 
             timeLoop->reportTimeStep();  // report statistics of this time step
 

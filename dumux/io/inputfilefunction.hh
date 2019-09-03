@@ -22,7 +22,7 @@ namespace Dumux {
  *
  * Table        the value is calculated by linear interpolation from a table (y,x) given in the input file
  *              y and x are both set to multiple sampling points
- *              y and x are not set, but a parameter File = example.csv, is set in the same parameter group.
+ *              y and x are not set, but a parameter CSVFile = example.csv, is set in the same parameter group.
  *
  * Data         the value is taken from the grid file
  *              y and x are not set
@@ -242,7 +242,7 @@ public:
                 throw Dumux::ParameterException("InputFileFunction::f("+std::to_string(x)+", "+std::to_string(eIdx)+"): "+
                     nameY_+" table type > available tables, "+ std::to_string(t)+">="+std::to_string(table_.size()));
             }
-            return Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
+            return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
         }
         default:
             throw Dumux::ParameterException("InputFileFunction: unknown function type");

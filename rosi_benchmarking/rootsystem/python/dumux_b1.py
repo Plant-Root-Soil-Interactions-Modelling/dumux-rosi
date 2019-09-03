@@ -31,8 +31,11 @@ def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
 # Parameters
 L = 0.5  # length of single straight root (m)
 a = 2.e-3  # radius (m)
-kr = 2.e-13  # radial conductivity per root type (m^2 s / kg)
-kz = 5.e-17  # axial conductivity (m^5 s / kg)
+kz = 0.173  # axial conductivity [cm^4/hPa/day] similar (cm^3 / day)
+kz = 1e-6 * kz / (rho * g) / (24 * 3600)
+kr = 2.6e-3  # radial conductivity [cm/hPa/day] similar (1 / day)
+kr = kr / (rho * g) / (24 * 3600)
+
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
 t0 = -2e-8
@@ -55,7 +58,7 @@ d3 = np.linalg.solve(AA3, bb3)  # compute constants d_1 and d_2 from bc
 # Analytical solution
 p_r = lambda z: toHead(p_s + d[0] * exp(sqrt(c) * z) + d[1] * exp(-sqrt(c) * z))
 p_r2 = lambda z: toHead(p_s + d2[0] * exp(sqrt(c) * z) + d2[1] * exp(-sqrt(c) * z))  # neglecting gravitation
-p_r3 = lambda z: toHead(p_s + d3[0] * exp(sqrt(c) * z) + d3[1] * exp(-sqrt(c) * z))  # neglecting gravitation
+p_r3 = lambda z: toHead(p_s + d3[0] * exp(sqrt(c) * z) + d3[1] * exp(-sqrt(c) * z))  # transpiration
 
 # Prepare plot
 za_ = np.linspace(0, -L, 100)
@@ -113,7 +116,7 @@ ax3.set_title("Predescribed transpiration")
 # save benchmark 1
 z_ = np.linspace(0, -0.5, len(p_))
 h_ = vg.pa2head(p_)
-np.savetxt("dumux_b1", np.vstack((z_, h_)), delimiter = ',')
+np.savetxt("dumux_b1", np.vstack((100 * z_, h_)), delimiter = ',')
 
 if __name__ == "__main__":
     plt.show()

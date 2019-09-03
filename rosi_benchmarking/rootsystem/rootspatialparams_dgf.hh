@@ -132,12 +132,12 @@ public:
 
     //! radial conductivity [m/Pa/s] == [m^2 s/kg]
     Scalar kr(std::size_t eIdx) const {
-        return kr_.f(this->age(eIdx), this->order(eIdx));
+        return kr_.f(this->age(eIdx), eIdx);
     }
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        return kx_.f(this->age(eIdx), this->order(eIdx));
+        return kx_.f(this->age(eIdx), eIdx);
     }
 
     //! set current simulation time, age is time dependent (so sad), kx and kr can be age dependent
