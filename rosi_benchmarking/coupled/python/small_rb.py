@@ -14,12 +14,12 @@ np_ = 1  # number of processors
 
 # run dumux
 if np_ == 1:
-    os.system("./coupled_seq_rb input/small_rb.input")
+    os.system("./coupled_rb input/small_rb.input")
 else:
     os.system("mpirun -n " + str(np_) + " ./coupled_seq_rb input/small_rb.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("small_rbS-00001", np_)
+s_, p_, z1_ = read3D_vtp("small_rb-00001", np_)
 h1_ = vg.pa2head(p_)
 plt.plot(h1_, z1_ * 100, "r+")
 plt.xlabel('$\psi$ (cm)')

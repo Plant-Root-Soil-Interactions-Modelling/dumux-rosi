@@ -1,6 +1,6 @@
 [TimeLoop]
 TEnd = 86400 # 86400 
-DtInitial =  1 
+DtInitial =  360 
 CheckTimes = 43200
 MaxTimeStepSize = 3600 
 

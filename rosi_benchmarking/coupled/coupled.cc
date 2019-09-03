@@ -214,6 +214,14 @@ int main(int argc, char** argv) try
         rootProblem->spatialParams().updateParameters(*growth);
     }
 
+    // the solution vector
+    sol[soilDomainIdx].resize(soilGridGeometry->numDofs());
+    sol[rootDomainIdx].resize(rootGridGeometry->numDofs());
+    soilProblem->applyInitialSolution(sol[soilDomainIdx]);
+    rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+    oldSol = sol;
+
+
     // coupling manager
     couplingManager->init(soilProblem, rootProblem, sol);
     soilProblem->computePointSourceMap();
@@ -328,6 +336,7 @@ int main(int argc, char** argv) try
                     std::cout << "grow \n"<< std::flush;
                     gridGrowth->grow(dt);
                     rootProblem->spatialParams().updateParameters(*growth);
+                    rootProblem->applyInitialSolution(sol[rootDomainIdx]);
                     rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
 
                     couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
