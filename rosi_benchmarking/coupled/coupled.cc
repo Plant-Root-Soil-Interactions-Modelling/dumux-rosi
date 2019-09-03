@@ -30,6 +30,7 @@
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
 #include <dune/grid/io/file/vtk.hh>
 #include <dune/istl/io.hh>
+#include <dune/grid/common/rangegenerators.hh>
 
 // Dumux
 #include <dumux/common/parameters.hh>
@@ -60,6 +61,42 @@
 #include "../soil/richardsproblem.hh"
 #include "properties.hh" // inclcudes root properties, soil properties, redefines coupling manager
 
+namespace Dumux {
+
+using SoilTypeTag = Properties::TTag::RichardsBox;
+using RootTypeTag = Properties::TTag::RootsBox;
+using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
+
+/**
+ * debugging
+ */
+template<class SoilGridVariables, class SoilSolution>
+void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
+    const SoilSolution& sol, const SoilSolution& oldSol, double t, double dt) {
+    double cVol = 0.;
+    double oldVol = 0.;
+    const auto& gridView = gridGeometry.gridView();  // soil
+    for (const auto& element : elements(gridView)) { // soil elements
+        auto fvGeometry = localView(gridGeometry); // soil solution -> volume variable
+        fvGeometry.bindElement(element);
+        auto elemVolVars = localView(gridVariables.curGridVolVars());
+        elemVolVars.bindElement(element, fvGeometry, sol);
+        for (const auto& scv : scvs(fvGeometry)) {
+            cVol += elemVolVars[scv].saturation(0)*scv.volume();
+        }
+        elemVolVars.bindElement(element, fvGeometry, oldSol);
+        for (const auto& scv : scvs(fvGeometry)) {
+            oldVol += elemVolVars[scv].saturation(0)*scv.volume();
+        }
+    }
+    std::cout << "\nWater in domain: " << cVol*1.e6 << " g at day " << t/24/3600 << " \n";
+    std::cout << "...   a change of: " << (oldVol-cVol)*1.e3 << " kg = " << (oldVol-cVol)*1.e6*24*3600/dt << " g/day \n" ;
+}
+} // namespace Dumux
+
+
+
+
 /**
  * and so it begins...
  */
@@ -84,8 +121,6 @@ int main(int argc, char** argv) try
     Parameters::init(argc, argv);
 
     // Define the sub problem type tags (see properties.hh)
-    using SoilTypeTag = Properties::TTag::RichardsBox;
-    using RootTypeTag = Properties::TTag::RootsBox;
     int simtype = Properties::simtype;
 
     // soil grid
@@ -95,8 +130,8 @@ int main(int argc, char** argv) try
     // soil grid geometry
     const auto& soilGridView = soilGridManager.grid().leafGridView();
     using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
-    auto soilGridGeoemtry = std::make_shared<SoilFVGridGeometry>(soilGridView);
-    soilGridGeoemtry->update();
+    auto soilGridGeometry = std::make_shared<SoilFVGridGeometry>(soilGridView);
+    soilGridGeometry->update();
 
     // root gridmanager and grid
     using GlobalPosition = Dune::FieldVector<double, 3>;
@@ -115,7 +150,7 @@ int main(int argc, char** argv) try
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
         // rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
-        const auto size = soilGridGeoemtry->bBoxMax() - soilGridGeoemtry->bBoxMin();
+        const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
         rootSystem->setGeometry(new CRootBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
@@ -143,11 +178,11 @@ int main(int argc, char** argv) try
 
     // the coupling manager
     using CouplingManager = GetPropType<SoilTypeTag, Properties::CouplingManager>;
-    auto couplingManager = std::make_shared<CouplingManager>(soilGridGeoemtry, rootGridGeometry);
+    auto couplingManager = std::make_shared<CouplingManager>(soilGridGeometry, rootGridGeometry);
 
     // the problems
     using SoilProblem = GetPropType<SoilTypeTag, Properties::Problem>;
-    auto soilProblem = std::make_shared<SoilProblem>(soilGridGeoemtry);
+    auto soilProblem = std::make_shared<SoilProblem>(soilGridGeometry);
     soilProblem->setCouplingManager(&(*couplingManager));
     using RootProblem = GetPropType<RootTypeTag, Properties::Problem>;
     auto rootProblem = std::make_shared<RootProblem>(rootGridGeometry);
@@ -155,7 +190,7 @@ int main(int argc, char** argv) try
 
     // the solution vector
     Traits::SolutionVector sol;
-    sol[soilDomainIdx].resize(soilGridGeoemtry->numDofs());
+    sol[soilDomainIdx].resize(soilGridGeometry->numDofs());
     sol[rootDomainIdx].resize(rootGridGeometry->numDofs());
     soilProblem->applyInitialSolution(sol[soilDomainIdx]);
     rootProblem->applyInitialSolution(sol[rootDomainIdx]);
@@ -186,7 +221,7 @@ int main(int argc, char** argv) try
 
     // the grid variables
     using SoilGridVariables = GetPropType<SoilTypeTag, Properties::GridVariables>;
-    auto soilGridVariables = std::make_shared<SoilGridVariables>(soilProblem, soilGridGeoemtry);
+    auto soilGridVariables = std::make_shared<SoilGridVariables>(soilProblem, soilGridGeometry);
     soilGridVariables->init(sol[soilDomainIdx]);
     using RootGridVariables = GetPropType<RootTypeTag, Properties::GridVariables>;
     auto rootGridVariables = std::make_shared<RootGridVariables>(rootProblem, rootGridGeometry);
@@ -254,15 +289,15 @@ int main(int argc, char** argv) try
     using Assembler = MultiDomainFVAssembler<Traits, CouplingManager, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
-         assembler = std::make_shared<Assembler>(std::make_tuple(soilProblem, rootProblem),
-                                                     std::make_tuple(soilGridGeoemtry, rootGridGeometry),
-                                                     std::make_tuple(soilGridVariables, rootGridVariables),
-                                                     couplingManager, timeLoop); // dynamic
+        assembler = std::make_shared<Assembler>(std::make_tuple(soilProblem, rootProblem),
+            std::make_tuple(soilGridGeometry, rootGridGeometry),
+            std::make_tuple(soilGridVariables, rootGridVariables),
+            couplingManager, timeLoop); // dynamic
     } else {
-         assembler = std::make_shared<Assembler>(std::make_tuple(soilProblem, rootProblem),
-                                                     std::make_tuple(soilGridGeoemtry, rootGridGeometry),
-                                                     std::make_tuple(soilGridVariables, rootGridVariables),
-                                                     couplingManager); // static
+        assembler = std::make_shared<Assembler>(std::make_tuple(soilProblem, rootProblem),
+            std::make_tuple(soilGridGeometry, rootGridGeometry),
+            std::make_tuple(soilGridVariables, rootGridVariables),
+            couplingManager); // static
     }
 
     // the linear solver
@@ -295,7 +330,7 @@ int main(int argc, char** argv) try
                     rootProblem->spatialParams().updateParameters(*growth);
                     rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
 
-                    couplingManager->updateAfterGridAdaption(soilGridGeoemtry, rootGridGeometry);
+                    couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
                     couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
                     couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
 
@@ -315,6 +350,8 @@ int main(int argc, char** argv) try
             assembler->setPreviousSolution(oldSol);
 
             nonLinearSolver.solve(sol);
+
+            soilControl(*soilGridGeometry, *soilGridVariables, sol[soilDomainIdx], oldSol[soilDomainIdx], t, dt); //debugging soil water content
 
             // make the new solution the old solution
             oldSol = sol;
@@ -345,6 +382,7 @@ int main(int argc, char** argv) try
             rootProblem->writeTranspirationRate(sol[rootDomainIdx]); // always add transpiration data into the text file
             soilProblem->computeSourceIntegral(sol[soilDomainIdx], *soilGridVariables);
             rootProblem->computeSourceIntegral(sol[rootDomainIdx], *rootGridVariables);
+            std::cout << "\n";
 
             timeLoop->reportTimeStep();  // report statistics of this time step
 

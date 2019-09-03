@@ -82,27 +82,55 @@ using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
 
 using SoilLookUp = GrowthModule::SoilLookUpBBoxTree<SoilFVGridGeometry>;
 
+/**
+ * debugging
+ */
+template<class SoilGridVariables, class SoilSolution>
+void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
+    const SoilSolution& sol, const SoilSolution& oldSol, double t, double dt) {
+    double cVol = 0.;
+    double oldVol = 0.;
+    const auto& gridView = gridGeometry.gridView();  // soil
+    for (const auto& element : elements(gridView)) { // soil elements
+        auto fvGeometry = localView(gridGeometry); // soil solution -> volume variable
+        fvGeometry.bindElement(element);
+        auto elemVolVars = localView(gridVariables.curGridVolVars());
+        elemVolVars.bindElement(element, fvGeometry, sol);
+        for (const auto& scv : scvs(fvGeometry)) {
+            cVol += elemVolVars[scv].saturation(0)*scv.volume();
+        }
+        elemVolVars.bindElement(element, fvGeometry, oldSol);
+        for (const auto& scv : scvs(fvGeometry)) {
+            oldVol += elemVolVars[scv].saturation(0)*scv.volume();
+        }
+    }
+    std::cout << "Water in domain: " << cVol*1.e3 << " kg at time " << t/24/3600 << " days\n";
+    std::cout << "change of " << (oldVol-cVol)*1.e3 << " kg = " << (oldVol-cVol)*1.e3/dt << " kg/s \n" ;
+}
+
+
 /*!
- * calculates saturation from the solution vector (todo which dof is associated to scv?)
- * todo move to soil
+ * calculates saturation from the solution vector
  */
 template<class SoilGridVariables, class SoilSolution>
 void updateSaturation(std::vector<double>& saturation, const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
     const SoilSolution& sol) {
+    double vol = 0;
 
     const auto& gridView = gridGeometry.gridView();  // soil
     for (const auto& element : elements(gridView)) { // soil elements
 
-        // soil solution -> volume variable
-        auto fvGeometry = localView(gridGeometry);
+        auto fvGeometry = localView(gridGeometry); // soil solution -> volume variable
         fvGeometry.bindElement(element);
         auto elemVolVars = localView(gridVariables.curGridVolVars());
         elemVolVars.bindElement(element, fvGeometry, sol);
 
-        for (const auto& scv : scvs(fvGeometry)) {
+        for (const auto& scv : scvs(fvGeometry)) { // i dont quite get that..
             saturation[scv.dofIndex()] = elemVolVars[scv].saturation(0);
+            vol += elemVolVars[scv].saturation(0)*scv.volume();
         }
     }
+    std::cout << "updateSaturation: Water volume: " << vol << " m3 \n";
 }
 
 /*!
@@ -124,19 +152,20 @@ void radialFlux2soilSink(std::vector<double>& source, const RootFVGridGeometry& 
         elemVolVars.bindElement(element, fvGeometry, r);
 
         for (const auto& scv : scvs(fvGeometry)) {  //root sub control volumes
-
             double s = -rootProblem.source(element, gridGeometry, elemVolVars, scv); // pass to problem class [kg/s/m^3]
             s *=  scv.volume()*elemVolVars[scv].extrusionFactor();  // [kg / s]
             auto pos = scv.center();
             int eIdx = soilLookUp->pick(pos); // find element index of soil, for root each root element
             if (eIdx>=0) { // just to be sure...
-                source.at(eIdx) += s; // accumulate source term
+                source.at(eIdx) += s; //  [kg/s] accumulate source term
             } else {
                 std::cout << "root at position " << pos << " not within soil";
             }
-
         }
     }
+    double sum = std::accumulate(source.begin(), source.end(), 0.);
+    std::cout << "radialFlux2soilSink: summed source: " << sum << " [kg / s] \n";
+
 }
 
 } // end namespace Dumux
@@ -417,6 +446,9 @@ int main(int argc, char** argv) try
             updateSaturation(saturation, *soilGridGeometry, *soilGridVariables, sOld); // updates soil look up for the root problem#
             std::cout << "solve roots\n";
             rootNonlinearSolver.solve(r, *timeLoop);
+
+            soilControl(*soilGridGeometry, *soilGridVariables, s, sOld, t, dt); //debugging soil water content
+
 
             // make the new solution the old solution
             rOld = r;

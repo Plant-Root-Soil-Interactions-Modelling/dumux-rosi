@@ -293,7 +293,7 @@ public:
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
     void setTime(double t, double dt) {
-        std::cout << "Time " << t << " time step " << dt << "\n";
+        // std::cout << "Time " << t << " time step " << dt << "\n";
         this->spatialParams().setTime(t, dt);
         time_ = t;
         dt_ = dt;
@@ -310,9 +310,8 @@ public:
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
             << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
-
-        std::cout << "Time:" << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
-            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
+//        std::cout << "Time:" << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
+//            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
