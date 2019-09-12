@@ -1,0 +1,35 @@
+[Problem]
+Name = soybean_HL_CT
+
+[TimeLoop]
+TEnd = 604800 # 31536000 # 0 is steady state
+DtInitial =  7200 # [s]
+MaxTimeStepSize = 3600 # 10 days [s] 
+
+# 37 x 5 x 150 cm
+[Soil.Grid]
+LowerLeft = -0.185 -0.025 -1.50
+UpperRight = 0.185 0.025 0.0
+Cells = 25 8 60
+
+[Soil.BC.Top]
+Type = 4 # constant flux
+Value = 0.5 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -200 # cm pressure head
+
+[Soil.VanGenuchten] 
+# Loam  
+Qr = 0.08 	
+Qs = 0.5 
+Alpha = 3.72e-2 # [1/cm] 
+N = 1.6
+Ks = 130 # [cm/d] 
+
+[Climate]
+Time = 1e10 # const value 
+Precipitation = 100 # [cm/day]
