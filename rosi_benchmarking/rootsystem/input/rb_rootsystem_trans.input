@@ -17,7 +17,7 @@ Kr = 1.728 # radial conductivity [cm/hPa/day]
 Kx = 432 # axial conductivity [cm^4/hPa/day]
 
 [RootSystem.Collar]
-File = input/transpiration.csv
+CSVFile = input/transpiration.csv
 Sinusoidal = True
 
 [Soil.IC]
