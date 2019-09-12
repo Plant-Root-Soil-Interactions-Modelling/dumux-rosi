@@ -19,6 +19,8 @@ If on a recent Ubuntu system, the c++ compiler and python that come with the dis
 \lstinline{pip3 install scipy}\\
 - Install the python package matplotlib:\\
 \lstinline{pip3 install matplotlib}\footnote{Known bug in ubuntu 18.04: needs sudo apt-get install libfreetype6-dev libxft-dev installed before.}\\
+- Install the python package VTK:\\
+\lstinline {pip3 install vtk}\\
 - Install the java runtime environment:\\
 \lstinline{sudo apt-get install default-jre}\\
 - Install Paraview\\
@@ -30,7 +32,7 @@ If on a recent Ubuntu system, the c++ compiler and python that come with the dis
 \section*{DuMu$^x$ installation}
 In all dune modules we stay in version 2.6, the latest stable release version. 
 
-- Create a DUMUX folder\\
+- Create a DuMu$^x$ working folder\\
 \lstinline{mkdir DUMUX}\\
 \lstinline{cd DUMUX}\\
 - Download DUNE core modules:\\
@@ -81,6 +83,7 @@ In all dune modules we stay in version 2.6, the latest stable release version.
     \hspace{\parindent} \texttt{git checkout master}\\
 		\hspace{\parindent} \texttt{cd ..}\\
 To build CRootBox and its python shared library, move again into the CRootBox folder and type into the console:\\
+\lstinline {cd CRootBox}\\
 \lstinline{cmake .}\footnote{It may be necessary on your installation to check the CRootBox/src/CMakeLists.txt file regarding required python version and out-commenting line 34.}\\
 \lstinline{make}\\
 (If building CRootBox on the cluster, two lines in the file \lstinline{CRootBox/CMakeLists.txt} need to be outcommented before:\\ 
@@ -88,10 +91,11 @@ To build CRootBox and its python shared library, move again into the CRootBox fo
 \lstinline{set(CMAKE_CXX_COMPILER "/usr/bin/g++")})\\
 
 Now build DuMu$^{x}$ with the CRootBox module: \\
--The configuration file \lstinline{optim.opts} is stored in the dumux folder. Move a copy of this file to your DuMu$^x$ working folder (one level up)\\
+-The configuration file \lstinline{cmake.opts} is stored in the dumux folder. Move a copy of this file to your DuMu$^x$ working folder (one level up, DUMUX)\\
 
 - To build all downloaded modules and check whether all dependencies and prerequisites are met, run dunecontrol:\\
-\lstinline{./dune-common/bin/dunecontrol --opts=optim.opts all}\\
+\lstinline{cd ..} \\
+\lstinline{./dune-common/bin/dunecontrol --opts=cmake.opts all}\\
 
 Installation done! Good luck!
 
