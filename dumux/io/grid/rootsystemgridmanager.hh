@@ -170,8 +170,8 @@ public:
         const auto numSegments = shootSegments.size() + segments.size();
 
         // get some root data
-        const auto segmentRoots = rs.getSegmentsOrigin(); // the root origin for each segment
-        const auto segmentAges = rs.getNETimes(); // the segment ages
+        const auto segmentRoots = rs.getSegmentOrigins(); // the root origin for each segment
+        const auto segmentAges = rs.getRootTips(); // the segment ages
         auto rootParams = getRootParams_(rs);
         auto shootParams = getShootParams_(rs);
         std::vector<ElementParams> elemData; elemData.reserve(numSegments);
@@ -264,8 +264,8 @@ public:
         const auto numSegments = shootSegments.size() + segments.size();
 
         // get some root data
-        const auto segmentRoots = rs.getSegmentsOrigin(); // the root origin for each segment
-        const auto segmentAges = rs.getNETimes(); // the segment ages
+        const auto segmentRoots = rs.getSegmentOrigins(); // the root origin for each segment
+        const auto segmentAges = rs.getRootTips(); // the segment ages
         auto rootParams = getRootParams_(rs);
         auto shootParams = getShootParams_(rs);
 
@@ -446,7 +446,7 @@ private:
         const auto roots = rs.getRoots();
         for (auto&& root : roots)
         {
-            auto& rp = rootParams[root->id];
+            auto& rp = rootParams[root->getId()];
 
             // compute the root order
             rp.order = 0;
@@ -458,7 +458,7 @@ private:
             }
 
             rp.radius = root->param.a * 0.01; // conversion from cm to m
-            rp.rootId = root->id;
+            rp.rootId = root->getId();
             rp.plantId = 0;
         }
 
@@ -501,7 +501,7 @@ private:
         else
         {
             const auto sIdx = segmentIdx-numShootSegments;
-            params.id = segmentRoots[sIdx]->id;
+            params.id = segmentRoots[sIdx]->getId();
             params.age = std::max(0.0, rs.getSimTime() - segmentAges[sIdx]);
             const auto& rp = rootParams[params.id];
             params.radius = rp.radius;
