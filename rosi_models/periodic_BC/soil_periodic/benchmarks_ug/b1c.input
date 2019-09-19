@@ -1,0 +1,33 @@
+[Problem]
+Name = benchmarkUG_1c
+
+[Soil.Grid]
+File = grids/b1_ug2.msh
+
+[TimeLoop]
+TEnd = 0 # 0 is steady state 31536000
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0.5 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -15 # cm pressure head (initial guess)
+
+[Soil.VanGenuchten] 
+# Clay over sand 
+Qr =  0.1 0.045	
+Qs = 0.4 0.43
+Alpha = 0.01  0.15 # [1/cm] 
+N = 1.1  3
+Ks = 10 1000 # [cm/d] 		
+
+[Soil.Layer]
+Z = 0 1.5 1.5 2 
+Number = 2 2 1 1	
+	

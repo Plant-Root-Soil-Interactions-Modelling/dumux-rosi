@@ -1,0 +1,35 @@
+[Problem]
+Name = benchmarkC12
+
+[TimeLoop]
+TEnd = 1209600 # 1209600 -> 2 weeks [s] # 86400 # a day
+DtInitial = 360 # [s]
+MaxTimeStepSize = 360 # 1 h
+
+[Soil.Grid]
+#10x10x25 cm
+LowerLeft = -0.05 -0.05 -0.25
+UpperRight = 0.05  0.05  0.
+Cells = 9 9 23
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 2 # 5 free drainage, 1 constant pressure
+Value = 0 # [cm] pressure head, fully saturated bot
+
+[Soil.IC]
+P = -2500 #cm
+
+[Soil.VanGenuchten]
+# Loam
+Qr = 0.08
+Qs = 0.43
+Alpha = 0.04 # [1/cm]
+N =  1.6
+Ks = 50 # [cm/d]
+
+[Soil.Layer]
+Number = 1 # pick soil type here ...

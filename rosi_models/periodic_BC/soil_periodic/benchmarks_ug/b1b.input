@@ -1,0 +1,34 @@
+[Problem]
+Name = benchmarkUG_1b
+
+[Soil.Grid]
+File = grids/b1_ug2.msh
+
+[TimeLoop]
+TEnd = 31536000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0.5 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -40 -40 -40 -20 # cm pressure head (initial guess)
+Z = 0 1 1 2
+
+[Soil.VanGenuchten] 
+# Sand over Loam 
+Qr = 0.045 0.08  	 
+Qs = 0.43 0.43
+Alpha =  0.15 0.04 # [1/cm] 
+N =  3 1.6
+Ks = 1000 50 # [cm/d] 	
+
+[Soil.Layer]
+Z = 0 1.5 1.5 2 
+Number = 2 2 1 1	
+	

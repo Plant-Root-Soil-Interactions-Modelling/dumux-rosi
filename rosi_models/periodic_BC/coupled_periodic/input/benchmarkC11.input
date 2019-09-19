@@ -1,0 +1,13 @@
+[TimeLoop]
+TEnd = 2160000 # 86400 a day,  6048000 = 70 days, 2160000 = 25 days
+DtInitial =  1 
+PeriodicCheckTimes = 172800 # 172800 = 2 days
+MaxTimeStepSize = 86400 
+
+[Soil.Grid]
+Cells = 20 20 1
+
+[Problem]
+Name = benchmarkC11
+RootName = ../rootsystem/input/benchmarkC11.input
+SoilName = ../soil/benchmarks_3d/benchmarkC11.input

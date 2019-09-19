@@ -1,0 +1,23 @@
+[Problem]
+Name = benchmarkC11 
+
+[TimeLoop]
+TEnd = 604800 # 604800 a week [s] # 86400 # a day
+CheckTimes = 43200 # half a day
+DtInitial = 360 # [s]
+MaxTimeStepSize = 360 # 1 h
+
+[RootSystem.Grid]
+File =  grids/singleC11.dgf
+radiusIdx = 4
+
+[RootSystem.Conductivity]
+Kx = 1 # axial conductivity [cm^4/hPa/day]
+Kr = 1 # radial conductivity [cm/hPa/day] 
+
+[RootSystem.Collar]
+Transpiration =  6.28318531e-7
+
+[Soil.IC]
+P = -100  
+
