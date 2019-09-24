@@ -1,23 +1,22 @@
-""" "Benchmark C12 root system part """
+''' Run Benchmakrk C12 '''
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
-from math import *
 import van_genuchten as vg
-import threading
-import time
+import math
 
-# Go to the right place
+# go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
+os.chdir("../../../build-cmake/rosi_benchmarking/coupled")
 
-# run dumux
-os.system("./rootsystem input/benchmarkC12.input")
+# run simulation
+os.system("./coupled input/benchmarkC12.input")
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
-with open("benchmarkC12_actual_transpiration.txt", 'r') as f:
+with open("benchmarkC12c_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 
 print()
@@ -38,7 +37,7 @@ ax1.plot(t, d[:, 5] / 1000, 'r-,')  # actual transpiration (calculated)
 ax1.plot(t, d[:, 1] * c, 'g:')  # actual transpiration (neumann)
 
 ax1.legend(['Potential', 'Actual', 'Actual'], loc = 'upper left')
-ax1.axis((0, t[-1], 0, 0.13))
+ax1.axis((0, t[-1], 0, 0.13 / 1000))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
 

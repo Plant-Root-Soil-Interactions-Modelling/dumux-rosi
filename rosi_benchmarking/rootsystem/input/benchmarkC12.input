@@ -21,7 +21,7 @@ Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day)
 Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
 
 [RootSystem.Collar]
-Transpiration = 0.00006
+Transpiration = 0.06
 Sinusoidal = True
 
 [Soil.IC]
