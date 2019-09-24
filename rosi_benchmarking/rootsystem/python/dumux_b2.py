@@ -1,8 +1,11 @@
-#
-# Calcultates root system benchmark 2a (static root system, constant conductivities)
-#
-# D. Leitner, 2018
-#
+"""
+Benchmark M32a
+
+ Calcultates root system benchmark M32a (static root system, constant conductivities)
+
+ D. Leitner, 2019
+
+"""
 
 import os
 import matplotlib.pyplot as plt
@@ -27,6 +30,6 @@ h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
-np.savetxt("dumux_b2", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
+np.savetxt("dumux_m32a", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
 plt.show()
 

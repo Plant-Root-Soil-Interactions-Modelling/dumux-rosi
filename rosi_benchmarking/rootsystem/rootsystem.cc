@@ -272,7 +272,7 @@ int main(int argc, char** argv) try
             }
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-            nonLinearSolver.solve(x); // solve the non-linear system with time step control
+            nonLinearSolver.solve(x, *timeLoop); // solve the non-linear system with time step control
             xOld = x; // make the new solution the old solution
 
             gridVariables->advanceTimeStep();

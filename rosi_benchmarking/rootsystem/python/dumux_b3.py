@@ -1,8 +1,11 @@
-#
-# Calcultates root system benchmark 2b (static root system, age dependent conductivities)
-#
-# D. Leitner, 2018
-#
+"""
+Benchmark M32b
+
+ Calcultates root system benchmark M32b (static root system, age dependent conductivities)
+
+ D. Leitner, 2019
+
+"""
 
 import os
 import matplotlib.pyplot as plt
@@ -27,5 +30,5 @@ h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
-np.savetxt("dumux_b3", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
+np.savetxt("dumux_m32b", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
 plt.show()

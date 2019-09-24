@@ -1,7 +1,9 @@
 """
+ Benchmark M31
+
  Compares the dumux solution of 1d single root to its analytical solution
 
- solves Benchmark M32,
+ solves Benchmark M31,
  additionally computes case without gravitation, and with transpiration BC
 
  D. Leitner, 2019

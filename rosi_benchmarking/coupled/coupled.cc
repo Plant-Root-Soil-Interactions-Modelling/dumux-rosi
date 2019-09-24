@@ -358,7 +358,7 @@ int main(int argc, char** argv) try
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(oldSol);
 
-            nonLinearSolver.solve(sol);
+            nonLinearSolver.solve(sol, *timeLoop);
 
             soilControl(*soilGridGeometry, *soilGridVariables, sol[soilDomainIdx], oldSol[soilDomainIdx], t, dt); //debugging soil water content
 

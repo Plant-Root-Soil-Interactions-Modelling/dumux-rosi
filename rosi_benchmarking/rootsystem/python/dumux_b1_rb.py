@@ -1,8 +1,10 @@
+"""
+ Benchmark M31
 
-# compares the dumux solution of 1d geometry created by rootbox to its analytical solution
-#
-# D. Leitner, 2019
-#
+ compares the dumux solution of 1d geometry created by rootbox to its analytical solution
+
+ D. Leitner, 2019
+"""
 
 import os
 import matplotlib.pyplot as plt
