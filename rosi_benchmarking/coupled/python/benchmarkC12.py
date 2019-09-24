@@ -23,21 +23,21 @@ print()
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
 print("potential", d[-1, 2] * c)
 print("actual", d[-1, 1] * c)
-print("actual", d[-1, 5] / 1000)
+print("actual", d[-1, 5] / 1000)  # Strange behaviour of simplistically calculated radial flows
 
 # Plot collar transpiration & pressure
 fig, ax1 = plt.subplots()
 
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
-t = d[:, 6] / (24 * 3600)  # [s] -> [day]
+t = d[:, 0] / (24 * 3600)  # [s] -> [day]
 
 # 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
 ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration
-ax1.plot(t, d[:, 5] / 1000, 'r-,')  # actual transpiration (calculated)
-ax1.plot(t, d[:, 1] * c, 'g:')  # actual transpiration (neumann)
+ax1.plot(t, d[:, 1] * c, 'g-')  # actual transpiration (neumann)
+# ax1.plot(d[:, 6] / (24 * 3600), d[:, 5] / 1000, 'r:,')  # actual transpiration (calculated)
 
 ax1.legend(['Potential', 'Actual', 'Actual'], loc = 'upper left')
-ax1.axis((0, t[-1], 0, 0.13 / 1000))
+ax1.axis((0, t[-1], 0, 0.13))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
 
