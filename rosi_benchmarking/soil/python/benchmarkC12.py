@@ -1,4 +1,4 @@
-""" Benchmark C21, soil part """
+""" Benchmark C12, soil part """
 
 import os
 import matplotlib.pyplot as plt
@@ -13,12 +13,12 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil")
 np_ = 1  # number of processors
 # run dumux
 if np_ == 1:
-    os.system("./richards3d benchmarks_3d/benchmarkC21.input")
+    os.system("./richards3d benchmarks_3d/benchmarkC12.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/benchmarkC21.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/benchmarkC12.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("benchmarkC21-00001", np_)
+s_, p_, z1_ = read3D_vtp("benchmarkC12-00001", np_)
 h1_ = vg.pa2head(p_)
 plt.plot(h1_, z1_ * 100, "r+")
 plt.xlabel('$\psi$ (cm)')

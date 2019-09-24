@@ -1,5 +1,5 @@
 [Problem]
-Name = benchmarkC21
+Name = benchmarkC12
 
 [TimeLoop]
 TEnd = 31536000 # a year, 0 is steady state
