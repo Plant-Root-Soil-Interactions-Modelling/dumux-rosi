@@ -11,7 +11,6 @@ MaxTimeStepSize = 360 # 1 h
 Transpiration = 0.6 # [kg/day]
 Sinusoidal = True
 
-
 [Soil.IC]
 P = -3058.104 -3058.104 -101.937 -101.937 # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa
 Z = -1.26 -.43 -.41 0

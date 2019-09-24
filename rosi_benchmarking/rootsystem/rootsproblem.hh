@@ -223,17 +223,16 @@ public:
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
-            Scalar p = volVars.pressure();
+            double p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            Scalar kx = this->spatialParams().kx(eIdx);
+            double kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist;  // todo check
-            Scalar trans = collar_.f(time_); // kg/s
-            Scalar v = std::min(trans, maxTrans);
-            neumannTime_ = time_;
-            potentialTrans_ = trans;
+            double criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist; // check units todo
+            potentialTrans_ = collar_.f(time_); // [ kg/s]
+            double v = std::min(potentialTrans_, criticalTranspiration);
             actualTrans_ = v;
-            maxTrans_ = maxTrans;
+            neumannTime_ = time_;
+            maxTrans_ = criticalTranspiration;
             collarP_ = p;
             v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
             return NumEqVector(v);
@@ -304,14 +303,12 @@ public:
      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day]
      *
-     * 1 - 4 work only for neuman bc
+     * 0 - 4 work only for neuman bc
      */
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
-        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
-            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
-//        std::cout << "Time:" << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
-//            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
+        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
+            << trans << ", "<< time_ << "\n";
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -432,7 +429,7 @@ private:
     size_t bcType_;
     double time_ = 0.;
     double dt_ = 0.;
-    Scalar criticalCollarPressure_ = -1.4e6;
+    double criticalCollarPressure_ = -1.4e6;
     bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
@@ -441,11 +438,11 @@ private:
     static constexpr Scalar eps_ = 1e-6;
 
     std::ofstream file_at_; // file for actual transpiration
-    mutable Scalar neumannTime_ = 0;
-    mutable Scalar actualTrans_ = 0;
-    mutable Scalar potentialTrans_ = 0;
-    mutable Scalar maxTrans_ = 0.;
-    mutable Scalar collarP_ = 0.;
+    mutable double neumannTime_ = 0;
+    mutable double actualTrans_ = 0;
+    mutable double potentialTrans_ = 0;
+    mutable double maxTrans_ = 0.;
+    mutable double collarP_ = 0.;
 
     std::map<std::string, std::vector<Scalar>> userData_;
 

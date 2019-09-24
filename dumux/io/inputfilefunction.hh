@@ -141,7 +141,7 @@ public:
     }
 
     /**
-     * Constructor 3:   an input file functions oft types constant, table, or perTypeIFF
+     * Constructor 3:   an input file functions of types constant, table, or perTypeIFF
      *                  i.e. all types without grid data
      *
      * a call to InputFileFunction::f(double x) is sufficient

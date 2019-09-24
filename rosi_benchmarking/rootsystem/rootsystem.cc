@@ -249,7 +249,7 @@ int main(int argc, char** argv) try
                 // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
                 while (growth->simTime()+dt<t+initialTime) {
 
-                    std::cout << "grow \n"<< std::flush;
+                    std::cout << "\n grow ..."<< std::flush;
                     gridGrowth->grow(dt);
                     problem->spatialParams().updateParameters(*growth);
                     problem->applyInitialSolution(x); // reset todo (? does this make sense)?
