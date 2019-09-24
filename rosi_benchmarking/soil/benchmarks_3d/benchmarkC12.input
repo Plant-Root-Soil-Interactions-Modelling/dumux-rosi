@@ -7,9 +7,9 @@ DtInitial =  3600 # [s]
 MaxTimeStepSize = 31536000 
 
 [Soil.Grid]
-LowerLeft = -0.05 -0.05 -1.
+LowerLeft = -0.05 -0.05 -.25
 UpperRight = 0.05  0.05  0.
-Cells = 10 10 100
+Cells = 10 10 25
 
 [Soil.BC.Top]
 Type = 2 # constant flux

@@ -5,7 +5,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 360
 
 [Soil.Grid]
-Cells = 10 10 100
+Cells = 10 10 25
 
 [Problem]
 Name = benchmarkC12c
