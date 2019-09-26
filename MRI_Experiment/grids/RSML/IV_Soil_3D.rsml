@@ -1,0 +1,2509 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rsml>
+   <metadata>
+      <version>1</version>
+      <unit>mm</unit>
+      <resolution>1</resolution>
+      <last-modified>26-Sep-2019</last-modified>
+      <software>RSWMS</software>
+      <user>m.landl</user>
+      <file-key>DAP8_RootSys_2</file-key>
+   </metadata>
+   <scene>
+      <plant>
+         <root ID="1">
+            <geometry>
+               <polyline>
+                  <point x="-0.21936" y="-0.83166" z="-1.7394"/>
+                  <point x="-0.32904" y="-1.2475" z="-2.6091"/>
+                  <point x="-0.43872" y="-1.6633" z="-3.4788"/>
+                  <point x="-0.5484" y="-2.0792" z="-4.3485"/>
+                  <point x="-0.65808" y="-2.495" z="-5.2182"/>
+                  <point x="-0.76776" y="-2.9108" z="-6.0879"/>
+                  <point x="-0.88914" y="-3.1998" z="-7.0107"/>
+                  <point x="-1.0105" y="-3.4889" z="-7.9336"/>
+                  <point x="-1.1319" y="-3.7779" z="-8.8564"/>
+                  <point x="-1.2533" y="-4.0669" z="-9.7793"/>
+                  <point x="-1.3747" y="-4.356" z="-10.702"/>
+                  <point x="-1.496" y="-4.645" z="-11.625"/>
+                  <point x="-1.8335" y="-5.3752" z="-12.043"/>
+                  <point x="-2.171" y="-6.1053" z="-12.462"/>
+                  <point x="-2.5084" y="-6.8355" z="-12.88"/>
+                  <point x="-2.8459" y="-7.5657" z="-13.299"/>
+                  <point x="-3.1834" y="-8.2958" z="-13.717"/>
+                  <point x="-3.5889" y="-8.9528" z="-14.007"/>
+                  <point x="-3.9944" y="-9.6097" z="-14.297"/>
+                  <point x="-4.3999" y="-10.267" z="-14.586"/>
+                  <point x="-4.8054" y="-10.924" z="-14.876"/>
+                  <point x="-5.2109" y="-11.58" z="-15.165"/>
+                  <point x="-5.7918" y="-12.244" z="-15.192"/>
+                  <point x="-6.3726" y="-12.907" z="-15.218"/>
+                  <point x="-6.9534" y="-13.571" z="-15.245"/>
+                  <point x="-7.5342" y="-14.234" z="-15.271"/>
+                  <point x="-8.115" y="-14.897" z="-15.298"/>
+                  <point x="-9.0014" y="-14.82" z="-14.857"/>
+                  <point x="-9.8877" y="-14.743" z="-14.417"/>
+                  <point x="-10.774" y="-14.665" z="-13.977"/>
+                  <point x="-11.367" y="-14.243" z="-13.472"/>
+                  <point x="-11.96" y="-13.821" z="-12.966"/>
+                  <point x="-12.658" y="-14.047" z="-12.59"/>
+                  <point x="-13.355" y="-14.272" z="-12.213"/>
+                  <point x="-14.052" y="-14.498" z="-11.837"/>
+                  <point x="-14.75" y="-14.724" z="-11.461"/>
+                  <point x="-15.138" y="-15.456" z="-11.602"/>
+                  <point x="-15.526" y="-16.189" z="-11.743"/>
+                  <point x="-15.914" y="-16.922" z="-11.885"/>
+                  <point x="-16.174" y="-17.679" z="-12.067"/>
+                  <point x="-16.435" y="-18.435" z="-12.25"/>
+                  <point x="-16.695" y="-19.192" z="-12.433"/>
+                  <point x="-16.956" y="-19.949" z="-12.616"/>
+                  <point x="-17.427" y="-20.51" z="-12.741"/>
+                  <point x="-17.899" y="-21.072" z="-12.867"/>
+                  <point x="-18.37" y="-21.633" z="-12.993"/>
+                  <point x="-19.013" y="-22.128" z="-12.934"/>
+                  <point x="-19.656" y="-22.622" z="-12.875"/>
+                  <point x="-20.155" y="-23.237" z="-13.341"/>
+                  <point x="-20.654" y="-23.851" z="-13.807"/>
+                  <point x="-21.154" y="-24.466" z="-14.274"/>
+                  <point x="-21.421" y="-24.82" z="-14.816"/>
+                  <point x="-21.689" y="-25.175" z="-15.359"/>
+                  <point x="-21.956" y="-25.529" z="-15.901"/>
+                  <point x="-22.357" y="-25.996" z="-16.369"/>
+                  <point x="-22.758" y="-26.463" z="-16.837"/>
+                  <point x="-23.159" y="-26.93" z="-17.304"/>
+                  <point x="-23.56" y="-27.397" z="-17.772"/>
+                  <point x="-23.949" y="-28.101" z="-18.332"/>
+                  <point x="-23.925" y="-28.351" z="-19.237"/>
+                  <point x="-23.901" y="-28.6" z="-20.143"/>
+                  <point x="-23.878" y="-28.849" z="-21.048"/>
+                  <point x="-23.854" y="-29.099" z="-21.953"/>
+                  <point x="-23.83" y="-29.348" z="-22.858"/>
+                  <point x="-23.905" y="-29.279" z="-23.712"/>
+                  <point x="-23.979" y="-29.21" z="-24.566"/>
+                  <point x="-24.053" y="-29.142" z="-25.42"/>
+                  <point x="-24.128" y="-29.073" z="-26.275"/>
+                  <point x="-24.202" y="-29.004" z="-27.129"/>
+                  <point x="-24.005" y="-29.152" z="-27.962"/>
+                  <point x="-23.809" y="-29.301" z="-28.795"/>
+                  <point x="-23.613" y="-29.449" z="-29.628"/>
+                  <point x="-23.416" y="-29.597" z="-30.461"/>
+                  <point x="-23.22" y="-29.745" z="-31.294"/>
+                  <point x="-23.02" y="-29.948" z="-32.061"/>
+                  <point x="-22.819" y="-30.151" z="-32.828"/>
+                  <point x="-22.619" y="-30.354" z="-33.594"/>
+                  <point x="-22.419" y="-30.557" z="-34.361"/>
+                  <point x="-22.367" y="-30.673" z="-35.162"/>
+                  <point x="-22.315" y="-30.789" z="-35.964"/>
+                  <point x="-22.263" y="-30.906" z="-36.766"/>
+                  <point x="-22.211" y="-31.022" z="-37.568"/>
+                  <point x="-22.104" y="-31.067" z="-38.321"/>
+                  <point x="-21.997" y="-31.112" z="-39.073"/>
+                  <point x="-21.89" y="-31.157" z="-39.826"/>
+                  <point x="-21.783" y="-31.202" z="-40.579"/>
+                  <point x="-21.802" y="-31.31" z="-41.53"/>
+                  <point x="-21.822" y="-31.419" z="-42.481"/>
+                  <point x="-21.841" y="-31.527" z="-43.432"/>
+                  <point x="-21.86" y="-31.636" z="-44.383"/>
+                  <point x="-21.88" y="-31.744" z="-45.334"/>
+                  <point x="-21.72" y="-31.649" z="-46.214"/>
+                  <point x="-21.561" y="-31.553" z="-47.095"/>
+               </polyline>
+            </geometry>
+            <properties>
+               <length value="81.841"/>
+               <type value="1"/>
+               <parent-branch value="1"/>
+               <parent-node value="-1"/>
+            </properties>
+            <functions>
+               <function domain="polyline" name="emergence_time">
+                  <sample value="0.21"/>
+                  <sample value="0.31"/>
+                  <sample value="0.42"/>
+                  <sample value="0.52"/>
+                  <sample value="0.62"/>
+                  <sample value="0.73"/>
+                  <sample value="0.83"/>
+                  <sample value="0.93"/>
+                  <sample value="1.04"/>
+                  <sample value="1.14"/>
+                  <sample value="1.25"/>
+                  <sample value="1.35"/>
+                  <sample value="1.45"/>
+                  <sample value="1.55"/>
+                  <sample value="1.64"/>
+                  <sample value="1.74"/>
+                  <sample value="1.84"/>
+                  <sample value="1.92"/>
+                  <sample value="2.01"/>
+                  <sample value="2.1"/>
+                  <sample value="2.19"/>
+                  <sample value="2.28"/>
+                  <sample value="2.37"/>
+                  <sample value="2.47"/>
+                  <sample value="2.56"/>
+                  <sample value="2.65"/>
+                  <sample value="2.75"/>
+                  <sample value="2.86"/>
+                  <sample value="2.96"/>
+                  <sample value="3.07"/>
+                  <sample value="3.16"/>
+                  <sample value="3.26"/>
+                  <sample value="3.35"/>
+                  <sample value="3.43"/>
+                  <sample value="3.52"/>
+                  <sample value="3.61"/>
+                  <sample value="3.7"/>
+                  <sample value="3.79"/>
+                  <sample value="3.88"/>
+                  <sample value="3.97"/>
+                  <sample value="4.05"/>
+                  <sample value="4.14"/>
+                  <sample value="4.23"/>
+                  <sample value="4.31"/>
+                  <sample value="4.39"/>
+                  <sample value="4.47"/>
+                  <sample value="4.56"/>
+                  <sample value="4.64"/>
+                  <sample value="4.74"/>
+                  <sample value="4.84"/>
+                  <sample value="4.94"/>
+                  <sample value="5.01"/>
+                  <sample value="5.09"/>
+                  <sample value="5.16"/>
+                  <sample value="5.25"/>
+                  <sample value="5.33"/>
+                  <sample value="5.41"/>
+                  <sample value="5.49"/>
+                  <sample value="5.6"/>
+                  <sample value="5.7"/>
+                  <sample value="5.8"/>
+                  <sample value="5.9"/>
+                  <sample value="6"/>
+                  <sample value="6.07"/>
+                  <sample value="6.14"/>
+                  <sample value="6.21"/>
+                  <sample value="6.27"/>
+                  <sample value="6.34"/>
+                  <sample value="6.41"/>
+                  <sample value="6.47"/>
+                  <sample value="6.54"/>
+                  <sample value="6.61"/>
+                  <sample value="6.68"/>
+                  <sample value="6.74"/>
+                  <sample value="6.81"/>
+                  <sample value="6.87"/>
+                  <sample value="6.94"/>
+                  <sample value="7"/>
+                  <sample value="7.06"/>
+                  <sample value="7.13"/>
+                  <sample value="7.19"/>
+                  <sample value="7.25"/>
+                  <sample value="7.31"/>
+                  <sample value="7.37"/>
+                  <sample value="7.43"/>
+                  <sample value="7.49"/>
+                  <sample value="7.56"/>
+                  <sample value="7.64"/>
+                  <sample value="7.71"/>
+                  <sample value="7.79"/>
+                  <sample value="7.86"/>
+                  <sample value="7.93"/>
+                  <sample value="8"/>
+               </function>
+               <function1 domain="polyline" name="diameter">
+                  <sample value="3.35986842613861"/>
+                  <sample value="3.35986842613861"/>
+                  <sample value="3.35986842613861"/>
+                  <sample value="3.35986842613861"/>
+                  <sample value="3.35986842613861"/>
+                  <sample value="3.35983379653093"/>
+                  <sample value="3.35998123313104"/>
+                  <sample value="3.35998123313104"/>
+                  <sample value="3.35998123313104"/>
+                  <sample value="3.35998123313104"/>
+                  <sample value="3.35998123313104"/>
+                  <sample value="3.36001570755963"/>
+                  <sample value="3.35999424596329"/>
+                  <sample value="3.35999424596329"/>
+                  <sample value="3.35999424596329"/>
+                  <sample value="3.35999424596329"/>
+                  <sample value="3.35999229506906"/>
+                  <sample value="3.28764122800842"/>
+                  <sample value="3.10025251109865"/>
+                  <sample value="2.91282518917921"/>
+                  <sample value="2.72539786725978"/>
+                  <sample value="2.53800132652874"/>
+                  <sample value="2.53599289111579"/>
+                  <sample value="2.72323612326195"/>
+                  <sample value="2.91051544005489"/>
+                  <sample value="3.09779475684783"/>
+                  <sample value="3.28503798899399"/>
+                  <sample value="3.35989493666137"/>
+                  <sample value="3.35989493666137"/>
+                  <sample value="3.35989493666137"/>
+                  <sample value="3.3600035537158"/>
+                  <sample value="3.3600035537158"/>
+                  <sample value="3.31244255595553"/>
+                  <sample value="3.20233815684107"/>
+                  <sample value="3.0922723908491"/>
+                  <sample value="2.98220662485713"/>
+                  <sample value="2.79662539421602"/>
+                  <sample value="2.38642541487388"/>
+                  <sample value="1.97622543553173"/>
+                  <sample value="1.72328191624808"/>
+                  <sample value="1.72328191624808"/>
+                  <sample value="1.72328191624808"/>
+                  <sample value="1.72328191624808"/>
+                  <sample value="1.72324409017076"/>
+                  <sample value="1.72324409017076"/>
+                  <sample value="1.72324409017076"/>
+                  <sample value="1.72327169554196"/>
+                  <sample value="1.72327169554196"/>
+                  <sample value="1.67795688427073"/>
+                  <sample value="1.58276839687418"/>
+                  <sample value="1.48761454866519"/>
+                  <sample value="1.43806610538881"/>
+                  <sample value="1.43806610538881"/>
+                  <sample value="1.43809099922119"/>
+                  <sample value="1.43806771229756"/>
+                  <sample value="1.43806771229756"/>
+                  <sample value="1.43806771229756"/>
+                  <sample value="1.43806771229756"/>
+                  <sample value="1.43808700352211"/>
+                  <sample value="1.39453757312654"/>
+                  <sample value="1.30411479029664"/>
+                  <sample value="1.21372589906451"/>
+                  <sample value="1.12333700783238"/>
+                  <sample value="1.03291422500249"/>
+                  <sample value="0.984436858060067"/>
+                  <sample value="0.98010681624078"/>
+                  <sample value="0.975776774421494"/>
+                  <sample value="0.971446732602207"/>
+                  <sample value="0.967127935279837"/>
+                  <sample value="0.953321126095549"/>
+                  <sample value="0.929944276281999"/>
+                  <sample value="0.906530785638019"/>
+                  <sample value="0.883153935824469"/>
+                  <sample value="0.859750341815138"/>
+                  <sample value="0.847988248060239"/>
+                  <sample value="0.847988248060239"/>
+                  <sample value="0.847988248060239"/>
+                  <sample value="0.847988248060239"/>
+                  <sample value="0.847989926511428"/>
+                  <sample value="0.847989926511428"/>
+                  <sample value="0.847989926511428"/>
+                  <sample value="0.847989926511428"/>
+                  <sample value="0.847984925839202"/>
+                  <sample value="0.847996059802672"/>
+                  <sample value="0.847996059802672"/>
+                  <sample value="0.847984925839202"/>
+                  <sample value="0.847988548077517"/>
+                  <sample value="0.847988548077517"/>
+                  <sample value="0.847988548077517"/>
+                  <sample value="0.847988548077517"/>
+                  <sample value="0.847979691152749"/>
+                  <sample value="0.847963188280094"/>
+                  <sample value="0.847963188280094"/>
+               </function1>
+            </functions>
+            <root ID="2">
+               <geometry>
+                  <polyline>
+                     <point x="-10.901" y="-13.918" z="-14.406"/>
+                     <point x="-11.028" y="-13.17" z="-14.835"/>
+                     <point x="-11.155" y="-12.423" z="-15.265"/>
+                     <point x="-11.283" y="-11.676" z="-15.694"/>
+                     <point x="-11.41" y="-10.928" z="-16.123"/>
+                     <point x="-11.537" y="-10.181" z="-16.553"/>
+                     <point x="-11.664" y="-9.4338" z="-16.982"/>
+                     <point x="-12.441" y="-9.1994" z="-17.313"/>
+                     <point x="-13.219" y="-8.965" z="-17.644"/>
+                     <point x="-13.996" y="-8.7306" z="-17.974"/>
+                     <point x="-14.774" y="-8.4962" z="-18.305"/>
+                     <point x="-15.551" y="-8.2618" z="-18.636"/>
+                     <point x="-16.418" y="-8.0991" z="-19.057"/>
+                     <point x="-17.284" y="-7.9364" z="-19.479"/>
+                     <point x="-18.151" y="-7.7737" z="-19.9"/>
+                     <point x="-19.017" y="-7.611" z="-20.322"/>
+                     <point x="-19.53" y="-7.4451" z="-21.075"/>
+                     <point x="-20.044" y="-7.2791" z="-21.828"/>
+                     <point x="-20.557" y="-7.1131" z="-22.581"/>
+                     <point x="-21.322" y="-7.3304" z="-23.043"/>
+                     <point x="-22.086" y="-7.5477" z="-23.506"/>
+                     <point x="-22.851" y="-7.765" z="-23.968"/>
+                     <point x="-23.616" y="-7.9823" z="-24.43"/>
+                     <point x="-24.38" y="-8.0007" z="-24.959"/>
+                     <point x="-25.144" y="-8.019" z="-25.489"/>
+                     <point x="-25.909" y="-8.0374" z="-26.018"/>
+                     <point x="-26.66" y="-8.1874" z="-26.621"/>
+                     <point x="-27.41" y="-8.3375" z="-27.224"/>
+                     <point x="-28.161" y="-8.4875" z="-27.827"/>
+                     <point x="-28.912" y="-8.6375" z="-28.43"/>
+                     <point x="-29.663" y="-8.7876" z="-29.033"/>
+                     <point x="-30.298" y="-8.8854" z="-29.539"/>
+                     <point x="-30.932" y="-8.9832" z="-30.045"/>
+                     <point x="-31.567" y="-9.081" z="-30.551"/>
+                     <point x="-31.619" y="-9.126" z="-31.256"/>
+                     <point x="-31.67" y="-9.171" z="-31.961"/>
+                     <point x="-31.712" y="-9.6286" z="-32.547"/>
+                     <point x="-31.754" y="-10.086" z="-33.134"/>
+                     <point x="-31.796" y="-10.544" z="-33.72"/>
+                     <point x="-31.752" y="-11.079" z="-34.303"/>
+                     <point x="-31.707" y="-11.615" z="-34.886"/>
+                     <point x="-31.663" y="-12.151" z="-35.469"/>
+                     <point x="-31.618" y="-12.686" z="-36.052"/>
+                     <point x="-31.591" y="-13.127" z="-36.591"/>
+                     <point x="-31.564" y="-13.568" z="-37.129"/>
+                     <point x="-31.536" y="-14.009" z="-37.668"/>
+                     <point x="-31.57" y="-14.067" z="-38.363"/>
+                     <point x="-31.604" y="-14.126" z="-39.058"/>
+                     <point x="-31.637" y="-14.185" z="-39.753"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="41.972"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="30"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="3.18"/>
+                     <sample value="3.29"/>
+                     <sample value="3.41"/>
+                     <sample value="3.52"/>
+                     <sample value="3.63"/>
+                     <sample value="3.74"/>
+                     <sample value="3.86"/>
+                     <sample value="3.97"/>
+                     <sample value="4.08"/>
+                     <sample value="4.19"/>
+                     <sample value="4.31"/>
+                     <sample value="4.42"/>
+                     <sample value="4.55"/>
+                     <sample value="4.67"/>
+                     <sample value="4.8"/>
+                     <sample value="4.93"/>
+                     <sample value="5.05"/>
+                     <sample value="5.17"/>
+                     <sample value="5.28"/>
+                     <sample value="5.4"/>
+                     <sample value="5.52"/>
+                     <sample value="5.64"/>
+                     <sample value="5.76"/>
+                     <sample value="5.88"/>
+                     <sample value="6"/>
+                     <sample value="6.1"/>
+                     <sample value="6.2"/>
+                     <sample value="6.3"/>
+                     <sample value="6.4"/>
+                     <sample value="6.5"/>
+                     <sample value="6.6"/>
+                     <sample value="6.69"/>
+                     <sample value="6.77"/>
+                     <sample value="6.86"/>
+                     <sample value="6.93"/>
+                     <sample value="7"/>
+                     <sample value="7.08"/>
+                     <sample value="7.16"/>
+                     <sample value="7.24"/>
+                     <sample value="7.32"/>
+                     <sample value="7.4"/>
+                     <sample value="7.48"/>
+                     <sample value="7.57"/>
+                     <sample value="7.64"/>
+                     <sample value="7.71"/>
+                     <sample value="7.78"/>
+                     <sample value="7.86"/>
+                     <sample value="7.93"/>
+                     <sample value="8"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="3.27696120244536"/>
+                     <sample value="3.059568860439"/>
+                     <sample value="2.84213998190458"/>
+                     <sample value="2.62474763989823"/>
+                     <sample value="2.40735529789187"/>
+                     <sample value="2.18992641935745"/>
+                     <sample value="1.97251143629514"/>
+                     <sample value="1.76340671077047"/>
+                     <sample value="1.56824305709879"/>
+                     <sample value="1.37311570619006"/>
+                     <sample value="1.17798835528134"/>
+                     <sample value="0.982824701609654"/>
+                     <sample value="0.844721660909394"/>
+                     <sample value="0.773149987595937"/>
+                     <sample value="0.701610891284444"/>
+                     <sample value="0.630039217970987"/>
+                     <sample value="0.615758932992853"/>
+                     <sample value="0.659150303431394"/>
+                     <sample value="0.702583612785593"/>
+                     <sample value="0.754578738977257"/>
+                     <sample value="0.814745635721877"/>
+                     <sample value="0.874947150934129"/>
+                     <sample value="0.935158836664898"/>
+                     <sample value="0.92839527743327"/>
+                     <sample value="0.854118178586159"/>
+                     <sample value="0.779866922609978"/>
+                     <sample value="0.742128633243868"/>
+                     <sample value="0.742128633243868"/>
+                     <sample value="0.742128633243868"/>
+                     <sample value="0.742128633243868"/>
+                     <sample value="0.742153679368173"/>
+                     <sample value="0.742154754565039"/>
+                     <sample value="0.742154754565039"/>
+                     <sample value="0.74212490431976"/>
+                     <sample value="0.742149082788716"/>
+                     <sample value="0.742149082788716"/>
+                     <sample value="0.74212350147141"/>
+                     <sample value="0.74212350147141"/>
+                     <sample value="0.74212350147141"/>
+                     <sample value="0.758624245124399"/>
+                     <sample value="0.791298996991231"/>
+                     <sample value="0.823933607885254"/>
+                     <sample value="0.856619162283831"/>
+                     <sample value="0.872749794169258"/>
+                     <sample value="0.872749794169258"/>
+                     <sample value="0.872749794169258"/>
+                     <sample value="0.867570939376059"/>
+                     <sample value="0.857133653055222"/>
+                     <sample value="0.846696366734386"/>
+                  </function1>
+               </functions>
+               <root/>
+            </root>
+            <root ID="3">
+               <geometry>
+                  <polyline>
+                     <point x="-11.141" y="-15.541" z="-14.114"/>
+                     <point x="-11.508" y="-16.416" z="-14.252"/>
+                     <point x="-11.875" y="-17.291" z="-14.39"/>
+                     <point x="-12.242" y="-18.167" z="-14.528"/>
+                     <point x="-12.609" y="-19.042" z="-14.665"/>
+                     <point x="-13.028" y="-19.796" z="-15.118"/>
+                     <point x="-13.447" y="-20.55" z="-15.571"/>
+                     <point x="-13.866" y="-21.304" z="-16.023"/>
+                     <point x="-14.285" y="-22.058" z="-16.476"/>
+                     <point x="-14.704" y="-22.813" z="-16.929"/>
+                     <point x="-15.123" y="-23.567" z="-17.381"/>
+                     <point x="-15.361" y="-24.167" z="-17.957"/>
+                     <point x="-15.599" y="-24.767" z="-18.533"/>
+                     <point x="-15.838" y="-25.367" z="-19.109"/>
+                     <point x="-16.076" y="-25.968" z="-19.685"/>
+                     <point x="-16.314" y="-26.568" z="-20.26"/>
+                     <point x="-16.552" y="-27.168" z="-20.836"/>
+                     <point x="-16.829" y="-27.671" z="-21.528"/>
+                     <point x="-17.106" y="-28.174" z="-22.22"/>
+                     <point x="-17.383" y="-28.676" z="-22.912"/>
+                     <point x="-17.66" y="-29.179" z="-23.604"/>
+                     <point x="-17.937" y="-29.682" z="-24.296"/>
+                     <point x="-18.215" y="-30.184" z="-24.988"/>
+                     <point x="-18.492" y="-30.687" z="-25.68"/>
+                     <point x="-18.769" y="-31.19" z="-26.372"/>
+                     <point x="-18.928" y="-31.398" z="-27.324"/>
+                     <point x="-19.087" y="-31.607" z="-28.276"/>
+                     <point x="-19.246" y="-31.816" z="-29.229"/>
+                     <point x="-19.405" y="-32.025" z="-30.181"/>
+                     <point x="-19.565" y="-32.234" z="-31.133"/>
+                     <point x="-19.724" y="-32.443" z="-32.085"/>
+                     <point x="-19.671" y="-32.444" z="-32.997"/>
+                     <point x="-19.618" y="-32.444" z="-33.909"/>
+                     <point x="-19.565" y="-32.445" z="-34.821"/>
+                     <point x="-19.512" y="-32.446" z="-35.733"/>
+                     <point x="-19.459" y="-32.447" z="-36.646"/>
+                     <point x="-19.407" y="-32.448" z="-37.558"/>
+                     <point x="-19.354" y="-32.449" z="-38.47"/>
+                     <point x="-19.301" y="-32.45" z="-39.382"/>
+                     <point x="-19.37" y="-32.407" z="-40.365"/>
+                     <point x="-19.44" y="-32.365" z="-41.349"/>
+                     <point x="-19.509" y="-32.322" z="-42.333"/>
+                     <point x="-19.579" y="-32.28" z="-43.316"/>
+                     <point x="-19.649" y="-32.237" z="-44.3"/>
+                     <point x="-19.718" y="-32.194" z="-45.284"/>
+                     <point x="-19.788" y="-32.152" z="-46.268"/>
+                     <point x="-19.857" y="-32.109" z="-47.251"/>
+                     <point x="-19.84" y="-32.209" z="-48.207"/>
+                     <point x="-19.822" y="-32.309" z="-49.162"/>
+                     <point x="-19.805" y="-32.409" z="-50.117"/>
+                     <point x="-19.787" y="-32.509" z="-51.072"/>
+                     <point x="-19.77" y="-32.609" z="-52.027"/>
+                     <point x="-19.752" y="-32.708" z="-52.982"/>
+                     <point x="-19.735" y="-32.808" z="-53.938"/>
+                     <point x="-19.717" y="-32.908" z="-54.893"/>
+                     <point x="-19.7" y="-33.008" z="-55.848"/>
+                     <point x="-19.683" y="-33.108" z="-56.803"/>
+                     <point x="-19.716" y="-33.064" z="-57.649"/>
+                     <point x="-19.749" y="-33.02" z="-58.496"/>
+                     <point x="-19.782" y="-32.976" z="-59.342"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="56.306"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="30"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="3.12"/>
+                     <sample value="3.17"/>
+                     <sample value="3.22"/>
+                     <sample value="3.27"/>
+                     <sample value="3.32"/>
+                     <sample value="3.37"/>
+                     <sample value="3.42"/>
+                     <sample value="3.48"/>
+                     <sample value="3.53"/>
+                     <sample value="3.58"/>
+                     <sample value="3.63"/>
+                     <sample value="3.68"/>
+                     <sample value="3.72"/>
+                     <sample value="3.77"/>
+                     <sample value="3.81"/>
+                     <sample value="3.86"/>
+                     <sample value="3.9"/>
+                     <sample value="3.95"/>
+                     <sample value="4"/>
+                     <sample value="4.05"/>
+                     <sample value="4.09"/>
+                     <sample value="4.14"/>
+                     <sample value="4.19"/>
+                     <sample value="4.24"/>
+                     <sample value="4.29"/>
+                     <sample value="4.34"/>
+                     <sample value="4.39"/>
+                     <sample value="4.44"/>
+                     <sample value="4.49"/>
+                     <sample value="4.55"/>
+                     <sample value="4.6"/>
+                     <sample value="4.65"/>
+                     <sample value="4.7"/>
+                     <sample value="4.74"/>
+                     <sample value="4.79"/>
+                     <sample value="4.84"/>
+                     <sample value="4.89"/>
+                     <sample value="4.94"/>
+                     <sample value="4.98"/>
+                     <sample value="5.04"/>
+                     <sample value="5.09"/>
+                     <sample value="5.14"/>
+                     <sample value="5.19"/>
+                     <sample value="5.25"/>
+                     <sample value="5.3"/>
+                     <sample value="5.35"/>
+                     <sample value="5.4"/>
+                     <sample value="5.45"/>
+                     <sample value="5.5"/>
+                     <sample value="5.55"/>
+                     <sample value="5.61"/>
+                     <sample value="5.66"/>
+                     <sample value="5.71"/>
+                     <sample value="5.76"/>
+                     <sample value="5.81"/>
+                     <sample value="5.86"/>
+                     <sample value="5.91"/>
+                     <sample value="5.96"/>
+                     <sample value="6"/>
+                     <sample value="6"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="3.24857683225314"/>
+                     <sample value="2.94295765863234"/>
+                     <sample value="2.63733848501154"/>
+                     <sample value="2.33171931139074"/>
+                     <sample value="2.02610013776994"/>
+                     <sample value="1.85051805791211"/>
+                     <sample value="1.85051805791211"/>
+                     <sample value="1.85051805791211"/>
+                     <sample value="1.85051805791211"/>
+                     <sample value="1.85051805791211"/>
+                     <sample value="1.85051805791211"/>
+                     <sample value="1.81869816160278"/>
+                     <sample value="1.75236903998598"/>
+                     <sample value="1.68603991836918"/>
+                     <sample value="1.61967400855403"/>
+                     <sample value="1.55334488693723"/>
+                     <sample value="1.48699616286219"/>
+                     <sample value="1.42768534268107"/>
+                     <sample value="1.37630963135152"/>
+                     <sample value="1.32496932712832"/>
+                     <sample value="1.27359361579877"/>
+                     <sample value="1.22221790446922"/>
+                     <sample value="1.17087760024603"/>
+                     <sample value="1.11950188891647"/>
+                     <sample value="1.06812617758692"/>
+                     <sample value="1.04199981672203"/>
+                     <sample value="1.04203203986632"/>
+                     <sample value="1.04203203986632"/>
+                     <sample value="1.04203203986632"/>
+                     <sample value="1.04203203986632"/>
+                     <sample value="1.04203203986632"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.04203159754498"/>
+                     <sample value="1.0420195667666"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04200762441679"/>
+                     <sample value="1.04201818056174"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.04202222326873"/>
+                     <sample value="1.0420330717906"/>
+                     <sample value="0.904122272690731"/>
+                     <sample value="0.595029622411338"/>
+                     <sample value="0.285959489809235"/>
+                  </function1>
+               </functions>
+               <root ID="4">
+                  <geometry>
+                     <polyline>
+                        <point x="-19.883" y="-33.114" z="-57.75"/>
+                        <point x="-20.083" y="-33.12" z="-58.698"/>
+                        <point x="-20.284" y="-33.126" z="-59.645"/>
+                        <point x="-20.484" y="-33.132" z="-60.592"/>
+                        <point x="-20.685" y="-33.138" z="-61.54"/>
+                        <point x="-20.885" y="-33.145" z="-62.487"/>
+                        <point x="-21.085" y="-33.151" z="-63.434"/>
+                        <point x="-21.118" y="-33.047" z="-64.417"/>
+                        <point x="-21.152" y="-32.944" z="-65.4"/>
+                        <point x="-21.185" y="-32.841" z="-66.383"/>
+                        <point x="-21.218" y="-32.738" z="-67.366"/>
+                        <point x="-21.251" y="-32.635" z="-68.349"/>
+                        <point x="-21.284" y="-32.532" z="-69.332"/>
+                        <point x="-21.317" y="-32.428" z="-70.315"/>
+                        <point x="-21.35" y="-32.325" z="-71.298"/>
+                        <point x="-21.383" y="-32.222" z="-72.281"/>
+                        <point x="-21.416" y="-32.119" z="-73.264"/>
+                        <point x="-21.449" y="-32.016" z="-74.246"/>
+                        <point x="-21.482" y="-31.913" z="-75.229"/>
+                        <point x="-21.516" y="-31.809" z="-76.212"/>
+                        <point x="-21.549" y="-31.706" z="-77.195"/>
+                        <point x="-21.53" y="-31.674" z="-78.18"/>
+                        <point x="-21.511" y="-31.642" z="-79.164"/>
+                        <point x="-21.492" y="-31.61" z="-80.149"/>
+                        <point x="-21.473" y="-31.578" z="-81.133"/>
+                        <point x="-21.454" y="-31.546" z="-82.118"/>
+                        <point x="-21.435" y="-31.514" z="-83.102"/>
+                        <point x="-21.416" y="-31.482" z="-84.087"/>
+                        <point x="-21.397" y="-31.45" z="-85.071"/>
+                        <point x="-21.378" y="-31.418" z="-86.056"/>
+                        <point x="-21.359" y="-31.386" z="-87.04"/>
+                        <point x="-21.527" y="-31.285" z="-87.863"/>
+                        <point x="-21.695" y="-31.184" z="-88.686"/>
+                        <point x="-21.863" y="-31.083" z="-89.508"/>
+                        <point x="-22.031" y="-30.982" z="-90.331"/>
+                        <point x="-22.199" y="-30.881" z="-91.154"/>
+                        <point x="-22.197" y="-30.865" z="-92.145"/>
+                        <point x="-22.195" y="-30.849" z="-93.135"/>
+                        <point x="-22.193" y="-30.834" z="-94.126"/>
+                        <point x="-22.191" y="-30.818" z="-95.116"/>
+                        <point x="-22.19" y="-30.802" z="-96.107"/>
+                        <point x="-22.188" y="-30.787" z="-97.097"/>
+                        <point x="-22.186" y="-30.771" z="-98.088"/>
+                        <point x="-22.184" y="-30.755" z="-99.078"/>
+                        <point x="-22.182" y="-30.74" z="-100.07"/>
+                        <point x="-22.181" y="-30.724" z="-101.06"/>
+                        <point x="-22.179" y="-30.708" z="-102.05"/>
+                        <point x="-22.177" y="-30.693" z="-103.04"/>
+                        <point x="-22.175" y="-30.677" z="-104.03"/>
+                        <point x="-22.173" y="-30.661" z="-105.02"/>
+                        <point x="-22.171" y="-30.646" z="-106.01"/>
+                        <point x="-22.17" y="-30.63" z="-107"/>
+                        <point x="-22.168" y="-30.615" z="-107.99"/>
+                        <point x="-22.166" y="-30.599" z="-108.98"/>
+                        <point x="-22.164" y="-30.583" z="-109.97"/>
+                        <point x="-22.162" y="-30.568" z="-110.96"/>
+                        <point x="-22.209" y="-30.617" z="-111.9"/>
+                        <point x="-22.255" y="-30.667" z="-112.84"/>
+                        <point x="-22.301" y="-30.717" z="-113.77"/>
+                        <point x="-22.347" y="-30.767" z="-114.71"/>
+                        <point x="-22.393" y="-30.816" z="-115.65"/>
+                        <point x="-22.439" y="-30.866" z="-116.58"/>
+                        <point x="-22.486" y="-30.916" z="-117.52"/>
+                        <point x="-22.532" y="-30.966" z="-118.46"/>
+                        <point x="-22.578" y="-31.015" z="-119.39"/>
+                        <point x="-22.624" y="-31.065" z="-120.33"/>
+                        <point x="-22.67" y="-31.115" z="-121.27"/>
+                        <point x="-22.716" y="-31.165" z="-122.2"/>
+                        <point x="-22.767" y="-31.201" z="-123.16"/>
+                        <point x="-22.817" y="-31.237" z="-124.12"/>
+                        <point x="-22.867" y="-31.273" z="-125.07"/>
+                        <point x="-22.917" y="-31.309" z="-126.03"/>
+                        <point x="-22.967" y="-31.345" z="-126.99"/>
+                        <point x="-23.018" y="-31.381" z="-127.95"/>
+                        <point x="-23.014" y="-31.561" z="-128.83"/>
+                        <point x="-23.01" y="-31.74" z="-129.72"/>
+                        <point x="-23.006" y="-31.919" z="-130.6"/>
+                        <point x="-23.002" y="-32.099" z="-131.49"/>
+                     </polyline>
+                  </geometry>
+                  <properties>
+                     <length value="75.153"/>
+                     <type value="2"/>
+                     <parent-branch value="3"/>
+                     <parent-node value="57"/>
+                  </properties>
+                  <functions>
+                     <function domain="polyline" name="emergence_time">
+                        <sample value="6.03"/>
+                        <sample value="6.05"/>
+                        <sample value="6.08"/>
+                        <sample value="6.1"/>
+                        <sample value="6.13"/>
+                        <sample value="6.15"/>
+                        <sample value="6.18"/>
+                        <sample value="6.21"/>
+                        <sample value="6.23"/>
+                        <sample value="6.26"/>
+                        <sample value="6.29"/>
+                        <sample value="6.31"/>
+                        <sample value="6.34"/>
+                        <sample value="6.36"/>
+                        <sample value="6.39"/>
+                        <sample value="6.42"/>
+                        <sample value="6.44"/>
+                        <sample value="6.47"/>
+                        <sample value="6.5"/>
+                        <sample value="6.52"/>
+                        <sample value="6.55"/>
+                        <sample value="6.58"/>
+                        <sample value="6.6"/>
+                        <sample value="6.63"/>
+                        <sample value="6.65"/>
+                        <sample value="6.68"/>
+                        <sample value="6.71"/>
+                        <sample value="6.73"/>
+                        <sample value="6.76"/>
+                        <sample value="6.78"/>
+                        <sample value="6.81"/>
+                        <sample value="6.83"/>
+                        <sample value="6.86"/>
+                        <sample value="6.88"/>
+                        <sample value="6.9"/>
+                        <sample value="6.92"/>
+                        <sample value="6.95"/>
+                        <sample value="6.98"/>
+                        <sample value="7"/>
+                        <sample value="7.03"/>
+                        <sample value="7.06"/>
+                        <sample value="7.08"/>
+                        <sample value="7.11"/>
+                        <sample value="7.13"/>
+                        <sample value="7.16"/>
+                        <sample value="7.19"/>
+                        <sample value="7.21"/>
+                        <sample value="7.24"/>
+                        <sample value="7.27"/>
+                        <sample value="7.29"/>
+                        <sample value="7.32"/>
+                        <sample value="7.35"/>
+                        <sample value="7.37"/>
+                        <sample value="7.4"/>
+                        <sample value="7.42"/>
+                        <sample value="7.45"/>
+                        <sample value="7.48"/>
+                        <sample value="7.5"/>
+                        <sample value="7.53"/>
+                        <sample value="7.55"/>
+                        <sample value="7.58"/>
+                        <sample value="7.6"/>
+                        <sample value="7.63"/>
+                        <sample value="7.65"/>
+                        <sample value="7.68"/>
+                        <sample value="7.7"/>
+                        <sample value="7.73"/>
+                        <sample value="7.75"/>
+                        <sample value="7.78"/>
+                        <sample value="7.8"/>
+                        <sample value="7.83"/>
+                        <sample value="7.85"/>
+                        <sample value="7.88"/>
+                        <sample value="7.9"/>
+                        <sample value="7.93"/>
+                        <sample value="7.95"/>
+                        <sample value="7.98"/>
+                        <sample value="8"/>
+                     </function>
+                     <function1 domain="polyline" name="diameter">
+                        <sample value="1.06838541090336"/>
+                        <sample value="1.12038952523981"/>
+                        <sample value="1.17239363957627"/>
+                        <sample value="1.22443062629852"/>
+                        <sample value="1.27643474063498"/>
+                        <sample value="1.32843885497143"/>
+                        <sample value="1.38045722551684"/>
+                        <sample value="1.41484651544918"/>
+                        <sample value="1.43255060571394"/>
+                        <sample value="1.45028688523372"/>
+                        <sample value="1.46799097549848"/>
+                        <sample value="1.48569506576323"/>
+                        <sample value="1.50343134528301"/>
+                        <sample value="1.52113543554777"/>
+                        <sample value="1.53887171506755"/>
+                        <sample value="1.55657580533231"/>
+                        <sample value="1.57427989559706"/>
+                        <sample value="1.59201617511684"/>
+                        <sample value="1.6097202653816"/>
+                        <sample value="1.62742435564635"/>
+                        <sample value="1.64516063516613"/>
+                        <sample value="1.64112834669652"/>
+                        <sample value="1.61518382446167"/>
+                        <sample value="1.58923930222681"/>
+                        <sample value="1.56329477999195"/>
+                        <sample value="1.53738256724929"/>
+                        <sample value="1.51143804501444"/>
+                        <sample value="1.48549352277958"/>
+                        <sample value="1.45954900054472"/>
+                        <sample value="1.43363678780206"/>
+                        <sample value="1.40770655424811"/>
+                        <sample value="1.3946144288618"/>
+                        <sample value="1.3946144288618"/>
+                        <sample value="1.3946144288618"/>
+                        <sample value="1.3946144288618"/>
+                        <sample value="1.3946144288618"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39461398591164"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39460569702819"/>
+                        <sample value="1.39459307290613"/>
+                        <sample value="1.39459307290613"/>
+                        <sample value="1.39459307290613"/>
+                        <sample value="1.39459307290613"/>
+                        <sample value="1.39459307290613"/>
+                        <sample value="1.39459307290613"/>
+                        <sample value="1.34634741056408"/>
+                        <sample value="1.24554663748623"/>
+                        <sample value="1.14474586440838"/>
+                        <sample value="1.04395664655381"/>
+                     </function1>
+                  </functions>
+                  <root/>
+               </root>
+            </root>
+            <root ID="5">
+               <geometry>
+                  <polyline>
+                     <point x="-7.9398" y="-15.709" z="-15.606"/>
+                     <point x="-7.7645" y="-16.52" z="-15.914"/>
+                     <point x="-7.5892" y="-17.331" z="-16.222"/>
+                     <point x="-7.414" y="-18.143" z="-16.53"/>
+                     <point x="-7.2387" y="-18.954" z="-16.838"/>
+                     <point x="-6.9214" y="-19.721" z="-17.163"/>
+                     <point x="-6.6042" y="-20.488" z="-17.489"/>
+                     <point x="-6.2869" y="-21.254" z="-17.815"/>
+                     <point x="-5.9696" y="-22.021" z="-18.14"/>
+                     <point x="-5.6524" y="-22.788" z="-18.466"/>
+                     <point x="-5.6606" y="-23.427" z="-19.041"/>
+                     <point x="-5.6689" y="-24.065" z="-19.616"/>
+                     <point x="-5.6771" y="-24.704" z="-20.191"/>
+                     <point x="-5.6854" y="-25.342" z="-20.766"/>
+                     <point x="-5.6937" y="-25.981" z="-21.341"/>
+                     <point x="-5.7019" y="-26.62" z="-21.916"/>
+                     <point x="-5.7905" y="-27.353" z="-22"/>
+                     <point x="-5.8792" y="-28.087" z="-22.084"/>
+                     <point x="-5.9678" y="-28.821" z="-22.167"/>
+                     <point x="-6.0987" y="-29.473" z="-22.88"/>
+                     <point x="-6.2296" y="-30.125" z="-23.592"/>
+                     <point x="-6.3605" y="-30.778" z="-24.305"/>
+                     <point x="-6.4914" y="-31.43" z="-25.017"/>
+                     <point x="-6.6223" y="-32.082" z="-25.729"/>
+                     <point x="-6.7532" y="-32.735" z="-26.442"/>
+                     <point x="-6.8102" y="-33.264" z="-27.057"/>
+                     <point x="-6.8672" y="-33.794" z="-27.672"/>
+                     <point x="-6.9242" y="-34.324" z="-28.288"/>
+                     <point x="-6.9812" y="-34.854" z="-28.903"/>
+                     <point x="-7.0381" y="-35.383" z="-29.518"/>
+                     <point x="-7.3188" y="-35.889" z="-30.092"/>
+                     <point x="-7.5995" y="-36.394" z="-30.666"/>
+                     <point x="-7.8801" y="-36.9" z="-31.24"/>
+                     <point x="-8.1608" y="-37.405" z="-31.814"/>
+                     <point x="-8.0954" y="-37.454" z="-32.706"/>
+                     <point x="-8.03" y="-37.502" z="-33.598"/>
+                     <point x="-7.9646" y="-37.55" z="-34.49"/>
+                     <point x="-7.8992" y="-37.599" z="-35.383"/>
+                     <point x="-7.8338" y="-37.647" z="-36.275"/>
+                     <point x="-7.7684" y="-37.695" z="-37.167"/>
+                     <point x="-7.703" y="-37.744" z="-38.059"/>
+                     <point x="-7.7652" y="-37.656" z="-39.039"/>
+                     <point x="-7.8275" y="-37.569" z="-40.02"/>
+                     <point x="-7.8897" y="-37.482" z="-41"/>
+                     <point x="-7.9519" y="-37.395" z="-41.98"/>
+                     <point x="-8.0142" y="-37.308" z="-42.961"/>
+                     <point x="-8.0764" y="-37.221" z="-43.941"/>
+                     <point x="-8.131" y="-37.315" z="-44.802"/>
+                     <point x="-8.1856" y="-37.409" z="-45.663"/>
+                     <point x="-8.2402" y="-37.503" z="-46.523"/>
+                     <point x="-8.2948" y="-37.597" z="-47.384"/>
+                     <point x="-8.3494" y="-37.69" z="-48.245"/>
+                     <point x="-8.2356" y="-37.746" z="-49.177"/>
+                     <point x="-8.1218" y="-37.802" z="-50.109"/>
+                     <point x="-8.008" y="-37.858" z="-51.04"/>
+                     <point x="-7.8942" y="-37.914" z="-51.972"/>
+                     <point x="-7.7804" y="-37.97" z="-52.904"/>
+                     <point x="-7.6666" y="-38.026" z="-53.836"/>
+                     <point x="-7.5528" y="-38.082" z="-54.768"/>
+                     <point x="-7.5114" y="-38.137" z="-55.748"/>
+                     <point x="-7.47" y="-38.192" z="-56.727"/>
+                     <point x="-7.4286" y="-38.246" z="-57.707"/>
+                     <point x="-7.3872" y="-38.301" z="-58.686"/>
+                     <point x="-7.3458" y="-38.356" z="-59.666"/>
+                     <point x="-7.3043" y="-38.41" z="-60.645"/>
+                     <point x="-7.2629" y="-38.465" z="-61.625"/>
+                     <point x="-7.1371" y="-38.676" z="-62.413"/>
+                     <point x="-7.0113" y="-38.886" z="-63.202"/>
+                     <point x="-6.8855" y="-39.097" z="-63.99"/>
+                     <point x="-6.7597" y="-39.308" z="-64.779"/>
+                     <point x="-6.6339" y="-39.518" z="-65.567"/>
+                     <point x="-6.8622" y="-39.315" z="-66.518"/>
+                     <point x="-7.0906" y="-39.112" z="-67.469"/>
+                     <point x="-7.319" y="-38.909" z="-68.42"/>
+                     <point x="-7.5473" y="-38.706" z="-69.371"/>
+                     <point x="-7.5184" y="-38.737" z="-70.148"/>
+                     <point x="-7.4895" y="-38.767" z="-70.925"/>
+                     <point x="-7.4606" y="-38.798" z="-71.701"/>
+                     <point x="-7.4317" y="-38.828" z="-72.478"/>
+                     <point x="-7.4948" y="-38.773" z="-73.281"/>
+                     <point x="-7.5578" y="-38.717" z="-74.084"/>
+                     <point x="-7.6209" y="-38.662" z="-74.887"/>
+                     <point x="-7.684" y="-38.606" z="-75.691"/>
+                     <point x="-7.7471" y="-38.551" z="-76.494"/>
+                     <point x="-7.7211" y="-38.528" z="-77.433"/>
+                     <point x="-7.695" y="-38.506" z="-78.373"/>
+                     <point x="-7.669" y="-38.483" z="-79.313"/>
+                     <point x="-7.643" y="-38.46" z="-80.252"/>
+                     <point x="-7.617" y="-38.438" z="-81.192"/>
+                     <point x="-7.5935" y="-38.431" z="-82.112"/>
+                     <point x="-7.57" y="-38.425" z="-83.033"/>
+                     <point x="-7.5465" y="-38.418" z="-83.954"/>
+                     <point x="-7.523" y="-38.412" z="-84.875"/>
+                     <point x="-7.4994" y="-38.406" z="-85.795"/>
+                     <point x="-7.4759" y="-38.399" z="-86.716"/>
+                     <point x="-7.5328" y="-38.451" z="-87.622"/>
+                     <point x="-7.5897" y="-38.502" z="-88.527"/>
+                     <point x="-7.6466" y="-38.554" z="-89.433"/>
+                     <point x="-7.7035" y="-38.605" z="-90.339"/>
+                     <point x="-7.7604" y="-38.657" z="-91.244"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="89.476"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="27"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.82"/>
+                     <sample value="2.89"/>
+                     <sample value="2.96"/>
+                     <sample value="3.03"/>
+                     <sample value="3.1"/>
+                     <sample value="3.17"/>
+                     <sample value="3.25"/>
+                     <sample value="3.32"/>
+                     <sample value="3.39"/>
+                     <sample value="3.46"/>
+                     <sample value="3.53"/>
+                     <sample value="3.6"/>
+                     <sample value="3.67"/>
+                     <sample value="3.73"/>
+                     <sample value="3.8"/>
+                     <sample value="3.87"/>
+                     <sample value="3.93"/>
+                     <sample value="3.99"/>
+                     <sample value="4.05"/>
+                     <sample value="4.13"/>
+                     <sample value="4.21"/>
+                     <sample value="4.28"/>
+                     <sample value="4.36"/>
+                     <sample value="4.44"/>
+                     <sample value="4.52"/>
+                     <sample value="4.58"/>
+                     <sample value="4.65"/>
+                     <sample value="4.71"/>
+                     <sample value="4.78"/>
+                     <sample value="4.84"/>
+                     <sample value="4.91"/>
+                     <sample value="4.97"/>
+                     <sample value="5.04"/>
+                     <sample value="5.1"/>
+                     <sample value="5.18"/>
+                     <sample value="5.25"/>
+                     <sample value="5.32"/>
+                     <sample value="5.39"/>
+                     <sample value="5.46"/>
+                     <sample value="5.53"/>
+                     <sample value="5.61"/>
+                     <sample value="5.68"/>
+                     <sample value="5.76"/>
+                     <sample value="5.84"/>
+                     <sample value="5.92"/>
+                     <sample value="6"/>
+                     <sample value="6.04"/>
+                     <sample value="6.08"/>
+                     <sample value="6.11"/>
+                     <sample value="6.15"/>
+                     <sample value="6.18"/>
+                     <sample value="6.22"/>
+                     <sample value="6.26"/>
+                     <sample value="6.3"/>
+                     <sample value="6.33"/>
+                     <sample value="6.37"/>
+                     <sample value="6.41"/>
+                     <sample value="6.45"/>
+                     <sample value="6.49"/>
+                     <sample value="6.53"/>
+                     <sample value="6.57"/>
+                     <sample value="6.61"/>
+                     <sample value="6.65"/>
+                     <sample value="6.69"/>
+                     <sample value="6.73"/>
+                     <sample value="6.77"/>
+                     <sample value="6.8"/>
+                     <sample value="6.84"/>
+                     <sample value="6.87"/>
+                     <sample value="6.9"/>
+                     <sample value="6.94"/>
+                     <sample value="6.98"/>
+                     <sample value="7.02"/>
+                     <sample value="7.06"/>
+                     <sample value="7.1"/>
+                     <sample value="7.13"/>
+                     <sample value="7.17"/>
+                     <sample value="7.2"/>
+                     <sample value="7.23"/>
+                     <sample value="7.26"/>
+                     <sample value="7.3"/>
+                     <sample value="7.33"/>
+                     <sample value="7.36"/>
+                     <sample value="7.39"/>
+                     <sample value="7.43"/>
+                     <sample value="7.47"/>
+                     <sample value="7.51"/>
+                     <sample value="7.55"/>
+                     <sample value="7.59"/>
+                     <sample value="7.63"/>
+                     <sample value="7.66"/>
+                     <sample value="7.7"/>
+                     <sample value="7.74"/>
+                     <sample value="7.78"/>
+                     <sample value="7.81"/>
+                     <sample value="7.85"/>
+                     <sample value="7.89"/>
+                     <sample value="7.93"/>
+                     <sample value="7.96"/>
+                     <sample value="8"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="3.23084660317733"/>
+                     <sample value="2.68609808733874"/>
+                     <sample value="2.14134957150015"/>
+                     <sample value="1.59660105566157"/>
+                     <sample value="1.05185253982298"/>
+                     <sample value="0.772771524826502"/>
+                     <sample value="0.822509118232375"/>
+                     <sample value="0.872246711638249"/>
+                     <sample value="0.922020010423451"/>
+                     <sample value="0.971757603829325"/>
+                     <sample value="0.995507825807361"/>
+                     <sample value="0.994014627819332"/>
+                     <sample value="0.992570054466933"/>
+                     <sample value="0.991088440772166"/>
+                     <sample value="0.989606827077399"/>
+                     <sample value="0.988136711901435"/>
+                     <sample value="0.987397857506434"/>
+                     <sample value="0.987397857506434"/>
+                     <sample value="0.987397857506434"/>
+                     <sample value="0.987415724043261"/>
+                     <sample value="0.987415724043261"/>
+                     <sample value="0.987415724043261"/>
+                     <sample value="0.987415724043261"/>
+                     <sample value="0.987415724043261"/>
+                     <sample value="0.987415724043261"/>
+                     <sample value="0.987441546937344"/>
+                     <sample value="0.987441546937344"/>
+                     <sample value="0.987441546937344"/>
+                     <sample value="0.987441546937344"/>
+                     <sample value="0.987402437243628"/>
+                     <sample value="0.987429872638328"/>
+                     <sample value="0.987441991911153"/>
+                     <sample value="0.987429872638328"/>
+                     <sample value="0.987429872638328"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.987431869164372"/>
+                     <sample value="0.979996021447632"/>
+                     <sample value="0.965084020857789"/>
+                     <sample value="0.950172020267946"/>
+                     <sample value="0.935260019678103"/>
+                     <sample value="0.92034801908826"/>
+                     <sample value="0.905426837346525"/>
+                     <sample value="0.897967397206166"/>
+                     <sample value="0.897967397206166"/>
+                     <sample value="0.897967397206166"/>
+                     <sample value="0.897967397206166"/>
+                     <sample value="0.897941056847628"/>
+                     <sample value="0.897968942076378"/>
+                     <sample value="0.897968942076378"/>
+                     <sample value="0.897968942076378"/>
+                     <sample value="0.897968942076378"/>
+                     <sample value="0.897968942076378"/>
+                     <sample value="0.897968942076378"/>
+                     <sample value="0.897978489960375"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897967508928976"/>
+                     <sample value="0.897942405804379"/>
+                     <sample value="0.897942405804379"/>
+                     <sample value="0.897942405804379"/>
+                     <sample value="0.897942405804379"/>
+                     <sample value="0.897942405804379"/>
+                     <sample value="0.897971960813395"/>
+                     <sample value="0.897971960813395"/>
+                     <sample value="0.897971960813395"/>
+                     <sample value="0.897971960813395"/>
+                     <sample value="0.897979712344397"/>
+                     <sample value="0.897979712344397"/>
+                     <sample value="0.897979712344397"/>
+                     <sample value="0.897968166627051"/>
+                     <sample value="0.89796993784305"/>
+                     <sample value="0.89796993784305"/>
+                     <sample value="0.89796993784305"/>
+                     <sample value="0.89796993784305"/>
+                     <sample value="0.897981057387577"/>
+                     <sample value="0.897946420184088"/>
+                     <sample value="0.897946420184088"/>
+                     <sample value="0.897946420184088"/>
+                     <sample value="0.897946420184088"/>
+                     <sample value="0.897946420184088"/>
+                     <sample value="0.897972580111536"/>
+                     <sample value="0.897972580111536"/>
+                     <sample value="0.897972580111536"/>
+                     <sample value="0.897972580111536"/>
+                     <sample value="0.897972580111536"/>
+                     <sample value="0.897972580111536"/>
+                     <sample value="0.874150977977556"/>
+                     <sample value="0.825857472163244"/>
+                     <sample value="0.777598987020298"/>
+                     <sample value="0.729305481205985"/>
+                     <sample value="0.681046996063039"/>
+                  </function1>
+               </functions>
+               <root/>
+            </root>
+            <root ID="6">
+               <geometry>
+                  <polyline>
+                     <point x="-7.5861" y="-15.415" z="-15.756"/>
+                     <point x="-7.0573" y="-15.932" z="-16.213"/>
+                     <point x="-6.5284" y="-16.449" z="-16.671"/>
+                     <point x="-5.9995" y="-16.966" z="-17.128"/>
+                     <point x="-5.6107" y="-17.573" z="-17.617"/>
+                     <point x="-5.2219" y="-18.179" z="-18.105"/>
+                     <point x="-4.833" y="-18.786" z="-18.593"/>
+                     <point x="-4.4442" y="-19.392" z="-19.082"/>
+                     <point x="-3.9084" y="-19.871" z="-19.627"/>
+                     <point x="-3.3726" y="-20.351" z="-20.171"/>
+                     <point x="-2.8367" y="-20.83" z="-20.716"/>
+                     <point x="-2.3009" y="-21.31" z="-21.261"/>
+                     <point x="-1.765" y="-21.789" z="-21.806"/>
+                     <point x="-1.3375" y="-22.314" z="-22.406"/>
+                     <point x="-0.90986" y="-22.839" z="-23.006"/>
+                     <point x="-0.48227" y="-23.364" z="-23.605"/>
+                     <point x="-0.05467" y="-23.889" z="-24.205"/>
+                     <point x="0.37292" y="-24.413" z="-24.805"/>
+                     <point x="0.80052" y="-24.938" z="-25.405"/>
+                     <point x="1.2121" y="-25.298" z="-26.194"/>
+                     <point x="1.6237" y="-25.658" z="-26.984"/>
+                     <point x="2.0353" y="-26.018" z="-27.773"/>
+                     <point x="2.4469" y="-26.378" z="-28.563"/>
+                     <point x="2.8585" y="-26.738" z="-29.352"/>
+                     <point x="3.2701" y="-27.098" z="-30.142"/>
+                     <point x="3.6309" y="-27.282" z="-30.918"/>
+                     <point x="3.9918" y="-27.465" z="-31.695"/>
+                     <point x="4.3526" y="-27.649" z="-32.471"/>
+                     <point x="4.7134" y="-27.832" z="-33.247"/>
+                     <point x="5.0742" y="-28.015" z="-34.024"/>
+                     <point x="5.1131" y="-28.11" z="-34.96"/>
+                     <point x="5.152" y="-28.205" z="-35.897"/>
+                     <point x="5.1909" y="-28.3" z="-36.834"/>
+                     <point x="5.2298" y="-28.395" z="-37.771"/>
+                     <point x="5.2686" y="-28.489" z="-38.707"/>
+                     <point x="5.3075" y="-28.584" z="-39.644"/>
+                     <point x="5.3464" y="-28.679" z="-40.581"/>
+                     <point x="5.3154" y="-28.53" z="-41.515"/>
+                     <point x="5.2844" y="-28.38" z="-42.45"/>
+                     <point x="5.2534" y="-28.231" z="-43.384"/>
+                     <point x="5.2224" y="-28.081" z="-44.318"/>
+                     <point x="5.1914" y="-27.931" z="-45.252"/>
+                     <point x="5.304" y="-27.823" z="-46.091"/>
+                     <point x="5.4165" y="-27.715" z="-46.93"/>
+                     <point x="5.5291" y="-27.607" z="-47.768"/>
+                     <point x="5.6416" y="-27.499" z="-48.607"/>
+                     <point x="5.7542" y="-27.391" z="-49.446"/>
+                     <point x="5.8668" y="-27.283" z="-50.284"/>
+                     <point x="5.8162" y="-27.026" z="-51.208"/>
+                     <point x="5.7657" y="-26.769" z="-52.132"/>
+                     <point x="5.7151" y="-26.512" z="-53.056"/>
+                     <point x="5.6646" y="-26.255" z="-53.979"/>
+                     <point x="5.614" y="-25.997" z="-54.903"/>
+                     <point x="5.5635" y="-25.74" z="-55.827"/>
+                     <point x="5.5129" y="-25.483" z="-56.751"/>
+                     <point x="5.4624" y="-25.226" z="-57.674"/>
+                     <point x="5.4538" y="-25.209" z="-58.513"/>
+                     <point x="5.4452" y="-25.193" z="-59.352"/>
+                     <point x="5.4366" y="-25.176" z="-60.19"/>
+                     <point x="5.4281" y="-25.159" z="-61.029"/>
+                     <point x="5.6942" y="-24.934" z="-61.625"/>
+                     <point x="5.9604" y="-24.709" z="-62.221"/>
+                     <point x="6.2266" y="-24.484" z="-62.817"/>
+                     <point x="6.4684" y="-24.626" z="-63.292"/>
+                     <point x="6.7103" y="-24.769" z="-63.767"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="57.698"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="27"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.81"/>
+                     <sample value="2.86"/>
+                     <sample value="2.92"/>
+                     <sample value="2.97"/>
+                     <sample value="3.03"/>
+                     <sample value="3.09"/>
+                     <sample value="3.14"/>
+                     <sample value="3.2"/>
+                     <sample value="3.26"/>
+                     <sample value="3.32"/>
+                     <sample value="3.38"/>
+                     <sample value="3.43"/>
+                     <sample value="3.49"/>
+                     <sample value="3.55"/>
+                     <sample value="3.61"/>
+                     <sample value="3.67"/>
+                     <sample value="3.73"/>
+                     <sample value="3.78"/>
+                     <sample value="3.84"/>
+                     <sample value="3.91"/>
+                     <sample value="3.97"/>
+                     <sample value="4.03"/>
+                     <sample value="4.09"/>
+                     <sample value="4.15"/>
+                     <sample value="4.22"/>
+                     <sample value="4.27"/>
+                     <sample value="4.33"/>
+                     <sample value="4.39"/>
+                     <sample value="4.44"/>
+                     <sample value="4.5"/>
+                     <sample value="4.56"/>
+                     <sample value="4.62"/>
+                     <sample value="4.68"/>
+                     <sample value="4.74"/>
+                     <sample value="4.8"/>
+                     <sample value="4.87"/>
+                     <sample value="4.93"/>
+                     <sample value="4.99"/>
+                     <sample value="5.05"/>
+                     <sample value="5.11"/>
+                     <sample value="5.17"/>
+                     <sample value="5.23"/>
+                     <sample value="5.29"/>
+                     <sample value="5.34"/>
+                     <sample value="5.4"/>
+                     <sample value="5.45"/>
+                     <sample value="5.51"/>
+                     <sample value="5.56"/>
+                     <sample value="5.63"/>
+                     <sample value="5.69"/>
+                     <sample value="5.75"/>
+                     <sample value="5.81"/>
+                     <sample value="5.88"/>
+                     <sample value="5.94"/>
+                     <sample value="6"/>
+                     <sample value="6.26"/>
+                     <sample value="6.48"/>
+                     <sample value="6.7"/>
+                     <sample value="6.93"/>
+                     <sample value="7.15"/>
+                     <sample value="7.34"/>
+                     <sample value="7.52"/>
+                     <sample value="7.71"/>
+                     <sample value="7.85"/>
+                     <sample value="8"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="3.23751362309046"/>
+                     <sample value="2.76066173749398"/>
+                     <sample value="2.28377325824501"/>
+                     <sample value="1.80694214568004"/>
+                     <sample value="1.51618806307512"/>
+                     <sample value="1.51618806307512"/>
+                     <sample value="1.51618806307512"/>
+                     <sample value="1.51618806307512"/>
+                     <sample value="1.51618308901098"/>
+                     <sample value="1.51618308901098"/>
+                     <sample value="1.51618308901098"/>
+                     <sample value="1.51618308901098"/>
+                     <sample value="1.51621837287892"/>
+                     <sample value="1.51621720565759"/>
+                     <sample value="1.51621720565759"/>
+                     <sample value="1.51621720565759"/>
+                     <sample value="1.51621720565759"/>
+                     <sample value="1.51621720565759"/>
+                     <sample value="1.51619877567156"/>
+                     <sample value="1.51620010548776"/>
+                     <sample value="1.51620010548776"/>
+                     <sample value="1.51620010548776"/>
+                     <sample value="1.51620010548776"/>
+                     <sample value="1.51620010548776"/>
+                     <sample value="1.51620010548776"/>
+                     <sample value="1.51621669714707"/>
+                     <sample value="1.51621669714707"/>
+                     <sample value="1.51621669714707"/>
+                     <sample value="1.51621669714707"/>
+                     <sample value="1.51621669714707"/>
+                     <sample value="1.51620851374916"/>
+                     <sample value="1.51620851374916"/>
+                     <sample value="1.51620851374916"/>
+                     <sample value="1.51620851374916"/>
+                     <sample value="1.51620851374916"/>
+                     <sample value="1.51620851374916"/>
+                     <sample value="1.51620691474843"/>
+                     <sample value="1.51619528837925"/>
+                     <sample value="1.51619528837925"/>
+                     <sample value="1.51619528837925"/>
+                     <sample value="1.51619528837925"/>
+                     <sample value="1.51619528837925"/>
+                     <sample value="1.45759255902251"/>
+                     <sample value="1.33221788226149"/>
+                     <sample value="1.20688051939237"/>
+                     <sample value="1.08150584263135"/>
+                     <sample value="0.956168479762225"/>
+                     <sample value="0.830831116893101"/>
+                     <sample value="0.773448403953282"/>
+                     <sample value="0.788166863209036"/>
+                     <sample value="0.802852172781782"/>
+                     <sample value="0.817570632037536"/>
+                     <sample value="0.832255941610282"/>
+                     <sample value="0.846974400866036"/>
+                     <sample value="0.861659710438782"/>
+                     <sample value="0.876369042941886"/>
+                     <sample value="0.883662852846417"/>
+                     <sample value="0.883662852846417"/>
+                     <sample value="0.883662852846417"/>
+                     <sample value="0.883662852846417"/>
+                     <sample value="0.883676846042263"/>
+                     <sample value="0.883676846042263"/>
+                     <sample value="0.883676846042263"/>
+                     <sample value="0.883671420362254"/>
+                     <sample value="0.883671420362254"/>
+                  </function1>
+               </functions>
+               <root/>
+            </root>
+            <root ID="7">
+               <geometry>
+                  <polyline>
+                     <point x="-5.8576" y="-11.086" z="-15.544"/>
+                     <point x="-6.5043" y="-10.591" z="-15.923"/>
+                     <point x="-7.151" y="-10.096" z="-16.301"/>
+                     <point x="-7.7977" y="-9.6018" z="-16.68"/>
+                     <point x="-8.4443" y="-9.1071" z="-17.059"/>
+                     <point x="-9.091" y="-8.6124" z="-17.437"/>
+                     <point x="-9.7377" y="-8.1178" z="-17.816"/>
+                     <point x="-10.555" y="-7.9769" z="-17.99"/>
+                     <point x="-11.372" y="-7.836" z="-18.163"/>
+                     <point x="-12.189" y="-7.6952" z="-18.336"/>
+                     <point x="-13.007" y="-7.5543" z="-18.51"/>
+                     <point x="-13.751" y="-7.3406" z="-19.086"/>
+                     <point x="-14.496" y="-7.1269" z="-19.661"/>
+                     <point x="-15.241" y="-6.9132" z="-20.237"/>
+                     <point x="-16.033" y="-6.8424" z="-20.65"/>
+                     <point x="-16.824" y="-6.7716" z="-21.063"/>
+                     <point x="-17.615" y="-6.7008" z="-21.476"/>
+                     <point x="-18.407" y="-6.63" z="-21.889"/>
+                     <point x="-19.198" y="-6.5592" z="-22.302"/>
+                     <point x="-19.989" y="-6.4884" z="-22.715"/>
+                     <point x="-20.614" y="-6.6296" z="-23.291"/>
+                     <point x="-21.238" y="-6.7707" z="-23.867"/>
+                     <point x="-21.863" y="-6.9119" z="-24.442"/>
+                     <point x="-22.487" y="-7.0531" z="-25.018"/>
+                     <point x="-23.111" y="-7.1943" z="-25.594"/>
+                     <point x="-23.736" y="-7.3355" z="-26.17"/>
+                     <point x="-24.416" y="-7.3618" z="-26.83"/>
+                     <point x="-25.095" y="-7.3881" z="-27.491"/>
+                     <point x="-25.775" y="-7.4145" z="-28.151"/>
+                     <point x="-26.455" y="-7.4408" z="-28.812"/>
+                     <point x="-27.134" y="-7.4671" z="-29.472"/>
+                     <point x="-27.814" y="-7.4934" z="-30.132"/>
+                     <point x="-28.296" y="-7.6758" z="-30.841"/>
+                     <point x="-28.778" y="-7.8581" z="-31.549"/>
+                     <point x="-29.26" y="-8.0404" z="-32.258"/>
+                     <point x="-29.742" y="-8.2227" z="-32.966"/>
+                     <point x="-30.224" y="-8.405" z="-33.675"/>
+                     <point x="-30.459" y="-8.3951" z="-34.471"/>
+                     <point x="-30.694" y="-8.3852" z="-35.268"/>
+                     <point x="-30.929" y="-8.3753" z="-36.065"/>
+                     <point x="-31.164" y="-8.3654" z="-36.862"/>
+                     <point x="-31.399" y="-8.3555" z="-37.659"/>
+                     <point x="-31.466" y="-8.3299" z="-38.652"/>
+                     <point x="-31.533" y="-8.3043" z="-39.645"/>
+                     <point x="-31.6" y="-8.2787" z="-40.638"/>
+                     <point x="-31.666" y="-8.253" z="-41.631"/>
+                     <point x="-31.733" y="-8.2274" z="-42.624"/>
+                     <point x="-31.8" y="-8.2018" z="-43.616"/>
+                     <point x="-31.856" y="-8.293" z="-44.46"/>
+                     <point x="-31.911" y="-8.3841" z="-45.304"/>
+                     <point x="-31.966" y="-8.4752" z="-46.147"/>
+                     <point x="-32.022" y="-8.5663" z="-46.991"/>
+                     <point x="-32.077" y="-8.6575" z="-47.835"/>
+                     <point x="-32.077" y="-8.6884" z="-48.791"/>
+                     <point x="-32.077" y="-8.7194" z="-49.747"/>
+                     <point x="-32.078" y="-8.7503" z="-50.704"/>
+                     <point x="-32.11" y="-8.8474" z="-51.558"/>
+                     <point x="-32.143" y="-8.9444" z="-52.413"/>
+                     <point x="-32.176" y="-9.0414" z="-53.267"/>
+                     <point x="-32.223" y="-9.1301" z="-54.16"/>
+                     <point x="-32.27" y="-9.2187" z="-55.053"/>
+                     <point x="-32.317" y="-9.3073" z="-55.946"/>
+                     <point x="-32.364" y="-9.3959" z="-56.838"/>
+                     <point x="-32.411" y="-9.4845" z="-57.731"/>
+                     <point x="-32.458" y="-9.5731" z="-58.624"/>
+                     <point x="-32.504" y="-9.6617" z="-59.517"/>
+                     <point x="-32.599" y="-9.7013" z="-60.373"/>
+                     <point x="-32.693" y="-9.7408" z="-61.23"/>
+                     <point x="-32.787" y="-9.7804" z="-62.086"/>
+                     <point x="-32.882" y="-9.8199" z="-62.943"/>
+                     <point x="-32.976" y="-9.8595" z="-63.799"/>
+                     <point x="-33.07" y="-9.8991" z="-64.656"/>
+                     <point x="-33.165" y="-9.9386" z="-65.512"/>
+                     <point x="-33.1" y="-9.9581" z="-66.369"/>
+                     <point x="-33.035" y="-9.9776" z="-67.225"/>
+                     <point x="-32.97" y="-9.9971" z="-68.082"/>
+                     <point x="-32.905" y="-10.017" z="-68.939"/>
+                     <point x="-32.84" y="-10.036" z="-69.795"/>
+                     <point x="-32.776" y="-10.056" z="-70.652"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="70.492"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="22"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.37"/>
+                     <sample value="2.46"/>
+                     <sample value="2.55"/>
+                     <sample value="2.64"/>
+                     <sample value="2.74"/>
+                     <sample value="2.83"/>
+                     <sample value="2.92"/>
+                     <sample value="3"/>
+                     <sample value="3.09"/>
+                     <sample value="3.18"/>
+                     <sample value="3.26"/>
+                     <sample value="3.36"/>
+                     <sample value="3.46"/>
+                     <sample value="3.56"/>
+                     <sample value="3.65"/>
+                     <sample value="3.74"/>
+                     <sample value="3.83"/>
+                     <sample value="3.92"/>
+                     <sample value="4.02"/>
+                     <sample value="4.11"/>
+                     <sample value="4.2"/>
+                     <sample value="4.28"/>
+                     <sample value="4.37"/>
+                     <sample value="4.46"/>
+                     <sample value="4.55"/>
+                     <sample value="4.63"/>
+                     <sample value="4.73"/>
+                     <sample value="4.83"/>
+                     <sample value="4.92"/>
+                     <sample value="5.02"/>
+                     <sample value="5.12"/>
+                     <sample value="5.21"/>
+                     <sample value="5.3"/>
+                     <sample value="5.39"/>
+                     <sample value="5.48"/>
+                     <sample value="5.57"/>
+                     <sample value="5.66"/>
+                     <sample value="5.75"/>
+                     <sample value="5.83"/>
+                     <sample value="5.92"/>
+                     <sample value="6"/>
+                     <sample value="6.05"/>
+                     <sample value="6.11"/>
+                     <sample value="6.17"/>
+                     <sample value="6.22"/>
+                     <sample value="6.28"/>
+                     <sample value="6.34"/>
+                     <sample value="6.4"/>
+                     <sample value="6.45"/>
+                     <sample value="6.5"/>
+                     <sample value="6.55"/>
+                     <sample value="6.6"/>
+                     <sample value="6.65"/>
+                     <sample value="6.71"/>
+                     <sample value="6.76"/>
+                     <sample value="6.82"/>
+                     <sample value="6.87"/>
+                     <sample value="6.92"/>
+                     <sample value="6.97"/>
+                     <sample value="7.02"/>
+                     <sample value="7.08"/>
+                     <sample value="7.13"/>
+                     <sample value="7.18"/>
+                     <sample value="7.24"/>
+                     <sample value="7.29"/>
+                     <sample value="7.34"/>
+                     <sample value="7.39"/>
+                     <sample value="7.44"/>
+                     <sample value="7.49"/>
+                     <sample value="7.54"/>
+                     <sample value="7.6"/>
+                     <sample value="7.65"/>
+                     <sample value="7.7"/>
+                     <sample value="7.75"/>
+                     <sample value="7.8"/>
+                     <sample value="7.85"/>
+                     <sample value="7.9"/>
+                     <sample value="7.95"/>
+                     <sample value="8"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="2.36015256166677"/>
+                     <sample value="2.2046382209883"/>
+                     <sample value="2.04915932921356"/>
+                     <sample value="1.89364498853508"/>
+                     <sample value="1.73816609676034"/>
+                     <sample value="1.58265175608187"/>
+                     <sample value="1.42717286430713"/>
+                     <sample value="1.28180595810272"/>
+                     <sample value="1.14823753914811"/>
+                     <sample value="1.01470669218197"/>
+                     <sample value="0.881138273227368"/>
+                     <sample value="0.960610172424065"/>
+                     <sample value="1.24137196081557"/>
+                     <sample value="1.52211798396887"/>
+                     <sample value="1.64556623574091"/>
+                     <sample value="1.64556623574091"/>
+                     <sample value="1.64556623574091"/>
+                     <sample value="1.64556623574091"/>
+                     <sample value="1.64556623574091"/>
+                     <sample value="1.64556623574091"/>
+                     <sample value="1.64555852943874"/>
+                     <sample value="1.64555852943874"/>
+                     <sample value="1.64555852943874"/>
+                     <sample value="1.64555852943874"/>
+                     <sample value="1.64555852943874"/>
+                     <sample value="1.64557764050697"/>
+                     <sample value="1.6455725319347"/>
+                     <sample value="1.6455725319347"/>
+                     <sample value="1.6455725319347"/>
+                     <sample value="1.6455725319347"/>
+                     <sample value="1.6455725319347"/>
+                     <sample value="1.6455725319347"/>
+                     <sample value="1.64554460121976"/>
+                     <sample value="1.64554460121976"/>
+                     <sample value="1.64554460121976"/>
+                     <sample value="1.64554460121976"/>
+                     <sample value="1.64556338576105"/>
+                     <sample value="1.57218304138223"/>
+                     <sample value="1.40989614508632"/>
+                     <sample value="1.24757093743624"/>
+                     <sample value="1.08528404114033"/>
+                     <sample value="0.922986035907359"/>
+                     <sample value="0.837893197200052"/>
+                     <sample value="0.837893197200052"/>
+                     <sample value="0.837893197200052"/>
+                     <sample value="0.837893197200052"/>
+                     <sample value="0.837893197200052"/>
+                     <sample value="0.837893197200052"/>
+                     <sample value="0.837913708412121"/>
+                     <sample value="0.837913708412121"/>
+                     <sample value="0.837913708412121"/>
+                     <sample value="0.837913708412121"/>
+                     <sample value="0.837913708412121"/>
+                     <sample value="0.837902741942908"/>
+                     <sample value="0.837902741942908"/>
+                     <sample value="0.837902741942908"/>
+                     <sample value="0.837897003818448"/>
+                     <sample value="0.837897003818448"/>
+                     <sample value="0.837897003818448"/>
+                     <sample value="0.837913083817474"/>
+                     <sample value="0.837913083817474"/>
+                     <sample value="0.837913083817474"/>
+                     <sample value="0.837913083817474"/>
+                     <sample value="0.837913083817474"/>
+                     <sample value="0.837913083817474"/>
+                     <sample value="0.837886978047075"/>
+                     <sample value="0.837906190001894"/>
+                     <sample value="0.837906190001894"/>
+                     <sample value="0.837906190001894"/>
+                     <sample value="0.837906190001894"/>
+                     <sample value="0.837906190001894"/>
+                     <sample value="0.837906190001894"/>
+                     <sample value="0.837879002514393"/>
+                     <sample value="0.794135623089417"/>
+                     <sample value="0.704346698682087"/>
+                     <sample value="0.614557774274757"/>
+                     <sample value="0.524768849867427"/>
+                     <sample value="0.434979925460097"/>
+                     <sample value="0.345187296889219"/>
+                  </function1>
+               </functions>
+               <root/>
+            </root>
+            <root ID="8">
+               <geometry>
+                  <polyline>
+                     <point x="-6.1284" y="-11.378" z="-15.325"/>
+                     <point x="-7.0459" y="-11.175" z="-15.485"/>
+                     <point x="-7.9633" y="-10.973" z="-15.645"/>
+                     <point x="-8.8808" y="-10.77" z="-15.805"/>
+                     <point x="-9.7982" y="-10.568" z="-15.964"/>
+                     <point x="-10.716" y="-10.365" z="-16.124"/>
+                     <point x="-11.633" y="-10.163" z="-16.284"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="6.6713"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="22"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.9"/>
+                     <sample value="3.52"/>
+                     <sample value="4.14"/>
+                     <sample value="4.76"/>
+                     <sample value="5.38"/>
+                     <sample value="6"/>
+                     <sample value="6"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="2.32440863847237"/>
+                     <sample value="2.07465035413447"/>
+                     <sample value="1.82485867072136"/>
+                     <sample value="1.57510038638346"/>
+                     <sample value="1.32534210204556"/>
+                     <sample value="1.07558381770765"/>
+                     <sample value="0.825825533369751"/>
+                  </function1>
+               </functions>
+               <root/>
+            </root>
+            <root ID="9">
+               <geometry>
+                  <polyline>
+                     <point x="-4.8204" y="-12.152" z="-15.787"/>
+                     <point x="-4.4298" y="-12.723" z="-16.408"/>
+                     <point x="-4.0393" y="-13.294" z="-17.03"/>
+                     <point x="-3.6487" y="-13.865" z="-17.651"/>
+                     <point x="-3.2582" y="-14.436" z="-18.273"/>
+                     <point x="-2.8676" y="-15.007" z="-18.894"/>
+                     <point x="-2.4771" y="-15.578" z="-19.515"/>
+                     <point x="-2.0865" y="-16.149" z="-20.137"/>
+                     <point x="-1.696" y="-16.72" z="-20.758"/>
+                     <point x="-1.086" y="-17.117" z="-21.432"/>
+                     <point x="-0.47594" y="-17.513" z="-22.105"/>
+                     <point x="0.13406" y="-17.91" z="-22.778"/>
+                     <point x="0.74407" y="-18.306" z="-23.451"/>
+                     <point x="1.3541" y="-18.703" z="-24.124"/>
+                     <point x="1.8917" y="-18.91" z="-24.877"/>
+                     <point x="2.4294" y="-19.118" z="-25.63"/>
+                     <point x="2.9671" y="-19.325" z="-26.383"/>
+                     <point x="3.5048" y="-19.532" z="-27.135"/>
+                     <point x="4.0424" y="-19.74" z="-27.888"/>
+                     <point x="4.5801" y="-19.947" z="-28.641"/>
+                     <point x="4.9554" y="-20.138" z="-29.459"/>
+                     <point x="5.3306" y="-20.329" z="-30.277"/>
+                     <point x="5.7059" y="-20.52" z="-31.094"/>
+                     <point x="6.0812" y="-20.711" z="-31.912"/>
+                     <point x="6.4564" y="-20.901" z="-32.73"/>
+                     <point x="6.8317" y="-21.092" z="-33.548"/>
+                     <point x="7.207" y="-21.283" z="-34.366"/>
+                     <point x="7.5167" y="-21.531" z="-35.271"/>
+                     <point x="7.8265" y="-21.779" z="-36.176"/>
+                     <point x="8.1362" y="-22.026" z="-37.081"/>
+                     <point x="8.6085" y="-22.055" z="-37.851"/>
+                     <point x="9.0808" y="-22.083" z="-38.621"/>
+                     <point x="9.5531" y="-22.111" z="-39.391"/>
+                     <point x="10.025" y="-22.139" z="-40.162"/>
+                     <point x="10.498" y="-22.167" z="-40.932"/>
+                     <point x="10.97" y="-22.195" z="-41.702"/>
+                     <point x="11.356" y="-22.169" z="-42.614"/>
+                     <point x="11.742" y="-22.143" z="-43.526"/>
+                     <point x="12.128" y="-22.118" z="-44.438"/>
+                     <point x="12.45" y="-22.369" z="-45.237"/>
+                     <point x="12.772" y="-22.62" z="-46.036"/>
+                     <point x="13.094" y="-22.871" z="-46.835"/>
+                     <point x="13.415" y="-23.122" z="-47.634"/>
+                     <point x="13.737" y="-23.373" z="-48.433"/>
+                     <point x="13.869" y="-23.438" z="-49.382"/>
+                     <point x="14" y="-23.503" z="-50.33"/>
+                     <point x="14.131" y="-23.568" z="-51.279"/>
+                     <point x="14.262" y="-23.633" z="-52.228"/>
+                     <point x="14.393" y="-23.698" z="-53.176"/>
+                     <point x="14.524" y="-23.763" z="-54.125"/>
+                     <point x="14.656" y="-23.828" z="-55.073"/>
+                     <point x="14.787" y="-23.892" z="-56.022"/>
+                     <point x="14.763" y="-24.012" z="-56.944"/>
+                     <point x="14.739" y="-24.132" z="-57.867"/>
+                     <point x="14.715" y="-24.252" z="-58.789"/>
+                     <point x="14.692" y="-24.372" z="-59.711"/>
+                     <point x="14.668" y="-24.492" z="-60.634"/>
+                     <point x="14.644" y="-24.612" z="-61.556"/>
+                     <point x="14.62" y="-24.732" z="-62.478"/>
+                     <point x="14.597" y="-24.852" z="-63.401"/>
+                     <point x="14.573" y="-24.972" z="-64.323"/>
+                     <point x="14.549" y="-25.092" z="-65.246"/>
+                     <point x="14.525" y="-25.212" z="-66.168"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="59.213"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="22"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.35"/>
+                     <sample value="2.42"/>
+                     <sample value="2.5"/>
+                     <sample value="2.57"/>
+                     <sample value="2.65"/>
+                     <sample value="2.72"/>
+                     <sample value="2.79"/>
+                     <sample value="2.87"/>
+                     <sample value="2.94"/>
+                     <sample value="3.02"/>
+                     <sample value="3.1"/>
+                     <sample value="3.17"/>
+                     <sample value="3.25"/>
+                     <sample value="3.33"/>
+                     <sample value="3.41"/>
+                     <sample value="3.48"/>
+                     <sample value="3.56"/>
+                     <sample value="3.63"/>
+                     <sample value="3.71"/>
+                     <sample value="3.78"/>
+                     <sample value="3.85"/>
+                     <sample value="3.93"/>
+                     <sample value="4"/>
+                     <sample value="4.07"/>
+                     <sample value="4.15"/>
+                     <sample value="4.22"/>
+                     <sample value="4.29"/>
+                     <sample value="4.37"/>
+                     <sample value="4.45"/>
+                     <sample value="4.53"/>
+                     <sample value="4.6"/>
+                     <sample value="4.67"/>
+                     <sample value="4.74"/>
+                     <sample value="4.81"/>
+                     <sample value="4.88"/>
+                     <sample value="4.95"/>
+                     <sample value="5.03"/>
+                     <sample value="5.11"/>
+                     <sample value="5.19"/>
+                     <sample value="5.26"/>
+                     <sample value="5.33"/>
+                     <sample value="5.4"/>
+                     <sample value="5.47"/>
+                     <sample value="5.54"/>
+                     <sample value="5.62"/>
+                     <sample value="5.7"/>
+                     <sample value="5.77"/>
+                     <sample value="5.85"/>
+                     <sample value="5.92"/>
+                     <sample value="6"/>
+                     <sample value="6.16"/>
+                     <sample value="6.32"/>
+                     <sample value="6.47"/>
+                     <sample value="6.62"/>
+                     <sample value="6.78"/>
+                     <sample value="6.93"/>
+                     <sample value="7.08"/>
+                     <sample value="7.23"/>
+                     <sample value="7.39"/>
+                     <sample value="7.54"/>
+                     <sample value="7.69"/>
+                     <sample value="7.85"/>
+                     <sample value="8"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="2.37010729051899"/>
+                     <sample value="2.24096375740236"/>
+                     <sample value="2.11178599594406"/>
+                     <sample value="1.98264246282742"/>
+                     <sample value="1.85346470136912"/>
+                     <sample value="1.72432116825249"/>
+                     <sample value="1.59517763513585"/>
+                     <sample value="1.46599987367755"/>
+                     <sample value="1.33685634056092"/>
+                     <sample value="1.269244856173"/>
+                     <sample value="1.269244856173"/>
+                     <sample value="1.269244856173"/>
+                     <sample value="1.269244856173"/>
+                     <sample value="1.269244856173"/>
+                     <sample value="1.23708460228219"/>
+                     <sample value="1.17124150964633"/>
+                     <sample value="1.10539841701048"/>
+                     <sample value="1.03955532437463"/>
+                     <sample value="0.973712231738774"/>
+                     <sample value="0.907878715680585"/>
+                     <sample value="0.888669600492024"/>
+                     <sample value="0.916941204541787"/>
+                     <sample value="0.945212808591551"/>
+                     <sample value="0.973449808474791"/>
+                     <sample value="1.00172141252456"/>
+                     <sample value="1.02999301657432"/>
+                     <sample value="1.05826462062408"/>
+                     <sample value="1.07224377092354"/>
+                     <sample value="1.07224377092354"/>
+                     <sample value="1.07227598591485"/>
+                     <sample value="1.04107879694936"/>
+                     <sample value="0.977413298390782"/>
+                     <sample value="0.913747799832201"/>
+                     <sample value="0.85008230127362"/>
+                     <sample value="0.786416802715039"/>
+                     <sample value="0.722751304156458"/>
+                     <sample value="0.690472027881035"/>
+                     <sample value="0.690472027881035"/>
+                     <sample value="0.690472027881035"/>
+                     <sample value="0.690492674967546"/>
+                     <sample value="0.690492674967546"/>
+                     <sample value="0.690492674967546"/>
+                     <sample value="0.690492674967546"/>
+                     <sample value="0.690500370537113"/>
+                     <sample value="0.690466832726626"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690492803595253"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                     <sample value="0.690493599158871"/>
+                  </function1>
+               </functions>
+               <root/>
+            </root>
+            <root ID="10">
+               <geometry>
+                  <polyline>
+                     <point x="-3.7135" y="-8.3346" z="-13.008"/>
+                     <point x="-4.2437" y="-8.3734" z="-12.298"/>
+                     <point x="-4.7738" y="-8.4122" z="-11.589"/>
+                     <point x="-5.304" y="-8.4509" z="-10.879"/>
+                     <point x="-5.8341" y="-8.4897" z="-10.169"/>
+                     <point x="-6.3643" y="-8.5285" z="-9.4597"/>
+                     <point x="-6.8944" y="-8.5672" z="-8.7501"/>
+                     <point x="-7.4246" y="-8.606" z="-8.0405"/>
+                     <point x="-8.1296" y="-8.7459" z="-7.3732"/>
+                     <point x="-8.8347" y="-8.8857" z="-6.7059"/>
+                     <point x="-9.5405" y="-9.4272" z="-6.574"/>
+                     <point x="-10.246" y="-9.9688" z="-6.442"/>
+                     <point x="-10.952" y="-10.51" z="-6.3101"/>
+                     <point x="-11.643" y="-11.006" z="-6.428"/>
+                     <point x="-12.334" y="-11.502" z="-6.5459"/>
+                     <point x="-12.631" y="-11.721" z="-7.3916"/>
+                     <point x="-12.927" y="-11.941" z="-8.2373"/>
+                     <point x="-13.224" y="-12.161" z="-9.0829"/>
+                     <point x="-13.133" y="-12.403" z="-9.9291"/>
+                     <point x="-13.042" y="-12.644" z="-10.775"/>
+                     <point x="-12.952" y="-12.886" z="-11.622"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="18.892"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="17"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.04"/>
+                     <sample value="2.25"/>
+                     <sample value="2.45"/>
+                     <sample value="2.66"/>
+                     <sample value="2.86"/>
+                     <sample value="3.07"/>
+                     <sample value="3.27"/>
+                     <sample value="3.48"/>
+                     <sample value="3.7"/>
+                     <sample value="3.93"/>
+                     <sample value="4.14"/>
+                     <sample value="4.35"/>
+                     <sample value="4.55"/>
+                     <sample value="4.75"/>
+                     <sample value="4.95"/>
+                     <sample value="5.16"/>
+                     <sample value="5.38"/>
+                     <sample value="5.59"/>
+                     <sample value="5.8"/>
+                     <sample value="6"/>
+                     <sample value="6"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="3.28703253433963"/>
+                     <sample value="3.10677313204907"/>
+                     <sample value="2.92651372975851"/>
+                     <sample value="2.74625432746795"/>
+                     <sample value="2.56599492517739"/>
+                     <sample value="2.38573552288682"/>
+                     <sample value="2.20547612059626"/>
+                     <sample value="2.02520365879719"/>
+                     <sample value="1.80349314075727"/>
+                     <sample value="1.52094480022402"/>
+                     <sample value="1.36582848811169"/>
+                     <sample value="1.36582848811169"/>
+                     <sample value="1.36582848811169"/>
+                     <sample value="1.36581640618472"/>
+                     <sample value="1.36581640618472"/>
+                     <sample value="1.46437519465658"/>
+                     <sample value="1.64810772750166"/>
+                     <sample value="1.83186011338956"/>
+                     <sample value="2.05407173019018"/>
+                     <sample value="2.29795137603156"/>
+                     <sample value="2.54183102187294"/>
+                  </function1>
+               </functions>
+               <root ID="11">
+                  <geometry>
+                     <polyline>
+                        <point x="-12.908" y="-11.778" z="-9.8083"/>
+                        <point x="-12.592" y="-11.396" z="-10.534"/>
+                        <point x="-12.276" y="-11.013" z="-11.259"/>
+                        <point x="-11.959" y="-10.631" z="-11.985"/>
+                        <point x="-11.643" y="-10.249" z="-12.71"/>
+                        <point x="-11.327" y="-9.8662" z="-13.435"/>
+                        <point x="-10.531" y="-9.4341" z="-13.869"/>
+                        <point x="-9.7342" y="-9.0021" z="-14.303"/>
+                        <point x="-8.9379" y="-8.57" z="-14.737"/>
+                        <point x="-8.1415" y="-8.1379" z="-15.171"/>
+                        <point x="-7.5367" y="-7.6848" z="-15.597"/>
+                        <point x="-6.9318" y="-7.2317" z="-16.024"/>
+                        <point x="-6.327" y="-6.7786" z="-16.451"/>
+                        <point x="-5.7221" y="-6.3255" z="-16.878"/>
+                        <point x="-5.1173" y="-5.8724" z="-17.304"/>
+                        <point x="-4.5125" y="-5.4193" z="-17.731"/>
+                     </polyline>
+                  </geometry>
+                  <properties>
+                     <length value="14.499"/>
+                     <type value="2"/>
+                     <parent-branch value="10"/>
+                     <parent-node value="18"/>
+                  </properties>
+                  <functions>
+                     <function domain="polyline" name="emergence_time">
+                        <sample value="5.62"/>
+                        <sample value="5.64"/>
+                        <sample value="5.67"/>
+                        <sample value="5.7"/>
+                        <sample value="5.72"/>
+                        <sample value="5.75"/>
+                        <sample value="5.78"/>
+                        <sample value="5.81"/>
+                        <sample value="5.84"/>
+                        <sample value="5.87"/>
+                        <sample value="5.9"/>
+                        <sample value="5.92"/>
+                        <sample value="5.95"/>
+                        <sample value="5.97"/>
+                        <sample value="6"/>
+                        <sample value="6"/>
+                     </function>
+                     <function1 domain="polyline" name="diameter">
+                        <sample value="1.83801069701679"/>
+                        <sample value="1.66746167393748"/>
+                        <sample value="1.49691265085817"/>
+                        <sample value="1.32636362777885"/>
+                        <sample value="1.15585082237274"/>
+                        <sample value="0.985290588541231"/>
+                        <sample value="0.927265693331019"/>
+                        <sample value="0.989121432288785"/>
+                        <sample value="1.05100885963741"/>
+                        <sample value="1.11289628698604"/>
+                        <sample value="1.12649938404599"/>
+                        <sample value="1.09253752731063"/>
+                        <sample value="1.05857567057527"/>
+                        <sample value="1.02461381383991"/>
+                        <sample value="0.990651957104548"/>
+                        <sample value="0.956679077450909"/>
+                     </function1>
+                  </functions>
+                  <root/>
+               </root>
+            </root>
+            <root ID="12">
+               <geometry>
+                  <polyline>
+                     <point x="-2.5273" y="-8.8237" z="-14.225"/>
+                     <point x="-1.8712" y="-9.3516" z="-14.733"/>
+                     <point x="-1.2151" y="-9.8795" z="-15.241"/>
+                     <point x="-0.55902" y="-10.407" z="-15.749"/>
+                     <point x="-0.72975" y="-10.757" z="-16.508"/>
+                     <point x="-0.90048" y="-11.107" z="-17.267"/>
+                     <point x="-1.0712" y="-11.457" z="-18.026"/>
+                     <point x="-0.51209" y="-11.982" z="-18.318"/>
+                     <point x="0.04704" y="-12.506" z="-18.61"/>
+                     <point x="0.84921" y="-12.702" z="-19.135"/>
+                     <point x="1.6514" y="-12.897" z="-19.66"/>
+                     <point x="2.4535" y="-13.093" z="-20.186"/>
+                     <point x="3.2557" y="-13.288" z="-20.711"/>
+                     <point x="4.0579" y="-13.484" z="-21.236"/>
+                     <point x="4.8601" y="-13.68" z="-21.761"/>
+                     <point x="5.6622" y="-13.875" z="-22.286"/>
+                     <point x="5.7797" y="-14.647" z="-22.466"/>
+                     <point x="5.8972" y="-15.419" z="-22.645"/>
+                     <point x="6.0146" y="-16.191" z="-22.824"/>
+                     <point x="6.5386" y="-16.609" z="-23.375"/>
+                     <point x="7.0625" y="-17.026" z="-23.925"/>
+                     <point x="7.5865" y="-17.444" z="-24.475"/>
+                     <point x="8.1104" y="-17.861" z="-25.026"/>
+                     <point x="8.6344" y="-18.279" z="-25.576"/>
+                     <point x="9.1583" y="-18.696" z="-26.127"/>
+                     <point x="9.4308" y="-19.024" z="-26.922"/>
+                     <point x="9.7032" y="-19.352" z="-27.717"/>
+                     <point x="9.9757" y="-19.68" z="-28.512"/>
+                     <point x="10.248" y="-20.007" z="-29.307"/>
+                     <point x="10.521" y="-20.335" z="-30.102"/>
+                     <point x="11.061" y="-20.879" z="-30.42"/>
+                     <point x="11.602" y="-21.422" z="-30.737"/>
+                     <point x="12.143" y="-21.965" z="-31.054"/>
+                     <point x="12.684" y="-22.509" z="-31.371"/>
+                     <point x="13.17" y="-22.695" z="-32.122"/>
+                     <point x="13.657" y="-22.881" z="-32.873"/>
+                     <point x="14.144" y="-23.067" z="-33.623"/>
+                     <point x="14.631" y="-23.254" z="-34.374"/>
+                     <point x="15.118" y="-23.44" z="-35.125"/>
+                  </polyline>
+               </geometry>
+               <properties>
+                  <length value="34.988"/>
+                  <type value="2"/>
+                  <parent-branch value="1"/>
+                  <parent-node value="17"/>
+               </properties>
+               <functions>
+                  <function domain="polyline" name="emergence_time">
+                     <sample value="2.02"/>
+                     <sample value="2.2"/>
+                     <sample value="2.38"/>
+                     <sample value="2.56"/>
+                     <sample value="2.72"/>
+                     <sample value="2.88"/>
+                     <sample value="3.03"/>
+                     <sample value="3.18"/>
+                     <sample value="3.34"/>
+                     <sample value="3.52"/>
+                     <sample value="3.7"/>
+                     <sample value="3.88"/>
+                     <sample value="4.06"/>
+                     <sample value="4.24"/>
+                     <sample value="4.42"/>
+                     <sample value="4.6"/>
+                     <sample value="4.75"/>
+                     <sample value="4.89"/>
+                     <sample value="5.04"/>
+                     <sample value="5.2"/>
+                     <sample value="5.36"/>
+                     <sample value="5.52"/>
+                     <sample value="5.68"/>
+                     <sample value="5.84"/>
+                     <sample value="6"/>
+                     <sample value="6.15"/>
+                     <sample value="6.29"/>
+                     <sample value="6.44"/>
+                     <sample value="6.58"/>
+                     <sample value="6.73"/>
+                     <sample value="6.86"/>
+                     <sample value="7"/>
+                     <sample value="7.13"/>
+                     <sample value="7.26"/>
+                     <sample value="7.41"/>
+                     <sample value="7.56"/>
+                     <sample value="7.71"/>
+                     <sample value="7.85"/>
+                     <sample value="8"/>
+                  </function>
+                  <function1 domain="polyline" name="diameter">
+                     <sample value="3.20993163884533"/>
+                     <sample value="2.70250408137209"/>
+                     <sample value="2.19507652389886"/>
+                     <sample value="1.68764896642562"/>
+                     <sample value="1.39102898134977"/>
+                     <sample value="1.39102898134977"/>
+                     <sample value="1.39104999209954"/>
+                     <sample value="1.39102719961407"/>
+                     <sample value="1.39102719961407"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39105450654323"/>
+                     <sample value="1.39104880800166"/>
+                     <sample value="1.39104880800166"/>
+                     <sample value="1.39103144550125"/>
+                     <sample value="1.3910363757988"/>
+                     <sample value="1.3910363757988"/>
+                     <sample value="1.3910363757988"/>
+                     <sample value="1.3910363757988"/>
+                     <sample value="1.3910363757988"/>
+                     <sample value="1.3910363757988"/>
+                     <sample value="1.30452789152491"/>
+                     <sample value="1.11664962511148"/>
+                     <sample value="0.928736076394502"/>
+                     <sample value="0.74082252767752"/>
+                     <sample value="0.55294426126409"/>
+                     <sample value="0.456531668639521"/>
+                     <sample value="0.456531668639521"/>
+                     <sample value="0.456531668639521"/>
+                     <sample value="0.456531668639521"/>
+                     <sample value="0.456539520756426"/>
+                     <sample value="0.456539520756426"/>
+                     <sample value="0.456539520756426"/>
+                     <sample value="0.456539520756426"/>
+                     <sample value="0.456544516210253"/>
+                  </function1>
+               </functions>
+               <root ID="13">
+                  <geometry>
+                     <polyline>
+                        <point x="-0.42286" y="-12.934" z="-19.138"/>
+                        <point x="-0.89275" y="-13.362" z="-19.666"/>
+                        <point x="-1.3626" y="-13.789" z="-20.194"/>
+                        <point x="-1.8325" y="-14.217" z="-20.722"/>
+                        <point x="-2.3024" y="-14.645" z="-21.25"/>
+                        <point x="-2.0947" y="-14.959" z="-22.071"/>
+                        <point x="-2.4652" y="-15.521" z="-22.552"/>
+                        <point x="-2.8356" y="-16.084" z="-23.033"/>
+                        <point x="-3.2061" y="-16.647" z="-23.514"/>
+                        <point x="-3.5765" y="-17.209" z="-23.995"/>
+                        <point x="-3.9682" y="-17.79" z="-24.641"/>
+                        <point x="-4.3598" y="-18.371" z="-25.287"/>
+                        <point x="-4.6788" y="-18.761" z="-25.944"/>
+                        <point x="-4.9978" y="-19.151" z="-26.6"/>
+                        <point x="-5.3168" y="-19.541" z="-27.257"/>
+                        <point x="-5.6358" y="-19.931" z="-27.913"/>
+                        <point x="-5.9548" y="-20.321" z="-28.57"/>
+                        <point x="-6.1314" y="-20.751" z="-29.391"/>
+                        <point x="-6.3081" y="-21.181" z="-30.212"/>
+                        <point x="-6.4847" y="-21.611" z="-31.034"/>
+                        <point x="-6.6614" y="-22.041" z="-31.855"/>
+                        <point x="-6.8819" y="-22.29" z="-32.644"/>
+                        <point x="-7.1024" y="-22.54" z="-33.433"/>
+                        <point x="-7.3229" y="-22.789" z="-34.222"/>
+                        <point x="-7.5434" y="-23.038" z="-35.01"/>
+                        <point x="-7.7639" y="-23.288" z="-35.799"/>
+                        <point x="-7.9844" y="-23.537" z="-36.588"/>
+                        <point x="-8.0872" y="-23.658" z="-37.452"/>
+                        <point x="-8.1899" y="-23.78" z="-38.315"/>
+                        <point x="-8.2927" y="-23.901" z="-39.178"/>
+                        <point x="-8.3954" y="-24.023" z="-40.042"/>
+                        <point x="-8.4982" y="-24.144" z="-40.905"/>
+                        <point x="-8.601" y="-24.265" z="-41.768"/>
+                        <point x="-8.8401" y="-24.464" z="-42.65"/>
+                        <point x="-9.0792" y="-24.663" z="-43.532"/>
+                        <point x="-9.3183" y="-24.861" z="-44.414"/>
+                        <point x="-9.5573" y="-25.06" z="-45.296"/>
+                        <point x="-9.3663" y="-25.021" z="-46.118"/>
+                        <point x="-9.1753" y="-24.981" z="-46.94"/>
+                        <point x="-8.9843" y="-24.942" z="-47.763"/>
+                        <point x="-8.7933" y="-24.902" z="-48.585"/>
+                        <point x="-8.7877" y="-24.95" z="-49.514"/>
+                        <point x="-8.7821" y="-24.997" z="-50.442"/>
+                        <point x="-8.7764" y="-25.045" z="-51.37"/>
+                        <point x="-8.7708" y="-25.092" z="-52.299"/>
+                        <point x="-8.8403" y="-25.01" z="-53.216"/>
+                        <point x="-8.9098" y="-24.928" z="-54.134"/>
+                        <point x="-8.9794" y="-24.846" z="-55.051"/>
+                        <point x="-9.0489" y="-24.764" z="-55.969"/>
+                        <point x="-9.1184" y="-24.682" z="-56.886"/>
+                        <point x="-9.188" y="-24.6" z="-57.804"/>
+                        <point x="-9.2237" y="-24.481" z="-58.721"/>
+                        <point x="-9.2594" y="-24.362" z="-59.638"/>
+                        <point x="-9.2951" y="-24.244" z="-60.556"/>
+                        <point x="-9.3308" y="-24.125" z="-61.473"/>
+                        <point x="-9.3665" y="-24.006" z="-62.39"/>
+                        <point x="-9.2891" y="-23.841" z="-63.149"/>
+                        <point x="-9.2117" y="-23.677" z="-63.908"/>
+                        <point x="-9.1343" y="-23.512" z="-64.667"/>
+                        <point x="-9.0569" y="-23.347" z="-65.426"/>
+                        <point x="-9.044" y="-23.176" z="-66.316"/>
+                        <point x="-9.0311" y="-23.005" z="-67.205"/>
+                        <point x="-9.0181" y="-22.834" z="-68.094"/>
+                        <point x="-9.0052" y="-22.663" z="-68.983"/>
+                        <point x="-8.9923" y="-22.493" z="-69.873"/>
+                        <point x="-8.9793" y="-22.322" z="-70.762"/>
+                        <point x="-8.9664" y="-22.151" z="-71.651"/>
+                        <point x="-8.9535" y="-21.98" z="-72.541"/>
+                        <point x="-8.9405" y="-21.809" z="-73.43"/>
+                        <point x="-9.1226" y="-21.779" z="-74.412"/>
+                        <point x="-9.3046" y="-21.749" z="-75.394"/>
+                        <point x="-9.4867" y="-21.719" z="-76.376"/>
+                        <point x="-9.6687" y="-21.689" z="-77.358"/>
+                        <point x="-9.8507" y="-21.659" z="-78.34"/>
+                        <point x="-9.7372" y="-21.399" z="-79.018"/>
+                        <point x="-9.6237" y="-21.139" z="-79.697"/>
+                        <point x="-9.5101" y="-20.88" z="-80.375"/>
+                        <point x="-9.0067" y="-20.078" z="-80.12"/>
+                        <point x="-8.5032" y="-19.276" z="-79.865"/>
+                        <point x="-7.9997" y="-18.474" z="-79.61"/>
+                     </polyline>
+                  </geometry>
+                  <properties>
+                     <length value="70.995"/>
+                     <type value="2"/>
+                     <parent-branch value="12"/>
+                     <parent-node value="9"/>
+                  </properties>
+                  <functions>
+                     <function domain="polyline" name="emergence_time">
+                        <sample value="3.39"/>
+                        <sample value="3.45"/>
+                        <sample value="3.51"/>
+                        <sample value="3.56"/>
+                        <sample value="3.62"/>
+                        <sample value="3.68"/>
+                        <sample value="3.74"/>
+                        <sample value="3.8"/>
+                        <sample value="3.86"/>
+                        <sample value="3.91"/>
+                        <sample value="3.98"/>
+                        <sample value="4.05"/>
+                        <sample value="4.1"/>
+                        <sample value="4.16"/>
+                        <sample value="4.22"/>
+                        <sample value="4.27"/>
+                        <sample value="4.33"/>
+                        <sample value="4.4"/>
+                        <sample value="4.46"/>
+                        <sample value="4.53"/>
+                        <sample value="4.59"/>
+                        <sample value="4.65"/>
+                        <sample value="4.71"/>
+                        <sample value="4.77"/>
+                        <sample value="4.83"/>
+                        <sample value="4.89"/>
+                        <sample value="4.95"/>
+                        <sample value="5.01"/>
+                        <sample value="5.07"/>
+                        <sample value="5.13"/>
+                        <sample value="5.19"/>
+                        <sample value="5.25"/>
+                        <sample value="5.31"/>
+                        <sample value="5.38"/>
+                        <sample value="5.44"/>
+                        <sample value="5.51"/>
+                        <sample value="5.57"/>
+                        <sample value="5.63"/>
+                        <sample value="5.69"/>
+                        <sample value="5.75"/>
+                        <sample value="5.81"/>
+                        <sample value="5.87"/>
+                        <sample value="5.94"/>
+                        <sample value="6"/>
+                        <sample value="6.06"/>
+                        <sample value="6.11"/>
+                        <sample value="6.17"/>
+                        <sample value="6.23"/>
+                        <sample value="6.28"/>
+                        <sample value="6.34"/>
+                        <sample value="6.4"/>
+                        <sample value="6.46"/>
+                        <sample value="6.51"/>
+                        <sample value="6.57"/>
+                        <sample value="6.63"/>
+                        <sample value="6.68"/>
+                        <sample value="6.73"/>
+                        <sample value="6.78"/>
+                        <sample value="6.83"/>
+                        <sample value="6.87"/>
+                        <sample value="6.93"/>
+                        <sample value="6.99"/>
+                        <sample value="7.04"/>
+                        <sample value="7.1"/>
+                        <sample value="7.15"/>
+                        <sample value="7.21"/>
+                        <sample value="7.26"/>
+                        <sample value="7.32"/>
+                        <sample value="7.38"/>
+                        <sample value="7.44"/>
+                        <sample value="7.5"/>
+                        <sample value="7.56"/>
+                        <sample value="7.62"/>
+                        <sample value="7.68"/>
+                        <sample value="7.73"/>
+                        <sample value="7.77"/>
+                        <sample value="7.82"/>
+                        <sample value="7.88"/>
+                        <sample value="7.94"/>
+                        <sample value="8"/>
+                     </function>
+                     <function1 domain="polyline" name="diameter">
+                        <sample value="1.33184617067458"/>
+                        <sample value="1.20530826167718"/>
+                        <sample value="1.07877035267977"/>
+                        <sample value="0.952232443682365"/>
+                        <sample value="0.82569453468496"/>
+                        <sample value="0.900331630762604"/>
+                        <sample value="1.02187264183945"/>
+                        <sample value="1.02187264183945"/>
+                        <sample value="1.02187264183945"/>
+                        <sample value="1.02186029665501"/>
+                        <sample value="1.02184508583268"/>
+                        <sample value="1.02187847509833"/>
+                        <sample value="1.02187505273088"/>
+                        <sample value="1.02187505273088"/>
+                        <sample value="1.02187505273088"/>
+                        <sample value="1.02187505273088"/>
+                        <sample value="1.02187505273088"/>
+                        <sample value="1.02187285414207"/>
+                        <sample value="1.02187285414207"/>
+                        <sample value="1.02187285414207"/>
+                        <sample value="1.02187285414207"/>
+                        <sample value="1.02184971812876"/>
+                        <sample value="1.02184971812876"/>
+                        <sample value="1.02184971812876"/>
+                        <sample value="1.02184971812876"/>
+                        <sample value="1.02184971812876"/>
+                        <sample value="1.02184971812876"/>
+                        <sample value="1.02186077806869"/>
+                        <sample value="1.02186077806869"/>
+                        <sample value="1.02186077806869"/>
+                        <sample value="1.02186077806869"/>
+                        <sample value="1.02186077806869"/>
+                        <sample value="1.02186077806869"/>
+                        <sample value="1.10981725217822"/>
+                        <sample value="1.27758349201669"/>
+                        <sample value="1.44538377532916"/>
+                        <sample value="1.61313276259534"/>
+                        <sample value="1.67474431704735"/>
+                        <sample value="1.6429954311233"/>
+                        <sample value="1.61128420698563"/>
+                        <sample value="1.57959167225935"/>
+                        <sample value="1.51885608435066"/>
+                        <sample value="1.42575518500106"/>
+                        <sample value="1.33268852651183"/>
+                        <sample value="1.23958762716224"/>
+                        <sample value="1.18737374733637"/>
+                        <sample value="1.17900079839259"/>
+                        <sample value="1.17062784944881"/>
+                        <sample value="1.16228935708504"/>
+                        <sample value="1.15391640814126"/>
+                        <sample value="1.14554345919748"/>
+                        <sample value="1.22078743487891"/>
+                        <sample value="1.37203604433852"/>
+                        <sample value="1.52331904411407"/>
+                        <sample value="1.67460204388962"/>
+                        <sample value="1.82588504366516"/>
+                        <sample value="1.78639766774424"/>
+                        <sample value="1.51250510590361"/>
+                        <sample value="1.23857176803769"/>
+                        <sample value="0.964679206197061"/>
+                        <sample value="0.867705677902348"/>
+                        <sample value="0.969249069301055"/>
+                        <sample value="1.07082760898339"/>
+                        <sample value="1.17240614866572"/>
+                        <sample value="1.27394954006443"/>
+                        <sample value="1.37552807974676"/>
+                        <sample value="1.4771066194291"/>
+                        <sample value="1.57865001082781"/>
+                        <sample value="1.68021195539402"/>
+                        <sample value="1.72831201037281"/>
+                        <sample value="1.72831201037281"/>
+                        <sample value="1.72831201037281"/>
+                        <sample value="1.72831201037281"/>
+                        <sample value="1.72828015326136"/>
+                        <sample value="1.72830562317967"/>
+                        <sample value="1.72830562317967"/>
+                        <sample value="1.72830562317967"/>
+                        <sample value="1.67041517925752"/>
+                        <sample value="1.54796957204078"/>
+                        <sample value="1.42552396482403"/>
+                     </function1>
+                  </functions>
+                  <root/>
+               </root>
+            </root>
+         </root>
+      </plant>
+   </scene>
+</rsml>
