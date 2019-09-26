@@ -13,11 +13,11 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
 
 # run dumux
-os.system("./rootsystem input/benchmarkC12.input")
+os.system("./rootsystem input/benchmarkC12b.input")
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
-with open("benchmarkC12_actual_transpiration.txt", 'r') as f:
+with open("benchmarkC12b_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 
 print()
@@ -38,7 +38,7 @@ ax1.plot(t, d[:, 5] / 1000, 'r-,')  # actual transpiration (calculated)
 ax1.plot(t, d[:, 1] * c, 'g:')  # actual transpiration (neumann)
 
 ax1.legend(['Potential', 'Actual', 'Actual'], loc = 'upper left')
-ax1.axis((0, t[-1], 0, 0.13))
+ax1.axis((0, t[-1], 0, 0.013))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
 

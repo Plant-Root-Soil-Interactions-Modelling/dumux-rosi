@@ -1,5 +1,5 @@
 [Problem]
-Name = benchmarkC12
+Name = benchmarkC12b
 
 [TimeLoop]
 TEnd = 43200 # half day [s]
@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 360 
 
 [RootSystem.Grid]
-File =  grids/RootSystem.dgf
+File =  grids/DAP8_RootSys.dgf
 InitialT = 14 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -42,11 +42,12 @@ Kr3 =  0.00411 0.00389 0.00367 0.00347 0.00328 0.0031 0.00293 0.00277 0.00262 0.
 KrAge3 = 0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 # days
 
 [RootSystem.Collar]
-Transpiration = 0.06
+Transpiration = 6.4e-3 # kg/day 
 Sinusoidal = True
 
 [Soil.IC]
-P = -200 # cm pressure head
+P = -644.8 -659.8
+Z = -.15 0.
 
 [Vtk]
 AddProcessRank = "false"

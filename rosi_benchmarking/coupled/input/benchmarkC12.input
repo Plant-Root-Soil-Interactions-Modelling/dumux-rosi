@@ -1,11 +1,11 @@
 [TimeLoop]
-TEnd = 1209600 # a day 86400 [s], two weeks 1209600 [s]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
-PeriodicCheckTimes = 7200
+PeriodicCheckTimes = 3600
 MaxTimeStepSize = 360
 
 [Soil.Grid]
-Cells = 10 10 25
+Cells = 8 8 15
 
 [Problem]
 Name = benchmarkC12c

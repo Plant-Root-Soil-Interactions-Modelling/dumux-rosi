@@ -7,9 +7,9 @@ DtInitial =  3600 # [s]
 MaxTimeStepSize = 31536000 
 
 [Soil.Grid]
-LowerLeft = -0.05 -0.05 -.25
-UpperRight = 0.05  0.05  0.
-Cells = 10 10 25
+LowerLeft = -0.04 -0.04 -.15
+UpperRight = 0.04  0.04  0.
+Cells = 8 8 15
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -20,7 +20,8 @@ Type = 2 # 5 free drainage, 1 constant pressure
 Value = 0 # [cm] pressure head, fully saturated bot
 
 [Soil.IC]
-P = -200 
+P = -644.8 -659.8
+Z = -.15 0.
 
 [Soil.VanGenuchten] 
 # Sand, Loam, Clay 
@@ -31,4 +32,4 @@ N =  3 1.6 1.1
 Ks = 1000 50 10 # [cm/d] 		
 
 [Soil.Layer]
-Number = 2 # pick soil type here ...
+Number = 2 # pick soil type here starting at 1! (2 = Loam)
