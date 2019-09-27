@@ -1,4 +1,4 @@
-""" "Benchmark C12 root system part """
+""" "Benchmark C12b root system part """
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
@@ -38,7 +38,7 @@ ax1.plot(t, d[:, 5] / 1000, 'r-,')  # actual transpiration (calculated)
 ax1.plot(t, d[:, 1] * c, 'g:')  # actual transpiration (neumann)
 
 ax1.legend(['Potential', 'Actual', 'Actual'], loc = 'upper left')
-ax1.axis((0, t[-1], 0, 0.013))
+ax1.axis((0, t[-1], 0, 0.13))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
 
