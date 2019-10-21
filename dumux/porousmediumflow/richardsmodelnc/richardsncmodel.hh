@@ -86,9 +86,9 @@
 
 #include <dumux/porousmediumflow/richards/model.hh>
 
-#include "volumevariables.hh"
-#include "indices.hh"
-#include "iofields.hh"
+#include "richardsncvolumevariables.hh"
+#include "richardsncindices.hh"
+#include "richardsnciofields.hh"
 
 namespace Dumux {
 
