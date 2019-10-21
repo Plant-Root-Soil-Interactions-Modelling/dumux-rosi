@@ -14,7 +14,7 @@
 #include <dumux/discretization/cctpfa.hh>
 #include <dumux/discretization/box.hh>
 
-#include <dumux/porousmediumflow/richardsnc/model.hh>
+#include <dumux/porousmediumflow/richardsmodelnc/richardsncmodel.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
