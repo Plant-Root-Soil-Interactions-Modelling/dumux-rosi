@@ -28,6 +28,10 @@ os.system("./rootsystem input/b3.input")
 p_, z_ = read3D_vtp_data("benchmark3-00001.vtp", False)
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
+xmin = min(h_)
+xmax = max(h_)
+print("from ", xmin, "to", xmax, " cm pressure head")
+
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
 np.savetxt("dumux_m32b", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
