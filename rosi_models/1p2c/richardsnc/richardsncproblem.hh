@@ -282,11 +282,13 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
+        NumEqVector source1(0.);
         if ((source_ != nullptr)) {
             auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-            return source_->at(eIdx)/scv.volume();
+            source1 = source_->at(eIdx)/scv.volume();
+            return source1;
         } else {
-            return 0.;
+            return source1;
         }
     }
 
