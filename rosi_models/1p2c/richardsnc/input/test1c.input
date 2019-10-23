@@ -1,5 +1,5 @@
 [Problem]
-Name = small_n
+Name = test1c
 
 [TimeLoop]
 DtInitial =  1 # [s]
@@ -33,7 +33,7 @@ Ks = 50 # [cm/d]
 
 [Component]
 Name = NO3
-MolarMass = 62.0049e-3 #[kg/mol]
+MolarMass = 62.0049 #[kg/mol]
 liquidDiffCoeff = 1.7e-9
 
 [Climate]

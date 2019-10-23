@@ -69,6 +69,9 @@ public:
      */
     RichardsNCProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
+
+        // initialize fluid system
+        FluidSystem::init();
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
@@ -174,7 +177,7 @@ public:
             switch (bcTopType_) {
             case constantPressure:
                 values[Indices::pressureIdx] = toPa_(bcTopValue_);
-                values[Indices::massOrMoleFracIdx] = getParam<Scalar>("Soil.BC.InitialSoluteMassFracInSoil",0.);
+                values[Indices::massOrMoleFracIdx] = getParam<Scalar>("Soil.BC.InitialSoluteMassFracInSoil",1.24e-6);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,
@@ -184,7 +187,7 @@ public:
             switch (bcBotType_) {
             case constantPressure:
                 values[Indices::pressureIdx] = toPa_(bcBotValue_);
-                values[Indices::massOrMoleFracIdx] = getParam<Scalar>("Soil.BC.InitialSoluteMassFracInSoil",0.);
+                values[Indices::massOrMoleFracIdx] = getParam<Scalar>("Soil.BC.InitialSoluteMassFracInSoil",1.24e-6);
                 break;
             default:
                 DUNE_THROW(Dune::InvalidStateException,
@@ -378,7 +381,7 @@ public:
         const SubControlVolume &scv) const {
         
         PrimaryVariables sourceValues(0.);
-        if (couplingManager_!=nullptr) {
+       // if (couplingManager_!=nullptr) {
             //            // compute source at every integration point
             const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
             const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
@@ -401,16 +404,17 @@ public:
             const Scalar DiffValue = 0.;
             //Advective flux term of transport
             Scalar AdvValue;
-            if (sourceValues[conti0EqIdx]>0) // flow from root to soil
-            	AdvValue = 2 * M_PI * krel * rootRadius * kr * (pressure1D - pressure3D) * density * c1D;
-            else
-            	AdvValue = 2 * M_PI * krel * rootRadius * kr * (pressure1D - pressure3D) * density * c3D;
+            if (sourceValues[conti0EqIdx]>0) {      // flow from root to soil
+            	AdvValue = 2 * M_PI * krel * rootRadius * kr * (pressure1D - pressure3D) * density * c1D;}
+            else {
+            	AdvValue = 2 * M_PI * krel * rootRadius * kr * (pressure1D - pressure3D) * density * c3D;}
+
             // Active flux - active uptake based on Michaeles Menten
             Scalar ActiveValue;
             ActiveValue;
             ActiveValue = 0;
-            const Scalar Vmax = getParam<Scalar>("SpatialParam.Vmax",6.2e-11); // kg/(m2s)
-            const Scalar Km = getParam<Scalar>("SpatialParam.Km",3.1e-9); // kg/m3
+            const Scalar Vmax = getParam<Scalar>("SpatialParam.Vmax", 6.2e-11); // kg/(m2s)
+            const Scalar Km = getParam<Scalar>("SpatialParam.Km", 3.1e-9); // kg/m3
             ActiveValue = -2 * M_PI * rootRadius * Vmax * c3D * density/(Km + c3D * density);
 
             Scalar sigma;
@@ -418,9 +422,9 @@ public:
             sourceValues[transportEqIdx] = (sigma * (AdvValue + DiffValue) + (1-sigma)*ActiveValue)*source.quadratureWeight()*source.integrationElement();
             sourceValues[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement();
             source = sourceValues;
-        } else {
-            source = 0;
-        }
+       // } else {
+        //    source = 0;
+       // }
     }
 
     /**
