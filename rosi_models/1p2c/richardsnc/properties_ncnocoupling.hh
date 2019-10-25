@@ -1,52 +1,49 @@
-// -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
-// vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_PROPERTIES_NOCOUPLING_HH
-#define DUMUX_ROOT_PROPERTIES_NOCOUPLING_HH
+#ifndef DUMUX_SOIL_PROPERTIES_NC_NOCOUPLING_HH
+#define DUMUX_SOIL_PROPERTIES_NC_NOCOUPLING_HH
 
 namespace Dumux {
 namespace Properties {
 
 /**
- * no functionality (but Dumux wants its bindings)
+ * no functionality (but Dumux wants its static bindings)
  * ugly, but I found no other option...
  */
 // The point source type (not used)
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::Roots> {
+struct PointSource<TypeTag, TTag::RichardsTT> {
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
     using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
 };
 /// Dummy types
-class DummyPointSourceDataR {
+class DummyPointSourceData {
 public:
     double lowDimElementIdx() { throw 1; };
 };
-class DummySpatialR {
+class DummySpatial {
 public:
     double kr(int i) const { throw 1; };
     double radius(int i) const { throw 1; };
 };
-class DummyProblemR {
+class DummyProblem {
 public:
-    DummySpatialR spatialParams() { throw 1; };
+    DummySpatial spatialParams() { throw 1; };
 };
-class DummyCouplingManagerR {
+class DummyCouplingManager {
 public:
     std::vector<double> bulkPriVars(int i) { throw 1; };
     std::vector<double>  lowDimPriVars(int i) { throw 1; };
-    DummyProblemR& problem(int i) { throw 1; };
-    DummyPointSourceDataR& pointSourceData(int i) { throw 1; };
+    DummyProblem& problem(int i) { throw 1; };
+    DummyPointSourceData& pointSourceData(int i) { throw 1; };
     std::vector<double>& lowDimPointSources() { throw 1; };
     std::vector<double>& bulkPointSources() { throw 1; };
 };
 // For a dummy manager
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::Roots> {
-    using type = DummyCouplingManagerR;
+struct CouplingManager<TypeTag, TTag::RichardsTT> {
+    using type = DummyCouplingManager;
 };
 
-
-} // namespace Properties
-} // namespace Dumux
+} // end namespace properties
+} // end namespace DUMUX
 
 #endif

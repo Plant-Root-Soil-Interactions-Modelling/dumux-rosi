@@ -20,8 +20,8 @@
  * \file
  * \brief The spatial parameters class
  */
-#ifndef DUMUX_ROOT_SPATIALPARAMS_DGF_HH
-#define DUMUX_ROOT_SPATIALPARAMS_DGF_HH
+#ifndef DUMUX_ROOT_SPATIALPARAMS_DGF_1P2C_HH
+#define DUMUX_ROOT_SPATIALPARAMS_DGF_1P2C_HH
 
 #include <dune/common/exceptions.hh>
 #include <dumux/common/math.hh>

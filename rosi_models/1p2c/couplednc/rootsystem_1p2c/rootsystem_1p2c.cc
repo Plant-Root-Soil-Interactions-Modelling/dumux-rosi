@@ -56,7 +56,7 @@
 #include <dumux/growth/crootboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "rootsproblem_1p2c.hh"
+#include "roots_1p2c_problem.hh"
 #include "properties_1p2c.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling_1p2c.hh" // dummy types for replacing the coupling types
 
