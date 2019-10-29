@@ -59,12 +59,12 @@
 
 #include "../rootsystem/rootsproblem.hh"
 #include "../soil/richardsproblem.hh"
-#include "properties.hh" // inclcudes root properties, soil properties, redefines coupling manager
+#include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::RichardsBox;
-using RootTypeTag = Properties::TTag::RootsBox;
+using SoilTypeTag = Properties::TTag::RichardsCC; //RichardsBox;
+using RootTypeTag = Properties::TTag::RootsCCTpfa; // RichardsCC
 using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
 
 /**
@@ -334,6 +334,7 @@ int main(int argc, char** argv) try
                 while (growth->simTime()+dt<t+initialTime) {
 
                     std::cout << "grow \n"<< std::flush;
+
                     gridGrowth->grow(dt);
                     rootProblem->spatialParams().updateParameters(*growth);
                     rootProblem->applyInitialSolution(sol[rootDomainIdx]);
