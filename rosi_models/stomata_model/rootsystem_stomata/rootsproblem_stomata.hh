@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef ROOTS_PROBLEM_HH
-#define ROOTS_PROBLEM_HH
+#ifndef ROOTS_1P2C_PROBLEM_HH
+#define ROOTS_1P2C_PROBLEM_HH
 
 #include <math.h>
 #include <map>
@@ -25,13 +25,14 @@ namespace Dumux {
  * with optional coupling to a soil model
  */
 template<class TypeTag>
-class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
+class RootsOnePTwoCProblem: public PorousMediumFlowProblem<TypeTag> {
 
     using ParentType = PorousMediumFlowProblem<TypeTag>;
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
@@ -47,8 +48,17 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
     using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
     enum {
-        conti0EqIdx = Indices::conti0EqIdx, // indices of the primary variables
-        pressureIdx = Indices::pressureIdx
+        // indices of primary variables
+        pressureIdx = Indices::pressureIdx,
+        
+        // component indices
+        H2OIdx = FluidSystem::compIdx(FluidSystem::MultiPhaseFluidSystem::H2OIdx),
+        ABAIdx = FluidSystem::compIdx(FluidSystem::MultiPhaseFluidSystem::ABAIdx),
+
+        // indices of the equations
+        contiH2OEqIdx = Indices::conti0EqIdx + H2OIdx,
+        contiABAEqIdx = Indices::conti0EqIdx + ABAIdx 
+        
     };
     enum {
         isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
@@ -58,11 +68,15 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
         bcNeumann = 1
     };
 
+    static constexpr bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
     static const int dimWorld = GridView::dimensionworld;
 
 public:
 
-    RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
+    RootsOnePTwoCProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
+
+        // initialize fluid system
+        FluidSystem::init();
 
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
@@ -82,7 +96,7 @@ public:
         file_at_.open(this->name() + "_actual_transpiration.txt");
     }
 
-    virtual ~RootsProblem() {
+    virtual ~RootsOnePTwoCProblem() {
         delete soil_;
         std::cout << "closing file \n" << std::flush;
         file_at_.close();
@@ -204,7 +218,7 @@ public:
      */
     PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const {
         if (critical_) {
-            return criticalCollarPressure_;
+            return PrimaryVariables(criticalCollarPressure_);
         } else {
             return PrimaryVariables(collar_.f(time_)+pRef_);
         }
@@ -223,89 +237,31 @@ public:
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
-            Scalar p = volVars.pressure();
-            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            Scalar kx = this->spatialParams().kx(eIdx);
-            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            Scalar trans = collar_.f(time_); // kg/s   
-            if (Control) { maxTrans = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; } 
-            else { maxTrans = stomatalconductance(p) * trans; }        
-            Scalar v = std::min(trans, maxTrans);
-            neumannTime_ = time_;
-            potentialTrans_ = trans;
-            actualTrans_ = v;
-            maxTrans_ = maxTrans;
+            double p = volVars.pressure();
             collarP_ = p;
+            // auto eIdx = this->fvGridGeometry().elementMapper().index(element);            
+            //double kx = this->spatialParams().kx(eIdx);
+            //auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+            //double criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist; // check units todo
+            potentialTrans_ = collar_.f(time_); // [ kg/s]
+            if (collarP_ < p_crit)
+            {
+                alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
+            }
+            else
+            {
+                alpha = alphaR + (1 - alphaR)*exp(-sC*cL);
+            }
+            double criticalTranspiration = alpha * potentialTrans_;
+            double v = std::min(potentialTrans_, criticalTranspiration);
+            actualTrans_ = v;
+            neumannTime_ = time_;
+            maxTrans_ = criticalTranspiration;
             v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-            std::cout   <<   "transpiration:"                       << trans             <<    std::endl;
             return NumEqVector(v);
         } else {
-            //Pressure at root tips
-            const auto& volVars = elemVolVars[scvf.insideScvIdx()];
-            const auto p_root = volVars.pressure(0);
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            tipPressureMap[eIdx] = p_root; // filling the map with index as eIdx and value as pressure at root tips */
             return NumEqVector(0.); // no flux at root tips
         }
-    }
-
-        Scalar Msignal() const
-    {
-        const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
-        
-        for (std::map<size_t, double>::iterator p_tips = tipPressureMap.begin(); p_tips != tipPressureMap.end(); p_tips++) 
-        {
-            p_RootTip = p_tips->second; //store pressure at the root tips in p_RootTip
-                  
-            //compute M_signal
-            if (abs(p_RootTip) >= abs(p0))
-            {
-               M_signal = 3.26e-16*(abs(p_RootTip) - abs(p0))*mi;     //3.2523e-16 is production rate per dry mass and pressure in mol kg-1 Pa-1 s-1
-		    }	
-            else 
-            {					   
-		       M_signal = 0;  
-            }                                                                                                                                                                                                                                                                   
-        M_signal_ += M_signal;
-        }
-        std::cout   <<   "cumulative M_signal: " << M_signal_ << std::endl; 
-        return M_signal_;
-    }
-
-    Scalar chemicalconcentration() const //compute concentration of chemical signal produced by roots  
-     {
-        if (maxTrans_*dt_*1.e-3 > 0.18*7.68e-5) {
-            cL += (Msignal()*dt_ - cL*maxTrans_*1.e-3*dt_)/7.68e-5; //7.68e-5 is the volume of root in m3 
-        }
-        else {
-            cL += 0;            
-        }
-            std::cout   <<   "cL:"                                           << cL                    <<     std::endl; 
-    return cL;
-    }
-
-    Scalar stomatalconductance(Scalar P_collar) const
-    {
-                                                                                                                                                                                                            
-      int alphaR  = 0;
-      	 //relative stomatal conductance
-         if (P_collar < p_crit) //pressure at root collar is less than the critical pressure
-         {
-		 alpha = alphaR + (1-alphaR)*exp((-sC*chemicalconcentration())*exp(-1.02e-6*(P_collar-p_crit)));
-         }
-		 else
-         {
-         alpha = alphaR + (1-alphaR)*exp(-sC*chemicalconcentration());
-         }
-            
-         std::cout   <<   "time step: "                                   << dt_                   <<    std::endl;
-         std::cout   <<   "pressure at root tips: "                       << p_RootTip             <<    std::endl;
-         std::cout   <<   "Critical Pressure: "                           << p_crit                <<    std::endl;
-         std::cout   <<   "Pressure at root collar: "                     << P_collar              <<    std::endl;
-         std::cout   <<   "pressure below which production starts: "      << p0                    <<    std::endl;
-         std::cout   <<   "stomatal conductance: "                        << alpha                 <<    std::endl;
-         //std::cout   <<   "Critical transpiration:"                       << maxTrans_             <<    std::endl;
-        return alpha;  
     }
 
     /*!
@@ -325,11 +281,29 @@ public:
             Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
             Scalar phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
             Scalar phs = soil(scv.center()); // kg/m/s^2
-            values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
-            values[conti0EqIdx] /= (a * a * M_PI); // 1/s
-            values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+            values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+            values[contiH2OEqIdx] /= (a * a * M_PI); // 1/s
+            values[contiH2OEqIdx] *= rho_; // (kg/s/m^3)
+            Scalar RootAge = params.age(eIdx); // s
+            RootAge /= (24. * 3600.); // days
+            if (RootAge <= 1)  // if root segment age <= 1 day
+            {
+                Scalar tipP_ = elemVolVars[scv.localDofIndex()].pressure(); // local tip pressure in kg/m/s^2
+                if (abs(tipP_) >= abs(p0))
+                {
+                    Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1, Msignal (mol s-1)
+                    Msignal *= rhoABA_; // (mol-kg/s/m^3) 
+                    values[contiABAEqIdx] += Msignal; // in (kg/s/m^3)
+                }                
+                else
+                {
+                    Msignal = 0;
+                    values[contiABAEqIdx] += Msignal; // in (kg/s/m^3)
+                }            
+            }
         } else {
-            values[conti0EqIdx] = 0;
+            values[contiH2OEqIdx] = 0;
+            values[contiABAEqIdx] += 0;
         }
         return values;
     }
@@ -370,14 +344,12 @@ public:
      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day]
      *
-     * 1 - 4 work only for neuman bc
+     * 0 - 4 work only for neuman bc
      */
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
-        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
-            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
-//        std::cout << "Time:" << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", "
-//            << collarP_ <<", " << trans << "\n"; // << std::setprecision(17)
+        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
+            << trans << ", "<< time_ << "\n";
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -487,6 +459,11 @@ public:
 
 private:
 
+    //! cm pressure head -> Pascal
+    Scalar toPa_(Scalar ph) const {
+        return pRef_ + ph / 100. * rho_ * g_;
+    }
+
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
         return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
@@ -498,40 +475,35 @@ private:
     size_t bcType_;
     double time_ = 0.;
     double dt_ = 0.;
-    Scalar criticalCollarPressure_ = -1.4e6;
+    double criticalCollarPressure_ = -1.4e6;
     bool critical_ = false; // imposes dirichlet strong
-    bool Control = getParam<bool>("StomatalBehavior.Control");
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
     static constexpr Scalar rho_ = 1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
     static constexpr Scalar eps_ = 1e-6;
 
-     Scalar toPa_(Scalar ph) const {     // cm -> Pa
-        return pRef_ + ph / 100. * rho_ * g_;
-    }
-
     std::ofstream file_at_; // file for actual transpiration
-    mutable Scalar neumannTime_ = 0;
-    mutable Scalar actualTrans_ = 0;
-    mutable Scalar potentialTrans_ = 0;
-    mutable Scalar maxTrans = 0;
-    mutable Scalar maxTrans_ = 0.;
-    mutable Scalar collarP_ = 0.;
-
-    Scalar sC = getParam<Scalar>("StomatalBehavior.sC");
-    Scalar p_crit = toPa_(-5500); //cm -> Pa    
-    Scalar p0 = toPa_(-4500); //pressure head below which chemical production starts cm -> Pa 
-    mutable double M_signal  = 0.0;     //M_signal is the chemical production rate in root segment
-    mutable double M_signal_ = 0.0;     //M_signal_ is cumulative chemical production rate
-    mutable Scalar alpha = 1.0;
-    mutable Scalar cL   = 0.0;
-    mutable Scalar p_RootTip=0.0;
-   // mutable Scalar p= 0.0;
-    mutable std::map<size_t, double> tipPressureMap; // create an empty map for pressure at root tips
-    mutable std::map<size_t, double>::iterator p_tips;
+    mutable double neumannTime_ = 0;
+    mutable double actualTrans_ = 0;
+    mutable double potentialTrans_ = 0;
+    mutable double maxTrans_ = 0.;
+    mutable double collarP_ = 0.;
 
     std::map<std::string, std::vector<Scalar>> userData_;
+
+    // chemical signalling variables
+    Scalar p0 = toPa_(-4500); // cm -> Pa
+    mutable Scalar Msignal = 0; // initial production rate of chemicals
+    const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
+    const Scalar p_crit = toPa_(-5500); // cm -> Pa
+    mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
+    Scalar alphaR = 0; // residual stomatal conductance, taken as 0
+    static constexpr Scalar rhoABA_ = 1.19e3; // 1.19e3 kg/m^3 is the density of ABA
+    Scalar cD = getParam<Scalar>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+    const Scalar sC = 5e+4; // from Huber et. al [2014]
+    mutable Scalar cL = 0; // initial chemical concentration
+    const Scalar sH = 1.02e-6; // from Huber et. al [2014]
 
 };
 

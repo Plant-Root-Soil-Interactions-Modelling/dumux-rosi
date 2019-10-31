@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_PROPERTIES_NOCOUPLING_HH
-#define DUMUX_ROOT_PROPERTIES_NOCOUPLING_HH
+#ifndef DUMUX_ROOT_1P2C_PROPERTIES_NOCOUPLING_HH
+#define DUMUX_ROOT_1P2C_PROPERTIES_NOCOUPLING_HH
 
 namespace Dumux {
 namespace Properties {
@@ -12,7 +12,7 @@ namespace Properties {
  */
 // The point source type (not used)
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::Roots> {
+struct PointSource<TypeTag, TTag::RootsOnePTwoC> {
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
     using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
 };
@@ -41,7 +41,7 @@ public:
 };
 // For a dummy manager
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::Roots> {
+struct CouplingManager<TypeTag, TTag::RootsOnePTwoC> {
     using type = DummyCouplingManagerR;
 };
 
