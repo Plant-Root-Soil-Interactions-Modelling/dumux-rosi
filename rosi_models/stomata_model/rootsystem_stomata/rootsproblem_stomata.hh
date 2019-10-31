@@ -130,8 +130,9 @@ public:
                 d = this->spatialParams().radius(eIdx);// m
             }
             if (name=="initialPressure") {
+                PrimaryVariables d(0);
                 d = initialAtPos(e.geometry().center()); // Pa
-                d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
+                double a = 100. * (d[0] - pRef_) / rho_ / g_;  // Pa -> cm
             }
             if (name=="radialFlux") {
                 auto geo = e.geometry();
@@ -142,7 +143,7 @@ public:
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 auto p = geo.center();
                 // kr [m /Pa/s]
-                d =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1] + sol[i0]) / 2); // m^3 / s
+                d =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1][0] + sol[i0][0]) / 2); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
             if (name=="axialFlux") {
@@ -151,13 +152,13 @@ public:
                 auto kx = this->spatialParams().kx(eIdx);
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
-                d = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
+                d = kx * ((sol[i1][0] - sol[i0][0]) / length - rho_ * g_); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
             if (name=="p") {
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
-                d = 0.5 * (sol[i1] + sol[i0]);
+                d = 0.5 * (sol[i1][0] + sol[i0][0]);
                 d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
             userData_[name][eIdx] = d;
@@ -239,11 +240,20 @@ public:
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
             collarP_ = p;
+            NumEqVector conc_(0.);
             // auto eIdx = this->fvGridGeometry().elementMapper().index(element);            
             //double kx = this->spatialParams().kx(eIdx);
             //auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             //double criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist; // check units todo
             potentialTrans_ = collar_.f(time_); // [ kg/s]
+
+            // chemical concentration in buffer
+            for (auto&& scv : scvs(fvGeometry)) {
+                conc_ = this->source(element, fvGeometry, elemVolVars, scv);
+                cL = conc_[1] * dt_; // (kg/m^3)
+            }
+
+            // stomatal conductance definition
             if (collarP_ < p_crit)
             {
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
@@ -252,7 +262,7 @@ public:
             {
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);
             }
-            double criticalTranspiration = alpha * potentialTrans_;
+            double criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
             double v = std::min(potentialTrans_, criticalTranspiration);
             actualTrans_ = v;
             neumannTime_ = time_;
@@ -292,7 +302,8 @@ public:
                 if (abs(tipP_) >= abs(p0))
                 {
                     Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1, Msignal (mol s-1)
-                    Msignal *= rhoABA_; // (mol-kg/s/m^3) 
+                    Msignal *=  MolarMassABA; // (kg/s)                  
+                    Msignal /= 7.68e-5; // (kg/s/m^3)  7.68e-5 is the volume of root system in m3
                     values[contiABAEqIdx] += Msignal; // in (kg/s/m^3)
                 }                
                 else
@@ -448,8 +459,8 @@ public:
                 source += pointSources;
             }
         }
-        std::cout << "Global integrated source (root): " << source << " (kg/s) / "
-            <<                           source*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Global integrated source (root): " << source[0] << " (kg/s) / "
+            <<                           source[0]*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
@@ -501,9 +512,10 @@ private:
     Scalar alphaR = 0; // residual stomatal conductance, taken as 0
     static constexpr Scalar rhoABA_ = 1.19e3; // 1.19e3 kg/m^3 is the density of ABA
     Scalar cD = getParam<Scalar>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    const Scalar sC = 5e+4; // from Huber et. al [2014]
-    mutable Scalar cL = 0; // initial chemical concentration
-    const Scalar sH = 1.02e-6; // from Huber et. al [2014]
+    mutable Scalar cL = 0;
+    const Scalar MolarMassABA = 0.26432; // (kg/mol) Molar mass of ABA is 264.321 g/mol
+    const Scalar sC = 1.89e5; // (m^3/kg) 5e+4 from Huber et. al [2014]
+    const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
 
 };
 

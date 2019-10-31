@@ -13,13 +13,15 @@
 #include <dumux/discretization/method.hh>
 #include <dumux/discretization/elementsolution.hh>
 
-#include <dumux/porousmediumflow/1p/model.hh>
+#include <dumux/porousmediumflow/1pnc/model.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
 #include <dumux/material/components/constant.hh>
-#include <dumux/material/fluidsystems/1pliquid.hh>
+//#include <dumux/material/fluidsystems/1pliquid.hh>
+#include <dumux/material/fluidsystems/h2oABA.hh>
+#include <dumux/material/fluidsystems/1padapter.hh>
 
 #include "../rootsystem_stomata/properties_stomata.hh" // TypeTag:Roots
 #include "../soil_stomata/properties_stomata.hh" // TypeTag:RichardsTT
