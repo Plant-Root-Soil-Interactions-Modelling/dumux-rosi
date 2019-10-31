@@ -25,39 +25,40 @@
 
 #include <ctime>
 #include <iostream>
+#include <memory>
 
-#include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
-#include <dune/common/timer.hh> // to compute wall times
+// Dune
+#include <dune/common/parallel/mpihelper.hh>
+#include <dune/common/exceptions.hh>
+#include <dune/common/timer.hh>
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
-#include <dune/grid/io/file/vtk.hh>
-#include <dune/istl/io.hh>
+#include <dune/istl/io.hh> // debug vector/matrix output
+#include <dune/localfunctions/lagrange/pqkfactory.hh>
+#include <dune/grid/common/mcmgmapper.hh>
 
-// #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system
-// #include <dumux/common/properties/propertysystem.hh>
-#include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
-#include <dumux/common/valgrind.hh> // for debugging
-#include <dumux/common/dumuxmessage.hh> // for fun (a static class)
-#include <dumux/common/defaultusagemessage.hh> // for information (a global function)
-
-#include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
-#include <dumux/nonlinear/newtonsolver.hh> // the only nonlinear solver available
-
-#include <dumux/common/timeloop.hh>
-#include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
-
-#include <dumux/io/vtkoutputmodule.hh>
+// Dumux
+#include <dumux/common/exceptions.hh>
+#include <dumux/common/properties.hh>
+#include <dumux/common/parameters.hh>
+#include <dumux/common/dumuxmessage.hh>
+#include <dumux/common/defaultusagemessage.hh>
+#include <dumux/common/geometry/boundingboxtree.hh>
+#include <dumux/common/geometry/geometricentityset.hh>
+#include <dumux/common/geometry/intersectingentities.hh>
+#include <dumux/linear/seqsolverbackend.hh>
+#include <dumux/nonlinear/newtonsolver.hh>
+#include <dumux/assembly/fvassembler.hh>
 #include <dumux/io/grid/gridmanager.hh>
-// #include <dumux/io/loadsolution.hh> // global functions to resume a simulation
 
-#include <RootSystem.h>
+#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
-#include <dumux/growth/rootsystemgridfactory.hh> // dumux-rosi growth ideas (modified from dumux-rootgrowth)
-#include <dumux/growth/growthinterface.hh>
-#include <dumux/growth/crootboxadapter.hh>
-#include <dumux/growth/gridgrowth.hh>
+#include <dumux/multidomain/traits.hh>
+#include <dumux/multidomain/fvassembler.hh>
+#include <dumux/multidomain/newtonsolver.hh>
 
 #include "rootsproblem.hh"
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_periodic.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -68,8 +69,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsCCTpfa; // RootsCC, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
-    int simtype = Properties::simtype;
+    using TypeTag = Properties::TTag::RootsCCTpfa; // RootsCCTpfa, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -82,39 +82,18 @@ int main(int argc, char** argv) try
     // parse command line arguments and input file
     Parameters::init(argc, argv);
 
-    //    using GridView = GetPropType<TypeTag, Properties::GridView>;
-    //    using Element = typename GridView::template Codim<0>::Entity;
-    //    using GlobalPosition = typename Element::Geometry::GlobalCoordinate; // the beauty (is there a correct & quicker way?)
     using GlobalPosition = Dune::FieldVector<double, 3>;
+    std::bitset<3> periodic("110");
+    GlobalPosition lower = { -1.e9, -1.e9, -1.e9 };
+    GlobalPosition upper = { 1.e9, 1.e9, 1.e9 };
 
     // Create the gridmanager and grid
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
-    GridManager<Grid> gridManager; // only for dgf
-    std::shared_ptr<CRootBox::RootSystem> rootSystem; // only for rootbox
-    GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
-    if (simtype==Properties::dgf) { // for a static dgf grid
-        std::cout << "\nSimulation type is dgf \n\n" << std::flush;
-        gridManager.init("RootSystem");
-        grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
-    } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
-        std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
-        rootSystem = std::make_shared<CRootBox::RootSystem>();
-        rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
-        if (hasParam("RootSystem.Grid.Confined")) {
-            auto box = getParam<std::vector<double>>("RootSystem.Grid.Confined");
-            rootSystem->setGeometry(new CRootBox::SDF_PlantBox(box.at(0)*100, box.at(1)*100, box.at(2)*100));
-        } else { // half plane
-            rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
-        }
-        rootSystem->initialize();
-        double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
-        grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
-        //  todo static soil for hydrotropsim ...
-        //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
-        //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CRootBoxAdapter<GlobalPosition>(*rootSystem);
-    }
+    PeriodicNetworkGridManager<3> gridManager(lower, upper, periodic); // only for dgf
+    std::cout << "\nSimulation type is dgf \n\n" << std::flush;
+    gridManager.init("RootSystem");
+    grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
 
     // we compute on the leaf grid view
     const auto& leafGridView = grid->leafGridView();
@@ -122,7 +101,9 @@ int main(int argc, char** argv) try
 
     // create the finite volume grid geometry
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
+    auto fvGridGeometry = std::make_shared<FVGridGeometry>(gridManager.grid().leafGridView());
+    const auto periodicConnectivity = gridManager.getGridData()->createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
+    fvGridGeometry->setExtraConnectivity(periodicConnectivity);
     fvGridGeometry->update();
     std::cout << "i have the geometry \n" << std::flush;
 
@@ -134,24 +115,10 @@ int main(int argc, char** argv) try
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
 
-    // root growth
-    GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
-    double initialTime = 0.; // s
-    if (simtype==Properties::rootbox) {
-        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
-        std::cout << "...grid grower initialized \n" << std::flush;
-        initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
-        gridGrowth->grow(initialTime);
-        std::cout << "\ninitial growth performed... \n" << std::flush;
-    }
-
     // the problem (initial and boundary conditions)
     auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
-    if (simtype==Properties::dgf) {
-        problem->spatialParams().initParameters(*gridManager.getGridData());
-    } else if (simtype==Properties::rootbox){
-        problem->spatialParams().updateParameters(*growth);
-    }
+    problem->spatialParams().initParameters(*gridManager.getGridData());
+
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
     std::cout << "i have a problem \n" << std::flush;
@@ -244,33 +211,6 @@ int main(int argc, char** argv) try
             double dt = timeLoop->timeStepSize(); // dumux time step
             problem->setTime(t, dt); // pass current time to the problem
 
-            if (grow) {
-
-                // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                while (growth->simTime()+dt<t+initialTime) {
-
-                    std::cout << "\n grow ..."<< std::flush;
-                    gridGrowth->grow(dt);
-                    problem->spatialParams().updateParameters(*growth);
-                    problem->applyInitialSolution(x); // reset todo (? does this make sense)?
-                    std::cout << "grew \n"<< std::flush;
-
-                    // what shall I update?
-                    fvGridGeometry->update();
-                    //gridVariables->update();
-                    gridVariables->updateAfterGridAdaption(x); // update the secondary variables
-
-                    // todo? what is necessary? no clue what i am doing ...
-                    assembler->setResidualSize(); // resize residual vector
-                    assembler->setJacobianPattern(); // resize and set Jacobian pattern
-                    assembler->setPreviousSolution(x);
-                    assembler->assembleJacobianAndResidual(x);
-
-                    xOld = x;
-                }
-
-            }
-
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
             nonLinearSolver.solve(x, *timeLoop); // solve the non-linear system with time step control
             xOld = x; // make the new solution the old solution
@@ -291,7 +231,7 @@ int main(int argc, char** argv) try
                 problem->userData("age", x); // age changes with time
                 problem->userData("kr", x);  // conductivities change with age
                 problem->userData("kx", x);
-                vtkWriter.write(timeLoop->time());
+//                vtkWriter.write(timeLoop->time());
             }
             problem->writeTranspirationRate(x); // always add transpiration data into the text file
             timeLoop->reportTimeStep();  // report statistics of this time step
@@ -317,7 +257,7 @@ int main(int argc, char** argv) try
         problem->userData("age", x); // prepare fields
         problem->userData("kr", x);  // conductivities change with age
         problem->userData("kx", x);
-        vtkWriter.write(1); // write vtk output
+//        vtkWriter.write(1); // write vtk output
         problem->writeTranspirationRate(x);
     }
 

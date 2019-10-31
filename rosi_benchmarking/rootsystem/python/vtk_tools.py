@@ -119,15 +119,29 @@ def read3D_vtp_data(name, cell = True):
         d = p.GetTuple(i)
         p_[i] = d[0]
 
-    Np = polydata.GetNumberOfPoints()
-    z_ = np.zeros((Np, 3))
     points = polydata.GetPoints()
-    for i in range(0, Np):
-        p = np.zeros(3,)
-        points.GetPoint(i, p)
-        z_[i, :] = p
 
-    return p_, z_
+    if not cell:
+        Np = polydata.GetNumberOfPoints()
+        z_ = np.zeros((Np, 3))
+        for i in range(0, Np):
+            p = np.zeros(3,)
+            points.GetPoint(i, p)
+            z_[i, :] = p
+        return p_, z_
+
+    if cell:
+        Nc = polydata.GetNumberOfLines()  # GetPointId (int ptId)
+        z_ = np.zeros((Nc, 3))
+        for i in range(0, Nc):
+            c = polydata.GetCell(i)
+            ids = c.GetPointIds()
+            p1 = np.zeros(3,)
+            points.GetPoint(ids.GetId(0), p1)
+            p2 = np.zeros(3,)
+            points.GetPoint(ids.GetId(1), p2)
+            z_[i, :] = 0.5 * (p1 + p2)
+        return p_, z_
 
 
 if __name__ == "__main__":

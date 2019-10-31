@@ -59,5 +59,5 @@ print(np.linalg.det(AA), d)
 
 print("\nInv")
 AAi = np.array([[1, 1], [exp(sqrt(c) * L), exp(-sqrt(c) * L)] ])
-print(np.linalg.inv(AA)
-print(AAi)      
+print(np.linalg.inv(AA))
+print(AAi)

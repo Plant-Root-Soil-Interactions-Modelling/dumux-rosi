@@ -25,7 +25,7 @@ os.system("rm benchmark3-00001.vtp")
 os.system("./rootsystem input/b3.input")
 
 # plot
-p_, z_ = read3D_vtp_data("benchmark3-00001.vtp", False)
+p_, z_ = read3D_vtp_data("benchmark3-00001.vtp", True)
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 xmin = min(h_)
