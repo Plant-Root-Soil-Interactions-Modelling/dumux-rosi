@@ -39,7 +39,7 @@
 
 #include <dumux/io/name.hh>
 
-#include <dumux/material/components/base.hh>
+#include <dumux/material/fluidsystems/base.hh>
 
 namespace Dumux {
 namespace FluidSystems {
@@ -63,9 +63,8 @@ struct H2OABADefaultPolicy
  * \brief A two-phase fluid system with two components water \f$(\mathrm{H_2O})\f$
  *        ABA \f$(\mathrm{N_2})\f$ for non-equilibrium models.
  */
-template <class Scalar, class Policy = H2OABADefaultPolicy<>>
-class H2OABA
-    : public Base<Scalar, H2OABA<Scalar, Policy> >
+template <class Scalar, class Policy = H2OABADefaultPolicy<> >
+class H2OABA : public Base<Scalar, H2OABA<Scalar, Policy> >
 {
     using ThisType = H2OABA<Scalar, Policy>;
     using Base = Dumux::FluidSystems::Base<Scalar, ThisType>;
@@ -292,12 +291,12 @@ public:
                    "H2OABAFluidSystem::criticalMolarVolume()");
     }
 
-    /*!
+    !
      * \brief The acentric factor of a component \f$\mathrm{[-]}\f$.
      *
      * \param compIdx The index of the component to consider
-     */
-  /*  static Scalar acentricFactor(int compIdx)
+     
+    static Scalar acentricFactor(int compIdx)
     {
         static const Scalar accFac[] = {
             H2O::acentricFactor(),
@@ -409,7 +408,7 @@ public:
        // return (rho_gH2O + rho_gABA);
     }
 
-  //  using Base::molarDensity;
+    using Base::molarDensity;
     /*!
      * \brief The molar density \f$\rho_{mol,\alpha}\f$
      *   of a fluid phase \f$\alpha\f$ in \f$\mathrm{[mol/m^3]}\f$
@@ -422,10 +421,10 @@ public:
      *
      * \f[\rho_{mol,\alpha} = \frac{\rho_\alpha}{\overline M_\alpha} \;.\f]
      */
-  /*  template <class FluidState>
+    template <class FluidState>
     static Scalar molarDensity(const FluidState &fluidState, int phaseIdx)
-    {
-        assert(0 <= phaseIdx  && phaseIdx < numPhases);
+    { return 1.19e3;
+       /* assert(0 <= phaseIdx  && phaseIdx < numPhases);
 
         Scalar T = fluidState.temperature(phaseIdx);
         Scalar p = fluidState.pressure(phaseIdx);
@@ -449,8 +448,8 @@ public:
         // assume ideal mixture: steam and nitrogen don't "see" each other
         Scalar rho_gH2O = H2O::gasMolarDensity(T, fluidState.partialPressure(gasPhaseIdx, H2OIdx));
         Scalar rho_gABA = ABA::gasMolarDensity(T, fluidState.partialPressure(gasPhaseIdx, ABAIdx));
-        return rho_gH2O + rho_gABA;
-    }*/
+        return rho_gH2O + rho_gABA; */
+    }
 
     using Base::viscosity;
     /*!

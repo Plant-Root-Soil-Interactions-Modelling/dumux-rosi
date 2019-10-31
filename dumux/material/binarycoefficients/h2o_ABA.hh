@@ -69,9 +69,9 @@ public:
         using ABA = Dumux::Components::ABA<Scalar>;
 
         // atomic diffusion volumes
-        const Scalar SigmaNu[2] = { 13.1 /* H2O *///,  18.5 /* ABA */ };
-        // molar masses [g/mol] */
-    /*    const Scalar M[2] = { H2O::molarMass()*Scalar(1e3), ABA::molarMass()*Scalar(1e3) };
+        const Scalar SigmaNu[2] = { 13.1 H2O ,  18.5  ABA  };
+        // molar masses [g/mol] 
+       const Scalar M[2] = { H2O::molarMass()*Scalar(1e3), ABA::molarMass()*Scalar(1e3) };
 
         return fullerMethod(M, SigmaNu, temperature, pressure);
     } */
