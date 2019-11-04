@@ -1,5 +1,5 @@
 # create a link to the grid file and the input file in the build directory
-dune_symlink_to_source_files(FILES "python" "input" "grids" "modelparameter")
+dune_symlink_to_source_files(FILES "python" "input" "grids" "modelparameter" "results")
 
 add_executable(decoupled_stomata EXCLUDE_FROM_ALL decoupled_stomata.cc)
 target_compile_definitions(decoupled_stomata PUBLIC DGF)

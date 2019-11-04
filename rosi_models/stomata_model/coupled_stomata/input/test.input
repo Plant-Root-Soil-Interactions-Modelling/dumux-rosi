@@ -1,8 +1,8 @@
 [TimeLoop]
 TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
-DtInitial = 360 # [s]
+DtInitial = 7200 # [s]
 PeriodicCheckTimes = 3600
-MaxTimeStepSize = 360
+MaxTimeStepSize = 3600
 
 # 75 x 15 x 126 cm
 [Soil.Grid]
@@ -11,17 +11,24 @@ UpperRight = 0.375 0.075 0.0
 Cells = 37 8 63
 
 [Soil.IC]
-P = 9e4
+P = -1000
 
 [Soil.VanGenuchten]
-Qr = 0.08
-Qs = 0.43
+Qr = 0.0045
+Qs = 1
 Alpha = 2e-4
 N = 1.41
-Ks = 50
+Ks = 10.7 # cm/day
+
+[Control]
+cD = 0
 
 [Component]
-liquidDiffCoeff = 1.2e-5
+liquidDiffCoeff = 1.2e-13
+
+[RootSystem.Collar]
+Transpiration = 5.33 # kg/day 
+Sinusoidal = True
 
 [Problem]
 Name = test

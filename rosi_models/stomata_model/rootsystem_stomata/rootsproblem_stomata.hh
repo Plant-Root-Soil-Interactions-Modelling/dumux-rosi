@@ -250,7 +250,7 @@ public:
             // chemical concentration in buffer
             for (auto&& scv : scvs(fvGeometry)) {
                 conc_ = this->source(element, fvGeometry, elemVolVars, scv);
-                cL = conc_[1] * dt_; // (kg/m^3)
+                cL += conc_[1] * dt_; // (kg/m^3)
             }
 
             // stomatal conductance definition
@@ -304,18 +304,19 @@ public:
                     Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1, Msignal (mol s-1)
                     Msignal *=  MolarMassABA; // (kg/s)                  
                     Msignal /= 7.68e-5; // (kg/s/m^3)  7.68e-5 is the volume of root system in m3
-                    values[contiABAEqIdx] += Msignal; // in (kg/s/m^3)
+                    values[contiABAEqIdx] = Msignal; // in (kg/s/m^3)
                 }                
                 else
                 {
                     Msignal = 0;
-                    values[contiABAEqIdx] += Msignal; // in (kg/s/m^3)
+                    values[contiABAEqIdx] = Msignal; // in (kg/s/m^3)
                 }            
             }
         } else {
             values[contiH2OEqIdx] = 0;
             values[contiABAEqIdx] += 0;
         }
+        //std::cout << "mass production rate" << values[contiABAEqIdx] << std::endl;
         return values;
     }
 
