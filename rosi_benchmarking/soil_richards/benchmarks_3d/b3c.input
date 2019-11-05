@@ -1,0 +1,36 @@
+[Problem]
+Name = benchmark3d_3c
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 43200 # half a day [s] 
+MaxTimeStepSize = 3600 # an hour [s] 
+CheckTimes = 8640 17280 
+
+[Soil.Grid]
+UpperRight = 0.05 0.05 0. 
+LowerLeft = -0.05 -0.05 -2. 
+Cells = 9 9 199 
+
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
+# Type = 1 
+# Value = 0
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -400
+
+[Soil.VanGenuchten] 
+# Clay: 
+Qr = 0.1 
+Qs = 0.4 
+Alpha = 0.01  # [1/cm] 
+N = 1.1 
+Ks = 10 # [cm/d] 
+
+[Climate]
+Time = 1e10 # const value 
+Precipitation = 100 # [cm/day]

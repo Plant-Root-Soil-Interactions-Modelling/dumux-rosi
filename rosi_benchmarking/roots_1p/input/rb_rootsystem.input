@@ -1,0 +1,27 @@
+[Problem]
+Name = rb_rootsystem 
+
+[TimeLoop]
+TEnd =  864000 # 10 days
+DtInitial = 1 # [s]
+CheckTimes = 86400 172800 259200 345600 432000 518400 604800 691200 777600
+
+[RootSystem.Grid]
+File =  Anagallis_femina_Leitner_2010  # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
+InitialT = 10 # days
+Grow = True
+
+[RootSystem.Conductivity]
+Kr = 1.728 # radial conductivity [cm/hPa/day] 
+Kx = 432 # axial conductivity [cm^4/hPa/day]
+
+[RootSystem.Collar]
+Transpiration = 0.6
+Sinusoidal = True
+
+[Soil.IC]
+P = -200 # cm pressure head
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

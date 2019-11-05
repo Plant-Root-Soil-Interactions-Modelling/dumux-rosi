@@ -1,0 +1,45 @@
+[Problem]
+Name = rb_swtop 
+
+[RootSystem.Grid]
+Grow = True
+
+[TimeLoop]
+TEnd = 86400 # 604800 # 86400 #43200 # 43200 # half a day
+# CheckTimes = 10800 21600 32400 # 1/8 days 
+PeriodicCheckTimes = 3600
+DtInitial = 360 # [s]
+MaxTimeStepSize = 3600 # 1 h
+
+[RootSystem.Grid]
+Confined = .75 .15 1.26 
+
+[RootSystem.Collar]
+Transpiration = 0.6 # [kg/day]
+Sinusoidal = True
+
+[RootSystem.Conductivity]
+KrAge0 = 0 5 10 15 20 1e20 # days
+Kr0 = 1.8e-4 1.8e-4 0.6e-4 0.6e-4 0.18e-4 0.18e-4 # cm/hPa/day
+KrAge1 = 0 10 15 1e20 # days
+Kr1 = 1.8e-4 1.8e-4 0.18e-4 0.18e-4 # cm/hPa/day
+KrAge2 = 0 10 15 1e20 # days
+Kr2 = 1.8e-4 1.8e-4 0.18e-4 0.18e-4 # cm/hPa/day
+KrAge3 = 0 10 15 1e20 # days
+Kr3 = 1.8e-4 1.8e-4 0.18e-4 0.18e-4 # cm/hPa/day
+KxAge0 = 0 3 4 5 1e20 # days
+Kx0 = 0.01 0.3 0.3 4.3 4.3 # cm^4/hPa/day
+KxAge1 = 0 5 10 12 20 22 1e20 # days
+Kx1 = 0.01e-3 0.01e-3 0.1e-3 0.6e-3 0.6e-3 1.7e-3 1.7e-3 # cm^4/hPa/day
+KxAge2 = 0 5 10 12 20 22 1e20 # days
+Kx2 = 0.01e-3 0.01e-3 0.1e-3 0.6e-3 0.6e-3 1.7e-3 1.7e-3 # cm^4/hPa/day
+KxAge3 = 0 5 10 12 20 22 1e20 # days
+Kx3 = 0.01e-3 0.01e-3 0.1e-3 0.6e-3 0.6e-3 1.7e-3 1.7e-3 # cm^4/hPa/da
+
+[Soil.IC]
+P = -3058.104 -3058.104 -101.937 -101.937 # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa
+Z = -1.26 -.43 -.41 0
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true" 
