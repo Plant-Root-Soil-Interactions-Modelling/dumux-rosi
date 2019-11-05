@@ -1,4 +1,4 @@
-time,Tact[kg/day]
+x, y           x = time,y = Tact[kg/day]
 1,0
 2,0.00225
 3,0.00225
