@@ -57,8 +57,8 @@
 #include <dumux/growth/crootboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "../rootsystem/rootsproblem.hh"
-#include "../soil/richardsproblem.hh"
+#include "../roots_1p/rootsproblem.hh"
+#include "../soil_richards/richardsproblem.hh"
 #include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
 
 namespace Dumux {

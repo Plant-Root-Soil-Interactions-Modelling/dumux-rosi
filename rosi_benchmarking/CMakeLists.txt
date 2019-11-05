@@ -1,3 +1,3 @@
-add_subdirectory("soil")
-add_subdirectory("rootsystem")
-add_subdirectory("coupled")
+add_subdirectory("roots_1p")
+add_subdirectory("soil_richards")
+add_subdirectory("coupled_1p_richards")

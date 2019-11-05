@@ -75,7 +75,7 @@ struct FluidSystem<TypeTag, TTag::Roots> {
 /**
  * Compile definitions are either DGF or ROOTBOX defined in CMakeLists
  */
-enum modelType { dgf=0, rootbox=1 };
+enum modelType { dgf = 0, rootbox = 1 };
 
 /**
  * Pick either RootSpatialParamsDGF (for static dgf files),

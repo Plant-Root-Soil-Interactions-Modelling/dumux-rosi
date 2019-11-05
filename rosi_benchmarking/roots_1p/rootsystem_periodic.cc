@@ -84,6 +84,9 @@ int main(int argc, char** argv) try
 
     using GlobalPosition = Dune::FieldVector<double, 3>;
     std::bitset<3> periodic("110");
+    if (hasParam("Grid.Periodic"))  {
+        periodic = getParam<std::bitset<3>>("Grid.Periodic");
+    }
     GlobalPosition lower = { -1.e9, -1.e9, -1.e9 };
     GlobalPosition upper = { 1.e9, 1.e9, 1.e9 };
 
