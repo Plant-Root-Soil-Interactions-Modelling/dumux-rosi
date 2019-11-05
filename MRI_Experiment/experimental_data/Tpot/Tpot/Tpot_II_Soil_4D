@@ -1,4 +1,4 @@
-time,Tpot[kg/day]
+x,y             x = time,y = Tpot[kg/day]
 0,0
 1,0.002535
 2,0.0043675

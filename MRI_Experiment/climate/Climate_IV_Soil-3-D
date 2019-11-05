@@ -1,4 +1,4 @@
-time,Irrig[cm/day]
+x, y               x = time,y = Irrig(cm/day)
 1,0
 2,0
 3,0
