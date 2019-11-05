@@ -5,7 +5,7 @@
  *                                                                           *
  *   This program is free software: you can redistribute it and/or modify    *
  *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
+ *   the Free Software Foundation, either version 3 of the License, or       *
  *   (at your option) any later version.                                     *
  *                                                                           *
  *   This program is distributed in the hope that it will be useful,         *
@@ -18,6 +18,7 @@
  *****************************************************************************/
 /*!
  * \file
+ * \author Timo Koch <timo.koch@iws.uni-stuttgart.de>
  * \author Timo Koch
  * \ingroup CCTpfaDiscretization
  * \brief The finite volume geometry (scvs and scvfs) for cell-centered TPFA models on a grid view
@@ -30,6 +31,7 @@
 #include <dune/common/fvector.hh>
 #include <dune/grid/common/mcmgmapper.hh>
 #include <dumux/io/grid/gridmanager.hh>
+#include <dumux/io/grid/griddata.hh>
 #include <dumux/periodic/periodicnetworktransform.hh>
 
 namespace Dumux {
@@ -62,15 +64,27 @@ class PeriodicNetworkGridManager
         , gridFactory_(std::move(gridFactory))
         {}
 
+        GridDataType(typename std::shared_ptr<GridData<GridType>> hostGridData)
+        : hostGridData_(hostGridData)
+        {}
+
         //! get element parameters from host grid dgf
         const std::vector<double>& parameters(const Element& element) const
-        { return elementParams_[gridFactory_.insertionIndex(element)]; }
+        {
+            if (!hostGridData_)
+                return elementParams_[gridFactory_.insertionIndex(element)];
+            else
+                return hostGridData_->parameters(element);
+        }
 
         //! create the periodic vertex set given mappers
         template<class ElementMapper, class VertexMapper>
         std::unordered_map<IndexType, std::vector<IndexType>>
         createPeriodicConnectivity(const ElementMapper& elementMapper, const VertexMapper& vertexMapper) const
         {
+            if (periodicConnectivity_.empty())
+                return periodicConnectivity_;
+
             std::vector<IndexType> leafElementIndex(grid_->leafGridView().size(0));
             for (const auto& element : elements(grid_->leafGridView()))
                 leafElementIndex[gridFactory_.insertionIndex(element)] = elementMapper.index(element);
@@ -96,6 +110,8 @@ class PeriodicNetworkGridManager
         const std::vector<std::vector<double>> elementParams_;
         std::shared_ptr<const GridType> grid_;
         Dune::GridFactory<GridType> gridFactory_;
+
+        std::shared_ptr<GridData<GridType>> hostGridData_;
     };
 
 public:
@@ -117,17 +133,20 @@ public:
      */
     void init(const std::string& paramGroup = "")
     {
-        if (transformation_.periodic().none())
-            DUNE_THROW(Dune::InvalidStateException, "No periodic boundary was specified! Set at least one bit to true.");
-
         // first create the host grid
-        GridManager<Grid> gridManager;
-        gridManager.init(paramGroup);
+        hostGridManager_.init(paramGroup);
+
+        // for non-periodic grid just forward to host grid
+        if (transformation_.periodic().none())
+        {
+            gridData_ = std::make_shared<GridData>(hostGridManager_.getGridData());
+            return;
+        }
 
         // get the data, we also have to transfer that to the new grid
-        auto gridData = gridManager.getGridData();
+        auto gridData = hostGridManager_.getGridData();
 
-        const auto& grid = gridManager.grid();
+        const auto& grid = hostGridManager_.grid();
         const auto& gridView = grid.leafGridView();
 
         std::cout << "Read non-periodic grid with " << gridView.size(dim) << " vertices and "
@@ -281,7 +300,12 @@ public:
      * \brief Returns a reference to the grid.
      */
     Grid& grid()
-    { return *grid_; }
+    {
+        if (grid_)
+            return *grid_;
+        else
+            return hostGridManager_.grid();
+    }
 
     /*!
      * \brief get a shared_ptr to the grid data
@@ -292,6 +316,8 @@ public:
 private:
     PeriodicNetworkTransform<GlobalCoordinate> transformation_;
     std::shared_ptr<Grid> grid_;
+    GridManager<Grid> hostGridManager_;
+
     std::shared_ptr<GridData> gridData_;
 };
 
