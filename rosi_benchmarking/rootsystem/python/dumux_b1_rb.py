@@ -28,11 +28,11 @@ print(trans)
 
 # run dumux
 os.system("./rootsystem_rb input/rb_single.input")
-p_, z_ = read3D_vtp_data("rb_single-00001.vtp", True)
+p_, z_ = read3D_vtp_data("rb_single-00001.vtp")
 h_ = vg.pa2head(p_)
 
 os.system("./rootsystem_rb input/rb_single_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name rb_singleT".format(trans))
-p2_, z2_ = read3D_vtp_data("rb_singleT-00001.vtp", True)  #
+p2_, z2_ = read3D_vtp_data("rb_singleT-00001.vtp")  #
 h2_ = vg.pa2head(p2_)
 
 with open("benchmark1c_actual_transpiration.txt", 'r') as f:

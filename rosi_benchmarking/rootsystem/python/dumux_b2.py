@@ -25,7 +25,7 @@ os.system("rm benchmark2-00001.vtp")
 os.system("./rootsystem input/b2.input")
 
 # plot
-p_, z_ = read3D_vtp_data("benchmark2-00001.vtp", True)  # !!!! Box = False, CCTpfa = True
+p_, z_ = read3D_vtp_data("benchmark2-00001.vtp")
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")

@@ -79,17 +79,19 @@ def vtp2dgf(name):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
 #
-def read1D_vtp_data(name, cell = True):
+def read1D_vtp_data(name):
     polydata = read_polydata(name)
 
-    if cell:
-        data = polydata.GetCellData()
-    else:
-        data = polydata.GetPointData()
-
+    data = polydata.GetPointData()  # for box method
     nocd = data.GetNumberOfArrays()
     p = data.GetArray(0)  # pressure
-    noa = p.GetNumberOfTuples()
+    try:
+        noa = p.GetNumberOfTuples()
+    except:
+        data = polydata.GetCellData()  # for CCTpfa
+        nocd = data.GetNumberOfArrays()
+        p = data.GetArray(0)  # pressure
+        noa = p.GetNumberOfTuples()
 
     p_ = np.ones(noa,)
     for i in range(0, noa):
@@ -102,17 +104,21 @@ def read1D_vtp_data(name, cell = True):
 #
 # returns the cell or vertex data (index 0) of vtp file
 #
-def read3D_vtp_data(name, cell = True):
+def read3D_vtp_data(name):
     polydata = read_polydata(name)
 
-    if cell:
-        data = polydata.GetCellData()
-    else:
+    try:  # Box
         data = polydata.GetPointData()
-
-    nocd = data.GetNumberOfArrays()
-    p = data.GetArray(0)  # pressure
-    noa = p.GetNumberOfTuples()
+        nocd = data.GetNumberOfArrays()
+        p = data.GetArray(0)  # pressure
+        noa = p.GetNumberOfTuples()
+        cc = False
+    except:  # CCTpfa
+        data = polydata.GetCellData()
+        nocd = data.GetNumberOfArrays()
+        p = data.GetArray(0)  # pressure
+        noa = p.GetNumberOfTuples()
+        cc = True
 
     p_ = np.ones(noa,)
     for i in range(0, noa):
@@ -121,16 +127,7 @@ def read3D_vtp_data(name, cell = True):
 
     points = polydata.GetPoints()
 
-    if not cell:
-        Np = polydata.GetNumberOfPoints()
-        z_ = np.zeros((Np, 3))
-        for i in range(0, Np):
-            p = np.zeros(3,)
-            points.GetPoint(i, p)
-            z_[i, :] = p
-        return p_, z_
-
-    if cell:
+    if cc:
         Nc = polydata.GetNumberOfLines()  # GetPointId (int ptId)
         z_ = np.zeros((Nc, 3))
         for i in range(0, Nc):
@@ -141,6 +138,14 @@ def read3D_vtp_data(name, cell = True):
             p2 = np.zeros(3,)
             points.GetPoint(ids.GetId(1), p2)
             z_[i, :] = 0.5 * (p1 + p2)
+        return p_, z_
+    else:  # not cell
+        Np = polydata.GetNumberOfPoints()
+        z_ = np.zeros((Np, 3))
+        for i in range(0, Np):
+            p = np.zeros(3,)
+            points.GetPoint(i, p)
+            z_[i, :] = p
         return p_, z_
 
 

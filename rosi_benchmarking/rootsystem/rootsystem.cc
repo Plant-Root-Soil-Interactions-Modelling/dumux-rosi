@@ -68,7 +68,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsCCTpfa; // RootsCC, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RootsCCTpfa; // RootsCCTpfa, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
     int simtype = Properties::simtype;
 
     // initialize MPI, finalize is done automatically on exit
