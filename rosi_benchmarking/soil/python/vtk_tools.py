@@ -34,22 +34,22 @@ def read_vtu(name):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded) of vtp file
 #
-def read1D_vtp_data(name, cell = True):
+def read1D_vtp_data(name):
     pd = read_polydata(name)
-    if cell:
+
+    try:  # cell
         data = pd.GetCellData()
-    else:
+        a = data.GetArray(2).GetTuple(0)
+        cell = True
+    except:
         data = pd.GetPointData()
+        cell = False
 
     nocd = data.GetNumberOfArrays()
-#     print("Number of arrays", nocd)
-#     for i in range(0, nocd):
-#         print(data.GetArrayName(i))
-
     sw = data.GetArray(0)  # saturation (S_lig)
     pw = data.GetArray(2)  # pressure (p_lig)
-
     noa = sw.GetNumberOfTuples()
+
     sw_ = np.ones(noa,)
     pw_ = np.ones(noa,)
     for i in range(0, noa):
@@ -58,16 +58,26 @@ def read1D_vtp_data(name, cell = True):
         d = pw.GetTuple(i)
         pw_[i] = d[0]
 
-    # vertex (makes actually only sense for vertex data)
-    Np = pd.GetNumberOfPoints()
-    z_ = np.ones(Np,)
     points = pd.GetPoints()
-    for i in range(0, Np):
-        p = np.zeros(3,)
-        points.GetPoint(i, p)
-        z_[i] = p[0]
 
-    return sw_, pw_, z_
+    if cell:
+        Nc = pd.GetNumberOfCells()
+        z_ = np.zeros((Nc,))
+        for i in range(0, Nc):
+            c = pd.GetCell(i)
+            ids = c.GetPointIds()
+            p1 = np.zeros(3,)
+            points.GetPoint(ids.GetId(1), p1)
+            z_[i] = p1[0]  # sould actually be the mean of the 8 cube points (but i was too lazy)
+        return sw_, pw_, z_
+    else:  # not cell
+        Np = pd.GetNumberOfPoints()
+        z_ = np.zeros((Np,))
+        for i in range(0, Np):
+            p = np.zeros(3,)
+            points.GetPoint(i, p)
+            z_[i] = p[0]
+        return sw_, pw_, z_
 
 
 #

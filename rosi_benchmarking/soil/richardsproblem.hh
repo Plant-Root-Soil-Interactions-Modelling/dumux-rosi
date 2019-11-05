@@ -364,7 +364,7 @@ public:
         const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
         if (couplingManager_!=nullptr) {
-            //            // compute source at every integration point
+            // compute source at every integration point
             const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
             const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
             const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
@@ -377,6 +377,7 @@ public:
             const auto density = 1000;
             const Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
             source = sourceValue*source.quadratureWeight()*source.integrationElement();
+            //std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
         } else {
             source = 0;
         }

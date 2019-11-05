@@ -25,7 +25,7 @@ ex = []  # list for data for export
 
 # result (Figure 4a)
 for i in range(0, 3):
-    s_, p_, z_ = read1D_vtp_data("benchmark1d_3a-0000" + str(i + 1) + ".vtp", False)
+    s_, p_, z_ = read1D_vtp_data("benchmark1d_3a-0000" + str(i + 1) + ".vtp")
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, sand)
     ax1.plot(theta_, z_ * 100, "r+")
@@ -34,7 +34,7 @@ for i in range(0, 3):
 
 # result (Figure 4b)
 for i in range(0, 3):
-    s_, p_, z_ = read1D_vtp_data("benchmark1d_3b-0000" + str(i + 1) + ".vtp", False)
+    s_, p_, z_ = read1D_vtp_data("benchmark1d_3b-0000" + str(i + 1) + ".vtp")
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, loam)
     ax2.plot(theta_, z_ * 100, "r+")
@@ -43,7 +43,7 @@ for i in range(0, 3):
 
 # result (Figure 4c)
 for i in range(0, 3):
-    s_, p_, z_ = read1D_vtp_data("benchmark1d_3c-0000" + str(i + 1) + ".vtp", False)
+    s_, p_, z_ = read1D_vtp_data("benchmark1d_3c-0000" + str(i + 1) + ".vtp")
     h_ = vg.pa2head(p_)
     theta_ = vg.water_content(h_, clay)
     ax3.plot(theta_, z_ * 100, "r+")
