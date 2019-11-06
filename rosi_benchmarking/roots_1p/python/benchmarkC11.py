@@ -9,7 +9,7 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
+os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
 
 # run dumux
 os.system("./rootsystem input/benchmarkC11.input")

@@ -24,7 +24,7 @@ class myThread(threading.Thread):
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/rootsystem")
+os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
 
 # Run dumux
 t0 = time.time()

@@ -17,14 +17,12 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-np_ = 4  # number of processors
+np_ = 8  # number of processors
 if np_ == 1:
-    pass
     os.system("./richardsUG input/b1a_ug.input")
     os.system("./richardsUG input/b1b_ug.input")
     os.system("./richardsUG input/b1c_ug.input")
 else:
-    pass
     os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1a_ug.input -Grid.Overlap 0")
     os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1b_ug.input -Grid.Overlap 0")
     os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1c_ug.input -Grid.Overlap 0")
