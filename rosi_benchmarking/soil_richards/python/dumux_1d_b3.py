@@ -14,12 +14,12 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-os.system("./richards1d benchmarks_1d/b3a.input")
-os.system("./richards1d benchmarks_1d/b3b.input")
-os.system("./richards1d benchmarks_1d/b3c.input")
+os.system("./richards1d input/b3a_1d.input")
+os.system("./richards1d input/b3b_1d.input")
+os.system("./richards1d input/b3c_1d.input")
 
 ex = []  # list for data for export
 

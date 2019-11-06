@@ -17,17 +17,17 @@ from scipy.interpolate import interp1d
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-os.system("./richards1d benchmarks_1d/b4a.input")
-os.system("./richards1d benchmarks_1d/b4b.input")
-os.system("./richards1d benchmarks_1d/b4c.input")
-os.system("./richards1d benchmarks_1d/b4d.input")
-os.system("./richards1d benchmarks_1d/b4a.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4a_hr")
-os.system("./richards1d benchmarks_1d/b4b.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4b_hr")
-os.system("./richards1d benchmarks_1d/b4c.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4c_hr")
-os.system("./richards1d benchmarks_1d/b4d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4d_hr")
+os.system("./richards1d input/b4a_1d.input")
+os.system("./richards1d input/b4b_1d.input")
+os.system("./richards1d input/b4c_1d.input")
+os.system("./richards1d input/b4d_1d.input")
+os.system("./richards1d input/b4a_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4a_hr")
+os.system("./richards1d input/b4b_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4b_hr")
+os.system("./richards1d input/b4c_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4c_hr")
+os.system("./richards1d input/b4d_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4d_hr")
 
 # open results
 num = ['a', 'c', 'b', 'd', 'a_hr', 'c_hr', 'b_hr', 'd_hr']

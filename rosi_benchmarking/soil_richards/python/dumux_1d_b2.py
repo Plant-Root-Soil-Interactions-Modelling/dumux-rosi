@@ -13,11 +13,11 @@ import analytic_b2
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-os.system("./richards1d benchmarks_1d/b2.input")
-os.system("./richards1d benchmarks_1d/b2.input -Soil.Grid.Cells 1000")  # high res looks nice
+os.system("./richards1d input/b2_1d.input")
+os.system("./richards1d input/b2_1d.input -Soil.Grid.Cells 1000")  # high res looks nice
 
 # result dumux jan1 (Figure 2a)
 s_, p_, z_ = read1D_vtp_data("benchmark1d_2-00001.vtp")

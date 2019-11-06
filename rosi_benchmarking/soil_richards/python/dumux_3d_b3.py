@@ -14,19 +14,19 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
 np_ = 4  # number of processors
 if np_ == 1:
-    os.system("./richards3d benchmarks_3d/b3a.input")
-    os.system("./richards3d benchmarks_3d/b3b.input")
-    os.system("./richards3d benchmarks_3d/b3c.input")
+    os.system("./richards3d input/b3a_3d.input")
+    os.system("./richards3d input/b3b_3d.input")
+    os.system("./richards3d input/b3c_3d.input")
 else:
     pass
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3a.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3b.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b3c.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3a_3d.input -Grid.Overlap 1")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3b_3d.input -Grid.Overlap 1")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3c_3d.input -Grid.Overlap 1")
 
 ex = []  # list for data for export
 

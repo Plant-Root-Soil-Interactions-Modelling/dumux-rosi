@@ -14,20 +14,20 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
 np_ = 4  # number of processors
 if np_ == 1:
     pass
-    os.system("./richardsUG benchmarks_ug/b1a.input")
-    os.system("./richardsUG benchmarks_ug/b1b.input")
-    os.system("./richardsUG benchmarks_ug/b1c.input")
+    os.system("./richardsUG input/b1a_ug.input")
+    os.system("./richardsUG input/b1b_ug.input")
+    os.system("./richardsUG input/b1c_ug.input")
 else:
     pass
-    os.system("mpirun -n " + str(np_) + " ./richardsUG benchmarks_ug/b1a.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richardsUG benchmarks_ug/b1b.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richardsUG benchmarks_ug/b1c.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1a_ug.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1b_ug.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1c_ug.input -Grid.Overlap 0")
 
 # Figure 2a
 s_, p_, z1_ = read3D_vtp("benchmarkUG_1a-00001", np_)

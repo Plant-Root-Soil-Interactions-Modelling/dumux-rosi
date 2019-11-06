@@ -8,14 +8,14 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 np_ = 1  # number of processors
 # run dumux
 if np_ == 1:
-    os.system("./richardsUG benchmarks_3d/benchmarkC12ug.input")
+    os.system("./richardsUG input/benchmarkC12ug_3d.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richardsUG benchmarks_3d/benchmarkC12ug.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richardsUG input/benchmarkC12ug_3d.input -Grid.Overlap 0")
 
 # Figure
 s_, p_, z1_ = read3D_vtp("benchmarkC12ug-00001", np_)

@@ -13,14 +13,14 @@ import analytic_b2
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
 np_ = 1  # number of processors
 if np_ == 1:
-    os.system("./richards3d benchmarks_3d/b2.input")
+    os.system("./richards3d input/b2_3d.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d benchmarks_3d/b2.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b2_3d.input -Grid.Overlap 0")
 
 # result dumux jan1 (Figure 2a)
 s_, p_, z_ = read3D_vtp("benchmark3d_2-00001", np_)
