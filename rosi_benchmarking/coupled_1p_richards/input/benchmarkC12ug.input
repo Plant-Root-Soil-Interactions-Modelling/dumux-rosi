@@ -7,4 +7,4 @@ MaxTimeStepSize = 360
 [Problem]
 Name = benchmarkC12cug
 RootName = ../roots_1p/input/benchmarkC12.input
-SoilName = ../soil_richards/input/benchmarkC12_ug_3d.input
+SoilName = ../soil_richards/input/benchmarkC12ug_3d.input
