@@ -6,5 +6,5 @@ MaxTimeStepSize = 86400
 
 [Problem]
 Name = benchmarkC11
-RootName = ../rootsystem/input/swbot.input
-SoilName = ../soil/benchmarks_3d/swbot.input
+RootName = ../roots_1p/input/swbot.input
+SoilName = ../soil_richards/input/swbot_3d.input
