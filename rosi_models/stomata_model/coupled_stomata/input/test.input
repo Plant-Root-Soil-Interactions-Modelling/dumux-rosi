@@ -11,7 +11,7 @@ UpperRight = 0.375 0.075 0.0
 Cells = 37 8 63
 
 [Soil.IC]
-P = -1000
+P = -2000
 
 [Soil.VanGenuchten]
 Qr = 0.0045
@@ -24,7 +24,7 @@ Ks = 10.7 # cm/day
 cD = 0
 
 [Component]
-liquidDiffCoeff = 1.2e-13
+liquidDiffCoeff = 1.2e-9
 
 [RootSystem.Collar]
 Transpiration = 5.33 # kg/day 

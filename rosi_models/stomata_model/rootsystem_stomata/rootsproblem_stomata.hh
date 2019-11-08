@@ -78,6 +78,13 @@ public:
         // initialize fluid system
         FluidSystem::init();
 
+        // stating in the console whether mole or mass fractions are used
+        if(useMoles)
+            std::cout<<"problem uses mole fractions"<<std::endl;
+        else
+            std::cout<<"problem uses mass fractions"<<std::endl;
+
+        //I.C.
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
@@ -240,18 +247,12 @@ public:
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
             collarP_ = p;
-            NumEqVector conc_(0.);
-            // auto eIdx = this->fvGridGeometry().elementMapper().index(element);            
-            //double kx = this->spatialParams().kx(eIdx);
-            //auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            //double criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist; // check units todo
             potentialTrans_ = collar_.f(time_); // [ kg/s]
 
-            // chemical concentration in buffer
-            for (auto&& scv : scvs(fvGeometry)) {
-                conc_ = this->source(element, fvGeometry, elemVolVars, scv);
-                cL += conc_[1] * dt_; // (kg/m^3)
-            }
+            // chemical concentration 
+            NumEqVector conc(0.);
+            conc = this -> pointSource(source, element, fvGeometry, elemVolVars, scv);
+            cL += conc[1] * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3 
 
             // stomatal conductance definition
             if (collarP_ < p_crit)
@@ -267,6 +268,7 @@ public:
             actualTrans_ = v;
             neumannTime_ = time_;
             maxTrans_ = criticalTranspiration;
+            chemconc = cL/MolarMassABA * 1e+9; // nmol/m3
             v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
             return NumEqVector(v);
         } else {
@@ -289,32 +291,18 @@ public:
             const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar a = params.radius(eIdx); // root radius (m)
             Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-            Scalar phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
+            Scalar phx;
+            if (isBox) { // dumux
+                phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
+            } else {
+                phx = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
+            }
             Scalar phs = soil(scv.center()); // kg/m/s^2
-            values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+            values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^2/s
             values[contiH2OEqIdx] /= (a * a * M_PI); // 1/s
             values[contiH2OEqIdx] *= rho_; // (kg/s/m^3)
-            Scalar RootAge = params.age(eIdx); // s
-            RootAge /= (24. * 3600.); // days
-            if (RootAge <= 1)  // if root segment age <= 1 day
-            {
-                Scalar tipP_ = elemVolVars[scv.localDofIndex()].pressure(); // local tip pressure in kg/m/s^2
-                if (abs(tipP_) >= abs(p0))
-                {
-                    Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1, Msignal (mol s-1)
-                    Msignal *=  MolarMassABA; // (kg/s)                  
-                    Msignal /= 7.68e-5; // (kg/s/m^3)  7.68e-5 is the volume of root system in m3
-                    values[contiABAEqIdx] = Msignal; // in (kg/s/m^3)
-                }                
-                else
-                {
-                    Msignal = 0;
-                    values[contiABAEqIdx] = Msignal; // in (kg/s/m^3)
-                }            
-            }
         } else {
             values[contiH2OEqIdx] = 0;
-            values[contiABAEqIdx] += 0;
         }
         //std::cout << "mass production rate" << values[contiABAEqIdx] << std::endl;
         return values;
@@ -361,7 +349,7 @@ public:
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << "\n";
+            << trans << ", "<< time_ << " , " << chemconc << "\n";
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -437,9 +425,35 @@ public:
             const auto krel = 1.0;//this->couplingManager().relPermSoil(pressure3D);
             // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
             const auto density = 1000;
-            const Scalar sourceValue = 2* M_PI *krel*rootRadius * kr *(pressure3D - pressure1D)*density;
-            source = sourceValue*source.quadratureWeight()*source.integrationElement();
-        } else {
+            PrimaryVariables sourceValue;
+            sourceValue[contiH2OEqIdx] = 2* M_PI *krel*rootRadius * kr *(pressure3D - pressure1D)*density; // (kg/m/s)
+            sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement();
+            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            Scalar RootAge = this->spatialParams().age(eIdx); // RootAge in s
+            RootAge /= (24. * 3600.); // days
+            if (RootAge <= 1)  // if root segment age <= 1 day
+            {
+                Scalar tipP_ = pressure1D; // local tip pressure in kg/m/s^2
+                if (abs(tipP_) >= abs(p0))
+                {
+                    if (useMoles) {
+                    Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //(mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
+                    }
+                    else {
+                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMassABA; // (kg/s)                  
+                    }
+                    //cL = Msignal * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3                 
+                    sourceValue[contiABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
+                }                
+                else
+                {   
+                    sourceValue[contiABAEqIdx] = 0.;
+                }
+            }
+            source = sourceValue;
+        } 
+            
+            else {
             source = 0;
         }
     }
@@ -513,10 +527,11 @@ private:
     Scalar alphaR = 0; // residual stomatal conductance, taken as 0
     static constexpr Scalar rhoABA_ = 1.19e3; // 1.19e3 kg/m^3 is the density of ABA
     Scalar cD = getParam<Scalar>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    mutable Scalar cL = 0;
+    mutable Scalar cL = 0.;
     const Scalar MolarMassABA = 0.26432; // (kg/mol) Molar mass of ABA is 264.321 g/mol
     const Scalar sC = 1.89e5; // (m^3/kg) 5e+4 from Huber et. al [2014]
-    const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
+    const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]  
+    mutable Scalar chemconc = 0.;
 
 };
 

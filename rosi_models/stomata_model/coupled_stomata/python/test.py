@@ -12,6 +12,7 @@ os.chdir(path)
 os.chdir("../../../../build-cmake/rosi_models/stomata_model/coupled_stomata")
 
 # run simulation
+os.system("make coupled_rb_stomata")
 os.system("./coupled_rb_stomata input/test.input")  # benchmarkC12, or benchmarkC12b
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
@@ -27,6 +28,7 @@ print("actual", d[-1, 5] / 1000)  # Strange behaviour of simplistically calculat
 
 # Plot collar transpiration & pressure
 fig, ax1 = plt.subplots()
+fig, ax3 = plt.subplots()
 
 c = 1000 * 24 * 3600  #  [kg/s] -> [cm3/per day]
 t = d[:, 0] / (24 * 3600)  # [s] -> [day]
@@ -34,17 +36,20 @@ t = d[:, 0] / (24 * 3600)  # [s] -> [day]
 # 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration, 6 time, 7 chemical concentration
 ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration
 ax1.plot(t, d[:, 1] * c, 'g')  # actual transpiration (neumann)
-ax1.plot(t, d[:, 7]) # chemical concentration
+ax3.plot(t, d[:, 7]) # chemical concentration
 
 ax2 = ax1.twinx()
 ctrans = np.cumsum(np.multiply(d[1:, 1] * c, (t[1:] - t[:-1])))
 ax2.plot(t[1:], ctrans, 'c--')  # cumulative transpiration (neumann)
 
-ax1.legend(['Potential', 'Actual', 'Cumulative', 'chemical concentration'], loc = 'upper left')
+ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
+ax3.legend(['chemical concentration'])
 #ax1.axis((0, t[-1], 0, 13))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
 ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
+ax3.set_xlabel("Time $[d]$")
+ax3.set_ylabel("Chemical concentration $[nmol/m^3]$")
 
 #plt.savefig('../results/Transpitation_2000.png')
 plt.show()
