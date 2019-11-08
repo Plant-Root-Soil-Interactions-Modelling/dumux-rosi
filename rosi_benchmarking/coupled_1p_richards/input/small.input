@@ -6,5 +6,5 @@ MaxTimeStepSize = 3600
 
 [Problem]
 Name = small
-RootName = ../rootsystem/input/small.input
-SoilName = ../soil/benchmarks_3d/small.input
+RootName = ../roots_1p/input/small.input
+SoilName = ../soil_richards/input/small_3d.input

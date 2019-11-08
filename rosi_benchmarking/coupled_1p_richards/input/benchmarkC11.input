@@ -9,5 +9,5 @@ Cells = 100 100 1
 
 [Problem]
 Name = benchmarkC11
-RootName = ../rootsystem/input/benchmarkC11.input
-SoilName = ../soil/benchmarks_3d/benchmarkC11.input
+RootName = ../roots_1p/input/benchmarkC11.input
+SoilName = ../soil_richards/input/benchmarkC11_3d.input

@@ -21,8 +21,8 @@
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include "../rootsystem/properties.hh" // TypeTag:Roots
-#include "../soil/properties.hh" // TypeTag:RichardsTT
+#include "../roots_1p/properties.hh" // TypeTag:Roots
+#include "../soil_richards/properties.hh" // TypeTag:RichardsTT
 
 namespace Dumux {
 namespace Properties {

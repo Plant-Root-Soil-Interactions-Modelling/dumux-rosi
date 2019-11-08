@@ -59,12 +59,16 @@
 
 #include "../roots_1p/rootsproblem.hh"
 #include "../soil_richards/richardsproblem.hh"
-#include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
+#include "propertiesMix.hh" // includes root properties, soil properties, redefines coupling manager
+// for Box                  properties.hh // <- not working for UG
+// for CCTpfa               propertiesCC.hh // <- working, but bad results for UG
+// for box soil, CC roots,  propertiesMix.hh (CC roots needed for periodicity)
+// cahnge L70 & L71 accordingly
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::RichardsCC; //RichardsBox;
-using RootTypeTag = Properties::TTag::RootsCCTpfa; // RichardsCC
+using SoilTypeTag = Properties::TTag::RichardsBox; // RichardsCC //RichardsBox
+using RootTypeTag = Properties::TTag::RootsCCTpfa; // RootsBox // RootsCCTpfa
 using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
 
 /**

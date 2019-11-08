@@ -10,5 +10,5 @@ Cells = 16 16 30
 
 [Problem]
 Name = benchmarkC12c
-RootName = ../rootsystem/input/benchmarkC12.input
-SoilName = ../soil/benchmarks_3d/benchmarkC12.input
+RootName = ../roots_1p/input/benchmarkC12.input
+SoilName = ../soil_richards/input/benchmarkC12_3d.input

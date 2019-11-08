@@ -11,21 +11,23 @@ from analytic_b1 import *
 from vtk_tools import *
 import van_genuchten as vg
 
+# fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-np_ = 8  # number of processors
-if np_ == 1:
-    os.system("./richardsUG input/b1a_ug.input")
-    os.system("./richardsUG input/b1b_ug.input")
-    os.system("./richardsUG input/b1c_ug.input")
-else:
-    os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1a_ug.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1b_ug.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1c_ug.input -Grid.Overlap 0")
+np_ = 1  # number of processors
+# if np_ == 1:
+#     os.system("./richardsUG input/b1a_ug.input")
+#     os.system("./richardsUG input/b1b_ug.input")
+#     os.system("./richardsUG input/b1c_ug.input")
+# else:
+#     os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1a_ug.input -Grid.Overlap 1")
+#     os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1b_ug.input -Grid.Overlap 1")
+#     os.system("mpirun -n " + str(np_) + " ./richardsUG input/b1c_ug.input -Grid.Overlap 1")
 
 # Figure 2a
 s_, p_, z1_ = read3D_vtp("benchmarkUG_1a-00001", np_)
@@ -42,7 +44,9 @@ s_, p_, z3_ = read3D_vtp("benchmarkUG_1c-00001", np_)
 h3_ = vg.pa2head(p_)
 ax3.plot(h3_, (z3_ - 2) * 100, "r+")
 
-np.savetxt("dumuxUG_b1", np.vstack((z1_ - 2, h1_, z2_ - 2, h2_, z3_ - 2, h3_)), delimiter = ",")
+# np.savetxt("dumuxUG_b1", np.vstack((z1_ - 2, h1_, z2_ - 2, h2_, z3_ - 2, h3_)), delimiter = ",")
+
+print(len(p_))
 
 plt.show()
 
