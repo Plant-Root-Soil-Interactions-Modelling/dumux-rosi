@@ -27,6 +27,9 @@ namespace Dumux {
 template<class TypeTag>
 class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
 
+public:
+
+    using Grid = GetPropType<TypeTag, Properties::Grid>;
     using ParentType = PorousMediumFlowProblem<TypeTag>;
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
@@ -59,8 +62,6 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
     };
 
     static const int dimWorld = GridView::dimensionworld;
-
-public:
 
     RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
 

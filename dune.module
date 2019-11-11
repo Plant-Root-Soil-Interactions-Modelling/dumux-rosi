@@ -6,4 +6,4 @@
 Module: dumux-rosi
 Version: 0.01
 Maintainer: t.mai@fz-juelich.de
-Depends: dumux (>= 3.0) dune-common (>= 2.6)
+Depends: dumux (>= 3.0) dune-common (>= 2.6) dune-alugrid (>= 2.6) dune-pybindxi (>= 0)
