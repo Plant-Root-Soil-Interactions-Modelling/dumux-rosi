@@ -1,58 +1,55 @@
 #include "solverbase.hh"
 
 // initialize
-#include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
-int DUMUX_VERSION = 100; // the future (needed in dumuxmessage.hh)
-#include <dumux/common/dumuxmessage.hh> // for fun (a static class)
-#include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
+// #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
+// #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
+// #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
 
 // createGrid
-#include <dumux/io/grid/gridmanager.hh>
+// #include <dumux/io/grid/gridmanager.hh>
 
 // simulate
-#include <dumux/common/timeloop.hh> // timeloop is need for step size control
+//#include <dumux/common/timeloop.hh> // timeloop is need for step size control
 // #include <dumux/nonlinear/newtonsolver.hh>
-#include <dumux/porousmediumflow/richards/newtonsolver.hh>
-#include <dumux/common/timeloop.hh>
+// #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
-
-///**
-// * Writes the Dumux welcome message, and creates the global Dumux parameter tree
-// *
-// * Normally you state an input file, that contains all parameters that are needed for the simulation.
-// * SolverBase will try to set some of them dynamically.
-// */
+/**
+ * Writes the Dumux welcome message, and creates the global Dumux parameter tree
+ *
+ * Normally you state an input file, that contains all parameters that are needed for the simulation.
+ * SolverBase will try to set some of them dynamically.
+ */
 //template<class Problem, class Assembler, class LinearSolver>
 //void SolverBase<Problem, Assembler, LinearSolver>::initialize(std::vector<std::string> args)
 //{
-//    std::vector<char*> cargs;
-//    cargs.reserve(args.size());
-//    for(size_t i = 0; i < args.size(); ++i) {
-//        cargs.push_back(const_cast<char*>(args[i].c_str()));
-//    } // its a beautiful language
+////    std::vector<char*> cargs;
+////    cargs.reserve(args.size());
+////    for(size_t i = 0; i < args.size(); ++i) {
+////        cargs.push_back(const_cast<char*>(args[i].c_str()));
+////    } // its a beautiful language
+////
+////	auto& mpiHelper = Dune::MPIHelper::instance(cargs.size(), &cargs[0]); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
+////
+////    if (mpiHelper.rank() == 0) { // rank is the process number
+////    	Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
+////    }
 //
-//	auto& mpiHelper = Dune::MPIHelper::instance(cargs.size(), &cargs[0]); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
-//
-//    if (mpiHelper.rank() == 0) { // rank is the process number
-//    	Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
-//    }
-//
-//    Dumux::Parameters::init(cargs.size(), &cargs[0]); // parse command line arguments and input file
+// //   Dumux::Parameters::init(cargs.size(), &cargs[0]); // parse command line arguments and input file
 //}
 
 /**
  * Creates a grid from the parameter tree
  */
-template<class Problem, class Assembler, class LinearSolver>
-void SolverBase<Problem, Assembler, LinearSolver>::createGrid()
-{
-//    GridManagerFix<Grid> gridManager;
-//    gridManager.init();
-//    grid = gridManager.gridPtr();
-//    try {
-//        gridData = gridManager.getGridData(); // test for null by getter
-//    } catch(...) { }
-}
+//template<class Problem, class Assembler, class LinearSolver>
+//void SolverBase<Problem, Assembler, LinearSolver>::createGrid()
+//{
+////    GridManagerFix<Grid> gridManager;
+////    gridManager.init();
+////    grid = gridManager.gridPtr();
+////    try {
+////        gridData = gridManager.getGridData(); // test for null by getter
+////    } catch(...) { }
+//}
 
 ///**
 // * Creates a rectangular grid with a given resolution

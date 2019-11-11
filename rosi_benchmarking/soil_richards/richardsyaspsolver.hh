@@ -55,7 +55,6 @@ using Problem = Dumux::RichardsProblem<TypeTag>;
 using Assembler = Dumux::FVAssembler<TypeTag, Dumux::DiffMethod::numeric>;
 using LinearSolver = Dumux::AMGBackend<TypeTag>;
 
-
 /**
  * Python binding of the Dumux solver base class
  */
@@ -65,13 +64,13 @@ PYBIND11_MODULE(richards_yasp_solver, m) {
 
     py::class_<RichardsYaspSolver>(m, "RichardsYaspSolver")
         .def(py::init<>())
-   	   // .def("initialize", &RichardsYaspSolver::initialize)
-//        .def("createGrid", &RichardsYaspSolver::createGrid) // (void (RichardsYaspSolver::*)())
+        .def("initialize", &RichardsYaspSolver::initialize)
+//      .def("createGrid", &RichardsYaspSolver::createGrid) // (void (RichardsYaspSolver::*)())
 //    	.def("createGrid", (void (RichardsYaspSolver::*)(VectorType, VectorType, VectorType, std::string)) &RichardsYaspSolver::createGrid)
-//        .def("createGrid", (void (RichardsYaspSolver::*)(std::string)) &RichardsYaspSolver::createGrid)
+//      .def("createGrid", (void (RichardsYaspSolver::*)(std::string)) &RichardsYaspSolver::createGrid)
 //    	.def("getPoints", &RichardsYaspSolver::getPoints) // vtk naming
 //    	.def("getCells", &RichardsYaspSolver::getCells) // vtk naming
-//        .def("simulate", &RichardsYaspSolver::simulate)
+//      .def("simulate", &RichardsYaspSolver::simulate)
         .def_readwrite("initialValues", &RichardsYaspSolver::initialValues)
         .def_readwrite("solution", &RichardsYaspSolver::solution);
 }

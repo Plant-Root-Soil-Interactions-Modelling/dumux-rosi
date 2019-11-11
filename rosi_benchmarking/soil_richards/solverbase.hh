@@ -10,6 +10,11 @@ namespace py = pybind11;
 #include <dune/grid/common/mcmgmapper.hh> // the element and vertex mappers
 #include <dumux/common/defaultmappertraits.hh> // nothingness
 
+// initialize
+#include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
+#include <dumux/common/dumuxmessage.hh> // for fun (a static class)
+#include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
+
 using VectorType = std::array<double,3>;
 
 /**
@@ -33,16 +38,32 @@ template<class Problem, class Assembler, class LinearSolver>
 class SolverBase {
 public:
 
-    const bool dim = Problem::dimWorld;
-    const bool isBox = Problem::isBox;
+    int dim = Problem::dimWorld;
+    bool isBox = Problem::isBox;
 
     SolverBase() { };
 
-    virtual ~SolverBase();
+    void initialize(std::vector<std::string> args)
+    {
+        std::vector<char*> cargs;
+        cargs.reserve(args.size());
+        for(size_t i = 0; i < args.size(); ++i) {
+            cargs.push_back(const_cast<char*>(args[i].c_str()));
+        } // its a beautiful language
 
-//  void initialize(std::vector<std::string> args);
+        int argc = cargs.size();
+        char** argv  =  &cargs[0];
 
-    void createGrid() { };
+        auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
+
+        if (mpiHelper.rank() == 0) { // rank is the process number
+            Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
+        }
+
+        Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
+    }
+
+    //    void createGrid() { }
 
     //	virtual void createGrid(VectorType boundsMin, VectorType boundsMax, VectorType numberOfCells, std::string periodic = "false false false");
     //    virtual void createGrid(std::string file);
@@ -70,8 +91,8 @@ public:
 
 protected:
 
-//    using Grid = typename Problem::Grid;
-//    using GridData = Dumux::GridData<Grid>;
+    //    using Grid = typename Problem::Grid;
+    //    using GridData = Dumux::GridData<Grid>;
 
     //    using FVGridGeometry = typename Problem::FVGridGeometry;
     //    using SolutionVector = typename Problem::SolutionVector;

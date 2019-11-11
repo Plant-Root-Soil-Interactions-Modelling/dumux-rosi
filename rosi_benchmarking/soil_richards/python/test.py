@@ -6,8 +6,11 @@ print("alive")
 
 s = solver.RichardsYaspSolver()
 
+s.initialize(["hello"])
 print(s.initialValues)
 print(s.solution)
 
 # s.createGrid()
 # solver.initialize(["input/b1a_3d.input"])
+
+print("done")
