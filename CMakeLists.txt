@@ -11,7 +11,7 @@ endif()
 find_package(dune-common REQUIRED)
 find_package(dune-alugrid REQUIRED)
 find_package(dune-pybindxi REQUIRED) # PATHS ../dune-pybindxi/build-cmake/
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${dune-common_MODULE_PATH} "/home/daniel/workspace/DUMUX/dune-pybindxi/cmake/modules") # <-
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${dune-common_MODULE_PATH} ) # "/home/daniel/workspace/DUMUX/dune-pybindxi/cmake/modules" <-
 
 #include the dune macros
 include(DuneMacros)

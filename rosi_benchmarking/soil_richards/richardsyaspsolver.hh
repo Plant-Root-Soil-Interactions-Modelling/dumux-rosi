@@ -55,24 +55,32 @@ using Problem = Dumux::RichardsProblem<TypeTag>;
 using Assembler = Dumux::FVAssembler<TypeTag, Dumux::DiffMethod::numeric>;
 using LinearSolver = Dumux::AMGBackend<TypeTag>;
 
+// Name of the choice of Problem, Assembler, LinearSolver
+std::string name = "RichardsYaspSolver";
+
 /**
  * Python binding of the Dumux solver base class
  */
 PYBIND11_MODULE(richards_yasp_solver, m) {
 
-    using RichardsYaspSolver = SolverBase<Problem, Assembler, LinearSolver>;
+    using Solver = SolverBase<Problem, Assembler, LinearSolver>;
 
-    py::class_<RichardsYaspSolver>(m, "RichardsYaspSolver")
+    py::class_<Solver>(m, "RichardsYaspSolver")
         .def(py::init<>())
-        .def("initialize", &RichardsYaspSolver::initialize)
-//      .def("createGrid", &RichardsYaspSolver::createGrid) // (void (RichardsYaspSolver::*)())
-//    	.def("createGrid", (void (RichardsYaspSolver::*)(VectorType, VectorType, VectorType, std::string)) &RichardsYaspSolver::createGrid)
-//      .def("createGrid", (void (RichardsYaspSolver::*)(std::string)) &RichardsYaspSolver::createGrid)
-//    	.def("getPoints", &RichardsYaspSolver::getPoints) // vtk naming
-//    	.def("getCells", &RichardsYaspSolver::getCells) // vtk naming
-//      .def("simulate", &RichardsYaspSolver::simulate)
-        .def_readwrite("initialValues", &RichardsYaspSolver::initialValues)
-        .def_readwrite("solution", &RichardsYaspSolver::solution);
+        .def("initialize", &Solver::initialize)
+        .def("createGrid", (void (Solver::*)()) &Solver::createGrid) // (void (Solver::*)())
+     	.def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid)
+        .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid)
+        .def("setParameter", &Solver::setParameter)
+        .def("initializeProblem", &Solver::initializeProblem)
+    	.def("getPoints", &Solver::getPoints) // vtk naming
+    	.def("getCells", &Solver::getCells) // vtk naming
+    	.def("getDof", &Solver::getDof) // vtk naming
+		.def("simulate", &Solver::simulate)
+        .def_readwrite("initialValues", &Solver::initialValues)
+        .def_readwrite("solution", &Solver::solution)
+    	.def_readwrite("ddt", &Solver::ddt)
+    	.def("__str__",&Solver::toString);
 }
 
 #endif
