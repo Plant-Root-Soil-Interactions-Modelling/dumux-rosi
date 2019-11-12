@@ -251,7 +251,8 @@ public:
 
             // chemical concentration 
             NumEqVector conc(0.);
-            conc = this -> pointSource(source, element, fvGeometry, elemVolVars, scv);
+            PointSource s;
+            conc = this -> pointSource(s, element, fvGeometry, elemVolVars, fvGeometry.scv(scvf.insideScvIdx()));
             cL += conc[1] * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3 
 
             // stomatal conductance definition
@@ -268,7 +269,6 @@ public:
             actualTrans_ = v;
             neumannTime_ = time_;
             maxTrans_ = criticalTranspiration;
-            chemconc = cL/MolarMassABA * 1e+9; // nmol/m3
             v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
             return NumEqVector(v);
         } else {
@@ -304,7 +304,6 @@ public:
         } else {
             values[contiH2OEqIdx] = 0;
         }
-        //std::cout << "mass production rate" << values[contiABAEqIdx] << std::endl;
         return values;
     }
 
@@ -349,7 +348,7 @@ public:
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << chemconc << "\n";
+            << trans << ", "<< time_ << " , " << cL << "\n";
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -440,9 +439,8 @@ public:
                     Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //(mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
                     }
                     else {
-                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMassABA; // (kg/s)                  
+                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMass; // (kg/s)                  
                     }
-                    //cL = Msignal * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3                 
                     sourceValue[contiABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
                 }                
                 else
@@ -519,20 +517,20 @@ private:
     std::map<std::string, std::vector<Scalar>> userData_;
 
     // chemical signalling variables
-    Scalar p0 = toPa_(-4500); // cm -> Pa
-    mutable Scalar Msignal = 0; // initial production rate of chemicals
-    const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
+    const Scalar p0 = toPa_(-4500); // cm -> Pa
     const Scalar p_crit = toPa_(-5500); // cm -> Pa
-    mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
-    Scalar alphaR = 0; // residual stomatal conductance, taken as 0
-    static constexpr Scalar rhoABA_ = 1.19e3; // 1.19e3 kg/m^3 is the density of ABA
-    Scalar cD = getParam<Scalar>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    mutable Scalar cL = 0.;
-    const Scalar MolarMassABA = 0.26432; // (kg/mol) Molar mass of ABA is 264.321 g/mol
+    const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
     const Scalar sC = 1.89e5; // (m^3/kg) 5e+4 from Huber et. al [2014]
     const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]  
-    mutable Scalar chemconc = 0.;
 
+    mutable Scalar cL = 0.;
+    mutable Scalar Msignal = 0; // initial production rate of chemicals
+    mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
+
+    Scalar alphaR = 0; // residual stomatal conductance, taken as 0
+    bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) 
+    
 };
 
 /*

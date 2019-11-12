@@ -12,7 +12,6 @@ os.chdir(path)
 os.chdir("../../../../build-cmake/rosi_models/stomata_model/coupled_stomata")
 
 # run simulation
-os.system("make coupled_rb_stomata")
 os.system("./coupled_rb_stomata input/test.input")  # benchmarkC12, or benchmarkC12b
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],

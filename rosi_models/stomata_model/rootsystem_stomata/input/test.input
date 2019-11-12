@@ -4,8 +4,8 @@ Name = test
 [TimeLoop]
 TEnd = 604800 # 7 days [s]
 DtInitial = 7200 # [s]
-PeriodicCheckTimes = 7200
-MaxTimeStepSize = 360 
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
 File =  Zea_mays_4_Leitner_2014
@@ -22,6 +22,13 @@ Sinusoidal = True
 [Soil.IC]
 P = -100
 #Z = -.15 0.
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 # Molar mass of ABA is 264.321 g/mol
 
 [Vtk]
 AddProcessRank = "false"
