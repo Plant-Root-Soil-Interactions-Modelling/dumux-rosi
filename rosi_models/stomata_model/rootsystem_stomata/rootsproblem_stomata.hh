@@ -251,7 +251,8 @@ public:
 
             // chemical concentration 
             NumEqVector conc(0.);
-            PointSource s;
+            using GlobalPosition = Dune::FieldVector<double, 3>;
+            PointSource s(GlobalPosition);
             conc = this -> pointSource(s, element, fvGeometry, elemVolVars, fvGeometry.scv(scvf.insideScvIdx()));
             cL += conc[1] * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3 
 
