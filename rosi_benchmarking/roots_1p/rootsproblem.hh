@@ -337,8 +337,8 @@ public:
      */
     template<class ElementSolution>
     Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
-        const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-        const auto radius = this->spatialParams().radius(eIdx);
+        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        auto radius = this->spatialParams().radius(eIdx);
         return M_PI*radius*radius;
     }
 

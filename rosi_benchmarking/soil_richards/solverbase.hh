@@ -233,7 +233,7 @@ public:
     /**
      * Returns the Dune vertices (vtk points) of the grid
      */
-    virtual std::vector<VectorType> getPoints() // todo does this work with MPI, gather or broadcasts points?
+    virtual std::vector<VectorType> getPoints() // todo does this work with MPI, gather or broadcasts points, in C++ or Python?
         {
         checkInitialized();
         std::vector<VectorType> points;
@@ -249,7 +249,7 @@ public:
     /**
      * return the Dune element (vtk cell) centers of the grid
      */
-    virtual std::vector<VectorType> getCellCenters() // todo does this work with MPI, gather or broadcasts cells?
+    virtual std::vector<VectorType> getCellCenters() // todo does this work with MPI, gather or broadcasts cells?  in C++ or Python?
         {
         checkInitialized();
         std::vector<VectorType> cells;
@@ -389,40 +389,35 @@ protected:
 
     void copySolution() { ///< copies the solution
 
-        std::vector<std::array<double, numberOfEquations>> s;
         int n = gridGeometry->numDofs();
         n = gridGeometry->gridView().comm().sum(n);
         std::cout << "The processor wide DOF are less then: " << n << " \n" << std::flush;
 
+        std::vector<std::array<double, numberOfEquations>> s;
+        s.resize(n);
         std::array<double, numberOfEquations> ini;
         std::fill(ini.begin(), ini.end(), -1.e16);
         std::fill(s.begin(), s.end(), ini);
 
         if (isBox) { // DOF are located at the vertices
-            std::cout << "box started \n" << std::flush;
             int c = 0;
             for (const auto& v :vertices(gridGeometry->gridView())) {
                 auto vIdx = gridGeometry->vertexMapper().index(v);
                 for (int j=0; j<numberOfEquations; j++) {
-                    s[vIdx][j] = x[j][c]; // rhs, local index (?)
+                    s[vIdx][j] = x[j][c]; // rhs, local index ok ?
                 }
                 c++; // increase local index (?)
             }
-            std::cout << "box copied \n" << std::flush;
         } else {
             int c = 0;
             for (const auto& e :elements(gridGeometry->gridView())) {
                 auto eIdx = gridGeometry->vertexMapper().index(e);
                 for (int j=0; j<numberOfEquations; j++) {
-                    s[eIdx][j] = x[j][c]; // rhs, local index (?)
+                    s[eIdx][j] = x[j][c]; // rhs, local index ok ?
                 }
                 c++; // increase local index (?)
             }
         }
-
-        gridGeometry->gridView().comm().barrier();
-        std::cout << "collecting starts for dof " << n << " \n" << std::flush;
-
         /* collect from mpi (a desperate approach...)*/
         for (int i = 0; i< n; i++) {
             // if (i%100==0) std::cout << "i" << i << "\n";
@@ -430,9 +425,6 @@ protected:
                 s[i][j] = gridGeometry->gridView().comm().max(s[i][j]);
             }
         }
-
-        std::cout << "waiting for some... \n" << std::flush;
-        gridGeometry->gridView().comm().barrier();
     }
 
     using Grid = typename Problem::Grid;
