@@ -19,7 +19,7 @@ class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
-    // used by the binding
+    // exports, used by the binding
     using Grid = GetPropType<TypeTag, Properties::Grid>;
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;

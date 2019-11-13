@@ -1,39 +1,52 @@
-import os
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/soil_richards/")
-import richards_yasp_solver as solver
+from richardsyaspsolver import *
 
-print(os.getcwd())
+import os
+import time
 
-s = solver.RichardsYaspSolver()
+from mpi4py import MPI
 
-s.initialize([""])
-s.initialize(["-input","../input/b1a_3d.input"])
-s.createGrid() # wrong param group (todo)
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+s = RichardsYaspSolver()
+
+# s.initialize([""])
+  # wrong param group (todo)
 # s.createGrid([-1, -1, -1], [1,1,1], [2, 2, 2], "false, false, false")
-#s.createGrid("../grids/b1.dgf") # does only take intervals
+# s.createGrid("../grids/b1.dgf") # does only take intervals
 
+s.initialize(["-input", "../input/b1a_3d.input"])  # , "-Grid.Overlap", "0"
+s.createGrid()
 s.initializeProblem()
 
-print()
-print("Number of points", len(s.getPoints()))
-print("Number of cells", len(s.getCells()))
+if rank == 0:
 
-print(); 
-print(s)
+    print("\nNumber of points", len(s.getPoints()))
+    print("Number of cells", len(s.getCellCenters()))
 
-day = 3600*24
-s.ddt = day
+    print("")
+    print(s, "\n")
+
+t = time.time()
+
+dt = 3600 * 24  # a day in seconds
+s.ddt = 360  # s, initial internal time step
 for i in range(0, 10):
-    print("***************time step****************", i, " internal initial time step", s.ddt)
-    s.simulate(day, -1)
+    if rank == 0:
+        print("*************** External time step ", i, dt, "****************", "Simulation time ", s.simTime / 3600 / 24, "days, internal time step", s.ddt / 3600 / 24, "days")
+    s.simulate(dt, -1)
     #
-    # do wild stuff 
+    # do wild stuff
     #
- 
-print(len(s.initialValues[0]))
-print(s.initialValues[0])
-print(len(s.solution[0]))
-print(s.solution)
- 
-print("done")
+
+if rank == 0:
+    print("\nOverall time ", time.time() - t)
+    print("done")
+
+# print(len(s.initialValues[0]))
+# print(s.initialValues[0])
+# print(len(s.solution[0]))
+# print(s.solution)
+

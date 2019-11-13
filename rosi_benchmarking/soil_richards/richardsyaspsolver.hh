@@ -15,12 +15,11 @@ namespace py = pybind11;
 
 // Dune
 #include <dune/common/parallel/mpihelper.hh>
-#include <dune/common/exceptions.hh>
 #include <dune/common/timer.hh>
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
-#include <dune/istl/io.hh> // debug vector/matrix output
 #include <dune/localfunctions/lagrange/pqkfactory.hh>
 #include <dune/grid/common/mcmgmapper.hh>
+#include <dune/grid/common/rangegenerators.hh>
 
 // Dumux
 #include <dumux/common/exceptions.hh>
@@ -33,6 +32,7 @@ namespace py = pybind11;
 #include <dumux/common/geometry/intersectingentities.hh>
 #include <dumux/linear/seqsolverbackend.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
+#include <dumux/linear/amgbackend.hh>
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
@@ -41,9 +41,6 @@ namespace py = pybind11;
 #include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 #include "propertiesYasp.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
-
-#include <dumux/linear/amgbackend.hh>
-#include <dumux/assembly/fvassembler.hh>
 
 // define the type tag for this problem
 using TypeTag = Dumux::Properties::TTag::RichardsBox; // RichardsCC, RichardsBox
@@ -59,28 +56,72 @@ using LinearSolver = Dumux::AMGBackend<TypeTag>;
 std::string name = "RichardsYaspSolver";
 
 /**
+ * Adds solver functionality, that specifically makes sense for Richards equation
+ */
+class RichardsYaspSolver : public SolverBase<Problem, Assembler, LinearSolver> {
+public:
+
+    /**
+     * Total water volume in domain
+     */
+    virtual double getWaterVolume()
+    {
+        checkInitialized();
+//        double cVol = 0.;
+//        for (const auto& element : Dune::elements(gridGeometry->gridView())) { // soil elements
+//            auto fvGeometry = Dumux::localView(gridGeometry); // soil solution -> volume variable
+//            fvGeometry.bindElement(element);
+//            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+//            elemVolVars.bindElement(element, fvGeometry, x);
+//            for (const auto& scv : Dumux::scvs(fvGeometry)) {
+//                cVol += elemVolVars[scv].saturation(0)*scv.volume();
+//            }
+//
+//        }
+//        return cVol;
+        return 0;
+    }
+
+};
+
+using Solver = RichardsYaspSolver;
+
+/**
  * Python binding of the Dumux solver base class
  */
 PYBIND11_MODULE(richards_yasp_solver, m) {
 
-    using Solver = SolverBase<Problem, Assembler, LinearSolver>;
-
-    py::class_<Solver>(m, "RichardsYaspSolver")
+    py::class_<Solver>(m, name.c_str())
         .def(py::init<>())
         .def("initialize", &Solver::initialize)
-        .def("createGrid", (void (Solver::*)()) &Solver::createGrid) // (void (Solver::*)())
-     	.def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid)
-        .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid)
+        .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
+     	.def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid,
+     	   py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
+        .def("readGrid", &Solver::readGrid)
+        .def("getGridBounds", &Solver::getGridBounds)
         .def("setParameter", &Solver::setParameter)
+        .def("getParameter", &Solver::getParameter)
         .def("initializeProblem", &Solver::initializeProblem)
     	.def("getPoints", &Solver::getPoints) // vtk naming
-    	.def("getCells", &Solver::getCells) // vtk naming
-    	.def("getDof", &Solver::getDof) // vtk naming
+    	.def("getCellCenters", &Solver::getCellCenters) // vtk naming
+    	.def("getDof", &Solver::getDof)
 		.def("simulate", &Solver::simulate)
-        .def_readwrite("initialValues", &Solver::initialValues)
-        .def_readwrite("solution", &Solver::solution)
-    	.def_readwrite("ddt", &Solver::ddt)
-    	.def("__str__",&Solver::toString);
+        .def("pickCell", &Solver::pickCell)
+
+        .def_readonly("solution", &Solver::solution) // read only
+        .def_readonly("simTime", &Solver::simTime) // read only
+        .def_readonly("rank", &Solver::rank) // read only
+        .def_readonly("maxRank", &Solver::maxRank) // read only
+        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
+    	.def("__str__",&Solver::toString)
+
+        // added by class specialization
+        .def("getWaterVolume",&Solver::getWaterVolume);
+
+        // added by richarsyaspsolver.py at a later point:
+        // writeVTK()
+        // setVanGenuchtenParameter
+
 }
 
 #endif
