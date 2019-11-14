@@ -57,7 +57,7 @@ class RootsOnePTwoCProblem: public PorousMediumFlowProblem<TypeTag> {
 
         // indices of the equations
         contiH2OEqIdx = Indices::conti0EqIdx + H2OIdx,
-        contiABAEqIdx = Indices::conti0EqIdx + ABAIdx 
+        transportABAEqIdx = Indices::conti0EqIdx + ABAIdx 
         
     };
     enum {
@@ -246,26 +246,27 @@ public:
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
+            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            double kx = this->spatialParams().kx(eIdx);
+            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             collarP_ = p;
             potentialTrans_ = collar_.f(time_); // [ kg/s]
-
+            double criticalTranspiration;
             // chemical concentration 
-            NumEqVector conc(0.);
-            using GlobalPosition = Dune::FieldVector<double, 3>;
-            PointSource s(GlobalPosition);
-            conc = this -> pointSource(s, element, fvGeometry, elemVolVars, fvGeometry.scv(scvf.insideScvIdx()));
-            cL += conc[1] * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3 
-
+            double cL = densityABA/MolarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
+                                                                    volVars.massFraction(0, ABAIdx)	); // (mol/m3)        
+    
             // stomatal conductance definition
             if (collarP_ < p_crit)
             {
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
+                criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
             }
             else
             {
-                alpha = alphaR + (1 - alphaR)*exp(-sC*cL);
+                criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist;
             }
-            double criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
+            
             double v = std::min(potentialTrans_, criticalTranspiration);
             actualTrans_ = v;
             neumannTime_ = time_;
@@ -442,11 +443,11 @@ public:
                     else {
                     Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMass; // (kg/s)                  
                     }
-                    sourceValue[contiABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
+                    sourceValue[transportABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
                 }                
                 else
                 {   
-                    sourceValue[contiABAEqIdx] = 0.;
+                    sourceValue[transportABAEqIdx] = 0.;
                 }
             }
             source = sourceValue;
@@ -518,20 +519,21 @@ private:
     std::map<std::string, std::vector<Scalar>> userData_;
 
     // chemical signalling variables
+    Scalar alphaR = 0; // residual stomatal conductance, taken as 0
+    bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) 
+    Scalar densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
+
     const Scalar p0 = toPa_(-4500); // cm -> Pa
     const Scalar p_crit = toPa_(-5500); // cm -> Pa
     const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
-    const Scalar sC = 1.89e5; // (m^3/kg) 5e+4 from Huber et. al [2014]
     const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]  
+    const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
 
     mutable Scalar cL = 0.;
     mutable Scalar Msignal = 0; // initial production rate of chemicals
     mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
 
-    Scalar alphaR = 0; // residual stomatal conductance, taken as 0
-    bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) 
-    
 };
 
 /*

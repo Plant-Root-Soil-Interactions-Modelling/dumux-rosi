@@ -28,7 +28,7 @@ UpperRight = 0.375 0.075 0.0
 Cells = 37 8 63
 
 [Soil.IC]
-P = -2000
+P = -100
 
 [Soil.VanGenuchten]
 Qr = 0.0045
@@ -43,3 +43,4 @@ cD = 0 # 0 -> interaction between pressure and chemical regulation
 [Component]
 liquidDiffCoeff = 1.2e-9
 MolarMass = 0.26432 # Molar mass of ABA is 264.321 g/mol
+Density = 1192 # kg/m3
