@@ -31,6 +31,8 @@ namespace py = pybind11;
 #include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
+#include <dune/grid/utility/globalindexset.hh> // todo
+
 using VectorType = std::array<double,3>;
 
 /**
@@ -47,7 +49,7 @@ public:
 /**
  * Dumux as a solver with a simple Python interface
  *
- * first we want to run a simulation with .input file parameters.
+ * First we want to run a simulation with .input file parameters.
  * in future these parameters will be replaced step by step.
  */
 template<class Problem, class Assembler, class LinearSolver>
@@ -55,7 +57,7 @@ class SolverBase {
 public:
 
     std::string gridType = "YaspGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
-    int dim = Problem::dimWorld;
+    static const int dim = 3; // Problem::dimWorld;
     bool isBox = Problem::isBox; // numerical method
     const std::vector<std::string> primNames = { "Matric potential [Pa]" };
     static const bool numberOfEquations = 1;
@@ -96,7 +98,7 @@ public:
             setParameter("Grid.Overlap","1");
         }
 
-        auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
+        auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
 
         maxRank = mpiHelper.size();
         rank = mpiHelper.rank();
@@ -110,12 +112,20 @@ public:
             }
             // std::cout << "SolverBase::initialize: MPI working\n"; // for debugging
         }
+        mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
 
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
     }
 
     /**
-     * Creates a grid from the (global) Dumux parameter tree
+     * Creates a grid from the (global) Dumux parameter tree.
+     * Parameters known to me are:
+     * Grid.UpperRight
+     * Grid.LowerLeft
+     * Grid.Cells
+     * Grid.Periodic
+     * Grid.File
+     * Grid.Overlap (should = 0 for box, = 1 for CCTpfa)
      */
     virtual void createGrid(std::string modelParamGroup = "")
     {
@@ -230,13 +240,12 @@ public:
     {
         checkInitialized();
         std::vector<VectorType> points;
-        points.resize(gridGeometry->gridView().size(dim));
-        int c = 0;
+        points.reserve(gridGeometry->gridView().size(dim));
         for (const auto& v : vertices(gridGeometry->gridView())) {
             auto p = v.geometry().center();
-            points[c] = make3d(VectorType({p[0], p[1], p[2]}));
-            c++;
+            points.push_back(make3d(VectorType({p[0], p[1], p[2]})));
         }
+        std::cout << " and has " << points.size() << "\n";
         return points;
     }
 
@@ -248,12 +257,10 @@ public:
     {
         checkInitialized();
         std::vector<VectorType> cells;
-        cells.resize(gridGeometry->gridView().size(0));
-        int c = 0;
+        cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
             auto p = e.geometry().center();
-            cells[c] = make3d(VectorType({p[0], p[1], p[2]}));
-            c++;
+            cells.push_back(make3d(VectorType({p[0], p[1], p[2]})));
         }
         return cells;
     }
@@ -286,20 +293,19 @@ public:
      */
     virtual std::vector<int> getDofIndices()
     {
-        checkInitialized();
-        std::vector<int> indices;
-        if (isBox) {
-            indices.resize(gridGeometry->gridView().size(dim));
-            for (const auto& v : vertices(gridGeometry->gridView())) {
-                indices.push_back(gridGeometry->vertexMapper().index(v));
-            }
-        } else {
-            indices.reserve(gridGeometry->gridView().size(0));
-            for (const auto& e : elements(gridGeometry->gridView())) {
-                indices.push_back(gridGeometry->elementMapper().index(e));
-            }
-        }
-        return indices;
+    	std::vector<int> indices;
+    	if (isBox) {
+    		Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView(), dim);
+    		for (const auto& v : vertices(gridGeometry->gridView())) {
+    			indices.push_back(indexSet.index(v));
+    		}
+    	} else {
+    		Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView() , 0);
+    		for (const auto& e : elements(gridGeometry->gridView())) {
+    			indices.push_back(indexSet.index(e));
+    		}
+    	}
+    	return indices;
     }
 
     /**
@@ -451,6 +457,7 @@ protected:
     using Grid = typename Problem::Grid;
     using GridData = Dumux::GridData<Grid>;
     using FVGridGeometry = typename Problem::FVGridGeometry;
+    using GridView = typename Dune::YaspGridFamily<3,Dune::EquidistantOffsetCoordinates<double,3>>::Traits::LeafGridView;
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
 

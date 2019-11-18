@@ -16,7 +16,21 @@ rank = comm.Get_rank()
 class PySolverBase(solver.RichardsYaspSolver):
 
     # todo getPoints, getCellCenters
-
+    
+    def getDofIndices(self):
+        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 3)"""
+        self.checkInitialized()
+        comm = MPI.COMM_WORLD
+        indices2 = comm.gather(super().getDofIndices(), root = 0)
+        if rank == 0: 
+            for i,p in enumerate(indices2):
+                print("getDofIndices() rank", i, ":", len(p))
+        if rank == 0:
+            indices = [item for sublist in indices2 for item in sublist]
+        else: 
+            indices = None
+        return indices   
+    
     def getDofCorrdinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3)"""
         self.checkInitialized()
