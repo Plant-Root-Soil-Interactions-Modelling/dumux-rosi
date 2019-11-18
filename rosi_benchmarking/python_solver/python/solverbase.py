@@ -15,33 +15,35 @@ rank = comm.Get_rank()
 
 class PySolverBase(solver.RichardsYaspSolver):
 
+    # todo getPoints, getCellCenters
+
     def getDofCorrdinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3)"""
-        # self.checkInitialized()
+        self.checkInitialized()
         comm = MPI.COMM_WORLD
         points2 = comm.gather(super().getDofCoordinates(), root = 0)
-        indices2 = comm.gather(super().getDofIndices(), root = 0)
         points = [item for sublist in points2 for item in sublist]
-        indices = [item for sublist in indices2 for item in sublist]
-        ndof = max(indices) + 1
-        p = np.zeros((ndof + 1, 3))
-        for i in range(0, ndof):
-            p[indices[i], :] = np.array(points[i])
-        return p
+        return self._map(points)
 
     def getSolution(self):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq) """
-        super().checkInitialized()
+        self.checkInitialized()
         comm = MPI.COMM_WORLD
-        solution2 = comm.gather(getSolution(), root = 0)
-        indices2 = comm.gather(getDofIndices(), root = 0)
+        solution2 = comm.gather(super().getSolution(), root = 0)
         solution = [item for sublist in solution2 for item in sublist]
+        return self._map(solution)
+
+    def _map(self, x):
+        """ maps to the right indices """
+        comm = MPI.COMM_WORLD
+        indices2 = comm.gather(super().getDofIndices(), root = 0)
         indices = [item for sublist in indices2 for item in sublist]
         ndof = max(indices) + 1
-        s = np.zeros((ndof, numberOfEquations))
+        m = len(x[0])
+        p = np.zeros((ndof + 1, m))
         for i in range(0, ndof):
-            a[indices[i], :] = np.array(solution[i])
-        return s
+            p[indices[i], :] = np.array(x[i])
+        return p
 
     def writeVTK(self):
         pass

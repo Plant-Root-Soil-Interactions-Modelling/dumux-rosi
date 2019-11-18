@@ -109,7 +109,8 @@ PYBIND11_MODULE(richards_yasp_solver, m) {
     	.def("getCellCenters", &Solver::getCellCenters) // vtk naming
     	.def("getDofCoordinates", &Solver::getDofCoordinates)
         .def("getDofIndices", &Solver::getDofIndices)
-		.def("simulate", &Solver::simulate)
+        .def("simulate", &Solver::simulate)
+        .def("getSolution", &Solver::getSolution)
         .def("pickCell", &Solver::pickCell)
         .def_readonly("solution", &Solver::solution) // read only
         .def_readonly("simTime", &Solver::simTime) // read only
