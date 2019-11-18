@@ -74,10 +74,10 @@ public:
     { }
 
     /**
-     * Writes the Dumux welcome message, and creates the global Dumux parameter tree
+     * Writes the Dumux welcome message, and creates the global Dumux parameter tree from defaults and the .input file
      *
      * Normally you state an input file, that contains all parameters that are needed for the simulation.
-     * SolverBase will try to set some of them dynamically.
+     * SolverBase will optionally set some of them dynamically.
      */
     virtual void initialize(std::vector<std::string> args)
     {
@@ -112,19 +112,6 @@ public:
         }
 
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
-
-        //        // create and broadcast solution and inital values
-        //        if (rank == 0) {
-        //            std::cout<< "I am rank 0, I am the owner " << rank << "\n" << std::flush;
-        //            // owner_sol = std::make_shared<std::vector<std::array<double, numberOfEquations>>>();
-        //            solution = new std::vector<std::array<double, numberOfEquations>>();
-        //            std::cout<< "rank " << rank << " solution " << solution->size() << "\n"; // check if it works
-        //        }
-        //        mpiHelper.getCollectiveCommunication().barrier();
-        //        mpiHelper.getCollectiveCommunication().broadcast(&solution, 1, 0);
-        //        std::cout<< "rank " << rank << " solution " << &solution << "; "<< solution << "; " << solution->size() << "\n"; // check if it works
-        // I don't have access to other process resource
-
     }
 
     /**
@@ -137,6 +124,7 @@ public:
         grid = gridManager.gridPtr();
         try {
             gridData = gridManager.getGridData(); // test for null by getter (todo)
+            // missing concept to add grid data dynamically
         } catch(...) { }
     }
 
@@ -180,11 +168,11 @@ public:
      * [minx, miny, minz, maxx, maxy, maxz]
      */
     virtual std::array<double, 6> getGridBounds()
-        {
+    {
         auto bMax = gridGeometry->bBoxMax();
         auto bMin = gridGeometry->bBoxMin();
         return std::array<double,6>({bMin[0], bMin[1], bMin[2], bMax[0], bMax[1], bMax[2]});
-        }
+    }
 
     /**
      * Writes a parameter into the global Dumux parameter map
@@ -208,7 +196,7 @@ public:
      * After the grid is created, the problem can be initialized
      *
      * creates (a) the GridGeometry, (b) the Problem, (c) applies initial conditions (using input file functions)
-     * (d) GridVariables (e) resets simtime, ddt
+     * (d) GridVariables (e) resets simtime, and internal time step ddt
      */
     virtual void initializeProblem()
     {
@@ -232,9 +220,10 @@ public:
 
     /**
      * Returns the Dune vertices (vtk points) of the grid
+     * for a single mpi process. Gathering is done in Python.
      */
-    virtual std::vector<VectorType> getPoints() // todo does this work with MPI, gather or broadcasts points, in C++ or Python?
-        {
+    virtual std::vector<VectorType> getPoints()
+    {
         checkInitialized();
         std::vector<VectorType> points;
         points.resize(gridGeometry->gridView().size(dim));
@@ -244,13 +233,14 @@ public:
             points[vIdx] = make3d(VectorType({p[0], p[1], p[2]}));
         }
         return points;
-        }
+    }
 
     /**
      * return the Dune element (vtk cell) centers of the grid
+     * for a single mpi process. Gathering is done in Python.
      */
-    virtual std::vector<VectorType> getCellCenters() // todo does this work with MPI, gather or broadcasts cells?  in C++ or Python?
-        {
+    virtual std::vector<VectorType> getCellCenters()
+    {
         checkInitialized();
         std::vector<VectorType> cells;
         cells.resize(gridGeometry->gridView().size(0));
@@ -260,28 +250,79 @@ public:
             cells[eIdx] = make3d(VectorType({p[0], p[1], p[2]}));
         }
         return cells;
-        }
+    }
 
     /**
      * Returns the coordinate, where the DOF sit, in the same order like the solution values.
      *
      * DOF sit either at the vertices (points) for box method or
      * element centers (cell centers) for CCTpfa.
+     *
+     * For a single mpi process. Gathering is done in Python
      */
-    virtual std::vector<VectorType> getDof()
-        {
+    virtual std::vector<VectorType> getDofCoordinates()
+    {
         if (isBox) {
             return getPoints();
         } else {
             return getCellCenters();
         }
+    }
+
+    /**
+     * Return the indices of the grid elements or vertices where the DOF sit.
+     * Used to sort the coordinates when gathered from the processes,
+     * makes no sense to call directly.
+     *
+     * For a single mpi process. Gathering is done in Python
+     */
+    virtual std::vector<int> getDofIndices()
+    {
+        checkInitialized();
+        std::vector<int> indices;
+        if (isBox) {
+            indices.resize(gridGeometry->gridView().size(dim));
+            for (const auto& v : vertices(gridGeometry->gridView())) {
+                indices.push_back(gridGeometry->vertexMapper().index(v));
+            }
+        } else {
+            indices.reserve(gridGeometry->gridView().size(0));
+            for (const auto& e : elements(gridGeometry->gridView())) {
+                indices.push_back(gridGeometry->elementMapper().index(e));
+            }
         }
+        return indices;
+    }
+
+    /**
+     * Returns the current solution
+     * for a single mpi process. Gathering is done in Python
+     */
+    virtual std::vector<int> getSolution()
+    {
+        checkInitialized();
+        std::vector<int> indices;
+        if (isBox) {
+            indices.resize(gridGeometry->gridView().size(dim));
+            for (const auto& v : vertices(gridGeometry->gridView())) {
+                indices.push_back(gridGeometry->vertexMapper().index(v));
+            }
+        } else {
+            indices.reserve(gridGeometry->gridView().size(0));
+            for (const auto& e : elements(gridGeometry->gridView())) {
+                indices.push_back(gridGeometry->elementMapper().index(e));
+            }
+        }
+        return indices;
+    }
 
     /**
      * simulates the problem for time span dt, with initial time step ddt.
      *
      * Assembler needs a TimeLoop, so i have to create it in each simulate call.
      * (could be improved, but overhead is likely to be small)
+     *
+     * todo steady state
      */
     virtual void simulate(double dt, double maxDt = -1) {
         checkInitialized();
@@ -324,7 +365,6 @@ public:
 
         } while (!timeLoop->finished());
 
-        copySolution(); //< some overhead, could be moved outside
         simTime += dt;
 
     }
@@ -332,7 +372,8 @@ public:
     /**
      * picks and element index (cell index)
      */
-    virtual int pickCell(VectorType pos) { // todo? do I have to take care about periodicity?
+    virtual int pickCell(VectorType pos) // todo? do I have to take care about periodicity?
+    {
         checkInitialized();
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
@@ -347,7 +388,8 @@ public:
     /**
      * Quick overview
      */
-    std::string toString() {
+    virtual std::string toString()
+    {
         std::ostringstream msg;
         msg << "DuMux Solver using " << gridType << " in " << dim << "D ";
         if (isBox) {
@@ -369,6 +411,17 @@ public:
         return msg.str();
     }
 
+    /**
+     * Checks if the problem was initialized,
+     * i.e. initializeProblem() was called
+     */
+    virtual void checkInitialized()
+    {
+        if (!gridGeometry) {
+            throw std::invalid_argument("SolverBase::checkInitialized: Problem not initialized, call initializeProblem first");
+        }
+    }
+
 protected:
 
     VectorType make3d(VectorType p) { ///<- binding is always 3d, lower dimensional Dumux grids are projected to 3d
@@ -381,51 +434,45 @@ protected:
         }
     }
 
-    void checkInitialized() { ///< checks if initializeProblem was called
-        if (!gridGeometry) {
-            throw std::invalid_argument("SolverBase::checkInitialized: Problem not initialized, call initializeProblem first");
-        }
-    }
-
-    void copySolution() { ///< copies the solution
-
-        int n = gridGeometry->numDofs();
-        n = gridGeometry->gridView().comm().sum(n);
-        std::cout << "The processor wide DOF are less then: " << n << " \n" << std::flush;
-
-        std::vector<std::array<double, numberOfEquations>> s;
-        s.resize(n);
-        std::array<double, numberOfEquations> ini;
-        std::fill(ini.begin(), ini.end(), -1.e16);
-        std::fill(s.begin(), s.end(), ini);
-
-        if (isBox) { // DOF are located at the vertices
-            int c = 0;
-            for (const auto& v :vertices(gridGeometry->gridView())) {
-                auto vIdx = gridGeometry->vertexMapper().index(v);
-                for (int j=0; j<numberOfEquations; j++) {
-                    s[vIdx][j] = x[j][c]; // rhs, local index ok ?
-                }
-                c++; // increase local index (?)
-            }
-        } else {
-            int c = 0;
-            for (const auto& e :elements(gridGeometry->gridView())) {
-                auto eIdx = gridGeometry->vertexMapper().index(e);
-                for (int j=0; j<numberOfEquations; j++) {
-                    s[eIdx][j] = x[j][c]; // rhs, local index ok ?
-                }
-                c++; // increase local index (?)
-            }
-        }
-        /* collect from mpi (a desperate approach...)*/
-        for (int i = 0; i< n; i++) {
-            // if (i%100==0) std::cout << "i" << i << "\n";
-            for (int j=0; j<numberOfEquations; j++) {
-                s[i][j] = gridGeometry->gridView().comm().max(s[i][j]);
-            }
-        }
-    }
+//    void copySolution() { ///< copies the solution
+//
+//        int n = gridGeometry->numDofs();
+//        n = gridGeometry->gridView().comm().sum(n);
+//        std::cout << "The processor wide DOF are less then: " << n << " \n" << std::flush;
+//
+//        std::vector<std::array<double, numberOfEquations>> s;
+//        s.resize(n);
+//        std::array<double, numberOfEquations> ini;
+//        std::fill(ini.begin(), ini.end(), -1.e16);
+//        std::fill(s.begin(), s.end(), ini);
+//
+//        if (isBox) { // DOF are located at the vertices
+//            int c = 0;
+//            for (const auto& v :vertices(gridGeometry->gridView())) {
+//                auto vIdx = gridGeometry->vertexMapper().index(v);
+//                for (int j=0; j<numberOfEquations; j++) {
+//                    s[vIdx][j] = x[j][c]; // rhs, local index ok ?
+//                }
+//                c++; // increase local index (?)
+//            }
+//        } else {
+//            int c = 0;
+//            for (const auto& e :elements(gridGeometry->gridView())) {
+//                auto eIdx = gridGeometry->vertexMapper().index(e);
+//                for (int j=0; j<numberOfEquations; j++) {
+//                    s[eIdx][j] = x[j][c]; // rhs, local index ok ?
+//                }
+//                c++; // increase local index (?)
+//            }
+//        }
+//        /* collect from mpi (a desperate approach...)*/
+//        for (int i = 0; i< n; i++) {
+//            // if (i%100==0) std::cout << "i" << i << "\n";
+//            for (int j=0; j<numberOfEquations; j++) {
+//                s[i][j] = gridGeometry->gridView().comm().max(s[i][j]);
+//            }
+//        }
+//    }
 
     using Grid = typename Problem::Grid;
     using GridData = Dumux::GridData<Grid>;

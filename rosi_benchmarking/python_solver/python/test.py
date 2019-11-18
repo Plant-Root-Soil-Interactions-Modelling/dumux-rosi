@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../../../build-cmake/rosi_benchmarking/soil_richards/")
+sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 from richardsyaspsolver import *
 
 import os
@@ -26,17 +26,27 @@ if rank == 0:
     print("\nNumber of points", len(s.getPoints()))
     print("Number of cells", len(s.getCellCenters()))
 
-    print("")
+    print()
     print(s, "\n")
+
+    print("Bounding box ", s.getGridBounds())  # it is not optimal to pass parameters via strings
+
+#     print()
+#     print("Initial total water ", s.getgetWaterVolume())
+
+    print()
+    coord = s.getDofCorrdinates()
+    print("DOF ", coord.shape[0] - 1)
+    sol = s.getSolution()
 
 t = time.time()
 
-dt = 3600 * 24  # a day in seconds
-s.ddt = 360  # s, initial internal time step
-for i in range(0, 10):
-    if rank == 0:
-        print("*************** External time step ", i, dt, "****************", "Simulation time ", s.simTime / 3600 / 24, "days, internal time step", s.ddt / 3600 / 24, "days")
-    s.simulate(dt, -1)
+# dt = 3600 * 24  # a day in seconds
+# s.ddt = 360  # s, initial internal time step
+# for i in range(0, 10):
+#     if rank == 0:
+#         print("*************** External time step ", i, dt, "****************", "Simulation time ", s.simTime / 3600 / 24, "days, internal time step", s.ddt / 3600 / 24, "days")
+#     s.simulate(dt, -1)
     #
     # do wild stuff
     #

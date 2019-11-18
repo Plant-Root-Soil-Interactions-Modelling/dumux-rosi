@@ -38,9 +38,9 @@ namespace py = pybind11;
 
 #include "solverbase.hh"
 
-#include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "propertiesYasp.hh" // the property system related stuff (to pass types, used instead of polymorphism)
-#include "properties_nocoupling.hh" // dummy types for replacing the coupling types
+#include "../soil_richards/richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "../soil_richards/propertiesYasp.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 // define the type tag for this problem
 using TypeTag = Dumux::Properties::TTag::RichardsBox; // RichardsCC, RichardsBox
@@ -60,6 +60,9 @@ std::string name = "RichardsYaspSolver";
  */
 class RichardsYaspSolver : public SolverBase<Problem, Assembler, LinearSolver> {
 public:
+
+    virtual ~RichardsYaspSolver()
+    { }
 
     /**
      * Total water volume in domain
@@ -104,24 +107,19 @@ PYBIND11_MODULE(richards_yasp_solver, m) {
         .def("initializeProblem", &Solver::initializeProblem)
     	.def("getPoints", &Solver::getPoints) // vtk naming
     	.def("getCellCenters", &Solver::getCellCenters) // vtk naming
-    	.def("getDof", &Solver::getDof)
+    	.def("getDofCoordinates", &Solver::getDofCoordinates)
+        .def("getDofIndices", &Solver::getDofIndices)
 		.def("simulate", &Solver::simulate)
         .def("pickCell", &Solver::pickCell)
-
         .def_readonly("solution", &Solver::solution) // read only
         .def_readonly("simTime", &Solver::simTime) // read only
         .def_readonly("rank", &Solver::rank) // read only
         .def_readonly("maxRank", &Solver::maxRank) // read only
         .def_readwrite("ddt", &Solver::ddt) // initial internal time step
     	.def("__str__",&Solver::toString)
-
+        .def("checkInitialized", &Solver::checkInitialized)
         // added by class specialization
         .def("getWaterVolume",&Solver::getWaterVolume);
-
-        // added by richarsyaspsolver.py at a later point:
-        // writeVTK()
-        // setVanGenuchtenParameter
-
 }
 
 #endif
