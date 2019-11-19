@@ -88,6 +88,9 @@ public:
         }
         // IC
         initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
+
+        std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType " <<  bcBotType_ << ", " << bcBotValue_
+            << "\n" << std::flush;
     }
 
     /**
@@ -294,6 +297,7 @@ public:
     PrimaryVariables initial(const Entity& entity) const {
         auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
         Scalar z = entity.geometry().center()[dimWorld - 1];
+        std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
         PrimaryVariables v(0.0);
         v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
         v.setState(bothPhases);

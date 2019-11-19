@@ -6,7 +6,7 @@ TEnd = 0 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
-[Grid]
+[Soil.Grid]
 LowerLeft = -0.05 -0.05 -2. 
 UpperRight =  0.05 0.05 0. 
 Cells = 9 9 199

@@ -91,6 +91,8 @@ public:
         }
         layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
+
+        std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
     }
 
     /*!
@@ -145,6 +147,7 @@ private:
         } else {
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar z = element.geometry().center()[dimWorld - 1];
+            //std::cout << z << "\n";
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
         }
     }

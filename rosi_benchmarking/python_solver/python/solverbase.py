@@ -98,15 +98,12 @@ class PySolverBase(solver.RichardsYaspSolver):
             plt.ylabel("Depth (cm)")
             plt.show()
 
-    def plotZ(self, eq = 0, conv = lambda x: x, xlabel = "Pressure"):
+    def plotZ(self, x, xlabel = "Pressure"):
+        """ plots x along the z axis """
         self.checkInitialized()
         points = np.array(self.getDofCorrdinates())
-        MPI.COMM_WORLD.Barrier()
-        solution = np.array(self.getSolution())
-        print("dof coord", points.shape)
-        print("solution", solution.shape)
         if rank == 0:
-            plt.plot(conv(solution[:, eq]), points[:, 2] * 100, "*")
+            plt.plot(x, points[:, 2] * 100, "*")
             plt.xlabel(xlabel)
             plt.ylabel("Depth (cm)")
             plt.show()

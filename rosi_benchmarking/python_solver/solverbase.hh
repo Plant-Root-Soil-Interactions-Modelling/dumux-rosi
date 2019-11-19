@@ -6,13 +6,6 @@
 #include <dune/pybindxi/numpy.h>
 namespace py = pybind11;
 
-#include <sstream>
-#include <stdexcept>
-
-#include <dumux/io/grid/gridmanager.hh> // grid types
-#include <dune/grid/common/mcmgmapper.hh> // the element and vertex mappers
-#include <dumux/common/defaultmappertraits.hh> // nothingness
-
 // initialize
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
@@ -21,17 +14,16 @@ namespace py = pybind11;
 // createGrid
 #include <dumux/io/grid/gridmanager.hh>
 
-// initialize
-#include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
-#include <dumux/common/dumuxmessage.hh> // for fun (a static class)
-#include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
-
 // simulate
 #include <dumux/common/timeloop.hh> // timeloop is need for step size control
 #include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
-#include <dune/grid/utility/globalindexset.hh> // todo
+// getDofIndices, getPointIndices, getCellIndices
+#include <dune/grid/utility/globalindexset.hh>
+
+// pick
+#include <dumux/common/geometry/intersectingentities.hh>
 
 using VectorType = std::array<double,3>;
 
@@ -174,7 +166,7 @@ public:
     }
 
     /**
-     * Returns a rectangular bounding box around the geometry
+     * Returns a rectangular bounding box around the grid geometry
      * [minx, miny, minz, maxx, maxy, maxz]
      */
     virtual std::array<double, 6> getGridBounds()
@@ -230,6 +222,58 @@ public:
         gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
         simTime = 0; // reset
         ddt = -1;
+    }
+
+    /**
+     * Simulates the problem for time span dt, with initial time step ddt.
+     *
+     * Assembler needs a TimeLoop, so i have to create it in each simulate call.
+     * (could be improved, but overhead is likely to be small)
+     *
+     * todo steady state
+     */
+    virtual void simulate(double dt, double maxDt = -1) {
+        checkInitialized();
+        using namespace Dumux;
+
+        if (ddt<1.e-6) { // happens at the first call
+            ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
+        }
+
+        std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
+            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt); // the main time loop is moved to Python
+        if (maxDt<0) { // per default value take from parameter tree
+            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // maximal time step size
+        }
+        timeLoop->setMaxTimeStepSize(maxDt);
+
+        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
+        auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
+        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        nonLinearSolver->setVerbose(false);
+
+        timeLoop->start();
+        auto xOld = x;
+        do {
+            ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
+            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+
+            assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
+
+            nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
+
+            xOld = x; // make the new solution the old solution
+
+            gridVariables->advanceTimeStep();
+            timeLoop->advanceTimeStep(); // advance to the time loop to the next step
+            timeLoop->reportTimeStep(); // report statistics of this time step
+
+            problem->setTime(simTime + timeLoop->time()); // pass current time to the problem ddt?
+
+        } while (!timeLoop->finished());
+
+        simTime += dt;
     }
 
     /**
@@ -331,58 +375,6 @@ public:
         } else {
             return getCellIndices();
         }
-    }
-
-    /**
-     * Simulates the problem for time span dt, with initial time step ddt.
-     *
-     * Assembler needs a TimeLoop, so i have to create it in each simulate call.
-     * (could be improved, but overhead is likely to be small)
-     *
-     * todo steady state
-     */
-    virtual void simulate(double dt, double maxDt = -1) {
-        checkInitialized();
-        using namespace Dumux;
-
-        if (ddt<1.e-6) { // happens at the first call
-            ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
-        }
-
-        std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
-            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt); // the main time loop is moved to Python
-        if (maxDt<0) { // per default value take from parameter tree
-            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // maximal time step size
-        }
-        timeLoop->setMaxTimeStepSize(maxDt);
-
-        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
-        auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
-        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
-        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
-        nonLinearSolver->setVerbose(false);
-
-        timeLoop->start();
-        auto xOld = x;
-        do {
-            ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
-            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
-
-            assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-
-            nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
-
-            xOld = x; // make the new solution the old solution
-
-            gridVariables->advanceTimeStep();
-            timeLoop->advanceTimeStep(); // advance to the time loop to the next step
-            timeLoop->reportTimeStep(); // report statistics of this time step
-
-            problem->setTime(simTime + timeLoop->time()); // pass current time to the problem ddt?
-
-        } while (!timeLoop->finished());
-
-        simTime += dt;
     }
 
     /**

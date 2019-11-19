@@ -5,6 +5,7 @@ from richardsyaspsolver import *
 import os
 import time
 
+import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
 
@@ -23,16 +24,14 @@ def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-s = RichardsYaspSolver()
+s = RichardsYaspSolver()  # the one and only
 
 # s.initialize([""])
-# wrong param group (todo)
 # s.createGrid([-1, -1, -1], [1,1,1], [2, 2, 2], "false, false, false")
 # s.createGrid("../grids/b1.dgf") # YASP does only take intervals
-
 s.initialize(["-input", "../input/b1a_3d.input"])  # , "-Grid.Overlap", "0"
-
-s.createGrid()
+# s.createGrid("Soil")
+s.createGrid([-0.05, -0.05, -2], [0.05, 0.05, 0], [1, 1, 199], "false, false, false")
 s.initializeProblem()
 
 # if rank == 0:
@@ -49,35 +48,52 @@ s.initializeProblem()
 #     print()
 #     print("Initial total water ", s.getgetWaterVolume())
 
-# print()
-# ind = s.getDofIndices()  # collect global ids
-# if rank == 0:
-#     print()
-#     print("Indices: ", len(ind))
-#     print("Indices unique: ", len(list(set(ind))))
-#     print()
+print()
+ind = s.getDofIndices()  # collect global ids
+if rank == 0:
+    print()
+    print("Indices: ", len(ind))
+    l = list(set(ind))
+    print("Indices unique: ", len(l))
+    l = np.sort(l)
+    print(l)
+    print()
+    print()
 
-# points = s.getDofCorrdinates()  # in case of box, these are grid vertices
-# if rank == 0:
-#     print("Coordinates ", points.shape[0])
-# #     fig = plt.figure()
-# #     ax = fig.add_subplot(111, projection = '3d')
-# #     ax.set_xlabel('X Label')
-# #     ax.set_ylabel('Y Label')
-# #     ax.set_zlabel('Z Label')
-# #     ax.scatter(points[:, 0], points[:, 1], points[:, 2])
-# #     plt.show()
+input("Press Enter to continue...")
+points = s.getDofCorrdinates()  # in case of box, these are grid vertices
+if rank == 0:
+    print("Coordinates ", points.shape[0])
+    print(points)
+
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111, projection = '3d')
+#     ax.set_xlabel('X Label')
+#     ax.set_ylabel('Y Label')
+#     ax.set_zlabel('Z Label')
+#     ax.scatter(points[:, 0], points[:, 1], points[:, 2])
+#     plt.show()
 
 # sol = s.getSolution()
 # if rank == 0:
 #     print("Initial solution ", sol.shape[0])
 # s.plotZ(0, toHead)
 
+x = s.getSolution()
+print(min(toHead(x)), max(toHead(x)))
+
+bounds = s.getGridBounds()
+if rank == 0:
+    print("Bounding box ", bounds)  # it is not optimal to pass parameters via strings
+
+s.plotZ(toHead(x), "Pressure head (cm)")
+
+input("Press Enter to continue...")
 t = time.time()
 
 dt = 10 * 3600 * 24  # a day in seconds
 s.ddt = 360  # s, initial internal time step
-for i in range(0, 10):
+for i in range(0, 1):
     if rank == 0:
         print("*************** External time step ", i, dt, "****************", "Simulation time ", s.simTime / 3600 / 24, "days, internal time step", s.ddt / 3600 / 24, "days")
     s.simulate(dt, -1)
@@ -89,7 +105,22 @@ if rank == 0:
     print("\nOverall time ", time.time() - t)
     print("done")
 
-s.plotZ(0, toHead, "Pressure head (cm)")
+x = s.getSolution()
+print(min(toHead(x)), max(toHead(x)))
+
+print()
+ind = s.getDofIndices()  # collect global ids
+if rank == 0:
+    print()
+    print("Indices: ", len(ind))
+    print("Indices unique: ", len(list(set(ind))))
+    print()
+
+bounds = s.getGridBounds()
+if rank == 0:
+    print("Bounding box ", bounds)  # it is not optimal to pass parameters via strings
+
+s.plotZ(x, "Pressure head (cm)")
 
 # print(len(s.initialValues[0]))
 # print(s.initialValues[0])
