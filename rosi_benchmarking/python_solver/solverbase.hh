@@ -245,7 +245,6 @@ public:
             auto p = v.geometry().center();
             points.push_back(make3d(VectorType({p[0], p[1], p[2]})));
         }
-        std::cout << " and has " << points.size() << "\n";
         return points;
     }
 
@@ -285,6 +284,40 @@ public:
     }
 
     /**
+     * Return the indices of the grid vertices.
+     * Used to map the coordinates when gathered from the processes,
+     * makes little sense to call directly.
+     *
+     * For a single mpi process. Gathering is done in Python
+     */
+    virtual std::vector<int> getPointIndices() {
+        std::vector<int> indices;
+        indices.reserve(gridGeometry->gridView().size(dim));
+        Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView(), dim);
+        for (const auto& v : vertices(gridGeometry->gridView())) {
+            indices.push_back(indexSet.index(v));
+        }
+        return indices;
+    }
+
+    /**
+     * Return the indices of the grid elements.
+     * Used to map the coordinates when gathered from the processes,
+     * makes little sense to call directly.
+     *
+     * For a single mpi process. Gathering is done in Python
+     */
+    virtual std::vector<int> getCellIndices() {
+        std::vector<int> indices;
+        indices.reserve(gridGeometry->gridView().size(0));
+        Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView() , 0);
+        for (const auto& e : elements(gridGeometry->gridView())) {
+            indices.push_back(indexSet.index(e));
+        }
+        return indices;
+    }
+
+    /**
      * Return the indices of the grid elements or vertices where the DOF sit.
      * Used to map the coordinates when gathered from the processes,
      * makes little sense to call directly.
@@ -293,19 +326,11 @@ public:
      */
     virtual std::vector<int> getDofIndices()
     {
-    	std::vector<int> indices;
-    	if (isBox) {
-    		Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView(), dim);
-    		for (const auto& v : vertices(gridGeometry->gridView())) {
-    			indices.push_back(indexSet.index(v));
-    		}
-    	} else {
-    		Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView() , 0);
-    		for (const auto& e : elements(gridGeometry->gridView())) {
-    			indices.push_back(indexSet.index(e));
-    		}
-    	}
-    	return indices;
+        if (isBox) {
+            return getPointIndices();
+        } else {
+            return getCellIndices();
+        }
     }
 
     /**
@@ -358,32 +383,26 @@ public:
         } while (!timeLoop->finished());
 
         simTime += dt;
-
     }
 
     /**
-     * Returns the current solution
-     * for a single mpi process. Gathering and mapping is done in Python
+     * Returns the current solution for a single mpi process.
+     * Gathering and mapping is done in Python
      */
     virtual std::vector<std::array<double, numberOfEquations>> getSolution()
     {
         checkInitialized();
         std::vector<std::array<double, numberOfEquations>> sol;
-        if (isBox) { // DOF are located at the vertices
-            int c = 0;
-            for (const auto& v :vertices(gridGeometry->gridView())) {
-                for (int j=0; j<numberOfEquations; j++) {
-                    sol[c][j] = x[j][c];
-                }
-                c++;
-            }
-        } else { // DOF are located at the cell centers
-            int c = 0;
-            for (const auto& e :elements(gridGeometry->gridView())) {
-                for (int j=0; j<numberOfEquations; j++) {
-                    sol[c][j] = x[j][c];
-                }
-                c++;
+        int n;
+        if (isBox) {
+            n = gridGeometry->gridView().size(dim);
+        } else {
+            n = gridGeometry->gridView().size(0);
+        }
+        sol.resize(n);
+        for (int c = 0; c<n; c++) {
+            for (int j=0; j<numberOfEquations; j++) {
+                sol[c][j] = x[j][c];
             }
         }
         return sol;
@@ -402,7 +421,7 @@ public:
             return -1;
         }
         auto element = bBoxTree.entitySet().entity(entities[0]);
-        return gridGeometry->elementMapper().index(element);
+        return gridGeometry->elementMapper().index(element); // todo make a global id from it
     }
 
     /**

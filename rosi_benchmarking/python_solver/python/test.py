@@ -37,7 +37,9 @@ if rank == 0:
     print()
     coord = s.getDofCorrdinates()
     print("DOF ", coord.shape[0] - 1)
-    sol = s.getSolution()
+    print(coord)
+
+    # sol = s.getSolution()
 
 t = time.time()
 
