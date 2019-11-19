@@ -12,6 +12,3 @@ target_compile_definitions(richardsUG PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::si
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-
-add_subdirectory(pybind11)
-pybind11_add_module(solverbase SHARED solverbase.cc) 

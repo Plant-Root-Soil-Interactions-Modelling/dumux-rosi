@@ -56,15 +56,16 @@ public:
 
     RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
         ParentType(fvGridGeometry) {
-        // DGF specific (where is what)
+        // DGF specific,
+        // new IBG-3 default: order, brnID, surf [cm2], length [cm], radius [cm], kz [cm4 hPa-1 d-1], kr [cm hPa-1 d-1], emergence time [d]
+        orderIdx_ = Dumux::getParam<int>("RootSystem.Grid.orderIdx", 0);
+        radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 4);
+        ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 7);
+        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 6);
+        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 5);
+        idIdx_ = Dumux::getParam<int>("RootSystem.Grid.idIdx", 1);
+        // DGF specific
         time0_ = Dumux::getParam<double>("RootSystem.Grid.InitialT", 14)*24*3600; // days -> s
-        orderIdx_ = Dumux::getParam<int>("RootSystem.Grid.orderIdx", 0); // 1
-        radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 1);
-        ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 2);
-        krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 3);
-        kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 4);
-        idIdx_ = Dumux::getParam<int>("RootSystem.Grid.idIdx", 0);
-        //
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm/hPa/day] ([day])
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
@@ -74,7 +75,8 @@ public:
         radius_ = InputFileFunction("RootSystem", "Radius", "RadiusAge", radiusIdx_, orderIdx_); // [cm] ([day])
         radius_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius_.setFunctionScale(1.e-2); // [cm] -> [m]
-        ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [s], optional grid data, no variable
+        ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [day], optional grid data, no variable
+        ct_.setFunctionScale(24.*3600.); // [day] -> [s]
         order_ = InputFileFunction("RootSystem", "Order", orderIdx_, orderIdx_); // [1], optional grid data, no variable
         id_ = InputFileFunction("RootSystem", "Id", idIdx_, idIdx_);
     }
