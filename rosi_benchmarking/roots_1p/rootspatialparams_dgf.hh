@@ -57,7 +57,7 @@ public:
     RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
         ParentType(fvGridGeometry) {
         // DGF specific,
-        // new IBG-3 default: order, brnID, surf [cm2], length [cm], radius [cm], kz [cm4 hPa-1 d-1], kr [cm hPa-1 d-1], emergence time [d]
+        // new IBG-3 default: order, brnID, surf [cm2], length [cm], radius [cm], kz [cm4 hPa-1 d-1], kr [cm hPa-1 d-1], emergence time [d], subType, organType
         orderIdx_ = Dumux::getParam<int>("RootSystem.Grid.orderIdx", 0);
         radiusIdx_ = Dumux::getParam<int>("RootSystem.Grid.radiusIdx", 4);
         ctIdx_ = Dumux::getParam<int>("RootSystem.Grid.ctIdx", 7);
