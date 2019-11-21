@@ -72,7 +72,7 @@ class RichardsYaspSolver(solver.PySolverBase):
         if equilibrium:
             bounds = self.getGridBounds()
             z = [bounds[2], bounds[5]]
-            m = (z[1] - z[0]) / 2
+            m = 100. * (z[1] - z[0]) / 2.
             p = [p + m, p - m]
             self.setInitialConditionsZ(p, z)
         else:

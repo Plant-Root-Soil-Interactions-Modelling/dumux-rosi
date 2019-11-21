@@ -415,8 +415,8 @@ public:
 
     /**
      * picks and element index (cell index)
-     *
-     * todo the lucky rank a index needs to map to global index todo
+     * The lucky rank who found it, maps the local index to a global one,
+     * and broadcasts to the others
      */
     virtual int pickCell(VectorType pos) // todo? do I have to take care about periodicity?
     {
@@ -424,11 +424,15 @@ public:
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
         auto entities = Dumux::intersectingEntities(p, bBoxTree);
+        int gIdx;
         if (entities.empty()) {
-            return -1;
+            gIdx = -1;
+        } else {
+            auto element = bBoxTree.entitySet().entity(entities[0]);
+            gIdx = cellIdx->index(element);
         }
-        auto element = bBoxTree.entitySet().entity(entities[0]);
-        return gridGeometry->elementMapper().index(element); // todo make a global id from it
+        gIdx = gridGeometry->gridView().comm().max(gIdx); // so clever
+        return gIdx;
     }
 
     /**

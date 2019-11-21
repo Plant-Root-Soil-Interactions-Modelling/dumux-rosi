@@ -18,7 +18,7 @@ s = RichardsYaspSolver()  # the one and only
 
 s.initialize([""])
 s.setParameter("Problem.Name", "periodicity")
-s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [49, 49, 49], "false true true")  # 125000
+s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [19, 19, 19], "false false false")  # 125000
 s.setVanGenuchtenParameter(0.08, 0.43, 0.04, 1.6, 50.)  # Loam
 if rank == 0:
     print("trying", s.getGridBounds())
@@ -26,22 +26,32 @@ s.setHomogeneousInitialConditions(-100, True)  # cm pressure head, hydraulic equ
 s.setBCTopBot("constantFlux", 0, "freeDrainage", 0.)
 s.initializeProblem()
 
+dof = 0;
 points = s.getDofCoordinates()
 id = s.pickCell([0., 0.2, -0.1])
 if rank == 0:
     dof = points.shape[0]
-    source = np.zeros((dof, 1))
     print("DOF", dof, "Picked id", id)
-source[dof] = 5  # g / day
+dof = comm.bcast(dof, root = 0)
+
+source = np.zeros((dof, 1))
+source[id] = 1.e-7  # g / day
 s.setSource(source)
+
+x = np.array(s.getSolution())
+if rank == 0:
+    print("Water volume", s.getWaterVolume(), "cm3")
+#     plt.plot(s.toHead(x), points[:, 2] * 100, "r*")
+#     plt.show()
 
 dt = 3600  # ten days in seconds
 s.ddt = 1  # s, initial internal time step
 
 for i in range(0, 10 * 24):
     if rank == 0:
-        print(i, "*** External time step ", dt, "***", "Simulation time ", s.simTime / 3600 / 24)
+        print(i, "*** External time step ", dt, "***", "simulation time ", s.simTime / 3600 / 24)
     s.simulate(dt)
+    print("Water volume", s.getWaterVolume(), "cm3")
 
 x = np.array(s.getSolution())
 # x = np.array(s.getSaturation())
