@@ -14,47 +14,61 @@ comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
+CSolverBase = solver.RichardsYaspSolver
 
-class PySolverBase(solver.RichardsYaspSolver):
+
+class PySolverBase(CSolverBase):
+    """ Additional functionality to the C++ Python binding. 
+        
+        Contains mainly methods that are easier to write in Python, 
+        e.g. writeVTK, interpolate        
+    """
 
     # todo getPoints, getCellCenters
 
     def getDofIndices(self):
-        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 3)"""
+        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
         self.checkInitialized()
-        indices2 = MPI.COMM_WORLD.gather(super().getDofIndices(), root = 0)
-        if rank == 0:
-            for i, p in enumerate(indices2):
-                print("getDofIndices() rank", i, ":", len(p))
-        if rank == 0:
-            indices = [item for sublist in indices2 for item in sublist]
-        else:
-            indices = None
-        MPI.COMM_WORLD.Barrier()
-        return indices
+        return self._flat0(MPI.COMM_WORLD.gather(super().getDofIndices(), root = 0))
 
-    def getDofCorrdinates(self):
+    def getPoints(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3)"""
         self.checkInitialized()
-        points = self._flat0(MPI.COMM_WORLD.gather(super().getDofCoordinates(), root = 0))
-        MPI.COMM_WORLD.Barrier()
-        return self._map(points)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(super().getPoints(), root = 0)), 1)
+
+    def getCellCenters(self):
+        """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3)"""
+        self.checkInitialized()
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(super().getCellCenters(), root = 0)), 2)
+
+    def getDofCoordinates(self):
+        """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3)"""
+        self.checkInitialized()
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(super().getDofCoordinates(), root = 0)))
 
     def getSolution(self):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq) """
         self.checkInitialized()
-        solution = self._flat0(MPI.COMM_WORLD.gather(super().getSolution(), root = 0))
-        MPI.COMM_WORLD.Barrier()
-        return self._map(solution)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(super().getSolution(), root = 0)))
 
-    def _map(self, x):
-        """ converts rows of x to numpy array and maps it to the right indices """
-        indices = self._flat0(MPI.COMM_WORLD.gather(super().getDofIndices(), root = 0))
+    def _map(self, x, type = 0):
+        """Converts rows of x to numpy array and maps it to the right indices         
+        @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
+        """
+        if type == 0:  # auto (dof)
+            indices = self._flat0(MPI.COMM_WORLD.gather(super().getDofIndices(), root = 0))
+        elif type == 1:  # points
+            indices = self._flat0(MPI.COMM_WORLD.gather(super().getPointIndices(), root = 0))
+        elif type == 2:  # cells
+            indices = self._flat0(MPI.COMM_WORLD.gather(super().getCellIndices(), root = 0))
+        else:
+            raise Exception('PySolverBase._map type must be 0, 1, or 2.')
         if indices:  # only for rank 0 not empty
+            assert(len(indices) == len(x))
             ndof = max(indices) + 1
             m = len(x[0])
             p = np.zeros((ndof, m))
-            for i in range(0, ndof):
+            for i in range(0, len(indices)):  #
                 p[indices[i], :] = np.array(x[i])
             return p
         else:
@@ -63,48 +77,21 @@ class PySolverBase(solver.RichardsYaspSolver):
     def _flat0(self, xx):
         """flattens the gathered list in rank 0, empty list for other ranks """
         if rank == 0:
-            x = [item for sublist in xx for item in sublist]
+            return [item for sublist in xx for item in sublist]
         else:
-            x = []
-        return x
+            return []
 
     def writeVTK(self):
         """ todo """
         pass
 
     def interpolate(self, xi, eq = 0):
-        """ interpolates the solution at position x """
+        """ interpolates the solution at position x todo: test"""
         self.checkInitialized()
-        points = self.getDofCoordinates()  # todo convert to numpy
-        MPI.COMM_WORLD.Barrier()
+        points = self.getDofCoordinates()
         solution = self.getSolution()
         if rank == 0:
             return griddata(points, solution[:, eq], xi, method = 'linear')
         else:
             return []
-
-    def plot_interpolated_Z(self, eq = 0, conv = lambda x: x, xlabel = "Pressure", xy = (0, 0)):
-        """ plots the current solution along the z axis (not working, todo) """
-        self.checkInitialized()
-        bounds = self.getGridBounds()
-        z_ = np.linspace(bounds[2], bounds[5], 200)
-        y_ = np.ones(z_.shape) * xy[1]
-        x_ = np.ones(z_.shape) * xy[0]
-        xi = np.hstack((x_, y_, z_))
-        sol = self.interpolate(xi, eq)  # for this all processes are needed
-        if rank == 0:
-            plt.plot(conv(sol), z_ * 100, "*")  #
-            plt.xlabel(xlabel)
-            plt.ylabel("Depth (cm)")
-            plt.show()
-
-    def plotZ(self, x, xlabel = "Pressure"):
-        """ plots x along the z axis """
-        self.checkInitialized()
-        points = np.array(self.getDofCorrdinates())
-        if rank == 0:
-            plt.plot(x, points[:, 2] * 100, "*")
-            plt.xlabel(xlabel)
-            plt.ylabel("Depth (cm)")
-            plt.show()
 

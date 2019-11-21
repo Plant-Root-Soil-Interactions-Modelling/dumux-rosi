@@ -21,6 +21,31 @@ def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
     return (pa - ref) * 100 / rho / g
 
 
+def plot_interpolated_Z(eq = 0, conv = lambda x: x, xlabel = "Pressure", xy = (0, 0)):
+    """ plots the current solution along the z axis (not working, todo) """
+    self.checkInitialized()
+    bounds = self.getGridBounds()
+    z_ = np.linspace(bounds[2], bounds[5], 200)
+    y_ = np.ones(z_.shape) * xy[1]
+    x_ = np.ones(z_.shape) * xy[0]
+    xi = np.hstack((x_, y_, z_))
+    sol = self.interpolate(xi, eq)  # for this all processes are needed
+    if rank == 0:
+        plt.plot(conv(sol), z_ * 100, "*")  #
+        plt.xlabel(xlabel)
+        plt.ylabel("Depth (cm)")
+        plt.show()
+
+
+def plotZ(points, v, xlabel = "Pressure"):
+    """ plots x along the z axis """
+    if rank == 0:
+        plt.plot(v, points[:, 2] * 100, "*")
+        plt.xlabel(xlabel)
+        plt.ylabel("Depth (cm)")
+        plt.show()
+
+
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -31,7 +56,7 @@ s = RichardsYaspSolver()  # the one and only
 # s.createGrid("../grids/b1.dgf") # YASP does only take intervals
 s.initialize(["-input", "../input/b1a_3d.input"])  # , "-Grid.Overlap", "0"
 # s.createGrid("Soil")
-s.createGrid([-0.05, -0.05, -2], [0.05, 0.05, 0], [1, 1, 199], "false, false, false")
+s.createGrid([-0.05, -0.05, -2], [0.05, 0.05, 0], [9, 9, 199], "false false false")
 s.initializeProblem()
 
 # if rank == 0:
@@ -48,7 +73,6 @@ s.initializeProblem()
 #     print()
 #     print("Initial total water ", s.getgetWaterVolume())
 
-print()
 ind = s.getDofIndices()  # collect global ids
 if rank == 0:
     print()
@@ -56,17 +80,15 @@ if rank == 0:
     l = list(set(ind))
     print("Indices unique: ", len(l))
     l = np.sort(l)
-    print(l)
-    print()
+    print("from ", l[0], "to", l[-1])
     print()
 
-input("Press Enter to continue...")
-points = s.getDofCorrdinates()  # in case of box, these are grid vertices
-if rank == 0:
-    print("Coordinates ", points.shape[0])
-    print(points)
-
+# points = s.getDofCorrdinates()  # in case of box, these are grid vertices
+# if rank == 0:
+#     print("Coordinates ", points.shape[0])
+#     #print(points)
 #     fig = plt.figure()
+
 #     ax = fig.add_subplot(111, projection = '3d')
 #     ax.set_xlabel('X Label')
 #     ax.set_ylabel('Y Label')
@@ -79,51 +101,59 @@ if rank == 0:
 #     print("Initial solution ", sol.shape[0])
 # s.plotZ(0, toHead)
 
-x = s.getSolution()
-print(min(toHead(x)), max(toHead(x)))
+# bounds = s.getGridBounds()
+# if rank == 0:
+#     print("Bounding box ", bounds)  # it is not optimal to pass parameters via strings
+#
+# x = s.getSolution()
+# s.plotZ(toHead(x), "Pressure head (cm)")
 
-bounds = s.getGridBounds()
-if rank == 0:
-    print("Bounding box ", bounds)  # it is not optimal to pass parameters via strings
+# input("Press Enter to continue...")
 
-s.plotZ(toHead(x), "Pressure head (cm)")
-
-input("Press Enter to continue...")
+print()
 t = time.time()
 
 dt = 10 * 3600 * 24  # a day in seconds
-s.ddt = 360  # s, initial internal time step
-for i in range(0, 1):
+s.ddt = 1  # s, initial internal time step
+for i in range(0, 10):
     if rank == 0:
         print("*************** External time step ", i, dt, "****************", "Simulation time ", s.simTime / 3600 / 24, "days, internal time step", s.ddt / 3600 / 24, "days")
     s.simulate(dt, -1)
+
     #
-    # do wild stuff
+    # optionally, do wild stuff
     #
 
 if rank == 0:
     print("\nOverall time ", time.time() - t)
-    print("done")
 
-x = s.getSolution()
-print(min(toHead(x)), max(toHead(x)))
-
-print()
 ind = s.getDofIndices()  # collect global ids
 if rank == 0:
-    print()
+    print("Dof indices")
     print("Indices: ", len(ind))
     print("Indices unique: ", len(list(set(ind))))
     print()
 
 bounds = s.getGridBounds()
 if rank == 0:
+    print("Bounding box:")
     print("Bounding box ", bounds)  # it is not optimal to pass parameters via strings
 
-s.plotZ(x, "Pressure head (cm)")
+x = np.array(s.getSolution())
+if rank == 0:
+    print("Solution:")
+    print(x.shape)
+    print("first", toHead(x[0]))
+    print("last", toHead(x[-1]))
+    print("last", toHead(x[-2]))
 
-# print(len(s.initialValues[0]))
-# print(s.initialValues[0])
-# print(len(s.solution[0]))
-# print(s.solution)
+points = s.getDofCoordinates()
+if rank == 0:
+    print("Dof coordinates")
+    # print(points)
+    print(len(points))
+    print(type(points))
+    print(points.shape)
+
+plotZ(points, toHead(x), "Pressure head (cm)")
 

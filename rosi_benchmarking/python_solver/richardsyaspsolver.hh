@@ -8,9 +8,12 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
+// #include <dumux/discretization/box/fvelementgeometry.hh> // free function scvs(...)
+
 // pick assembler and linear solver
 #include <dumux/linear/amgbackend.hh>
 #include <dumux/assembly/fvassembler.hh>
+
 
 // most includes are in solverbase
 #include "solverbase.hh"
@@ -46,28 +49,76 @@ std::string name = "RichardsYaspSolver";
 class RichardsYaspSolver : public SolverBase<Problem, Assembler, LinearSolver> {
 public:
 
+    std::vector<double> ls; // local sink
+
     virtual ~RichardsYaspSolver()
     { }
 
     /**
-     * Total water volume in domain
+     * Sets the source term of the problem.
+     * The source is given per cell (element), independently of the dof location.
+     */
+    virtual void setSource(std::vector<double> source)
+    {
+        checkInitialized();
+        int n = gridGeometry->gridView().size(0);
+        std::vector<int> indices;
+        ls.resize(n);
+        indices.reserve(n);
+        for (const auto& e : elements(gridGeometry->gridView())) { // local elements
+            auto eIdx = gridGeometry->elementMapper().index(e);
+            ls[eIdx] = source[cellIdx->index(e)]*24.*3600./1.e3; // g/day -> kg/s
+        }
+        problem->setSource(&ls); // why a pointer? todo
+    }
+
+    /**
+     * Returns the current solution for a single mpi process.
+     * Gathering and mapping is done in Python
+     */
+    virtual std::vector<double> getSaturation()
+        {
+        checkInitialized();
+        std::vector<double> s;
+        int n;
+        if (isBox) {
+            n = gridGeometry->gridView().size(dim);
+        } else {
+            n = gridGeometry->gridView().size(0);
+        }
+        s.resize(n);
+        for (const auto& element : Dune::elements(gridGeometry->gridView())) { // soil elements
+            auto eIdx = gridGeometry->elementMapper().index(element);
+            s[eIdx] = 0;
+            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, x);
+            for (const auto& scv : scvs(fvGeometry)) {
+                s[eIdx] += elemVolVars[scv].saturation(0)*scv.volume();
+            }
+        }
+        return s;
+        }
+
+    /**
+     * Returns the total water volume [cm3] in domain of the current solution
      */
     virtual double getWaterVolume()
     {
         checkInitialized();
-//        double cVol = 0.;
-//        for (const auto& element : Dune::elements(gridGeometry->gridView())) { // soil elements
-//            auto fvGeometry = Dumux::localView(gridGeometry); // soil solution -> volume variable
-//            fvGeometry.bindElement(element);
-//            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-//            elemVolVars.bindElement(element, fvGeometry, x);
-//            for (const auto& scv : Dumux::scvs(fvGeometry)) {
-//                cVol += elemVolVars[scv].saturation(0)*scv.volume();
-//            }
-//
-//        }
-//        return cVol;
-        return 0;
+        double cVol = 0.;
+        for (const auto& element : Dune::elements(gridGeometry->gridView())) { // soil elements
+            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, x);
+            for (const auto& scv : scvs(fvGeometry)) {
+                cVol += elemVolVars[scv].saturation(0)*scv.volume();
+            }
+
+        }
+        return gridGeometry->gridView().comm().sum(cVol)*1.e6; // m3 -> cm3
     }
 
 };
@@ -80,37 +131,40 @@ using Solver = RichardsYaspSolver;
 PYBIND11_MODULE(richards_yasp_solver, m) {
 
     py::class_<Solver>(m, name.c_str())
-         // initialization
-        .def(py::init<>())
-        .def("initialize", &Solver::initialize)
-        .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-     	.def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid,
-     	   py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
-        .def("readGrid", &Solver::readGrid)
-        .def("getGridBounds", &Solver::getGridBounds)
-        .def("setParameter", &Solver::setParameter)
-        .def("getParameter", &Solver::getParameter)
-        .def("initializeProblem", &Solver::initializeProblem)
-         // simulation
-        .def("simulate", &Solver::simulate, py::arg("dt"), py::arg("maxDt") = -1)
-         // post processing
-    	.def("getPoints", &Solver::getPoints) // vtk naming
-    	.def("getCellCenters", &Solver::getCellCenters) // vtk naming
-    	.def("getDofCoordinates", &Solver::getDofCoordinates)
-        .def("getDofIndices", &Solver::getDofIndices)
-        .def("getSolution", &Solver::getSolution)
-        .def("pickCell", &Solver::pickCell)
-        // members
-        .def_readonly("simTime", &Solver::simTime) // read only
-        .def_readonly("rank", &Solver::rank) // read only
-        .def_readonly("maxRank", &Solver::maxRank) // read only
-        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
-    	 // useful
-        .def("__str__",&Solver::toString)
-        .def("checkInitialized", &Solver::checkInitialized)
-        // added by class specialization
-        .def("getWaterVolume",&Solver::getWaterVolume);
+             // initialization
+            .def(py::init<>())
+            .def("initialize", &Solver::initialize)
+            .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
+            .def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid,
+                py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
+                .def("readGrid", &Solver::readGrid)
+                .def("getGridBounds", &Solver::getGridBounds)
+                .def("setParameter", &Solver::setParameter)
+                .def("getParameter", &Solver::getParameter)
+                .def("initializeProblem", &Solver::initializeProblem)
+                // simulation
+                .def("simulate", &Solver::simulate, py::arg("dt"), py::arg("maxDt") = -1)
+                // post processing
+                .def("getPoints", &Solver::getPoints) // vtk naming
+                .def("getCellCenters", &Solver::getCellCenters) // vtk naming
+                .def("getDofCoordinates", &Solver::getDofCoordinates)
+                .def("getDofIndices", &Solver::getDofIndices)
+                .def("getSolution", &Solver::getSolution)
+                .def("pickCell", &Solver::pickCell)
+                // members
+                .def_readonly("simTime", &Solver::simTime) // read only
+                .def_readonly("rank", &Solver::rank) // read only
+                .def_readonly("maxRank", &Solver::maxRank) // read only
+                .def_readwrite("ddt", &Solver::ddt) // initial internal time step
+                // useful
+                .def("__str__",&Solver::toString)
+                .def("checkInitialized", &Solver::checkInitialized)
+                // added by class specialization
+                .def("setSource", &Solver::setSource)
+                .def("getSaturation",&Solver::getSaturation)
+                .def("getWaterVolume",&Solver::getWaterVolume);
 }
 
 #endif
 
+// #include <dumux/discretization/localview.hh> // free fucntion localView(...)

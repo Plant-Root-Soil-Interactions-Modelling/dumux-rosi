@@ -15,7 +15,7 @@ namespace py = pybind11;
 #include <dumux/io/grid/gridmanager.hh>
 
 // simulate
-#include <dumux/common/timeloop.hh> // timeloop is need for step size control
+#include <dumux/common/timeloop.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 
@@ -24,6 +24,9 @@ namespace py = pybind11;
 
 // pick
 #include <dumux/common/geometry/intersectingentities.hh>
+
+#include <ostream>
+#include <iostream>
 
 using VectorType = std::array<double,3>;
 
@@ -83,8 +86,7 @@ public:
         int argc = cargs.size();
         char** argv  =  &cargs[0];
 
-        // add DuMux peculiarities
-        if (isBox) {
+        if (isBox) { // add DuMux peculiarities
             setParameter("Grid.Overlap","0");
         } else {
             setParameter("Grid.Overlap","1");
@@ -102,7 +104,6 @@ public:
             if (gridType.compare("FoamGrid") == 0) {
                 throw std::invalid_argument("SolverBase::initialize: FoamGrid does not support parallel computation");
             }
-            // std::cout << "SolverBase::initialize: MPI working\n"; // for debugging
         }
         mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
 
@@ -110,14 +111,15 @@ public:
     }
 
     /**
-     * Creates a grid from the (global) Dumux parameter tree.
+     * Creates the grid and gridGeometry from the (global) DuMux parameter tree.
+     *
      * Parameters known to me are:
      * Grid.UpperRight
      * Grid.LowerLeft
      * Grid.Cells
      * Grid.Periodic
      * Grid.File
-     * Grid.Overlap (should = 0 for box, = 1 for CCTpfa)
+     * Grid.Overlap (should = 0 for box, = 1 for CCTpfa), automatically set in SolverBase::initialize
      */
     virtual void createGrid(std::string modelParamGroup = "")
     {
@@ -128,6 +130,9 @@ public:
             gridData = gridManager.getGridData(); // test for null by getter (todo)
             // missing concept to add grid data dynamically
         } catch(...) { }
+
+        gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
+        gridGeometry->update();
     }
 
     /**
@@ -146,8 +151,13 @@ public:
         bmin << boundsMin[0] << " " << boundsMin[1]<< " " << boundsMin[2];
         bmax << boundsMax[0] << " " << boundsMax[1]<< " " << boundsMax[2];
         cells << numberOfCells[0] << " " << numberOfCells[1]<< " " << numberOfCells[2];
-        p["Grid.UpperRight"] =  bmin.str();
-        p["Grid.LowerLeft"] = bmax.str();
+        for (int i=0; i<3; i++) {
+            if (boundsMin[i] >= boundsMax[i]) {
+                throw std::invalid_argument("SolverBase::createGrid: bounds min >= bounds max");
+            }
+        }
+        p["Grid.LowerLeft"] = bmin.str();
+        p["Grid.UpperRight"] = bmax.str();
         p["Grid.Cells"] = cells.str();
         p["Grid.Periodic"] = periodic;
         createGrid();
@@ -167,6 +177,7 @@ public:
 
     /**
      * Returns a rectangular bounding box around the grid geometry
+     *
      * [minx, miny, minz, maxx, maxy, maxz]
      */
     virtual std::array<double, 6> getGridBounds()
@@ -198,30 +209,31 @@ public:
      * After the grid is created, the problem can be initialized
      *
      * initializeProblem() creates
-     * (a) the GridGeometry,
-     * (b) the Problem (initial values, bc, and source terms determined from the input file parameters, todo)
-     * (c) GridGeometry, GridVariables
+     * (a) the Problem (initial values, bc, and source terms determined from the input file parameters)
+     * (b) the solution vector
+     * (c) GridVariables
      * (d) resets simtime, and internal time step ddt
+     * (e) creates global index maps
      *
      * The initialize values are set to the current solution,
      * i.e. can be analyzed using getSolution().
      */
     virtual void initializeProblem()
     {
-        gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
-        gridGeometry->update();
         problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
-
-        std::cout << "SolutionVector of rank "<< rank << " has size "  << dof << "\n";
 
         problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
 
         gridVariables = std::make_shared<GridVariables>(problem, gridGeometry);
         gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
+
         simTime = 0; // reset
         ddt = -1;
+
+        pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim); // global index mappers
+        cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0);
     }
 
     /**
@@ -232,7 +244,8 @@ public:
      *
      * todo steady state
      */
-    virtual void simulate(double dt, double maxDt = -1) {
+    virtual void simulate(double dt, double maxDt = -1)
+    {
         checkInitialized();
         using namespace Dumux;
 
@@ -277,8 +290,8 @@ public:
     }
 
     /**
-     * Returns the Dune vertices (vtk points) of the grid
-     * for a single mpi process. Gathering and mapping is done in Python.
+     * Returns the Dune vertices (vtk points) of the grid for a single mpi process.
+     * Gathering and mapping is done in Python.
      */
     virtual std::vector<VectorType> getPoints()
     {
@@ -293,8 +306,8 @@ public:
     }
 
     /**
-     * return the Dune element (vtk cell) centers of the grid
-     * for a single mpi process. Gathering and mapping is done in Python.
+     * return the Dune element (vtk cell) centers of the grid for a single mpi process.
+     * Gathering and mapping is done in Python.
      */
     virtual std::vector<VectorType> getCellCenters()
     {
@@ -309,6 +322,7 @@ public:
     }
 
     // todo getCells // as point ids
+    // collect local ids, map to global ids
 
     /**
      * Returns the coordinate, where the DOF sit, in the same order like the solution values.
@@ -337,26 +351,24 @@ public:
     virtual std::vector<int> getPointIndices() {
         std::vector<int> indices;
         indices.reserve(gridGeometry->gridView().size(dim));
-        Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView(), dim);
         for (const auto& v : vertices(gridGeometry->gridView())) {
-            indices.push_back(indexSet.index(v));
+            indices.push_back(pointIdx->index(v));
         }
         return indices;
     }
 
     /**
-     * Return the indices of the grid elements.
+     * Return the indices of the grid elements for a single mpi process.
      * Used to map the coordinates when gathered from the processes,
      * makes little sense to call directly.
      *
-     * For a single mpi process. Gathering is done in Python
+     * Gathering is done in Python
      */
     virtual std::vector<int> getCellIndices() {
         std::vector<int> indices;
         indices.reserve(gridGeometry->gridView().size(0));
-        Dune::GlobalIndexSet<GridView> indexSet(grid->leafGridView() , 0);
         for (const auto& e : elements(gridGeometry->gridView())) {
-            indices.push_back(indexSet.index(e));
+            indices.push_back(cellIdx->index(e));
         }
         return indices;
     }
@@ -391,10 +403,11 @@ public:
         } else {
             n = gridGeometry->gridView().size(0);
         }
+        // std::cout << "getSolution(): n " << n << ", " << x.size() << "\n" << std::flush;
         sol.resize(n);
         for (int c = 0; c<n; c++) {
             for (int j=0; j<numberOfEquations; j++) {
-                sol[c][j] = x[j][c];
+                sol[c][j] = x[c]; // [j]
             }
         }
         return sol;
@@ -402,6 +415,8 @@ public:
 
     /**
      * picks and element index (cell index)
+     *
+     * todo the lucky rank a index needs to map to global index todo
      */
     virtual int pickCell(VectorType pos) // todo? do I have to take care about periodicity?
     {
@@ -477,17 +492,21 @@ protected:
     std::shared_ptr<FVGridGeometry> gridGeometry;
     std::shared_ptr<Problem> problem;
     std::shared_ptr<GridVariables> gridVariables;
+
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx;
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx;
+
     SolutionVector x;
 
 };
 
 #endif
 
-///**
-// * lacking polymorphism I have not found a way to make the gird dynamic.
-// * you need to choose the grid at compile time,
-// * and I don't know how to pass it via CMakeLists.txt building the Python binding
-// */
+/**
+ * lacking polymorphism I have not found a way to make the gird dynamic.
+ * you need to choose the grid at compile time,
+ * and I don't know how to pass it via CMakeLists.txt building the Python binding
+ */
 //using Grid = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>;
 //using GridView = typename Dune::YaspGridFamily<3,Dune::EquidistantOffsetCoordinates<double,3>>::Traits::LeafGridView;
 //using Scalar = double;
@@ -495,7 +514,6 @@ protected:
 //using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
 //using MapperTraits = Dumux::DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 //using FVGridGeometry = Dumux::BoxFVGridGeometry<double, GridView, /*enableCache*/ true, Dumux::BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
-
 //using SolutionVector =  Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>; // in fvproperties
 
 
