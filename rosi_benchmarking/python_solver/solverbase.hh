@@ -321,8 +321,29 @@ public:
         return cells;
     }
 
-    // todo getCells // as point ids
-    // collect local ids, map to global ids
+    /**
+     * Return the Dune element (vtk cell) of the grid as vertex indices.
+     * The number of indices are
+     * 2 for line, 4 for tetraeder, 8 for hexaedron (todo ohther relevant objects?)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    virtual std::vector<std::vector<int>> getCells()
+    {
+        checkInitialized();
+        std::vector<std::vector<int>> cells;
+        cells.reserve(gridGeometry->gridView().size(0));
+        for (const auto& e : elements(gridGeometry->gridView())) {
+            std::vector<int> cell;
+
+
+
+
+
+
+        }
+        return cells;
+    }
 
     /**
      * Returns the coordinate, where the DOF sit, in the same order like the solution values.
@@ -418,16 +439,14 @@ public:
      * The lucky rank who found it, maps the local index to a global one,
      * and broadcasts to the others
      */
-    virtual int pickCell(VectorType pos) // todo? do I have to take care about periodicity?
+    virtual int pickCell(VectorType pos) // todo! I have to take care about periodicity myself!
     {
         checkInitialized();
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
         auto entities = Dumux::intersectingEntities(p, bBoxTree);
-        int gIdx;
-        if (entities.empty()) {
-            gIdx = -1;
-        } else {
+        int gIdx = -1;
+        if (!entities.empty()) {
             auto element = bBoxTree.entitySet().entity(entities[0]);
             gIdx = cellIdx->index(element);
         }

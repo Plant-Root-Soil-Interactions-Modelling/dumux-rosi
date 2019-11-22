@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.interpolate import griddata
+import vtk
 
 from mpi4py import MPI
 
@@ -23,8 +24,6 @@ class PySolverBase(CSolverBase):
         Contains mainly methods that are easier to write in Python, 
         e.g. writeVTK, interpolate        
     """
-
-    # todo getPoints, getCellCenters
 
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
@@ -81,10 +80,6 @@ class PySolverBase(CSolverBase):
         else:
             return []
 
-    def writeVTK(self):
-        """ todo """
-        pass
-
     def interpolate(self, xi, eq = 0):
         """ interpolates the solution at position x todo: test"""
         self.checkInitialized()
@@ -95,3 +90,57 @@ class PySolverBase(CSolverBase):
         else:
             return []
 
+    def writeVTK(self, file :str, small :bool = False):
+        """writes a vtk file (todo additional fields) 
+        @param file 
+        @param small Determines if data are compressed and stroed binary  
+        """
+        points = self.getDofCoordinates()
+        # cells = self.getCells()
+        if self.rank == 0:
+            pd = vtk.vtkPolyData()
+            pd.SetPoints(_vtkPoints(points))
+
+            writer = vtk.vtkXMLPolyDataWriter()
+            writer.SetFileName(file)
+            writer.SetInputData(pd)
+            writer.SetDataModeToBinary()
+            writer.SetCompressorTypeToZLib()
+            writer.Write()
+
+    @staticmethod
+    def _vtkPoints(p):
+        """ Creates vtkPoints from an numpy array"""
+        assert(p.shape(1) == 3)
+        da = vtk.vtkDataArray.CreateDataArray(vtk.VTK_DOUBLE)
+        da.SetNumberOfComponents(3)  # vtk point dimension is always 3
+        da.SetNumberOfTuples(p.shape[0])
+        for i in range(0, p.shape[0]):
+            da.InsertTuple3(i, p[i, 0], p[i, 1], p[i, 2])
+        points = vtk.vtkPoints()
+        points.SetData(da)
+        return points
+
+    @staticmethod
+    def _vtkCells(t):
+        """ Creates vtkCells from an numpy array"""
+        cellArray = vtk.vtkCellArray()
+        if t.shape[1] == 2:
+            Simplex = vtk.vtkLine
+        elif t.shape[1] == 4:
+            Simplex = vtk.vtkTetra
+        elif t.shape[1] == 8:
+            Simplex = vtk.Hexaedron
+        else:
+            raise Exception('PySolverBase._vtkCells: do not know what to do with {} vertices'.format(t.shape[1]))
+        for vert in t:
+            tetra = Simplex()
+            for i, v in enumerate(vert):
+                tetra.GetPointIds().SetId(i, int(v))
+            cellArray.InsertNextCell(tetra)
+        return cellArray
+
+    @staticmethod
+    def _vtkData(data):
+        """ todo """
+        pass

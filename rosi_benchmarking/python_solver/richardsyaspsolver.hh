@@ -56,9 +56,10 @@ public:
 
     /**
      * Sets the source term of the problem.
-     * The source is given per cell (element), independently of the dof location.
+     * The source is given per cell (element),
+     * as a map with element index as key, and source as value
      */
-    virtual void setSource(std::vector<double> source)
+    virtual void setSource(std::map<int, double> source)
     {
         checkInitialized();
         int n = gridGeometry->gridView().size(0);
@@ -66,8 +67,13 @@ public:
         ls.resize(n);
         indices.reserve(n);
         for (const auto& e : elements(gridGeometry->gridView())) { // local elements
+            int gIdx = cellIdx->index(e); // global index
             auto eIdx = gridGeometry->elementMapper().index(e);
-            ls[eIdx] = source[cellIdx->index(e)]*24.*3600./1.e3; // g/day -> kg/s
+            if (source.count(gIdx)) {
+                ls[eIdx] = source[gIdx]/24.*3600./1.e3; // g/day -> kg/s
+            } else {
+                ls[eIdx] = 0.;
+            }
         }
         problem->setSource(&ls); // why a pointer? todo
     }
@@ -77,7 +83,7 @@ public:
      * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getSaturation()
-        {
+    {
         checkInitialized();
         std::vector<double> s;
         int n;
@@ -99,7 +105,7 @@ public:
             }
         }
         return s;
-        }
+    }
 
     /**
      * Returns the total water volume [cm3] in domain of the current solution
@@ -121,6 +127,19 @@ public:
         return gridGeometry->gridView().comm().sum(cVol)*1.e6; // m3 -> cm3
     }
 
+    /**
+     * Uses the Dumux VTK Writer
+     */
+    virtual void writeDumuxVTK(std::string name)
+    {
+        Dumux::VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, name);
+        // using VelocityOutput = PorousMediumFlowVelocityOutput<GridVariables> // <- can't get this type without TTAG :-(
+        // vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+        vtkWriter.addVolumeVariable([](const auto& volVars){ return volVars.pressure(); }, "p (Pa)");
+        vtkWriter.addVolumeVariable([](const auto& volVars){ return volVars.saturation(); }, "saturation");
+        vtkWriter.write(0.0);
+    }
+
 };
 
 using Solver = RichardsYaspSolver;
@@ -131,38 +150,41 @@ using Solver = RichardsYaspSolver;
 PYBIND11_MODULE(richards_yasp_solver, m) {
 
     py::class_<Solver>(m, name.c_str())
-             // initialization
-            .def(py::init<>())
-            .def("initialize", &Solver::initialize)
-            .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-            .def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid,
-                py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
-                .def("readGrid", &Solver::readGrid)
-                .def("getGridBounds", &Solver::getGridBounds)
-                .def("setParameter", &Solver::setParameter)
-                .def("getParameter", &Solver::getParameter)
-                .def("initializeProblem", &Solver::initializeProblem)
-                // simulation
-                .def("simulate", &Solver::simulate, py::arg("dt"), py::arg("maxDt") = -1)
-                // post processing
-                .def("getPoints", &Solver::getPoints) // vtk naming
-                .def("getCellCenters", &Solver::getCellCenters) // vtk naming
-                .def("getDofCoordinates", &Solver::getDofCoordinates)
-                .def("getDofIndices", &Solver::getDofIndices)
-                .def("getSolution", &Solver::getSolution)
-                .def("pickCell", &Solver::pickCell)
-                // members
-                .def_readonly("simTime", &Solver::simTime) // read only
-                .def_readonly("rank", &Solver::rank) // read only
-                .def_readonly("maxRank", &Solver::maxRank) // read only
-                .def_readwrite("ddt", &Solver::ddt) // initial internal time step
-                // useful
-                .def("__str__",&Solver::toString)
-                .def("checkInitialized", &Solver::checkInitialized)
-                // added by class specialization
-                .def("setSource", &Solver::setSource)
-                .def("getSaturation",&Solver::getSaturation)
-                .def("getWaterVolume",&Solver::getWaterVolume);
+    // initialization
+        .def(py::init<>())
+        .def("initialize", &Solver::initialize)
+        .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
+        .def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid,
+            py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
+        .def("readGrid", &Solver::readGrid)
+        .def("getGridBounds", &Solver::getGridBounds)
+        .def("setParameter", &Solver::setParameter)
+        .def("getParameter", &Solver::getParameter)
+        .def("initializeProblem", &Solver::initializeProblem)
+    // simulation
+        .def("simulate", &Solver::simulate, py::arg("dt"), py::arg("maxDt") = -1)
+    // post processing (vtk naming)
+        .def("getPoints", &Solver::getPoints) //
+        .def("getCellCenters", &Solver::getCellCenters)
+        .def("getDofCoordinates", &Solver::getDofCoordinates)
+        .def("getPointIndices", &Solver::getPointIndices)
+        .def("getCellIndices", &Solver::getCellIndices)
+        .def("getDofIndices", &Solver::getDofIndices)
+        .def("getSolution", &Solver::getSolution)
+        .def("pickCell", &Solver::pickCell)
+    // members
+        .def_readonly("simTime", &Solver::simTime) // read only
+        .def_readonly("rank", &Solver::rank) // read only
+        .def_readonly("maxRank", &Solver::maxRank) // read only
+        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
+    // useful
+        .def("__str__",&Solver::toString)
+        .def("checkInitialized", &Solver::checkInitialized)
+    // added by class specialization
+        .def("setSource", &Solver::setSource)
+        .def("getSaturation",&Solver::getSaturation)
+        .def("getWaterVolume",&Solver::getWaterVolume)
+        .def("writeDumuxVTK",&Solver::writeDumuxVTK);
 }
 
 #endif
