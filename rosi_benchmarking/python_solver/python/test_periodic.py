@@ -68,7 +68,7 @@ s.setSource(sources)
 dt = 3600  # ten days in seconds
 s.ddt = 1  # s, initial internal time step
 
-for i in range(0, 10 * 24):
+for i in range(0, 24):
     if rank == 0:
         print(i, "*** External time step ", dt, "***", "simulation time ", s.simTime / 3600 / 24)
     s.simulate(dt)
