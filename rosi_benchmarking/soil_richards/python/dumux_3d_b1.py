@@ -26,9 +26,9 @@ if np_ == 1:
     os.system("./richards3d input/b1b_3d.input")
     os.system("./richards3d input/b1c_3d.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1a_3d.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1b_3d.input -Grid.Overlap 0")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1c_3d.input -Grid.Overlap 0")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1a_3d.input")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1b_3d.input")
+    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1c_3d.input")
 
 elapsed = time.time() - t
 print("Time elapsed", elapsed)
