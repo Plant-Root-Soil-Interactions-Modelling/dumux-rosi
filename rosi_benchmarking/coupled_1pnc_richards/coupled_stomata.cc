@@ -1,23 +1,9 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+
 /*!
- * Monolythic coupling
+ * Couples the root system stomata model (based on 1pnc),
+ * to the richards equation (in soil) with a monolythic coupling
  */
 #include <config.h>
 
@@ -44,6 +30,9 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
+#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/fvassembler.hh>
 #include <dumux/multidomain/newtonsolver.hh>
@@ -57,19 +46,17 @@
 #include <dumux/growth/crootboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "../roots_1p/rootsproblem.hh"
-#include "../soil_richards/richardsproblem.hh"
+#include "../roots_1pnc/rootsproblem_stomata.hh" // Stomata model
+#include "../soil_richards/richardsproblem.hh" // Richards model in soil
 
 #include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
-// for Box                  properties.hh // <- not working for UG
-// for CCTpfa               propertiesCC.hh // <- working, but bad results for UG
-// for box soil, CC roots,  propertiesMix.hh (CC roots needed for periodicity)
-// cahnge L70 & L71 accordingly
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::RichardsCC; // RichardsCC //RichardsBox
-using RootTypeTag = Properties::TTag::RootsCCTpfa; // RootsBox // RootsCCTpfa
+using SoilTypeTag = Properties::TTag::RichardsCC;
+using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
+
+
 
 /**
  * debugging
@@ -98,7 +85,6 @@ void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables
     std::cout << "...   a change of: " << (oldVol-cVol)*1.e3 << " kg = " << (oldVol-cVol)*1.e6*24*3600/dt << " g/day \n" ;
 }
 } // namespace Dumux
-
 
 
 
