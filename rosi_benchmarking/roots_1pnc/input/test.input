@@ -2,34 +2,35 @@
 Name = test
 
 [TimeLoop]
-TEnd = 31536000 # a year, 0 is steady state
-DtInitial =  3600 # [s]
-MaxTimeStepSize = 31536000 
+TEnd = 604800 # 7 days [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600 
 
-[Soil.Grid]
-LowerLeft = -0.04 -0.04 -.15
-UpperRight = 0.04  0.04  0.
-Cells = 8 8 15
+[RootSystem.Grid]
+File =  Zea_mays_4_Leitner_2014
+InitialT = 20 # days
 
-[Soil.BC.Top]
-Type = 2 # constant flux
-Value = 0 # [cm day-1]
+[RootSystem.Conductivity]
+Kx = 4.3      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 7.5e-2     # radial conductivity [cm/hPa/day] similar (1 / day) 
 
-[Soil.BC.Bot]
-Type = 2 # 5 free drainage, 1 constant pressure 
-Value = 0 # [cm] pressure head, fully saturated bot
+[RootSystem.Collar]
+Transpiration = 2.36478e-07 # kg/day 
+Sinusoidal = True
 
 [Soil.IC]
-P = -644.8 -659.8
-Z = -.15 0.
+P = -100
+#Z = -.15 0.
 
-[Soil.VanGenuchten] 
-# Sand, Loam, Clay 
-Qr = 0.045 0.08 0.1 	 
-Qs = 0.43 0.43 0.4
-Alpha =  0.15 0.04 0.01# [1/cm] 
-N =  3 1.6 1.1
-Ks = 1000 50 10 # [cm/d] 		
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
 
-[Soil.Layer]
-Number = 2 # pick soil type here starting at 1! (2 = Loam)
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 # Molar mass of ABA is 264.321 g/mol
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

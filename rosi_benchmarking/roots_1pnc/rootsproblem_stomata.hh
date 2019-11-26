@@ -102,6 +102,12 @@ public:
             bcType_ = bcNeumann;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
+
+        cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+        molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol)
+        densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
+
+        // difusivity is defined in h2o_ABA.hh
     }
 
     virtual ~RootsOnePTwoCProblem() {
@@ -254,10 +260,10 @@ public:
             potentialTrans_ = collar_.f(time_); // [ kg/s]
             double criticalTranspiration;
             // chemical concentration
-            double cL = densityABA/MolarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
-                                                                    volVars.massFraction(0, ABAIdx)	); // (mol/m3)
+            double cL = densityABA/molarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
+                volVars.massFraction(0, ABAIdx)	); // (mol/m3)
 
-            // stomatal conductance definition
+                // stomatal conductance definition
             if (collarP_ < p_crit)
             {
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
@@ -416,8 +422,8 @@ public:
     void pointSource(PointSource& source, const Element &element, const FVElementGeometry& fvGeometry,
         const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) const
     {
-        if (couplingManager_!=nullptr) {
-            // compute source at every integration point
+        if (couplingManager_!=nullptr) { // compute source at every integration point
+
             const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
             const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
             const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
@@ -431,30 +437,31 @@ public:
             sourceValue[contiH2OEqIdx] = 2* M_PI *krel*rootRadius * kr *(pressure3D - pressure1D)*density; // (kg/m/s)
             sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement();
             const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            Scalar RootAge = this->spatialParams().age(eIdx); // RootAge in s
-            RootAge /= (24. * 3600.); // days
-            if (RootAge <= 1)  // if root segment age <= 1 day
-            {
-                Scalar tipP_ = pressure1D; // local tip pressure in kg/m/s^2
-                if (abs(tipP_) >= abs(p0))
-                {
+            Scalar rootAge = this->spatialParams().age(eIdx); // RootAge in s
+            rootAge /= (24. * 3600.); // days
+
+            if (rootAge <= 1) { // if root segment age <= 1 day
+
+                Scalar tipP_ = pressure1D; // local tip pressure in [kg/m/s^2] = [Pa]
+
+                if (abs(tipP_) >= abs(p0)) {
                     if (useMoles) {
-                    Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //(mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
+                        mSignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     // (mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
                     }
                     else {
-                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMass; // (kg/s)
+                        mSignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * molarMass; // (kg/s)
                     }
-                    sourceValue[transportABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
+                    sourceValue[transportABAEqIdx] = mSignal*source.quadratureWeight()*source.integrationElement(); // Msignal [mol/s]
                 }
-                else
-                {
+                else {
                     sourceValue[transportABAEqIdx] = 0.;
                 }
+
             }
             source = sourceValue;
         }
 
-            else {
+        else {
             source = 0;
         }
     }
@@ -521,9 +528,9 @@ private:
 
     // chemical signalling variables
     Scalar alphaR = 0; // residual stomatal conductance, taken as 0
-    bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol)
-    Scalar densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
+    bool cD; // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+    Scalar molarMass; // (kg/mol)
+    Scalar densityABA; // (kg/m3)
 
     const Scalar p0 = toPa_(-4500); // cm -> Pa
     const Scalar p_crit = toPa_(-5500); // cm -> Pa
@@ -532,8 +539,85 @@ private:
     const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
 
     mutable Scalar cL = 0.;
-    mutable Scalar Msignal = 0; // initial production rate of chemicals
+    mutable Scalar mSignal = 0; // initial production rate of chemicals
     mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
+
+
+
+    NumEqVector neumann(const Element& element,
+                           const FVElementGeometry& fvGeometry,
+                           const ElementVolumeVariables& elemVolVars,
+                           const SubControlVolumeFace& scvf) const
+    {
+        // set a fixed pressure on the right side of the domain
+        const Scalar dirichletPressure = 1e5;
+
+        NumEqVector flux(0.0);
+        const auto& ipGlobal = scvf.ipGlobal();
+        const auto& volVars = elemVolVars[scvf.insideScvIdx()];
+
+        // no-flow everywhere except at the right boundary
+        if(ipGlobal[0] < this->fvGridGeometry().bBoxMax()[0] - eps_)
+            return flux;
+
+        // if specified in the input file, use a Nitsche type boundary condition for the box model,
+        // otherwise compute the acutal fluxes explicitly
+        if(isBox && useNitscheTypeBc_)
+        {
+            flux[contiH2OEqIdx] = (volVars.pressure() - dirichletPressure) * 1e7;
+            flux[contiN2EqIdx] = flux[contiH2OEqIdx]  * (useMoles ? volVars.moleFraction(0, N2Idx) :
+                                                                    volVars.massFraction(0, N2Idx));
+            return flux;
+        }
+
+        // construct the element solution
+        const auto elemSol = [&]()
+        {
+            auto sol = elementSolution(element, elemVolVars, fvGeometry);
+
+            if(isBox)
+                for(auto&& scvf : scvfs(fvGeometry))
+                    if(scvf.center()[0] > this->fvGridGeometry().bBoxMax()[0] - eps_)
+                        sol[fvGeometry.scv(scvf.insideScvIdx()).localDofIndex()][pressureIdx] = dirichletPressure;
+
+            return sol;
+        }();
+
+        // evaluate the gradient
+        const auto gradient = [&]()->GlobalPosition
+        {
+            if(isBox)
+            {
+                const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(), elemSol, ipGlobal);
+                return grads[pressureIdx];
+            }
+
+            else
+            {
+                const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
+                const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
+                auto grad = ipGlobal - scvCenter;
+                grad /= grad.two_norm2();
+                grad *= (dirichletPressure - scvCenterPresureSol);
+                return grad;
+            }
+        }();
+
+        const Scalar K = volVars.permeability();
+        const Scalar density = useMoles ? volVars.molarDensity() : volVars.density();
+
+        // calculate the flux
+        Scalar tpfaFlux = gradient * scvf.unitOuterNormal();
+        tpfaFlux *= -1.0  * K;
+        tpfaFlux *=  density * volVars.mobility();
+        flux[contiH2OEqIdx] = tpfaFlux;
+
+        // emulate an outflow condition for the component transport on the right side
+        flux[contiN2EqIdx] = tpfaFlux  * (useMoles ? volVars.moleFraction(0, N2Idx) : volVars.massFraction(0, N2Idx));
+
+        return flux;
+    }
+
 
 };
 
