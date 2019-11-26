@@ -248,31 +248,40 @@ public:
             double p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             double kx = this->spatialParams().kx(eIdx);
+            double radius = this->spatialParams().radius(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             collarP_ = p;
             potentialTrans_ = collar_.f(time_); // [ kg/s]
-            double criticalTranspiration;
-            // chemical concentration 
-            double cL = densityABA/MolarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
-                                                                    volVars.massFraction(0, ABAIdx)	); // (mol/m3)        
-    
-            // stomatal conductance definition
+
+            NumEqVector flux(0.0);
+            flux[contiH2OEqIdx] = volVars.density(0) * kx * (p - criticalCollarPressure_) /dist; // TODO unit check [kg/s]
+            // convective flux (qw*cL) where qw is water flux, and cL is chemical concentration
+            Scalar ConvFlux;
+            ConvFlux = flux[contiH2OEqIdx] * volVars.moleFraction(0, ABAIdx) / MolarMass; // [mol/s]
+
+            // diffusive flux
+            Scalar DiffFlux = 0.0;
+
+            // total flux of solutes = convective flux + diffusive + hydrodynamic dispersion (qw*cL - De \partial cL/ \partial z)
+            cL += (ConvFlux + DiffFlux) * dt_/ VBuffer; // [mol/m3]
+
             if (collarP_ < p_crit)
             {
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
-                criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
             }
             else
             {
-                criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist;
+                alpha = alphaR + (1 - alphaR)*exp(-sC*cL);
             }
-            
-            double v = std::min(potentialTrans_, criticalTranspiration);
-            actualTrans_ = v;
+            // double v = alpha * potentialTrans_ - flux[contiH2OEqIdx]; // Tact = alpha * Tpot
+            // flux[transportABAEqIdx] = v; 
+            flux[transportABAEqIdx] = alpha * potentialTrans_;
+            //actualTrans_ = std::min(potentialTrans_, flux[contiH2OEqIdx] + flux[transportABAEqIdx]);
+            actualTrans_ = std::min(potentialTrans_, flux[transportABAEqIdx]);
             neumannTime_ = time_;
-            maxTrans_ = criticalTranspiration;
-            v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-            return NumEqVector(v);
+            maxTrans_ = flux[contiH2OEqIdx] + flux[transportABAEqIdx];
+            flux /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+            return flux;
         } else {
             return NumEqVector(0.); // no flux at root tips
         }
@@ -523,6 +532,7 @@ private:
     bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
     Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) 
     Scalar densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
+    const Scalar VBuffer = getParam<Scalar>("Component.VBuffer"); // (m3)
 
     const Scalar p0 = toPa_(-4500); // cm -> Pa
     const Scalar p_crit = toPa_(-5500); // cm -> Pa

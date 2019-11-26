@@ -23,12 +23,11 @@ Sinusoidal = True
 P = -100
 #Z = -.15 0.
 
-[Control]
-cD = 0 # 0 -> interaction between pressure and chemical regulation
-
 [Component]
 liquidDiffCoeff = 1.2e-9
 MolarMass = 0.26432 # Molar mass of ABA is 264.321 g/mol
+VBuffer = 7.5e-5 #m3
+Density = 1120 # kg/m3
 
 [Vtk]
 AddProcessRank = "false"
