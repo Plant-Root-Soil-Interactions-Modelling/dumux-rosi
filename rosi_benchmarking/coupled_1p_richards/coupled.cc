@@ -57,7 +57,10 @@
 #include <dumux/growth/crootboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "propertiesMix.hh" // includes root properties, soil properties, redefines coupling manager
+#include "../roots_1p/rootsproblem.hh"
+#include "../soil_richards/richardsproblem.hh"
+
+#include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
 // for Box                  properties.hh // <- not working for UG
 // for CCTpfa               propertiesCC.hh // <- working, but bad results for UG
 // for box soil, CC roots,  propertiesMix.hh (CC roots needed for periodicity)
@@ -65,7 +68,7 @@
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::RichardsBox; // RichardsCC //RichardsBox
+using SoilTypeTag = Properties::TTag::RichardsCC; // RichardsCC //RichardsBox
 using RootTypeTag = Properties::TTag::RootsCCTpfa; // RootsBox // RootsCCTpfa
 
 /**

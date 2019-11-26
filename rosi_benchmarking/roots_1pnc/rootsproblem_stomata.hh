@@ -79,10 +79,11 @@ public:
         FluidSystem::init();
 
         // stating in the console whether mole or mass fractions are used
-        if(useMoles)
+        if(useMoles) {
             std::cout<<"problem uses mole fractions"<<std::endl;
-        else
+        } else {
             std::cout<<"problem uses mass fractions"<<std::endl;
+        }
 
         //I.C.
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
@@ -535,38 +536,6 @@ private:
     mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
 
 };
-
-/*
-    //! compute the actual transpiration rate
-    Scalar computeActualTranspirationRate(const SolutionVector& sol, const GridVariables& gridVars, bool verbose = true) const
-    {
-        NumEqVector transpirationRate(0.0);
-        for (const auto& element : elements(this->fvGridGeometry().gridView()))
-        {
-            auto fvGeometry = localView(this->fvGridGeometry());
-            fvGeometry.bindElement(element);
-
-            auto elemVolVars = localView(gridVars.curGridVolVars());
-            elemVolVars.bindElement(element, fvGeometry, sol);
-
-            for (const auto& scvf : scvfs(fvGeometry))
-                if (scvf.boundary())
-                    transpirationRate += this->neumann(element, fvGeometry, elemVolVars, scvf)
- *scvf.area()*elemVolVars[scvf.insideScvIdx()].extrusionFactor();
-        }
-        if (verbose)
-        {
-            std::cout << "Actual transpiration rate:       " << transpirationRate << " (kg/s) / "
-                << transpirationRate[0]*86400*1000 << " (g/day) / "
-                << transpirationRate[0]/domainSize_[0]/domainSize_[1]*86400 << " (mm/day)\n"
-                << "Potential transpiration rate:    " << potentialTranspirationRate() << " (kg/s) / "
-                << potentialTranspirationRate()*86400*1000 << " (g/day) / "
-                << potentialTranspirationRate()/domainSize_[0]/domainSize_[1]*86400 << " (mm/day)\n";
-        }
-        return transpirationRate[0];
-    }
- */
-
 
 } //end namespace Dumux
 

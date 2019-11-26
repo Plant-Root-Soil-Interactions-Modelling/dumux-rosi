@@ -23,8 +23,8 @@
 #include <dumux/material/fluidsystems/h2oABA.hh>
 #include <dumux/material/fluidsystems/1padapter.hh>
 
-#include "../roots_1pnc/rootsproblem_stomata.hh" // Stomata model
-#include "../soil_richards/richardsproblem.hh" // Richards model in soil
+#include "../roots_1pnc/properties1pnc_periodic.hh"
+#include "../soil_richards/properties.hh"
 
 namespace Dumux {
 namespace Properties {

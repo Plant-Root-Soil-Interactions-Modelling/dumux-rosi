@@ -30,6 +30,9 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
+#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/fvassembler.hh>
 #include <dumux/multidomain/newtonsolver.hh>
@@ -43,12 +46,47 @@
 #include <dumux/growth/crootboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
+#include "../roots_1pnc/rootsproblem_stomata.hh" // Stomata model
+#include "../soil_richards/richardsproblem.hh" // Richards model in soil
+
 #include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
 
 namespace Dumux {
 
 using SoilTypeTag = Properties::TTag::RichardsCC;
 using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
+
+
+
+/**
+ * debugging
+ */
+using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
+template<class SoilGridVariables, class SoilSolution>
+void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
+    const SoilSolution& sol, const SoilSolution& oldSol, double t, double dt) {
+    double cVol = 0.;
+    double oldVol = 0.;
+    const auto& gridView = gridGeometry.gridView();  // soil
+    for (const auto& element : elements(gridView)) { // soil elements
+        auto fvGeometry = localView(gridGeometry); // soil solution -> volume variable
+        fvGeometry.bindElement(element);
+        auto elemVolVars = localView(gridVariables.curGridVolVars());
+        elemVolVars.bindElement(element, fvGeometry, sol);
+        for (const auto& scv : scvs(fvGeometry)) {
+            cVol += elemVolVars[scv].saturation(0)*scv.volume();
+        }
+        elemVolVars.bindElement(element, fvGeometry, oldSol);
+        for (const auto& scv : scvs(fvGeometry)) {
+            oldVol += elemVolVars[scv].saturation(0)*scv.volume();
+        }
+    }
+    std::cout << "\nWater in domain: " << cVol*1.e6 << " g at day " << t/24/3600 << " \n";
+    std::cout << "...   a change of: " << (oldVol-cVol)*1.e3 << " kg = " << (oldVol-cVol)*1.e6*24*3600/dt << " g/day \n" ;
+}
+} // namespace Dumux
+
+
 
 /**
  * and so it begins...
