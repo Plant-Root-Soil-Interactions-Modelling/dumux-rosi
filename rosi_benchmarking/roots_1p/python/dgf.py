@@ -48,7 +48,7 @@ if __name__ == "__main__":
     age = np.zeros((1, nnz))
     kr_ = np.ones((1, nnz)) * 1.728;  # cm/hPa/day, = 2.e-9 m/Pa/s;
     kz_ = np.ones((1, nnz)) * 432;  # cm^4/hPa/day, = 5.e-13 m/Pa/s;
-    params = np.vstack((order, a_, age, kr_, kz_))
+    params = np.vstack((order, a_, age, kr_, kz_))  ###################################### TODO ADJUST TO IBG-3 DEFAULTS
     createDGF_1Droots("../grids/singleroot.dgf", nodes, seg, params)
     nodes2 = np.transpose(np.vstack((nodes[:, 2], nodes[:, 0], nodes[:, 1] - 1.e-4)))  # 1e.-4 to make it easier with the BC
     nodes2[0, 2] = 0  # collar BC

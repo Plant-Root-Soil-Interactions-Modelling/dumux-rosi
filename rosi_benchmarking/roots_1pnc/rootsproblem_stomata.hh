@@ -9,6 +9,13 @@
 #include <dumux/porousmediumflow/problem.hh>
 #include <dumux/growth/soillookup.hh>
 
+// maybe we will need it for advective flux approx
+#include <dumux/discretization/cctpfa.hh>
+#include <dumux/discretization/ccmpfa.hh>
+#include <dumux/discretization/box.hh>
+#include <dumux/discretization/evalsolution.hh>
+#include <dumux/discretization/evalgradients.hh>
+
 #if DGF
 #include "../roots_1p/rootspatialparams_dgf.hh"
 #endif
@@ -157,7 +164,7 @@ public:
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 auto p = geo.center();
                 // kr [m /Pa/s]
-                d =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1][0] + sol[i0][0]) / 2); // m^3 / s
+                d =  2 * a * M_PI * length* kr * (soil(p) - (sol[i1][pressureIdx] + sol[i0][pressureIdx]) / 2); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
             if (name=="axialFlux") {
@@ -166,7 +173,7 @@ public:
                 auto kx = this->spatialParams().kx(eIdx);
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
-                d = kx * ((sol[i1][0] - sol[i0][0]) / length - rho_ * g_); // m^3 / s
+                d = kx * ((sol[i1][pressureIdx] - sol[i0][pressureIdx]) / length - rho_ * g_); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
             if (name=="p") {
@@ -232,10 +239,15 @@ public:
      *        control volume.
      */
     PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const {
+        PrimaryVariables p;
         if (critical_) {
-            return PrimaryVariables(criticalCollarPressure_);
+            p[contiH2OEqIdx] = criticalCollarPressure_;
+            p[transportABAEqIdx] = 0.; // TODO what to do in the case of dirichlet, avoid?;
+            return p;
         } else {
-            return PrimaryVariables(collar_.f(time_)+pRef_);
+            p[contiH2OEqIdx] = collar_.f(time_)+pRef_;
+            p[transportABAEqIdx] = 0.; // TODO what to do in the case of dirichlet, avoid?
+            return p;
         }
     }
 
@@ -249,8 +261,9 @@ public:
     NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolumeFace& scvf) const {
 
+        NumEqVector flux;
         const auto globalPos = scvf.center();
-        if (onUpperBoundary_(globalPos)) {
+        if (onUpperBoundary_(globalPos)) { // root collar
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
@@ -259,18 +272,17 @@ public:
             collarP_ = p;
             potentialTrans_ = collar_.f(time_); // [ kg/s]
             double criticalTranspiration;
+
             // chemical concentration
             double cL = densityABA/molarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
                 volVars.massFraction(0, ABAIdx)	); // (mol/m3)
 
-                // stomatal conductance definition
-            if (collarP_ < p_crit)
-            {
+            // stomatal conductance definition
+            if (collarP_ < p_crit) {
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
                 criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
             }
-            else
-            {
+            else {
                 criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist;
             }
 
@@ -279,9 +291,16 @@ public:
             neumannTime_ = time_;
             maxTrans_ = criticalTranspiration;
             v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-            return NumEqVector(v);
-        } else {
-            return NumEqVector(0.); // no flux at root tips
+
+            flux[contiH2OEqIdx] = v;
+            // flux[transportABAEqIdx] // complicated story (bot)
+
+            return flux;
+        } else { // root tip
+            flux[contiH2OEqIdx] = 0.;
+            // flux[transportABAEqIdx] // complicated story (bot)
+
+            return flux; // no flux at root tips
         }
     }
 
@@ -543,80 +562,80 @@ private:
     mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
 
 
-
-    NumEqVector neumann(const Element& element,
-                           const FVElementGeometry& fvGeometry,
-                           const ElementVolumeVariables& elemVolVars,
-                           const SubControlVolumeFace& scvf) const
-    {
-        // set a fixed pressure on the right side of the domain
-        const Scalar dirichletPressure = 1e5;
-
-        NumEqVector flux(0.0);
-        const auto& ipGlobal = scvf.ipGlobal();
-        const auto& volVars = elemVolVars[scvf.insideScvIdx()];
-
-        // no-flow everywhere except at the right boundary
-        if(ipGlobal[0] < this->fvGridGeometry().bBoxMax()[0] - eps_)
-            return flux;
-
-        // if specified in the input file, use a Nitsche type boundary condition for the box model,
-        // otherwise compute the acutal fluxes explicitly
-        if(isBox && useNitscheTypeBc_)
-        {
-            flux[contiH2OEqIdx] = (volVars.pressure() - dirichletPressure) * 1e7;
-            flux[contiN2EqIdx] = flux[contiH2OEqIdx]  * (useMoles ? volVars.moleFraction(0, N2Idx) :
-                                                                    volVars.massFraction(0, N2Idx));
-            return flux;
-        }
-
-        // construct the element solution
-        const auto elemSol = [&]()
-        {
-            auto sol = elementSolution(element, elemVolVars, fvGeometry);
-
-            if(isBox)
-                for(auto&& scvf : scvfs(fvGeometry))
-                    if(scvf.center()[0] > this->fvGridGeometry().bBoxMax()[0] - eps_)
-                        sol[fvGeometry.scv(scvf.insideScvIdx()).localDofIndex()][pressureIdx] = dirichletPressure;
-
-            return sol;
-        }();
-
-        // evaluate the gradient
-        const auto gradient = [&]()->GlobalPosition
-        {
-            if(isBox)
-            {
-                const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(), elemSol, ipGlobal);
-                return grads[pressureIdx];
-            }
-
-            else
-            {
-                const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
-                const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
-                auto grad = ipGlobal - scvCenter;
-                grad /= grad.two_norm2();
-                grad *= (dirichletPressure - scvCenterPresureSol);
-                return grad;
-            }
-        }();
-
-        const Scalar K = volVars.permeability();
-        const Scalar density = useMoles ? volVars.molarDensity() : volVars.density();
-
-        // calculate the flux
-        Scalar tpfaFlux = gradient * scvf.unitOuterNormal();
-        tpfaFlux *= -1.0  * K;
-        tpfaFlux *=  density * volVars.mobility();
-        flux[contiH2OEqIdx] = tpfaFlux;
-
-        // emulate an outflow condition for the component transport on the right side
-        flux[contiN2EqIdx] = tpfaFlux  * (useMoles ? volVars.moleFraction(0, N2Idx) : volVars.massFraction(0, N2Idx));
-
-        return flux;
-    }
+//
+//    NumEqVector neumann(const Element& element, // from test exmaple ...
+//        const FVElementGeometry& fvGeometry,
+//        const ElementVolumeVariables& elemVolVars,
+//        const SubControlVolumeFace& scvf) const
+//    {
+//        // set a fixed pressure on the right side of the domain
+//        const Scalar dirichletPressure = 1e5;
+//
+//        NumEqVector flux(0.0);
+//        const auto& ipGlobal = scvf.ipGlobal();
+//        const auto& volVars = elemVolVars[scvf.insideScvIdx()];
+//
+//        // no-flow everywhere except at the right boundary
+//        if(ipGlobal[0] < this->fvGridGeometry().bBoxMax()[0] - eps_)
+//            return flux;
+//
+//        // if specified in the input file, use a Nitsche type boundary condition for the box model,
+//        // otherwise compute the acutal fluxes explicitly
+//        if(isBox && useNitscheTypeBc_)
+//        {
+//            flux[contiH2OEqIdx] = (volVars.pressure() - dirichletPressure) * 1e7;
+//            flux[contiN2EqIdx] = flux[contiH2OEqIdx]  * (useMoles ? volVars.moleFraction(0, N2Idx) :
+//                volVars.massFraction(0, N2Idx));
+//            return flux;
+//        }
+//
+//        // construct the element solution
+//        const auto elemSol = [&]()
+//            {
+//            auto sol = elementSolution(element, elemVolVars, fvGeometry);
+//
+//            if(isBox)
+//                for(auto&& scvf : scvfs(fvGeometry))
+//                    if(scvf.center()[0] > this->fvGridGeometry().bBoxMax()[0] - eps_)
+//                        sol[fvGeometry.scv(scvf.insideScvIdx()).localDofIndex()][pressureIdx] = dirichletPressure;
+//
+//            return sol;
+//            }();
+//
+//            // evaluate the gradient
+//            const auto gradient = [&]()->GlobalPosition
+//                {
+//                if(isBox)
+//                {
+//                    const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(), elemSol, ipGlobal);
+//                    return grads[pressureIdx];
+//                }
+//
+//                else
+//                {
+//                    const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
+//                    const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
+//                    auto grad = ipGlobal - scvCenter;
+//                    grad /= grad.two_norm2();
+//                    grad *= (dirichletPressure - scvCenterPresureSol);
+//                    return grad;
+//                }
+//                }();
+//
+//                const Scalar K = volVars.permeability();
+//                const Scalar density = useMoles ? volVars.molarDensity() : volVars.density();
+//
+//                // calculate the flux
+//                Scalar tpfaFlux = gradient * scvf.unitOuterNormal(); // Two-Point Flux Approximation Scheme
+//                tpfaFlux *= -1.0  * K;
+//                tpfaFlux *=  density * volVars.mobility();
+//                flux[contiH2OEqIdx] = tpfaFlux;
+//
+//                // emulate an outflow condition for the component transport on the right side
+//                flux[contiN2EqIdx] = tpfaFlux  * (useMoles ? volVars.moleFraction(0, N2Idx) : volVars.massFraction(0, N2Idx));
+//
+//                return flux;
+//    }
 
 
 };
