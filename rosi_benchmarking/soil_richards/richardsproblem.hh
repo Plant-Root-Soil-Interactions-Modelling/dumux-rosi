@@ -297,7 +297,7 @@ public:
     PrimaryVariables initial(const Entity& entity) const {
         auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
         Scalar z = entity.geometry().center()[dimWorld - 1];
-        std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
+        // std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
         PrimaryVariables v(0.0);
         v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
         v.setState(bothPhases);
