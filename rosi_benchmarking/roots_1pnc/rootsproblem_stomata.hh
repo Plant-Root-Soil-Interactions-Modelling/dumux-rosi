@@ -7,22 +7,22 @@
 #include <map>
 
 #include <dumux/porousmediumflow/problem.hh>
-
 #include <dumux/growth/soillookup.hh>
 
 #if DGF
-#include "rootspatialparams_dgf_stomata.hh"
+#include "../roots_1p/rootspatialparams_dgf.hh"
 #endif
 #if ROOTBOX
-#include "rootspatialparams_rb_stomata.hh"
+#include "../roots_1p/rootspatialparams_rb.hh"
 #endif
 
 namespace Dumux {
 
 /*!
- * Root Doussan Model
+ * Root system water movement and transpiration driven by hormones.
  *
- * with optional coupling to a soil model
+ * similar Huber et al. 2014
+ *
  */
 template<class TypeTag>
 class RootsOnePTwoCProblem: public PorousMediumFlowProblem<TypeTag> {
@@ -50,15 +50,15 @@ class RootsOnePTwoCProblem: public PorousMediumFlowProblem<TypeTag> {
     enum {
         // indices of primary variables
         pressureIdx = Indices::pressureIdx,
-        
+
         // component indices
         H2OIdx = FluidSystem::compIdx(FluidSystem::MultiPhaseFluidSystem::H2OIdx),
         ABAIdx = FluidSystem::compIdx(FluidSystem::MultiPhaseFluidSystem::ABAIdx),
 
         // indices of the equations
         contiH2OEqIdx = Indices::conti0EqIdx + H2OIdx,
-        transportABAEqIdx = Indices::conti0EqIdx + ABAIdx 
-        
+        transportABAEqIdx = Indices::conti0EqIdx + ABAIdx
+
     };
     enum {
         isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
@@ -252,10 +252,10 @@ public:
             collarP_ = p;
             potentialTrans_ = collar_.f(time_); // [ kg/s]
             double criticalTranspiration;
-            // chemical concentration 
+            // chemical concentration
             double cL = densityABA/MolarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
-                                                                    volVars.massFraction(0, ABAIdx)	); // (mol/m3)        
-    
+                                                                    volVars.massFraction(0, ABAIdx)	); // (mol/m3)
+
             // stomatal conductance definition
             if (collarP_ < p_crit)
             {
@@ -266,7 +266,7 @@ public:
             {
                 criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist;
             }
-            
+
             double v = std::min(potentialTrans_, criticalTranspiration);
             actualTrans_ = v;
             neumannTime_ = time_;
@@ -441,18 +441,18 @@ public:
                     Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //(mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
                     }
                     else {
-                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMass; // (kg/s)                  
+                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMass; // (kg/s)
                     }
                     sourceValue[transportABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
-                }                
+                }
                 else
-                {   
+                {
                     sourceValue[transportABAEqIdx] = 0.;
                 }
             }
             source = sourceValue;
-        } 
-            
+        }
+
             else {
             source = 0;
         }
@@ -521,13 +521,13 @@ private:
     // chemical signalling variables
     Scalar alphaR = 0; // residual stomatal conductance, taken as 0
     bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) 
+    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol)
     Scalar densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
 
     const Scalar p0 = toPa_(-4500); // cm -> Pa
     const Scalar p_crit = toPa_(-5500); // cm -> Pa
     const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
-    const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]  
+    const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
     const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
 
     mutable Scalar cL = 0.;

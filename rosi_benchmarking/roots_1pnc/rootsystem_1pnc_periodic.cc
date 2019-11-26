@@ -58,8 +58,10 @@
 #include <dumux/multidomain/newtonsolver.hh>
 
 #include "rootsproblem_stomata.hh"
-#include "properties_periodic_stomata.hh" // the property system related stuff (to pass types, used instead of polymorphism)
-#include "properties_nocoupling_stomata.hh" // dummy types for replacing the coupling types
+
+#include "properties1pnc_periodic.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_nocoupling.hh" // dummy types for replacing the coupling types
+
 
 /**
  * and so it begins...
@@ -69,7 +71,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsCCTpfa; // RootsCCTpfa, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RootsOnePTwoCCCTpfa; // RootsOnePTwoCCC, RootsOnePTwoCBox
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -116,7 +118,7 @@ int main(int argc, char** argv) try
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
 
     // the problem (initial and boundary conditions)
-    auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
+    auto problem = std::make_shared<RootsOnePTwoCProblem<TypeTag>>(fvGridGeometry);
     problem->spatialParams().initParameters(*gridManager.getGridData());
 
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()

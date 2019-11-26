@@ -57,8 +57,9 @@
 #include <dumux/growth/gridgrowth.hh>
 
 #include "rootsproblem_stomata.hh"
-#include "properties_stomata.hh" // the property system related stuff (to pass types, used instead of polymorphism)
-#include "properties_nocoupling_stomata.hh" // dummy types for replacing the coupling types
+
+#include "properties1pnc.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
  * and so it begins...
@@ -68,7 +69,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsOnePTwoCCCTpfa; // RootsOnePTwoCCC, RootsOnePTwoCBox (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RootsOnePTwoCCCTpfa; // RootsOnePTwoCCC, RootsOnePTwoCBox
     int simtype = Properties::simtype;
 
     // initialize MPI, finalize is done automatically on exit
@@ -96,7 +97,7 @@ int main(int argc, char** argv) try
     if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
         gridManager.init("RootSystem");
-        grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
+        grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>()); // make a shared ptr, but do not take ownership
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CRootBox::RootSystem>();

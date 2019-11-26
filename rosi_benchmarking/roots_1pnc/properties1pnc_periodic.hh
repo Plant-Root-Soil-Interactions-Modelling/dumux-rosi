@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_1P2C_PROPERTIES_HH
-#define DUMUX_ROOT_1P2C_PROPERTIES_HH
+#ifndef DUMUX_ROOT_1P2C_PROPERTIES_PERIODIC_HH
+#define DUMUX_ROOT_1P2C_PROPERTIES_PERIODIC_HH
 
 #include <dune/foamgrid/foamgrid.hh>
 
@@ -12,15 +12,12 @@
 #include <dumux/porousmediumflow/1pnc/model.hh>
 #include <dumux/porousmediumflow/1p/incompressiblelocalresidual.hh>
 
-//#include <dumux/material/components/simpleh2o.hh>
-//#include <dumux/material/fluidsystems/1pliquid.hh>
-
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/h2oABA.hh>
 #include <dumux/material/fluidsystems/1padapter.hh>
 
-#include <dumux/growth/couplingmanager.hh>
-#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+#include <dumux/multidomain/traits.hh>
+#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
 
 
@@ -49,8 +46,7 @@ private:
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-     using type = PeriodicCCTpfaFVGridGeometry<GridView, /*enableCache=*/true>;
-//     using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = PeriodicCCTpfaFVGridGeometry<GridView, /*enableCache=*/true>;
 };
 
 // for Box
@@ -95,7 +91,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootOnePTwoCSpatialParamsDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif
@@ -104,7 +100,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootOnePTwoCSpatialParamsRB<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif
