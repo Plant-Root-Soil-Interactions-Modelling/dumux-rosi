@@ -57,8 +57,6 @@
 #include <dumux/growth/crootboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "../roots_1p/rootsproblem.hh"
-#include "../soil_richards/richardsproblem.hh"
 #include "propertiesMix.hh" // includes root properties, soil properties, redefines coupling manager
 // for Box                  properties.hh // <- not working for UG
 // for CCTpfa               propertiesCC.hh // <- working, but bad results for UG
@@ -69,11 +67,11 @@ namespace Dumux {
 
 using SoilTypeTag = Properties::TTag::RichardsBox; // RichardsCC //RichardsBox
 using RootTypeTag = Properties::TTag::RootsCCTpfa; // RootsBox // RootsCCTpfa
-using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
 
 /**
  * debugging
  */
+using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
 template<class SoilGridVariables, class SoilSolution>
 void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
     const SoilSolution& sol, const SoilSolution& oldSol, double t, double dt) {

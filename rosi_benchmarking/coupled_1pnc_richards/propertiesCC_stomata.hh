@@ -23,8 +23,8 @@
 #include <dumux/material/fluidsystems/h2oABA.hh>
 #include <dumux/material/fluidsystems/1padapter.hh>
 
-#include "../rootsystem_stomata/properties_stomata.hh" // TypeTag:Roots
-#include "../soil_stomata/properties_stomata.hh" // TypeTag:RichardsTT
+#include "../roots_1pnc/rootsproblem_stomata.hh"
+#include "../soil_richards/richardsproblem.hh"
 
 namespace Dumux {
 namespace Properties {
