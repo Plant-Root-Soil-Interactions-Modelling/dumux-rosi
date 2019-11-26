@@ -42,16 +42,25 @@ public:
 };
 
 /**
- * Dumux as a solver with a simple Python interface
+ * Dumux as a solver with a simple Python interface.
  *
- * First we want to run a simulation with .input file parameters.
- * in future these parameters will be replaced step by step.
+ * No input file is needed. The .input file parameters are passed to
+ * the solver before the problem is created.
+ *
+ * There is no need to write a VTK, geometry and results can be easily
+ * accessed.
+ *
+ * This class works in combination with methods from the Python side
+ * in solverbase.py. For simplicity most MPI communication is done in
+ * Python.
+ *
+ * Examples are given in python/ directory
  */
 template<class Problem, class Assembler, class LinearSolver>
 class SolverBase {
 public:
 
-    std::string gridType = "YaspGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
+    std::string gridType = "SPGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
     static const int dim = 3; // Problem::dimWorld;
     bool isBox = Problem::isBox; // numerical method
     const std::vector<std::string> primNames = { "Matric potential [Pa]" };
@@ -74,7 +83,7 @@ public:
      * Writes the Dumux welcome message, and creates the global Dumux parameter tree from defaults and the .input file
      *
      * Normally you state an input file, that contains all parameters that are needed for the simulation.
-     * SolverBase will optionally set some of them dynamically.
+     * SolverBase will optionally set most of them dynamically.
      */
     virtual void initialize(std::vector<std::string> args)
     {
@@ -335,11 +344,9 @@ public:
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
             std::vector<int> cell;
-
-
-
-
-
+//            gridGeometry->vertexMapper.
+//            auto i0 = vMapper.subIndex(e, 0, 1);
+//            auto i1 = vMapper.subIndex(e, 1, 1);
 
         }
         return cells;
@@ -504,11 +511,12 @@ protected:
     }
 
     using Grid = typename Problem::Grid;
-    using GridData = Dumux::GridData<Grid>;
     using FVGridGeometry = typename Problem::FVGridGeometry;
-    using GridView = typename Dune::YaspGridFamily<3,Dune::EquidistantOffsetCoordinates<double,3>>::Traits::LeafGridView;
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
+
+    using GridData = Dumux::GridData<Grid>;
+    using GridView = typename Grid::Traits::LeafGridView;
 
     std::shared_ptr<Grid> grid;
     std::shared_ptr<GridData> gridData;
@@ -538,5 +546,3 @@ protected:
 //using MapperTraits = Dumux::DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 //using FVGridGeometry = Dumux::BoxFVGridGeometry<double, GridView, /*enableCache*/ true, Dumux::BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
 //using SolutionVector =  Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>; // in fvproperties
-
-

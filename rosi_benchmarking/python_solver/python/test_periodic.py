@@ -1,6 +1,6 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-from richardsyaspsolver import *
+from richardsspsolver import *
 
 import os
 import time
@@ -21,7 +21,7 @@ s = RichardsYaspSolver()  # the one and only
 #
 s.initialize([""])
 s.setParameter("Problem.Name", "periodicity")
-s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [19, 19, 19], "true true false")  # 125000
+s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [19, 19, 19], "false false false")  # dof 125000
 s.setVanGenuchtenParameter(0.08, 0.43, 0.04, 1.6, 50.)  # Loam
 s.setHomogeneousInitialConditions(-100, True)  # cm pressure head, hydraulic equilibrium
 s.setBCTopBot("constantFlux", 0, "freeDrainage", 0.)
@@ -68,14 +68,14 @@ s.setSource(sources)
 dt = 3600  # ten days in seconds
 s.ddt = 1  # s, initial internal time step
 
-for i in range(0, 24):
+for i in range(0, 12):
     if rank == 0:
         print(i, "*** External time step ", dt, "***", "simulation time ", s.simTime / 3600 / 24)
     s.simulate(dt)
     print("Water volume", s.getWaterVolume(), "cm3")
 #
 
-s.writeDumuxDGF("periodicTest1")
+s.writeDumuxVTK("periodicTest1")
 # x = np.array(s.getSolution())
 # # x = np.array(s.getSaturation())
 #

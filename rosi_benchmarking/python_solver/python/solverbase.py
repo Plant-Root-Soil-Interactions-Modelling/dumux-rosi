@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-import richards_yasp_solver as solver
+import richards_sp_solver as solver
 
 import matplotlib.pyplot as plt
 import numpy as np

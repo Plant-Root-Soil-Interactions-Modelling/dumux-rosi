@@ -19,13 +19,15 @@ namespace py = pybind11;
 #include "solverbase.hh"
 
 #include "../soil_richards/richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "../soil_richards/propertiesYasp.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+
+#define GRIDTYPE Dune::SPGrid<double,3>
+#include "../soil_richards/properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /*
  * Define the type tag for this problem (in propertiesYasp.hh)
  */
-using TypeTag = Dumux::Properties::TTag::RichardsBox; // RichardsCC, RichardsBox
+using TypeTag = Dumux::Properties::TTag::RichardsCC; // RichardsCC, RichardsBox
 
 /*
  * The problem
@@ -69,7 +71,7 @@ public:
         for (const auto& e : elements(gridGeometry->gridView())) { // local elements
             int gIdx = cellIdx->index(e); // global index
             auto eIdx = gridGeometry->elementMapper().index(e);
-            if (source.count(gIdx)) {
+            if (source.count(gIdx)>0) {
                 ls[eIdx] = source[gIdx]/24.*3600./1.e3; // g/day -> kg/s
             } else {
                 ls[eIdx] = 0.;
@@ -147,7 +149,7 @@ using Solver = RichardsYaspSolver;
 /**
  * Python binding of the Dumux solver base class
  */
-PYBIND11_MODULE(richards_yasp_solver, m) {
+PYBIND11_MODULE(richards_sp_solver, m) {
 
     py::class_<Solver>(m, name.c_str())
     // initialization
