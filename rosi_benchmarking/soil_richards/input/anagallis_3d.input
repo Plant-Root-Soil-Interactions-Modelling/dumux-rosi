@@ -1,0 +1,37 @@
+[Problem]
+Name = anagallis_soil
+
+[TimeLoop]
+DtInitial =  86400 # [s]
+TEnd = 86400 # a day [s] 
+MaxTimeStepSize = 3600 # an hour [s] 
+# CheckTimes = 17280 43200 
+
+[Soil.Grid]
+UpperRight = 0.15 0.15 0. 
+LowerLeft = -0.15 -0.15 -0.3 
+Cells = 29 29 29 
+
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
+# Type = 1 
+# Value = 0
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -200
+
+[Soil.VanGenuchten] 
+# Loam: 
+Qr = 0.08 
+Qs = 0.43 
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d] 
+
+[Climate]
+Time = 0 1e10 # const value 
+Precipitation = 0. 0. # [cm/day]
+

@@ -1,0 +1,19 @@
+[Problem]
+Name = anagallis
+RootName = ../roots_1pnc/input/anagallis_stomata.input
+SoilName = ../soil_richards/input/anagallis_3d.input
+
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 86400
+MaxTimeStepSize = 7200
+
+[Soil.IC]
+P = -200
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+
+[Component]
+ProductionRate = 0 # 3.26e-16 #  [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)

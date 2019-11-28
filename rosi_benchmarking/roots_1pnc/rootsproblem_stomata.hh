@@ -102,6 +102,7 @@ public:
             collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
             collar_.setFunctionScale(1.e-2 * rho_ * g_); // [cm] -> [Pa], don't forget to add pRef_
             bcType_ = bcDirichlet;
+            std::cout << "RootsOnePTwoCProblem(): Warning: transpiration should be predetermined, hormone model is not implemented for Dirichlet BC yet. \n";
         } else { // ".File " gives transpiration table
             collar_ = InputFileFunction("RootSystem.Collar", "Transpiration", "TranspirationT", 0.02);  // [kg/day]([day])
             collar_.setVariableScale(1./(24.*3600)); // [s] -> [day]
@@ -115,10 +116,10 @@ public:
         leafVolume_.setFunctionScale(1.e-6); // [cm^3] -> [m^3]
 
         cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+        a_ = getParam<Scalar>("Component.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+        molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) // todo should this be somewhere in the fluidsystem (?)
 
-        // todo should be in the fluidsystem (?)
-        molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol)
-        densityABA = getParam<Scalar>("Component.Density"); // (kg/m3) UNUSED
+        // densityABA = getParam<Scalar>("Component.Density"); // (kg/m3) UNUSED
 
         // difusivity is defined in h2o_ABA.hh
     }
@@ -288,6 +289,7 @@ public:
             else {
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
             }
+            // std::cout << "alpha "<< alpha << "\n";
             v *= alpha; // reduced actual transpiration rate [kg/s]
 
             double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); // [-]
@@ -342,7 +344,7 @@ public:
     void setTime(double t, double dt) {
 
         // chemical concentration
-        mL_ += mLRate_*dt_; // integrate rate with old time step
+        mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
 
         this->spatialParams().setTime(t, dt);
         time_ = t;
@@ -352,14 +354,12 @@ public:
     /*!
      * writes the actual transpiration into a text file:
      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
-     * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day]
-     *
-     * 0 - 4 work only for neuman bc
+     * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], simtime [s], hormone leaf mass [kg], hormone flow rate [kg/s]
      */
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << mL_ << "\n"; // TODO
+            << trans << ", "<< time_ << " , " << mL_ << ", "<< mLRate_ << "\n"; // TODO
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -446,13 +446,12 @@ public:
                 Scalar tipP_ = pressure1D; // local tip pressure in [kg/m/s^2] = [Pa]
 
                 if (abs(tipP_) >= abs(p0)) {
-                    double r = 3.26e-16; //Production rate per dry mass in mol [kg-1 Pa-1 s-1]
                     double mSignal; // [kg/s]
                     if (useMoles) {
-                        mSignal = r*(abs(tipP_)-abs(p0))*mi * molarMass; // [kg / s]
+                        mSignal = a_*(abs(tipP_)-abs(p0))*mi*molarMass; // [kg / s]
                     }
                     else {
-                        mSignal = r*(abs(tipP_)-abs(p0))*mi; // [kg / s]
+                        mSignal = a_*(abs(tipP_)-abs(p0))*mi; // [kg / s]
                     }
                     sourceValue[transportABAEqIdx] = mSignal*source.quadratureWeight()*source.integrationElement(); // mSignal [mol/s]
                 } else {
@@ -562,6 +561,8 @@ protected:
     mutable Scalar mL_ = 0.; // (kg) mass of hormones in the leaf
     mutable Scalar mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume
     InputFileFunction leafVolume_; // (m^3)
+    Scalar a_; //Production rate per dry mass in mol [kg-1 Pa-1 s-1]
+
 
 };
 
