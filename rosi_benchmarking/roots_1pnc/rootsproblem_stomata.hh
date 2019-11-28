@@ -110,11 +110,15 @@ public:
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
 
+        leafVolume_ = InputFileFunction("RootSystem.Leaf", "Volume", "VolumeT", 1); // [cm^3]([day])
+        leafVolume_.setVariableScale(1./(24.*3600)); // [s] -> [day]
+        leafVolume_.setFunctionScale(1.e-6); // [cm^3] -> [m^3]
+
         cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
 
         // todo should be in the fluidsystem (?)
         molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol)
-        densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
+        densityABA = getParam<Scalar>("Component.Density"); // (kg/m3) UNUSED
 
         // difusivity is defined in h2o_ABA.hh
     }
@@ -264,6 +268,7 @@ public:
 
         NumEqVector flux;
         const auto globalPos = scvf.center();
+
         if (onUpperBoundary_(globalPos)) { // root collar
 
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
@@ -271,39 +276,40 @@ public:
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             double kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            collarP_ = p;
-            potentialTrans_ = collar_.f(time_); // [ kg/s]
-            double criticalTranspiration;
+            double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
+            potentialTrans_ = collar_.f(time_); // [kg/s]
+            double v = std::min(potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
 
-            // chemical concentration
-            double cL = densityABA/molarMass * (useMoles ? volVars.moleFraction(0, ABAIdx) :
-                volVars.massFraction(0, ABAIdx)	); // (mol/m3)
-
-            // stomatal conductance definition
-            if (collarP_ < p_crit) {
-                alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
-                criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
+            double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
+            double alpha;
+            if (p < p_crit) { // stomatal conductance definition
+                alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(p - p_crit));  // [-] (Eqn 2a, Huber et al. 2014)
             }
             else {
-                criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist;
+                alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
             }
+            v *= alpha; // reduced actual transpiration rate [kg/s]
 
-            double v = std::min(potentialTrans_, criticalTranspiration);
-            actualTrans_ = v;
-            neumannTime_ = time_;
-            maxTrans_ = criticalTranspiration;
-            v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+            double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); // [-]
+            flux[contiH2OEqIdx] = v/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
+            flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg/(s*m^2)],  convective outflow BC
 
-            flux[contiH2OEqIdx] = v;
-            // flux[transportABAEqIdx] // complicated story (bot)
+            // the rate will be integrated to mL_ in setTime(t,dt)
+            mLRate_ = v*fraction; // [kg/s]
 
-            return flux;
+            // file output
+            actualTrans_ = v;  // [kg/s]
+            neumannTime_ = time_; // [s]
+            maxTrans_ = criticalTranspiration; // [kg/s]
+            collarP_ = p; // [Pa]
+
         } else { // root tip
-            flux[contiH2OEqIdx] = 0.;
-            // flux[transportABAEqIdx] // complicated story (bot)
 
-            return flux; // no flux at root tips
+            flux[contiH2OEqIdx] = 0.;
+            flux[transportABAEqIdx] = 0.; // hormones cannot leave from the tip
+
         }
+        return flux;
     }
 
     /*!
@@ -334,7 +340,10 @@ public:
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
     void setTime(double t, double dt) {
-        // std::cout << "Time " << t << " time step " << dt << "\n";
+
+        // chemical concentration
+        mL_ += mLRate_*dt_; // integrate rate with old time step
+
         this->spatialParams().setTime(t, dt);
         time_ = t;
         dt_ = dt;
@@ -350,7 +359,7 @@ public:
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << cL << "\n"; // TODO
+            << trans << ", "<< time_ << " , " << mL_ << "\n"; // TODO
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -423,36 +432,38 @@ public:
             const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             // const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+            // eIdx == lowDimElementIdx ?
             Scalar kr = this->spatialParams().kr(eIdx);
             Scalar rootRadius = this->spatialParams().radius(eIdx);
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
 
-            const auto density = 1000;
-            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-            sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - pressure1D)*density; // (kg/m/s)
-            sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement();
+            const auto density = 1000; // [kg /m^3]
+            sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - pressure1D)*density; // [kg/m/s]
+            sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
 
             if (rootAge <= 1) { // if root segment age <= 1 day
 
                 Scalar tipP_ = pressure1D; // local tip pressure in [kg/m/s^2] = [Pa]
 
                 if (abs(tipP_) >= abs(p0)) {
+                    double r = 3.26e-16; //Production rate per dry mass in mol [kg-1 Pa-1 s-1]
+                    double mSignal; // [kg/s]
                     if (useMoles) {
-                        mSignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     // (mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
+                        mSignal = r*(abs(tipP_)-abs(p0))*mi * molarMass; // [kg / s]
                     }
                     else {
-                        mSignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * molarMass; // (kg/s)
+                        mSignal = r*(abs(tipP_)-abs(p0))*mi; // [kg / s]
                     }
                     sourceValue[transportABAEqIdx] = mSignal*source.quadratureWeight()*source.integrationElement(); // mSignal [mol/s]
-                }
-                else {
+                } else {
                     sourceValue[transportABAEqIdx] = 0.;
                 }
-
             }
+
             source = sourceValue;
         }
-        else {
+        else { // should not happen...
+            std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
             source = sourceValue;
         }
     }
@@ -482,7 +493,24 @@ public:
         couplingManager_ = cm;
     }
 
-private:
+protected:
+
+//    //! evaluate the gradient (todo not sure if we need it)
+//    GlobalPosition gradient( const Element &element, const FVElementGeometry& fvGeometry,
+//        const ElementVolumeVariables& elemVolVars, const GlobalPosition& ipGlobal) {
+//        if(isBox) {
+//            const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(),
+//                elementSolution(element, elemVolVars, fvGeometry), ipGlobal);
+//            return grads[pressureIdx];
+//        } else {
+//            const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
+//            const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
+//            auto grad = ipGlobal - scvCenter;
+//            grad /= grad.two_norm2();
+//            grad *= (dirichletPressure - scvCenterPresureSol);
+//            return grad;
+//        }
+//    }
 
     //! cm pressure head -> Pascal
     Scalar toPa_(Scalar ph) const {
@@ -518,97 +546,22 @@ private:
     std::map<std::string, std::vector<Scalar>> userData_;
 
     // chemical signalling variables
+
     Scalar alphaR = 0; // residual stomatal conductance, taken as 0
     bool cD; // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    Scalar molarMass; // (kg/mol)
-    Scalar densityABA; // (kg/m3)
 
-    const Scalar p0 = toPa_(-4500); // cm -> Pa
+    Scalar molarMass; // (kg/mol)
+    Scalar densityABA; // (kg/m3) todo UNUSED
+
+    const Scalar p0 = toPa_(-4500); // cm -> Pa todo UNUSED
     const Scalar p_crit = toPa_(-5500); // cm -> Pa
     const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
     const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
     const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
 
-    mutable Scalar cL = 0.;
-    mutable Scalar mSignal = 0; // initial production rate of chemicals
-    mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
-
-
-//
-//    NumEqVector neumann(const Element& element, // from test exmaple ...
-//        const FVElementGeometry& fvGeometry,
-//        const ElementVolumeVariables& elemVolVars,
-//        const SubControlVolumeFace& scvf) const
-//    {
-//        // set a fixed pressure on the right side of the domain
-//        const Scalar dirichletPressure = 1e5;
-//
-//        NumEqVector flux(0.0);
-//        const auto& ipGlobal = scvf.ipGlobal();
-//        const auto& volVars = elemVolVars[scvf.insideScvIdx()];
-//
-//        // no-flow everywhere except at the right boundary
-//        if(ipGlobal[0] < this->fvGridGeometry().bBoxMax()[0] - eps_)
-//            return flux;
-//
-//        // if specified in the input file, use a Nitsche type boundary condition for the box model,
-//        // otherwise compute the acutal fluxes explicitly
-//        if(isBox && useNitscheTypeBc_)
-//        {
-//            flux[contiH2OEqIdx] = (volVars.pressure() - dirichletPressure) * 1e7;
-//            flux[contiN2EqIdx] = flux[contiH2OEqIdx]  * (useMoles ? volVars.moleFraction(0, N2Idx) :
-//                volVars.massFraction(0, N2Idx));
-//            return flux;
-//        }
-//
-//        // construct the element solution
-//        const auto elemSol = [&]()
-//            {
-//            auto sol = elementSolution(element, elemVolVars, fvGeometry);
-//
-//            if(isBox)
-//                for(auto&& scvf : scvfs(fvGeometry))
-//                    if(scvf.center()[0] > this->fvGridGeometry().bBoxMax()[0] - eps_)
-//                        sol[fvGeometry.scv(scvf.insideScvIdx()).localDofIndex()][pressureIdx] = dirichletPressure;
-//
-//            return sol;
-//            }();
-//
-//            // evaluate the gradient
-//            const auto gradient = [&]()->GlobalPosition
-//                {
-//                if(isBox)
-//                {
-//                    const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(), elemSol, ipGlobal);
-//                    return grads[pressureIdx];
-//                }
-//
-//                else
-//                {
-//                    const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
-//                    const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
-//                    auto grad = ipGlobal - scvCenter;
-//                    grad /= grad.two_norm2();
-//                    grad *= (dirichletPressure - scvCenterPresureSol);
-//                    return grad;
-//                }
-//                }();
-//
-//                const Scalar K = volVars.permeability();
-//                const Scalar density = useMoles ? volVars.molarDensity() : volVars.density();
-//
-//                // calculate the flux
-//                Scalar tpfaFlux = gradient * scvf.unitOuterNormal(); // Two-Point Flux Approximation Scheme
-//                tpfaFlux *= -1.0  * K;
-//                tpfaFlux *=  density * volVars.mobility();
-//                flux[contiH2OEqIdx] = tpfaFlux;
-//
-//                // emulate an outflow condition for the component transport on the right side
-//                flux[contiN2EqIdx] = tpfaFlux  * (useMoles ? volVars.moleFraction(0, N2Idx) : volVars.massFraction(0, N2Idx));
-//
-//                return flux;
-//    }
-
+    mutable Scalar mL_ = 0.; // (kg) mass of hormones in the leaf
+    mutable Scalar mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume
+    InputFileFunction leafVolume_; // (m^3)
 
 };
 

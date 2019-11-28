@@ -227,8 +227,8 @@ public:
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             double kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            double criticalTranspiration = volVars.density(0)/volVars.viscosity(0) * kx * (p - criticalCollarPressure_) / dist; // check units todo
-            potentialTrans_ = collar_.f(time_); // [ kg/s]
+            double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
+            potentialTrans_ = collar_.f(time_); // [kg/s]
             double v = std::min(potentialTrans_, criticalTranspiration);
             actualTrans_ = v;
             neumannTime_ = time_;
