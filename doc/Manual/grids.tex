@@ -17,7 +17,7 @@ In the example of the coupled problems, both are used simultaneously. In that ca
 	\label{fig:merged}
 \end{figure}
 
-Grids can be created using different DUNE internal or external grid managers (see documentation of dune-grid). In the input file, the details about the numerical grids are specified in the groups [RootSystem.Grid] or [SoilGrid]. Each folder contains a folder named ``grids" where grids can be provided in dgf format. In the dumux-rosi examples, the soil grid is usually a structured grid created by the default ``GridCreator", where corner points of the domain, spatial resolution and cell type are specified such as in the following example: 
+Grids can be created using different DUNE internal or external grid managers (see documentation of dune-grid). In the input file, the details about the numerical grids are specified in the groups [RootSystem.Grid] or [Soil.Grid]. Each folder contains a folder named ``grids" where grids can be provided in dgf format. In the dumux-rosi examples, the soil grid is usually a structured grid created by the default ``GridCreator", where corner points of the domain, spatial resolution and cell type are specified such as in the following example: 
 
 \begin{lstlisting}
 [ Grid ]
@@ -26,6 +26,25 @@ UpperRight = 1 1 1
 Cells = 10 10 20
 CellType = Cube # or Simplex
 \end{lstlisting}
+
+Alternatively, msh-files can be read. 
+
+\section*{Choice of grid manager for the soil domain}
+
+\textbf{YaspGrid}: Structured grids, only non-periodic soil domains\\
+\textbf{SpGrid}: Structured grids, also periodic soil domains\\
+\textbf{AluGrid}: Unstructured grids, only works for CC_2pfa-scheme\\
+\textbf{UGGrid}: Unstructured grids, works for both CC_2pfa and Box schemes\\
+
+Thus, we suggest SPGrid as default grid manager for problems with structured grids and UGGrid as default grid manager for problems with structured grids. 
+
+\section*{How to switch grid manager}
+To change the grid manager, open the file \lstinline{dumux-rosi/rosi_benchmarking/coupled_1p_richards/CMakeLists.txt}. If not available, add the following lines to make the gridmanager available to build an executable. For the example of UGGrid:\\
+
+\lstinline{add_executable(coupledUG EXCLUDE_FROM_ALL coupled.cc)}\\
+\lstinline{target_compile_definitions(coupledUG PUBLIC DGF GRIDTYPE=Dune:: UGrid<3>)}
+
+\section*{Grids for root systems}
 
 There are two options to specify the root system grid. The first option is to specify it as a file in dgf-format that specifies the coordinates and connection of nodes (verteces).  
 
