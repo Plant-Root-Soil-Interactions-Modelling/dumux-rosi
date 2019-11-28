@@ -1,0 +1,24 @@
+\chapter*{Numerical schemes}
+
+\section*{Numercical schemes available in DuMu$^x$}
+
+\subsection*{Box Method}
+
+\subsection*{CC_2pfa Method}
+
+\section*{How to switch numerical scheme in a DuMu$^x$ simulation}
+
+Open the main file of your application. For coupled root-soil problems, it is for example the file \lstinline{coupled.cc}. \\
+Change the line that specifies the numerical scheme for the soil subproblem:\\
+\lstinline{using SoilTypeTag = Properties::TTag::RichardsBox;}\\
+or
+\lstinline{using SoilTypeTag = Properties::TTag::RichardsCC;}\\
+
+Change the line that specifies the numerical scheme for the root subproblem:\\
+\lstinline{using RootTypeTag = Properties::TTag::RootsCCTpfa;}\\
+or 
+\lstinline{using RootTypeTag = Properties::TTag::RootsBox;}\\
+
+Make sure that the relevant properties file is given (line 62 in coupled.cc). 
+
+
