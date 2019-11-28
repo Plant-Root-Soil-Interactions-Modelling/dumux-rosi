@@ -1,0 +1,10 @@
+[TimeLoop]
+TEnd = 86400 # 86400 
+DtInitial =  360 
+CheckTimes = 43200
+MaxTimeStepSize = 3600 
+
+[Problem]
+Name = small_rb
+RootName = ../roots_1p/input/small_rb.input
+SoilName = ../soil_richards/input/small_3d.input

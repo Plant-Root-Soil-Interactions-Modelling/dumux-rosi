@@ -20,8 +20,8 @@
  * \file
  * \brief The spatial parameters class
  */
-#ifndef DUMUX_ROOT_SPATIALPARAMS_DGF_HH
-#define DUMUX_ROOT_SPATIALPARAMS_DGF_HH
+#ifndef DUMUX_ROOT_1P2C_SPATIALPARAMS_DGF_HH
+#define DUMUX_ROOT_1P2C_SPATIALPARAMS_DGF_HH
 
 #include <dune/common/exceptions.hh>
 #include <dumux/common/math.hh>
@@ -40,9 +40,9 @@ namespace Dumux {
  *
  */
 template<class FVGridGeometry, class Scalar>
-class RootSpatialParamsDGF
-    : public FVSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParamsDGF<FVGridGeometry, Scalar>> {
-    using ThisType = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+class RootOnePTwoCSpatialParamsDGF
+    : public FVSpatialParamsOneP<FVGridGeometry, Scalar, RootOnePTwoCSpatialParamsDGF<FVGridGeometry, Scalar>> {
+    using ThisType = RootOnePTwoCSpatialParamsDGF<FVGridGeometry, Scalar>;
     using ParentType = FVSpatialParamsOneP<FVGridGeometry, Scalar, ThisType>;
     using GridView = typename FVGridGeometry::GridView;
     using Element = typename GridView::template Codim<0>::Entity;
@@ -54,7 +54,7 @@ public:
 
     using PermeabilityType = Scalar; // export permeability type
 
-    RootSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
+    RootOnePTwoCSpatialParamsDGF(std::shared_ptr<const FVGridGeometry> fvGridGeometry):
         ParentType(fvGridGeometry) {
         // DGF specific (where is what)
         time0_ = Dumux::getParam<double>("RootSystem.Grid.InitialT", 14)*24*3600; // days -> s

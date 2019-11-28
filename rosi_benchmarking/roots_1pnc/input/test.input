@@ -1,0 +1,36 @@
+[Problem]
+Name = test
+
+[TimeLoop]
+TEnd = 604800 # 7 days [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  Zea_mays_4_Leitner_2014
+InitialT = 20 # days
+
+[RootSystem.Conductivity]
+Kx = 4.3      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 7.5e-2     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem.Collar]
+Transpiration = 2.36478e-07 # kg/day 
+Sinusoidal = True
+
+[Soil.IC]
+P = -100
+#Z = -.15 0.
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 # Molar mass of ABA is 264.321 g/mol
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

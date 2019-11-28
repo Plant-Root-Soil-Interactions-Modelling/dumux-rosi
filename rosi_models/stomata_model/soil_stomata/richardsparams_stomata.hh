@@ -58,7 +58,7 @@ public:
     RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
     {
-        phi_ = 1; // Richards equation is independent of phi [1]
+        phi_ = 0.45; // Richards equation is independent of phi [1]
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]

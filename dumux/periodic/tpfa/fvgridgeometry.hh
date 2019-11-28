@@ -5,7 +5,7 @@
  *                                                                           *
  *   This program is free software: you can redistribute it and/or modify    *
  *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
+ *   the Free Software Foundation, either version 3 of the License, or       *
  *   (at your option) any later version.                                     *
  *                                                                           *
  *   This program is distributed in the hope that it will be useful,         *
@@ -18,6 +18,7 @@
  *****************************************************************************/
 /*!
  * \file
+ * \author Timo Koch <timo.koch@iws.uni-stuttgart.de>
  * \author Timo Koch
  * \ingroup CCTpfaDiscretization
  * \brief The finite volume geometry (scvs and scvfs) for cell-centered TPFA models on a grid view
@@ -29,7 +30,9 @@
 
 #include <algorithm>
 
+#include <dumux/common/indextraits.hh>
 #include <dumux/common/defaultmappertraits.hh>
+
 #include <dumux/discretization/method.hh>
 #include <dumux/discretization/basefvgridgeometry.hh>
 #include <dumux/discretization/checkoverlapsize.hh>
@@ -65,7 +68,7 @@ class PeriodicCCTpfaFVGridGeometry<GV, true, Traits>
     using ThisType = PeriodicCCTpfaFVGridGeometry<GV, true, Traits>;
     using ParentType = BaseFVGridGeometry<ThisType, GV, Traits>;
     using ConnectivityMap = typename Traits::template ConnectivityMap<ThisType>;
-    using IndexType = typename GV::IndexSet::IndexType;
+    using GridIndexType = typename IndexTraits<GV>::GridIndex;
     using Element = typename GV::template Codim<0>::Entity;
 
     static const int dim = GV::dimension;
@@ -129,7 +132,7 @@ public:
 
     //! to be called before update to connect elements that are not connected by grid intersections
     //! maps from boundary vertices to all connected elements
-    void setExtraConnectivity(const std::unordered_map<IndexType, std::vector<IndexType>>& connectivity)
+    void setExtraConnectivity(const std::unordered_map<GridIndexType, std::vector<GridIndexType>>& connectivity)
     { extraConnectivity_ = connectivity; }
 
     //! update all fvElementGeometries (do this again after grid adaption)
@@ -146,8 +149,8 @@ public:
         flipScvfIndices_.clear();
 
         // determine size of containers
-        IndexType numScvs = numDofs();
-        IndexType numScvf = 0;
+        std::size_t numScvs = numDofs();
+        std::size_t numScvf = 0;
         for (const auto& element : elements(this->gridView()))
             numScvf += element.subEntities(1);
 
@@ -155,9 +158,10 @@ public:
         scvs_.resize(numScvs);
         scvfs_.reserve(numScvf);
         scvfIndicesOfScv_.resize(numScvs);
+        hasBoundaryScvf_.resize(numScvs, false);
 
         // Build the scvs and scv faces
-        IndexType scvfIdx = 0;
+        GridIndexType scvfIdx = 0;
         numBoundaryScvf_ = 0;
         for (const auto& element : elements(this->gridView()))
         {
@@ -165,7 +169,7 @@ public:
             scvs_[eIdx] = SubControlVolume(element.geometry(), eIdx);
 
             // the element-wise index sets for finite volume geometry
-            std::vector<IndexType> scvfsIndexSet;
+            std::vector<GridIndexType> scvfsIndexSet;
             scvfsIndexSet.reserve(element.subEntities(1));
 
             // for network grids there might be multiple intersection with the same geometryInInside
@@ -241,9 +245,11 @@ public:
                         scvfs_.emplace_back(intersection,
                                             intersection.geometry(),
                                             scvfIdx,
-                                            ScvfGridIndexStorage({eIdx, this->gridView().size(0) + numBoundaryScvf_++}),
+                                            ScvfGridIndexStorage({eIdx, static_cast<GridIndexType>(this->gridView().size(0) + numBoundaryScvf_++)}),
                                             true);
                         scvfsIndexSet.push_back(scvfIdx++);
+
+                        hasBoundaryScvf_[eIdx] = true;
                     }
                 }
             }
@@ -271,26 +277,26 @@ public:
     }
 
     //! Get a sub control volume with a global scv index
-    const SubControlVolume& scv(IndexType scvIdx) const
+    const SubControlVolume& scv(GridIndexType scvIdx) const
     {
         return scvs_[scvIdx];
     }
 
     //! Get a sub control volume face with a global scvf index
-    const SubControlVolumeFace& scvf(IndexType scvfIdx) const
+    const SubControlVolumeFace& scvf(GridIndexType scvfIdx) const
     {
         return scvfs_[scvfIdx];
     }
 
     //! Get the scvf on the same face but from the other side
     //! Note that e.g. the normals might be different in the case of surface grids
-    const SubControlVolumeFace& flipScvf(IndexType scvfIdx, unsigned int outsideScvfIdx = 0) const
+    const SubControlVolumeFace& flipScvf(GridIndexType scvfIdx, std::size_t outsideScvfIdx = 0) const
     {
         return scvfs_[flipScvfIndices_[scvfIdx][outsideScvfIdx]];
     }
 
     //! Get the sub control volume face indices of an scv by global index
-    const std::vector<IndexType>& scvfIndicesOfScv(IndexType scvIdx) const
+    const std::vector<GridIndexType>& scvfIndicesOfScv(GridIndexType scvIdx) const
     {
         return scvfIndicesOfScv_[scvIdx];
     }
@@ -302,9 +308,13 @@ public:
     const ConnectivityMap &connectivityMap() const
     { return connectivityMap_; }
 
+    //! Returns whether one of the geometry's scvfs lies on a boundary
+    bool hasBoundaryScvf(GridIndexType eIdx) const
+    { return hasBoundaryScvf_[eIdx]; }
+
 private:
     // find the scvf that has insideScvIdx in its outsideScvIdx list and outsideScvIdx as its insideScvIdx
-    IndexType findFlippedScvfIndex_(IndexType insideScvIdx, IndexType outsideScvIdx)
+    GridIndexType findFlippedScvfIndex_(GridIndexType insideScvIdx, GridIndexType outsideScvIdx)
     {
         // go over all potential scvfs of the outside scv
         for (auto outsideScvfIndex : scvfIndicesOfScv_[outsideScvIdx])
@@ -320,16 +330,17 @@ private:
 
     //! connectivity map for efficient assembly
     ConnectivityMap connectivityMap_;
-    std::unordered_map<IndexType, std::vector<IndexType>> extraConnectivity_;
+    std::unordered_map<GridIndexType, std::vector<GridIndexType>> extraConnectivity_;
 
     //! containers storing the global data
     std::vector<SubControlVolume> scvs_;
     std::vector<SubControlVolumeFace> scvfs_;
-    std::vector<std::vector<IndexType>> scvfIndicesOfScv_;
-    IndexType numBoundaryScvf_;
+    std::vector<std::vector<GridIndexType>> scvfIndicesOfScv_;
+    std::size_t numBoundaryScvf_;
+    std::vector<bool> hasBoundaryScvf_;
 
     //! needed for embedded surface and network grids (dim < dimWorld)
-    std::vector<std::vector<IndexType>> flipScvfIndices_;
+    std::vector<std::vector<GridIndexType>> flipScvfIndices_;
 };
 
 } // end namespace Dumux

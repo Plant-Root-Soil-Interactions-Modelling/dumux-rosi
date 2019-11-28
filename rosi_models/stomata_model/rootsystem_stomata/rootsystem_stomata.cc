@@ -68,7 +68,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsBox; // RootsCC, RootsBox (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RootsOnePTwoCCCTpfa; // RootsOnePTwoCCC, RootsOnePTwoCBox (TypeTag is defined in the problem class richardsproblem.hh)
     int simtype = Properties::simtype;
 
     // initialize MPI, finalize is done automatically on exit
@@ -146,7 +146,7 @@ int main(int argc, char** argv) try
     }
 
     // the problem (initial and boundary conditions)
-    auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
+    auto problem = std::make_shared<RootsOnePTwoCProblem<TypeTag>>(fvGridGeometry);
     if (simtype==Properties::dgf) {
         problem->spatialParams().initParameters(*gridManager.getGridData());
     } else if (simtype==Properties::rootbox){
@@ -249,7 +249,7 @@ int main(int argc, char** argv) try
                 // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
                 while (growth->simTime()+dt<t+initialTime) {
 
-                    std::cout << "grow \n"<< std::flush;
+                    std::cout << "\n grow ..."<< std::flush;
                     gridGrowth->grow(dt);
                     problem->spatialParams().updateParameters(*growth);
                     problem->applyInitialSolution(x); // reset todo (? does this make sense)?
@@ -272,7 +272,7 @@ int main(int argc, char** argv) try
             }
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-            nonLinearSolver.solve(x); // solve the non-linear system with time step control
+            nonLinearSolver.solve(x, *timeLoop); // solve the non-linear system with time step control
             xOld = x; // make the new solution the old solution
 
             gridVariables->advanceTimeStep();
