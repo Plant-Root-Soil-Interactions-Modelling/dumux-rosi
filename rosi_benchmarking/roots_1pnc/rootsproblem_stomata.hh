@@ -111,6 +111,8 @@ public:
         file_at_.open(this->name() + "_actual_transpiration.txt");
 
         cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+
+        // todo should be in the fluidsystem (?)
         molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol)
         densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
 
@@ -151,9 +153,8 @@ public:
                 d = this->spatialParams().radius(eIdx);// m
             }
             if (name=="initialPressure") {
-                PrimaryVariables d(0);
-                d = initialAtPos(e.geometry().center()); // Pa
-                double a = 100. * (d[0] - pRef_) / rho_ / g_;  // Pa -> cm
+                d = initialAtPos(e.geometry().center())[pressureIdx]; // Pa
+                d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
             if (name=="radialFlux") {
                 auto geo = e.geometry();
@@ -242,11 +243,11 @@ public:
         PrimaryVariables p;
         if (critical_) {
             p[contiH2OEqIdx] = criticalCollarPressure_;
-            p[transportABAEqIdx] = 0.; // TODO what to do in the case of dirichlet, avoid?;
+            p[transportABAEqIdx] = 0.; // todo what to do in the case of dirichlet, avoid?;
             return p;
         } else {
             p[contiH2OEqIdx] = collar_.f(time_)+pRef_;
-            p[transportABAEqIdx] = 0.; // TODO what to do in the case of dirichlet, avoid?
+            p[transportABAEqIdx] = 0.; // todo what to do in the case of dirichlet, avoid?
             return p;
         }
     }
@@ -264,6 +265,7 @@ public:
         NumEqVector flux;
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) { // root collar
+
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
@@ -305,41 +307,13 @@ public:
     }
 
     /*!
-     * For this method, the return parameter stores the conserved quantity rate
-     * generated or annihilate per volume unit. Positive values mean
-     * that the conserved quantity is created, negative ones mean that it vanishes.
-     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f$.
-     */
-    NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
-        const SubControlVolume &scv) const {
-
-        NumEqVector values;
-        if (couplingManager_==nullptr) {
-            auto params = this->spatialParams();
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            Scalar a = params.radius(eIdx); // root radius (m)
-            Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-            Scalar phx;
-            if (isBox) { // dumux
-                phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
-            } else {
-                phx = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
-            }
-            Scalar phs = soil(scv.center()); // kg/m/s^2
-            values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^2/s
-            values[contiH2OEqIdx] /= (a * a * M_PI); // 1/s
-            values[contiH2OEqIdx] *= rho_; // (kg/s/m^3)
-        } else {
-            values[contiH2OEqIdx] = 0;
-        }
-        return values;
-    }
-
-    /*!
      * \brief Evaluate the initial value for a control volume.
      */
     PrimaryVariables initialAtPos(const GlobalPosition& p) const {
-        return PrimaryVariables(soil(p)); // soil(p)
+        PrimaryVariables priVars;
+        priVars[pressureIdx] = soil(p); //
+        priVars[ABAIdx] = 0.0;  // todo (if we want some initial hormone state)
+        return priVars;
     }
 
     /**
@@ -376,7 +350,7 @@ public:
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << cL << "\n";
+            << trans << ", "<< time_ << " , " << cL << "\n"; // TODO
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -441,23 +415,22 @@ public:
     void pointSource(PointSource& source, const Element &element, const FVElementGeometry& fvGeometry,
         const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) const
     {
+        PrimaryVariables sourceValue;
+
         if (couplingManager_!=nullptr) { // compute source at every integration point
 
             const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
             const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
-            const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-            const Scalar kr = this->spatialParams().kr(lowDimElementIdx);
-            const Scalar rootRadius = this->spatialParams().radius(lowDimElementIdx);
-            // relative soil permeability
-            const auto krel = 1.0;//this->couplingManager().relPermSoil(pressure3D);
-            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            // const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+            Scalar kr = this->spatialParams().kr(eIdx);
+            Scalar rootRadius = this->spatialParams().radius(eIdx);
+            Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
+
             const auto density = 1000;
-            PrimaryVariables sourceValue;
-            sourceValue[contiH2OEqIdx] = 2* M_PI *krel*rootRadius * kr *(pressure3D - pressure1D)*density; // (kg/m/s)
+            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+            sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - pressure1D)*density; // (kg/m/s)
             sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement();
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            Scalar rootAge = this->spatialParams().age(eIdx); // RootAge in s
-            rootAge /= (24. * 3600.); // days
 
             if (rootAge <= 1) { // if root segment age <= 1 day
 
@@ -470,7 +443,7 @@ public:
                     else {
                         mSignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * molarMass; // (kg/s)
                     }
-                    sourceValue[transportABAEqIdx] = mSignal*source.quadratureWeight()*source.integrationElement(); // Msignal [mol/s]
+                    sourceValue[transportABAEqIdx] = mSignal*source.quadratureWeight()*source.integrationElement(); // mSignal [mol/s]
                 }
                 else {
                     sourceValue[transportABAEqIdx] = 0.;
@@ -479,9 +452,8 @@ public:
             }
             source = sourceValue;
         }
-
         else {
-            source = 0;
+            source = sourceValue;
         }
     }
 
