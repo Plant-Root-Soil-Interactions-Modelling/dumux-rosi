@@ -138,8 +138,7 @@ public:
 
     // [s]
     Scalar age(std::size_t eIdx) const {
-        double a = (time0_+time_) - ctimes_[eIdx];
-        return a;
+        return time0_- ctimes_[eIdx] +time_;
     }
 
     //! radial conductivity [m /Pa/s]

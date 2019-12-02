@@ -129,7 +129,7 @@ public:
 
     //! segment age [s]
     Scalar age(std::size_t eIdx) const {
-        return (time0_ - ct_.f(eIdx)) + time_;
+        return time0_ - ct_.f(eIdx) + time_;
     }
 
     //! radial conductivity [m/Pa/s] == [m^2 s/kg]

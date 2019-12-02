@@ -289,12 +289,11 @@ public:
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
             }
             // std::cout << "alpha "<< alpha << "\n";
-            alpha = 1.;
             double v = std::min(alpha*potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
             flux[contiH2OEqIdx] = v/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
 
             double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); // [-] todo (!)
-            //flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg/(s*m^2)],  convective outflow BC
+            flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg/(s*m^2)],  convective outflow BC
 
             // the rate will be integrated to mL_ in setTime(t,dt)
             mLRate_ = v*fraction; // [kg/s]
@@ -341,25 +340,24 @@ public:
             values[contiH2OEqIdx] /= (a * a * M_PI); // 1/s
             values[contiH2OEqIdx] *= rho_; // (kg/s/m^3)
 
-//            Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
-//
-//            if (rootAge <= 1) { // if root segment age <= 1 day
-//
-//                Scalar tipP_ = phx; // local tip pressure in [kg/m/s^2] = [Pa]
-//
-//                if (abs(tipP_) >= abs(p0)) {
-//                    double mSignal; // [kg/s]
-//                    if (useMoles) {
-//                        mSignal = a_*(abs(tipP_)-abs(p0))*mi*molarMass; // [kg / s]
-//                    }
-//                    else {
-//                        mSignal = a_*(abs(tipP_)-abs(p0))*mi; // [kg / s]
-//                    }
-//                    values[transportABAEqIdx] = mSignal; // *source.quadratureWeight()*source.integrationElement(); // mSignal [kg/s]
-//                } else {
-//                    values[transportABAEqIdx] = 0.;
-//                }
-//            }
+            Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
+
+            if (rootAge <= 1) { // if root segment age <= 1 day
+
+                Scalar tipP_ = phx; // local tip pressure in [kg/m/s^2] = [Pa]
+
+                if (abs(tipP_) >= abs(critPTips_)) {
+                    double mSignal; // [kg/s]
+                    if (useMoles) {
+                        mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi*molarMass; // [kg / s]
+                    } else {
+                        mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi; // [kg / s]
+                    }
+                    values[transportABAEqIdx] = mSignal; // *source.quadratureWeight()*source.integrationElement(); // mSignal [kg/s]
+                } else {
+                    values[transportABAEqIdx] = 0.;
+                }
+            }
 
         } else {
             values[contiH2OEqIdx] = 0;
@@ -582,7 +580,6 @@ protected:
     size_t bcType_;
     double time_ = 0.;
     double dt_ = 0.;
-    double critPCollarDirichlet_ = -1.4e12; // -1.4e6;
     bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
@@ -607,8 +604,10 @@ protected:
     Scalar molarMass; // (kg/mol)
     Scalar densityABA; // (kg/m3) todo UNUSED
 
+    const Scalar critPCollarDirichlet_ = -1.4e12; // -1.4e6;
     const Scalar critPTips_ = toPa_(-4500); // cm -> Pa
     const Scalar critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
+
     const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
     const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
     const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]

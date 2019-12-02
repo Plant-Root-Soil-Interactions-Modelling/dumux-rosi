@@ -88,7 +88,7 @@ enum modelType { dgf=0, rootbox=1 };
  */
 #if DGF
 template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::RootsOnePTI currently set it false, since my woC> {
+struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
@@ -97,7 +97,7 @@ int simtype = dgf;
 #endif
 #if ROOTBOX
 template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::Roots> {
+struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
