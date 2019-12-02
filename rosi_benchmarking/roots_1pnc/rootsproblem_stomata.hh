@@ -111,15 +111,15 @@ public:
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
 
-        leafVolume_ = InputFileFunction("RootSystem.Leaf", "Volume", "VolumeT", 1); // [cm^3]([day])
+        grow_ = getParam<bool>("RootSystem.Grid.Grow", false);
+
+        leafVolume_ = InputFileFunction("RootSystem.Leaf", "Volume", "VolumeT", 1.); // [cm^3]([day])
         leafVolume_.setVariableScale(1./(24.*3600)); // [s] -> [day]
         leafVolume_.setFunctionScale(1.e-6); // [cm^3] -> [m^3]
 
-        cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+        cD = getParam<bool>("Control.cD", false); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
         a_ = getParam<Scalar>("Component.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
         molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) // todo should this be somewhere in the fluidsystem (?)
-
-        // densityABA = getParam<Scalar>("Component.Density"); // (kg/m3) UNUSED
 
         // diffusivity is defined in h2o_ABA.hh
     }
@@ -280,6 +280,8 @@ public:
             double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
             potentialTrans_ = collar_.f(time_); // [kg/s]
 
+            std::cout << "eIdx " << eIdx << " insideScvIdx "<< scvf.insideScvIdx()<< "  globalPos " << globalPos << "\n";
+
             double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
             double alpha;
             if (p < critPCollarAlpha_) { // stomatal conductance definition
@@ -288,7 +290,6 @@ public:
             else {
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
             }
-            // std::cout << "alpha "<< alpha << "\n";
             double v = std::min(alpha*potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
             flux[contiH2OEqIdx] = v/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
 
@@ -297,6 +298,8 @@ public:
 
             // the rate will be integrated to mL_ in setTime(t,dt)
             mLRate_ = v*fraction; // [kg/s]
+
+            std::cout << "alpha "<< alpha << " 1.e6* { cL "<< 1.e6*cL << " mL_ "<< 1.e6*mL_ << " leafVolume " << 1.e6*leafVolume_.f(time_) <<" fraction " << 1.e6*fraction << " }\n";
 
             // file output
             actualTrans_ = v;  // [kg/s]
@@ -341,8 +344,11 @@ public:
             values[contiH2OEqIdx] *= rho_; // (kg/s/m^3)
 
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
+            if (!grow_) { // for static root system, root tips should stay young
+                rootAge -= time_;
+            }
 
-            if (rootAge <= 1) { // if root segment age <= 1 day
+            if ((rootAge>=0) && (rootAge <= 1)) { // negative root age means, the root is not born
 
                 Scalar tipP_ = phx; // local tip pressure in [kg/m/s^2] = [Pa]
 
@@ -353,10 +359,12 @@ public:
                     } else {
                         mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi; // [kg / s]
                     }
-                    values[transportABAEqIdx] = mSignal; // *source.quadratureWeight()*source.integrationElement(); // mSignal [kg/s]
+                    values[transportABAEqIdx] = 0.; //mSignal; // *source.quadratureWeight()*source.integrationElement(); // mSignal [kg/s]
                 } else {
                     values[transportABAEqIdx] = 0.;
                 }
+            } else {
+                values[transportABAEqIdx] = 0.;
             }
 
         } else {
@@ -394,13 +402,28 @@ public:
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
     void setTime(double t, double dt) {
-
-        // chemical concentration
-        mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
-
         this->spatialParams().setTime(t, dt);
         time_ = t;
         dt_ = dt;
+    }
+
+    //! sets the cumulative outflow according to the last solution
+    void calcCumulativeOutflow(const SolutionVector& sol, const GridVariables& gridVars) {
+        NumEqVector source(0.0);
+
+        const auto& e = elements(this->fvGridGeometry().gridView()).begin();
+        auto fvGeometry = localView(this->fvGridGeometry());
+        fvGeometry.bindElement(e);
+        auto elemVolVars = localView(gridVars.curGridVolVars());
+        elemVolVars.bindElement(e, fvGeometry, sol);
+
+//        for (auto&& scv : scvs(fvGeometry)) {
+//            auto pointSources = this->scvPointSources(e, fvGeometry, elemVolVars, scv);
+//            pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
+//            source += pointSources;
+//        }
+
+        mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
     }
 
     /*!
@@ -488,7 +511,7 @@ public:
             Scalar kr = this->spatialParams().kr(eIdx);
             Scalar rootRadius = this->spatialParams().radius(eIdx);
 
-            const auto density = 1000; // [kg /m^3]
+            const auto density = 1000; // [kg /m^3]            std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
             sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - pressure1D)*density; // [kg/m/s]
             sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
 
@@ -502,19 +525,19 @@ public:
                     double mSignal; // [kg/s]
                     if (useMoles) {
                         mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi*molarMass; // [kg / s]
-                    }
-                    else {
+                    } else {
                         mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi; // [kg / s]
                     }
-                    sourceValue[transportABAEqIdx] = mSignal*source.quadratureWeight()*source.integrationElement(); // mSignal [mol/s]
+                    sourceValue[transportABAEqIdx] = 0.;// mSignal*source.quadratureWeight()*source.integrationElement(); // mSignal [mol/s]
                 } else {
                     sourceValue[transportABAEqIdx] = 0.;
                 }
             }
 
             source = sourceValue;
-        }
-        else { // should not happen...
+            std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
+
+        } else { // should not happen...
             std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
             source = sourceValue;
         }
@@ -578,8 +601,8 @@ protected:
     CRootBox::SoilLookUp* soil_;
     InputFileFunction collar_;
     size_t bcType_;
-    double time_ = 0.;
-    double dt_ = 0.;
+    double time_ = 0.; // s
+    double dt_ = 0.; // s
     bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
@@ -596,26 +619,27 @@ protected:
 
     std::map<std::string, std::vector<Scalar>> userData_;
 
-    // chemical signalling variables
+    bool grow_; // indicates if root segments age, or not
 
-    Scalar alphaR = 0; // residual stomatal conductance, taken as 0
-    bool cD; // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+    /**
+     * Hormone model parameters
+     */
+    double critPCollarDirichlet_ = -1.4e12; // -1.4e6;
+    double critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
+    double alphaR = 0; // residual stomata conductance
+    bool cD = false; // interaction between pressure and chemical regulation
+    double sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
+    double sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
 
-    Scalar molarMass; // (kg/mol)
-    Scalar densityABA; // (kg/m3) todo UNUSED
-
-    const Scalar critPCollarDirichlet_ = -1.4e12; // -1.4e6;
-    const Scalar critPTips_ = toPa_(-4500); // cm -> Pa
-    const Scalar critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
-
-    const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
-    const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
-    const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
+    double critPTips_ = toPa_(-4500); // cm -> Pa
+    double mi = 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
+    double a_; // Maximal hormone production rate per dry mass in mol [kg-1 Pa-1 s-1]
 
     mutable Scalar mL_ = 0.; // (kg) mass of hormones in the leaf
     mutable Scalar mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume
     InputFileFunction leafVolume_; // (m^3)
-    Scalar a_; //Production rate per dry mass in mol [kg-1 Pa-1 s-1]
+
+    Scalar molarMass; // (kg/mol)
 
 };
 

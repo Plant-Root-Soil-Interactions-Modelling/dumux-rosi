@@ -79,6 +79,17 @@ public:
         ct_.setFunctionScale(24.*3600.); // [day] -> [s]
         order_ = InputFileFunction("RootSystem", "Order", orderIdx_, orderIdx_); // [1], optional grid data, no variable
         id_ = InputFileFunction("RootSystem", "Id", idIdx_, idIdx_);
+
+        // Conductivities and radius of (artificial) shoot
+        kx0_ = InputFileFunction("RootSystem.Conductivity" , "ShootKx", "ShootKxAge", 1.); // default = high axial flux
+        kx0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kx0_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+        kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKrAge", 0.); // default = no radial flux
+        kr0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        kr0_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        radius0_ = InputFileFunction("RootSystem.Conductivity", "ShootRadius", "ShootRadiusAge", 0.5); // default = large radius
+        radius0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
+        radius0_.setFunctionScale(1.e-2); // [cm] -> [m]
     }
 
     /*!
@@ -114,7 +125,7 @@ public:
 
     //! segment root order, or root type [1], starts at zero
     int order(std::size_t eIdx) const {
-        int o = (int)order_.f(eIdx);
+        int o = (int) order_.f(eIdx);
         if (o<0) {
             std::cout << "RootSpatialParams::order: warning root order is negative for element index " << eIdx <<": " << o << ", resuming with root order 0\n" << std::flush;
             o = 0;
@@ -124,6 +135,9 @@ public:
 
     //! segment radius [m]
     Scalar radius(std::size_t eIdx) const {
+        if (eIdx==0) { // todo (will not always be zero)
+            return radius0_.f(this->age(eIdx), eIdx);
+        }
         return radius_.f(this->age(eIdx), eIdx);
     }
 
@@ -134,11 +148,17 @@ public:
 
     //! radial conductivity [m/Pa/s] == [m^2 s/kg]
     Scalar kr(std::size_t eIdx) const {
+        if (eIdx==0) { // todo (will not always be zero)
+            return kr0_.f(this->age(eIdx), eIdx);
+        }
         return kr_.f(this->age(eIdx), eIdx);
     }
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
+        if (eIdx==0) { //  todo (will not always be zero)
+            return kx0_.f(this->age(eIdx), eIdx);
+        }
         return kx_.f(this->age(eIdx), eIdx);
     }
 
@@ -181,6 +201,10 @@ private:
     InputFileFunction radius_;
     InputFileFunction ct_;
     InputFileFunction id_;
+
+    InputFileFunction kx0_;
+    InputFileFunction kr0_;
+    InputFileFunction radius0_;
 
     double time_ = 0.;
     double dt_ = 0.;
