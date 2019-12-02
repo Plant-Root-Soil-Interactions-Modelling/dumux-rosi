@@ -88,7 +88,7 @@ enum modelType { dgf=0, rootbox=1 };
  */
 #if DGF
 template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
+struct SpatialParams<TypeTag, TTag::RootsOnePTI currently set it false, since my woC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
@@ -105,9 +105,14 @@ struct SpatialParams<TypeTag, TTag::Roots> {
 int simtype = rootbox;
 #endif
 
-// Define whether mole (true) or mass (false) fractions are used
+/*
+ * Define whether mole (true) or mass (false) fractions are used
+ *
+ * TODO I only understand false...
+ *
+ */
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RootsOnePTwoC> { static constexpr bool value = true; };
+struct UseMoles<TypeTag, TTag::RootsOnePTwoC> { static constexpr bool value = false; };
 
 /**
  * to wrap a raw pointer into a shared pointer:
