@@ -1,3 +1,6 @@
 add_subdirectory("roots_1p")
+add_subdirectory("roots_1pnc")
 add_subdirectory("soil_richards")
+add_subdirectory("soil_richardsnc")
 add_subdirectory("coupled_1p_richards")
+add_subdirectory("coupled_1pnc_richards")

@@ -57,7 +57,7 @@ class RootsOnePTwoCProblem: public PorousMediumFlowProblem<TypeTag> {
 
         // indices of the equations
         contiH2OEqIdx = Indices::conti0EqIdx + H2OIdx,
-        contiABAEqIdx = Indices::conti0EqIdx + ABAIdx 
+        transportABAEqIdx = Indices::conti0EqIdx + ABAIdx 
         
     };
     enum {
@@ -246,15 +246,25 @@ public:
         if (onUpperBoundary_(globalPos)) {
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
+            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            double kx = this->spatialParams().kx(eIdx);
+            double radius = this->spatialParams().radius(eIdx);
+            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             collarP_ = p;
             potentialTrans_ = collar_.f(time_); // [ kg/s]
 
-            // chemical concentration 
-            NumEqVector conc(0.);
-            conc = this -> pointSource(source, element, fvGeometry, elemVolVars, scv);
-            cL += conc[1] * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3 
+            NumEqVector flux(0.0);
+            flux[contiH2OEqIdx] = volVars.density(0) * kx * (p - criticalCollarPressure_) /dist; // TODO unit check [kg/s]
+            // convective flux (qw*cL) where qw is water flux, and cL is chemical concentration
+            Scalar ConvFlux;
+            ConvFlux = flux[contiH2OEqIdx] * volVars.moleFraction(0, ABAIdx) / MolarMass; // [mol/s]
 
-            // stomatal conductance definition
+            // diffusive flux
+            Scalar DiffFlux = 0.0;
+
+            // total flux of solutes = convective flux + diffusive + hydrodynamic dispersion (qw*cL - De \partial cL/ \partial z)
+            cL += (ConvFlux + DiffFlux) * dt_/ VBuffer; // [mol/m3]
+
             if (collarP_ < p_crit)
             {
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(collarP_ - p_crit));
@@ -263,14 +273,15 @@ public:
             {
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);
             }
-            double criticalTranspiration = alpha * potentialTrans_; // Tact = alpha * Tpot
-            double v = std::min(potentialTrans_, criticalTranspiration);
-            actualTrans_ = v;
+            // double v = alpha * potentialTrans_ - flux[contiH2OEqIdx]; // Tact = alpha * Tpot
+            // flux[transportABAEqIdx] = v; 
+            flux[transportABAEqIdx] = alpha * potentialTrans_;
+            //actualTrans_ = std::min(potentialTrans_, flux[contiH2OEqIdx] + flux[transportABAEqIdx]);
+            actualTrans_ = std::min(potentialTrans_, flux[transportABAEqIdx]);
             neumannTime_ = time_;
-            maxTrans_ = criticalTranspiration;
-            chemconc = cL/MolarMassABA * 1e+9; // nmol/m3
-            v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-            return NumEqVector(v);
+            maxTrans_ = flux[contiH2OEqIdx] + flux[transportABAEqIdx];
+            flux /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+            return flux;
         } else {
             return NumEqVector(0.); // no flux at root tips
         }
@@ -304,7 +315,6 @@ public:
         } else {
             values[contiH2OEqIdx] = 0;
         }
-        //std::cout << "mass production rate" << values[contiABAEqIdx] << std::endl;
         return values;
     }
 
@@ -349,7 +359,7 @@ public:
     void writeTranspirationRate(const SolutionVector& sol) {
         Scalar trans = this->transpiration(sol); // [cm3/day]
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << chemconc << "\n";
+            << trans << ", "<< time_ << " , " << cL << "\n";
     }
 
     //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
@@ -440,14 +450,13 @@ public:
                     Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi;     //(mol/s) 3.2523e-16 is production rate per dry mass in mol kg-1 Pa-1 s-1
                     }
                     else {
-                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMassABA; // (kg/s)                  
+                    Msignal =  Msignal = 3.26e-16*(abs(tipP_) - abs(p0))*mi * MolarMass; // (kg/s)                  
                     }
-                    //cL = Msignal * dt_/7.68e-5; // (mol/m3) where 7.68e-5 is the volume of root system (maize) in m3                 
-                    sourceValue[contiABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
+                    sourceValue[transportABAEqIdx] = Msignal*source.quadratureWeight()*source.integrationElement(); // Msignal in (mol/s) TODO: ask for units
                 }                
                 else
                 {   
-                    sourceValue[contiABAEqIdx] = 0.;
+                    sourceValue[transportABAEqIdx] = 0.;
                 }
             }
             source = sourceValue;
@@ -519,19 +528,21 @@ private:
     std::map<std::string, std::vector<Scalar>> userData_;
 
     // chemical signalling variables
-    Scalar p0 = toPa_(-4500); // cm -> Pa
-    mutable Scalar Msignal = 0; // initial production rate of chemicals
-    const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
-    const Scalar p_crit = toPa_(-5500); // cm -> Pa
-    mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
     Scalar alphaR = 0; // residual stomatal conductance, taken as 0
-    static constexpr Scalar rhoABA_ = 1.19e3; // 1.19e3 kg/m^3 is the density of ABA
-    Scalar cD = getParam<Scalar>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-    mutable Scalar cL = 0.;
-    const Scalar MolarMassABA = 0.26432; // (kg/mol) Molar mass of ABA is 264.321 g/mol
-    const Scalar sC = 1.89e5; // (m^3/kg) 5e+4 from Huber et. al [2014]
+    bool cD = getParam<bool>("Control.cD"); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+    Scalar MolarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) 
+    Scalar densityABA = getParam<Scalar>("Component.Density"); // (kg/m3)
+    const Scalar VBuffer = getParam<Scalar>("Component.VBuffer"); // (m3)
+
+    const Scalar p0 = toPa_(-4500); // cm -> Pa
+    const Scalar p_crit = toPa_(-5500); // cm -> Pa
+    const Scalar mi= 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
     const Scalar sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]  
-    mutable Scalar chemconc = 0.;
+    const Scalar sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
+
+    mutable Scalar cL = 0.;
+    mutable Scalar Msignal = 0; // initial production rate of chemicals
+    mutable Scalar alpha = 1; // initial stomatal conductance (=1) is stomata is fully open
 
 };
 

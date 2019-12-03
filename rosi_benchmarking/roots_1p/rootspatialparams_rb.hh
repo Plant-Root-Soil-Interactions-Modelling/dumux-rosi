@@ -86,7 +86,7 @@ public:
         radius0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius0_.setFunctionScale(1.e-2); // [cm] -> [m]
 
-        radii_ = { 0. }; // vectors will incrementially grow in updateParameters
+        radii_ = { 0. }; // vectors will incrementally grow in updateParameters
         orders_ = { 0 };
         ctimes_ = { 0. };
         ids_ = { 0 };
@@ -130,7 +130,7 @@ public:
 
     // [m]
     Scalar radius(std::size_t eIdx) const {
-        if (eIdx==0) {
+        if (eIdx==0) { // todo (will not always be zero)
             return radius0_.f(this->age(eIdx), eIdx);
         }
         return radii_[eIdx]; // m
@@ -138,13 +138,12 @@ public:
 
     // [s]
     Scalar age(std::size_t eIdx) const {
-        double a = (time0_+time_) - ctimes_[eIdx];
-        return a;
+        return time0_- ctimes_[eIdx] +time_;
     }
 
     //! radial conductivity [m /Pa/s]
     Scalar kr(std::size_t eIdx) const {
-        if (eIdx==0) { // no radial flow at the shoot element
+        if (eIdx==0) { // todo (will not always be zero)
             return kr0_.f(this->age(eIdx), eIdx);
         }
         return kr_.f(this->age(eIdx), eIdx);
@@ -152,7 +151,7 @@ public:
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        if (eIdx==0) { // high axial flow at the shoot element
+        if (eIdx==0) { //  todo (will not always be zero)
             return kx0_.f(this->age(eIdx), eIdx);
         }
         return kx_.f(this->age(eIdx), eIdx);

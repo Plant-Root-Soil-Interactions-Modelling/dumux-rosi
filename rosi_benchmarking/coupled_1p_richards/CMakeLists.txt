@@ -13,6 +13,9 @@ target_compile_definitions(coupled_seq_rb PUBLIC ROOTBOX)
 add_executable(coupled EXCLUDE_FROM_ALL coupled.cc)
 target_compile_definitions(coupled PUBLIC DGF)
 
+add_executable(coupled_periodic EXCLUDE_FROM_ALL coupled_periodic.cc)
+target_compile_definitions(coupled_periodic PUBLIC DGF)
+
 add_executable(coupledUG EXCLUDE_FROM_ALL coupled.cc)
 target_compile_definitions(coupledUG PUBLIC DGF GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
 
