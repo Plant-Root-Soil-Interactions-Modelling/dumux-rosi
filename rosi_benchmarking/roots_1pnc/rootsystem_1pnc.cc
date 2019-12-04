@@ -69,7 +69,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RootsOnePTwoCCCTpfa; // RootsOnePTwoCCC, RootsOnePTwoCBox
+    using TypeTag = Properties::TTag::RootsOnePTwoCCCTpfa; // RootsOnePTwoCCCTpfa, RootsOnePTwoCBox
     int simtype = Properties::simtype;
 
     // initialize MPI, finalize is done automatically on exit
@@ -244,6 +244,7 @@ int main(int argc, char** argv) try
             double t = timeLoop->time(); // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
             problem->setTime(t, dt); // pass current time to the problem
+            problem->calcCumulativeOutflow(x, *gridVariables);
 
             if (grow) {
 

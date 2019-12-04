@@ -222,6 +222,7 @@ public:
 
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) {
+
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
@@ -229,13 +230,13 @@ public:
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
             potentialTrans_ = collar_.f(time_); // [kg/s]
-            double v = std::min(potentialTrans_, criticalTranspiration);
-            actualTrans_ = v;
+            double actTrans = std::min(potentialTrans_, criticalTranspiration);
+            actualTrans_ = actTrans;
             neumannTime_ = time_;
             maxTrans_ = criticalTranspiration;
             collarP_ = p;
-            v /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-            return NumEqVector(v);
+            actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+            return NumEqVector(actTrans);
         } else {
             return NumEqVector(0.); // no flux at root tips
         }
@@ -434,7 +435,7 @@ private:
     size_t bcType_;
     double time_ = 0.;
     double dt_ = 0.;
-    double criticalCollarPressure_ = -1.4e6;
+    double criticalCollarPressure_ = -1.4e6; // -15290 cm ??
     bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2

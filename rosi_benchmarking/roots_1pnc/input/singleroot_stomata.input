@@ -2,9 +2,9 @@
 Name = singleroot
 
 [TimeLoop]
-TEnd = 604800 # 7 days [s]
+TEnd = 8640000 # 7 days [s]
 DtInitial = 7200 # [s]
-# PeriodicCheckTimes = 3600
+PeriodicCheckTimes = 86400
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
@@ -25,14 +25,18 @@ Sinusoidal = False
 [Soil.IC]
 P = -200
 
-[Control]
-cD = 0 # 0 -> interaction between pressure and chemical regulation
-
 [Component]
 liquidDiffCoeff = 1.2e-9
 MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
-ProductionRate = 0.
-# ProductionRate = 3.26e-16 #  [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -10000
+CritCollarPAlpha = -1000
+CritTipP = 0
+ProductionRate = 1.e-6 # 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+Age = 5
+
 
 [Vtk]
 AddProcessRank = "false"

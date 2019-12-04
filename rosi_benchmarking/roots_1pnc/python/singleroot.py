@@ -29,7 +29,6 @@ kz = 4.32e-2  # axial conductivity [cm^4/hPa/day] similar (cm^3 / day)
 kz = 1e-6 * kz / (rho * g) / (24 * 3600)
 kr = 1.728e-4  # radial conductivity [cm/hPa/day] similar (1 / day)
 kr = kr / (rho * g) / (24 * 3600)
-plt.title("Predescribed transpiration")
 
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
@@ -54,39 +53,52 @@ pr3 = list(map(p_r3, za_))
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-# os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # run dumux
-# os.system("./rootsystem_1pnc input/singleroot_stomata.input")
 os.system("./rootsystem_1pnc input/singleroot_stomata.input")
 
-# p_ = read1D_vtp_data("singleroot-00001.vtp")
 p_ = read1D_vtp_data("singleroot-00001.vtp")
 
-# benchmark predescribed transpiration
-z_ = np.linspace(0, -0.5, len(p_))
-h_ = vg.pa2head(p_)
-plt.plot(h_, z_, "r+")
-plt.plot(pr3, za_, "b")
-plt.ylabel("Depth (m)")
-plt.xlabel("Xylem pressure (cm)")
-plt.title("Predescribed transpiration")
+""" benchmark pressure head in single root """
+# z_ = np.linspace(0, -0.5, len(p_))
+# h_ = vg.pa2head(p_)
+# plt.plot(h_, z_, "r+")
+# plt.plot(pr3, za_, "b")
+# plt.ylabel("Depth (m)")
+# plt.xlabel("Xylem pressure (cm)")
 
-# save benchmark M31
-z_ = np.linspace(0, -0.5, len(p_))
-h_ = vg.pa2head(p_)
-np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter = ',')
-
+#      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
+#      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
+#      * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
 with open("singleroot_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
+c = 24 * 3600  # s / day
 
-print()
-c = 24 * 3600  #  [kg/s] -> [kg/per day]
-print("potential", d[-1, 2] * c)
-print("actual", d[-1, 1] * c)
-print("actual", d[-1, 5] / 1000)
-print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
+""" Plot transpiration """
+plt.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
+plt.plot(d[:, 0] / c, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
+plt.xlabel("time (days)")
+plt.ylabel("transpiration (g/day)")
+plt.legend(["potential", "actual"])
+plt.title("Water transpiration")
+
+""" Plot hormone rate and mass """
+# fig, [ax1, ax2] = plt.subplots(1, 2)
+#
+# ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
+# ax1.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
+# ax1.set_ylabel("mass rate (g/day)")
+# ax1.set_xlabel("time (days)")
+# ax1.set_title("Hormone production rate")
+# ax1.legend(["leaf rate", "root system rate"])
+#
+# ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
+# ax2.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
+# ax2.set_ylabel("mass (g)")
+# ax2.set_xlabel("time (days)")
+# ax2.set_title("Hormone mass")
+# ax2.legend(["leaf mass", "root system mass"])
 
 if __name__ == "__main__":
     plt.show()

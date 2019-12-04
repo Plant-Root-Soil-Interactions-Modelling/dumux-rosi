@@ -4,6 +4,7 @@
 #define ROOTS_1P2C_PROBLEM_HH
 
 #include <math.h>
+#include <cmath>        // std::abs
 #include <map>
 
 #include <dumux/porousmediumflow/problem.hh>
@@ -87,7 +88,7 @@ public:
 
         // stating in the console whether mole or mass fractions are used
         if(useMoles) {
-            std::cout<<"problem uses mole fractions"<<std::endl;
+            std::cout<<"problem uses mole fractions, CURRENTLY WRONG, CARE!"<<std::endl;
         } else {
             std::cout<<"problem uses mass fractions"<<std::endl;
         }
@@ -117,11 +118,24 @@ public:
         leafVolume_.setVariableScale(1./(24.*3600)); // [s] -> [day]
         leafVolume_.setFunctionScale(1.e-6); // [cm^3] -> [m^3]
 
-        cD = getParam<bool>("Control.cD", false); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-        a_ = getParam<Scalar>("Component.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
-        molarMass = getParam<Scalar>("Component.MolarMass"); // (kg/mol) // todo should this be somewhere in the fluidsystem (?)
 
-        // diffusivity is defined in h2o_ABA.hh
+        molarMass = getParam<double>("Component.MolarMass", 0.26432); // (kg/mol)
+
+        // Optionally, give crit values
+        critPCollarDirichlet_ = toPa_(getParam<double>("Control.CritCollarP", -1.e5));  // cm -> Pa
+        critPCollarAlpha_ = toPa_(getParam<double>("Control.CritCollarPAlpha", -5500.)); ; // cm -> Pa
+        critPTips_ = toPa_(getParam<double>("Control.CritTipP", -4500.)); // cm -> Pa
+
+        cD = getParam<bool>("Control.cD", false); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
+        a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+        age_ = getParam<double>("Control.Age", 1.);
+
+        std::cout << "***********************************************\n";
+        std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";
+        std::cout << "ProductionRate "<< a_ << ", cD " << cD << ", age " << age_ << "\n";
+        std::cout << "critPCollarDirichlet " << critPCollarDirichlet_ << ", critPCollarAlpha " << critPCollarAlpha_ << ", critPTips " << critPTips_ << "\n";
+        std::cout << "***********************************************\n";
+
     }
 
     virtual ~RootsOnePTwoCProblem() {
@@ -269,44 +283,29 @@ public:
 
         NumEqVector flux;
         const auto globalPos = scvf.center();
-
         if (onUpperBoundary_(globalPos)) { // root collar
 
-            auto& volVars = elemVolVars[scvf.insideScvIdx()];
-            double p = volVars.pressure();
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            auto& volVars = elemVolVars[scvf.insideScvIdx()];
+            double p = volVars.pressure(); // pressure at the root collar
             double kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
-            potentialTrans_ = collar_.f(time_); // [kg/s]
-
-            std::cout << "eIdx " << eIdx << " insideScvIdx "<< scvf.insideScvIdx()<< "  globalPos " << globalPos << "\n";
+            double potentialTrans = collar_.f(time_); // [kg/s]
 
             double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
             double alpha;
-            if (p < critPCollarAlpha_) { // stomatal conductance definition
+            if (p < critPCollarAlpha_) { // stomatal conductanc
                 alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(p - critPCollarAlpha_));  // [-] (Eqn 2a, Huber et al. 2014)
-            }
-            else {
+            } else {
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
             }
-            double v = std::min(alpha*potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
-            flux[contiH2OEqIdx] = v/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
+
+            double actTrans = std::min(alpha*potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
+            flux[contiH2OEqIdx] = actTrans/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
 
             double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); // [-] todo (!)
             flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg/(s*m^2)],  convective outflow BC
-
-            // the rate will be integrated to mL_ in setTime(t,dt)
-            mLRate_ = v*fraction; // [kg/s]
-
-            std::cout << "alpha "<< alpha << " 1.e6* { cL "<< 1.e6*cL << " mL_ "<< 1.e6*mL_ << " leafVolume " << 1.e6*leafVolume_.f(time_) <<" fraction " << 1.e6*fraction << " }\n";
-
-            // file output
-            actualTrans_ = v;  // [kg/s]
-            neumannTime_ = time_; // [s]
-            maxTrans_ = criticalTranspiration; // [kg/s]
-            collarP_ = p; // [Pa]
-
         } else { // root tip
 
             flux[contiH2OEqIdx] = 0.;
@@ -332,34 +331,27 @@ public:
             const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar a = params.radius(eIdx); // root radius (m)
             Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-            Scalar phx;
-            if (isBox) { // dumux
-                phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
+            Scalar tipP_;
+            if (isBox) { // would elemVolVars[scv] work? not sure...
+                tipP_ = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
             } else {
-                phx = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
+                tipP_ = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
+                //                double density = elemVolVars[scv.dofIndex()].density();
+                //                std::cout << "density " << density << "\n";
             }
             Scalar phs = soil(scv.center()); // kg/m/s^2
-            values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+            values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - tipP_); // m^3/s
             values[contiH2OEqIdx] /= (a * a * M_PI); // 1/s
             values[contiH2OEqIdx] *= rho_; // (kg/s/m^3)
 
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
-            if (!grow_) { // for static root system, root tips should stay young
-                rootAge -= time_;
+            if (!grow_) { // for static root system, static root tips should not age
+                rootAge -= time_ / (24. * 3600.);
             }
 
-            if ((rootAge>=0) && (rootAge <= 1)) { // negative root age means, the root is not born
-
-                Scalar tipP_ = phx; // local tip pressure in [kg/m/s^2] = [Pa]
-
-                if (abs(tipP_) >= abs(critPTips_)) {
-                    double mSignal; // [kg/s]
-                    if (useMoles) {
-                        mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi*molarMass; // [kg / s]
-                    } else {
-                        mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi; // [kg / s]
-                    }
-                    values[transportABAEqIdx] = 0.; //mSignal; // *source.quadratureWeight()*source.integrationElement(); // mSignal [kg/s]
+            if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
+                if (tipP_  <= critPTips_) {
+                    values[transportABAEqIdx] = a_*std::abs(critPTips_ - tipP_)*mi*molarMass; // [kg / s]
                 } else {
                     values[transportABAEqIdx] = 0.;
                 }
@@ -375,99 +367,11 @@ public:
     }
 
     /*!
-     * \brief Evaluate the initial value for a control volume.
-     */
-    PrimaryVariables initialAtPos(const GlobalPosition& p) const {
-        PrimaryVariables priVars;
-        priVars[pressureIdx] = soil(p); //
-        priVars[ABAIdx] = 0.0;  // todo (if we want some initial hormone state)
-        return priVars;
-    }
-
-    /**
-     * deletes old soil, sets new soil, takes ownership
-     */
-    void setSoil(CRootBox::SoilLookUp* s) {
-        delete soil_;
-        soil_ = s;
-        std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
-    }
-
-    //! soil pressure (called by initial, and source term)
-    Scalar soil(const GlobalPosition& p) const {
-        auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100); // m -> cm
-        double d = soil_->getValue(p2);
-        return pRef_+d;
-    }
-
-    //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
-    void setTime(double t, double dt) {
-        this->spatialParams().setTime(t, dt);
-        time_ = t;
-        dt_ = dt;
-    }
-
-    //! sets the cumulative outflow according to the last solution
-    void calcCumulativeOutflow(const SolutionVector& sol, const GridVariables& gridVars) {
-        NumEqVector source(0.0);
-
-        const auto& e = elements(this->fvGridGeometry().gridView()).begin();
-        auto fvGeometry = localView(this->fvGridGeometry());
-        fvGeometry.bindElement(e);
-        auto elemVolVars = localView(gridVars.curGridVolVars());
-        elemVolVars.bindElement(e, fvGeometry, sol);
-
-//        for (auto&& scv : scvs(fvGeometry)) {
-//            auto pointSources = this->scvPointSources(e, fvGeometry, elemVolVars, scv);
-//            pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
-//            source += pointSources;
-//        }
-
-        mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
-    }
-
-    /*!
-     * writes the actual transpiration into a text file:
-     * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
-     * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], simtime [s], hormone leaf mass [kg], hormone flow rate [kg/s]
-     */
-    void writeTranspirationRate(const SolutionVector& sol) {
-        Scalar trans = this->transpiration(sol); // [cm3/day]
-        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << mL_ << ", "<< mLRate_ << "\n"; // TODO
-    }
-
-    //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
-    void setCritical(bool b) {
-        critical_ = b;
-    }
-
-    //! sets the criticalCollarPressure [Pa]
-    void criticalCollarPressure(Scalar p) {
-        critPCollarDirichlet_ = p;
-    }
-
-    /*!
-     * \brief Return how much the domain is extruded at a given sub-control volume.
-     *
-     * The extrusion factor here makes extrudes the 1d line to a circular tube with
-     * cross-section area pi*r^2.
-     *
-     * called by volumevariables (why there?), no compilation error if you remove it, just wrong results
-     */
-    template<class ElementSolution>
-    Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
-        const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-        const auto radius = this->spatialParams().radius(eIdx);
-        return M_PI*radius*radius;
-    }
-
-    /*!
      * \brief Applies a vector of point sources. The point sources
      *        are possibly solution dependent.
      *
      * \param pointSources A vector of PointSource s that contain
-             source values for all phases and space positions.
+                 source values for all phases and space positions.
      *
      * For this method, the \a values method of the point source
      * has to return the absolute mass rate in kg/s. Positive values mean
@@ -503,37 +407,32 @@ public:
 
         if (couplingManager_!=nullptr) { // compute source at every integration point
 
-            const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
-            const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
+            Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
+            Scalar tipP_ = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             // const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
             // eIdx == lowDimElementIdx ?
             Scalar kr = this->spatialParams().kr(eIdx);
             Scalar rootRadius = this->spatialParams().radius(eIdx);
 
-            const auto density = 1000; // [kg /m^3]            std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
-            sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - pressure1D)*density; // [kg/m/s]
+            double density = 1000.; // [kg /m^3]            std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
+            sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - tipP_)*density; // [kg/m/s]
             sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
 
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
+            if (!grow_) { // for static root system, static root tips should not age
+                rootAge -= time_ / (24. * 3600.);
+            }
 
-            if (rootAge <= 1) { // if root segment age <= 1 day
-
-                Scalar tipP_ = pressure1D; // local tip pressure in [kg/m/s^2] = [Pa]
-
-                if (abs(tipP_) >= abs(critPTips_)) {
-                    double mSignal; // [kg/s]
-                    if (useMoles) {
-                        mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi*molarMass; // [kg / s]
-                    } else {
-                        mSignal = a_*(abs(tipP_)-abs(critPTips_))*mi; // [kg / s]
-                    }
-                    sourceValue[transportABAEqIdx] = 0.;// mSignal*source.quadratureWeight()*source.integrationElement(); // mSignal [mol/s]
+            if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
+                if (tipP_  <= critPTips_) {
+                    sourceValue[transportABAEqIdx] = a_*std::abs(critPTips_ - tipP_)*mi*molarMass; // [kg / s]
                 } else {
                     sourceValue[transportABAEqIdx] = 0.;
                 }
+            } else {
+                sourceValue[transportABAEqIdx] = 0.;
             }
-
             source = sourceValue;
             std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
 
@@ -541,6 +440,138 @@ public:
             std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
             source = sourceValue;
         }
+    }
+
+
+    /*!
+     * \brief Evaluate the initial value for a control volume.
+     */
+    PrimaryVariables initialAtPos(const GlobalPosition& p) const {
+        PrimaryVariables priVars;
+        priVars[pressureIdx] = soil(p); //
+        priVars[ABAIdx] = 0.0;  // todo (if we want some initial hormone state)
+        return priVars;
+    }
+
+    /**
+     * deletes old soil, sets new soil, takes ownership
+     */
+    void setSoil(CRootBox::SoilLookUp* s) {
+        delete soil_;
+        soil_ = s;
+        std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
+    }
+
+    //! soil pressure (called by initial, and source term)
+    Scalar soil(const GlobalPosition& p) const {
+        return pRef_+soil_->getValue(CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100)); // m -> cm;
+    }
+
+    //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
+    void setTime(double t, double dt) {
+        this->spatialParams().setTime(t, dt);
+        time_ = t;
+        dt_ = dt;
+    }
+
+    //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
+    void setCritical(bool b) {
+        critical_ = b;
+    }
+
+    //! sets the criticalCollarPressure [Pa]
+    void criticalCollarPressure(Scalar p) {
+        critPCollarDirichlet_ = p;
+    }
+
+    /*!
+     * \brief Return how much the domain is extruded at a given sub-control volume.
+     *
+     * The extrusion factor here makes extrudes the 1d line to a circular tube with
+     * cross-section area pi*r^2.
+     *
+     * called by volumevariables (why there?), no compilation error if you remove it, just wrong results
+     */
+    template<class ElementSolution>
+    Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
+        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        double radius = this->spatialParams().radius(eIdx);
+        return M_PI*radius*radius;
+    }
+
+    /**
+     * Sets the cumulative outflow according to the last solution
+     */
+    void calcCumulativeOutflow(const SolutionVector& sol, const GridVariables& gridVars) {
+        NumEqVector source(0.0);
+        mLRate_ = 0.;
+        for (const auto& e :elements(this->fvGridGeometry().gridView())) {
+
+            auto fvGeometry = localView(this->fvGridGeometry());
+            fvGeometry.bindElement(e);
+            auto elemVolVars = localView(gridVars.curGridVolVars());
+            elemVolVars.bindElement(e, fvGeometry, sol);
+
+            for (const auto& scv :scvs(fvGeometry)) {
+                if (couplingManager_!=nullptr) {
+                    auto pointSources = this->scvPointSources(e, fvGeometry, elemVolVars, scv);
+                    pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
+                    source += pointSources;
+                } else {
+                    auto sources = this->source(e, fvGeometry, elemVolVars, scv);
+                    source += sources;
+                }
+            }
+
+            for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
+
+                if (onUpperBoundary_(scvf.center())) { // root collar
+
+                    auto& volVars = elemVolVars[scvf.insideScvIdx()];
+                    double p = volVars.pressure();
+                    auto eIdx = this->fvGridGeometry().elementMapper().index(e);
+                    double kx = this->spatialParams().kx(eIdx);
+                    auto dist = (scvf.center() - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+                    double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
+                    potentialTrans_ = collar_.f(time_); // [kg/s]
+
+                    double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
+                    double alpha;
+                    if (p < critPCollarAlpha_) { // stomatal conductance definition
+                        alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(p - critPCollarAlpha_));  // [-] (Eqn 2a, Huber et al. 2014)
+                    }
+                    else {
+                        alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
+                    }
+                    double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); // [-]
+                    neumannTime_ = time_; // [s]
+                    actualTrans_ = std::min(alpha*potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
+                    maxTrans_ = criticalTranspiration; // [kg/s]
+                    collarP_ = p; // [Pa]
+                    mLRate_ = actualTrans_*fraction; // [kg/s]
+
+                    // std::cout << "eIdx " << eIdx << " insideScvIdx "<< scvf.insideScvIdx()<< "  globalPos " << scvf.center() << "\n";
+                    std::cout << "\nalpha "<< alpha << " 1.e6* { cL "<< 1.e6*cL << " mL_ "<< 1.e6*mL_ << " leafVolume " << 1.e6*leafVolume_.f(time_) <<
+                        " fraction " << 1.e6*fraction << " }\n\n";
+                }
+            }
+        }
+        mRootRate_ = source[transportABAEqIdx];
+
+        mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
+        mRoot_ +=  mRootRate_*dt_;
+    }
+
+    /*!
+     * writes the actual transpiration into a text file:
+     * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
+     * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
+     * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
+     */
+    void writeTranspirationRate(const SolutionVector& sol) {
+        Scalar trans = this->transpiration(sol); // [cm3/day]
+        file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
+            << trans << ", "<< time_ << " , " << mL_ << ", "<< mLRate_  << ", " << mRoot_ << ", " << mRootRate_ << "\n";
     }
 
     /**
@@ -559,8 +590,8 @@ public:
                 source += pointSources;
             }
         }
-        std::cout << "Global integrated source (root): " << source[0] << " (kg/s) / "
-            <<                           source[0]*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Global integrated source: water " << source[contiH2OEqIdx]*3600*24*1000 << " (g/day), " <<
+          "ABA " << source[transportABAEqIdx]*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
@@ -570,22 +601,22 @@ public:
 
 protected:
 
-//    //! evaluate the gradient (todo not sure if we need it)
-//    GlobalPosition gradient( const Element &element, const FVElementGeometry& fvGeometry,
-//        const ElementVolumeVariables& elemVolVars, const GlobalPosition& ipGlobal) {
-//        if(isBox) {
-//            const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(),
-//                elementSolution(element, elemVolVars, fvGeometry), ipGlobal);
-//            return grads[pressureIdx];
-//        } else {
-//            const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
-//            const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
-//            auto grad = ipGlobal - scvCenter;
-//            grad /= grad.two_norm2();
-//            grad *= (dirichletPressure - scvCenterPresureSol);
-//            return grad;
-//        }
-//    }
+    //    //! evaluate the gradient (todo not sure if we need it)
+    //    GlobalPosition gradient( const Element &element, const FVElementGeometry& fvGeometry,
+    //        const ElementVolumeVariables& elemVolVars, const GlobalPosition& ipGlobal) {
+    //        if(isBox) {
+    //            const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(),
+    //                elementSolution(element, elemVolVars, fvGeometry), ipGlobal);
+    //            return grads[pressureIdx];
+    //        } else {
+    //            const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
+    //            const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
+    //            auto grad = ipGlobal - scvCenter;
+    //            grad /= grad.two_norm2();
+    //            grad *= (dirichletPressure - scvCenterPresureSol);
+    //            return grad;
+    //        }
+    //    }
 
     //! cm pressure head -> Pascal
     Scalar toPa_(Scalar ph) const {
@@ -606,16 +637,17 @@ protected:
     bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
-    static constexpr Scalar rho_ = 1.e3; // kg / m^3
+    static constexpr Scalar rho_ = 1.e3; //1.e3; // kg / m^3
     static constexpr Scalar pRef_ = 1.e5; // Pa
     static constexpr Scalar eps_ = 1e-6;
 
     std::ofstream file_at_; // file for actual transpiration
-    mutable double neumannTime_ = 0;
-    mutable double actualTrans_ = 0;
-    mutable double potentialTrans_ = 0;
-    mutable double maxTrans_ = 0.;
-    mutable double collarP_ = 0.;
+    double neumannTime_ = 0;
+    double actualTrans_ = 0;
+    double potentialTrans_ = 0;
+    double maxTrans_ = 0.;
+    double collarP_ = 0.;
+    double mRootRate_ = 0.; // [kg/s]
 
     std::map<std::string, std::vector<Scalar>> userData_;
 
@@ -624,7 +656,7 @@ protected:
     /**
      * Hormone model parameters
      */
-    double critPCollarDirichlet_ = -1.4e12; // -1.4e6;
+    double critPCollarDirichlet_ = -1.4e6; // -1.4e6;
     double critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
     double alphaR = 0; // residual stomata conductance
     bool cD = false; // interaction between pressure and chemical regulation
@@ -634,9 +666,11 @@ protected:
     double critPTips_ = toPa_(-4500); // cm -> Pa
     double mi = 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
     double a_; // Maximal hormone production rate per dry mass in mol [kg-1 Pa-1 s-1]
+    double age_;
 
-    mutable Scalar mL_ = 0.; // (kg) mass of hormones in the leaf
-    mutable Scalar mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume
+    double mL_ = 0.; // (kg) mass of hormones in the leaf
+    double mRoot_ = 0.; // (kg) mass of hormones in the root system
+    double mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume
     InputFileFunction leafVolume_; // (m^3)
 
     Scalar molarMass; // (kg/mol)

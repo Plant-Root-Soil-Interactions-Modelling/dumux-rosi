@@ -2,9 +2,9 @@
 Name = anagallis_roots
 
 [TimeLoop]
-TEnd = 604800 # 7 days [s]
+TEnd = 864000 # 7 days [s]
 DtInitial = 7200 # [s]
-PeriodicCheckTimes = 3600
+PeriodicCheckTimes = 86400
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
@@ -16,20 +16,22 @@ Kx = 4.3        # axial conductivity [cm^4/hPa/day] similar (cm^3 / day)
 Kr = 7.5e-2     # radial conductivity [cm/hPa/day] similar (1 / day) 
 
 [RootSystem.Collar]
-Transpiration = 2.36478e-07 # kg/day 
+Transpiration = 2e-3 # 2.36478e-07 # kg/day 
 Sinusoidal = True
 
 [Soil.IC]
 P = -100
-#Z = -.15 0.
+
+[Component]
+liquidDiffCoeff = 1.2e-7 # 1.2e-9
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
-
-[Component]
-liquidDiffCoeff = 1.2e-9
-MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
-# ProductionRate = 3.26e-16 #  [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+CritCollarP = -10000
+CritCollarPAlpha = -1000
+CritTipP = 0
+ProductionRate = 1.e-6 # 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+Age = 5
 
 [Vtk]
 AddProcessRank = "false"
