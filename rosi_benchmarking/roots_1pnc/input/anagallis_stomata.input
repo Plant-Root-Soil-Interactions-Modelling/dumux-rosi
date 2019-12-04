@@ -8,8 +8,8 @@ PeriodicCheckTimes = 86400
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/anagallis.dgf
-InitialT = 30 # days
+File =  grids/anagallis15.dgf
+InitialT = 15 # days
 
 [RootSystem.Conductivity]
 Kx = 4.3        # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
@@ -30,7 +30,7 @@ cD = 0 # 0 -> interaction between pressure and chemical regulation
 CritCollarP = -10000
 CritCollarPAlpha = -1000
 CritTipP = 0
-ProductionRate = 1.e-6 # 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+ProductionRate = 3.26e-10 # 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
 Age = 5
 
 [Vtk]

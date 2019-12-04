@@ -434,7 +434,6 @@ public:
                 sourceValue[transportABAEqIdx] = 0.;
             }
             source = sourceValue;
-            std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
 
         } else { // should not happen...
             std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
@@ -503,6 +502,7 @@ public:
      * Sets the cumulative outflow according to the last solution
      */
     void calcCumulativeOutflow(const SolutionVector& sol, const GridVariables& gridVars) {
+
         NumEqVector source(0.0);
         mLRate_ = 0.;
         for (const auto& e :elements(this->fvGridGeometry().gridView())) {
@@ -556,6 +556,7 @@ public:
                 }
             }
         }
+
         mRootRate_ = source[transportABAEqIdx];
 
         mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
@@ -590,8 +591,8 @@ public:
                 source += pointSources;
             }
         }
-        std::cout << "Global integrated source: water " << source[contiH2OEqIdx]*3600*24*1000 << " (g/day), " <<
-          "ABA " << source[transportABAEqIdx]*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Source: water    " << source[contiH2OEqIdx]*3600*24*1000 << " (g/day),\n" <<
+                     "        hormones " << source[transportABAEqIdx]*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
