@@ -21,16 +21,8 @@ with open("anagallis_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 c = 24 * 3600  # s / day
 
-""" Plot transpiration """
-plt.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
-plt.plot(d[:, 0] / c, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
-plt.xlabel("time (days)")
-plt.ylabel("transpiration (g/day)")
-plt.legend(["potential", "actual"])
-plt.title("Water transpiration")
-
 """ Plot hormone rate and mass """
-fig, [ax1, ax2] = plt.subplots(1, 2)
+fig, [ax1, ax2, ax3] = plt.subplots(1, 2)
 
 ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
 ax1.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
@@ -45,5 +37,13 @@ ax2.set_ylabel("mass (g)")
 ax2.set_xlabel("time (days)")
 ax2.set_title("Hormone mass")
 ax2.legend(["leaf mass", "root system mass"])
+
+""" Plot transpiration """
+ax3.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
+ax3.plot(d[:, 0] / c, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
+ax3.set_xlabel("time (days)")
+ax3.set_ylabel("transpiration (g/day)")
+ax3.legend(["potential", "actual"])
+ax3.set_title("Water transpiration")
 
 plt.show()

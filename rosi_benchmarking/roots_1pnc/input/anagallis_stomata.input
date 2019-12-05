@@ -23,7 +23,7 @@ Sinusoidal = True
 P = -100
 
 [Component]
-liquidDiffCoeff = 1.2e-7 # 1.2e-9
+liquidDiffCoeff = 1.2e-9
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
