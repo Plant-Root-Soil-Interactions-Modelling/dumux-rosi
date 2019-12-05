@@ -12,49 +12,36 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
 
 # # run simulation
-# os.system("./coupled_1pnc_richards input/anagallis.input")
+os.system("./coupled_1pnc_richards input/anagallis.input")
 
-# 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
-# 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg], 8 hormone flow rate [kg/s]
-with open("anagallis_actual_transpiration.txt", 'r') as f:  # benchmarkC12c_actual_transpiration. or benchmarkC12bc_actual_transpiration
+#      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
+#      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
+#      * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
+with open("anagallis_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
+c = 24 * 3600  # s / day
 
-print()
-c = 24 * 3600  #  [kg/s] -> [kg/per day]
-print("potential", d[-1, 2] * c)
-print("actual", d[-1, 1] * c)
-print("actual", d[-1, 5] / 1000)  # Strange behaviour of simplistically calculated radial flows
+""" Plot transpiration """
+plt.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
+plt.plot(d[:, 0] / c, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
+plt.xlabel("time (days)")
+plt.ylabel("transpiration (g/day)")
+plt.legend(["potential", "actual"])
+plt.title("Water transpiration")
 
-# Plot collar transpiration & pressure
-fig, [ax1, ax3] = plt.subplots(1, 2)
-
-c = 1000 * 24 * 3600  #  [kg/s] -> [cm3/per day]
-t = d[:, 0] / (24 * 3600)  # [s] -> [day]
-
-# 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration, 6 time, 7 chemical concentration
-ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration
-ax1.plot(t, d[:, 1] * c, 'g')  # actual transpiration (neumann)
-ax3.plot(t, d[:, 7])  # chemical concentration
-
-ax2 = ax1.twinx()
-ctrans = np.cumsum(np.multiply(d[1:, 1] * c, (t[1:] - t[:-1])))
-ax2.plot(t[1:], ctrans, 'c--')  # cumulative transpiration (neumann)
-
-ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-ax3.legend(['chemical concentration'])
-# ax1.axis((0, t[-1], 0, 13))
-ax1.set_xlabel("Time $[d]$")
-ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
-ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
-ax3.set_xlabel("Time $[d]$")
-ax3.set_ylabel("Chemical concentration $[nmol/m^3]$")
-
-# plt.savefig('../results/Transpitation_2000.png')
-plt.show()
-
-# trans = interpolate.interp1d(t, d[:, 1] * c)
-# print(t.shape)
-# ctrans = np.zeros(t.shape)
-# ctrans[0] = 0
-# for i, t_ in enumerate(t[1:]):
-#     ctrans[i] = integrate.quad(trans, 0, t_)[0]
+""" Plot hormone rate and mass """
+# fig, [ax1, ax2] = plt.subplots(1, 2)
+#
+# ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
+# ax1.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
+# ax1.set_ylabel("mass rate (g/day)")
+# ax1.set_xlabel("time (days)")
+# ax1.set_title("Hormone production rate")
+# ax1.legend(["leaf rate", "root system rate"])
+#
+# ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
+# ax2.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
+# ax2.set_ylabel("mass (g)")
+# ax2.set_xlabel("time (days)")
+# ax2.set_title("Hormone mass")
+# ax2.legend(["leaf mass", "root system mass"])
