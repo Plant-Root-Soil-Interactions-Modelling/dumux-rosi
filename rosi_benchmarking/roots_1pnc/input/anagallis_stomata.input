@@ -30,7 +30,7 @@ cD = 0 # 0 -> interaction between pressure and chemical regulation
 CritCollarP = -10000
 CritCollarPAlpha = -1000
 CritTipP = 0
-ProductionRate = 3.26e-10 # 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
 Age = 5
 
 [Vtk]

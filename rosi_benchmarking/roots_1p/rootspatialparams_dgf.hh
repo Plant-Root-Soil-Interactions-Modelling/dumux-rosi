@@ -127,7 +127,8 @@ public:
     int order(std::size_t eIdx) const {
         int o = (int) order_.f(eIdx);
         if (o<0) {
-            std::cout << "RootSpatialParams::order: warning root order is negative for element index " << eIdx <<": " << o << ", resuming with root order 0\n" << std::flush;
+            std::cout << "RootSpatialParams::order: warning root order is negative for element index "
+                << eIdx <<": " << o << ", resuming with root order 0\n" << std::flush;
             o = 0;
         }
         return o;

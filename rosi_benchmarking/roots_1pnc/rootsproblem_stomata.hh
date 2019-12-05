@@ -336,8 +336,6 @@ public:
                 tipP_ = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
             } else {
                 tipP_ = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
-                //                double density = elemVolVars[scv.dofIndex()].density();
-                //                std::cout << "density " << density << "\n";
             }
             Scalar phs = soil(scv.center()); // kg/m/s^2
             values[contiH2OEqIdx] = kr * 2 * a * M_PI * (phs - tipP_); // m^3/s
@@ -351,7 +349,7 @@ public:
 
             if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
                 if (tipP_  <= critPTips_) {
-                    values[transportABAEqIdx] = a_*std::abs(critPTips_ - tipP_)*mi*molarMass; // [kg / s]
+                    values[transportABAEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*molarMass; // [kg / m3 / s]
                 } else {
                     values[transportABAEqIdx] = 0.;
                 }
@@ -412,10 +410,9 @@ public:
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             // const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
             // eIdx == lowDimElementIdx ?
-            Scalar kr = this->spatialParams().kr(eIdx);
-            Scalar rootRadius = this->spatialParams().radius(eIdx);
-
-            double density = 1000.; // [kg /m^3]            std::cout << "RootsOnePTwoCProblem::pointSource(): couplingManager is set ... \n";
+            Scalar kr = this->spatialParams().kr(eIdx); //  [m^2 s/kg]
+            Scalar rootRadius = this->spatialParams().radius(eIdx); // [m]
+            double density = 1000.; // [kg /m^3]
             sourceValue[contiH2OEqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - tipP_)*density; // [kg/m/s]
             sourceValue[contiH2OEqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
 
@@ -426,7 +423,13 @@ public:
 
             if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
                 if (tipP_  <= critPTips_) {
-                    sourceValue[transportABAEqIdx] = a_*std::abs(critPTips_ - tipP_)*mi*molarMass; // [kg / s]
+                    double volume;
+                    if (isBox) { // would elemVolVars[scv] work? not sure...
+                        volume = scv.volume()*elemVolVars[scv.localDofIndex()].extrusionFactor(); // m3
+                    } else {
+                        volume = scv.volume()*elemVolVars[scv.dofIndex()].extrusionFactor(); // m3
+                    }
+                    sourceValue[transportABAEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*volume*molarMass; // [kg / s]
                 } else {
                     sourceValue[transportABAEqIdx] = 0.;
                 }
@@ -664,9 +667,9 @@ protected:
     double sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
     double sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
 
+    double dm_ =  140.;  //root dry mass [kg / m3]
     double critPTips_ = toPa_(-4500); // cm -> Pa
-    double mi = 1.76e-7;  //dry mass = 140 kg_DM/m3, calculated using root tip = 1 cm length, and 0.02 cm radius
-    double a_; // Maximal hormone production rate per dry mass in mol [kg-1 Pa-1 s-1]
+    double a_; // Maximal hormone production rate in mol per dry mass per pressure [mol kg-1 Pa-1 s-1]
     double age_;
 
     double mL_ = 0.; // (kg) mass of hormones in the leaf

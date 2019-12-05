@@ -318,6 +318,7 @@ int main(int argc, char** argv) try
             double dt = timeLoop->timeStepSize(); // dumux time step
             rootProblem->setTime(t, dt); // pass current time to the root problem
             soilProblem->setTime(t);
+            rootProblem->calcCumulativeOutflow(sol[rootDomainIdx], *rootGridVariables);
 
             if (grow) {
 

@@ -30,18 +30,20 @@ plt.legend(["potential", "actual"])
 plt.title("Water transpiration")
 
 """ Plot hormone rate and mass """
-# fig, [ax1, ax2] = plt.subplots(1, 2)
-#
-# ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
-# ax1.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
-# ax1.set_ylabel("mass rate (g/day)")
-# ax1.set_xlabel("time (days)")
-# ax1.set_title("Hormone production rate")
-# ax1.legend(["leaf rate", "root system rate"])
-#
-# ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
-# ax2.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
-# ax2.set_ylabel("mass (g)")
-# ax2.set_xlabel("time (days)")
-# ax2.set_title("Hormone mass")
-# ax2.legend(["leaf mass", "root system mass"])
+fig, [ax1, ax2] = plt.subplots(1, 2)
+
+ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
+ax1.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
+ax1.set_ylabel("mass rate (g/day)")
+ax1.set_xlabel("time (days)")
+ax1.set_title("Hormone production rate")
+ax1.legend(["leaf rate", "root system rate"])
+
+ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
+ax2.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
+ax2.set_ylabel("mass (g)")
+ax2.set_xlabel("time (days)")
+ax2.set_title("Hormone mass")
+ax2.legend(["leaf mass", "root system mass"])
+
+plt.show()
