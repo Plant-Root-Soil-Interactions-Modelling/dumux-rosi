@@ -18,7 +18,7 @@ CritCollarP = -10000
 CritCollarPAlpha = -5500
 CritTipP = -1000 #-4500
 ProductionRate = 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
-Age = 5
+Age = 1
 
 [RootSystem.Collar]
 Transpiration = 2e-2 # 2.36478e-07 # kg/day 

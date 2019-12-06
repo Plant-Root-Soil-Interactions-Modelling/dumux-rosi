@@ -22,21 +22,27 @@ with open("anagallis_actual_transpiration.txt", 'r') as f:
 c = 24 * 3600  # s / day
 
 """ Plot hormone rate and mass """
-fig, [ax1, ax2, ax3] = plt.subplots(1, 2)
+fig, [ax1, ax2, ax3] = plt.subplots(1, 3)
 
 ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
-ax1.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
-ax1.set_ylabel("mass rate (g/day)")
+ax1.tick_params(axis = 'y', labelcolor = "r")
+ax1.set_ylabel("leaf mass rate (g/day)", color = "r")
+ax1b = ax1.twinx()
+ax1b.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
+ax1b.tick_params(axis = 'y', labelcolor = "b")
+ax1b.set_ylabel("root system production rate (g/day)", color = "b")
 ax1.set_xlabel("time (days)")
 ax1.set_title("Hormone production rate")
-ax1.legend(["leaf rate", "root system rate"])
 
 ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
-ax2.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
-ax2.set_ylabel("mass (g)")
+ax2.tick_params(axis = 'y', labelcolor = "r")
+ax2.set_ylabel("leaf mass (g)", color = "r")
+ax2b = ax2.twinx()
+ax2b.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
+ax2b.tick_params(axis = 'y', labelcolor = "b")
+ax2b.set_ylabel("root system mass (g)", color = "b")
 ax2.set_xlabel("time (days)")
 ax2.set_title("Hormone mass")
-ax2.legend(["leaf mass", "root system mass"])
 
 """ Plot transpiration """
 ax3.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
