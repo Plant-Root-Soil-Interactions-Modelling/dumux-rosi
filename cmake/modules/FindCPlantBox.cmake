@@ -44,8 +44,8 @@ find_path(CPLANTBOX_INCLUDE_DIR
           PATH_SUFFIXES "cplantbox" "CPlantBox" "SRC" "src")
 
 # look for library, at position fiven by the user and some defaults
-find_library(CROOTBOX_LIBRARY
-             NAMES CPlantBox cplantbox libCPlantBox CPlantBox.a crootbox.a libCPlantBox.a
+find_library(CPLANTBOX_LIBRARY
+             NAMES CPlantBox cplantbox libCPlantBox CPlantBox.a cplantbox.a libCPlantBox.a
              PATHS "${CPLANTBOX_ROOT}"
                    "${CMAKE_SOURCE_DIR}/../external/cplantbox"
                    "${CMAKE_SOURCE_DIR}/../external/CPlantBox"
@@ -67,7 +67,7 @@ cmake_push_check_state() # Save variables
 if(CPLANTBOX_INCLUDE_DIR)
   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${CPLANTBOX_INCLUDE_DIR})
 endif()
-if(CROOTBOX_LIBRARY)
+if(CPLANTBOX_LIBRARY)
   set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${CPLANTBOX_LIBRARY})
 endif()
 
@@ -115,7 +115,7 @@ if(CPLANTBOX_FOUND)
                               INCLUDE_DIRS "${CPLANTBOX_INCLUDE_DIRS}")
 endif()
 
-mark_as_advanced(CROOTBOX_INCLUDE_DIRS CPLANTBOX_LIBRARIES HAVE_CPLANTBOX)
+mark_as_advanced(CPLANTBOX_INCLUDE_DIRS CPLANTBOX_LIBRARIES HAVE_CPLANTBOX)
 
 # text for feature summary
 set_package_properties("CPlantBox" PROPERTIES
