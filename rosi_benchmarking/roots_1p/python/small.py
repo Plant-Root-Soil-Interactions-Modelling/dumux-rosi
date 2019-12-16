@@ -18,6 +18,7 @@ os.system("./rootsystem input/"+name+".input")
 if not os.path.exists("results_"+name):
     os.mkdir("results_"+name)
 os.system("mv "+name+"* "+"results_"+name+"/")
+os.system("cp input/"+name+".input "+"results_"+name+"/")
 
 # plot
 p_, z_ = read3D_vtp_data("results_"+name+"/"+name+"-00001.vtp")
