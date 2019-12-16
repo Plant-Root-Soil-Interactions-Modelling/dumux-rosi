@@ -1,25 +1,26 @@
-#
-# Small dgf root system
-#
-# D. Leitner, 2018
-#
-
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
 from math import *
 import van_genuchten as vg
 
+name = "small" # this name should be unique
+
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
+os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p/")
 
 # run dumux
-os.system("./rootsystem input/small.input")
+os.system("./rootsystem input/"+name+".input")
+
+# move results to folder 'name'
+if not os.path.exists("results_"+name):
+    os.mkdir("results_"+name)
+os.system("mv "+name+"* "+"results_"+name+"/")
 
 # plot
-p_, z_ = read3D_vtp_data("small-00001.vtp", False)
+p_, z_ = read3D_vtp_data("results_"+name+"/"+name+"-00001.vtp")
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
