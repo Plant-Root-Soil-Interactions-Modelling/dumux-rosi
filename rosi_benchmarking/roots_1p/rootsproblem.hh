@@ -283,7 +283,7 @@ public:
     /**
      * deletes old soil, sets new soil, takes ownership
      */
-    void setSoil(CRootBox::SoilLookUp* s) {
+    void setSoil(CPlantBox::SoilLookUp* s) {
         delete soil_;
         soil_ = s;
         std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
@@ -291,7 +291,7 @@ public:
 
     //! soil pressure (called by initial, and source term)
     Scalar soil(const GlobalPosition& p) const {
-        auto p2 = CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100); // m -> cm
+        auto p2 = CPlantBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100); // m -> cm
         double d = soil_->getValue(p2);
         return pRef_+d;
     }
@@ -430,7 +430,7 @@ private:
 
     CouplingManager* couplingManager_ = nullptr;
 
-    CRootBox::SoilLookUp* soil_;
+    CPlantBox::SoilLookUp* soil_;
     InputFileFunction collar_;
     size_t bcType_;
     double time_ = 0.;

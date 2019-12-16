@@ -10,10 +10,11 @@
 """
 
 import os
-import matplotlib.pyplot as plt
-from vtk_tools import *
+# import matplotlib.pyplot as plt
+# from vtk_tools import *
 from math import *
 import van_genuchten as vg
+import numpy as np
 
 g = 9.81  # gravitational acceleration (m/s^2)
 rho = 1.e3  # density of water, (kg/m^3)

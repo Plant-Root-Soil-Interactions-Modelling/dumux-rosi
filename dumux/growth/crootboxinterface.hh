@@ -34,10 +34,10 @@ class CRootBoxInterface
     using GlobalPosition = Dune::FieldVector<double, 3>;
 public:
     //! scaling: default assumes cm units in CRootBox and m units in Dumux
-    static GlobalPosition convert(const CRootBox::Vector3d& v, double scale = 0.01)
+    static GlobalPosition convert(const CPlantBox::Vector3d& v, double scale = 0.01)
     { return GlobalPosition({v.x*scale, v.y*scale, v.z*scale}); }
 
-    static std::vector<unsigned int> convert(const CRootBox::Vector2i& v)
+    static std::vector<unsigned int> convert(const CPlantBox::Vector2i& v)
     { return {static_cast<unsigned int>(v.x), static_cast<unsigned int>(v.y)}; }
 
     //! conversion factor from seconds to days

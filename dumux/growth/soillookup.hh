@@ -36,14 +36,14 @@ namespace Dumux {
 namespace GrowthModule {
 
 /*!
- * A CRootBox soillookup implementation for Dumux
+ * A CPlantBox soillookup implementation for Dumux
  * using a BoundingBoxTree to obtain the soil element,
  * and linear finite elements for interpolation of the point
  *
  * todo: do i have to update the mappers??? better use fvGridGeometry?
  */
 template<class FVGridGeometry>
-class SoilLookUpBBoxTree : public CRootBox::SoilLookUp
+class SoilLookUpBBoxTree : public CPlantBox::SoilLookUp
 {
     using Grid = typename FVGridGeometry::Grid;
     using FeCache = Dune::PQkLocalFiniteElementCache<typename Grid::ctype, double, 3, 1>;
@@ -68,7 +68,8 @@ public:
     /**
      *  Returns the interpolated saturation, pos [cm]
      */
-    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Organ* root = nullptr) const final {
+    double getValue(const CPlantBox::Vector3d& pos,
+    		const std::shared_ptr<CPlantBox::Organ> organ = nullptr) const final {
 
         auto p = periodic(pos.plus(shiftRB)); // periodic mapping
         const auto globalPos = Dune::FieldVector<double, 3>( { p.x * 0.01, p.y * 0.01, p.z * 0.01 });
@@ -104,7 +105,7 @@ public:
     int pick(const Dune::FieldVector<double, 3>& pos) {
 
         auto p = pos + shift; // shift
-        auto pp = periodic(CRootBox::Vector3d(100*p[0], 100*p[1], 100*p[2])); // periodic mapping
+        auto pp = periodic(CPlantBox::Vector3d(100*p[0], 100*p[1], 100*p[2])); // periodic mapping
         p[0] = pp.x/100.; p[1] = pp.y/100.; p[2] = pp.z/100.;
 
         // std::cout << "pick() "<< pos << "->" << p << " [m] \n" << std::flush;
@@ -123,7 +124,7 @@ public:
      */
     void setShift(Dune::FieldVector<double, 3> p) {
         shift = p;
-        shiftRB = CRootBox::Vector3d(100.*shift[0], 100.*shift[1], 100.*shift[2]);
+        shiftRB = CPlantBox::Vector3d(100.*shift[0], 100.*shift[1], 100.*shift[2]);
     }
 
     std::string toString() const final {
@@ -140,7 +141,7 @@ private:
     const BBoxTree& bBoxTree_;
 
     Dune::FieldVector<double, 3> shift = { 0., 0., 0. };
-    CRootBox::Vector3d shiftRB = CRootBox::Vector3d();
+    CPlantBox::Vector3d shiftRB = CPlantBox::Vector3d();
 };
 
 
@@ -155,7 +156,7 @@ private:
  *
  * todo periodicity
  */
-class SoilLookUpTable: public CRootBox::SoilLookUp {
+class SoilLookUpTable: public CPlantBox::SoilLookUp {
 
 public:
 
@@ -165,7 +166,8 @@ public:
     }
 
     //! Returns the saturation, pos [cm]
-    double getValue(const CRootBox::Vector3d& pos, const CRootBox::Organ* root = nullptr) const final {
+    double getValue(const CPlantBox::Vector3d& pos,
+    		const std::shared_ptr<CPlantBox::Organ> organ = nullptr) const final {
         auto p = Dune::FieldVector<double, 3>( { pos.x * 0.01, pos.y * 0.01, pos.z * 0.01 });
         double v = iff_.f(p[2]);
         return v;
