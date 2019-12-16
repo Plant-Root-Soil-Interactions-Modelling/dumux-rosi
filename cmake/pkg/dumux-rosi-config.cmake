@@ -39,7 +39,7 @@ set(dumux-rosi_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -Wextra -Wno-unused-parameter
 set(dumux-rosi_CXX_FLAGS_MINSIZEREL "-Os -DNDEBUG")
 set(dumux-rosi_CXX_FLAGS_RELEASE " -fdiagnostics-color=always -fno-strict-aliasing -fstrict-overflow -fno-finite-math-only -DNDEBUG=1 -O3 -march=native -funroll-loops -g0 -Wall -Wunused -Wmissing-include-dirs -Wcast-align -Wno-missing-braces -Wmissing-field-initializers -Wno-sign-compare")
 set(dumux-rosi_CXX_FLAGS_RELWITHDEBINFO " -fdiagnostics-color=always -fno-strict-aliasing -fstrict-overflow -fno-finite-math-only -DNDEBUG=1 -O3 -march=native -funroll-loops -g0 -Wall -Wunused -Wmissing-include-dirs -Wcast-align -Wno-missing-braces -Wmissing-field-initializers -Wno-sign-compare -g -ggdb -Wall")
-set(dumux-rosi_DEPENDS "dumux (>= 3.0);dune-common (>= 2.6)")
+set(dumux-rosi_DEPENDS "dumux (>= 3.0);dune-common (>= 2.6);dune-uggrid (>= 2.6);dune-alugrid (>= 2.6)")
 set(dumux-rosi_SUGGESTS "")
 set(dumux-rosi_MODULE_PATH "${PACKAGE_PREFIX_DIR}/share/dune/cmake/modules")
 set(dumux-rosi_LIBRARIES "")

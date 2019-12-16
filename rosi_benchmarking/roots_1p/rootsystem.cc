@@ -53,7 +53,7 @@
 
 #include <dumux/growth/rootsystemgridfactory.hh> // dumux-rosi growth ideas (modified from dumux-rootgrowth)
 #include <dumux/growth/growthinterface.hh>
-#include <dumux/growth/crootboxadapter.hh>
+#include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
 #include "rootsproblem.hh"
@@ -91,7 +91,7 @@ int main(int argc, char** argv) try
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
     GridManager<Grid> gridManager; // only for dgf
-    std::shared_ptr<CRootBox::RootSystem> rootSystem; // only for rootbox
+    std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
     if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
@@ -99,13 +99,13 @@ int main(int argc, char** argv) try
         grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
-        rootSystem = std::make_shared<CRootBox::RootSystem>();
+        rootSystem = std::make_shared<CPlantBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         if (hasParam("RootSystem.Grid.Confined")) {
             auto box = getParam<std::vector<double>>("RootSystem.Grid.Confined");
-            rootSystem->setGeometry(new CRootBox::SDF_PlantBox(box.at(0)*100, box.at(1)*100, box.at(2)*100));
+            rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(box.at(0)*100, box.at(1)*100, box.at(2)*100));
         } else { // half plane
-            rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+            rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         }
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
@@ -113,7 +113,7 @@ int main(int argc, char** argv) try
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CRootBoxAdapter<GlobalPosition>(*rootSystem);
+        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(*rootSystem);
     }
 
     // we compute on the leaf grid view

@@ -32,7 +32,7 @@ namespace Dumux {
 namespace GrowthModule {
 
 /**
- * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CRootBox::RootSystem)
+ * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CPlantBox::RootSystem)
  *
  * use static member function: RootSystemGridFactory::makeGrid(RootSystem)
  */
@@ -47,7 +47,7 @@ public:
     using Grid = Dune::FoamGrid<1, 3>;
 
     //! make the grid from the initial root system
-    static std::shared_ptr<Grid> makeGrid(const CRootBox::RootSystem& rs, double shootZ = 0., bool verbose = false)
+    static std::shared_ptr<Grid> makeGrid(const CPlantBox::RootSystem& rs, double shootZ = 0., bool verbose = false)
     {
         // the grid factory creates the grid
         if (verbose) std::cout << "RootSystemGridFactory: " << std::endl;
@@ -79,11 +79,11 @@ public:
 
 private:
 
-    static GlobalPosition convert_(const CRootBox::Vector3d& v, double scale = 0.01) {
+    static GlobalPosition convert_(const CPlantBox::Vector3d& v, double scale = 0.01) {
         return GlobalPosition( { v.x * scale, v.y * scale, v.z * scale });
     }
 
-    static std::vector<unsigned int> convert_(const CRootBox::Vector2i& v) {
+    static std::vector<unsigned int> convert_(const CPlantBox::Vector2i& v) {
         return {static_cast<unsigned int>(v.x), static_cast<unsigned int>(v.y)};
     }
 

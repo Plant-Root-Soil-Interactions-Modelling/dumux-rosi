@@ -20,8 +20,8 @@
  * \file
  * \brief This file contains a generic grid growth class
  */
-#ifndef DUMUX_CROOTBOX_ADAPTER_HH
-#define DUMUX_CROOTBOX_ADAPTER_HH
+#ifndef DUMUX_CPLANTBOX_ADAPTER_HH
+#define DUMUX_CPLANTBOX_ADAPTER_HH
 
 #include <RootSystem.h>
 #include <mymath.h>
@@ -32,25 +32,25 @@ namespace Dumux {
 
 namespace GrowthModule {
 
-using namespace CRootBox;
+using namespace CPlantBox;
 
 /**
- * Adapter for CRootBox: Converts types, units, and naming conventions
+ * Adapter for CPlantBox: Converts types, units, and naming conventions
  *
  * RootSystem can be replaced by template for Plant, and RootSystem
  * base class is not enough, because we need to copy it, and I wrote only a copy constructor
  */
 template<class GlobalPosition>
-class CRootBoxAdapter :public GrowthInterface<GlobalPosition> {
+class CPlantBoxAdapter :public GrowthInterface<GlobalPosition> {
 
 public:
 
-    CRootBoxAdapter(CRootBox::RootSystem& rs) :rootsystem_(rs) {
+    CPlantBoxAdapter(CPlantBox::RootSystem& rs) :rootsystem_(rs) {
         this->root2dune = std::vector<size_t>(rs.getNumberOfNodes());
         std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
 
-    virtual ~CRootBoxAdapter() { }; // nothing to do
+    virtual ~CPlantBoxAdapter() { }; // nothing to do
 
     void simulate(double dt) override {
         rootsystem_.simulate(dt/3600./24., false);
@@ -58,13 +58,13 @@ public:
 
     void store() override { // currently unused
         std::cout << "store root system at time " << rootsystem_.getSimTime() << "\n";
-        storedRootSystem_ = zRootSystem(rootsystem_); // deep copy
+        storedRootSystem_ = RootSystem(rootsystem_); // deep copy
         // this was never checked for memory leaks
     }
 
     void restore() override { // currently unused
         std::cout << "restore root system failed at " << storedRootSystem_.getSimTime();
-        rootsystem_ = CRootBox::RootSystem(storedRootSystem_); // deep copy
+        rootsystem_ = CPlantBox::RootSystem(storedRootSystem_); // deep copy
         std::cout << " to " << rootsystem_.getSimTime();
     }
 
@@ -139,10 +139,10 @@ public:
      * or we move radius to the Organ class for simplicity
      */
     std::vector<double> segmentRadii() const override {
-        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
+        auto roots = rootsystem_.getNewSegmentOrigins();
         auto radii = std::vector<double>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
-            radii[i] = ((Root*)roots[i])->param()->a / 100.; // convert to m
+            radii[i] =  roots[i]->getParameter("radius") / 100.; // convert to m TODO radius to base class?
         }
         return radii;
 //         return segmentParameter("radius");
@@ -152,7 +152,7 @@ public:
      * radius, order, id, ...
      */
     std::vector<double>  segmentParameter(std::string name) const override {
-        std::vector<Organ*> roots = rootsystem_.getNewSegmentOrigins();
+    	auto roots = rootsystem_.getNewSegmentOrigins();
         auto param = std::vector<double>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
             param[i] = roots[i]->getParameter(name);
@@ -168,8 +168,8 @@ public:
     }
 
 private:
-    CRootBox::RootSystem rootsystem_;
-    CRootBox::RootSystem storedRootSystem_;
+    CPlantBox::RootSystem rootsystem_;
+    CPlantBox::RootSystem storedRootSystem_;
 
 };
 
