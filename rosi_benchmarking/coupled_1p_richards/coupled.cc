@@ -54,7 +54,7 @@
 // dumux-rosi
 #include <dumux/growth/rootsystemgridfactory.hh>
 #include <dumux/growth/growthinterface.hh>
-#include <dumux/growth/crootboxadapter.hh>
+#include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
 #include "../roots_1p/rootsproblem.hh"
@@ -143,7 +143,7 @@ int main(int argc, char** argv) try
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> rootGrid;
     GridManager<Grid> rootGridManager; // only for dgf
-    std::shared_ptr<CRootBox::RootSystem> rootSystem; // only for rootbox
+    std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
     if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
@@ -151,19 +151,19 @@ int main(int argc, char** argv) try
         rootGrid = std::shared_ptr<Grid>(&rootGridManager.grid(), Properties::empty_delete<Grid>());
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
-        rootSystem = std::make_shared<CRootBox::RootSystem>();
+        rootSystem = std::make_shared<CPlantBox::RootSystem>();
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
-        // rootSystem->setGeometry(new CRootBox::SDF_HalfPlane(CRootBox::Vector3d(0.,0.,0.5), CRootBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+        // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
-        rootSystem->setGeometry(new CRootBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
+        rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         rootGrid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CRootBoxAdapter<GlobalPosition>(*rootSystem);
+        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(*rootSystem);
     }
 
     // root grid geometry
@@ -212,7 +212,7 @@ int main(int argc, char** argv) try
         std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 
-    // obtain parameters from the crootbox or dgf
+    // obtain parameters from the CPlantBox or dgf
     if (simtype==Properties::dgf) {
         rootProblem->spatialParams().initParameters(*rootGridManager.getGridData());
     } else if (simtype==Properties::rootbox){
