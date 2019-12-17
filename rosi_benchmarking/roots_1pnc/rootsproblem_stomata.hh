@@ -94,6 +94,7 @@ public:
         }
         std::cout<<"contiH2OEqIdx "<< contiH2OEqIdx <<"transportABAEqIdx "<< transportABAEqIdx << std::endl;
 
+        // for the uncoupled case, a static soil is created        
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
@@ -112,7 +113,7 @@ public:
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
 
-        grow_ = getParam<bool>("RootSystem.Grid.Grow", false);
+        grow_ = getParam<bool>("RootSystem.Grid.Grow", false); // for mimicing growth using root age
 
         leafVolume_ = InputFileFunction("RootSystem.Leaf", "Volume", "VolumeT", 1.); // [cm^3]([day])
         leafVolume_.setVariableScale(1./(24.*3600)); // [s] -> [day]
@@ -122,13 +123,13 @@ public:
         molarMass = getParam<double>("Component.MolarMass", 0.26432); // (kg/mol)
 
         // Optionally, give crit values
-        critPCollarDirichlet_ = toPa_(getParam<double>("Control.CritCollarP", -1.e5));  // cm -> Pa
+        critPCollarDirichlet_ = toPa_(getParam<double>("Control.CritCollarP", -1.5e4));  // cm -> Pa
         critPCollarAlpha_ = toPa_(getParam<double>("Control.CritCollarPAlpha", -5500.)); ; // cm -> Pa
         critPTips_ = toPa_(getParam<double>("Control.CritTipP", -4500.)); // cm -> Pa
 
         cD = getParam<bool>("Control.cD", false); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
         a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
-        age_ = getParam<double>("Control.Age", 1.);
+        age_ = getParam<double>("Control.Age", 1.); // hormone sink activates if segment age is smaller than age_
 
         std::cout << "***********************************************\n";
         std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";
@@ -304,8 +305,8 @@ public:
             double actTrans = std::min(alpha*potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
             flux[contiH2OEqIdx] = actTrans/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
 
-            double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); // [-] todo (!)
-            flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg/(s*m^2)],  convective outflow BC
+            double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); 
+            flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg_aba/(s*m^2)],  convective outflow BC
         } else { // root tip
 
             flux[contiH2OEqIdx] = 0.;
@@ -459,7 +460,7 @@ public:
     /**
      * deletes old soil, sets new soil, takes ownership
      */
-    void setSoil(CRootBox::SoilLookUp* s) {
+    void setSoil(CPlantBox::SoilLookUp* s) {
         delete soil_;
         soil_ = s;
         std::cout << "setSoil(...): manually changed soil to " << s->toString() << "\n";
@@ -467,7 +468,7 @@ public:
 
     //! soil pressure (called by initial, and source term)
     Scalar soil(const GlobalPosition& p) const {
-        return pRef_+soil_->getValue(CRootBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100)); // m -> cm;
+        return pRef_+soil_->getValue(CPlantBox::Vector3d(p[0] * 100, p[1] * 100, p[2] * 100)); // m -> cm;
     }
 
     //! sets the current simulation time [s] (within the simulation loop) for collar boundary look up
@@ -518,11 +519,11 @@ public:
 
             for (const auto& scv :scvs(fvGeometry)) {
                 if (couplingManager_!=nullptr) {
-                    auto pointSources = this->scvPointSources(e, fvGeometry, elemVolVars, scv);
+                    auto pointSources = this->scvPointSources(e, fvGeometry, elemVolVars, scv); // kg s-1
                     pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
                     source += pointSources;
                 } else {
-                    auto sources = this->source(e, fvGeometry, elemVolVars, scv);
+                    auto sources = this->source(e, fvGeometry, elemVolVars, scv); // kg m-3 s-1
                     source += sources;
                 }
             }
@@ -560,11 +561,11 @@ public:
                 }
             }
         }
-
-        mRootRate_ = source[transportABAEqIdx];
-
+        
         mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
-        mRoot_ +=  mRootRate_*dt_;
+        
+        mRootRate_ = source[transportABAEqIdx]; // kg/s
+        mRoot_ +=  mRootRate_*dt_; //kg
     }
 
     /*!
@@ -634,7 +635,7 @@ protected:
 
     CouplingManager* couplingManager_ = nullptr;
 
-    CRootBox::SoilLookUp* soil_;
+    CPlantBox::SoilLookUp* soil_;
     InputFileFunction collar_;
     size_t bcType_;
     double time_ = 0.; // s
