@@ -195,8 +195,6 @@ int main(int argc, char** argv) try
     problem->userData("radius", x);
     problem->userData("order", x);
     problem->userData("id", x);
-    problem->userData("axialFlux", x);// todo wrong (coarse approximation)
-    problem->userData("radialFlux", x);
     problem->userData("age", x);
     problem->userData("initialPressure",x);
     problem->userData("kr", x);
@@ -205,8 +203,6 @@ int main(int argc, char** argv) try
     vtkWriter.addField(problem->radius(), "radius [m]"); // not in cm, because of tube plot
     vtkWriter.addField(problem->order(), "order [1]");
     vtkWriter.addField(problem->id(), "id [1]");
-    vtkWriter.addField(problem->axialFlux(), "axial flux [cm3/d]");
-    vtkWriter.addField(problem->radialFlux(), "radial flux [cm3/d]");
     vtkWriter.addField(problem->age(), "age [d]");
     vtkWriter.addField(problem->initialPressure(), "initial pressure [cm]");
     vtkWriter.addField(problem->kr(), "kr [cm/hPa/d]");

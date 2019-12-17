@@ -8,7 +8,8 @@ DtInitial = 360 # [s]
 MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Grid]
-File =  grids/singlerootC.dgf
+File =  grids/example_3e.dgf
+InitialT = 0
 radiusIdx = 4
 
 [RootSystem.Conductivity]

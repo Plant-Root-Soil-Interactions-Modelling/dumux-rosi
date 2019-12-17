@@ -72,7 +72,7 @@ public:
         kx_ = InputFileFunction("RootSystem.Conductivity","Kx", "KxAge", kxIdx_, orderIdx_); // [cm^4/hPa/day] ([day])
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
-        radius_ = InputFileFunction("RootSystem", "Radius", "RadiusAge", radiusIdx_, orderIdx_); // [cm] ([day])
+        radius_ = InputFileFunction("RootSystem.Grid", "Radius", "RadiusAge", radiusIdx_, orderIdx_); // [cm] ([day])
         radius_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius_.setFunctionScale(1.e-2); // [cm] -> [m]
         ct_ = InputFileFunction("RootSystem", "CreationTime", ctIdx_, orderIdx_); // segment creation time [day], optional grid data, no variable

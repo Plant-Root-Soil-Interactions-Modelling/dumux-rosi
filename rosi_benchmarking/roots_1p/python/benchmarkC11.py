@@ -15,7 +15,7 @@ os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
 os.system("./rootsystem input/benchmarkC11.input")
 
 # plot
-p_, z_ = read3D_vtp_data("benchmarkC11-00001.vtp", False)
+p_, z_ = read3D_vtp_data("benchmarkC11-00001.vtp")
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
