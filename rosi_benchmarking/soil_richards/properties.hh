@@ -4,6 +4,7 @@
 #define DUMUX_SOIL_PROPERTIES_HH
 
 #include <dune/grid/yaspgrid.hh>
+#include <dune/grid/spgrid.hh>
 #if HAVE_DUNE_ALUGRID
 #include <dune/alugrid/grid.hh>
 #endif
@@ -33,7 +34,7 @@ struct RichardsCC { using InheritsFrom = std::tuple<RichardsTT, CCTpfaModel>; };
 // Set grid type
 #ifndef GRIDTYPE
 template<class TypeTag>
-struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
+struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
 #else
 template<class TypeTag>
 struct Grid<TypeTag, TTag::RichardsTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
