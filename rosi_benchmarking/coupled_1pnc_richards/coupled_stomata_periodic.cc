@@ -1,23 +1,9 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+
 /*!
- * Monolythic coupling
+ * Couples the root system stomata model (based on 1pnc),
+ * to the richards equation (in soil) with a monolythic coupling
  */
 #include <config.h>
 
@@ -42,6 +28,7 @@
 #include <dumux/common/timeloop.hh>
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/io/vtkoutputmodule.hh>
+#include <dumux/io/grid/gridmanager.hh>
 
 #include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
@@ -59,22 +46,22 @@
 #include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "../roots_1p/rootsproblem.hh"
-#include "../soil_richards/richardsproblem.hh"
+#include "../roots_1pnc/rootsproblem_stomata.hh" // Stomata model
+#include "../soil_richards/richardsproblem.hh" // Richards model in soil
 
 #include "propertiesPeriodic.hh" // includes root properties, soil properties, redefines coupling manager
-// for box soil, CC roots,  needed for periodicity
-// cahnge L70 & L71 accordingly
 
 namespace Dumux {
 
 using SoilTypeTag = Properties::TTag::RichardsBox;
-using RootTypeTag = Properties::TTag::RootsCCTpfa;
-using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
+using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
+
+
 
 /**
  * debugging
  */
+using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
 template<class SoilGridVariables, class SoilSolution>
 void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
     const SoilSolution& sol, const SoilSolution& oldSol, double t, double dt) {
@@ -98,7 +85,6 @@ void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables
     std::cout << "...   a change of: " << (oldVol-cVol)*1.e3 << " kg = " << (oldVol-cVol)*1.e6*24*3600/dt << " g/day \n" ;
 }
 } // namespace Dumux
-
 
 
 
@@ -150,7 +136,7 @@ int main(int argc, char** argv) try
     GlobalPosition lower = soilGridGeometry->bBoxMin();
     GlobalPosition upper = soilGridGeometry->bBoxMax();
 
-    // Create the gridmanager and grid
+    // root gridmanager and grid
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
     PeriodicNetworkGridManager<3> rootGridManager(lower, upper, periodic); // only for dgf
@@ -223,7 +209,7 @@ int main(int argc, char** argv) try
         std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 
-    // obtain parameters from the CPlantBox or dgf
+    // obtain parameters from the cplantbox or dgf
     if (simtype==Properties::dgf) {
         rootProblem->spatialParams().initParameters(*rootGridManager.getGridData());
     } else if (simtype==Properties::rootbox){
@@ -343,6 +329,7 @@ int main(int argc, char** argv) try
             double dt = timeLoop->timeStepSize(); // dumux time step
             rootProblem->setTime(t, dt); // pass current time to the root problem
             soilProblem->setTime(t);
+            rootProblem->calcCumulativeOutflow(sol[rootDomainIdx], *rootGridVariables);
 
             if (grow) {
 

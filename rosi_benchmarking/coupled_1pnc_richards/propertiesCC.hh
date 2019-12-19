@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_COUPLED_PROPERTIES_HH
-#define DUMUX_COUPLED_PROPERTIES_HH
+#ifndef DUMUX_COUPLED_1P2C__PROPERTIES_HH
+#define DUMUX_COUPLED_1P2C__PROPERTIES_HH
 
 #include <dune/foamgrid/foamgrid.hh>
 
@@ -19,12 +19,10 @@
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
 #include <dumux/material/components/constant.hh>
-//#include <dumux/material/fluidsystems/1pliquid.hh>
-#include <dumux/material/fluidsystems/h2oABA.hh>
-#include <dumux/material/fluidsystems/1padapter.hh>
+#include <dumux/material/fluidsystems/1pliquid.hh>
 
-#include "../roots_1pnc/properties1pnc_periodic.hh"
-#include "../soil_richards/properties.hh"
+#include "../roots_1pnc/properties1pnc.hh" // TypeTag:Roots
+#include "../soil_richards/properties.hh" // TypeTag:RichardsTT
 
 namespace Dumux {
 namespace Properties {
