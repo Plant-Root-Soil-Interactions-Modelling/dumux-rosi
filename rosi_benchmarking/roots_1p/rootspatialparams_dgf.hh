@@ -101,15 +101,15 @@ public:
     template<class ElementSolution>
     PermeabilityType permeability(const Element& element,
         const SubControlVolume& scv, const ElementSolution& elemSol) const {
-        return permeability(element);
-    }
-
-    //! simpler interface
-    PermeabilityType permeability(const Element& element) const {
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
         auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
+        Scalar p = elemSol[0];
+        // std::cout << "pressure? "<< p << ", " ;
+
+        // TODO optional Eqn for cavitation
+
         return kx * mu / (M_PI * a * a);
     }
 
