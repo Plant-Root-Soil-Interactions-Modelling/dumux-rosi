@@ -22,18 +22,14 @@ def simulate(soiltype, q_root, simtime, checktimes, maxtimestep):
 
 
 def plot_number(ax1, i, tend, soiltype, q_root, export):
-    try:
-        print("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
-        p_, y_ = read3D_vtp_data_line("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
-        h1_ = vg.pa2head(p_)  #
 
-        print(h1_)
+    print("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
+    p_, y_ = read3D_vtp_data_line("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
+    h1_ = vg.pa2head(p_)  #
+    ax1.plot(np.array(y_) * 100, h1_)
+    export.append(np.array(y_) * 100)
+    export.append(h1_)
 
-        ax1.plot(np.array(y_) * 100, h1_)
-        export.append(np.array(y_) * 100)
-        export.append(h1_)
-    except:
-         print("ERROR: benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
     ax1.legend([str(tend) + " days"])
     ax1.set_ylabel('$water potential$ (cm)')
     ax1.set_xlabel('r (cm)')
@@ -89,7 +85,8 @@ def stress_at(soiltype, q_root):
 export = []
 
 q = [0.1, 0.05]  # cm/day
-times = [[0.1, 0.1], [10, 21.2], [8.5, 17.5]]
+times = np.array([[0.1, 0.1], [10, 21.2], [8.5, 17.5]])
+
 fig, axes = plt.subplots(2, 3, sharey = True)
 
 for j in range(0, 2):
@@ -98,7 +95,7 @@ for j in range(0, 2):
         soiltype = i  # sand, loam, clay
         q_root = q[j]
         simulate(soiltype, q_root, tend, tend, 3600)
-        plot_number(axes[j, i], 1, times[i][j], soiltype, q_root, export)  # why 2?
+        plot_number(axes[j, i], 1, times[i][j], soiltype, q_root, export)
 
 plt.show()
 

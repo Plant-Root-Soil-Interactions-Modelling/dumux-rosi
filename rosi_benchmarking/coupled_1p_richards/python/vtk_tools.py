@@ -30,24 +30,28 @@ def read_vtu(name):
     polydata = reader.GetOutput()
     return polydata
 
+
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
 #
-def read3D_vtp_data_line(name):
+def read3D_vtp_data_line(name, eps = 0.1):
+
     pd = read_vtu(name)
     try:  # cell
         data = pd.GetCellData()
         a = data.GetArray(2).GetTuple(0)
+        print("cell")
         cell = True
     except:
         data = pd.GetPointData()
         cell = False
+        print("point")
 
     nocd = data.GetNumberOfArrays()
-    sw = data.GetArray(0)  # saturation
-    pw = data.GetArray(2)  # pressure
-
+    sw = data.GetArray(0)  # saturation (S_lig)
+    pw = data.GetArray(2)  # pressure (p_lig)
     noa = sw.GetNumberOfTuples()
+
     sw_ = np.ones(noa,)
     pw_ = np.ones(noa,)
     for i in range(0, noa):
@@ -56,18 +60,35 @@ def read3D_vtp_data_line(name):
         d = pw.GetTuple(i)
         pw_[i] = d[0]
 
-    # vertex (makes actually only sense for vertex data)
-    Np = pd.GetNumberOfPoints()
-    y_, p_ = [], []
     points = pd.GetPoints()
-    for i in range(0, Np):
-        p = np.zeros(3,)
-        points.GetPoint(i, p)
-        if p[2] == 0 and p[0] == 0 and p[1] >= 0 :
-            y_.append(p[1])
-            p_.append(pw_[i])
+    y_, p_ = [], []
+    if cell:
+        Nc = pd.GetNumberOfCells()
+        z_ = np.zeros((Nc,))
+        for i in range(0, Nc):
+            c = pd.GetCell(i)
+            ids = c.GetPointIds()
+            n = ids.GetNumberOfIds ()
+            midp = np.zeros(3,)
+            p1 = np.zeros(3,)
+            for j in range(0, n):
+                points.GetPoint(ids.GetId(j), p1)
+                midp += p1 / n
+            p = midp
+            if p[2] > -eps and p[0] > -eps  and p[0] < eps and p[1] >= 0:
+                y_.append(p[1])
+                p_.append(pw_[i])
+        return p_, y_
+    else:  # not cell
+        Np = pd.GetNumberOfPoints()
+        for i in range(0, Np):
+            p = np.zeros(3,)
+            points.GetPoint(i, p)
+            if p[2] > -eps and p[0] > -eps  and p[0] < eps and p[1] >= 0:
+                y_.append(p[1])
+                p_.append(pw_[i])
+        return p_, y_
 
-    return p_, y_
 
 #
 # returns the cell or vertex data (index 0 and 2 hard coded) of vtp file
@@ -164,7 +185,7 @@ def read3D_vtp_data(name, axis = 2):
             for j in range(0, n):
                 points.GetPoint(ids.GetId(j), p1)
                 midz += p1[2] / n
-            z_[i] = midz  # sould actually be the mean of the 8 cube points (but i was too lazy)
+            z_[i] = midz
         return sw_, pw_, z_
     else:  # not cell
         Np = pd.GetNumberOfPoints()
