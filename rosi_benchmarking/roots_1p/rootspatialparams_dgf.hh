@@ -105,11 +105,9 @@ public:
         auto eIdx = this->fvGridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
-        Scalar p = elemSol[0];
+        // Scalar p = elemSol[0];
         // std::cout << "pressure? "<< p << ", " ;
-
         // TODO optional Eqn for cavitation
-
         return kx * mu / (M_PI * a * a);
     }
 
