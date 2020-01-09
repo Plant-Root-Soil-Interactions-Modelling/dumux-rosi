@@ -16,7 +16,7 @@ os.system("./coupled_periodic input/benchmarkC12periodic.input")
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
-with open("benchmarkC12c_actual_transpiration.txt", 'r') as f:  # benchmarkC12c_actual_transpiration. or benchmarkC12bc_actual_transpiration
+with open("benchmarkC12periodic_actual_transpiration.txt", 'r') as f:  # benchmarkC12c_actual_transpiration. or benchmarkC12bc_actual_transpiration
     d = np.loadtxt(f, delimiter = ',')
 
 print()

@@ -18,10 +18,10 @@
 #include <dumux/discretization/evalgradients.hh>
 
 #if DGF
-#include "../roots_1p/rootspatialparams_dgf.hh"
+#include "../roots_1p/rootspatialparams1pnc_dgf.hh"
 #endif
 #if ROOTBOX
-#include "../roots_1p/rootspatialparams_rb.hh"
+#include "../roots_1p/rootspatialparams_rb.hh" // TODO
 #endif
 
 namespace Dumux {
@@ -94,7 +94,7 @@ public:
         }
         std::cout<<"contiH2OEqIdx "<< contiH2OEqIdx <<"transportABAEqIdx "<< transportABAEqIdx << std::endl;
 
-        // for the uncoupled case, a static soil is created        
+        // for the uncoupled case, a static soil is created
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
@@ -305,7 +305,7 @@ public:
             double actTrans = std::min(alpha*potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
             flux[contiH2OEqIdx] = actTrans/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
 
-            double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx); 
+            double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, ABAIdx);
             flux[transportABAEqIdx] = flux[contiH2OEqIdx] * fraction; // [kg_aba/(s*m^2)],  convective outflow BC
         } else { // root tip
 
@@ -561,9 +561,9 @@ public:
                 }
             }
         }
-        
+
         mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
-        
+
         mRootRate_ = source[transportABAEqIdx]; // kg/s
         mRoot_ +=  mRootRate_*dt_; //kg
     }
