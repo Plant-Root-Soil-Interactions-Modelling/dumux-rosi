@@ -9,11 +9,11 @@ LowerLeft = -0.015 -0.015 -.15
 UpperRight = 0.015  0.015  0.
 Cells = 12 12 30
 Periodic = true true false
-Overlap = 1 
+Overlap = 0 
 
 [Grid]
 Periodic = true true false
-Overlap = 1 
+Overlap = 0 
 
 [Problem]
 Name = benchmarkC12periodic
