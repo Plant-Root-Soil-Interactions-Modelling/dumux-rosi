@@ -21,7 +21,7 @@ s = RichardsYaspSolver()  # the one and only
 #
 s.initialize([""])
 s.setParameter("Problem.Name", "periodicity")
-s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [19, 19, 19], "false false false")  # dof 125000
+s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [19, 19, 19], "true true false")  # dof 125000
 s.setVanGenuchtenParameter(0.08, 0.43, 0.04, 1.6, 50.)  # Loam
 s.setHomogeneousInitialConditions(-100, True)  # cm pressure head, hydraulic equilibrium
 s.setBCTopBot("constantFlux", 0, "freeDrainage", 0.)
