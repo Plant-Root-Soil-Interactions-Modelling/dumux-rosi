@@ -25,6 +25,7 @@ namespace Dumux {
 template<class FVGridGeometry, class Scalar>
 class RootSpatialParams1pncDGF : public RootSpatialParamsDGF<FVGridGeometry, Scalar> {
 
+    using GridView = typename FVGridGeometry::GridView;
     using Element = typename GridView::template Codim<0>::Entity;
     using SubControlVolume = typename FVGridGeometry::SubControlVolume;
     using Water = Components::SimpleH2O<Scalar>;
@@ -33,7 +34,7 @@ public:
 
     using PermeabilityType = Scalar; // export permeability type
 
-    using RootSpatialParamsDGF<FVGridGeometry, Scalar>::RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+    using RootSpatialParamsDGF<FVGridGeometry, Scalar>::RootSpatialParamsDGF;
 
     /*!
      * \brief Return the intrinsic permeability for the current sub-control volume in [m^2].

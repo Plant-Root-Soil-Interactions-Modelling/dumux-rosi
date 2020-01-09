@@ -8,7 +8,12 @@ MaxTimeStepSize = 360
 LowerLeft = -0.015 -0.015 -.15
 UpperRight = 0.015  0.015  0.
 Cells = 12 12 30
-Periodic = True True False
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1 
 
 [Problem]
 Name = benchmarkC12periodic
