@@ -389,7 +389,7 @@ int main(int argc, char** argv) try
                 rootProblem->userData("axialFlux", sol[rootDomainIdx]);
                 rootProblem->userData("radialFlux", sol[rootDomainIdx]);
                 rootProblem->userData("age", sol[rootDomainIdx]); // age changes with time
-                rootProblem->userData("kr", sol[rootDomainIdx]);  // conductivities change with age
+                rootProblem->userData("kr", sol[rootDomainIdx]);  // conductivities might change with age
                 rootProblem->userData("kx", sol[rootDomainIdx]);
                 rootVtkWriter.write(timeLoop->time());
                 soilVtkWriter.write(timeLoop->time());

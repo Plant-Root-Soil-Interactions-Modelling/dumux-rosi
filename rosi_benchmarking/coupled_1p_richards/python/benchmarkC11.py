@@ -15,7 +15,7 @@ soils = ["Sand", "Loam", "Clay"]
 
 
 def simulate(soiltype, q_root, simtime, checktimes, maxtimestep):
-    trans = q_root * ((2 * 0.02 * math.pi) * 1) * 1.e-6 * 1000.  # cm/day -> kg/day
+    trans = q_root * ((2 * 0.2 * math.pi) * 1) * 1.e-6 * 1000.  # cm/day -> kg/day
     print("Transpiration", trans, "kg/day")
     os.system("./coupled input/benchmarkC11.input -TimeLoop.TEnd {} -TimeLoop.PeriodicCheckTimes {} -TimeLoop.MaxTimeStepSize {} ".format(simtime, checktimes, maxtimestep)
               +"-Problem.Name {} -Soil.Layer.Number {} -RootSystem.Collar.Transpiration {}".format("benchmarkC11" + soils[soiltype], soiltype + 1, trans))
@@ -24,8 +24,11 @@ def simulate(soiltype, q_root, simtime, checktimes, maxtimestep):
 def plot_number(ax1, i, tend, soiltype, q_root, export):
 
     print("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
-    p_, y_ = read3D_vtp_data_line("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
+    p_, y_ = read3D_vtp_data_line("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i), 1.e-4)
     h1_ = vg.pa2head(p_)  #
+    print("h", np.min(h1_), np.max(h1_))
+    print("y", np.min(y_), np.max(y_))
+
     ax1.plot(np.array(y_) * 100, h1_)
     export.append(np.array(y_) * 100)
     export.append(h1_)
@@ -34,6 +37,7 @@ def plot_number(ax1, i, tend, soiltype, q_root, export):
     ax1.set_ylabel('$water potential$ (cm)')
     ax1.set_xlabel('r (cm)')
     ax1.set_title(soils[soiltype] + ", q_{root}=" + str(q_root) + "cm/d")
+    ax1.axis([0., 0.5, -5000, 0.])
 
 
 def plot_actual(ax1, soiltype, q_root):
@@ -99,8 +103,8 @@ for j in range(0, 2):
 
 plt.show()
 
-for e in export:
-    print(e.shape)
+# for e in export:
+#     print(e.shape)
 
 # np.savetxt("dumux_c11", np.vstack(export), delimiter = ",")
 

@@ -63,31 +63,33 @@ def read3D_vtp_data_line(name, eps = 0.1):
     points = pd.GetPoints()
     y_, p_ = [], []
     if cell:
+        print("opening cell")
         Nc = pd.GetNumberOfCells()
         z_ = np.zeros((Nc,))
         for i in range(0, Nc):
             c = pd.GetCell(i)
             ids = c.GetPointIds()
-            n = ids.GetNumberOfIds ()
+            n = ids.GetNumberOfIds()  # 8 for cubes, 4 for tets
             midp = np.zeros(3,)
             p1 = np.zeros(3,)
             for j in range(0, n):
                 points.GetPoint(ids.GetId(j), p1)
-                midp += p1 / n
+                midp += (p1 / n)
             p = midp
-            if p[2] > -eps and p[0] > -eps  and p[0] < eps and p[1] >= 0:
+            if p[0] > -eps and p[0] < eps and p[1] >= 0:  # take points (0,y,0) where y>=0
                 y_.append(p[1])
                 p_.append(pw_[i])
         return p_, y_
     else:  # not cell
+        print("opening box")
         Np = pd.GetNumberOfPoints()
         for i in range(0, Np):
             p = np.zeros(3,)
             points.GetPoint(i, p)
-            if p[2] > -eps and p[0] > -eps  and p[0] < eps and p[1] >= 0:
+            if p[0] > -eps and p[0] < eps and p[1] >= 0:
                 y_.append(p[1])
                 p_.append(pw_[i])
-        return p_, y_
+        return np.array(p_), np.array(y_)
 
 
 #
