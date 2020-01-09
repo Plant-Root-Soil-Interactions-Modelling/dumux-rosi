@@ -25,6 +25,7 @@
 
 #include <ctime>
 #include <iostream>
+
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 #include <dune/common/timer.hh> // to compute wall times
 #include <dune/grid/io/file/dgfparser/dgfexception.hh>
@@ -61,7 +62,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::RichardsCC; // RichardsCC, RichardsBox, (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RichardsBox; // RichardsCC, RichardsBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)

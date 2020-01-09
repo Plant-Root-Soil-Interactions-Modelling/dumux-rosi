@@ -27,6 +27,7 @@ namespace Dumux {
 template<class TypeTag>
 class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
 
+<<<<<<< HEAD
 	using ParentType = PorousMediumFlowProblem<TypeTag>;
 	using GridView = GetPropType<TypeTag, Properties::GridView>;
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
@@ -347,8 +348,8 @@ public:
 	 * \brief Applies a vector of point sources. The point sources
 	 *        are possibly solution dependent.
 	 *
-	 * \param pointSources A vector of PointSource s that contain
-             source values for all phases and space positions.
+	 * \param pointSources A vector of PointSource s that contain 
+     * source values for all phases and space positions.
 	 *
 	 * For this method, the \a values method of the point source
 	 * has to return the absolute mass rate in kg/s. Positive values mean

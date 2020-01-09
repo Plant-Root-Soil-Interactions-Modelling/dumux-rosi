@@ -19,7 +19,13 @@ class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
+    // exports, used by the binding
+    using Grid = GetPropType<TypeTag, Properties::Grid>;
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+
+    // other
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
@@ -33,11 +39,9 @@ public:
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using Grid = GetPropType<TypeTag, Properties::Grid>;
     using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
     using MaterialLawParams = typename MaterialLaw::Params;
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+
     using PointSource = GetPropType<TypeTag, Properties::PointSource>;
     using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
@@ -47,7 +51,9 @@ public:
         conti0EqIdx = Indices::conti0EqIdx,
         bothPhases = Indices::bothPhases,
         // world dimension
-        dimWorld = GridView::dimensionworld
+        dimWorld = GridView::dimensionworld,
+        // discretization method
+        isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
     };
 
     enum BCTypes {
@@ -82,6 +88,9 @@ public:
         }
         // IC
         initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
+
+        std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType " <<  bcBotType_ << ", " << bcBotValue_
+            << "\n" << std::flush;
     }
 
     /**
@@ -288,6 +297,7 @@ public:
     PrimaryVariables initial(const Entity& entity) const {
         auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
         Scalar z = entity.geometry().center()[dimWorld - 1];
+        // std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
         PrimaryVariables v(0.0);
         v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
         v.setState(bothPhases);

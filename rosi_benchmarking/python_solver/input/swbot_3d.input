@@ -1,0 +1,32 @@
+[Problem]
+Name = swbot
+
+[TimeLoop]
+TEnd = 31536000 # 31536000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+CheckTimes = 86400 864000  
+
+[Soil.Grid]
+LowerLeft = -0.375 -0.075 -1.26
+UpperRight = 0.375 0.075 0. 
+Cells = 75 15 126 
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 2 # constant flux
+Value = 0 # [cm day-1]
+
+[Soil.IC]
+P = -101.937 -101.937 -3058.104 -3058.104  # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa
+Z = -1.26 -.43 -.43 0.
+
+[Soil.VanGenuchten]  
+Qr = 0.067 
+Qs = 0.45  
+Alpha = 0.02  
+N = 1.41 
+Ks = 10.8

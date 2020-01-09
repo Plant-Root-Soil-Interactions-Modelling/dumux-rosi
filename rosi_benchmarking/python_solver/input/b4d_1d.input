@@ -1,0 +1,33 @@
+[Problem]
+Name = benchmark1d_4d
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 518400 # 6 days [s] 
+MaxTimeStepSize = 60 # a minute [s] 
+
+[Soil.Grid]
+UpperRight = 0
+LowerLeft = -1
+Cells = 99
+
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -200 # cm pressure head 
+
+[Soil.VanGenuchten] 
+# Clay: 
+Qr = 0.1 
+Qs = 0.4 
+Alpha = 0.01  # [1/cm] 
+N = 1.1 
+Ks = 10 # [cm/d] 
+
+[Climate]
+Time = 1e10 # const value 
+Precipitation = -0.3 # [cm/day]

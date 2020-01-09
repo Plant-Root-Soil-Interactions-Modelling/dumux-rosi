@@ -10,15 +10,14 @@ endif()
 #find dune-common and set the module path
 find_package(dune-common REQUIRED)
 find_package(dune-alugrid REQUIRED)
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules"
-  ${dune-common_MODULE_PATH})
+find_package(dune-pybindxi REQUIRED) # PATHS ../dune-pybindxi/build-cmake/
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${dune-common_MODULE_PATH} ) # "/home/daniel/workspace/DUMUX/dune-pybindxi/cmake/modules" <-
 
 #include the dune macros
 include(DuneMacros)
 
 # start a dune project with information from dune.module
 dune_project()
-
 dune_enable_all_packages()
 
 add_subdirectory(rosi_benchmarking)

@@ -21,7 +21,6 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 t = time.time()
 np_ = 8  # number of processors
 if np_ == 1:
-    pass
     os.system("./richards3d input/b1a_3d.input")
     os.system("./richards3d input/b1b_3d.input")
     os.system("./richards3d input/b1c_3d.input")

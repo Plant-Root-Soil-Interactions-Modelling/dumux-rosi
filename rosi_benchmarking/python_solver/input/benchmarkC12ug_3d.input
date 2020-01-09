@@ -1,0 +1,33 @@
+[Problem]
+Name = benchmarkC12ug
+
+[TimeLoop]
+TEnd = 31536000 # a year, 0 is steady state
+DtInitial =  3600 # [s]
+MaxTimeStepSize = 31536000 
+
+[Soil.Grid]
+File = grids/big_grid_tobi.msh
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 2 # 5 free drainage, 1 constant pressure 
+Value = 0 # [cm] pressure head, fully saturated bot
+
+[Soil.IC]
+P = -644.8 -659.8
+Z = -.15 0.
+
+[Soil.VanGenuchten] 
+# Sand, Loam, Clay 
+Qr = 0.045 0.08 0.1 	 
+Qs = 0.43 0.43 0.4
+Alpha =  0.15 0.04 0.01# [1/cm] 
+N =  3 1.6 1.1
+Ks = 1000 50 10 # [cm/d] 		
+
+[Soil.Layer]
+Number = 2 # pick soil type here starting at 1! (2 = Loam)
