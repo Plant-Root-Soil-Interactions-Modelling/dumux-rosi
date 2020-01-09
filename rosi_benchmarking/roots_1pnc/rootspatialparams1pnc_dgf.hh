@@ -62,7 +62,11 @@ public:
     }
 
     /**
-     * The two parameters of the Weibull function
+     * The two parameters of the Weibull function:
+     * b [Pa] or [cm] TODO, and
+     * c [1]
+     *
+     * k = exp(-(|psi|/b)^c)
      */
     void setParameter(double b, double c)
     {
@@ -72,8 +76,8 @@ public:
 
 private:
 
-    Scalar b_ = 1; // [Pa] or shall we convert to [cm] ?
-    Scalar c_ = 1; // [1]
+    Scalar b_ = 1.; // [Pa] or shall we convert to [cm] ?
+    Scalar c_ = 1.; // [1]
 
 };
 
