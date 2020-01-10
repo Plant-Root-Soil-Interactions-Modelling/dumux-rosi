@@ -53,7 +53,7 @@
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::RichardsBox;
+using SoilTypeTag = Properties::TTag::RichardsCC;
 using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
 
 

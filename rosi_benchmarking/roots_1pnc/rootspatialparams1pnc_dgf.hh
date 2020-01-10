@@ -21,6 +21,8 @@ namespace Dumux {
  *
  * use initParameters to initialize the class with data from the grid file
  *
+ * Permeability takes the effect of xylem caviation into account according to the model of Spery et al.
+ *
  */
 template<class FVGridGeometry, class Scalar>
 class RootSpatialParams1pncDGF : public RootSpatialParamsDGF<FVGridGeometry, Scalar> {
