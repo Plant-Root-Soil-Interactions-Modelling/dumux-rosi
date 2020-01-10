@@ -152,18 +152,18 @@ int main(int argc, char** argv) try
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CPlantBox::RootSystem>();
-        rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
+        rootSystem->readParameters("modelparameter/rootsystem/"+getParam<std::string>("RootSystem.Grid.File")+".xml");
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
         // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
-        rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
+        // rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         rootGrid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(*rootSystem);
+        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(rootSystem);
     }
 
     // root grid geometry
@@ -208,7 +208,8 @@ int main(int argc, char** argv) try
         gridGrowth = new GrowthModule::GridGrowth<RootTypeTag>(rootGrid, rootGridGeometry, growth, sol[rootDomainIdx]); // in growth/gridgrowth.hh
         std::cout << "...grid grower initialized \n" << std::flush;
         initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
-        gridGrowth->grow(initialTime);
+        std::cout << "intialT " << initialTime/24/3600 << "\n" << std::flush;
+        gridGrowth->grow(initialTime); ////////////////////////////////////////////////////////////////////
         std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 

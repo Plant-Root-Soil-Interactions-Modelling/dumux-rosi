@@ -85,6 +85,9 @@ public:
         //! grow the root system
         growth_->simulate(dt);
 
+        std::cout << "simulate \n" << std::flush;
+        auto newNodes2 = growth_->newNodes();
+
         //! get nodes that changed their position
         auto updatedNodeIndices = growth_->updatedNodeIndices();
         auto updatedNodes = growth_->updatedNodes();
@@ -93,11 +96,21 @@ public:
             grid_->setPosition(indexToVertex_[getDuneIndex_(updatedNodeIndices[i])], updatedNodes[i]);
         }
 
+        std::cout << "nodes moved \n" << std::flush;
 
         //! nodes and segments that have be added
         auto newNodes = growth_->newNodes();
+
+        std::cout << "newNodes \n" << std::flush;
+
         auto newNodeIndices = growth_->newNodeIndices();
+
+        std::cout << "newNodeIndices \n" << std::flush;
+
+
         auto newSegments = growth_->newSegments();
+
+        std::cout << "growth interface worked \n" << std::flush;
 
         //! add them to the dune-foamgrid
         if (!newSegments.empty()) {
@@ -111,12 +124,15 @@ public:
                     DUNE_THROW(Dune::GridError, "Nodes are not consecutively numbered!");
                 }
             }
+            std::cout << "register new vertices \n" << std::flush;
 
             // insert the line elements
             for (size_t i = 0; i < newSegments.size(); i++) {
                 const auto& s = newSegments[i];
                 grid_->insertElement(Dune::GeometryTypes::line, { getDuneIndex_(s[0]), getDuneIndex_(s[1]) });
             }
+
+            std::cout << "segments inserted \n" << std::flush;
 
             // this actually inserts the new vertices and segments
 
@@ -130,6 +146,8 @@ public:
             indexMap_.resize(gv.size(Grid::dimension));
             indexMapInv_.resize(gv.size(Grid::dimension)); // inverse map
 
+            std::cout << "someting \n" << std::flush;
+
             // update the actual index of new vertices, map growth model index to dune vertex index
             auto vMapper = fvGridGeometry_->vertexMapper();
             for (const auto& v : vertices(gv)) {
@@ -141,6 +159,8 @@ public:
                     // std::cout << " vertex: growth insertion index " << insertionIdx << ", final index " << vIdx << "\n"<< std::flush;
                 }
             }
+
+            std::cout << "update vMapper \n" << std::flush;
 
             // update the actual index the new elements, map growth model segment index to dune element index
             auto eMapper = fvGridGeometry_->elementMapper();
@@ -159,16 +179,25 @@ public:
                 }
             }
 
+            std::cout << "update eMapper \n" << std::flush;
+
             // also update the index to vertex map
             indexToVertex_.update(fvGridGeometry_->vertexMapper());
 
             // restore the old grid data and initialize new data
             reconstructData_();
 
+            std::cout << "reconstruct \n" << std::flush;
+
             // cleanup grid after growth
             grid_->postGrow();
 
+            std::cout << "postGrow \n" << std::flush;
+
         }
+
+        std::cout << "segments inserted \n" << std::flush;
+
 
         // check if all segments could be inserted
         if (oldNumSegments + newSegments.size() != gv.size(0)) {

@@ -1,7 +1,7 @@
 [Problem]
 Name = test
-RootName = ../rootsystem_stomata/input/test.input
-SoilName = ../soil_stomata/input/test.input
+RootName = ../roots_1pnc/input/test.input
+SoilName = ../soil_richards/input/small_3d.input
 
 [TimeLoop]
 TEnd = 259200 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]

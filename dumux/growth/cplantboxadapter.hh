@@ -45,40 +45,38 @@ class CPlantBoxAdapter :public GrowthInterface<GlobalPosition> {
 
 public:
 
-    CPlantBoxAdapter(CPlantBox::RootSystem& rs) :rootsystem_(rs) {
-        this->root2dune = std::vector<size_t>(rs.getNumberOfNodes());
+    CPlantBoxAdapter(std::shared_ptr<CPlantBox::RootSystem> rs) :rootsystem_(rs) {
+        this->root2dune = std::vector<size_t>(rs->getNumberOfNodes());
         std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
 
     virtual ~CPlantBoxAdapter() { }; // nothing to do
 
     void simulate(double dt) override {
-        rootsystem_.simulate(dt/3600./24., false);
+        rootsystem_->simulate(dt/3600./24., false);
     }
 
     void store() override { // currently unused
-        std::cout << "store root system at time " << rootsystem_.getSimTime() << "\n";
-        storedRootSystem_ = RootSystem(rootsystem_); // deep copy
-        // this was never checked for memory leaks
+        std::cout << "store root system at time " << rootsystem_->getSimTime() << "\n";
+        storedRootSystem_ = rootsystem_->copy(); // deep copy
     }
 
     void restore() override { // currently unused
-        std::cout << "restore root system failed at " << storedRootSystem_.getSimTime();
-        rootsystem_ = CPlantBox::RootSystem(storedRootSystem_); // deep copy
-        std::cout << " to " << rootsystem_.getSimTime();
+        std::cout << "restore root system failed at " << storedRootSystem_->getSimTime();
+        rootsystem_ = std::static_pointer_cast<CPlantBox::RootSystem>(storedRootSystem_); // once I need to cast
     }
 
     double simTime() const override {
-        return rootsystem_.getSimTime()*24.*3600;
+        return rootsystem_->getSimTime()*24.*3600;
     }
 
     std::vector<size_t> updatedNodeIndices() const override {
-        auto ni = rootsystem_.getUpdatedNodeIndices();
+        auto ni = rootsystem_->getUpdatedNodeIndices();
         return std::vector<size_t>(ni.begin(), ni.end());
     }
 
     std::vector<GlobalPosition> updatedNodes() const override {
-        std::vector<Vector3d> n = rootsystem_.getUpdatedNodes();
+        std::vector<Vector3d> n = rootsystem_->getUpdatedNodes();
         auto p = std::vector<GlobalPosition>(n.size());
         for (size_t i=0; i<n.size(); i++) {
             p[i][0] = n[i].x/100.; // convert to m
@@ -89,19 +87,19 @@ public:
     }
 
     std::vector<double> updatedNodeCTs() const override {
-        std::vector<double> cts = rootsystem_.getUpdatedNodeCTs();
+        std::vector<double> cts = rootsystem_->getUpdatedNodeCTs();
         std::transform(cts.begin(), cts.end(), cts.begin(), std::bind1st(std::multiplies<double>(), 24.*3600.)); // convert to s
         return cts;
     }
 
     std::vector<size_t> newNodeIndices() const override {
-        auto v = std::vector<size_t>(rootsystem_.getNumberOfNewNodes());
-        std::iota(v.begin(), v.end(), rootsystem_.getNumberOfNodes()-rootsystem_.getNumberOfNewNodes());
+        auto v = std::vector<size_t>(rootsystem_->getNumberOfNewNodes());
+        std::iota(v.begin(), v.end(), rootsystem_->getNumberOfNodes()-rootsystem_->getNumberOfNewNodes());
         return v;
     }
 
     std::vector<GlobalPosition> newNodes() const override {
-        std::vector<Vector3d> n = rootsystem_.getNewNodes();
+        std::vector<Vector3d> n = rootsystem_->getNewNodes();
         auto p = std::vector<GlobalPosition>(n.size());
         for (size_t i=0; i<n.size(); i++) {
             p[i][0] = n[i].x/100.; // convert to m
@@ -112,7 +110,7 @@ public:
     }
 
     std::vector<std::array<size_t, 2>> newSegments() const override {
-        std::vector<Vector2i> s = rootsystem_.getNewSegments();
+        std::vector<Vector2i> s = rootsystem_->getNewSegments();
         auto seg = std::vector<std::array<size_t, 2>>(s.size());
         for (size_t i=0; i<s.size(); i++) {
             seg[i] = std::array<size_t, 2>{size_t(s[i].x), size_t(s[i].y)};
@@ -121,12 +119,12 @@ public:
     }
 
     std::vector<double> segmentCreationTimes() const override { // a bit tricky since RootBox uses node creation times now
-        std::vector<Vector2i> segs = rootsystem_.getNewSegments();
-        std::vector<double> nodeCTs = rootsystem_.getNewNodeCTs();
+        std::vector<Vector2i> segs = rootsystem_->getNewSegments();
+        std::vector<double> nodeCTs = rootsystem_->getNewNodeCTs();
         std::vector<double> segCTs = std::vector<double>(segs.size());
         int i = 0;
         for (auto& s :segs) {
-            int ni = s.y - (rootsystem_.getNumberOfNodes()-rootsystem_.getNumberOfNewNodes());
+            int ni = s.y - (rootsystem_->getNumberOfNodes()-rootsystem_->getNumberOfNewNodes());
             segCTs[i] = nodeCTs[ni];
             i++;
         }
@@ -139,7 +137,7 @@ public:
      * or we move radius to the Organ class for simplicity
      */
     std::vector<double> segmentRadii() const override {
-        auto roots = rootsystem_.getNewSegmentOrigins();
+        auto roots = rootsystem_->getNewSegmentOrigins();
         auto radii = std::vector<double>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
             radii[i] =  roots[i]->getParameter("radius") / 100.; // convert to m TODO radius to base class?
@@ -152,7 +150,7 @@ public:
      * radius, order, id, ...
      */
     std::vector<double>  segmentParameter(std::string name) const override {
-    	auto roots = rootsystem_.getNewSegmentOrigins();
+    	auto roots = rootsystem_->getNewSegmentOrigins();
         auto param = std::vector<double>(roots.size());
         for (size_t i=0; i<roots.size(); i++) {
             param[i] = roots[i]->getParameter(name);
@@ -168,8 +166,8 @@ public:
     }
 
 private:
-    CPlantBox::RootSystem rootsystem_;
-    CPlantBox::RootSystem storedRootSystem_;
+    std::shared_ptr<CPlantBox::RootSystem> rootsystem_;
+    std::shared_ptr<Organism> storedRootSystem_;
 
 };
 
