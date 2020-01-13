@@ -55,8 +55,8 @@ public:
         Scalar kx = this->kx(eIdx);
         Scalar p = elemSol[0][0];
         Scalar y = -std::abs(p)/b_;
-        Scalar k = std::exp(std::exp(c_*std::log(y))); // std::exp(c*std::log(y)) == y^c
-        return kx * mu / (M_PI * a * a);
+        Scalar kappa = std::exp(std::exp(c_*std::log(y))); // std::exp(c*std::log(y)) == y^c
+        return kappa * kx * mu / (M_PI * a * a);
     }
 
     /**

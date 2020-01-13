@@ -146,12 +146,20 @@ public:
     }
 
     //! evaluates user defined data for vtk fields
-    void userData(std::string name, const SolutionVector& sol) {
+    void userData(std::string name, const SolutionVector& sol, const GridVariables& gridVars) {
+
         const auto& gridView = this->fvGridGeometry().gridView();
         userData_[name] = std::vector<Scalar>(gridView.size(0));
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
-        for (const auto& e : elements(gridView)) {
+
+        for (const auto& e :elements(this->fvGridGeometry().gridView())) {
+
+            auto fvGeometry = localView(this->fvGridGeometry());
+            fvGeometry.bindElement(e);
+            auto elemVolVars = localView(gridVars.curGridVolVars());
+            elemVolVars.bindElement(e, fvGeometry, sol);
+
             auto eIdx = eMapper.index(e);
             double d = 0;
             if (name=="kr") {
@@ -176,7 +184,7 @@ public:
                 d = initialAtPos(e.geometry().center())[pressureIdx]; // Pa
                 d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
-            if (name=="radialFlux") {
+            if (name=="radialFlux") { // two point approximation
                 auto geo = e.geometry();
                 auto length = geo.volume();
                 auto kr = this->spatialParams().kr(eIdx);
@@ -197,14 +205,17 @@ public:
                 d = kx * ((sol[i1][pressureIdx] - sol[i0][pressureIdx]) / length - rho_ * g_); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
-            if (name=="p") {
+            if (name=="pSoil") {
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 d = 0.5 * (sol[i1][0] + sol[i0][0]);
                 d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
+
             userData_[name][eIdx] = d;
+
         }
+
     }
 
     //! vtk fields call back functions
@@ -597,7 +608,7 @@ public:
             }
         }
         std::cout << "Source: water    " << source[contiH2OEqIdx]*3600*24*1000 << " (g/day),\n" <<
-                     "        hormones " << source[transportABAEqIdx]*3600*24*1000 << " (g/day)" << '\n';
+            "        hormones " << source[transportABAEqIdx]*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
@@ -606,23 +617,6 @@ public:
     }
 
 protected:
-
-    //    //! evaluate the gradient (todo not sure if we need it)
-    //    GlobalPosition gradient( const Element &element, const FVElementGeometry& fvGeometry,
-    //        const ElementVolumeVariables& elemVolVars, const GlobalPosition& ipGlobal) {
-    //        if(isBox) {
-    //            const auto grads = evalGradients(element, element.geometry(), fvGeometry.fvGridGeometry(),
-    //                elementSolution(element, elemVolVars, fvGeometry), ipGlobal);
-    //            return grads[pressureIdx];
-    //        } else {
-    //            const auto& scvCenter = fvGeometry.scv(scvf.insideScvIdx()).center();
-    //            const Scalar scvCenterPresureSol = elemSol[0][pressureIdx];
-    //            auto grad = ipGlobal - scvCenter;
-    //            grad /= grad.two_norm2();
-    //            grad *= (dirichletPressure - scvCenterPresureSol);
-    //            return grad;
-    //        }
-    //    }
 
     //! cm pressure head -> Pascal
     Scalar toPa_(Scalar ph) const {
