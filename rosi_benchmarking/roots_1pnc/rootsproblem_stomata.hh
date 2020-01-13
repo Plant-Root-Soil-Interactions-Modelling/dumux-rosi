@@ -146,7 +146,7 @@ public:
     }
 
     //! evaluates user defined data for vtk fields
-    void userData(std::string name, const SolutionVector& sol, const GridVariables& gridVars) {
+    void userData(std::string name, const SolutionVector& sol) { // , const GridVariables& gridVars
 
         const auto& gridView = this->fvGridGeometry().gridView();
         userData_[name] = std::vector<Scalar>(gridView.size(0));
@@ -155,10 +155,10 @@ public:
 
         for (const auto& e :elements(this->fvGridGeometry().gridView())) {
 
-            auto fvGeometry = localView(this->fvGridGeometry());
-            fvGeometry.bindElement(e);
-            auto elemVolVars = localView(gridVars.curGridVolVars());
-            elemVolVars.bindElement(e, fvGeometry, sol);
+//            auto fvGeometry = localView(this->fvGridGeometry());
+//            fvGeometry.bindElement(e);
+//            auto elemVolVars = localView(gridVars.curGridVolVars());
+//            elemVolVars.bindElement(e, fvGeometry, sol);
 
             auto eIdx = eMapper.index(e);
             double d = 0;

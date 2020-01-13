@@ -149,7 +149,7 @@ int main(int argc, char** argv) try
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(*rootSystem);
+        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(rootSystem);
     }
 
     // root grid geometry
