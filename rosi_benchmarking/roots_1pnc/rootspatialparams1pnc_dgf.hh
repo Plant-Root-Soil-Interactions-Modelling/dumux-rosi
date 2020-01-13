@@ -54,13 +54,9 @@ public:
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
         Scalar p = elemSol[0][0];
-
-        std::cout << "pressure? "<< p << ", " ; // for debugging
-
         Scalar y = -std::abs(p)/b_;
         Scalar k = std::exp(std::exp(c_*std::log(y))); // std::exp(c*std::log(y)) == y^c
-
-         return kx * mu / (M_PI * a * a);
+        return kx * mu / (M_PI * a * a);
     }
 
     /**
