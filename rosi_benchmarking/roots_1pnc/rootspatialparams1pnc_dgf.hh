@@ -78,7 +78,7 @@ public:
 
 private:
 
-    Scalar b_ = 1.; // [Pa] or shall we convert to [cm] ?
+    Scalar b_ = 1.e16; // [Pa] or shall we convert to [cm] ?
     Scalar c_ = 1.; // [1]
 
 };

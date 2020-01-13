@@ -150,6 +150,9 @@ int main(int argc, char** argv) try
     GlobalPosition lower = soilGridGeometry->bBoxMin();
     GlobalPosition upper = soilGridGeometry->bBoxMax();
 
+    std::cout << "lower " << lower << "\n";
+    std::cout << "upper " << upper << "\n";
+
     // Create the gridmanager and grid
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
@@ -174,7 +177,7 @@ int main(int argc, char** argv) try
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(*rootSystem);
+        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(rootSystem);
     }
 
     // root grid geometry
@@ -440,7 +443,7 @@ int main(int argc, char** argv) try
 
     ////////////////////////////////////////////////////////////
     // finalize, print dumux message to say goodbye
-    ////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////-ro
 
     // print dumux end message
     if (mpiHelper.rank() == 0) {
@@ -465,27 +468,4 @@ catch (Dumux::ParameterException &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
-
-
-/**
- *
- */
-//template <class Assembler, class LinearSolver>
-//class MyNewton :public Dumux::NewtonSolver<Assembler,LinearSolver> {
-//
-//    using GlobalPosition = Dune::FieldVector<double, 3>;
-//
-//public:
-//
-//    virtual ~MyNewton() { }
-//
-//    virtual void newtonFail(SolutionVector& u) {
-//        std::cout << "i failed \n";
-//        grow->restore();
-//    }
-//
-//    GrowthModule::GrowthInterface<GlobalPosition>* grow;
-//
-//
-//};
 
