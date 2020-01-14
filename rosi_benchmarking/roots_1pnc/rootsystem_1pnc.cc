@@ -244,7 +244,8 @@ int main(int argc, char** argv) try
             double t = timeLoop->time(); // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
             problem->setTime(t, dt); // pass current time to the problem
-            problem->calcCumulativeOutflow(x, *gridVariables);
+            problem->postTimeStep(x, *gridVariables);
+            problem->writeTranspirationRate(); // add transpiration data into the text file
 
             if (grow) {
 
@@ -295,9 +296,8 @@ int main(int argc, char** argv) try
                 problem->userData("kx", x);
                 vtkWriter.write(timeLoop->time());
             }
-            problem->writeTranspirationRate(x); // always add transpiration data into the text file
-            timeLoop->reportTimeStep();  // report statistics of this time step
 
+            timeLoop->reportTimeStep();  // report statistics of this time step
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
 
         } while (!timeLoop->finished());
@@ -309,7 +309,6 @@ int main(int argc, char** argv) try
         std::cout << "a static model \n\n" << std::flush;
 
         assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-
         nonLinearSolver.solve(x); // solve the non-linear system
 
         // write outputs
@@ -320,7 +319,8 @@ int main(int argc, char** argv) try
         problem->userData("kr", x);  // conductivities change with age
         problem->userData("kx", x);
         vtkWriter.write(1); // write vtk output
-        problem->writeTranspirationRate(x);
+        problem->postTimeStep(x, *gridVariables);
+        problem->writeTranspirationRate();
     }
 
     ////////////////////////////////////////////////////////////

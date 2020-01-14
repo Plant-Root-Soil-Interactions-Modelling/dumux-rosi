@@ -160,7 +160,7 @@ int main(int argc, char** argv) try
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
         //    rootSystem->setSoil(&soilLookup);
-        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(*rootSystem);
+        growth = new GrowthModule::CPlantBoxAdapter<GlobalPosition>(rootSystem);
     }
 
     // root grid geometry
@@ -328,8 +328,9 @@ int main(int argc, char** argv) try
             double t = timeLoop->time(); // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
             rootProblem->setTime(t, dt); // pass current time to the root problem
+            rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
+            rootProblem->writeTranspirationRate(); // add transpiration data into the text file
             soilProblem->setTime(t);
-            rootProblem->calcCumulativeOutflow(sol[rootDomainIdx], *rootGridVariables);
 
             if (grow) {
 
@@ -392,13 +393,11 @@ int main(int argc, char** argv) try
                 rootVtkWriter.write(timeLoop->time());
                 soilVtkWriter.write(timeLoop->time());
             }
-            rootProblem->writeTranspirationRate(sol[rootDomainIdx]); // always add transpiration data into the text file
             soilProblem->computeSourceIntegral(sol[soilDomainIdx], *soilGridVariables);
             rootProblem->computeSourceIntegral(sol[rootDomainIdx], *rootGridVariables);
             std::cout << "\n";
 
             timeLoop->reportTimeStep();  // report statistics of this time step
-
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
 
         } while (!timeLoop->finished());
@@ -422,7 +421,8 @@ int main(int argc, char** argv) try
         rootProblem->userData("kx", sol[rootDomainIdx]);
         rootVtkWriter.write(1); // write vtk output
         soilVtkWriter.write(1);
-        rootProblem->writeTranspirationRate(sol[rootDomainIdx]);
+        rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
+        rootProblem->writeTranspirationRate(); // add transpiration data into the text file
     }
 
     ////////////////////////////////////////////////////////////

@@ -81,6 +81,7 @@ class RootsOnePTwoCProblem: public PorousMediumFlowProblem<TypeTag> {
 
 public:
 
+    //! Constructor
     RootsOnePTwoCProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
 
         // initialize fluid system
@@ -139,6 +140,7 @@ public:
 
     }
 
+    //! Destructor - close transpiration file
     virtual ~RootsOnePTwoCProblem() {
         delete soil_;
         std::cout << "closing file \n" << std::flush;
@@ -147,19 +149,11 @@ public:
 
     //! evaluates user defined data for vtk fields
     void userData(std::string name, const SolutionVector& sol) { // , const GridVariables& gridVars
-
         const auto& gridView = this->fvGridGeometry().gridView();
         userData_[name] = std::vector<Scalar>(gridView.size(0));
         auto eMapper = this->fvGridGeometry().elementMapper();
         auto vMapper = this->fvGridGeometry().vertexMapper();
-
         for (const auto& e :elements(this->fvGridGeometry().gridView())) {
-
-//            auto fvGeometry = localView(this->fvGridGeometry());
-//            fvGeometry.bindElement(e);
-//            auto elemVolVars = localView(gridVars.curGridVolVars());
-//            elemVolVars.bindElement(e, fvGeometry, sol);
-
             auto eIdx = eMapper.index(e);
             double d = 0;
             if (name=="kr") {
@@ -211,11 +205,8 @@ public:
                 d = 0.5 * (sol[i1][0] + sol[i0][0]);
                 d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
-
             userData_[name][eIdx] = d;
-
         }
-
     }
 
     //! vtk fields call back functions
@@ -228,7 +219,7 @@ public:
     std::vector<Scalar>& radius() { return userData_["radius"]; }
     std::vector<Scalar>& initialPressure() { return userData_["initialPressure"]; }
     std::vector<Scalar>& id() { return userData_["id"]; }
-    std::vector<Scalar>& p() { return userData_["p"]; }
+    std::vector<Scalar>& p() { return userData_["pSoil"]; }
 
     //! calculates transpiraton, as the sum of radial fluxes (slow but accurate) [cm^3/day]
     Scalar transpiration(const SolutionVector& sol) {
@@ -250,37 +241,7 @@ public:
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const {
         BoundaryTypes bcTypes;
         bcTypes.setAllNeumann(); // default
-        if (onUpperBoundary_(pos)) { // root collar
-            if (bcType_ == bcDirichlet) {
-                bcTypes.setAllDirichlet();
-            } else {
-                if (!critical_) {
-                    bcTypes.setAllNeumann();
-                } else {
-                    bcTypes.setAllDirichlet();
-                }
-            }
-        } else { // for all other (i.e. root tips)
-            bcTypes.setAllNeumann();
-        }
         return bcTypes;
-    }
-
-    /*!
-     * \brief Evaluate the boundary conditions for a dirichlet
-     *        control volume.
-     */
-    PrimaryVariables dirichletAtPos(const GlobalPosition &pos) const {
-        PrimaryVariables p;
-        if (critical_) {
-            p[contiH2OEqIdx] = critPCollarDirichlet_;
-            p[transportABAEqIdx] = 0.; // todo what to do in the case of dirichlet, avoid?;
-            return p;
-        } else {
-            p[contiH2OEqIdx] = collar_.f(time_)+pRef_;
-            p[transportABAEqIdx] = 0.; // todo what to do in the case of dirichlet, avoid?
-            return p;
-        }
     }
 
     /*
@@ -399,12 +360,6 @@ public:
      * solution dependent and requires some quantities that
      * are specific to the fully-implicit method.
      *
-     * \param pointSource A single point source
-     * \param element The finite element
-     * \param fvGeometry The finite-volume geometry
-     * \param elemVolVars All volume variables for the element
-     * \param scv The sub-control volume within the element
-     *
      * For this method, the \a values() method of the point sources returns
      * the absolute rate mass generated or annihilate in kg/s. Positive values mean
      * that mass is created, negative ones mean that it vanishes.
@@ -457,7 +412,6 @@ public:
         }
     }
 
-
     /*!
      * \brief Evaluate the initial value for a control volume.
      */
@@ -470,6 +424,7 @@ public:
 
     /**
      * deletes old soil, sets new soil, takes ownership
+     * TODO use smart pointers
      */
     void setSoil(CPlantBox::SoilLookUp* s) {
         delete soil_;
@@ -487,11 +442,6 @@ public:
         this->spatialParams().setTime(t, dt);
         time_ = t;
         dt_ = dt;
-    }
-
-    //! if true, sets bc to Dirichlet at criticalCollarPressure (false per default)
-    void setCritical(bool b) {
-        critical_ = b;
     }
 
     //! sets the criticalCollarPressure [Pa]
@@ -517,7 +467,7 @@ public:
     /**
      * Sets the cumulative outflow according to the last solution
      */
-    void calcCumulativeOutflow(const SolutionVector& sol, const GridVariables& gridVars) {
+    void postTimeStep(const SolutionVector& sol, const GridVariables& gridVars) {
 
         NumEqVector source(0.0);
         mLRate_ = 0.;
@@ -580,15 +530,15 @@ public:
     }
 
     /*!
-     * writes the actual transpiration into a text file:
+     * Writes the actual transpiration into a text file. Call postTimeStep before using it.
+     *
      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
-     * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
+     * 4 collar pressure [Pa], 5 - (0.), 6 simtime [s], 7 hormone leaf mass [kg],
      * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
      */
-    void writeTranspirationRate(const SolutionVector& sol) {
-        Scalar trans = this->transpiration(sol); // [cm3/day]
+    void writeTranspirationRate() {
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << trans << ", "<< time_ << " , " << mL_ << ", "<< mLRate_  << ", " << mRoot_ << ", " << mRootRate_ << "\n";
+            << 0. << ", "<< time_ << " , " << mL_ << ", "<< mLRate_  << ", " << mRoot_ << ", " << mRootRate_ << "\n";
     }
 
     /**
@@ -634,7 +584,6 @@ protected:
     size_t bcType_;
     double time_ = 0.; // s
     double dt_ = 0.; // s
-    bool critical_ = false; // imposes dirichlet strong
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
     static constexpr Scalar rho_ = 1.e3; //1.e3; // kg / m^3
