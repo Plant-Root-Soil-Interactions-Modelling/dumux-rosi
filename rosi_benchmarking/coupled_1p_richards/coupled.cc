@@ -332,6 +332,8 @@ int main(int argc, char** argv) try
             double t = timeLoop->time(); // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
             rootProblem->setTime(t, dt); // pass current time to the root problem
+            rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
+            rootProblem->writeTranspirationRate(); // add transpiration data into the text file
             soilProblem->setTime(t);
 
             if (grow) {
@@ -395,13 +397,11 @@ int main(int argc, char** argv) try
                 rootVtkWriter.write(timeLoop->time());
                 soilVtkWriter.write(timeLoop->time());
             }
-            rootProblem->writeTranspirationRate(sol[rootDomainIdx]); // always add transpiration data into the text file
             soilProblem->computeSourceIntegral(sol[soilDomainIdx], *soilGridVariables);
             rootProblem->computeSourceIntegral(sol[rootDomainIdx], *rootGridVariables);
             std::cout << "\n";
 
             timeLoop->reportTimeStep();  // report statistics of this time step
-
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize())); // set new dt as suggested by the newton solver
 
         } while (!timeLoop->finished());
@@ -413,7 +413,6 @@ int main(int argc, char** argv) try
         std::cout << "a static model \n\n" << std::flush;
 
         assembler->setPreviousSolution(oldSol); // set previous solution for storage evaluations
-
         nonLinearSolver.solve(sol); // solve the non-linear system
 
         // write outputs
@@ -425,7 +424,8 @@ int main(int argc, char** argv) try
         rootProblem->userData("kx", sol[rootDomainIdx]);
         rootVtkWriter.write(1); // write vtk output
         soilVtkWriter.write(1);
-        rootProblem->writeTranspirationRate(sol[rootDomainIdx]);
+        rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
+        rootProblem->writeTranspirationRate();
     }
 
     ////////////////////////////////////////////////////////////
