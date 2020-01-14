@@ -232,7 +232,9 @@ int main(int argc, char** argv) try
             // set new dt as suggested by the newton solver
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
-            problem->setTime(timeLoop->time());
+            problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
+            problem->postTimeStep(x, *gridVariables);
+            problem->writeBoundaryFluxes();
 
         } while (!timeLoop->finished());
 
@@ -244,6 +246,8 @@ int main(int argc, char** argv) try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
+        problem->postTimeStep(x, *gridVariables);
+        problem->writeBoundaryFluxes();
     }
 
     ////////////////////////////////////////////////////////////

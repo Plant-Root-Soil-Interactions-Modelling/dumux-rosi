@@ -347,7 +347,10 @@ int main(int argc, char** argv) try
             rootProblem->setTime(t, dt); // pass current time to the root problem
             rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
             rootProblem->writeTranspirationRate(); // add transpiration data into the text file
-            soilProblem->setTime(t);
+            soilProblem->setTime(t, dt);
+            soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
+            soilProblem->writeBoundaryFluxes();
+
 
             if (grow) {
 
@@ -439,6 +442,8 @@ int main(int argc, char** argv) try
         soilVtkWriter.write(1);
         rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
         rootProblem->writeTranspirationRate();
+        soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
+        soilProblem->writeBoundaryFluxes();
     }
 
     ////////////////////////////////////////////////////////////

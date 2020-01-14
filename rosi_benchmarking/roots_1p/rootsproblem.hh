@@ -380,7 +380,7 @@ public:
     }
 
     /**
-     * Sets the cumulative outflow according to the last solution
+     * Sets transpiration according to the last solution
      */
     void postTimeStep(const SolutionVector& sol, const GridVariables& gridVars) {
 

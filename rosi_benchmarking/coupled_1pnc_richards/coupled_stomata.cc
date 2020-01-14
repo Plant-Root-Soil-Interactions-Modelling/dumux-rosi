@@ -319,7 +319,9 @@ int main(int argc, char** argv) try
             rootProblem->setTime(t, dt); // pass current time to the root problem
             rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
             rootProblem->writeTranspirationRate(); // add transpiration data into the text file
-            soilProblem->setTime(t);
+            soilProblem->setTime(t, dt);
+            soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
+            soilProblem->writeBoundaryFluxes();
 
             if (grow) {
 
@@ -412,6 +414,8 @@ int main(int argc, char** argv) try
         soilVtkWriter.write(1);
         rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
         rootProblem->writeTranspirationRate(); // add transpiration data into the text file
+        soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
+        soilProblem->writeBoundaryFluxes();
     }
 
     ////////////////////////////////////////////////////////////
@@ -441,27 +445,4 @@ catch (Dumux::ParameterException &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
-
-
-/**
- *
- */
-//template <class Assembler, class LinearSolver>
-//class MyNewton :public Dumux::NewtonSolver<Assembler,LinearSolver> {
-//
-//    using GlobalPosition = Dune::FieldVector<double, 3>;
-//
-//public:
-//
-//    virtual ~MyNewton() { }
-//
-//    virtual void newtonFail(SolutionVector& u) {
-//        std::cout << "i failed \n";
-//        grow->restore();
-//    }
-//
-//    GrowthModule::GrowthInterface<GlobalPosition>* grow;
-//
-//
-//};
 

@@ -72,6 +72,7 @@ public:
      */
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
+
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
@@ -83,24 +84,22 @@ public:
             precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
             precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
             precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
-            std::string filestr = this->name() + ".csv"; // output file
-            myfile_.open(filestr.c_str());
         }
         // IC
         initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
-
-        std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType " <<  bcBotType_ << ", " << bcBotValue_
-            << "\n" << std::flush;
+        // Output
+        std::string filestr = this->name() + ".csv"; // output file
+        myfile_.open(filestr.c_str());
+        std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
+            <<  bcBotType_ << ", " << bcBotValue_ << "\n" << std::flush;
     }
 
     /**
      * \brief Eventually, closes output file
      */
     ~RichardsProblem() {
-        if (bcTopType_==atmospheric) {
-            std::cout << "closing file \n";
-            myfile_.close();
-        }
+        std::cout << "closing file \n";
+        myfile_.close();
     }
 
     /*!
@@ -114,7 +113,6 @@ public:
      * overwrites PorousMediumFlowProblem::temperature (compiles without, throws exception of base class)
      */
     Scalar temperature() const {
-        // std::cout << "\n\n dont dont dont \n\n";
         return 273.15 + 10; // -> 10°C
     }
 
@@ -128,7 +126,23 @@ public:
     }
 
     /*!
-     * \copydoc FVProblem::boundaryTypesAtPos
+     * \copydoc FVProblem::initial
+     *
+     * called by FVProblem::applyInitialSolution(...)
+     */
+    template<class Entity>
+    PrimaryVariables initial(const Entity& entity) const {
+        auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+        Scalar z = entity.geometry().center()[dimWorld - 1];
+        // std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
+        PrimaryVariables v(0.0);
+        v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
+        v.setState(bothPhases);
+        return v;
+    }
+
+    /*!
+     * @copydoc FVProblem::boundaryTypesAtPos
      *
      * discretization dependent, e.g. called by BoxElementBoundaryTypes::boundaryTypes(...)
      * when?
@@ -182,8 +196,7 @@ public:
                 values[Indices::pressureIdx] = toPa_(bcTopValue_);
                 break;
             default:
-                DUNE_THROW(Dune::InvalidStateException,
-                    "Top boundary type Dirichlet: unknown boundary type");
+                DUNE_THROW(Dune::InvalidStateException, "Top boundary type Dirichlet: unknown boundary type");
             }
         } else if (onLowerBoundary_(globalPos)) { // bot bc
             switch (bcBotType_) {
@@ -191,8 +204,7 @@ public:
                 values[Indices::pressureIdx] = toPa_(bcBotValue_);
                 break;
             default:
-                DUNE_THROW(Dune::InvalidStateException,
-                    "Bottom boundary type Dirichlet: unknown boundary type");
+                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Dirichlet: unknown boundary type");
             }
         }
         values.setState(Indices::bothPhases);
@@ -202,7 +214,8 @@ public:
     /*!
      * \copydoc FVProblem::neumann // [kg/(m²*s)]
      *
-     * called by BoxLocalResidual::evalFlux
+     * called by BoxLocalResidual::evalFlux,
+     *  mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
      */
     NumEqVector neumann(const Element& element,
         const FVElementGeometry& fvGeometry,
@@ -237,17 +250,10 @@ public:
                     // std::cout << prec << ", " << emax << ", " << h << "\n";
                     values[conti0EqIdx] = v;
                 }
-                // hack for benchmark 4 TODO some better concept for output
-                if (time_ > last_time_) { // once per time step
-                    myfile_ << time_ << ", "; //
-                    myfile_ << values[conti0EqIdx] << "\n";
-                    last_time_ = time_;
-                }
                 break;
             }
             default:
-                DUNE_THROW(Dune::InvalidStateException,
-                    "Top boundary type Neumann: unknown error");
+                DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
             }
         } else if (onLowerBoundary_(pos)) { // bot bc
             switch (bcBotType_) {
@@ -264,8 +270,7 @@ public:
                 break;
             }
             default:
-                DUNE_THROW(Dune::InvalidStateException,
-                    "Bottom boundary type Neumann: unknown error");
+                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
             }
         } else {
             values[conti0EqIdx] = 0.;
@@ -288,29 +293,15 @@ public:
         }
     }
 
-    /*!
-     * \copydoc FVProblem::initial
-     *
-     * called by FVProblem::applyInitialSolution(...)
-     */
-    template<class Entity>
-    PrimaryVariables initial(const Entity& entity) const {
-        auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
-        Scalar z = entity.geometry().center()[dimWorld - 1];
-        // std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
-        PrimaryVariables v(0.0);
-        v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
-        v.setState(bothPhases);
-        return v;
-    }
 
     /*!
      * Sets the current simulation time (within the simulation loop) for atmospheric look up [s]
      *
      * eventually, called in the main file (example specific, richards.cc)
      */
-    void setTime(Scalar t) {
+    void setTime(Scalar t, Scalar dt) {
         time_ = t;
+        dt_ = dt; // currently unused
     }
 
     /*!
@@ -394,25 +385,57 @@ public:
     }
 
     /**
+     * Sets boundary fluxes according to the last solution
+     */
+    void postTimeStep(const SolutionVector& sol, const GridVariables& gridVars) {
+        bc_flux_upper = 0.;
+        int uc = 0;
+        bc_flux_lower = 0.;
+        int lc = 0;
+        for (const auto& e :elements(this->fvGridGeometry().gridView())) {
+            auto fvGeometry = localView(this->fvGridGeometry());
+            fvGeometry.bindElement(e);
+            auto elemVolVars = localView(gridVars.curGridVolVars());
+            elemVolVars.bindElement(e, fvGeometry, sol);
+            for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
+                auto p = scvf.center();
+                if (onUpperBoundary_(p)) { // top
+                    bc_flux_upper += neumann(e, this->fvGridGeometry(), elemVolVars, scvf);
+                    uc++;
+                } else if (onLowerBoundary_(p)) { // bottom
+                    bc_flux_lower += neumann(e, this->fvGridGeometry(), elemVolVars, scvf);
+                    lc++;
+                }
+            }
+        }
+        bc_flux_upper /= uc;
+        bc_flux_lower /= lc;
+    }
+
+    /*!
+     * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
+     */
+    void writeBoundaryFluxes() {
+        myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
+    }
+
+    /**
      * debug info
      */
     void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
         NumEqVector source(0.0);
-        for (const auto& element : elements(this->fvGridGeometry().gridView()))
-        {
+        for (const auto& element : elements(this->fvGridGeometry().gridView())) {
             auto fvGeometry = localView(this->fvGridGeometry());
             fvGeometry.bindElement(element);
             auto elemVolVars = localView(gridVars.curGridVolVars());
             elemVolVars.bindElement(element, fvGeometry, sol);
-            for (auto&& scv : scvs(fvGeometry))
-            {
+            for (auto&& scv : scvs(fvGeometry)) {
                 auto pointSources = this->scvPointSources(element, fvGeometry, elemVolVars, scv);
                 pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
                 source += pointSources;
             }
         }
-        std::cout << "Global integrated source (soil): " << source << " (kg/s) / "
-            <<                           source*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Global integrated source (soil): " << source << " (kg/s) / " << source*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
@@ -458,9 +481,11 @@ private:
     InputFileFunction precipitation_;
     Scalar criticalPressure_; // cm
     Scalar time_ = 0.;
+    Scalar dt_ = 0.;
 
-    mutable std::ofstream myfile_;
-    mutable Scalar last_time_ = -1.;
+    std::ofstream myfile_;
+    Scalar bc_flux_upper = 0.;
+    Scalar bc_flux_lower = 0.;
 
     static constexpr Scalar eps_ = 1.e-7;
     static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
