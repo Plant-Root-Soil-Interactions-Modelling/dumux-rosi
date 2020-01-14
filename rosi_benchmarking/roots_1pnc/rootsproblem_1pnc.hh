@@ -18,7 +18,7 @@
 #include <dumux/discretization/evalgradients.hh>
 
 #if DGF
-#include "rootspatialparams_caviation_dgf.hh"
+#include "../roots_1p/rootspatialparams_dgf.hh"
 #endif
 #if ROOTBOX
 #include "../roots_1p/rootspatialparams_rb.hh" // TODO

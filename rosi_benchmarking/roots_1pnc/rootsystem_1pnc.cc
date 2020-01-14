@@ -55,10 +55,10 @@
 #include <dumux/growth/growthinterface.hh>
 #include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
+#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 
 #include "rootsproblem_stomata.hh"
 
-#include "properties1pnc.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**

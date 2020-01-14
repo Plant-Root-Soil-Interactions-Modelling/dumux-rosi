@@ -1,0 +1,29 @@
+[Problem]
+Name = small_UG
+
+[TimeLoop]
+TEnd = 31536000 # 31536000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+
+[Soil.Grid]
+UpperRight = 0.08 0.04 0.24
+Cells = 8 4 24
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 2 # constant flux
+Value = 0 # [cm day-1]
+
+[Soil.IC]
+P = -100 # or -1000  cm 
+
+[Soil.VanGenuchten] 
+Qr = 0.067  	
+Qs = 0.45 
+Alpha = 0.02   
+N = 1.41  
+Ks = 10.8  
