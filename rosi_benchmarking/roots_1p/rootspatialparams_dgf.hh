@@ -44,6 +44,7 @@ public:
         krIdx_ = Dumux::getParam<int>("RootSystem.Grid.krIdx", 6);
         kxIdx_ = Dumux::getParam<int>("RootSystem.Grid.kxIdx", 5);
         idIdx_ = Dumux::getParam<int>("RootSystem.Grid.idIdx", 1);
+
         // DGF specific
         time0_ = Dumux::getParam<double>("RootSystem.Grid.InitialT", 14)*24*3600; // days -> s
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm/hPa/day] ([day])

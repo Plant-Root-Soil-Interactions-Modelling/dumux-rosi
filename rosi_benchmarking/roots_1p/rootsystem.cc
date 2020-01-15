@@ -42,7 +42,11 @@
 #include <dumux/growth/gridgrowth.hh>
 
 #include "rootsproblem.hh"
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#if ROOTPERIODIC
+#include "properties_periodic.hh"
+#else
+#include "properties.hh"
+#endif
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
