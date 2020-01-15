@@ -177,7 +177,7 @@ int main(int argc, char** argv) try
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    problem->userData("p", x);
+    problem->userData("pSoil", x);
     problem->userData("radius", x);
     problem->userData("order", x);
     problem->userData("id", x);
@@ -269,7 +269,7 @@ int main(int argc, char** argv) try
                     problem->userData("id", x);
                     problem->userData("initialPressure", x);
                 }
-                problem->userData("p", x);
+                problem->userData("pSoil", x);
                 problem->userData("axialFlux", x);
                 problem->userData("radialFlux", x);
                 problem->userData("age", x); // age changes with time

@@ -10,8 +10,8 @@
 """
 
 import os
-# import matplotlib.pyplot as plt
-# from vtk_tools import *
+import matplotlib.pyplot as plt
+from vtk_tools import *
 from math import *
 import van_genuchten as vg
 import numpy as np

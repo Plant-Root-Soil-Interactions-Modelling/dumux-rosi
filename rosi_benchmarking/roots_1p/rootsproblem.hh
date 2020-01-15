@@ -152,7 +152,7 @@ public:
         }
     }
 
-    //! vtk fields call back functions
+    //! vtk fields call back functions (initialize with userData(name) )
     std::vector<Scalar>& radialFlux() { return userData_["radialFlux"]; }
     std::vector<Scalar>& axialFlux() { return userData_["axialFlux"]; }
     std::vector<Scalar>& kr() { return userData_["kr"]; }
