@@ -16,8 +16,6 @@ Type = 2 # constant flux
 Value = 0.5 # [cm/d]
 
 [Soil.BC.Bot]
-#Type = 2 # constant flux
-#Value = -0.5 # [cm/d]
 Type = 5 # free drainage
 
 [Soil.IC]

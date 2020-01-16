@@ -117,7 +117,7 @@ public:
     }
 
     /*
-     * \brief Hydraulic conductivites [m/s], called by the problem for conversions
+     * \brief Hydraulic conductivities [m/s], called by the problem for conversions
      */
     const Scalar hydraulicConductivity(const Element& element) const {
         return kc_.at(index_(element));

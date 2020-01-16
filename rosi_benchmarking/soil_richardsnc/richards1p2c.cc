@@ -63,7 +63,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::Richards1CBox; // Richards1CCC, Richards1CBox, (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::Richards1CCC; // Richards1CCC, Richards1CBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -215,7 +215,6 @@ int main(int argc, char** argv) try
         timeLoop->start();
 
         do {
-
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(xOld);
             // solve the non-linear system with time step control

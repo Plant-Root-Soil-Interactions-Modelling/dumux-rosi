@@ -3,7 +3,7 @@ Name = benchmark1d_2
 
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 8640000 # a year [s] hopefully steady steate is reached after 1 year
+TEnd = 31536000 # a year [s] hopefully steady steate is reached after 1 year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Soil.Grid]
@@ -13,15 +13,16 @@ Cells = 52
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = -0.5 # [cm day-1]
+Value = -0.2 # [cm day-1]
 
 [Soil.BC.Bot]
 Type = 1 # constant pressure head
-Value = 0 # [cm] fully saturated
+Value = -10 # [cm] fully saturated
 
 [Soil.IC]
 P = 0 -53 # cm pressure head (initial guess)
 Z = -.53  0
+C = 0
 
 [Soil.VanGenuchten] 
 # Loam: 

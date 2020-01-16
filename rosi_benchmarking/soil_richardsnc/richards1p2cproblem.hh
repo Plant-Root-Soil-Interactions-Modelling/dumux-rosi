@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_RICHARDS1C_PROBLEM_HH
-#define DUMUX_RICHARDS1C_PROBLEM_HH
+#ifndef DUMUX_RICHARDS1P2C_PROBLEM_HH
+#define DUMUX_RICHARDS1P2C_PROBLEM_HH
 
 #include <dumux/porousmediumflow/problem.hh> // base class
 #include <dumux/porousmediumflow/richardsnc/model.hh>
@@ -81,6 +81,13 @@ public:
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
+//        if (bcTopType_ == constantPressure ) {
+//            bcTopValue_ = toPa_(bcTopValue_);
+//        }
+//        if (bcBotType_ == constantPressure ) {
+//            bcBotValue_ = toPa_(bcBotValue_);
+//        }
+
         // Component
         bcSTopType_ = getParam<int>("Soil.BC.Top.SType", outflow); // todo type as a string might be nicer
         bcSBotType_ = getParam<int>("Soil.BC.Bot.SType", outflow);
@@ -166,7 +173,7 @@ public:
      * \copydoc FVProblem::neumann // [kg/(m²*s)]
      *
      * called by BoxLocalResidual::evalFlux,
-     *  mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
+     * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
      */
     NumEqVector neumann(const Element& e,
         const FVElementGeometry& fvGeometry,
@@ -190,19 +197,18 @@ public:
                 break;
             }
             case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
-                Scalar s = volVars.saturation(0);
                 Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
-                MaterialLawParams params = this->spatialParams().materialLawParams(e);
-                Scalar p = MaterialLaw::pc(params, s) + pRef_;
-                Scalar h = -toHead_(p); // todo why minus -pc?
+                Scalar s = volVars.saturation(0);
+                Scalar h = toHead_(volVars.pressure());
                 GlobalPosition ePos = e.geometry().center();
-                Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
+                Scalar dz = 100 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
                 Scalar prec = -precipitation_.f(time_);
                 if (prec < 0) { // precipitation
                     Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal infiltration
                     Scalar v = std::max(prec, imax);
                     flux[conti0EqIdx] = v;
                 } else { // evaporation
+                    MaterialLawParams params = this->spatialParams().materialLawParams(e);
                     Scalar krw = MaterialLaw::krw(params, s);
                     Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - 1.); // maximal evaporation
                     Scalar v = std::min(prec, emax);
@@ -217,14 +223,12 @@ public:
         } else if (onLowerBoundary_(pos)) { // bot bc Water
             switch (bcBotType_) {
             case constantPressure: {
-                std::cout << "center \n" << std::flush;
-                double dist = 1e-2; //(pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-                std::cout << "permeability \n" << std::flush;
-                double k = this->spatialParams().permeability(e); // m2
-                std::cout << "pressure \n" << std::flush;
-                double v =  k * (volVars.pressure() - bcBotValue_) / dist; // [kg/s]
-                std::cout << "area \n" << std::flush;
-                flux[conti0EqIdx] = v / scvf.area();
+                Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
+                Scalar s = volVars.saturation(0);
+                MaterialLawParams params = this->spatialParams().materialLawParams(e);
+                Scalar h = toHead_(volVars.pressure());
+                Scalar dz = 100 * std::abs(e.geometry().center()[dimWorld - 1] - pos[dimWorld - 1]); // cm
+                flux[conti0EqIdx] = - rho_ * Kc * ((bcBotValue_ - h) / dz - 1.);
                 break;
             }
             case constantFlux: {
@@ -232,11 +236,11 @@ public:
                 break;
             }
             case freeDrainage: {
-                Scalar Kc = this->spatialParams().hydraulicConductivity(e);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(e); // [m/s]
                 Scalar s = volVars.saturation(0);
                 MaterialLawParams params = this->spatialParams().materialLawParams(e);
                 Scalar krw = MaterialLaw::krw(params, s);
-                flux[conti0EqIdx] = krw * Kc * rho_; // * 1 [m]
+                flux[conti0EqIdx] = krw * Kc * rho_; // [kg/(m^2 s)]
                 break;
             }
             default:
@@ -247,44 +251,44 @@ public:
         }
 
         if (onUpperBoundary_(pos)) { // top bc Solute
-//          switch (bcSTopType_) {
-//            case constantConcentration: {
-//                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-//                double v = this->spatialParams().permeability(e) * (volVars.massFraction(0, soluteIdx) - bcSTopValue_) / dist; // [kg/s]
-//                flux[transportEqIdx] = v / scvf.area();
-//                break;
-//            }
-//            case constantFlux: {
-//                flux[transportEqIdx] = -bcSTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-//                break;
-//            }
-//            case outflow: {
-//                flux[transportEqIdx] = flux[conti0EqIdx] * volVars.massFraction(0, soluteIdx);
-//                break;
-//            }
-//            default:
-//                DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
-//            }
+          switch (bcSTopType_) {
+            case constantConcentration: {
+                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+                double v = this->spatialParams().permeability(e) * (volVars.massFraction(0, soluteIdx) - bcSTopValue_) / dist; // ??? TODO [kg/s]
+                flux[transportEqIdx] = v / scvf.area();
+                break;
+            }
+            case constantFlux: {
+                flux[transportEqIdx] = -bcSTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+                break;
+            }
+            case outflow: {
+                flux[transportEqIdx] = flux[conti0EqIdx] * volVars.massFraction(0, soluteIdx);
+                break;
+            }
+            default:
+                DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
+            }
         } else if (onLowerBoundary_(pos)) { // bot bc Solute
-//            switch (bcSBotType_) {
-//            case constantConcentration: {
-//                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-//                double v = this->spatialParams().permeability(e) * (volVars.massFraction(0, soluteIdx) - bcSBotValue_) / dist; // [kg/s]
-//                flux[transportEqIdx] = v / scvf.area();
-//                break;
-//            }
-//            case constantFlux: {
-//                flux[transportEqIdx] = -bcSBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-//                break;
-//            }
-//            case outflow: {
-//                flux[transportEqIdx] = flux[conti0EqIdx] * volVars.massFraction(0, soluteIdx);
-//                break;
-//            }
-//            default:
-//                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
-//            }
-//        } else {
+            switch (bcSBotType_) {
+            case constantConcentration: {
+                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+                double v = this->spatialParams().permeability(e) * (volVars.massFraction(0, soluteIdx) - bcSBotValue_) / dist; //  ??? TODO [kg/s]
+                flux[transportEqIdx] = v / scvf.area();
+                break;
+            }
+            case constantFlux: {
+                flux[transportEqIdx] = -bcSBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+                break;
+            }
+            case outflow: {
+                flux[transportEqIdx] = flux[conti0EqIdx] * volVars.massFraction(0, soluteIdx);
+                break;
+            }
+            default:
+                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
+            }
+        } else {
             flux[transportEqIdx] = 0.;
         }
         flux[transportEqIdx] = 0.; // TODO remvove
@@ -298,17 +302,16 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
-//        if ((source_ != nullptr)) {
-//            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-//            double v = scv.volume();
-//            auto s = source_->at(eIdx);
-//            s[h2OIdx] = s[h2OIdx]/v;
-//            s[soluteIdx] = s[soluteIdx]/v;
-//            return s;
-//        } else {
-//            return NumEqVector(0.);
-//        }
-        return NumEqVector(0.);
+        if ((source_ != nullptr)) {
+            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+            double v = scv.volume();
+            auto s = source_->at(eIdx);
+            s[h2OIdx] = s[h2OIdx]/v;
+            s[soluteIdx] = s[soluteIdx]/v;
+            return s;
+        } else {
+            return NumEqVector(0.);
+        }
     }
 
     /*!
@@ -350,22 +353,22 @@ public:
 
         PrimaryVariables sourceValue(0.);
 
-//        if (couplingManager_!=nullptr) { // compute source at every integration point
-//            const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[pressureIdx];
-//            const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
-//            const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
-//            const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-//            const Scalar kr = spatialParams.kr(lowDimElementIdx);
-//            const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
-//            // relative soil permeability
-//            const auto krel = 1.0;
-//            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-//            const auto density = 1000;
-//            sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
-//            sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
-//            sourceValue[soluteIdx] = 0.; // TODO this might change (on both sides) if we couple richards1c and roots1pnc
-//            //std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
-//        }
+        if (couplingManager_!=nullptr) { // compute source at every integration point
+            const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[pressureIdx];
+            const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
+            const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
+            const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+            const Scalar kr = spatialParams.kr(lowDimElementIdx);
+            const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
+            // relative soil permeability
+            const auto krel = 1.0;
+            // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+            const auto density = 1000;
+            sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
+            sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
+            sourceValue[soluteIdx] = 0.; // TODO this might change (on both sides) if we couple richards1c and roots1pnc
+            //std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
+        }
 
         source = sourceValue; // return value as reference
     }
