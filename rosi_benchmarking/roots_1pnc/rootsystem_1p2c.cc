@@ -55,10 +55,11 @@
 #include <dumux/growth/growthinterface.hh>
 #include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 
 #include "rootsproblem_stomata.hh"
 
+#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_stomata.hh"
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -192,7 +193,7 @@ int main(int argc, char** argv) try
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    problem->userData("p", x);
+    problem->userData("pSoil", x);
     problem->userData("radius", x);
     problem->userData("order", x);
     problem->userData("id", x);

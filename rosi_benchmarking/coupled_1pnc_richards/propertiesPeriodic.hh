@@ -20,8 +20,7 @@
 
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
-
-#include "../roots_1pnc/properties_periodic.hh"
+#include "../roots_1pnc/properties_periodic_stomata.hh"
 #include "../soil_richards/properties.hh"
 
 namespace Dumux {

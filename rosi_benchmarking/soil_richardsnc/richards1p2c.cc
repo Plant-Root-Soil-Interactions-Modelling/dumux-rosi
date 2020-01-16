@@ -50,10 +50,10 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+
 #include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
-
 
 /**
  * here we go
@@ -63,7 +63,7 @@ int main(int argc, char** argv) try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::Richards1CCC; // Richards1CCC, Richards1CBox, (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::Richards1CBox; // Richards1CCC, Richards1CBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -137,7 +137,8 @@ int main(int argc, char** argv) try
     fvGridGeometry->update(); // update all Mappers(do this again after grid adaption)
 
     // the problem (initial and boundary conditions)
-    auto problem = std::make_shared<Richards1CProblem<TypeTag>>(fvGridGeometry);
+    using Problem = GetPropType<TypeTag, Properties::Problem>;
+    auto problem = std::make_shared<Problem>(fvGridGeometry);
 
     // the solution vector
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>

@@ -32,3 +32,7 @@ Ks = 1000 50 # [cm/d]
 [Soil.Layer]
 Z = -2 -0.5 -0.5 0
 Number = 2 2 1 1
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol

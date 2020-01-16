@@ -56,17 +56,16 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # run dumux
-os.system("./rootsystem_1pnc input/singleroot_stomata.input")
-
-p_ = read1D_vtp_data("singleroot-00001.vtp")
+os.system("./rootsystem_stomata2 input/singleroot_stomata.input")
 
 """ benchmark pressure head in single root """
-# z_ = np.linspace(0, -0.5, len(p_))
-# h_ = vg.pa2head(p_)
-# plt.plot(h_, z_, "r+")
-# plt.plot(pr3, za_, "b")
-# plt.ylabel("Depth (m)")
-# plt.xlabel("Xylem pressure (cm)")
+p_ = read1D_vtp_data("singleroot-00001.vtp")
+z_ = np.linspace(0, -0.5, len(p_))
+h_ = vg.pa2head(p_)
+plt.plot(h_, z_, "r+")
+plt.plot(pr3, za_, "b")
+plt.ylabel("Depth (m)")
+plt.xlabel("Xylem pressure (cm)")
 
 #      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 #      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
@@ -75,13 +74,13 @@ with open("singleroot_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 c = 24 * 3600  # s / day
 
-""" Plot transpiration """
-plt.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
-plt.plot(d[:, 0] / c, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
-plt.xlabel("time (days)")
-plt.ylabel("transpiration (g/day)")
-plt.legend(["potential", "actual"])
-plt.title("Water transpiration")
+# """ Plot transpiration """
+# plt.plot(d[:, 0] / c, 1000 * d[:, 2] * c, 'k')  # potential transpiration
+# plt.plot(d[:, 0] / c, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
+# plt.xlabel("time (days)")
+# plt.ylabel("transpiration (g/day)")
+# plt.legend(["potential", "actual"])
+# plt.title("Water transpiration")
 
 """ Plot hormone rate and mass """
 # fig, [ax1, ax2] = plt.subplots(1, 2)

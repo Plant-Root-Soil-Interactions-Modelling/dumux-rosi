@@ -1,11 +1,8 @@
-""" "Test root system part """
+""" "Test root system part of the stomata model"""
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
 from math import *
-import van_genuchten as vg
-import threading
-import time
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -13,7 +10,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # run dumux
-os.system("./rootsystem_1pnc input/anagallis_stomata.input")
+os.system("./rootsystem_stomata2 input/anagallis_stomata.input")
 
 #      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 #      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],

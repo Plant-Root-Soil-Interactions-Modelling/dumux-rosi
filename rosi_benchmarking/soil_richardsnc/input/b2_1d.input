@@ -3,7 +3,7 @@ Name = benchmark1d_2
 
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 0 # a year [s] hopefully steady steate is reached after 1 year
+TEnd = 8640000 # a year [s] hopefully steady steate is reached after 1 year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Soil.Grid]
@@ -30,3 +30,7 @@ Qs = 0.43
 Alpha = 0.04  # [1/cm] 
 N = 1.6 
 Ks = 50 # [cm/d]  hydrus verdoppelt
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol

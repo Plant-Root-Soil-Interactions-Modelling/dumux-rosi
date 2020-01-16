@@ -73,15 +73,15 @@ os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # delete old results
 os.system("rm benchmark1-00001.vtp")
-os.system("rm benchmark1b-00001.vtp")
-os.system("rm benchmark1c-00001.vtp")
+# os.system("rm benchmark1b-00001.vtp")
+# os.system("rm benchmark1c-00001.vtp")
 
 # run dumux
-os.system("./rootsystem_1pnc input/b1.input")
+os.system("./rootsystem_stomata2 input/b1.input")
 p_ = read1D_vtp_data("benchmark1-00001.vtp")
-os.system("./rootsystem_1pnc input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
+os.system("./rootsystem_stomata2 input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_ = read1D_vtp_data("benchmark1b-00001.vtp")
-os.system("./rootsystem_1pnc input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
+os.system("./rootsystem_stomata2 input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
 p3_ = read1D_vtp_data("benchmark1c-00001.vtp")
 
 # plot

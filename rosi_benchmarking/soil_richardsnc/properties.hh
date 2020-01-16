@@ -42,13 +42,20 @@ struct Grid<TypeTag, TTag::Richards1CTT> { using type = GRIDTYPE; };  // Use GRI
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::Richards1CTT> { using type = Richards1CProblem<TypeTag>; };
+struct Problem<TypeTag, TTag::Richards1CTT> { using type = Richards1P2CProblem<TypeTag>; };
 
 // Set the spatial parameters
 template<class TypeTag>
 struct SpatialParams<TypeTag, TTag::Richards1CTT> {
     using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
 };
+
+/*
+ * Define whether mole (true) or mass (false) fractions are used
+ * TODO I only understand false...
+ */
+template<class TypeTag>
+struct UseMoles<TypeTag, TTag::Richards1CTT> { static constexpr bool value = false; };
 
 } // end namespace properties
 } // end namespace DUMUX

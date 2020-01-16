@@ -106,7 +106,13 @@ public:
      * [m^2]\
      */
     template<class ElementSolution>
-    decltype(auto) permeability(const Element& element, const SubControlVolume& scv, const ElementSolution& elemSol) const {
+    PermeabilityType permeability(const Element& element,
+        const SubControlVolume& scv, const ElementSolution& elemSol) const {
+        return permeability(element);
+    }
+
+    //! simpler interface
+    PermeabilityType permeability(const Element& element) const {
         return k_.at(index_(element));
     }
 

@@ -2,7 +2,7 @@
 Name = benchmark1d_1a
 
 [TimeLoop]
-TEnd = 3153600 # 0 is steady state
+TEnd = 31536000 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
@@ -16,10 +16,13 @@ Type = 2 # constant flux
 Value = 0.5 # [cm/d]
 
 [Soil.BC.Bot]
+#Type = 2 # constant flux
+#Value = -0.5 # [cm/d]
 Type = 5 # free drainage
 
 [Soil.IC]
 P = -200 # cm pressure head (initial guess)
+C = 0
 
 [Soil.VanGenuchten] 
 # Loam over sand 
@@ -32,3 +35,7 @@ Ks = 50 1000 # [cm/d]
 [Soil.Layer]
 Z = -2 -0.5 -0.5 0
 Number = 2 2 1 1	
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol

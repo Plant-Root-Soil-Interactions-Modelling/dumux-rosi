@@ -25,7 +25,7 @@ namespace Dumux {
  *
  */
 template<class FVGridGeometry, class Scalar>
-class RootSpatialParams1pncDGF : public RootSpatialParamsDGF<FVGridGeometry, Scalar> {
+class RootSpatialParamsCaviationDGF : public RootSpatialParamsDGF<FVGridGeometry, Scalar> {
 
     using GridView = typename FVGridGeometry::GridView;
     using Element = typename GridView::template Codim<0>::Entity;
@@ -56,26 +56,34 @@ public:
         Scalar p = elemSol[0][0];
         Scalar y = -std::abs(p)/b_;
         Scalar kappa = std::exp(std::exp(c_*std::log(y))); // std::exp(c*std::log(y)) == y^c
-        return kappa * kx * mu / (M_PI * a * a);
+        return kx * mu / (M_PI * a * a); // TODO kappa *
     }
 
     /**
      * The two parameters of the Weibull function:
-     * b [Pa] or [cm] TODO, and
+     * b [cm], and
      * c [1]
      *
      * k = exp(-(|psi|/b)^c)
      */
-    void setParameter(double b, double c)
-    {
-        b_ = b;
+    void setParameter(double b, double c) {
+        b_ = toPa_(b);
         c_ = c;
     }
 
 private:
 
-    Scalar b_ = 1.e16; // [Pa] or shall we convert to [cm] ?
+    Scalar b_ = 1.e16; // [Pa]
     Scalar c_ = 1.; // [1]
+
+    static constexpr Scalar g_ = 9.81; // cm / s^2
+    static constexpr Scalar rho_ = 1.e3; //1.e3; // kg / m^3
+    static constexpr Scalar pRef_ = 1.e5; // Pa
+
+    //! cm pressure head -> Pascal
+    Scalar toPa_(Scalar ph) const {
+        return pRef_ + ph / 100. * rho_ * g_;
+    }
 
 };
 

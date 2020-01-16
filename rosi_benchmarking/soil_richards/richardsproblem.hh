@@ -399,10 +399,10 @@ public:
             for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
                 auto p = scvf.center();
                 if (onUpperBoundary_(p)) { // top
-                    bc_flux_upper += neumann(e, this->fvGridGeometry(), elemVolVars, scvf);
+                    bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
                     uc++;
                 } else if (onLowerBoundary_(p)) { // bottom
-                    bc_flux_lower += neumann(e, this->fvGridGeometry(), elemVolVars, scvf);
+                    bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
                     lc++;
                 }
             }
