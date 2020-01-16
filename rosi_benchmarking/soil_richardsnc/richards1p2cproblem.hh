@@ -187,9 +187,10 @@ public:
         if (onUpperBoundary_(pos)) { // top bc Water
             switch (bcTopType_) {
             case constantPressure: {
-                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-                double v = this->spatialParams().permeability(e) * (volVars.pressure() - bcTopValue_) / dist; // [kg/s]
-                flux[conti0EqIdx] = v / scvf.area();
+                Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
+                Scalar h = toHead_(volVars.pressure());
+                Scalar dz = 100 * std::abs(e.geometry().center()[dimWorld - 1] - pos[dimWorld - 1]); // [cm]
+                flux[conti0EqIdx] = - rho_ * Kc * ((bcTopValue_ - h) / dz - 1.);
                 break;
             }
             case constantFlux: {
@@ -224,10 +225,8 @@ public:
             switch (bcBotType_) {
             case constantPressure: {
                 Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
-                Scalar s = volVars.saturation(0);
-                MaterialLawParams params = this->spatialParams().materialLawParams(e);
                 Scalar h = toHead_(volVars.pressure());
-                Scalar dz = 100 * std::abs(e.geometry().center()[dimWorld - 1] - pos[dimWorld - 1]); // cm
+                Scalar dz = 100 * std::abs(e.geometry().center()[dimWorld - 1] - pos[dimWorld - 1]); // [cm]
                 flux[conti0EqIdx] = - rho_ * Kc * ((bcBotValue_ - h) / dz - 1.);
                 break;
             }
@@ -253,9 +252,7 @@ public:
         if (onUpperBoundary_(pos)) { // top bc Solute
           switch (bcSTopType_) {
             case constantConcentration: {
-                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-                double v = this->spatialParams().permeability(e) * (volVars.massFraction(0, soluteIdx) - bcSTopValue_) / dist; // ??? TODO [kg/s]
-                flux[transportEqIdx] = v / scvf.area();
+                flux[transportEqIdx] = flux[conti0EqIdx] * (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
                 break;
             }
             case constantFlux: {
@@ -272,9 +269,7 @@ public:
         } else if (onLowerBoundary_(pos)) { // bot bc Solute
             switch (bcSBotType_) {
             case constantConcentration: {
-                double dist = (pos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-                double v = this->spatialParams().permeability(e) * (volVars.massFraction(0, soluteIdx) - bcSBotValue_) / dist; //  ??? TODO [kg/s]
-                flux[transportEqIdx] = v / scvf.area();
+                flux[transportEqIdx] = flux[conti0EqIdx] * (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
                 break;
             }
             case constantFlux: {
