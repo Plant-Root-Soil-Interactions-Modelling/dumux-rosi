@@ -36,7 +36,7 @@ Z = -2 -0.5 -0.5 0
 Number = 2 2 1 1	
 
 [Component]
-LiquidDiffusionCoefficient = 2.3e-9
+LiquidDiffusionCoefficient = 2.3e-9 #liquidDiffCoeff
 Name = "D2O"
 MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
 

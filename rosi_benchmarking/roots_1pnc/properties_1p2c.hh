@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_PROPERTIES_STOMATA_HH
-#define DUMUX_ROOT_PROPERTIES_STOMATA_HH
+#ifndef DUMUX_ROOT_PROPERTIES_1P2C_HH
+#define DUMUX_ROOT_PROPERTIES_1P2C_HH
 
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/h2oABA.hh>
@@ -15,7 +15,7 @@ namespace Properties {
 // Set the problem property
 template<class TypeTag>
 struct Problem<TypeTag, TTag::RootsOnePTwoC> {
-    using type = RootsStomataProblem<TypeTag>;
+    using type = Roots1P2CProblem<TypeTag>;
 };
 
 // the fluid system
@@ -48,7 +48,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsCaviationDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif
@@ -57,7 +57,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>; // TODO
+    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif

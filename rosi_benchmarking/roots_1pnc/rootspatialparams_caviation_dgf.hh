@@ -3,12 +3,13 @@
 #ifndef DUMUX_ROOT_SPATIALPARAMS1PNC_DGF_HH
 #define DUMUX_ROOT_SPATIALPARAMS1PNC_DGF_HH
 
+#include <cmath>
+
 #include <dune/common/exceptions.hh>
 #include <dumux/common/math.hh>
 #include <dumux/common/parameters.hh>
 #include <dumux/material/spatialparams/fv1p.hh>
 #include <dumux/material/components/simpleh2o.hh>
-#include <cmath>
 
 #include <dumux/io/inputfilefunction.hh> // in dumux-rosi
 

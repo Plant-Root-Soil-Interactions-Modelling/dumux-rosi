@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef ROOTS_STOMATA_PROBLEM_HH
-#define ROOTS_STOMATA_PROBLEM_HH
+#ifndef ROOTS_PROBLEM_STOMATA_HH
+#define ROOTS_PROBLEM_STOMATA_HH
 
 #include <math.h>
 #include <cmath>        // std::abs
@@ -14,6 +14,7 @@
 //#include <dumux/discretization/cctpfa.hh>
 //#include <dumux/discretization/ccmpfa.hh>
 //#include <dumux/discretization/box.hh>
+//#include <dumux/discretization/evalsolution.hh>
 //#include <dumux/discretization/evalgradients.hh>
 
 #if DGF
@@ -79,9 +80,9 @@ public:
 
         // stating in the console whether mole or mass fractions are used
         if(useMoles) {
-            std::cout<<"problem uses mole fractions, CURRENTLY WRONG, CARE!"<<std::endl;
+            std::cout<<"RootsStomataProblem uses mole fractions, CURRENTLY WRONG, CARE!"<<std::endl;
         } else {
-            std::cout<<"problem uses mass fractions"<<std::endl;
+            std::cout<<"RootsStomataProblem uses mass fractions"<<std::endl;
         }
         std::cout<<"contiH2OEqIdx "<< conti0EqIdx <<"transportEqIdx "<< transportEqIdx << std::endl;
 

@@ -1,27 +1,14 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+
 /*!
  * \file
  *
- * \brief Doussan model for xylem flux (using dumux/porousmediumflow/1p/model.hh)
+ * \brief Doussan model for xylem flux with a solute
  */
 #include <config.h>
+
+#include "rootsproblem_1p2c.hh"
 
 #include <ctime>
 #include <iostream>
@@ -46,7 +33,11 @@
 #include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
 
 #include <dumux/io/vtkoutputmodule.hh>
+
 #include <dumux/io/grid/gridmanager.hh>
+#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
+
 // #include <dumux/io/loadsolution.hh> // global functions to resume a simulation
 
 #include <RootSystem.h>
@@ -56,10 +47,11 @@
 #include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "rootsproblem_stomata.hh"
-
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
-#include "properties_stomata.hh"
+#if ROOTS_PERIODIC
+#include "properties_periodic_1p2c.hh"
+#else
+#include "properties_1p2c.hh"
+#endif
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -92,7 +84,20 @@ int main(int argc, char** argv) try
     // Create the gridmanager and grid
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
+
+#if ROOTS_PERIODIC
+    using GlobalPosition = Dune::FieldVector<double, 3>;
+    std::bitset<3> periodic("110");
+    if (hasParam("Grid.Periodic"))  {
+        periodic = getParam<std::bitset<3>>("Grid.Periodic");
+    }
+    GlobalPosition lower = { -1.e9, -1.e9, -1.e9 };
+    GlobalPosition upper = { 1.e9, 1.e9, 1.e9 };
+    PeriodicNetworkGridManager<3> gridManager(lower, upper, periodic); // only for dgf
+#else
     GridManager<Grid> gridManager; // only for dgf
+#endif
+
     std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
     if (simtype==Properties::dgf) { // for a static dgf grid
@@ -148,7 +153,8 @@ int main(int argc, char** argv) try
     }
 
     // the problem (initial and boundary conditions)
-    auto problem = std::make_shared<RootsOnePTwoCProblem<TypeTag>>(fvGridGeometry);
+    using Problem = GetPropType<TypeTag, Properties::Problem>;
+    auto problem = std::make_shared<Problem>(fvGridGeometry);
     if (simtype==Properties::dgf) {
         problem->spatialParams().initParameters(*gridManager.getGridData());
     } else if (simtype==Properties::rootbox){

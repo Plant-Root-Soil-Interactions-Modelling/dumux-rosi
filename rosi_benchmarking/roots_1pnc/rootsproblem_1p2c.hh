@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef ROOTS_1P2C_PROBLEM_HH
-#define ROOTS_1P2C_PROBLEM_HH
+#ifndef ROOTS_PROBLEM_1P2C_HH
+#define ROOTS_PROBLEM_1P2C_HH
 
 #include <math.h>
 #include <cmath>        // std::abs
@@ -10,12 +10,12 @@
 #include <dumux/porousmediumflow/problem.hh>
 #include <dumux/growth/soillookup.hh>
 
-// maybe we will need it for advective flux approx
-#include <dumux/discretization/cctpfa.hh>
-#include <dumux/discretization/ccmpfa.hh>
-#include <dumux/discretization/box.hh>
-#include <dumux/discretization/evalsolution.hh>
-#include <dumux/discretization/evalgradients.hh>
+//// maybe we will need it for advective flux approx
+//#include <dumux/discretization/cctpfa.hh>
+//#include <dumux/discretization/ccmpfa.hh>
+//#include <dumux/discretization/box.hh>
+//#include <dumux/discretization/evalsolution.hh>
+//#include <dumux/discretization/evalgradients.hh>
 
 #if DGF
 #include "../roots_1p/rootspatialparams_dgf.hh"
@@ -39,7 +39,6 @@ class Roots1P2CProblem: public PorousMediumFlowProblem<TypeTag> {
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
-    using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
@@ -56,11 +55,12 @@ class Roots1P2CProblem: public PorousMediumFlowProblem<TypeTag> {
     using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
     enum {
-        pressureIdx = Indices::pressureIdx, // indices of primary variables
-        H2OIdx = 0, // component indices
+
+        pressureIdx = 0, // indices of primary variables
+        h2OIdx = 0, // component indices
         soluteIdx = 1,
-        conti0EqIdx = Indices::conti0EqIdx,  // indices of the equations
-        transportEqIdx = Indices::transportEqIdx,
+        conti0EqIdx = 0,  // indices of the equations
+        transportEqIdx = 1, //
 
         isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box,
 
@@ -81,9 +81,9 @@ public:
 
         // stating in the console whether mole or mass fractions are used
         if(useMoles) {
-            std::cout<<"problem uses mole fractions, CURRENTLY WRONG, CARE!"<<std::endl;
+            std::cout<<"Roots1P2CProblem uses mole fractions, CURRENTLY WRONG, CARE!"<<std::endl;
         } else {
-            std::cout<<"problem uses mass fractions"<<std::endl;
+            std::cout<<"Roots1P2CProblem problem uses mass fractions"<<std::endl;
         }
         std::cout<<"contiH2OEqIdx "<< conti0EqIdx <<"transportEqIdx "<< transportEqIdx << std::endl;
 
@@ -116,17 +116,15 @@ public:
 
         // Optionally, give crit values
         critPCollarDirichlet_ = toPa_(getParam<double>("Control.CritCollarP", -1.5e4));  // cm -> Pa
-        critPCollarAlpha_ = toPa_(getParam<double>("Control.CritCollarPAlpha", -5500.)); ; // cm -> Pa
-        critPTips_ = toPa_(getParam<double>("Control.CritTipP", -4500.)); // cm -> Pa
 
-        cD = getParam<bool>("Control.cD", false); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-        a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
-        age_ = getParam<double>("Control.Age", 1.); // hormone sink activates if segment age is smaller than age_
+        // Uptake params
+        vMax_ =  getParam<Scalar>("SpatialParam.Vmax", 6.2e-11); // Michaelis Menten Parameter [kg m-2 s-1]
+        km_ = getParam<Scalar>("SpatialParam.Km", 3.1e-9);  // Michaelis Menten Parameter  [kg m-3]
+        sigma_ = getParam<Scalar>("SpatialParam.PartitionCoefficient", 1.); // 1 for passive transport, 0 for active transport
 
         std::cout << "***********************************************\n";
         std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";
-        std::cout << "ProductionRate "<< a_ << ", cD " << cD << ", age " << age_ << "\n";
-        std::cout << "critPCollarDirichlet " << critPCollarDirichlet_ << ", critPCollarAlpha " << critPCollarAlpha_ << ", critPTips " << critPTips_ << "\n";
+        std::cout << "critPCollarDirichlet " << critPCollarDirichlet_ << ", critPCollarAlpha " << critPCollarAlpha_ << "\n";
         std::cout << "***********************************************\n";
     }
 
@@ -265,25 +263,16 @@ public:
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
             double potentialTrans = collar_.f(time_); // [kg/s]
-
-            double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
-            double alpha;
-            if (p < critPCollarAlpha_) { // stomatal conductanc
-                alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(p - critPCollarAlpha_));  // [-] (Eqn 2a, Huber et al. 2014)
-            } else {
-                alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
-            }
-
-            double actTrans = std::min(alpha*potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
+            double actTrans = std::min(potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
             flux[conti0EqIdx] = actTrans/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
 
-            double fraction = useMoles ? volVars.moleFraction(0, ABAIdx) : volVars.massFraction(0, soluteIdx);
+            double fraction = useMoles ? volVars.moleFraction(0, soluteIdx) : volVars.massFraction(0, soluteIdx);
             flux[transportEqIdx] = flux[conti0EqIdx] * fraction; // [kg_aba/(s*m^2)],  convective outflow BC
 
         } else { // root tip
 
             flux[conti0EqIdx] = 0.;
-            flux[transportEqIdx] = 0.; // hormones cannot leave from the tip
+            flux[transportEqIdx] = 0.; // solutes cannot leave from the tip
 
         }
         return flux;
@@ -320,18 +309,9 @@ public:
             if (!grow_) { // for static root system, static root tips should not age
                 rootAge -= time_ / (24. * 3600.);
             }
+            values[transportEqIdx] = 0.; // TODO
 
-            if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
-                if (tipP_  <= critPTips_) {
-                    values[transportEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*molarMass; // [kg / m3 / s]
-                } else {
-                    values[transportEqIdx] = 0.;
-                }
-            } else {
-                values[transportEqIdx] = 0.;
-            }
-
-        } else {
+        } else { // couplingManager_ is set, pointSources is used instead of source(...)
             values[conti0EqIdx] = 0;
             values[transportEqIdx] = 0.;
         }
@@ -373,40 +353,37 @@ public:
 
         if (couplingManager_!=nullptr) { // compute source at every integration point
 
-            Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
-            Scalar tipP_ = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
+            Scalar soilP = couplingManager_->bulkPriVars(source.id())[pressureIdx];
+            Scalar tipP = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
+
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            // const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-            // eIdx == lowDimElementIdx ?
             Scalar kr = this->spatialParams().kr(eIdx); //  [m^2 s/kg]
             Scalar rootRadius = this->spatialParams().radius(eIdx); // [m]
             double density = 1000.; // [kg /m^3]
-            sourceValue[conti0EqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - tipP_)*density; // [kg/m/s]
+            sourceValue[conti0EqIdx] = 2* M_PI *rootRadius * kr *(soilP - tipP)*density; // [kg/m/s] TODO check signs, must equal the richardsnc::pointSource
             sourceValue[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
 
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
             if (!grow_) { // for static root system, static root tips should not age
                 rootAge -= time_ / (24. * 3600.);
-            }
+            } // todo currently unused, but might make sense
 
-            if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
-                if (tipP_  <= critPTips_) {
-                    double volume;
-                    if (isBox) { // would elemVolVars[scv] work? not sure...
-                        volume = scv.volume()*elemVolVars[scv.localDofIndex()].extrusionFactor(); // m3
-                    } else {
-                        volume = scv.volume()*elemVolVars[scv.dofIndex()].extrusionFactor(); // m3
-                    }
-                    std::cout << 1.e9*volume << " mm3, ";
-                    sourceValue[transportEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*volume*molarMass; // [kg / s]
-                } else {
-                    sourceValue[transportEqIdx] = 0.;
-                }
+            Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
+            Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
+
+            Scalar passiveUptake;
+            if (sourceValue[conti0EqIdx]>0) {      // flow from root to soil TODO check signs, must equal the richardsnc::pointSource
+                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * tipC;
             } else {
-                sourceValue[transportEqIdx] = 0.;
+                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * soilC;
             }
-            source = sourceValue;
+            // Active uptake based on Michaelis Menten
+            Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density);
 
+            // choose active or passive
+            sourceValue[transportEqIdx] = (sigma_*passiveUptake + (1.-sigma_)*activeUptake) *source.quadratureWeight()*source.integrationElement();
+
+            source = sourceValue;
         } else { // should not happen...
             std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
             source = sourceValue;
@@ -491,31 +468,20 @@ public:
                     auto dist = (scvf.center() - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
                     double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
                     potentialTrans_ = collar_.f(time_); // [kg/s]
-
                     double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
-                    double alpha;
-                    if (p < critPCollarAlpha_) { // stomatal conductance definition
-                        alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(p - critPCollarAlpha_));  // [-] (Eqn 2a, Huber et al. 2014)
-                    }
-                    else {
-                        alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
-                    }
                     double fraction = useMoles ? volVars.moleFraction(0, soluteIdx) : volVars.massFraction(0, soluteIdx); // [-]
                     neumannTime_ = time_; // [s]
-                    actualTrans_ = std::min(alpha*potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
+                    actualTrans_ = std::min(potentialTrans_, criticalTranspiration);// actual transpiration rate [kg/s]
                     maxTrans_ = criticalTranspiration; // [kg/s]
                     collarP_ = p; // [Pa]
                     mLRate_ = actualTrans_*fraction; // [kg/s]
-
-                    // std::cout << "eIdx " << eIdx << " insideScvIdx "<< scvf.insideScvIdx()<< "  globalPos " << scvf.center() << "\n";
-                    std::cout << "\nalpha "<< alpha << " 1.e6* { cL "<< 1.e6*cL << " mL_ "<< 1.e6*mL_ << " leafVolume " << 1.e6*leafVolume_.f(time_) <<
+                    std::cout << " 1.e6* { cL "<< 1.e6*cL << " mL_ "<< 1.e6*mL_ << " leafVolume " << 1.e6*leafVolume_.f(time_) <<
                         " fraction " << 1.e6*fraction << " }\n\n";
                 }
             }
         }
 
         mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
-
         mRootRate_ = source[transportEqIdx]; // kg/s
         mRoot_ +=  mRootRate_*dt_; //kg
     }
@@ -548,8 +514,8 @@ public:
                 source += pointSources;
             }
         }
-        std::cout << "Source: water    " << source[conti0EqIdx]*3600*24*1000 << " (g/day),\n" <<
-            "        hormones " << source[transportEqIdx]*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Source: water " << source[conti0EqIdx]*3600*24*1000 << " (g/day),\n"
+            << " solutes " << source[transportEqIdx]*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
@@ -589,7 +555,7 @@ protected:
     double collarP_ = 0.;
     double mRootRate_ = 0.; // [kg/s]
 
-    std::map<std::string, std::vector<Scalar>> userData_;
+    std::map<std::string, std::vector<Scalar>> userData_; // for vtk fields
 
     bool grow_; // indicates if root segments age, or not
 
@@ -598,15 +564,6 @@ protected:
      */
     double critPCollarDirichlet_ = -1.4e6; // -1.4e6;
     double critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
-    double alphaR = 0; // residual stomata conductance
-    bool cD = false; // interaction between pressure and chemical regulation
-    double sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
-    double sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
-
-    double dm_ =  140.;  //root dry mass [kg / m3]
-    double critPTips_ = toPa_(-4500); // cm -> Pa
-    double a_; // Maximal hormone production rate in mol per dry mass per pressure [mol kg-1 Pa-1 s-1]
-    double age_;
 
     double mL_ = 0.; // (kg) mass of hormones in the leaf
     double mRoot_ = 0.; // (kg) mass of hormones in the root system
@@ -614,6 +571,10 @@ protected:
     InputFileFunction leafVolume_; // (m^3)
 
     Scalar molarMass; // (kg/mol)
+
+    Scalar vMax_; // Michaelis Menten Parameter [kg m-2 s-1]
+    Scalar km_; // Michaelis Menten Parameter  [kg m-3]
+    Scalar sigma_; // 1 for passive transport, 0 for active transport
 
 };
 

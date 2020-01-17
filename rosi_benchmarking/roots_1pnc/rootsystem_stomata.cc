@@ -8,6 +8,8 @@
  */
 #include <config.h>
 
+#include "rootsproblem_stomata.hh"
+
 #include <ctime>
 #include <iostream>
 
@@ -83,7 +85,7 @@ int main(int argc, char** argv) try
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
 
-    #if ROOTS_PERIODIC
+#if ROOTS_PERIODIC
     using GlobalPosition = Dune::FieldVector<double, 3>;
     std::bitset<3> periodic("110");
     if (hasParam("Grid.Periodic"))  {
@@ -92,9 +94,9 @@ int main(int argc, char** argv) try
     GlobalPosition lower = { -1.e9, -1.e9, -1.e9 };
     GlobalPosition upper = { 1.e9, 1.e9, 1.e9 };
     PeriodicNetworkGridManager<3> gridManager(lower, upper, periodic); // only for dgf
-    #else
+#else
     GridManager<Grid> gridManager; // only for dgf
-    #endif
+#endif
 
     std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)

@@ -120,7 +120,7 @@ public:
     }
 
     /**
-     * Creates the grid and gridGeometry from the (global) DuMux parameter tree.
+     * Creates the Grid and gridGeometry from the (global) DuMux parameter tree.
      *
      * Parameters known to me are:
      * Grid.UpperRight

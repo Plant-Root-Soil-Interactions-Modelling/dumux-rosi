@@ -9,8 +9,6 @@
 
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
-#include "rootsproblem_stomata.hh"
-
 #include "properties.hh"
 
 namespace Dumux {

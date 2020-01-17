@@ -1,11 +1,13 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_PROPERTIES_STOMATA_HH
-#define DUMUX_ROOT_PROPERTIES_STOMATA_HH
+#ifndef DUMUX_ROOT_PROPERTIES_PERIOIDC_1P2C_HH
+#define DUMUX_ROOT_PROPERTIES_PERIODIC 1P2C_HH
 
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/h2oABA.hh>
 #include <dumux/material/fluidsystems/1padapter.hh>
+
+#include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 #include "properties.hh"
 
@@ -15,7 +17,7 @@ namespace Properties {
 // Set the problem property
 template<class TypeTag>
 struct Problem<TypeTag, TTag::RootsOnePTwoC> {
-    using type = RootsStomataProblem<TypeTag>;
+    using type = Roots1P2CProblem<TypeTag>;
 };
 
 // the fluid system
@@ -26,7 +28,7 @@ struct FluidSystem<TypeTag, TTag::RootsOnePTwoC> {
     using type = FluidSystems::OnePAdapter<H2OABA, H2OABA::liquidPhaseIdx>;
 };
 
-// for CC (not periodic)
+// for CC
 template<class TypeTag>
 struct FVGridGeometry<TypeTag, TTag::RootsOnePTwoCCCTpfa> {
 private:
@@ -36,7 +38,7 @@ private:
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-    using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = PeriodicCCTpfaFVGridGeometry<GridView, /*enableCache=*/true>;
 };
 
 /**
@@ -48,7 +50,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsCaviationDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif
@@ -57,7 +59,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>; // TODO
+    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif
@@ -67,3 +69,5 @@ int simtype = rootbox;
 } // namespace Dumux
 
 #endif
+
+
