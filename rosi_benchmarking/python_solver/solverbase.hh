@@ -333,9 +333,9 @@ public:
     /**
      * Return the Dune element (vtk cell) of the grid as vertex indices.
      * The number of indices are
-     * 2 for line, 4 for tetraeder, 8 for hexaedron (todo ohther relevant objects?)
+     * 2 for line, 4 for tetraeder, 8 for hexaedron (todo other relevant objects? add 2D?)
      *
-     * This is done for a single process, gathering and mapping is done in Python.
+     * This is done for a single process, gathering and mapping is done in Python. TODO
      */
     virtual std::vector<std::vector<int>> getCells()
     {
@@ -502,7 +502,7 @@ protected:
 
     VectorType make3d(VectorType p) { ///<- binding is always 3d, lower dimensional Dumux grids are projected to 3d
         switch(dim) {
-        case 1: return VectorType({0., 0., p[0]}); // 1D
+        case 1: return VectorType({0., 0., p[0]}); // 1D is depth
         case 2: return VectorType({p[0], p[1], 0.}); // 2D, ignore z
         case 3: return VectorType({p[0], p[1], p[2]}); // 3D
         default:
@@ -534,10 +534,12 @@ protected:
 #endif
 
 /**
- * lacking polymorphism I have not found a way to make the gird dynamic.
+ * lacking polymorphism I have not found a way to make the grid dynamic.
  * you need to choose the grid at compile time,
  * and I don't know how to pass it via CMakeLists.txt building the Python binding
  */
+
+
 //using Grid = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>;
 //using GridView = typename Dune::YaspGridFamily<3,Dune::EquidistantOffsetCoordinates<double,3>>::Traits::LeafGridView;
 //using Scalar = double;

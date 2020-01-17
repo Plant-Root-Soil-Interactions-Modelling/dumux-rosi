@@ -81,12 +81,6 @@ public:
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
-//        if (bcTopType_ == constantPressure ) {
-//            bcTopValue_ = toPa_(bcTopValue_);
-//        }
-//        if (bcBotType_ == constantPressure ) {
-//            bcBotValue_ = toPa_(bcBotValue_);
-//        }
 
         // Component
         bcSTopType_ = getParam<int>("Soil.BC.Top.SType", outflow); // todo type as a string might be nicer
@@ -183,7 +177,7 @@ public:
         NumEqVector flux;
         GlobalPosition pos = scvf.center();
         auto& volVars = elemVolVars[scvf.insideScvIdx()];
-
+        // WATER
         if (onUpperBoundary_(pos)) { // top bc Water
             switch (bcTopType_) {
             case constantPressure: {
@@ -248,7 +242,7 @@ public:
         } else {
             flux[conti0EqIdx] = 0.;
         }
-
+        // SOLUTE
         if (onUpperBoundary_(pos)) { // top bc Solute
           switch (bcSTopType_) {
             case constantConcentration: {
@@ -286,7 +280,6 @@ public:
         } else {
             flux[transportEqIdx] = 0.;
         }
-        flux[transportEqIdx] = 0.; // TODO remvove
         return flux;
     }
 

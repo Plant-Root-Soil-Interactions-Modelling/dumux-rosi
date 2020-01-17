@@ -20,9 +20,11 @@ CSolverBase = solver.RichardsYaspSolver
 
 class PySolverBase(CSolverBase):
     """ Additional functionality to the C++ Python binding. 
+    
+        The class defined in the Binding acts as Base class 
         
         Contains mainly methods that are easier to write in Python, 
-        e.g. writeVTK, interpolate        
+        e.g. MPI communication, writeVTK, interpolate        
     """
 
     def getDofIndices(self):
@@ -61,7 +63,7 @@ class PySolverBase(CSolverBase):
         elif type == 2:  # cells
             indices = self._flat0(MPI.COMM_WORLD.gather(super().getCellIndices(), root = 0))
         else:
-            raise Exception('PySolverBase._map type must be 0, 1, or 2.')
+            raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
         if indices:  # only for rank 0 not empty
             assert(len(indices) == len(x))
             ndof = max(indices) + 1

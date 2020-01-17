@@ -34,7 +34,7 @@ def read_vtu(name):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded) of vtp file
 #
-def read1D_vtp_data(name):
+def read1D_vtp_data(name, pwidx = 2):
     pd = read_polydata(name)
 
     try:  # cell
@@ -47,7 +47,7 @@ def read1D_vtp_data(name):
 
     nocd = data.GetNumberOfArrays()
     sw = data.GetArray(0)  # saturation (S_lig)
-    pw = data.GetArray(2)  # pressure (p_lig)
+    pw = data.GetArray(pwidx)  # pressure (p_lig)
     noa = sw.GetNumberOfTuples()
 
     sw_ = np.ones(noa,)

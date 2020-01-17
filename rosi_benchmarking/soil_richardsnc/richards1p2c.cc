@@ -23,6 +23,8 @@
  */
 #include <config.h>
 
+#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+
 #include <ctime>
 #include <iostream>
 
@@ -38,6 +40,7 @@
 #include <dumux/common/valgrind.hh> // for debugging
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a function)
+
 #include <dumux/linear/amgbackend.hh> // linear solver (currently the only parallel solver available(?))
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 /**
@@ -46,11 +49,10 @@
  */
 #include <dumux/common/timeloop.hh>
 #include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
+
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
-
-#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 
 #include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types

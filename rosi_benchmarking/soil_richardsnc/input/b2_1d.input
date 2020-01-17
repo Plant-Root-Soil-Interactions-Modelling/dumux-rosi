@@ -3,7 +3,7 @@ Name = benchmark1d_2
 
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 31536000 # a year [s] hopefully steady steate is reached after 1 year
+TEnd = 604800 # 31536000 # a year [s] hopefully steady steate is reached after 1 year
 MaxTimeStepSize = 86400 # a day [s] 
 
 [Soil.Grid]
@@ -13,16 +13,18 @@ Cells = 52
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = -0.2 # [cm day-1]
+Value = -0.5 # [cm day-1]
 
 [Soil.BC.Bot]
 Type = 1 # constant pressure head
-Value = -10 # [cm] fully saturated
+Value = 0 # [cm] fully saturated
+# SType = 2 # SType = 0 is default (outflow), with no flux, solute accumulates 
 
 [Soil.IC]
 P = 0 -53 # cm pressure head (initial guess)
 Z = -.53  0
-C = 0
+C = 0 0 .1 0 0
+CZ = -.53 -.25 -.2 -.15 0 
 
 [Soil.VanGenuchten] 
 # Loam: 
@@ -33,5 +35,8 @@ N = 1.6
 Ks = 50 # [cm/d]  hydrus verdoppelt
 
 [Component]
-liquidDiffCoeff = 1.2e-9
-MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
+LiquidDiffusionCoefficient = 2.3e-9
+Name = "D2O"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
+
+
