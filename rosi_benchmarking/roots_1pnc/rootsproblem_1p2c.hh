@@ -118,9 +118,9 @@ public:
         critPCollarDirichlet_ = toPa_(getParam<double>("Control.CritCollarP", -1.5e4));  // cm -> Pa
 
         // Uptake params
-        vMax_ =  getParam<Scalar>("SpatialParam.Vmax", 6.2e-11); // Michaelis Menten Parameter [kg m-2 s-1]
-        km_ = getParam<Scalar>("SpatialParam.Km", 3.1e-9);  // Michaelis Menten Parameter  [kg m-3]
-        sigma_ = getParam<Scalar>("SpatialParam.PartitionCoefficient", 1.); // 1 for passive transport, 0 for active transport
+        vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11); // Michaelis Menten Parameter [kg m-2 s-1]
+        km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9);  // Michaelis Menten Parameter  [kg m-3]
+        sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for passive transport, 0 for active transport
 
         std::cout << "***********************************************\n";
         std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";
@@ -381,7 +381,7 @@ public:
             Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density);
 
             // choose active or passive
-            sourceValue[transportEqIdx] = (sigma_*passiveUptake + (1.-sigma_)*activeUptake) *source.quadratureWeight()*source.integrationElement();
+            sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
 
             source = sourceValue;
         } else { // should not happen...

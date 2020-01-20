@@ -98,6 +98,12 @@ public:
         // IC
         initialSoilP_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
         initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
+
+        // Uptake params
+        vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11); // Michaelis Menten Parameter [kg m-2 s-1]
+        km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9);  // Michaelis Menten Parameter  [kg m-3]
+        sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for passive transport, 0 for active transport
+
         // Output
         std::string filestr = this->name() + ".csv"; // output file
         myfile_.open(filestr.c_str());
@@ -342,8 +348,9 @@ public:
         PrimaryVariables sourceValue(0.);
 
         if (couplingManager_!=nullptr) { // compute source at every integration point
-            const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[pressureIdx];
-            const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
+
+            const Scalar soilP = couplingManager_->bulkPriVars(source.id())[pressureIdx];
+            const Scalar tipP = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
             const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
             const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
             const Scalar kr = spatialParams.kr(lowDimElementIdx);
@@ -352,10 +359,24 @@ public:
             const auto krel = 1.0;
             // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
             const auto density = 1000;
-            sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
+            sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(tipP - soilP)*density;
             sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
-            sourceValue[soluteIdx] = 0.; // TODO this might change (on both sides) if we couple richards1c and roots1pnc
-            //std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
+
+            Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
+            Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
+            Scalar passiveUptake;
+            if (sourceValue[h2OIdx]>0) {
+                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * tipC;
+            } else {
+                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * soilC;
+            }
+            // Active uptake based on Michaelis Menten
+            Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density);
+
+            // choose active or passive
+            sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
+
+            source = sourceValue;
         }
 
         source = sourceValue; // return value as reference
@@ -503,6 +524,11 @@ private:
     static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
     static constexpr Scalar pRef_ = 1.e5; // Pa
 
+    // Uptake params
+
+    Scalar vMax_; // Michaelis Menten Parameter [kg m-2 s-1]
+    Scalar km_;  // Michaelis Menten Parameter  [kg m-3]
+    Scalar sigma_;// 1 for passive transport, 0 for active transport
 };
 
 } //end namespace Dumux
