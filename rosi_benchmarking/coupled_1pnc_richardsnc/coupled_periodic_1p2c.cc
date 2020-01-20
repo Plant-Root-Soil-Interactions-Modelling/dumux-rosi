@@ -46,14 +46,14 @@
 #include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "../roots_1pnc/rootsproblem_stomata.hh" // Stomata model
-#include "../soil_richards/richardsproblem.hh" // Richards model in soil
+#include "../roots_1pnc/rootsproblem_1p2c.hh" // Stomata model
+#include "../soil_richardsnc/richards1p2cproblem.hh" // Richards model in soil
 
 #include "propertiesPeriodic.hh" // includes root properties, soil properties, redefines coupling manager
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::RichardsCC;
+using SoilTypeTag = Properties::TTag::Richards2CCC;
 using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
 
 

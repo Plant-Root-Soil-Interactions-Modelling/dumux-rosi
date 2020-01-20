@@ -26,27 +26,27 @@ namespace Dumux {
 namespace Properties {
 
 namespace TTag { // Create new type tags
-struct Richards1CTT { using InheritsFrom = std::tuple<RichardsNC>; };
-struct Richards1CBox { using InheritsFrom = std::tuple<Richards1CTT, BoxModel>; };
-struct Richards1CCC { using InheritsFrom = std::tuple<Richards1CTT, CCTpfaModel>; };
+struct Richards2CTT { using InheritsFrom = std::tuple<RichardsNC>; };
+struct Richards2CBox { using InheritsFrom = std::tuple<Richards2CTT, BoxModel>; };
+struct Richards2CCC { using InheritsFrom = std::tuple<Richards2CTT, CCTpfaModel>; };
 }
 
 // Set grid type
 #ifndef GRIDTYPE
 template<class TypeTag>
-struct Grid<TypeTag, TTag::Richards1CTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
+struct Grid<TypeTag, TTag::Richards2CTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
 #else
 template<class TypeTag>
-struct Grid<TypeTag, TTag::Richards1CTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
+struct Grid<TypeTag, TTag::Richards2CTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
 #endif
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::Richards1CTT> { using type = Richards1P2CProblem<TypeTag>; };
+struct Problem<TypeTag, TTag::Richards2CTT> { using type = Richards1P2CProblem<TypeTag>; };
 
 // Set the spatial parameters
 template<class TypeTag>
-struct SpatialParams<TypeTag, TTag::Richards1CTT> {
+struct SpatialParams<TypeTag, TTag::Richards2CTT> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
@@ -61,7 +61,7 @@ struct SpatialParams<TypeTag, TTag::Richards1CTT> {
  * TODO I only understand false...
  */
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::Richards1CTT> { static constexpr bool value = false; };
+struct UseMoles<TypeTag, TTag::Richards2CTT> { static constexpr bool value = false; };
 
 } // end namespace properties
 } // end namespace DUMUX

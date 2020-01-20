@@ -20,8 +20,11 @@
 
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
-#include "../roots_1pnc/properties_periodic_stomata.hh"
-#include "../soil_richards/properties.hh"
+
+#include "../roots_1pnc/properties.hh" // TypeTag:RootsOnePTwoCC
+#include "../roots_1pnc/properties_periodic_1p2c.hh" // TypeTag:RootsOnePTwoCC
+
+#include "../soil_richardsnc/properties.hh" // TypeTag:Richards2C
 
 namespace Dumux {
 namespace Properties {
@@ -32,17 +35,17 @@ namespace Properties {
 
 // Coupling Properties for the Soil
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::RichardsCC>
+struct CouplingManager<TypeTag, TTag::Richards2CCC>
 {
     using Traits = MultiDomainTraits<TypeTag, Properties::TTag::RootsOnePTwoCCCTpfa>;
     using type = EmbeddedCouplingManager1d3d<Traits, EmbeddedCouplingMode::line>;
 };
 // the point source type
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::RichardsCC> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<0>; };
+struct PointSource<TypeTag, TTag::Richards2CCC> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<0>; };
 // the point source locater helper class
 template<class TypeTag>
-struct PointSourceHelper<TypeTag, TTag::RichardsCC> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>;  };
+struct PointSourceHelper<TypeTag, TTag::Richards2CCC> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>;  };
 
 
 
@@ -50,7 +53,7 @@ struct PointSourceHelper<TypeTag, TTag::RichardsCC> { using type = typename GetP
 template<class TypeTag>
 struct CouplingManager<TypeTag, TTag::RootsOnePTwoCCCTpfa>
 {
-    using Traits = MultiDomainTraits<Properties::TTag::RichardsCC, TypeTag>;
+    using Traits = MultiDomainTraits<TTag::Richards2CCC, TypeTag>;
     using type = EmbeddedCouplingManager1d3d<Traits, EmbeddedCouplingMode::line>;
 };
 // the point source type

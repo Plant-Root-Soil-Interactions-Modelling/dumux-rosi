@@ -452,7 +452,7 @@ public:
     }
 
     /**
-     * debug info TODO
+     * debug info TODO make meaningful for 2c
      */
     void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
         NumEqVector source(0.0);
@@ -467,7 +467,7 @@ public:
                 source += pointSources;
             }
         }
-        std::cout << "Global integrated source (soil): " << source << " (kg/s) / " << source*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Global integrated source (soil): " << source[h2OIdx] << " (kg/s) / " << source[h2OIdx]*3600*24*1000 << " (g/day)" << '\n';
     }
 
 private:

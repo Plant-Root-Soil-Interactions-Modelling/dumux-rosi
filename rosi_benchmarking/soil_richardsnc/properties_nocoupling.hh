@@ -10,7 +10,7 @@ namespace Properties {
  */
 // The point source type (not used)
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::Richards1CTT> {
+struct PointSource<TypeTag, TTag::Richards2CTT> {
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
     using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
 };
@@ -39,7 +39,7 @@ public:
 };
 // For a dummy manager
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::Richards1CTT> {
+struct CouplingManager<TypeTag, TTag::Richards2CTT> {
     using type = DummyCouplingManager;
 };
 
