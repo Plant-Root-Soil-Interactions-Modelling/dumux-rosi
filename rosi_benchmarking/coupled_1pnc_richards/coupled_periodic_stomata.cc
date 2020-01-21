@@ -46,14 +46,14 @@
 #include <dumux/growth/cplantboxadapter.hh>
 #include <dumux/growth/gridgrowth.hh>
 
-#include "../roots_1pnc/rootsproblem_1p2c.hh" // Stomata model
-#include "../soil_richardsnc/richards1p2cproblem.hh" // Richards model in soil
+#include "../roots_1pnc/rootsproblem_stomata.hh" // Stomata model
+#include "../soil_richards/richardsproblem.hh" // Richards model in soil
 
-#include "propertiesCC.hh" // includes root properties, soil properties, redefines coupling manager
+#include "propertiesPeriodic.hh" // includes root properties, soil properties, redefines coupling manager
 
 namespace Dumux {
 
-using SoilTypeTag = Properties::TTag::Richards2CCC;
+using SoilTypeTag = Properties::TTag::RichardsCC;
 using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
 
 
@@ -103,7 +103,7 @@ int main(int argc, char** argv) try
         throw Dumux::ParameterException("Care! Foamgrid does not support parallel computation");
     }
 
-    // parse command line arguments and input fileProperties
+    // parse command line arguments and input file
     Parameters::init(argc, argv);
     std::string rootName = getParam<std::string>("Problem.RootName");
     Parameters::init(0, argv, rootName);
@@ -124,11 +124,22 @@ int main(int argc, char** argv) try
     auto soilGridGeometry = std::make_shared<SoilFVGridGeometry>(soilGridView);
     soilGridGeometry->update();
 
-    // root gridmanager and grid
+    // periodic root gridmanager and grid
     using GlobalPosition = Dune::FieldVector<double, 3>;
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> rootGrid;
-    GridManager<Grid> rootGridManager; // only for dgf
+    using GlobalPosition = Dune::FieldVector<double, 3>;
+    std::bitset<3> periodic("110");
+    if (hasParam("Grid.Periodic"))  {
+        periodic = getParam<std::bitset<3>>("Grid.Periodic");
+    }
+    GlobalPosition lower = soilGridGeometry->bBoxMin();
+    GlobalPosition upper = soilGridGeometry->bBoxMax();
+
+    // root gridmanager and grid
+    using Grid = Dune::FoamGrid<1, 3>;
+    std::shared_ptr<Grid> grid;
+    PeriodicNetworkGridManager<3> rootGridManager(lower, upper, periodic); // only for dgf
     std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
     if (simtype==Properties::dgf) { // for a static dgf grid
@@ -445,4 +456,3 @@ catch (Dumux::ParameterException &e) {
     std::cerr << "Unknown exception thrown: " << e.what() << " ---> Abort!" << std::endl;
     return 4;
 }
-
