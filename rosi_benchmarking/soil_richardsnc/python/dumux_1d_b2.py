@@ -21,8 +21,8 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc")
 
 # run dumux
-os.system("./richardsnc1d input/b2_1d.input")
-# os.system("./richardsnc1d input/b2_1d.input -Soil.Grid.Cells 1000")  # high res looks nice
+# os.system("./richardsnc1d input/b2_1d.input")
+os.system("./richardsnc1d input/b2_1d.input -Soil.Grid.Cells 1000")  # high res looks nice
 
 ax2 = ax1.twiny()
 

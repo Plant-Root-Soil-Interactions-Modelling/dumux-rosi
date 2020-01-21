@@ -56,8 +56,6 @@ namespace Dumux {
 using SoilTypeTag = Properties::TTag::RichardsCC;
 using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
 
-
-
 /**
  * debugging
  */
@@ -262,7 +260,7 @@ int main(int argc, char** argv) try
     VtkOutputModule<RootGridVariables, RootSolution> rootVtkWriter(*rootGridVariables, sol[rootDomainIdx], rootProblem->name());
     GetPropType<RootTypeTag, Properties::VtkOutputFields>::initOutputModule(rootVtkWriter);
 
-    rootProblem->userData("p", sol[rootDomainIdx]);
+    rootProblem->userData("pSoil", sol[rootDomainIdx]);
     rootProblem->userData("radius", sol[rootDomainIdx]);
     rootProblem->userData("order", sol[rootDomainIdx]);
     rootProblem->userData("id", sol[rootDomainIdx]);

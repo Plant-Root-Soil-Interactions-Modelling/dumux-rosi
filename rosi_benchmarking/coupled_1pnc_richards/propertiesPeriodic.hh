@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_COUPLED_1P2C_PROPERTIES_HH
-#define DUMUX_COUPLED_1P2C_PROPERTIES_HH
+#ifndef DUMUX_COUPLED_1P2C_PROPERTIES_PERIODIC_HH
+#define DUMUX_COUPLED_1P2C_PROPERTIES_PERIODIC__HH
 
 #include <dune/foamgrid/foamgrid.hh>
 
