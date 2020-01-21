@@ -2,7 +2,7 @@
 Name = benchmark3d_1c
 
 [TimeLoop]
-TEnd = 0 # 0 is steady state
+TEnd = 864000 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
@@ -20,7 +20,9 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-P = -15 # cm pressure head (initial guess)
+P = -30 
+C = 0 0 .1 0 0
+CZ = -2. -.55 -.5 -.45 0 
 
 [Soil.VanGenuchten] 
 # Clay over sand 
@@ -33,4 +35,9 @@ Ks = 10 1000 # [cm/d]
 [Soil.Layer]
 Number = 2 2 1 1
 Z = -2. -0.5 -0.5 0.	
+
+[Component]
+LiquidDiffusionCoefficient = 2.3e-11
+Name = "D2O"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
 	

@@ -71,7 +71,6 @@ def read1D_vtp_data(name, pwidx = 2):
             p2 = np.zeros(3,)
             points.GetPoint(ids.GetId(1), p2)
             z_[i] = 0.5 * (p1[0] + p2[0])
-        return sw_, pw_, z_
     else:  # not cell
         Np = pd.GetNumberOfPoints()
         z_ = np.zeros((Np,))
@@ -79,13 +78,14 @@ def read1D_vtp_data(name, pwidx = 2):
             p = np.zeros(3,)
             points.GetPoint(i, p)
             z_[i] = p[0]
-        return sw_, pw_, z_
+
+    return sw_, pw_, z_
 
 
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
 #
-def read3D_vtp_data(name, axis = 2):
+def read3D_vtp_data(name, pwidx = 2):
     pd = read_vtu(name)
 
     try:  # cell
@@ -101,7 +101,7 @@ def read3D_vtp_data(name, axis = 2):
 #     for i in range(0, nocd):
 #         print(data.GetArrayName(i))
     sw = data.GetArray(0)  # saturation
-    pw = data.GetArray(2)  # pressure
+    pw = data.GetArray(pwidx)  # pressure
 
     noa = sw.GetNumberOfTuples()
     # print("number of data points", noa)
@@ -143,14 +143,14 @@ def read3D_vtp_data(name, axis = 2):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded) of parallel vtp files
 #
-def read3Dp_vtp_data(prename, postname, n):
+def read3Dp_vtp_data(prename, postname, n, pwidx = 2):
     z_ = np.ones(0,)
     sw_ = np.ones(0,)
     pw_ = np.ones(0,)
     for i in range(0, n):
         n_ = prename + "{:04d}-".format(i) + postname + ".vtu"
         print("opening: ", n_)
-        sw, pw, z = read3D_vtp_data(n_)
+        sw, pw, z = read3D_vtp_data(n_, pwidx = 2)
         z_ = np.hstack((z_, z))
         sw_ = np.hstack((sw_, sw))
         pw_ = np.hstack((pw_, pw))
@@ -161,9 +161,9 @@ def read3Dp_vtp_data(prename, postname, n):
 #
 # reads a dumux output style vtu
 #
-def read3D_vtp(name, np = 1, axis = 2):
+def read3D_vtp(name, np = 1, pwidx = 2):
     if np == 1:
-        return read3D_vtp_data(name + ".vtu", axis)
+        return read3D_vtp_data(name + ".vtu", pwidx)
     else:
-        return read3Dp_vtp_data("s{:04d}-p".format(np), name, np)
+        return read3Dp_vtp_data("s{:04d}-p".format(np), name, np, pwidx)
 

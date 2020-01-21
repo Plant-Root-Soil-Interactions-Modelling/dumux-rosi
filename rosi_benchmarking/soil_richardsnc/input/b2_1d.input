@@ -21,8 +21,8 @@ Value = 0 # [cm] fully saturated
 # SType = 2 # SType = 0 is default (outflow), with no flux, solute accumulates 
 
 [Soil.IC]
-P = 0 -53 # cm pressure head (initial guess)
-Z = -.53  0
+Z = -0.53 0.
+P = 0 -53 
 C = 0 0 .1 0 0
 CZ = -.53 -.25 -.2 -.15 0 
 
@@ -35,7 +35,7 @@ N = 1.6
 Ks = 50 # [cm/d]  hydrus verdoppelt
 
 [Component]
-LiquidDiffusionCoefficient = 2.3e-9
+LiquidDiffusionCoefficient = 0. # 2.3e-9
 Name = "D2O"
 MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
 

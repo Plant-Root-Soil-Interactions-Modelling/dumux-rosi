@@ -19,7 +19,7 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-P = -30 # cm pressure head (initial guess)
+P = -30 
 C = 0 0 .1 0 0
 CZ = -2. -.55 -.5 -.45 0 
 
@@ -36,6 +36,6 @@ Z = -2 -0.5 -0.5 0
 Number = 2 2 1 1 
 
 [Component]
-LiquidDiffusionCoefficient = 2.3e-9
+LiquidDiffusionCoefficient = 0. #0 # = 2.3e-9
 Name = "D2O"
 MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
