@@ -14,13 +14,13 @@ namespace py = pybind11;
 #include <dumux/linear/amgbackend.hh>
 #include <dumux/assembly/fvassembler.hh>
 
-
-// most includes are in solverbase
+// general most includes are in solverbase
 #include "solverbase.hh"
 
-#include "../soil_richards/richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "../soil_richards/richardsproblem.hh" // the problem class
 
 #define GRIDTYPE Dune::SPGrid<double,3>
+
 #include "../soil_richards/properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types
 
@@ -40,26 +40,23 @@ using Problem = Dumux::RichardsProblem<TypeTag>;
 using Assembler = Dumux::FVAssembler<TypeTag, Dumux::DiffMethod::numeric>;
 using LinearSolver = Dumux::AMGBackend<TypeTag>;
 
-/*
- * Name of the configuration of Problem, Assembler, LinearSolver
- */
-std::string name = "RichardsYaspSolver";
-
 /**
  * Adds solver functionality, that specifically makes sense for Richards equation
  */
-class RichardsYaspSolver : public SolverBase<Problem, Assembler, LinearSolver> {
+class RichardsSP : public SolverBase<Problem, Assembler, LinearSolver> {
 public:
 
     std::vector<double> ls; // local sink
 
-    virtual ~RichardsYaspSolver()
+    virtual ~RichardsSP()
     { }
 
     /**
      * Sets the source term of the problem.
-     * The source is given per cell (element),
-     * as a map with element index as key, and source as value
+     * The source is given per cell (Dumux element),
+     * as a map with global element index as key, and source as value
+     *
+     * for simplicity avoiding mpi broadcasting or scattering
      */
     virtual void setSource(std::map<int, double> source)
     {
@@ -80,7 +77,14 @@ public:
         problem->setSource(&ls); // why a pointer? todo
     }
 
+    /*
+     * TODO setInitialConditions, std::map<int, double> ic,  setLayers(std::map<int, int> l)
+     */
+
+
     /**
+     *
+     *
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
      */
@@ -144,13 +148,17 @@ public:
 
 };
 
-using Solver = RichardsYaspSolver;
+using Solver = RichardsSP;
+std::string name = "RichardsSP";
 
 /**
- * Python binding of the Dumux solver base class
+ * Python binding of the Dumux
  */
-PYBIND11_MODULE(richards_sp_solver, m) {
+PYBIND11_MODULE(richardssp, m) {
 
+    /**
+     * SolverBase
+     */
     py::class_<Solver>(m, name.c_str())
     // initialization
         .def(py::init<>())
@@ -182,7 +190,9 @@ PYBIND11_MODULE(richards_sp_solver, m) {
     // useful
         .def("__str__",&Solver::toString)
         .def("checkInitialized", &Solver::checkInitialized)
-    // added by class specialization
+        /**
+         * RichardsSolverSP
+         */
         .def("setSource", &Solver::setSource)
         .def("getSaturation",&Solver::getSaturation)
         .def("getWaterVolume",&Solver::getWaterVolume)
@@ -190,5 +200,3 @@ PYBIND11_MODULE(richards_sp_solver, m) {
 }
 
 #endif
-
-// #include <dumux/discretization/localview.hh> // free fucntion localView(...)

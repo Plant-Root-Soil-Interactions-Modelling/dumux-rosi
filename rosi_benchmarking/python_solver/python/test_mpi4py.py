@@ -1,6 +1,6 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/soil_richards/")
-from richardsyaspsolver import *
+from richards_sp_solver import *
 
 import numpy as np
 import os

@@ -1,6 +1,6 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-from richardsyaspsolver import *
+from richards_sp_solver import *
 
 import os
 import time

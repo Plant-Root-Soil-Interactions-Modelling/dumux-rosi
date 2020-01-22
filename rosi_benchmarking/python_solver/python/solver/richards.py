@@ -1,18 +1,19 @@
 import os
 import sys
-sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-import solverbase as solver
+sys.path.append("../../../../build-cmake/rosi_benchmarking/python_solver/")
+
+from solver.solverbase import SolverWrapper
 
 
-class RichardsYaspSolver(solver.PySolverBase):
+class RichardsWrapper(SolverWrapper):
     """ 
     Adds functionality specifically for Richards equation             
     Wraps passing parameters to Dumux for VanGenuchtenParameter, IC, BC, 
     """
 
-    def __init__(self):
+    def __init__(self, base):
+        super().__init__(base)
         self.param_group = "Soil."
-        super().__init__()
 
     def  setParameterGroup(self, group :str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
@@ -35,15 +36,21 @@ class RichardsYaspSolver(solver.PySolverBase):
                 s += " " + str(l_)
             return s[1:]
 
-    def setVanGenuchtenParameter(self, qr, qs, alpha, n, ks):
-        """ Can be single values (float), or value per layer (list), 
+    def setVGParameters(self, soils :list):
+        """ Sets a list of vg parameter lists, 5 values per soil 
             set before creating the problem with SolverBase.initializeProblem 
         
             # todo doc params
         """
-        assert(type(qr) == type(qs) == type(alpha) == type(n) == type(ks))  # float or list
-        if (type(qr) == list):
-            assert(len(qr) == len(qs) == len(alpha) == len(n) == len(ks))
+        qr, qs, alpha, n, ks = [], [], [], [], []
+
+        for soil in soils:
+            assert(len(soil) == 5)
+            qr.append(soil[0])
+            qs.append(soil[1])
+            alpha.append(soil[2])
+            n.append(soil[3])
+            ks.append(soil[4])
 
         self.setParameter(self.param_group + "VanGenuchten.Qr", self.dumux_str(qr))
         self.setParameter(self.param_group + "VanGenuchten.Qs", self.dumux_str(qs))
@@ -51,7 +58,18 @@ class RichardsYaspSolver(solver.PySolverBase):
         self.setParameter(self.param_group + "VanGenuchten.N", self.dumux_str(n))
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
 
-    def setInitialConditionsZ(self, p :list, z :list = []):
+    def setLayersZ(self, number :list, z :list = []):
+        """ sets depth dependent layers 
+        
+        @param number     list of layer numbers at the z-positions (if given), or per soil layer, [cm] pressure head.      
+        @param z          list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
+        """
+        self.setParameter(self.param_group + "Layer.Number", self.dumux_str(number))
+        if z:
+            assert(len(number) == len(z))  # sample points
+            self.setParameter(self.param_group + "Layer.Z", self.dumux_str(z))
+
+    def setICZ(self, p :list, z :list = []):
         """ sets depth dependent initial condtions 
         
         @param p     list of pressures at the z-positions (if given), or per soil layer, [cm] pressure head.      
@@ -62,7 +80,7 @@ class RichardsYaspSolver(solver.PySolverBase):
             assert(len(p) == len(z))  # sample points
             self.setParameter(self.param_group + "IC.Z", self.dumux_str(z))
 
-    def setHomogeneousInitialConditions(self, p :float, equilibrium = False):
+    def setHomogeneousIC(self, p :float, equilibrium = False):
         """ sets homogeneous initial condions 
         
         @param p              mean matric potential [cm] pressure head
@@ -74,12 +92,12 @@ class RichardsYaspSolver(solver.PySolverBase):
             z = [bounds[2], bounds[5]]
             m = 100. * (z[1] - z[0]) / 2.
             p = [p + m, p - m]
-            self.setInitialConditionsZ(p, z)
+            self.setICZ(p, z)
         else:
-            self.setInitialConditionsZ(p)
+            self.setICZ(p)
 
-    def setBCTopBot(self, type_top :str, value_top :float, type_bot :str, value_bot = 0., climate :list = []):
-        """ Top and bot boundary conditions, set before creating the problem with SolverBase.initializeProblem 
+    def setTopBC(self, type_top :str, value_top :float, climate :list = []):
+        """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_top:
         type_top ==  "constantPressure", value_top is a constant pressure [cm] pressure head
@@ -87,14 +105,10 @@ class RichardsYaspSolver(solver.PySolverBase):
         type_top ==  "atmospheric", value_top is given by climatic data describing evapotranspiration [cm/day], 
                      Data are given in @param climate, the value of value_top is ignored.  
                      Minus denotes evaporation, plus transpiraton.                                            
-                     Evaporation stops at a critical pressure of -10000 cm, infiltration is with run off.                                                   
-        @param type_bot:
-        type_bot ==  "constantPressure", value_bot is a constant pressure [cm] pressure head
-        type_bot ==  "constantFlux", value_bot is the constant flux [cm/day] 
-        type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                 
-        @param climate:
-                     Two lists are expected, first a list of times [day], second a list of evapotranspirations [cm/day], 
-                     between the values linear interpolation is applied.       
+                     Evaporation stops at a critical pressure of -10000 cm, infiltration is with run off.     
+
+        @param climate:  Two lists are expected, first a list of times [day], second a list of evapotranspirations [cm/day], 
+                         between the values linear interpolation is applied.                                                                          
         """
         if type_top == "constantPressure":
             t = 1
@@ -105,20 +119,8 @@ class RichardsYaspSolver(solver.PySolverBase):
         else:
             raise Exception('Top type should be "constantPressure", "constantFlux", or "atmospheric", unknown top type {}'.format(type_top))
 
-        if type_top == "constantPressure":
-            b = 1
-        elif type_top == "constantFlux":
-            b = 2
-        elif type_top == "freeDrainage":
-            b = 5
-        else:
-            raise Exception('Bottom type should be "constantPressure", "constantFlux", or "freeDrainage", unknown bottom type {}'.format(type_top))
-
-        # pass to Dumux by strings (TODO make setter for it)
         self.setParameter(self.param_group + "BC.Top.Type", str(t))
         self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
-        self.setParameter(self.param_group + "BC.Bot.Type", str(b))
-        self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
         if t == 4:  # atmospheric
             if climate:
@@ -128,6 +130,27 @@ class RichardsYaspSolver(solver.PySolverBase):
 
             else:
                 raise Exception('Atmospheric boundary conditions where set, but no climatic data where given')
+
+    def setBotBC(self, type_bot :str, value_bot = 0.,):
+        """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
+        
+        @param type_bot:
+        type_bot ==  "constantPressure", value_bot is a constant pressure [cm] pressure head
+        type_bot ==  "constantFlux", value_bot is the constant flux [cm/day] 
+        type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                       
+        """
+
+        if type_bot == "constantPressure":
+            b = 1
+        elif type_bot == "constantFlux":
+            b = 2
+        elif type_bot == "freeDrainage":
+            b = 5
+        else:
+            raise Exception('Bottom type should be "constantPressure", "constantFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
+
+        self.setParameter(self.param_group + "BC.Bot.Type", str(b))
+        self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (dof, 1) """

@@ -116,6 +116,7 @@ public:
         }
         mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
 
+        setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
     }
 
@@ -280,6 +281,7 @@ public:
         do {
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
 
@@ -288,10 +290,9 @@ public:
             xOld = x; // make the new solution the old solution
 
             gridVariables->advanceTimeStep();
+
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
             timeLoop->reportTimeStep(); // report statistics of this time step
-
-            problem->setTime(simTime + timeLoop->time()); // pass current time to the problem ddt?
 
         } while (!timeLoop->finished());
 
@@ -442,7 +443,7 @@ public:
     }
 
     /**
-     * picks and element index (cell index)
+     * Picks a cell and returns its global element cell index
      * The lucky rank who found it, maps the local index to a global one,
      * and broadcasts to the others
      */
