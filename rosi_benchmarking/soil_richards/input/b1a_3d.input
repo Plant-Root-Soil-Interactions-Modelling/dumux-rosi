@@ -2,7 +2,7 @@
 Name = benchmark3d_1a
 
 [TimeLoop]
-TEnd = 0 # 31536000 # 0 is steady state
+TEnd = 3153600 #  # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
@@ -10,7 +10,7 @@ MaxTimeStepSize = 864000 # 10 days [s]
 LowerLeft = -0.05 -0.05 -2. 
 UpperRight =  0.05 0.05 0. 
 Cells = 9 9 199
-Periodic = true true false
+# Periodic = true true false
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -20,8 +20,9 @@ Value = 0.5 # [cm day-1]
 Type = 5 # free drainage
 
 [Soil.IC]
-P = -20 -20 -20 -40 # cm pressure head (initial guess)
-Z = -2. -1. -1. 0.
+P = -200 # cm pressure head (initial guess)
+# P = -20 -20 -20 -40 # cm pressure head (initial guess)
+# Z = -2. -1. -1. 0.
 
 [Soil.VanGenuchten] 
 # Loam over sand 
@@ -32,7 +33,6 @@ N = 1.6  3
 Ks = 50 1000 # [cm/d] 
 
 [Soil.Layer]
-Number = 2 2 1 1
-# Z = 0 1.5 1.5 2 	
+Number = 2 2 1 1	
 Z = -2. -0.5 -0.5 0.
 

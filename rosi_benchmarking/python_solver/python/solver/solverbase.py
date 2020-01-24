@@ -33,17 +33,27 @@ class SolverWrapper():
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
         self.base.createGrid(modelParamGroup)
 
-    def createGrid(self, boundsMin, boundsMax, numberOfCells, periodic = "false false false"):
-        """ Creates a rectangular grid with a given resolution """
-        self.base.createGrid(boundsMin, boundsMax, numberOfCells, periodic)
+    def createGrid(self, boundsMin, boundsMax, numberOfCells, periodic = False):
+        """ Creates a rectangular grid with a given resolution             
+            @param boundsMin        domain corner [cm]
+            @param boundsMax        domain corner [cm]        
+            @param numberOfCells    resoultion [1]
+            @param periodic         If true, the domain is periodic in x and y, not in z 
+        """
+        if periodic:
+            str = "true true false"
+        else:
+            str = "false false false"
+
+        self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), str)  # cm -> m
 
     def readGrid(self, file :str):
-        """ Creates a grid from a file """
+        """ Creates a grid from a file (e.g. dgf or msh)"""
         self.base.readGrid(file)
 
     def getGridBounds(self):
-        """  Returns a rectangular bounding box around the grid geometry """
-        return self.base.getGridBounds()
+        """  Returns a rectangular bounding box around the grid geometry [cm] """
+        return np.array(self.base.getGridBounds()) * 100.  # m -> cm
 
     def setParameter(self, key :str, value :str):
         """ Writes a parameter into the global Dumux parameter map """
@@ -58,25 +68,34 @@ class SolverWrapper():
         self.base.initializeProblem()
 
     def simulate(self, dt :float, maxDt = -1.):
-        """ Simulates the problem for time span dt, with initial time step ddt """
-        self.base.simulate(dt, maxDt)
+        """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
+        @param dt      time span [days] 
+        @param mxDt    maximal time step [days] 
+        """
+        self.base.simulate(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+
+    def solveSteadyState(self):
+        """ Finds the steady state of the problem """
+        self.base.solveSteadyState()
 
     def getPoints(self):
-        """Gathers vertices into rank 0, and converts it into numpy array (dof, 3)"""
+        """Gathers vertices into rank 0, and converts it into numpy array (dof, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getPoints(), root = 0)), 1)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getPoints(), root = 0)), 1) * 100.  # m -> cm
 
     def getCellCenters(self):
-        """Gathers cell centers into rank 0, and converts it into numpy array (dof, 3)"""
+        """Gathers cell centers into rank 0, and converts it into numpy array (dof, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCellCenters(), root = 0)), 2)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
 
     def getDofCoordinates(self):
-        """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3)"""
+        """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getDofCoordinates(), root = 0)))
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getDofCoordinates(), root = 0))) * 100.  # m -> cm
 
     # def getCells # TODO
+    # def getCellVolumes # TODO
+    # def quad, int or something
 
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
@@ -84,11 +103,31 @@ class SolverWrapper():
         return self._flat0(MPI.COMM_WORLD.gather(self.base.getDofIndices(), root = 0))
 
     def getSolution(self):
-        """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq) """
+        """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
+        model dependent units, [Pa, ...]"""
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(), root = 0)))
 
-    def pickCell(self, pos :tuple):
+    def getNeumann(self, gIdx):
+        """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
+        fluxes = MPI.COMM_WORLD.gather(self.base.getNeumann(gIdx), root = 0)
+        if fluxes:
+            f = sum(fluxes)  # 0. or value
+            return f / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        else:
+            return 0.
+
+    def getAllNeumann(self):
+        """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
+        dics = MPI.COMM_WORLD.gather(self.base.getAllNeumann(), root = 0)
+        flat_dic = {}
+        for d in dics:
+            flat_dic.update(d)
+        for key, value in flat_dic:
+            flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        return flat_dic
+
+    def pickCell(self, pos):
         """ Picks a cell and returns its global element cell index """
         return self.base.pickCell(pos)
 
@@ -102,8 +141,8 @@ class SolverWrapper():
 
     @property
     def simTime(self):
-        """ Current simulation time (read only)"""
-        return self.base.simTime
+        """ Current simulation time (read only) [days]"""
+        return self.base.simTime / 24. / 3600.  # s->days
 
     @property
     def rank(self):
@@ -117,20 +156,23 @@ class SolverWrapper():
 
     @property
     def ddt(self):
-        """ last internal time step, i.e. Dumux time step """
-        return self.base.ddt
+        """ last internal time step, i.e. Dumux time step [days]"""
+        return self.base.ddt / 24. / 3600.  # s-> days
 
     @ddt.setter
     def ddt(self, value):
-        self.base.ddt = value
+        """ sets internal time step, i.e. Dumux time step [days]"""
+        self.base.ddt = value * 24.*3600.  # days -> s
 
     def interpolate(self, xi, eq = 0):
-        """ interpolates the solution at position x todo: test"""
+        """ interpolates the solution at position ix [cm],
+        model dependent units
+        todo: test"""
         self.checkInitialized()
         points = self.getDofCoordinates()
         solution = self.getSolution()
         if rank == 0:
-            return griddata(points, solution[:, eq], xi, method = 'linear')
+            return griddata(points, solution[:, eq], xi / 100., method = 'linear')  # cm -> m
         else:
             return []
 
@@ -165,15 +207,18 @@ class SolverWrapper():
         else:
             raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
         if indices:  # only for rank 0 not empty
-            assert(len(indices) == len(x))
+            assert len(indices) == len(x), "_map: indices and values have different length"
             ndof = max(indices) + 1
-            m = len(x[0])
+            if isinstance(x[0], list):
+                m = len(x[0])
+            else:
+                m = 1
             p = np.zeros((ndof, m))
             for i in range(0, len(indices)):  #
                 p[indices[i], :] = np.array(x[i])
             return p
         else:
-            return []
+            return 0
 
     def _flat0(self, xx):
         """flattens the gathered list in rank 0, empty list for other ranks """
@@ -218,3 +263,9 @@ class SolverWrapper():
     def _vtkData(data):
         """ todo """
         pass
+
+    @staticmethod
+    def toHead(pa):
+        """ Converts Pascal (kg/ (m s^2)) to cm pressure head """
+        g , rho, ref = 9.81, 1.e3, 1.e5  # (m/s^2), (kg/m^3), Pa
+        return (pa - ref) * 100 / rho / g

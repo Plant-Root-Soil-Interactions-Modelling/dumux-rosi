@@ -2,7 +2,7 @@
 Name = benchmark3d_1b
 
 [TimeLoop]
-TEnd = 31536000 # 0 is steady state
+TEnd = 3153600 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 
@@ -10,7 +10,7 @@ MaxTimeStepSize = 864000 # 10 days [s]
 LowerLeft = -0.05 -0.05 -2. 
 UpperRight =  0.05 0.05 0. 
 Cells = 9 9 199
-Periodic = true true false
+# Periodic = true true false
 
 [Soil.BC.Top]
 Type = 2 # constant flux

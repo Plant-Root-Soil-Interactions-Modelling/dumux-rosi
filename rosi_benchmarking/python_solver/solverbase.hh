@@ -24,9 +24,11 @@ namespace py = pybind11;
 
 // pick
 #include <dumux/common/geometry/intersectingentities.hh>
+#include <dumux/discretization/localview.hh>
 
 #include <ostream>
 #include <iostream>
+#include <limits>
 
 using VectorType = std::array<double,3>;
 
@@ -54,7 +56,7 @@ public:
  * in solverbase.py. For simplicity most MPI communication is done in
  * Python.
  *
- * Examples are given in python/ directory
+ * Examples are given in the python directory
  */
 template<class Problem, class Assembler, class LinearSolver>
 class SolverBase {
@@ -73,11 +75,9 @@ public:
 
     std::vector<std::array<double, numberOfEquations>> solution;
 
-    SolverBase()
-    { }
+    SolverBase() { }
 
-    virtual ~SolverBase()
-    { }
+    virtual ~SolverBase() { }
 
     /**
      * Writes the Dumux welcome message, and creates the global Dumux parameter tree from defaults and the .input file
@@ -85,8 +85,7 @@ public:
      * Normally you state an input file, that contains all parameters that are needed for the simulation.
      * SolverBase will optionally set most of them dynamically.
      */
-    virtual void initialize(std::vector<std::string> args)
-    {
+    virtual void initialize(std::vector<std::string> args) {
         std::vector<char*> cargs;
         cargs.reserve(args.size());
         for(size_t i = 0; i < args.size(); ++i) {
@@ -131,8 +130,7 @@ public:
      * Grid.File
      * Grid.Overlap (should = 0 for box, = 1 for CCTpfa), automatically set in SolverBase::initialize
      */
-    virtual void createGrid(std::string modelParamGroup = "")
-    {
+    virtual void createGrid(std::string modelParamGroup = "") {
         GridManagerFix<Grid> gridManager;
         gridManager.init(modelParamGroup);
         grid = gridManager.gridPtr();
@@ -152,8 +150,7 @@ public:
      * e.g. the method does not make a lot of sense for unstructured grids
      */
     virtual void createGrid(VectorType boundsMin, VectorType boundsMax,
-        VectorType numberOfCells, std::string periodic = "false false false")
-    {
+        VectorType numberOfCells, std::string periodic = "false false false") {
         auto& p = Dumux::Parameters::paramTree(); // had to modify parameters.hh, its private an no way I can pull it out
         std::ostringstream bmin;
         std::ostringstream bmax;
@@ -178,8 +175,7 @@ public:
      *
      * depending on the Grid you choose at compile time it will accept the file type, or not.
      */
-    virtual void readGrid(std::string file)
-    {
+    virtual void readGrid(std::string file) {
         auto& p = Dumux::Parameters::paramTree();
         p["Grid.File"] = file;
         createGrid();
@@ -190,8 +186,7 @@ public:
      *
      * [minx, miny, minz, maxx, maxy, maxz]
      */
-    virtual std::array<double, 6> getGridBounds()
-    {
+    virtual std::array<double, 6> getGridBounds() {
         auto bMax = gridGeometry->bBoxMax();
         auto bMin = gridGeometry->bBoxMin();
         return std::array<double,6>({bMin[0], bMin[1], bMin[2], bMax[0], bMax[1], bMax[2]});
@@ -200,8 +195,7 @@ public:
     /**
      * Writes a parameter into the global Dumux parameter map
      */
-    virtual void setParameter(std::string key, std::string value)
-    {
+    virtual void setParameter(std::string key, std::string value) {
         auto& p = Dumux::Parameters::paramTree();
         p[key] = value;
     }
@@ -210,8 +204,7 @@ public:
      * Reads a parameter from the global Dumux parameter map,
      * returns an empty string if value is not set.
      */
-    virtual std::string getParameter(std::string key)
-    {
+    virtual std::string getParameter(std::string key) {
         return Dumux::getParam<std::string>(key, "");
     }
 
@@ -228,8 +221,7 @@ public:
      * The initialize values are set to the current solution,
      * i.e. can be analyzed using getSolution().
      */
-    virtual void initializeProblem()
-    {
+    virtual void initializeProblem() {
         problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
@@ -244,18 +236,22 @@ public:
 
         pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim); // global index mappers
         cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0);
+
+        localCellIdx.clear();
+        for (const auto& e : Dune::elements(gridGeometry->gridView())) {
+            int eIdx = gridGeometry->elementMapper().index(e);
+            int gIdx = cellIdx->index(e);
+            localCellIdx[gIdx] = eIdx;
+        }
     }
 
     /**
-     * Simulates the problem for time span dt, with initial time step ddt.
+     * Simulates the problem for time span dt, with maximal time step maxDt.
      *
      * Assembler needs a TimeLoop, so i have to create it in each simulate call.
      * (could be improved, but overhead is likely to be small)
-     *
-     * todo steady state
      */
-    virtual void simulate(double dt, double maxDt = -1)
-    {
+    virtual void simulate(double dt, double maxDt = -1) {
         checkInitialized();
         using namespace Dumux;
 
@@ -300,11 +296,31 @@ public:
     }
 
     /**
+     * Finds the steady state of the problem.
+     * Optionally, simulate for a time span to get a good initial guess.
+     */
+    virtual void solveSteadyState() {
+        checkInitialized();
+        using namespace Dumux;
+
+        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables); // steady state
+        auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
+        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        nonLinearSolver->setVerbose(false);
+
+        assembler->setPreviousSolution(x);
+        nonLinearSolver->solve(x); // solve the non-linear system
+
+        simTime = std::numeric_limits<double>::infinity();
+    }
+
+
+    /**
      * Returns the Dune vertices (vtk points) of the grid for a single mpi process.
      * Gathering and mapping is done in Python.
      */
-    virtual std::vector<VectorType> getPoints()
-    {
+    virtual std::vector<VectorType> getPoints() {
         checkInitialized();
         std::vector<VectorType> points;
         points.reserve(gridGeometry->gridView().size(dim));
@@ -319,8 +335,7 @@ public:
      * return the Dune element (vtk cell) centers of the grid for a single mpi process.
      * Gathering and mapping is done in Python.
      */
-    virtual std::vector<VectorType> getCellCenters()
-    {
+    virtual std::vector<VectorType> getCellCenters() {
         checkInitialized();
         std::vector<VectorType> cells;
         cells.reserve(gridGeometry->gridView().size(0));
@@ -338,16 +353,15 @@ public:
      *
      * This is done for a single process, gathering and mapping is done in Python. TODO
      */
-    virtual std::vector<std::vector<int>> getCells()
-    {
+    virtual std::vector<std::vector<int>> getCells() {
         checkInitialized();
         std::vector<std::vector<int>> cells;
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
             std::vector<int> cell;
-//            gridGeometry->vertexMapper.
-//            auto i0 = vMapper.subIndex(e, 0, 1);
-//            auto i1 = vMapper.subIndex(e, 1, 1);
+            //            gridGeometry->vertexMapper.
+            //            auto i0 = vMapper.subIndex(e, 0, 1);
+            //            auto i1 = vMapper.subIndex(e, 1, 1);
 
         }
         return cells;
@@ -361,8 +375,7 @@ public:
      *
      * For a single mpi process. Gathering and mapping is done in Python
      */
-    virtual std::vector<VectorType> getDofCoordinates()
-    {
+    virtual std::vector<VectorType> getDofCoordinates() {
         if (isBox) {
             return getPoints();
         } else {
@@ -409,8 +422,7 @@ public:
      *
      * For a single mpi process. Gathering is done in Python
      */
-    virtual std::vector<int> getDofIndices()
-    {
+    virtual std::vector<int> getDofIndices() {
         if (isBox) {
             return getPointIndices();
         } else {
@@ -422,8 +434,7 @@ public:
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
      */
-    virtual std::vector<std::array<double, numberOfEquations>> getSolution()
-    {
+    virtual std::vector<std::array<double, numberOfEquations>> getSolution() {
         checkInitialized();
         std::vector<std::array<double, numberOfEquations>> sol;
         int n;
@@ -434,21 +445,98 @@ public:
         }
         // std::cout << "getSolution(): n " << n << ", " << x.size() << "\n" << std::flush;
         sol.resize(n);
-        for (int c = 0; c<n; c++) {
-            for (int j=0; j<numberOfEquations; j++) {
-                sol[c][j] = x[c]; // [j]
+        if (numberOfEquations > 1) {
+            for (int c = 0; c<n; c++) {
+                for (int j=0; j<numberOfEquations; j++) {
+                    sol[c][j] = x[c][j];
+                }
+            }
+        } else {
+            for (int c = 0; c<n; c++) {
+                sol[c][0] = x[c];
             }
         }
         return sol;
     }
 
     /**
+     * Returns the maximal flux (over the boundary scvfs) of an element, given by its global element index
+     *
+     * TODO speed up with inverse gIdx -> eIdx map
+     *
+     * For a single mpi process. Gathering is done in Python
+     */
+    virtual double getNeumann(int gIdx) {
+//        double f = 0.;
+//        if (localCellIdx.count(gIdx)>0) {
+//            int eIdx = localCellIdx.count(gIdx);
+//            auto e = gridGeometry->element(eIdx);
+//            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+//            fvGeometry.bindElement(e);
+//            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+//            elemVolVars.bindElement(e, fvGeometry, x);
+//            for (const auto& scvf : scvfs(fvGeometry)) {
+//                if (scvf.boundary()) {
+//                        double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
+//         f = (std::abs(n) > std::abs(f)) ? n : f;
+//                }
+//            }
+//        } else {
+//            return 0.;
+//        }
+        double f = 0.;
+        for (const auto& e : Dune::elements(gridGeometry->gridView())) {
+            if (cellIdx->index(e) == gIdx) {
+                auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+                fvGeometry.bindElement(e);
+                for (const auto& scvf : scvfs(fvGeometry)) {
+                    if (scvf.boundary()) {
+                        auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+                        elemVolVars.bindElement(e, fvGeometry, x);
+                        double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
+                        f = (std::abs(n) > std::abs(f)) ? n : f;
+                    }
+                }
+            }
+        }
+        return f;
+    }
+
+    /**
+     * Return the neumann fluxes of the current solution for each element (as mean over all scvfs).
+     *
+     * For a single mpi process. Gathering is done in Python
+     */
+    virtual std::map<int, double> getAllNeumann() {
+        std::map<int, double> fluxes;
+        for (const auto& e : Dune::elements(gridGeometry->gridView())) { // soil elements
+            double f = 0.;
+            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(e);
+            int c = 0;
+            for (const auto& scvf : scvfs(fvGeometry)) {
+                if (scvf.boundary()) {
+                    c++;
+                    auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+                    elemVolVars.bindElement(e, fvGeometry, x);
+                    f += problem->neumann(e, fvGeometry, elemVolVars, scvf);
+                }
+            }
+            if (c>0) {
+                fluxes[cellIdx->index(e)] = f/c; // mean value
+            }
+        }
+        return fluxes;
+    }
+
+    /**
      * Picks a cell and returns its global element cell index
      * The lucky rank who found it, maps the local index to a global one,
      * and broadcasts to the others
+     *
+     * // todo! I have to take care about periodicity myself!
      */
-    virtual int pickCell(VectorType pos) // todo! I have to take care about periodicity myself!
-    {
+    virtual int pickCell(VectorType pos) {
         checkInitialized();
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
@@ -465,8 +553,7 @@ public:
     /**
      * Quick overview
      */
-    virtual std::string toString()
-    {
+    virtual std::string toString() {
         std::ostringstream msg;
         msg << "DuMux Solver using " << gridType << " in " << dim << "D ";
         if (isBox) {
@@ -492,8 +579,7 @@ public:
      * Checks if the problem was initialized,
      * i.e. initializeProblem() was called
      */
-    virtual void checkInitialized()
-    {
+    virtual void checkInitialized() {
         if (!gridGeometry) {
             throw std::invalid_argument("SolverBase::checkInitialized: Problem not initialized, call initializeProblem first");
         }
@@ -527,6 +613,7 @@ protected:
 
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx;
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx;
+    std::map<int, int> localCellIdx; // global to local index mapper
 
     SolutionVector x;
 

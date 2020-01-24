@@ -1,5 +1,5 @@
-#ifndef RICHARDS_YASP_SOLVER_H_
-#define RICHARDS_YASP_SOLVER_H_
+#ifndef RICHARDS_SP_SOLVER_H_
+#define RICHARDS_SP_SOLVER_H_
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
@@ -8,7 +8,7 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
-// #include <dumux/discretization/box/fvelementgeometry.hh> // free function scvs(...)
+#include <dumux/discretization/cellcentered/tpfa/fvelementgeometry.hh> // free function scvs(...)
 
 // pick assembler and linear solver
 #include <dumux/linear/amgbackend.hh>
@@ -83,12 +83,12 @@ public:
 
 
     /**
-     *
-     *
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
+     *
+     * TODO does this work for box ??? should i loop over vertices?
      */
-    virtual std::vector<double> getSaturation()
+    virtual std::vector<double> getWaterContent()
     {
         checkInitialized();
         std::vector<double> s;
@@ -100,15 +100,20 @@ public:
         }
         s.resize(n);
         for (const auto& element : Dune::elements(gridGeometry->gridView())) { // soil elements
+
             auto eIdx = gridGeometry->elementMapper().index(element);
             s[eIdx] = 0;
             auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
             fvGeometry.bindElement(element);
             auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
             elemVolVars.bindElement(element, fvGeometry, x);
+
+            int c = 0;
             for (const auto& scv : scvs(fvGeometry)) {
-                s[eIdx] += elemVolVars[scv].saturation(0)*scv.volume();
+                c++;
+                s[eIdx] += elemVolVars[scv].waterContent();
             }
+            s[eIdx] /= c; // mean value
         }
         return s;
     }
@@ -128,7 +133,6 @@ public:
             for (const auto& scv : scvs(fvGeometry)) {
                 cVol += elemVolVars[scv].saturation(0)*scv.volume();
             }
-
         }
         return gridGeometry->gridView().comm().sum(cVol)*1.e6; // m3 -> cm3
     }
@@ -173,6 +177,7 @@ PYBIND11_MODULE(richardssp, m) {
         .def("initializeProblem", &Solver::initializeProblem)
     // simulation
         .def("simulate", &Solver::simulate, py::arg("dt"), py::arg("maxDt") = -1)
+        .def("solveSteadyState", &Solver::solveSteadyState)
     // post processing (vtk naming)
         .def("getPoints", &Solver::getPoints) //
         .def("getCellCenters", &Solver::getCellCenters)
@@ -181,6 +186,8 @@ PYBIND11_MODULE(richardssp, m) {
         .def("getCellIndices", &Solver::getCellIndices)
         .def("getDofIndices", &Solver::getDofIndices)
         .def("getSolution", &Solver::getSolution)
+        .def("getNeumann", &Solver::getNeumann)
+        .def("getAllNeumann", &Solver::getAllNeumann)
         .def("pickCell", &Solver::pickCell)
     // members
         .def_readonly("simTime", &Solver::simTime) // read only
@@ -194,7 +201,7 @@ PYBIND11_MODULE(richardssp, m) {
          * RichardsSolverSP
          */
         .def("setSource", &Solver::setSource)
-        .def("getSaturation",&Solver::getSaturation)
+        .def("getWaterContent",&Solver::getWaterContent)
         .def("getWaterVolume",&Solver::getWaterVolume)
         .def("writeDumuxVTK",&Solver::writeDumuxVTK);
 }

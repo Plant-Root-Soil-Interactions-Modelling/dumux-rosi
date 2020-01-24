@@ -248,7 +248,6 @@ public:
                     Scalar krw = MaterialLaw::krw(params, s);
                     Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - 1.); // maximal evaporation
                     Scalar v = std::min(prec, emax);
-                    // std::cout << prec << ", " << emax << ", " << h << "\n";
                     flux[conti0EqIdx] = v;
                 }
                 break;

@@ -91,7 +91,7 @@ public:
         layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
 
-        std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
+        // std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
     }
 
     /*!

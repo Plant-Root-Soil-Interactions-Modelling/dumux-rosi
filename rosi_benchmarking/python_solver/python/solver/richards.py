@@ -1,8 +1,14 @@
-import os
+import numpy as np
 import sys
 sys.path.append("../../../../build-cmake/rosi_benchmarking/python_solver/")
 
 from solver.solverbase import SolverWrapper
+
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
 
 class RichardsWrapper(SolverWrapper):
@@ -18,12 +24,6 @@ class RichardsWrapper(SolverWrapper):
     def  setParameterGroup(self, group :str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
         self.param_group = group
-
-    @staticmethod
-    def toHead(pa):
-        """ Converts Pascal (kg/ (m s^2)) to cm pressure head """
-        g , rho, ref = 9.81, 1.e3, 1.e5  # (m/s^2), (kg/m^3), Pa
-        return (pa - ref) * 100 / rho / g
 
     @staticmethod
     def dumux_str(l):
@@ -66,8 +66,8 @@ class RichardsWrapper(SolverWrapper):
         """
         self.setParameter(self.param_group + "Layer.Number", self.dumux_str(number))
         if z:
-            assert(len(number) == len(z))  # sample points
-            self.setParameter(self.param_group + "Layer.Z", self.dumux_str(z))
+            assert len(number) == len(z), "setLayersZ: sample point values and z coordinates have unequal length"
+            self.setParameter(self.param_group + "Layer.Z", self.dumux_str(np.array(z) / 100.))  # cm -> m
 
     def setICZ(self, p :list, z :list = []):
         """ sets depth dependent initial condtions 
@@ -78,7 +78,7 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "IC.P", self.dumux_str(p))
         if z:
             assert(len(p) == len(z))  # sample points
-            self.setParameter(self.param_group + "IC.Z", self.dumux_str(z))
+            self.setParameter(self.param_group + "IC.Z", self.dumux_str(np.array(z) / 100.))
 
     def setHomogeneousIC(self, p :float, equilibrium = False):
         """ sets homogeneous initial condions 
@@ -88,7 +88,7 @@ class RichardsWrapper(SolverWrapper):
                               for hydrostatic equilibrium the grid must be created before  
         """
         if equilibrium:
-            bounds = self.getGridBounds()
+            bounds = self.getGridBounds() / 100  # cm-> m
             z = [bounds[2], bounds[5]]
             m = 100. * (z[1] - z[0]) / 2.
             p = [p + m, p - m]
@@ -152,8 +152,8 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "BC.Bot.Type", str(b))
         self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
-    def getSaturation(self):
-        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (dof, 1) """
+    def getWaterContent(self):
+        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (dof, 1) [1]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(super().getSaturation(), root = 0)))
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getWaterContent(), root = 0)))
 
