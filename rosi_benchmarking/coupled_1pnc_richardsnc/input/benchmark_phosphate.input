@@ -5,7 +5,7 @@ MaxTimeStepSize = 86400
 # PeriodicCheckTimes = 864000 # 1 day
 
 [Soil.Grid]
-Cells = 101 101 1
+Cells = 41 41 1
 
 [RootSystem.Uptake]
 Vmax = 86.4 # [g/cm2/day]
@@ -16,6 +16,9 @@ ActiveTransport = 1
 LiquidDiffusionCoefficient = 3.e-10 # m2/s
 MolarMass = 0.2 # ??? does this do anything
 BufferPower = 0
+
+[RootSystem.Collar]
+Transpiration = 1.0857e-06 # kg/day
 
 [Problem]
 Name = benchmark_phosphate2
