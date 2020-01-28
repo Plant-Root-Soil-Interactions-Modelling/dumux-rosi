@@ -7,8 +7,8 @@ DtInitial =  3600 # [s]
 MaxTimeStepSize = 86400 # 1 days [s] 
 
 [Soil.Grid]
-LowerLeft = -5e-2 -5e-2 -1.e-2
-UpperRight = 5e-2  5e-2  0.
+LowerLeft = -2.e-2 -2.e-2 -1.e-2
+UpperRight = 2.e-2  2.e-2  0.
 Cells = 20 20 1
 
 [Soil.BC.Top]
@@ -37,4 +37,4 @@ Number = 2 # pick soil type here ...
 [Component]
 LiquidDiffusionCoefficient = 1.e-9 # m2/s
 MolarMass = 0.2 # ???
-
+BufferPower = 140

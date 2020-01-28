@@ -1,11 +1,21 @@
 [TimeLoop]
 TEnd = 120960 # 14 days
-DtInitial =  1 
-# PeriodicCheckTimes = 864000 # 1 day
+DtInitial =  3600 
 MaxTimeStepSize = 86400
+# PeriodicCheckTimes = 864000 # 1 day
 
 [Soil.Grid]
-Cells = 41 41 1
+Cells = 101 101 1
+
+[RootSystem.Uptake]
+Vmax = 86.4 # [g/cm2/day]
+Km = 0.1 # [g/cm3] 
+ActiveTransport = 1
+
+[Component]
+LiquidDiffusionCoefficient = 3.e-10 # m2/s
+MolarMass = 0.2 # ??? does this do anything
+BufferPower = 0
 
 [Problem]
 Name = benchmark_phosphate2

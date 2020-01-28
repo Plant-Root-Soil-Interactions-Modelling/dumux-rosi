@@ -97,12 +97,15 @@ public:
         }
         // IC
         initialSoilP_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
-        initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
+        initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); //
 
         // Uptake params
-        vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11); // Michaelis Menten Parameter [kg m-2 s-1]
-        km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9);  // Michaelis Menten Parameter  [kg m-3]
+        vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/(10./24./3600.))*10./24./3600.; //  [g cm-2 day-1] -> [kg m-2 s-1]
+        km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1000. )*1000.;  // [g cm-3] -> [kg m-3]
         sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for passive transport, 0 for active transport
+
+        // Buffer power
+        b_ = getParam<Scalar>("Component.BufferPower", 0.);
 
         // Output
         std::string filestr = this->name() + ".csv"; // output file
@@ -142,6 +145,15 @@ public:
         return pRef_;
     }
 
+    /**
+     * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
+     *
+     * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
+     */
+    Scalar getBufferPower(const SubControlVolume& scv, const VolumeVariables& volVars) const {
+        return b_;
+    }
+
     /*!
      * \copydoc FVProblem::initial
      *
@@ -154,6 +166,7 @@ public:
         PrimaryVariables v(0.0);
         v[pressureIdx] = toPa_(initialSoilP_.f(z,eIdx));
         v[soluteIdx] = initialSoilC_.f(z,eIdx);
+        // std::cout << v[soluteIdx] << "\n";//////////////////////////////////////////////////////////////
         return v;
     }
 
@@ -371,7 +384,7 @@ public:
                 passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * soilC;
             }
             // Active uptake based on Michaelis Menten
-            Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density);
+            Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density); // todo times root element length
 
             // choose active or passive
             sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
@@ -525,10 +538,12 @@ private:
     static constexpr Scalar pRef_ = 1.e5; // Pa
 
     // Uptake params
-
     Scalar vMax_; // Michaelis Menten Parameter [kg m-2 s-1]
     Scalar km_;  // Michaelis Menten Parameter  [kg m-3]
     Scalar sigma_;// 1 for passive transport, 0 for active transport
+
+    Scalar b_; // buffer power
+
 };
 
 } //end namespace Dumux

@@ -53,6 +53,7 @@ class RootsStomataProblem: public PorousMediumFlowProblem<TypeTag> {
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
+    using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
 
     enum {
         pressureIdx = 0, // indices of primary variables
@@ -226,6 +227,15 @@ public:
      */
     Scalar temperature() const {
         return 273.15 + 10; // 10C
+    }
+
+    /**
+     * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
+     *
+     * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
+     */
+    Scalar getBufferPower(const SubControlVolume& scv, const VolumeVariables& volVars) const {
+        return 0.;
     }
 
     /*!
