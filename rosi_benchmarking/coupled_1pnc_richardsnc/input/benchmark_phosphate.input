@@ -1,5 +1,5 @@
 [TimeLoop]
-TEnd = 1209600 # 14 days
+TEnd = 120960 # 14 days
 DtInitial =  1 
 # PeriodicCheckTimes = 864000 # 1 day
 MaxTimeStepSize = 86400

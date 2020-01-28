@@ -32,6 +32,7 @@ ax1.plot(h1_, z1_ * 100, "r+")
 ax1b = ax1.twiny()
 s_, c_, z_ = read1D_vtp_data("benchmark1d_1a-00000.vtp", 13)  # Solute concentration
 ax1b.plot(c_, z_ * 100, "g:")
+print(max(c_))
 s_, c_, z_ = read1D_vtp_data("benchmark1d_1a-00001.vtp", 13)
 ax1b.plot(c_, z_ * 100, "r:")
 

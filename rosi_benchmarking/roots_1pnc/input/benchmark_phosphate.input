@@ -20,8 +20,8 @@ Kr = 1 # radial conductivity [cm/hPa/day]
 Transpiration = 1.0857e-06 # cm/day
 
 [Component]
-liquidDiffCoeff = 1.2e-9
-MolarMass = 0.26432 # ???
+liquidDiffCoeff = 1e-9
+MolarMass = 0.2 # ???
 
 [RootSystem.Uptake]
 Vmax = 86.4 # g/cm2/day

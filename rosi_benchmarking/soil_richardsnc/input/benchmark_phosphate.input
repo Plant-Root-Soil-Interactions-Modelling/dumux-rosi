@@ -36,5 +36,5 @@ Number = 2 # pick soil type here ...
 
 [Component]
 LiquidDiffusionCoefficient = 1.e-9 # m2/s
-MolarMass = 20e-3 # ???
+MolarMass = 0.2 # ???
 

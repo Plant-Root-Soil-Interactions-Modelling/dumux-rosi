@@ -10,7 +10,6 @@ MaxTimeStepSize = 864000 # 10 days [s]
 LowerLeft = -0.05 -0.05 -2. 
 UpperRight =  0.05 0.05 0. 
 Cells = 9 9 199
-Periodic = true true false
 
 [Soil.BC.Top]
 Type = 2 # constant flux
