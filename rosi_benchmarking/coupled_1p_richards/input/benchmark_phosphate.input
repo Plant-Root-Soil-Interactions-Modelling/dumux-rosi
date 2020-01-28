@@ -1,8 +1,8 @@
 [TimeLoop]
 TEnd = 1209600 # 14 days
 DtInitial =  1 
-# PeriodicCheckTimes = 864000 # 1 day
-MaxTimeStepSize = 86400
+PeriodicCheckTimes = 86400 # 0.1 day
+MaxTimeStepSize = 3600
 
 [Soil.Grid]
 Cells = 41 41 1

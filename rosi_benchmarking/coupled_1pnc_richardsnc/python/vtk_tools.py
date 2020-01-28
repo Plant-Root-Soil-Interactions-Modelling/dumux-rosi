@@ -2,12 +2,6 @@ import vtk
 import numpy as np
 import matplotlib.pyplot as plt
 
-#
-# vtk_tools (more tools in conversions module roco)
-#
-# D. Leitner, 2018
-#
-
 
 #
 # opens a vtp and returns the vtk polydata class
@@ -34,7 +28,7 @@ def read_vtu(name):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
 #
-def read3D_vtp_data_line(name, eps = 0.1):
+def read3D_vtp_data_line(name, eps = 1e-2, pwidx = 2):
 
     pd = read_vtu(name)
     try:  # cell
@@ -49,7 +43,7 @@ def read3D_vtp_data_line(name, eps = 0.1):
 
     nocd = data.GetNumberOfArrays()
     sw = data.GetArray(0)  # saturation (S_lig)
-    pw = data.GetArray(2)  # pressure (p_lig)
+    pw = data.GetArray(pwidx)  # pressure (p_lig)
     noa = sw.GetNumberOfTuples()
 
     sw_ = np.ones(noa,)
@@ -63,7 +57,7 @@ def read3D_vtp_data_line(name, eps = 0.1):
     points = pd.GetPoints()
     y_, p_ = [], []
     if cell:
-        print("opening cell")
+         # p rint("opening cell")
         Nc = pd.GetNumberOfCells()
         z_ = np.zeros((Nc,))
         for i in range(0, Nc):
@@ -79,9 +73,9 @@ def read3D_vtp_data_line(name, eps = 0.1):
             if p[0] > -eps and p[0] < eps and p[1] >= 0:  # take points (0,y,0) where y>=0
                 y_.append(p[1])
                 p_.append(pw_[i])
-        return p_, y_
+        return np.array(p_), np.array(y_)
     else:  # not cell
-        print("opening box")
+        # print("opening box")
         Np = pd.GetNumberOfPoints()
         for i in range(0, Np):
             p = np.zeros(3,)

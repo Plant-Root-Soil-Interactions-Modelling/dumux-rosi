@@ -375,7 +375,7 @@ int main(int argc, char** argv) try
                     rootProblem->userData("id", sol[rootDomainIdx]);
                     rootProblem->userData("initialPressure", sol[rootDomainIdx]);
                 }
-                rootProblem->userData("p", sol[rootDomainIdx]);
+                rootProblem->userData("pSoil", sol[rootDomainIdx]);
                 rootProblem->userData("axialFlux", sol[rootDomainIdx]);
                 rootProblem->userData("radialFlux", sol[rootDomainIdx]);
                 rootProblem->userData("age", sol[rootDomainIdx]); // age changes with time
@@ -404,7 +404,7 @@ int main(int argc, char** argv) try
         nonLinearSolver.solve(sol); // solve the non-linear system
 
         // write outputs
-        rootProblem->userData("p", sol[rootDomainIdx]);
+        rootProblem->userData("pSoil", sol[rootDomainIdx]);
         rootProblem->userData("axialFlux", sol[rootDomainIdx]);
         rootProblem->userData("radialFlux", sol[rootDomainIdx]);
         rootProblem->userData("age", sol[rootDomainIdx]); // prepare fields

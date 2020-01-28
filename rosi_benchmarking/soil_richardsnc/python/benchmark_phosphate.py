@@ -22,7 +22,7 @@ else:
 # Figure
 s_, p_, y_ = read3D_vtp("benchmark_phosphate-00001", np_)
 h1_ = vg.pa2head(p_)
-plt.plot(y_ * 100, h1_, "r+")
-plt.ylabel('$\psi$ (cm)')
-plt.xlabel('y axis (cm)')
+plt.plot(h1_, y_ * 100, "r+")
+plt.xlabel('$\psi$ (cm)')
+plt.ylabel('z axis (cm)')
 plt.show()

@@ -349,7 +349,7 @@ public:
     void pointSource(PointSource& source, const Element &element, const FVElementGeometry& fvGeometry,
         const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) const
     {
-        PrimaryVariables sourceValue;
+        PrimaryVariables sourceValue(0.);
 
         if (couplingManager_!=nullptr) { // compute source at every integration point
 
@@ -381,12 +381,15 @@ public:
             Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density);
 
             // choose active or passive
-            sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
+            sourceValue[transportEqIdx] = 0.; // (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
 
             source = sourceValue;
+
         } else { // should not happen...
+
             std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
             source = sourceValue;
+
         }
     }
 
