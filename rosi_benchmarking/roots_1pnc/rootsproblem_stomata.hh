@@ -401,7 +401,7 @@ public:
                     } else {
                         volume = scv.volume()*elemVolVars[scv.dofIndex()].extrusionFactor(); // m3
                     }
-                    std::cout << 1.e9*volume << " mm3, ";
+                    // std::cout << 1.e9*volume << " mm3, ";
                     sourceValue[transportEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*volume*molarMass; // [kg / s]
                 } else {
                     sourceValue[transportEqIdx] = 0.;

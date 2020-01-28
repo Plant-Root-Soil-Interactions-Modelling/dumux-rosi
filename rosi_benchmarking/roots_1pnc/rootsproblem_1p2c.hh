@@ -118,13 +118,13 @@ public:
         critPCollarDirichlet_ = toPa_(getParam<double>("Control.CritCollarP", -1.5e4));  // cm -> Pa
 
         // Uptake params
-        vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11); // Michaelis Menten Parameter [kg m-2 s-1]
-        km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9);  // Michaelis Menten Parameter  [kg m-3]
-        sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for passive transport, 0 for active transport
+        vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/(10.*24.*3600.))*10*24*3600; // Michaelis Menten Parameter [g/cm2/day] -> [kg m-2 s-1]
+        km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9/1000.)*1000.;  // Michaelis Menten Parameter  [g/cm3] - > [kg m-3]
+        sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for active transport, 0 for passive
 
         std::cout << "***********************************************\n";
         std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";
-        std::cout << "critPCollarDirichlet " << critPCollarDirichlet_ << ", critPCollarAlpha " << critPCollarAlpha_ << "\n";
+        std::cout << "critPCollarDirichlet " << critPCollarDirichlet_ << "\n";
         std::cout << "***********************************************\n";
     }
 
@@ -559,12 +559,7 @@ protected:
 
     bool grow_; // indicates if root segments age, or not
 
-    /**
-     * Hormone model parameters
-     */
     double critPCollarDirichlet_ = -1.4e6; // -1.4e6;
-    double critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
-
     double mL_ = 0.; // (kg) mass of hormones in the leaf
     double mRoot_ = 0.; // (kg) mass of hormones in the root system
     double mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume

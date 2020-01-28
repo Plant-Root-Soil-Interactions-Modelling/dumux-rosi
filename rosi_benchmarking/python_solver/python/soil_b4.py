@@ -35,12 +35,10 @@ def solve(soil, simtime, evap, NZ, ic = -200):
     s.initializeProblem()
     idx_top = s.pickCell([0.0, 0.0, 0.0])  # index to watch flux
 
-    input()
-
     N = 200
     dt = simtime / N
     s.ddt = 1.e-5  # initial Dumux time step [days]
-    maxDt = 60  # 120 / 24 / 3600  # maximal Dumux time step [days]
+    maxDt = 1  # maximal Dumux time step [days]
 
     x_, y_ = [], []
 
