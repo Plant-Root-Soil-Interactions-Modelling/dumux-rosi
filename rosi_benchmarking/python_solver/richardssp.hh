@@ -46,13 +46,13 @@ using LinearSolver = Dumux::AMGBackend<TypeTag>;
 class RichardsSP : public SolverBase<Problem, Assembler, LinearSolver> {
 public:
 
-    std::vector<double> ls; // local sink
+    std::vector<double> ls; // local sink [kg/s]
 
     virtual ~RichardsSP()
     { }
 
     /**
-     * Sets the source term of the problem.
+     * Sets the source term of the problem [g/day].
      * The source is given per cell (Dumux element),
      * as a map with global element index as key, and source as value
      *
@@ -69,7 +69,7 @@ public:
             int gIdx = cellIdx->index(e); // global index
             auto eIdx = gridGeometry->elementMapper().index(e);
             if (source.count(gIdx)>0) {
-                ls[eIdx] = source[gIdx]/24.*3600./1.e3; // g/day -> kg/s
+                ls[eIdx] = source[gIdx]/24./3600./1.e3; // [g/day] -> [kg/s]
             } else {
                 ls[eIdx] = 0.;
             }
@@ -119,7 +119,7 @@ public:
     }
 
     /**
-     * Returns the total water volume [cm3] in domain of the current solution
+     * Returns the total water volume [m3] in domain of the current solution
      */
     virtual double getWaterVolume()
     {
@@ -134,7 +134,7 @@ public:
                 cVol += elemVolVars[scv].saturation(0)*scv.volume();
             }
         }
-        return gridGeometry->gridView().comm().sum(cVol)*1.e6; // m3 -> cm3
+        return gridGeometry->gridView().comm().sum(cVol);
     }
 
     /**
@@ -168,7 +168,7 @@ PYBIND11_MODULE(richardssp, m) {
         .def(py::init<>())
         .def("initialize", &Solver::initialize)
         .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-        .def("createGrid", (void (Solver::*)(VectorType, VectorType, VectorType, std::string)) &Solver::createGrid,
+        .def("createGrid", (void (Solver::*)(VectorType, VectorType, std::array<int, 3>, std::string)) &Solver::createGrid,
             py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
         .def("readGrid", &Solver::readGrid)
         .def("getGridBounds", &Solver::getGridBounds)
@@ -185,15 +185,17 @@ PYBIND11_MODULE(richardssp, m) {
         .def("getPointIndices", &Solver::getPointIndices)
         .def("getCellIndices", &Solver::getCellIndices)
         .def("getDofIndices", &Solver::getDofIndices)
-        .def("getSolution", &Solver::getSolution)
+        .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
         .def("getNeumann", &Solver::getNeumann)
         .def("getAllNeumann", &Solver::getAllNeumann)
         .def("pickCell", &Solver::pickCell)
     // members
         .def_readonly("simTime", &Solver::simTime) // read only
+        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
         .def_readonly("rank", &Solver::rank) // read only
         .def_readonly("maxRank", &Solver::maxRank) // read only
-        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
+        .def_readonly("numberOfCells", &Solver::numberOfCells) // read only
+        .def_readonly("periodic", &Solver::periodic) // read only
     // useful
         .def("__str__",&Solver::toString)
         .def("checkInitialized", &Solver::checkInitialized)

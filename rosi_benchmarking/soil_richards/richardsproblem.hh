@@ -360,7 +360,7 @@ public:
     }
 
     /*!
-     * Source per element index \f$ [ kg / s)] \f$
+     * Source per element index \f$ [ kg / s ] \f$
      *
      * eventually, called in the main file (example specific, richards.cc)
      * todo use smart pointer

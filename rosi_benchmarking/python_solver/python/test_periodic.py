@@ -1,30 +1,33 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-from richards_sp_solver import *
+
+from richardssp import RichardsSP  # C++ part (Dumux binding)
+from solver.richards import RichardsWrapper  # Python part
 
 import os
 import time
 
+# import numpy as np
+# from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+# import matplotlib.pyplot as plt
+
+import plotly.graph_objects as go
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-import matplotlib.pyplot as plt
 
 from mpi4py import MPI
-
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-s = RichardsYaspSolver()  # the one and only
+cpp_base = RichardsSP()
+s = RichardsWrapper(cpp_base)
+s.initialize()
 
-#
-# Set up the problem
-#
-s.initialize([""])
-s.setParameter("Problem.Name", "periodicity")
-s.createGrid([-0.25, -0.25, -0.5], [0.25, 0.25, 0.], [19, 19, 19], "true true false")  # dof 125000
-s.setVanGenuchtenParameter(0.08, 0.43, 0.04, 1.6, 50.)  # Loam
-s.setHomogeneousInitialConditions(-100, True)  # cm pressure head, hydraulic equilibrium
-s.setBCTopBot("constantFlux", 0, "freeDrainage", 0.)
+s.createGrid([-25, -25, -50], [25, 25, 0.], [19, 19, 19], True)
+loam = [0.08, 0.43, 0.04, 1.6, 50.]
+s.setVGParameters([loam])
+s.setHomogeneousIC(-100, True)  # cm pressure head, hydraulic equilibrium
+s.setTopBC("constantFlux", 0.)
+s.setBotBC("freeDrainage")
 s.initializeProblem()
 
 if rank == 0:
@@ -39,7 +42,7 @@ if rank == 0:
 dof = comm.bcast(dof, root = 0)
 
 # Test picking
-p = [0., 0.02, -0.01]
+p = [0, 0, 0]
 id = s.pickCell(p)
 print("Total dof of rank", rank, "=", dof, "picked id", id)
 comm.barrier()
@@ -47,38 +50,60 @@ if rank == 0:
     print("Picked cell ", cells[id])
     print("Distance to element center", np.linalg.norm(cells[id] - p), "cm")
 
-p = [0., 0.25, -0.4]
+print()
+p = [0, 25, -40]
 id2 = s.pickCell(p)
-print("Total dof of rank", rank, "=", dof, "picked id", id)
+print("Total dof of rank", rank, "=", dof, "picked id", id2)
 comm.barrier()
 if rank == 0:
     print("Picked cell ", cells[id2])
     print("Distance to element center", np.linalg.norm(cells[id2] - p), "cm")
 
-sources = { id: 1.e-3, id2: 1.e-3}  # gIdx: value
+sources = { id: 50., id2: 50.}  # gIdx: value [g/day]
 s.setSource(sources)
 
 # # Show inital condition
 # x = np.array(s.getSolution())
 # if rank == 0:
 #     print("Water volume", s.getWaterVolume(), "cm3")
-# #     plt.plot(s.toHead(x), points[:, 2] * 100, "r*")
-# #     plt.show()
+#     plt.plot(s.toHead(x), points[:, 2], "r*")
+#     plt.show()
 
-dt = 3600  # ten days in seconds
-s.ddt = 1  # s, initial internal time step
+dt = 10  # ten days
+s.ddt = 1.e-5
 
 for i in range(0, 12):
     if rank == 0:
-        print(i, "*** External time step ", dt, "***", "simulation time ", s.simTime / 3600 / 24)
+        print(i, "*** External time step ", dt, "***", "simulation time ", s.simTime)
     s.simulate(dt)
     print("Water volume", s.getWaterVolume(), "cm3")
-#
 
-s.writeDumuxVTK("periodicTest1")
-# x = np.array(s.getSolution())
-# # x = np.array(s.getSaturation())
-#
-# if rank == 0:
-#     plt.plot(s.toHead(x), points[:, 2] * 100, "r*")
-#     plt.show()
+# s.writeDumuxVTK("test_periodic")
+
+x = np.array(s.getWaterContent())
+
+if rank == 0:
+
+    nmin = np.min(x)
+    nmax = np.max(x)
+    N = s.numberOfCells
+    X, Y, Z = np.mgrid[-25:25:(N[0] * 1j), -25:25:(N[1] * 1j), 0:-50:(N[2] * 1j)]  # Domain def in Python
+    V = np.zeros(X.shape)
+    for i in range(0, 19):
+        for j in range(0, 19):
+            for k in range(0, 19):
+                gIdx = s.pickCell([X[i, j, k], Y[i, j, k], Z[i, j, k]])
+                V[i, j, k] = x[gIdx]
+
+    fig = go.Figure(data = go.Isosurface(
+        x = X.flatten(),
+        y = Y.flatten(),
+        z = Z.flatten(),
+        value = V.flatten(),
+        isomin = nmin,
+        isomax = nmax,
+        surface_count = 7,  # number of isosurfaces, 2 by default: only min and max
+        colorbar_nticks = 7,  # colorbar ticks correspond to isosurface values
+        caps = dict(x_show = False, y_show = False)
+        ))
+    fig.show()

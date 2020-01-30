@@ -88,15 +88,15 @@ class RichardsWrapper(SolverWrapper):
                               for hydrostatic equilibrium the grid must be created before  
         """
         if equilibrium:
-            bounds = self.getGridBounds() / 100  # cm-> m
+            bounds = self.getGridBounds()
             z = [bounds[2], bounds[5]]
-            m = 100. * (z[1] - z[0]) / 2.
+            m = (z[1] - z[0]) / 2.
             p = [p + m, p - m]
             self.setICZ(p, z)
         else:
             self.setICZ(p)
 
-    def setTopBC(self, type_top :str, value_top :float, climate :list = []):
+    def setTopBC(self, type_top :str, value_top :float = 0., climate :list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_top:
@@ -116,6 +116,9 @@ class RichardsWrapper(SolverWrapper):
             t = 2
         elif type_top == "atmospheric":
             t = 4
+        elif type_top == "noflux":
+            t = 2
+            assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
         else:
             raise Exception('Top type should be "constantPressure", "constantFlux", or "atmospheric", unknown top type {}'.format(type_top))
 
@@ -146,14 +149,38 @@ class RichardsWrapper(SolverWrapper):
             b = 2
         elif type_bot == "freeDrainage":
             b = 5
+        elif type_bot == "noflux":
+            b = 2
+            assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
         else:
             raise Exception('Bottom type should be "constantPressure", "constantFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
 
         self.setParameter(self.param_group + "BC.Bot.Type", str(b))
         self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
+    def setSource(self, source_map):
+        """Sets the source term as map with global cell index as key, and source as value [g/day] """
+        self.checkInitialized()
+        self.base.setSource(source_map)
+
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (dof, 1) [1]"""
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getWaterContent(), root = 0)))
+
+    def getWaterVolume(self):
+        """Returns total water volume of the domain [cm3]"""
+        self.checkInitialized()
+        return self.base.getWaterVolume() * 1.e6  # m3 -cm3
+
+    def writeDumuxVTK(self, file_name):
+        """Uses the Dumux VTK writer to write the current model output"""
+        self.checkInitialized()
+        return self.base.writeDumuxVTK(file_name)
+
+    @property
+    def numberOfCells(self):
+        """ In case of a rectangular domain, the number of cells in each direction, 
+            not valid if the grid was given by a file (read only) """
+        return self.base.numberOfCells
 

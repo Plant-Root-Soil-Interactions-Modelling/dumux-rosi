@@ -65,15 +65,14 @@ public:
     std::string gridType = "SPGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
     static const int dim = 3; // Problem::dimWorld;
     bool isBox = Problem::isBox; // numerical method
-    const std::vector<std::string> primNames = { "Matric potential [Pa]" };
-    static const bool numberOfEquations = 1;
 
     double simTime = 0;
     double ddt = -1; // internal time step, minus indicates that its uninitialized
     int maxRank = -1; // max mpi rank
     int rank = -1; // mpi rank
 
-    std::vector<std::array<double, numberOfEquations>> solution;
+    bool periodic = false; // periodic domain
+    std::array<int, 3> numberOfCells = { 0, 0, 0 };
 
     SolverBase() { }
 
@@ -106,8 +105,8 @@ public:
         rank = mpiHelper.rank();
 
         if (rank == 0) { // rank is the process number
+            std::cout << "\n" << toString() << "\n" << std::flush; // add my story
             Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
-            std::cout << "\n" << toString() << "\n\n" << std::flush; // add my story
         } else {
             if (gridType.compare("FoamGrid") == 0) {
                 throw std::invalid_argument("SolverBase::initialize: FoamGrid does not support parallel computation");
@@ -131,6 +130,8 @@ public:
      * Grid.Overlap (should = 0 for box, = 1 for CCTpfa), automatically set in SolverBase::initialize
      */
     virtual void createGrid(std::string modelParamGroup = "") {
+        std::string pstr =  Dumux::getParam<std::string>("Grid.Periodic", "");
+        periodic = ((pstr[0]!='t') || (pstr[0]!='T'));
         GridManagerFix<Grid> gridManager;
         gridManager.init(modelParamGroup);
         grid = gridManager.gridPtr();
@@ -138,7 +139,6 @@ public:
             gridData = gridManager.getGridData(); // test for null by getter (todo)
             // missing concept to add grid data dynamically
         } catch(...) { }
-
         gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
         gridGeometry->update();
     }
@@ -150,7 +150,9 @@ public:
      * e.g. the method does not make a lot of sense for unstructured grids
      */
     virtual void createGrid(VectorType boundsMin, VectorType boundsMax,
-        VectorType numberOfCells, std::string periodic = "false false false") {
+        std::array<int, 3> numberOfCells, std::string periodic = "false false false") {
+
+        this->numberOfCells = numberOfCells;
         auto& p = Dumux::Parameters::paramTree(); // had to modify parameters.hh, its private an no way I can pull it out
         std::ostringstream bmin;
         std::ostringstream bmax;
@@ -262,7 +264,7 @@ public:
         std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
             std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt); // the main time loop is moved to Python
         if (maxDt<0) { // per default value take from parameter tree
-            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // maximal time step size
+            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // if none, default is outer time step
         }
         timeLoop->setMaxTimeStepSize(maxDt);
 
@@ -432,11 +434,11 @@ public:
 
     /**
      * Returns the current solution for a single mpi process.
-     * Gathering and mapping is done in Python
+     * Gathering and mapping is done in Python TODO pass equ id, return vector<double>
      */
-    virtual std::vector<std::array<double, numberOfEquations>> getSolution() {
+    virtual std::vector<double> getSolution(int eqIdx = 0) {
         checkInitialized();
-        std::vector<std::array<double, numberOfEquations>> sol;
+        std::vector<double> sol;
         int n;
         if (isBox) {
             n = gridGeometry->gridView().size(dim);
@@ -445,15 +447,13 @@ public:
         }
         // std::cout << "getSolution(): n " << n << ", " << x.size() << "\n" << std::flush;
         sol.resize(n);
-        if (numberOfEquations > 1) {
+        if (eqIdx > 0) {
             for (int c = 0; c<n; c++) {
-                for (int j=0; j<numberOfEquations; j++) {
-                    sol[c][j] = x[c][j];
-                }
+                sol[c] = x[c][eqIdx];
             }
         } else {
             for (int c = 0; c<n; c++) {
-                sol[c][0] = x[c];
+                sol[c] = x[c];
             }
         }
         return sol;
@@ -467,23 +467,23 @@ public:
      * For a single mpi process. Gathering is done in Python
      */
     virtual double getNeumann(int gIdx) {
-//        double f = 0.;
-//        if (localCellIdx.count(gIdx)>0) {
-//            int eIdx = localCellIdx.count(gIdx);
-//            auto e = gridGeometry->element(eIdx);
-//            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
-//            fvGeometry.bindElement(e);
-//            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-//            elemVolVars.bindElement(e, fvGeometry, x);
-//            for (const auto& scvf : scvfs(fvGeometry)) {
-//                if (scvf.boundary()) {
-//                        double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
-//         f = (std::abs(n) > std::abs(f)) ? n : f;
-//                }
-//            }
-//        } else {
-//            return 0.;
-//        }
+        //        double f = 0.;
+        //        if (localCellIdx.count(gIdx)>0) {
+        //            int eIdx = localCellIdx.count(gIdx);
+        //            auto e = gridGeometry->element(eIdx);
+        //            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+        //            fvGeometry.bindElement(e);
+        //            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+        //            elemVolVars.bindElement(e, fvGeometry, x);
+        //            for (const auto& scvf : scvfs(fvGeometry)) {
+        //                if (scvf.boundary()) {
+        //                        double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
+        //         f = (std::abs(n) > std::abs(f)) ? n : f;
+        //                }
+        //            }
+        //        } else {
+        //            return 0.;
+        //        }
         double f = 0.;
         for (const auto& e : Dune::elements(gridGeometry->gridView())) {
             if (cellIdx->index(e) == gIdx) {
@@ -533,11 +533,26 @@ public:
      * Picks a cell and returns its global element cell index
      * The lucky rank who found it, maps the local index to a global one,
      * and broadcasts to the others
-     *
-     * // todo! I have to take care about periodicity myself!
      */
     virtual int pickCell(VectorType pos) {
         checkInitialized();
+        if (periodic) {
+            auto b = getGridBounds();
+            double minx = b[0];
+            double xx = b[3]-minx;
+            double miny = b[1];
+            double yy = b[4]-miny;
+            if (!std::isinf(xx)) { // periodic in x
+                pos[0] -= minx;
+                pos[0] = (pos[0]/xx - (int)(pos[0]/xx))*xx;
+                pos[0] += minx;
+            }
+            if (!std::isinf(yy)) { // periodic in y
+                pos[1] -= miny;
+                pos[1] = (pos[1]/yy - (int)(pos[1]/yy))*yy;
+                pos[1] += miny;
+            }
+        }
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
         auto entities = Dumux::intersectingEntities(p, bBoxTree);
@@ -611,8 +626,8 @@ protected:
     std::shared_ptr<Problem> problem;
     std::shared_ptr<GridVariables> gridVariables;
 
-    std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx;
-    std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx;
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx; // global index mappers
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx; // global index mappers
     std::map<int, int> localCellIdx; // global to local index mapper
 
     SolutionVector x;

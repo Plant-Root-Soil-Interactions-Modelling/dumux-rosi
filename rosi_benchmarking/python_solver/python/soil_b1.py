@@ -27,10 +27,10 @@ def solve(soils):
     s = RichardsWrapper(cpp_base)
     s.initialize()
 
+    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 199])  # [cm]
     s.setHomogeneousIC(-50.)  # cm pressure head
     s.setTopBC("constantFlux", 0.5)  #  [cm/day]
     s.setBotBC("freeDrainage")
-    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 199])  # [cm]
     s.setLayersZ([2, 2, 1, 1], [-200., -50., -50., 0.])  # sample points ([1], [cm])
     s.setVGParameters(soils)
     s.initializeProblem()

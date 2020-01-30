@@ -293,7 +293,7 @@ int main(int argc, char** argv) try
         nonLinearSolver.solve(x); // solve the non-linear system
 
         // write outputs
-        problem->userData("p", x);
+        problem->userData("pSoil", x);
         problem->userData("axialFlux", x);
         problem->userData("radialFlux", x);
         problem->userData("age", x); // prepare fields
