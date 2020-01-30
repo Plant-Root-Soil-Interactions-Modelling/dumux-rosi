@@ -17,11 +17,15 @@ trans /= 1e4  # kg/cm2/s
 trans = A * trans * (24.*3600.)  # kg/s -> kg/day
 print("Transpiration", trans, "kg/day")  # in the input file
 
-# # Plot Comsol solution
-# comsol = np.loadtxt("python/gradients.txt", skiprows = 9)
-# r_ = comsol[:, 0]
-# c_ = comsol[:, 15]
-# plt.plot(r_, c_, "g")
+# # # Plot Comsol solution
+comsol = np.loadtxt("python/gradients.txt", skiprows = 9)
+comsol0b = np.loadtxt("python/gradients_0b.txt", skiprows = 9)
+r_ = comsol[:, 0]
+c_ = comsol[:, 15]
+r0_ = comsol0b[:, 0]
+c0_ = comsol0b[:, 15]
+plt.plot(r_, c_, "g:")
+plt.plot(r0_, c0_, "b:")
 
 os.system("./coupled_1p2c input/benchmark_phosphate.input")
 
@@ -33,13 +37,13 @@ print("pressure head", np.min(h1_), np.max(h1_))
 print("concentration", np.min(c_), np.max(c_))
 print("coordinate", np.min(y_), np.max(y_))
 
-plt.plot(y_, h1_, "r")
-plt.ylabel("$\psi$ cm pressure head")
+# plt.plot(y_, h1_, "r")
+# plt.ylabel("$\psi$ cm pressure head")
 
-# plt.plot(y_ * 100, c_, "r")  # c_ *rho [kg / m^3] == c_ *1000 [g/cm]
-# plt.ylabel("g/cm3")
-# plt.xlabel("cm")
-# plt.legend(["Comsol", "Dumux"])
-# plt.title("Results after 14 days")
+plt.plot(y_ * 100, c_, "r")  # c_ *rho [kg / m^3] == c_ *1000 [g/cm]
+plt.ylabel("g/cm3")
+plt.xlabel("cm")
+plt.legend(["Comsol", "Comsol_{b0}", "Dumux"])
+plt.title("Results after 14 days")
 
 plt.show()

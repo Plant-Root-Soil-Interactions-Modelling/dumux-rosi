@@ -18,7 +18,7 @@ Kx = 1 # axial conductivity [cm^4/hPa/day]
 Kr = 1 # radial conductivity [cm/hPa/day] 
 
 [RootSystem.Collar]
-Transpiration = 100 # 1.0857e-06 # kg/day
+Transpiration = -1.0857e-06 # kg/day
 
 [Component]
 liquidDiffCoeff = 1e-9
@@ -30,5 +30,5 @@ Km = 0.1 # g / cm3
 ActiveTransport = 0
 
 [Soil.IC]
-P = -100  
+P = -1
 

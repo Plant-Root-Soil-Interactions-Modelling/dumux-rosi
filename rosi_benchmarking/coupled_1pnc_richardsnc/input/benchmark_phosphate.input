@@ -1,11 +1,11 @@
 [TimeLoop]
-TEnd = 120960 # 14 days
-DtInitial =  3600 
-MaxTimeStepSize = 86400
+TEnd = 1209600 # 14 days
+DtInitial =  360 
+MaxTimeStepSize = 36000
 # PeriodicCheckTimes = 864000 # 1 day
 
 [Soil.Grid]
-Cells = 41 41 1
+Cells = 101 101 1
 
 [RootSystem.Uptake]
 Vmax = 86.4 # [g/cm2/day]
@@ -13,12 +13,16 @@ Km = 0.1 # [g/cm3]
 ActiveTransport = 1
 
 [Component]
-LiquidDiffusionCoefficient = 3.e-10 # m2/s
+LiquidDiffusionCoefficient = 3.333e-9 # m2/s  D = D/theta ?
 MolarMass = 0.2 # ??? does this do anything
 BufferPower = 0
 
 [RootSystem.Collar]
-Transpiration = 1.0857e-06 # kg/day
+Transpiration = 1.0857e-06 # kg/day # maybe choose larger to see an effect ?
+
+[Soil.IC]
+P = -0.1 # cm
+C = 1.e-3 # * rho = 1 kg/m3
 
 [Problem]
 Name = benchmark_phosphate2
