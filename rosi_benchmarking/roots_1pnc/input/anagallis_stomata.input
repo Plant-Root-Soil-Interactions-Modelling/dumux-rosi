@@ -10,6 +10,12 @@ MaxTimeStepSize = 3600
 [RootSystem.Grid]
 File =  grids/anagallis15.dgf
 InitialT = 15 # days
+Grow = false
+
+# # if we want a growing root system
+# InitialT = 1 # days
+# Grow = true
+
 
 [RootSystem.Conductivity]
 Kx = 4.3        # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
