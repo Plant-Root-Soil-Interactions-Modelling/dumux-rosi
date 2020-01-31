@@ -52,7 +52,8 @@ public:
     { }
 
     /**
-     * Sets the source term of the problem [g/day].
+     * Sets the source term of the problem [kg/s].
+     *
      * The source is given per cell (Dumux element),
      * as a map with global element index as key, and source as value
      *
@@ -69,7 +70,7 @@ public:
             int gIdx = cellIdx->index(e); // global index
             auto eIdx = gridGeometry->elementMapper().index(e);
             if (source.count(gIdx)>0) {
-                ls[eIdx] = source[gIdx]/24./3600./1.e3; // [g/day] -> [kg/s]
+                ls[eIdx] = source[gIdx];
             } else {
                 ls[eIdx] = 0.;
             }

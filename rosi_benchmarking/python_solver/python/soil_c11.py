@@ -40,7 +40,7 @@ def solve(soil, simtimes, N, q_r):
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
     s.setBotBC("noflux")
-    s.createGrid([-.532, -.532, -1.], [.532, .532, 0.], [20, 20, 3])  # [cm]
+    s.createGrid([-.971, -.971, -1.], [.971, .971, 0.], [20, 20, 3])  # [cm]
     s.setVGParameters([soil])
     s.initializeProblem()
     idx_top = s.pickCell([0.0, 0.0, -.5])  # index to watch flux
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     sand = [0.045, 0.43, 0.15, 3, 1000]
     loam = [0.08, 0.43, 0.04, 1.6, 50]
-    clay = [0.1, 0.4, 0.01, 1.1, 10]
+    clay = [0.1, 0.4, 0.01, 1.1, 10]  # UNITS ?!!!!!qr, qs, alpha, n, ks
 
     clay_times = np.linspace(0, 3, 300)
 

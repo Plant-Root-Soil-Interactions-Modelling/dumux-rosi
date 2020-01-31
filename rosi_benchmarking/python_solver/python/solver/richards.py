@@ -45,7 +45,7 @@ class RichardsWrapper(SolverWrapper):
         qr, qs, alpha, n, ks = [], [], [], [], []
 
         for soil in soils:
-            assert(len(soil) == 5)
+            assert len(soil) == 5, "setVGParameters, soil need to be a list of 5 parameters: qr, qs, alpha, n, ks "
             qr.append(soil[0])
             qs.append(soil[1])
             alpha.append(soil[2])
@@ -161,6 +161,8 @@ class RichardsWrapper(SolverWrapper):
     def setSource(self, source_map):
         """Sets the source term as map with global cell index as key, and source as value [g/day] """
         self.checkInitialized()
+        for key, value in source_map.items():
+            source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
         self.base.setSource(source_map)
 
     def getWaterContent(self):

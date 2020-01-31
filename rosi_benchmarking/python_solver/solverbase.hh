@@ -531,6 +531,7 @@ public:
 
     /**
      * Picks a cell and returns its global element cell index
+     *
      * The lucky rank who found it, maps the local index to a global one,
      * and broadcasts to the others
      */
@@ -538,19 +539,18 @@ public:
         checkInitialized();
         if (periodic) {
             auto b = getGridBounds();
-            double minx = b[0];
-            double xx = b[3]-minx;
-            double miny = b[1];
-            double yy = b[4]-miny;
-            if (!std::isinf(xx)) { // periodic in x
-                pos[0] -= minx;
-                pos[0] = (pos[0]/xx - (int)(pos[0]/xx))*xx;
-                pos[0] += minx;
-            }
-            if (!std::isinf(yy)) { // periodic in y
-                pos[1] -= miny;
-                pos[1] = (pos[1]/yy - (int)(pos[1]/yy))*yy;
-                pos[1] += miny;
+            for (int i = 0; i++; i<2) {
+                double minx = b[i];
+                double xx = b[i+3]-minx;
+                if (!std::isinf(xx)) { // periodic in x
+                    pos[i] -= minx; // start at 0
+                    if (pos[i]>=0) {
+                        pos[i] = (pos[i]/xx - (int)(pos[i]/xx))*xx;
+                    } else {
+                        pos[i] = (pos[i]/xx + (int)((xx-pos[i])/xx))*xx;
+                    }
+                    pos[i] += minx;
+                }
             }
         }
         auto& bBoxTree = gridGeometry->boundingBoxTree();
