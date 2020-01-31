@@ -17,7 +17,7 @@ s = RichardsWrapper(cpp_base)
 s.initialize()
 
 # Set up a soil problem
-s.createGrid([-10, -10, -30], [10, 10, 0.], [19, 19, 29], periodic = True)
+s.createGrid([-10, -10, -30], [10, 10, 0.], [19, 19, 29], False)
 loam = [0.08, 0.43, 0.04, 1.6, 50.]
 s.setVGParameters([loam])
 s.setHomogeneousIC(-500, True)  # cm pressure head, hydraulic equilibrium
@@ -31,7 +31,7 @@ path = "../modelparameter/rootsystem/"
 name = "Anagallis_femina_Leitner_2010"
 r.readParameters(path + name + ".xml")
 
-r.setKr(1.73e-4 * np.ones((1, 1)))
+r.setKr(1.73e-4 * np.ones((1, 1)) * 1.e-2)
 r.setKx(4.32e-2 * np.ones((1, 1)))
 
 r.simulate(10)
@@ -40,7 +40,7 @@ trans = -2e-8  # kg / s
 trans = -trans * 24 * 3600 * 1000  # g /day
 
 sx_old = s.toHead(s.getSolution())
-rx_old = r.solve(trans, sx_old, False)
+rx_old = r.solve(-600, sx_old, False)
 
 dt = 1. / 3600. / 24.  # 1s = days
 
@@ -52,10 +52,14 @@ for i in range(0, 60):
     sx = s.toHead(s.getSolution())
 
     r.simulate(dt)  # simulates root growth
-    rx = r.solve(trans, sx_old, False)  # solves water flow
+    rx = r.solve(-600, sx_old, False)  # solves water flow
 
     sx_old = sx
     rx_old = rx
+
+nodes = r.convert_(r.rs.getNodes())
+plt.plot(rx_old, nodes[:, 2])
+plt.show()
 
 print("fin.")
 
