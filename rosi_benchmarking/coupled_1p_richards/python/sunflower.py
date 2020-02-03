@@ -25,35 +25,41 @@ rs.setGeometry(soil_layer)
 rs.setSeed(0)
 rs.initialize()
 
-rs.simulate(7)
+rs.simulate(7, True)
 rs.write("results/sunflower_7days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
-    print("Shoot segment", s)
-    print(ana.nodes[0])
-    print(ana.nodes[1])
+    # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-
 ana.write("results/sunflower_7days.dgf")
 
-rs.simulate(7)
+l = np.array(ana.getParameter("length"))
+print("Min ", np.min(l))
+
+rs.simulate(7, True)
 rs.write("results/sunflower_14days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
-    print("Shoot segment", s)
+    # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
 ana.write("results/sunflower_14days.dgf")
 
-rs.simulate(7)
+l = np.array(ana.getParameter("length"))
+print("Min ", np.min(l))
+
+rs.simulate(7, True)
 rs.write("results/sunflower_21days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
-    print("Shoot segment", s)
+    # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
 ana.write("results/sunflower_21days.dgf")
+
+l = np.array(ana.getParameter("length"))
+print("Min ", np.min(l))
 
 rs.simulate(9)
 rs.write("results/sunflower_30days.vtp")
@@ -64,6 +70,9 @@ for s in aseg:
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
 ana.write("results/sunflower_30days.dgf")
 
+l = np.array(ana.getParameter("length"))
+print("Min ", np.min(l))
+
 rs.simulate(60)
 rs.write("results/sunflower_90days.vtp")
 ana = pb.SegmentAnalyser(rs)
@@ -72,6 +81,9 @@ for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
 ana.write("results/sunflower_90days.dgf")
+
+l = np.array(ana.getParameter("length"))
+print("Min ", np.min(l))
 
 # ana = pb.SegmentAnalyser(rs)
 # aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
