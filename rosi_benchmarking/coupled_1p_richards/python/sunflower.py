@@ -3,7 +3,6 @@ import sys
 from cmath import pi
 sys.path.append("../../..")
 import plantbox as pb
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,8 +13,7 @@ rs = pb.RootSystem()
 rs.readParameters(path + name + ".xml")
 
 # Create and set geometry
-
-# 1. creates a square 50*33 cm containter with height 150 cm
+rs.setMinDx(1.e-3)
 x0 = pb.Vector3d(0., 0., -1.)
 nx = pb.Vector3d(1., 0., -1.)
 ny = pb.Vector3d(0., 1., -1.)
@@ -59,7 +57,9 @@ for s in aseg:
 ana.write("results/sunflower_21days.dgf")
 
 l = np.array(ana.getParameter("length"))
-print("Min ", np.min(l))
+print("Min length", np.min(l))
+a = np.array(ana.getParameter("radius"))
+print("Min radius", np.min(a))
 
 rs.simulate(9)
 rs.write("results/sunflower_30days.vtp")
@@ -71,7 +71,9 @@ for s in aseg:
 ana.write("results/sunflower_30days.dgf")
 
 l = np.array(ana.getParameter("length"))
-print("Min ", np.min(l))
+print("Min length", np.min(l))
+a = np.array(ana.getParameter("radius"))
+print("Min radius", np.min(a))
 
 rs.simulate(60)
 rs.write("results/sunflower_90days.vtp")
@@ -83,7 +85,9 @@ for s in aseg:
 ana.write("results/sunflower_90days.dgf")
 
 l = np.array(ana.getParameter("length"))
-print("Min ", np.min(l))
+print("Min length", np.min(l))
+a = np.array(ana.getParameter("radius"))
+print("Min radius", np.min(a))
 
 # ana = pb.SegmentAnalyser(rs)
 # aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
