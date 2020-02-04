@@ -46,7 +46,7 @@ def solve(soil, simtimes):
         if rank == 0:
             print("***** external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-        s.simulate(dt)
+        s.solve(dt)
 
         points = s.getDofCoordinates()
         theta = s.getWaterContent()

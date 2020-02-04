@@ -87,7 +87,7 @@ public:
     virtual void initialize(std::vector<std::string> args) {
         std::vector<char*> cargs;
         cargs.reserve(args.size());
-        for(size_t i = 0; i < args.size(); ++i) {
+        for(size_t i = 0; i < args.size(); i++) {
             cargs.push_back(const_cast<char*>(args[i].c_str()));
         } // its a beautiful language
         int argc = cargs.size();
@@ -250,10 +250,10 @@ public:
     /**
      * Simulates the problem for time span dt, with maximal time step maxDt.
      *
-     * Assembler needs a TimeLoop, so i have to create it in each simulate call.
+     * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    virtual void simulate(double dt, double maxDt = -1) {
+    virtual void solve(double dt, double maxDt = -1) {
         checkInitialized();
         using namespace Dumux;
 
@@ -299,7 +299,8 @@ public:
 
     /**
      * Finds the steady state of the problem.
-     * Optionally, simulate for a time span to get a good initial guess.
+     *
+     * Optionally, solve for a time span first, to get a good initial guess.
      */
     virtual void solveSteadyState() {
         checkInitialized();
@@ -460,46 +461,45 @@ public:
     }
 
     /**
-     * Returns the maximal flux (over the boundary scvfs) of an element, given by its global element index
+     * Returns the current solution at a cell index
+     * for all mpi processes
      *
-     * TODO speed up with inverse gIdx -> eIdx map
-     *
-     * For a single mpi process. Gathering is done in Python
+     * TODO currently works only for CCTpfa
+     */
+    double getSolutionAt(int gIdx, int eqIdx = 0) {
+        double y = 0.;
+        if (localCellIdx.count(gIdx)>0) {
+            int eIdx = localCellIdx[gIdx];
+            if (eqIdx > 0) {
+                y = x[eIdx][eqIdx];
+            } else {
+                y= x[eIdx];
+            }
+        }
+        return gridGeometry->gridView().comm().sum(y); // cunning as a weasel
+    }
+
+    /**
+     * Returns the maximal flux (over the boundary scvfs) of an element, given by its global element index,
+     * for all mpi processes
      */
     virtual double getNeumann(int gIdx) {
-        //        double f = 0.;
-        //        if (localCellIdx.count(gIdx)>0) {
-        //            int eIdx = localCellIdx.count(gIdx);
-        //            auto e = gridGeometry->element(eIdx);
-        //            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
-        //            fvGeometry.bindElement(e);
-        //            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-        //            elemVolVars.bindElement(e, fvGeometry, x);
-        //            for (const auto& scvf : scvfs(fvGeometry)) {
-        //                if (scvf.boundary()) {
-        //                        double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
-        //         f = (std::abs(n) > std::abs(f)) ? n : f;
-        //                }
-        //            }
-        //        } else {
-        //            return 0.;
-        //        }
         double f = 0.;
-        for (const auto& e : Dune::elements(gridGeometry->gridView())) {
-            if (cellIdx->index(e) == gIdx) {
-                auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
-                fvGeometry.bindElement(e);
-                for (const auto& scvf : scvfs(fvGeometry)) {
-                    if (scvf.boundary()) {
-                        auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-                        elemVolVars.bindElement(e, fvGeometry, x);
-                        double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
-                        f = (std::abs(n) > std::abs(f)) ? n : f;
-                    }
+        if (localCellIdx.count(gIdx)>0) {
+            int eIdx = localCellIdx[gIdx];
+            auto e = gridGeometry->element(eIdx);
+            auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(e);
+            auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+            elemVolVars.bindElement(e, fvGeometry, x);
+            for (const auto& scvf : scvfs(fvGeometry)) {
+                if (scvf.boundary()) {
+                    double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
+                    f = (std::abs(n) > std::abs(f)) ? n : f;
                 }
             }
         }
-        return f;
+        return gridGeometry->gridView().comm().sum(f); // so clever
     }
 
     /**
@@ -539,7 +539,7 @@ public:
         checkInitialized();
         if (periodic) {
             auto b = getGridBounds();
-            for (int i = 0; i++; i<2) {
+            for (int i = 0; i<2; i++) {
                 double minx = b[i];
                 double xx = b[i+3]-minx;
                 if (!std::isinf(xx)) { // periodic in x
@@ -641,7 +641,6 @@ protected:
  * you need to choose the grid at compile time,
  * and I don't know how to pass it via CMakeLists.txt building the Python binding
  */
-
 
 //using Grid = Dune::YaspGrid<3,Dune::EquidistantOffsetCoordinates<double,3>>;
 //using GridView = typename Dune::YaspGridFamily<3,Dune::EquidistantOffsetCoordinates<double,3>>::Traits::LeafGridView;

@@ -67,12 +67,12 @@ class SolverWrapper():
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
 
-    def simulate(self, dt :float, maxDt = -1.):
+    def solve(self, dt :float, maxDt = -1.):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
-        self.base.simulate(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+        self.base.solve(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """
@@ -108,14 +108,13 @@ class SolverWrapper():
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(), root = 0)))
 
+    def getSolutionAt(self, gIdx):
+        """Returns the current solution at a cell index"""
+        return self.base.getSolutionAt(gIdx)
+
     def getNeumann(self, gIdx):
         """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
-        fluxes = MPI.COMM_WORLD.gather(self.base.getNeumann(gIdx), root = 0)
-        if fluxes:
-            f = sum(fluxes)  # 0. or value
-            return f / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
-        else:
-            return 0.
+        return self.base.getNeumann(gIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self):
         """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
@@ -172,9 +171,26 @@ class SolverWrapper():
         points = self.getDofCoordinates()
         solution = self.getSolution()
         if rank == 0:
-            return griddata(points, solution[:, eq], xi / 100., method = 'linear')  # cm -> m
+            yi = np.zeros((xi.shape[0]))
+            for i in range(0, xi.shape[0]):
+                yi[i] = griddata(points, solution[:, eq], xi / 100., method = 'linear', rescale = True)  # cm -> m
+            return y
         else:
             return []
+
+    def interpolateNN(self, xi, eq = 0):
+        """ solution at the points xi (todo currently works only for CCTpfa)"""
+        self.checkInitialized()
+        solution = self.getSolution()
+        if rank == 0:
+            y = np.zeros((xi.shape[0]))
+        else:
+            y = []
+        for i in range(0, xi.shape[0]):
+            idx = self.pickCell(xi[i, :])  # cm -> m
+            if rank == 0:
+                y[i] = solution[idx, eq]
+        return y
 
     def writeVTK(self, file :str, small :bool = False):
         """writes a vtk file (todo additional fields) 

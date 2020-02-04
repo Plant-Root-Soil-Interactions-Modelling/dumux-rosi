@@ -47,7 +47,7 @@ def solve(soils):
         if rank == 0:
             print("*****", "#", i, "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-        s.simulate(dt)
+        s.solve(dt)
 
     points = s.getDofCoordinates()
     x = s.getSolution()

@@ -177,7 +177,7 @@ PYBIND11_MODULE(richardssp, m) {
         .def("getParameter", &Solver::getParameter)
         .def("initializeProblem", &Solver::initializeProblem)
     // simulation
-        .def("simulate", &Solver::simulate, py::arg("dt"), py::arg("maxDt") = -1)
+        .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
         .def("solveSteadyState", &Solver::solveSteadyState)
     // post processing (vtk naming)
         .def("getPoints", &Solver::getPoints) //
@@ -187,6 +187,7 @@ PYBIND11_MODULE(richardssp, m) {
         .def("getCellIndices", &Solver::getCellIndices)
         .def("getDofIndices", &Solver::getDofIndices)
         .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
+        .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
         .def("getNeumann", &Solver::getNeumann)
         .def("getAllNeumann", &Solver::getAllNeumann)
         .def("pickCell", &Solver::pickCell)

@@ -47,7 +47,7 @@ def solve(soil, simtime, evap, NZ, ic = -200):
         if rank == 0:
             print("***** external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-        s.simulate(dt, maxDt)
+        s.solve(dt, maxDt)
 
         f = s.getNeumann(idx_top)
 
