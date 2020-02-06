@@ -254,31 +254,32 @@ int main(int argc, char** argv) try
             problem->postTimeStep(x, *gridVariables);
             problem->writeTranspirationRate(); // add transpiration data into the text file
 
-            if (grow) {
+            if (simtype==Properties::rootbox) {
+                if (grow) {
 
-                // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                while (growth->simTime()+dt<t+initialTime) {
+                    // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
+                    while (growth->simTime()+dt<t+initialTime) {
 
-                    std::cout << "\n grow ..."<< std::flush;
-                    gridGrowth->grow(dt);
-                    problem->spatialParams().updateParameters(*growth);
-                    problem->applyInitialSolution(x); // reset todo (? does this make sense)?
-                    std::cout << "grew \n"<< std::flush;
+                        std::cout << "\n grow ..."<< std::flush;
+                        gridGrowth->grow(dt);
+                        problem->spatialParams().updateParameters(*growth);
+                        problem->applyInitialSolution(x); // reset todo (? does this make sense)?
+                        std::cout << "grew \n"<< std::flush;
 
-                    // what shall I update?
-                    fvGridGeometry->update();
-                    //gridVariables->update();
-                    gridVariables->updateAfterGridAdaption(x); // update the secondary variables
+                        // what shall I update?
+                        fvGridGeometry->update();
+                        //gridVariables->update();
+                        gridVariables->updateAfterGridAdaption(x); // update the secondary variables
 
-                    // todo? what is necessary? no clue what i am doing ...
-                    assembler->setResidualSize(); // resize residual vector
-                    assembler->setJacobianPattern(); // resize and set Jacobian pattern
-                    assembler->setPreviousSolution(x);
-                    assembler->assembleJacobianAndResidual(x);
+                        // todo? what is necessary? no clue what i am doing ...
+                        assembler->setResidualSize(); // resize residual vector
+                        assembler->setJacobianPattern(); // resize and set Jacobian pattern
+                        assembler->setPreviousSolution(x);
+                        assembler->assembleJacobianAndResidual(x);
 
-                    xOld = x;
+                        xOld = x;
+                    }
                 }
-
             }
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations

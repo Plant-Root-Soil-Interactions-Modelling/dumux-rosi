@@ -1,0 +1,41 @@
+[Problem]
+Name = sunflower_30days_HLCT
+
+[TimeLoop]
+TEnd = 43200 # half day [s]
+DtInitial = 1 # [s]
+PeriodicCheckTimes = 7200
+MaxTimeStepSize = 360 
+
+[RootSystem.Grid]
+File =  grids/sunflower_7days.dgf
+InitialT = 7 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
+
+[RootSystem.Conductivity]
+
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+# Kx = 0.0006736268	0.0006736268 0.074759246 0.08296797 0.09207803 0.102188394 0.113408897 0.125861436 0.13968129 0.155018593 0.172039965 0.190930319 0.211894875 0.235161384 0.260982605 0.289639051 0.321442035 0.356737056  4.3	4.3    # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
+# KxAge = -154	0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32	60	1e20	# days
+
+# Kr = 	0	0 0.00109 0.00103 0.000983 0.000935 0.00089 0.000847 0.000806 0.000767 0.00073 0.000695 0.000662 0.00063 0.000599 0.00057 0.000543 0.000517 0.0008 0.0008  
+# KrAge = -154	0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32 	60	1e20	# days
+
+
+[RootSystem.Collar]
+CSVFile = input/sunflower_transpiration_2003.csv
+Sinusoidal = True
+
+[Soil.IC]
+P = -100
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

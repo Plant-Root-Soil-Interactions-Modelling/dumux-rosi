@@ -10,7 +10,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # run dumux
-os.system("./rootsystem_stomata2 input/anagallis_stomata.input")
+os.system("./rootsystem_periodic_stomata input/anagallis_stomata_grow.input")
 
 #      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 #      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
