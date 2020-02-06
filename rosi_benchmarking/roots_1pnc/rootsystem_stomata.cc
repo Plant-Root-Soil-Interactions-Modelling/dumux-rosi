@@ -251,8 +251,6 @@ int main(int argc, char** argv) try
             double t = timeLoop->time(); // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
             problem->setTime(t, dt); // pass current time to the problem
-            problem->postTimeStep(x, *gridVariables);
-            problem->writeTranspirationRate(); // add transpiration data into the text file
 
             if (simtype==Properties::rootbox) {
                 if (grow) {
@@ -281,14 +279,13 @@ int main(int argc, char** argv) try
                     }
                 }
             }
-            std::cout << "pre assember\n" << std::flush;
-
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-
-            std::cout << "post assembler\n" << std::flush;
 
             nonLinearSolver.solve(x, *timeLoop); // solve the non-linear system with time step control
             xOld = x; // make the new solution the old solution
+
+            problem->postTimeStep(x, *gridVariables);
+            problem->writeTranspirationRate(); // add transpiration data into the text file
 
             gridVariables->advanceTimeStep();
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step

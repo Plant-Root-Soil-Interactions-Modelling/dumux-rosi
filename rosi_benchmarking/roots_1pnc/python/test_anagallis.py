@@ -15,7 +15,7 @@ os.system("./rootsystem_periodic_stomata input/anagallis_stomata_grow.input")
 #      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 #      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
 #      * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
-with open("anagallis_roots_actual_transpiration.txt", 'r') as f:
+with open("anagallis_roots_grow_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 c = 24 * 3600  # s / day
 
