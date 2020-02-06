@@ -1,0 +1,45 @@
+[Problem]
+Name = soybean_2days
+
+[TimeLoop]
+TEnd = 864000 # 7 days [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 86400
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  grids/Glycine_max_2days.dgf
+InitialT = 2 # days
+#Grow = true
+
+# # if we want a growing root system
+# InitialT = 1 # days
+# Grow = true
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem.Collar]
+CSVFile = input/soybean_transpiration_2003.csv # kg/day 
+Sinusoidal = True
+
+[Soil.IC]
+P = -400
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -10000
+CritCollarPAlpha = -1000
+CritTipP = 0
+ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
+Age = 5
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

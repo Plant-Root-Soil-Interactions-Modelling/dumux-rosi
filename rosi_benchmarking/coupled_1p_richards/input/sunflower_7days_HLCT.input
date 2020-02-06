@@ -1,0 +1,22 @@
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 360
+
+[Soil.Grid]
+Cells = 25 17 60
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1 
+
+[Soil.IC]
+P = -0.01
+
+[Problem]
+Name = sunflower_7days_HLCT
+RootName = ../roots_1p/input/sunflower_7days_HLCT.input
+SoilName = ../soil_richards/input/sunflower_HLCT.input
