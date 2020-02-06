@@ -320,6 +320,7 @@ int main(int argc, char** argv) try
             soilProblem->setTime(t, dt);
             soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
             soilProblem->writeBoundaryFluxes();
+
             if (simtype==Properties::rootbox) {
                 if (grow) {
 

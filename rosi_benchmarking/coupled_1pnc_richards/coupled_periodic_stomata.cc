@@ -334,33 +334,33 @@ int main(int argc, char** argv) try
             soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
             soilProblem->writeBoundaryFluxes();
 
-            if (grow) {
+            if (simtype==Properties::rootbox) {
+                if (grow) {
+                    // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
+                    while (growth->simTime()+dt<t+initialTime) {
 
-                // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                while (growth->simTime()+dt<t+initialTime) {
+                        std::cout << "grow \n"<< std::flush;
 
-                    std::cout << "grow \n"<< std::flush;
+                        gridGrowth->grow(dt);
+                        rootProblem->spatialParams().updateParameters(*growth);
+                        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+                        rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
 
-                    gridGrowth->grow(dt);
-                    rootProblem->spatialParams().updateParameters(*growth);
-                    rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-                    rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
+                        couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
+                        couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
+                        couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
 
-                    couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
-                    couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
-                    couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
+                        soilProblem->computePointSourceMap(); // recompute the coupling sources
+                        rootProblem->computePointSourceMap(); // recompute the coupling sources
 
-                    soilProblem->computePointSourceMap(); // recompute the coupling sources
-                    rootProblem->computePointSourceMap(); // recompute the coupling sources
+                        assembler->setJacobianPattern(assembler->jacobian()); // resize and set Jacobian pattern
+                        assembler->setResidualSize(assembler->residual()); // resize residual vector
 
-                    assembler->setJacobianPattern(assembler->jacobian()); // resize and set Jacobian pattern
-                    assembler->setResidualSize(assembler->residual()); // resize residual vector
+                        oldSol[rootDomainIdx] = sol[rootDomainIdx]; // // update old solution to new grid
 
-                    oldSol[rootDomainIdx] = sol[rootDomainIdx]; // // update old solution to new grid
-
-                    std::cout << "grew \n"<< std::flush;
+                        std::cout << "grew \n"<< std::flush;
+                    }
                 }
-
             }
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(oldSol);
