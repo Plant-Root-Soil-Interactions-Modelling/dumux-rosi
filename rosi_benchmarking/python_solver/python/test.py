@@ -4,6 +4,7 @@ sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 from richardssp import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 from solver.xylem_flux import XylemFlux
+import solver.plantbox as pb
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,13 +27,17 @@ s.setBotBC("freeDrainage")
 s.initializeProblem()
 
 # Set up the root problem
-r = XylemFlux(s)
+root_system = pb.MappedRootSystem()
+root_system.setSoilGrid(cpp_base)
 path = "../modelparameter/rootsystem/"
 name = "Anagallis_femina_Leitner_2010"
-r.readParameters(path + name + ".xml")  # Open plant and root parameter from a file
+root_system.readParameters(path + name + ".xml")  # Open plant and root parameter from a file
+root_system.initialize()
+root_system.simulate(10)
+
+r = XylemFlux(root_system, s)
 r.setKr(1.73e-4 * np.ones((1, 1)))
 r.setKx(4.32e-2 * np.ones((1, 1)))
-r.simulate(10)
 
 # q_r = 0.5
 # q_r = q_r * 1  # * 1 g/cm3 = g/cm2/day

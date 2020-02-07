@@ -24,6 +24,9 @@ namespace py = pybind11;
 #include "../soil_richards/properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types
 
+
+#include "RootSoilInteraction.hh"
+
 /*
  * Define the type tag for this problem (in propertiesYasp.hh)
  */
@@ -201,13 +204,24 @@ PYBIND11_MODULE(richardssp, m) {
     // useful
         .def("__str__",&Solver::toString)
         .def("checkInitialized", &Solver::checkInitialized)
-        /**
-         * RichardsSolverSP
-         */
+         // RichardsSolverSP
         .def("setSource", &Solver::setSource)
         .def("getWaterContent",&Solver::getWaterContent)
         .def("getWaterVolume",&Solver::getWaterVolume)
         .def("writeDumuxVTK",&Solver::writeDumuxVTK);
+    /**
+     * MappedRootSystem
+     */
+    py::class_<ROSI_HybridRichards>(m, "ROSI_HybridRichards")
+            .def(py::init<std::shared_ptr<CPlantBox::MappedRootSystem>>())
+            .def("soilPressure", &ROSI_HybridRichards::soilPressure)
+            .def("roots2cell",&ROSI_HybridRichards::roots2cell)
+            .def("kr",&ROSI_HybridRichards::kr)
+            .def("kr",&ROSI_HybridRichards::kz)
+            .def_readwrite("oldSoilX", &ROSI_HybridRichards::oldSoilX)
+            .def_readwrite("oldRootX", &ROSI_HybridRichards::oldRootX)
+            .def_readonly("rs", &ROSI_HybridRichards::rs);
+
 }
 
 #endif

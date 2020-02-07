@@ -25,6 +25,7 @@ namespace py = pybind11;
 // pick
 #include <dumux/common/geometry/intersectingentities.hh>
 #include <dumux/discretization/localview.hh>
+#include <MappedOrganism.h>
 
 #include <ostream>
 #include <iostream>
@@ -59,7 +60,7 @@ public:
  * Examples are given in the python directory
  */
 template<class Problem, class Assembler, class LinearSolver>
-class SolverBase {
+class SolverBase : public CPlantBox::Pickable {
 public:
 
     std::string gridType = "SPGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
@@ -563,6 +564,13 @@ public:
         }
         gIdx = gridGeometry->gridView().comm().max(gIdx); // so clever
         return gIdx;
+    }
+
+    /**
+     * Implements the pickable interface
+     */
+    int pick(double x, double y, double z) override {
+        return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m
     }
 
     /**
