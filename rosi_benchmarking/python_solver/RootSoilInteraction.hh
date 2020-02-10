@@ -105,5 +105,20 @@ public:
 
 };
 
+/**
+ * MappedRootSystem
+ */
+void init_rosi(py::module& m) {
+	py::class_<ROSI_HybridRichards>(m, "ROSI_HybridRichards")
+        .def(py::init<std::shared_ptr<CPlantBox::MappedRootSystem>>())
+        .def("soilPressure", &ROSI_HybridRichards::soilPressure)
+        .def("roots2cell",&ROSI_HybridRichards::roots2cell)
+        .def("kr",&ROSI_HybridRichards::kr)
+        .def("kr",&ROSI_HybridRichards::kz)
+        .def_readwrite("oldSoilX", &ROSI_HybridRichards::oldSoilX)
+        .def_readwrite("oldRootX", &ROSI_HybridRichards::oldRootX)
+        .def_readonly("rs", &ROSI_HybridRichards::rs);
+}
+
 
 #endif

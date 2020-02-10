@@ -156,72 +156,13 @@ public:
 
 };
 
-using Solver = RichardsSP;
-std::string name = "RichardsSP";
-
-/**
- * Python binding of the Dumux
- */
-PYBIND11_MODULE(richardssp, m) {
-
-    /**
-     * SolverBase
-     */
-    py::class_<Solver>(m, name.c_str())
-    // initialization
-        .def(py::init<>())
-        .def("initialize", &Solver::initialize)
-        .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-        .def("createGrid", (void (Solver::*)(VectorType, VectorType, std::array<int, 3>, std::string)) &Solver::createGrid,
-            py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
-        .def("readGrid", &Solver::readGrid)
-        .def("getGridBounds", &Solver::getGridBounds)
-        .def("setParameter", &Solver::setParameter)
-        .def("getParameter", &Solver::getParameter)
-        .def("initializeProblem", &Solver::initializeProblem)
-    // simulation
-        .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
-        .def("solveSteadyState", &Solver::solveSteadyState)
-    // post processing (vtk naming)
-        .def("getPoints", &Solver::getPoints) //
-        .def("getCellCenters", &Solver::getCellCenters)
-        .def("getDofCoordinates", &Solver::getDofCoordinates)
-        .def("getPointIndices", &Solver::getPointIndices)
-        .def("getCellIndices", &Solver::getCellIndices)
-        .def("getDofIndices", &Solver::getDofIndices)
-        .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
-        .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
-        .def("getNeumann", &Solver::getNeumann)
-        .def("getAllNeumann", &Solver::getAllNeumann)
-        .def("pickCell", &Solver::pickCell)
-    // members
-        .def_readonly("simTime", &Solver::simTime) // read only
-        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
-        .def_readonly("rank", &Solver::rank) // read only
-        .def_readonly("maxRank", &Solver::maxRank) // read only
-        .def_readonly("numberOfCells", &Solver::numberOfCells) // read only
-        .def_readonly("periodic", &Solver::periodic) // read only
-    // useful
-        .def("__str__",&Solver::toString)
-        .def("checkInitialized", &Solver::checkInitialized)
-         // RichardsSolverSP
-        .def("setSource", &Solver::setSource)
-        .def("getWaterContent",&Solver::getWaterContent)
-        .def("getWaterVolume",&Solver::getWaterVolume)
-        .def("writeDumuxVTK",&Solver::writeDumuxVTK);
-    /**
-     * MappedRootSystem
-     */
-    py::class_<ROSI_HybridRichards>(m, "ROSI_HybridRichards")
-            .def(py::init<std::shared_ptr<CPlantBox::MappedRootSystem>>())
-            .def("soilPressure", &ROSI_HybridRichards::soilPressure)
-            .def("roots2cell",&ROSI_HybridRichards::roots2cell)
-            .def("kr",&ROSI_HybridRichards::kr)
-            .def("kr",&ROSI_HybridRichards::kz)
-            .def_readwrite("oldSoilX", &ROSI_HybridRichards::oldSoilX)
-            .def_readwrite("oldRootX", &ROSI_HybridRichards::oldRootX)
-            .def_readonly("rs", &ROSI_HybridRichards::rs);
-
+void init_solverbase(py::module &m) {
+	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, "RichardsSP")
+   .def("setSource", &RichardsSP::setSource)
+   .def("getWaterContent",&RichardsSP::getWaterContent)
+   .def("getWaterVolume",&RichardsSP::getWaterVolume)
+   .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK);
 }
+
 
 #endif

@@ -1,9 +1,10 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 
-from richardssp import RichardsSP  # C++ part (Dumux binding)
+from dumux_rosi import SolverBase  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
-from solver.xylem_flux import XylemFlux
+
+from solver.xylem_flux import XylemFlux # Python hybrid solver
 import solver.plantbox as pb
 
 import numpy as np

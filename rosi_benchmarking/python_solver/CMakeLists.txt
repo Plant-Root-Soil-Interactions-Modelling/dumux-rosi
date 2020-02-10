@@ -8,8 +8,8 @@ dune_symlink_to_source_files(FILES "grids" "python" "input")
 
 # build pyhthon binding 
 include(DunePybindxiUtils)
-dune_pybindxi_add_module(richardssp richardssp.cc RootSoilInteraction.cc)
-target_link_dune_default_libraries(richardssp)
+dune_pybindxi_add_module(dumux_rosi py_solver.cc)
+target_link_dune_default_libraries(dumux_rosi)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)

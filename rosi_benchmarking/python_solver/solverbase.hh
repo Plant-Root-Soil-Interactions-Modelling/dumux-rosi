@@ -25,7 +25,7 @@ namespace py = pybind11;
 // pick
 #include <dumux/common/geometry/intersectingentities.hh>
 #include <dumux/discretization/localview.hh>
-#include <MappedOrganism.h>
+// #include <MappedOrganism.h>
 
 #include <ostream>
 #include <iostream>
@@ -60,7 +60,7 @@ public:
  * Examples are given in the python directory
  */
 template<class Problem, class Assembler, class LinearSolver>
-class SolverBase : public CPlantBox::Pickable {
+class SolverBase  { // : public CPlantBox::Pickable
 public:
 
     std::string gridType = "SPGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
@@ -566,12 +566,12 @@ public:
         return gIdx;
     }
 
-    /**
-     * Implements the pickable interface
-     */
-    int pick(double x, double y, double z) override {
-        return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m
-    }
+//    /**
+//     * Implements the pickable interface
+//     */
+//    int pick(double x, double y, double z) override {
+//        return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m
+//    }
 
     /**
      * Quick overview
@@ -641,6 +641,54 @@ protected:
     SolutionVector x;
 
 };
+
+
+template<class Problem, class Assembler, class LinearSolver>
+void init_solverbase(py::module &m) {
+//
+//	py::class_<CPlantBox::Pickable>(m, "Pickable")
+//		.def(py::init<>())
+//		.def("pick", &CPlantBox::Pickable::pick);
+
+	using Solver = SolverBase<Problem, Assembler, LinearSolver>; // choose your destiny
+	py::class_<Solver>(m, "SolverBase") // , CPlantBox::Pickable
+	// initialization
+	    .def(py::init<>())
+	    .def("initialize", &Solver::initialize)
+	    .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
+	    .def("createGrid", (void (Solver::*)(VectorType, VectorType, std::array<int, 3>, std::string)) &Solver::createGrid,
+	        py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
+	    .def("readGrid", &Solver::readGrid)
+	    .def("getGridBounds", &Solver::getGridBounds)
+	    .def("setParameter", &Solver::setParameter)
+	    .def("getParameter", &Solver::getParameter)
+	    .def("initializeProblem", &Solver::initializeProblem)
+	// simulation
+	    .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
+	    .def("solveSteadyState", &Solver::solveSteadyState)
+	// post processing (vtk naming)
+	    .def("getPoints", &Solver::getPoints) //
+	    .def("getCellCenters", &Solver::getCellCenters)
+	    .def("getDofCoordinates", &Solver::getDofCoordinates)
+	    .def("getPointIndices", &Solver::getPointIndices)
+	    .def("getCellIndices", &Solver::getCellIndices)
+	    .def("getDofIndices", &Solver::getDofIndices)
+	    .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
+	    .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
+	    .def("getNeumann", &Solver::getNeumann)
+	    .def("getAllNeumann", &Solver::getAllNeumann)
+	    .def("pickCell", &Solver::pickCell)
+	// members
+	    .def_readonly("simTime", &Solver::simTime) // read only
+	    .def_readwrite("ddt", &Solver::ddt) // initial internal time step
+	    .def_readonly("rank", &Solver::rank) // read only
+	    .def_readonly("maxRank", &Solver::maxRank) // read only
+	    .def_readonly("numberOfCells", &Solver::numberOfCells) // read only
+	    .def_readonly("periodic", &Solver::periodic) // read only
+	// useful
+	    .def("__str__",&Solver::toString)
+	    .def("checkInitialized", &Solver::checkInitialized);
+}
 
 #endif
 
