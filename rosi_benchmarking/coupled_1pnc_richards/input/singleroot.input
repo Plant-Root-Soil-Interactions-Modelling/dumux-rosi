@@ -20,8 +20,8 @@ CritTipP = -4500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
 Age = 100 # [day]
 Decay = 0.693 # [day-1]
-b = 1.e16 # [cm] pressure head
-c = 1 # [1] 
+b = 10 # [cm] pressure head
+c = 200 # [1] 
 
 [RootSystem.Collar]
 Transpiration = 5e-4 # [kg/day] 

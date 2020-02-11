@@ -56,8 +56,8 @@ public:
         Scalar kx = this->kx(eIdx);
         Scalar p = elemSol[0][0];
         Scalar y = -std::abs(p)/b_;
-        Scalar kappa = std::exp(std::exp(c_*std::log(y))); // std::exp(c*std::log(y)) == y^c
-        return kappa * kx * mu / (M_PI * a * a);
+        double kappa = std::exp(std::pow(y, c_));
+        return kx * mu / (M_PI * a * a); //  kappa *
     }
 
     /**
@@ -74,8 +74,8 @@ public:
 
 private:
 
-    Scalar b_ = 1.e16; // [Pa]
-    Scalar c_ = 1.; // [1]
+    Scalar b_ = 1.e6; // [Pa]
+    Scalar c_ = 100.; // [1]
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
     static constexpr Scalar rho_ = 1.e3; //1.e3; // kg / m^3
