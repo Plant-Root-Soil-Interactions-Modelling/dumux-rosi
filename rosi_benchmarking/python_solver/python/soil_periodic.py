@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 
-from richardssp import RichardsSP  # C++ part (Dumux binding)
+from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import os
@@ -75,7 +75,7 @@ s.ddt = 1.e-5
 for i in range(0, 12):
     if rank == 0:
         print(i, "*** External time step ", dt, "***", "simulation time ", s.simTime)
-    s.simulate(dt)
+    s.solve(dt)
     print("Water volume", s.getWaterVolume(), "cm3")
 
 # s.writeDumuxVTK("test_periodic")

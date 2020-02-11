@@ -1,11 +1,6 @@
 #ifndef SOLVERBASE_H_
 #define SOLVERBASE_H_
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
-#include <dune/pybindxi/numpy.h>
-namespace py = pybind11;
-
 // initialize
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
@@ -25,7 +20,6 @@ namespace py = pybind11;
 // pick
 #include <dumux/common/geometry/intersectingentities.hh>
 #include <dumux/discretization/localview.hh>
-// #include <MappedOrganism.h>
 
 #include <ostream>
 #include <iostream>
@@ -60,7 +54,7 @@ public:
  * Examples are given in the python directory
  */
 template<class Problem, class Assembler, class LinearSolver>
-class SolverBase  { // : public CPlantBox::Pickable
+class SolverBase  {
 public:
 
     std::string gridType = "SPGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
@@ -566,12 +560,12 @@ public:
         return gIdx;
     }
 
-//    /**
-//     * Implements the pickable interface
-//     */
-//    int pick(double x, double y, double z) override {
-//        return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m
-//    }
+    /**
+     *TODO
+     */
+    virtual int pick(double x, double y, double z) {
+        return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m
+    }
 
     /**
      * Quick overview
@@ -642,16 +636,13 @@ protected:
 
 };
 
-
+/**
+ * pybind11
+ */
 template<class Problem, class Assembler, class LinearSolver>
-void init_solverbase(py::module &m) {
-//
-//	py::class_<CPlantBox::Pickable>(m, "Pickable")
-//		.def(py::init<>())
-//		.def("pick", &CPlantBox::Pickable::pick);
-
+void init_solverbase(py::module &m, std::string name) {
 	using Solver = SolverBase<Problem, Assembler, LinearSolver>; // choose your destiny
-	py::class_<Solver>(m, "SolverBase") // , CPlantBox::Pickable
+	py::class_<Solver>(m, name.c_str())
 	// initialization
 	    .def(py::init<>())
 	    .def("initialize", &Solver::initialize)
@@ -678,6 +669,7 @@ void init_solverbase(py::module &m) {
 	    .def("getNeumann", &Solver::getNeumann)
 	    .def("getAllNeumann", &Solver::getAllNeumann)
 	    .def("pickCell", &Solver::pickCell)
+        .def("pick", &Solver::pick)
 	// members
 	    .def_readonly("simTime", &Solver::simTime) // read only
 	    .def_readwrite("ddt", &Solver::ddt) // initial internal time step
