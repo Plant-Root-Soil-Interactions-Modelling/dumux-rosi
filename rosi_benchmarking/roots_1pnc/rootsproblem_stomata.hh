@@ -283,7 +283,7 @@ public:
             double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
             double alpha;
             if (p < critPCollarAlpha_) { // stomatal conductanc
-                alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(critPCollarAlpha_-p));  // [-] (Eqn 2a, Huber et al. 2014)
+                alpha = alphaR + (1 - alphaR)*exp((-(1-cD)*sC*cL - cD)*exp(-sH*(p-critPCollarAlpha_)));  // [-] (Eqn 2a, Huber et al. 2014)
             } else {
                 alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
             }
@@ -509,7 +509,7 @@ public:
                     double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
                     double alpha;
                     if (p < critPCollarAlpha_) { // stomatal conductance definition
-                        alpha = alphaR + (1 - alphaR)*exp(-(1-cD)*sC*cL - cD)*exp(-sH*(critPCollarAlpha_-p));  // [-] (Eqn 2a, Huber et al. 2014)
+                        alpha = alphaR + (1 - alphaR)*exp((-(1-cD)*sC*cL - cD)*exp(-sH*(p-critPCollarAlpha_)));  // [-] (Eqn 2a, Huber et al. 2014)
                     } else {
                         alpha = alphaR + (1 - alphaR)*exp(-sC*cL);  // [-] (Eqn 2b, Huber et al. 2014)
                     }
