@@ -32,3 +32,8 @@ Ks = 50 1000 # [cm/d]
 [Soil.Layer]
 Z = -2 -0.5 -0.5 0
 Number = 2 2 1 1	
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+
