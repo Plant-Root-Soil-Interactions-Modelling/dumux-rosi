@@ -57,7 +57,7 @@ public:
         Scalar p = elemSol[0][0];
         Scalar y = -std::abs(p)/b_;
         Scalar kappa = std::exp(std::exp(c_*std::log(y))); // std::exp(c*std::log(y)) == y^c
-        return kx * mu / (M_PI * a * a); // TODO kappa *
+        return kappa * kx * mu / (M_PI * a * a);
     }
 
     /**

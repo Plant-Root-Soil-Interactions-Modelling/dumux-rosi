@@ -18,7 +18,7 @@
 //#include <dumux/discretization/evalgradients.hh>
 
 #if DGF
-#include "rootspatialparams_caviation_dgf.hh"
+#include "rootspatialparams_cavitation_dgf.hh"
 #endif
 #if ROOTBOX
 #include "../roots_1p/rootspatialparams_rb.hh" // TODO
@@ -130,7 +130,7 @@ public:
         std::cout << "critPCollarDirichlet " << critPCollarDirichlet_ << ", critPCollarAlpha " << critPCollarAlpha_ << ", critPTips " << critPTips_ << "\n";
         std::cout << "***********************************************\n";
 
-        // Optionally give caviation paramter
+        // Optionally give cavitation parameter
         double b = getParam<double>("Control.b", 1.e16); // cm pressure head
         double c = getParam<double>("Control.c", 1);
         this->spatialParams().setParameter(b,c);
