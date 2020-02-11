@@ -122,6 +122,7 @@ public:
         cD = getParam<bool>("Control.cD", false); // boolean variable {0,1}: cD = 0 -> interaction between pressure and chemical regulation
         a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1]
         age_ = getParam<double>("Control.Age", 1.); // hormone sink activates if segment age is smaller than age_
+        decay_ = getParam<double>("Control.Decay", 0.693) /24./3600.; // 1/day -> 1/s;
 
         std::cout << "***********************************************\n";
         std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";
@@ -494,6 +495,8 @@ public:
                 }
             }
 
+            double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
+
             for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 
                 if (onUpperBoundary_(scvf.center())) { // root collar
@@ -506,7 +509,6 @@ public:
                     double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
                     potentialTrans_ = collar_.f(time_); // [kg/s]
 
-                    double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
                     double alpha;
                     if (p < critPCollarAlpha_) { // stomatal conductance definition
                         alpha = alphaR + (1 - alphaR)*exp((-(1-cD)*sC*cL - cD)*exp(-sH*(p-critPCollarAlpha_)));  // [-] (Eqn 2a, Huber et al. 2014)
@@ -527,7 +529,7 @@ public:
             }
         }
 
-        mL_ += mLRate_*dt_; // integrate rate with old time step, we might need additional decay rate
+        mL_ += mLRate_*dt_ - mL_*decay_*dt_; // integrate rate with old time step, we might need additional decay rate
 
         mRootRate_ = source[transportEqIdx]; // kg/s
         mRoot_ +=  mRootRate_*dt_; //kg
@@ -561,8 +563,8 @@ public:
                 source += pointSources;
             }
         }
-        std::cout << "Source: water    " << source[conti0EqIdx]*3600*24*1000 << " (g/day),\n" <<
-            "        hormones " << source[transportEqIdx]*3600*24*1000 << " (g/day)" << '\n';
+        std::cout << "Source: water    " << source[conti0EqIdx]*3600*24*1000 << " (g/day) " <<
+            "hormones " << source[transportEqIdx]*3600*24*1000 << " (g/day)" << '\n';
     }
 
     //! Set the coupling manager
@@ -609,16 +611,16 @@ protected:
     /**
      * Hormone model parameters
      */
-    double critPCollarDirichlet_ = -1.4e6; // -1.4e6;
+    double critPCollarDirichlet_ = -1.4e6; // -1.4e6 Pa;
     double critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
     double alphaR = 0; // residual stomata conductance
     bool cD = false; // interaction between pressure and chemical regulation
     double sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
-    double sC = 5e+4; // (m^3/mol) from Huber et. al [2014]
+    double sC = 5e+4; // (m3 mol-1) from Huber et. al [2014]
 
-    double dm_ =  140.;  //root dry mass [kg / m3]
+    double dm_ =  140.;  //root dry mass (kg / m3)
     double critPTips_ = toPa_(-4500); // cm -> Pa
-    double a_; // Maximal hormone production rate in mol per dry mass per pressure [mol kg-1 Pa-1 s-1]
+    double a_; // Maximal hormone production rate in mol per dry mass per pressure (mol kg-1 Pa-1 s-1)
     double age_;
 
     double mL_ = 0.; // (kg) mass of hormones in the leaf
@@ -627,6 +629,8 @@ protected:
     InputFileFunction leafVolume_; // (m^3)
 
     Scalar molarMass; // (kg/mol)
+
+    double decay_ = 0.; // (s-1)
 
 };
 
