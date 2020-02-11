@@ -5,12 +5,12 @@ SoilName = ../soil_richards/input/soybean_HLCT.input
 
 [TimeLoop]
 TEnd = 864000 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
-DtInitial = 7200 # [s]
+DtInitial = 1 # [s]
 PeriodicCheckTimes = 21600
 MaxTimeStepSize = 7200
 
 [Soil.IC]
-P = -400
+P = -100
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation

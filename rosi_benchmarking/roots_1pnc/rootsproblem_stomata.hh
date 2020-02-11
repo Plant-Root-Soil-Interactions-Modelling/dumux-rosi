@@ -119,8 +119,8 @@ public:
         critPCollarAlpha_ = toPa_(getParam<double>("Control.CritCollarPAlpha", -5500.)); ; // cm -> Pa
         critPTips_ = toPa_(getParam<double>("Control.CritTipP", -4500.)); // cm -> Pa
 
-        cD = getParam<bool>("Control.cD", false); // boolean variable: cD = 0 -> interaction between pressure and chemical regulation
-        a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+        cD = getParam<bool>("Control.cD", false); // boolean variable {0,1}: cD = 0 -> interaction between pressure and chemical regulation
+        a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1]
         age_ = getParam<double>("Control.Age", 1.); // hormone sink activates if segment age is smaller than age_
 
         std::cout << "***********************************************\n";
