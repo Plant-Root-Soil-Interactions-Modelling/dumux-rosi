@@ -4,7 +4,7 @@ from vtk_tools import *
 from math import *
 import van_genuchten as vg
 
-name = "sunflower_30days_HLCT"  # this name should be unique
+name = "sunflower_154days_HLCT"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -12,7 +12,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p/")
 
 # run dumux
-os.system("./rootsystem input/" + name + ".input")
+os.system("./rootsystem_periodic input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name):

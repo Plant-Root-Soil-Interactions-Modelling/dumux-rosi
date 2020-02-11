@@ -70,12 +70,6 @@ ax4.set_xlabel("time (days)")
 ax4.set_ylabel("T$_{act}/T_{pot}$")
 #ax4.set_title("Stress (T$_{act}/T_{pot}$)")
 
-""" Plot Tact/Tpot vs xylem pressure"""
-#fig, ax5 = plt.subplots()
-#p_, z_ = read3D_vtp_data("singleroot-00001.vtp")
-#h_ = vg.pa2head(p_)
-#ax5.plot(h_, z_[:, 2], "r+")  # cell data
-#ax5.set_ylabel("Depth (m)")
 #ax5.set_xlabel("Xylem pressure (cm)")
 
 plt.show()

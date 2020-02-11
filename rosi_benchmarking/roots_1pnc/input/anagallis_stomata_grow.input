@@ -8,8 +8,8 @@ PeriodicCheckTimes = 86400
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/Glycine_max_30days.dgf
-InitialT = 30 # days
+File =  grids/anagallis15.dgf
+InitialT = 1 # days
 Grow = true
 
 # # if we want a growing root system
