@@ -172,7 +172,7 @@ class XylemFluxPython(XylemFlux):
 
             cii = -kx * di * math.sqrt(c) * (math.exp(-math.sqrt(c) * l) + math.exp(math.sqrt(c) * l))  # Eqn 16
             cij = 2 * kx * di * math.sqrt(c)  # Eqn 17
-            bi = kx * self.rho * self.g * vz  # Eqn 18
+            bi = kx * vz  # Eqn 18 * self.rho * self.g
 
             b[i] += bi
             I[k], J[k], V[k] = i, i, cii
