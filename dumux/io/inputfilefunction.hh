@@ -217,7 +217,7 @@ public:
         case perType: {
             int t = int(data_.at(eIdx));
             if (t < 0) {
-                std::cout << "InputFileFunction::perType: warning root order is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
+                std::cout << "InputFileFunction::perType: warning type is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
                 t = 0;
             }
             return fs*yy_.at(t);
@@ -225,23 +225,24 @@ public:
         case perTypeIFF: {
             int t = int(iff_->f(x, eIdx));
             if (t < 0) {
-                std::cout << "InputFileFunction::perTypeIFF: warning root order is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
+                std::cout << "InputFileFunction::perTypeIFF: warning type is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
                 t = 0;
             }
             return fs*yy_.at(t);
         }
         case tablePerType: {
             int t = int(data_.at(eIdx));
-            //            assert( t>=0  && "InputFileFunction::f: table type < 0" );
+            if (t>=table_.size()) {
+                std::cout << "InputFileFunction::tablePerType: warning InputFileFunction::f("+std::to_string(x)+", "
+                    +std::to_string(eIdx)+"): "+nameY_+" table type > available tables, "+ std::to_string(t)+">="+std::to_string(table_.size());
+                 t = table_.size()-1;
+             };
             if (t < 0) {
-                std::cout << "InputFileFunction::tablePerType: warning root order is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
+                std::cout << "InputFileFunction::tablePerType: warning type is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
                 t = 0;
             }
             //            assert( t<table_.size() && "InputFileFunction::f: table type > available tables" );
-            if (t>=table_.size()) {
-                throw Dumux::ParameterException("InputFileFunction::f("+std::to_string(x)+", "+std::to_string(eIdx)+"): "+
-                    nameY_+" table type > available tables, "+ std::to_string(t)+">="+std::to_string(table_.size()));
-            }
+
             return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_.at(t));
         }
         default:
