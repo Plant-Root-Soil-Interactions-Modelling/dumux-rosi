@@ -10,11 +10,6 @@ MaxTimeStepSize = 3600
 [RootSystem.Grid]
 File =  grids/Glycine_max_2days.dgf
 InitialT = 2 # days
-#Grow = true
-
-# # if we want a growing root system
-# InitialT = 1 # days
-# Grow = true
 
 [RootSystem.Conductivity]
 Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
@@ -37,7 +32,8 @@ CritCollarP = -10000
 CritCollarPAlpha = -1000
 CritTipP = 0
 ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
-Age = 5
+ProductionAge = 5
+ProductionGrowth = "true"
 
 [Vtk]
 AddProcessRank = "false"

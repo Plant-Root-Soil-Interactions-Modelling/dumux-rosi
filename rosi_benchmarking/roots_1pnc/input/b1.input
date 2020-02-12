@@ -9,13 +9,11 @@ MaxTimeStepSize = 3600
 [RootSystem.Grid]
 File =  grids/singleroot.dgf
 InitialT = 15 # days
+Radius = 0.2 # cm
 
 [RootSystem.Conductivity]
 Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
 Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
-
-[RootSystem]
-Radius = 0.2 # cm
 
 [RootSystem.Collar]
 P = -1000 # cm pressure head
@@ -34,7 +32,8 @@ CritCollarP = -10000
 CritCollarPAlpha = -1000
 CritTipP = 0
 ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
-Age = 5
+ProductionAge = 5
+ProductionGrowth = "true"
 
 [Vtk]
 AddProcessRank = "false"

@@ -373,11 +373,6 @@ public:
             sourceValue[conti0EqIdx] = 2* M_PI *rootRadius * kr *(soilP - tipP)*density; // [kg/m/s] TODO check signs, must equal the richardsnc::pointSource
             sourceValue[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
 
-            Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
-            if (!grow_) { // for static root system, static root tips should not age
-                rootAge -= time_ / (24. * 3600.);
-            } // todo currently unused, but might make sense
-
             Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
             Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
 

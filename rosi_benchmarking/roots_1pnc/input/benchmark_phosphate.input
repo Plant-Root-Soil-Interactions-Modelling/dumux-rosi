@@ -7,7 +7,6 @@ DtInitial = 360 # [s]
 MaxTimeStepSize = 86400 # 1 h
 # CheckTimes = 86400 # half a day
 
-
 [RootSystem.Grid]
 File =  grids/singleC11.dgf
 # radiusIdx = 4

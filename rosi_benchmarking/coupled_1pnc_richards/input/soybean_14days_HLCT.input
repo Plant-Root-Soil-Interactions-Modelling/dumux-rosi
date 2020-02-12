@@ -18,6 +18,6 @@ CritCollarP = -10000
 CritCollarPAlpha = -5500
 CritTipP = -1000 #-4500
 ProductionRate = 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
-Age = 1
+ProductionAge = 1
 
 

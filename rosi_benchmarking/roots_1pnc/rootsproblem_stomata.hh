@@ -106,8 +106,6 @@ public:
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
 
-        grow_ = getParam<bool>("RootSystem.Grid.Grow", false); // for mimicing growth using root age
-
         leafVolume_ = InputFileFunction("RootSystem.Leaf", "Volume", "VolumeT", 1.); // [cm^3]([day])
         leafVolume_.setVariableScale(1./(24.*3600)); // [s] -> [day]
         leafVolume_.setFunctionScale(1.e-6); // [cm^3] -> [m^3]
@@ -121,8 +119,9 @@ public:
 
         cD = getParam<bool>("Control.cD", false); // boolean variable {0,1}: cD = 0 -> interaction between pressure and chemical regulation
         a_ = getParam<double>("Control.ProductionRate", 3.26e-16); // [kg-1 Pa-1 s-1]
-        age_ = getParam<double>("Control.Age", 1.); // hormone sink activates if segment age is smaller than age_
+        age_ = getParam<double>("Control.ProductionAge", 1.); // hormone sink activates if segment age is smaller than age_
         decay_ = getParam<double>("Control.Decay", 0.693) /24./3600.; // 1/day -> 1/s;
+        grow_ = getParam<bool>("Control.ProductionGrowth", false); // for mimicing growth using root age
 
         std::cout << "***********************************************\n";
         std::cout << "leafVolume "<< leafVolume_.f(0.) << ", grow " << grow_ << "\n";

@@ -10,7 +10,6 @@ MaxTimeStepSize = 3600
 [RootSystem.Grid]
 File =  grids/singleRoot.dgf
 InitialT = 10 # [days]
-Grow = "true" # Aging (all roots are already there at InitalT=10)
 Radius = 0.02 # cm
 
 [RootSystem.Conductivity]
@@ -40,7 +39,8 @@ CritCollarP = -100000 # pressure, when to switch to dirichlet
 CritCollarPAlpha = -5500 # for alpha
 CritTipP = -4500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
-Age = 1
+ProductionAge = 5
+ProductionGrowth = "true"
 
 [Vtk]
 AddProcessRank = "false"
