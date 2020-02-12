@@ -11,6 +11,12 @@ CheckTimes = 8640 17280
 UpperRight = 0.005 0.005 0. 
 LowerLeft = -0.005 -0.005 -0.15
 Cells = 10 10 150 
+Periodic = true true false
+Overlap = 1
+
+[Grid]
+Periodic = true true false
+Overlap = 1
 
 [Soil.BC.Top]
 Type = 2 # atmospheric BC with surface run off

@@ -253,20 +253,19 @@ public:
             const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             auto params = this->spatialParams();
             Scalar age = params.age(eIdx); // root age (s)
-//            if (age>0) {
-                Scalar a = params.radius(eIdx); // root radius (m)
-                Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
-                Scalar phx;
-                if (isBox) { // dumux
-                    phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
-                } else {
-                    phx = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
-                }
-                Scalar phs = soil(scv.center()); // kg/m/s^2
-                values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
-                values[conti0EqIdx] /= (a * a * M_PI); // 1/s
-                values[conti0EqIdx] *= rho_; // (kg/s/m^3)
-  //          }
+
+            Scalar a = params.radius(eIdx); // root radius (m)
+            Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
+            Scalar phx;
+            if (isBox) { // dumux
+                phx = elemVolVars[scv.localDofIndex()].pressure(); // kg/m/s^2
+            } else {
+                phx = elemVolVars[scv.dofIndex()].pressure(); // kg/m/s^2
+            }
+            Scalar phs = soil(scv.center()); // kg/m/s^2
+            values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
+            values[conti0EqIdx] /= (a * a * M_PI); // 1/s
+            values[conti0EqIdx] *= rho_; // (kg/s/m^3)
         }
         return values;
     }

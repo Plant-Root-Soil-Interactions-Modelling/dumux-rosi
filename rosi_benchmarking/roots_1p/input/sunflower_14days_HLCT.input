@@ -9,7 +9,7 @@ MaxTimeStepSize = 360
 
 [RootSystem.Grid]
 File =  grids/sunflower_14days.dgf
-InitialT = 0 # days
+InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
 ctIdx = 7

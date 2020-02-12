@@ -1,11 +1,11 @@
 [TimeLoop]
-TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd = 1209600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
-MaxTimeStepSize = 360
+MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 25 17 60
+Cells = 25 17 75 # for 50 * 33 * 150
 Periodic = true true false
 Overlap = 1 
 
@@ -14,7 +14,7 @@ Periodic = true true false
 Overlap = 1 
 
 [Soil.IC]
-P = -0.01
+P = -300
 
 [Problem]
 Name = sunflower_14days_HLCT
