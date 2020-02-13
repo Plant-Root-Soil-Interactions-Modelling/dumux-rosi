@@ -22,15 +22,16 @@ class XylemFluxPython(XylemFlux):
         self.kx = None
         self.kr = None
 
-    def solve(self, value, neumann = True) :
+    def solve(self, sim_time, value, neumann = True) :
         """ solves the flux equations, with neumann or dirichlet boundary condtion,
+            @param sim_time [day] simulation time to evaluate age dependent conductivities
             @param value    [cm day-1] or [cm] pressure head
             @parm neumann   Neumann or Dirichlet
          """
         start = timeit.default_timer()
 
         # self.linearSystem()
-        I, J, V, b = self.linear_system()
+        I, J, V, b = self.linear_system(sim_time)
         Q = sparse.coo_matrix((V, (I, J)))
         # Q = sparse.coo_matrix((self.aV, (self.aI, self.aJ)))
         Q = sparse.csr_matrix(Q)
@@ -101,8 +102,7 @@ class XylemFluxPython(XylemFlux):
         return np.array(list(map(lambda x: np.array(x, dtype), x)), dtype)  # is there a better way?
 
     def setKr(self, values :np.array, age :np.array = np.array([])):
-        """ Sets the radial conductivity in [1 day-1], 
-            converts to [cm2 day g-1] by dividing by rho*g """
+        """ Sets the radial conductivity in [1 day-1] converts to [cm2 day g-1] by dividing by rho*g """
         self.kr_ = values / (self.rho * self.g)
         print("Kr", values, "day-1 -> ", self.kr_, "cm2 day g-1")
         if age.size == 0:
@@ -119,8 +119,7 @@ class XylemFluxPython(XylemFlux):
         self.setKrF(self.kr)  # to the cpp
 
     def setKx(self, values :np.array, age :np.array = np.array([])):
-        """ Sets the axial conductivity [cm3 day-1], 
-            converts to [cm5 day g-1] by dividing by rho*g """
+        """ Sets the axial conductivity [cm3 day-1] converts to [cm5 day g-1] by dividing by rho*g """
         self.kx_ = values / (self.rho * self.g)
         print("Kx", values, "day-1 -> ", self.kx_, "cm5 day g-1")
         if age.size == 0:
@@ -136,10 +135,8 @@ class XylemFluxPython(XylemFlux):
                 self.kx = lambda age, type: np.interp(age, self.kx_t_[type], self.kx_[type])
         self.setKxF(self.kx)  # to the cpp
 
-    def linear_system(self):
-        """ assembles the linear system,
-         (todo -> c++) """
-        simTime = self.rs.getSimTime()  # to calculate age from ct
+    def linear_system(self, simTime :float):
+        """ assembles the linear system (for comparison with the c++ equivalent linearSystem)"""
         Ns = len(self.rs.segments)
         N = len(self.rs.nodes)
 

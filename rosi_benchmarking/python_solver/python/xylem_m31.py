@@ -51,7 +51,7 @@ plt.plot(pr, za_)
 
 """ Numeric solution """
 
-rs = pb.MappedRootSystem()
+rs = pb.MappedSegments()
 
 # create a straigth root by hand (todo: friendlier setter...)
 N = 100  # resolution
