@@ -55,7 +55,7 @@ public:
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
         Scalar p = elemSol[0][0];
-        Scalar y = std::abs(p)/b_;
+        Scalar y = std::abs(p-pRef_)/(b_-pRef_);
         double kappa = std::exp(-std::pow(y, c_));
         // std::cout << "kappa " << kappa << ", " << c_ << "\n";
         return  kappa *kx * mu / (M_PI * a * a);
