@@ -164,18 +164,19 @@ int main(int argc, char** argv) try
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop; // defined in common/timeloop.hh, everything clear, easy to use.
     if (tEnd > 0) { // dynamic problem
-        const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
         auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
         timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
-        timeLoop->setMaxTimeStepSize(maxDt);
-        try { // CheckPoints defined
+        timeLoop->setMaxTimeStepSize(getParam<Scalar>("TimeLoop.MaxTimeStepSize"));
+        if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-            // insert check points
-            for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
+            std::cout << "using "<< checkPoints.size() << "check times \n";
+            for (auto p : checkPoints) {
                 timeLoop->setCheckPoint(p);
             }
-        } catch(std::exception& e) {
-            std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+        }
+        if (hasParam("TimeLoop.PeriodicCheckTimes")) {
+            std::cout << "using periodic check times \n";
+            timeLoop->setPeriodicCheckPoint(getParam<double>("TimeLoop.PeriodicCheckTimes"));
         }
     } else { // static
     }
