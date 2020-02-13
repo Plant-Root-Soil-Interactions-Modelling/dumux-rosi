@@ -57,7 +57,8 @@ public:
         Scalar p = elemSol[0][0];
         Scalar y = std::abs(p-pRef_)/(b_-pRef_);
         double kappa = std::exp(-std::pow(y, c_));
-        // std::cout << "kappa " << kappa << ", " << c_ << "\n";
+        // Scalar p_cm = toHead_(p);
+        // std::cout << "kappa " << kappa << ", " << p_cm << "\n";
         return  kappa *kx * mu / (M_PI * a * a);
     }
 
@@ -86,6 +87,11 @@ private:
     Scalar toPa_(Scalar ph) const {
         return pRef_ + ph / 100. * rho_ * g_;
     }
+
+  /*  //! Pascal -> cm pressure head
+    Scalar toHead_(Scalar p) const {
+        return (p - pRef_) * 100. / rho_ / g_;
+    }*/
 
 };
 

@@ -1,5 +1,5 @@
 [Problem]
-Name = singleroot
+Name = singleroot_cavitation
 RootName = ../roots_1pnc/input/singleroot.input # anagallis_stomata.input  # 
 SoilName = ../soil_richards/input/singleroot_domain.input # sunflower_HLCT
 
@@ -20,8 +20,8 @@ CritTipP = -4500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
 ProductionAge = 100 # [day]
 Decay = 0.693 # [day-1]
-b = 1.e8 # [cm] pressure head
-c = 200 # [1] 
+b = 10193.68 # [cm] pressure head
+c = 0.7 # [1] 
 
 [RootSystem.Collar]
 Transpiration = 5e-4 # [kg/day] 

@@ -1,4 +1,4 @@
-''' singleroot '''
+''' singleroot cavitation'''
 
 import os
 import matplotlib.pyplot as plt
@@ -13,12 +13,12 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
 
 # # run simulation
-os.system("./coupled_periodic_1pnc_richards input/singleroot.input")
+os.system("./coupled_periodic_1pnc_richards input/singleroot_cavitation.input")
 
 #      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 #      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
 #      * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
-with open("singleroot_actual_transpiration.txt", 'r') as f:
+with open("singleroot_cavitation_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 
 c = 24 * 3600  # s / day
@@ -36,7 +36,6 @@ ax1b.tick_params(axis = 'y', labelcolor = "b")
 ax1b.set_ylabel("root system production rate (g/day)", color = "b")
 ax1.set_xlabel("time (days)")
 ax1.set_title("Hormone production rate")
-plt.savefig('Hormoneproductionrate.pdf', dpi=300)
 
 fig, ax2 = plt.subplots()
 
@@ -49,7 +48,6 @@ ax2b.tick_params(axis = 'y', labelcolor = "b")
 ax2b.set_ylabel("root system mass (g)", color = "b")
 ax2.set_xlabel("time (days)")
 ax2.set_title("Hormone mass")
-plt.savefig('Hormonemass.pdf', dpi=300)
 
 """ Plot transpiration """
 fig, ax3 = plt.subplots()
@@ -64,7 +62,6 @@ ax3.set_ylabel("transpiration (g/day)")
 ax3b.set_ylabel("Cumulative transpiration $[g]$", color = "b")
 ax3.legend(["potential", "actual", "cumulative"])
 #ax3.set_title("Water transpiration")
-plt.savefig('transpiration.pdf', dpi=300)
 
 """ Plot Tact/Tpot """
 fig, ax4 = plt.subplots()

@@ -9,6 +9,15 @@ DtInitial = 360 # [s]
 PeriodicCheckTimes = 21600
 MaxTimeStepSize = 3600
 
+[Soil.Grid]
+Cells = 18 3 75 # 37*5*150
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1
+
 [Soil.IC]
 P = -300
 
