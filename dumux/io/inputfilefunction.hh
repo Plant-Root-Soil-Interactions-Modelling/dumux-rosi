@@ -232,11 +232,11 @@ public:
         }
         case tablePerType: {
             int t = int(data_.at(eIdx));
-            if (t>=table_.size()) {
+            if (t>=int(table_.size())) {
                 std::cout << "InputFileFunction::tablePerType: warning InputFileFunction::f("+std::to_string(x)+", "
-                    +std::to_string(eIdx)+"): "+nameY_+" table type > available tables, "+ std::to_string(t)+">="+std::to_string(table_.size());
-                 t = table_.size()-1;
-             };
+                    +std::to_string(eIdx)+"): "+nameY_+" table type > available tables, "+ std::to_string(t)+">="+std::to_string(table_.size()) +"\n";
+                t = table_.size()-1;
+            }
             if (t < 0) {
                 std::cout << "InputFileFunction::tablePerType: warning type is negative for element index " << eIdx <<": " << t << ", resuming with root order 0\n" << std::flush;
                 t = 0;
@@ -333,7 +333,7 @@ public:
         case(perType): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from Grid at index "<< typeIdx_ << s << "\n"; break;
         case(perTypeIFF): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from InputFileFunction" << s << "\n"; break;
         case(tablePerType): std::cout << "InputFileFunction: "<< nameY_ << ": Table per Type from Grid, " << table_.size()
-                << " types" << s << "\n"; break;
+                    << " types" << s << "\n"; break;
         default:
             std::cout << "InputFileFunction: unknown function type";
         }
