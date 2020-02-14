@@ -6,16 +6,7 @@ import solver.plantbox as pb
 
 from math import *
 import numpy as np
-from numpy.linalg.linalg import norm
-from scipy import sparse
-import scipy.sparse.linalg as LA
-# from rsml_reader import *  # located in the same directory
-
 import matplotlib.pyplot as plt
-
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
 
 """ 
 Benchmark M3.1 Single root: steady state vertical root solved with the Python/cpp Hybrid solver
@@ -68,8 +59,18 @@ r.setKx([kz0])
 
 rx_hom = r.solve(0., p0 - p_s, False)
 rx = r.getSolution(rx_hom, [p_s])
-
+flux = r.collar_flux(0., rx, [p_s])
+print("Transpiration", flux, "cm3/day")
 plt.plot(rx, z_, "r*")
+
+rx_hom = r.solve(0., -2 / (r.rho * r.g), True)
+rx = r.getSolution(rx_hom, [p_s])
+
+flux = r.collar_flux(0., rx, [p_s])
+print("Transpiration", flux, "cm3/day")
+plt.plot(rx, z_, "g*")
+
 plt.xlabel("Xylem pressure (cm)")
 plt.ylabel("Depth (m)")
+plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm3 day"])
 plt.show()

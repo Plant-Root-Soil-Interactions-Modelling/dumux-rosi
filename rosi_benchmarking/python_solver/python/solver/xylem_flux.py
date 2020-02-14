@@ -8,6 +8,7 @@ import scipy.sparse.linalg as LA
 from solver.plantbox import MappedRootSystem
 from solver.plantbox import XylemFlux
 import solver.rsml_reader as rsml  # todo
+from duplicity.backends import sxbackend
 
 
 class XylemFluxPython(XylemFlux):
@@ -19,7 +20,7 @@ class XylemFluxPython(XylemFlux):
     def solve(self, sim_time, value, neumann) :
         """ solves the flux equations, with neumann or dirichlet boundary condtion,
             @param sim_time [day] simulation time to evaluate age dependent conductivities
-            @param value    [cm day-1] or [cm] pressure head
+            @param value    [cm3 day-1] or [cm] pressure head
             @parm neumann   Neumann or Dirichlet
          """
         start = timeit.default_timer()
@@ -34,7 +35,7 @@ class XylemFluxPython(XylemFlux):
         Q = sparse.csr_matrix(Q)
 
         if neumann:
-            Q, b = self.bc_neumann(Q, self.aB, [0], [value])
+            Q, b = self.bc_neumann(Q, self.aB, [0], [value ])  # / (rs.rho * rs.g)
         else:
             Q, b = self.bc_dirichlet(Q, self.aB, [0], [value])
 
@@ -60,6 +61,30 @@ class XylemFluxPython(XylemFlux):
             x = solve(sim_time, wiltingPoint, False)
 
         return x
+
+    def collar_flux(self, sim_time, rx, sx, seg_ind = 0):
+        """ returns the exact transpirational flux of the solution @param rx [g/cm] """
+        s = self.rs.segments[seg_ind]  # collar segment
+        i, j = int(s.x), int(s.y)  # node indices
+        n1, n2 = self.rs.nodes[i], self.rs.nodes[j]  # nodes
+        v = n2.minus(n1)
+        l = v.length()  # length of segment
+        v.normalize()  # normalized v.z is needed for qz
+        cell_ind = self.rs.seg2cell[seg_ind]
+        p_s = sx[cell_ind]  # soil pressure at collar segment
+        a = self.rs.radii[seg_ind]  # radius
+        type = int(self.rs.types[seg_ind])  # conductivities kr, kx
+        age = sim_time - int(self.rs.nodeCTs[j])
+        kr = self.kr_f(age, type)  # c++ conductivity call back functions
+        kx = self.kx_f(age, type)
+        c = 2 * a * math.pi * kr / kx  # cm-2
+        AA = np.array([[1, 1], [math.exp(math.sqrt(c) * l), math.exp(-math.sqrt(c) * l)] ])  # insert z = 0, z = l into exact solution
+        bb = np.array([rx[i] - p_s, rx[j] - p_s])  # solve for solution
+        d = np.linalg.solve(AA, bb)  # compute constants d_1 and d_2 from bc
+        # p_r = lambda z: p_s + d[0] * math.exp(math.sqrt(c) * z) + d[1] * math.exp(-math.sqrt(c) * z)  # exact solution
+        # dpdz = d[0] *sqrt(c)*exp(sqrt(c)*(-L)) + d[1] * (-sqrt(c)*exp(-sqrt(c)*(-L))) # dp/dz
+        dpdz0 = d[0] * math.sqrt(c) - d[1] * math.sqrt(c)
+        return -kx * (dpdz0 + v.z) * self.rho * self.g  # kx [cm5 day g-1]-> [cm3 day-1] by multiplying rho*g
 
     @staticmethod
     def bc_dirichlet(Q, b, n0, d):
