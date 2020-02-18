@@ -30,24 +30,15 @@ def head2pa(h_, pnref = 1.e5, g = 9.81):
 #
 class Parameters:
 
-    def __init__(self, R, S, alpha, n, m, Ksat):
-        self.theta_R = R
-        self.theta_S = S
-        self.alpha = alpha  # [1/cm]
-        self.n = n
-        self.m = m
-        self.Ksat = Ksat
-
-    def __init__(self, R, S, alpha, n, Ksat):
-        self.theta_R = R
-        self.theta_S = S
-        self.alpha = alpha  # [1/cm]
-        self.n = n
-        self.m = 1. - 1. / n
-        self.Ksat = Ksat
+    def __init__(self, p):
+        self.theta_R = p[0]
+        self.theta_S = p[1]
+        self.alpha = p[2]  # [1/cm]
+        self.n = p[3]
+        self.m = 1. - 1. / self.n
+        self.Ksat = p[4]
 
 
-#
 # returns the volumetric water content at a given pressure head  according to the van genuchten model (Eqn 21)
 #
 def water_content(h, sp):

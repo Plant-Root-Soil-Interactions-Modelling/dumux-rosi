@@ -561,7 +561,8 @@ public:
     }
 
     /**
-     *TODO
+     * Picks a cell and returns its global element cell index @see pickCell
+     * Care x,y,z [cm]!
      */
     virtual int pick(double x, double y, double z) {
         return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m

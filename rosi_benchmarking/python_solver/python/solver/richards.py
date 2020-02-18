@@ -116,11 +116,11 @@ class RichardsWrapper(SolverWrapper):
             t = 2
         elif type_top == "atmospheric":
             t = 4
-        elif type_top == "noflux":
+        elif type_top == "noflux" or type_top == "noFlux" or type_top == "no-flux":
             t = 2
             assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
         else:
-            raise Exception('Top type should be "constantPressure", "constantFlux", or "atmospheric", unknown top type {}'.format(type_top))
+            raise Exception('Top type should be "constantPressure", "constantFlux", "noFlux", or "atmospheric", unknown top type {}'.format(type_top))
 
         self.setParameter(self.param_group + "BC.Top.Type", str(t))
         self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
@@ -149,11 +149,11 @@ class RichardsWrapper(SolverWrapper):
             b = 2
         elif type_bot == "freeDrainage":
             b = 5
-        elif type_bot == "noflux":
+        elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
             b = 2
             assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
         else:
-            raise Exception('Bottom type should be "constantPressure", "constantFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
+            raise Exception('Bottom type should be "constantPressure", "constantFlux", "noFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
 
         self.setParameter(self.param_group + "BC.Bot.Type", str(b))
         self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
@@ -164,6 +164,12 @@ class RichardsWrapper(SolverWrapper):
         for key, value in source_map.items():
             source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
         self.base.setSource(source_map)
+
+    def getSolutionHead(self):
+        """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
+        model dependent units, [Pa, ...]"""
+        self.checkInitialized()
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolutionHead(), root = 0)))
 
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (dof, 1) [1]"""

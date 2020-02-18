@@ -15,45 +15,25 @@ Benchmark M3.2 Root system: steady state small root system solved with the Pytho
 """
 
 """ Parameters """
-L = 50  # length of single straight root [cm]
-a = 0.2  # radius [cm] <--------------------------------------------------------- ???
 kz = 4.32e-2  # [cm^3/day]
 kr = 1.728e-4  # [1/day]
 p_s = -200  # static soil pressure [cm]
 p0 = -500  # dircichlet bc at top
 simtime = 14  # [day] for task b
 
-""" Read and convert rsml"""
-polylines, props, funcs = rsml.read_rsml("../grids/RootSystem.rsml")
-nodes, segs = rsml.get_segments(polylines, props)
-radii, seg_ct, types = rsml.get_parameter(polylines, funcs, props)
-nodes = np.array(nodes)  # for slicing in the plots
-nodes2 = []  # Conversions...
-for n in nodes:
-    nodes2.append(pb.Vector3d(n[0] / 10., n[1] / 10., n[2] / 10.))  # [mm] -> [cm], and convert to a list of Vetor3d
-segs2 = []
-nodeCTs = np.zeros((len(nodes), 1))  # we need node creation times
-for i, s in enumerate(segs):
-    nodeCTs[s[1]] = seg_ct[i]
-    segs2.append(pb.Vector2i(int(s[0]), int(s[1])))
-radii = np.array(radii) / 10.  # [mm]->[cm]
-types = np.array(types, dtype = np.int64) - 1  # index must start with 0
-
-rs = pb.MappedSegments(nodes2, nodeCTs, segs2, radii, types)
-
-fig, (ax1, ax2) = plt.subplots(1, 2)
+""" root problem """
+r = XylemFluxPython("../grids/RootSystem.rsml")
+r.setKr([kr])
+r.setKx([kz])
+nodes = r.get_nodes()
 
 """ Numerical solution (a) """
 
-r = XylemFluxPython(rs)
-r.setKr([kr])
-r.setKx([kz])
+fig, (ax1, ax2) = plt.subplots(1, 2)
 
-rx_hom = r.solve(0., p0 - p_s, False)
+rx_hom = r.solve_dirichlet(0., p0, p_s)
 rx = r.getSolution(rx_hom, [p_s])
-
-flux = r.collar_flux(0., rx, [p_s])
-print("Transpiration", flux, "cm3/day")
+print("Transpiration", r.collar_flux(0., rx, [p_s]), "cm3/day")
 
 ax1.plot(rx, nodes[:, 2] , "r*")
 ax1.set_xlabel("Xylem pressure (cm)")
@@ -72,11 +52,9 @@ kx0 = np.array([[0, 6.74e-02], [2, 7.48e-02], [4, 8.30e-02], [6, 9.21e-02], [8, 
 kx1 = np.array([[0, 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03], [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03], [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
 r.setKxTables([kx0[:, 1], kx1[:, 1], kx1[:, 1], kx1[:, 1]], [kx0[:, 0], kx1[:, 0], kx1[:, 0], kx1[:, 0]])
 
-rx_hom = r.solve(simtime, p0 - p_s, False)
+rx_hom = r.solve_dirichlet(simtime, p0, p_s)
 rx = r.getSolution(rx_hom, [p_s])
-
-flux = r.collar_flux(simtime, rx, [p_s])
-print("Transpiration", flux, "cm3/day")
+print("Transpiration", r.collar_flux(simtime, rx, [p_s]), "cm3/day")
 
 ax2.plot(rx, nodes[:, 2] , "r*")
 ax2.set_xlabel("Xylem pressure (cm)")

@@ -130,6 +130,10 @@ class SolverWrapper():
         """ Picks a cell and returns its global element cell index """
         return self.base.pickCell(np.array(pos) / 100.)  # cm -> m
 
+    def pick(self, x, y, z):
+        """ Picks a cell and returns its global element cell index """
+        return self.base.pick(x, y, z)
+
     def __str__(self):
         """ Solver representation as string """
         return str(self.base)

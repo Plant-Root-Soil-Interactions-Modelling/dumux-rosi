@@ -5,60 +5,86 @@ import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg as LA
 
-from solver.plantbox import MappedRootSystem
+import solver.plantbox as pb
 from solver.plantbox import XylemFlux
 import solver.rsml_reader as rsml  # todo
-from duplicity.backends import sxbackend
 
 
 class XylemFluxPython(XylemFlux):
     """  Hybrid flux solver (following Meunier et al)"""
 
     def __init__(self, rs):
-        super().__init__(rs)
+        """ @param rs is either a pb.MappedRootSystem or a string of a .rsml filename"""
+        if isinstance(rs, str):
+            rs = self.read_rsml(rs)
+            super().__init__(rs)
+        else:
+            super().__init__(rs)
 
-    def solve(self, sim_time, value, neumann) :
-        """ solves the flux equations, with neumann or dirichlet boundary condtion,
-            @param sim_time [day] simulation time to evaluate age dependent conductivities
-            @param value    [cm3 day-1] or [cm] pressure head
-            @parm neumann   Neumann or Dirichlet
+    def solve_neumann(self, sim_time :float, value :float) :
+        """ solves the flux equations, with a neumann boundary condtion,
+            @param sim_time [day]      simulation time to evaluate age dependent conductivities
+            @param value [cm3 day-1]   tranpirational flux is negative 
          """
-        start = timeit.default_timer()
-
+        # start = timeit.default_timer()
 #         I, J, V, b = self.linear_system(sim_time)  # Python (care no age or type dependencies!)
 #         self.aB = b
 #         Q = sparse.coo_matrix((V, (I, J)))
-
         self.linearSystem(sim_time)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
-
         Q = sparse.csr_matrix(Q)
-
-        if neumann:
-            Q, b = self.bc_neumann(Q, self.aB, [0], [value ])  # / (rs.rho * rs.g)
-        else:
-            Q, b = self.bc_dirichlet(Q, self.aB, [0], [value])
-
+        Q, b = self.bc_neumann(Q, self.aB, [0], [value / (self.rho * self.g)])  # cm3 day-1 -> something crazy (?)
         x = LA.spsolve(Q, b, use_umfpack = True)  # direct
-
-        print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
+        # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
 
-    def solve_wp(self, sim_time, trans, sx, wiltingPoint = -15000):
-        """ solves the flux equations using neumann and switching to dirichlet in case, 
-            (todo assembling once should be enough) 
+    def solve_dirichlet(self, sim_time :float, value :float, sx :float) :
+        """ solves the flux equations, with a dirichlet boundary condtion,
+            @param sim_time [day]     simulation time to evaluate age dependent conductivities
+            @param value [cm]         root collar pressure head 
+            @param sx [cm]            soil pressure head around root collar segment 
+         """
+        self.linearSystem(sim_time)  # C++
+        Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
+        Q = sparse.csr_matrix(Q)
+        Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value) - float(sx)])
+        x = LA.spsolve(Q, b, use_umfpack = True)
+        return x
+
+    def solve(self, sim_time :float, value :float, sx :float, wilting_point :float = -15000):
+        """ solves the flux equations using neumann and switching to dirichlet 
+            in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
             @param trans            [cm day-1] transpiration rate
-            @param sx               [cm] soil solution at root collar 
+            @param sx               [cm] soil pressure at the root collar 
             @parm wiltingPoint      [cm] pressure head            
         """
-        try:
-            x = solve(sim_time, trans, True)
-        except:
-            x = [-15001 - sx]
+        eps = 1.e-6
+        x = [wilting_point - sx - 1]
 
-        if x[0] + sx < -15000:
-            x = solve(sim_time, wiltingPoint, False)
+        if sx >= wilting_point - eps:
+
+            x = self.solve_neumann(sim_time, value)
+
+            if x[0] + sx < wilting_point - eps:
+#                 print()
+#                 print("solve_wp switched to Dirichlet, pressure at collar", float(x[0]) + sx)
+#                 print()
+                Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
+                Q = sparse.csr_matrix(Q)
+                Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point) - float(sx)])
+                try:
+                    x = LA.spsolve(Q, b, use_umfpack = True)
+                except:
+                    print("Exeption solving Dirichlet")
+                    print("Dirichlet at ", value - sx, "cm")
+                    print("b", b)
+                    raise
+        else:
+            print()
+            print("solve_wp used Dirichlet because soil pressure is below wilting point", float(x[0]) + sx)
+            print()
+            solve_dirichlet(self, sim_time, wilting_point, sx)
 
         return x
 
@@ -85,6 +111,29 @@ class XylemFluxPython(XylemFlux):
         # dpdz = d[0] *sqrt(c)*exp(sqrt(c)*(-L)) + d[1] * (-sqrt(c)*exp(-sqrt(c)*(-L))) # dp/dz
         dpdz0 = d[0] * math.sqrt(c) - d[1] * math.sqrt(c)
         return -kx * (dpdz0 + v.z) * self.rho * self.g  # kx [cm5 day g-1]-> [cm3 day-1] by multiplying rho*g
+
+    def get_nodes(self):
+        """ converts the list of Vector3d to a 2D numpy array """
+        return np.array(list(map(lambda x: np.array(x), self.rs.nodes)))
+
+    @staticmethod
+    def read_rsml(file_name :str):
+        """ Reads and converts rsml to expected types and units"""
+        polylines, props, funcs = rsml.read_rsml(file_name)
+        nodes, segs = rsml.get_segments(polylines, props)
+        radii, seg_ct, types = rsml.get_parameter(polylines, funcs, props)
+        nodes = np.array(nodes)  # for slicing in the plots
+        nodes2 = []  # Conversions...
+        for n in nodes:
+            nodes2.append(pb.Vector3d(n[0] / 10., n[1] / 10., n[2] / 10.))  # [mm] -> [cm], and convert to a list of Vetor3d
+        segs2 = []
+        nodeCTs = np.zeros((len(nodes), 1))  # we need node creation times
+        for i, s in enumerate(segs):
+            nodeCTs[s[1]] = seg_ct[i]
+            segs2.append(pb.Vector2i(int(s[0]), int(s[1])))
+        radii = np.array(radii) / 10.  # [mm]->[cm]
+        types = np.array(types, dtype = np.int64) - 1  # index must start with 0
+        return pb.MappedSegments(nodes2, nodeCTs, segs2, radii, types)  # root system grid
 
     @staticmethod
     def bc_dirichlet(Q, b, n0, d):

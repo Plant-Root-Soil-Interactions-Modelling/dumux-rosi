@@ -72,10 +72,21 @@ public:
         this->problem->setSource(&ls); // why a pointer? todo
     }
 
-    /*
-     * TODO setInitialConditions, std::map<int, double> ic,  setLayers(std::map<int, int> l)
+    /**
+     * Returns the current solution for a single mpi process in cm pressure head. @see SolverBase::getSolution
+     * Gathering and mapping is done in Python TODO pass equ id, return vector<double>
      */
+    virtual std::vector<double> getSolutionHead(int eqIdx = 0) {
+        std::vector<double> sol = this->getSolution(eqIdx);
+        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::plus<double>(), -1.e5));
+        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / 1.e3 / 9.81));
+        return sol;
+    }
 
+    /*
+     * TODO setInitialConditions, std::map<int, double> ic,
+     * TODO setLayers(std::map<int, int> l)
+     */
 
     /**
      * Returns the current solution for a single mpi process.
@@ -159,6 +170,7 @@ void init_richardssp(py::module &m, std::string name) {
 	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
    .def("setSource", &RichardsSP::setSource)
+   .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsSP::getWaterContent)
    .def("getWaterVolume",&RichardsSP::getWaterVolume)
    .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK);

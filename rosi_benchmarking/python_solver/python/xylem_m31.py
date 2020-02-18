@@ -57,13 +57,13 @@ r = XylemFluxPython(rs)
 r.setKr([kr0])
 r.setKx([kz0])
 
-rx_hom = r.solve(0., p0 - p_s, False)
+rx_hom = r.solve_dirichlet(0., p0, p_s)
 rx = r.getSolution(rx_hom, [p_s])
 flux = r.collar_flux(0., rx, [p_s])
 print("Transpiration", flux, "cm3/day")
 plt.plot(rx, z_, "r*")
 
-rx_hom = r.solve(0., -2 / (r.rho * r.g), True)
+rx_hom = r.solve_neumann(0., -2.)
 rx = r.getSolution(rx_hom, [p_s])
 
 flux = r.collar_flux(0., rx, [p_s])
@@ -72,5 +72,5 @@ plt.plot(rx, z_, "g*")
 
 plt.xlabel("Xylem pressure (cm)")
 plt.ylabel("Depth (m)")
-plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm3 day"])
+plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm$^3$ day$^{-1}$"])
 plt.show()
