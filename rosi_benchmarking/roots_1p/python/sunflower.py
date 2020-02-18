@@ -4,7 +4,7 @@ from vtk_tools import *
 from math import *
 import van_genuchten as vg
 
-name = "sunflower_154days_HLCT"  # this name should be unique
+name = "sunflower_154days"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -26,4 +26,5 @@ h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
+plt.savefig("results_" + name + ".pdf")
 plt.show()

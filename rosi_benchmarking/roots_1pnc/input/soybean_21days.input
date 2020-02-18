@@ -2,9 +2,9 @@
 Name = soybean_21days
 
 [TimeLoop]
-TEnd = 864000 # 7 days [s]
-DtInitial = 7200 # [s]
-PeriodicCheckTimes = 86400
+TEnd = 604800 # 7 days [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 7200
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
@@ -41,7 +41,7 @@ CSVFile = input/soybean_transpiration_2003.csv # kg/day
 Sinusoidal = True
 
 [Soil.IC]
-P = -400
+P = -300
 
 [Component]
 liquidDiffCoeff = 1.2e-9
@@ -49,12 +49,15 @@ MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
-CritCollarP = -10000
-CritCollarPAlpha = -1000
-CritTipP = 0
-ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
-ProductionAge = 5
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -5500 # for alpha
+CritTipP = -4500 # when production starts
+ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 100 # [day]
 ProductionGrowth = "true"
+Decay = 0.693 # [day-1]
+b = 1.e8 # [cm] pressure head
+c = 200 # [1] 
 
 [Vtk]
 AddProcessRank = "false"

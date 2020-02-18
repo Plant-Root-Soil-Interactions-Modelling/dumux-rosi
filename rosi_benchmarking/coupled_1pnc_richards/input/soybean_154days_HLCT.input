@@ -5,21 +5,29 @@ SoilName = ../soil_richards/input/soybean_HLCT.input
 
 [TimeLoop]
 TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
-DtInitial = 7200 # [s]
+DtInitial = 360 # [s]
 PeriodicCheckTimes = 21600
-MaxTimeStepSize = 7200
+MaxTimeStepSize = 3600
+
+[Soil.Grid]
+Cells = 18 3 75 # 37*5*150
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1
 
 [Soil.IC]
-P = -400
+P = -300
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
-CritCollarP = -10000
-CritCollarPAlpha = -5500
-CritTipP = -1000 #-4500
-ProductionRate = 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
-ProductionAge = 1
-
-[RootSystem.Collar]
-Transpiration = 2e-2 # 2.36478e-07 # kg/day 
-Sinusoidal = True
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -5500 # for alpha
+CritTipP = -4500 # when production starts
+ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 100 # [day]
+Decay = 0.693 # [day-1]
+b = 1.e8 # [cm] pressure head
+c = 200 # [1] s
