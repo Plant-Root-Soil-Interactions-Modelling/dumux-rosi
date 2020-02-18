@@ -1,167 +1,62 @@
-"""analysis of results using signed distance functions"""
-import sys
-from cmath import pi
-sys.path.append("../../..")
-import plantbox as pb
-import numpy as np
+''' Run sunflower periodic '''
+
+import os
 import matplotlib.pyplot as plt
+from vtk_tools import *
+import van_genuchten as vg
+import math
 
-path = "../modelparameter/rootsystem/"
-name = "Heliantus_Pagès_2013"  # ""
+name = "sunflower_7days_HLCT"  # this name should be unique
 
-rs = pb.RootSystem()
-rs.readParameters(path + name + ".xml")
+# go to the right place
+path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(path)
+os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
-# Create and set geometry
-rs.setMinDx(1.e-3)
-x0 = pb.Vector3d(0., 0., -1.)
-nx = pb.Vector3d(1., 0., -1.)
-ny = pb.Vector3d(0., 1., -1.)
-soil_layer = pb.SDF_HalfPlane(x0, nx, ny)  # there was bug, with updated CPlantBox
-rs.setGeometry(soil_layer)
+# run simulation
+os.system("./coupled_periodic input/" + name + ".input")
 
-rs.setSeed(0)
-rs.initialize()
+# move results to folder 'name'
+if not os.path.exists("results_" + name):
+    os.mkdir("results_" + name)
+os.system("mv " + name + "* " + "results_" + name + "/")
+os.system("cp input/" + name + ".input " + "results_" + name + "/")
 
-rs.simulate(7, True)
-rs.write("results/sunflower_7days.vtp")
-ana = pb.SegmentAnalyser(rs)
-aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-for s in aseg:
-    # print("Shoot segment", s)
-    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_7days.dgf")
+# 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
+# 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
+with open("results_" + name + "/" + name + "_actual_transpiration.txt", 'r') as f:  # benchmarkC12c_actual_transpiration. or benchmarkC12bc_actual_transpiration
+    d = np.loadtxt(f, delimiter = ',')
 
-l = np.array(ana.getParameter("length"))
-print("Min ", np.min(l))
+print()
+c = 24 * 3600  #  [kg/s] -> [kg/per day]
+print("potential", d[-1, 2] * c)
+print("actual", d[-1, 1] * c)
+print("actual", d[-1, 5] / 1000)  # Strange behaviour of simplistically calculated radial flows
 
-rs.simulate(7, True)
-rs.write("results/sunflower_14days.vtp")
-ana = pb.SegmentAnalyser(rs)
-aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-for s in aseg:
-    # print("Shoot segment", s)
-    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_14days.dgf")
+# Plot collar transpiration & pressure
+fig, ax1 = plt.subplots()
 
-l = np.array(ana.getParameter("length"))
-print("Min ", np.min(l))
+c = 1000 * 24 * 3600  #  [kg/s] -> [cm3/per day]
+t = d[:, 0] / (24 * 3600)  # [s] -> [day]
 
-rs.simulate(7, True)
-rs.write("results/sunflower_21days.vtp")
-ana = pb.SegmentAnalyser(rs)
-aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-for s in aseg:
-    # print("Shoot segment", s)
-    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_21days.dgf")
+# 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
+ax1.plot(t, d[:, 2] * c, 'k')  # potential transpiration
+ax1.plot(t, d[:, 1] * c, 'g')  # actual transpiration (neumann)
 
-l = np.array(ana.getParameter("length"))
-print("Min length", np.min(l))
-a = np.array(ana.getParameter("radius"))
-print("Min radius", np.min(a))
+ax2 = ax1.twinx()
+ctrans = np.cumsum(np.multiply(d[1:, 1] * c, (t[1:] - t[:-1])))
+ax2.plot(t[1:], ctrans, 'c--')  # cumulative transpiration (neumann)
 
-rs.simulate(9)
-rs.write("results/sunflower_30days.vtp")
-ana = pb.SegmentAnalyser(rs)
-aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-for s in aseg:
-    print("Shoot segment", s)
-    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_30days.dgf")
+ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
+ax1.set_xlabel("Time $[d]$")
+ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
+ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
+plt.savefig("results_" + name + ".pdf")
+plt.show()
 
-l = np.array(ana.getParameter("length"))
-print("Min length", np.min(l))
-a = np.array(ana.getParameter("radius"))
-print("Min radius", np.min(a))
-
-rs.simulate(60)
-rs.write("results/sunflower_90days.vtp")
-ana = pb.SegmentAnalyser(rs)
-aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-for s in aseg:
-    print("Shoot segment", s)
-    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_90days.dgf")
-
-l = np.array(ana.getParameter("length"))
-print("Min length", np.min(l))
-a = np.array(ana.getParameter("radius"))
-print("Min radius", np.min(a))
-
-# ana = pb.SegmentAnalyser(rs)
-# aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-# for s in aseg:
-#    print("Shoot segment", s)
-#    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-
-# ana.write("results/sunflower_90days.dgf")
-
-# Make a root length distribution
-# ana = pb.SegmentAnalyser(rs)
-# ana.cropDomain(50, 33, depth)
-# layerVolume = depth / layers * 50 * 33
-# rl0_ = ana.distribution("length", 0., -depth, layers, True)
-# plt.plot(np.array(rl0_) / layerVolume, z_, label = '90 days')
-# plt.xlabel('RLD (cm/cm^3)')  # layer size is 1 cm
-# plt.ylabel('Depth (cm)')
-# plt.legend(["90 days"])
-
-# 2. creates a square 50*33 cm containter with height 150 cm
-# rhizotron = pb.SDF_PlantBox(50, 33, 150)
-# rs.setGeometry(rhizotron)
-
-# rs.setSeed(0)
-# rs.initialize()
-# rs.simulate(30)
-# rs.write("results/sunflower_30days.vtp")
-
-# ana = pb.SegmentAnalyser(rs)
-# aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-# for s in aseg:
-#    print("Shoot segment", s)
-#    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-
-# ana.write("results/sunflower_30days.dgf")
-
-# Make a root length distribution
-# ana = pb.SegmentAnalyser(rs)
-# ana.cropDomain(50, 33, depth)
-# layerVolume = depth / layers * 50 * 33
-# rl0_ = ana.distribution("length", 0., -depth, layers, True)
-# plt.plot(np.array(rl0_) / layerVolume, z_, label = '30 days')
-# plt.xlabel('RLD (cm/cm^3)')  # layer size is 1 cm
-# plt.ylabel('Depth (cm)')
-# plt.legend(["30 days"])
-
-# 3. creates a square 50*33 cm containter with height 150 cm
-# rhizotron = pb.SDF_PlantBox(50, 33, 150)
-# rs.setGeometry(rhizotron)
-
-# rs.setSeed(0)
-# rs.initialize()
-# rs.simulate(7)
-# rs.write("results/sunflower_7days.vtp")
-
-# ana = pb.SegmentAnalyser(rs)
-# aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
-# for s in aseg:
-#    print("Shoot segment", s)
-#    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-
-# ana.write("results/sunflower_7days.dgf")
-
-# Make a root length distribution
-# ana = pb.SegmentAnalyser(rs)
-# ana.cropDomain(50, 33, depth)
-# layerVolume = depth / layers * 50 * 33
-# rl0_ = ana.distribution("length", 0., -depth, layers, True)
-# plt.plot(np.array(rl0_) / layerVolume, z_, label = '7 days')
-# plt.xlabel('RLD (cm/cm^3)')  # layer size is 1 cm
-# plt.ylabel('Depth (cm)')
-# plt.legend(["7 days"])
-
-# fig.subplots_adjust()
-# plt.legend()
-# plt.savefig("results/sunflower_RLD_comparsion.pdf")
-# plt.show()
+# trans = interpolate.interp1d(t, d[:, 1] * c)
+# print(t.shape)
+# ctrans = np.zeros(t.shape)
+# ctrans[0] = 0
+# for i, t_ in enumerate(t[1:]):
+#     ctrans[i] = integrate.quad(trans, 0, t_)[0]
