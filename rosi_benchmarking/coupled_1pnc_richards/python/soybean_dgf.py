@@ -6,8 +6,8 @@ import plantbox as pb
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = "../modelparameter/rootsystem/"
-name = "Heliantus_Pagès_2013"  # ""
+path = "../../../modelparameter/rootsystem/"
+name = "Glycine_max"  # ""
 
 rs = pb.RootSystem()
 rs.readParameters(path + name + ".xml")
@@ -24,37 +24,37 @@ rs.setSeed(0)
 rs.initialize()
 
 rs.simulate(7, True)
-rs.write("results/sunflower_7days.vtp")
+rs.write("results/Glycine_max_7days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_7days.dgf")
+ana.write("results/Glycine_max_7days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min ", np.min(l))
 
 rs.simulate(7, True)
-rs.write("results/sunflower_14days.vtp")
+rs.write("results/Glycine_max_14days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_14days.dgf")
+ana.write("results/Glycine_max_14days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min ", np.min(l))
 
 rs.simulate(7, True)
-rs.write("results/sunflower_21days.vtp")
+rs.write("results/Glycine_max_21days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_21days.dgf")
+ana.write("results/Glycine_max_21days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min length", np.min(l))
@@ -62,13 +62,13 @@ a = np.array(ana.getParameter("radius"))
 print("Min radius", np.min(a))
 
 rs.simulate(9)
-rs.write("results/sunflower_30days.vtp")
+rs.write("results/Glycine_max_30days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_30days.dgf")
+ana.write("results/Glycine_max_30days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min length", np.min(l))
@@ -76,13 +76,13 @@ a = np.array(ana.getParameter("radius"))
 print("Min radius", np.min(a))
 
 rs.simulate(15)
-rs.write("results/sunflower_45days.vtp")
+rs.write("results/Glycine_max_45days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_45days.dgf")
+ana.write("results/Glycine_max_45days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min length", np.min(l))
@@ -90,13 +90,13 @@ a = np.array(ana.getParameter("radius"))
 print("Min radius", np.min(a))
 
 rs.simulate(15)
-rs.write("results/sunflower_60days.vtp")
+rs.write("results/Glycine_max_60days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_60days.dgf")
+ana.write("results/Glycine_max_60days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min length", np.min(l))
@@ -104,13 +104,13 @@ a = np.array(ana.getParameter("radius"))
 print("Min radius", np.min(a))
 
 rs.simulate(30)
-rs.write("results/sunflower_90days.vtp")
+rs.write("results/Glycine_max_90days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_90days.dgf")
+ana.write("results/Glycine_max_90days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min length", np.min(l))
@@ -118,13 +118,13 @@ a = np.array(ana.getParameter("radius"))
 print("Min radius", np.min(a))
 
 rs.simulate(64)
-rs.write("results/sunflower_154days.vtp")
+rs.write("results/Glycine_max_154days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
-ana.write("results/sunflower_154days.dgf")
+ana.write("results/Glycine_max_154days.dgf")
 
 l = np.array(ana.getParameter("length"))
 print("Min length", np.min(l))

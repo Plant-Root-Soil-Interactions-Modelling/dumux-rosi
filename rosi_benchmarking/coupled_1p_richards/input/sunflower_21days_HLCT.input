@@ -14,7 +14,7 @@ Periodic = true true false
 Overlap = 1 
 
 [Soil.IC]
-P = -300
+P = -10000
 
 [Problem]
 Name = sunflower_21days_HLCT

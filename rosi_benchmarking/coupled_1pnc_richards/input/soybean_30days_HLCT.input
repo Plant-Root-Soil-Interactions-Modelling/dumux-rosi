@@ -19,7 +19,7 @@ Periodic = true true false
 Overlap = 1
 
 [Soil.IC]
-P = -300
+P = -10000
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation

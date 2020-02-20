@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from vtk_tools import *
 from math import *
 
-name = "soybean_7days"  # this name should be unique
+name = "soybean_154days"  # this name should be unique
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -33,21 +33,21 @@ fig, [ax1, ax2, ax3] = plt.subplots(1, 3)
 
 ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
 ax1.tick_params(axis = 'y', labelcolor = "r")
-ax1.set_ylabel("leaf mass rate (g/day)", color = "r")
+ax1.set_ylabel("leaves (g/day)", color = "r")
 ax1b = ax1.twinx()
 ax1b.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
 ax1b.tick_params(axis = 'y', labelcolor = "b")
-ax1b.set_ylabel("root system production rate (g/day)", color = "b")
+ax1b.set_ylabel("root system (g/day)", color = "b")
 ax1.set_xlabel("time (days)")
 ax1.set_title("Hormone production rate")
 
 ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
 ax2.tick_params(axis = 'y', labelcolor = "r")
-ax2.set_ylabel("leaf mass (g)", color = "r")
+ax2.set_ylabel("leaves (g)", color = "r")
 ax2b = ax2.twinx()
 ax2b.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
 ax2b.tick_params(axis = 'y', labelcolor = "b")
-ax2b.set_ylabel("root system mass (g)", color = "b")
+ax2b.set_ylabel("root system (g)", color = "b")
 ax2.set_xlabel("time (days)")
 ax2.set_title("Hormone mass")
 
