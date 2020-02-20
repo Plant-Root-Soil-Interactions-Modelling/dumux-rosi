@@ -166,8 +166,11 @@ int main(int argc, char** argv) try
     // root grid geometry
     const auto& rootGridView = rootGrid->leafGridView();
     using FVGridGeometry = GetPropType<RootTypeTag, Properties::FVGridGeometry>;
-    auto rootGridGeometry = std::make_shared<FVGridGeometry>(rootGridView);
+    auto rootGridGeometry = std::make_shared<FVGridGeometry>(rootGridManager.grid().leafGridView());
+    const auto periodicConnectivity = rootGridManager.getGridData()->createPeriodicConnectivity(rootGridGeometry->elementMapper(), rootGridGeometry->vertexMapper());
+    rootGridGeometry->setExtraConnectivity(periodicConnectivity);
     rootGridGeometry->update();
+
 
     ////////////////////////////////////////////////////////////
     // run stationary or dynamic problem on this grid
