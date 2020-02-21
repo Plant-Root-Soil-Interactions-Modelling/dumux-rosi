@@ -10,7 +10,7 @@ PeriodicCheckTimes = 21600
 MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 18 3 75 # 37*5*150
+Cells = 18 3 125 # 37*5*250
 Periodic = true true false
 Overlap = 1 
 
