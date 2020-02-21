@@ -8,9 +8,9 @@ MaxTimeStepSize = 3600 # an hour [s]
 # CheckTimes = 17280 43200 
 
 [Soil.Grid]
-LowerLeft = 0.185 0.025 0.
-UpperRight = -0.185 -0.025 -1.50.
-Cells = 18 3 75 # 37*5*150
+LowerLeft = 0.185 0.03 0.
+UpperRight = -0.185 -0.03 -2.50.
+Cells = 18 3 125 # 37*5*250
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off

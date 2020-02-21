@@ -6,7 +6,7 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "sunflower_30days_HLCT"  # this name should be unique
+name = "sunflower_90days_HLCT"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
