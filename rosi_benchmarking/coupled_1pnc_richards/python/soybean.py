@@ -6,7 +6,7 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "soybean_154days_HLCT"  # this name should be unique
+name = "soybean_30days_HLCT"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -31,29 +31,34 @@ c = 24 * 3600  # s / day
 t = d[:, 0] / c  # [s] -> [day]
 
 """ Plot hormone rate and mass """
-fig, [ax1, ax2, ax3] = plt.subplots(1, 3)
+fig, ax1 = plt.subplots()
 
-ax1.plot(t, 1000 * d[:, 8] * c, "r")
+ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
 ax1.tick_params(axis = 'y', labelcolor = "r")
 ax1.set_ylabel("leaves (g/day)", color = "r")
 ax1b = ax1.twinx()
-ax1b.plot(t, 1000 * d[:, 10] * c, "b")
+ax1b.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
 ax1b.tick_params(axis = 'y', labelcolor = "b")
 ax1b.set_ylabel("root system (g/day)", color = "b")
 ax1.set_xlabel("time (days)")
 ax1.set_title("Hormone production rate")
+plt.savefig("results_" + name + "/" + name + '_productionrate.pdf', dpi=300)
 
-ax2.plot(t, 1000 * d[:, 7], "r")
+fig, ax2 = plt.subplots()
+
+ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
 ax2.tick_params(axis = 'y', labelcolor = "r")
 ax2.set_ylabel("leaves (g)", color = "r")
 ax2b = ax2.twinx()
-ax2b.plot(t, 1000 * d[:, 9], "b")
+ax2b.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
 ax2b.tick_params(axis = 'y', labelcolor = "b")
 ax2b.set_ylabel("root system (g)", color = "b")
 ax2.set_xlabel("time (days)")
 ax2.set_title("Hormone mass")
+plt.savefig("results_" + name + "/" + name + '_hormoneMass.pdf', dpi=300)
 
 """ Plot transpiration """
+fig, ax3 = plt.subplots()
 ax3.plot(t, 1000 * d[:, 2] * c, 'k')  # potential transpiration
 ax3.plot(t, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
 ax3b = ax3.twinx()
@@ -64,6 +69,13 @@ ax3.set_xlabel("time (days)")
 ax3.set_ylabel("transpiration (g/day)")
 ax3b.set_ylabel("Cumulative transpiration $[g]$", color = "b")
 ax3.legend(["potential", "actual", "cumulative"])
+plt.savefig("results_" + name + "/" + name + '_transpiration.pdf', dpi=300)
 
-plt.savefig("results_" + name + ".pdf")
+""" Plot root collar pressure """
+fig, ax4 = plt.subplots()
+ax4.plot(d[:, 0] / c, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root colalr pressure head (convert from Pa to Head)  
+ax4.set_xlabel("time (days)")
+ax4.set_ylabel("Pressure at root collar (cm)")
+plt.savefig("results_" + name + "/" + name + '_collarPressure.pdf', dpi=300)
+
 plt.show()
