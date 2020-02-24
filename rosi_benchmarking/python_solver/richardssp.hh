@@ -1,39 +1,12 @@
 #ifndef RICHARDS_SP_SOLVER_H_
 #define RICHARDS_SP_SOLVER_H_
 
-#include <config.h> // configuration file
-
-#include <dumux/discretization/cellcentered/tpfa/fvelementgeometry.hh> // free function scvs(...)
-
-// pick assembler and linear solver
-#include <dumux/linear/amgbackend.hh>
-#include <dumux/assembly/fvassembler.hh>
-
-// general most includes are in solverbase
+// most includes are in solverbase
 #include "solverbase.hh"
 
-#include "../soil_richards/richardsproblem.hh" // the problem class
+// writeDumuxVTK
+#include <dumux/io/vtkoutputmodule.hh>
 
-#define GRIDTYPE Dune::SPGrid<double,3>
-
-#include "../soil_richards/properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
-#include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types
-
-/*
- * Define the type tag for this problem (in propertiesYasp.hh)
- */
-using TypeTag = Dumux::Properties::TTag::RichardsCC; // RichardsCC, RichardsBox
-
-/*
- * The problem
- */
-using Problem = Dumux::RichardsProblem<TypeTag>;
-
-/*
- * Pick assembler and solver
- */
-using Assembler = Dumux::FVAssembler<TypeTag, Dumux::DiffMethod::numeric>;
-using LinearSolver = Dumux::AMGBackend<TypeTag>;
 
 /**
  * Adds solver functionality, that specifically makes sense for Richards equation
@@ -70,6 +43,25 @@ public:
             }
         }
         this->problem->setSource(&ls); // why a pointer? todo
+    }
+
+    /**
+     * TODO
+     * applies source (operator splitting)
+     * limits with wilting point from below, and with full saturation
+     */
+    virtual void applySource(std::map<int, double> init) {
+        if (isBox) {
+            throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
+        } else {
+            for (const auto& e : Dune::elements(gridGeometry->gridView())) {
+                int eIdx = gridGeometry->elementMapper().index(e);
+                int gIdx = cellIdx->index(e);
+                /* equations... */
+
+                x[eIdx] = init[gIdx];
+            }
+        }
     }
 
     /**
@@ -124,7 +116,7 @@ public:
     }
 
     /**
-     * Returns the total water volume [m3] in domain of the current solution
+     * Returns the total water volume [m3] within the domain
      */
     virtual double getWaterVolume()
     {

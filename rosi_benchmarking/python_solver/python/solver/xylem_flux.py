@@ -84,7 +84,7 @@ class XylemFluxPython(XylemFlux):
             print()
             print("solve_wp used Dirichlet because soil pressure is below wilting point", float(x[0]) + sx)
             print()
-            solve_dirichlet(self, sim_time, wilting_point, sx)
+            self.solve_dirichlet(sim_time, wilting_point, sx)
 
         return x
 

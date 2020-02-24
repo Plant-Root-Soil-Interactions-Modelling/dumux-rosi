@@ -67,6 +67,10 @@ class SolverWrapper():
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
 
+    def setInitialCondition(self, ic):
+        """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
+        self.base.setInitialCondition(ic)
+
     def solve(self, dt :float, maxDt = -1.):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
@@ -93,9 +97,12 @@ class SolverWrapper():
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getDofCoordinates(), root = 0))) * 100.  # m -> cm
 
-    # def getCells # TODO
+    def getCells(self):
+        """ the dune elements as list of list of vertex indices """
+        return self.base.getCells()
+
     # def getCellVolumes # TODO
-    # def quad, int or something
+    # def quad, int or something (over all domain)
 
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""

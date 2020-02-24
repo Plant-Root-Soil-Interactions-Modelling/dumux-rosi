@@ -1,5 +1,5 @@
-#ifndef SOLVERBASE_H_
-#define SOLVERBASE_H_
+#ifndef SOLVER_BASE_H_
+#define SOLVER_BASE_H_
 
 // initialize
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
@@ -57,7 +57,6 @@ template<class Problem, class Assembler, class LinearSolver>
 class SolverBase  {
 public:
 
-    std::string gridType = "SPGrid"; // <- for better description and warnings, e.g. YaspGrid, AluGrid, FoamGrid, SPGrid
     static const int dim = 3; // Problem::dimWorld;
     bool isBox = Problem::isBox; // numerical method
 
@@ -102,10 +101,6 @@ public:
         if (rank == 0) { // rank is the process number
             std::cout << "\n" << toString() << "\n" << std::flush; // add my story
             Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
-        } else {
-            if (gridType.compare("FoamGrid") == 0) {
-                throw std::invalid_argument("SolverBase::initialize: FoamGrid does not support parallel computation");
-            }
         }
         mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
 
@@ -243,6 +238,23 @@ public:
     }
 
     /**
+     * Sets the initial conditions, for a MPI process (TODO for more than 1 equation)
+     *
+     *  @param init         globally shared initial data, sorted by global index
+     */
+    virtual void setInitialCondition(std::vector<double> init) {
+        if (isBox) {
+            throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
+        } else {
+            for (const auto& e : Dune::elements(gridGeometry->gridView())) {
+                int eIdx = gridGeometry->elementMapper().index(e);
+                int gIdx = cellIdx->index(e);
+                x[eIdx] = init[gIdx];
+            }
+        }
+    }
+
+    /**
      * Simulates the problem for time span dt, with maximal time step maxDt.
      *
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
@@ -357,10 +369,11 @@ public:
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
             std::vector<int> cell;
-            //            gridGeometry->vertexMapper.
-            //            auto i0 = vMapper.subIndex(e, 0, 1);
-            //            auto i1 = vMapper.subIndex(e, 1, 1);
-
+            for (int i =0; i<2; i++) {
+                int j = gridGeometry->elementMapper().subIndex(e, i, 1);
+                cell.push_back(j);
+            }
+            cells.push_back(cell);
         }
         return cells;
     }
@@ -462,16 +475,20 @@ public:
      * TODO currently works only for CCTpfa
      */
     double getSolutionAt(int gIdx, int eqIdx = 0) {
-        double y = 0.;
-        if (localCellIdx.count(gIdx)>0) {
-            int eIdx = localCellIdx[gIdx];
-            if (eqIdx > 0) {
-                y = x[eIdx][eqIdx];
-            } else {
-                y= x[eIdx];
+        if (isBox) {
+            throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
+        } else {
+            double y = 0.;
+            if (localCellIdx.count(gIdx)>0) {
+                int eIdx = localCellIdx[gIdx];
+                if (eqIdx > 0) {
+                    y = x[eIdx][eqIdx];
+                } else {
+                    y= x[eIdx];
+                }
             }
+            return gridGeometry->gridView().comm().sum(y); // cunning as a weasel
         }
-        return gridGeometry->gridView().comm().sum(y); // cunning as a weasel
     }
 
     /**
@@ -573,7 +590,7 @@ public:
      */
     virtual std::string toString() {
         std::ostringstream msg;
-        msg << "DuMux Solver using " << gridType << " in " << dim << "D ";
+        msg << "DuMux Solver using in " << dim << "D ";
         if (isBox) {
             msg << "(box method)";
         } else {
@@ -655,12 +672,14 @@ void init_solverbase(py::module &m, std::string name) {
 	    .def("setParameter", &Solver::setParameter)
 	    .def("getParameter", &Solver::getParameter)
 	    .def("initializeProblem", &Solver::initializeProblem)
-	// simulation
+        .def("setInitialCondition", &Solver::setInitialCondition)
+	    // simulation
 	    .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
 	    .def("solveSteadyState", &Solver::solveSteadyState)
 	// post processing (vtk naming)
 	    .def("getPoints", &Solver::getPoints) //
 	    .def("getCellCenters", &Solver::getCellCenters)
+        .def("getCells", &Solver::getCells)
 	    .def("getDofCoordinates", &Solver::getDofCoordinates)
 	    .def("getPointIndices", &Solver::getPointIndices)
 	    .def("getCellIndices", &Solver::getCellIndices)

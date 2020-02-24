@@ -1,21 +1,25 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 
+from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
+import solver.plantbox as pb
+import solver.rsml_reader as rsml
 from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
-import matplotlib.pyplot as plt
+import van_genuchten as vg
+
+from math import *
 import numpy as np
-import time
+import matplotlib.pyplot as plt
+import timeit
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 """ 
-Root uptake with a sink term (Benchmark C11) with a 3D SPGrid but low resolution z (for speed), 
-
-everything scripted, no input file needed
+Benchmark M1.1 single root in in soil
 
 also works parallel with mpiexec (only slightly faster, due to overhead)
 """
@@ -32,13 +36,25 @@ def solve(soil, simtimes, q_r, N):
     q_r             root flux [cm/day]   
     N               spatial resolution
     """
+
     r_root = 0.02  # cm
     r_out = 0.6
 
     q_r = q_r * 1  # * 1 g/cm3 = g/cm2/day
     q_r = q_r * 2 * r_root * np.pi * 1.  # g/day
-    print("Qr as sink", q_r)
+    print("Qr as sink", q_r, "g day-1")
+    trans = q_r
 
+    """ Root problem"""
+    n1 = pb.Vector3d(0, 0, 0)
+    n2 = pb.Vector3d(0, 0, -1)
+    seg = pb.Vector2i(0, 1)
+    rs = pb.MappedSegments([n1, n2], [seg], [r_root])  # a single root
+    r = XylemFluxPython(rs)
+    r.setKr([1.e-7])
+    r.setKx([1.e-7])
+
+    """ Soil problem """
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
     s.setBotBC("noflux")
@@ -46,30 +62,41 @@ def solve(soil, simtimes, q_r, N):
     s.createGrid([-l, -l, -1.], [l, l, 0.], [N, N, 1])  # [cm]
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
-    idx_top = s.pickCell([0.0, 0.0, -.5])  # index for sink
 
-    sources = { idx_top:-q_r }  # gIdx: value [ g/day ]
-    s.setSource(sources)
+    """ Coupling (map indices) """
+    picker = lambda x, y, z : s.pick(x, y, z)
+    r.rs.setSoilGrid(picker)
+    cci = picker(0, 0, 0)  # collar cell index
 
+    """ Numerical solution """
+    start_time = timeit.default_timer()
     nsp = N  # number of sample points for output
     y_ = np.linspace(0, l, nsp)
     y_ = np.expand_dims(y_, 1)
     x_ = np.hstack((np.zeros((nsp, 1)), y_, np.zeros((nsp, 1))))
+    sx = s.getSolutionHead()  # inital condition, solverbase.py
 
     dt_ = np.diff(simtimes)
     s.ddt = 1.e-5  # initial Dumux time step [days]
 
+    rx_hom = r.solve_neumann(0., -trans)  # xylem_flux.py
+    # homogeneous solution is constant and indepent of soil
+
     for dt in dt_:
 
-        vol = s.getWaterVolume()  # don't move to output, needs all ranks
+        if rank == 0:  # Root part is not parallel
+            rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
+            fluxes = r.soilFluxes(0., rx_hom)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+            cflux = r.collar_flux(0., rx, sx)
+            # print("fluxes", fluxes, " = ", trans, "=", cflux, "g day-1")
+        else:
+            fluxes = None
+        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
 
-        if rank == 0:
-            print("***** external time step {:.3f} d, simulation time {:.3f} d, internal time step {:.3f} d Water volume {:.3f} cm3".
-                  format(dt, s.simTime, s.ddt, vol))
-
+        s.setSource(fluxes)  # g day-1, richards.py
         s.solve(dt)
 
-        x0 = s.toHead(s.getSolutionAt(idx_top))
+        x0 = s.toHead(s.getSolutionAt(cci))
         if x0 < -15000:
             if rank == 0:
                 print("Simulation time at -15000 cm > {:.3f} cm after {:.3f} days".format(float(x0), s.simTime))
@@ -90,7 +117,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(2, 3, figsize = (14, 14))
 
     if rank == 0:
-        t0 = time.time()
+        t0 = timeit.default_timer()
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
     for soil, qj, i, j in jobs:
@@ -103,6 +130,6 @@ if __name__ == "__main__":
             ax[i, j].title.set_text(soil[5] + ", q = {:.2f} cm/d".format(qj))
 
     if rank == 0:
-        print("Elapsed time: ", time.time() - t0, "s")
+        print("Elapsed time: ", timeit.default_timer() - t0, "s")
         plt.show()
 
