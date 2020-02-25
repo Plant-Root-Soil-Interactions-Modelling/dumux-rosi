@@ -90,7 +90,10 @@ public:
         initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
         // Output
         std::string filestr = this->name() + ".csv"; // output file
-        myfile_.open(filestr.c_str());
+        writeFile_ = getParam<bool>("Soil.Output.File", true);
+        if (writeFile_) {
+            myfile_.open(filestr.c_str());
+        }
         std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
             <<  bcBotType_ << ", " << bcBotValue_ << "\n" << std::flush;
     }
@@ -99,8 +102,10 @@ public:
      * \brief Eventually, closes output file
      */
     ~RichardsProblem() {
-        std::cout << "closing file \n";
-        myfile_.close();
+        if (writeFile_) {
+            std::cout << "closing file \n";
+            myfile_.close();
+        }
     }
 
     /*!
@@ -414,7 +419,9 @@ public:
      * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
      */
     void writeBoundaryFluxes() {
-        myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
+        if (writeFile_) {
+            myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
+        }
     }
 
     /**
@@ -476,6 +483,7 @@ private:
     Scalar time_ = 0.;
     Scalar dt_ = 0.;
 
+    bool writeFile_ = true;
     std::ofstream myfile_;
     Scalar bc_flux_upper = 0.;
     Scalar bc_flux_lower = 0.;
