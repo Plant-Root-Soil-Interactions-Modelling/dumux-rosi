@@ -20,6 +20,14 @@ public:
     virtual ~RichardsSP() { }
 
     /**
+     * Calls parent, additionally turns file output off
+     */
+    void initialize(std::vector<std::string> args) override {
+        SolverBase<Problem, Assembler, LinearSolver>::initialize(args);
+        this->setParameter("Soil.Output.File", "false");
+    }
+
+    /**
      * Sets the source term of the problem [kg/s].
      *
      * The source is given per cell (Dumux element),
@@ -42,24 +50,30 @@ public:
                 ls[eIdx] = 0.;
             }
         }
-        this->problem->setSource(&ls); // why a pointer? todo
+        this->problem->setSource(&ls); // why a raw pointer? todo
     }
 
     /**
-     * TODO
-     * applies source (operator splitting)
+     * Applies source term (operator splitting)
      * limits with wilting point from below, and with full saturation
      */
-    virtual void applySource(std::map<int, double> init) {
-        if (isBox) {
+    virtual void applySource(const std::vector<double>& rx, const std::map<int,std::vector<int>>& cell2seg) {
+
+        if (this->isBox) {
             throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
         } else {
-            for (const auto& e : Dune::elements(gridGeometry->gridView())) {
-                int eIdx = gridGeometry->elementMapper().index(e);
-                int gIdx = cellIdx->index(e);
+            auto theta = this->getWaterContent();
+            auto vol = this->getCellVolumes();
+            // , std::map<int, std::vector<int>> cell2seg
+            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
+                int eIdx = this->gridGeometry->elementMapper().index(e);
+                int gIdx = this->cellIdx->index(e);
+                // auto segs = cell2seg[gIdx];
+               //  for (au)
+
                 /* equations... */
 
-                x[eIdx] = init[gIdx];
+//                this->x[eIdx] = init[gIdx];
             }
         }
     }
@@ -83,36 +97,31 @@ public:
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
-     *
-     * TODO does this work for box ??? should i loop over vertices?
      */
     virtual std::vector<double> getWaterContent() {
         this->checkInitialized();
-        std::vector<double> s;
+        std::vector<double> theta;
         int n;
         if (this->isBox) {
             n = this->gridGeometry->gridView().size(this->dim);
         } else {
             n = this->gridGeometry->gridView().size(0);
         }
-        s.resize(n);
+        theta.reserve(n);
         for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
-
-            auto eIdx = this->gridGeometry->elementMapper().index(element);
-            s[eIdx] = 0;
+            double t = 0;
             auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
             fvGeometry.bindElement(element);
             auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
             elemVolVars.bindElement(element, fvGeometry, this->x);
-
             int c = 0;
             for (const auto& scv : scvs(fvGeometry)) {
                 c++;
-                s[eIdx] += elemVolVars[scv].waterContent();
+                t += elemVolVars[scv].waterContent();
             }
-            s[eIdx] /= c; // mean value
+            theta.push_back(t/c); // mean value
         }
-        return s;
+        return theta;
     }
 
     /**

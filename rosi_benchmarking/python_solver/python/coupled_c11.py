@@ -13,6 +13,7 @@ from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
+import cProfile
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD

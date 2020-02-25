@@ -83,25 +83,28 @@ class SolverWrapper():
         self.base.solveSteadyState()
 
     def getPoints(self):
-        """Gathers vertices into rank 0, and converts it into numpy array (dof, 3) [cm]"""
+        """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getPoints(), root = 0)), 1) * 100.  # m -> cm
 
     def getCellCenters(self):
-        """Gathers cell centers into rank 0, and converts it into numpy array (dof, 3) [cm]"""
+        """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
 
     def getDofCoordinates(self):
-        """Gathers dof coorinates into rank 0, and converts it into numpy array (dof, 3) [cm]"""
+        """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getDofCoordinates(), root = 0))) * 100.  # m -> cm
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getDofCoordinates(), root = 0)), 0) * 100.  # m -> cm
 
     def getCells(self):
-        """ the dune elements as list of list of vertex indices """
-        return self.base.getCells()
+        """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCells(), root = 0)), 2, np.int64)
 
-    # def getCellVolumes # TODO
+    def getCellVolumes(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m3 -> cm3
+
     # def quad, int or something (over all domain)
 
     def getDofIndices(self):
@@ -113,7 +116,7 @@ class SolverWrapper():
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(), root = 0)))
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(), root = 0)), 0)
 
     def getSolutionAt(self, gIdx):
         """Returns the current solution at a cell index"""
@@ -139,7 +142,7 @@ class SolverWrapper():
 
     def pick(self, x, y, z):
         """ Picks a cell and returns its global element cell index """
-        return self.base.pick(x, y, z)
+        return self.base.pick(x / 100., y / 100., z / 100.)  # cm -> m
 
     def __str__(self):
         """ Solver representation as string """
@@ -221,7 +224,7 @@ class SolverWrapper():
             writer.SetCompressorTypeToZLib()
             writer.Write()
 
-    def _map(self, x, type = 0):
+    def _map(self, x, type, dtype = np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
         @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
@@ -240,9 +243,9 @@ class SolverWrapper():
                 m = len(x[0])
             else:
                 m = 1
-            p = np.zeros((ndof, m))
+            p = np.zeros((ndof, m), dtype = dtype)
             for i in range(0, len(indices)):  #
-                p[indices[i], :] = np.array(x[i])
+                p[indices[i], :] = np.array(x[i], dtype = dtype)
             return p
         else:
             return 0

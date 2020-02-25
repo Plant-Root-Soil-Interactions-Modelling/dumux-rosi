@@ -166,15 +166,15 @@ class RichardsWrapper(SolverWrapper):
         self.base.setSource(source_map)
 
     def getSolutionHead(self):
-        """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
+        """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolutionHead(), root = 0)))
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolutionHead(), root = 0)), 0)
 
     def getWaterContent(self):
-        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (dof, 1) [1]"""
+        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getWaterContent(), root = 0)))
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getWaterContent(), root = 0)), 2)
 
     def getWaterVolume(self):
         """Returns total water volume of the domain [cm3]"""

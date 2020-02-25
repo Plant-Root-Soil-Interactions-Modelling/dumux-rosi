@@ -235,6 +235,12 @@ public:
             int gIdx = cellIdx->index(e);
             localCellIdx[gIdx] = eIdx;
         }
+        globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
+        for (const auto& v : Dune::vertices(gridGeometry->gridView())) {
+            int vIdx = gridGeometry->vertexMapper().index(v);
+            int gIdx = pointIdx->index(v);
+            globalPointIdx[vIdx] = gIdx;
+        }
     }
 
     /**
@@ -325,7 +331,6 @@ public:
         simTime = std::numeric_limits<double>::infinity();
     }
 
-
     /**
      * Returns the Dune vertices (vtk points) of the grid for a single mpi process.
      * Gathering and mapping is done in Python.
@@ -357,11 +362,9 @@ public:
     }
 
     /**
-     * Return the Dune element (vtk cell) of the grid as vertex indices.
-     * The number of indices are
-     * 2 for line, 4 for tetraeder, 8 for hexaedron (todo other relevant objects? add 2D?)
+     * The Dune elements (vtk cell) of the grid as global vertex indices
      *
-     * This is done for a single process, gathering and mapping is done in Python. TODO
+     * This is done for a single process, gathering and mapping is done in Python.
      */
     virtual std::vector<std::vector<int>> getCells() {
         checkInitialized();
@@ -369,13 +372,26 @@ public:
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
             std::vector<int> cell;
-            for (int i =0; i<2; i++) {
-                int j = gridGeometry->elementMapper().subIndex(e, i, 1);
-                cell.push_back(j);
+            for (int i =0; i<e.geometry().corners(); i++) {
+                int j = gridGeometry->vertexMapper().subIndex(e, i, 3);
+                cell.push_back(globalPointIdx[j]);
             }
             cells.push_back(cell);
         }
         return cells;
+    }
+
+    /**
+     * The volume [m3] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    virtual std::vector<double> getCellVolumes() {
+        std::vector<double> vols;
+        for (const auto& e : elements(gridGeometry->gridView())) {
+            vols.push_back(e.geometry().volume());
+        }
+        return vols;
     }
 
     /**
@@ -443,16 +459,16 @@ public:
 
     /**
      * Returns the current solution for a single mpi process.
-     * Gathering and mapping is done in Python TODO pass equ id, return vector<double>
+     * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getSolution(int eqIdx = 0) {
         checkInitialized();
         std::vector<double> sol;
         int n;
         if (isBox) {
-            n = gridGeometry->gridView().size(dim);
+            n = gridGeometry->gridView().size(dim); // number of vertices (on this process)
         } else {
-            n = gridGeometry->gridView().size(0);
+            n = gridGeometry->gridView().size(0); // number of cells (on this process)
         }
         // std::cout << "getSolution(): n " << n << ", " << x.size() << "\n" << std::flush;
         sol.resize(n);
@@ -549,7 +565,7 @@ public:
      */
     virtual int pickCell(VectorType pos) {
         checkInitialized();
-        if (periodic) {
+        if (periodic) { // TODO
             auto b = getGridBounds();
             for (int i = 0; i<2; i++) {
                 double minx = b[i];
@@ -559,7 +575,7 @@ public:
                     if (pos[i]>=0) {
                         pos[i] = (pos[i]/xx - (int)(pos[i]/xx))*xx;
                     } else {
-                        pos[i] = (pos[i]/xx + (int)((xx-pos[i])/xx))*xx;
+                        pos[i] = (pos[i]/xx + 1. +(int)((-pos[i])/xx))*xx;
                     }
                     pos[i] += minx;
                 }
@@ -579,10 +595,9 @@ public:
 
     /**
      * Picks a cell and returns its global element cell index @see pickCell
-     * Care x,y,z [cm]!
      */
     virtual int pick(double x, double y, double z) {
-        return pickCell(VectorType({x/100.,y/100.,z/100.})); // cm -> m
+        return pickCell(VectorType({x,y,z}));
     }
 
     /**
@@ -649,6 +664,7 @@ protected:
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx; // global index mappers
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx; // global index mappers
     std::map<int, int> localCellIdx; // global to local index mapper
+    std::vector<int> globalPointIdx; // local to global index mapper
 
     SolutionVector x;
 
@@ -680,7 +696,8 @@ void init_solverbase(py::module &m, std::string name) {
 	    .def("getPoints", &Solver::getPoints) //
 	    .def("getCellCenters", &Solver::getCellCenters)
         .def("getCells", &Solver::getCells)
-	    .def("getDofCoordinates", &Solver::getDofCoordinates)
+        .def("getCellVolumes", &Solver::getCellVolumes)
+        .def("getDofCoordinates", &Solver::getDofCoordinates)
 	    .def("getPointIndices", &Solver::getPointIndices)
 	    .def("getCellIndices", &Solver::getCellIndices)
 	    .def("getDofIndices", &Solver::getDofIndices)
