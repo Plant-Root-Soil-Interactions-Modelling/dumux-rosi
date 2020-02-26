@@ -20,7 +20,7 @@ ny = pb.Vector3d(0., 1., -1.)
 soil_layer = pb.SDF_HalfPlane(x0, nx, ny)  # there was bug, with updated CPlantBox
 rs.setGeometry(soil_layer)
 
-rs.setSeed(0)
+rs.setSeed(3)
 rs.initialize()
 
 rs.simulate(7, True)
@@ -48,7 +48,7 @@ l = np.array(ana.getParameter("length"))
 print("Min ", np.min(l))
 
 rs.simulate(7, True)
-rs.write("results/sunflower_21days.vtp")
+rs.write("results/sunflower_21days_2.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:

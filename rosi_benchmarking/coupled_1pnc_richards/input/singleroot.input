@@ -1,16 +1,16 @@
 [Problem]
 Name = singleroot
-RootName = ../roots_1pnc/input/singleroot.input # anagallis_stomata.input  # 
-SoilName = ../soil_richards/input/singleroot_domain.input # sunflower_HLCT
+RootName = ../roots_1pnc/input/singleroot.input 
+SoilName = ../soil_richards/input/singleroot_domain.input
 
 [TimeLoop]
-TEnd = 1209600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 21600
 MaxTimeStepSize = 3600
 
 [Soil.IC]
-P = -300
+P = -15
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -24,7 +24,7 @@ b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 
 [RootSystem.Collar]
-Transpiration = 5e-4 # [kg/day] 
+Transpiration = 8e-3 # [kg/day] 
 Sinusoidal = True
 
 [RootSystem.Leaf]

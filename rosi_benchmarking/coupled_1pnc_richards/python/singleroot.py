@@ -65,12 +65,13 @@ ax3.plot(t, 1000 * d[:, 2] * c, 'k')  # potential transpiration
 ax3.plot(t, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
 ax3b = ax3.twinx()
 ctrans = np.cumsum(np.multiply(1000 * d[1:, 1] * c, (t[1:] - t[:-1])))
+np.savetxt('results_' + name + "/" + name + '_ctrans.txt', ctrans, delimiter = '\n')   # save cumulative transpiration file
 ax3b.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
 ax3b.tick_params(axis= 'y', labelcolor = 'b')
 ax3.set_xlabel("time (days)")
 ax3.set_ylabel("transpiration (g/day)")
 ax3b.set_ylabel("Cumulative transpiration $[g]$", color = "b")
-ax3.legend(["potential", "actual", "cumulative"])
+ax3.legend(["potential", "actual", "cumulative"], loc = 'upper left')
 plt.savefig("results_" + name + "/" + name + '_transpiration.pdf', dpi=300)
 
 """ Plot root collar pressure """
