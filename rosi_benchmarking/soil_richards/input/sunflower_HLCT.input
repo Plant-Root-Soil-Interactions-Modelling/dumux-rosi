@@ -15,7 +15,7 @@ Cells = 25 17 75
 Type = 4 # atmospheric
 
 [Climate]
-CSVFile = input/sunflower_precipitation_2003.csv # [cm day-1]
+CSVFile = input/sunflower_precipitation_2003_14days.csv # [cm day-1]
 
 [Soil.BC.Bot]
 Type = 5 # 5 free drainage, 1 constant pressure 

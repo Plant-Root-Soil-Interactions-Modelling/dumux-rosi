@@ -6,7 +6,7 @@ import plantbox as pb
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = "../../../modelparameter/rootsystem/"
+path = "../modelparameter/rootsystem/"
 name = "Glycine_max"  # ""
 
 rs = pb.RootSystem()

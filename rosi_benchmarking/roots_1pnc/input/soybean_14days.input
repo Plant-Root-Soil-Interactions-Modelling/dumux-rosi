@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/Glycine_max_14days.dgf
+File =  grids/Glycine_max_14days_.dgf
 InitialT = 1 # days
 Grow = true
 
