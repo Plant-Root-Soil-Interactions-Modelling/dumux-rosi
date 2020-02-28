@@ -87,9 +87,12 @@ def solve(soil, simtimes, q_r, N):
 
         if rank == 0:  # Root part is not parallel
             rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-            fluxes = r.soilFluxes(0., rx_hom)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+            fluxesApprox = r.soilFluxesApprox(0., rx_hom)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+            fluxesExact = r.soilFluxes(0., rx_hom)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
             cflux = r.collar_flux(0., rx, sx)
-            # print("fluxes", fluxes, " = ", trans, "=", cflux, "g day-1")
+            off = abs(100 * (1 - fluxesApprox[cci] / fluxesExact[cci]))
+            print("fluxes at ", cci, ": approx", fluxesApprox[cci], "exact", fluxesExact[cci], "cflux", cflux, "g day-1", "approximation is {:.6}% off".format(off))
+            fluxes = fluxesExact
         else:
             fluxes = None
         fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
@@ -115,9 +118,9 @@ if __name__ == "__main__":
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
-    fig, ax = plt.subplots(2, 3, figsize = (14, 14))
 
     if rank == 0:
+        fig, ax = plt.subplots(2, 3, figsize = (14, 14))
         t0 = timeit.default_timer()
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
@@ -129,6 +132,8 @@ if __name__ == "__main__":
             ax[i, j].set_ylabel("water potential (cm)")
             ax[i, j].legend(["final: {:.3f} d".format(t)])
             ax[i, j].title.set_text(soil[5] + ", q = {:.2f} cm/d".format(qj))
+
+    s.writeDumuxVTK("c11 " + soil[5] + " " + str(qj) + ".vtp")
 
     if rank == 0:
         print("Elapsed time: ", timeit.default_timer() - t0, "s")

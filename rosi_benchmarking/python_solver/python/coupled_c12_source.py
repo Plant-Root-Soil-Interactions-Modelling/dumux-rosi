@@ -29,7 +29,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-sim_time = 7  # [day] for task b
+sim_time = 1  # [day] for task b
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -10000  # cm
 loam = [0.08, 0.43, 0.04, 1.6, 50]
@@ -84,7 +84,7 @@ for i in range(0, N):
     if rank == 0:  # Root part is not parallel
         rx_hom = r.solve(t, -trans * sinusoidal(t), sx[cci], wilting_point)  # xylem_flux.py
         rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-        fluxes = r.soilFluxes(t, rx_hom)  # class XylemFlux is defined in MappedOrganism.h
+        fluxes = r.soilFluxesApprox(t, rx_hom)  # class XylemFlux is defined in MappedOrganism.h
     else:
         fluxes = None
     fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel

@@ -57,9 +57,8 @@ nodes = r.get_nodes()
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
-# s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
-s.createGrid([-2, -8., -20.], [2, 8., 0.], [8, 8, 20], False)  # [cm]
-# s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+# s.createGrid([-2, -8., -20.], [2, 8., 0.], [16, 16, 40])  # [cm]
+s.createGrid([-2, -8., -20.], [2, 8., 0.], [8, 8, 20], True)  # [cm] thinner domain, with same volume
 
 s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
@@ -72,7 +71,6 @@ picker = lambda x, y, z : s.pick(x, y, z)
 r.rs.setSoilGrid(picker)
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
-ss
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []

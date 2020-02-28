@@ -121,7 +121,7 @@ public:
      */
     virtual void createGrid(std::string modelParamGroup = "") {
         std::string pstr =  Dumux::getParam<std::string>("Grid.Periodic", "");
-        periodic = ((pstr[0]!='t') || (pstr[0]!='T'));
+        periodic = ((pstr.at(0)=='t') || (pstr.at(0)=='T')); // always x,y, not z
         GridManagerFix<Grid> gridManager;
         gridManager.init(modelParamGroup);
         grid = gridManager.gridPtr();
@@ -503,7 +503,8 @@ public:
                     y= x[eIdx];
                 }
             }
-            return gridGeometry->gridView().comm().sum(y); // cunning as a weasel
+            return gridGeometry->gridView().comm().min(y);
+            // I would prefer sum(y), BUT more than one process can have this cell
         }
     }
 
@@ -565,17 +566,17 @@ public:
      */
     virtual int pickCell(VectorType pos) {
         checkInitialized();
-        if (periodic) { // TODO
+        if (periodic) {
             auto b = getGridBounds();
-            for (int i = 0; i<2; i++) {
+            for (int i = 0; i < 2; i++) { // for x and y, not z
                 double minx = b[i];
                 double xx = b[i+3]-minx;
                 if (!std::isinf(xx)) { // periodic in x
                     pos[i] -= minx; // start at 0
                     if (pos[i]>=0) {
-                        pos[i] = (pos[i]/xx - (int)(pos[i]/xx))*xx;
+                        pos[i] = pos[i] - int(pos[i]/xx)*xx;
                     } else {
-                        pos[i] = (pos[i]/xx + 1. +(int)((-pos[i])/xx))*xx;
+                        pos[i] = pos[i] + int((xx-pos[i])/xx)*xx;
                     }
                     pos[i] += minx;
                 }
@@ -583,6 +584,7 @@ public:
         }
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
+        // std::cout << "point: " << pos[0]<<", "<< pos[1] <<","<< pos[2] << " in box "; // <<  getGridBounds();
         auto entities = Dumux::intersectingEntities(p, bBoxTree);
         int gIdx = -1;
         if (!entities.empty()) {

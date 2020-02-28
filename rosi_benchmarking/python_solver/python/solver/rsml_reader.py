@@ -100,7 +100,7 @@ def get_parameter(polylines :list, funcs :dict, props :dict) -> (list, list, lis
             radii.append(fdiam[i][j] / 2)
             cts.append(fet[i][j])
             types.append(ptype[i])
-    return radii, cts, types
+    return radii[1:], cts[1:], types[1:]
 
 
 def plot_rsml(polylines :list, prop :list):

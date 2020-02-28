@@ -46,7 +46,7 @@ def solve(soil, simtimes, q_r, N):
     s.createGrid([-l, -l, -1.], [l, l, 0.], [N, N, 1])  # [cm]
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
-    idx_top = s.pickCell([0.0, 0.0, -.5])  # index for sink
+    idx_top = s.pickCell([0., 0., -.5])  # index for sink
 
     sources = { idx_top:-q_r }  # gIdx: value [ g/day ]
     s.setSource(sources)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
     for soil, qj, i, j in jobs:
-        y, x, t = solve(soil, sim_times, qj, 40)
+        y, x, t = solve(soil, sim_times, qj, 41)
         if rank == 0:
             ax[i, j].plot(x, s.toHead(y), "r*")
             ax[i, j].set_xlabel("r (cm)")
