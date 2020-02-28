@@ -6,7 +6,7 @@ import plantbox as pb
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = "../../../modelparameter/rootsystem/"
+path = "../modelparameter/rootsystem/"
 name = "Glycine_max"  # ""
 
 rs = pb.RootSystem()
@@ -20,7 +20,7 @@ ny = pb.Vector3d(0., 1., -1.)
 soil_layer = pb.SDF_HalfPlane(x0, nx, ny)  # there was bug, with updated CPlantBox
 rs.setGeometry(soil_layer)
 
-rs.setSeed(0)
+rs.setSeed(2)
 rs.initialize()
 
 rs.simulate(7, True)

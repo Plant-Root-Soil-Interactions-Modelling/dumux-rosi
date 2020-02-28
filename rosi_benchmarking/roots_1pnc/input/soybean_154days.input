@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/Glycine_max_154days.dgf
+File =  grids/Glycine_max_154days_.dgf
 InitialT = 1 # days
 Grow = true
 
@@ -54,7 +54,7 @@ CritCollarP = -100000 # pressure, when to switch to dirichlet
 CritCollarPAlpha = -5500 # for alpha
 CritTipP = -4500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
-ProductionAge = 100 # [day]
+ProductionAge = 5 # [day]
 ProductionGrowth = "true"
 Decay = 0.693 # [day-1]
 b = 1.e8 # [cm] pressure head
