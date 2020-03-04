@@ -30,4 +30,4 @@ ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
 ProductionAge = 2 # [day]
 Decay = 0.693 # [day-1]
 b = 1.e8 # [cm] pressure head
-c = 200 # [1] s
+c = 200 # [1] 

@@ -19,4 +19,4 @@ P = -10000
 [Problem]
 Name = sunflower_14days_HLCT
 RootName = ../roots_1p/input/sunflower_14days.input
-SoilName = ../soil_richards/input/sunflower_HLCT.input
+SoilName = ../soil_richards/input/sunflower_HLCT_14d.input

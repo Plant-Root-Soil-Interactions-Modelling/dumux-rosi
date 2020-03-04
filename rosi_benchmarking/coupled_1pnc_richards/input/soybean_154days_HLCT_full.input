@@ -1,0 +1,33 @@
+[Problem]
+Name = soybean_154days_HLCT_full
+RootName = ../roots_1pnc/input/soybean_154days.input
+SoilName = ../soil_richards/input/soybean_HLCT.input
+
+[TimeLoop]
+TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 21600
+MaxTimeStepSize = 3600
+
+[Soil.Grid]
+Cells = 18 3 125 # 37*5*250
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1
+
+[Soil.IC]
+P = -300
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -5500 # for alpha
+CritTipP = -4500 # when production starts
+ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 2 # [day]
+Decay = 0.693 # [day-1]
+b = 1.e8 # [cm] pressure head
+c = 200 # [1] 

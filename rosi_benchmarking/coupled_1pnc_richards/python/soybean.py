@@ -6,7 +6,7 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "soybean_7days_HLCT"  # this name should be unique
+name = "soybean_154days_HLCT_full"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -68,7 +68,7 @@ ax3b.tick_params(axis= 'y', labelcolor = 'b')
 ax3.set_xlabel("time (days)")
 ax3.set_ylabel("transpiration (g/day)")
 ax3b.set_ylabel("Cumulative transpiration $[g]$", color = "b")
-ax3.legend(["potential", "actual", "cumulative"])
+ax3.legend(["potential", "actual", "cumulative"], loc = 'upper left')
 plt.savefig("results_" + name + "/" + name + '_transpiration.pdf', dpi=300)
 
 """ Plot root collar pressure """
