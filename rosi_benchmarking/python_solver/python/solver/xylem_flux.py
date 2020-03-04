@@ -122,6 +122,10 @@ class XylemFluxPython(XylemFlux):
         polylines, props, funcs = rsml.read_rsml(file_name)
         nodes, segs = rsml.get_segments(polylines, props)
         radii, seg_ct, types = rsml.get_parameter(polylines, funcs, props)
+
+        print("nodes", len(nodes))
+        print("radii", len(radii))
+
         nodes = np.array(nodes)  # for slicing in the plots
         nodes2 = []  # Conversions...
         for n in nodes:

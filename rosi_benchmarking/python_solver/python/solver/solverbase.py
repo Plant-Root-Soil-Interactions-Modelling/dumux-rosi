@@ -44,7 +44,6 @@ class SolverWrapper():
             str = "true true false"
         else:
             str = "false false false"
-
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), str)  # cm -> m
 
     def readGrid(self, file :str):

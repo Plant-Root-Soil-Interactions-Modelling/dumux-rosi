@@ -38,16 +38,14 @@ public:
     virtual void setSource(std::map<int, double> source) {
         this->checkInitialized();
         int n = this->gridGeometry->gridView().size(0);
-        std::vector<int> indices;
         ls.resize(n);
-        indices.reserve(n);
+        std::fill(ls.begin(), ls.end(), 0.);
         for (const auto& e : elements(this->gridGeometry->gridView())) { // local elements
             int gIdx = this->cellIdx->index(e); // global index
             auto eIdx = this->gridGeometry->elementMapper().index(e);
             if (source.count(gIdx)>0) {
+                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
                 ls[eIdx] = source[gIdx];
-            } else {
-                ls[eIdx] = 0.;
             }
         }
         this->problem->setSource(&ls); // why a raw pointer? todo
