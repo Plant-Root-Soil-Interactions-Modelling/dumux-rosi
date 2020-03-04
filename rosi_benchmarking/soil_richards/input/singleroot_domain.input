@@ -10,7 +10,7 @@ CheckTimes = 8640 17280
 [Soil.Grid]
 UpperRight = 0.005 0.005 0. 
 LowerLeft = -0.005 -0.005 -0.15
-Cells = 10 10 150 
+Cells = 5 5 75 
 Periodic = true true false
 Overlap = 1
 
@@ -37,5 +37,5 @@ N =  1.1457
 Ks = 1488 # [cm/d] 	
 
 [Climate]
-Precipitation = 10 # [cm day-1]
+Precipitation = 8 # [cm day-1]
 # CSVFile = input/sunflower_precipitation_2003.csv # [cm day-1]

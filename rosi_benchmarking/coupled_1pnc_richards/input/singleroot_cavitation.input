@@ -24,7 +24,7 @@ b = 10193.68 # [cm] pressure head
 c = 0.7 # [1] 
 
 [RootSystem.Collar]
-Transpiration = 2e-3 # [kg/day] 
+Transpiration = 3e-3 # [kg/day] 
 Sinusoidal = True
 
 [RootSystem.Leaf]
