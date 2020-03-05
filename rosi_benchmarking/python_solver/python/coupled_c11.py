@@ -45,12 +45,14 @@ def solve(soil, simtimes, q_r, N):
     q_r = q_r * 2 * r_root * np.pi * 1.  # g/day
     print("Qr as sink", q_r, "g day-1")
     trans = q_r
+    l = np.sqrt((r_out * r_out - r_root * r_root) * np.pi) / 2  # same area as cylindrical
 
     """ Root problem"""
     n1 = pb.Vector3d(0, 0, 0)
     n2 = pb.Vector3d(0, 0, -1)
     seg = pb.Vector2i(0, 1)
     rs = pb.MappedSegments([n1, n2], [seg], [r_root])  # a single root
+    rs.setRectangularGrid(pb.Vector3d(-l, -l, -1.), pb.Vector3d(l, l, 0.), pb.Vector3d(N, N, 1))
     r = XylemFluxPython(rs)
     r.setKr([1.e-7])
     r.setKx([1.e-7])
@@ -59,7 +61,6 @@ def solve(soil, simtimes, q_r, N):
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
     s.setBotBC("noflux")
-    l = np.sqrt((r_out * r_out - r_root * r_root) * np.pi) / 2  # same area as cylindrical
     s.createGrid([-l, -l, -1.], [l, l, 0.], [N, N, 1])  # [cm]
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
@@ -87,12 +88,19 @@ def solve(soil, simtimes, q_r, N):
 
         if rank == 0:  # Root part is not parallel
             rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-            fluxesApprox = r.soilFluxesApprox(0., rx_hom)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
-            fluxesExact = r.soilFluxes(0., rx_hom)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+
+            fluxesApprox = r.soilFluxes(0., rx_hom, True)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+            fluxesExact = r.soilFluxes(0., rx_hom, False)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
             cflux = r.collar_flux(0., rx, sx)
-            off = abs(100 * (1 - fluxesApprox[cci] / fluxesExact[cci]))
+            off = abs(100 * (1 - fluxesApprox[cci] / (-trans)))
             print("fluxes at ", cci, ": approx", fluxesApprox[cci], "exact", fluxesExact[cci], "cflux", cflux, "g day-1", "approximation is {:.6}% off".format(off))
-            fluxes = fluxesExact
+            fluxes = fluxesApprox
+
+#             sum_flux = 0.
+#             for f in fluxes.values():
+#                 sum_flux += f
+#             print("Fuxes ", sum_flux, "=", -trans, "0", fluxes[cci])
+
         else:
             fluxes = None
         fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel

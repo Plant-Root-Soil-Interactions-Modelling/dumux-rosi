@@ -59,6 +59,7 @@ s = RichardsWrapper(cpp_base)
 s.initialize()
 # s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
 s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
 s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
@@ -67,7 +68,7 @@ s.initializeProblem()
 
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick(x, y, z)
-r.rs.setSoilGrid(picker)
+r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
 """ Numerical solution (a) """
@@ -83,8 +84,13 @@ for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
         rx_hom = r.solve(t, -trans * sinusoidal(t), sx[cci], wilting_point)  # xylem_flux.py
-        rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-        fluxes = r.soilFluxes(t, rx_hom)  # class XylemFlux is defined in MappedOrganism.h
+        fluxes = r.soilFluxes(t, rx_hom, approx = True)  # class XylemFlux is defined in MappedOrganism.h
+        sum_flux = 0.
+
+        for f in fluxes.values():
+            sum_flux += f
+        print("Fuxes ", sum_flux, "=", -trans * sinusoidal(t) , "0", fluxes[cci])
+
     else:
         fluxes = None
 
@@ -98,6 +104,7 @@ for i in range(0, N):
     if rank == 0:
         n = round(float(i) / float(N) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "]")
+        rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in XylemFlux.h
         f = float(r.collar_flux(t, rx, sx))  # exact root collar flux
         x_.append(t)
         y_.append(f)

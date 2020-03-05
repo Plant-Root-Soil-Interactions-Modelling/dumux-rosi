@@ -10,9 +10,9 @@ from scipy import integrate
 import van_genuchten as vg
 import matplotlib.pyplot as plt
 
-sand = vg.Parameters(0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24)
-loam = vg.Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06 * 100 * 3600 * 24)
-clay = vg.Parameters(0.1, 0.4, 0.01, 1.1, 1.1574e-06 * 100 * 3600 * 24)
+sand = vg.Parameters([0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24])
+loam = vg.Parameters([0.08, 0.43, 0.04, 1.6, 5.7870e-06 * 100 * 3600 * 24])
+clay = vg.Parameters([0.1, 0.4, 0.01, 1.1, 1.1574e-06 * 100 * 3600 * 24])
 
 Jw = 0.5;  # constant downward flow rate [cm/d]
 

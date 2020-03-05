@@ -85,7 +85,7 @@ for i in range(0, N):
     if rank == 0:  # Root part is not parallel
         rx_hom = r.solve(t, -trans * sinusoidal(t), sx[cci], wilting_point)  # xylem_flux.py
         rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-        fluxes = r.soilFluxes(t, rx_hom)  # class XylemFlux is defined in MappedOrganism.h
+        fluxes = r.soilFluxes(t, rx_hom, approx = True)  # class XylemFlux is defined in MappedOrganism.h
     else:
         fluxes = None
 

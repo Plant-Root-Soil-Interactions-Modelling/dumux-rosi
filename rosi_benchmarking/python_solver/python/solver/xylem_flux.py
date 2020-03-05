@@ -21,7 +21,7 @@ class XylemFluxPython(XylemFlux):
         else:
             super().__init__(rs)
 
-    def solve_neumann(self, sim_time :float, value :float) :
+    def solve_neumann(self, sim_time :float, value :float, sxx) :
         """ solves the flux equations, with a neumann boundary condtion,
             @param sim_time [day]      simulation time to evaluate age dependent conductivities
             @param value [cm3 day-1]   tranpirational flux is negative 
@@ -30,7 +30,7 @@ class XylemFluxPython(XylemFlux):
 #         I, J, V, b = self.linear_system(sim_time)  # Python (care no age or type dependencies!)
 #         self.aB = b
 #         Q = sparse.coo_matrix((V, (I, J)))
-        self.linearSystem(sim_time)  # C++
+        self.linearSystem(sim_time, sxx)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_neumann(Q, self.aB, [0], [value / (self.rho * self.g)])  # cm3 day-1 -> something crazy (?)
@@ -38,20 +38,20 @@ class XylemFluxPython(XylemFlux):
         # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
 
-    def solve_dirichlet(self, sim_time :float, value :float, sx :float) :
+    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx):
         """ solves the flux equations, with a dirichlet boundary condtion,
             @param sim_time [day]     simulation time to evaluate age dependent conductivities
             @param value [cm]         root collar pressure head 
             @param sx [cm]            soil pressure head around root collar segment 
          """
-        self.linearSystem(sim_time)  # C++
+        self.linearSystem(sim_time, sxx)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
-        Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value) - float(sx)])
+        Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value) ])
         x = LA.spsolve(Q, b, use_umfpack = True)
         return x
 
-    def solve(self, sim_time :float, value :float, sx :float, wilting_point :float = -15000):
+    def solve(self, sim_time :float, value :float, sx :float, sxx, wilting_point :float = -15000):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
@@ -64,7 +64,7 @@ class XylemFluxPython(XylemFlux):
 
         if sx >= wilting_point - eps:
 
-            x = self.solve_neumann(sim_time, value)
+            x = self.solve_neumann(sim_time, value, sxx)
 
             if x[0] + sx < wilting_point - eps:
 #                 print()
@@ -84,7 +84,7 @@ class XylemFluxPython(XylemFlux):
             print()
             print("solve_wp used Dirichlet because soil pressure is below wilting point", float(x[0]) + sx)
             print()
-            self.solve_dirichlet(sim_time, wilting_point, sx)
+            self.solve_dirichlet(sim_time, wilting_point, sx, sxx)
 
         return x
 
@@ -122,10 +122,7 @@ class XylemFluxPython(XylemFlux):
         polylines, props, funcs = rsml.read_rsml(file_name)
         nodes, segs = rsml.get_segments(polylines, props)
         radii, seg_ct, types = rsml.get_parameter(polylines, funcs, props)
-
-        print("nodes", len(nodes))
-        print("radii", len(radii))
-
+        print("Read rsml:", len(nodes), "nodes", len(radii), "radii")
         nodes = np.array(nodes)  # for slicing in the plots
         nodes2 = []  # Conversions...
         for n in nodes:

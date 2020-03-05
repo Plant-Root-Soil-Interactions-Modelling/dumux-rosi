@@ -26,7 +26,6 @@ p_s = -200  # static soil pressure [cm]
 p0 = -1000  # dircichlet bc at top
 
 """ Analytical solution """
-
 c = 2 * a * pi * kr / kz
 p_r = lambda z: p_s + d[0] * exp(sqrt(c) * z) + d[1] * exp(-sqrt(c) * z)  #
 
@@ -40,7 +39,6 @@ pr = list(map(p_r, za_))
 plt.plot(pr, za_)
 
 """ Numeric solution """
-
 N = 100  # resolution
 z_ = np.linspace(0., -L, N)
 
@@ -52,20 +50,19 @@ for s in range(0, N - 1):
     radii.append(a)
 
 rs = pb.MappedSegments(nodes, segs, radii)
+soil_index = lambda x, y, z : 0
+rs.setSoilGrid(soil_index)
 
 r = XylemFluxPython(rs)
 r.setKr([kr0])
 r.setKx([kz0])
 
-rx_hom = r.solve_dirichlet(0., p0, p_s)
-rx = r.getSolution(rx_hom, [p_s])
+rx = r.solve_dirichlet(0., p0, p_s, [p_s])
 flux = r.collar_flux(0., rx, [p_s])
 print("Transpiration", flux, "cm3/day")
 plt.plot(rx, z_, "r*")
 
-rx_hom = r.solve_neumann(0., -2.)
-rx = r.getSolution(rx_hom, [p_s])
-
+rx = r.solve_neumann(0., -2., [p_s])
 flux = r.collar_flux(0., rx, [p_s])
 print("Transpiration", flux, "cm3/day")
 plt.plot(rx, z_, "g*")
