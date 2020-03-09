@@ -76,31 +76,30 @@ def solve(soil, simtimes, q_r, N):
     y_ = np.linspace(0, l, nsp)
     y_ = np.expand_dims(y_, 1)
     x_ = np.hstack((np.zeros((nsp, 1)), y_, np.zeros((nsp, 1))))
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
 
     dt_ = np.diff(simtimes)
     s.ddt = 1.e-5  # initial Dumux time step [days]
-
-    rx_hom = r.solve_neumann(0., -trans)  # xylem_flux.py
-    # homogeneous solution is constant and indepent of soil
+    print("starting")
 
     for dt in dt_:
 
-        if rank == 0:  # Root part is not parallel
-            rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
+        sx = s.getSolutionHead()
+        fluxes = comm.barrier()  # wait for sx
 
-            fluxesApprox = r.soilFluxes(0., rx_hom, True)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
-            fluxesExact = r.soilFluxes(0., rx_hom, False)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+        if rank == 0:  # Root part is not parallel
+            rx = r.solve_neumann(0., -trans, sx)  # xylem_flux.py
+            print("alive1")
+            fluxesApprox = r.soilFluxes(0., rx, sx, True)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
+            fluxesExact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
             cflux = r.collar_flux(0., rx, sx)
             off = abs(100 * (1 - fluxesApprox[cci] / (-trans)))
-            print("fluxes at ", cci, ": approx", fluxesApprox[cci], "exact", fluxesExact[cci], "cflux", cflux, "g day-1", "approximation is {:.6}% off".format(off))
-            fluxes = fluxesApprox
-
+            print("fluxes at ", cci, ": approx", fluxesApprox[cci], "exact", fluxesExact[cci], "collar flux", cflux, "[g day-1]", "approximation is {:.6}% off".format(off))
+#             fluxes = fluxesExact
 #             sum_flux = 0.
 #             for f in fluxes.values():
 #                 sum_flux += f
-#             print("Fuxes ", sum_flux, "=", -trans, "0", fluxes[cci])
-
+#             print("Fuxes ", sum_flux, "=", -trans, "[g day-1]", "index 0:", fluxes[cci])
+            fluxes = fluxesExact
         else:
             fluxes = None
         fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
