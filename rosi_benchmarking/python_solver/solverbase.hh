@@ -607,7 +607,7 @@ public:
      */
     virtual std::string toString() {
         std::ostringstream msg;
-        msg << "DuMux Solver using in " << dim << "D ";
+        msg << "DuMux Solver " << dim << "D ";
         if (isBox) {
             msg << "(box method)";
         } else {
@@ -619,7 +619,7 @@ public:
             msg << " no problem initialized";
         }
         if (maxRank>=0) {
-            msg << " process rank "<< rank+1 << "/" << maxRank;
+            msg << " on process rank "<< rank+1 << "/" << maxRank;
         }
         if (simTime>0) {
             msg << "\nSimulation time is "<< simTime/3600/24 << " days, current internal time step is "<< ddt/3600/24 << " days";

@@ -35,7 +35,7 @@ public:
      *
      * for simplicity avoiding mpi broadcasting or scattering
      */
-    virtual void setSource(std::map<int, double> source) {
+    virtual void setSource(const std::map<int, double>& source) {
         this->checkInitialized();
         int n = this->gridGeometry->gridView().size(0);
         ls.resize(n);
@@ -45,7 +45,7 @@ public:
             auto eIdx = this->gridGeometry->elementMapper().index(e);
             if (source.count(gIdx)>0) {
                 //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
-                ls[eIdx] = source[gIdx];
+                ls[eIdx] = source.at(gIdx);
             }
         }
         this->problem->setSource(&ls); // why a raw pointer? todo

@@ -49,9 +49,12 @@ def solve(soil, simtimes, q_r, N):
 
     """ Root problem"""
     n1 = pb.Vector3d(0, 0, 0)
-    n2 = pb.Vector3d(0, 0, -1)
-    seg = pb.Vector2i(0, 1)
-    rs = pb.MappedSegments([n1, n2], [seg], [r_root])  # a single root
+    n2 = pb.Vector3d(0, 0, -0.5)
+    n3 = pb.Vector3d(0, 0, -1)
+    seg1 = pb.Vector2i(0, 1)
+    seg2 = pb.Vector2i(1, 2)
+    #  rs = pb.MappedSegments([n1, n3], [seg1], [r_root])  # a single root
+    rs = pb.MappedSegments([n1, n2, n3], [seg1, seg2], [r_root, r_root])  # a single root
     rs.setRectangularGrid(pb.Vector3d(-l, -l, -1.), pb.Vector3d(l, l, 0.), pb.Vector3d(N, N, 1))
     r = XylemFluxPython(rs)
     r.setKr([1.e-7])
@@ -79,32 +82,29 @@ def solve(soil, simtimes, q_r, N):
 
     dt_ = np.diff(simtimes)
     s.ddt = 1.e-5  # initial Dumux time step [days]
-    print("starting")
 
     for dt in dt_:
 
         sx = s.getSolutionHead()
-        fluxes = comm.barrier()  # wait for sx
 
         if rank == 0:  # Root part is not parallel
             rx = r.solve_neumann(0., -trans, sx)  # xylem_flux.py
-            print("alive1")
-            fluxesApprox = r.soilFluxes(0., rx, sx, True)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
-            fluxesExact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h  !CARE only approx (1 seg)
-            cflux = r.collar_flux(0., rx, sx)
-            off = abs(100 * (1 - fluxesApprox[cci] / (-trans)))
-            print("fluxes at ", cci, ": approx", fluxesApprox[cci], "exact", fluxesExact[cci], "collar flux", cflux, "[g day-1]", "approximation is {:.6}% off".format(off))
-#             fluxes = fluxesExact
-#             sum_flux = 0.
-#             for f in fluxes.values():
-#                 sum_flux += f
-#             print("Fuxes ", sum_flux, "=", -trans, "[g day-1]", "index 0:", fluxes[cci])
-            fluxes = fluxesExact
+            fluxes_approx = r.soilFluxes(0., rx, sx, True)  # class XylemFlux is defined in MappedOrganism.h
+            fluxes_exact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h
+            collar_flux = r.collar_flux(0., rx, sx)
+            off = abs(100 * (1 - fluxes_approx[cci] / (-trans)))
+            print("fluxes at ", cci, ": approx", fluxes_approx[cci], "exact", fluxes_exact[cci], "collar flux", collar_flux, "[g day-1]", "approximation is {:.6}% off".format(off))
+            fluxes = fluxes_exact
+            sum_flux = 0.
+            for f in fluxes.values():
+                sum_flux += f
+            print("Summed fluxes ", sum_flux, "=", -trans, "[g day-1]", "index 0:", fluxes[cci])
         else:
             fluxes = None
-        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
 
+        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
         s.setSource(fluxes)  # g day-1, richards.py
+
         s.solve(dt)
 
         x0 = s.toHead(s.getSolutionAt(cci))
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             ax[i, j].legend(["final: {:.3f} d".format(t)])
             ax[i, j].title.set_text(soil[5] + ", q = {:.2f} cm/d".format(qj))
 
-    s.writeDumuxVTK("c11 " + soil[5] + " " + str(qj) + ".vtp")
+    s.writeDumuxVTK("c11_" + soil[5] + "_" + str(qj))
 
     if rank == 0:
         print("Elapsed time: ", timeit.default_timer() - t0, "s")

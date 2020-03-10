@@ -29,10 +29,11 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-sim_time = 2  # [day] for task b
+sim_time = 7  # [day] for task b
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -10000  # cm
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+periodic = False  # for perioidc, we take
 
 """ Root problem (a) or (b)"""
 r = XylemFluxPython("../grids/RootSystem.rsml")
@@ -43,7 +44,7 @@ r = XylemFluxPython("../grids/RootSystem.rsml")
 r.setKr([ 1.728e-4])  # [cm^3/day]
 r.setKx([4.32e-2 ])  # [1/day]
 
-# (b) TODO - check carefully
+# (b)
 # kr0 = np.array([[0, 1.14e-03], [2, 1.09e-03], [4, 1.03e-03], [6, 9.83e-04], [8, 9.35e-04], [10, 8.90e-04], [12, 8.47e-04], [14, 8.06e-04], [16, 7.67e-04], [18, 7.30e-04], [20, 6.95e-04], [22, 6.62e-04], [24, 6.30e-04], [26, 5.99e-04], [28, 5.70e-04], [30, 5.43e-04], [32, 5.17e-04]])
 # kr1 = np.array([[0, 4.11e-03], [1, 3.89e-03], [2, 3.67e-03], [3, 3.47e-03], [4, 3.28e-03], [5, 3.10e-03], [6, 2.93e-03], [7, 2.77e-03], [8, 2.62e-03], [9, 2.48e-03], [10, 2.34e-03], [11, 2.21e-03], [12, 2.09e-03], [13, 1.98e-03], [14, 1.87e-03], [15, 1.77e-03], [16, 1.67e-03], [17, 1.58e-03]])
 # r.setKrTables([kr0[:, 1], kr1[:, 1], kr1[:, 1], kr1[:, 1]], [kr0[:, 0], kr1[:, 0], kr1[:, 0], kr1[:, 0]])
@@ -57,6 +58,10 @@ nodes = r.get_nodes()
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
+# if periodic:
+#
+# else:
+
 # s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
 s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
 r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
@@ -83,13 +88,13 @@ t = 0.
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-        rx_hom = r.solve(t, -trans * sinusoidal(t), sx[cci], wilting_point)  # xylem_flux.py
-        fluxes = r.soilFluxes(t, rx_hom, approx = True)  # class XylemFlux is defined in MappedOrganism.h
-        sum_flux = 0.
+        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, wilting_point)  # xylem_flux.py
+        fluxes = r.soilFluxes(t, rx, sx, approx = False)  # class XylemFlux is defined in MappedOrganism.h
 
+        sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("Fuxes ", sum_flux, "=", -trans * sinusoidal(t) , "0", fluxes[cci])
+        print("Fuxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
 
     else:
         fluxes = None
@@ -104,7 +109,6 @@ for i in range(0, N):
     if rank == 0:
         n = round(float(i) / float(N) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "]")
-        rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in XylemFlux.h
         f = float(r.collar_flux(t, rx, sx))  # exact root collar flux
         x_.append(t)
         y_.append(f)
@@ -115,6 +119,8 @@ for i in range(0, N):
         # print("Time:", t, ", collar flux", f, "cm^3/day at", rx[0], "cm xylem ", float(sx_old[cci]), "cm soil", "; domain water", s.getWaterVolume(), "cm3")
 
     t += dt
+
+s.writeDumuxVTK("c12_final")
 
 """ Plot """
 if rank == 0:

@@ -47,7 +47,7 @@ class XylemFluxPython(XylemFlux):
         self.linearSystem(sim_time, sxx)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
-        Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value) ])
+        Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value)])
         x = LA.spsolve(Q, b, use_umfpack = True)
         return x
 
@@ -56,7 +56,8 @@ class XylemFluxPython(XylemFlux):
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
             @param trans            [cm day-1] transpiration rate
-            @param sx               [cm] soil pressure at the root collar 
+            @param sx               [cm] soil matric potential around root collar
+            @param sxx              [cm] soil matric potentials 
             @parm wiltingPoint      [cm] pressure head            
         """
         eps = 1.e-6
@@ -66,13 +67,10 @@ class XylemFluxPython(XylemFlux):
 
             x = self.solve_neumann(sim_time, value, sxx)
 
-            if x[0] + sx < wilting_point - eps:
-#                 print()
-#                 print("solve_wp switched to Dirichlet, pressure at collar", float(x[0]) + sx)
-#                 print()
+            if x[0] < wilting_point - eps:
                 Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
                 Q = sparse.csr_matrix(Q)
-                Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point) - float(sx)])
+                Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point)])
                 try:
                     x = LA.spsolve(Q, b, use_umfpack = True)
                 except:
@@ -82,7 +80,7 @@ class XylemFluxPython(XylemFlux):
                     raise
         else:
             print()
-            print("solve_wp used Dirichlet because soil pressure is below wilting point", float(x[0]) + sx)
+            print("solve_wp used Dirichlet because soil matric potential is below wilting point", sx)
             print()
             self.solve_dirichlet(sim_time, wilting_point, sx, sxx)
 
