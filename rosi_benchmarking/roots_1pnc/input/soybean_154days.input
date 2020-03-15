@@ -9,7 +9,7 @@ MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
 File =  grids/Glycine_max_154days.dgf
-InitialT = 1 # days
+InitialT = 100 # days
 Grow = true
 
 [RootSystem.Conductivity]
@@ -41,8 +41,8 @@ KrAge3 = -154	0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 60	1e20	# days
 CSVFile = input/soybean_transpiration_2003.csv # kg/day 
 Sinusoidal = True
 
-[Soil.IC]
-P = -5000
+#[Soil.IC]
+#P = -5000
 
 [Component]
 liquidDiffCoeff = 1.2e-9

@@ -1,0 +1,37 @@
+[Problem]
+Name = test_restart
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 1209600 # 2 weeks [s] 
+MaxTimeStepSize = 3600 # 3600 # an hour [s] 
+PeriodicCheckTimes = 86400  
+
+[Soil.Grid]
+UpperRight = 0.005 0.005 0. 
+LowerLeft = -0.005 -0.005 -0.15
+Cells = 3 3 25 
+Periodic = true true false
+Overlap = 1
+
+[Soil.BC.Top]
+Type = 4 # atmospheric 
+# Value = 0
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -500
+
+[Soil.VanGenuchten]
+# Hollabrunn_Convectional Tillage
+Qr = 0.0045	 
+Qs = 0.489
+Alpha =  0.1978# [1/cm] 
+N =  1.1457
+Ks = 1488 # [cm/d] 	
+
+[Climate]
+Precipitation = 0.1 # [cm day-1]
+

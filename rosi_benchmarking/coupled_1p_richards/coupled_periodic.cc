@@ -45,6 +45,7 @@
 
 #include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
+#include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/fvassembler.hh>
@@ -210,6 +211,9 @@ int main(int argc, char** argv) try
     auto rootProblem = std::make_shared<RootProblem>(rootGridGeometry);
     rootProblem->setCouplingManager(&(*couplingManager));
 
+    // check if we are about to restart a previously interrupted simulation
+    double restartTime = getParam<double>("Restart.Time", 0);
+
     // the solution vector
     Traits::SolutionVector sol;
     sol[soilDomainIdx].resize(soilGridGeometry->numDofs());
@@ -239,10 +243,33 @@ int main(int argc, char** argv) try
     // the solution vector
     sol[soilDomainIdx].resize(soilGridGeometry->numDofs());
     sol[rootDomainIdx].resize(rootGridGeometry->numDofs());
-    soilProblem->applyInitialSolution(sol[soilDomainIdx]);
-    rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-    oldSol = sol;
+    if (restartTime > 0)
+    {
+        // soil
+        using soilIOFields = GetPropType<SoilTypeTag, Properties::IOFields>;
+        using soilPrimaryVariables = GetPropType<SoilTypeTag, Properties::PrimaryVariables>;
+        using soilModelTraits = GetPropType<SoilTypeTag, Properties::ModelTraits>;
+        using soilFluidSystem = GetPropType<SoilTypeTag, Properties::FluidSystem>;
+        const auto soilfileName = getParam<std::string>("Restart.SoilFile");
+        const auto soilpvName = createPVNameFunction<soilIOFields, soilPrimaryVariables, soilModelTraits, soilFluidSystem>();
+        loadSolution(sol[soilDomainIdx], soilfileName, soilpvName, *soilGridGeometry);
 
+        // root
+        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+      /*  using rootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
+        using rootPrimaryVariables = GetPropType<RootTypeTag, Properties::PrimaryVariables>;
+        using rootModelTraits = GetPropType<RootTypeTag, Properties::ModelTraits>;
+        using rootFluidSystem = GetPropType<RootTypeTag, Properties::FluidSystem>;
+        const auto rootfileName = getParam<std::string>("Restart.RootFile");
+        const auto rootpvName = createPVNameFunction<rootIOFields, rootPrimaryVariables, rootModelTraits, rootFluidSystem>();
+        loadSolution(sol[rootDomainIdx], rootfileName, rootpvName, *rootGridGeometry);*/
+    }
+    else
+    {
+        soilProblem->applyInitialSolution(sol[soilDomainIdx]);
+        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+    }
+    oldSol = sol;
 
     // coupling manager
     couplingManager->init(soilProblem, rootProblem, sol);
@@ -267,7 +294,7 @@ int main(int argc, char** argv) try
     if (tEnd > 0) { // dynamic problem
         grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
         auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
-        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
+        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(restartTime, initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
@@ -287,7 +314,7 @@ int main(int argc, char** argv) try
     using SoilSolution = std::decay_t<decltype(sol[soilDomainIdx])>;
     VtkOutputModule<SoilGridVariables, SoilSolution> soilVtkWriter(*soilGridVariables, sol[soilDomainIdx], soilProblem->name());
     GetPropType<SoilTypeTag, Properties::VtkOutputFields>::initOutputModule(soilVtkWriter);
-    soilVtkWriter.write(0.0);
+    soilVtkWriter.write(restartTime);
 
     using RootSolution = std::decay_t<decltype(sol[rootDomainIdx])>;
     VtkOutputModule<RootGridVariables, RootSolution> rootVtkWriter(*rootGridVariables, sol[rootDomainIdx], rootProblem->name());
@@ -313,7 +340,7 @@ int main(int argc, char** argv) try
     rootVtkWriter.addField(rootProblem->initialPressure(), "initial pressure [cm]");
     rootVtkWriter.addField(rootProblem->kr(), "kr [cm/hPa/d]");
     rootVtkWriter.addField(rootProblem->kx(), "kx [cm4/hPa/day]");
-    rootVtkWriter.write(0.0);
+    rootVtkWriter.write(restartTime);
 
     // the assembler with time loop for instationary problem
     using Assembler = MultiDomainFVAssembler<Traits, CouplingManager, DiffMethod::numeric>;

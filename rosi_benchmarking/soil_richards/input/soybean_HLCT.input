@@ -8,9 +8,9 @@ MaxTimeStepSize = 3600 # an hour [s]
 # CheckTimes = 17280 43200 
 
 [Soil.Grid]
-LowerLeft = 0.185 0.04 0.
-UpperRight = -0.185 -0.04 -2.50.
-Cells = 18 4 125 # 37*8*250 # changed y from 5 cm to 8 cm
+LowerLeft = 0.185 0.03 0.
+UpperRight = -0.185 -0.03 -2.50.
+Cells = 18 3 125 # 37*6*250 # changed y from 5 cm to 6 cm
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off
@@ -18,8 +18,8 @@ Type = 4 # atmospheric BC with surface run off
 [Soil.BC.Bot]
 Type = 5 # free drainage
 
-[Soil.IC]
-P = -200
+#[Soil.IC]
+#P = -200
 
 [Soil.VanGenuchten] 
 # Hollabrunn_Convectional Tillage
@@ -30,6 +30,7 @@ N =  1.1457
 Ks = 1488 # [cm/d] 	
 
 [Climate]
+# Precipitation = 0.1 # [cm day-1]
 CSVFile = input/soybean_precipitation_2003.csv # [cm day-1]
 
 

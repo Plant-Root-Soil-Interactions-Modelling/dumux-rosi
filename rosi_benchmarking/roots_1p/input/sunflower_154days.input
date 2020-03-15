@@ -9,7 +9,7 @@ MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
 File =  grids/Sunflower_154days.dgf
-InitialT = 14 # days
+InitialT = 142 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
 ctIdx = 7
@@ -45,8 +45,8 @@ KrAge3 = -154	0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 60	1e20	# days
 CSVFile = input/sunflower_transpiration_2003.csv
 Sinusoidal = True
 
-[Soil.IC]
-P = -10000
+#[Soil.IC]
+#P = -300
 
 [Vtk]
 AddProcessRank = "false"

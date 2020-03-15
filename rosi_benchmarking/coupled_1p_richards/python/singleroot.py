@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from vtk_tools import *
 import van_genuchten as vg
 import math
+import numpy as np
 
-name = "singleroot"  # this name should be unique
+name = "singleroot_atmospheric_HLCT"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -14,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # # run simulation
-os.system("./coupled_periodic input/singleroot.input")
+os.system("./coupled_periodic input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name):

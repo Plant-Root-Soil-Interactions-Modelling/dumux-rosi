@@ -1,5 +1,5 @@
 [TimeLoop]
-TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd = 2592000 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 30 days 2592000 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
@@ -13,10 +13,15 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1 
 
-[Soil.IC]
-P = -10000
+# [Soil.IC]
+# P = -300
 
 [Problem]
 Name = sunflower_30days_HLCT
 RootName = ../roots_1p/input/sunflower_30days.input
-SoilName = ../soil_richards/input/sunflower_HLCT_14d.input
+SoilName = ../soil_richards/input/sunflower_HLCT.input
+
+[Restart]
+Time = 1814400
+SoilFile = ./results_sunflower_21days_HLCT/sunflower_21days_HLCT-00168.vtu
+

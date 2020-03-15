@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 import numpy as np
 
-name = "singleroot"  # this name should be unique
+name = "singleroot_atmospheric_HLCT"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))

@@ -2,9 +2,10 @@
 Name = small
 
 [TimeLoop]
-TEnd = 31536000 # 31536000 # 0 is steady state
+TEnd = 604800 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
-MaxTimeStepSize = 864000 # 10 days [s] 
+MaxTimeStepSize = 3600 # 10 days [s] 
+PeriodicCheckTimes = 3600
 
 [Soil.Grid]
 LowerLeft = -0.04 -0.02 -0.24

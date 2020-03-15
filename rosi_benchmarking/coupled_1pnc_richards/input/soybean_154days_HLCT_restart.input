@@ -1,5 +1,5 @@
 [Problem]
-Name = soybean_154days_HLCT_full
+Name = soybean_154days_HLCT_restart
 RootName = ../roots_1pnc/input/soybean_154days.input
 SoilName = ../soil_richards/input/soybean_HLCT.input
 
@@ -10,7 +10,7 @@ PeriodicCheckTimes = 21600
 MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 18 3 125 # 37*5*250
+Cells = 18 3 125 # 37*6*250
 Periodic = true true false
 Overlap = 1 
 
@@ -18,8 +18,8 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-[Soil.IC]
-P = -300
+#[Soil.IC]
+#P = -300
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -31,3 +31,8 @@ ProductionAge = 2 # [day]
 Decay = 0.693 # [day-1]
 b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
+
+[Restart]
+Time = 8.69956e+06 # 100 days
+SoilFile = ./soybean_Results/soybean_154days_HLCT-00403.vtu
+

@@ -34,6 +34,7 @@
 #include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/io/grid/gridmanager.hh>
+#include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
 #include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
@@ -100,16 +101,31 @@ int main(int argc, char** argv) try
     // run stationary or dynamic problem on this grid
     ////////////////////////////////////////////////////////////
 
-    // the solution vector
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
-    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
-
     // the problem (initial and boundary conditions)
     auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
     problem->spatialParams().initParameters(*gridManager.getGridData());
 
-    problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
+    // check if we are about to restart a previously interrupted simulation
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    Scalar restartTime = getParam<Scalar>("Restart.Time", 0);
+
+    // the solution vector
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+    if (restartTime > 0)
+    {
+        using IOFields = GetPropType<TypeTag, Properties::IOFields>;
+        using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+        using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;
+        using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+        const auto fileName = getParam<std::string>("Restart.RootFile");
+        const auto pvName = createPVNameFunction<IOFields, PrimaryVariables, ModelTraits, FluidSystem>();
+        loadSolution(x, fileName, pvName, *fvGridGeometry);
+    }
+    else
+        problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
+
     std::cout << "i have a problem \n" << std::flush;
 
     // the grid variables
@@ -125,7 +141,7 @@ int main(int argc, char** argv) try
     if (tEnd > 0) { // dynamic problem
         grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
         auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
-        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
+        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(restartTime, initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
@@ -168,7 +184,7 @@ int main(int argc, char** argv) try
     vtkWriter.addField(problem->kr(), "kr [cm/hPa/d]");
     vtkWriter.addField(problem->kx(), "kx [cm4/hPa/day]");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(0.0);
+    vtkWriter.write(restartTime);
     std::cout << "vtk writer module initialized \n" << std::flush;
 
     // the assembler with time loop for instationary problem

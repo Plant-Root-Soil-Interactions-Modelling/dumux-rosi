@@ -48,7 +48,7 @@
 #include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
-// #include <dumux/io/loadsolution.hh> // functions to resume a simulation
+#include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
 #include "richardsproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
 #include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
@@ -138,10 +138,25 @@ int main(int argc, char** argv) try
     // the problem (initial and boundary conditions)
     auto problem = std::make_shared<RichardsProblem<TypeTag>>(fvGridGeometry);
 
+    // check if we are about to restart a previously interrupted simulation
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    Scalar restartTime = getParam<Scalar>("Restart.Time", 0);
+
     // the solution vector
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
-    problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
+    if (restartTime > 0)
+    {
+        using IOFields = GetPropType<TypeTag, Properties::IOFields>;
+        using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+        using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;
+        using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+        const auto fileName = getParam<std::string>("Restart.SoilFile");
+        const auto pvName = createPVNameFunction<IOFields, PrimaryVariables, ModelTraits, FluidSystem>();
+        loadSolution(x, fileName, pvName, *fvGridGeometry);
+    }
+    else
+        problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
 
     // the grid variables
@@ -160,12 +175,11 @@ int main(int argc, char** argv) try
     gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
 
     // get some time loop parameters  & instantiate time loop
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop; // defined in common/timeloop.hh, everything clear, easy to use.
     if (tEnd > 0) { // dynamic problem
         auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
-        timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
+        timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(restartTime, initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<Scalar>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
@@ -187,7 +201,7 @@ int main(int argc, char** argv) try
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(0.0);
+    vtkWriter.write(restartTime);
     /**
      * home grown vkt output, rather uninteresting
      */

@@ -1,20 +1,20 @@
 [Problem]
-Name = singleroot_domain
+Name = test_restart2
 
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 25920 # 0.3 days [s] 
-MaxTimeStepSize = 1800 # 3600 # an hour [s] 
-CheckTimes = 8640 17280  
+TEnd = 1209600 # 0.3 days [s] 
+MaxTimeStepSize = 3600 # 3600 # an hour [s] 
+PeriodicCheckTimes = 86400  
+
+[Restart]
+Time = 604800
+File = test_restart1-00007.vtu
 
 [Soil.Grid]
 UpperRight = 0.005 0.005 0. 
 LowerLeft = -0.005 -0.005 -0.15
-Cells = 5 5 75 
-Periodic = true true false
-Overlap = 1
-
-[Grid]
+Cells = 3 3 25 
 Periodic = true true false
 Overlap = 1
 
@@ -26,7 +26,7 @@ Type = 4 # atmospheric
 Type = 5 # free drainage
 
 [Soil.IC]
-P = -300
+P = -500
 
 [Soil.VanGenuchten]
 # Hollabrunn_Convectional Tillage
@@ -37,5 +37,5 @@ N =  1.1457
 Ks = 1488 # [cm/d] 	
 
 [Climate]
-Precipitation = 8 # [cm day-1]
-# CSVFile = input/sunflower_precipitation_2003.csv # [cm day-1]
+Precipitation = 0.1 # [cm day-1]
+

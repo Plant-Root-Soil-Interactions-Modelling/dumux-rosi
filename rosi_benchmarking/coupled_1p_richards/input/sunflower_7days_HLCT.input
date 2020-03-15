@@ -14,9 +14,9 @@ Periodic = true true false
 Overlap = 1 
 
 [Soil.IC]
-P = -10000
+P = -300
 
 [Problem]
 Name = sunflower_7days_HLCT
 RootName = ../roots_1p/input/sunflower_7days.input
-SoilName = ../soil_richards/input/sunflower_HLCT_14d.input
+SoilName = ../soil_richards/input/sunflower_HLCT.input
