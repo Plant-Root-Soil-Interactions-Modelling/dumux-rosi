@@ -178,7 +178,7 @@ int main(int argc, char** argv) try
     if (tEnd > 0) { // dynamic problem
         grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
         auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
-        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(restartTime, initialDt, tEnd);
+        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
@@ -221,7 +221,7 @@ int main(int argc, char** argv) try
     vtkWriter.addField(problem->kr(), "kr [cm/hPa/d]");
     vtkWriter.addField(problem->kx(), "kx [cm4/hPa/day]");
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(restartTime);
+    vtkWriter.write(0.0);
     std::cout << "vtk writer module initialized \n" << std::flush;
 
     // the assembler with time loop for instationary problem
