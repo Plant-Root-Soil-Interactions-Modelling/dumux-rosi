@@ -1,4 +1,4 @@
-''' Run sunflower periodic '''
+''' Run convergence '''
 
 import os
 import matplotlib.pyplot as plt
@@ -6,8 +6,8 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "sunflower"  # this name should be unique
-suffix = "_154days_HLCT"
+name = "convergence"  # this name should be unique
+suffix = "_loam_0,6_100"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled_periodic input/" + name + ".input -RootSystem.Grid.File grids/Sunflower_154days.dgf")
+os.system("./coupled input/" + name + ".input -Soil.Layer.Number 2")  # layer 1 (sand), 2 (loam), 3 (clay)
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
@@ -25,7 +25,7 @@ os.system("cp input/" + name + ".input " + "results_" + name + suffix + "/")
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
-with open("results_" + name + suffix + "/" + name + "_actual_transpiration.txt", 'r') as f:  # benchmarkC12c_actual_transpiration. or benchmarkC12bc_actual_transpiration
+with open("results_" + name + suffix + "/" + name + "_actual_transpiration.txt", 'r') as f:  
     d = np.loadtxt(f, delimiter = ',')
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
 t = d[:, 0] / c  # [s] -> [day]

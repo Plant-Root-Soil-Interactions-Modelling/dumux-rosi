@@ -1,5 +1,5 @@
 [Problem]
-Name = sunflower_90days
+Name = sunflower
 
 [TimeLoop]
 TEnd = 604800 # 7 day [s]
@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/Sunflower_90days.dgf
+File =  grids/Sunflower_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -46,7 +46,7 @@ CSVFile = input/sunflower_transpiration_2003.csv
 Sinusoidal = True
 
 [Soil.IC]
-P = -10000
+P = -300
 
 [Vtk]
 AddProcessRank = "false"

@@ -5,7 +5,8 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 25 17 75 # for 50 * 33 * 150
+# Cells = 25 17 75 # for 50 * 33 * 150
+Cells = 13 9 37
 Periodic = true true false
 Overlap = 1 
 
@@ -17,6 +18,10 @@ Overlap = 1
 P = -300
 
 [Problem]
-Name = sunflower_7days_HLCT
-RootName = ../roots_1p/input/sunflower_7days.input
+Name = sunflower
+RootName = ../roots_1p/input/sunflower.input
 SoilName = ../soil_richards/input/sunflower_HLCT.input
+
+#[Restart]
+#Time = 7.77393e+06
+#SoilFile = ./results_sunflower_90days_HLCT/sunflower_90days_HLCT-01441.vtu

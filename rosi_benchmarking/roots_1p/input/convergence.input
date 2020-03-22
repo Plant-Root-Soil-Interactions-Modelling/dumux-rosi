@@ -1,5 +1,5 @@
 [Problem]
-Name = benchmarkC12
+Name = convergence
 
 [TimeLoop]
 TEnd = 43200 # half day [s]

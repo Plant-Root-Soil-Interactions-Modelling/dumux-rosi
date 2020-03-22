@@ -6,11 +6,11 @@ SoilName = ../soil_richards/input/soybean_HLCT.input
 [TimeLoop]
 TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
-PeriodicCheckTimes = 21600
+PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 18 3 125 # 37*5*250
+Cells = 18 3 125 # 37*6*250
 Periodic = true true false
 Overlap = 1 
 

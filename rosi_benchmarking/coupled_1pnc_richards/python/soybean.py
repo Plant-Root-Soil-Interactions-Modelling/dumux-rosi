@@ -6,14 +6,14 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "soybean_154days_HLCT_restart"  # this name should be unique
+name = "soybean_154days_HLCT"  # this name should be unique
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
 
-# # run simulation
+# run simulation
 os.system("./coupled_periodic_1pnc_richards input/" + name + ".input")
 
 # move results to folder 'name'
@@ -66,8 +66,8 @@ ctrans = np.cumsum(np.multiply(1000 * d[1:, 1] * c, (t[1:] - t[:-1])))
 ax3b.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
 ax3b.tick_params(axis= 'y', labelcolor = 'b')
 ax3.set_xlabel("time (days)")
-ax3.set_ylabel("transpiration (g/day)")
-ax3b.set_ylabel("Cumulative transpiration $[g]$", color = "b")
+ax3.set_ylabel("transpiration (mL/day)")
+ax3b.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
 ax3.legend(["potential", "actual", "cumulative"], loc = 'upper left')
 plt.savefig("results_" + name + "/" + name + '_transpiration.pdf', dpi=300)
 

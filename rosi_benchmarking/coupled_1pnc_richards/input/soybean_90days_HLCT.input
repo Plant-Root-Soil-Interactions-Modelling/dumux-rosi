@@ -4,7 +4,7 @@ RootName = ../roots_1pnc/input/soybean_90days.input
 SoilName = ../soil_richards/input/soybean_HLCT.input
 
 [TimeLoop]
-TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd = 7776000 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 21600
 MaxTimeStepSize = 3600
@@ -19,7 +19,7 @@ Periodic = true true false
 Overlap = 1
 
 [Soil.IC]
-P = -10000
+P = -300
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation

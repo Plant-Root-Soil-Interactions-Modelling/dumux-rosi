@@ -1,0 +1,16 @@
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 360
+
+[Soil.Grid]
+Cells = 13 13 25
+
+[Soil.IC]
+P = -100
+
+[Problem]
+Name = convergence
+RootName = ../roots_1p/input/convergence.input
+SoilName = ../soil_richards/input/convergence.input
