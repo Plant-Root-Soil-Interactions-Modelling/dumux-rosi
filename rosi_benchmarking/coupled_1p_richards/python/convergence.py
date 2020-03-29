@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "convergence"  # this name should be unique
-suffix = "_loam_0,6_100"
+suffix = "_sand_0,4_200"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled input/" + name + ".input -Soil.Layer.Number 2")  # layer 1 (sand), 2 (loam), 3 (clay)
+os.system("./coupled input/" + name + ".input -Soil.Layer.Number 1")  # layer 1 (sand), 2 (loam), 3 (clay)
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):

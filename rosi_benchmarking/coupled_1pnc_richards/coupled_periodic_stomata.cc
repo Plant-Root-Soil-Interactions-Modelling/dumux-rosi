@@ -240,13 +240,13 @@ int main(int argc, char** argv) try
 
         // root
         rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-        /*using rootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
+        using rootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
         using rootPrimaryVariables = GetPropType<RootTypeTag, Properties::PrimaryVariables>;
         using rootModelTraits = GetPropType<RootTypeTag, Properties::ModelTraits>;
         using rootFluidSystem = GetPropType<RootTypeTag, Properties::FluidSystem>;
         const auto rootfileName = getParam<std::string>("Restart.RootFile");
         const auto rootpvName = createPVNameFunction<rootIOFields, rootPrimaryVariables, rootModelTraits, rootFluidSystem>();
-        loadSolution(sol[rootDomainIdx], rootfileName, rootpvName, *rootGridGeometry);*/
+        loadSolution(sol[rootDomainIdx], rootfileName, rootpvName, *rootGridGeometry);
     }
     else
     {

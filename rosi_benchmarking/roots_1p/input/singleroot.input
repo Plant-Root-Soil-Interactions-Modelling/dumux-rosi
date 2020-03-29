@@ -9,7 +9,7 @@ MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
 File =  grids/singleRoot.dgf
-InitialT = 1 # [days]
+InitialT = 10 # [days]
 Radius = 0.02 # cm
 
 [RootSystem.Conductivity]
@@ -24,7 +24,7 @@ Transpiration = 5e-4 # kg/day
 Sinusoidal = True
 
 [Soil.IC]
-P = -200
+P = -300
 
 [Vtk]
 AddProcessRank = "false"

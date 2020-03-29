@@ -5,10 +5,10 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 360
 
 [Soil.Grid]
-Cells = 13 13 25
+Cells = 20 20 38
 
 [Soil.IC]
-P = -100
+P = -200
 
 [Problem]
 Name = convergence

@@ -9,13 +9,8 @@ DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
-[Restart]
-Time = 604800
-SoilFile = test_restart1-00168.vtu
-RootFile = test_restart1-00168.vtp
-
-[Soil.IC]
-P = -500
+#[Soil.IC]
+#P = -500
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -34,3 +29,9 @@ Sinusoidal = True
 
 [RootSystem.Leaf]
 Volume = 0.0125 # [cm^3] equals root volume
+
+[Restart]
+Time = 603068
+SoilFile = ./results_test_restart1/test_restart1-00168.vtu
+RootFile = ./results_test_restart1/test_restart1-00168.vtp
+

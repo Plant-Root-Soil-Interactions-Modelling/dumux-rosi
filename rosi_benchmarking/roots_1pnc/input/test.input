@@ -21,7 +21,6 @@ Sinusoidal = True
 
 [Soil.IC]
 P = -100
-#Z = -.15 0.
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation

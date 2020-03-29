@@ -21,8 +21,8 @@ Type = 4 # atmospheric
 [Soil.BC.Bot]
 Type = 5 # free drainage
 
-[Soil.IC]
-P = -500
+#[Soil.IC]
+#P = -500
 
 [Soil.VanGenuchten]
 # Hollabrunn_Convectional Tillage

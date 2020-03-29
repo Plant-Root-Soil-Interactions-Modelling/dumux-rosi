@@ -26,8 +26,8 @@ Sinusoidal = True
 [RootSystem.Leaf]
 Volume = 0.0125 # [cm^3] equals root volume
 
-[Soil.IC]
-P = -300
+#[Soil.IC]
+#P = -300
 
 [Component]
 liquidDiffCoeff = 1.2e-9

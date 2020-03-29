@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from vtk_tools import *
 from math import *
 
-name = "soybean_154days"  # this name should be unique
+name = "soybean"  # this name should be unique
+suffix = "_154days_HLCT"
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -13,18 +14,18 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # run dumux
-os.system("./rootsystem_periodic_stomata input/" + name + ".input")
+os.system("./rootsystem_periodic_stomata input/" + name + ".input -RootSystem.Grid.File grids/Glycine_max_154days.dgf")
 
 # move results to folder 'name'
-if not os.path.exists("results_" + name):
-    os.mkdir("results_" + name)
-os.system("mv " + name + "* " + "results_" + name + "/")
-os.system("cp input/" + name + ".input " + "results_" + name + "/")
+if not os.path.exists("results_" + name + suffix):
+    os.mkdir("results_" + name + suffix)
+os.system("mv " + name + "* " + "results_" + name + suffix + "/")
+os.system("cp input/" + name + ".input " + "results_" + name + suffix + "/")
 
 #      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 #      * 4 collar pressure [Pa], 5 calculated actual transpiration [cm^3/day], 6 simtime [s], 7 hormone leaf mass [kg],
 #      * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg] , 10 hormone source rate [kg/s]
-with open("results_" + name + "/" + name + "_actual_transpiration.txt", 'r') as f:
+with open("results_" + name + suffix + "/" + name + "_actual_transpiration.txt", 'r') as f:
     d = np.loadtxt(f, delimiter = ',')
 c = 24 * 3600  # s / day
 
@@ -58,5 +59,5 @@ ax3.set_xlabel("time (days)")
 ax3.set_ylabel("transpiration (g/day)")
 ax3.legend(["potential", "actual"])
 ax3.set_title("Water transpiration")
-plt.savefig("results_" + name + ".pdf")
+plt.savefig("results_" + name + suffix + ".pdf")
 plt.show()
