@@ -90,7 +90,7 @@ public:
         NumEqVector storage(0.0);
         storage[conti0EqIdx] = volVars.porosity()
                                * volVars.density(liquidPhaseIdx)
-                               * volVars.saturation(liquidPhaseIdx)*volVars.coordinatesCenter()[0];
+                               * volVars.saturation(liquidPhaseIdx)*scv.center()[0];
 
         // for extended Richards we consider water in air // todo ignored for now
         if (enableWaterDiffusionInAir)
@@ -134,7 +134,7 @@ public:
         auto upwindTerm = [](const auto& volVars)
                           { return volVars.density(liquidPhaseIdx)*volVars.mobility(liquidPhaseIdx); };
 
-        flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm)*volVars.coordinatesCenter()[0];
+        flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm)*scvf.center()[0];
 
         // for extended Richards we consider water vapor diffusion in air // todo ignored for now
         if (enableWaterDiffusionInAir)
