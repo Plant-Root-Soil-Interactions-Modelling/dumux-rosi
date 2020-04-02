@@ -1,0 +1,37 @@
+[Problem]
+Name = benchmark1d_1a
+EnableGravity = "false"
+
+[TimeLoop]
+TEnd = 3153600 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+
+[Soil.Grid]
+UpperRight = 0
+LowerLeft = -2
+Cells = 199
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0.5 # [cm/d]
+
+[Soil.BC.Bot]
+Type = 2 # constant flux
+Value =  0 #no flux
+
+[Soil.IC]
+P = -200 # cm pressure head (initial guess)
+
+[Soil.VanGenuchten] 
+# Loam 
+Qr = 0.08 	
+Qs = 0.43
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d] 	
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+
