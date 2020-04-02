@@ -7,6 +7,9 @@ target_compile_definitions(richards3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 add_executable(richards1d EXCLUDE_FROM_ALL richards.cc)
 target_compile_definitions(richards1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
+add_executable(richards1d_cyl EXCLUDE_FROM_ALL richards_cyl.cc)
+target_compile_definitions(richards1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
+
 add_executable(richards_alu EXCLUDE_FROM_ALL richards.cc)
 target_compile_definitions(richards_alu PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
 
