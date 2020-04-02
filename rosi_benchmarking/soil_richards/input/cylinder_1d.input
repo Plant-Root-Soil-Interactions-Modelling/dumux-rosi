@@ -3,29 +3,30 @@ Name = cylinder_1d
 EnableGravity = "false"
 
 [TimeLoop]
-TEnd = 3153600 # 0 is steady state
+TEnd = 864000 # 0 is steady state
 DtInitial =  1 # [s]
-MaxTimeStepSize = 864000 # 10 days [s] 
+MaxTimeStepSize = 864000 # 10 days [s]
+CheckTimes = 288000 576000 864000
 
 [Soil.Grid]
-UpperRight = 0
-LowerLeft = -2
-Cells = 199
+UpperRight = 0.02
+LowerLeft = -0.6
+Cells = 100
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = 0.5 # [cm/d]
+Value = 0.1 # [cm/d]
 
 [Soil.BC.Bot]
 Type = 2 # constant flux
 Value =  0 #no flux
 
 [Soil.IC]
-P = -200 # cm pressure head (initial guess)
+P = -100 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
 # Loam 
-Qr = 0.08 	
+Qr = 0.045 	
 Qs = 0.43
 Alpha = 0.04  # [1/cm] 
 N = 1.6 
