@@ -1,5 +1,5 @@
 [Problem]
-Name = benchmark1d_1a
+Name = cylinder_1d
 EnableGravity = "false"
 
 [TimeLoop]
