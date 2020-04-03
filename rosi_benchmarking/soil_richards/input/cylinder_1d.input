@@ -19,7 +19,7 @@ Value = 0 # [cm/d]
 
 [Soil.BC.Bot]
 Type = 2 # constant flux
-Value =  -0.00002  [cm/d] 
+Value =  -0.00002   #[cm/d]
 
 [Soil.IC]
 P = -100 # cm pressure head (initial guess)
