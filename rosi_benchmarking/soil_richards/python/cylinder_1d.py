@@ -1,13 +1,12 @@
-# Benchmark 3 (in 1D)
+# cylinder problem (in 1D)
 #
-# compares the dumux solution to the analytical solution (Figure 4abc Vanderborght et al 2005)
+# compares the dumux solution with the comsol solution
 #
 # D. Leitner, 2018
 #
 
 import os
 import matplotlib.pyplot as plt
-#from analytic_b3 import *
 from vtk_tools import *
 import van_genuchten as vg
 
@@ -17,22 +16,22 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-os.system("./richards1d input/cylinder_1d.input")
+os.system("./richards1d_cyl input/cylinder_1d.input")
 
 
-#ex = []  # list for data for export
+#read in data
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
+data = np.loadtxt("cylinder_1d_Comsol.txt")
+z_comsol = data[:,0]
+h_comsol = data[:,-1]
 
-
-for i in range(0, 3):
-    s_, p_, z_ = read1D_vtp_data("cylinder_1d-0000" + str(i + 1) + ".vtp")
-    h_ = vg.pa2head(p_)
-    theta_ = vg.water_content(h_, sand)
-    #ax1.plot(theta_, z_ * 100, "r+")
-    #ex.append(z_)
-    #ex.append(theta_)
-
-
-#np.savetxt("cylinder_1d", np.vstack(ex), delimiter = ",")
-
+#got to the right place and plot
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
+#s_, p_, z_ = read1D_vtp_data("cylinder_1d-00003.vtp")
+#h_ = vg.pa2head(p_)
+plt.plot(z_comsol,h_comsol,  "b", z_comsol, h_comsol, "r")
+plt.xlabel('distance from the root surface (cm)')
+plt.ylabel('pressure head (cm)')
+plt.legend(["dumux", "comsol"], loc='lower right')
 plt.show()
 
