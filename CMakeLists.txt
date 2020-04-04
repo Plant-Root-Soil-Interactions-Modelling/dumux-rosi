@@ -7,10 +7,16 @@ if(NOT (dune-common_DIR OR dune-common_ROOT OR
       ${PROJECT_BINARY_DIR})
 endif()
 
+# find_package (Python3 COMPONENTS Interpreter Development)
+# set(PYBIND11_PYTHON_VERSION 3.7.5)
+# set(DUNE_PYBINDXI_PYTHON_VERSION 3.7.5)
+# find_package( PythonInterp 3.7.5 REQUIRED )
+# find_package( PythonLibs 3.7.5 REQUIRED )
+
 #find dune-common and set the module path
 find_package(dune-common REQUIRED)
 find_package(dune-alugrid REQUIRED)
-# find_package(dune-pybindxi REQUIRED) # PATHS ../dune-pybindxi/build-cmake/
+find_package(dune-pybindxi REQUIRED) # PATHS ../dune-pybindxi/build-cmake/
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${dune-common_MODULE_PATH} ) 
 
 #include the dune macros
