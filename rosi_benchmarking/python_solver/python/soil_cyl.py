@@ -6,6 +6,7 @@ from solver.richards import RichardsWrapper  # Python part
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -23,9 +24,9 @@ cpp_base = RichardsCylFoam()
 s = RichardsWrapper(cpp_base)
 s.initialize()
 
-loam = [0.08, 0.43, 0.04, 1.6, 50]
+loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-s.createGrid([0.02], [0.6], [500])  # [cm]
+s.createGrid([0.02], [0.6], [100])  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setTopBC("constantFlux", 0.)  #  [cm/day]
@@ -36,7 +37,7 @@ s.initializeProblem()
 if rank == 0:
     print(s)
  
-times = np.array([0, 10000, 576000, 864000]) / (3600 * 24)  # , 576000, 864000
+times = np.array([0, 288000, 576000, 864000]) / (3600 * 24)  # , 576000, 864000
 print("Times", times)
 s.ddt = 1.e-5  # days
  
@@ -47,6 +48,14 @@ for dt in np.diff(times):
  
 points = s.getDofCoordinates()
 x = s.getSolution()
-plt.plot(points[:], RichardsWrapper.toHead(x), "r*")
+plt.plot(points[:], RichardsWrapper.toHead(x), "b")
+
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
+data = np.loadtxt("cylinder_1d_Comsol.txt")
+z_comsol = data[:,0]
+h_comsol = data[:,-1]
+plt.plot(z_comsol+0.02, h_comsol, "r*")
+
+
 plt.show()
 
