@@ -1,5 +1,5 @@
-#ifndef RICHARDS_SP_SOLVER_H_
-#define RICHARDS_SP_SOLVER_H_
+#ifndef PYTHON_RICHARDS_SOLVER_H_
+#define PYTHON_RICHARDS_SOLVER_H_
 
 // most includes are in solverbase
 #include "solverbase.hh"
@@ -11,13 +11,13 @@
 /**
  * Adds solver functionality, that specifically makes sense for Richards equation
  */
-template<class Problem, class Assembler, class LinearSolver>
-class RichardsSP : public SolverBase<Problem, Assembler, LinearSolver> {
+template<class Problem, class Assembler, class LinearSolver, int dim = 3>
+class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
 
     std::vector<double> ls; // local sink [kg/s]
 
-    virtual ~RichardsSP() { }
+    virtual ~Richards() { }
 
     /**
      * Calls parent, additionally turns file output off
@@ -53,7 +53,7 @@ public:
 
     /**
      * Applies source term (operator splitting)
-     * limits with wilting point from below, and with full saturation
+     * limits with wilting point from below, and with full saturation todo
      */
     virtual void applySource(const std::vector<double>& rx, const std::map<int,std::vector<int>>& cell2seg) {
 
@@ -88,7 +88,6 @@ public:
     }
 
     /*
-     * TODO setInitialConditions, std::map<int, double> ic,
      * TODO setLayers(std::map<int, int> l)
      */
 
@@ -101,7 +100,7 @@ public:
         std::vector<double> theta;
         int n;
         if (this->isBox) {
-            n = this->gridGeometry->gridView().size(this->dim);
+            n = this->gridGeometry->gridView().size(dim);
         } else {
             n = this->gridGeometry->gridView().size(0);
         }
@@ -165,7 +164,7 @@ protected:
  */
 template<class Problem, class Assembler, class LinearSolver>
 void init_richardssp(py::module &m, std::string name) {
-    using RichardsSP = RichardsSP<Problem, Assembler, LinearSolver>;
+    using RichardsSP = Richards<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
    .def("setSource", &RichardsSP::setSource)

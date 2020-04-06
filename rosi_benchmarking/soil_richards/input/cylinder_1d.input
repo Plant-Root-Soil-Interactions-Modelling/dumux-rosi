@@ -15,7 +15,7 @@ Cells = 500
 
 [Soil.BC.Top]
 Type = 2 # constant flux
-Value = 0 # [cm/d]
+Value =  0 # [cm/d]
 
 [Soil.BC.Bot]
 Type = 2 # constant flux

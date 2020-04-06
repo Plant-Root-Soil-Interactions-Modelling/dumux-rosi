@@ -1,5 +1,5 @@
-#ifndef PYSOLVER_H_
-#define PYSOLVER_H_
+#ifndef PYTHON_RICHARDS_H_
+#define PYTHON_RICHARDS_H_
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
@@ -9,7 +9,7 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
-#include "richardssp.hh" // includes solverbase
+#include "richards.hh" // includes solverbase
 
 #include "../soil_richards/richardsproblem.hh" // the problem class
 
@@ -76,11 +76,10 @@ using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric
 using RichardsUGLinearSolver = Dumux::AMGBackend<RUGTT>;
 using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
 
-
 PYBIND11_MODULE(dumux_rosi, m) {
-    init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "SolverBase");
+    init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "BaseRichardsSP");
     init_richardssp<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "RichardsSP");
-    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "SolverBaseUG");
+    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseUGRichardsSP");
     init_richardssp<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");
 }
 

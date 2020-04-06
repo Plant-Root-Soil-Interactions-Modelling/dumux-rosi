@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_ROOT_PROPERTIES_NOCOUPLING_HH
-#define DUMUX_ROOT_PROPERTIES_NOCOUPLING_HH
+#ifndef DUMUX_ROOTS_PROPERTIES_NOCOUPLING_HH
+#define DUMUX_ROOTS_PROPERTIES_NOCOUPLING_HH
 
 //#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 #include <dumux/multidomain/embedded/integrationpointsource.hh>

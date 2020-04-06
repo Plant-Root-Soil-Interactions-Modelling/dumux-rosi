@@ -1,5 +1,5 @@
-#ifndef SOLVER_BASE_H_
-#define SOLVER_BASE_H_
+#ifndef PYTHON_SOLVER_BASE_H_
+#define PYTHON_SOLVER_BASE_H_
 
 // initialize
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
@@ -25,7 +25,6 @@
 #include <iostream>
 #include <limits>
 
-using VectorType = std::array<double,3>;
 
 /**
  * Derived class will pass ownership
@@ -53,11 +52,11 @@ public:
  *
  * Examples are given in the python directory
  */
-template<class Problem, class Assembler, class LinearSolver>
+template<class Problem, class Assembler, class LinearSolver, int dim = 3 /*Problem::dimWorld */>
 class SolverBase  {
 public:
 
-    static const int dim = 3; // Problem::dimWorld;
+	using VectorType = std::array<double, dim>;
     bool isBox = Problem::isBox; // numerical method
 
     double simTime = 0;
@@ -66,9 +65,13 @@ public:
     int rank = -1; // mpi rank
 
     bool periodic = false; // periodic domain
-    std::array<int, 3> numberOfCells = { 0, 0, 0 };
+    std::array<int, dim> numberOfCells;
 
-    SolverBase() { }
+    SolverBase() {
+    	for (int i=0; i<dim; i++) { // initialize numberOfCells
+    		numberOfCells[i] = 0;
+    	}
+    }
 
     virtual ~SolverBase() { }
 
@@ -94,7 +97,6 @@ public:
         }
 
         auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
-
         maxRank = mpiHelper.size();
         rank = mpiHelper.rank();
 
@@ -140,25 +142,37 @@ public:
      * e.g. the method does not make a lot of sense for unstructured grids
      */
     virtual void createGrid(VectorType boundsMin, VectorType boundsMax,
-        std::array<int, 3> numberOfCells, std::string periodic = "false false false") {
-
+        std::array<int, dim> numberOfCells, bool periodic = false) {
         this->numberOfCells = numberOfCells;
         auto& p = Dumux::Parameters::paramTree(); // had to modify parameters.hh, its private an no way I can pull it out
         std::ostringstream bmin;
         std::ostringstream bmax;
         std::ostringstream cells;
-        bmin << boundsMin[0] << " " << boundsMin[1]<< " " << boundsMin[2];
-        bmax << boundsMax[0] << " " << boundsMax[1]<< " " << boundsMax[2];
-        cells << numberOfCells[0] << " " << numberOfCells[1]<< " " << numberOfCells[2];
-        for (int i=0; i<3; i++) {
+        for (int i=0; i<dim; i++) {
             if (boundsMin[i] >= boundsMax[i]) {
                 throw std::invalid_argument("SolverBase::createGrid: bounds min >= bounds max");
             }
+        	bmin << boundsMin[i] << " ";
+        	bmax << boundsMax[i] << " ";
+        	cells << numberOfCells[i] << " ";
         }
         p["Grid.LowerLeft"] = bmin.str();
         p["Grid.UpperRight"] = bmax.str();
         p["Grid.Cells"] = cells.str();
-        p["Grid.Periodic"] = periodic;
+        if (dim == 1) { // todo dim = 2
+        	if (periodic) {
+                p["Grid.Periodic"] = "true";
+        	} else {
+                p["Grid.Periodic"] = "false";
+        	}
+        }
+        if (dim == 3) {
+        	if (periodic) {
+                p["Grid.Periodic"] = "true true false";
+        	} else {
+                p["Grid.Periodic"] = "false false false";
+        	}
+        }
         createGrid();
     }
 
@@ -178,10 +192,15 @@ public:
      *
      * [minx, miny, minz, maxx, maxy, maxz]
      */
-    virtual std::array<double, 6> getGridBounds() {
+    virtual std::vector<double> getGridBounds() {
         auto bMax = gridGeometry->bBoxMax();
         auto bMin = gridGeometry->bBoxMin();
-        return std::array<double,6>({bMin[0], bMin[1], bMin[2], bMax[0], bMax[1], bMax[2]});
+        std::vector<double> bnds = std::vector<double>(2*dim);
+        for (int i=0; i<dim; i++) {
+        	bnds[i] = bMin[i];
+        	bnds[dim+i] = bMax[i];
+        }
+        return bnds;
     }
 
     /**
@@ -341,7 +360,11 @@ public:
         points.reserve(gridGeometry->gridView().size(dim));
         for (const auto& v : vertices(gridGeometry->gridView())) {
             auto p = v.geometry().center();
-            points.push_back(make3d(VectorType({p[0], p[1], p[2]})));
+            VectorType vp;
+            for (int i=0; i<dim; i++) { // found no better way
+            	vp[i] = p[i];
+            }
+            points.push_back(vp);
         }
         return points;
     }
@@ -356,7 +379,11 @@ public:
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
             auto p = e.geometry().center();
-            cells.push_back(make3d(VectorType({p[0], p[1], p[2]})));
+            VectorType vp;
+            for (int i=0; i<dim; i++) { // found no better way
+            	vp[i] = p[i];
+            }
+            cells.push_back(vp);
         }
         return cells;
     }
@@ -504,7 +531,7 @@ public:
                 }
             }
             return gridGeometry->gridView().comm().min(y);
-            // I would prefer sum(y), BUT more than one process can have this cell
+            // I would prefer sum(y), BUT more than one process can have this cell (borders overlap)
         }
     }
 
@@ -583,7 +610,10 @@ public:
             }
         }
         auto& bBoxTree = gridGeometry->boundingBoxTree();
-        Dune::FieldVector<double, 3> p({pos[0], pos[1], pos[2]});
+        Dune::FieldVector<double, dim> p;
+        for (int i=0; i<dim; i++) {
+        	p[i] = pos[i];
+        }
         // std::cout << "point: " << pos[0]<<", "<< pos[1] <<","<< pos[2] << " in box "; // <<  getGridBounds();
         auto entities = Dumux::intersectingEntities(p, bBoxTree);
         int gIdx = -1;
@@ -598,8 +628,8 @@ public:
     /**
      * Picks a cell and returns its global element cell index @see pickCell
      */
-    virtual int pick(double x, double y, double z) {
-        return pickCell(VectorType({x,y,z}));
+    virtual int pick(VectorType x) {
+        return pickCell(x);
     }
 
     /**
@@ -639,16 +669,6 @@ public:
 
 protected:
 
-    VectorType make3d(VectorType p) { ///<- binding is always 3d, lower dimensional Dumux grids are projected to 3d
-        switch(dim) {
-        case 1: return VectorType({0., 0., p[0]}); // 1D is depth
-        case 2: return VectorType({p[0], p[1], 0.}); // 2D, ignore z
-        case 3: return VectorType({p[0], p[1], p[2]}); // 3D
-        default:
-            throw std::invalid_argument("SolverBase::getPoints: Dimension "+ std::to_string(dim) + "D is not supported");
-        }
-    }
-
     using Grid = typename Problem::Grid;
     using FVGridGeometry = typename Problem::FVGridGeometry;
     using SolutionVector = typename Problem::SolutionVector;
@@ -675,16 +695,16 @@ protected:
 /**
  * pybind11
  */
-template<class Problem, class Assembler, class LinearSolver>
+template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 void init_solverbase(py::module &m, std::string name) {
-	using Solver = SolverBase<Problem, Assembler, LinearSolver>; // choose your destiny
+	using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
 	py::class_<Solver>(m, name.c_str())
 	// initialization
 	    .def(py::init<>())
 	    .def("initialize", &Solver::initialize)
 	    .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-	    .def("createGrid", (void (Solver::*)(VectorType, VectorType, std::array<int, 3>, std::string)) &Solver::createGrid,
-	        py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = "false false false") // overloads, defaults
+	    .def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid,
+	        py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false) // overloads, defaults
 	    .def("readGrid", &Solver::readGrid)
 	    .def("getGridBounds", &Solver::getGridBounds)
 	    .def("setParameter", &Solver::setParameter)
