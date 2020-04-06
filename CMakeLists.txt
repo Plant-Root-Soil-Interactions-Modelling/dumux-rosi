@@ -8,10 +8,10 @@ if(NOT (dune-common_DIR OR dune-common_ROOT OR
 endif()
 
 # find_package (Python3 COMPONENTS Interpreter Development)
-# set(PYBIND11_PYTHON_VERSION 3.7.5)
-# set(DUNE_PYBINDXI_PYTHON_VERSION 3.7.5)
-# find_package( PythonInterp 3.7.5 REQUIRED )
-# find_package( PythonLibs 3.7.5 REQUIRED )
+set(PYBIND11_PYTHON_VERSION 3.7.5)
+set(DUNE_PYBINDXI_PYTHON_VERSION 3.7.5)
+find_package( PythonInterp 3.7.5 REQUIRED )
+find_package( PythonLibs 3.7.5 REQUIRED )
 
 #find dune-common and set the module path
 find_package(dune-common REQUIRED)
