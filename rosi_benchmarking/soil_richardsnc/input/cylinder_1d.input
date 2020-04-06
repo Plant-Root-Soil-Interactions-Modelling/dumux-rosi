@@ -22,7 +22,7 @@ Value =  -0.00002   #[cm/d]
 
 [Soil.IC]
 P = -100 
-C = 0
+C = 9.5e-1
 
 [Soil.VanGenuchten] 
 # Loam over sand 
