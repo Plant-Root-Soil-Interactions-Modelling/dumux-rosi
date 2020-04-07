@@ -26,7 +26,10 @@
 #define DUMUX_TRACER_TEST_SPATIAL_PARAMS_HH
 
 #include <dumux/porousmediumflow/properties.hh>
+#include <dumux/porousmediumflow/velocityoutput.hh>
 #include <dumux/material/spatialparams/fv1p.hh>
+
+#include <dumux/io/inputfilefunction.hh>
 
 namespace Dumux {
 
@@ -60,8 +63,7 @@ public:
      *
      * \param globalPos The global position
      */
-    Scalar porosityAtPos(const GlobalPosition& globalPos) const
-    { return 0.2; }
+    Scalar porosityAtPos(const GlobalPosition& globalPos) const { return 0.2; } // whoever calls, whatever it wants, its 0.2 ...
 
     /*!
      * \brief Defines the dispersivity.
@@ -71,51 +73,27 @@ public:
      * \param elemSol The solution for all dofs of the element
      */
     template<class ElementSolution>
-    Scalar dispersivity(const Element &element,
-                        const SubControlVolume& scv,
-                        const ElementSolution& elemSol) const
-    { return 0; }
+    Scalar dispersivity(const Element &element, const SubControlVolume& scv, const ElementSolution& elemSol) const { return 0; }
+    Scalar fluidDensity(const Element &element, const SubControlVolume& scv) const { return 1000; } // its surely no business of the tracer, hope no one calls it ...
+    Scalar fluidMolarMass(const Element &element, const SubControlVolume& scv) const { return 18.0; } // useMolar = false, but better don't touch
+    Scalar fluidMolarMass(const GlobalPosition &globalPos) const { return 18.0; } // useMolar = false, but better don't touch
 
-    //! Fluid properties that are spatial parameters in the tracer model
-    //! They can possibly vary with space but are usually constants
 
-    //! Fluid density
-    Scalar fluidDensity(const Element &element,
-                        const SubControlVolume& scv) const
-    { return 1000; }
-
-    //! Fluid molar mass
-    Scalar fluidMolarMass(const Element &element,
-                          const SubControlVolume& scv) const
-    { return 18.0; }
-
-    Scalar fluidMolarMass(const GlobalPosition &globalPos) const
-    { return 18.0; }
-
-    //! Velocity field
-    GlobalPosition velocity(const SubControlVolumeFace& scvf) const
-    {
-        GlobalPosition vel(1e-5);
-        const auto globalPos = scvf.ipGlobal();
-        const auto& x = globalPos[0];
-        const auto& y = globalPos[1];
-
-        vel[0] *= x*x * (1.0 - x)*(1.0 - x) * (2.0*y - 6.0*y*y + 4.0*y*y*y);
-        vel[1] *= -1.0*y*y * (1.0 - y)*(1.0 - y) * (2.0*x - 6.0*x*x + 4.0*x*x*x);
-
-        return vel;
-    }
-
-    //! Velocity field
+    /**
+     * volumeFlux is called by tracers local resdiual (this is the one important method)
+     */
     template<class ElementVolumeVariables>
     Scalar volumeFlux(const Element &element,
                       const FVElementGeometry& fvGeometry,
                       const ElementVolumeVariables& elemVolVars,
                       const SubControlVolumeFace& scvf) const
     {
-        return velocity(scvf) * scvf.unitOuterNormal() * scvf.area()
+        return velocity(element) * scvf.unitOuterNormal() * scvf.area()
                * elemVolVars[fvGeometry.scv(scvf.insideScvIdx())].extrusionFactor();
     }
+
+    std::function<GlobalPosition(const Element)> velocity; // now we need to set this from richards...
+
 };
 
 } // end namespace Dumux

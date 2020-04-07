@@ -47,6 +47,7 @@ template <class TypeTag>
 class TracerTest;
 
 namespace Properties {
+
 // Create new type tags
 namespace TTag {
 struct TracerTest { using InheritsFrom = std::tuple<Tracer>; };
@@ -120,13 +121,12 @@ public:
     static Scalar binaryDiffusionCoefficient(unsigned int compIdx,
                                              const Problem& problem,
                                              const Element& element,
-                                             const SubControlVolume& scv) { return D; }
+                                             const SubControlVolume& scv) { return problem.diffusionCoefficient; }
 
     static constexpr bool isCompressible(int phaseIdx) { return false; } ///< \copydoc Dumux::FluidSystems::Base::isCompressible
 
     static constexpr bool viscosityIsConstant(int phaseIdx) { return true; } ///< \copydoc  Dumux::FluidSystems::Base::viscosityIsConstant
 
-    static constexpr Scalar D = 1.;
 };
 
 template<class TypeTag>
@@ -160,64 +160,251 @@ class TracerTest : public PorousMediumFlowProblem<TypeTag>
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
     using SpatialParams = GetPropType<TypeTag, Properties::SpatialParams>;
-
-    //! property that defines whether mole or mass fractions are used
-    static constexpr bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
     using Element = typename FVGridGeometry::GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+    using FVElementGeometry = typename FVGridGeometry::LocalView;
+    using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    using SubControlVolume = typename FVGridGeometry::SubControlVolume;
+    using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
+//    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>; // wrong todo
+//    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // wrong todo
+//    using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
+
+    enum {
+        dimWorld = GridView::dimensionworld, // world dimension
+        isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box // discretization method
+    };
+
+    enum BCTypes {
+        constantPressure = 1,
+        constantFlux = 2,
+		linear = 3,
+		michaelisMenten = 4
+    };
 
 public:
 
-    TracerTest(std::shared_ptr<const FVGridGeometry> fvGridGeom) : ParentType(fvGridGeom) { }
+    TracerTest(std::shared_ptr<const FVGridGeometry> fvGridGeom)
+	: PorousMediumFlowProblem<TypeTag>(fvGridGeom) {
+
+    	// BC
+        bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
+        bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
+        bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
+        bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
+
+        // IC
+        initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m]) pressure head, conversions hard coded
+
+        std::cout << "TracerProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
+            <<  bcBotType_ << ", " << bcBotValue_ << "\n" << std::flush;
+    }
 
     /*!
-     * \name Boundary conditions
-     */
-    // \{
-
-    /*!
-     * \brief Specifies which kind of boundary condition should be
-     *        used for which equation on a given boundary segment.
+     * \copydoc FVProblem::initial
      *
-     * \param globalPos The position for which the bc type should be evaluated
+     * called by FVProblem::applyInitialSolution(...)
      */
-    BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const
-    {
-        BoundaryTypes values;
-        values.setAllNeumann(); // no-flow
+    template<class Entity>
+    PrimaryVariables initial(const Entity& entity) const {
+        auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+        Scalar z = entity.geometry().center()[dimWorld - 1];
+        // std::cout << "tracer initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
+        return PrimaryVariables(toPa_(initialSoil_.f(z, eIdx)));
+    }
+
+
+    /*!
+     * @copydoc FVProblem::boundaryTypesAtPos
+     *
+     * discretization dependent, e.g. called by BoxElementBoundaryTypes::boundaryTypes(...)
+     * when?
+     */
+    BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const {
+        BoundaryTypes bcTypes;
+        if (onUpperBoundary_(globalPos)) { // top or outer bc
+            switch (bcTopType_) {
+            case constantPressure:
+                bcTypes.setAllDirichlet();
+                break;
+            case constantFlux:
+                bcTypes.setAllNeumann();
+                break;
+            default:
+                DUNE_THROW(Dune::InvalidStateException,"Top or outer boundary type not implemented");
+            }
+        } else if (onLowerBoundary_(globalPos)) { // bot bc
+            switch (bcBotType_) {
+            case constantPressure:
+                bcTypes.setAllDirichlet();
+                break;
+            case constantFlux:
+                bcTypes.setAllNeumann();
+                break;
+            case michaelisMenten:
+                bcTypes.setAllNeumann();
+                break;
+            case linear:
+                bcTypes.setAllNeumann();
+                break;
+            default:
+                DUNE_THROW(Dune::InvalidStateException,"Bottom or inner boundary type not implemented");
+            }
+        } else {
+            bcTypes.setAllNeumann(); // no top not bottom is no flux
+        }
+        return bcTypes;
+    }
+
+    /*!
+     * \copydoc FVProblem::dirichletAtPos
+     *
+     * dirchlet(...) is called by the local assembler, e.g. BoxLocalAssembler::evalDirichletBoundaries
+     */
+    PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const {
+        PrimaryVariables values;
+        if (onUpperBoundary_(globalPos)) { // top bc
+            switch (bcTopType_) {
+            case constantPressure:
+                values[0] = toPa_(bcTopValue_);
+                break;
+            default:
+                DUNE_THROW(Dune::InvalidStateException, "Top boundary or outer type Dirichlet: unknown boundary type");
+            }
+        } else if (onLowerBoundary_(globalPos)) { // bot bc
+            switch (bcBotType_) {
+            case constantPressure:
+                values[0] = toPa_(bcBotValue_);
+                break;
+            default:
+                DUNE_THROW(Dune::InvalidStateException, "Bottom or inner boundary type Dirichlet: unknown boundary type");
+            }
+        }
         return values;
     }
-    // \}
 
     /*!
-     * \name Volume terms
+     * \copydoc FVProblem::neumann // [kg/(m²*s)]
+     *
+     * called by BoxLocalResidual::evalFlux,
+     *  mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
      */
-    // \{
+    NumEqVector neumann(const Element& element,
+        const FVElementGeometry& fvGeometry,
+        const ElementVolumeVariables& elemVolVars,
+        const SubControlVolumeFace& scvf) const {
 
-    /*!
-     * \brief Evaluates the initial value for a control volume.
-     *
-     * \param globalPos The position for which the initial condition should be evaluated
-     *
-     * For this method, the \a values parameter stores primary
-     * variables.
-     */
-    PrimaryVariables initialAtPos(const GlobalPosition &globalPos) const
-    {
-        PrimaryVariables initialValues(0.0);
-        if (globalPos[1] > 0.4 - eps_ && globalPos[1] < 0.6 + eps_)
-        {
-            if (useMoles)
-                initialValues = 1e-9;
-            else
-                initialValues = 1e-9*FluidSystem::molarMass(0)/this->spatialParams().fluidMolarMass(globalPos);
+        NumEqVector flux;
+        GlobalPosition pos = scvf.center();
+        if (onUpperBoundary_(pos)) { // top or outer bc
+            switch (bcTopType_) {
+            case constantFlux: { // with switch for maximum in- or outflow
+                Scalar constflux = -bcTopValue_*rho_/(24.*60.*60.) / 100.; // cm/day -> kg/(m²*s)
+                flux[0] = constflux;
+                break;
+            }
+            default:
+                DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
+            }
+        } else if (onLowerBoundary_(pos)) { // bot or inner bc
+            switch (bcBotType_) {
+            case constantFlux: { // with switch for maximum in- or outflow
+                Scalar constflux = -bcBotValue_*rho_/(24.*60.*60.) / 100.; // cm/day -> kg/(m²*s)
+                flux[0] = constflux;
+                break;
+            }
+            default:
+                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
+            }
+        } else {
+            flux[0] = 0.;
         }
-        return initialValues; }
+        return flux;
+    }
 
-    // \}
+    /*!
+     * Sets the current simulation time (within the simulation loop) for atmospheric look up [s]
+     *
+     * eventually, called in the main file (example specific, richards.cc)
+     */
+    void setTime(Scalar t, Scalar dt) {
+        time_ = t;
+        dt_ = dt; // currently unused
+    }
+
+    Scalar diffusionCoefficient = 1.; // the diffusion coefficient of the tracer
+
+//    void setVelocity(std::shared_ptr<RichardsProblem> problem) {
+//			spatialParams().setVelocityFun(problem.velocity) ??? / todoo
+//    }
+
+//    /**
+//     * Callback function for spatial parameters (bad design)
+//     *
+//     * spatialparams has no type tag (that is good)
+//     * BUT for PorousMediumFlowVelocityOutput<GridVariables, FluxVariables>,
+//     * I need GridVariables, and FluxVariables again.
+//     *
+//     * so that must be good enough... TODO move to Richards, otherwise types are wrong e.g. SolutionVector
+//     */
+//    GlobalPosition velocity(const Element &element) const {
+//        GlobalPosition vel; // return value
+//        auto fvGeometry = localView(this->fvGridGeometry());
+//        fvGeometry.bindElement(element);
+//        auto elemVolVars = localView(gridVars.curGridVolVars());
+//        elemVolVars.bindElement(element, fvGeometry, currSol);
+//    	pmVelocity->calculateVelocity(vel, elemVolVars, fvGeometry, element, 0); // o: there is only one phase, i assume pase = 0
+//    	return vel;
+//    }
+    //    SolutionVector& currSol;
+    //    GridVariables& gridVars;
+    //    PorousMediumFlowVelocityOutput<GridVariables, FluxVariables>* pmVelocity = nullptr;
+
 
 private:
-    static constexpr Scalar eps_ = 1e-6;
+
+    //! cm pressure head -> Pascal
+    Scalar toPa_(Scalar ph) const {
+        return pRef_ + ph / 100. * rho_ * g_;
+    }
+
+    //! Pascal -> cm pressure head
+    Scalar toHead_(Scalar p) const {
+        return (p - pRef_) * 100. / rho_ / g_;
+    }
+
+    //! true if on the point lies on the upper boundary
+    bool onUpperBoundary_(const GlobalPosition &globalPos) const {
+        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+    }
+
+    //! true if on the point lies on the upper boundary
+    bool onLowerBoundary_(const GlobalPosition &globalPos) const {
+        return globalPos[dimWorld - 1] < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+    }
+
+    // Initial
+    InputFileFunction initialSoil_; // initial concentration kg/m3
+
+    // BC
+    int bcTopType_;
+    int bcBotType_;
+    Scalar bcTopValue_;
+    Scalar bcBotValue_;
+
+    // additional BC params (inner)
+    // Michaelis Menten maximal flux == bcBotValue_
+    Scalar mmK  =1.; // Michaelis Menten half concentration
+
+    Scalar time_ = 0.;
+    Scalar dt_ = 0.;
+
+    static constexpr Scalar eps_ = 1.e-7;
+    static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+    static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
+    static constexpr Scalar pRef_ = 1.e5; // Pa
+
 };
 
 } // end namespace Dumux
