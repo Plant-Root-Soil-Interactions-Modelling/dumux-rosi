@@ -279,8 +279,25 @@ public:
             }
         } else if (onLowerBoundary_(pos)) { // bot bc
             switch (bcBotType_) {
-            case constantFlux: {
-                flux[conti0EqIdx] = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+            case constantFlux: { // with switch for maximum in- or outflow
+                Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
+                Scalar Kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
+                MaterialLawParams params = this->spatialParams().materialLawParams(element);
+                Scalar p = MaterialLaw::pc(params, s) + pRef_;
+                Scalar h = -toHead_(p); // todo why minus -pc?
+                GlobalPosition ePos = element.geometry().center();
+                Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
+                Scalar constflux = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+                if (constflux < 0) { // outflow (drainage)
+                    Scalar krw = MaterialLaw::krw(params, s);
+                    Scalar omax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - 1.); // maximal outflow
+                    Scalar v = std::max(constflux, omax);
+                    flux[conti0EqIdx] = v;
+                } else { // inflow
+                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal inflow (capillary rise)
+                    Scalar v = std::min(constflux, imax);
+                    flux[conti0EqIdx] = v;
+                }
                 break;
             }
             case freeDrainage: {
