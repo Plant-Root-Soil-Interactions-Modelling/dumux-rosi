@@ -87,8 +87,8 @@
  * Richards model!
  */
 
-#ifndef DUMUX_RICHARDS_MODEL_HH
-#define DUMUX_RICHARDS_MODEL_HH
+#ifndef DUMUX_RICHARDS_CYL_MODEL_HH
+#define DUMUX_RICHARDS_CYL_MODEL_HH
 
 #include <dune/common/fvector.hh>
 

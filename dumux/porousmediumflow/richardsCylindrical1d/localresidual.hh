@@ -23,8 +23,8 @@
  *        using the Richards fully implicit models.
  */
 
-#ifndef DUMUX_RICHARDS_LOCAL_RESIDUAL_HH
-#define DUMUX_RICHARDS_LOCAL_RESIDUAL_HH
+#ifndef DUMUX_RICHARDS_CYL_LOCAL_RESIDUAL_HH
+#define DUMUX_RICHARDS_CYL_LOCAL_RESIDUAL_HH
 
 #include <dumux/common/properties.hh>
 

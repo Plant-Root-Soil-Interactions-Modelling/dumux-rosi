@@ -335,7 +335,7 @@ public:
 
     Scalar diffusionCoefficient = 1.; // the diffusion coefficient of the tracer
 
-//    void setVelocity(std::shared_ptr<RichardsProblem> problem) {
+//    void setVelocity(std::shared_ptr<RichardsProblem> problem) { // TODO
 //			spatialParams().setVelocityFun(problem.velocity) ??? / todoo
 //    }
 

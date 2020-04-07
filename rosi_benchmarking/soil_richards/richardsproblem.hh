@@ -79,7 +79,8 @@ public:
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
 
-        criticalPressure_ = getParam<double>("Climate.CriticalPressure", -1.e4); // cm
+        criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
+        criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
         // precipitation
         if (bcTopType_==atmospheric) {
             precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
@@ -155,7 +156,7 @@ public:
      */
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const {
         BoundaryTypes bcTypes;
-        if (onUpperBoundary_(globalPos)) { // top bc
+        if (onUpperBoundary_(globalPos)) { // top or outer bc
             switch (bcTopType_) {
             case constantPressure:
                 bcTypes.setAllDirichlet();
@@ -169,7 +170,7 @@ public:
             default:
                 DUNE_THROW(Dune::InvalidStateException,"Top boundary type not implemented");
             }
-        } else if (onLowerBoundary_(globalPos)) { // bot bc
+        } else if (onLowerBoundary_(globalPos)) { // bot or inner bc
             switch (bcBotType_) {
             case constantPressure:
                 bcTypes.setAllDirichlet();
