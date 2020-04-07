@@ -35,7 +35,7 @@
 #include <dumux/porousmediumflow/problem.hh>
 #include <dumux/material/fluidsystems/base.hh>
 
-#include "spatialparams.hh"
+#include "tracerparams.hh"
 
 namespace Dumux {
 /**
@@ -103,7 +103,7 @@ public:
     static constexpr int getMainComponent(int phaseIdx) { return -1; }
 
     //! The number of components
-    static constexpr int numComponents = 2;
+    static constexpr int numComponents = 1;
     static constexpr int numPhases = 1;
 
     //! Human readable component name (index compIdx) (for vtk output)
@@ -120,25 +120,13 @@ public:
     static Scalar binaryDiffusionCoefficient(unsigned int compIdx,
                                              const Problem& problem,
                                              const Element& element,
-                                             const SubControlVolume& scv)
-    {
-        static const Scalar D = getParam<Scalar>("Problem.D");
-        static const Scalar D2 = getParam<Scalar>("Problem.D2");
-        if (compIdx == 0)
-            return D;
-        else
-            return D2;
-    }
+                                             const SubControlVolume& scv) { return D; }
 
-    /*!
-     * \copydoc Dumux::FluidSystems::Base::isCompressible
-     */
-    static constexpr bool isCompressible(int phaseIdx) { return false; }
+    static constexpr bool isCompressible(int phaseIdx) { return false; } ///< \copydoc Dumux::FluidSystems::Base::isCompressible
 
-     /*!
-     * \copydoc  Dumux::FluidSystems::Base::viscosityIsConstant
-     */
-    static constexpr bool viscosityIsConstant(int phaseIdx) { return true; }
+    static constexpr bool viscosityIsConstant(int phaseIdx) { return true; } ///< \copydoc  Dumux::FluidSystems::Base::viscosityIsConstant
+
+    static constexpr Scalar D = 1.;
 };
 
 template<class TypeTag>

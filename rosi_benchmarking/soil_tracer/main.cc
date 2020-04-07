@@ -42,14 +42,16 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
-#include "problem.hh"
+#include <dune/istl/umfpack.hh>
+
+#include "tracerproblem.hh"
 
 int main(int argc, char** argv) try
 {
     using namespace Dumux;
 
     //! define the type tag for this problem
-    using TypeTag = Properties::TTag::TYPETAG;
+    using TypeTag = Dumux::Properties::TTag::TracerTestTpfa;
 
     //! initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
@@ -107,7 +109,7 @@ int main(int argc, char** argv) try
     timeLoop->setMaxTimeStepSize(maxDt);
 
     //! the assembler with time loop for instationary problem
-    using Assembler = FVAssembler<TypeTag, DiffMethod::analytic, IMPLICIT>;
+    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric, IMPLICIT>;
     auto assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop);
     using JacobianMatrix = GetPropType<TypeTag, Properties::JacobianMatrix>;
     auto A = std::make_shared<JacobianMatrix>();
@@ -115,7 +117,7 @@ int main(int argc, char** argv) try
     assembler->setLinearSystem(A, r);
 
     //! the linear solver
-    using LinearSolver = Dune::UMFPackBackend;
+    using LinearSolver = Dumux::AMGBackend<TypeTag>; // Dumux::AMGBackend<TypeTag>
     auto linearSolver = std::make_shared<LinearSolver>();
 
     //! intialize the vtk output module
