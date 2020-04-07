@@ -37,10 +37,6 @@
 
 #include "spatialparams.hh"
 
-#ifndef USEMOLES // default to true if not set through CMake
-#define USEMOLES true
-#endif
-
 namespace Dumux {
 /**
  * \ingroup TracerTests
@@ -86,7 +82,7 @@ struct SpatialParams<TypeTag, TTag::TracerTest>
 
 // Define whether mole(true) or mass (false) fractions are used
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::TracerTest> { static constexpr bool value = USEMOLES; };
+struct UseMoles<TypeTag, TTag::TracerTest> { static constexpr bool value = false; };
 
 //! A simple fluid system with one tracer component
 template<class TypeTag>
@@ -101,28 +97,23 @@ class TracerFluidSystem : public FluidSystems::Base<GetPropType<TypeTag, Propert
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
 
 public:
-    static constexpr bool isTracerFluidSystem()
-    { return true; }
+    static constexpr bool isTracerFluidSystem() { return true; }
 
     //! None of the components are the main component of the phase
-    static constexpr int getMainComponent(int phaseIdx)
-    { return -1; }
+    static constexpr int getMainComponent(int phaseIdx) { return -1; }
 
     //! The number of components
     static constexpr int numComponents = 2;
     static constexpr int numPhases = 1;
 
     //! Human readable component name (index compIdx) (for vtk output)
-    static std::string componentName(int compIdx)
-    { return "tracer_" + std::to_string(compIdx); }
+    static std::string componentName(int compIdx) { return "tracer_" + std::to_string(compIdx); }
 
     //! Human readable phase name (index phaseIdx) (for velocity vtk output)
-    static std::string phaseName(int phaseIdx = 0)
-    { return "Groundwater"; }
+    static std::string phaseName(int phaseIdx = 0) { return "Water"; }
 
     //! Molar mass in kg/mol of the component with index compIdx
-    static Scalar molarMass(unsigned int compIdx)
-    { return 0.300; }
+    static Scalar molarMass(unsigned int compIdx) { return 0.300; }
 
     //! Binary diffusion coefficient
     //! (might depend on spatial parameters like pressure / temperature)
@@ -142,14 +133,12 @@ public:
     /*!
      * \copydoc Dumux::FluidSystems::Base::isCompressible
      */
-    static constexpr bool isCompressible(int phaseIdx)
-    { return false; }
+    static constexpr bool isCompressible(int phaseIdx) { return false; }
 
      /*!
      * \copydoc  Dumux::FluidSystems::Base::viscosityIsConstant
      */
-    static constexpr bool viscosityIsConstant(int phaseIdx)
-    { return true; }
+    static constexpr bool viscosityIsConstant(int phaseIdx) { return true; }
 };
 
 template<class TypeTag>
@@ -190,15 +179,8 @@ class TracerTest : public PorousMediumFlowProblem<TypeTag>
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
 public:
-    TracerTest(std::shared_ptr<const FVGridGeometry> fvGridGeom)
-    : ParentType(fvGridGeom)
-    {
-        // stating in the console whether mole or mass fractions are used
-        if(useMoles)
-            std::cout<<"problem uses mole fractions" << '\n';
-        else
-            std::cout<<"problem uses mass fractions" << '\n';
-    }
+
+    TracerTest(std::shared_ptr<const FVGridGeometry> fvGridGeom) : ParentType(fvGridGeom) { }
 
     /*!
      * \name Boundary conditions
