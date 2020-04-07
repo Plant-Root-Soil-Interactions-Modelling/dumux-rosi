@@ -1,0 +1,49 @@
+[Problem]
+Name = cylinder_1d
+
+[TimeLoop]
+TEnd = 1728000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s]
+CheckTimes = 1728000 #20 days
+
+[Soil.Grid]
+UpperRight = 0.0002
+LowerLeft = 0.006
+Cells = 500
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value =  0 # [cm/d]
+
+[Soil.BC.Bot]
+Type = 2 # constant flux
+Value =  -0.00002   #[cm/d]
+
+[Soil.IC]
+P = -100 #[cm]
+C = 1e-8 #[mol/m³]
+
+[Soil.VanGenuchten] 
+# Loam over sand 
+Qr = 0.45
+Qs = 0.43
+Alpha = 0.04 # [1/cm] 
+N = 1.6
+Ks = 50 # [cm/d] 
+
+
+[Component]
+LiquidDiffusionCoefficient = 1.e-9 #[m²/s]?? 
+Name = "PO4"
+MolarMass = 95e-3 # in kg/mol, molar mass phosphate PO4
+
+[RootSystem.Uptake]
+Vmax = 3.26e-10 #[mol/m²/s]
+Km = 5.8e-9 #[mol/m³]
+ActiveTransport = 0 #?????
+
+#[Adsorption]
+#KF = 100 #mol/g
+#NF = 1
+#rho_b = 1400 #kg/m³
