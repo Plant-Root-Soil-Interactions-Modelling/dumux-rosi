@@ -73,10 +73,7 @@ public:
     RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
-        //gravity
-        //std::vector<bool> gravity = getParam<std::vector<bool>>("Problem.EnableGravity");
-        //gravity  = getParam<bool>("Problem.EnableGravity");
-        gravity = Dumux::getParam<bool>("Problem.EnableGravity", 1);
+    	gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
             
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
@@ -248,12 +245,12 @@ public:
                 Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
                 Scalar constflux = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
                 if (constflux < 0) { // inflow
-                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - gravity); // maximal inflow
+                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
                     Scalar v = std::max(constflux, imax);
                     flux[conti0EqIdx] = v;
                 } else { // outflow
                     Scalar krw = MaterialLaw::krw(params, s);
-                    Scalar omax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - gravity); // maximal outflow (evaporation)
+                    Scalar omax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
                     Scalar v = std::min(constflux, omax);
                     flux[conti0EqIdx] = v;
                 }
@@ -269,12 +266,12 @@ public:
                 Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
                 Scalar prec = -precipitation_.f(time_);
                 if (prec < 0) { // precipitation
-                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - gravity); // maximal infiltration
+                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
                     Scalar v = std::max(prec, imax);
                     flux[conti0EqIdx] = v;
                 } else { // evaporation
                     Scalar krw = MaterialLaw::krw(params, s);
-                    Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - gravity); // maximal evaporation
+                    Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
                     Scalar v = std::min(prec, emax);
                     flux[conti0EqIdx] = v;
                 }
@@ -296,11 +293,11 @@ public:
                 Scalar constflux = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
                 if (constflux < 0) { // outflow (drainage)
                     Scalar krw = MaterialLaw::krw(params, s);
-                    Scalar omax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - gravity); // maximal outflow
+                    Scalar omax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow
                     Scalar v = std::max(constflux, omax);
                     flux[conti0EqIdx] = v;
                 } else { // inflow
-                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - gravity); // maximal inflow (capillary rise)
+                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - gravityOn_); // maximal inflow (capillary rise)
                     Scalar v = std::min(constflux, imax);
                     flux[conti0EqIdx] = v;
                 }
@@ -513,6 +510,7 @@ private:
     int bcBotType_;
     Scalar bcTopValue_;
     Scalar bcBotValue_;
+    bool gravityOn_;
 
     // Source
     std::vector<double>* source_ = nullptr;
