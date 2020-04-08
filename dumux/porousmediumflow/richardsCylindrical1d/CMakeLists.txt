@@ -1,5 +1,3 @@
-add_subdirectory(richards)
-
 install(FILES
 model.hh
 localresidual.hh

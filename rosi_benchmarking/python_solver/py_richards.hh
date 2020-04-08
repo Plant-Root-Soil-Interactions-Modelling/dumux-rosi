@@ -22,12 +22,12 @@ namespace py = pybind11;
 #include <dumux/porousmediumflow/richards/model.hh>
 
 #include <dune/grid/spgrid.hh>
-#if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
-#endif
-#if HAVE_UG
-#include <dune/grid/uggrid.hh>
-#endif
+//#if HAVE_DUNE_ALUGRID
+//#include <dune/alugrid/grid.hh>
+//#endif
+//#if HAVE_UG
+//#include <dune/grid/uggrid.hh>
+//#endif
 
 /**
  * create type tags
@@ -38,11 +38,11 @@ namespace TTag { // Create new type tags
 
 struct RichardsTT { using InheritsFrom = std::tuple<Richards>; }; // defaults, dumux/porousmediumflow/richards/model.hh
 struct RichardsSPTT { using InheritsFrom = std::tuple<RichardsTT>; }; // sp grid
-struct RichardsUGTT { using InheritsFrom = std::tuple<RichardsTT>; }; // ug grid
+//struct RichardsUGTT { using InheritsFrom = std::tuple<RichardsTT>; }; // ug grid
 struct RichardsSPCC { using InheritsFrom = std::tuple<RichardsSPTT, CCTpfaModel>; };
 struct RichardsSPBox { using InheritsFrom = std::tuple<RichardsSPTT, BoxModel>; };
-struct RichardsUGCC { using InheritsFrom = std::tuple<RichardsUGTT, CCTpfaModel>; };
-struct RichardsUGBox { using InheritsFrom = std::tuple<RichardsUGTT, BoxModel>; };
+// struct RichardsUGCC { using InheritsFrom = std::tuple<RichardsUGTT, CCTpfaModel>; };
+//struct RichardsUGBox { using InheritsFrom = std::tuple<RichardsUGTT, BoxModel>; };
 
 };
 
@@ -56,8 +56,8 @@ struct SpatialParams<TypeTag, TTag::RichardsTT> { using type = RichardsParams<Ge
 template<class TypeTag> // Set grid type
 struct Grid<TypeTag, TTag::RichardsSPTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; };
 
-template<class TypeTag> // Set grid type
-struct Grid<TypeTag, TTag::RichardsUGTT> { using type = Dune::UGGrid<3>; };
+//template<class TypeTag> // Set grid type
+//struct Grid<TypeTag, TTag::RichardsUGTT> { using type = Dune::UGGrid<3>; };
 
 } }
 
@@ -71,16 +71,16 @@ using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric
 using RichardsSPLinearSolver = Dumux::AMGBackend<RSPTT>;
 using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 
-using RUGTT = Dumux::Properties::TTag::RichardsUGBox;
-using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
-using RichardsUGLinearSolver = Dumux::AMGBackend<RUGTT>;
-using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
+//using RUGTT = Dumux::Properties::TTag::RichardsUGBox;
+//using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
+//using RichardsUGLinearSolver = Dumux::AMGBackend<RUGTT>;
+//using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
 
 PYBIND11_MODULE(dumux_rosi, m) {
     init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "BaseRichardsSP");
     init_richardssp<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "RichardsSP");
-    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");
-    init_richardssp<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");
+//    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");
+//    init_richardssp<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");
 }
 
 #endif

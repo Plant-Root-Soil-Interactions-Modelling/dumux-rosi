@@ -177,10 +177,11 @@ class TracerTest : public PorousMediumFlowProblem<TypeTag>
     };
 
     enum BCTypes {
-        constantPressure = 1,
+        constantConcentration = 1,
         constantFlux = 2,
 		linear = 3,
-		michaelisMenten = 4
+		michaelisMenten = 4,
+		outflow = 5
     };
 
 public:
@@ -225,7 +226,7 @@ public:
         BoundaryTypes bcTypes;
         if (onUpperBoundary_(globalPos)) { // top or outer bc
             switch (bcTopType_) {
-            case constantPressure:
+            case constantConcentration:
                 bcTypes.setAllDirichlet();
                 break;
             case constantFlux:
@@ -236,7 +237,7 @@ public:
             }
         } else if (onLowerBoundary_(globalPos)) { // bot bc
             switch (bcBotType_) {
-            case constantPressure:
+            case constantConcentration:
                 bcTypes.setAllDirichlet();
                 break;
             case constantFlux:
@@ -266,7 +267,7 @@ public:
         PrimaryVariables values;
         if (onUpperBoundary_(globalPos)) { // top bc
             switch (bcTopType_) {
-            case constantPressure:
+            case constantConcentration:
                 values[0] = toPa_(bcTopValue_);
                 break;
             default:
@@ -274,7 +275,7 @@ public:
             }
         } else if (onLowerBoundary_(globalPos)) { // bot bc
             switch (bcBotType_) {
-            case constantPressure:
+            case constantConcentration:
                 values[0] = toPa_(bcBotValue_);
                 break;
             default:
