@@ -79,17 +79,14 @@ public:
     {
         NumEqVector storage(0.0);
 
-        // formulation with mole balances
-        if (useMoles)
-        {
+        double b = problem.getBufferPower(scv, volVars);
+
+        if (useMoles) { // formulation with mole balances
             for (int compIdx = 0; compIdx < numComponents; ++compIdx)
                 storage[compIdx] += volVars.porosity()
                                     * volVars.molarDensity(phaseIdx)
                                     * volVars.moleFraction(phaseIdx, compIdx);
-        }
-        // formulation with mass balances
-        else
-        {
+        } else { // formulation with mass balances
             for (int compIdx = 0; compIdx < numComponents; ++compIdx)
                 storage[compIdx] += volVars.porosity()
                                     * volVars.density(phaseIdx)
