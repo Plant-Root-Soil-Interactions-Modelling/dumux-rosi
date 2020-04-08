@@ -3,10 +3,10 @@ Name = cylinder_1d
 EnableGravity = "false"
 
 [TimeLoop]
-TEnd = 864000 # 0 is steady state
+TEnd = 1728000 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s]
-CheckTimes = 288000 576000 864000
+CheckTimes = 288000 576000 1728000
 
 [Soil.Grid]
 UpperRight = 0.0002
