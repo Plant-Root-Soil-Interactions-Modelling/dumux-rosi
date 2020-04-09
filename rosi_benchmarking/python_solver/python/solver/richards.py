@@ -178,6 +178,10 @@ class RichardsWrapper(SolverWrapper):
         for key, value in source_map.items():
             source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
         self.base.setSource(source_map)
+    
+    def setCriticalPressure(self, critical):
+        """ Sets the critical pressure to limit flow for boundary conditions constantFlow, constantFlowCyl, and atmospheric """ 
+        self.base.setCriticalPressure(critical)
 
     def getSolutionHead(self):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 

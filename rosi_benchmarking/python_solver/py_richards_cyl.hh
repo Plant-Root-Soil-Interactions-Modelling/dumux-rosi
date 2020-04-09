@@ -46,7 +46,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RichardsTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
 
 template<class TypeTag> // Set grid type
-struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 1>; }; // Dune::FoamGrid<1,1>;
+struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>; }; //  Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 1>
 
 } }
 
