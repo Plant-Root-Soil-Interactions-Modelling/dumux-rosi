@@ -1,11 +1,12 @@
 [Problem]
 Name = cylinder_1d
+EnableGravity = "false"
 
 [TimeLoop]
-TEnd = 1728000 # 0 is steady state
+TEnd = 1728000
 DtInitial =  1 # [s]
-MaxTimeStepSize = 864000 # 10 days [s]
-CheckTimes = 1728000
+MaxTimeStepSize = 86400 # 10 days [s]
+CheckTimes = 288000 432000 1728000 # 1728000
 
 [Soil.Grid]
 UpperRight = 0.0002
@@ -13,34 +14,28 @@ LowerLeft = 0.006
 Cells = 500
 
 [Soil.BC.Top]
-Type = 2 # constant flux
+Type = 3 # constant flux (cylindrical)
 Value =  0 # [cm/d]
 
 [Soil.BC.Bot]
-Type = 2 # constant flux
-Value =  -0.00002   #[cm/d]
+Type = 3 # constant flux (cylindrical)
+Value =  -0.1   #[cm/d]
+
+[Soil]
+CriticalPressure = -15000
 
 [Soil.IC]
-P = -100 
-C = 9.5e-1
+P = -100 # cm pressure head (initial guess)
 
 [Soil.VanGenuchten] 
-# Loam over sand 
-Qr = 0.45
+# Loam 
+Qr = 0.045 	
 Qs = 0.43
-Alpha = 0.04 # [1/cm] 
-N = 1.6
-Ks = 50 # [cm/d] 
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d] 	
 
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "false"
 
-[Component]
-LiquidDiffusionCoefficient = 1.e-5 #[cm²/s]?? 
-Name = "PO4"
-MolarMass = 95e-3 # in kg/mol, molar mass phosphate PO4
-
-[RootSystem.Uptake]
-Vmax = 3.58e-9 #[g/cm²/d]
-Km = 5.51e-1 #[g/cm³]
-ActiveTransport = 0 #?????
-
-#adsorption is missing?? (KF, NF, rho_b)

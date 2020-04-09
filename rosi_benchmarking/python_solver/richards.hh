@@ -77,6 +77,14 @@ public:
     }
 
     /**
+     * Sets critical pressure, used for constantFlux, constantFluxCyl, or atmospheric boundary conditions,
+     * to limit maximal the flow.
+     */
+    void setCriticalPressure(double critical) {
+    	this->problem->criticalPressure(critical); // problem is defined in solverbase.hh
+    }
+
+    /**
      * Returns the current solution for a single mpi process in cm pressure head. @see SolverBase::getSolution
      * Gathering and mapping is done in Python TODO pass equ id, return vector<double>
      */
@@ -168,6 +176,7 @@ void init_richardssp(py::module &m, std::string name) {
 	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
    .def("setSource", &RichardsSP::setSource)
+   .def("setCriticalPressure", &RichardsSP::setCriticalPressure)
    .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsSP::getWaterContent)
    .def("getWaterVolume",&RichardsSP::getWaterVolume)

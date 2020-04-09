@@ -26,34 +26,37 @@ s.initialize()
 
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-s.createGrid([0.02], [0.6], [10])  # [cm]
+s.createGrid([0.02], [0.6], [100])  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
-s.setTopBC("noFlux")  #  [cm/day]
-s.setBotBC("constantFlux", -0.00002) # [cm/day] * m radius TODO
+s.setOuterBC("noFlux")  #  [cm/day]
+s.setInnerBC("fluxCyl", -0.1)  # [cm/day] 
 s.setVGParameters([loam])
 s.initializeProblem()
+s.setCriticalPressure(-150000)  # cm pressure head
  
 if rank == 0:
     print(s)
  
-times = np.array([0, 288000, 576000, 864000]) / (3600 * 24)  
-s.ddt = 1.e-5  # days
+times = [0., 10, 20]  # days  
+s.ddt = 1.e-5  
  
 for dt in np.diff(times):
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
     s.solve(dt)
- 
-points = s.getDofCoordinates()
-x = s.getSolution()
-plt.plot(points[:], RichardsWrapper.toHead(x), "r*", label = "dumux")
+    points = s.getDofCoordinates()
+    x = s.getSolution()
+    plt.plot(points[:], RichardsWrapper.toHead(x), "r*", label="dumux " + s.simTime)
 
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
-data = np.loadtxt("cylinder_1d_Comsol.txt")
-z_comsol = data[:,0]
-h_comsol = data[:,-1]
-plt.plot(z_comsol+0.02, h_comsol, "b", label = "comsol")
+data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows=8)
+z_comsol = data[:, 0]
+h_comsol = data[:, 25]
+plt.plot(z_comsol + 0.02, h_comsol, "b", label="comsol 10 days")
+h_comsol = data[:, -1]
+plt.plot(z_comsol + 0.02, h_comsol, "b", label="comsol 20 days")
+
 plt.legend()
 
 plt.show()

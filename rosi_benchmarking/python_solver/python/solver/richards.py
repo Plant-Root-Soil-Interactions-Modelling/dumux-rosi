@@ -58,7 +58,7 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "VanGenuchten.N", self.dumux_str(n))
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
 
-    def setLayersZ(self, number :list, z :list = []):
+    def setLayersZ(self, number :list, z :list=[]):
         """ sets depth dependent layers 
         
         @param number     list of layer numbers at the z-positions (if given), or per soil layer, [cm] pressure head.      
@@ -69,7 +69,7 @@ class RichardsWrapper(SolverWrapper):
             assert len(number) == len(z), "setLayersZ: sample point values and z coordinates have unequal length"
             self.setParameter(self.param_group + "Layer.Z", self.dumux_str(np.array(z) / 100.))  # cm -> m
 
-    def setICZ(self, p :list, z :list = []):
+    def setICZ(self, p :list, z :list=[]):
         """ sets depth dependent initial condtions 
         
         @param p     list of pressures at the z-positions (if given), or per soil layer, [cm] pressure head.      
@@ -80,7 +80,7 @@ class RichardsWrapper(SolverWrapper):
             assert(len(p) == len(z))  # sample points
             self.setParameter(self.param_group + "IC.Z", self.dumux_str(np.array(z) / 100.))
 
-    def setHomogeneousIC(self, p :float, equilibrium = False):
+    def setHomogeneousIC(self, p :float, equilibrium=False):
         """ sets homogeneous initial condions 
         
         @param p              mean matric potential [cm] pressure head
@@ -96,12 +96,13 @@ class RichardsWrapper(SolverWrapper):
         else:
             self.setICZ(p)
 
-    def setTopBC(self, type_top :str, value_top :float = 0., climate :list = []):
+    def setTopBC(self, type_top :str, value_top :float=0., climate :list=[]):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_top:
         type_top ==  "constantPressure", value_top is a constant pressure [cm] pressure head
-        type_top ==  "constantFlux", value_top is the constant flux [cm/day]         
+        type_top ==  "constantFlux", value_top is the constant flux [cm/day]
+        type_top ==  "constantFluxCyl", value_top is the constant flux [cm/day] for cylindrical coordinates                          
         type_top ==  "atmospheric", value_top is given by climatic data describing evapotranspiration [cm/day], 
                      Data are given in @param climate, the value of value_top is ignored.  
                      Minus denotes evaporation, plus transpiraton.                                            
@@ -110,17 +111,19 @@ class RichardsWrapper(SolverWrapper):
         @param climate:  Two lists are expected, first a list of times [day], second a list of evapotranspirations [cm/day], 
                          between the values linear interpolation is applied.                                                                          
         """
-        if type_top == "constantPressure":
+        if type_top == "constantPressure" or type_top == "pressure":
             t = 1
-        elif type_top == "constantFlux":
+        elif type_top == "constantFlux" or type_top == "flux":
             t = 2
+        elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
+            t = 3
         elif type_top == "atmospheric":
             t = 4
         elif type_top == "noflux" or type_top == "noFlux" or type_top == "no-flux":
             t = 2
             assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
         else:
-            raise Exception('Top type should be "constantPressure", "constantFlux", "noFlux", or "atmospheric", unknown top type {}'.format(type_top))
+            raise Exception('Top type should be "constantPressure", "constantFlux", constantCyl", "noFlux", or "atmospheric", unknown top type {}'.format(type_top))
 
         self.setParameter(self.param_group + "BC.Top.Type", str(t))
         self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
@@ -134,29 +137,40 @@ class RichardsWrapper(SolverWrapper):
             else:
                 raise Exception('Atmospheric boundary conditions where set, but no climatic data where given')
 
-    def setBotBC(self, type_bot :str, value_bot = 0.,):
+    def setBotBC(self, type_bot :str, value_bot=0.,):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_bot:
         type_bot ==  "constantPressure", value_bot is a constant pressure [cm] pressure head
         type_bot ==  "constantFlux", value_bot is the constant flux [cm/day] 
+        type_bot ==  "constantFluxCyl", value_bot is the constant flux [cm/day] for cylindrical coordinates        
         type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                       
         """
 
-        if type_bot == "constantPressure":
+        if type_bot == "constantPressure" or type_bot == "pressure":
             b = 1
-        elif type_bot == "constantFlux":
+        elif type_bot == "constantFlux" or type_bot == "flux":
             b = 2
-        elif type_bot == "freeDrainage":
+        elif type_bot == "constantFluxCyl" or type_bot == "fluxCyl":
+            b = 3            
+        elif type_bot == "freeDrainage" or type_bot == "fleeFlow" or type_bot == "free":
             b = 5
         elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
             b = 2
             assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
         else:
-            raise Exception('Bottom type should be "constantPressure", "constantFlux", "noFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
+            raise Exception('Bottom type should be "constantPressure", "constantFlux", "constantFluxCyl", "noFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
 
         self.setParameter(self.param_group + "BC.Bot.Type", str(b))
         self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
+
+    def setInnerBC(self, type_bot :str, value_bot=0.):
+        """ more appropriate name for cylindrical coordinates, calls setBotBC, @see setBotBC """
+        self.setBotBC(type_bot, value_bot)
+
+    def setOuterBC(self, type_top :str, value_top=0.):
+        """ more appropriate name for cylindrical coordinates, calls setToptBC, @see setToptBC """
+        self.setTopBC(type_top, value_top)
 
     def setSource(self, source_map):
         """Sets the source term as map with global cell index as key, and source as value [g/day] """
@@ -169,12 +183,12 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolutionHead(), root = 0)), 0)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolutionHead(), root=0)), 0)
 
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getWaterContent(), root = 0)), 2)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getWaterContent(), root=0)), 2)
 
     def getWaterVolume(self):
         """Returns total water volume of the domain [cm3]"""
