@@ -21,12 +21,12 @@ os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc")
 os.system("./richardsnc1d_cyl input/cylinder_1d_water.input")
 
 # plot dumux results
-s_, p_, z_ = read1D_vtp_data("cylinder_1d_water-00003.vtp")
+s_, p_, z_ = read1D_vtp_data("cylinder_1d_water-00001.vtp")
 h_ = vg.pa2head(p_)
 plt.plot((z_ - 0.0002) * 100, h_, "b",)
 
 # read and plot comsol data
-os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
+os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc/python")
 data = np.loadtxt("cylinder_1d_Comsol_water.txt", skiprows=8)
 z_comsol = data[:, 0]
 h_comsol = data[:, 25]
