@@ -35,4 +35,6 @@ plt.plot(z_comsol, h_comsol, "r")
 plt.xlabel('distance from the root surface (cm)')
 plt.ylabel('pressure head (cm)')
 plt.legend(["dumux", "comsol"], loc='lower right')
+
 plt.show()
+
