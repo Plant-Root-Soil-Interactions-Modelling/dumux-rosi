@@ -1,10 +1,9 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_RICHARDS1P2C_PROBLEM_HH
-#define DUMUX_RICHARDS1P2C_PROBLEM_HH
+#ifndef RICHARDS1P2C_PROBLEM_HH
+#define RICHARDS1P2C_PROBLEM_HH
 
 #include <dumux/porousmediumflow/problem.hh> // base class
-#include <dumux/porousmediumflow/richardsnc/model.hh>
 
 #include "../soil_richards/richardsparams.hh"
 
@@ -61,9 +60,12 @@ public:
         constantPressure = 1,
         constantConcentration = 1,
         constantFlux = 2,
+        constantFluxCyl = 3,
         atmospheric = 4,
         freeDrainage = 5,
-        outflow = 5
+        outflow = 6,
+		linear = 7,
+		michaelisMenten = 8
     };
 
     enum GridParameterIndex {
@@ -76,19 +78,22 @@ public:
     Richards1P2CProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
+		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
+
         // BC
-        bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
+        bcTopType_ = getParam<int>("Soil.BC.Top.Type");
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
         bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
         bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
 
         // Component
-        bcSTopType_ = getParam<int>("Soil.BC.Top.SType", outflow); // todo type as a string might be nicer
+        bcSTopType_ = getParam<int>("Soil.BC.Top.SType", outflow);
         bcSBotType_ = getParam<int>("Soil.BC.Bot.SType", outflow);
         bcSTopValue_ = getParam<Scalar>("Soil.BC.Top.CValue", 0.);
         bcSBotValue_ = getParam<Scalar>("Soil.BC.Bot.CValue", 0.);
 
-        criticalPressure_ = getParam<double>("Climate.CriticalPressure", -1.e4); // cm
+		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
+		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
         // Precipitation & Evaporation
         if (bcTopType_==atmospheric) {
             precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
@@ -110,8 +115,9 @@ public:
         // Output
         std::string filestr = this->name() + ".csv"; // output file
         myfile_.open(filestr.c_str());
-        std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
-            <<  bcBotType_ << ", " << bcBotValue_ << "\n" << std::flush;
+		std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
+				<<  bcBotType_ << ", " << bcBotValue_  << ", gravitation " << gravityOn_ <<", Critical pressure "
+				<< criticalPressure_ << "\n" << std::flush;
     }
 
     /**
@@ -188,7 +194,7 @@ public:
      * called by BoxLocalResidual::evalFlux,
      * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
      */
-    NumEqVector neumann(const Element& e,
+    NumEqVector neumann(const Element& element,
         const FVElementGeometry& fvGeometry,
         const ElementVolumeVariables& elemVolVars,
         const SubControlVolumeFace& scvf) const {
@@ -196,76 +202,97 @@ public:
         NumEqVector flux;
         GlobalPosition pos = scvf.center();
         auto& volVars = elemVolVars[scvf.insideScvIdx()];
+
         // WATER
-        if (onUpperBoundary_(pos)) { // top bc Water
-            switch (bcTopType_) {
-            case constantPressure: {
-                Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
-                Scalar h = toHead_(volVars.pressure());
-                Scalar dz = 100 * std::abs(e.geometry().center()[dimWorld - 1] - pos[dimWorld - 1]); // [cm]
-                flux[conti0EqIdx] = - rho_ * Kc * ((bcTopValue_ - h) / dz - 1.);
-                break;
-            }
-            case constantFlux: {
-                flux[conti0EqIdx] = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-                break;
-            }
-            case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
-                Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
-                Scalar s = volVars.saturation(0);
-                Scalar h = toHead_(volVars.pressure());
-                GlobalPosition ePos = e.geometry().center();
-                Scalar dz = 100 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
-                Scalar prec = -precipitation_.f(time_);
-                if (prec < 0) { // precipitation
-                    Scalar imax = rho_ * Kc * ((h - 0.) / dz - 1.); // maximal infiltration
-                    Scalar v = std::max(prec, imax);
-                    flux[conti0EqIdx] = v;
-                } else { // evaporation
-                    MaterialLawParams params = this->spatialParams().materialLawParams(e);
-                    Scalar krw = MaterialLaw::krw(params, s);
-                    Scalar emax = rho_ * krw * Kc * ((h - criticalPressure_) / dz - 1.); // maximal evaporation
-                    Scalar v = std::min(prec, emax);
-                    // std::cout << prec << ", " << emax << ", " << h << "\n";
-                    flux[conti0EqIdx] = v;
-                }
-                break;
-            }
-            default:
-                DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
-            }
-        } else if (onLowerBoundary_(pos)) { // bot bc Water
-            switch (bcBotType_) {
-            case constantPressure: {
-                Scalar Kc = this->spatialParams().hydraulicConductivity(e); //  [m/s]
-                Scalar h = toHead_(volVars.pressure());
-                Scalar dz = 100 * std::abs(e.geometry().center()[dimWorld - 1] - pos[dimWorld - 1]); // [cm]
-                flux[conti0EqIdx] = - rho_ * Kc * ((bcBotValue_ - h) / dz - 1.);
-                break;
-            }
-            case constantFlux: {
-                flux[conti0EqIdx] = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-                break;
-            }
-            case freeDrainage: {
-                Scalar Kc = this->spatialParams().hydraulicConductivity(e); // [m/s]
-                Scalar s = volVars.saturation(0);
-                MaterialLawParams params = this->spatialParams().materialLawParams(e);
-                Scalar krw = MaterialLaw::krw(params, s);
-                flux[conti0EqIdx] = krw * Kc * rho_; // [kg/(m^2 s)]
-                break;
-            }
-            default:
-                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
-            }
-        } else {
-            flux[conti0EqIdx] = 0.;
-        }
+		double f = 0.; // return value
+		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
+
+			Scalar s = volVars.saturation(0);
+			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
+			MaterialLawParams params = this->spatialParams().materialLawParams(element);
+			Scalar p = MaterialLaw::pc(params, s) + pRef_;
+			Scalar h = -toHead_(p); // todo why minus -pc?
+			GlobalPosition ePos = element.geometry().center();
+			Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
+			Scalar krw = MaterialLaw::krw(params, s);
+
+			if (onUpperBoundary_(pos)) { // top bc
+				switch (bcTopType_) {
+				case constantFlux: { // with switch for maximum in- or outflow
+					f = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					if (f < 0) { // inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						f = std::max(f, imax);
+					} else { // outflow
+						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						f = std::min(f, omax);
+					}
+					break;
+				}
+				case constantFluxCyl: { // with switch for maximum in- or outflow
+					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];
+					if (f < 0) { // inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						f = std::max(f, imax);
+					} else { // outflow
+						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						f = std::min(f, omax);
+					}
+					break;
+				}
+				case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
+					Scalar prec = -precipitation_.f(time_);
+					if (prec < 0) { // precipitation
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
+						f = std::max(prec, imax);
+					} else { // evaporation
+						Scalar emax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
+						f = std::min(prec, emax);
+					}
+					break;
+				}
+				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
+				}
+			} else if (onLowerBoundary_(pos)) { // bot bc
+				switch (bcBotType_) {
+				case constantFlux: { // with switch for maximum in- or outflow
+					f = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					if (f < 0) { // inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						f = std::max(f, imax);
+					} else { // outflow
+						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						f = std::min(f, omax);
+					}
+					break;
+				}
+				case constantFluxCyl: { // with switch for maximum in- or outflow
+					f = -bcBotValue_*rho_/(24.*60.*60.)/100 * pos[0];
+					if (f < 0) { // inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						f = std::max(f, imax);
+					} else { // outflow
+						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_ << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
+						f = std::min(f, omax);
+					}
+					break;
+				}
+				case freeDrainage: {
+					f = krw * kc * rho_; // * 1 [m]
+					break;
+				}
+				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
+				}
+			}
+		}
+		flux[conti0EqIdx] = f;
+
         // SOLUTE
         if (onUpperBoundary_(pos)) { // top bc Solute
           switch (bcSTopType_) {
             case constantConcentration: {
-                flux[transportEqIdx] = flux[conti0EqIdx] * (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
+                flux[transportEqIdx] = f* (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
                 break;
             }
             case constantFlux: {
@@ -273,7 +300,7 @@ public:
                 break;
             }
             case outflow: {
-                flux[transportEqIdx] = flux[conti0EqIdx] * volVars.massFraction(0, soluteIdx);
+                flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
                 break;
             }
             default:
@@ -282,7 +309,7 @@ public:
         } else if (onLowerBoundary_(pos)) { // bot bc Solute
             switch (bcSBotType_) {
             case constantConcentration: {
-                flux[transportEqIdx] = flux[conti0EqIdx] * (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
+                flux[transportEqIdx] = f * (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
                 break;
             }
             case constantFlux: {
@@ -290,15 +317,15 @@ public:
                 break;
             }
             case outflow: {
-                flux[transportEqIdx] = flux[conti0EqIdx] * volVars.massFraction(0, soluteIdx);
+                flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
                 break;
             }
-            default:
-                DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
+            default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
             }
         } else {
             flux[transportEqIdx] = 0.;
         }
+
         return flux;
     }
 
@@ -514,6 +541,8 @@ private:
     int bcBotType_;
     Scalar bcTopValue_;
     Scalar bcBotValue_;
+	bool gravityOn_;
+
     int bcSTopType_;
     int bcSBotType_;
     Scalar bcSTopValue_;

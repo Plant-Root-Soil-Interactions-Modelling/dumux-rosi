@@ -1,5 +1,7 @@
-#ifndef DUMUX_SOIL_PROPERTIES_NOCOUPLING_HH
-#define DUMUX_SOIL_PROPERTIES_NOCOUPLING_HH
+// -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+// vi: set et ts=4 sw=4 sts=4:
+#ifndef RICHARDSNC_PROPERTIES_NOCOUPLING_HH
+#define RICHARDSNC_PROPERTIES_NOCOUPLING_HH
 
 namespace Dumux {
 namespace Properties {

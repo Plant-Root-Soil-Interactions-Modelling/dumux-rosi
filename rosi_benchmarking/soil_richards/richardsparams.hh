@@ -16,8 +16,8 @@
  *   You should have received a copy of the GNU General Public License       *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
-#ifndef DUMUX_RICHARDS_PARAMETERS_HH
-#define DUMUX_RICHARDS_PARAMETERS_HH
+#ifndef RICHARDS_PARAMETERS_HH
+#define RICHARDS_PARAMETERS_HH
 
 #include <dumux/material/spatialparams/fv.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>

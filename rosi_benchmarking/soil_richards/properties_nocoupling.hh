@@ -1,5 +1,5 @@
-#ifndef DUMUX_SOIL_PROPERTIES_NOCOUPLING_HH
-#define DUMUX_SOIL_PROPERTIES_NOCOUPLING_HH
+#ifndef RICHARDS_PROPERTIES_NOCOUPLING_HH
+#define RICHARDS_PROPERTIES_NOCOUPLING_HH
 
 #include <dumux/multidomain/embedded/integrationpointsource.hh>
 

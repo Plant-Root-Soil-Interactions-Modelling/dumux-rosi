@@ -64,8 +64,8 @@
  * Richards model!
  */
 
-#ifndef DUMUX_RICHARDSNC_MODEL_HH
-#define DUMUX_RICHARDSNC_MODEL_HH
+#ifndef DUMUX_RICHARDSNC_MODEL_CYL_HH
+#define DUMUX_RICHARDSNC_MODEL_CYL_HH
 
 #include <dumux/common/properties.hh>
 

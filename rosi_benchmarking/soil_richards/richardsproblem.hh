@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_RICHARDS_PROBLEM_HH
-#define DUMUX_RICHARDS_PROBLEM_HH
+#ifndef RICHARDS_PROBLEM_HH
+#define RICHARDS_PROBLEM_HH
 
 #include <dumux/porousmediumflow/problem.hh> // base class
 
@@ -77,7 +77,7 @@ public:
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
 		// BC
-		bcTopType_ = getParam<int>("Soil.BC.Top.Type"); // todo type as a string might be nicer
+		bcTopType_ = getParam<int>("Soil.BC.Top.Type");
 		bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
 		bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
 		bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
@@ -288,6 +288,7 @@ public:
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						// std::cout << " f " << f*1.e9 << ", omax "<< omax << ", value " << bcBotValue_ << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
 						f = std::min(f, omax);
 					}
 					break;

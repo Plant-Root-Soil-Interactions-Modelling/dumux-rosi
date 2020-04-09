@@ -157,7 +157,8 @@ public:
         // advective fluxes
         for (int phaseIdx = 0; phaseIdx < numPhases; ++phaseIdx)
         {
-            const auto diffusiveFluxes = fluxVars.molecularDiffusionFlux(phaseIdx)*scvf.center()[0];
+            auto diffusiveFluxes = fluxVars.molecularDiffusionFlux(phaseIdx);
+			diffusiveFluxes *= scvf.center()[0];
             for (int compIdx = 0; compIdx < numComponents; ++compIdx)
             {
                 // get equation index

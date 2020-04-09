@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef DUMUX_SOIL_PROPERTIES_HH
-#define DUMUX_SOIL_PROPERTIES_HH
+#ifndef RICHARDSNC_PROPERTIES_HH
+#define RICHARDSNC_PROPERTIES_HH
 
 #include <dune/grid/yaspgrid.hh>
 #include <dune/grid/spgrid.hh>

@@ -11,7 +11,7 @@ CheckTimes = 288000 432000 1728000 # 1728000
 [Soil.Grid]
 UpperRight = 0.0002
 LowerLeft = 0.006
-Cells = 500
+Cells = 100
 
 [Soil.BC.Top]
 Type = 3 # constant flux (cylindrical)

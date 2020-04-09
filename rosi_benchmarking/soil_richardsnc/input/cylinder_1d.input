@@ -3,15 +3,15 @@ Name = cylinder_1d
 EnableGravity = "false"
 
 [TimeLoop]
-TEnd = 1728000
+TEnd = 864000
 DtInitial =  1 # [s]
 MaxTimeStepSize = 86400 # 10 days [s]
-CheckTimes = 288000 432000 1728000 # 1728000
+CheckTimes = 288000 432000 864000 # 1728000
 
 [Soil.Grid]
 UpperRight = 0.0002
 LowerLeft = 0.006
-Cells = 500
+Cells = 100
 
 [Soil.BC.Top]
 Type = 3 # constant flux (cylindrical)
@@ -39,3 +39,7 @@ Ks = 50 # [cm/d]
 AddProcessRank = "false"
 AddVelocity = "false"
 
+[Component]
+LiquidDiffusionCoefficient = 1.e-8
+Name = "D2O"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
