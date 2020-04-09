@@ -1,12 +1,11 @@
 [Problem]
 Name = cylinder_1d
-EnableGravity = "false"
 
 [TimeLoop]
-TEnd = 1728000
+TEnd = 1728000 # 0 is steady state
 DtInitial =  1 # [s]
-MaxTimeStepSize = 86400 # 10 days [s]
-CheckTimes = 288000 432000 1728000 # 1728000
+MaxTimeStepSize = 864000 # 10 days [s]
+CheckTimes = 864000 1728000
 
 [Soil.Grid]
 UpperRight = 0.0002
@@ -14,28 +13,37 @@ LowerLeft = 0.006
 Cells = 500
 
 [Soil.BC.Top]
-Type = 3 # constant flux (cylindrical)
+Type = 2 # constant flux
 Value =  0 # [cm/d]
 
 [Soil.BC.Bot]
-Type = 3 # constant flux (cylindrical)
-Value =  -0.1   #[cm/d]
-
-[Soil]
-CriticalPressure = -15000
+Type = 2 # constant flux
+Value =  -0.00002   #[cm/d]
 
 [Soil.IC]
-P = -100 # cm pressure head (initial guess)
+P = -100 
+C = 1e-2
 
 [Soil.VanGenuchten] 
-# Loam 
-Qr = 0.045 	
+# Loam over sand 
+Qr = 0.45
 Qs = 0.43
-Alpha = 0.04  # [1/cm] 
-N = 1.6 
-Ks = 50 # [cm/d] 	
+Alpha = 0.04 # [1/cm] 
+N = 1.6
+Ks = 50 # [cm/d] 
 
-[Vtk]
-AddProcessRank = "false"
-AddVelocity = "false"
 
+[Component]
+LiquidDiffusionCoefficient = 1.e-5 #[cm²/s]
+Name = "PO4"
+MolarMass = 95e-3 # in kg/mol, molar mass phosphate PO4
+
+[RootSystem.Uptake]
+Vmax = 3.7e-11 #[mol/cm²/d]
+Km = 5.8e-3 #[g/cm³]
+ActiveTransport = 0 #?????
+
+[Adsorption]
+KF = 100 #[mol/g]
+NF = 1
+rhob = 1.4 #[g/cm³]
