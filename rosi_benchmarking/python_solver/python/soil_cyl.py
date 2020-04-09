@@ -33,7 +33,7 @@ s.setOuterBC("noFlux")  #  [cm/day]
 s.setInnerBC("fluxCyl", -0.1)  # [cm/day] 
 s.setVGParameters([loam])
 s.initializeProblem()
-s.setCriticalPressure(-150000)  # cm pressure head
+s.setCriticalPressure(-15000)  # cm pressure head
  
 if rank == 0:
     print(s)
@@ -47,16 +47,13 @@ for dt in np.diff(times):
     s.solve(dt)
     points = s.getDofCoordinates()
     x = s.getSolution()
-    plt.plot(points[:], RichardsWrapper.toHead(x), "r*", label="dumux " + s.simTime)
+    plt.plot(points[:], RichardsWrapper.toHead(x), "r*", label="dumux {} days".format(s.simTime))
 
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
 data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows=8)
 z_comsol = data[:, 0]
-h_comsol = data[:, 25]
-plt.plot(z_comsol + 0.02, h_comsol, "b", label="comsol 10 days")
-h_comsol = data[:, -1]
-plt.plot(z_comsol + 0.02, h_comsol, "b", label="comsol 20 days")
+plt.plot(z_comsol + 0.02, data[:, 25], "b", label="comsol 10 days")
+plt.plot(z_comsol + 0.02, data[:, -1], "b", label="comsol 20 days")
 
 plt.legend()
-
 plt.show()
