@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 
-from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import matplotlib.pyplot as plt

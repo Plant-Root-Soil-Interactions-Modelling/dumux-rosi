@@ -3,10 +3,10 @@ Name = cylinder_1d_water
 EnableGravity = "false"
 
 [TimeLoop]
-TEnd = 1728000
+TEnd = 864000
 DtInitial =  1 # [s]
 MaxTimeStepSize = 86400 # 10 days [s]
-CheckTimes = 864000 1728000
+CheckTimes = 864000 
 
 [Soil.Grid]
 UpperRight = 0.0002
@@ -15,7 +15,7 @@ Cells = 100
 
 [Soil.BC.Top]
 Type = 3 # constant flux (cylindrical)
-Value =  0 # [cm/d]
+Value =  0. # [cm/d]
 
 [Soil.BC.Bot]
 Type = 3 # constant flux (cylindrical)
@@ -38,7 +38,6 @@ Ks = 50 # [cm/d]
 [Vtk]
 AddProcessRank = "false"
 AddVelocity = "false"
-
 
 [Component]
 LiquidDiffusionCoefficient = 1.e-8

@@ -80,6 +80,10 @@ public:
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
+		source_.resize(2); // 2 equations (currently hard coded, where can I get the value?)
+		source_[0] = nullptr;
+		source_[1] = nullptr;
+
         // BC
         bcTopType_ = getParam<int>("Soil.BC.Top.Type");
         bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
@@ -303,13 +307,21 @@ public:
                 flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
                 break;
             }
+            case linear: {
+            	flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx);
+                break;
+            }
+            case michaelisMenten: {
+            	flux[transportEqIdx] = vMax_ * (volVars.massFraction(0, soluteIdx)*rho_)/(km_ + volVars.massFraction(0, soluteIdx)*rho_);
+                break;
+            }
             default:
                 DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
             }
         } else if (onLowerBoundary_(pos)) { // bot bc Solute
             switch (bcSBotType_) {
             case constantConcentration: {
-                flux[transportEqIdx] = f * (bcSTopValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
+                flux[transportEqIdx] = f * (bcSBotValue_ - volVars.massFraction(0, soluteIdx)) ; // TODO ???
                 break;
             }
             case constantFlux: {
@@ -318,6 +330,14 @@ public:
             }
             case outflow: {
                 flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
+                break;
+            }
+            case linear: { // -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density);
+            	flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx);
+                break;
+            }
+            case michaelisMenten: {
+            	flux[transportEqIdx] = vMax_ * (volVars.massFraction(0, soluteIdx)*rho_)/(km_ + volVars.massFraction(0, soluteIdx)*rho_);
                 break;
             }
             default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
@@ -336,16 +356,17 @@ public:
      */
     NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
         const SubControlVolume &scv) const {
-        if ((source_ != nullptr)) {
-            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-            double v = scv.volume();
-            auto s = source_->at(eIdx);
-            s[h2OIdx] = s[h2OIdx]/v;
-            s[soluteIdx] = s[soluteIdx]/v;
-            return s;
-        } else {
-            return NumEqVector(0.);
-        }
+
+    	auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+    	double h = 0.;
+    	if (source_[h2OIdx] != nullptr) {
+        	h = source_[h2OIdx]->at(eIdx);
+    	}
+        double s = 0.;
+    	if (source_[soluteIdx] != nullptr) {
+        	s = source_[soluteIdx]->at(eIdx);
+    	}
+        return NumEqVector({ h, s });
     }
 
     /*!
@@ -398,20 +419,19 @@ public:
             // relative soil permeability
             const auto krel = 1.0;
             // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-            const auto density = 1000;
-            sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(tipP - soilP)*density;
+            sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(tipP - soilP)*rho_;
             sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
 
             Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
             Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
             Scalar passiveUptake;
             if (sourceValue[h2OIdx]>0) {
-                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * tipC;
+                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * tipC;
             } else {
-                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * density * soilC;
+                passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * soilC;
             }
             // Active uptake based on Michaelis Menten
-            Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * density/(km_ + soilC * density); // todo times root element length
+            Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * rho_/(km_ + soilC * rho_); // todo times root element length
 
             // choose active or passive
             sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
@@ -436,10 +456,9 @@ public:
      * Source per element index \f$ [ kg / s)] \f$
      *
      * eventually, called in the main file (example specific, richards.cc)
-     * todo use smart pointer
      */
-    void setSource(std::vector<NumEqVector>* s) {
-        source_ = s;
+    void setSource(std::shared_ptr<std::vector<double>> s, int eqIdx = 0) {
+    	source_[eqIdx] = s;
     }
 
     //! Set the coupling manager
@@ -549,7 +568,7 @@ private:
     Scalar bcSBotValue_;
 
     // Source
-    std::vector<NumEqVector>* source_ = nullptr;
+    std::vector<std::shared_ptr<std::vector<double>>> source_;
     CouplingManager* couplingManager_ = nullptr;
 
     InputFileFunction precipitation_;

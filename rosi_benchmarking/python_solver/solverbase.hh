@@ -499,14 +499,8 @@ public:
         }
         // std::cout << "getSolution(): n " << n << ", " << x.size() << "\n" << std::flush;
         sol.resize(n);
-        if (eqIdx > 0) {
-            for (int c = 0; c<n; c++) {
-                sol[c] = x[c][eqIdx];
-            }
-        } else {
-            for (int c = 0; c<n; c++) {
-                sol[c] = x[c];
-            }
+        for (int c = 0; c<n; c++) {
+            sol[c] = x[c][eqIdx];
         }
         return sol;
     }
@@ -524,11 +518,7 @@ public:
             double y = 0.;
             if (localCellIdx.count(gIdx)>0) {
                 int eIdx = localCellIdx[gIdx];
-                if (eqIdx > 0) {
-                    y = x[eIdx][eqIdx];
-                } else {
-                    y= x[eIdx];
-                }
+                y = x[eIdx][eqIdx];
             }
             return gridGeometry->gridView().comm().min(y);
             // I would prefer sum(y), BUT more than one process can have this cell (borders overlap)
@@ -539,7 +529,7 @@ public:
      * Returns the maximal flux (over the boundary scvfs) of an element, given by its global element index,
      * for all mpi processes
      */
-    virtual double getNeumann(int gIdx) {
+    virtual double getNeumann(int gIdx, int eqIdx = 0) {
         double f = 0.;
         if (localCellIdx.count(gIdx)>0) {
             int eIdx = localCellIdx[gIdx];
@@ -550,7 +540,7 @@ public:
             elemVolVars.bindElement(e, fvGeometry, x);
             for (const auto& scvf : scvfs(fvGeometry)) {
                 if (scvf.boundary()) {
-                    double n = problem->neumann(e, fvGeometry, elemVolVars, scvf);
+                    double n = problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];
                     f = (std::abs(n) > std::abs(f)) ? n : f;
                 }
             }
@@ -563,7 +553,7 @@ public:
      *
      * For a single mpi process. Gathering is done in Python
      */
-    virtual std::map<int, double> getAllNeumann() {
+    virtual std::map<int, double> getAllNeumann(int eqIdx = 0) {
         std::map<int, double> fluxes;
         for (const auto& e : Dune::elements(gridGeometry->gridView())) { // soil elements
             double f = 0.;
@@ -575,7 +565,7 @@ public:
                     c++;
                     auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
                     elemVolVars.bindElement(e, fvGeometry, x);
-                    f += problem->neumann(e, fvGeometry, elemVolVars, scvf);
+                    f += problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];
                 }
             }
             if (c>0) {
@@ -725,8 +715,8 @@ void init_solverbase(py::module &m, std::string name) {
 	    .def("getDofIndices", &Solver::getDofIndices)
 	    .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
 	    .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
-	    .def("getNeumann", &Solver::getNeumann)
-	    .def("getAllNeumann", &Solver::getAllNeumann)
+	    .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
+	    .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
 	    .def("pickCell", &Solver::pickCell)
         .def("pick", &Solver::pick)
 	// members

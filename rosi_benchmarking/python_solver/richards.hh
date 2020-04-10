@@ -15,7 +15,7 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
 
-    std::vector<double> ls; // local sink [kg/s]
+    std::vector<std::shared_ptr<std::vector<double>>> source; // local sink [kg/s]
 
     virtual ~Richards() { }
 
@@ -23,7 +23,7 @@ public:
      * Calls parent, additionally turns file output off
      */
     void initialize(std::vector<std::string> args) override {
-        SolverBase<Problem, Assembler, LinearSolver>::initialize(args);
+        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args);
         this->setParameter("Soil.Output.File", "false");
     }
 
@@ -35,20 +35,20 @@ public:
      *
      * for simplicity avoiding mpi broadcasting or scattering
      */
-    virtual void setSource(const std::map<int, double>& source) {
+    virtual void setSource(const std::map<int, double>& sourceMap, int eqIdx = 0) {
         this->checkInitialized();
         int n = this->gridGeometry->gridView().size(0);
-        ls.resize(n);
-        std::fill(ls.begin(), ls.end(), 0.);
-        for (const auto& e : elements(this->gridGeometry->gridView())) { // local elements
-            int gIdx = this->cellIdx->index(e); // global index
-            auto eIdx = this->gridGeometry->elementMapper().index(e);
-            if (source.count(gIdx)>0) {
-                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
-                ls[eIdx] = source.at(gIdx);
-            }
-        }
-        this->problem->setSource(&ls); // why a raw pointer? todo
+//        ls.resize(n);
+//        std::fill(ls.begin(), ls.end(), 0.);
+//        for (const auto& e : elements(this->gridGeometry->gridView())) { // local elements
+//            int gIdx = this->cellIdx->index(e); // global index
+//            auto eIdx = this->gridGeometry->elementMapper().index(e);
+//            if (source.count(gIdx)>0) {
+//                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
+//                ls[eIdx] = source.at(gIdx);
+//            }
+//        }
+        this->problem->setSource(source[eqIdx]); // why a raw pointer? todo
     }
 
     /**
@@ -81,6 +81,7 @@ public:
      * to limit maximal the flow.
      */
     void setCriticalPressure(double critical) {
+    	this->checkInitialized();
     	this->problem->criticalPressure(critical); // problem is defined in solverbase.hh
     }
 

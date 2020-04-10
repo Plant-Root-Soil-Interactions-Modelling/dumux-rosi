@@ -26,7 +26,7 @@ CriticalPressure = -15000 #[cm]
 
 [Soil.IC]
 P = -100 #[cm]
-C = 1e-8 #[mol/m³]
+# C = 1e-8 #[mol/m³]
 
 [Soil.VanGenuchten] 
 # Loam over sand 
@@ -36,6 +36,9 @@ Alpha = 0.04 # [1/cm]
 N = 1.6
 Ks = 50 # [cm/d] 
 
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "false"
 
 [Component]
 LiquidDiffusionCoefficient = 1.e-9 #[m²/s]
@@ -52,6 +55,3 @@ KF = 100 #[mol/g]
 NF = 1
 rhob = 1400 #[kg/m³]
 
-[Vtk]
-AddProcessRank = "false"
-AddVelocity = "false"

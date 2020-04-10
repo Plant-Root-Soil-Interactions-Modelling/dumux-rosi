@@ -4,7 +4,7 @@ sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
 import solver.plantbox as pb
 import solver.rsml_reader as rsml
-from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import van_genuchten as vg
@@ -85,11 +85,11 @@ for i in range(0, N):
     if rank == 0:  # Root part is not parallel
         rx_hom = r.solve(t, -trans * sinusoidal(t), sx[cci], wilting_point)  # xylem_flux.py
         rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-        fluxes = r.soilFluxes(t, rx_hom, approx = True)  # class XylemFlux is defined in MappedOrganism.h
+        fluxes = r.soilFluxes(t, rx_hom, approx=True)  # class XylemFlux is defined in MappedOrganism.h
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
     s.solve(dt)
 
@@ -120,6 +120,6 @@ if rank == 0:
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
     plt.show()
 

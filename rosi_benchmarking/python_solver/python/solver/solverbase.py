@@ -107,23 +107,23 @@ class SolverWrapper():
         self.checkInitialized()
         return self._flat0(MPI.COMM_WORLD.gather(self.base.getDofIndices(), root=0))
 
-    def getSolution(self):
+    def getSolution(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(), root=0)), 0)
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(eqIdx), root=0)), 0)
 
-    def getSolutionAt(self, gIdx):
+    def getSolutionAt(self, gIdx, eqIdx=0):
         """Returns the current solution at a cell index"""
-        return self.base.getSolutionAt(gIdx)
+        return self.base.getSolutionAt(gIdx, eqIdx)
 
-    def getNeumann(self, gIdx):
+    def getNeumann(self, gIdx, eqIdx=0):
         """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
-        return self.base.getNeumann(gIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
-    def getAllNeumann(self):
+    def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
-        dics = MPI.COMM_WORLD.gather(self.base.getAllNeumann(), root=0)
+        dics = MPI.COMM_WORLD.gather(self.base.getAllNeumann(eqIdx), root=0)
         flat_dic = {}
         for d in dics:
             flat_dic.update(d)

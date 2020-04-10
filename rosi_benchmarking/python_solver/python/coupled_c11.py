@@ -4,7 +4,7 @@ sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
 import solver.plantbox as pb
 import solver.rsml_reader as rsml
-from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import van_genuchten as vg
@@ -102,7 +102,7 @@ def solve(soil, simtimes, q_r, N):
         else:
             fluxes = None
 
-        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+        fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
         s.setSource(fluxes)  # g day-1, richards.py
 
         s.solve(dt)
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
 
     if rank == 0:
-        fig, ax = plt.subplots(2, 3, figsize = (14, 14))
+        fig, ax = plt.subplots(2, 3, figsize=(14, 14))
         t0 = timeit.default_timer()
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])

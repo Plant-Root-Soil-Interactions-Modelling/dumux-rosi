@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 
-from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import matplotlib.pyplot as plt
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
-    fig, ax = plt.subplots(2, 3, figsize = (14, 14))
+    fig, ax = plt.subplots(2, 3, figsize=(14, 14))
 
     if rank == 0:
         t0 = time.time()

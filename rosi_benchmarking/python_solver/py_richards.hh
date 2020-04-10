@@ -66,7 +66,7 @@ struct Grid<TypeTag, TTag::RichardsSPTT> { using type = Dune::SPGrid<GetPropType
 /*
  * pick assembler, linear solver and problem
  */
-using RSPTT = Dumux::Properties::TTag::RichardsSPCC;
+using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // CC!
 using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric>;
 using RichardsSPLinearSolver = Dumux::AMGBackend<RSPTT>;
 using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
@@ -76,7 +76,7 @@ using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 //using RichardsUGLinearSolver = Dumux::AMGBackend<RUGTT>;
 //using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
 
-PYBIND11_MODULE(dumux_rosi, m) {
+PYBIND11_MODULE(rosi_richards, m) {
     init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "BaseRichardsSP");
     init_richardssp<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "RichardsSP");
 //    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");

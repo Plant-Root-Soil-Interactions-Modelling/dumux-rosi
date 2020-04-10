@@ -391,9 +391,8 @@ public:
 	 * Source per element index \f$ [ kg / s ] \f$
 	 *
 	 * eventually, called in the main file (example specific, richards.cc)
-	 * todo use smart pointer
 	 */
-	void setSource(std::vector<double>* s) {
+	void setSource(std::shared_ptr<std::vector<double>> s, int eqIdx = 0) {
 		source_ = s;
 	}
 
@@ -499,7 +498,7 @@ private:
 	bool gravityOn_;
 
 	// Source
-	std::vector<double>* source_ = nullptr;
+	std::shared_ptr<std::vector<double>> source_;
 	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_;
