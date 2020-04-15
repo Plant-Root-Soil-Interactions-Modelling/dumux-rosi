@@ -1,16 +1,27 @@
 [TimeLoop]
-TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd = 259200 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 360
 
 [Soil.Grid]
-Cells = 20 20 38
-
-[Soil.IC]
-P = -200
+Cells = 40 40 75
 
 [Problem]
-Name = convergence
+Name = convergence_
 RootName = ../roots_1p/input/convergence.input
 SoilName = ../soil_richards/input/convergence.input
+
+#[Soil.IC]
+#P = -300
+
+#[Soil.BC.Top]
+#Type = 4 # 2 constant flux, 4 atmospheric
+#Value = 0 # [cm day-1]
+
+#[Climate]
+#CSVFile = input/convergence_precipitation.csv
+
+[Restart]
+Time = 128858
+SoilFile = ./results_convergence_loam_0,2_b12/convergence-00035.vtu

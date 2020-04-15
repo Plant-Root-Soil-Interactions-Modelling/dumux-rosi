@@ -12,11 +12,8 @@ UpperRight = 0.04  0.04  0.
 Cells = 8 8 15
 
 [Soil.BC.Top]
-Type = 2 # atmospheric
+Type = 2 # constant flux
 Value = 0 # [cm day-1]
-
-#[Climate]
-#Precipitation = 0.05
 
 [Soil.BC.Bot]
 Type = 2 # 5 free drainage, 1 constant pressure 
