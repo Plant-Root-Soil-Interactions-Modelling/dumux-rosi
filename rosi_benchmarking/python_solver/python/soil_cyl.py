@@ -31,8 +31,6 @@ s.createGrid([0.02], [0.6], [100])  # [cm]
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("fluxCyl", 0.)  #  [cm/day]
 s.setInnerBC("fluxCyl", -0.1)  # [cm/day] 
-s.setParameter("Component.MolarMass", "20e-3")  # MolarMass = 20e-3
-s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-8")
 s.setVGParameters([loam])
 s.initializeProblem()
 s.setCriticalPressure(-15000)  # cm pressure head

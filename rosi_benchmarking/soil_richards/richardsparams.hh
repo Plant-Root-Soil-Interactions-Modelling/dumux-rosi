@@ -57,7 +57,7 @@ public:
     RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
     {
-        phi_ = 1; // Richards equation is independent of phi [1]
+        phi_ = 0.43; // Richards equation is independent of phi [1]
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
@@ -82,7 +82,7 @@ public:
             materialParams_.at(i).setVgn(n.at(i)); // N
             k_.push_back(kc_.at(i)*mu/(rho*g_)); // Convert to intrinsic permeability
             // Regularisation parameters
-            double eps = 1.e-4;
+            double eps = 1.e-9;
             materialParams_.at(i).setPcLowSw(eps);
             materialParams_.at(i).setPcHighSw(1. - eps);
             materialParams_.at(i).setKrnLowSw(eps);
