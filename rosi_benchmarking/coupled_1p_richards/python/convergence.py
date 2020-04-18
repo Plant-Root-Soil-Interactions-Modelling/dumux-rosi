@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "convergence"  # this name should be unique
-suffix = "_sand_0,4_200"
+suffix = "_loam_0,2_b12_1"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled input/" + name + ".input -Soil.Layer.Number 1")  # layer 1 (sand), 2 (loam), 3 (clay)
+os.system("./coupled input/" + name + ".input -Soil.Layer.Number 2")  # layer 1 (sand), 2 (loam), 3 (clay)
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
@@ -45,8 +45,8 @@ ax2 = ax1.twinx()
 ctrans = np.cumsum(np.multiply(1000 * d[1:, 1] * c, (t[1:] - t[:-1])))
 ax2.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
 ax2.tick_params(axis= 'y', labelcolor = 'b')
-ax1.set_xlabel("time (days)")
-ax1.set_ylabel("transpiration rate (mL/day)")
+ax1.set_xlabel("time [days]")
+ax1.set_ylabel("transpiration rate [mL/day]")
 ax2.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
 ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
 plt.savefig("results_" + name + suffix + ".pdf", dpi=300)

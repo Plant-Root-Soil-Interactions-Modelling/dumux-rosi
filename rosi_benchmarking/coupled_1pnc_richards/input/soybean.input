@@ -19,7 +19,8 @@ Periodic = true true false
 Overlap = 1
 
 #[Soil.IC]
-#P = -300
+#P = -50 -300
+#Z = -250 0
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -27,12 +28,12 @@ CritCollarP = -100000 # pressure, when to switch to dirichlet
 CritCollarPAlpha = -5500 # for alpha
 CritTipP = -4500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
-ProductionAge = 2 # [day]
+ProductionAge = 1 # [day]
 Decay = 0.693 # [day-1]
 b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 
 [Restart]
-Time = 4.4208e+06
-SoilFile = ./cluster_soybean_HLCT/soybean_154days_HLCT-01227.vtu
-RootFile = ./cluster_soybean_HLCT/soybean_154days_HLCT-01227.vtp
+Time = 8.13981e+06
+SoilFile = ./results_soybean_HLCT_1/soybean-01255.vtu
+RootFile = ./results_soybean_HLCT_1/soybean-01255.vtp
