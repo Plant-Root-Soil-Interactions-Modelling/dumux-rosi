@@ -27,7 +27,11 @@ s.initialize()
 
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-s.createGrid([0.02], [0.6], [100])  # [cm]
+# s.createGrid([0.02], [0.6], [100])  # [cm]
+
+# points = np.linspace(0.02, 0.6, 100)
+points = np.logspace(np.log10(0.02), np.log10(0.6), 20)
+s.createGrid1d(points)  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("noflux")  #  [cm/day]
@@ -82,8 +86,8 @@ for i, dt in enumerate(np.diff(times)):
     x = s.getSolutionHead()
     y = np.array(s.getSolution(1))  # solute concentration kg/m3 -> g/cm3
         
-    ax1.plot(points[:], x, col[i % len(col)], label="dumux {} days".format(s.simTime))
-    ax2.plot(points[:], y, col[i % len(col)], label="dumux {} days".format(s.simTime))
+    ax1.plot(points[:], x, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
+    ax2.plot(points[:], y, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
     
     f.append(s.getNeumann(idx))  # [kg/kg] -> 1/1000 [kg/m3] [] -> 1 [g/cm3] # solute concentration
 

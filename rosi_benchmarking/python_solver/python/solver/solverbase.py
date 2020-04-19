@@ -42,6 +42,18 @@ class SolverWrapper():
         """
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
 
+    def createGrid1d(self, points):
+        """
+        """
+        p = []
+        if not isinstance(points[0], list): 
+            for v in points:
+                p.append([v / 100.])  # cm -> m
+        else:  # TODO check for 1d/3d
+            for v in points:
+                p.append(v / 100.)  # cm -> m
+        self.base.createGrid1d(p)
+
     def readGrid(self, file :str):
         """ Creates a grid from a file (e.g. dgf or msh)"""
         self.base.readGrid(file)
