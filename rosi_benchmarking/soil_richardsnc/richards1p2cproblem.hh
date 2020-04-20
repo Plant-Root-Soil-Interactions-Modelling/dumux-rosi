@@ -43,6 +43,7 @@ public:
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
 	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
 
 	enum {
 		pressureIdx = 0, // index of primary variables
@@ -197,7 +198,7 @@ public:
 	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
 	 *
 	 * called by BoxLocalResidual::evalFlux,
-	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
+	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$// effective diffusion coefficient !!!!!!!!!!!!
 	 */
 	NumEqVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
@@ -302,10 +303,13 @@ public:
 			switch (bcSTopType_) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
-				Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
-				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient");
-				flux[transportEqIdx] = d * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_*rho_) / dz;
+				Scalar dz = 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
+				Scalar porosity = this->spatialParams().porosityAtPos(ePos);
+				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
+				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				break;
+
 			}
 			case constantFlux: {
 				flux[transportEqIdx] = -bcSTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
@@ -331,10 +335,12 @@ public:
 			switch (bcSBotType_) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
-				Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
-				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient");
-				flux[transportEqIdx] = d * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_*rho_) / dz;
-				// std::cout << d*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
+				Scalar dz = std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
+				Scalar porosity = this->spatialParams().porosityAtPos(ePos);
+				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
+				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
 				break;
 			}
 			case constantFlux: {

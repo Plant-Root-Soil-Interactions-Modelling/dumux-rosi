@@ -30,7 +30,7 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 # s.createGrid([0.02], [0.6], [100])  # [cm]
 
 # points = np.linspace(0.02, 0.6, 100)
-points = np.logspace(np.log10(0.02), np.log10(0.6), 20)
+points = np.logspace(np.log10(0.02), np.log10(0.6), 100)
 s.createGrid1d(points)  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
@@ -41,7 +41,7 @@ s.setParameter("Component.MolarMass", "1.8e-2")  # TODO no idea, where this is n
 s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-9")  # m^2 s-1
 # s.setParameter("SpatialParams.Tortuosity", "0.129")
 
-s.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
+s.setParameter("Component.BufferPower", "100.")  # buffer power = \rho * Kd [1]
 s.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
 
 s.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Type) 
@@ -64,7 +64,7 @@ if rank == 0:
     
 fig, (ax1, ax2) = plt.subplots(1, 2)    
  
-times = [0., 10. / 24., 20.]  # days   , 25, 30
+times = [0., 10. / 24., 10, 20.]  # days   , 25, 30
 s.ddt = 1.e-5  
  
 col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
@@ -72,7 +72,7 @@ col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
 idx = s.pick([0.02])
 print("boundary element ", idx) 
 f = []
-maxDt = 1
+maxDt = 0.1
 
 for i, dt in enumerate(np.diff(times)):
     
@@ -101,10 +101,13 @@ ax1.set_ylabel("soil matric potential (cm)")
 ax1.legend()
  
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc/python")
-data = np.loadtxt("cylinder_1d_Comsol_P.txt", skiprows=8)
+data = np.loadtxt("c_results.txt", skiprows=8)  # buffer power = 100
+# data = np.loadtxt("c_results_nob.txt", skiprows=8) # buffer power = 0
+
 z_comsol = data[:, 0]
-ax2.plot(z_comsol + 0.02, data[:, 25], "k", label="comsol 10 days")
-ax2.plot(z_comsol + 0.02, data[:, -1], "k:", label="comsol 20 days")
+ax2.plot(z_comsol + 0.02, data[:, 2], "r", label="1 hour")
+ax2.plot(z_comsol + 0.02, data[:, 25], "g", label="comsol 10 days")
+ax2.plot(z_comsol + 0.02, data[:, -1], "b:", label="comsol 20 days")
 ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()
