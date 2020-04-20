@@ -23,8 +23,8 @@
  *        using compositional fully implicit model.
  */
 
-#ifndef DUMUX_COMPOSITIONAL_LOCAL_RESIDUAL_HH
-#define DUMUX_COMPOSITIONAL_LOCAL_RESIDUAL_HH
+#ifndef DUMUX_COMPOSITIONAL_CYL_LOCAL_RESIDUAL_HH
+#define DUMUX_COMPOSITIONAL_CYL_LOCAL_RESIDUAL_HH
 
 #include <vector>
 #include <dumux/common/properties.hh>
@@ -112,8 +112,7 @@ public:
             // in case one balance is substituted by the total mole balance
             if (useTotalMoleOrMassBalance)
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
-                                             * volVars.porosity()
-                                             * volVars.saturation(phaseIdx)*scv.center()[0];;
+                                             *(volVars.porosity()*volVars.saturation(phaseIdx)+b)*scv.center()[0];
 
             //! The energy storage in the fluid phase with index phaseIdx
             EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, phaseIdx);
@@ -169,7 +168,7 @@ public:
                 { return massOrMoleDensity(volVars, phaseIdx)*massOrMoleFraction(volVars, phaseIdx, compIdx)*volVars.mobility(phaseIdx); };
 
                 if (eqIdx != replaceCompEqIdx)
-                    flux[eqIdx] += fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0];
+                    flux[eqIdx] += (fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0]); //
 
                 // diffusive fluxes (only for the component balances)
                 if(eqIdx != replaceCompEqIdx)
@@ -184,7 +183,7 @@ public:
                 const auto upwindTerm = [&massOrMoleDensity, phaseIdx] (const auto& volVars)
                 { return massOrMoleDensity(volVars, phaseIdx)*volVars.mobility(phaseIdx); };
 
-                flux[replaceCompEqIdx] += fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0];
+                flux[replaceCompEqIdx] += (fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0]); // ;
 
                 for(int compIdx = 0; compIdx < numComponents; ++compIdx)
                     flux[replaceCompEqIdx] += useMoles ? diffusiveFluxes[compIdx]

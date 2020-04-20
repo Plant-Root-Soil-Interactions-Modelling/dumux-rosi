@@ -96,7 +96,10 @@
 
 #include <dumux/porousmediumflow/immiscible/localresidual.hh>
 #include <dumux/porousmediumflow/compositional/switchableprimaryvariables.hh>
-#include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
+
+// #include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
+#include <dumux/material/fluidmatrixinteractions/diffusivityconstanttortuosity.hh>
+
 #include <dumux/material/fluidmatrixinteractions/2p/thermalconductivitysomerton.hh>
 #include <dumux/material/spatialparams/fv.hh>
 #include <dumux/material/components/simpleh2o.hh>
@@ -221,10 +224,13 @@ public:
 template<class TypeTag>
 struct EnableWaterDiffusionInAir<TypeTag, TTag::Richards> { static constexpr bool value = false; };
 
-//! Use the model after Millington (1961) for the effective diffusivity
+////! Use the model after Millington (1961) for the effective diffusivity
+//template<class TypeTag>
+//struct EffectiveDiffusivityModel<TypeTag, TTag::Richards>
+//{ using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
+
 template<class TypeTag>
-struct EffectiveDiffusivityModel<TypeTag, TTag::Richards>
-{ using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
+struct EffectiveDiffusivityModel<TypeTag, TTag::Richards> { using type = DiffusivityConstantTortuosity<GetPropType<TypeTag, Properties::Scalar>>; };
 
 //! The primary variables vector for the richards model
 template<class TypeTag>
