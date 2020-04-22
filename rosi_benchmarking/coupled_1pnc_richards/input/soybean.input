@@ -19,8 +19,7 @@ Periodic = true true false
 Overlap = 1
 
 #[Soil.IC]
-#P = -50 -300
-#Z = -250 0
+#P = -300
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -34,6 +33,6 @@ b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 
 [Restart]
-Time = 8.13981e+06
-SoilFile = ./results_soybean_HLCT_1/soybean-01255.vtu
-RootFile = ./results_soybean_HLCT_1/soybean-01255.vtp
+Time = 3.456e+06
+SoilFile = ./results_soybean_HLCT/soybean-00960.vtu
+RootFile = ./results_soybean_HLCT/soybean-00960.vtp

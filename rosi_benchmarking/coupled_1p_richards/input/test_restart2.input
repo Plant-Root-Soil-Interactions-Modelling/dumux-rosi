@@ -9,6 +9,9 @@ DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
+# [Soil.IC]
+# P = -500
+
 [RootSystem.Collar]
 Transpiration = 5e-4 # 0.5cm3/day # kg/day 
 Sinusoidal = True

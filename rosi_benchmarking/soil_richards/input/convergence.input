@@ -19,9 +19,9 @@ Value = 0 # [cm day-1]
 Type = 2 # 5 free drainage, 1 constant pressure 
 Value = 0 # [cm] pressure head, fully saturated bot
 
-[Soil.IC]
-P = -644.8 -659.8
-Z = -.15 0.
+#[Soil.IC]
+#P = -644.8 -659.8
+#Z = -.15 0.
 
 [Soil.VanGenuchten] 
 # Sand, Loam, Clay 

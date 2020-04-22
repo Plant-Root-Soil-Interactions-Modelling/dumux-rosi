@@ -201,24 +201,8 @@ int main(int argc, char** argv) try
     Traits::SolutionVector sol;
     sol[soilDomainIdx].resize(soilGridGeometry->numDofs());
     sol[rootDomainIdx].resize(rootGridGeometry->numDofs());
-    if (restartTime > 0)
-        {
-        // soil
-        using soilIOFields = GetPropType<SoilTypeTag, Properties::IOFields>;
-        using soilPrimaryVariables = GetPropType<SoilTypeTag, Properties::PrimaryVariables>;
-        using soilModelTraits = GetPropType<SoilTypeTag, Properties::ModelTraits>;
-        using soilFluidSystem = GetPropType<SoilTypeTag, Properties::FluidSystem>;
-        const auto soilfileName = getParam<std::string>("Restart.SoilFile");
-        const auto soilpvName = createPVNameFunction<soilIOFields, soilPrimaryVariables, soilModelTraits, soilFluidSystem>();
-        loadSolution(sol[soilDomainIdx], soilfileName, soilpvName, *soilGridGeometry);
-        // root
-        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-        }
-    else
-        {
-        soilProblem->applyInitialSolution(sol[soilDomainIdx]);
-        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-        }
+    soilProblem->applyInitialSolution(sol[soilDomainIdx]);
+    rootProblem->applyInitialSolution(sol[rootDomainIdx]);
     auto oldSol = sol;
 
     // initial root growth
@@ -243,10 +227,33 @@ int main(int argc, char** argv) try
     // the solution vector
     sol[soilDomainIdx].resize(soilGridGeometry->numDofs());
     sol[rootDomainIdx].resize(rootGridGeometry->numDofs());
-    soilProblem->applyInitialSolution(sol[soilDomainIdx]);
-    rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-    oldSol = sol;
+    if (restartTime > 0)
+        {
+        // soil
+        using soilIOFields = GetPropType<SoilTypeTag, Properties::IOFields>;
+        using soilPrimaryVariables = GetPropType<SoilTypeTag, Properties::PrimaryVariables>;
+        using soilModelTraits = GetPropType<SoilTypeTag, Properties::ModelTraits>;
+        using soilFluidSystem = GetPropType<SoilTypeTag, Properties::FluidSystem>;
+        const auto soilfileName = getParam<std::string>("Restart.SoilFile");
+        const auto soilpvName = createPVNameFunction<soilIOFields, soilPrimaryVariables, soilModelTraits, soilFluidSystem>();
+        loadSolution(sol[soilDomainIdx], soilfileName, soilpvName, *soilGridGeometry);
 
+        // root
+        /*using rootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
+        using rootPrimaryVariables = GetPropType<RootTypeTag, Properties::PrimaryVariables>;
+        using rootModelTraits = GetPropType<RootTypeTag, Properties::ModelTraits>;
+        using rootFluidSystem = GetPropType<RootTypeTag, Properties::FluidSystem>;
+        const auto rootfileName = getParam<std::string>("Restart.RootFile");
+        const auto rootpvName = createPVNameFunction<rootIOFields, rootPrimaryVariables, rootModelTraits, rootFluidSystem>();
+        loadSolution(sol[rootDomainIdx], rootfileName, rootpvName, *rootGridGeometry);*/
+        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+        }
+    else
+        {
+        soilProblem->applyInitialSolution(sol[soilDomainIdx]);
+        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+        }
+    oldSol = sol;
 
     // coupling manager
     couplingManager->init(soilProblem, rootProblem, sol);

@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "convergence"  # this name should be unique
-suffix = "_loam_0,2_b12_1"
+suffix = "_loam_0,2_b12_2"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))

@@ -6,7 +6,7 @@ MaxTimeStepSize = 3600
 
 [Soil.Grid]
 # Cells = 25 17 75 # for 50 * 33 * 150
-Cells = 13 9 37
+Cells = 5 5 10
 Periodic = true true false
 Overlap = 1 
 
@@ -15,7 +15,7 @@ Periodic = true true false
 Overlap = 1 
 
 [Soil.IC]
-P = -300
+P = -10000
 
 [Problem]
 Name = sunflower
@@ -25,3 +25,4 @@ SoilName = ../soil_richards/input/sunflower_HLCT.input
 #[Restart]
 #Time = 7.77393e+06
 #SoilFile = ./results_sunflower_90days_HLCT/sunflower_90days_HLCT-01441.vtu
+#RootFile = ./results_sunflower_90days_HLCT/sunflower_90days_HLCT-01441.vtp

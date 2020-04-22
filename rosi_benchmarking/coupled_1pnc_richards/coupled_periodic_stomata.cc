@@ -197,7 +197,6 @@ int main(int argc, char** argv) try
     // check if we are about to restart a previously interrupted simulation
     double restartTime = getParam<double>("Restart.Time", 0);
 
-
     // the solution vector
     Traits::SolutionVector sol;
     sol[soilDomainIdx].resize(soilGridGeometry->numDofs());

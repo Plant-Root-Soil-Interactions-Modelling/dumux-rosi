@@ -7,8 +7,8 @@ DtInitial =  3600 # [s]
 MaxTimeStepSize = 86400 
 
 [Soil.Grid]
-LowerLeft = -0.25 -0.165 -1.50
-UpperRight = 0.25 0.165 0.
+LowerLeft = -0.05 -0.05 -.25
+UpperRight = 0.05 0.05 0.
 Cells = 25 17 75
 
 

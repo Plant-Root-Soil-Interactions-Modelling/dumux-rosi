@@ -14,7 +14,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled_periodic input/" + name + ".input")
+os.system("./coupled input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name):

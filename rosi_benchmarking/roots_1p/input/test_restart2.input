@@ -45,6 +45,9 @@ KrAge3 = -154	0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 60	1e20	# days
 CSVFile = input/sunflower_transpiration_2003.csv
 Sinusoidal = True
 
+#[Soil.IC]
+#P = -300
+
 [Vtk]
 AddProcessRank = "false"
 AddVelocity = "true"
