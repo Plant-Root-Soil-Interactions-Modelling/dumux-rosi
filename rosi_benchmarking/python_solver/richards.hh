@@ -15,8 +15,6 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
 
-    std::vector<std::shared_ptr<std::vector<double>>> source; // local sink [kg/s]
-
     virtual ~Richards() { }
 
     /**
@@ -33,22 +31,22 @@ public:
      * The source is given per cell (Dumux element),
      * as a map with global element index as key, and source as value
      *
-     * for simplicity avoiding mpi broadcasting or scattering
+     * for simplicity avoiding mpi broadcasting or scattering TODO
      */
     virtual void setSource(const std::map<int, double>& sourceMap, int eqIdx = 0) {
-        this->checkInitialized();
+    	this->checkInitialized();
         int n = this->gridGeometry->gridView().size(0);
-//        ls.resize(n);
-//        std::fill(ls.begin(), ls.end(), 0.);
-//        for (const auto& e : elements(this->gridGeometry->gridView())) { // local elements
-//            int gIdx = this->cellIdx->index(e); // global index
-//            auto eIdx = this->gridGeometry->elementMapper().index(e);
-//            if (source.count(gIdx)>0) {
-//                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
-//                ls[eIdx] = source.at(gIdx);
-//            }
-//        }
-        this->problem->setSource(source[eqIdx]); // why a raw pointer? todo
+        std::shared_ptr<std::vector<double>> ls = std::make_shared<std::vector<double>>(n);
+        std::fill(ls->begin(), ls->end(), 0.);
+        for (const auto& e : elements(this->gridGeometry->gridView())) { // local elements
+            int gIdx = this->cellIdx->index(e); // global index
+            auto eIdx = this->gridGeometry->elementMapper().index(e);
+            if (sourceMap.count(gIdx)>0) {
+                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
+                ls->at(eIdx) = sourceMap.at(gIdx);
+            }
+        }
+        this->problem->setSource(ls);
     }
 
     /**
@@ -176,7 +174,7 @@ void init_richardssp(py::module &m, std::string name) {
     using RichardsSP = Richards<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
-   .def("setSource", &RichardsSP::setSource)
+   .def("setSource", &RichardsSP::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsSP::setCriticalPressure)
    .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsSP::getWaterContent)

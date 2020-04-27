@@ -72,7 +72,7 @@ s.setVGParameters([loam])
 s.initializeProblem()
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick(x, y, z)
+picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 

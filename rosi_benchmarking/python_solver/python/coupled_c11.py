@@ -13,7 +13,6 @@ from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
-import cProfile
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -59,6 +58,7 @@ def solve(soil, simtimes, q_r, N):
     r = XylemFluxPython(rs)
     r.setKr([1.e-7])
     r.setKx([1.e-7])
+    print("fin root problem")
 
     """ Soil problem """
     s.setHomogeneousIC(-100)  # cm pressure head
@@ -69,7 +69,7 @@ def solve(soil, simtimes, q_r, N):
     s.initializeProblem()
 
     """ Coupling (map indices) """
-    picker = lambda x, y, z : s.pick(x, y, z)
+    picker = lambda x, y, z : s.pick([x, y, z])
     r.rs.setSoilGrid(picker)
     cci = picker(0, 0, 0)  # collar cell index
 

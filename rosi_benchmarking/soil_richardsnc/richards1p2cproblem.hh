@@ -221,7 +221,7 @@ public:
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;
 			Scalar h = -toHead_(p); // todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
-			Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
+			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
 			Scalar krw = MaterialLaw::krw(params, s);
 
 			if (onUpperBoundary_(pos)) { // top bc
@@ -303,7 +303,7 @@ public:
 			switch (bcSTopType_) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
-				Scalar dz = 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosityAtPos(ePos);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
@@ -335,7 +335,7 @@ public:
 			switch (bcSBotType_) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
-				Scalar dz = std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosityAtPos(ePos);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
@@ -380,11 +380,11 @@ public:
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		double h = 0.;
 		if (source_[h2OIdx] != nullptr) {
-			h = source_[h2OIdx]->at(eIdx);
+			h = source_[h2OIdx]->at(eIdx)/scv.volume();
 		}
 		double s = 0.;
 		if (source_[soluteIdx] != nullptr) {
-			s = source_[soluteIdx]->at(eIdx);
+			s = source_[soluteIdx]->at(eIdx)/scv.volume();
 		}
 		return NumEqVector({ h, s });
 	}
@@ -588,7 +588,7 @@ private:
 	Scalar bcSBotValue_;
 
 	// Source
-	std::vector<std::shared_ptr<std::vector<double>>> source_;
+	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_;

@@ -100,7 +100,7 @@ public:
 		}
 		std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValue_ << ",  Output File " << writeFile_
-				<< ", Critical pressure " << criticalPressure_ << "\n" << std::flush;
+				<< ", Critical pressure " << criticalPressure_ << " gravity " << gravityOn_ << "\n" << std::flush;
 	}
 
 	/**
@@ -225,10 +225,10 @@ public:
 			Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
-			Scalar p = MaterialLaw::pc(params, s) + pRef_;
-			Scalar h = -toHead_(p); // todo why minus -pc?
+			Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
+			Scalar h = -toHead_(p); // cm
 			GlobalPosition ePos = element.geometry().center();
-			Scalar dz = 100 * 2 * std::abs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
+			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
 			Scalar krw = MaterialLaw::krw(params, s);
 
 			if (onUpperBoundary_(pos)) { // top bc
@@ -258,9 +258,11 @@ public:
 				case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
 					Scalar prec = -precipitation_.f(time_);
 					if (prec < 0) { // precipitation
+						// std::cout << "in" << "\n";
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
 					} else { // evaporation
+						// std::cout << "out" << "\n";
 						Scalar emax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
 						f = std::min(prec, emax);
 					}
@@ -310,6 +312,8 @@ public:
 	 * \copydoc FVProblem::source
 	 *
 	 * called by FVLocalResidual:computeSource(...)
+	 *
+	 * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f
 	 */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
@@ -498,7 +502,7 @@ private:
 	bool gravityOn_;
 
 	// Source
-	std::shared_ptr<std::vector<double>> source_;
+	std::shared_ptr<std::vector<double>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_;
