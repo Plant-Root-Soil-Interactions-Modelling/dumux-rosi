@@ -156,6 +156,21 @@ public:
         return &layer_;
     }
 
+    /**
+     * Call to change default setting (of 1.e-6 for both)
+     *
+     * pcEps    capillary pressure regularisation
+     * krEps 	relative permeabiltiy regularisation
+     */
+    void setRegularisation(double pcEps = 1.e-6, double krEps = 1.e-6) {
+    	for (int i =0; i<materialParams_.size(); i++) {
+            materialParams_.at(i).setPcLowSw(pcEps);
+            materialParams_.at(i).setPcHighSw(1. - pcEps);
+            materialParams_.at(i).setKrnLowSw(krEps);
+            materialParams_.at(i).setKrwHighSw(1 - krEps);
+    	}
+    }
+
 private:
 
     //! returns the index of the soil layer

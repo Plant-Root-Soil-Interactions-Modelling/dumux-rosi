@@ -549,6 +549,18 @@ public:
 		std::cout << "Global integrated source (soil): " << source[h2OIdx] << " (kg/s) / " << source[h2OIdx]*3600*24*1000 << " (g/day)" << '\n';
 	}
 
+	/**
+	 * Forwards to spatialParams
+	 *
+     * Call to change default setting (of 1.e-6 for both)
+     *
+     * pcEps    capillary pressure regularisation
+     * krEps 	relative permeabiltiy regularisation
+     */
+    void setRegularisation(double pcEps = 1.e-6, double krEps = 1.e-6) {
+    	this->spatialParams().setRegularisation(pcEps,krEps);
+    }
+
 private:
 
 	//! cm pressure head -> Pascal
