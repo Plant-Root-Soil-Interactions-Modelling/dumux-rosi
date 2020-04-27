@@ -57,26 +57,28 @@ public:
     RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
     : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
     {
-        phi_ = 0.43; // Richards equation is independent of phi [1]
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
         Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
 
         /* Get Van Genuchten parameters from the input file */
-        std::vector<Scalar> Qr = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qr"); // [1]
-        std::vector<Scalar> Qs = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qs"); // [1]
+        std::vector<Scalar> qr = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qr"); // [1]
+        std::vector<Scalar> qs = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qs"); // [1]
         std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");  // [1/cm]
         std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N"); // [1]
         kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity [cm/day]
         std::transform(kc_.begin (), kc_.end (), kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from [cm/day] to [m/s]
-        homogeneous_ = Qr.size()==1; // more than one set of VG parameters?
+        homogeneous_ = qr.size()==1; // more than one set of VG parameters?
 
+        phi_.resize(qr.size());
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
-        for (int i=0; i<Qr.size(); i++) {
+        for (int i=0; i<qr.size(); i++) {
+
+            phi_[i] = qs.at(i); // Richards equation is independent of phi [1]
             materialParams_.push_back(MaterialLawParams());
-            materialParams_.at(i).setSwr(Qr.at(i)/phi_); // Qr
-            materialParams_.at(i).setSnr(1.-Qs.at(i)/phi_); // Qs
+            materialParams_.at(i).setSwr(qr.at(i)/phi_[i]); // Qr
+            materialParams_.at(i).setSnr(1.-qs.at(i)/phi_[i]); // Qs
             Scalar a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
             materialParams_.at(i).setVgAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
             materialParams_.at(i).setVgn(n.at(i)); // N
@@ -97,8 +99,11 @@ public:
     /*!
      * \brief \copydoc FVGridGeometry::porosity
      */
-    Scalar porosityAtPos(const GlobalPosition& globalPos) const {
-        return phi_;
+    template<class ElementSolution>
+    Scalar porosity(const Element& element,
+                    const SubControlVolume& scv,
+                    const ElementSolution& elemSol) const {
+        return phi_.at(index_(element));
     }
 
     /*!
@@ -157,7 +162,7 @@ private:
         }
     }
 
-    Scalar phi_; // porosity
+    std::vector<Scalar> phi_; // porosity
 
     bool homogeneous_; // soil is homogeneous
     InputFileFunction layer_;
