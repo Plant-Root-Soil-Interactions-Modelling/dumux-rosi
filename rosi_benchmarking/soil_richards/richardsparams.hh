@@ -107,6 +107,14 @@ public:
     }
 
     /*!
+     * \brief \copydoc FVGridGeometry::porosity
+     * simper interface
+     */
+    Scalar porosity(const Element& element) const {
+        return phi_.at(index_(element));
+    }
+
+    /*!
      * \brief \copydoc FVSpatialParamsOneP::permeability
      * [m^2]\
      */
