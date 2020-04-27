@@ -43,17 +43,14 @@ for i in range(0, 3):
 
 # result (Figure 4c)
 for i in range(0, 3):
-    try:
-        s_, p_, z_ = read1D_vtp_data("benchmark1d_3c-0000" + str(i + 1) + ".vtp")
-        h_ = vg.pa2head(p_)
-        theta_ = vg.water_content(h_, clay)
-        ax3.plot(theta_, z_ * 100, "r+")
-        ex.append(z_)
-        ex.append(theta_)
-    except:
-        pass
+    s_, p_, z_ = read1D_vtp_data("benchmark1d_3c-0000" + str(i + 1) + ".vtp")
+    h_ = vg.pa2head(p_)
+    theta_ = vg.water_content(h_, clay)
+    ax3.plot(theta_, z_ * 100, "r+")
+    ex.append(z_)
+    ex.append(theta_)
 
-np.savetxt("dumux1d_b3", np.vstack(ex), delimiter=",")
+ # np.savetxt("dumux1d_b3", np.vstack(ex), delimiter=",")
 
 plt.show()
 

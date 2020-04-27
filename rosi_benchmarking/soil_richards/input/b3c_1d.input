@@ -10,7 +10,7 @@ CheckTimes = 8640 17280
 [Soil.Grid]
 UpperRight = 0
 LowerLeft = -2
-Cells = 399
+Cells = 199
 
 [Soil.BC.Top]
 Type = 2 # 4 # atmospheric BC with surface run off
