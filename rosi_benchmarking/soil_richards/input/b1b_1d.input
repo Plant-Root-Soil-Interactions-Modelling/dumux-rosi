@@ -2,7 +2,7 @@
 Name = benchmark1d_1b
 
 [TimeLoop]
-TEnd = 31536000 # 31536000 # 0 is steady state
+TEnd = 3153600 # 3153600 # 0 is steady state
 DtInitial =  1 # [s]
 MaxTimeStepSize = 864000 # 10 days [s] 
 

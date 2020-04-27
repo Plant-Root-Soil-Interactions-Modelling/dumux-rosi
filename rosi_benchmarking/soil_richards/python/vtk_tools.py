@@ -36,7 +36,6 @@ def read_vtu(name):
 #
 def read1D_vtp_data(name):
     pd = read_polydata(name)
-
     try:  # cell
         data = pd.GetCellData()
         a = data.GetArray(2).GetTuple(0)
@@ -85,7 +84,7 @@ def read1D_vtp_data(name):
 #
 # returns the cell or vertex data (index 0 and 2 hard coded)) of vtp file
 #
-def read3D_vtp_data(name, axis = 2):
+def read3D_vtp_data(name, axis=2):
     pd = read_vtu(name)
 
     try:  # cell
@@ -161,7 +160,7 @@ def read3Dp_vtp_data(prename, postname, n):
 #
 # reads a dumux output style vtu
 #
-def read3D_vtp(name, np = 1, axis = 2):
+def read3D_vtp(name, np=1, axis=2):
     if np == 1:
         return read3D_vtp_data(name + ".vtu", axis)
     else:

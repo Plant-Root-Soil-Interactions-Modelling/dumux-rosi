@@ -39,6 +39,6 @@ h3_ = vg.pa2head(p_)
 ax3.plot(h3_, z3_ * 100, "r+")
 
 # print(z1_.shape, z2_.shape, z3_.shape, h1_.shape, h2_.shape, h3_.shape)
-np.savetxt("dumux1d_b1", np.vstack((z1_, h1_, z2_, h2_, z3_, h3_)), delimiter = ",")
+np.savetxt("dumux1d_b1", np.vstack((z1_, h1_, z2_, h2_, z3_, h3_)), delimiter=",")
 
 plt.show()

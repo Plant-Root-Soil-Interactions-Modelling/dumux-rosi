@@ -17,8 +17,8 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
 
 # run dumux
-os.system("./richards1d input/b3a_1d.input")
-os.system("./richards1d input/b3b_1d.input")
+# os.system("./richards1d input/b3a_1d.input")
+# os.system("./richards1d input/b3b_1d.input")
 os.system("./richards1d input/b3c_1d.input")
 
 ex = []  # list for data for export

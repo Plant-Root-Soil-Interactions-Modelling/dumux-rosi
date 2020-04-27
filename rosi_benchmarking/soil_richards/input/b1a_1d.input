@@ -35,5 +35,5 @@ Number = 2 2 1 1
 
 [Vtk]
 AddProcessRank = "false"
-AddVelocity = "true"
+AddVelocity = "false"
 

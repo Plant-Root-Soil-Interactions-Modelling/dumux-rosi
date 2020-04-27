@@ -88,7 +88,7 @@ public:
 		if (bcTopType_==atmospheric) {
 			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
 			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
-			precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+			precipitation_.setFunctionScale(rho_/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
 		// IC
 		initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
@@ -237,6 +237,7 @@ public:
 					f = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						//std::cout << "in:" << f <<", " << imax <<"\n";
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
@@ -255,7 +256,7 @@ public:
 					}
 					break;
 				}
-				case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
+				case atmospheric: { // atmospheric boundary condition (with surface run-off)
 					Scalar prec = -precipitation_.f(time_);
 					if (prec < 0) { // precipitation
 						// std::cout << "in" << "\n";
@@ -427,13 +428,16 @@ public:
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
-				auto p = scvf.center();
-				if (onUpperBoundary_(p)) { // top
-					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
-					uc++;
-				} else if (onLowerBoundary_(p)) { // bottom
-					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
-					lc++;
+				try { // will throw an exception, if boundary type is Dirichlet
+					auto p = scvf.center();
+					if (onUpperBoundary_(p)) { // top
+						bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
+						uc++;
+					} else if (onLowerBoundary_(p)) { // bottom
+						bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
+						lc++;
+					}
+				} catch (...) {
 				}
 			}
 		}
