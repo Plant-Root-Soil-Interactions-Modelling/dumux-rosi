@@ -19,10 +19,10 @@ public:
     virtual ~RichardsCyl() { }
 
     /**
-     * Calls parent, additionally turns file output off
+     * Calls parent, additionally turns gravity off
      */
-    void initialize(std::vector<std::string> args) override {
-    	Richards<Problem, Assembler, LinearSolver, dim>::initialize(args);
+    void initialize(std::vector<std::string> args = std::vector<std::string>(0), bool verbose = true) override {
+    	Richards<Problem, Assembler, LinearSolver, dim>::initialize(args, verbose);
         this->setParameter("Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem
         this->setParameter("Soil.Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem
     }
@@ -39,12 +39,17 @@ void init_richards_cyl(py::module &m, std::string name) {
     using RichardsFoam = RichardsCyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
    .def(py::init<>())
-   .def("setSource", &RichardsFoam::setSource)
+   .def("initialize", &RichardsFoam::initialize, py::arg("args") = std::vector<std::string>(0), py::arg("verbose") = true)
+   .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsFoam::setCriticalPressure)
    .def("getSolutionHead", &RichardsFoam::getSolutionHead, py::arg("eqIdx") = 0)
+   .def("getSolutionHeadAt", &RichardsFoam::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsFoam::getWaterContent)
    .def("getWaterVolume",&RichardsFoam::getWaterVolume)
-   .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK);
+   .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK)
+   .def("setRegularisation",&RichardsFoam::setRegularisation)
+   .def("setBcTop",&RichardsFoam::setBcTop)
+   .def("setBcBot",&RichardsFoam::setBcBot);
 }
 
 

@@ -82,7 +82,7 @@ public:
 	 * Normally you state an input file, that contains all parameters that are needed for the simulation.
 	 * SolverBase will optionally set most of them dynamically.
 	 */
-	virtual void initialize(std::vector<std::string> args) {
+	virtual void initialize(std::vector<std::string> args = std::vector<std::string>(0), bool verbose = true) {
 		std::vector<char*> cargs;
 		cargs.reserve(args.size());
 		for(size_t i = 0; i < args.size(); i++) {
@@ -101,7 +101,7 @@ public:
 		maxRank = mpiHelper.size();
 		rank = mpiHelper.rank();
 
-		if (rank == 0) { // rank is the process number
+		if ((rank == 0) && verbose) { // rank is the process number
 			std::cout << "\n" << toString() << "\n" << std::flush; // add my story
 			Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
 		}
@@ -714,7 +714,7 @@ void init_solverbase(py::module &m, std::string name) {
 	py::class_<Solver>(m, name.c_str())
 			// initialization
 	    		.def(py::init<>())
-				.def("initialize", &Solver::initialize)
+				.def("initialize", &Solver::initialize, py::arg("args") = std::vector<std::string>(0), py::arg("verbose") = true)
 				.def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
 				.def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid,
 						py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false) // overloads, defaults

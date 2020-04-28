@@ -66,9 +66,7 @@ if __name__ == "__main__":
 
     xa, za = solve(sand, [0., 0.1, 0.2, 0.3])
     xb, zb = solve(loam, [0., 0.2, 0.5, 1.])
-    # xc, zc = solve(clay, [0., 0.1, 0.2, 0.5])
-
-    xc, zc = [1., 1. , 1.], [1., 1., 1.]
+    xc, zc = solve(clay, [0., 0.1, 0.2, 0.5])
 
     if rank == 0:
         for i in range(0, 3):

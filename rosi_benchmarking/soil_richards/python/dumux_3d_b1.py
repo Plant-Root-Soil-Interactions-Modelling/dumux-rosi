@@ -22,8 +22,8 @@ t = time.time()
 np_ = 1  # number of processors
 if np_ == 1:
     os.system("./richards3d input/b1a_3d.input")
-#     os.system("./richards3d input/b1b_3d.input")
-#     os.system("./richards3d input/b1c_3d.input")
+    os.system("./richards3d input/b1b_3d.input")
+    os.system("./richards3d input/b1c_3d.input")
 else:
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b1a_3d.input")
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b1b_3d.input")

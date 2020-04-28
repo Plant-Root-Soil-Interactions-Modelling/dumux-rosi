@@ -557,9 +557,20 @@ public:
      * pcEps    capillary pressure regularisation
      * krEps 	relative permeabiltiy regularisation
      */
-    void setRegularisation(double pcEps = 1.e-6, double krEps = 1.e-6) {
+    void setRegularisation(double pcEps, double krEps) {
     	this->spatialParams().setRegularisation(pcEps,krEps);
     }
+
+	// BC, direct access for Python binding (setBcTop, setBcBot)
+	int bcTopType_;
+	int bcBotType_;
+	Scalar bcTopValue_;
+	Scalar bcBotValue_;
+	int bcSTopType_;
+	int bcSBotType_;
+	Scalar bcSTopValue_;
+	Scalar bcSBotValue_;
+
 
 private:
 
@@ -587,17 +598,7 @@ private:
 	InputFileFunction initialSoilP_;
 	InputFileFunction initialSoilC_;
 
-	// BC
-	int bcTopType_;
-	int bcBotType_;
-	Scalar bcTopValue_;
-	Scalar bcBotValue_;
 	bool gravityOn_;
-
-	int bcSTopType_;
-	int bcSBotType_;
-	Scalar bcSTopValue_;
-	Scalar bcSBotValue_;
 
 	// Source
 	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]

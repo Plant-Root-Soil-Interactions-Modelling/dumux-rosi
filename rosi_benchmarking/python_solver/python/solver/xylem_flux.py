@@ -34,7 +34,7 @@ class XylemFluxPython(XylemFlux):
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_neumann(Q, self.aB, [0], [value / (self.rho * self.g)])  # cm3 day-1 -> something crazy (?)
-        x = LA.spsolve(Q, b, use_umfpack = True)  # direct
+        x = LA.spsolve(Q, b, use_umfpack=True)  # direct
         # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
 
@@ -48,10 +48,10 @@ class XylemFluxPython(XylemFlux):
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value)])
-        x = LA.spsolve(Q, b, use_umfpack = True)
+        x = LA.spsolve(Q, b, use_umfpack=True)
         return x
 
-    def solve(self, sim_time :float, value :float, sx :float, sxx, wilting_point :float = -15000):
+    def solve(self, sim_time :float, value :float, sx :float, sxx, wilting_point :float=-15000):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
@@ -72,7 +72,7 @@ class XylemFluxPython(XylemFlux):
                 Q = sparse.csr_matrix(Q)
                 Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point)])
                 try:
-                    x = LA.spsolve(Q, b, use_umfpack = True)
+                    x = LA.spsolve(Q, b, use_umfpack=True)
                 except:
                     print("Exeption solving Dirichlet")
                     print("Dirichlet at ", value - sx, "cm")
@@ -86,7 +86,7 @@ class XylemFluxPython(XylemFlux):
 
         return x
 
-    def collar_flux(self, sim_time, rx, sx, seg_ind = 0):
+    def collar_flux(self, sim_time, rx, sx, seg_ind=0):
         """ returns the exact transpirational flux of the solution @param rx [g/cm] """
         s = self.rs.segments[seg_ind]  # collar segment
         i, j = int(s.x), int(s.y)  # node indices
@@ -116,7 +116,9 @@ class XylemFluxPython(XylemFlux):
 
     @staticmethod
     def read_rsml(file_name :str):
-        """ Reads and converts rsml to expected types and units"""
+        """ 
+        Reads an RSML file and converts to MappedSegments with units [cm]
+        """
         polylines, props, funcs = rsml.read_rsml(file_name)
         nodes, segs = rsml.get_segments(polylines, props)
         radii, seg_ct, types = rsml.get_parameter(polylines, funcs, props)
@@ -131,7 +133,7 @@ class XylemFluxPython(XylemFlux):
             nodeCTs[s[1]] = seg_ct[i]
             segs2.append(pb.Vector2i(int(s[0]), int(s[1])))
         radii = np.array(radii) / 10.  # [mm]->[cm]
-        types = np.array(types, dtype = np.int64) - 1  # index must start with 0
+        types = np.array(types, dtype=np.int64) - 1  # index must start with 0
         return pb.MappedSegments(nodes2, nodeCTs, segs2, radii, types)  # root system grid
 
     @staticmethod
@@ -154,7 +156,7 @@ class XylemFluxPython(XylemFlux):
         return Q, b
 
     @staticmethod
-    def convert_(x, dtype = np.float64):
+    def convert_(x, dtype=np.float64):
         return np.array(list(map(lambda x: np.array(x, dtype), x)), dtype)  # is there a better way?
 
     def linear_system(self, simTime :float):
@@ -162,8 +164,8 @@ class XylemFluxPython(XylemFlux):
         Ns = len(self.rs.segments)
         N = len(self.rs.nodes)
 
-        I = np.zeros(4 * Ns, dtype = np.int64)
-        J = np.zeros(4 * Ns, dtype = np.int64)
+        I = np.zeros(4 * Ns, dtype=np.int64)
+        J = np.zeros(4 * Ns, dtype=np.int64)
         V = np.zeros(4 * Ns)
         b = np.zeros(N)
         k = 0

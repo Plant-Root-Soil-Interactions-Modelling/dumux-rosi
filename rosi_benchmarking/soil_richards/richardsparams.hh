@@ -84,7 +84,7 @@ public:
             materialParams_.at(i).setVgn(n.at(i)); // N
             k_.push_back(kc_.at(i)*mu/(rho*g_)); // Convert to intrinsic permeability
             // Regularisation parameters
-            double eps = 1.e-6; // with 1.e-9 benchmark 3 does not work anymore (and everything becomes slower)
+            double eps = 1.e-4; // with 1.e-9 benchmark 3 does not work anymore (and everything becomes slower)
             materialParams_.at(i).setPcLowSw(eps);
             materialParams_.at(i).setPcHighSw(1. - eps);
             materialParams_.at(i).setKrnLowSw(eps);
@@ -162,7 +162,7 @@ public:
      * pcEps    capillary pressure regularisation
      * krEps 	relative permeabiltiy regularisation
      */
-    void setRegularisation(double pcEps = 1.e-6, double krEps = 1.e-6) {
+    void setRegularisation(double pcEps, double krEps) {
     	for (int i =0; i<materialParams_.size(); i++) {
             materialParams_.at(i).setPcLowSw(pcEps);
             materialParams_.at(i).setPcHighSw(1. - pcEps);

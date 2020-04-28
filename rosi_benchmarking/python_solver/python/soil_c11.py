@@ -95,7 +95,6 @@ if __name__ == "__main__":
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
     for soil, qj, i, j in jobs:
-        qj = 0.1 * qj
         y, x, t = solve(soil, sim_times, qj, 41)
         if rank == 0:
             ax[i, j].plot(x, s.toHead(y), "r*")

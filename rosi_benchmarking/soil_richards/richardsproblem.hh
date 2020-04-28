@@ -481,9 +481,15 @@ public:
      * pcEps    capillary pressure regularisation
      * krEps 	relative permeabiltiy regularisation
      */
-    void setRegularisation(double pcEps = 1.e-6, double krEps = 1.e-6) {
+    void setRegularisation(double pcEps, double krEps) {
     	this->spatialParams().setRegularisation(pcEps,krEps);
     }
+
+	// BC, direct access for Python binding (setBcTop, setBcBot)
+	int bcTopType_;
+	int bcBotType_;
+	double bcTopValue_;
+	double bcBotValue_;
 
 private:
 
@@ -509,12 +515,6 @@ private:
 
 	// Initial
 	InputFileFunction initialSoil_;
-
-	// BC
-	int bcTopType_;
-	int bcBotType_;
-	Scalar bcTopValue_;
-	Scalar bcBotValue_;
 	bool gravityOn_;
 
 	// Source

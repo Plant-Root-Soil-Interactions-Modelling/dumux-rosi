@@ -20,8 +20,8 @@ public:
     /**
      * Calls parent, additionally turns file output off
      */
-    void initialize(std::vector<std::string> args) override {
-        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args);
+    void initialize(std::vector<std::string> args, bool verbose = true) override {
+        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args, verbose);
         this->setParameter("Soil.Output.File", "false");
     }
 
@@ -51,7 +51,7 @@ public:
 
     /**
      * Applies source term (operator splitting)
-     * limits with wilting point from below, and with full saturation todo
+     * limits with wilting point from below, and with full saturation from above todo
      */
     virtual void applySource(const std::vector<double>& rx, const std::map<int,std::vector<int>>& cell2seg) {
 
@@ -84,8 +84,17 @@ public:
     }
 
     /**
+     * Returns the current solution for a single mpi process in cm pressure head at a global cell index
+     * @see SolverBase::getSolutionAt
+     */
+    virtual double getSolutionHeadAt(int gIdx, int eqIdx = 0) {
+        double sol = this->getSolutionAt(gIdx, eqIdx); // Pa
+        return (sol - 1.e5)*100. / 1.e3 / 9.81; // cm
+    }
+
+    /**
      * Returns the current solution for a single mpi process in cm pressure head. @see SolverBase::getSolution
-     * Gathering and mapping is done in Python TODO pass equ id, return vector<double>
+     * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getSolutionHead(int eqIdx = 0) {
         std::vector<double> sol = this->getSolution(eqIdx);
@@ -93,6 +102,8 @@ public:
         std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / 1.e3 / 9.81));
         return sol;
     }
+
+
 
     /*
      * TODO setLayers(std::map<int, int> l)
@@ -160,7 +171,34 @@ public:
         vtkWriter.write(0.0);
     }
 
+    /**
+     * Call to change default setting (of 1.e-6 for both)
+     *
+     * pcEps    capillary pressure regularisation
+     * krEps 	relative permeabiltiy regularisation
+     */
+    virtual void setRegularisation(double pcEps, double krEps) {
+    	this->checkInitialized();
+    	this->problem->setRegularisation(pcEps, krEps);
+    }
+
+
+    void setBcTop(int type, double value) {
+    	this->checkInitialized();
+    	this->problem->bcTopType_ = type;
+    	this->problem->bcTopValue_ = value;
+    }
+
+    void setBcBot(int type, double value) {
+    	this->checkInitialized();
+    	this->problem->bcBotType_ = type;
+    	this->problem->bcBotValue_ = value;
+    }
+
+
+
 protected:
+
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
 
@@ -177,10 +215,13 @@ void init_richardssp(py::module &m, std::string name) {
    .def("setSource", &RichardsSP::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsSP::setCriticalPressure)
    .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
+   .def("getSolutionHeadAt", &RichardsSP::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsSP::getWaterContent)
    .def("getWaterVolume",&RichardsSP::getWaterVolume)
-   .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK);
+   .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK)
+   .def("setRegularisation",&RichardsSP::setRegularisation)
+   .def("setBcTop",&RichardsSP::setBcTop)
+   .def("setBcBot",&RichardsSP::setBcBot);
 }
-
 
 #endif
