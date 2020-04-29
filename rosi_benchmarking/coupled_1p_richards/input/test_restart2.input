@@ -19,4 +19,3 @@ Sinusoidal = True
 [Restart]
 Time = 604800
 SoilFile = ./results_test_restart1/test_restart1-00168.vtu
-RootFile = ./results_test_restart1/test_restart1-00168.vtp

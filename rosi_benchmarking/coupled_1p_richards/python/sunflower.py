@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "sunflower"  # this name should be unique
-suffix = "_7days_test"
+suffix = "_154days"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled_periodic input/" + name + ".input -RootSystem.Grid.File grids/Sunflower_7days.dgf")
+os.system("./coupled_periodic input/" + name + ".input -RootSystem.Grid.File grids/Sunflower_154days.dgf")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
