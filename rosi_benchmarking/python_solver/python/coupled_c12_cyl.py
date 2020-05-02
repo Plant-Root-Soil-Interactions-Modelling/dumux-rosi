@@ -46,9 +46,17 @@ nodes = r.get_nodes()
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
-s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+min_b = [-4., -4., -20.]
+max_b = [4., 4., 0.]
+cell_number = [8, 8, 20]
+s.createGrid(min_b, max_b, cell_number)  # [cm]
+cell_volume = np.prod(np.array(max_b) - np.array(min_b)) / (np.prod(cell_number))
+print("cell volume:", cell_volume, "cm3")
 r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
-s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
+
+s.setHomogeneousIC(-100, False)  # cm pressure head, equilibrium
+# s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
+
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([loam])
@@ -60,37 +68,66 @@ r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
 """ Set up cylindrical problems """
+segments = r.rs.segments
+cell2seg = r.rs.cell2seg  # cell to segments mapper
+nodes = r.get_nodes()
+
 rich_cyls = []
-rich_inner_i = []  # inner index (at the root surface)
-rich_outer_i = []  # outer domain boundary index 
 N = 20 
 
-segs = r.rs.segments
-for i, _ in enumerate(segs):    
+seg_radii = np.array(r.rs.radii)
+seg_length = np.zeros(seg_radii.shape)
+seg_prop = np.zeros(seg_radii.shape)  # proportionality factor
+seg_outer_radii = np.zeros(seg_radii.shape)
+
+# interate over the cells
+for cellId in cell2seg.keys():  # create seg volumes per cell
+    segs = cell2seg[cellId]    
+    # print(cellId, ":", segs)
+    v = 0.  # volume of all segments
+    for i in segs:
+        n1 = nodes[int(segments[i].x), :]
+        n2 = nodes[int(segments[i].y), :]
+        l = np.linalg.norm(n1 - n2)
+        seg_length[i] = l
+        a = seg_radii[i]
+        v += 2 * np.pi * a * l
+    for i in segs:        
+        l = seg_length[i] 
+        a = seg_radii[i]
+        seg_prop[i] = (2 * np.pi * a * l) / v
+        tv = seg_prop[i] * cell_volume  # target volume                
+        a_out = (tv + (2 * np.pi * a * l)) / (2 * np.pi * l) 
+        # print("target:", tv, "inner", a, "outer", a_out)
+        seg_outer_radii[i] = a_out
+
+for i, _ in enumerate(segments):    
     
-    print(i)
-    a_in = 0.02
-    a_out = 0.6
+    a_in = seg_radii[i]
+    a_out = seg_outer_radii[i]
     
     cpp_base = RichardsCylFoam()
     rcyl = RichardsWrapper(cpp_base)
     
-    rcyl.initialize()  # [""], False
-    rcyl.createGrid([a_in], [a_out], [N])  # [cm]    
-    
-    rcyl.setHomogeneousIC(-100.)  # cm pressure head
-    rcyl.setOuterBC("fluxCyl", 0.)  #  [cm/day]
-    rcyl.setInnerBC("fluxCyl", 0.)  # [cm/day] 
-    rcyl.setVGParameters([loam])
-    rcyl.initializeProblem()
-    rcyl.setCriticalPressure(-15000)  # cm pressure head            
-    
-    rich_cyls.append(rcyl)    
+    rcyl.initialize([""], False)  # [""], False
+    try:
+        rcyl.createGrid([a_in], [a_out], [N])  # [cm]
+        rcyl.setHomogeneousIC(-100.)  # cm pressure head
+        rcyl.setOuterBC("fluxCyl", 0.)  #  [cm/day]
+        rcyl.setInnerBC("fluxCyl", 0.)  # [cm/day] 
+        rcyl.setVGParameters([loam])
+        rcyl.initializeProblem()
+        rcyl.setCriticalPressure(-15000)  # cm pressure head                
+        rich_cyls.append(rcyl)    
+    except:
+        rich_cyls.append([])  # in case a_out = 0, e.g. if segment does not lie within the domain
+        print("\nError", a_in, a_out, "\n")        
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
+rsx = np.zeros(seg_radii.shape)  # root soil interface
 
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 N = sim_time * round(1. / dt)
@@ -99,19 +136,34 @@ t = 0.
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, wilting_point)  # xylem_flux.py
-        fluxes = r.soilFluxes(t, rx, sx, approx=False)  # class XylemFlux is defined in MappedOrganism.h
+        
+        for j, rc in enumerate(rich_cyls):
+            if not isinstance(rc, list):                
+                rsx[j] = rc.getInnerHead()
+        
+        # user rsx as soil pressures around the individual segments (cells = False)
+        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point)  # xylem_flux.py        
+        
+        # For the soil model 
+        seg_fluxes = r.segFluxes(t, rx, rsx, approx=False)  # class XylemFlux is defined in CPlantBox XylemFlux.h
+        soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # class XylemFlux is defined in CPlantBox XylemFlux.h
+
+        # set seg_fluxes
+        for j, rc in enumerate(rich_cyls):
+            if not isinstance(rc, list):                
+                rsx[j] = rc.setInnerBC("flux", seg_fluxes[j])  # TODO units
 
         sum_flux = 0.
-        for f in fluxes.values():
+        for f in soil_fluxes.values():
             sum_flux += f
         print("Fuxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
 
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
-    s.setSource(fluxes)  # richards.py
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part coult runs parallel
+
+    s.setSource(soil_fluxes)  # richards.py
     s.solve(dt)
 
     sx = s.getSolutionHead()  # richards.py

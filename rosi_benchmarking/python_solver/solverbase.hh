@@ -54,7 +54,7 @@ public:
  * Examples are given in the python directory
  */
 template<class Problem, class Assembler, class LinearSolver, int dim = 3 /*Problem::dimWorld */>
-class SolverBase  {
+class SolverBase {
 public:
 
 	using VectorType = std::array<double, dim>;
@@ -82,11 +82,11 @@ public:
 	 * Normally you state an input file, that contains all parameters that are needed for the simulation.
 	 * SolverBase will optionally set most of them dynamically.
 	 */
-	virtual void initialize(std::vector<std::string> args = std::vector<std::string>(0), bool verbose = true) {
+	virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true) {
 		std::vector<char*> cargs;
-		cargs.reserve(args.size());
-		for(size_t i = 0; i < args.size(); i++) {
-			cargs.push_back(const_cast<char*>(args[i].c_str()));
+		cargs.reserve(args_.size());
+		for(size_t i = 0; i < args_.size(); i++) {
+			cargs.push_back(const_cast<char*>(args_[i].c_str()));
 		} // its a beautiful language
 		int argc = cargs.size();
 		char** argv  =  &cargs[0];
@@ -572,7 +572,7 @@ public:
 	}
 
 	/**
-	 * Return the neumann fluxes of the current solution for each element (as mean over all scvfs).
+	 * Return the neumann fluxes of the current solution for each boundary element (as mean over all scvfs, TODO why, net-flux would make more sense).
 	 *
 	 * For a single mpi process. Gathering is done in Python
 	 */
@@ -714,7 +714,7 @@ void init_solverbase(py::module &m, std::string name) {
 	py::class_<Solver>(m, name.c_str())
 			// initialization
 	    		.def(py::init<>())
-				.def("initialize", &Solver::initialize, py::arg("args") = std::vector<std::string>(0), py::arg("verbose") = true)
+				.def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
 				.def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
 				.def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid,
 						py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false) // overloads, defaults

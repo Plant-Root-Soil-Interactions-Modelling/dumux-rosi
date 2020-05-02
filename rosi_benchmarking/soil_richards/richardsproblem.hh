@@ -246,7 +246,7 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];
+					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];  // cm/day -> kg/(m²*s) (Eqns are multiplied by cylindrical radius)
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);

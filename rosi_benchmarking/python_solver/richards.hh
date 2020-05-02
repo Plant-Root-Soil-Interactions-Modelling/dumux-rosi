@@ -20,8 +20,8 @@ public:
     /**
      * Calls parent, additionally turns file output off
      */
-    void initialize(std::vector<std::string> args, bool verbose = true) override {
-        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args, verbose);
+    void initialize(std::vector<std::string> args_, bool verbose = true) override {
+        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose);
         this->setParameter("Soil.Output.File", "false");
     }
 
@@ -183,13 +183,13 @@ public:
     }
 
 
-    void setBcTop(int type, double value) {
+    void setTopBC(int type, double value) {
     	this->checkInitialized();
     	this->problem->bcTopType_ = type;
     	this->problem->bcTopValue_ = value;
     }
 
-    void setBcBot(int type, double value) {
+    void setBotBC(int type, double value) {
     	this->checkInitialized();
     	this->problem->bcBotType_ = type;
     	this->problem->bcBotValue_ = value;
@@ -212,6 +212,7 @@ void init_richardssp(py::module &m, std::string name) {
     using RichardsSP = Richards<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
+   .def("initialize", &RichardsSP::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
    .def("setSource", &RichardsSP::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsSP::setCriticalPressure)
    .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
@@ -220,8 +221,8 @@ void init_richardssp(py::module &m, std::string name) {
    .def("getWaterVolume",&RichardsSP::getWaterVolume)
    .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK)
    .def("setRegularisation",&RichardsSP::setRegularisation)
-   .def("setBcTop",&RichardsSP::setBcTop)
-   .def("setBcBot",&RichardsSP::setBcBot);
+   .def("setTopBC",&RichardsSP::setTopBC)
+   .def("setBotBC",&RichardsSP::setBotBC);
 }
 
 #endif

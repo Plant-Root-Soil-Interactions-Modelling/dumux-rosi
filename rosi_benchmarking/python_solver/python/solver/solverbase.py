@@ -25,9 +25,9 @@ class SolverWrapper():
         """ @param base is the C++ base class that is wrapped. """
         self.base = base
 
-    def initialize(self, args=[""]):
+    def initialize(self, args_=[""], verbose=True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
-        self.base.initialize(args)
+        self.base.initialize(args_, verbose)
 
     def createGrid(self, modelParamGroup=""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
@@ -121,12 +121,12 @@ class SolverWrapper():
 
     def getSolution(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
-        model dependent units, [Pa, ...]"""
+        model dependent units [Pa, ...]"""
         self.checkInitialized()
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getSolution(eqIdx), root=0)), 0)
 
     def getSolutionAt(self, gIdx, eqIdx=0):
-        """Returns the current solution at a cell index"""
+        """Returns the current solution at a cell index, model dependent units [Pa, ...]"""
         return self.base.getSolutionAt(gIdx, eqIdx)
 
     def getNeumann(self, gIdx, eqIdx=0):
