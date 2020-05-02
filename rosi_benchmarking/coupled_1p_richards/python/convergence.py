@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "convergence"  # this name should be unique
-suffix = "_loam_0,2_b12_2"
+suffix = "_clay_0,6_b12"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled input/" + name + ".input -Soil.Layer.Number 2")  # layer 1 (sand), 2 (loam), 3 (clay)
+os.system("./coupled input/" + name + ".input -Soil.Layer.Number 3")  # layer 1 (sand), 2 (loam), 3 (clay)
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
@@ -52,9 +52,3 @@ ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
 plt.savefig("results_" + name + suffix + ".pdf", dpi=300)
 plt.show()
 
-# trans = interpolate.interp1d(t, d[:, 1] * c)
-# print(t.shape)
-# ctrans = np.zeros(t.shape)
-# ctrans[0] = 0
-# for i, t_ in enumerate(t[1:]):
-#     ctrans[i] = integrate.quad(trans, 0, t_)[0]
