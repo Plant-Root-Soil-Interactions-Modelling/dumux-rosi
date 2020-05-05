@@ -75,7 +75,7 @@ public:
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
         for (int i=0; i<qr.size(); i++) {
 
-            phi_[i] = qs.at(i); // Richards equation is independent of phi [1]
+            phi_[i] = 1; // qs.at(i); // Richards equation is independent of phi [1]
             materialParams_.push_back(MaterialLawParams());
             materialParams_.at(i).setSwr(qr.at(i)/phi_[i]); // Qr
             materialParams_.at(i).setSnr(1.-qs.at(i)/phi_[i]); // Qs
