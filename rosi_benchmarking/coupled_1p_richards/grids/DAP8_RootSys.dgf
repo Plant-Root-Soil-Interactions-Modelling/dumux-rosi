@@ -589,7 +589,7 @@ parameters 0
 0.0064535 -0.019831 -0.012819 
 #
 Simplex
-parameters 8: node1ID, node2ID, order, brnID, surf [cm2], length [cm], radius [cm], kz [cm4 hPa-1 d-1], kr [cm hPa-1 d-1], emergence time [s] 
+parameters 8: node1ID, node2ID, order, brnID, surf [cm2], length [cm], radius [cm], kz [cm4 hPa-1 d-1], kr [cm hPa-1 d-1], emergence time [d] 
 0 1 0 -1 0.10134 0.096007 0.167996 5.184e+06 0.00499963 0 
 1 2 0 1 0.10134 0.192014 0.167996 5.184e+06 0.00499963 0.122914 
 2 3 0 1 0.10134 0.288021 0.167996 5.184e+06 0.00499963 0.184371 
