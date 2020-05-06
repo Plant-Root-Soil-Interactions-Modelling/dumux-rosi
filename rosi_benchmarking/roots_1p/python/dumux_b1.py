@@ -99,7 +99,7 @@ ax1.set_title("Benchmark 1")
 
 # benchmark without gravity
 h_ = vg.pa2head(p2_)
-ax2.plot(h_, z_, "r+")
+ax2.plot(h_, np.linspace(0, -0.5, len(p2_)), "r+")
 ax2.plot(pr, za_, "c")
 ax2.plot(pr2, za_, "b")
 ax2.set_ylabel("Depth (m)")
@@ -117,10 +117,10 @@ ax3.set_title("Predescribed transpiration")
 # save benchmark M31
 z_ = np.linspace(0, -0.5, len(p_))
 h_ = vg.pa2head(p_)
-np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter = ',')
+np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter=',')
 
 with open("benchmark1c_actual_transpiration.txt", 'r') as f:
-    d = np.loadtxt(f, delimiter = ',')
+    d = np.loadtxt(f, delimiter=',')
 
 print()
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
