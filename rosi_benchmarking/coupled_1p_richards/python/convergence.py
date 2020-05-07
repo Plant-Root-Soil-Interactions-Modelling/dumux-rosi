@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "convergence"  # this name should be unique
-suffix = "_loam_1,0_b12"
+suffix = "_loam_0,4_b12"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -49,6 +49,6 @@ ax1.set_xlabel("time [days]")
 ax1.set_ylabel("transpiration rate [mL/day]")
 ax2.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
 ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-plt.savefig("results_" + name + suffix + ".pdf", dpi=300)
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300)
 plt.show()
 

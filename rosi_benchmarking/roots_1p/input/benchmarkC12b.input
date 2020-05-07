@@ -9,7 +9,7 @@ MaxTimeStepSize = 360
 
 [RootSystem.Grid]
 File =  grids/DAP8_RootSys.dgf
-InitialT = 14 # days
+InitialT = 8 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
 ctIdx = 7
