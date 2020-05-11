@@ -58,18 +58,20 @@ nodes = r.get_nodes()
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
-# if periodic:
-#
-# else:
 
-# s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
-s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
-r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
+s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
+r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(16, 16, 40))  # cut root segments to grid (segments are not mapped after)
+
+# s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+# r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
+
 s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([loam])
 s.initializeProblem()
+s.setCriticalPressure(wilting_point)
+s.setRegularisation(1.e-4, 1.e-4)
 
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
@@ -82,13 +84,13 @@ x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
-N = sim_time * round(1. / dt)
+N = round(sim_time / dt)
 t = 0.
 
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, wilting_point)  # xylem_flux.py
+        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point)  # xylem_flux.py
         fluxes = r.soilFluxes(t, rx, sx, approx=False)  # class XylemFlux is defined in MappedOrganism.h
 
         sum_flux = 0.
@@ -100,15 +102,23 @@ for i in range(0, N):
         fluxes = None
 
     fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
-    s.setSource(fluxes)  # richards.py
+    # s.setSource(fluxes)  # richards.py
+
     s.solve(dt)
+
+    s.applySource(dt, sx, fluxes, -10000)  # richards.py
 
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
 
     if rank == 0:
         n = round(float(i) / float(N) * 100.)
-        print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "]")
+        min_sx = np.min(sx)
+        min_rx = np.min(rx)
+        max_sx = np.max(sx)
+        max_rx = np.max(rx)
+        print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}"
+              .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
         f = float(r.collar_flux(t, rx, sx))  # exact root collar flux
         x_.append(t)
         y_.append(f)

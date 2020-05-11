@@ -29,7 +29,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-sim_time = 1  # [day] for task b
+sim_time = 7  # [day] for task b
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -10000  # cm
 loam = [0.08, 0.43, 0.04, 1.6, 50]
@@ -57,17 +57,27 @@ nodes = r.get_nodes()
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
-# s.createGrid([-2, -8., -20.], [2, 8., 0.], [16, 16, 40])  # [cm]
-s.createGrid([-2, -8., -20.], [2, 8., 0.], [8, 8, 20], True)  # [cm] thinner domain, with same volume
+
+# for testing periodiciyt 
+# s.createGrid([-2, -8., -20.], [2, 8., 0.], [8, 32, 40])  # [cm]
+# r.rs.setRectangularGrid(pb.Vector3d(-2, -8., -20.), pb.Vector3d(2, 8., 0.), pb.Vector3d(8, 32, 40))  # cut root segments to grid (segments are not mapped after)
+
+s.createGrid([-4, -4., -20.], [4, 4., 0.], [16, 16, 40])  # [cm]
+r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(16, 16, 40))  # cut root segments to grid (segments are not mapped after)
+
+# s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+# r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
 
 s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([loam])
 s.initializeProblem()
+s.setCriticalPressure(wilting_point)
+s.setRegularisation(1.e-4, 1.e-4)
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick(x, y, z)
+picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
@@ -76,16 +86,15 @@ start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
-dt = 60. / (24 * 3600)  # [days] Time step must be very small
-N = sim_time * round(1. / dt)
+dt = 120. / (24 * 3600)  # [days] Time step must be very small
+N = round(sim_time / dt)
 t = 0.
 
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-        rx_hom = r.solve(t, -trans * sinusoidal(t), sx[cci], wilting_point)  # xylem_flux.py
-        rx = r.getSolution(rx_hom, sx)  # class XylemFlux is defined in MappedOrganism.h
-        fluxes = r.soilFluxes(t, rx_hom, approx=True)  # class XylemFlux is defined in MappedOrganism.h
+        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point)  # xylem_flux.py
+        fluxes = r.soilFluxes(t, rx, sx, approx=False)  # class XylemFlux is defined in MappedOrganism.h
     else:
         fluxes = None
 
@@ -96,9 +105,18 @@ for i in range(0, N):
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
 
-    if rank == 0:
+    if rank == 0 and i % 10 == 0:
         n = round(float(i) / float(N) * 100.)
-        print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "]")
+        min_sx = np.min(sx)
+        min_rx = np.min(rx)
+        max_sx = np.max(sx)
+        max_rx = np.max(rx)
+        max_f = 0.
+        for v in fluxes.values():
+            if v < max_f:
+                max_f = v
+        print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days, max f = {:g}"
+              .format(min_sx, max_sx, min_rx, max_rx, s.simTime, max_f))
         f = float(r.collar_flux(t, rx, sx))  # exact root collar flux
         x_.append(t)
         y_.append(f)

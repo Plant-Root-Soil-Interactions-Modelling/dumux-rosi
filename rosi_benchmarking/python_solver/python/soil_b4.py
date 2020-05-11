@@ -27,18 +27,21 @@ def solve(soil, simtime, evap, NZ, ic=-200):
     s = RichardsWrapper(cpp_base)
     s.initialize()
 
-    s.setHomogeneousIC(ic)  # cm pressure head
-    s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
+    # s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
+    s.setTopBC("flux", evap)  #  [cm/day] atmospheric is with surface run-off
     s.setBotBC("freeDrainage")  # BC
     s.createGrid([-5., -5., -100.], [5., 5., 0.], [1, 1, NZ])  # [cm]
     s.setVGParameters([soil])
+    s.setHomogeneousIC(ic)  # cm pressure head
     s.initializeProblem()
+    s.setCriticalPressure(-10000) 
+    s.setRegularisation(1.e-6, 0.)
     idx_top = s.pickCell([0.0, 0.0, 0.0])  # index to watch flux
 
     N = 200
     dt = simtime / N
     s.ddt = 1.e-5  # initial Dumux time step [days]
-    maxDt = 1  # maximal Dumux time step [days]
+    maxDt = 1.  # maximal Dumux time step [days]
 
     x_, y_ = [], []
 
@@ -50,6 +53,7 @@ def solve(soil, simtime, evap, NZ, ic=-200):
         s.solve(dt, maxDt)
 
         f = s.getNeumann(idx_top)
+        # f = s.getSolutionHeadAt(idx_top)
 
         if rank == 0:
             x_.append(s.simTime)

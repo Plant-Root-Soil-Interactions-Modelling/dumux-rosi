@@ -199,6 +199,15 @@ class RichardsWrapper(SolverWrapper):
             source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
         self.base.setSource(source_map)
     
+    def applySource(self, dt, sx, source_map, crit_p):
+        """Sets the source term as map with global cell index as key, and source as value [g/day] """
+        self.checkInitialized()
+        for key, value in source_map.items():
+            source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
+        # sx cm -> pa
+        # crit_p -> pa
+        self.base.applySource(self, dt, sx, source_map, crit_p)    
+    
     def setCriticalPressure(self, critical):
         """ Sets the critical pressure to limit flow for boundary conditions constantFlow, constantFlowCyl, and atmospheric """ 
         self.base.setCriticalPressure(critical)
@@ -221,7 +230,7 @@ class RichardsWrapper(SolverWrapper):
     def getWaterVolume(self):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
-        return self.base.getWaterVolume() * 1.e6  # m3 -cm3
+        return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
 
     def setRegularisation(self, pcEps, krEps):
         """ Van Genuchten regularisation parameters"""

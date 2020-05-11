@@ -24,7 +24,7 @@ class XylemFluxPython(XylemFlux):
         else:
             super().__init__(rs)
 
-    def solve_neumann(self, sim_time :float, value :float, sxx, cells=True) :
+    def solve_neumann(self, sim_time :float, value :float, sxx, cells :bool) :
         """ solves the flux equations, with a neumann boundary condtion,
             @param sim_time [day]      simulation time to evaluate age dependent conductivities
             @param value [cm3 day-1]   tranpirational flux is negative 
@@ -41,7 +41,7 @@ class XylemFluxPython(XylemFlux):
         # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
 
-    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells=True):
+    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells :bool):
         """ solves the flux equations, with a dirichlet boundary condtion,
             @param sim_time [day]     simulation time to evaluate age dependent conductivities
             @param value [cm]         root collar pressure head 
@@ -54,7 +54,7 @@ class XylemFluxPython(XylemFlux):
         x = LA.spsolve(Q, b, use_umfpack=True)
         return x
 
-    def solve(self, sim_time :float, value :float, sx :float, sxx, cells=True, wilting_point :float=-15000):
+    def solve(self, sim_time :float, value :float, sx :float, sxx, cells :bool, wilting_point :float):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
@@ -63,14 +63,14 @@ class XylemFluxPython(XylemFlux):
             @param sxx              [cm] soil matric potentials 
             @parm wiltingPoint      [cm] pressure head            
         """
-        eps = 1.e-6
+        eps = 1
         x = [wilting_point - sx - 1]
 
         if sx >= wilting_point - eps:
 
             x = self.solve_neumann(sim_time, value, sxx, cells)
 
-            if x[0] < wilting_point - eps:
+            if x[0] < wilting_point + eps:
                 Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
                 Q = sparse.csr_matrix(Q)
                 Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point)])
@@ -85,7 +85,8 @@ class XylemFluxPython(XylemFlux):
             print()
             print("solve_wp used Dirichlet because soil matric potential is below wilting point", sx)
             print()
-            self.solve_dirichlet(sim_time, wilting_point, sx, sxx, cells)
+            x = self.solve_dirichlet(sim_time, wilting_point, sx, sxx, cells)
+            input()
 
         return x
 
@@ -93,6 +94,10 @@ class XylemFluxPython(XylemFlux):
         """ returns the exact transpirational flux of the solution @param rx [g/cm] """
         s = self.rs.segments[seg_ind]  # collar segment
         i, j = int(s.x), int(s.y)  # node indices
+        if i >= len(rx):
+            print("rx len", len(rx), "i", i, "j", j, "seg_ind", seg_ind)
+        if j >= len(rx):
+            print("rx len", len(rx), "i", i, "j", j, "seg_ind", seg_ind)
         n1, n2 = self.rs.nodes[i], self.rs.nodes[j]  # nodes
         v = n2.minus(n1)
         l = v.length()  # length of segment

@@ -112,6 +112,10 @@ class SolverWrapper():
         """ Gathers element volumes (Nc, 1) [cm3] """
         return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCellVolumes(), root=0)), 2) * 1.e6  # m3 -> cm3
 
+    def getCellVolumesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getCellVolumesCyl(), root=0)), 2) * 1.e6  # m3 -> cm3
+
     # def quad, int or something (over all domain)
 
     def getDofIndices(self):

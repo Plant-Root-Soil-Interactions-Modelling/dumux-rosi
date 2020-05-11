@@ -4,8 +4,13 @@
 // most includes are in solverbase
 #include "solverbase.hh"
 
+#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
+
 // writeDumuxVTK
 #include <dumux/io/vtkoutputmodule.hh>
+
 
 
 /**
@@ -14,6 +19,9 @@
 template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
+
+    using MaterialLaw = Dumux::EffToAbsLaw<Dumux::RegularizedVanGenuchten<double>>;
+    using MaterialLawParams = typename MaterialLaw::Params;
 
     virtual ~Richards() { }
 
@@ -51,25 +59,28 @@ public:
 
     /**
      * Applies source term (operator splitting)
-     * limits with wilting point from below, and with full saturation from above todo
+     * limits with wilting point from below, and with full saturation from above todo!!!!!!!!!!!!!!!!!!!!!!! gogogogo
      */
-    virtual void applySource(const std::vector<double>& rx, const std::map<int,std::vector<int>>& cell2seg) {
-
+    virtual void applySource(double dt, std::vector<double>& sx, const std::vector<double>& soilFluxes, double critP) {
         if (this->isBox) {
             throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
         } else {
-            auto theta = this->getWaterContent();
-            auto vol = this->getCellVolumes();
-            // , std::map<int, std::vector<int>> cell2seg
-            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
-                int eIdx = this->gridGeometry->elementMapper().index(e);
-                int gIdx = this->cellIdx->index(e);
-                // auto segs = cell2seg[gIdx];
-               //  for (au)
+        	const auto& params = this->problem->spatialParams();
+        	auto theta = this->getWaterContent();
+            auto vol = this->getCellVolumesCyl();
+            int c = 0;
+            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {  // local elements
+                int gIdx = this->cellIdx->index(e); // global index
+            	int eIdx = this->gridGeometry->elementMapper().index(e);
 
-                /* equations... */
+            	double s = soilFluxes[gIdx]*dt/1000; // [kg / s] -> m3
+            	double newTheta = (theta[c] - s/vol[c]);
 
-//                this->x[eIdx] = init[gIdx];
+            	const auto& p = params.materialLawParams(e);
+
+            	std::cout << "changed " << sx[gIdx] << " to " << MaterialLaw::pc(p, newTheta) << "\n";
+            	sx[gIdx] = MaterialLaw::pc(p, newTheta);
+
             }
         }
     }
@@ -103,8 +114,6 @@ public:
         return sol;
     }
 
-
-
     /*
      * TODO setLayers(std::map<int, int> l)
      */
@@ -114,14 +123,8 @@ public:
      * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getWaterContent() {
-        this->checkInitialized();
+    	int n =  this->checkInitialized();
         std::vector<double> theta;
-        int n;
-        if (this->isBox) {
-            n = this->gridGeometry->gridView().size(dim);
-        } else {
-            n = this->gridGeometry->gridView().size(0);
-        }
         theta.reserve(n);
         for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
             double t = 0;
@@ -183,19 +186,23 @@ public:
     }
 
 
+    /**
+     * changes boundary condition in initialized problem (e.g. within the simulation loop)
+     */
     void setTopBC(int type, double value) {
     	this->checkInitialized();
     	this->problem->bcTopType_ = type;
     	this->problem->bcTopValue_ = value;
     }
 
+    /**
+     * changes boundary condition in initialized problem (e.g. within the simulation loop)
+     */
     void setBotBC(int type, double value) {
     	this->checkInitialized();
     	this->problem->bcBotType_ = type;
     	this->problem->bcBotValue_ = value;
     }
-
-
 
 protected:
 
@@ -214,6 +221,7 @@ void init_richardssp(py::module &m, std::string name) {
    .def(py::init<>())
    .def("initialize", &RichardsSP::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
    .def("setSource", &RichardsSP::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
+   .def("applySource", &RichardsSP::applySource)
    .def("setCriticalPressure", &RichardsSP::setCriticalPressure)
    .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getSolutionHeadAt", &RichardsSP::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)

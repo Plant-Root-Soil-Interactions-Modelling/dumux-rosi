@@ -445,6 +445,19 @@ public:
 	}
 
 	/**
+	 * The volume [m3] of each element (vtk cell)
+	 *
+	 * This is done for a single process, gathering and mapping is done in Python.
+	 */
+	virtual std::vector<double> getCellVolumesCyl() {
+		std::vector<double> vols;
+		for (const auto& e : elements(gridGeometry->gridView())) {
+			vols.push_back(e.geometry().volume()*2*e.geometry().center()[0]*3.1415);
+		}
+		return vols;
+	}
+
+	/**
 	 * Returns the coordinate, where the DOF sit, in the same order like the solution values.
 	 *
 	 * DOF sit either at the vertices (points) for box method or
@@ -512,15 +525,8 @@ public:
 	 * Gathering and mapping is done in Python
 	 */
 	virtual std::vector<double> getSolution(int eqIdx = 0) {
-		checkInitialized();
+		int n = checkInitialized();
 		std::vector<double> sol;
-		int n;
-		if (isBox) {
-			n = gridGeometry->gridView().size(dim); // number of vertices (on this process)
-		} else {
-			n = gridGeometry->gridView().size(0); // number of cells (on this process)
-		}
-		// std::cout << "getSolution(): n " << n << ", " << x.size() << "\n" << std::flush;
 		sol.resize(n);
 		for (int c = 0; c<n; c++) {
 			sol[c] = x[c][eqIdx];
@@ -671,13 +677,18 @@ public:
 	}
 
 	/**
-	 * Checks if the problem was initialized,
+	 * Checks if the problem was initialized, and returns number of local dof
 	 * i.e. initializeProblem() was called
 	 */
-	virtual void checkInitialized() {
+	virtual int checkInitialized() {
 		if (!gridGeometry) {
 			throw std::invalid_argument("SolverBase::checkInitialized: Problem not initialized, call initializeProblem first");
 		}
+        if (this->isBox) {
+            return this->gridGeometry->gridView().size(dim);
+        } else {
+            return this->gridGeometry->gridView().size(0);
+        }
 	}
 
 protected:
@@ -733,6 +744,7 @@ void init_solverbase(py::module &m, std::string name) {
 				.def("getCellCenters", &Solver::getCellCenters)
 				.def("getCells", &Solver::getCells)
 				.def("getCellVolumes", &Solver::getCellVolumes)
+				.def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
 				.def("getDofCoordinates", &Solver::getDofCoordinates)
 				.def("getPointIndices", &Solver::getPointIndices)
 				.def("getCellIndices", &Solver::getCellIndices)
