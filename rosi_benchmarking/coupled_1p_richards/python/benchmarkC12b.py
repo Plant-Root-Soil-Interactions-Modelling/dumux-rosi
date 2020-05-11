@@ -12,7 +12,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-# os.system("./coupled input/benchmarkC12b.input")  # benchmarkC12, or benchmarkC12b
+os.system("./coupled input/benchmarkC12b.input")  # benchmarkC12, or benchmarkC12b
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
@@ -28,7 +28,7 @@ print("actual", d[-1, 5] / 1000)  # Strange behaviour of simplistically calculat
 # Plot collar transpiration & pressure
 fig, ax1 = plt.subplots()
 
-c = 24 * 3600  #  [kg/s] -> [kg/per day]
+c = 1000 * 24 * 3600  #  [kg/s] -> [cm3/per day]
 t = d[:, 0] / (24 * 3600)  # [s] -> [day]
 
 # 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
@@ -41,8 +41,8 @@ ax2.plot(t[1:], ctrans, 'c--')  # cumulative transpiration (neumann)
 
 ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
 ax1.set_xlabel("Time $[d]$")
-ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
-ax2.set_ylabel("Cumulative transpiration $[kg]$")
+ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
+ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
 
 plt.show()
 
