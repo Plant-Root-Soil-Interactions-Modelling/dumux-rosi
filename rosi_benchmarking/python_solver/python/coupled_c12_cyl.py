@@ -30,7 +30,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-sim_time = 7  # [day] for task b
+sim_time = 1  # [day] for task b
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -10000  # cm
 loam = [0.08, 0.43, 0.04, 1.6, 50]
@@ -75,42 +75,22 @@ nodes = r.get_nodes()
 rich_cyls = []
 N = 20 
 
-seg_radii = np.array(r.rs.radii)
-seg_length = np.zeros(seg_radii.shape)
-seg_prop = np.zeros(seg_radii.shape)  # proportionality factor
-seg_outer_radii = np.zeros(seg_radii.shape)
+seg_inner_radii = np.array(r.rs.radii)
+seg_outer_radii = np.array(r.segOuterRadii())
+seg_length = np.array(r.segLength())
+seg_fluxes = np.zeros(seg_length.shape)
 
-# interate over the cells
-for cellId in cell2seg.keys():  # create seg volumes per cell
-    segs = cell2seg[cellId]    
-    # print(cellId, ":", segs)
-    v = 0.  # volume of all segments
-    for i in segs:
-        n1 = nodes[int(segments[i].x), :]
-        n2 = nodes[int(segments[i].y), :]
-        l = np.linalg.norm(n1 - n2)
-        seg_length[i] = l
-        a = seg_radii[i]
-        v += 2 * np.pi * a * l
-    for i in segs:        
-        l = seg_length[i] 
-        a = seg_radii[i]
-        seg_prop[i] = (2 * np.pi * a * l) / v
-        tv = seg_prop[i] * cell_volume  # target volume                
-        a_out = (tv + (2 * np.pi * a * l)) / (2 * np.pi * l) 
-        # print("target:", tv, "inner", a, "outer", a_out)
-        seg_outer_radii[i] = a_out
+# plt.hist(seg_outer_radii, 100, [0, 1]); plt.show()
+# print(np.min(seg_inner_radii), np.max(seg_inner_radii))
+# print(np.min(seg_outer_radii), np.max(seg_outer_radii))
 
-for i, _ in enumerate(segments):    
-    
-    a_in = seg_radii[i]
-    a_out = seg_outer_radii[i]
-    
-    cpp_base = RichardsCylFoam()
-    rcyl = RichardsWrapper(cpp_base)
-    
-    rcyl.initialize([""], False)  # [""], False
-    try:
+for i, _ in enumerate(segments):        
+    a_in = seg_inner_radii[i]
+    a_out = seg_outer_radii[i]    
+    if a_in < a_out:
+        cpp_base = RichardsCylFoam()
+        rcyl = RichardsWrapper(cpp_base)
+        rcyl.initialize([""], False)  # [""], False
         rcyl.createGrid([a_in], [a_out], [N])  # [cm]
         rcyl.setHomogeneousIC(-100.)  # cm pressure head
         rcyl.setOuterBC("fluxCyl", 0.)  #  [cm/day]
@@ -119,49 +99,93 @@ for i, _ in enumerate(segments):
         rcyl.initializeProblem()
         rcyl.setCriticalPressure(-15000)  # cm pressure head                
         rich_cyls.append(rcyl)    
-    except:
-        rich_cyls.append([])  # in case a_out = 0, e.g. if segment does not lie within the domain
-        print("\nError", a_in, a_out, "\n")        
+    else:
+        rich_cyls.append([])
+        print("Segment", i, "[", a_in, a_out, "]")
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-rsx = np.zeros(seg_radii.shape)  # root soil interface
+rsx = np.zeros(seg_inner_radii.shape)  # root soil interface
 
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 N = sim_time * round(1. / dt)
 t = 0.
 
 for i in range(0, N):
+    
+    print("Iteration", i)
 
     if rank == 0:  # Root part is not parallel
         
+        print("A")
         for j, rc in enumerate(rich_cyls):
-            if not isinstance(rc, list):                
+            if not isinstance(rc, list):  # avoid empty                
                 rsx[j] = rc.getInnerHead()
         
+        print("B")
         # user rsx as soil pressures around the individual segments (cells = False)
         rx = r.solve(t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point)  # xylem_flux.py        
+
+        print("C")        
+        print(t)
+        print(len(rx))
+        print(len(rsx))
+        print(len(seg_fluxes))
+        print(r)
+        input()
+        # For the soil model         
+        seg_fluxes = None
+        seg_fluxes = np.array(r.segFluxes(t, rx, rsx, approx=False))  # class XylemFlux is defined in CPlantBox XylemFlux.h
         
-        # For the soil model 
-        seg_fluxes = r.segFluxes(t, rx, rsx, approx=False)  # class XylemFlux is defined in CPlantBox XylemFlux.h
+        print("D")             
         soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # class XylemFlux is defined in CPlantBox XylemFlux.h
 
-        # set seg_fluxes
-        for j, rc in enumerate(rich_cyls):
-            if not isinstance(rc, list):                
-                rsx[j] = rc.setInnerBC("flux", seg_fluxes[j])  # TODO units
+        print("E")        
 
         sum_flux = 0.
         for f in soil_fluxes.values():
             sum_flux += f
-        print("Fuxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
+        print("Fluxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
+
+        # run cylindrical model            
+        for j, rc in enumerate(rich_cyls):  # set sources
+            if not isinstance(rc, list):  # avoid empty  
+                l = 1  # seg_length[j]
+                a = seg_inner_radii[j]
+                rsx[j] = rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * a * l))  # /  
+                
+                if j == 100 and i == 1:
+                    l = 1  # seg_length[j]
+                    a = seg_inner_radii[j]
+                    print("radius", a, "length", l)
+                    print("Set inner flux to", seg_fluxes[j] / (2 * np.pi * a * l), "[cm day-1]")  
+                    x = rc.getDofCoordinates()
+                    y = rc.getSolutionHead()
+                    plt.plot(x, y)
+                    plt.show()                                       
+        
+        # TODO outer flux
+        
+        for j, rc in enumerate(rich_cyls):  # simualte time step
+            if not isinstance(rc, list):  # avoid empty 
+                try:
+                    rc.solve(dt)
+                except:
+                    l = 1  # seg_length[j]
+                    a = seg_inner_radii[j]
+                    print("radius", a, "length", l)
+                    print("Set inner flux to", seg_fluxes[j] / (2 * np.pi * a * l), "[cm day-1]")  
+                    x = rc.getDofCoordinates()
+                    y = rc.getSolutionHead()
+                    plt.plot(x, y)
+                    plt.show()          
 
     else:
-        fluxes = None
+        soil_fluxes = None
 
-    fluxes = comm.bcast(fluxes, root=0)  # Soil part coult runs parallel
+    # soil_fluxes = comm.bcast(soil_fluxes, root=0)  # Soil part coult runs parallel
 
     s.setSource(soil_fluxes)  # richards.py
     s.solve(dt)
@@ -178,12 +202,9 @@ for i in range(0, N):
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))
-
-        # print("Time:", t, ", collar flux", f, "cm^3/day at", rx[0], "cm xylem ", float(sx_old[cci]), "cm soil", "; domain water", s.getWaterVolume(), "cm3")
+        print("Time:", t, ", collar flux", f, "cm^3/day at", rx[0], "cm xylem ""; domain water", water, "cm3")
 
     t += dt
-
-s.writeDumuxVTK("c12_final")
 
 """ Plot """
 if rank == 0:

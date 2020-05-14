@@ -228,43 +228,44 @@ public:
 			Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
 			Scalar h = -toHead_(p); // cm
 			GlobalPosition ePos = element.geometry().center();
-			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // cm
+			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
 			Scalar krw = MaterialLaw::krw(params, s);
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
 					f = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-					if (f < 0) { // inflow
+					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
-						//std::cout << "in:" << f <<", " << imax <<"\n";
+						// std::cout << "in:" << f <<", " << imax <<"\n";
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rho_ *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						// std::cout << "outflow " << f*1.e6 << ", " << omax*1.e6 << " krw " << krw*1.e6 << "\n";
 						f = std::min(f, omax);
 					}
 					break;
 				}
-				case constantFluxCyl: { // with switch for maximum in- or outflow
+				case constantFluxCyl: { // upper = outer, with switch for maximum in- or outflow
 					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];  // cm/day -> kg/(m²*s) (Eqns are multiplied by cylindrical radius)
-					if (f < 0) { // inflow
+					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rho_ *  kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						f = std::min(f, omax);
 					}
 					break;
 				}
 				case atmospheric: { // atmospheric boundary condition (with surface run-off)
 					Scalar prec = -precipitation_.f(time_);
-					if (prec < 0) { // precipitation
+					if (prec < 0.) { // precipitation
 						// std::cout << "in" << "\n";
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
 					} else { // evaporation
 						// std::cout << "out" << "\n";
-						Scalar emax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
+						Scalar emax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation KRW???
 						f = std::min(prec, emax);
 					}
 					break;
@@ -274,25 +275,30 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
-					if (f < 0) { // inflow
+					f = -bcBotValue_*rho_/(24.*60.*60.)/100.; // cm/day -> kg/(m²*s)
+					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						// std::cout << "outflow " << f << ", " << omax << "\n";
+						omax = std::max(omax, 0.); // must stay positive
 						f = std::min(f, omax);
 					}
 					break;
 				}
-				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100 * pos[0];
-					if (f < 0) { // inflow
+				case constantFluxCyl: { // lower = inner, with switch for maximum in- or outflow
+					f = -bcBotValue_*rho_/(24.*60.*60.)/100. * pos[0]; // cm/day -> kg/(m²*s)
+					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
-						// std::cout << " f " << f*1.e9 << ", omax "<< omax << ", value " << bcBotValue_ << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
+						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+//						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValue_
+//								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
 						f = std::min(f, omax);
+						// f = -bcBotValue_*rho_/(24.*60.*60.)/100 * pos[0];
 					}
 					break;
 				}
@@ -455,7 +461,7 @@ public:
 	}
 
 	/**
-	 * debug info
+	 * Debug info
 	 */
 	void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
 		NumEqVector source(0.0);

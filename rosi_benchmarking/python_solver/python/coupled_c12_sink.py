@@ -11,7 +11,7 @@ import van_genuchten as vg
 
 from math import *
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  
 import timeit
 
 from mpi4py import MPI
@@ -29,7 +29,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-sim_time = 7  # [day] for task b
+sim_time = 0.5  # [day] for task b
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -10000  # cm
 loam = [0.08, 0.43, 0.04, 1.6, 50]
@@ -83,7 +83,7 @@ start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
-dt = 3600. / (24 * 3600)  # [days] Time step must be very small
+dt = 120. / (24 * 3600)  # [days] Time step must be very small
 N = round(sim_time / dt)
 t = 0.
 
@@ -92,24 +92,23 @@ for i in range(0, N):
     if rank == 0:  # Root part is not parallel
         rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point)  # xylem_flux.py
         fluxes = r.soilFluxes(t, rx, sx, approx=False)  # class XylemFlux is defined in MappedOrganism.h
-
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
         print("Fuxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
-
     else:
         fluxes = None
 
     fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
-    s.setSource(fluxes)  # richards.py
+    # s.setSource(fluxes)  # richards.py
+    sx = s.getSolutionHead()  # richards.py
+    sx = s.applySource(dt, sx, fluxes, wilting_point)  # richards.py
+    s.setInitialCondition(sx)    
 
     s.solve(dt)
-
-    # s.applySource(dt, sx, fluxes, -10000)  # richards.py
-
-    sx = s.getSolutionHead()  # richards.py
+    
     water = s.getWaterVolume()
+    print("Minimum", np.min(sx), "cm", "Total  water: ", water, "cm3")
 
     if rank == 0:
         n = round(float(i) / float(N) * 100.)
@@ -122,7 +121,7 @@ for i in range(0, N):
         f = float(r.collar_flux(t, rx, sx))  # exact root collar flux
         x_.append(t)
         y_.append(f)
-        w_.append(water)
+        w_.append(water)  # diff(watter)/dt/1000.
         cpx.append(rx[0])
         cps.append(float(sx[cci]))
 
@@ -139,7 +138,8 @@ if rank == 0:
     ax1.plot(x_, trans * sinusoidal(x_), 'k')  # potential transpiration
     ax1.plot(x_, -np.array(y_), 'g')  # actual transpiration (neumann)
     ax2 = ax1.twinx()
-    ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
+     # ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
+    ax2.plot(x_[1:], np.diff(np.array(w_)) / (8 * 8 * 20) / dt, 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
     ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')

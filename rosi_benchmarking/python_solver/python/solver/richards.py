@@ -5,7 +5,7 @@ sys.path.append("../../../../build-cmake/rosi_benchmarking/python_solver/")
 from solver.solverbase import SolverWrapper
 
 from mpi4py import MPI
-
+ 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
@@ -180,6 +180,10 @@ class RichardsWrapper(SolverWrapper):
         """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
         self.base.setTopBC(3, value_top)
 
+    def setOuterPressure(self, value_top=0.):
+        """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
+        self.base.setTopBC(1, value_top)
+
     def setInnerBC(self, type_bot :str, value_bot=0.):
         """ more appropriate name for cylindrical coordinates, calls setBotBC, @see setBotBC """
         self.setBotBC(type_bot, value_bot)
@@ -204,9 +208,9 @@ class RichardsWrapper(SolverWrapper):
         self.checkInitialized()
         for key, value in source_map.items():
             source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
-        # sx cm -> pa
-        # crit_p -> pa
-        self.base.applySource(self, dt, sx, source_map, crit_p)    
+        sx = self.base.applySource(dt * 24.*3600., self.to_pa(sx), source_map, self.to_pa(crit_p)) 
+        sx = self.to_head(np.array(sx))  # [Pa] -> [cm]
+        return sx
     
     def setCriticalPressure(self, critical):
         """ Sets the critical pressure to limit flow for boundary conditions constantFlow, constantFlowCyl, and atmospheric """ 
@@ -240,6 +244,14 @@ class RichardsWrapper(SolverWrapper):
         """Uses the Dumux VTK writer to write the current model output"""
         self.checkInitialized()
         return self.base.writeDumuxVTK(file_name)
+
+    @staticmethod
+    def to_pa(ph):
+        return 1.e5 + ph / 100 * 1000. * 9.81;
+
+    @staticmethod
+    def to_head(p):        
+        return (p - 1.e5) * 100. / 1000. / 9.81;
 
     @property
     def numberOfCells(self):

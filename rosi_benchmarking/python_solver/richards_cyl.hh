@@ -31,10 +31,10 @@ public:
      */
 	virtual void initializeProblem() {
 		SolverBase<Problem, Assembler, LinearSolver, dim>::initializeProblem();
-		auto minmax = this->getGridBounds();
-		rIn = minmax[0];
+		auto minMax = this->getGridBounds();
+		rIn = minMax[0];
 		innerIdx = this->pick({ rIn });
-		rOut = minmax[1];
+		rOut = minMax[1];
     	outerIdx = this->pick({ rOut });
 	}
 

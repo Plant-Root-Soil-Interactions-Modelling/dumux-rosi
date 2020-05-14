@@ -7,9 +7,9 @@
 dune_symlink_to_source_files(FILES "grids" "python" "input")
 
 # build pyhthon binding 
-find_package (Python3 COMPONENTS Interpreter Development)
-set(PYBIND11_PYTHON_VERSION 3.7.5)
-set(DUNE_PYBINDXI_PYTHON_VERSION 3.7.5)
+# find_package (Python3 COMPONENTS Interpreter Development)
+# set(PYBIND11_PYTHON_VERSION 3.7.5)
+# set(DUNE_PYBINDXI_PYTHON_VERSION 3.7.5)
 
 # we need to build seperately, otherwise types are redefined and the linker complains 
 include(DunePybindxiUtils)

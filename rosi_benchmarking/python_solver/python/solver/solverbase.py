@@ -2,10 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.interpolate import griddata
-import vtk
-
+ 
 from mpi4py import MPI
-
+ 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
@@ -76,7 +75,7 @@ class SolverWrapper():
 
     def setInitialCondition(self, ic):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
-        self.base.setInitialCondition(ic)
+        self.base.setInitialConditionHead(ic)
 
     def solve(self, dt :float, maxDt=-1.):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
@@ -306,7 +305,11 @@ class SolverWrapper():
         pass
 
     @staticmethod
-    def toHead(pa):
-        """ Converts Pascal (kg/ (m s^2)) to cm pressure head """
-        g , rho, ref = 9.81, 1.e3, 1.e5  # (m/s^2), (kg/m^3), Pa
-        return (pa - ref) * 100 / rho / g
+    def to_pa(ph):
+        """ Converts cm pressure head to Pascal [kg/ (m s^2)] """
+        return 1.e5 + ph / 100 * 1000. * 9.81;
+
+    @staticmethod
+    def to_head(p):        
+        """ Converts Pascal [kg/ (m s^2)] to cm pressure head """
+        return (p - 1.e5) * 100. / 1000. / 9.81;

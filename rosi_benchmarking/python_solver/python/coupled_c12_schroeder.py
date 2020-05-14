@@ -35,6 +35,13 @@ wilting_point = -10000  # cm
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 periodic = False  # for perioidc, we take
 
+""" MFP """
+
+
+def mfp(ph):
+    return 0.  # todo
+
+
 """ Root problem (a) or (b)"""
 r = XylemFluxPython("../grids/RootSystem.rsml")
 # print("Types:")
@@ -59,8 +66,8 @@ cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
 
-s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
-r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(16, 16, 40))  # cut root segments to grid (segments are not mapped after)
+s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
 
 # s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
 # r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
@@ -83,7 +90,7 @@ start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
-dt = 3600. / (24 * 3600)  # [days] Time step must be very small
+dt = 120. / (24 * 3600)  # [days] Time step must be very small
 N = round(sim_time / dt)
 t = 0.
 

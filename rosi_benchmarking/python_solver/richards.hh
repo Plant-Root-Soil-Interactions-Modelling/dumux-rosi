@@ -34,12 +34,15 @@ public:
     }
 
     /**
-     * Sets the source term of the problem [kg/s].
+     * Sets the source term of the problem.
      *
      * The source is given per cell (Dumux element),
      * as a map with global element index as key, and source as value
      *
-     * for simplicity avoiding mpi broadcasting or scattering TODO
+     * for simplicity avoiding mpi broadcasting or scattering
+     *
+     * @param sourceMap 		for each global cell index the source or sink in [kg/s]
+     * @param eqIdx				the equation index (default = 0)
      */
     virtual void setSource(const std::map<int, double>& sourceMap, int eqIdx = 0) {
     	this->checkInitialized();
@@ -59,35 +62,52 @@ public:
 
     /**
      * Applies source term (operator splitting)
-     * limits with wilting point from below, and with full saturation from above todo!!!!!!!!!!!!!!!!!!!!!!! gogogogo
+     *
+     * Limits soil pressure with wilting point from below
+     *
+     * @param dt 			current time step [s]
+     * @param sx 			soil matric potential [Pa]
+     * @param soilFluxes 	fluxes between root and soil [kg/s] (negative fluxes are a sink)
+     * @param critP 		critical Pressure or wilting point [Pa]
      */
-    virtual void applySource(double dt, std::vector<double>& sx, const std::vector<double>& soilFluxes, double critP) {
-        if (this->isBox) {
+    virtual std::vector<double> applySource(double dt, std::vector<double>& sx, const std::map<int, double>& soilFluxes, double critP) {
+    	if (this->isBox) {
             throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
         } else {
+        	if (cellVolume.size()==0) {
+        		cellVolume = this->getCellVolumes();
+        	}
         	const auto& params = this->problem->spatialParams();
-        	auto theta = this->getWaterContent();
-            auto vol = this->getCellVolumesCyl();
+        	auto s = this->getSaturation();
             int c = 0;
             for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {  // local elements
-                int gIdx = this->cellIdx->index(e); // global index
-            	int eIdx = this->gridGeometry->elementMapper().index(e);
-
-            	double s = soilFluxes[gIdx]*dt/1000; // [kg / s] -> m3
-            	double newTheta = (theta[c] - s/vol[c]);
-
-            	const auto& p = params.materialLawParams(e);
-
-            	std::cout << "changed " << sx[gIdx] << " to " << MaterialLaw::pc(p, newTheta) << "\n";
-            	sx[gIdx] = MaterialLaw::pc(p, newTheta);
-
+            	int gIdx = this->cellIdx->index(e); // global index
+            	double phi = params.porosity(e);
+            	if (soilFluxes.count(gIdx)>0) {
+                	double sink = soilFluxes.at(gIdx)*dt/1000.; // [kg / s] -> [m3]
+                	double newS = (s[c] - sink/(cellVolume[c]*phi)); // s - sink/(V*phi)
+                	const auto& param = params.materialLawParams(e);
+                	double p = -MaterialLaw::pc(param, newS);
+                	std::cout << "change in s " << sink *1.e9 << " vol " << cellVolume[c] << " phi " << phi <<
+                			" changed " << (sx[gIdx] - 1.e5) * 100. / 1000. / 9.81 << " cm to " << p * 100. / 1000. / 9.81
+							<< " cm; saturation " << s[c] << " to " << newS << "\n";
+                	if (p<critP) {
+                		std::cout << "*";
+                    	sx[gIdx] = critP;
+                	} else {
+                    	sx[gIdx] = p;
+                	}
+            	}
             }
         }
+    	return sx;
     }
 
     /**
      * Sets critical pressure, used for constantFlux, constantFluxCyl, or atmospheric boundary conditions,
      * to limit maximal the flow.
+     *
+     * @param critical 		the critical pressure or wilting point [Pa]
      */
     void setCriticalPressure(double critical) {
     	this->checkInitialized();
@@ -140,6 +160,31 @@ public:
             theta.push_back(t/c); // mean value
         }
         return theta;
+    }
+
+
+    /**
+     * Returns the current solution for a single mpi process.
+     * Gathering and mapping is done in Python
+     */
+    virtual std::vector<double> getSaturation() {
+    	int n =  this->checkInitialized();
+        std::vector<double> s;
+        s.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+                t += elemVolVars[scv].saturation();
+            }
+            s.push_back(t/c); // mean value
+        }
+        return s;
     }
 
     /**
@@ -206,8 +251,23 @@ public:
 
 protected:
 
+    std::vector<double> cellVolume;
+
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
+
+	static constexpr double g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr double rho_ = 1.e3; // kg / m^3 (for type conversions)
+	static constexpr double pRef_ = 1.e5; // Pa
+
+	//! cm pressure head -> Pascal
+	static double toPa(double ph) {
+		return pRef_ + ph / 100. * rho_ * g_;
+	}
+	//! Pascal -> cm pressure head
+	static double toHead(double p) {
+		return (p - pRef_) * 100. / rho_ / g_;
+	}
 
 };
 
@@ -226,6 +286,7 @@ void init_richardssp(py::module &m, std::string name) {
    .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getSolutionHeadAt", &RichardsSP::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsSP::getWaterContent)
+   .def("getSaturation",&RichardsSP::getSaturation)
    .def("getWaterVolume",&RichardsSP::getWaterVolume)
    .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK)
    .def("setRegularisation",&RichardsSP::setRegularisation)

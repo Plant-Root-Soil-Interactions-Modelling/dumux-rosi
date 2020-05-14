@@ -30,9 +30,10 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 # s.createGrid([0.02], [0.6], [100])  # [cm]
 
 # points = np.linspace(0.02, 0.6, 1000)
-points = np.logspace(np.log10(0.02), np.log10(0.6), 1000)
+points = np.logspace(np.log10(0.02), np.log10(0.6), 10)
+print(points)
 s.createGrid1d(points)  # [cm]
-
+a
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("noflux")  #  [cm/day]
 s.setInnerBC("fluxCyl", -0.1)  # [cm/day] -0.1 

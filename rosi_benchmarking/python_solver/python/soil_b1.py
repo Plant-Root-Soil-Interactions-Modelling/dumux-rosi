@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from analytic_b1 import *  # plots the analytical solutions to ax1, ax2, ax3
 
 from mpi4py import MPI
+
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
