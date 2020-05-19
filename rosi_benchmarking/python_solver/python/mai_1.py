@@ -37,7 +37,7 @@ sim_time = 20  # [day]
 NT = 100  # iteration
 
 critP = -15000  # [cm]
-critPcyl = -15000  # [cm] at the root surface pressure is higher (not sure this is bug)
+critPcyl = -15000  # [cm] at the root surface cell center pressure is higher
 
 """ Macroscopic soil model """
 cpp_base = RichardsSP()
@@ -186,6 +186,7 @@ fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
 ax1.set_title("Water amount")
 ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cell), label="water cell")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_1d), label="water cylindric")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")

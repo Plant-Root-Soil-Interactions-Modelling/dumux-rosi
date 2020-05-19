@@ -52,17 +52,12 @@ def matric_potential_mfp(mfp, sp):
 
 
 def getInnerHead(p, q_root, q_out, r_in, r_out, soil):
-    """ returns the pressure head at the root surface according to Schroeder et al. """
-    # p = p * 0.8
-    if q_out == 0:
-        q_out = 0
-    else:        
-        q_out = q_root * (r_in / (2 * r_out))        
+    """ returns the pressure head at the root surface according to Schroeder et al. """   
     r = r_in  # we are only interested in the root soil interface
     rho = r_out / r_in
     mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
     if mfp > 0:
-        r = r_in + 0.001
+        r = r_in
         mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
         h = matric_potential_mfp(mfp, soil)
     else:    
@@ -72,6 +67,26 @@ def getInnerHead(p, q_root, q_out, r_in, r_out, soil):
     h = min(h, p)
     h = max(h, -15000.)
     return h
+
+
+def getInnerFlux(p, q_root, q_out, r_in, r_out, soil):
+    """ returns the flux at the root surface according to Schroeder et al. """   
+    dx = 0.00001
+    r = r_in  # we are only interested in the root soil interface
+    rho = r_out / r_in
+    mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+    if mfp > 0:
+        h0 = matric_potential_mfp(mfp, soil)
+        r = r_in + dx
+        mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+        h1 = matric_potential_mfp(mfp, soil)
+    else: 
+        h0 = -15000.
+        r = r_in + dx 
+        mfp = (matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
+        h1 = matric_potential_mfp(mfp, soil)
+    k = hydraulic_conductivity(h0, soil)
+    return k * (h1 - h0) / dx  # cm / day
 
 """ 
 Mai et al (2019) scenario 1 water movement  
@@ -93,7 +108,7 @@ logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] 
 sim_time = 20  # [day]
-NT = 200  # iteration
+NT = 1000  # iteration
 
 critP = -15000  # [cm]
 
@@ -159,8 +174,11 @@ for i in range(0, NT):
     for j in range(0, ns):  # for each segment
         p = sx[r.rs.seg2cell[j]]
         p = max(p, -15000)
-        rsx[j] = getInnerHead(p, max(-seg_fluxes[j] / (2. * np.pi * inner_radii[j]), 0.), 0.* -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j]), inner_radii[j], outer_radii[j], sp)  # [cm]            
-        print(p, -seg_fluxes[j] / (2. * np.pi * inner_radii[j]), -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j]), "==", rsx[j])
+        q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
+        q_out = -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]        
+        rsx[j] = getInnerHead(p, q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]            
+#         print(p, q_in, q_out, "==", rsx[j])
+#         print(getInnerFlux(p, q_in, q_out, inner_radii[j], outer_radii[j], sp))
        
     p1d.append(np.mean(np.array(rsx)))
     print("Cylindrical models at root surface", rsx, "cm")     
@@ -182,16 +200,12 @@ for i in range(0, NT):
     seg_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
     print("seg_outer_fluxes", seg_outer_fluxes)
             
-#     # run cylindrical model            
-#     for j, rc in enumerate(cyls):  # set cylindrical model fluxes
-#         l = seg_length[j]
-#         rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * r_root * l))  # [cm3/day] -> [cm /day]                                                                    
-#         rc.setOuterFluxCyl(seg_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l))  # [cm3/day] -> [cm /day]                                                                    
-#         rc.ddt = 1.e-5  # [day] initial time step  
-#         rc.solve(dt)
-#         print("Set inner flux to", seg_fluxes[j], "[cm3 day-1]")  # 
-#         seg_fluxes[j] = -rc.getInnerFlux() * (2 * np.pi * r_root * l) / r_root  # [cm/day] -> [cm3/day], ('/r_root' comes from cylindrical implementation) 
-#         print("Realized flux to ", seg_fluxes[j] , "[cm3 day-1]")  
+    for j in range(0, ns):  # for each segment
+        p = sx[r.rs.seg2cell[j]]
+        p = max(p, -15000)
+        q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
+        q_out = -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]          
+        seg_fluxes[j] = -(2. * np.pi * inner_radii[j]) * getInnerFlux(p, q_in, q_out, inner_radii[j], outer_radii[j], sp)    
 
     soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day] 
     sum_flux = 0.
