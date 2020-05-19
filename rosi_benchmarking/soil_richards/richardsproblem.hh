@@ -24,6 +24,7 @@ public:
 	using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
 	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
 
 	// other
 	using GridView = GetPropType<TypeTag, Properties::GridView>;
@@ -247,7 +248,7 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // upper = outer, with switch for maximum in- or outflow
-					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];  // cm/day -> kg/(m²*s) (Eqns are multiplied by cylindrical radius)
+					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
@@ -275,7 +276,7 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100.; // cm/day -> kg/(m²*s)
+					f = -bcBotValue_*rho_/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
@@ -289,16 +290,17 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // lower = inner, with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100. * pos[0]; // cm/day -> kg/(m²*s)
+					f = -bcBotValue_*rho_/(24.*60.*60.)/100. * pos[0]; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_)* pos[0]; // maximal inflow
+						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 //						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValue_
 //								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
+						omax = std::max(omax, 0.); // must stay positive
 						f = std::min(f, omax);
-						// f = -bcBotValue_*rho_/(24.*60.*60.)/100 * pos[0];
 					}
 					break;
 				}

@@ -24,6 +24,7 @@ public:
 	using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
 	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
 
 	// other
 	using GridView = GetPropType<TypeTag, Properties::GridView>;
