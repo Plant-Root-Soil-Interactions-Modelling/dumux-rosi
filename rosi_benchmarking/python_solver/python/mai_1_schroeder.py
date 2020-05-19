@@ -57,11 +57,9 @@ def getInnerHead(p, q_root, q_out, r_in, r_out, soil):
     rho = r_out / r_in
     mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
     if mfp > 0:
-        r = r_in
         mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
         h = matric_potential_mfp(mfp, soil)
     else:    
-        r = r_in + 0.001
         mfp = (matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
         h = matric_potential_mfp(mfp, soil)
     h = min(h, p)
@@ -108,7 +106,7 @@ logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] 
 sim_time = 20  # [day]
-NT = 1000  # iteration
+NT = 500  # iteration
 
 critP = -15000  # [cm]
 
@@ -177,10 +175,8 @@ for i in range(0, NT):
         q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
         q_out = -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]        
         rsx[j] = getInnerHead(p, q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]            
-#         print(p, q_in, q_out, "==", rsx[j])
-#         print(getInnerFlux(p, q_in, q_out, inner_radii[j], outer_radii[j], sp))
        
-    p1d.append(np.mean(np.array(rsx)))
+    p1d.append(np.min(np.array(rsx)))
     print("Cylindrical models at root surface", rsx, "cm")     
                        
      # solves root model                      
@@ -213,26 +209,27 @@ for i in range(0, NT):
         print("soil fluxes", k, f)
         if f > 0.:
             f = 0
+            print("strange... (press any key)"); input()
         sum_flux += f
     sum_flux2 = 0.
     for f in seg_fluxes:
          sum_flux2 += f
     print("Summed fluxes {:g} == {:g},  predescribed {:g}".format(sum_flux, sum_flux2, -q_r))
     uptake.append(sum_flux)    
-        
-    x0 = s.getSolutionHeadAt(cci)  # [cm]
-    collar.append(x0)
                 
     # run macroscopic soil model
     s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
     s.solve(dt)    
+
+    x0 = s.getSolutionHeadAt(cci)  # [cm]
+    collar.append(x0)
 
     # calculate net fluxes
     net_flux = (np.multiply(np.array(s.getWaterContent()), cell_volumes) - soil_water) 
     for k, v in soil_fluxes.items():
         net_flux[k] -= v * dt;    
     # print(net_flux / dt)
-    print("sum", np.sum(net_flux))
+    # print("sum", np.sum(net_flux))
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
@@ -243,9 +240,9 @@ ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="soil at root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="soil voxel at root collar")
 ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="1d model at root surface")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="1d cylindrical model at root surface")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
