@@ -586,7 +586,7 @@ public:
 			elemVolVars.bindElement(e, fvGeometry, x);
 			for (const auto& scvf : scvfs(fvGeometry)) {
 				if (scvf.boundary()) {
-					double n = problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];
+					double n = problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];  // [ kg / (m2 s)]
 					f = (std::abs(n) > std::abs(f)) ? n : f;
 				}
 			}
@@ -611,12 +611,54 @@ public:
 					c++;
 					auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
 					elemVolVars.bindElement(e, fvGeometry, x);
-					f += problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];
+					f += problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx]; // [kg / (m2 s)]
 				}
 			}
 			if (c>0) {
 				fluxes[cellIdx->index(e)] = f/c; // mean value
 			}
+		}
+		return fluxes;
+	}
+
+	/**
+	 * Returns the net flux [kg/s]. TODO crashes, no idea why
+	 *
+	 * partly from velocityoutput.hh
+	 *
+	 * For a single mpi process. Gathering is done in Python
+	 */
+	virtual std::vector<double> getNetFlux(int eqIdx = 0) {
+		int n = checkInitialized();
+		std::vector<double> fluxes;
+		fluxes.resize(n);
+
+		auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+		auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
+        auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
+
+		// the upwind term to be used for the volume flux evaluation
+		auto upwindTerm = [eqIdx](const auto& volVars) { return volVars.mobility(eqIdx); };
+
+		for (const auto& e : Dune::elements(gridGeometry->gridView())) { // soil elements
+
+			fvGeometry.bindElement(e);
+			elemVolVars.bindElement(e, fvGeometry, x);
+
+			double f = 0.;
+			for (const auto& scvf : scvfs(fvGeometry)) {
+
+                if (!scvf.boundary()) {
+        			// bind the element flux variables cache
+        	        elemFluxVarsCache.bindElement(e, fvGeometry, elemVolVars);
+//                    FluxVariables fluxVars;
+//                    fluxVars.init(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
+//                    f += fluxVars.advectiveFlux(eqIdx, upwindTerm);
+                }
+                else { }
+
+			}
+			fluxes[cellIdx->index(e)] = f;
 		}
 		return fluxes;
 	}
@@ -701,11 +743,11 @@ public:
 		if (!gridGeometry) {
 			throw std::invalid_argument("SolverBase::checkInitialized: Problem not initialized, call initializeProblem first");
 		}
-        if (this->isBox) {
-            return this->gridGeometry->gridView().size(dim);
-        } else {
-            return this->gridGeometry->gridView().size(0);
-        }
+		if (this->isBox) {
+			return this->gridGeometry->gridView().size(dim);
+		} else {
+			return this->gridGeometry->gridView().size(0);
+		}
 	}
 
 protected:
@@ -714,6 +756,7 @@ protected:
 	using FVGridGeometry = typename Problem::FVGridGeometry;
 	using SolutionVector = typename Problem::SolutionVector;
 	using GridVariables = typename Problem::GridVariables;
+	using FluxVariables = typename Problem::FluxVariables;
 
 	using GridData = Dumux::GridData<Grid>;
 	using GridView = typename Grid::Traits::LeafGridView;
@@ -740,49 +783,50 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 void init_solverbase(py::module &m, std::string name) {
 	using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
 	py::class_<Solver>(m, name.c_str())
-			// initialization
-	    		.def(py::init<>())
-				.def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
-				.def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-				.def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid,
-						py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false) // overloads, defaults
-				.def("createGrid1d", &Solver::createGrid1d)
-				.def("readGrid", &Solver::readGrid)
-				.def("getGridBounds", &Solver::getGridBounds)
-				.def("setParameter", &Solver::setParameter)
-				.def("getParameter", &Solver::getParameter)
-				.def("initializeProblem", &Solver::initializeProblem)
-				.def("setInitialCondition", &Solver::setInitialCondition)
-				.def("setInitialConditionHead", &Solver::setInitialConditionHead)
-				// simulation
-				.def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
-				.def("solveSteadyState", &Solver::solveSteadyState)
-				// post processing (vtk naming)
-				.def("getPoints", &Solver::getPoints) //
-				.def("getCellCenters", &Solver::getCellCenters)
-				.def("getCells", &Solver::getCells)
-				.def("getCellVolumes", &Solver::getCellVolumes)
-				.def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
-				.def("getDofCoordinates", &Solver::getDofCoordinates)
-				.def("getPointIndices", &Solver::getPointIndices)
-				.def("getCellIndices", &Solver::getCellIndices)
-				.def("getDofIndices", &Solver::getDofIndices)
-				.def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
-				.def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
-				.def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
-				.def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
-				.def("pickCell", &Solver::pickCell)
-				.def("pick", &Solver::pick)
-				// members
-				.def_readonly("simTime", &Solver::simTime) // read only
-				.def_readwrite("ddt", &Solver::ddt) // initial internal time step
-				.def_readonly("rank", &Solver::rank) // read only
-				.def_readonly("maxRank", &Solver::maxRank) // read only
-				.def_readonly("numberOfCells", &Solver::numberOfCells) // read only
-				.def_readonly("periodic", &Solver::periodic) // read only
-				// useful
-				.def("__str__",&Solver::toString)
-				.def("checkInitialized", &Solver::checkInitialized);
+					// initialization
+	    				.def(py::init<>())
+						.def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+						.def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
+						.def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid,
+								py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false) // overloads, defaults
+								.def("createGrid1d", &Solver::createGrid1d)
+								.def("readGrid", &Solver::readGrid)
+								.def("getGridBounds", &Solver::getGridBounds)
+								.def("setParameter", &Solver::setParameter)
+								.def("getParameter", &Solver::getParameter)
+								.def("initializeProblem", &Solver::initializeProblem)
+								.def("setInitialCondition", &Solver::setInitialCondition)
+								.def("setInitialConditionHead", &Solver::setInitialConditionHead)
+								// simulation
+								.def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
+								.def("solveSteadyState", &Solver::solveSteadyState)
+								// post processing (vtk naming)
+								.def("getPoints", &Solver::getPoints) //
+								.def("getCellCenters", &Solver::getCellCenters)
+								.def("getCells", &Solver::getCells)
+								.def("getCellVolumes", &Solver::getCellVolumes)
+								.def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
+								.def("getDofCoordinates", &Solver::getDofCoordinates)
+								.def("getPointIndices", &Solver::getPointIndices)
+								.def("getCellIndices", &Solver::getCellIndices)
+								.def("getDofIndices", &Solver::getDofIndices)
+								.def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
+								.def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
+								.def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
+								.def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
+								.def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
+								.def("pickCell", &Solver::pickCell)
+								.def("pick", &Solver::pick)
+								// members
+								.def_readonly("simTime", &Solver::simTime) // read only
+								.def_readwrite("ddt", &Solver::ddt) // initial internal time step
+								.def_readonly("rank", &Solver::rank) // read only
+								.def_readonly("maxRank", &Solver::maxRank) // read only
+								.def_readonly("numberOfCells", &Solver::numberOfCells) // read only
+								.def_readonly("periodic", &Solver::periodic) // read only
+								// useful
+								.def("__str__",&Solver::toString)
+								.def("checkInitialized", &Solver::checkInitialized);
 }
 
 #endif

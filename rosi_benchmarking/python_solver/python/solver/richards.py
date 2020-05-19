@@ -164,21 +164,29 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "BC.Bot.Type", str(b))
         self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
+    def setInnerFluxCyl(self, flux):
+        """ 
+        Sets the flux directly in the problem (problem must be initialized), 
+        calls base.setBotBC, @see setBotBC in richards.hh
+        
+        @param flux      [cm/day] negative means outflow          
+        """
+        self.base.setBotBC(3, flux)
+
     def getInnerFlux(self):
-        """ [cm / day]"""
-        return self.getInnerFlux() / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day        
+        """ [cm3 / cm2 / day] """
+        return self.base.getInnerFlux() * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day        
+
+    def setOuterFluxCyl(self, flux):
+        """ 
+        sets the flux directly in the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh
+        @param flux      [cm/day] negative means outflow    
+        """
+        self.base.setTopBC(3, flux)
 
     def getOuterFlux(self):
         """ [cm / day]"""        
         return self.getOuterFlux() / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day   
-
-    def setInnerFluxCyl(self, value_bot=0.):
-        """ sets the flux directly i the problem (problem must be initialized), calls base.setBotBC, @see setBotBC in richards.hh"""
-        self.base.setBotBC(3, value_bot)
-
-    def setOuterFluxCyl(self, value_top=0.):
-        """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
-        self.base.setTopBC(3, value_top)
 
     def setOuterPressure(self, value_top=0.):
         """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
@@ -193,21 +201,21 @@ class RichardsWrapper(SolverWrapper):
         self.setTopBC(type_top, value_top)
 
     def getInnerHead(self):
-        """ todo """
+        """  Gets the pressure head at the inner boundary [cm] """
         return self.base.getInnerHead()
 
     def setSource(self, source_map):
-        """Sets the source term as map with global cell index as key, and source as value [g/day] """
+        """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         for key, value in source_map.items():
-            source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
+            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
         self.base.setSource(source_map)
     
     def applySource(self, dt, sx, source_map, crit_p):
-        """Sets the source term as map with global cell index as key, and source as value [g/day] """
+        """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         for key, value in source_map.items():
-            source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s]
+            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
         sx = self.base.applySource(dt * 24.*3600., self.to_pa(sx), source_map, self.to_pa(crit_p)) 
         sx = self.to_head(np.array(sx))  # [Pa] -> [cm]
         return sx
@@ -235,6 +243,11 @@ class RichardsWrapper(SolverWrapper):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
+
+    def getVeclocity1D(self):
+        """Returns the Darcy velocities [cm/day] TODO not working! """
+        self.checkInitialized()
+        return np.array(self.base.getVelocity1D()) * 100.*24 * 3600  # m/s -> cm/day
 
     def setRegularisation(self, pcEps, krEps):
         """ Van Genuchten regularisation parameters"""

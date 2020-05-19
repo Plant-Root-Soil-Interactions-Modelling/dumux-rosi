@@ -200,11 +200,34 @@ public:
             auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
             elemVolVars.bindElement(element, fvGeometry, this->x);
             for (const auto& scv : scvs(fvGeometry)) {
-                cVol += elemVolVars[scv].saturation(0)*scv.volume();
+                cVol += elemVolVars[scv].waterContent()*scv.volume();
             }
         }
         return this->gridGeometry->gridView().comm().sum(cVol);
     }
+
+	/**
+	 * Return the darcy (?) velocity in a 1D model TODO not working even in 1D TODO (for nD we would need to multipy with the outer normals)
+	 *
+	 * For a single mpi process. Gathering is done in Python
+	 */
+	virtual std::vector<double> getVelocity1D() {
+		int n = this->checkInitialized();
+		std::vector<double> v;
+		v.resize(n);
+		for (const auto& e : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+			double f = 0.;
+			auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+			fvGeometry.bindElement(e);
+			for (const auto& scvf : scvfs(fvGeometry)) {
+				auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+				elemVolVars.bindElement(e, fvGeometry, this->x);
+				f += this->problem->neumann(e, fvGeometry, elemVolVars, scvf)[0]/1000.; // [kg / (m2 s)] -> [m/s]
+			}
+			v[this->cellIdx->index(e)] = f;
+		}
+		return v;
+	}
 
     /**
      * Uses the Dumux VTK Writer
@@ -232,7 +255,9 @@ public:
 
 
     /**
-     * changes boundary condition in initialized problem (e.g. within the simulation loop)
+     * Changes boundary condition in initialized problem (e.g. within the simulation loop)
+     * Dirichlet types: value [cm]
+     * Neumann types: value [cm/day] = [cm3/cm2/day]
      */
     void setTopBC(int type, double value) {
     	this->checkInitialized();
@@ -241,7 +266,9 @@ public:
     }
 
     /**
-     * changes boundary condition in initialized problem (e.g. within the simulation loop)
+     * Changes boundary condition in initialized problem (e.g. within the simulation loop)
+     * Dirichlet types: value [cm]
+     * Neumann types: value [cm/day] = [cm3/cm2/day]
      */
     void setBotBC(int type, double value) {
     	this->checkInitialized();
@@ -288,6 +315,7 @@ void init_richardssp(py::module &m, std::string name) {
    .def("getWaterContent",&RichardsSP::getWaterContent)
    .def("getSaturation",&RichardsSP::getSaturation)
    .def("getWaterVolume",&RichardsSP::getWaterVolume)
+   .def("getVelocity1D", &RichardsSP::getVelocity1D)
    .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK)
    .def("setRegularisation",&RichardsSP::setRegularisation)
    .def("setTopBC",&RichardsSP::setTopBC)

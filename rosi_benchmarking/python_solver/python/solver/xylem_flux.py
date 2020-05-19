@@ -58,7 +58,7 @@ class XylemFluxPython(XylemFlux):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
-            @param trans            [cm day-1] transpiration rate
+            @param trans            [cm3 day-1] transpiration rate
             @param sx               [cm] soil matric potential around root collar
             @param sxx              [cm] soil matric potentials 
             @parm wiltingPoint      [cm] pressure head            
@@ -70,7 +70,7 @@ class XylemFluxPython(XylemFlux):
 
             x = self.solve_neumann(sim_time, trans, sxx, cells)
 
-            if x[0] < wilting_point + eps:
+            if x[0] <= wilting_point:
                 Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
                 Q = sparse.csr_matrix(Q)
                 Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point)])
@@ -83,7 +83,7 @@ class XylemFluxPython(XylemFlux):
                     raise
         else:
             print()
-            print("solve_wp used Dirichlet because soil matric potential is below wilting point", sx)
+            print("solve_wp used Dirichlet because collar cell soil matric potential is below wilting point", sx)
             print()
             x = self.solve_dirichlet(sim_time, wilting_point, sx, sxx, cells)
 

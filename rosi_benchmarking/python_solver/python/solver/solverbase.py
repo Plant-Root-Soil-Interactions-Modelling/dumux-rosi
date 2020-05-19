@@ -133,11 +133,11 @@ class SolverWrapper():
         return self.base.getSolutionAt(gIdx, eqIdx)
 
     def getNeumann(self, gIdx, eqIdx=0):
-        """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
+        """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self, eqIdx=0):
-        """ Gathers the neuman fluxes into  rank 0 as a map with global index as key [cm / day]"""
+        """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         dics = MPI.COMM_WORLD.gather(self.base.getAllNeumann(eqIdx), root=0)
         flat_dic = {}
         for d in dics:
@@ -146,6 +146,11 @@ class SolverWrapper():
             flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
         return flat_dic
 
+    def getNetFlux(self, eqIdx=0):
+        """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
+        self.checkInitialized()
+        return self._map(self._flat0(MPI.COMM_WORLD.gather(self.base.getNetFlux(eqIdx), root=0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+    
     def pickCell(self, pos):
         """ Picks a cell and returns its global element cell index """
         return self.base.pickCell(np.array(pos) / 100.)  # cm -> m

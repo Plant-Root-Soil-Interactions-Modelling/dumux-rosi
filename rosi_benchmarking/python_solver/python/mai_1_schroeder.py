@@ -5,21 +5,80 @@ from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
 import solver.plantbox as pb
 import solver.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import van_genuchten as vg
 
 from math import *
 import numpy as np
+from scipy import optimize
+from scipy import integrate
 import matplotlib.pyplot as plt
 import timeit
+
+
+def water_content(h, sp):
+    """ returns the volumetric water content [1] at a given matric potential [cm] according to the VanGenuchten model (Eqn 21) """ 
+    return sp.theta_R + (sp.theta_S - sp.theta_R) / pow(1. + pow(sp.alpha * abs(h), sp.n), sp.m)
+
+
+def effective_saturation(h, sp):
+    """ returns the effective saturation [1] at a given matric potential [cm] according to the VanGenuchten model (dimensionless water content, Eqn 2) """
+    h = min(h, 0)  # pressure head is negative, zero the maximum
+    theta = water_content(h, sp)
+    se = (theta - sp.theta_R) / (sp.theta_S - sp.theta_R)
+    return se
+
+
+def hydraulic_conductivity(h, sp):
+    """ returns the hydraulic conductivity [cm/day] at a given matric potential [cm] according to the van genuchten model (Eqn 8) """
+    se = effective_saturation(h, sp) 
+    K = sp.Ksat * (se ** 0.5) * ((1. - pow(1. - pow(se, 1. / sp.m), sp.m)) ** 2)
+    return K 
+
+
+def matric_flux_potential(h, sp):
+    """ returns the matric flux potential [cm2/day] for a matric potential [cm]"""
+    K = lambda h: hydraulic_conductivity(h, sp)  # integrand 
+    MFP, err = integrate.quad(K, -15000, h)
+    return MFP
+
+
+def matric_potential_mfp(mfp, sp):
+    """ returns the matric potential [cm] from the matric flux potential [cm2/day]"""
+    mfp_ = lambda psi: matric_flux_potential(psi, sp) - mfp
+    h = optimize.brentq(mfp_, -15000, 0)
+    return h
+
+
+def getInnerHead(p, q_root, q_out, r_in, r_out, soil):
+    """ returns the pressure head at the root surface according to Schroeder et al. """
+    # p = p * 0.8
+    if q_out == 0:
+        q_out = 0
+    else:        
+        q_out = q_root * (r_in / (2 * r_out))        
+    r = r_in  # we are only interested in the root soil interface
+    rho = r_out / r_in
+    mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+    if mfp > 0:
+        r = r_in + 0.001
+        mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+        h = matric_potential_mfp(mfp, soil)
+    else:    
+        r = r_in + 0.001
+        mfp = (matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
+        h = matric_potential_mfp(mfp, soil)
+    h = min(h, p)
+    h = max(h, -15000.)
+    return h
 
 """ 
 Mai et al (2019) scenario 1 water movement  
 """
 N = 3  # number of cells in each dimension 
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+sp = vg.Parameters(loam) 
 initial = -100.  # [cm] initial soil matric potential 
 
 r_root = 0.02  # [cm] root radius
@@ -34,10 +93,9 @@ logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] 
 sim_time = 20  # [day]
-NT = 100  # iteration
+NT = 200  # iteration
 
 critP = -15000  # [cm]
-critPcyl = -15000  # [cm] at the root surface pressure is higher (not sure this is bug)
 
 """ Macroscopic soil model """
 cpp_base = RichardsSP()
@@ -50,7 +108,6 @@ s.setBotBC("noflux")
 s.createGrid([-1.5, -1.5, -3.], [1.5, 1.5, 0.], [3, 3, N])  # [cm] 3x3x3
 s.setVGParameters([loam])
 s.initializeProblem()
-s.setCriticalPressure(critP)
 s.ddt = 1.e-5  # [day] initial Dumux time step 
 
 """ Root model """
@@ -65,9 +122,10 @@ r = XylemFluxPython(rs)
 r.setKr([kr])
 r.setKx([kx])
 
-r_outer = r.segOuterRadii()
+inner_radii = np.array(r.rs.radii)
+outer_radii = r.segOuterRadii()
 seg_length = r.segLength()
-# print(r_outer); print(seg_length)
+ns = len(seg_length)
 
 """ Coupling soil and root model (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
@@ -77,26 +135,10 @@ cci = picker(0, 0, 0)  # collar cell index
 # for i in range(0, len(n) - 1):  # segments
 #     print("soil index", r.rs.seg2cell[i])
 
-""" Cylindrical models (around each root segment) """
-cyls = []
-points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base=logbase)
-ns = len(seg_length)  # number of segments 
-for i in range(0, ns):     
-    cpp_base = RichardsCylFoam()
-    cyl = RichardsWrapper(cpp_base)    
-    cyl.initialize()    
-    # plt.plot(points, [0.] * len(points), "b*"); plt.show()
-    cyl.createGrid1d(points)                 
-    cyl.setHomogeneousIC(initial)  # cm pressure head
-    cyl.setVGParameters([loam])
-    cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
-    cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]         
-    cyl.initializeProblem()
-    cyl.setCriticalPressure(critPcyl)  # cm pressure head                                             
-    cyls.append(cyl)    
-
 """ Simulation """
 rsx = np.zeros((ns,))  # xylem pressure at the root soil interface
+seg_fluxes = np.zeros((ns,))
+seg_outer_fluxes = np.zeros((ns,))
 dt = sim_time / NT 
 
 uptake = []
@@ -105,7 +147,6 @@ collar = []
 p1d = []
 
 water_cell = []
-water_1d = []
 water_domain = []
 
 cell_volumes = s.getCellVolumes()
@@ -115,9 +156,13 @@ for i in range(0, NT):
 
     # solutions of previous time step
     sx = s.getSolutionHead()  # [cm]         
-    for j, rc in enumerate(cyls):  # for each segment
-        rsx[j] = rc.getInnerHead()  # [cm]            
-    p1d.append(np.min(np.array(rsx)))
+    for j in range(0, ns):  # for each segment
+        p = sx[r.rs.seg2cell[j]]
+        p = max(p, -15000)
+        rsx[j] = getInnerHead(p, max(-seg_fluxes[j] / (2. * np.pi * inner_radii[j]), 0.), 0.* -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j]), inner_radii[j], outer_radii[j], sp)  # [cm]            
+        print(p, -seg_fluxes[j] / (2. * np.pi * inner_radii[j]), -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j]), "==", rsx[j])
+       
+    p1d.append(np.mean(np.array(rsx)))
     print("Cylindrical models at root surface", rsx, "cm")     
                        
      # solves root model                      
@@ -131,36 +176,29 @@ for i in range(0, NT):
     # water (for debugging)
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
     water_domain.append(np.sum(soil_water))
-    # print("soil water", np.sum(soil_water))
-    
-    cyl_water_content = cyls[0].getWaterContent()
-    cyl_water = 0.
-    for i, wc in enumerate(cyl_water_content):
-        r1 = points[i]
-        r2 = points[i + 1]
-        cyl_water += np.pi * (r2 * r2 - r1 * r1) * 1 * wc        
-    print("Water volume cylindric", cyl_water, "soil", soil_water[cci])
     water_cell.append(soil_water[cci])
-    water_1d.append(cyl_water)
-            
+    # print("soil water", np.sum(soil_water))
+          
     seg_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
-    print("outer", seg_outer_fluxes)
+    print("seg_outer_fluxes", seg_outer_fluxes)
             
-    # run cylindrical model            
-    for j, rc in enumerate(cyls):  # set cylindrical model fluxes
-        l = seg_length[j]
-        rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * r_root * l))  # [cm3/day] -> [cm /day]                                                                    
-        rc.setOuterFluxCyl(seg_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l))  # [cm3/day] -> [cm /day]                                                                    
-        rc.ddt = 1.e-5  # [day] initial time step  
-        rc.solve(dt)
-        print("Set inner flux to", seg_fluxes[j], "[cm3 day-1]")  # 
-        seg_fluxes[j] = -rc.getInnerFlux() * (2 * np.pi * r_root * l) / r_root  # [cm/day] -> [cm3/day], ('/r_root' comes from cylindrical implementation) 
-        print("Realized flux to ", seg_fluxes[j] , "[cm3 day-1]")  
+#     # run cylindrical model            
+#     for j, rc in enumerate(cyls):  # set cylindrical model fluxes
+#         l = seg_length[j]
+#         rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * r_root * l))  # [cm3/day] -> [cm /day]                                                                    
+#         rc.setOuterFluxCyl(seg_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l))  # [cm3/day] -> [cm /day]                                                                    
+#         rc.ddt = 1.e-5  # [day] initial time step  
+#         rc.solve(dt)
+#         print("Set inner flux to", seg_fluxes[j], "[cm3 day-1]")  # 
+#         seg_fluxes[j] = -rc.getInnerFlux() * (2 * np.pi * r_root * l) / r_root  # [cm/day] -> [cm3/day], ('/r_root' comes from cylindrical implementation) 
+#         print("Realized flux to ", seg_fluxes[j] , "[cm3 day-1]")  
 
     soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day] 
     sum_flux = 0.
     for k, f in soil_fluxes.items():
         print("soil fluxes", k, f)
+        if f > 0.:
+            f = 0
         sum_flux += f
     sum_flux2 = 0.
     for f in seg_fluxes:
@@ -197,7 +235,7 @@ ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="1d model at root su
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
-# plt.ylim(-15000, 0) 
+ax2.set_ylim(-15000, 0) 
  
 ax3.set_title("Water uptake")
 ax3.plot(np.linspace(0, sim_time, NT), -np.array(uptake))
@@ -208,7 +246,7 @@ ax4.set_title("Water in domain")
 ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
 ax4.set_xlabel("Time (days)")
 ax4.set_ylabel("cm3")
-plt.show()      
+plt.show()    
   
 # plt.title("Pressure")
 # h = np.array(cyls[0].getSolutionHead())
@@ -217,7 +255,7 @@ plt.show()
 # plt.xlabel("x (cm)")
 # plt.ylabel("Matric potential (cm)")
 # plt.show()   
-#  
+ 
 # plt.title("Darcy velocity")
 # h = np.array(cyls[0].getSolutionHead())
 # x = np.array(cyls[0].getDofCoordinates())

@@ -15,10 +15,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import timeit
 
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-
 
 def sinusoidal(t):
     return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
@@ -30,192 +26,149 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-sim_time = 1  # [day] for task b
-trans = 6.4  # cm3 /day (sinusoidal)
-wilting_point = -10000  # cm
+min_b = [-5., -5., -20.]
+max_b = [5., 5., 0.]
+cell_number = [10, 10, 20]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+initial = -100
+
+kx = 4.32e-2 
+kr = 1.728e-4
+trans = 6.4  # cm3 /day (sinusoidal)
+wilting_point = -5000  # cm
+wilting_point_cyl = -5000  # cm
+
+NC = 10  # dof of the cylindrical problem
+logbase = 1.5
+
 periodic = False  
+ 
+sim_time = 1  # [day]
+NT = 100  # iteration
 
-""" Root problem (a) or (b)"""
-r = XylemFluxPython("../grids/RootSystem.rsml")
-r.setKr([ 1.728e-4])  # [cm^3/day]
-r.setKx([4.32e-2 ])  # [1/day]
-nodes = r.get_nodes()
+sim_time = 1  # [day] for task b
 
-""" Soil problem """
+""" Macroscopic soil problem """
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
-min_b = [-4., -4., -20.]
-max_b = [4., 4., 0.]
-cell_number = [8, 8, 20]
 s.createGrid(min_b, max_b, cell_number)  # [cm]
-cell_volume = np.prod(np.array(max_b) - np.array(min_b)) / (np.prod(cell_number))
-print("cell volume:", cell_volume, "cm3")
-r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
-
-s.setHomogeneousIC(-100, False)  # cm pressure head, equilibrium
-# s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
-
+s.setHomogeneousIC(initial, False)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([loam])
 s.initializeProblem()
+s.ddt = 1.e-5  # [day] initial Dumux time step 
 
-""" Coupling (map indices) """
+""" Root model (a) """
+r = XylemFluxPython("../grids/RootSystem.rsml")
+r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]))  
+r.setKr([kr])  # [cm^3/day]
+r.setKx([kx])  # [1/day]
+
+inner_radii = np.array(r.rs.radii)
+outer_radii = r.segOuterRadii()
+seg_length = r.segLength()
+nodes = r.get_nodes()
+
+""" Coupling soil and root model (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
-""" Set up cylindrical problems """
-segments = r.rs.segments
-cell2seg = r.rs.cell2seg  # cell to segments mapper
-nodes = r.get_nodes()
-
-rich_cyls = []
-N = 20 
-
-seg_inner_radii = np.array(r.rs.radii)
-seg_outer_radii = np.array(r.segOuterRadii())
-seg_length = np.array(r.segLength())
-seg_fluxes = np.zeros(seg_length.shape)
-
-# plt.hist(seg_outer_radii, 100, [0, 1]); plt.show()
-# print(np.min(seg_inner_radii), np.max(seg_inner_radii))
-# print(np.min(seg_outer_radii), np.max(seg_outer_radii))
-
-for i, _ in enumerate(segments):        
-    a_in = seg_inner_radii[i]
-    a_out = seg_outer_radii[i]    
-    if a_in < a_out:
+""" Cylindrical models (around each root segment) """
+cyls = []
+ns = len(seg_length)  # number of segments 
+print(ns); input()
+for i in range(0, ns): 
+    a_in = inner_radii[i]
+    a_out = outer_radii[i]    
+    if a_in < a_out:        
         cpp_base = RichardsCylFoam()
-        rcyl = RichardsWrapper(cpp_base)
-        rcyl.initialize([""], False)  # [""], False
-        rcyl.createGrid([a_in], [a_out], [N])  # [cm]
-        rcyl.setHomogeneousIC(-100.)  # cm pressure head
-        rcyl.setOuterBC("fluxCyl", 0.)  #  [cm/day]
-        rcyl.setInnerBC("fluxCyl", 0.)  # [cm/day] 
-        rcyl.setVGParameters([loam])
-        rcyl.initializeProblem()
-        rcyl.setCriticalPressure(-15000)  # cm pressure head                
-        rich_cyls.append(rcyl)    
+        cyl = RichardsWrapper(cpp_base)    
+        cyl.initialize()    
+        # plt.plot(points, [0.] * len(points), "b*"); plt.show()
+        points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base=logbase)
+        cyl.createGrid1d(points)                 
+        cyl.setHomogeneousIC(initial)  # cm pressure head
+        cyl.setVGParameters([loam])
+        cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
+        cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]         
+        cyl.initializeProblem()
+        cyl.setCriticalPressure(wilting_point_cyl)  # cm pressure head                                             
+        cyls.append(cyl)  
     else:
-        rich_cyls.append([])
-        print("Segment", i, "[", a_in, a_out, "]")
-
-""" Numerical solution (a) """
-start_time = timeit.default_timer()
-x_, y_, w_, cpx, cps = [], [], [], [], []
-sx = s.getSolutionHead()  # inital condition, solverbase.py
-rsx = np.zeros(seg_inner_radii.shape)  # root soil interface
-
-dt = 120. / (24 * 3600)  # [days] Time step must be very small
-N = sim_time * round(1. / dt)
-t = 0.
-
-for i in range(0, N):
-    
-    print("Iteration", i)
-
-    if rank == 0:  # Root part is not parallel
-        
-        print("A")
-        for j, rc in enumerate(rich_cyls):
-            if not isinstance(rc, list):  # avoid empty                
-                rsx[j] = rc.getInnerHead()
-        
-        print("B")
-        # user rsx as soil pressures around the individual segments (cells = False)
-        rx = r.solve(t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point)  # xylem_flux.py        
-
-        print("C")        
-        print(t)
-        print(len(rx))
-        print(len(rsx))
-        print(len(seg_fluxes))
-        print(r)
+        cyls.append([])
+        print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
         input()
-        # For the soil model         
-        seg_fluxes = None
-        seg_fluxes = np.array(r.segFluxes(t, rx, rsx, approx=False))  # class XylemFlux is defined in CPlantBox XylemFlux.h
-        
-        print("D")             
-        soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # class XylemFlux is defined in CPlantBox XylemFlux.h
 
-        print("E")        
+""" Simulation """
+rsx = np.zeros((ns,))  # xylem pressure at the root soil interface
+dt = sim_time / NT 
 
-        sum_flux = 0.
-        for f in soil_fluxes.values():
-            sum_flux += f
-        print("Fluxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
+water_domain = []
 
-        # run cylindrical model            
-        for j, rc in enumerate(rich_cyls):  # set sources
-            if not isinstance(rc, list):  # avoid empty  
-                l = 1  # seg_length[j]
-                a = seg_inner_radii[j]
-                rsx[j] = rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * a * l))  # /  
+cell_volumes = s.getCellVolumes()
+net_flux = np.zeros(cell_volumes.shape)
+
+for i in range(0, NT):
+
+    t = i * dt
+
+    # solutions of previous time step
+    sx = s.getSolutionHead()  # [cm]         
+    for j, rc in enumerate(cyls):  # for each segment
+        rsx[j] = rc.getInnerHead()  # [cm]            
+                       
+     # solves root model                      
+    rx = r.solve(t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point)  # [cm]   
+#     min_rx.append(np.min(np.array(rx)))                
+#     print("Minimal root xylem pressure", min_rx[-1])  # working
+                  
+    # fluxes per segment according to root system model and cylindrical models                       
+    seg_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day] 
+                                        
+    # water 
+    soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
+    water_domain.append(np.sum(soil_water))
+            
+    seg_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
+            
+    # run cylindrical models           
+    for j, rc in enumerate(cyls):  
+        l = seg_length[j]
+        rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * inner_radii[j] * l))  # [cm3/day] -> [cm /day]                                                                    
+        rc.setOuterFluxCyl(seg_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l))  # [cm3/day] -> [cm /day]                                                                    
+        rc.ddt = 1.e-5  # [day] initial time step  
+        try:
+            rc.solve(dt)
+        except:
+            x = rc.getDofCoordinates()
+            y = rc.getSolutionHead()
+            plt.plot(x, y)
+            plt.xlabel("x (cm)")
+            plt.ylabel("pressure (cm)")
+            plt.show()
                 
-                if j == 100 and i == 1:
-                    l = 1  # seg_length[j]
-                    a = seg_inner_radii[j]
-                    print("radius", a, "length", l)
-                    print("Set inner flux to", seg_fluxes[j] / (2 * np.pi * a * l), "[cm day-1]")  
-                    x = rc.getDofCoordinates()
-                    y = rc.getSolutionHead()
-                    plt.plot(x, y)
-                    plt.show()                                       
+        seg_fluxes[j] = -rc.getInnerFlux() * (2 * np.pi * inner_radii[j] * l) / inner_radii  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)   
+    
+    print("one iteration done")
+    input()
+
+    soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day] 
+    print("here we go"); input()
         
-        # TODO outer flux
-        
-        for j, rc in enumerate(rich_cyls):  # simualte time step
-            if not isinstance(rc, list):  # avoid empty 
-                try:
-                    rc.solve(dt)
-                except:
-                    l = 1  # seg_length[j]
-                    a = seg_inner_radii[j]
-                    print("radius", a, "length", l)
-                    print("Set inner flux to", seg_fluxes[j] / (2 * np.pi * a * l), "[cm day-1]")  
-                    x = rc.getDofCoordinates()
-                    y = rc.getSolutionHead()
-                    plt.plot(x, y)
-                    plt.show()          
+    # run macroscopic soil model
+    s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
+    print("here we go"); input()
+    
+    s.solve(dt)    
+    print("here we go"); input()
 
-    else:
-        soil_fluxes = None
-
-    # soil_fluxes = comm.bcast(soil_fluxes, root=0)  # Soil part coult runs parallel
-
-    s.setSource(soil_fluxes)  # richards.py
-    s.solve(dt)
-
-    sx = s.getSolutionHead()  # richards.py
-    water = s.getWaterVolume()
-
-    if rank == 0:
-        n = round(float(i) / float(N) * 100.)
-        print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "]")
-        f = float(r.collar_flux(t, rx, sx))  # exact root collar flux
-        x_.append(t)
-        y_.append(f)
-        w_.append(water)
-        cpx.append(rx[0])
-        cps.append(float(sx[cci]))
-        print("Time:", t, ", collar flux", f, "cm^3/day at", rx[0], "cm xylem ""; domain water", water, "cm3")
-
-    t += dt
-
-""" Plot """
-if rank == 0:
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-    fig, ax1 = plt.subplots()
-    ax1.plot(x_, trans * sinusoidal(x_), 'k')  # potential transpiration
-    ax1.plot(x_, -np.array(y_), 'g')  # actual transpiration (neumann)
-    ax2 = ax1.twinx()
-    ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
-    ax1.set_xlabel("Time [d]")
-    ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
-    plt.show()
+    # calculate net fluxes
+    net_flux = (np.multiply(np.array(s.getWaterContent()), cell_volumes) - soil_water) 
+    for k, v in soil_fluxes.items():
+        net_flux[k] -= v * dt;    
+    print("sum", np.sum(net_flux))
 

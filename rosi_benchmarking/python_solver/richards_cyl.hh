@@ -39,19 +39,22 @@ public:
 	}
 
     /**
-     *
+     * [ kg / (m^2 \cdot s)]
      */
     double getInnerFlux() {
-    	return this->getNeumann(innerIdx)*rIn*1.; //  [ kg / (m^2 \cdot s)]  * area [m^2]
+    	return this->getNeumann(innerIdx); //  [ kg / (m^2 \cdot s)]
     }
 
     /**
      *
      */
     double getOuterFlux() {
-    	return this->getNeumann(outerIdx)*rOut*1.; //  [ kg / (m^2 \cdot s)] * area [m^2]
+    	return this->getNeumann(outerIdx); //  [ kg / (m^2 \cdot s)]
     }
 
+    /**
+     * Gets the pressure head at the inner boundary [cm]
+     */
     double getInnerHead() {
     	return this->getSolutionHeadAt(innerIdx);
     }
@@ -82,6 +85,7 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getSolutionHeadAt", &RichardsFoam::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsFoam::getWaterContent)
    .def("getWaterVolume",&RichardsFoam::getWaterVolume)
+   .def("getVelocity1D", &RichardsFoam::getVelocity1D)
    .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK)
    .def("setRegularisation",&RichardsFoam::setRegularisation)
    .def("setTopBC",&RichardsFoam::setTopBC)
