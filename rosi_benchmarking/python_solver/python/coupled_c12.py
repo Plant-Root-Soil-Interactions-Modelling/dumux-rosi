@@ -59,11 +59,11 @@ cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
 
-s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
-r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(16, 16, 40))  # cut root segments to grid (segments are not mapped after)
+# s.createGrid([-4., -4., -20.], [4., 4., 0.], [16, 16, 40])  # [cm]
+# r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(16, 16, 40))  # cut root segments to grid (segments are not mapped after)
 
-# s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
-# r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
+s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
+r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)
 
 s.setHomogeneousIC(-669.8 - 10, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
@@ -71,7 +71,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([loam])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
-s.setRegularisation(1.e-4, 1.e-4)
+# s.setRegularisation(1.e-4, 1.e-4)
 
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
@@ -83,7 +83,7 @@ start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
-dt = 3600. / (24 * 3600)  # [days] Time step must be very small
+dt = 120. / (24 * 3600)  # [days] Time step must be very small
 N = round(sim_time / dt)
 t = 0.
 
@@ -96,7 +96,7 @@ for i in range(0, N):
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("Fuxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
+        print("Fluxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(0., rx, sx))
 
     else:
         fluxes = None

@@ -5,8 +5,11 @@ from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
 import solver.plantbox as pb
 import solver.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
+
+import solver.van_genuchten as vg
+from solver.fv_grid import *
+import solver.richards_solver as rich
 
 import van_genuchten as vg
 
@@ -16,7 +19,7 @@ import matplotlib.pyplot as plt
 import timeit
 
 """ 
-Mai et al (2019) Scenario 1 water movement  
+Mai et al (2019) scenario 1 water movement  
 """
 N = 3  # number of cells in each dimension 
 loam = [0.08, 0.43, 0.04, 1.6, 50]
@@ -29,10 +32,10 @@ kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
 # print(kr, kx)
 
-NC = 10  #  NC-1 are the dof of the cylindrical problem
+NC = 10  # NC-1 are dof of the cylindrical problem
 logbase = 1.5
 
-q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] # transpiration
+q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] 
 sim_time = 20  # [day]
 NT = 1000  # iteration
 
@@ -42,7 +45,7 @@ critP = -15000  # [cm]
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()    
-s.setParameter("Problem.EnableGravity", "false")  # important in 1d axial-symmetric problem
+# s.setParameter("Problem.EnableGravity", "false")  # important in 1d axial-symmetric problem
 s.setHomogeneousIC(initial)  # cm pressure head
 s.setTopBC("noflux")
 s.setBotBC("noflux")
@@ -76,23 +79,16 @@ seg_length = r.segLength()
 """ Initialize local soil models (around each root segment) """
 cyls = []
 points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base=logbase)
+grid = FV_Grid1Dcyl(points)
+ndof = NC - 1
 ns = len(seg_length)  # number of segments 
-for i in range(0, ns):     
-    cpp_base = RichardsCylFoam()
-    cyl = RichardsWrapper(cpp_base)    
-    cyl.initialize()    
-    # plt.plot(points, [0.] * len(points), "b*"); plt.show()
-    cyl.createGrid1d(points)                 
-    cyl.setHomogeneousIC(initial)  # cm pressure head
-    cyl.setVGParameters([loam])
-    cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
-    cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]         
-    cyl.initializeProblem()
-    cyl.setCriticalPressure(critP)  # cm pressure head  
-    # cyl.setRegularisation(1.e-9, 1.e-9)                                           
-    cyls.append(cyl)    
+for i in range(0, ns):        
+    richards = rich.FV_Richards(grid, loam)  
+    richards.h0 = np.ones((ndof,)) * initial        
+    cyls.append(richards)    
 
 """ Simulation """
+rsx = np.zeros((ns,))  # xylem pressure at the root soil interface
 dt = sim_time / NT 
 
 min_rx, min_rsx, collar_sx = [], [], []  # cm
@@ -110,60 +106,65 @@ for i in range(0, NT):
     """
     csx = s.getSolutionHeadAt(cci)
     for j, cyl in enumerate(cyls):  # for each segment
-        rsx[j] = cyl.getInnerHead()  # [cm]                
+        rsx[j] = cyl.h0[0]  # [cm]                
     
     rx = r.solve(0., -q_r, csx, rsx, False, critP)  # [cm]   
 
     min_rsx.append(np.min(np.array(rsx)))
     collar_sx.append(csx)
     min_rx.append(np.min(np.array(rx)))                
-    print("Minimum of cylindrical model {:g} cm, minimal root xylem pressure {:g} cm".format(min_rsx[-1], min_rx[-1]))  
+    print("Minimum of cylindrical model {:g} cm, minimal root xylem pressure {:g} cm".format(min_rsx[-1], min_rx[-1]))      
 
     """
     Local soil model
-    """
+    """                  
     proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]             
-    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
+    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)         
     for j, cyl in enumerate(cyls):  # set cylindrical model fluxes
-        l = seg_length[j]
-        cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * r_root * l))  # [cm3/day] -> [cm /day]                                                                    
-        cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l))  # [cm3/day] -> [cm /day] TODO                                                           
-        cyl.ddt = 1.e-5  # [day] initial time step  
-        cyl.solve(dt)
-        realized_inner_fluxes[j] = -cyl.getInnerFlux() * (2 * np.pi * r_root * l) / r_root  # [cm/day] -> [cm3/day], ('/r_root' comes from cylindrical implementation) 
-        print("Propsed inner flux {:g} [cm3 day-1] realized {:g} [cm3 day-1]".format(proposed_inner_fluxes[j], realized_inner_fluxes[j]))  
-             
+        l = seg_length[j]    
+        # OUT - root surface
+        # cyl.bc[(0, 0)] = [cyl.bc_flux_out, proposed_inner_fluxes[j] / (2 * np.pi * r_root * l) , critPcyl, grid.mid[0]]  
+        cyl.bc[(0, 0)] = [cyl.bc_rootsystem, rx[j] , kr]  
+        # IN - outer radius
+        q = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
+        dx = points[ndof] - grid.mid[ndof - 1]
+        cyl.bc[(ndof - 1, 1)] = [cyl.bc_flux_in, q , 0., dx] 
+        # Simulate
+        cyl.solve([dt], 0.02, False)            
+        realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * r_root * l) / dt
+        # print("Propsed inner flux {:g} [cm3 day-1] realized {:g} [cm3 day-1]".format(proposed_inner_fluxes[j], realized_inner_fluxes[j]))   
+
     """
     Macroscopic soil model
     """   
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]    
+    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  
     s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
-    s.solve(dt)    
+    s.solve(dt)   
     
     new_soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3] 
     for k, root_flux in soil_fluxes.items():
         net_flux[k] -= root_flux * dt    
-    print("Summed net flux {:g}, max movement {:g} cm3".format(np.sum(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
-        
+    # print("Summed net flux {:g}, max movement {:g} cm3".format(np.sum(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
+    
     """ 
     Water (for output)
-    """
+    """    
     soil_water = new_soil_water
     water_domain.append(np.sum(soil_water))  # from previous time step 
     sum_flux = 0.
     for k, f in soil_fluxes.items():
         sum_flux += f
-    water_uptake.append(sum_flux)  # cm3     
-
+    water_uptake.append(sum_flux)  # cm3  
+    
     cyl_water_content = cyls[0].getWaterContent()  # segment 0
     cyl_water = 0.
     for i, wc in enumerate(cyl_water_content):
         r1 = points[i]
         r2 = points[i + 1]
         cyl_water += np.pi * (r2 * r2 - r1 * r1) * 1 * wc        
-    print("Water volume cylindric", cyl_water, "soil", soil_water[cci])
+    # print("Water volume cylindric", cyl_water, "soil", soil_water[cci])
     water_collar_cell.append(soil_water[cci])
     water_cyl.append(cyl_water)
 
@@ -197,27 +198,11 @@ ax4.set_ylabel("cm3")
 plt.show()      
   
 plt.title("Pressure")
-h = np.array(cyls[0].getSolutionHead())
-x = np.array(cyls[0].getDofCoordinates())
+h = np.array(cyls[0].h0)
+x = np.array(cyls[0].grid.mid)
 plt.plot(x, h, "b*")
 plt.xlabel("x (cm)")
 plt.ylabel("Matric potential (cm)")
-plt.show()   
-   
-plt.title("Darcy velocity")
-h = np.array(cyls[0].getSolutionHead())
-x = np.array(cyls[0].getDofCoordinates())
-print(np.diff(x, axis=0))
-print(np.diff(h, axis=0))
-dhdx = np.divide(np.diff(h, axis=0), np.diff(x, axis=0))
-sp = vg.Parameters(loam)
-hc = []
-for h_ in h[1:]: 
-    hc.append(vg.hydraulic_conductivity(h_, sp))  # mid heads
-velocity = np.multiply(np.array(hc), dhdx)
-plt.plot(x[0:-1], velocity / 100. / 24. / 3600., "b*")
-plt.xlabel("x (cm)")
-plt.ylabel("Velocity (m/s)")
 plt.show()   
 
 print("fin")
