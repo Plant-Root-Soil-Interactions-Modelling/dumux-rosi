@@ -57,16 +57,14 @@ def water_diffusivity(TH, theta_i, theta_sur, sp):
     return D
 
 
-def water_content(h, sp):
-#     h = np.minimum(h, np.zeros(h.shape))
-#     h = np.maximum(h, np.ones(h.shape) * -30000.)    
+def water_content(h, sp): 
     """ returns the volumetric water content [1] at a given matric potential [cm] according to the VanGenuchten model (Eqn 21) """ 
     return sp.theta_R + (sp.theta_S - sp.theta_R) / pow(1. + pow(sp.alpha * abs(h), sp.n), sp.m)
 
 
 def effective_saturation(h, sp):
     """ returns the effective saturation [1] at a given matric potential [cm] according to the VanGenuchten model (dimensionless water content, Eqn 2) """
-    h = min(h, 0)  # pressure head is negative, zero the maximum
+    # h = min(h, 0)  # pressure head is negative, zero the maximum
     theta = water_content(h, sp)
     se = (theta - sp.theta_R) / (sp.theta_S - sp.theta_R)
     return se

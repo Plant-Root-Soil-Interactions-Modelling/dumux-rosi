@@ -20,11 +20,13 @@ class FV_Richards:
     def __init__(self, grid :FV_Grid, soil):
         self.grid = grid  # simplistic fv grid           
         self.soil = vg.Parameters(soil)  #  currently, homogeneous soil (todo)                
+        i_ = np.array(range(0, self.grid.n_cells), dtype=np.int64)
+        cols = np.ones((1, self.grid.number_of_neighbours()), dtype=np.int64)  
+        self.alpha_i = np.outer(i_, cols)  # construtor 
+        self.alpha_j = self.grid.neighbours  # rename  
         # matrix
         self.k = np.zeros(grid.neighbours.shape)  # contains precomputed  hydraulic conductivities [cm/day]
         self.alpha = np.zeros((grid.n_cells * grid.number_of_neighbours(),))
-        self.alpha_i = np.zeros((grid.n_cells * grid.number_of_neighbours(),), dtype=np.int64)
-        self.alpha_j = np.zeros((grid.n_cells * grid.number_of_neighbours(),), dtype=np.int64)      
         self.beta_const = np.zeros((grid.n_cells,))  # const part of diagonal entries [1] 
         self.f_const = np.zeros((grid.n_cells,))  # const part of load vector [1]           
         # 
@@ -37,75 +39,61 @@ class FV_Richards:
         
     def create_k(self):
         """ sets up hydraulic conductivities from last time step solution @param h , for each neighbour"""
-        for i in range(0, self.grid.n_cells):                        
-            for j, ni in enumerate(self.grid.neighbours[i, :]):                        
-                    if ni > -1:
-                        a = vg.hydraulic_conductivity(self.h0[i], self.soil)
-                        b = vg.hydraulic_conductivity(self.h0[ni], self.soil)
-                        self.k[i, j] = 2 * a * b / (a + b)  # harmonic 
-#                        self.k[i, j] = 0.5 * (a + b)  # arithmetic
-#                        self.k[i, j] = vg.hydraulic_conductivity(0.5 * (h[i] + h[ni]), self.soil)  # arithmetic mean2
-    
+        cols = np.ones((1, self.grid.number_of_neighbours()))
+        a = vg.hydraulic_conductivity(self.h0, self.soil)
+        a_ = np.outer(a, cols) 
+        b = vg.hydraulic_conductivity(self.h0[self.grid.neighbours], self.soil)        
+        self.k = 2 * np.divide(np.multiply(a_, b), a_ + b)
+
     def create_f_const(self):
         """ sets up constant part of the load vector """
         self.f_const = vg.water_content(self.h0, self.soil)   
                         
     def create_alpha_beta(self, dt):  
-        """ calculate net fluxes over the cells """
-        c = 0
-        for i in range(0, self.grid.n_cells):                        
-            self.beta_const[i] = 0.
-            for j, ni in enumerate(self.grid.neighbours[i, :]):                        
-                if ni > -1:
-                    dx = np.linalg.norm(self.grid.mid[i] - self.grid.mid[ni])  # we could precompute these
-                    v = dt * self.k[i, j] * (self.grid.area[i, j] / self.grid.volume[i]) / dx
-                    self.alpha[c] = -v 
-                    self.alpha_i[c] = i
-                    self.alpha_j[c] = ni
-                    c += 1
-                    self.beta_const[i] += v                    
+        """ calculate net fluxes over the cells """        
+        v = dt * np.divide(np.multiply(self.grid.area_per_volume, self.k), self.grid.dx) 
+        self.alpha = -v
+        self.beta_const = np.sum(v, axis=1)
     
-    def bc_flux(self, i, j, v):
+    def bc_flux(self, q):
         """ flux boundary condition """
-        return v[0] * (self.grid.area[i, j] / self.grid.volume[i])  # [1/day]   
+        return q  # [cm3 / cm2 / day]   
     
-    def bc_flux_out(self, i, j, v):
+    def bc_flux_out(self, i, q, crit_p, dx):
         """ outflow boundary condition limits to out or zero flux, and to critical pressure"""
-        q, crit_p, dx = v[0], v[1], v[2]  
-        q = min(q, 0.)  # limit to negative (out) flux  
         k = vg.hydraulic_conductivity(self.h0[i], self.soil)
-        max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible outflux   
-        return min(max(q, max_q), 0.) * (self.grid.area[i, j] / self.grid.volume[i])  # [1/day]    
+        max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible outflux 
+        # print("bc_flux_out", q, max_q, i , crit_p, self.h0[i], k, dx)  
+        return min(max(q, max_q), 0.)  # [cm3 / cm2 / day]   
 
-    def bc_flux_in(self, i, j, v):
+    def bc_flux_in(self, i, q, crit_p, dx):
         """ outflow boundary condition limits to out or zero flux, and to critical pressure"""
-        q, crit_p, dx = v[0], v[1], v[2]  
-        q = max(q, 0.)  # limit to positive (in) flux  
-        k = vg.hydraulic_conductivity(self.h0[i], self.soil)
-        max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible outflux   
-        # print("bc_flux_in", q, max_q, i , j, crit_p, self.h0[i], k, dx)
-        return max(min(q, max_q), 0.) * (self.grid.area[i, j] / self.grid.volume[i])  # [1/day]    
+        k = vg.hydraulic_conductivity(self.h0[i], self.soil)  # [cm / day]
+        max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible outflux [cm3 / cm2 /day]   
+        # print("bc_flux_in", q, max_q, i, crit_p, self.h0[i], k, dx)
+        return max(min(q, max_q), 0.)  # [cm3 / cm2 / day]    
 
-    def bc_rootsystem(self, i, j, v):
-        """ flux is given by radial conductivity times difference in matric potentials """
-        rx = v[0]  # root xylem matric potential [cm]
-        kr = v[1]  # root condcutivitiy cm3 / day          
-        k = vg.hydraulic_conductivity(self.h0[i], self.soil)            
-        q = min(kr, k) * (rx - self.h0[i]) * (self.grid.area[i, j] / self.grid.volume[i])  #
-        # print("root system flux", rx, self.h0[i], kr, k, q)            
-        return min(q, 0.)  # limit to outflux  [1/day]
+    def bc_rootsystem(self, rx, kr):
+        """ flux is given by radial conductivity times difference in matric potentials 
+        @param rx      root xylem matric potential [cm]
+        @param kr      root radial condcutivitiy [1 / day] (intrinsic)
+        """
+        h = self.getInnerHead()
+        k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]              
+        dx = self.grid.nodes[0]  # self.grid.mid[0]
+        q = min(kr, k / dx) * (rx - h)  
+        return min(q, 0.)  # limit to outflux  # [cm3 / cm2 / day] 
 
     def bc_to_source(self, dt):
         """ 
         Computes a cell source term from a boundary conditions given in self.bc, 
-        self.bc is dictionary with keys (cell, face_id) and 
-        values is a list, where the first argument is a function, i.e. v[0](cell_id, face_id, v[1:]), 
-        and the other list values are passed to this boundary funcntion    
+        self.bc is dictionary with keys (cell, face_id) and values is a boundary function returning a value [cm3 / cm2 / day].          
+        
+        Only one face per cell is allowed, overwrites any other sources    
         """          
-        for k, v in self.bc.items(): 
+        for k, bc in self.bc.items(): 
             i, j = k[0], k[1]  # cell_id, face_id        
-            bc = v[0]  # fetch lambda bc function            
-            self.sources[i] = dt * bc(i, j, v[1:])
+            self.sources[i] = dt * bc() * self.grid.area_per_volume[i, j]
     
     def getFlux(self, cell_id, face_id):
         """ flux [cm3/cm2/day] over the inner face given by @param face_id in cell @param cell_id """
@@ -116,20 +104,19 @@ class FV_Richards:
         """ current water content for each cell """
         return vg.water_content(self.h0, self.soil)
     
+    def getInnerHead(self):
+        """ extrapolates result to root surface (specalized 1d) """        
+        right_neighbour = self.grid.neighbours[0, 1]  
+        dx0 = self.grid.mid[0]  #  (self.grid.mid[0] - self.grid.nodes[0])         
+        dx1 = self.grid.mid[1] - self.grid.mid[0]  
+        h0, h1 = self.h0[0], self.h0[1]
+        h = h0 - ((h1 - h0) / dx1) * dx0    
+        # print("linear head extrapolation", h0, h1, h, dx0, dx1, 1) 
+        return h             
+    
     def getInnerFlux(self):
+        """ exact flux at cell_id = 0, todo generalize """
         return self.innerFlux
-#         q = self.bc[(0, 0)][0]
-#         crit_p = self.bc[(0, 0)][1]  
-#         max(q, 0.)
-#         dx = self.grid.mid[0] - self.grid.nodes[0]  # TODO only holds for 1D, missing concept    
-#         a = vg.hydraulic_conductivity(h0, self.soil)
-#         b = vg.hydraulic_conductivity(crit_p, self.soil)
-#         # k = 2 * a * b / (a + b)  
-#         # k = (a + b) / 2             
-#         k = a 
-#         max_q = k * (crit_p - h0) / dx  # SIGN        
-#         # print("InnerFlux", q, max_q, h0)
-#         return min(max(q, max_q), 0.)    
 
     def picard_iteration(self, dt):        
         """ fix point iteration """
@@ -149,7 +136,7 @@ class FV_Richards:
             beta = c_pm1 + self.beta_const
             self.bc_to_source(dt)
             f = np.multiply(c_pm1, h_pm1) - theta_pm1 + self.f_const + self.sources           
-            A = sparse.coo_matrix((self.alpha, (self.alpha_i, self.alpha_j)))
+            A = sparse.coo_matrix((self.alpha.flat, (self.alpha_i.flat, self.alpha_j.flat)))
             B = sparse.coo_matrix((beta, (np.array(range(0, n)), np.array(range(0, n)))))  
 #             plt.spy(A + B)
 #             plt.show()
@@ -185,7 +172,6 @@ class FV_Richards:
             h2, ok, i = self. picard_iteration(dt_)
 
             if ok:          
-                self.innerFlux += self.sources[0] / (self.grid.area[0, 0] / self.grid.volume[0])  # exact inner flux    
                 sim_time = sim_time + dt_  # increase current time
                 
                 if output_times[k] <= sim_time:
@@ -195,6 +181,9 @@ class FV_Richards:
                     print('Time {:g} days, iterations {:g}, last time step {:g}'.format(sim_time, i, dt_))
                 
                 self.h0 = h2  
+
+                self.bc_to_source(dt_)
+                self.innerFlux += self.sources[0] / (self.grid.area_per_volume[0, 0])  # exact inner flux    
                 
                 if dt_ == dt:
                     if i < 5:

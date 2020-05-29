@@ -37,7 +37,7 @@ logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] 
 sim_time = 20  # [day]
-NT = 1000  # iteration
+NT = 200  # iteration
 
 critP = -15000  # [cm]
 
@@ -106,7 +106,7 @@ for i in range(0, NT):
     """
     csx = s.getSolutionHeadAt(cci)
     for j, cyl in enumerate(cyls):  # for each segment
-        rsx[j] = cyl.h0[0]  # [cm]                
+        rsx[j] = cyl.getInnerHead()  # [cm]                    
     
     rx = r.solve(0., -q_r, csx, rsx, False, critP)  # [cm]   
 
@@ -121,16 +121,18 @@ for i in range(0, NT):
     proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]             
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)         
     for j, cyl in enumerate(cyls):  # set cylindrical model fluxes
-        l = seg_length[j]    
-        # OUT - root surface
-        # cyl.bc[(0, 0)] = [cyl.bc_flux_out, proposed_inner_fluxes[j] / (2 * np.pi * r_root * l) , critPcyl, grid.mid[0]]  
-        cyl.bc[(0, 0)] = [cyl.bc_rootsystem, rx[j] , kr]  
-        # IN - outer radius
-        q = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
-        dx = points[ndof] - grid.mid[ndof - 1]
-        cyl.bc[(ndof - 1, 1)] = [cyl.bc_flux_in, q , 0., dx] 
+        l = seg_length[j]        
+#         cyl.dx_root = points[1] - grid.mid[0]
+#         cyl.q_root = proposed_inner_fluxes[j] / (2 * np.pi * r_root * l)
+#         cyl.bc[(0, 0)] = lambda: cyl.bc_flux_out(0, cyl.q_root , critP, cyl.dx_root)
+        cyl.kr_inner = kr
+        cyl.rx_inner = rx[j]  
+        cyl.bc[(0, 0)] = lambda: cyl.bc_rootsystem(cyl.rx_inner , cyl.kr_inner)  
+        cyl.dx_outer = points[ndof] - grid.mid[ndof - 1]
+        cyl.q_outer = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
+        cyl.bc[(ndof - 1, 1)] = lambda: cyl.bc_flux_in(ndof - 1, cyl.q_outer , 0., cyl.dx_outer) 
         # Simulate
-        cyl.solve([dt], 0.02, False)            
+        cyl.solve([dt], 0.01, False)            
         realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * r_root * l) / dt
         # print("Propsed inner flux {:g} [cm3 day-1] realized {:g} [cm3 day-1]".format(proposed_inner_fluxes[j], realized_inner_fluxes[j]))   
 
@@ -146,7 +148,7 @@ for i in range(0, NT):
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3] 
     for k, root_flux in soil_fluxes.items():
         net_flux[k] -= root_flux * dt    
-    # print("Summed net flux {:g}, max movement {:g} cm3".format(np.sum(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
+    print("Summed net flux {:g}, max movement {:g} cm3".format(np.sum(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
     
     """ 
     Water (for output)
@@ -163,7 +165,7 @@ for i in range(0, NT):
     for i, wc in enumerate(cyl_water_content):
         r1 = points[i]
         r2 = points[i + 1]
-        cyl_water += np.pi * (r2 * r2 - r1 * r1) * 1 * wc        
+        cyl_water += np.pi * (r2 * r2 - r1 * r1) * seg_length[0] * wc        
     # print("Water volume cylindric", cyl_water, "soil", soil_water[cci])
     water_collar_cell.append(soil_water[cci])
     water_cyl.append(cyl_water)

@@ -29,7 +29,7 @@ kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
 # print(kr, kx)
 
-NC = 10  #  NC-1 are the dof of the cylindrical problem
+NC = 50  #  NC-1 are the dof of the cylindrical problem
 logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] # transpiration
@@ -127,7 +127,7 @@ for i in range(0, NT):
     for j, cyl in enumerate(cyls):  # set cylindrical model fluxes
         l = seg_length[j]
         cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * r_root * l))  # [cm3/day] -> [cm /day]                                                                    
-        cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l))  # [cm3/day] -> [cm /day] TODO                                                           
+        cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l))  # [cm3/day] -> [cm /day]                                                            
         cyl.ddt = 1.e-5  # [day] initial time step  
         cyl.solve(dt)
         realized_inner_fluxes[j] = -cyl.getInnerFlux() * (2 * np.pi * r_root * l) / r_root  # [cm/day] -> [cm3/day], ('/r_root' comes from cylindrical implementation) 
