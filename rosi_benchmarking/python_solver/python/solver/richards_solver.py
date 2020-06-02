@@ -36,6 +36,8 @@ class FV_Richards:
         self.innerFlux = 0.  # cm3/cm2/day 
         #
         self.gravitation = 0  # assure dimension equals grid.dim (todo)
+#                 self.bc_f = { "flux": lambda: self.bc_flux, "flux_in": lambda: self.bc_flux_in, "flux_out":lambda: self.bc_flux_ot,
+#                      "rootsystem": lambda: self.bc_rootsystem }        
         
     def create_k(self):
         """ sets up hydraulic conductivities from last time step solution @param h , for each neighbour"""
@@ -67,7 +69,7 @@ class FV_Richards:
         return min(max(q, max_q), 0.)  # [cm3 / cm2 / day]   
 
     def bc_flux_in(self, i, q, crit_p, dx):
-        """ outflow boundary condition limits to out or zero flux, and to critical pressure"""
+        """ inflow boundary condition limits to out or zero flux, and to critical pressure"""
         k = vg.hydraulic_conductivity(self.h0[i], self.soil)  # [cm / day]
         max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible outflux [cm3 / cm2 /day]   
         # print("bc_flux_in", q, max_q, i, crit_p, self.h0[i], k, dx)
@@ -89,11 +91,22 @@ class FV_Richards:
         Computes a cell source term from a boundary conditions given in self.bc, 
         self.bc is dictionary with keys (cell, face_id) and values is a boundary function returning a value [cm3 / cm2 / day].          
         
-        Only one face per cell is allowed, overwrites any other sources    
-        """          
-        for k, bc in self.bc.items(): 
-            i, j = k[0], k[1]  # cell_id, face_id        
-            self.sources[i] = dt * bc() * self.grid.area_per_volume[i, j]
+        Only one face per cell is allowed, overwrites any other sources
+        
+        dictionary with lambda functions would be nicer, but causes trouble with parallelisation    
+        """                                     
+        for (i, j), (type, p1, p2, p3) in self.bc.items(): 
+            if type == "rootsystem":
+                bc = self.bc_rootsystem(p1, p2)
+            elif type == "flux_in":
+                bc = self.bc_flux_in(i, p1, p2, p3)
+            elif type == "flux_out":
+                bc = self.bc_flux_out(i, p1, p2, p3)
+            elif type == "flux":
+                bc = self.bc_flux_out()
+            else:
+                raise("Unkown boundary condition")
+            self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]
     
     def getFlux(self, cell_id, face_id):
         """ flux [cm3/cm2/day] over the inner face given by @param face_id in cell @param cell_id """

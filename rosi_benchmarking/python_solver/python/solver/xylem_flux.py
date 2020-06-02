@@ -24,7 +24,7 @@ class XylemFluxPython(XylemFlux):
         else:
             super().__init__(rs)
 
-    def solve_neumann(self, sim_time :float, value :float, sxx, cells :bool) :
+    def solve_neumann(self, sim_time :float, value :float, sxx, cells :bool, soil_k=[]) :
         """ solves the flux equations, with a neumann boundary condtion,
             @param sim_time [day]      simulation time to evaluate age dependent conductivities
             @param value [cm3 day-1]   tranpirational flux is negative 
@@ -33,7 +33,10 @@ class XylemFluxPython(XylemFlux):
 #         I, J, V, b = self.linear_system(sim_time)  # Python (care no age or type dependencies!)
 #         self.aB = b
 #         Q = sparse.coo_matrix((V, (I, J)))
-        self.linearSystem(sim_time, sxx, cells)  # C++
+        if len(soil_k) > 0:
+            self.linearSystem(sim_time, sxx, cells, soil_k)  # C++
+        else:
+            self.linearSystem(sim_time, sxx, cells)
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_neumann(Q, self.aB, [0], [value / (self.rho * self.g)])  # cm3 day-1 -> something crazy (?)
@@ -41,12 +44,16 @@ class XylemFluxPython(XylemFlux):
         # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
 
-    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells :bool):
+    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells :bool, soil_k=[]):
         """ solves the flux equations, with a dirichlet boundary condtion,
             @param sim_time [day]     simulation time to evaluate age dependent conductivities
             @param value [cm]         root collar pressure head 
             @param sx [cm]            soil pressure head around root collar segment 
          """
+        if len(soil_k) > 0:         
+            self.linearSystem(sim_time, sxx, cells, soil_k)  # C++
+        else:
+            self.linearSystem(sim_time, sxx, cells)
         self.linearSystem(sim_time, sxx, cells)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
@@ -54,7 +61,7 @@ class XylemFluxPython(XylemFlux):
         x = LA.spsolve(Q, b, use_umfpack=True)
         return x
 
-    def solve(self, sim_time :float, trans :float, sx :float, sxx, cells :bool, wilting_point :float):
+    def solve(self, sim_time :float, trans :float, sx :float, sxx, cells :bool, wilting_point :float, soil_k=[]):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
@@ -68,7 +75,7 @@ class XylemFluxPython(XylemFlux):
 
         if sx >= wilting_point - eps:
 
-            x = self.solve_neumann(sim_time, trans, sxx, cells)
+            x = self.solve_neumann(sim_time, trans, sxx, cells, soil_k)
 
             if x[0] <= wilting_point:
                 Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
@@ -85,7 +92,7 @@ class XylemFluxPython(XylemFlux):
             print()
             print("solve_wp used Dirichlet because collar cell soil matric potential is below wilting point", sx)
             print()
-            x = self.solve_dirichlet(sim_time, wilting_point, sx, sxx, cells)
+            x = self.solve_dirichlet(sim_time, wilting_point, sx, sxx, cells, soil_k)
 
         return x
 

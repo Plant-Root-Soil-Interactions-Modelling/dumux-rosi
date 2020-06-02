@@ -11,17 +11,20 @@ import solver.van_genuchten as vg
 from solver.fv_grid import *
 import solver.richards_solver as rich
 
-import van_genuchten as vg
+import solver.van_genuchten as vg
 
 from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
+from multiprocessing import Pool
+import copy 
 
 """ 
 Mai et al (2019) scenario 1 water movement  
 """
 N = 3  # number of cells in each dimension 
+domain_volume = 3 * 3 * 3  # cm 3
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 initial = -100.  # [cm] initial soil matric potential 
 
@@ -30,7 +33,9 @@ kr = 2.e-13 * 1000 * 9.81  # [m / (Pa s)] -> [ 1 / s ]
 kx = 5.e-17 * 1000 * 9.81  # [m^4 / (Pa s)] -> [m3 / s] 
 kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
-# print(kr, kx)
+# soil = vg.Parameters(loam)  
+# print(kr, vg.hydraulic_conductivity(-1000, soil) / r_root, vg.hydraulic_conductivity(-2000, soil) / r_root)
+# input()
 
 NC = 10  # NC-1 are dof of the cylindrical problem
 logbase = 1.5
@@ -82,10 +87,27 @@ points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.l
 grid = FV_Grid1Dcyl(points)
 ndof = NC - 1
 ns = len(seg_length)  # number of segments 
-for i in range(0, ns):        
+cyls = [None] * ns
+
+print("start initializing")
+
+
+def initialize_cyl(i): 
+    """ initialization of  local cylindrical model """
     richards = rich.FV_Richards(grid, loam)  
     richards.h0 = np.ones((ndof,)) * initial        
-    cyls.append(richards)    
+    return richards  
+
+
+def simulate_cyl(cyl):
+    cyl.solve([sim_time / NT], 0.01, False)            
+    return cyl    
+
+
+start_time = timeit.default_timer()
+pool = Pool()  # defaults to number of available CPU's
+cyls = pool.map(initialize_cyl, range(ns))         
+print ("Initialized in", timeit.default_timer() - start_time, " s")
 
 """ Simulation """
 rsx = np.zeros((ns,))  # xylem pressure at the root soil interface
@@ -96,6 +118,8 @@ water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
 rsx = np.zeros((ns,))  # matric potential at the root soil interface [cm]
 cell_volumes = s.getCellVolumes()
+inital_soil_water = np.sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))
+
 net_flux = np.zeros(cell_volumes.shape)
 realized_inner_fluxes = np.zeros((len(cyls),))
 
@@ -108,7 +132,10 @@ for i in range(0, NT):
     for j, cyl in enumerate(cyls):  # for each segment
         rsx[j] = cyl.getInnerHead()  # [cm]                    
     
-    rx = r.solve(0., -q_r, csx, rsx, False, critP)  # [cm]   
+    rho = 1  # [g cm-3]
+    g = 9.8065 * 100.*24.*3600.*24.*3600.  #  [cm day-2]    
+    soil_k = vg.hydraulic_conductivity(rsx, cyls[0].soil) / r_root / (rho * g)  # schirch
+    rx = r.solve(0., -q_r, csx, rsx, False, critP, soil_k)  # [cm]   
 
     min_rsx.append(np.min(np.array(rsx)))
     collar_sx.append(csx)
@@ -118,23 +145,23 @@ for i in range(0, NT):
     """
     Local soil model
     """                  
-    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]             
-    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)         
-    for j, cyl in enumerate(cyls):  # set cylindrical model fluxes
-        l = seg_length[j]        
+    # proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]             
+    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)     
+
+    for j, cyl in enumerate(cyls):  # boundary condtions
+        l = seg_length[j]    
 #         cyl.dx_root = points[1] - grid.mid[0]
 #         cyl.q_root = proposed_inner_fluxes[j] / (2 * np.pi * r_root * l)
-#         cyl.bc[(0, 0)] = lambda: cyl.bc_flux_out(0, cyl.q_root , critP, cyl.dx_root)
-        cyl.kr_inner = kr
-        cyl.rx_inner = rx[j]  
-        cyl.bc[(0, 0)] = lambda: cyl.bc_rootsystem(cyl.rx_inner , cyl.kr_inner)  
-        cyl.dx_outer = points[ndof] - grid.mid[ndof - 1]
-        cyl.q_outer = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
-        cyl.bc[(ndof - 1, 1)] = lambda: cyl.bc_flux_in(ndof - 1, cyl.q_outer , 0., cyl.dx_outer) 
-        # Simulate
-        cyl.solve([dt], 0.01, False)            
-        realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * r_root * l) / dt
-        # print("Propsed inner flux {:g} [cm3 day-1] realized {:g} [cm3 day-1]".format(proposed_inner_fluxes[j], realized_inner_fluxes[j]))   
+#         cyl.bc[(0, 0)] = ("flux_out",cyl.q_root , critP, cyl.dx_root)
+        cyl.bc[(0, 0)] = ("rootsystem", rx[j], kr, 0)  
+        dx_outer = points[ndof] - grid.mid[ndof - 1]
+        q_outer = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
+        cyl.bc[(ndof - 1, 1)] = ("flux_in", q_outer , 0., dx_outer) 
+                                
+    cyls = pool.map(simulate_cyl, cyls)  # simulate
+    
+    for j, cyl in enumerate(cyls):  # res          
+        realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * r_root * seg_length[j]) / dt        
 
     """
     Macroscopic soil model
@@ -171,14 +198,14 @@ for i in range(0, NT):
     water_cyl.append(cyl_water)
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-
+ 
 ax1.set_title("Water amount")
 ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label="water cell")
 ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cyl), label="water cylindric")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
-
+ 
 ax2.set_title("Pressure")
 ax2.plot(np.linspace(0, sim_time, NT), np.array(collar_sx), label="soil at root collar")
 ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
@@ -187,24 +214,49 @@ ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
 # plt.ylim(-15000, 0) 
- 
+  
 ax3.set_title("Water uptake")
 ax3.plot(np.linspace(0, sim_time, NT), -np.array(water_uptake))
 ax3.set_xlabel("Time (days)")
 ax3.set_ylabel("Uptake (cm/day)") 
- 
+  
 ax4.set_title("Water in domain")
 ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
 ax4.set_xlabel("Time (days)")
 ax4.set_ylabel("cm3")
 plt.show()      
-  
-plt.title("Pressure")
-h = np.array(cyls[0].h0)
-x = np.array(cyls[0].grid.mid)
-plt.plot(x, h, "b*")
-plt.xlabel("x (cm)")
-plt.ylabel("Matric potential (cm)")
-plt.show()   
+#   
+# plt.title("Pressure")
+# h = np.array(cyls[0].h0)
+# x = np.array(cyls[0].grid.mid)
+# plt.plot(x, h, "b*")
+# plt.xlabel("x (cm)")
+# plt.ylabel("Matric potential (cm)")
+# plt.show()   
+
+# fig, ax1 = plt.subplots()
+# x_ = np.linspace(0, sim_time, NT)
+# ax1.plot(x_, q_r * np.ones((len(x_),)), 'k')  # potential transpiration
+# print(sim_time / NT)
+# ax1.plot(x_, -np.array(water_uptake), 'g')  # actual transpiration (neumann)
+# ax2 = ax1.twinx()
+# ax2.plot(x_, np.cumsum(-np.array(water_uptake)), 'c--')  # cumulative transpiration (neumann)
+# ax1.set_xlabel("Time [d]")
+# ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
+# ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+# plt.show()
+
+fig, ax1 = plt.subplots()
+x_ = np.linspace(0, sim_time, NT)
+ax1.plot(x_, q_r * np.ones(x_.shape), 'k')  # potential transpiration
+print(sim_time / NT)
+ax1.plot(x_, -np.array(water_uptake), 'g')  # actual transpiration (neumann)
+ax2 = ax1.twinx()
+ # ax2.plot(x_, -np.cumsum(water_uptake), 'c--')  # cumulative transpiration (neumann)
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
+ax1.set_xlabel("Time [d]")
+ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
+ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+plt.show()
 
 print("fin")
