@@ -84,7 +84,7 @@ class FV_Richards:
         k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]              
         dx = self.grid.nodes[0]  # self.grid.mid[0]
         q = min(kr, k / dx) * (rx - h)  
-        return min(q, 0)  # [cm3 / cm2 / day] 
+        return q  # [cm3 / cm2 / day] 
 
     def bc_rootsystem_exact(self, rx0, rx1, kr, kz, a, l):
         """ flux is given following Meunier et al., using exact solution over single segment  
@@ -92,6 +92,9 @@ class FV_Richards:
         @param kr      root radial condcutivitiy [1 / day] (intrinsic)
         """
         h = self.getInnerHead()
+        k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]              
+        dx = self.grid.nodes[0]  # self.grid.mid[0]
+        kr = min(kr, k / dx)           
         f = -2 * a * np.pi * kr
         tau = np.sqrt(2 * a * np.pi * kr / kz)  # sqrt(c) [cm-1]
         d = np.exp(-tau * l) - np.exp(tau * l)  #  det                

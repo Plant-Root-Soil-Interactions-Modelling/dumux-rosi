@@ -29,12 +29,12 @@ kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
 # print(kr, kx)
 
-NC = 50  #  NC-1 are the dof of the cylindrical problem
+NC = 10  #  NC-1 are the dof of the cylindrical problem
 logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] # transpiration
 sim_time = 20  # [day]
-NT = 1000  # iteration
+NT = 500  # iteration
 
 critP = -15000  # [cm]
 

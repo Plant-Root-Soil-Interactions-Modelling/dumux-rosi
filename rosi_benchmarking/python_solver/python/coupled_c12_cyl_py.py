@@ -30,12 +30,12 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
-min_b = [-5., -5., -20.]
-max_b = [5., 5., 0.]
-domain_volume = 10 * 10 * 20  # cm 3
-cell_number = [10, 10, 20]
+min_b = [-4., -4., -15.]
+max_b = [4., 4., 0.]
+domain_volume = 8 * 8 * 15  # cm3
+cell_number = [10, 10, 15]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
-initial = -100
+initial = -659.8
 
 kx = 4.32e-2 
 kr = 1.728e-4
@@ -47,15 +47,15 @@ logbase = 1.5
 
 periodic = False  
  
-sim_time = 7  # [day]
-NT = 1400  # iteration
+sim_time = 3  # [day]
+NT = 216  # iteration ( 3 days / 216 = 1200 s)
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
 s.createGrid(min_b, max_b, cell_number)  # [cm]
-s.setHomogeneousIC(initial, False)  # cm pressure head, equilibrium
+s.setHomogeneousIC(initial - 7.5, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([loam])
@@ -63,18 +63,26 @@ s.initializeProblem()
 s.ddt = 1.e-5  # [day] initial Dumux time step 
 
 """ Initialize xylem model (a)"""
-r = XylemFluxPython("../grids/RootSystem.rsml")
+old_rs = XylemFluxPython("../grids/RootSystem_big.rsml")
+ana = pb.SegmentAnalyser(old_rs.rs)
+ana.filter("creationTime", 0., 8.)
+ana.crop(pb.SDF_PlantBox(7., 7., 14.))  # that's akward.. (but I wait for the final rsml).
+ana.pack()
+print("\nAfter 8 days", len(ana.segments))
+rs = pb.MappedSegments(ana.nodes, ana.segments, ana.data["radius"]) 
+r = XylemFluxPython(rs)  # <-- or final of you root system
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]))  
 r.setKr([kr])  # [cm^3/day]
 r.setKx([kx])  # [1/day]
-
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 
 nodes = r.get_nodes()
 segs = r.get_segments()
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
+
+print("Cut to", len(segs), "segments\n")
 
 # for i in r.rs.cell2seg[cci]:
 #     print("cell fun...", i)
@@ -96,11 +104,12 @@ def initialize_cyl(i):
     """ initialization of  local cylindrical model """
     a_in = inner_radii[i]
     a_out = outer_radii[i]  
-    if a_in < a_out:        
+    if a_in < a_out: 
+        z = 0.5 * (nodes[segs[i, 0], 2] + nodes[segs[i, 1], 2])       
         points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base=logbase)
         grid = FV_Grid1Dcyl(points)
         richards = rich.FV_Richards(grid, loam)  
-        richards.h0 = np.ones((ndof,)) * initial        
+        richards.h0 = np.ones((ndof,)) * (initial + z + 7.5)        
         return richards  
     else:
         print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
@@ -171,11 +180,9 @@ for i in range(0, NT):
     
     for j, cyl in enumerate(cyls):  # boundary condtions
         l = seg_length[j]    
-#         cyl.dx_root = points[1] - grid.mid[0]
-#         cyl.q_root = proposed_inner_fluxes[j] / (2 * np.pi * r_root * l)
-#         cyl.bc[(0, 0)] = ("flux_out",cyl.q_root , critP, cyl.dx_root)
         rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
-        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])  # TODO rx lives on the NODES !!!! 
+        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])  
+        # cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr, kx, inner_radii[j], l ])  
         dx_outer = cyl.grid.nodes[ndof] - cyl.grid.mid[ndof - 1]
         q_outer = proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l)
         cyl.bc[(ndof - 1, 1)] = ("flux_in", [q_outer , 0., dx_outer]) 

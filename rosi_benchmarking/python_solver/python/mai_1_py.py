@@ -50,7 +50,7 @@ critP = -15000  # [cm]
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()    
-# s.setParameter("Problem.EnableGravity", "false")  # important in 1d axial-symmetric problem
+s.setParameter("Problem.EnableGravity", "false")  # important in 1d axial-symmetric problem
 s.setHomogeneousIC(initial)  # cm pressure head
 s.setTopBC("noflux")
 s.setBotBC("noflux")
@@ -149,13 +149,13 @@ for i in range(0, NT):
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)     
 
     for j, cyl in enumerate(cyls):  # boundary condtions
-        l = seg_length[j]    
-        rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
-        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])  
-#         kr_ = min(soil_k[j], kr)
-#         cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr_, kx, r_root, l ])  
+        l = seg_length[j]          
+        # rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
+        # cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])  
+        cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr, kx, r_root, l ])  
         dx_outer = points[ndof] - grid.mid[ndof - 1]
         q_outer = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
+        # print(q_outer)
         cyl.bc[(ndof - 1, 1)] = ("flux_in", [q_outer , 0., dx_outer]) 
                                 
     cyls = pool.map(simulate_cyl, cyls)  # simulate
@@ -170,6 +170,7 @@ for i in range(0, NT):
     """   
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  
+    
     s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
     
     summed_soil_fluxes = 0.
