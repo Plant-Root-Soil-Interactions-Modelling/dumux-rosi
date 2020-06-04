@@ -39,7 +39,7 @@ class XylemFluxPython(XylemFlux):
             self.linearSystem(sim_time, sxx, cells)
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
-        Q, b = self.bc_neumann(Q, self.aB, [0], [value / (self.rho * self.g)])  # cm3 day-1 -> something crazy (?)
+        Q, b = self.bc_neumann(Q, self.aB, [0], [value])  # cm3 day-1
         x = LA.spsolve(Q, b, use_umfpack=True)  # direct
         # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
@@ -96,9 +96,13 @@ class XylemFluxPython(XylemFlux):
 
         return x
 
-    def collar_flux(self, sim_time, rx, sx, seg_ind=0):
+    def collar_flux(self, sim_time, rx, sx, k_soil=[], seg_ind=0, cells=True):
         """ returns the exact transpirational flux of the solution @param rx [g/cm] """
         s = self.rs.segments[seg_ind]  # collar segment
+        if len(k_soil) > 0:
+            ksoil = k_soil[seg_ind]
+        else: 
+            ksoil = 1000
         i, j = int(s.x), int(s.y)  # node indices
         if i >= len(rx):
             print("rx len", len(rx), "i", i, "j", j, "seg_ind", seg_ind)
@@ -108,12 +112,16 @@ class XylemFluxPython(XylemFlux):
         v = n2.minus(n1)
         l = v.length()  # length of segment
         v.normalize()  # normalized v.z is needed for qz
-        cell_ind = self.rs.seg2cell[seg_ind]
-        p_s = sx[cell_ind]  # soil pressure at collar segment
+        if cells:
+            cell_ind = self.rs.seg2cell[seg_ind]
+            p_s = sx[cell_ind]  # soil pressure at collar segment
+        else:
+            p_s = sx[seg_ind]
         a = self.rs.radii[seg_ind]  # radius
         type = int(self.rs.types[seg_ind])  # conductivities kr, kx
         age = sim_time - int(self.rs.nodeCTs[j])
         kr = self.kr_f(age, type)  # c++ conductivity call back functions
+        kr = min(kr, ksoil)
         kx = self.kx_f(age, type)
         c = 2 * a * math.pi * kr / kx  # cm-2
         AA = np.array([[1, 1], [math.exp(math.sqrt(c) * l), math.exp(-math.sqrt(c) * l)] ])  # insert z = 0, z = l into exact solution
@@ -122,11 +130,15 @@ class XylemFluxPython(XylemFlux):
         # p_r = lambda z: p_s + d[0] * math.exp(math.sqrt(c) * z) + d[1] * math.exp(-math.sqrt(c) * z)  # exact solution
         # dpdz = d[0] *sqrt(c)*exp(sqrt(c)*(-L)) + d[1] * (-sqrt(c)*exp(-sqrt(c)*(-L))) # dp/dz
         dpdz0 = d[0] * math.sqrt(c) - d[1] * math.sqrt(c)
-        return -kx * (dpdz0 + v.z) * self.rho * self.g  # kx [cm5 day g-1]-> [cm3 day-1] by multiplying rho*g
+        return -kx * (dpdz0 + v.z)  # kx [cm5 day g-1]-> [cm3 day-1] by multiplying rho*g
 
     def get_nodes(self):
         """ converts the list of Vector3d to a 2D numpy array """
         return np.array(list(map(lambda x: np.array(x), self.rs.nodes)))
+
+    def get_segments(self):
+        """ converts the list of Vector3d to a 2D numpy array """
+        return np.array(list(map(lambda x: np.array(x), self.rs.segments)), dtype=np.int64)
 
     @staticmethod
     def read_rsml(file_name :str):
@@ -150,23 +162,27 @@ class XylemFluxPython(XylemFlux):
         types = np.array(types, dtype=np.int64) - 1  # index must start with 0
         return pb.MappedSegments(nodes2, nodeCTs, segs2, radii, types)  # root system grid
 
+    @staticmethod 
+    def zero_rows(M, rows):
+        diag = sparse.eye(M.shape[0]).tolil()
+        for r in rows:
+            diag[r, r] = 0
+        return diag.dot(M)
+
     @staticmethod
     def bc_dirichlet(Q, b, n0, d):
-        c = 0
+        Q = XylemFluxPython.zero_rows(Q, n0)
         for c in range(0, len(n0)):
             i = n0[c]
-            e0 = np.zeros((1, Q.shape[1]))  # build zero vector
-            Q[i, :] = sparse.csr_matrix(e0)  # replace row i with ei
             Q[i, i] = 1
             b[i] = d[c]
         return Q, b
 
     @staticmethod
     def bc_neumann(Q, b, n0, f):
-        c = 0
+        """ units f? """
         for c in range(0, len(n0)):
-            i = n0[c]  # print("Neumann BC at node "+str(i))
-            b[i] += f[c]
+            b[n0[c]] += f[c]
         return Q, b
 
     @staticmethod

@@ -78,6 +78,8 @@ cci = picker(0, 0, 0)  # collar cell index
 # for i in range(0, len(n) - 1):  # segments
 #     print("soil index", r.rs.seg2cell[i])
 
+segs = r.get_segments()
+
 r_outer = r.segOuterRadii()
 seg_length = r.segLength()
 
@@ -100,7 +102,7 @@ def initialize_cyl(i):
 
 
 def simulate_cyl(cyl):
-    cyl.solve([sim_time / NT], 0.01, False)            
+    cyl.solve([sim_time / NT], sim_time / NT / 10, False)            
     return cyl    
 
 
@@ -131,10 +133,8 @@ for i in range(0, NT):
     csx = s.getSolutionHeadAt(cci)
     for j, cyl in enumerate(cyls):  # for each segment
         rsx[j] = cyl.getInnerHead()  # [cm]                    
-    
-    rho = 1  # [g cm-3]
-    g = 9.8065 * 100.*24.*3600.*24.*3600.  #  [cm day-2]    
-    soil_k = vg.hydraulic_conductivity(rsx, cyls[0].soil) / r_root / (rho * g)  # schirch
+      
+    soil_k = vg.hydraulic_conductivity(rsx, cyls[0].soil) / r_root
     rx = r.solve(0., -q_r, csx, rsx, False, critP, soil_k)  # [cm]   
 
     min_rsx.append(np.min(np.array(rsx)))
@@ -150,25 +150,33 @@ for i in range(0, NT):
 
     for j, cyl in enumerate(cyls):  # boundary condtions
         l = seg_length[j]    
-#         cyl.dx_root = points[1] - grid.mid[0]
-#         cyl.q_root = proposed_inner_fluxes[j] / (2 * np.pi * r_root * l)
-#         cyl.bc[(0, 0)] = ("flux_out",cyl.q_root , critP, cyl.dx_root)
-        cyl.bc[(0, 0)] = ("rootsystem", rx[j], kr, 0)  
+        rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
+        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])  
+#         kr_ = min(soil_k[j], kr)
+#         cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr_, kx, r_root, l ])  
         dx_outer = points[ndof] - grid.mid[ndof - 1]
         q_outer = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
-        cyl.bc[(ndof - 1, 1)] = ("flux_in", q_outer , 0., dx_outer) 
+        cyl.bc[(ndof - 1, 1)] = ("flux_in", [q_outer , 0., dx_outer]) 
                                 
     cyls = pool.map(simulate_cyl, cyls)  # simulate
     
     for j, cyl in enumerate(cyls):  # res          
         realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * r_root * seg_length[j]) / dt        
 
+    # print("Realized inner fluxes ", realized_inner_fluxes)
+    
     """
     Macroscopic soil model
     """   
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  
     s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
+    
+    summed_soil_fluxes = 0.
+    for k, v in soil_fluxes.items():
+        summed_soil_fluxes += v
+            
+    print("Fluxes: realized per segment", summed_soil_fluxes, np.sum(realized_inner_fluxes), "predescribed: ", r.collar_flux(0., rx, rsx, soil_k, 0, False), -q_r)    
     s.solve(dt)   
     
     new_soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
@@ -185,7 +193,7 @@ for i in range(0, NT):
     sum_flux = 0.
     for k, f in soil_fluxes.items():
         sum_flux += f
-    water_uptake.append(sum_flux)  # cm3  
+    water_uptake.append(sum_flux)  # cm3/day  
     
     cyl_water_content = cyls[0].getWaterContent()  # segment 0
     cyl_water = 0.

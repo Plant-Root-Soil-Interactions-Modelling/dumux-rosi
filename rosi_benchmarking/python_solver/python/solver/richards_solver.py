@@ -84,7 +84,19 @@ class FV_Richards:
         k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]              
         dx = self.grid.nodes[0]  # self.grid.mid[0]
         q = min(kr, k / dx) * (rx - h)  
-        return min(q, 0.)  # limit to outflux  # [cm3 / cm2 / day] 
+        return min(q, 0)  # [cm3 / cm2 / day] 
+
+    def bc_rootsystem_exact(self, rx0, rx1, kr, kz, a, l):
+        """ flux is given following Meunier et al., using exact solution over single segment  
+        @param rx      root xylem matric potential [cm]
+        @param kr      root radial condcutivitiy [1 / day] (intrinsic)
+        """
+        h = self.getInnerHead()
+        f = -2 * a * np.pi * kr
+        tau = np.sqrt(2 * a * np.pi * kr / kz)  # sqrt(c) [cm-1]
+        d = np.exp(-tau * l) - np.exp(tau * l)  #  det                
+        fExact = -f * (1. / (tau * d)) * (rx0 - h + rx1 - h) * (2. - np.exp(-tau * l) - np.exp(tau * l))        
+        return fExact / (2 * a * np.pi * l)  # [cm3 / cm2 / day] 
 
     def bc_to_source(self, dt):
         """ 
@@ -95,18 +107,20 @@ class FV_Richards:
         
         dictionary with lambda functions would be nicer, but causes trouble with parallelisation    
         """                                     
-        for (i, j), (type, p1, p2, p3) in self.bc.items(): 
+        for (i, j), (type, v) in self.bc.items(): 
             if type == "rootsystem":
-                bc = self.bc_rootsystem(p1, p2)
+                bc = self.bc_rootsystem(*v[0:2])
+            elif type == "rootsystem_exact":
+                bc = self.bc_rootsystem_exact(*v[0:6])
             elif type == "flux_in":
-                bc = self.bc_flux_in(i, p1, p2, p3)
+                bc = self.bc_flux_in(i, *v[0:3])
             elif type == "flux_out":
-                bc = self.bc_flux_out(i, p1, p2, p3)
+                bc = self.bc_flux_out(i, *v[0:3])
             elif type == "flux":
-                bc = self.bc_flux_out()
+                bc = self.bc_flux(v[0])
             else:
                 raise("Unkown boundary condition")
-            self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]
+            self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]
     
     def getFlux(self, cell_id, face_id):
         """ flux [cm3/cm2/day] over the inner face given by @param face_id in cell @param cell_id """
@@ -195,8 +209,8 @@ class FV_Richards:
                 
                 self.h0 = h2  
 
-                self.bc_to_source(dt_)
-                self.innerFlux += self.sources[0] / (self.grid.area_per_volume[0, 0])  # exact inner flux    
+                # self.bc_to_source(dt_)
+                self.innerFlux += self.sources[0] / (self.grid.area_per_volume[0, 0])  # [cm3/cm3] -> [cm3 /cm2] exact inner flux    
                 
                 if dt_ == dt:
                     if i < 5:
