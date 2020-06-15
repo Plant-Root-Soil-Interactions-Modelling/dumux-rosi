@@ -75,6 +75,13 @@ class FV_Richards:
         # print("bc_flux_in", q, max_q, i, crit_p, self.h0[i], k, dx)
         return max(min(q, max_q), 0.)  # [cm3 / cm2 / day]    
 
+    def bc_flux_in_out(self, i, q, crit_p, dx):
+        """ inflow and outflow boundary condition limited to critical pressures """
+        if q >= 0:
+            return self.bc_flux_in(i, q, 0., dx)
+        else: 
+            return self.bc_flux_out(i, q, crit_p, dx)
+
     def bc_rootsystem(self, rx, kr):
         """ flux is given by radial conductivity times difference in matric potentials 
         @param rx      root xylem matric potential [cm]
@@ -113,12 +120,14 @@ class FV_Richards:
         for (i, j), (type, v) in self.bc.items(): 
             if type == "rootsystem":
                 bc = self.bc_rootsystem(*v[0:2])
+            elif type == "flux_in_out":
+                bc = self.bc_flux_in_out(i, *v[0:3])                     
             elif type == "rootsystem_exact":
                 bc = self.bc_rootsystem_exact(*v[0:6])
             elif type == "flux_in":
                 bc = self.bc_flux_in(i, *v[0:3])
             elif type == "flux_out":
-                bc = self.bc_flux_out(i, *v[0:3])
+                bc = self.bc_flux_out(i, *v[0:3])           
             elif type == "flux":
                 bc = self.bc_flux(v[0])
             else:
@@ -158,6 +167,7 @@ class FV_Richards:
         self.create_k()
         self.create_f_const() 
         self.create_alpha_beta(dt) 
+        A = sparse.coo_matrix((self.alpha.flat, (self.alpha_i.flat, self.alpha_j.flat)))
 
         h_pm1 = self.h0.copy()        
         for i in range(0, max_iter):                        
@@ -166,7 +176,6 @@ class FV_Richards:
             beta = c_pm1 + self.beta_const
             self.bc_to_source(dt)
             f = np.multiply(c_pm1, h_pm1) - theta_pm1 + self.f_const + self.sources           
-            A = sparse.coo_matrix((self.alpha.flat, (self.alpha_i.flat, self.alpha_j.flat)))
             B = sparse.coo_matrix((beta, (np.array(range(0, n)), np.array(range(0, n)))))  
 #             plt.spy(A + B)
 #             plt.show()
@@ -225,7 +234,7 @@ class FV_Richards:
                 print("retry with max {:g} = {:g} day".format(dt, min(output_times[k] - sim_time, dt)))
                 if dt < 1.e-10:
                     print("\nI failed you\n")
-                    return
+                    raise()
     
         return np.array(h_out)
 

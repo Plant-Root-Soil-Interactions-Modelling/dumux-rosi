@@ -33,12 +33,12 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 domain_volume = 8 * 8 * 15  # cm3
-cell_number = [10, 10, 15]
+cell_number = [8, 8, 15]  # 32, 32, 60
 loam = [0.08, 0.43, 0.04, 1.6, 50]
-initial = -659.8
+initial = -659.8 - 7.5  # -659.8
 
 kx = 4.32e-2 
-kr = 1.728e-4
+kr = 1.73e-4
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
@@ -48,14 +48,14 @@ logbase = 1.5
 periodic = False  
  
 sim_time = 3  # [day]
-NT = 216  # iteration ( 3 days / 216 = 1200 s)
+NT = 10 * 216  # 216  # iteration ( 3 days / 216 = 1200 s)
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
 s.createGrid(min_b, max_b, cell_number)  # [cm]
-s.setHomogeneousIC(initial - 7.5, True)  # cm pressure head, equilibrium
+s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([loam])
@@ -66,11 +66,11 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 old_rs = XylemFluxPython("../grids/RootSystem_big.rsml")
 ana = pb.SegmentAnalyser(old_rs.rs)
 ana.filter("creationTime", 0., 8.)
-ana.crop(pb.SDF_PlantBox(7., 7., 14.))  # that's akward.. (but I wait for the final rsml).
+ana.crop(pb.SDF_PlantBox(7.76, 7.76, 14.76))  # that's akward.. (but I wait for the final rsml).
 ana.pack()
 print("\nAfter 8 days", len(ana.segments))
 rs = pb.MappedSegments(ana.nodes, ana.segments, ana.data["radius"]) 
-r = XylemFluxPython(rs)  # <-- or final of you root system
+r = XylemFluxPython(rs)  # <-- or final of you root system "../grids/RootSystem.rsml"
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]))  
 r.setKr([kr])  # [cm^3/day]
@@ -86,11 +86,16 @@ print("Cut to", len(segs), "segments\n")
 
 # for i in r.rs.cell2seg[cci]:
 #     print("cell fun...", i)
-# input()
+input()
 
 inner_radii = np.array(r.rs.radii)
-outer_radii = r.segOuterRadii()
+outer_radii = r.segOuterRadii(1)  # type 0 == volume, type 1 == surface
 seg_length = r.segLength()
+
+# for l in seg_length:
+#     if l < 1e-5:
+#         print(l)        
+# input()
 
 """ Initialize local soil models (around each root segment) """
 ns = len(seg_length)  # number of segments 
@@ -109,7 +114,7 @@ def initialize_cyl(i):
         points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base=logbase)
         grid = FV_Grid1Dcyl(points)
         richards = rich.FV_Richards(grid, loam)  
-        richards.h0 = np.ones((ndof,)) * (initial + z + 7.5)        
+        richards.h0 = np.ones((ndof,)) * (initial - 7.5 - z)        
         return richards  
     else:
         print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
@@ -118,14 +123,16 @@ def initialize_cyl(i):
 
 def simulate_cyl(cyl):
     try:
-        cyl.solve([sim_time / NT], sim_time / NT / 10, False)         
+        cyl.solve([sim_time / NT], sim_time / NT / 3, False)    
     except:
         x = cyl.grid.mid
         y = cyl.h0
         plt.plot(x, y)
         plt.xlabel("x (cm)")
         plt.ylabel("pressure (cm)")
-        plt.show()                        
+        plt.show()           
+        print(cyl.bc[(0, 0)])
+        input()             
     return cyl  
 
 
@@ -165,7 +172,7 @@ for i in range(0, NT):
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, cyls[0].soil), inner_radii)  # only valid for homogenous soil      
     print("Conductivities", np.min(soil_k), kr)                                                                                                          
     rx = r.solve(t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
-    collar_flux.append(r.collar_flux(t, rx, rsx, soil_k))
+    collar_flux.append(r.collar_flux(t, rx, rsx, soil_k, 0, False))
 
     min_rsx.append(np.min(np.array(rsx)))
     collar_sx.append(csx)
@@ -176,18 +183,20 @@ for i in range(0, NT):
     Local soil model
     """                  
     # proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]                 
-    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)  
+    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, 1)  # type 0 == volume, type 1 == surface
     
     for j, cyl in enumerate(cyls):  # boundary condtions
         l = seg_length[j]    
         rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
-        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])  
-        # cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr, kx, inner_radii[j], l ])  
+        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])        
+#         cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr, kx, inner_radii[j], l ])  
         dx_outer = cyl.grid.nodes[ndof] - cyl.grid.mid[ndof - 1]
         q_outer = proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l)
-        cyl.bc[(ndof - 1, 1)] = ("flux_in", [q_outer , 0., dx_outer]) 
+        cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , wilting_point, dx_outer]) 
                                 
+    local_models_time = timeit.default_timer()
     cyls = pool.map(simulate_cyl, cyls)  # simulate
+    print ("Local models solved in ", timeit.default_timer() - local_models_time, " s")
     
     for j, cyl in enumerate(cyls):  # res          
         realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * inner_radii[j] * seg_length[j]) / dt   
@@ -211,7 +220,7 @@ for i in range(0, NT):
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3] 
     for k, root_flux in soil_fluxes.items():
         net_flux[k] -= root_flux * dt    
-    print("Summed net flux {:g}, max movement {:g} cm3".format(np.sum(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
+    print("Summed net flux {:g}, min movement {:g}, max {:g} cm3".format(np.sum(net_flux), np.min(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
     soil_water = new_soil_water
     
     """ 
@@ -280,5 +289,8 @@ ax1.set_xlabel("Time [d]")
 ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
 ax2.set_ylabel("Min collar pressure $[cm]$")
 fig.legend()
+
+np.savetxt("dumux_c12_100", np.vstack((x_, -np.array(water_uptake), -np.array(collar_flux))), delimiter=';')
+
 plt.show()
 
