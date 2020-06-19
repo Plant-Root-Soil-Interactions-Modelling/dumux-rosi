@@ -24,7 +24,7 @@ class XylemFluxPython(XylemFlux):
         else:
             super().__init__(rs)
 
-    def solve_neumann(self, sim_time :float, value :float, sxx, cells :bool, soil_k=[]) :
+    def solve_neumann(self, sim_time :float, value :float, sxx, cells :bool, soil_k = []) :
         """ solves the flux equations, with a neumann boundary condtion,
             @param sim_time [day]      simulation time to evaluate age dependent conductivities
             @param value [cm3 day-1]   tranpirational flux is negative 
@@ -40,17 +40,17 @@ class XylemFluxPython(XylemFlux):
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_neumann(Q, self.aB, [0], [value])  # cm3 day-1
-        x = LA.spsolve(Q, b, use_umfpack=True)  # direct
+        x = LA.spsolve(Q, b, use_umfpack = True)  # direct
         # print ("linear system assembled and solved in", timeit.default_timer() - start, " s")
         return x
 
-    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells :bool, soil_k=[]):
+    def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells :bool, soil_k = []):
         """ solves the flux equations, with a dirichlet boundary condtion,
             @param sim_time [day]     simulation time to evaluate age dependent conductivities
             @param value [cm]         root collar pressure head 
             @param sx [cm]            soil pressure head around root collar segment 
          """
-        if len(soil_k) > 0:         
+        if len(soil_k) > 0:
             self.linearSystem(sim_time, sxx, cells, soil_k)  # C++
         else:
             self.linearSystem(sim_time, sxx, cells)
@@ -58,10 +58,10 @@ class XylemFluxPython(XylemFlux):
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value)])
-        x = LA.spsolve(Q, b, use_umfpack=True)
+        x = LA.spsolve(Q, b, use_umfpack = True)
         return x
 
-    def solve(self, sim_time :float, trans :float, sx :float, sxx, cells :bool, wilting_point :float, soil_k=[]):
+    def solve(self, sim_time :float, trans :float, sx :float, sxx, cells :bool, wilting_point :float, soil_k = []):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
             @param simulation time  [day] for age dependent conductivities
@@ -82,7 +82,7 @@ class XylemFluxPython(XylemFlux):
                 Q = sparse.csr_matrix(Q)
                 Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(wilting_point)])
                 try:
-                    x = LA.spsolve(Q, b, use_umfpack=True)
+                    x = LA.spsolve(Q, b, use_umfpack = True)
                 except:
                     print("Exeption solving Dirichlet")
                     print("Dirichlet at ", trans - sx, "cm")
@@ -96,12 +96,12 @@ class XylemFluxPython(XylemFlux):
 
         return x
 
-    def collar_flux(self, sim_time, rx, sx, k_soil=[], seg_ind=0, cells=True):
+    def collar_flux(self, sim_time, rx, sx, k_soil = [], seg_ind = 0, cells = True):
         """ returns the exact transpirational flux of the solution @param rx [g/cm] """
         s = self.rs.segments[seg_ind]  # collar segment
         if len(k_soil) > 0:
             ksoil = k_soil[seg_ind]
-        else: 
+        else:
             ksoil = 1000
         i, j = int(s.x), int(s.y)  # node indices
         if i >= len(rx):
@@ -138,7 +138,28 @@ class XylemFluxPython(XylemFlux):
 
     def get_segments(self):
         """ converts the list of Vector3d to a 2D numpy array """
-        return np.array(list(map(lambda x: np.array(x), self.rs.segments)), dtype=np.int64)
+        return np.array(list(map(lambda x: np.array(x), self.rs.segments)), dtype = np.int64)
+
+    def test(self):
+        """ perfoms some sanity checks """
+        print()
+        segments = self.get_segments()
+        for i, s_ in enumerate(segments):
+            if i != s_[1] - 1:
+                raise "Segment indices are mixed up"
+        print(len(segments), "segments")
+
+        seg_length = self.segLength()
+        c = 0
+        for l in seg_length:
+            if l < 1e-5:
+                c += 1
+        print(c, "segments with length < 1.e-5")
+
+        nodes = self.get_nodes()
+        cci = self.rs.soil_index(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
+
+        print()
 
     @staticmethod
     def read_rsml(file_name :str):
@@ -159,10 +180,10 @@ class XylemFluxPython(XylemFlux):
             nodeCTs[s[1]] = seg_ct[i]
             segs2.append(pb.Vector2i(int(s[0]), int(s[1])))
         radii = np.array(radii) / 10.  # [mm]->[cm]
-        types = np.array(types, dtype=np.int64) - 1  # index must start with 0
+        types = np.array(types, dtype = np.int64) - 1  # index must start with 0
         return pb.MappedSegments(nodes2, nodeCTs, segs2, radii, types)  # root system grid
 
-    @staticmethod 
+    @staticmethod
     def zero_rows(M, rows):
         diag = sparse.eye(M.shape[0]).tolil()
         for r in rows:
@@ -186,7 +207,7 @@ class XylemFluxPython(XylemFlux):
         return Q, b
 
     @staticmethod
-    def convert_(x, dtype=np.float64):
+    def convert_(x, dtype = np.float64):
         return np.array(list(map(lambda x: np.array(x, dtype), x)), dtype)  # is there a better way?
 
     def linear_system(self, simTime :float):
@@ -194,8 +215,8 @@ class XylemFluxPython(XylemFlux):
         Ns = len(self.rs.segments)
         N = len(self.rs.nodes)
 
-        I = np.zeros(4 * Ns, dtype=np.int64)
-        J = np.zeros(4 * Ns, dtype=np.int64)
+        I = np.zeros(4 * Ns, dtype = np.int64)
+        J = np.zeros(4 * Ns, dtype = np.int64)
         V = np.zeros(4 * Ns)
         b = np.zeros(N)
         k = 0

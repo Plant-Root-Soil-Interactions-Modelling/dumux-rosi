@@ -22,19 +22,28 @@ also works parallel with mpiexec
 """
 
 
-def solve(soil, simtime, evap, NZ, ic=-200):
+def solve(soil, simtime, evap, NZ, ic = -200):
     cpp_base = RichardsSP()
     s = RichardsWrapper(cpp_base)
     s.initialize()
 
-    # s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
-    s.setTopBC("flux", evap)  #  [cm/day] atmospheric is with surface run-off
+    s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
+    # s.setTopBC("flux", evap)  #  [cm/day] atmospheric is with surface run-off
     s.setBotBC("freeDrainage")  # BC
-    s.createGrid([-5., -5., -100.], [5., 5., 0.], [1, 1, NZ])  # [cm]
+
+    # s.createGrid([-5., -5., -100.], [5., 5., 0.], [1, 1, NZ])  # [cm]
+
+    points_0 = np.zeros((NZ,))
+    points_z = -np.logspace(np.log10(1), np.log10(101), NZ) + np.ones((NZ,))
+    points = np.transpose(np.vstack((points_0, points_0, points_z)))
+    p0 = np.array([[ 0.5, 0.5, 0. ], [ -0.5, 0.5, 0. ], [ -0.5, -0.5, 0. ], [ 0.5, -0.5, 0. ] ])
+    s.createGrid3d(points, p0)  # [cm]
+
+#     s.createGrid1d(points)
     s.setVGParameters([soil])
     s.setHomogeneousIC(ic)  # cm pressure head
     s.initializeProblem()
-    s.setCriticalPressure(-10000) 
+    s.setCriticalPressure(-10000)
     s.setRegularisation(1.e-6, 0.)
     idx_top = s.pickCell([0.0, 0.0, 0.0])  # index to watch flux
 
@@ -75,10 +84,10 @@ if __name__ == "__main__":
     xd, zd = solve(clay, 6, -0.3, 99)
 
     # high res
-    xa2, za2 = solve(sand, 1, -0.1, 399, -40)
-    xb2, zb2 = solve(loam, 10, -0.1, 399)
-    xc2, zc2 = solve(loam, 2, -0.3, 399)
-    xd2, zd2 = solve(clay, 6, -0.3, 399)
+    xa2, za2 = solve(sand, 1, -0.1, 53990, -40)
+    xb2, zb2 = solve(loam, 10, -0.1, 53990)
+    xc2, zc2 = solve(loam, 2, -0.3, 53990)
+    xd2, zd2 = solve(clay, 6, -0.3, 53990)
 
     if rank == 0:
         ax1.plot(xa, za, "r")

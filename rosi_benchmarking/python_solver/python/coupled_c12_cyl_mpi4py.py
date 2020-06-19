@@ -18,6 +18,11 @@ import matplotlib.pyplot as plt
 import timeit
 
 from multiprocessing import Pool
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
 
 def sinusoidal(t):
@@ -50,7 +55,7 @@ split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 NT = round(50 * sim_time * 24 * 3600 / 1200)
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
-name = "dumux_c12_025cm"
+name = "dumux_c12_domain_025cm"
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -92,12 +97,23 @@ seg_length = r.segLength()
 
 r.test()  # sanity checks
 print("Initial pressure head", s.getSolutionHeadAt(cci), s.getSolutionHeadAt(picker(0., 0., min_b[2])))
-input()
+# input()
 
 """ Initialize local soil models (around each root segment) """
 ns = len(seg_length)  # number of segments
 cyls = [None] * ns
 ndof = NC - 1
+
+# for MPI
+cyl_ind, c = [], 0  # cylinder indices per mpi process
+chunk_size = round(ns / size - 0.5)  # floor
+for i in range(0, size - 1):
+    cyl_ind.append(list(range(c, c + chunk_size)))
+    c += chunk_size
+cyl_ind.append(list(range(c, ns)))
+cyl_ind = comm.scatter(cyl_ind, root = 0)  # without growth this is done once
+
+print("start initializing")
 
 
 def initialize_cyl(i):
@@ -133,8 +149,20 @@ def simulate_cyl(cyl):
 
 pool = Pool()  # defaults to number of available CPU's
 start_time = timeit.default_timer()
-cyls = pool.map(initialize_cyl, range(ns))
+
+res = []
+for i in cyl_ind:
+    res.append(initialize_cyl(i))
+res = comm.gather(res, root = 0)
+if rank == 0:
+    cyls = [item for sublist in res for item in sublist]  # flatten res
+cyls = comm.bcast(cyls, root = 0)  # ?
+
+# cyls = pool.map(initialize_cyl, range(ns))
+
 print ("Initialized in", timeit.default_timer() - start_time, " s")
+if rank == 0:
+    input()
 
 cyl_water = 0.
 for k in r.rs.cell2seg[cci]:

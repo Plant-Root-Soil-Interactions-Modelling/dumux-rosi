@@ -11,7 +11,7 @@ import van_genuchten as vg
 
 from math import *
 import numpy as np
-import matplotlib.pyplot as plt  
+import matplotlib.pyplot as plt
 import timeit
 
 from mpi4py import MPI
@@ -91,7 +91,7 @@ for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
         rx = r.solve(t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point)  # xylem_flux.py
-        fluxes = r.soilFluxes(t, rx, sx, approx=False)  # class XylemFlux is defined in MappedOrganism.h
+        fluxes = r.soilFluxes(t, rx, sx, approx = False)  # class XylemFlux is defined in MappedOrganism.h
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
@@ -99,14 +99,14 @@ for i in range(0, N):
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
     # s.setSource(fluxes)  # richards.py
     sx = s.getSolutionHead()  # richards.py
     sx = s.applySource(dt, sx, fluxes, wilting_point)  # richards.py
-    s.setInitialCondition(sx)    
+    s.setInitialCondition(sx)
 
     s.solve(dt)
-    
+
     water = s.getWaterVolume()
     print("Minimum", np.min(sx), "cm", "Total  water: ", water, "cm3")
 
@@ -142,6 +142,6 @@ if rank == 0:
     ax2.plot(x_[1:], np.diff(np.array(w_)) / (8 * 8 * 20) / dt, 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
     plt.show()
 
