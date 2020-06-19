@@ -12,11 +12,12 @@ import solver.van_genuchten as vg
 from solver.fv_grid import *
 import solver.richards_solver as rich
 
+import vtk_plot as vp
+
 from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
-
 from multiprocessing import Pool
 
 
@@ -31,7 +32,7 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [32, 32, 60]  # [8, 8, 15]  # 32, 32, 60
+cell_number = [8, 8, 15]  # [32, 32, 60]  # [8, 8, 15]  # 32, 32, 60
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 initial = -659.8 + 7.5  # -659.8
 
@@ -43,14 +44,14 @@ wilting_point = -15000  # cm
 NC = 10  # NC-1 are dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 3  # [day]
+sim_time = 0.25  # [day]
 
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
-NT = round(50 * sim_time * 24 * 3600 / 1200)
+NT = round(10 * sim_time * 24 * 3600 / 1200)
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
-name = "dumux_c12_025cm"
+name = "dumux_c12_1cm"
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -92,7 +93,7 @@ seg_length = r.segLength()
 
 r.test()  # sanity checks
 print("Initial pressure head", s.getSolutionHeadAt(cci), s.getSolutionHeadAt(picker(0., 0., min_b[2])))
-input()
+# input()
 
 """ Initialize local soil models (around each root segment) """
 ns = len(seg_length)  # number of segments
@@ -118,7 +119,7 @@ def initialize_cyl(i):
 
 def simulate_cyl(cyl):
     try:
-        cyl.solve([sim_time / NT], sim_time / NT / 2, False)
+        cyl.solve([sim_time / NT], sim_time / NT / 3, False)
     except:
         x = cyl.grid.mid
         y = cyl.h0
@@ -254,6 +255,15 @@ for i in range(0, NT):
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
+# VTK vizualisation
+name = "soil pressure"
+ana = pb.SegmentAnalyser(r.rs)
+ana.addData("soil pressure", rsx)
+ana.addData("xylem pressure", rx)
+pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "soil pressure", "xylem pressure"])
+rootActor, rootCBar = vp.plot_roots(pd, name, False)
+vp.render_window([rootActor], name, rootCBar).Start()
+
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
 ax1.set_title("Water amount")
@@ -286,7 +296,6 @@ plt.show()
 fig, ax1 = plt.subplots()
 x_ = np.linspace(0, sim_time, NT)
 ax1.plot(x_, trans * sinusoidal(x_), 'k', label = "potential")  # potential transpiration * sinusoidal(x_)
-print(sim_time / NT)
 ax1.plot(x_, -np.array(water_uptake), 'g', label = "actual")  # actual transpiration (neumann)
 ax1.plot(x_, -np.array(collar_flux), 'r:', label = "collar flux")  # actual transpiration (neumann)
 ax2 = ax1.twinx()
