@@ -13,6 +13,7 @@ from solver.fv_grid import *
 import solver.richards_solver as rich
 
 import vtk_plot as vp
+import vtk_tools as vt
 
 from math import *
 import numpy as np
@@ -44,7 +45,7 @@ wilting_point = -15000  # cm
 NC = 10  # NC-1 are dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 0.25  # [day]
+sim_time = 0.025  # [day]
 
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
@@ -262,7 +263,14 @@ ana.addData("soil pressure", rsx)
 ana.addData("xylem pressure", rx)
 pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "soil pressure", "xylem pressure"])
 rootActor, rootCBar = vp.plot_roots(pd, name, False)
-vp.render_window([rootActor], name, rootCBar).Start()
+
+soil_grid = vp.uniform_grid(np.array(min_b), np.array(max_b), np.array(cell_number))
+soil_water_content = vt.vtk_data(np.array(s.getWaterContent()))
+soil_water_content.SetComponentName(0, "water content")
+soil_grid.GetCellData().AddArray(soil_water_content)
+meshActor, meshCBar = vp.plot_mesh(soil_grid, "water content", "", False)
+vp.render_window([meshActor], "water content", meshCBar).Start()
+# vp.render_window([rootActor], name, rootCBar).Start()
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 

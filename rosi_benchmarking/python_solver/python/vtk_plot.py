@@ -228,7 +228,8 @@ def plot_mesh(grid, p_name, win_title = "", render = True):
 
     lut = get_lookup_table()
     if p_name != "":
-        lut.SetTableRange(grid.GetPointData().GetScalars(p_name).GetRange())
+        lut.SetTableRange(grid.GetCellData().GetScalars(p_name).GetRange())
+        # lut.SetTableRange(grid.GetPointData().GetScalars(p_name).GetRange())
     mapper.SetLookupTable(lut)
 
     scalarBar = vtk.vtkScalarBarActor()
