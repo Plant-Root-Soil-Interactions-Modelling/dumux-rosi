@@ -19,7 +19,7 @@ namespace py = pybind11;
 #include <dumux/discretization/cctpfa.hh>
 #include <dumux/discretization/box.hh>
 
-#include <dumux/porousmediumflow/richards/model.hh>
+#include <dumux/porousmediumflow/richards/model.hh> // the model
 
 #include <dune/grid/spgrid.hh>
 //#if HAVE_DUNE_ALUGRID

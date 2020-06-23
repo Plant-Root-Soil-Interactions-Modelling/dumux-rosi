@@ -33,7 +33,7 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [32, 32, 60]  # [8, 8, 15]  # 32, 32, 60
+cell_number = [16, 16, 30]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] 
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 initial = -659.8 + 7.5  # -659.8
 
@@ -45,7 +45,7 @@ wilting_point = -15000  # cm
 NC = 10  # NC-1 are dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 0.025  # [day]
+sim_time = 0.25  # [day]
 
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
@@ -65,7 +65,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([loam])
 s.setParameter("MinTimeStepSize", "1.e-2")
 s.initializeProblem()
-s.setRegularisation(1.e-3, 1.e-3)
+s.setRegularisation(1.e-4, 1.e-4)
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a)"""
@@ -82,7 +82,7 @@ r.setKr([kr])  # [cm^3/day] # todo check order of age (segs are sorted)
 r.setKx([kx])  # [1/day]
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
-r.sort()  # <- ensures segment is located at index s.y-1
+r.rs.sort()  # <- ensures segment is located at index s.y-1
 
 nodes = r.get_nodes()
 segs = r.get_segments()
@@ -175,6 +175,11 @@ for i in range(0, NT):
     csx = s.getSolutionHeadAt(cci)  # [cm]
     for j, rc in enumerate(cyls):  # for each segment
         rsx[j] = rc.getInnerHead()  # [cm]
+        
+        if rsx[j]>s.getSolutionHeadAt(r.rs.seg2cell[j])+1:
+            print("strange segment", j, "in cell", r.rs.seg2cell[j])
+            print(rsx[j], "vs.", s.getSolutionHeadAt(r.rs.seg2cell[j]))
+            input()
 
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, cyls[0].soil), inner_radii)  # only valid for homogenous soil
     print("Conductivities", np.min(soil_k), kr)
@@ -233,7 +238,7 @@ for i in range(0, NT):
     """ 
     Water (for output)
     """
-    water_domain.append(np.sum(soil_water))  # from previous time step
+    water_domain.append(np.min(soil_water))  # from previous time step
     water_collar_cell.append(soil_water[cci])
     sum_flux = 0.
     for k, f in soil_fluxes.items():
@@ -256,8 +261,8 @@ for i in range(0, NT):
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-# VTK vizualisation
-name = "soil pressure"
+# # VTK vizualisation
+name = "soil pressure" # in soil at root soil interface
 ana = pb.SegmentAnalyser(r.rs)
 ana.addData("soil pressure", rsx)
 ana.addData("xylem pressure", rx)
@@ -266,11 +271,20 @@ rootActor, rootCBar = vp.plot_roots(pd, name, False)
 
 soil_grid = vp.uniform_grid(np.array(min_b), np.array(max_b), np.array(cell_number))
 soil_water_content = vt.vtk_data(np.array(s.getWaterContent()))
-soil_water_content.SetComponentName(0, "water content")
+soil_water_content.SetName("water content")
 soil_grid.GetCellData().AddArray(soil_water_content)
-meshActor, meshCBar = vp.plot_mesh(soil_grid, "water content", "", False)
-vp.render_window([meshActor], "water content", meshCBar).Start()
+soil_pressure = vt.vtk_data(np.array(s.getSolutionHead()))
+soil_pressure.SetName("pressure head") # in macroscopic soil
+soil_grid.GetCellData().AddArray(soil_pressure)
+name = "pressure head"
+soil_grid.GetCellData().SetActiveScalars(name)
+actors, meshCBar = vp.plot_mesh_cuts(soil_grid, name, 5, False)
+
+# meshActor, meshCBar = vp.plot_mesh(soil_grid, name, "", False)
 # vp.render_window([rootActor], name, rootCBar).Start()
+
+actors.extend([rootActor])
+vp.render_window(actors, "name" , [meshCBar, rootCBar]).Start()
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 

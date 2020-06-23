@@ -66,10 +66,10 @@ def uniform_grid(min_, max_, res):
 def render_window(actor, title = "", scalarBar = None):
     """ puts a vtk actor on the stage (an interactive window) @name is the window titel 
     
-    @param actor         the (single) actor
-    @param windowName    optional
-    @param scalarBar     an optional vtkScalarBarActor
-    @return The vtkRenderWindow (not sure if this is ever needed)
+    @param actor         a (single) actor, or a list of actors (ensemble)
+    @param title         window title (optional)
+    @param scalarBar     one or a list of vtkScalarBarActor (optional)
+    @return the vtkRenderWindow Use render_window(...).Start() to start interaction loop
     
     (built in)
     Keypress j / Keypress t: toggle between joystick (position sensitive) and trackball (motion sensitive) styles. In joystick style, motion occurs continuously as long as a mouse button is pressed. In trackball style, motion occurs when the mouse button is pressed and the mouse pointer moves.
@@ -105,7 +105,17 @@ def render_window(actor, title = "", scalarBar = None):
         a.RotateX(-90)
         ren.AddActor(a)  # Add the actors to the renderer, set the background and size
     if scalarBar is not None:
-        ren.AddActor2D(scalarBar)
+        if isinstance(scalarBar, list):
+            c = 0.
+            for sb in scalarBar:
+                x = sb.GetPosition()
+                y = (x[0]+c, x[1])
+                sb.SetPosition(y)
+                ren.AddActor2D(sb)
+                c -= 0.2
+                
+        else:
+            ren.AddActor2D(scalarBar)
     ren.SetBackground(colors.GetColor3d("Silver"))  #
     renWin.SetSize(1000, 1000)
     renWin.SetWindowName(title)
@@ -146,17 +156,39 @@ def write_png(renWin, fileName):
     writer.Write()
 
 
-def get_lookup_table(colorSeriesEnum = 15):
+def create_lookup_table(tableIdx = 15, numberOfColors = 256):
     """ creates a color lookup table 
-    @param colorSeriesEnum      the number of the predefined color table, see VTKColorSeriesPatches.html
+    @param tableIdx      the number of the predefined color table, see VTKColorSeriesPatches.html
     @return A vtkLookupTable
     
     @todo I don't know how to modify the number of colors used (or how to interpolate between)
     """
     colorSeries = vtk.vtkColorSeries()
-    colorSeries.SetColorScheme(colorSeriesEnum)
+    colorSeries.SetColorScheme(tableIdx)
     lut = vtk.vtkLookupTable()
+    lut.SetNumberOfColors(100)
     colorSeries.BuildLookupTable(lut, vtk.vtkColorSeries.ORDINAL)
+    lut.SetNumberOfColors(100)
+
+#     lut.SetRampToLinear()
+#     lut.SetIndexedLookup(False)
+#     lut.SetNumberOfTableValues (numberOfColors)
+#    lut.Build()
+
+    lut = vtk.vtkLookupTable()
+    print(lut)
+#     lut.SetNumberOfTableValues(256) 
+    # lut.SetHueRange( 0.0, 0.667 )
+    # colorSeries.BuildLookupTable(lut, vtk.vtkColorSeries.ORDINAL) 
+    
+#     print(lut)
+#     lut.SetNumberOfTableValues(4)
+#     lut.SetTableValue( 0, 1.0, 0.0, 0.0, 1.0 )
+#     lut.SetTableValue( 1, 0.0, 1.0, 0.0, 1.0 )
+#     lut.SetTableValue( 2, 0.0, 0.0, 1.0, 1.0 )
+#     lut.SetTableValue( 3, 1.0, 1.0, 0.0, 1.0 )   
+
+
     return lut
 
 
@@ -186,7 +218,7 @@ def plot_roots(pd, p_name, render = True):
     plantActor = vtk.vtkActor()
     plantActor.SetMapper(mapper)
 
-    lut = get_lookup_table(24)  # 24= Brewer Diverging Brown-Blue-Green (11)
+    lut = create_lookup_table(24)  # 24= Brewer Diverging Brown-Blue-Green (11)
     lut.SetTableRange(pd.GetPointData().GetScalars(p_name).GetRange())
     mapper.SetLookupTable(lut)
 
@@ -195,12 +227,15 @@ def plot_roots(pd, p_name, render = True):
     scalarBar.SetTitle(p_name)
     textProperty = vtk.vtkTextProperty()
     textProperty.SetFontSize(1)
+    scalarBar.SetDrawAnnotations(False)
+    scalarBar.SetAnnotationTextProperty(textProperty)
     scalarBar.SetTitleTextProperty(textProperty)
     scalarBar.SetLabelTextProperty(textProperty)
-#    scalarBar.SetAnnotationTextProperty(textProperty)
+
+    scalarBar.SetMaximumWidthInPixels(1)
 
     if render:
-        render_window(plantActor, pname, scalarBar)
+        render_window(plantActor, pname, scalarBar).Start()
     return plantActor, scalarBar
 
 
@@ -219,81 +254,96 @@ def plot_mesh(grid, p_name, win_title = "", render = True):
     mapper.SetInputData(grid)
     mapper.Update()
     mapper.SetArrayName(p_name)
-    mapper.SelectColorArray(p_name)
+    mapper.SelectColorArray(p_name) # ? to choose cell data or point data 
     mapper.UseLookupTableScalarRangeOn()
 
     meshActor = vtk.vtkActor()
     meshActor.SetMapper(mapper)
     meshActor.GetProperty().SetRepresentationToWireframe();
 
-    lut = get_lookup_table()
+    lut = create_lookup_table()
     if p_name != "":
         lut.SetTableRange(grid.GetCellData().GetScalars(p_name).GetRange())
         # lut.SetTableRange(grid.GetPointData().GetScalars(p_name).GetRange())
+    # lut.SetNumberOfTableValues(100)
+#    lut.Build()
+    
     mapper.SetLookupTable(lut)
 
     scalarBar = vtk.vtkScalarBarActor()
     scalarBar.SetLookupTable(lut)
     scalarBar.SetTitle(p_name)
-#     textProperty = vtk.vtkTextProperty()
-#     textProperty.SetFontSize(10)
-#     textProperty.UseTightBoundingBoxOff()
-#     scalarBar.GetLabelTextProperty().BoldOff()
-#     scalarBar.SetTitleTextProperty(textProperty)
-#     scalarBar.SetLabelTextProperty(textProperty)
-#     scalarBar.GetLabelTextProperty().SetFontSize(1)
-
+    scalarBar.SetDrawAnnotations(False)
+    textProperty = vtk.vtkTextProperty()   
+    textProperty.SetFontSize(30) 
+    scalarBar.SetAnnotationTextProperty(textProperty)
+    scalarBar.SetTitleTextProperty(textProperty)
+    scalarBar.SetLabelTextProperty(textProperty)
+    scalarBar.AnnotationTextScalingOff()
+    scalarBar.SetUnconstrainedFontSize(True)
+    
     if render:
-        render_window(meshActor, win_title, scalarBar)
+        render_window(meshActor, win_title, scalarBar).Start()
     return meshActor, scalarBar
 
 
-def plot_mesh_cuts(pd, p_name, nz = 7):
+def plot_mesh_cuts(grid, p_name, nz = 7, render = True):
     """ """
+#     pd.GetPointData().SetActiveScalars("radius")  # for the the filter
+#     tubeFilter = vtk.vtkTubeFilter()
+#     tubeFilter.SetInputData(pd)
+#     tubeFilter.SetNumberOfSides(9)
+#     tubeFilter.SetVaryRadiusToVaryRadiusByAbsoluteScalar()
+#     tubeFilter.Update()
 
-    # Create a cube
-    cube = vtk.vtkCubeSource()
-    cube.SetXLength(40)
-    cube.SetYLength(30)
-    cube.SetZLength(20)
-#     cubeMapper = vtk.vtkPolyDataMapper()
-#     cubeMapper.SetInputConnection(cube.GetOutputPort())
-
-    pd.GetPointData().SetActiveScalars("radius")  # for the the filter
-    tubeFilter = vtk.vtkTubeFilter()
-    tubeFilter.SetInputData(pd)
-    tubeFilter.SetNumberOfSides(9)
-    tubeFilter.SetVaryRadiusToVaryRadiusByAbsoluteScalar()
-    tubeFilter.Update()
-
-    bounds = pd.GetBounds()
+    bounds = grid.GetBounds()
     planes = []
     for i in range(0, nz):  # z-slices (implicit functions)
         p = vtk.vtkPlane()
         z = ((bounds[5] - bounds[4]) / (nz + 1)) * (i + 1)
-        p.SetOrigin(bounds[4] + z, 0, 0)
+        p.SetOrigin(0, 0, bounds[4] + z)
+        print( bounds[4] + z)
         p.SetNormal(0, 0, 1)
         planes.append(p)
 
-    lut = get_lookup_table(24)  # 24= Brewer Diverging Brown-Blue-Green (11)
-    # lut.SetTableRange(pd.GetPointData().GetScalars(p_name).GetRange())
+    lut = create_lookup_table()
+    if p_name != "":
+        lut.SetTableRange(grid.GetCellData().GetScalars(p_name).GetRange())
+        print("Range:", grid.GetCellData().GetScalars(p_name).GetRange())
+        # lut.SetTableRange(grid.GetPointData().GetScalars(p_name).GetRange())
+    # lut.SetNumberOfTableValues(100)
 
     # create cutter, mappers, and actors
     actors = []
     for i in range(0, nz):
         cutter = vtk.vtkCutter()
-        # cutter.SetInputData(pd)
+        cutter.SetInputData(grid)
         cutter.SetCutFunction(planes[i])
-        cutter.SetInputConnection(tubeFilter.GetOutputPort())
+        # cutter.SetInputConnection(tubeFilter.GetOutputPort())
         cutter.Update()
-        m = vtk.vtkPolyDataMapper()
+        # m = vtk.vtkPolyDataMapper()
+        m = vtk.vtkDataSetMapper()
         m.SetInputConnection(cutter.GetOutputPort())
         m.Update()
+        m.SetArrayName(p_name)
+        m.SelectColorArray(p_name)
+        m.UseLookupTableScalarRangeOn()
         m.SetLookupTable(lut)
+        m.SetColorModeToMapScalars();
+        
         a = vtk.vtkActor()  # create plane actor
         a.GetProperty().SetColor(1.0, 1, 0)
         a.GetProperty().SetLineWidth(2)
         a.SetMapper(m)
         actors.append(a)
-    return actors
+    
+    scalarBar = vtk.vtkScalarBarActor()
+    scalarBar.SetLookupTable(lut)
+    scalarBar.SetTitle(p_name)
+     
+    if render:
+        render_window(actors, p_name, scalarBar).Start()
+        
+    return actors, scalarBar
+
 
