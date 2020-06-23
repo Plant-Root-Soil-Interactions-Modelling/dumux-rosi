@@ -1,9 +1,9 @@
 import vtk
 import numpy as np
-# from rsml_writer import write_rsml
+# from rsml_writer import write_rsml # to write a rsml
 
 """ 
-VTK Tools, by Daniel Leitner (refurbished 12/2019) 
+VTK Tools, by Daniel Leitner (refurbished 6/2020) 
 
 for vtk to numpy, and numpy to vtk conversions
 reading: vtp, writing: msh, dgf, vtp, rsml
@@ -42,7 +42,8 @@ def vtk_cells(t):
 
 
 def vtk_data(d):
-    """ Creates a vtkDataArray from an numpy array, usage e.g. grid.GetCellData().SetScalars(vtk_data(celldata))
+    """ Creates a vtkDataArray from an numpy array, usage 
+    e.g. grid.GetCellData().SetScalars(vtk_data(celldata)), grid.GetCellData().AddArray(...)
     TODO vtkAbstractArray.SetComponentName
     """
     da = vtk.vtkDataArray.CreateDataArray(vtk.VTK_DOUBLE)
