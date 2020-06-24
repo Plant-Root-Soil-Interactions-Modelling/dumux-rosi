@@ -34,7 +34,9 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 cell_number = [16, 16, 30]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+name = "dumux_c12_05cm"
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+soil = vg.Parameters(loam)
 initial = -659.8 + 7.5  # -659.8
 
 kx = 4.32e-2
@@ -52,8 +54,6 @@ split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 NT = round(10 * sim_time * 24 * 3600 / 1200)
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
-name = "dumux_c12_05cm"
-
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
@@ -65,6 +65,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([loam])
 s.setParameter("MinTimeStepSize", "1.e-2")
 s.initializeProblem()
+s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.setRegularisation(1.e-4, 1.e-4)
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
@@ -120,7 +121,7 @@ def initialize_cyl(i):
 
 def simulate_cyl(cyl):
     try:
-        cyl.solve([sim_time / NT], sim_time / NT, False)
+        cyl.solve([sim_time / NT], sim_time / NT / 3, False)
     except:
         x = cyl.grid.mid
         y = cyl.h0
@@ -178,7 +179,7 @@ for i in range(0, NT):
 #         if rsx[j] > s.getSolutionHeadAt(r.rs.seg2cell[j]) + 1:
 #             print("strange segment", j, "in cell", r.rs.seg2cell[j], "root soil interface", rsx[j], "vs macro soil", s.getSolutionHeadAt(r.rs.seg2cell[j]))
 
-    soil_k = np.divide(vg.hydraulic_conductivity(rsx, cyls[0].soil), inner_radii)  # only valid for homogenous soil
+    soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), inner_radii)  # only valid for homogenous soil
     print("Conductivities", np.min(soil_k), kr)
     rx = r.solve(t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
     collar_flux.append(r.collar_flux(t, rx, rsx, soil_k, 0, False))
@@ -258,7 +259,7 @@ for i in range(0, NT):
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-# # VTK vizualisation
+# VTK vizualisation
 ana = pb.SegmentAnalyser(r.rs)
 ana.addData("soil pressure", rsx)
 ana.addData("xylem pressure", rx)
@@ -277,7 +278,7 @@ meshActors, meshCBar = vp.plot_mesh_cuts(soil_grid, "pressure head", 5, "", Fals
 lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
 rootActor.GetMapper().SetLookupTable(lut)
 meshActors.extend([rootActor])
-vp.render_window(meshActors, "Pressure head in soil and at soil root interface at {:g} days".format(sim_time) , meshCBar).Start()
+vp.render_window(meshActors, name + " at {:g} days".format(sim_time) , meshCBar).Start()
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 

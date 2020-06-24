@@ -46,7 +46,7 @@ class SolverWrapper():
         """
         p = []
         for v in points:
-            p.append(list(v / 100.))  # cm -> m
+            p.append([v / 100.])  # cm -> m
         self.base.createGrid1d(p)
 
 #     def createGrid3d(self, points, p0):
