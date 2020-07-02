@@ -8,7 +8,10 @@ from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
-import van_genuchten as vg
+import solver.van_genuchten as vg
+
+import vtk_plot as vp
+import vtk_tools as vt
 
 from math import *
 import numpy as np
@@ -41,7 +44,7 @@ wilting_point = -15000  # cm
 NC = 10  # dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 3  # [day]
+sim_time = 0.25  # [day]
 
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
@@ -90,9 +93,9 @@ seg_length = r.segLength()
 
 r.test()  # sanity checks
 print("Initial pressure head", s.getSolutionHeadAt(cci), s.getSolutionHeadAt(picker(0., 0., min_b[2])))
-input()
 
 """ Initialize local soil models (around each root segment) """
+grids = []
 cyls = []
 ns = len(seg_length)  # number of segments
 for i in range(0, ns):
@@ -103,6 +106,7 @@ for i in range(0, ns):
         cyl = RichardsWrapper(cpp_base)
         cyl.initialize()
         points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base = logbase)
+        grids.append(points)  # to remember
         cyl.createGrid1d(points)
         cyl.setHomogeneousIC(initial)  # cm pressure head
         cyl.setVGParameters([loam])
@@ -114,6 +118,7 @@ for i in range(0, ns):
     else:
         cyls.append([])
         print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
+        input()
 
 """ Simulation """
 print("Starting simulation")
@@ -139,7 +144,7 @@ for i in range(0, NT):
     """ 
     Xylem model 
     """
-    csx = s.getSolutionHead()  # [cm]
+    csx = s.getSolutionHeadAt(cci)  # [cm]
     for j, rc in enumerate(cyls):  # for each segment
         rsx[j] = rc.getInnerHead()  # [cm]
 #         if rsx[j] > s.getSolutionHeadAt(r.rs.seg2cell[j]) + 1:
@@ -153,31 +158,29 @@ for i in range(0, NT):
     min_rsx.append(np.min(np.array(rsx)))
     collar_sx.append(csx)
     min_rx.append(np.min(np.array(rx)))
-    print("Minimum of cylindrical model {:g} cm, minimal root xylem pressure {:g} cm".format(min_rsx[-1], min_rx[-1]))
+    print("Minimum of cylindrical model {:g} cm, soil cell {:g} cm, root xylem {:g} cm".format(min_rsx[-1], np.min(s.getSolutionHead()), min_rx[-1]))
 
     """
     Local soil model
     """
-    # proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]
+    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx = False)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
-
     local_models_time = timeit.default_timer()
-    for j, rc in enumerate(cyls):  # run cylindrical models
+    for j, cyl in enumerate(cyls):  # run cylindrical models
         l = seg_length[j]
-        rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * inner_radii[j] * l))  # [cm3/day] -> [cm /day]
-        rc.setOuterFluxCyl(seg_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-        rc.ddt = 1.e-5  # [day] initial time step
+        cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * inner_radii[j] * l))  # [cm3/day] -> [cm /day]
+        cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+        cyl.ddt = 1.e-5  # [day] initial time step
         try:
-            rc.solve(dt)
+            cyl.solve(dt)
         except:
-            x = rc.getDofCoordinates()
-            y = rc.getSolutionHead()
+            x = cyl.getDofCoordinates()
+            y = cyl.getSolutionHead()
             plt.plot(x, y)
             plt.xlabel("x (cm)")
             plt.ylabel("pressure (cm)")
             plt.show()
-
-        seg_fluxes[j] = -rc.getInnerFlux() * (2 * np.pi * inner_radii[j] * l) / inner_radii  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
+        realized_inner_fluxes[j] = -float(cyl.getInnerFlux()) * (2 * np.pi * inner_radii[j] * l) / inner_radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
 
     print ("Local models solved in ", timeit.default_timer() - local_models_time, " s")
 
@@ -203,9 +206,6 @@ for i in range(0, NT):
     print("Summed net flux {:g}, min movement {:g}, max {:g} cm3".format(np.sum(net_flux), np.min(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
     soil_water = new_soil_water
 
-    print("one iteration done")
-    input()
-
     """ 
     Water (for output)
     """
@@ -220,8 +220,8 @@ for i in range(0, NT):
     for k in r.rs.cell2seg[cci]:
         cyl_water_content = cyls[k].getWaterContent()  # segment 0
         for j, wc in enumerate(cyl_water_content):
-            r1 = cyls[k].grid.nodes[j]
-            r2 = cyls[k].grid.nodes[j + 1]
+            r1 = grids[k][j]
+            r2 = grids[k][j + 1]
             cyl_water += np.pi * (r2 * r2 - r1 * r1) * seg_length[k] * wc
 
     print("Water volume cylindric", cyl_water, "soil", soil_water[cci], cyl_water / soil_water[cci], cci)

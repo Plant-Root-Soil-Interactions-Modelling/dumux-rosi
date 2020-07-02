@@ -72,5 +72,14 @@ for i in range(0, len(t)):
 
 np.savetxt("dumux1d_b4", np.vstack(ex), delimiter = ",")
 
+ax1.set_ylim(0, 0.11)
+ax2.set_ylim(0, 0.11)
+ax3.set_ylim(0, 0.31)
+ax4.set_ylim(0, 0.31)
+
+# ax2.set_xlim(0, 10)
+# ax2.set_xlim(0, 10)
+# ax2.set_xlim(0, 10)
+
 plt.show()
 

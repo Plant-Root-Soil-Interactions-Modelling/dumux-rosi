@@ -26,8 +26,8 @@ class XylemFluxPython(XylemFlux):
 
     def solve_neumann(self, sim_time :float, value :float, sxx, cells :bool, soil_k = []) :
         """ solves the flux equations, with a neumann boundary condtion,
-            @param sim_time [day]      simulation time to evaluate age dependent conductivities
-            @param value [cm3 day-1]   tranpirational flux is negative 
+            @param sim_time [day]     needed for age dependent conductivities (age = sim_time - segment creation time)
+            @param value [cm3 day-1]  tranpirational flux is negative 
          """
         # start = timeit.default_timer()
 #         I, J, V, b = self.linear_system(sim_time)  # Python (care no age or type dependencies!)
@@ -46,7 +46,7 @@ class XylemFluxPython(XylemFlux):
 
     def solve_dirichlet(self, sim_time :float, value :float, sxc :float, sxx, cells :bool, soil_k = []):
         """ solves the flux equations, with a dirichlet boundary condtion,
-            @param sim_time [day]     simulation time to evaluate age dependent conductivities
+            @param sim_time [day]     needed for age dependent conductivities (age = sim_time - segment creation time)
             @param value [cm]         root collar pressure head 
             @param sx [cm]            soil pressure head around root collar segment 
          """
@@ -64,11 +64,14 @@ class XylemFluxPython(XylemFlux):
     def solve(self, sim_time :float, trans :float, sx :float, sxx, cells :bool, wilting_point :float, soil_k = []):
         """ solves the flux equations using neumann and switching to dirichlet 
             in case wilting point is reached in root collar 
-            @param simulation time  [day] for age dependent conductivities
-            @param trans            [cm3 day-1] transpiration rate
-            @param sx               [cm] soil matric potential around root collar
-            @param sxx              [cm] soil matric potentials 
-            @parm wiltingPoint      [cm] pressure head            
+            @param sim_time [day]        needed for age dependent conductivities (age = sim_time - segment creation time)
+            @param trans [cm3 day-1]     transpiration rate
+            @param sx [cm]               soil matric potential around root collar
+            @param sxx [cm]              soil matric potentials 
+            @param cells                 indicates if ssx is given per cell (True) or per segments (False)
+            @parm wiltingPoint [cm]      pressure head   
+            @param soil_k [cm/s]         soil conductivities
+            @return [cm] root xylem pressure
         """
         eps = 1
         x = [wilting_point - sx - 1]
@@ -97,17 +100,17 @@ class XylemFluxPython(XylemFlux):
         return x
 
     def collar_flux(self, sim_time, rx, sx, k_soil = [], seg_ind = 0, cells = True):
-        """ returns the exact transpirational flux of the solution @param rx [g/cm] """
+        """ returns the exact transpirational flux of the xylem model solution @param rx [g/cm] 
+            @param sim_time [day]     needed for age dependent conductivities (age = sim_time - segment creation time)        
+            @param rx [cm]            root xylem pressure
+            @param sxx [cm]           soil matric potentials 
+        """
         s = self.rs.segments[seg_ind]  # collar segment
         if len(k_soil) > 0:
             ksoil = k_soil[seg_ind]
         else:
             ksoil = 1000
         i, j = int(s.x), int(s.y)  # node indices
-        if i >= len(rx):
-            print("rx len", len(rx), "i", i, "j", j, "seg_ind", seg_ind)
-        if j >= len(rx):
-            print("rx len", len(rx), "i", i, "j", j, "seg_ind", seg_ind)
         n1, n2 = self.rs.nodes[i], self.rs.nodes[j]  # nodes
         v = n2.minus(n1)
         l = v.length()  # length of segment
@@ -119,7 +122,7 @@ class XylemFluxPython(XylemFlux):
             p_s = sx[seg_ind]
         a = self.rs.radii[seg_ind]  # radius
         type = int(self.rs.types[seg_ind])  # conductivities kr, kx
-        age = sim_time - int(self.rs.nodeCTs[j])
+        age = sim_time - self.rs.nodeCTs[j]
         kr = self.kr_f(age, type)  # c++ conductivity call back functions
         kr = min(kr, ksoil)
         kx = self.kx_f(age, type)
@@ -137,18 +140,27 @@ class XylemFluxPython(XylemFlux):
         return np.array(list(map(lambda x: np.array(x), self.rs.nodes)))
 
     def get_segments(self):
-        """ converts the list of Vector3d to a 2D numpy array """
+        """ converts the list of Vector2i to a 2D numpy array """
         return np.array(list(map(lambda x: np.array(x), self.rs.segments)), dtype = np.int64)
+
+    def get_ages(self):
+        """ converts the list of nodeCT to a numpy array of segment ages"""
+        ages = np.array(self.rs.nodeCTs)
+        ages = np.max(ages) * np.ones(ages.shape) - ages  # from creation time to age
+        return ages[1:]  # segment index is node index-1
 
     def test(self):
         """ perfoms some sanity checks """
         print()
+
+        # 1 check segment order
         segments = self.get_segments()
         for i, s_ in enumerate(segments):
             if i != s_[1] - 1:
                 raise "Segment indices are mixed up"
         print(len(segments), "segments")
 
+        # 2 check for small segments
         seg_length = self.segLength()
         c = 0
         for l in seg_length:
@@ -156,9 +168,15 @@ class XylemFluxPython(XylemFlux):
                 c += 1
         print(c, "segments with length < 1.e-5")
 
-        nodes = self.get_nodes()
-        cci = self.rs.soil_index(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
+        # 3 check for type range
+        types = self.rs.types
+        if np.min(types) > 0:
+            raise "Types start with an index greater than 0"
+        print("{:g} different root types".format(np.max(types) + 1))
 
+        # 4 output ages
+        ages = self.get_ages()
+        print("ages from {:g} to {:g}".format(np.min(ages), np.max(ages)))
         print()
 
     @staticmethod

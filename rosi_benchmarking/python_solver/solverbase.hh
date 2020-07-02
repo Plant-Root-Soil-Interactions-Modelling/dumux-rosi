@@ -374,7 +374,7 @@ public:
         }
 
         std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
-            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt); // the main time loop is moved to Python
+            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt, false); // the main time loop is moved to Python
         if (maxDt<0) { // per default value take from parameter tree
             maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // if none, default is outer time step
         }
@@ -390,6 +390,7 @@ public:
         auto xOld = x;
         do {
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
+            ddt = std::max(ddt, 1.); // limit minimal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
 
