@@ -46,17 +46,16 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-NC = 10  # dof
-logbase = 1.5
 sim_time = 3  # 0.65  # 0.25  # [day]
-
-split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 age_dependent = True  # conductivities
 
-NT = round(100 * sim_time * 24 * 3600 / 1200)
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
+NC = 10  # dof
+logbase = 1.5
+split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
+NT = round(100 * sim_time * 24 * 3600 / 1200)
 skip = 20  # for output and results, skip iteration
+domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -262,12 +261,11 @@ for i in range(0, NT):
     """ 
     Water (for output)
     """
-    water_domain.append(np.min(soil_water))  # from previous time step
-    water_collar_cell.append(soil_water[cci])
-    water_uptake.append(summed_soil_fluxes)  # cm3/day
-
     wall_iteration = timeit.default_timer() - wall_iteration
     if i % skip == 0:
+        water_domain.append(np.min(soil_water))  # from previous time step
+        water_collar_cell.append(soil_water[cci])
+        water_uptake.append(summed_soil_fluxes)  # cm3/day
         cyl_water = 0.
         for k in r.rs.cell2seg[cci]:
             cyl_water_content = cyls[k].getWaterContent()  # segment 0
@@ -285,28 +283,7 @@ for i in range(0, NT):
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-# VTK vizualisation
-ana = pb.SegmentAnalyser(r.rs)
-ana.addData("soil pressure", rsx)
-ana.addData("xylem pressure", rx)
-if periodic:
-    ana.mapPeriodic(min_b, max_b)
-pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "soil pressure", "xylem pressure"])
-rootActor, rootCBar = vp.plot_roots(pd, "soil pressure" , "", False)
-
-soil_grid = vp.uniform_grid(np.array(min_b), np.array(max_b), np.array(cell_number))
-soil_water_content = vt.vtk_data(np.array(s.getWaterContent()))
-soil_water_content.SetName("water content")
-soil_grid.GetCellData().AddArray(soil_water_content)
-soil_pressure = vt.vtk_data(np.array(s.getSolutionHead()))
-soil_pressure.SetName("pressure head")  # in macroscopic soil
-soil_grid.GetCellData().AddArray(soil_pressure)
-meshActors, meshCBar = vp.plot_mesh_cuts(soil_grid, "pressure head", 4, "", False)
-
-lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
-rootActor.GetMapper().SetLookupTable(lut)
-meshActors.extend([rootActor])
-vp.render_window(meshActors, name + " at {:g} days".format(sim_time) , meshCBar).Start()
+vp.plot_roots_and_soil(r.rs, "soil pressure", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 x_ = out_times

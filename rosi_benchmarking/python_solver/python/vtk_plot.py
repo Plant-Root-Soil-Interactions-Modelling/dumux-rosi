@@ -376,3 +376,32 @@ def plot_mesh_cuts(grid, p_name, nz = 3, win_title = "", render = True):
 
     return actors, scalar_bar
 
+
+def plot_roots_and_soil(rs, rname :str, rx, s, periodic :bool, min_b, max_b, cell_number, filename :str):
+    """ TODO """
+    ana = pb.SegmentAnalyser(rs)
+    ana.addData(rname, rx)
+    if periodic:
+        w = max_b - min_b
+        ana.mapPeriodic(w[0], w[1])
+    pd = segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", rname])
+    rootActor, rootCBar = plot_roots(pd, rname, "", False)
+    soil_grid = uniform_grid(np.array(min_b), np.array(max_b), np.array(cell_number))
+    soil_water_content = vtk_data(np.array(s.getWaterContent()))
+    soil_water_content.SetName("water content")
+    soil_grid.GetCellData().AddArray(soil_water_content)
+    soil_pressure = vtk_data(np.array(s.getSolutionHead()))
+    soil_pressure.SetName("pressure head")  # in macroscopic soil
+    soil_grid.GetCellData().AddArray(soil_pressure)
+    meshActors, meshCBar = plot_mesh_cuts(soil_grid, "pressure head", 4, "", False)
+    lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
+    rootActor.GetMapper().SetLookupTable(lut)
+    meshActors.extend([rootActor])
+    # ana.write(filename + ".vtp") # !!!!! todo segmentation fault?
+    # write_vtu(soil_grid, filename + ".vtu") # todo
+    render_window(meshActors, filename, meshCBar).Start()
+
+
+def plot_roots_and_soil_files(name):
+    # todo
+    pass

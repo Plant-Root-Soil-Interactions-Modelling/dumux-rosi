@@ -23,29 +23,33 @@ also works parallel with mpiexec
 
 
 def solve(soil, simtime, evap, NZ, ic = -200):
+
     cpp_base = RichardsSP()
     s = RichardsWrapper(cpp_base)
     s.initialize()
 
     s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
     # s.setTopBC("flux", evap)  #  [cm/day] atmospheric is with surface run-off
-    s.setBotBC("freeDrainage")  # BC
+    # s.setTopBC("constantPressure", -10000)  #  [cm/day] atmospheric is with surface run-off
+    s.setBotBC("freeDrainage")  # BC freeDrainage
 
-    # s.createGrid([-5., -5., -100.], [5., 5., 0.], [1, 1, NZ])  # [cm]
-
-    points_0 = np.zeros((NZ,))
-    points_z = -np.logspace(np.log10(1), np.log10(101), NZ) + np.ones((NZ,))
-    points = np.transpose(np.vstack((points_0, points_0, points_z)))
-    p0 = np.array([[ 0.5, 0.5, 0. ], [ -0.5, 0.5, 0. ], [ -0.5, -0.5, 0. ], [ 0.5, -0.5, 0. ] ])
-    s.createGrid3d(points, p0)  # [cm]
-
+    s.createGrid([-5., -5., -100.], [5., 5., 0.], [1, 1, NZ])  # [cm]
+#     points = -np.logspace(np.log(1) / np.log(1.5), np.log(101) / np.log(1.5), NZ, base = 1.5)
+#     points = points + np.ones(points.shape)
+#     vols = points[1:] - points[0:-1]
 #     s.createGrid1d(points)
+    vols = (100. / NZ) * np.ones((NZ,)) * 100.  # cm3
+
     s.setVGParameters([soil])
     s.setHomogeneousIC(ic)  # cm pressure head
     s.initializeProblem()
     s.setCriticalPressure(-10000)
     s.setRegularisation(1.e-6, 0.)
     idx_top = s.pickCell([0.0, 0.0, 0.0])  # index to watch flux
+
+    initial_water = s.getWaterVolume()
+#     initial_water = np.sum(np.multiply(water, vols))
+    print(initial_water)
 
     N = 200
     dt = simtime / N
@@ -63,6 +67,11 @@ def solve(soil, simtime, evap, NZ, ic = -200):
 
         f = s.getNeumann(idx_top)
         # f = s.getSolutionHeadAt(idx_top)
+
+#         current_water = s.getWaterVolume()
+#         f = (initial_water - current_water) / dt / 1.e2
+#         print(current_water, f)
+#         initial_water = current_water
 
         if rank == 0:
             x_.append(s.simTime)
@@ -84,10 +93,10 @@ if __name__ == "__main__":
     xd, zd = solve(clay, 6, -0.3, 99)
 
     # high res
-    xa2, za2 = solve(sand, 1, -0.1, 53990, -40)
-    xb2, zb2 = solve(loam, 10, -0.1, 53990)
-    xc2, zc2 = solve(loam, 2, -0.3, 53990)
-    xd2, zd2 = solve(clay, 6, -0.3, 53990)
+    xa2, za2 = solve(sand, 1, -0.1, 1399, -40)
+    xb2, zb2 = solve(loam, 10, -0.1, 1399)
+    xc2, zc2 = solve(loam, 2, -0.3, 1399)
+    xd2, zd2 = solve(clay, 6, -0.3, 1399)
 
     if rank == 0:
         ax1.plot(xa, za, "r")
@@ -98,5 +107,11 @@ if __name__ == "__main__":
         ax2.plot(xb2, zb2, "g--")
         ax3.plot(xc2, zc2, "g--")
         ax4.plot(xd2, zd2, "g--")
+
+        ax1.set_ylim(0, 0.11)
+        ax2.set_ylim(0, 0.11)
+        ax3.set_ylim(0, 0.31)
+        ax4.set_ylim(0, 0.31)
+
         plt.show()
 
