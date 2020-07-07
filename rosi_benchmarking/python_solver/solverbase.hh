@@ -72,6 +72,7 @@ public:
         for (int i=0; i<dim; i++) { // initialize numberOfCells
             numberOfCells[i] = 0;
         }
+        setParameter("Grid.Overlap","1");
     }
 
     virtual ~SolverBase() { }

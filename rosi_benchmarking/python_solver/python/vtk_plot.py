@@ -5,15 +5,14 @@ import numpy as np
 import vtk
 
 """ 
-VTK Tools, by Daniel Leitner (refurbished 12/2019) 
+VTK Plot, by Daniel Leitner (refurbished 06/2020) 
 
-for vtk to numpy, and numpy to vtk conversions
-reading: vtp, writing: msh, dgf, vtp, rsml
+to make interactive vtk plot of root systems and soil grids
 """
 
 
 def segs_to_polydata(rs, zoom_factor = 1., param_names = ["radius", "type", "creationTime"]):
-    """ Creates vtkPolydata from a RootSystem or Plant using segments 
+    """ Creates vtkPolydata from a RootSystem or Plant using vtkLines to represent the root segments 
     @param rs             A RootSystem, Plant, or SegmentAnalyser
     @param zoom_factor    The radial zoom factor, since root are sometimes too thin for vizualisation
     @param param_names    Parameter names of scalar fields, that are copied to the polydata    
@@ -325,8 +324,8 @@ def plot_mesh_cuts(grid, p_name, nz = 3, win_title = "", render = True):
     @param grid         some vtk grid (structured or unstructured)
     @param p_name       parameter to visualize
     @param nz           number of vertical slices
-    @param win_title  the windows titles (optionally, defaults to p_name)
-    @param render     render in a new interactive window (default = True)
+    @param win_title    the windows titles (optionally, defaults to p_name)
+    @param render       render in a new interactive window (default = True)
     @return a tuple of a list of vtkActors and a single corresponding color bar vtkScalarBarActor    
     """
     if win_title == "":
@@ -377,15 +376,24 @@ def plot_mesh_cuts(grid, p_name, nz = 3, win_title = "", render = True):
     return actors, scalar_bar
 
 
-def plot_roots_and_soil(rs, rname :str, rx, s, periodic :bool, min_b, max_b, cell_number, filename :str):
-    """ TODO """
+def plot_roots_and_soil(rs, pname :str, rp, s, periodic :bool, min_b, max_b, cell_number, filename :str):
+    """ Plots soil slices and roots, additionally saves both grids as files
+    @param rs            some Organism (e.g. RootSystem, MappedRootSystem, ...) or MappedSegments
+    @param pname         root and soil parameter that will be visualized ("pressure head", or "water content")
+    @param rp            root parameter segment data (will be added)
+    @param periodic      if yes the root system will be mapped into the domain 
+    @param min_b         minimum of domain boundaries
+    @param max_b         maximum of domain boundaries    
+    @param cell_number   domain resolution
+    @param filename      file name (without extension)
+    """
     ana = pb.SegmentAnalyser(rs)
-    ana.addData(rname, rx)
+    ana.addData(pname, rp)
     if periodic:
         w = max_b - min_b
         ana.mapPeriodic(w[0], w[1])
-    pd = segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", rname])
-    rootActor, rootCBar = plot_roots(pd, rname, "", False)
+    pd = segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", pname])
+
     soil_grid = uniform_grid(np.array(min_b), np.array(max_b), np.array(cell_number))
     soil_water_content = vtk_data(np.array(s.getWaterContent()))
     soil_water_content.SetName("water content")
@@ -393,15 +401,31 @@ def plot_roots_and_soil(rs, rname :str, rx, s, periodic :bool, min_b, max_b, cel
     soil_pressure = vtk_data(np.array(s.getSolutionHead()))
     soil_pressure.SetName("pressure head")  # in macroscopic soil
     soil_grid.GetCellData().AddArray(soil_pressure)
-    meshActors, meshCBar = plot_mesh_cuts(soil_grid, "pressure head", 4, "", False)
+
+    rootActor, rootCBar = plot_roots(pd, pname, "", False)
+    meshActors, meshCBar = plot_mesh_cuts(soil_grid, pname, 4, "", False)
     lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
     rootActor.GetMapper().SetLookupTable(lut)
     meshActors.extend([rootActor])
-    # ana.write(filename + ".vtp") # !!!!! todo segmentation fault?
-    # write_vtu(soil_grid, filename + ".vtu") # todo
     render_window(meshActors, filename, meshCBar).Start()
 
+    path = "results/"
+    ana.write(path + filename + ".vtp", ["radius", "subType", "creationTime", pname])
+    write_vtu(path + filename + ".vtu", soil_grid)
 
-def plot_roots_and_soil_files(name):
-    # todo
-    pass
+
+def plot_roots_and_soil_files(filename : str, pname :str):
+    """ Plots soil slices and roots from to files (one vtp and one vtu) 
+    @param filename      file name (without extension)
+    @param pname         root and soil parameter that will be visualized ("pressure head", or "water content")    
+    """
+    path = "results/"
+    pd = read_vtp(path + filename + ".vtp")
+    soil_grid = read_rect_vtu(path + filename + ".vtp")
+    rootActor, rootCBar = plot_roots(pd, pname, "", False)
+    meshActors, meshCBar = plot_mesh_cuts(soil_grid, pname, 4, "", False)
+    lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
+    rootActor.GetMapper().SetLookupTable(lut)
+    meshActors.extend([rootActor])
+    render_window(meshActors, filename, meshCBar).Start()
+

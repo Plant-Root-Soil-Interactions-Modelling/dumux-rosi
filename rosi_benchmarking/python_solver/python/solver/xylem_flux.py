@@ -36,7 +36,7 @@ class XylemFluxPython(XylemFlux):
         if len(soil_k) > 0:
             self.linearSystem(sim_time, sxx, cells, soil_k)  # C++
         else:
-            self.linearSystem(sim_time, sxx, cells)
+            self.linearSystem(sim_time, sxx, cells)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_neumann(Q, self.aB, [0], [value])  # cm3 day-1
@@ -143,10 +143,12 @@ class XylemFluxPython(XylemFlux):
         """ converts the list of Vector2i to a 2D numpy array """
         return np.array(list(map(lambda x: np.array(x), self.rs.segments)), dtype = np.int64)
 
-    def get_ages(self):
+    def get_ages(self, final_age = 0.):
         """ converts the list of nodeCT to a numpy array of segment ages"""
-        ages = np.array(self.rs.nodeCTs)
-        ages = np.max(ages) * np.ones(ages.shape) - ages  # from creation time to age
+        cts = np.array(self.rs.nodeCTs)
+        if final_age == 0. :
+            final_age = np.max(cts)
+        ages = final_age * np.ones(cts.shape) - cts  # from creation time to age
         return ages[1:]  # segment index is node index-1
 
     def test(self):
@@ -191,13 +193,13 @@ class XylemFluxPython(XylemFlux):
         nodes = np.array(nodes)  # for slicing in the plots
         nodes2 = []  # Conversions...
         for n in nodes:
-            nodes2.append(pb.Vector3d(n[0] / 10., n[1] / 10., n[2] / 10.))  # [mm] -> [cm], and convert to a list of Vetor3d
+            nodes2.append(pb.Vector3d(n[0] , n[1] , n[2]))
         segs2 = []
         nodeCTs = np.zeros((len(nodes), 1))  # we need node creation times
         for i, s in enumerate(segs):
             nodeCTs[s[1]] = seg_ct[i]
             segs2.append(pb.Vector2i(int(s[0]), int(s[1])))
-        radii = np.array(radii) / 10.  # [mm]->[cm]
+        radii = np.array(radii)
         types = np.array(types, dtype = np.int64) - 1  # index must start with 0
         return pb.MappedSegments(nodes2, nodeCTs, segs2, radii, types)  # root system grid
 

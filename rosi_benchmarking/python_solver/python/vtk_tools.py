@@ -6,7 +6,9 @@ import numpy as np
 VTK Tools, by Daniel Leitner (refurbished 6/2020) 
 
 for vtk to numpy, and numpy to vtk conversions
-reading: vtp, writing: msh, dgf, vtp, rsml
+
+reading: vtp, vtu 
+writing: vtp, vtu, msh, dgf, rsml
 """
 
 
@@ -152,6 +154,15 @@ def read_vtu(name):
     return ug
 
 
+def read_rect_vtu(name):
+    """ Opens a vtp and returns the vtkUnstructuredGrid class """
+    reader = vtk.vtkXMLRectilinearGridWriter()
+    reader.SetFileName(name)
+    reader.Update()
+    ug = reader.GetOutput()
+    return ug
+
+
 def write_msh(name, pd):
     """ Writes a tetraedral .msh file including cell data from vtkPolyData """
     with open(name, "w") as f:
@@ -246,6 +257,14 @@ def write_vtp(name, pd):
     writer = vtk.vtkXMLPolyDataWriter()
     writer.SetFileName(name)
     writer.SetInputData(pd)
+    writer.Write()
+
+
+def write_vtu(name, grid):
+    """ Writes a VTU file """
+    writer = vtk.vtkXMLRectilinearGridWriter()
+    writer.SetFileName(name)
+    writer.SetInputData(grid)
     writer.Write()
 
 
