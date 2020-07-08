@@ -12,10 +12,10 @@
 # rank = comm.Get_rank()
 
 import numpy as np
-import fivo as fv
+import fivo as fv  # C++ approach (not good)
 
 """ 
-Cylindrical 1D model 
+Cylindrical 1D model, water movement only (C++ solver depricated)
 
 """
 ndof = 200  # ndof = 1000, dann passts

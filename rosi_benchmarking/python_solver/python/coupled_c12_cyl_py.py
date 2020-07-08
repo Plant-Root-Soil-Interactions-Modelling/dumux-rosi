@@ -34,10 +34,10 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [16, 16, 30]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [4, 4, 7]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
-name = "dumux_c12_05cm_age"
+name = "dumux_c12_2cm"
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 soil = vg.Parameters(loam)
 initial = -659.8 + 7.5  # -659.8
@@ -46,15 +46,15 @@ trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
 sim_time = 3  # 0.65  # 0.25  # [day]
-age_dependent = True  # conductivities
+age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 
-NC = 10  # dof
+NC = 6  # dof+1
 logbase = 1.5
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
-NT = round(100 * sim_time * 24 * 3600 / 1200)
-skip = 10  # for output and results, skip iteration
+NT = round(10 * sim_time * 24 * 3600 / 1200)
+skip = 1  # for output and results, skip iteration
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 """ Initialize macroscopic soil model """
@@ -117,6 +117,7 @@ def initialize_cyl(i):
     if a_in < a_out:
         z = 0.5 * (nodes[segs[i, 0], 2] + nodes[segs[i, 1], 2])
         points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base = logbase)
+        # points = np.linspace(a_in, a_out, NC)
         grid = FV_Grid1Dcyl(points)
         cyl = rich.FV_Richards1D(grid, loam)
         cyl.h0 = np.ones((ndof,)) * (initial - 7.5 - z)
@@ -275,7 +276,7 @@ for i in range(0, NT):
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-vp.plot_roots_and_soil(r.rs, "soil pressure", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 x_ = out_times

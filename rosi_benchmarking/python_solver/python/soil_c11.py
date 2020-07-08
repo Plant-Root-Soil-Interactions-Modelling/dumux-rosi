@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 """ 
 Root uptake with a sink term (Benchmark C11) with a 3D SPGrid but low resolution z (for speed), 
@@ -46,7 +44,7 @@ def solve(soil, simtimes, q_r, N):
     s.createGrid([-l, -l, -1.], [l, l, 0.], [N, N, 1])  # [cm]
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
-    s.setCriticalPressure(-15000) 
+    s.setCriticalPressure(-15000)
     idx_top = s.pickCell([0., 0., -.5])  # index for sink
 
     sources = { idx_top:-q_r }  # gIdx: value [ g/day ]
@@ -88,7 +86,7 @@ if __name__ == "__main__":
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
-    fig, ax = plt.subplots(2, 3, figsize=(14, 14))
+    fig, ax = plt.subplots(2, 3, figsize = (14, 14))
 
     if rank == 0:
         t0 = time.time()

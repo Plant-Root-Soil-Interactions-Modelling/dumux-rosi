@@ -8,21 +8,14 @@ import matplotlib.pyplot as plt
 
 import solver.van_genuchten as vg
 from solver.fv_grid import *
-import solver.richards_solver as rich
+import solver.richards_solver as rich  # Python solver
 
 import matplotlib.pyplot as plt
-import numpy as np
 import os
-
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-
 import time
 
 """ 
-Cylindrical 1D model 
-
+Cylindrical 1D model (Python solver) Water movement only
 """
 
 ndof = 200  # ndof = 1000, dann passts

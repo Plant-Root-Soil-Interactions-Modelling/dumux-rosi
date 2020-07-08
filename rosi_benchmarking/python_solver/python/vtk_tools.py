@@ -156,7 +156,7 @@ def read_vtu(name):
 
 def read_rect_vtu(name):
     """ Opens a vtp and returns the vtkUnstructuredGrid class """
-    reader = vtk.vtkXMLRectilinearGridWriter()
+    reader = vtk.vtkXMLImageDataReader()
     reader.SetFileName(name)
     reader.Update()
     ug = reader.GetOutput()
@@ -262,7 +262,7 @@ def write_vtp(name, pd):
 
 def write_vtu(name, grid):
     """ Writes a VTU file """
-    writer = vtk.vtkXMLRectilinearGridWriter()
+    writer = vtk.vtkXMLImageDataWriter()
     writer.SetFileName(name)
     writer.SetInputData(grid)
     writer.Write()

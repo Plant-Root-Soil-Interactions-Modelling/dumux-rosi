@@ -410,7 +410,7 @@ def plot_roots_and_soil(rs, pname :str, rp, s, periodic :bool, min_b, max_b, cel
     render_window(meshActors, filename, meshCBar).Start()
 
     path = "results/"
-    ana.write(path + filename + ".vtp", ["radius", "subType", "creationTime", pname])
+    write_vtp(path + filename + ".vtp", pd)
     write_vtu(path + filename + ".vtu", soil_grid)
 
 

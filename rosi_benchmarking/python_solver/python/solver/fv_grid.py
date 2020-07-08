@@ -13,15 +13,15 @@ class FV_Grid:
         self.n_nodes = 0  # number of nodes
         self.n_cells = 0  # number of cells
 
-        self.neighbours = None  # cell indices, np.array((n_cells, number_of_neighbours), dtype=np.int64), -1 indicate no neigbour
+        self.neighbours = None  # cell indices, np.array((n_cells, number_of_neighbours), dtype=np.int64), -1 indicates no neigbour
         self.boundary_faces = []  # tuples defining the boundary faces of the grid (cell_id, face_id)
         self.area_per_volume = None  # [cm2/cm3] cell face area to neigbour cell divided by volume. shape of neigbours
         self.dx = None  # distances to neighbours. shape of neigbours
 
     def centers(self):
         """ cell centers as numpy array"""
-        c = np.zeros((self.cells.shape[0],))
-        for i in range(0, self.cells.shape[0]):
+        c = np.zeros((self.n_cells, self.dim))
+        for i in range(0, self.n_cells):
             c[i] = self.center(i)
         return c
 

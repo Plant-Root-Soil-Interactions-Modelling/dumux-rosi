@@ -31,13 +31,15 @@ class FV_Richards:
         self.alpha = np.zeros((n * grid.number_of_neighbours,))
         i_ = np.array(range(0, n), dtype = np.int64)
         cols = np.ones((1, self.grid.number_of_neighbours), dtype = np.int64)
-        self.alpha_i = np.outer(i_, cols)  # construtor
-        self.alpha_j = self.grid.neighbours  # rename
-        self.alpha_j[0, 0] = 0  # corresponding alpha = 0 at these boundary cells
-        self.alpha_j[-1, 1] = 0
+        self.alpha_i = np.outer(i_, cols)
+        self.alpha_j = self.grid.neighbours.copy()
+        for (i, j) in self.grid.boundary_faces:
+            self.alpha_j[i, j] = 0  # corresponding alpha = 0 at these boundary cells
+            self.alpha_j[i, j] = 0
         self.beta_const = np.zeros((n,))  # const part of diagonal entries [1]
         self.f_const = np.zeros((n,))  # const part of load vector [1]
         #
+        self.sim_time = 0  # current simulation time [day]
         self.h0 = np.zeros((n,))  # solution of last time step [cm]
         self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing list of values
         self.sources = np.zeros((n,))  # [cm3 / cm3]
@@ -51,28 +53,27 @@ class FV_Richards:
         """
         self.solver_initialize()
         dt = max_dt  #  initially proposed time step
-        sim_time = 0  # current simulation time
         k = 0
         h_out = []
         while k < len(output_times):
 
-            dt_ = min(output_times[k] - sim_time, dt)  #  actual time step
+            dt_ = min(output_times[k] - self.sim_time, dt)  #  actual time step
             dt_ = min(dt_, max_dt)
             h2, ok, i = self.picard_iteration(dt_)
 
             if ok:
 
-                sim_time = sim_time + dt_  # increase current time
+                self.sim_time = self.sim_time + dt_  # increase current time
 
                 self.h0 = h2
                 self.solver_success()
 
-                if output_times[k] <= sim_time:  # store result
+                if output_times[k] <= self.sim_time:  # store result
                     h_out.append(h2.copy())
                     k = k + 1
 
                 if verbose:
-                    print('Time {:g} days, iterations {:g}, last time step {:g}'.format(sim_time, i, dt_))
+                    print('Time {:g} days, iterations {:g}, last time step {:g}'.format(self.sim_time, i, dt_))
 
                 if dt_ == dt:
                     if i < 5:
@@ -81,7 +82,7 @@ class FV_Richards:
                         dt = dt / 1.25
             else:
                 dt = dt / 10.
-                print("retry with max {:g} = {:g} day".format(dt, min(output_times[k] - sim_time, dt)))
+                print("retry with max {:g} = {:g} day".format(dt, min(output_times[k] - self.sim_time, dt)))
                 if dt < 1.e-10:
                     raise Exception("I did not find a solution")
 
@@ -146,14 +147,12 @@ class FV_Richards:
     def prepare_linear_system(self):
         """ the part of the linear system that can be constructed outside the fix-point iteration """
         self.A = sparse.coo_matrix((self.alpha.flat, (self.alpha_i.flat, self.alpha_j.flat)))
-        a
 
     def solve_linear_system(self, beta, f):
         """ constructs and solves linear system """
         B = sparse.coo_matrix((beta, (np.array(range(0, self.n)), np.array(range(0, self.n)))))
         # plt.spy(A + B)
         # plt.show()
-        a
         return LA.spsolve(self.A + B, f, use_umfpack = True)
 
     def create_k(self):
@@ -211,12 +210,8 @@ class FV_Richards:
         dictionary with lambda functions would be nicer, but causes trouble with parallelisation    
         """
         for (i, j), (type, v) in self.bc.items():
-            if type == "rootsystem":
-                bc = self.bc_rootsystem(*v[0:2])
-            elif type == "flux_in_out":
+            if type == "flux_in_out":
                 bc = self.bc_flux_in_out(i, *v[0:3])
-            elif type == "rootsystem_exact":
-                bc = self.bc_rootsystem_exact(*v[0:6])
             elif type == "flux_in":
                 bc = self.bc_flux_in(i, *v[0:3])
             elif type == "flux_out":
