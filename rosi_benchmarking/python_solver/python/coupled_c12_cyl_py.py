@@ -9,7 +9,7 @@ from solver.richards import RichardsWrapper  # Python part
 
 import solver.van_genuchten as vg
 from solver.fv_grid import *
-import solver.richards_solver as rich  # local cylindrical models
+import solver.fv_richards as rich  # local cylindrical models
 
 import vtk_plot as vp
 import vtk_tools as vt
@@ -45,11 +45,11 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 3  # 0.65  # 0.25  # [day]
+sim_time = 1  # 0.65  # 0.25  # [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 
-NC = 6  # dof+1
+NC = 10  # dof+1
 logbase = 1.5
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
@@ -118,9 +118,9 @@ def initialize_cyl(i):
         z = 0.5 * (nodes[segs[i, 0], 2] + nodes[segs[i, 1], 2])
         points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base = logbase)
         # points = np.linspace(a_in, a_out, NC)
-        grid = FV_Grid1Dcyl(points)
-        cyl = rich.FV_Richards1D(grid, loam)
-        cyl.h0 = np.ones((ndof,)) * (initial - 7.5 - z)
+        grid = FVGrid1Dcyl(points)
+        cyl = rich.FVRichards1D(grid, loam)
+        cyl.x0 = np.ones((ndof,)) * (initial - 7.5 - z)
         return cyl
     else:
         print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
@@ -133,7 +133,7 @@ def simulate_cyl(cyl):
         cyl.solve([sim_time / NT], sim_time / NT, False)
     except:
         x = cyl.grid.centers()
-        y = cyl.h0
+        y = cyl.x0
         plt.plot(x, y)
         plt.xlabel("x (cm)")
         plt.ylabel("pressure (cm)")

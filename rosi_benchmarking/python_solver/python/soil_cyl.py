@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+import time
+
 """ 
 Cylindrical 1D model, water movement only (DuMux)
 
@@ -38,6 +40,7 @@ s.ddt = 1.e-5
 
 col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
 
+t = time.time()
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
@@ -47,6 +50,7 @@ for i, dt in enumerate(np.diff(times)):
     points = s.getDofCoordinates()
     x = s.getSolutionHead()
     plt.plot(points[:], x, col[i % len(col)], label = "dumux {} days".format(s.simTime))
+print("elapsed time", time.time() - t)
 
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
 data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows = 8)

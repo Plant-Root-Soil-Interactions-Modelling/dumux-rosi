@@ -9,9 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 """ 
 Cylindrical 1D model, (DuMux) Advection Diffusion  

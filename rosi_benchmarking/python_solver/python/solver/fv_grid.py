@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class FV_Grid:
+class FVGrid:
     """ simplistic FV base class """
 
     def __init__(self):
@@ -33,7 +33,7 @@ class FV_Grid:
         return m
 
 
-class FV_Grid1D(FV_Grid):
+class FVGrid1D(FVGrid):
     """ 1d grid """
 
     def __init__(self, nodes :np.array):
@@ -69,7 +69,7 @@ class FV_Grid1D(FV_Grid):
                     self.dx[i, j] = np.linalg.norm(center[i] - self.nodes[i])  # half cell width
 
 
-class FV_Grid1Dcyl(FV_Grid1D):
+class FVGrid1Dcyl(FVGrid1D):
     """ 1d cylindrical grid """
 
     def __init__(self, nodes :np.array):

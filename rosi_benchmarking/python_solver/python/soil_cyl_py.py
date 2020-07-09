@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import solver.van_genuchten as vg
 from solver.fv_grid import *
-import solver.richards_solver as rich  # Python solver
+import solver.fv_richards as rich  # Python solver
 
 import matplotlib.pyplot as plt
 import os
@@ -18,22 +18,28 @@ import time
 Cylindrical 1D model (Python solver) Water movement only
 """
 
-ndof = 200  # ndof = 1000, dann passts
+ndof = 100  # ndof = 1000, dann passts
 
 nodes = np.linspace(0.02, 0.6, ndof + 1)
-grid = FV_Grid1Dcyl(nodes)
+grid = FVGrid1Dcyl(nodes)
 
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
 sim_times = [10, 20]
 # richards = rich.FV_Richards(grid, loam)  # general solver using UMFPack
-richards = rich.FV_Richards1D(grid, loam)  # specialized 1d solver (direct banded is sufficient)
-richards.h0 = np.ones((ndof,)) * (-100)
-richards.bc[(0, 0)] = ["flux_out", [-0.1, -15000, 0.02 ]]
+richards = rich.FVRichards1D(grid, loam)  # specialized 1d solver (direct banded is sufficient)
+richards.x0 = np.ones((ndof,)) * (-100)
+dx = 0.5 * (nodes[1] - 0.01)
+richards.bc[(0, 0)] = ["flux_out", [-0.1, -15000, dx]]
 
 t = time.time()
-h = richards.solve(sim_times, 0.2)
+h = richards.solve(sim_times, 0.01)
 print("elapsed time", time.time() - t)
+
+# u = richards.darcy_velocity()
+# plt.title("Darcy velocities (cm/day)")
+# plt.plot(richards.grid.centers(), u, "b*")
+# plt.show()
 
 col = ["r*", "g*", "b", "m", "c", "y"] * 5
 for i in range(0, len(sim_times)):

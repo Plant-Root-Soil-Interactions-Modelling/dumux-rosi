@@ -2,13 +2,13 @@ import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg as LA
 import scipy.linalg as la
-import matplotlib.pyplot as plt
 
-import solver.van_genuchten as vg
 from solver.fv_grid import *
+from solver.fv_solver import *
+import solver.van_genuchten as vg
 
 
-class FV_Richards:
+class FVRichards(FVSolver):
     """ 
     Solves richards equation using finite volumes following van Dam and Feddes (2000) 
     
@@ -21,9 +21,9 @@ class FV_Richards:
     FV_Richards1D(FV_Richards)         adds a special bounary conditions for 1d, uses a driect banded solver
     """
 
-    def __init__(self, grid :FV_Grid, soil):
-        self.grid = grid  # simplistic fv grid
-        self.n = self.grid.n_cells
+    def __init__(self, grid :FVGrid, soil):
+        """ Initializes Richards solver """
+        super().__init__(grid)
         self.soil = vg.Parameters(soil)  #  currently, homogeneous soil (todo)
         #
         n = self.n
@@ -39,88 +39,28 @@ class FV_Richards:
         self.beta_const = np.zeros((n,))  # const part of diagonal entries [1]
         self.f_const = np.zeros((n,))  # const part of load vector [1]
         #
-        self.sim_time = 0  # current simulation time [day]
-        self.h0 = np.zeros((n,))  # solution of last time step [cm]
-        self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing list of values
-        self.sources = np.zeros((n,))  # [cm3 / cm3]
-        #
         self.gravitation = 0  # assure dimension equals grid.dim (todo) currently gravitation is ignored
-
-    def solve(self, output_times :list, max_dt = 0.5, verbose = True):
-        """ solves richards equation for several output times 
-        @param output_times       final simulation times [day]
-        @param max_dt             maximal internal time step
-        """
-        self.solver_initialize()
-        dt = max_dt  #  initially proposed time step
-        k = 0
-        h_out = []
-        while k < len(output_times):
-
-            dt_ = min(output_times[k] - self.sim_time, dt)  #  actual time step
-            dt_ = min(dt_, max_dt)
-            h2, ok, i = self.picard_iteration(dt_)
-
-            if ok:
-
-                self.sim_time = self.sim_time + dt_  # increase current time
-
-                self.h0 = h2
-                self.solver_success()
-
-                if output_times[k] <= self.sim_time:  # store result
-                    h_out.append(h2.copy())
-                    k = k + 1
-
-                if verbose:
-                    print('Time {:g} days, iterations {:g}, last time step {:g}'.format(self.sim_time, i, dt_))
-
-                if dt_ == dt:
-                    if i < 5:
-                        dt = dt * 1.25
-                    else:
-                        dt = dt / 1.25
-            else:
-                dt = dt / 10.
-                print("retry with max {:g} = {:g} day".format(dt, min(output_times[k] - self.sim_time, dt)))
-                if dt < 1.e-10:
-                    raise Exception("I did not find a solution")
-
-        return np.array(h_out)
-
-    def solve_single(self, dt = 0.5, verbose = True):
-        """ solves richards equation by using a single picard iteration. 
-            for less overhead in sequential couplings for very small dt
-        """
-        self.solver_initialize()
-        self.h0, ok, i = self.picard_iteration(dt)
-        if verbose:
-            print('Picard iterations {:g}, time step {:g}'.format(i, dt))
-        if ok:
-            self.solver_success()
-        else:
-            raise Exception("solve_single did not find a solution, decrease time step, or use solve")
 
     def solver_initialize(self):
         """ call back function for initialization"""
+        self.sim_time = 0.  # current simulation time [day]
+
+    def solver_proceed(self, dt):
+        """ call back function for each successfully performed time step """
         pass
 
-    def solver_success(self):
-        """ call back function for each time step """
-        pass
-
-    def picard_iteration(self, dt):
-        """ fix point iteration """
+    def solve_single_step(self, dt, verbose):
+        """ picard iteration (a fix point iteration) """
         max_iter = 100
         stop_tol = 1e-9  # stopping tolerance
 
-        # create constant parts dependent on self.h0
+        # create constant parts dependent on self.x0
         self.create_k()
         self.create_f_const()
         self.create_alpha_beta(dt)
         self.prepare_linear_system()
 
-        h_pm1 = self.h0.copy()
+        h_pm1 = self.x0.copy()
         for i in range(0, max_iter):
 
             c_pm1 = vg.specific_moisture_storage(h_pm1, self.soil)
@@ -156,16 +96,16 @@ class FV_Richards:
         return LA.spsolve(self.A + B, f, use_umfpack = True)
 
     def create_k(self):
-        """ sets up hydraulic conductivities from last time step solution self.h0, for each neighbour"""
+        """ sets up hydraulic conductivities from last time step solution self.x0, for each neighbour"""
         cols = np.ones((1, self.grid.number_of_neighbours))
-        a = vg.hydraulic_conductivity(self.h0, self.soil)
+        a = vg.hydraulic_conductivity(self.x0, self.soil)
         a_ = np.outer(a, cols)
-        b = vg.hydraulic_conductivity(self.h0[self.grid.neighbours], self.soil)
+        b = vg.hydraulic_conductivity(self.x0[self.grid.neighbours], self.soil)
         self.k = 2 * np.divide(np.multiply(a_, b), a_ + b)
 
     def create_f_const(self):
         """ sets up constant part of the load vector """
-        self.f_const = vg.water_content(self.h0, self.soil)
+        self.f_const = vg.water_content(self.x0, self.soil)
 
     def create_alpha_beta(self, dt):
         """ calculate net fluxes over the cells """
@@ -181,16 +121,14 @@ class FV_Richards:
 
     def bc_flux_out(self, i, q, crit_p, dx):
         """ outflow boundary condition limits to out or zero flux, and to critical pressure [cm3 / cm2 / day]"""
-        k = vg.hydraulic_conductivity(self.h0[i], self.soil)
-        max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible outflux
-        # print("bc_flux_out", q, max_q, i , crit_p, self.h0[i], k, dx)
+        k = vg.hydraulic_conductivity(self.x0[i], self.soil)
+        max_q = k * (crit_p - self.x0[i]) / dx  # maximal possible outflux
         return min(max(q, max_q), 0.)
 
     def bc_flux_in(self, i, q, crit_p, dx):
         """ inflow boundary condition limits to out or zero flux, and to critical pressure [cm3 / cm2 / day]"""
-        k = vg.hydraulic_conductivity(self.h0[i], self.soil)  # [cm / day]
-        max_q = k * (crit_p - self.h0[i]) / dx  # maximal possible influx [cm3 / cm2 /day]
-        # print("bc_flux_in", q, max_q, i, crit_p, self.h0[i], k, dx)
+        k = vg.hydraulic_conductivity(self.x0[i], self.soil)  # [cm / day]
+        max_q = k * (crit_p - self.x0[i]) / dx  # maximal possible influx [cm3 / cm2 /day]
         return max(min(q, max_q), 0.)
 
     def bc_flux_in_out(self, i, q, crit_p, dx):
@@ -219,35 +157,55 @@ class FV_Richards:
             elif type == "flux":
                 bc = self.bc_flux(v[0])
             else:
-                raise("Unkown boundary condition")
+                raise Exception("Unkown boundary condition")
             self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]
 
     def getFlux(self, cell_id, face_id):
         """ flux [cm3/cm2/day] over the inner face given by @param face_id in cell @param cell_id """
         i = cell_id
-        return self.k[i, face_id] * (self.h0[i] - self.h0[i + 1]) / self.grid.dx[i, face_id]  # [cm3/cm2/day]
+        return self.k[i, face_id] * (self.x0[i] - self.x0[i + 1]) / self.grid.dx[i, face_id]  # [cm3/cm2/day]
 
     def getWaterContent(self):
         """ current water content for each cell """
-        return vg.water_content(self.h0, self.soil)
+        return vg.water_content(self.x0, self.soil)
+
+    def darcy_velocity(self):
+        """ Darcy velocity """
+        self.create_k()  # todo remove, but make sure to take current k
+        dx = np.zeros(self.grid.dx.shape)
+        for i in range(0, self.x0.shape[0]):
+            for j in range(0, self.grid.number_of_neighbours):
+                ni = self.grid.neighbours[i, j]
+                if ni >= 0:
+                    dx[i, j] = self.x0[i] - self.x0[ni]
+        q = np.divide(np.multiply(self.k, dx) , self.grid.dx)  # [cm3/cm2/day]
+        # multiply by normal (1d) TODO (nd)
+
+        # include boundary fluxes
+        self.bc_to_source(1.)  # cm3/cm3/day # todo remove, but make sure to take current sources
+        for (i, j), (type, v) in self.bc.items():
+                    q[i, j] -= self.sources[i] / self.grid.area_per_volume[i, j]
+
+        q[:, 0] *= -1.
+        return np.mean(q, axis = 1)
 
 
-class FV_Richards1D(FV_Richards):
-    """ Sepecialisation of the general richards solverFV_Richards
+class FVRichards1D(FVRichards):
+    """ 1d sepezialisation of the general richards solverFV_Richards
         
         picks a direct banded linear solver (instead of default umfpack)
         adds the realized inner flux (left interval boundary) for cylindrical models
-        add special boundary conditions to couple to a root system
+        adds special boundary conditions to couple to a root system
     """
 
-    def __init__(self, grid :FV_Grid, soil):
+    def __init__(self, grid :FVGrid, soil):
         super().__init__(grid, soil)
         delattr(self, 'alpha_i')  # indices are not longer needed
         delattr(self, 'alpha_j')
         self.ab = np.zeros((3, self.n))  # banded matrix
         self.innerFlux = 0.  # cm3/cm2/day
-        # for getInnerHead()
-        self.dx0 = self.grid.center(0)  #  (self.grid.mid[0] - self.grid.nodes[0])
+        # for getInnerHead
+        self.dx0 = self.grid.center(0) - self.grid.nodes[0]
         self.dx1 = self.grid.center(1) - self.grid.center(0)  # todo
         # for bc_rootsystem, bc_rootsystem_exact
         self.dx = self.grid.nodes[0]
@@ -260,6 +218,7 @@ class FV_Richards1D(FV_Richards):
         self.ab[2, :-1] = self.alpha[1:, 0]
 
     def solve_linear_system(self, beta, f):
+        """ banded solver to solve tridiagonal matrix """
         self.ab[1, :] = beta  # diagonal is changed each iteration
         return la.solve_banded ((1, 1), self.ab, f, overwrite_b = True)
 
@@ -267,7 +226,7 @@ class FV_Richards1D(FV_Richards):
         """ call back function """
         self.innerFlux = 0.
 
-    def solver_success(self):
+    def solver_proceed(self, dt):
         """ call back function for each time step """
         self.innerFlux += self.sources[0] / (self.grid.area_per_volume[0, 0])  # [cm3/cm3] -> [cm3 /cm2] exact inner flux
 
@@ -277,11 +236,8 @@ class FV_Richards1D(FV_Richards):
 
     def getInnerHead(self):
         """ extrapolates result to root surface (specalized 1d) """
-        right_neighbour = self.grid.neighbours[0, 1]
-        h0, h1 = self.h0[0], self.h0[1]
-        h = h0 - ((h1 - h0) / self.dx1) * self.dx0
-        # print("linear head extrapolation", h0, h1, h, dx0, dx1, 1)
-        return h
+        x0, x1 = self.x0[0], self.x0[1]
+        return x0 - ((x1 - x0) / self.dx1) * self.dx0
 
     def bc_to_source(self, dt):
         """ 
@@ -295,12 +251,19 @@ class FV_Richards1D(FV_Richards):
         for (i, j), (type, v) in self.bc.items():
             if type == "rootsystem":
                 bc = self.bc_rootsystem(*v[0:2])
-                self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]
             elif type == "rootsystem_exact":
                 bc = self.bc_rootsystem_exact(*v[0:6])
-                self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]
+            elif type == "flux_in_out":
+                bc = self.bc_flux_in_out(i, *v[0:3])
+            elif type == "flux_in":
+                bc = self.bc_flux_in(i, *v[0:3])
+            elif type == "flux_out":
+                bc = self.bc_flux_out(i, *v[0:3])
+            elif type == "flux":
+                bc = self.bc_flux(v[0])
             else:
-                super().bc_to_source(dt)
+                raise Exception("Unkown boundary condition")
+            self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]
 
     def bc_rootsystem(self, rx, kr):
         """ flux is given by radial conductivity times difference in matric potentials 
