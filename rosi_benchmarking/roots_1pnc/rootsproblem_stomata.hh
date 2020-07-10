@@ -614,8 +614,8 @@ protected:
     double critPCollarAlpha_ = toPa_(-5500); // cm -> Pa
     double alphaR = 0; // residual stomata conductance
     bool cD = false; // interaction between pressure and chemical regulation
-    double sH = 1.02e-6; // (Pa-1) from Huber et. al [2014]
-    double sC = 5e+4; // (m3 mol-1) from Huber et. al [2014]
+    double sH = (getParam<double>("Control.sH", 1e-4))*1.02e-2; // (cm-1) --> (Pa-1) from Huber et. al [2014]
+    double sC = (getParam<double>("Control.sC", 5e+10))*1e-6; // (cm3 mol-1) --> (m3 mol-1) from Huber et. al [2014]
 
     double dm_ =  140.;  //root dry mass (kg / m3)
     double critPTips_ = toPa_(-4500); // cm -> Pa
