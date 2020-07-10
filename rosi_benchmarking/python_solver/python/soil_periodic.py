@@ -7,16 +7,9 @@ from solver.richards import RichardsWrapper  # Python part
 import os
 import time
 
-# import numpy as np
-# from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-# import matplotlib.pyplot as plt
-
-import plotly.graph_objects as go
 import numpy as np
 
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)

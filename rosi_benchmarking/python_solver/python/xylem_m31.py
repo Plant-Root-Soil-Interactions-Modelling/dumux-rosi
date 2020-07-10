@@ -4,7 +4,6 @@ sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
 import solver.plantbox as pb
 
-from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -26,10 +25,10 @@ p_s = -200  # static soil pressure [cm]
 p0 = -1000  # dircichlet bc at top
 
 """ Analytical solution """
-c = 2 * a * pi * kr / kz
-p_r = lambda z: p_s + d[0] * exp(sqrt(c) * z) + d[1] * exp(-sqrt(c) * z)  #
+c = 2 * a * np.pi * kr / kz
+p_r = lambda z: p_s + d[0] * np.exp(np.sqrt(c) * z) + d[1] * np.exp(-np.sqrt(c) * z)  #
 
-AA = np.array([[1, 1], [sqrt(c) * exp(-sqrt(c) * L), -sqrt(c) * exp(sqrt(c) * L)] ])  # # Boundary conditions dirichlet top, neumann bot
+AA = np.array([[1, 1], [np.sqrt(c) * np.exp(-np.sqrt(c) * L), -np.sqrt(c) * np.exp(np.sqrt(c) * L)] ])  # # Boundary conditions dirichlet top, neumann bot
 bb = np.array([p0 - p_s, -1])  # -rho * g
 d = np.linalg.solve(AA, bb)  # compute constants d_1 and d_2 from bc
 
@@ -57,12 +56,12 @@ r = XylemFluxPython(rs)
 r.setKr([kr0])
 r.setKx([kz0])
 
-rx = r.solve_dirichlet(0., p0, p_s, [p_s])
+rx = r.solve_dirichlet(0., p0, p_s, [p_s], True)
 flux = r.collar_flux(0., rx, [p_s])
 print("Transpiration", flux, "cm3/day")
 plt.plot(rx, z_, "r*")
 
-rx = r.solve_neumann(0., -2., [p_s])
+rx = r.solve_neumann(0., -2., [p_s], True)
 flux = r.collar_flux(0., rx, [p_s])
 print("Transpiration", flux, "cm3/day")
 plt.plot(rx, z_, "g*")

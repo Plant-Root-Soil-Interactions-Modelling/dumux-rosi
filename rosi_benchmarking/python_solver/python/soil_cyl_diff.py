@@ -11,7 +11,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 """ 
-Cylindrical 1D model, diffusion only (DuMux)
+Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 
 everything scripted, no input file needed, also works parallel with mpiexec
 """

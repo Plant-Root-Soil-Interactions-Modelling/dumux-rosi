@@ -15,7 +15,7 @@ import os
 import time
 
 """ 
-Cylindrical 1D model (Pyhton) Diffusion only
+Cylindrical 1D model (Pyhton) Diffusion only, zero sink
 """
 
 loam = [0.045, 0.43, 0.04, 1.6, 50]
