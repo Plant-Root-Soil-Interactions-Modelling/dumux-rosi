@@ -333,6 +333,12 @@ public:
                 const auto bulkElementIdx = couplingManager_->pointSourceData(source.id()).bulkElementIdx();          
                 //MaterialLawParams params = this->spatialParams().materialLawParams(element);
 
+                const auto& soilProblem = couplingManager_->problem(Dune::index_constant<0>{});
+                const auto& gridGeometry = soilProblem.fvGridGeometry();
+                //const auto& soilElements = elements(gridGeometry->gridView());                    //error: base operand of ‘->’ has non-pointer type
+                //const auto& soilElements = Dune::elements(gridGeometry.gridView());               //works
+                //const auto& eIdx_soilElement = (Dune::elements(gridGeometry.gridView()))[eIdx];   // not working yet, but needed
+
 
     
 
