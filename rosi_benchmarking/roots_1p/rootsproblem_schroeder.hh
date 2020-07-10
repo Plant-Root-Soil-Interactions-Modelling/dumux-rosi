@@ -328,19 +328,21 @@ public:
                 source = sourceValue*source.quadratureWeight()*source.integrationElement();
 
                 // Schroeder Implementation
-                const auto& spatialParams = couplingManager_->problem(Dune::index_constant<0>{}).spatialParams(); 
+                const auto& soilSpatialParams = couplingManager_->problem(Dune::index_constant<0>{}).spatialParams();
+                //get soil params in rootsproblem 
                 const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx(); 
                 const auto bulkElementIdx = couplingManager_->pointSourceData(source.id()).bulkElementIdx();          
-                //MaterialLawParams params = this->spatialParams().materialLawParams(element);
-
+                
+                // get bulkElement in rootsproblem (equivalent to pointSource element in richardsproblem)
                 const auto& soilProblem = couplingManager_->problem(Dune::index_constant<0>{});
                 const auto& gridGeometry = soilProblem.fvGridGeometry();
-                //const auto& soilElements = elements(gridGeometry->gridView());                    //error: base operand of ‘->’ has non-pointer type
-                //const auto& soilElements = Dune::elements(gridGeometry.gridView());               //works
-                //const auto& eIdx_soilElement = (Dune::elements(gridGeometry.gridView()))[eIdx];   // not working yet, but needed
+                const auto& bulkElement = gridGeometry.element(bulkElementIdx);
+                MaterialLawParams params = soilSpatialParams.materialLawParams(bulkElement);
 
-
-    
+                //test-calls for MaterialLaw
+                const Scalar pressure3D_pc = -pressure3D + pRef_;
+                const Scalar pressure3D_s = MaterialLaw::sw(params, pressure3D_pc);
+                const Scalar krw = MaterialLaw::krw(params, pressure3D_s);
 
             }
         }
