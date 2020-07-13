@@ -84,9 +84,9 @@ class FVAdvectionDiffusion(FVSolver):
         """ arithmetic mean of forward and backward eulers """
         return 0.5 * (self.solve_forward_euler(c, dt) + self.solve_backward_euler(c, dt))
 
-    def bc_concentration(self, i, c, dx):
+    def bc_concentration(self, i, c, dx, n):
         """ flux boundary condition [g / cm2 / day] """
-        q = (self.D[i]) * (c - self.x0[i]) / dx
+        q = (self.D[i]) * (c - self.x0[i]) / dx - np.inner(self.u[i], n) # ??????
         # print(q, "g/cm2/day")
         return q
 
@@ -101,7 +101,7 @@ class FVAdvectionDiffusion(FVSolver):
         """
         for (i, j), (type, v) in self.bc.items():
             if type == "concentration":
-                bc = self.bc_concentration(i, *v[0:2])
+                bc = self.bc_concentration(i, *v[0:3])
             else:
                 raise("Unkown boundary condition")
             self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [g / cm3]
@@ -119,13 +119,20 @@ class FVAdvectionDiffusion_richards(FVAdvectionDiffusion):
         self.D0 = self.D
 
     def solver_initialize(self):
-        """ call back function for initialization"""
-        super().solver_initialize()
+        """ call back function for initialization"""                   
+        self.sim_time = 0.  # current simulation time [day]
         self.solver_proceed(0.)
-
+        
     def solver_proceed(self, dt):
         """ retrieve effective diffusion and velocity field from richards """
-        self.u = self.richards.darcy_velocity()
+        self.u = 10*self.richards.darcy_velocity()
+        # print("vel", np.min(self.u))
         theta = vg.water_content(self.richards.x0, self.richards.soil)
         self.D = self.D0 * theta * 0.5
+        # todo b
+        self.prepare_linear_system()
+
+        
+        
+        
 

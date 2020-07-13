@@ -11,7 +11,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 """ 
-Cylindrical 1D model (DuMux) Diffusion only, zero sink
+Cylindrical 1D model (DuMux) Diffusion only, zero sink, no water movement
 
 everything scripted, no input file needed, also works parallel with mpiexec
 """

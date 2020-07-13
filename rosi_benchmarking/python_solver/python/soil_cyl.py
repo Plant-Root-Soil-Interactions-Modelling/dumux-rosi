@@ -11,7 +11,7 @@ import os
 import time
 
 """ 
-Cylindrical 1D model, water movement only (DuMux)
+Cylindrical 1D model (DuMux) Water movement only 
 
 DuMux everything scripted, no input file needed, also works parallel with mpiexec
 """

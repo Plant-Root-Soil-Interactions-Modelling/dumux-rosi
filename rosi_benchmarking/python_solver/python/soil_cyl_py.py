@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import solver.van_genuchten as vg
 from solver.fv_grid import *
-import solver.fv_richards as rich  # Python solver
+import solver.fv_richards as richards  # Python solver
 
 import matplotlib.pyplot as plt
 import os
@@ -19,31 +19,31 @@ Cylindrical 1D model (Python solver) Water movement only
 """
 
 ndof = 100  # ndof = 1000, dann passts
-
+#nodes = np.logspace(np.log10(0.02), np.log10(0.6), ndof + 1) # small spatial resolution requires smaller time step
 nodes = np.linspace(0.02, 0.6, ndof + 1)
 grid = FVGrid1Dcyl(nodes)
 
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
 sim_times = [10, 20]
-# richards = rich.FV_Richards(grid, loam)  # general solver using UMFPack
-richards = rich.FVRichards1D(grid, loam)  # specialized 1d solver (direct banded is sufficient)
-richards.x0 = np.ones((ndof,)) * (-100)
-dx = 0.5 * (nodes[1] - 0.01)
-richards.bc[(0, 0)] = ["flux_out", [-0.1, -15000, dx]]
+# rich = richards.FV_Richards(grid, loam)  # general solver using UMFPack
+rich = richards.FVRichards1D(grid, loam)  # specialized 1d solver (direct banded is sufficient)
+rich.x0 = np.ones((ndof,)) * (-100)
+dx = grid.nodes[1] - grid.center(0)
+rich.bc[(0, 0)] = ["flux_out", [-0.1, -15000, 2*dx]]
 
 t = time.time()
-h = richards.solve(sim_times, 0.01)
+h = rich.solve(sim_times, 0.01)
 print("elapsed time", time.time() - t)
 
-# u = richards.darcy_velocity()
+# u = rich.darcy_velocity()
 # plt.title("Darcy velocities (cm/day)")
-# plt.plot(richards.grid.centers(), u, "b*")
+# plt.plot(rich.grid.centers(), u, "b*")
 # plt.show()
 
 col = ["r*", "g*", "b", "m", "c", "y"] * 5
 for i in range(0, len(sim_times)):
-    plt.plot(richards.grid.centers(), h[i, :], col[i], label = "Time {:g} days".format(sim_times[i]))
+    plt.plot(rich.grid.centers(), h[i, :], col[i], label = "Time {:g} days".format(sim_times[i]))
 plt.xlabel("cm")
 plt.ylabel("matric potential (cm)")
 plt.legend()
@@ -59,21 +59,4 @@ plt.xlabel("soil matric potential (cm)")
 plt.legend()
 plt.show()
 
-# soil = vg.Parameters(loam)
-# water_volume = []
-# for h_ in h:
-#     water_volume.append(np.sum(np.multiply(vg.water_content(h_, soil), grid.volume)))
-# volume = np.sum(grid.volume)
-# water_volume = np.array(water_volume)
-# v = np.pi * (0.6 ** 2 - 0.02 ** 2) * vg.water_content(-100, soil)
-#
-# print("\n")
-# print("Volume {:g} == {:g} cm3".format(volume, np.pi * (0.6 ** 2 - 0.02 ** 2)))
-# print("Water in domain (first time step): actual {:g} analytical {:g}".format(water_volume[0], v - (0.1 * (2 * 0.02 * np.pi)) * sim_times[0]))
-#
-# # plt.plot(sim_times, water_volume)
-# # plt.xlabel("time (day)")
-# # plt.ylabel("water_volume (cm3)")
-# # plt.plot([sim_times[0], sim_times[-1]], [v, v])
-# # plt.show()
 

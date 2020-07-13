@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 from solver.fv_grid import *
 from solver.fv_solver import *
@@ -25,7 +26,7 @@ class FVSystem(FVSolver):
         @param max_dt             maximal time step [day]
         @param verbose            tell me more
         """
-        for s in solvers:
+        for s in self.solvers:
             s.solver_initialize()
         self.solver_initialize()
 
@@ -37,10 +38,10 @@ class FVSystem(FVSolver):
             dt_ = min(output_times[k] - self.sim_time, dt)  #  actual time step
             dt_ = min(dt_, max_dt)
 
-            x = [None] * len(solvers)
+            x = [None] * len(self.solvers)
             ok = True
             i = 0
-            for j, s in enumerate(solvers):
+            for j, s in enumerate(self.solvers):
                 x[j], ok_, i_ = s.solve_single_step(dt_, verbose)
                 i = max(i, i_)
                 ok = ok and ok_
@@ -51,16 +52,16 @@ class FVSystem(FVSolver):
             if ok:
 
                 self.sim_time = self.sim_time + dt_  # increase current time
-                for s in solvers:
+                for s in self.solvers:
                     s.sim_time = self.sim_time + dt_
 
-                for j, s in enumerate(solvers):
+                for j, s in enumerate(self.solvers):
                     s.x0 = x[j]
                     s.solver_proceed(dt_)
                 self.solver_proceed(dt_)
 
                 if output_times[k] <= self.sim_time:  # store result
-                    h_out.append(x.deepcopy())
+                    h_out.append(copy.deepcopy(x))
                     k = k + 1
 
                 if verbose:

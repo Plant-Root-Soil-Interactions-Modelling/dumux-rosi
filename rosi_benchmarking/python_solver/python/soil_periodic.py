@@ -1,15 +1,21 @@
 import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 
-from dumux_rosi import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from solver.richards import RichardsWrapper  # Python part
 
 import os
 import time
 
 import numpy as np
+import plotly.graph_objects as go
 
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+
+""" 
+Peridic example with water movement in soil using a constant sink,  
+and plotly for vizualisation (very nice)
+"""
 
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
