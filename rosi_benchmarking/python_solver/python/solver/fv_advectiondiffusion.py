@@ -86,7 +86,7 @@ class FVAdvectionDiffusion(FVSolver):
 
     def bc_concentration(self, i, c, dx, n):
         """ flux boundary condition [g / cm2 / day] """
-        q = (self.D[i]) * (c - self.x0[i]) / dx - np.inner(self.u[i], n) # ??????
+        q = (self.D[i]) * (c - self.x0[i]) / dx - np.inner(self.u[i], n)  # ??????
         # print(q, "g/cm2/day")
         return q
 
@@ -119,20 +119,16 @@ class FVAdvectionDiffusion_richards(FVAdvectionDiffusion):
         self.D0 = self.D
 
     def solver_initialize(self):
-        """ call back function for initialization"""                   
+        """ call back function for initialization"""
         self.sim_time = 0.  # current simulation time [day]
         self.solver_proceed(0.)
-        
+
     def solver_proceed(self, dt):
         """ retrieve effective diffusion and velocity field from richards """
-        self.u = 10*self.richards.darcy_velocity()
+        self.u = 10 * self.richards.darcy_velocity()
         # print("vel", np.min(self.u))
         theta = vg.water_content(self.richards.x0, self.richards.soil)
         self.D = self.D0 * theta * 0.5
         # todo b
         self.prepare_linear_system()
-
-        
-        
-        
 

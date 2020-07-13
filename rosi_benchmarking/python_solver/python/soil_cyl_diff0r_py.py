@@ -29,7 +29,7 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 soil = vg.Parameters(loam)
 theta = vg.water_content(-100., soil)
 rich = richards.FVRichards1D(grid, loam)  # specialized 1d solver (direct banded is sufficient)
-rich.x0 = np.ones((ndof,)) * (-100) # [cm] initial soil matric potential 
+rich.x0 = np.ones((ndof,)) * (-100)  # [cm] initial soil matric potential
 
 ad = ad.FVAdvectionDiffusion_richards(grid, rich)
 ad.x0 = np.ones((ndof,)) * 0.01  # [g/cm] initial concentration
@@ -39,7 +39,7 @@ dx = grid.nodes[1] - grid.center(0)
 ad.bc[(0, 0)] = ["concentration", [0., 2 * dx, np.array([-1])]]
 
 sim_times = [ 10., 20.]  # days 25, 30
-maxDt = 0.01
+maxDt = 0.05
 
 t = time.time()
 c = ad.solve(sim_times, maxDt)

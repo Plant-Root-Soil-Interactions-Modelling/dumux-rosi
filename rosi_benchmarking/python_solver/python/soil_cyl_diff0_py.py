@@ -28,6 +28,9 @@ ndof = 100
 nodes = np.linspace(0.02, 0.6, ndof + 1)
 grid = FVGrid1Dcyl(nodes)
 
+print(grid.dx)
+input()
+
 ad = ad.FVAdvectionDiffusion(grid)
 dx = grid.nodes[1] - grid.center(0)
 ad.bc[(0, 0)] = ["concentration", [0., 2 * dx, np.array([-1])]]
@@ -36,7 +39,7 @@ D = np.ones((ndof,)) * 1.e-5 * 24.* 3600.  # [cm2/day]
 b = np.ones((ndof,)) * (140 + theta)  # [1] buffer power
 c0 = np.ones((ndof,)) * 0.01  # [g/cm] initial concentration
 u = np.zeros((ndof,))  # [cm/day] velocity field
-ad.D = D * theta * 0.5 * (0.5 * 0.5)  # DiffusivityConstantTortuosity: porosity * saturation * tau * diffCoeff; todo (???????)!!!!!!!!!!!!!!!!!1
+ad.D = D * theta * 0.5  # DiffusivityConstantTortuosity: porosity * saturation * tau * diffCoeff; todo (???????)!!!!!!!!!!!!!!!!!1
 ad.b = b
 ad.x0 = c0
 
