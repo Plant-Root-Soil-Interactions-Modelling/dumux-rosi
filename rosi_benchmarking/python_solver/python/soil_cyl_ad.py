@@ -26,7 +26,7 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 # s.createGrid([0.02], [0.6], [100])  # [cm]
 
 # points = np.linspace(0.02, 0.6, 1000)
-points = np.logspace(np.log10(0.02), np.log10(0.6), 10)
+points = np.logspace(np.log10(0.02), np.log10(0.6), 200)
 s.createGrid1d(points)  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
@@ -60,7 +60,7 @@ if rank == 0:
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0, 10,20]  # days   , 25, 30
+times = [0, 10, 15]  # days   , 25, 30
 s.ddt = 1.e-5
 
 col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
@@ -68,7 +68,7 @@ col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
 idx = s.pick([0.02])
 print("boundary element ", idx)
 f = []
-maxDt = 0.0001
+maxDt = 0.001
 
 for i, dt in enumerate(np.diff(times)):
 

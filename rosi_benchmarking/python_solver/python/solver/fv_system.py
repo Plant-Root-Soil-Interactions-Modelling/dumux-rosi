@@ -38,16 +38,7 @@ class FVSystem(FVSolver):
             dt_ = min(output_times[k] - self.sim_time, dt)  #  actual time step
             dt_ = min(dt_, max_dt)
 
-            x = [None] * len(self.solvers)
-            ok = True
-            i = 0
-            for j, s in enumerate(self.solvers):
-                x[j], ok_, i_ = s.solve_single_step(dt_, verbose)
-                i = max(i, i_)
-                ok = ok and ok_
-                if not ok:
-                    break
-            self.solve_single_step(dt_, verbose)
+            x, ok, i = self.solve_single_step(dt_, verbose)
 
             if ok:
 
@@ -55,10 +46,7 @@ class FVSystem(FVSolver):
                 for s in self.solvers:
                     s.sim_time = self.sim_time + dt_
 
-                for j, s in enumerate(self.solvers):
-                    s.x0 = x[j]
-                    s.solver_proceed(dt_)
-                self.solver_proceed(dt_)
+                self.solver_proceed(x, dt_)
 
                 if output_times[k] <= self.sim_time:  # store result
                     h_out.append(copy.deepcopy(x))
@@ -84,15 +72,27 @@ class FVSystem(FVSolver):
         """ call back function for initialization"""
         self.sim_time = 0.
 
-    def solver_proceed(self, dt):
+    def solver_proceed(self, x, dt):
         """ call back function after each successfully performed time step, e.g. to update coefficientsf from coupled equations
         @param dt     time step [day]
         """
-        pass
+        for j, s in enumerate(self.solvers):
+            s.solver_proceed(x[j], dt)
+            s.x0 = x[j]
 
     def solve_single_step(self, dt, verbose):
         """ solve for time step dt, called by solve with step size control 
         @param dt     time step [day]
         @param verbose            tell me more        
         """
-        pass
+        x = [None] * len(self.solvers)
+        ok = True
+        i = 0
+        for j, s in enumerate(self.solvers):
+            x[j], ok_, i_ = s.solve_single_step(dt, verbose)
+            i = max(i, i_)
+            ok = ok and ok_
+            if not ok:
+                break
+        return (x, ok, i)
+

@@ -20,7 +20,7 @@ import time
 Cylindrical 1D model (Pyhton) Advection and Diffusion 
 """
 
-ndof = 100
+ndof = 1000
 # nodes = np.logspace(np.log10(0.02), np.log10(0.6), ndof + 1)
 nodes = np.linspace(0.02, 0.6, ndof + 1)
 grid = FVGrid1Dcyl(nodes)
@@ -30,22 +30,22 @@ soil = vg.Parameters(loam)
 theta = vg.water_content(-100., soil)
 rich = richards.FVRichards1D(grid, loam)  # specialized 1d solver (direct banded is sufficient)
 dx = grid.nodes[1] - grid.center(0)
-rich.x0 = np.ones((ndof,)) * (-100) # [cm] initial soil matric potential 
-rich.bc[(0, 0)] = ["flux_out", [-0.1, -15000, 2*dx]]
+rich.x0 = np.ones((ndof,)) * (-100)  # [cm] initial soil matric potential
+rich.bc[(0, 0)] = ["flux_out", [-0.1, -15000, 2 * dx]]
 
-ad = ad.FVAdvectionDiffusion_richards(grid, rich)
+ad = ad.FVAdvectionDiffusion1D_richards(grid, rich)
 ad.x0 = np.ones((ndof,)) * 0.01  # [g/cm] initial concentration
-ad.b = np.ones((ndof,)) * (100 + theta)  # [1] buffer power
-ad.D0 = np.ones((ndof,)) * 1.e-5 * 24.* 3600. *0.25  # [cm2/day]
+ad.b0 = np.ones((ndof,)) * 140.  # [1] buffer power
+ad.D0 = np.ones((ndof,)) * 1.e-5 * 24.* 3600.  # [cm2/day]
 dx = grid.nodes[1] - grid.center(0)
 ad.bc[(0, 0)] = ["concentration", [0., 2 * dx, np.array([-1])]]
 
-sim_times = [ 10., 20.]  # days 25, 30
-maxDt = 0.01
+sim_times = [ 1, 10., 20.]  # days 25, 30
+maxDt = 0.001
 
 eqns = system.FVSystem(grid)
-eqns.add_eqn(rich) # eqn 0
-eqns.add_eqn(ad) # eqn 1
+eqns.add_eqn(rich)  # eqn 0
+eqns.add_eqn(ad)  # eqn 1
 
 t = time.time()
 c = eqns.solve(sim_times, maxDt)
