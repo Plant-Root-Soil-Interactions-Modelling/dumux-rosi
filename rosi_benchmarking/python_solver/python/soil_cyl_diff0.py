@@ -34,7 +34,7 @@ s.setInnerBC("fluxCyl", 0.)  # [cm/day] -0.1
 
 s.setParameter("Component.MolarMass", "1.8e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
 s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-9")  # m2 s-1
-# s.setParameter("SpatialParams.Tortuosity", "0.129")  # porosity * 0.3
+s.setParameter("SpatialParams.Tortuosity", "0.001")  # porosity * 0.3
 
 s.setParameter("Component.BufferPower", "140.")  # buffer power = \rho * Kd [1]
 s.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?

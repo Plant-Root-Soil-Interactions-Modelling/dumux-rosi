@@ -10,12 +10,14 @@ class FVSolver:
     """
 
     def __init__(self, grid :FVGrid):
-        """ Initializes the solver """
+        """ Initializes the solver 
+        @param grid         a grid with base class FVGrid
+        """
         self.grid = grid
         self.n = self.grid.n_cells
         self.x0 = np.zeros((self.n,))  # solution of last time step [cm]
         self.sim_time = 0.
-        self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing list of values
+        self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing a list of values
         self.sources = np.zeros((self.n,))  # [cm3 / cm3]
 
     def solve(self, output_times :list, max_dt = 0.5, verbose = True):
@@ -39,8 +41,8 @@ class FVSolver:
 
                 self.sim_time = self.sim_time + dt_  # increase current time
 
+                self.solver_proceed(x, dt_)
                 self.x0 = x
-                self.solver_proceed(dt_)
 
                 if output_times[k] <= self.sim_time:  # store result
                     h_out.append(x.copy())
@@ -66,8 +68,9 @@ class FVSolver:
         """ call back function for initialization"""
         pass
 
-    def solver_proceed(self, dt):
-        """ call back function after each successfully performed time step, e.g. to update coefficientsf from coupled equations
+    def solver_proceed(self, x, dt):
+        """ call back function after each successfully performed time step, e.g. to update coefficients from coupled equations
+        @param dt     new solution x (self.x0 is the old solution)
         @param dt     time step [day]
         """
         pass

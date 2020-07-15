@@ -3,7 +3,7 @@
 
 %opening
 \title{Discretisation of the advection diffusion equation}
-\author{}
+\author{Daniel Leitner @ SimWerk}
 
 \begin{document}
 
@@ -21,7 +21,11 @@ The effective diffusion $D_e$ is often given as function of the water content, e
 \begin{eqnarray}
  D_e = D \theta  \tau,  
 \end{eqnarray}
-where $D$ is the diffusion constant of the solute in water, $\theta$ variable water content (e.g. from the Richards equation), and $\tau$ constant tortuosity factor.
+where $D$ is the diffusion constant of the solute in water, $\theta$ variable water content (e.g. from the Richards equation), and $\tau$ constant tortuosity factor. Or, by Millington and Quirk (1961), as 
+\begin{eqnarray}
+D_e = \phi S_w^3 \theta^{\frac13} D,
+\end{eqnarray}
+where $\phi$ is the porosity, and $S_w$ water content.
 
 The term $R$ could be a source or sink from a chemical reaction with another solute or a decay term.
 
@@ -59,15 +63,15 @@ Inserting the approximations in Eqn (\ref{eqn:fv}) yields
 
 This equation can be written as matrix vector multiplication
 \begin{eqnarray}
- diag(\mathbf{b}+\mathbf{\theta}) \frac{\partial \mathbf{c}}{\partial t}  = A \mathbf{c},  \label{eqn:matrix} \label{eq:ode}
+\frac{\partial \mathbf{c}}{\partial t}  = A \mathbf{c},  \label{eqn:matrix} \label{eq:ode}
 \end{eqnarray}
 where, matrix $A=(a_{ij})_{ij}$ has diagonal entries
 \begin{eqnarray}
-a_{ii} = -\sum_{j \in N(i)}  \frac{a_{ij}}{v_i} (\frac{D_{e,ij}}{d_{ij}} - \mathbf{u}_{ij}\cdot \mathbf{n}_{ij} ),
+a_{ii} = - \frac{1}{v_i (b+\theta_i)} \sum_{j \in N(i)}  a_{ij} (\frac{D_{e,ij}}{d_{ij}} - \mathbf{u}_{ij}\cdot \mathbf{n}_{ij} ),
 \end{eqnarray}
 and secondary diagonals
 \begin{eqnarray}
-a_{ij} = \sum_{j \in N(i)} \frac{a_{ij}}{v_i} \frac{D_{e,ij}}{d_{ij}}.
+a_{ij} = \frac{1}{v_i (b+\theta_i)} \sum_{j \in N(i)} a_{ij} \frac{D_{e,ij}}{d_{ij}}.
 \end{eqnarray}
 
 Such finite volumes schemes work for any grid dimensions and for cylindric or branched geometries. Information needed from the grid is neigbourhood information $N$, area per volume ($\frac{a_{ij}}{v_i}$), distance between cell centers ($d_{ij}$).
@@ -79,13 +83,13 @@ If the grid is not equidistant, the appoximations of $D_e$ and $\mathbf{u}$ will
 
 After spatial discretisation we obtain the ODE given by Eqn (\ref{eq:ode}). We can discretise in time as we choose, most common are (a) forward (exlplicit) Euler:
 \begin{eqnarray}
- diag(\mathbf{b}+\mathbf{\theta}) \frac{\mathbf{c}^{k+1}-\mathbf{c}^k}{dt} &=& A \mathbf{c}^k \\
-\mathbf{c}^{k+1} &=& (diag(\mathbf{b}+\mathbf{\theta})^{-1} dt A + I)\mathbf{c}^k  
+\frac{\mathbf{c}^{k+1}-\mathbf{c}^k}{dt} &=& A \mathbf{c}^k \\
+\mathbf{c}^{k+1} &=& (dt A + I)\mathbf{c}^k  
 \end{eqnarray}
 where $dt$ is the time step [day], and $ I(\mathbf{b}+\mathbf{\theta})$ is a diagonal matrix with entries $b+\theta_i$. Then, (b) backward (implicit) Euler:
 \begin{eqnarray}
- diag(\mathbf{b}+\mathbf{\theta}) \frac{\mathbf{c}^{k+1}-\mathbf{c}^k}{dt} &=& A \mathbf{c}^{k+1} \\
-  \mathbf{c}^{k} &=& (I-diag(\mathbf{b}+\mathbf{\theta})^{-1} dt A ) \mathbf{c}^{k+1} ,  
+ \frac{\mathbf{c}^{k+1}-\mathbf{c}^k}{dt} &=& A \mathbf{c}^{k+1} \\
+  \mathbf{c}^{k} &=& (I-dt A ) \mathbf{c}^{k+1} ,  
 \end{eqnarray}
 where a linear system has to be solved. And, Crank Nicolson, which is just the arithmetic mean of the forward and backward Euler solutions. 
 

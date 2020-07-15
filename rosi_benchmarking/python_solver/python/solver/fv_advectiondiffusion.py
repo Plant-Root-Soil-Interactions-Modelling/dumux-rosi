@@ -16,22 +16,16 @@ class FVAdvectionDiffusion(FVSolver):
 
     def __init__(self, grid :FVGrid):
         super().__init__(grid)
-        self.mid = self.grid.centers()  # precompute cell centers
-        #
-        n = self.n
-        self.b = np.ones((n,)) * 1.  # [1] buffer power
-        self.D = np.ones((n,)) * 0.864  #  [cm2/day] 1.e-5 cm2/s = 0.864 cm2 / day
-        self.u = np.zeros((n, self.grid.dim))  # [cm/day] velocity field
-        # TODO make local, save only A
-        self.beta = np.zeros((n,))  # const part of diagonal entries [1/day]
-        self.alpha = np.zeros(grid.neighbours.shape)  # secondary diagonals [1/day]
-        i_ = np.array(range(0, n), dtype = np.int64)
+        mid = self.grid.centers()  # precompute cell face normals
         cols = np.ones((1, self.grid.number_of_neighbours), dtype = np.int64)
-        self.alpha_i = np.outer(i_, cols)
-        self.alpha_j = self.grid.neighbours.copy()
+        self.fn = mid[self.grid.neighbours] - mid[np.outer(np.arange(0, self.n), cols)]
+        for i in range(0, self.grid.dim):
+            self.fn[:, :, i] = self.fn[:, :, i] / np.linalg.norm(self.fn, axis = 2)  # normalize
         for (i, j) in self.grid.boundary_faces:
-            self.alpha_j[i, j] = 0  # corresponding alpha = 0 at these boundary cells
-            self.alpha_j[i, j] = 0
+            self.fn[i, j, :] = 0  # set face boundary normals to zero
+        self.b = np.ones((self.n,)) * 1.  # [1] buffer power
+        self.D = np.ones((self.n,)) * 0.864  #  [cm2/day] effective diffusion, 1.e-5 cm2/s = 0.864 cm2 / day
+        self.u = np.zeros((self.n, self.grid.dim))  # [cm/day] velocity field
         self.A = None
 
     def solver_initialize(self):
@@ -39,46 +33,55 @@ class FVAdvectionDiffusion(FVSolver):
         self.sim_time = 0.  # current simulation time [day]
         self.prepare_linear_system()
 
-    def solver_proceed(self, dt):
+    def solver_proceed(self, x, dt):
         """ call back function for each time step """
         pass
 
     def solve_single_step(self, dt, verbose):
         """ solve for time step dt, called by solve with step size control 
-        @param dt     time step [day]
+        @param dt                 time step [day]
         @param verbose            tell me more        
         """
         self.bc_to_source(dt)
         b = self.x0 + self.sources
         b[0] = max(b[0], 0.)  # TODO
-        c2 = self.solve_crank_nicolson(b, dt)
+        c2 = self.solve_backward_euler(b, dt)
+        # c2 = self.solve_crank_nicolson(b, dt)  # <--- choose temporal discretisation
         return (c2, True, 0)
 
     def prepare_linear_system(self):
-        """ experimental ... TODO """
-        self.alpha = np.zeros(self.grid.neighbours.shape)
-        self.beta = np.zeros((self.n,))
+        """ builds the linear system """
+        cols = np.ones((1, self.grid.number_of_neighbours), dtype = np.int64)  # [1,1]
+        beta_inv = np.outer(np.divide(np.ones(self.b.shape), self.b), cols)
+        gamma = np.multiply(beta_inv, self.grid.area_per_volume)
+        ddx = np.divide(np.outer(self.D, cols), self.grid.dx)
 
-        for i in range(0, self.n):  # over cells
-            for  j in range(0, self.grid.number_of_neighbours):
-                neighbour = self.grid.neighbours[i, j]
-                if neighbour >= 0:  # -1 means there is no neighoour
-                    n = self.mid[neighbour] - self.mid[i]
-                    n = n / np.linalg.norm(n)
-                    self.beta[i] += (1. / self.b[i]) * self.grid.area_per_volume[i, j] * (-self.D[i] / self.grid.dx[i, j] - np.inner(self.u[i], n))
-                    self.alpha[i, j] += (1. / self.b[i]) * self.grid.area_per_volume[i, j] * (self.D[i] / self.grid.dx[i, j])
+        beta_ = np.multiply(gamma, -ddx)
+        for (i, j) in self.grid.boundary_faces:
+            beta_[i, j] = 0  # zero flux over boundaries
 
-        A = sparse.coo_matrix((self.alpha.flat, (self.alpha_i.flat, self.alpha_j.flat)))
-        B = sparse.coo_matrix((self.beta, (np.array(range(0, self.n)), np.array(range(0, self.n)))))
-        self.A = A + B
+        u = 0.5 * self.u[np.outer(np.arange(0, self.n), cols)] + self.u[self.grid.neighbours]  # boundary normals are zero TODO change u0 to surface fluxes?
+        un = np.multiply(u, self.fn)
+        beta = np.sum(beta_ - un[:, :, 0] , axis = 1)  # TODO for nD
+
+        alpha = -beta_
+        for (i, j) in self.grid.boundary_faces:
+            alpha[i, j] = 0  # zero flux over boundaries
+
+        alpha_i = np.outer(np.array(range(0, self.n), dtype = np.int64), np.ones((1, self.grid.number_of_neighbours), dtype = np.int64))  # [0..n] x [1 1]
+        alpha_j = self.grid.neighbours.copy()
+        for (i, j) in self.grid.boundary_faces:
+            alpha_j[i, j] = 0  # corresponding alpha = 0 at these boundary cells
+        self.A = sparse.coo_matrix((np.hstack((alpha.flat, beta)), (np.hstack((alpha_i.flat, alpha_i[:, 0].flat)),
+                                                                    np.hstack((alpha_j.flat, alpha_i[:, 0].flat)))))
 
     def solve_forward_euler(self, c, dt):
         """ explicit euler (matrix vector multiplication) """
-        return (I(self.n) + self.A * dt) * c
+        return (dt * self.A + I(self.n)) * c
 
     def solve_backward_euler(self, c, dt):
         """ implicit euler (solve a linear system) """
-        return LA.spsolve(I(self.n) - self.A * dt, c, use_umfpack = True)
+        return LA.spsolve(I(self.n) - dt * self.A, c, use_umfpack = True)
 
     def solve_crank_nicolson(self, c, dt):
         """ arithmetic mean of forward and backward eulers """
@@ -86,8 +89,7 @@ class FVAdvectionDiffusion(FVSolver):
 
     def bc_concentration(self, i, c, dx, n):
         """ flux boundary condition [g / cm2 / day] """
-        q = (self.D[i]) * (c - self.x0[i]) / dx - np.inner(self.u[i], n)  # ??????
-        # print(q, "g/cm2/day")
+        q = (self.D[i]) * (c - self.x0[i]) / dx - np.inner(self.u[i], n)
         return q
 
     def bc_to_source(self, dt):
@@ -106,29 +108,115 @@ class FVAdvectionDiffusion(FVSolver):
                 raise("Unkown boundary condition")
             self.sources[i] = dt * bc * self.grid.area_per_volume[i, j]  # [g / cm3]
 
+    def cfl(self, dt):
+        """ returns the Courant-Friedrichs-Lewy number for time step @param dt """
+        min_dx = np.min(self.grid.dx[:])
+        max_u = np.max(np.linalg.norm(self.u, axis = 1))
+        max_D = np.max(self.D[:])  # speed of diffusion is approximated with 1
+        return max(max_u, max_D) * dt / min_dx
+
+    def cfl_dt(self, c):
+        """ returns a time step to achieve the Courant-Friedrichs-Lewy @param c """
+        min_dx = np.min(self.grid.dx[:])
+        max_u = np.max(np.linalg.norm(self.u, axis = 1))
+        max_D = np.max(self.D[:])  # speed of diffusion is approximated with 1
+        return c * min_dx / max(max_u, max_D)
+
+
+class FVAdvectionDiffusion1D(FVAdvectionDiffusion):
+    """ 
+        Specialization for 1D:
+        uses a direct banded solver, and builds sparse accordingly 
+    """
+
+    def __init__(self, grid :FVGrid):
+        super().__init__(grid)
+        self.alpha = None
+        self.beta = None
+        self.ab = np.zeros((3, self.n))
+        self.A = None
+
+    def prepare_linear_system(self):
+        """ builds the linear system """
+        cols = np.ones((1, self.grid.number_of_neighbours), dtype = np.int64)  # [1,1]
+        beta_inv = np.outer(np.divide(np.ones(self.b.shape), self.b), cols)
+        gamma = np.multiply(beta_inv, self.grid.area_per_volume)
+        ddx = np.divide(np.outer(self.D, cols), self.grid.dx)
+
+        beta_ = np.multiply(gamma, -ddx)
+        for (i, j) in self.grid.boundary_faces:
+            beta_[i, j] = 0  # zero flux over boundaries
+
+        u = 0.5 * self.u[np.outer(np.arange(0, self.n), cols)] + self.u[self.grid.neighbours]  # boundary normals are zero TODO change u0 to surface fluxes?
+        un = np.multiply(u, self.fn)
+
+        self.beta = np.sum(beta_ - un[:, :, 0] , axis = 1)  # TODO for nD
+
+        alpha = -beta_
+        for (i, j) in self.grid.boundary_faces:
+            alpha[i, j] = 0  # zero flux over boundaries
+        self.alpha = alpha
+
+        self.A = sparse.diags([self.alpha[1:, 0], self.beta, self.alpha[:-1, 1]], [-1, 0, 1])
+
+    def solve_backward_euler(self, c, dt):
+        """ implicit euler (solve a linear system) """
+        self.ab[0, 0] = 0
+        self.ab[2, -1] = 0
+        self.ab[0, 1:] = -dt * self.alpha[:-1, 1]
+        self.ab[1, :] = np.ones(self.beta.shape) - dt * self.beta
+        self.ab[2, :-1] = -dt * self.alpha[1:, 0]
+        return la.solve_banded ((1, 1), self.ab, c, overwrite_ab = True)
+
 
 class FVAdvectionDiffusion_richards(FVAdvectionDiffusion):
     """ 
     Links FVAdvectionDiffusion to a FVRichards model, 
-    for effective Diffusivity and Darcy velocity 
+    for effective Diffusivity (Millington and Quirk, 1961) and Darcy velocity 
     """
 
     def __init__(self, grid :FVGrid, richards):
         super().__init__(grid)
         self.richards = richards
-        self.D0 = self.D
 
-    def solver_initialize(self):
-        """ call back function for initialization"""
-        self.sim_time = 0.  # current simulation time [day]
-        self.solver_proceed(0.)
-
-    def solver_proceed(self, dt):
+    def solver_proceed(self, x, dt):
         """ retrieve effective diffusion and velocity field from richards """
-        self.u = 10 * self.richards.darcy_velocity()
-        # print("vel", np.min(self.u))
-        theta = vg.water_content(self.richards.x0, self.richards.soil)
-        self.D = self.D0 * theta * 0.5
-        # todo b
+        r = self.richards
+
+        self.u = r.darcy_velocity()
+        if len(self.u.shape) == 1:  # (n,) -> (n,1)
+            self.u = np.expand_dims(self.u, axis = 1)
+
+        theta = vg.water_content(r.x0, r.soil)
+        phi = r.soil.theta_S
+        sw = theta / phi
+        self.D = phi * (sw ** 3) * np.cbrt(theta) * self.D0
+        self.b = self.b0 + theta
+        self.prepare_linear_system()
+
+
+class FVAdvectionDiffusion1D_richards(FVAdvectionDiffusion1D):
+    """ 
+    Links FVAdvectionDiffusion1D to a FVRichards model, 
+    for effective Diffusivity (Millington and Quirk, 1961) and Darcy velocity 
+    """
+
+    def __init__(self, grid :FVGrid, richards):
+        super().__init__(grid)
+        self.richards = richards
+
+    def solver_proceed(self, x, dt):
+        """ retrieve effective diffusion and velocity field from richards """
+        r = self.richards
+
+        self.u = 0.*r.darcy_velocity()
+        if len(self.u.shape) == 1:  # (n,) -> (n,1)
+            self.u = np.expand_dims(self.u, axis = 1)
+
+        theta = vg.water_content(r.x0, r.soil)
+        phi = r.soil.theta_S
+        sw = theta / phi
+        self.D = phi * (sw ** 3) * np.cbrt(theta) * self.D0
+        self.b = self.b0 + theta
         self.prepare_linear_system()
 

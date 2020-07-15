@@ -173,7 +173,7 @@ class FVRichards(FVSolver):
         """ Darcy velocity """
         self.create_k()  # todo remove, but make sure to take current k
         dx = np.zeros(self.grid.dx.shape)
-        for i in range(0, self.x0.shape[0]):
+        for i in range(0, self.x0.shape[0]):  # TODO
             for j in range(0, self.grid.number_of_neighbours):
                 ni = self.grid.neighbours[i, j]
                 if ni >= 0:
@@ -187,6 +187,7 @@ class FVRichards(FVSolver):
                     q[i, j] -= self.sources[i] / self.grid.area_per_volume[i, j]
 
         q[:, 0] *= -1.
+
         return np.mean(q, axis = 1)
 
 
@@ -226,7 +227,7 @@ class FVRichards1D(FVRichards):
         """ call back function """
         self.innerFlux = 0.
 
-    def solver_proceed(self, dt):
+    def solver_proceed(self, x, dt):
         """ call back function for each time step """
         self.innerFlux += self.sources[0] / (self.grid.area_per_volume[0, 0])  # [cm3/cm3] -> [cm3 /cm2] exact inner flux
 
