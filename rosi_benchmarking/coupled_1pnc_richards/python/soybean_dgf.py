@@ -23,13 +23,29 @@ rs.setGeometry(soil_layer)
 rs.setSeed(2)
 rs.initialize()
 
-rs.simulate(7, True)
+rs.simulate(1, True)
+rs.write("results/Glycine_max_1days.vtp")
+ana = pb.SegmentAnalyser(rs)
+aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
+for s in aseg:
+    # print("Shoot segment", s)
+    ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
+ana.write("results/Glycine_max_1days.dgf")
+
+l = np.array(ana.getParameter("length"))
+print("Min ", np.min(l))
+
+rs.simulate(6, True)
 rs.write("results/Glycine_max_7days.vtp")
 ana = pb.SegmentAnalyser(rs)
 aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only one segment
 for s in aseg:
     # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_7days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -42,6 +58,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_14days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -54,6 +72,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     # print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_21days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -68,6 +88,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_30days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -82,6 +104,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_45days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -96,6 +120,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_60days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -110,6 +136,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_90days.dgf")
 
 l = np.array(ana.getParameter("length"))
@@ -124,6 +152,8 @@ aseg = rs.getShootSegments()  # if there are no shoot borne roots, it is only on
 for s in aseg:
     print("Shoot segment", s)
     ana.addSegment(s, 0., 0.1, True)  # ct, radius, insert first
+    vt = rs.getSummed("volume")
+print("Volume (cm3)", vt)
 ana.write("results/Glycine_max_154days.dgf")
 
 l = np.array(ana.getParameter("length"))
