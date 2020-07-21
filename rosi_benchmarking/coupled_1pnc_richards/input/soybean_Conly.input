@@ -1,5 +1,5 @@
 [Problem]
-Name = soybean
+Name = soybean_Conly
 RootName = ../roots_1pnc/input/soybean.input
 SoilName = ../soil_richards/input/soybean_HLCT.input
 
@@ -26,14 +26,16 @@ Overlap = 1
 cD = 0 # 0 -> interaction between pressure and chemical regulation
 CritCollarP = -100000 # pressure, when to switch to dirichlet
 CritCollarPAlpha = -5500 # for alpha
-CritTipP = -4500 # when production starts
-ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
-ProductionAge = 1 # [day]
+CritTipP = 0 # when production starts
+ProductionRate = 3.26e-15 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 2 # [day]
 Decay = 0.693 # [day-1]
 b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
+sH = 0 # [cm-1]
+sC = 5e+7 # [cm3/mol]
 
 [Restart]
-Time = 1.02853e+07
-SoilFile = ./results_soybean_HLCT_1/soybean-01655.vtu
-RootFile = ./results_soybean_HLCT_1/soybean-01655.vtp
+Time = 4.32729e+06
+SoilFile = ./results_soybean_Conly_1/soybean_Conly-00063.vtu
+RootFile = ./results_soybean_Conly_1/soybean_Conly-00063.vtp
