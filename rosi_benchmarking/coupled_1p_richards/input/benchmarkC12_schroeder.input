@@ -5,15 +5,20 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 360
 
 [Soil.Grid]
-Cells = 2 2 4
+#Cells = 2 2 4
 #Cells = 4 4 8
-#Cells = 8 8 15
+Cells = 8 8 15
 #Cells = 16 16 30
 
 [Soil.IC]
-gradients = 1                 # 1 to enable Schröder, any other value disables it
+P = -2000
+
+[Schroeder]
+gradients = 1                 # set 1 to enable Schröder, set to zero for default model
+print= 1		      # set 1 to enable print-loops, set to zero for no prints
+n=2000			      # integration steps for k(h) => MFP, 10000 gives good results, but is way too slow
 
 [Problem]
 Name = benchmarkC12c
-RootName = ../roots_1p/input/benchmarkC12.input
+RootName = ../roots_1p/input/benchmarkC12_schroeder.input
 SoilName = ../soil_richards/input/benchmarkC12_3d.input
