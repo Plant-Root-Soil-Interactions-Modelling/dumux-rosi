@@ -378,30 +378,30 @@ public:
         return cumSum;
     } 
 
-// Templates for brent-algorithm taken from https://stackoverflow.com/questions/51931479/conversion-between-stdfunctiondoubledouble-to-double-double
-// note: function-builder-base and function builder need to be adapteded with 2x const each
+    // Templates for brent-algorithm taken from https://stackoverflow.com/questions/51931479/conversion-between-stdfunctiondoubledouble-to-double-double
+    // note: function-builder-base and function builder need to be adapteded with 2x const each
 
-template <class Lambda>
-class FunctionWithState : public brent::func_base, public Lambda {
-  public:
-     FunctionWithState(const Lambda & lambda): Lambda(lambda) {}
-     double operator()(double x) override 
-     { return Lambda::operator()(x); }
-};
+    template <class Lambda>
+    class FunctionWithState : public brent::func_base, public Lambda {
+      public:
+         FunctionWithState(const Lambda & lambda): Lambda(lambda) {}
+         double operator()(double x) override 
+         { return Lambda::operator()(x); }
+    };
 
-template<class Lambda>
-const auto function_builder_base (Lambda lambda) const 
-{
-    return FunctionWithState<decltype(lambda)>(lambda);
-}
+    template<class Lambda>
+    const auto function_builder_base (Lambda lambda) const 
+    {
+        return FunctionWithState<decltype(lambda)>(lambda);
+    }
 
 
-const auto function_builder(double a, double b, const Element &element, int n, const Scalar dx, const Scalar kc, const Scalar MFP_nostress_root) const
-{ 
-    return function_builder_base([=]( double x) {
-        return  pc_to_MFP(element, x, n, dx, kc) - MFP_nostress_root;
-    });
-}                       
+    const auto function_builder(double a, double b, const Element &element, int n, const Scalar dx, const Scalar kc, const Scalar MFP_nostress_root) const
+    { 
+        return function_builder_base([=]( double x) {
+            return  pc_to_MFP(element, x, n, dx, kc) - MFP_nostress_root;
+        });
+    }                       
 
 	template<class ElementVolumeVariables>
 	void pointSource(PointSource& source,
@@ -425,8 +425,8 @@ const auto function_builder(double a, double b, const Element &element, int n, c
             Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density; //T.S: [kg / s m], deleted const 
 			source = sourceValue*source.quadratureWeight()*source.integrationElement();
                      
-            // SCHROEDER IMPLEMENTATION       
-            const Scalar gradients = getParam<Scalar>("Soil.IC.gradients"); 
+            /// SCHROEDER IMPLEMENTATION       
+            const Scalar gradients = getParam<Scalar>("Schroeder.gradients"); 
             // Switch in Input-File (gradients = 1 in [Soil.IC] enables Schroeder, gradients = 0 disables it) 
 
             if (gradients == 1 && sourceValue < 0) { 
@@ -440,7 +440,7 @@ const auto function_builder(double a, double b, const Element &element, int n, c
                 const Scalar lowBound = -15000;
                 const Scalar lowBound_pc = -toPa_(lowBound) +pRef_ ;
                 // lower integration boundary (-15.000 cm) for MFP [pc] 
-                const int n = 10000;                                         
+                const int n = getParam<int>("Schroeder.n");                                         
                 // integration-steps (10000 gives good results for clay & loam, 40000 needed for sand & still not perfect)
                 const Scalar dx = (const Scalar) (lowBound_pc - pressure3D_pc)/n;   
                 // step-length for integration
@@ -449,7 +449,7 @@ const auto function_builder(double a, double b, const Element &element, int n, c
                 // hydraulic conductivity of soil voxel
                 const Scalar MFP_soil = pc_to_MFP(element, pressure3D_pc, n, dx, kc);                             
                 // MFP of source-point soil voxel, call to integration function
-                std::cout << " pointSource " << source.id() << " kc=" << kc << "\n";
+                
                 
                 // STEP 2) CALCULATE MFP_ROOT (according to non-stressed equation of Schroeder)
 
@@ -479,24 +479,24 @@ const auto function_builder(double a, double b, const Element &element, int n, c
 
                 
                 // r, radial coordinate for MFP calculation. For us always r = root, double definition for readibility of MFP_nostress_root equation          
-                const Scalar r = rootRadius*100; // [m]
-                const Scalar r_root = rootRadius*100; // [m]
+                const Scalar r = rootRadius*100; // [cm]
+                const Scalar r_root = rootRadius*100; // [cm]
                 //MFP at root_surface according to non-stressed equation of Schroeder et al. 2008 (equation 4) [cm²/d]
                 const Scalar MFP_nostress_root = MFP_soil + (q_root * r_root - q_out *r_out) * (pow(r,2) / pow(r_root, 2) / (2*(1-pow(rho,2))) 
                 + pow(rho,2) / (1-pow(rho,2)) * (log(r_out/r) -0.5)) + q_out * r_out * log(r / r_out);
                       
-                
+
                 // STEP 3) TRANSFER MFP at root-surface back to a pressure value
                 // parameters for Brent algorithm (finds zero of a function in a bracketing interval)
                 double tolerance = brent::r8_epsilon ( );       
                 // error-tolerance parameter of brent-algorithm 
                 auto MFP_to_pressure3D = function_builder(lowBound_pc,  0, element,   n,   dx,   kc, MFP_nostress_root);
-                double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D);
+                double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D); 
                 const Scalar pressure3D_pc_new = z; 
                 const Scalar pressure3D_new = -1*(z-pRef_);
                 
-                
-  
+ 
+
                 // STEP 4) PASS NEW PRESSURE3D TO SOURCE-TERM
                 const Scalar pressure3D_s_new = MaterialLaw::sw(params, pressure3D_pc_new);
                 const Scalar krw = MaterialLaw::krw(params, pressure3D_s_new); // pass new pressure3D_s to calculate krw
@@ -505,17 +505,19 @@ const auto function_builder(double a, double b, const Element &element, int n, c
                 sourceValue = 2 * M_PI *krel* rootRadius * kmin * (pressure1D - pressure3D_new)*density;    //* kr exchanged with kmin
                 source = sourceValue*source.quadratureWeight()*source.integrationElement();                
 
-                std::cout << "pointSourceSoil " << source.id() << "  rootRadius[cm]= " << rootRadius*100 << "   segment_volume= " << segment_volume << "\n";
-                //std::cout << "rootRadius[cm]= " << rootRadius*100 << "   r_out= " << r_out << "   q_root= " << q_root << "\n";
-                //std::cout << "MFP_soil= " << MFP_soil << "   MFP_root= " << MFP_nostress_root << "\n";
-                //std::cout << "h_old(soil)= " << toHead_(pressure3D) << "   h_new(r_root)= " << toHead_(pressure3D_new) << "\n";    
-                //std::cout << "MFP(soil-root)= " << MFP_soil-MFP_nostress_root << "\n";
-                
                 if(sourceValue > 0) {   
-                    //discards Schroeder if it leads to inversion of flow (e.g. macroscopic soil => root, schroeder root => soil. Jan thinks this clause may be exluded)
+                    //discards Schroeder if it leads to inversion of flow (e.g. macroscopic-flow soil => root, schroeder-flow root => soil. Jan thinks this clause may be exluded)
                     source = 0;
-
                     } 
+
+                //Prints (can be enabled / disabled via Schroeder print in coupled input-file)
+                const Scalar print = getParam<Scalar>("Schroeder.print");
+                if (print == 1) { 
+                    std::cout << " soilproblem sourceID_soil:" << source.id() << "\n" << " MFP_soil = " << MFP_soil <<  "   MFP_no_stress_root= " << MFP_nostress_root << "   deltaMFP= " 
+                    << MFP_soil-MFP_nostress_root << "  soil_r_out= " << r_out << "   root_radius= " << rootRadius*100 << "   q_root= " << q_root << "\n"
+                    << " pressure3D_head(soil)= " << toHead_(pressure3D) << "   pressure3D_head(root_surface)= " << toHead_(pressure3D_new) << "\n"
+                    << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n" << "\n";   
+                    }
                 }     
 		     }
 
