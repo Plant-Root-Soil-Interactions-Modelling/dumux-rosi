@@ -6,7 +6,7 @@
 #include <dumux/porousmediumflow/problem.hh> // base class
 
 #include "richardsparams.hh"
-#include "external/brent/brent.hpp"              //T.S.: Brent algorithm to find roots of function
+#include <dumux/external/brent/brent.hpp>                  //T.S.: Brent algorithm to find roots of function
 
 
 
