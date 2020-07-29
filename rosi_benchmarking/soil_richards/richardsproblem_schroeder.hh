@@ -6,7 +6,7 @@
 #include <dumux/porousmediumflow/problem.hh> // base class
 
 #include "richardsparams.hh"
-#include "../../../CPlantBox/src/external/brent/brent.hpp"              //T.S.: Brent algorithm to find roots of function
+#include "external/brent/brent.hpp"              //T.S.: Brent algorithm to find roots of function
 
 
 
@@ -366,17 +366,17 @@ public:
         Scalar cumSum =0;
         for (int i=0; i<n+1; i++)
         {
-            
+
             MaterialLawParams params = this->spatialParams().materialLawParams(element);
             Scalar xi = pressure3D_pc +i*dx; // pc value for sw call
             Scalar funValue = MaterialLaw::sw(params, xi);
             Scalar funValue2 = MaterialLaw::krw(params, funValue);
             Scalar rectangleArea = funValue2*dx*kc; // height * base length
-            cumSum += rectangleArea*86400; 
+            cumSum += rectangleArea*86400;
             // CHECK UNITS! MFP from cm²/s into cm²/day for comparison with python script, assumption was that MFP should be m²/day, results indicate otherwise
         }
         return cumSum;
-    } 
+    }
 
     // Templates for brent-algorithm taken from https://stackoverflow.com/questions/51931479/conversion-between-stdfunctiondoubledouble-to-double-double
     // note: function-builder-base and function builder need to be adapteded with 2x const each
@@ -385,23 +385,23 @@ public:
     class FunctionWithState : public brent::func_base, public Lambda {
       public:
          FunctionWithState(const Lambda & lambda): Lambda(lambda) {}
-         double operator()(double x) override 
+         double operator()(double x) override
          { return Lambda::operator()(x); }
     };
 
     template<class Lambda>
-    const auto function_builder_base (Lambda lambda) const 
+    const auto function_builder_base (Lambda lambda) const
     {
         return FunctionWithState<decltype(lambda)>(lambda);
     }
 
 
     const auto function_builder(double a, double b, const Element &element, int n, const Scalar dx, const Scalar kc, const Scalar MFP_nostress_root) const
-    { 
+    {
         return function_builder_base([=]( double x) {
             return  pc_to_MFP(element, x, n, dx, kc) - MFP_nostress_root;
         });
-    }                       
+    }
 
 	template<class ElementVolumeVariables>
 	void pointSource(PointSource& source,
@@ -421,81 +421,81 @@ public:
 			const auto krel = 1.0;
 			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
 			const auto density = 1000;
-                                             
-            Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density; //T.S: [kg / s m], deleted const 
-			source = sourceValue*source.quadratureWeight()*source.integrationElement();
-                     
-            /// SCHROEDER IMPLEMENTATION       
-            const Scalar gradients = getParam<Scalar>("Schroeder.gradients"); 
-            // Switch in Input-File (gradients = 1 in [Soil.IC] enables Schroeder, gradients = 0 disables it) 
 
-            if (gradients == 1 && sourceValue < 0) { 
+            Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density; //T.S: [kg / s m], deleted const
+			source = sourceValue*source.quadratureWeight()*source.integrationElement();
+
+            /// SCHROEDER IMPLEMENTATION
+            const Scalar gradients = getParam<Scalar>("Schroeder.gradients");
+            // Switch in Input-File (gradients = 1 in [Soil.IC] enables Schroeder, gradients = 0 disables it)
+
+            if (gradients == 1 && sourceValue < 0) {
             // switch to enable/disable Schroeder and check for macroscopic flow from soil to root (Schroeder only used if source value < 0)
 
                 // STEP 1) CALCULATE MFP_SOIL
                 // Integration of soil hydraulic conductivity K(h) from -15.000 cm to current pressure head of soil element
-                
+
                 const Scalar pressure3D_pc = -pressure3D + pRef_;
                 // upper integration boundary hc, soil point-source pressure [pc]
                 const Scalar lowBound = -15000;
                 const Scalar lowBound_pc = -toPa_(lowBound) +pRef_ ;
-                // lower integration boundary (-15.000 cm) for MFP [pc] 
-                const int n = getParam<int>("Schroeder.n");                                         
+                // lower integration boundary (-15.000 cm) for MFP [pc]
+                const int n = getParam<int>("Schroeder.n");
                 // integration-steps (10000 gives good results for clay & loam, 40000 needed for sand & still not perfect)
-                const Scalar dx = (const Scalar) (lowBound_pc - pressure3D_pc)/n;   
+                const Scalar dx = (const Scalar) (lowBound_pc - pressure3D_pc)/n;
                 // step-length for integration
                 MaterialLawParams params = this->spatialParams().materialLawParams(element);
                 Scalar kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
                 // hydraulic conductivity of soil voxel
-                const Scalar MFP_soil = pc_to_MFP(element, pressure3D_pc, n, dx, kc);                             
+                const Scalar MFP_soil = pc_to_MFP(element, pressure3D_pc, n, dx, kc);
                 // MFP of source-point soil voxel, call to integration function
-                
-                
+
+
                 // STEP 2) CALCULATE MFP_ROOT (according to non-stressed equation of Schroeder)
 
                 //calculation of r_out
-                const Scalar segment_length = source.integrationElement(); // [m]                     
+                const Scalar segment_length = source.integrationElement(); // [m]
                 // length of point-source segment in voxel (cut at voxel boundaries)
-                const Scalar rootsystem_volume_inElement = couplingManager_->lowDimVolume(element);   
+                const Scalar rootsystem_volume_inElement = couplingManager_->lowDimVolume(element);
                 // total volume of rootsystem in voxel
-                const Scalar cell_volume = element.geometry().volume();                               
+                const Scalar cell_volume = element.geometry().volume();
                 // volume of soil voxel
-                const Scalar segment_volume = (M_PI * rootRadius * rootRadius) * segment_length;  
+                const Scalar segment_volume = (M_PI * rootRadius * rootRadius) * segment_length;
                 // volume of single segment
-                const Scalar t = segment_volume / rootsystem_volume_inElement;                        
+                const Scalar t = segment_volume / rootsystem_volume_inElement;
                 // proportionality factor
-                const Scalar targetV = t * cell_volume;                                               
+                const Scalar targetV = t * cell_volume;
                 // targetVolume of segment
                 const Scalar r_out = sqrt((targetV + segment_volume) / (M_PI * segment_length)) * 100; // [cm]
                 // r_out = radius of bulk soil cylinder assigned to a segment
                 const Scalar rho = r_out / (rootRadius*100); // [cm/cm]
 
                 //flux densities at outer and inner boundary
-                const Scalar q_out = 0; 
+                const Scalar q_out = 0;
                 // flux at bulk soil cylinder with radius r_out, for now we assume no-flux
                 const Scalar q_root = (-1*sourceValue) / 1000 * 1000000 / 100 *86400 /(2 * M_PI *rootRadius*100);
-                // flux at root cylinder with radius r_root. sourceValue Conversion from Dumux units [kg s⁻¹ m⁻1] into Schroeder units [cm³ cm⁻² d⁻¹] <=> [cm/day] 
+                // flux at root cylinder with radius r_root. sourceValue Conversion from Dumux units [kg s⁻¹ m⁻1] into Schroeder units [cm³ cm⁻² d⁻¹] <=> [cm/day]
                 // this has to be *-1, MFP_soil < MFP_root
 
-                
-                // r, radial coordinate for MFP calculation. For us always r = root, double definition for readibility of MFP_nostress_root equation          
+
+                // r, radial coordinate for MFP calculation. For us always r = root, double definition for readibility of MFP_nostress_root equation
                 const Scalar r = rootRadius*100; // [cm]
                 const Scalar r_root = rootRadius*100; // [cm]
                 //MFP at root_surface according to non-stressed equation of Schroeder et al. 2008 (equation 4) [cm²/d]
-                const Scalar MFP_nostress_root = MFP_soil + (q_root * r_root - q_out *r_out) * (pow(r,2) / pow(r_root, 2) / (2*(1-pow(rho,2))) 
+                const Scalar MFP_nostress_root = MFP_soil + (q_root * r_root - q_out *r_out) * (pow(r,2) / pow(r_root, 2) / (2*(1-pow(rho,2)))
                 + pow(rho,2) / (1-pow(rho,2)) * (log(r_out/r) -0.5)) + q_out * r_out * log(r / r_out);
-                      
+
 
                 // STEP 3) TRANSFER MFP at root-surface back to a pressure value
                 // parameters for Brent algorithm (finds zero of a function in a bracketing interval)
-                double tolerance = brent::r8_epsilon ( );       
-                // error-tolerance parameter of brent-algorithm 
+                double tolerance = brent::r8_epsilon ( );
+                // error-tolerance parameter of brent-algorithm
                 auto MFP_to_pressure3D = function_builder(lowBound_pc,  0, element,   n,   dx,   kc, MFP_nostress_root);
-                double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D); 
-                const Scalar pressure3D_pc_new = z; 
+                double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D);
+                const Scalar pressure3D_pc_new = z;
                 const Scalar pressure3D_new = -1*(z-pRef_);
-                
- 
+
+
 
                 // STEP 4) PASS NEW PRESSURE3D TO SOURCE-TERM
                 const Scalar pressure3D_s_new = MaterialLaw::sw(params, pressure3D_pc_new);
@@ -503,22 +503,22 @@ public:
                 const Scalar krw_scaled_to_rootRadius = krw / rootRadius;      // soil hydraulic conductivity scaled to root radius (radius used as proxy)
                 const Scalar kmin = std::min(kr, krw_scaled_to_rootRadius);    // minimum of conductivity defines sourceValue
                 sourceValue = 2 * M_PI *krel* rootRadius * kmin * (pressure1D - pressure3D_new)*density;    //* kr exchanged with kmin
-                source = sourceValue*source.quadratureWeight()*source.integrationElement();                
+                source = sourceValue*source.quadratureWeight()*source.integrationElement();
 
-                if(sourceValue > 0) {   
+                if(sourceValue > 0) {
                     //discards Schroeder if it leads to inversion of flow (e.g. macroscopic-flow soil => root, schroeder-flow root => soil. Jan thinks this clause may be exluded)
                     source = 0;
-                    } 
+                    }
 
                 //Prints (can be enabled / disabled via Schroeder print in coupled input-file)
                 const Scalar print = getParam<Scalar>("Schroeder.print");
-                if (print == 1) { 
-                    std::cout << " soilproblem sourceID_soil:" << source.id() << "\n" << " MFP_soil = " << MFP_soil <<  "   MFP_no_stress_root= " << MFP_nostress_root << "   deltaMFP= " 
+                if (print == 1) {
+                    std::cout << " soilproblem sourceID_soil:" << source.id() << "\n" << " MFP_soil = " << MFP_soil <<  "   MFP_no_stress_root= " << MFP_nostress_root << "   deltaMFP= "
                     << MFP_soil-MFP_nostress_root << "  soil_r_out= " << r_out << "   root_radius= " << rootRadius*100 << "   q_root= " << q_root << "\n"
                     << " pressure3D_head(soil)= " << toHead_(pressure3D) << "   pressure3D_head(root_surface)= " << toHead_(pressure3D_new) << "\n"
-                    << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n" << "\n";   
+                    << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n" << "\n";
                     }
-                }     
+                }
 		     }
 
 // default again

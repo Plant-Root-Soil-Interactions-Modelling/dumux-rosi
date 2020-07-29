@@ -265,8 +265,18 @@ public:
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
 					} else { // evaporation
-						// std::cout << "out" << "\n";
-						Scalar emax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation KRW???
+						// std::cout << "out" << ", at " << h << " cm \n";
+					    Scalar p2 = toPa_(-10000);
+					    Scalar h3 = 0.5*(h + criticalPressure_);
+					    Scalar p3 = toPa_(h);
+					    Scalar s2 = MaterialLaw::sw(params, -(p2- pRef_));
+                        Scalar s3 = MaterialLaw::sw(params, -(p3- pRef_)) ;
+					    // std::cout << s2 << "\n";
+					    Scalar krw2 = MaterialLaw::krw(params, s2);
+					    Scalar krw3 = MaterialLaw::krw(params, s3);
+                        Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
+					    Scalar harmonic = 2*krw2*krw/(krw2+krw);
+						Scalar emax = rho_ * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
 						f = std::min(prec, emax);
 					}
 					break;
@@ -327,8 +337,24 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 		if ((source_ != nullptr)) {
-			auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-			return source_->at(eIdx)/scv.volume();
+ 		    auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+		    return source_->at(eIdx)/scv.volume();
+//		    double slope = 5000.;
+//		    Scalar s = elemVolVars[scv].saturation();
+//            MaterialLawParams params = this->spatialParams().materialLawParams(element);
+//            Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
+//            Scalar h = -toHead_(p); // cm
+//            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+//            if (h<criticalPressure_) {
+//                return 0.;
+//            } else if (h<=criticalPressure_+slope) { //  h in [crit, crit+slope]
+//                double theta = (h - criticalPressure_)/slope;
+//                std::cout << "REGULARIZE! " << h << ", "<< theta << "\n" << std::flush;
+//                return theta* source_->at(eIdx)/scv.volume();;
+//            } else  {
+//                return source_->at(eIdx)/scv.volume();
+//            }
+
 		} else {
 			return 0.;
 		}

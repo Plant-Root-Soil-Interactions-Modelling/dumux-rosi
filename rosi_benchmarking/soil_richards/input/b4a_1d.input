@@ -1,9 +1,10 @@
 [Problem]
 Name = benchmark1d_4a
+EnableGravity = 1 
 
 [TimeLoop]
 DtInitial =  1 # [s]
-TEnd = 86400 # 1 days [s] 
+TEnd = 86400 #  86400 # 1 days [s] 
 MaxTimeStepSize = 60 # a minute [s] 
 
 [Soil.Grid]

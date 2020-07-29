@@ -24,10 +24,10 @@ os.system("./richards1d input/b4a_1d.input")
 os.system("./richards1d input/b4b_1d.input")
 os.system("./richards1d input/b4c_1d.input")
 os.system("./richards1d input/b4d_1d.input")
-os.system("./richards1d input/b4a_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4a_hr")
-os.system("./richards1d input/b4b_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4b_hr")
-os.system("./richards1d input/b4c_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4c_hr")
-os.system("./richards1d input/b4d_1d.input -Soil.Grid.Cells 399 -Problem.Name benchmark1d_4d_hr")
+os.system("./richards1d input/b4a_1d.input -Soil.Grid.Cells 1399 -Problem.Name benchmark1d_4a_hr")
+os.system("./richards1d input/b4b_1d.input -Soil.Grid.Cells 1399 -Problem.Name benchmark1d_4b_hr")
+os.system("./richards1d input/b4c_1d.input -Soil.Grid.Cells 1399 -Problem.Name benchmark1d_4c_hr")
+os.system("./richards1d input/b4d_1d.input -Soil.Grid.Cells 1399 -Problem.Name benchmark1d_4d_hr")
 
 # open results
 num = ['a', 'c', 'b', 'd', 'a_hr', 'c_hr', 'b_hr', 'd_hr']
