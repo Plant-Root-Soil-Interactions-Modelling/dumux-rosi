@@ -7,7 +7,7 @@
 #include <map>
 #include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh> // import for MaterialLaw Schroeder
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>             // import for MaterialLaw Schroeder
-#include "external/brent/brent.hpp"                      //T.S.: Brent algorithm to find roots of function
+#include <dumux/external/brent/brent.hpp>                       //T.S.: Brent algorithm to find roots of function
 
 
 #include <dumux/porousmediumflow/problem.hh>
@@ -308,28 +308,6 @@ public:
     // Templates for brent-algorithm taken from https://stackoverflow.com/questions/51931479/conversion-between-stdfunctiondoubledouble-to-double-double
     // note: function-builder-base and function builder need to be adapteded with 2x const each
 
-    template <class Lambda>
-    class FunctionWithState : public brent::func_base, public Lambda {
-    public:
-        FunctionWithState(const Lambda & lambda): Lambda(lambda) {}
-        double operator()(double x) override
-        { return Lambda::operator()(x); }
-    };
-
-    template<class Lambda>
-    const auto function_builder_base (Lambda lambda) const
-    {
-        return FunctionWithState<decltype(lambda)>(lambda);
-    }
-
-
-    const auto function_builder(double a, double b, const auto& bulkElement, int n, const Scalar dx, const Scalar kc, const Scalar MFP_nostress_root) const
-    {
-        return function_builder_base([=]( double x) {
-            return  pc_to_MFP(bulkElement, x, n, dx, kc) - MFP_nostress_root;
-        });
-    }
-
     // T.S: Function definition: integration by hand (calculate matric-flux-potential based on the currenct absolute pressure)
     const Scalar pc_to_MFP(const auto& bulkElement, const Scalar pressure3D_pc, int n, const Scalar dx, const Scalar kc) const
     {
@@ -376,7 +354,7 @@ public:
                 // Switch in Input-File (gradients = 1 in [Soil.IC] enables Schroeder, gradients = 0 disables it)
 
                 if (gradients == 1 && sourceValue > 0) {
-                    // switch to enable/disable Schroeder and check for macroscopic flow from soil to root (Schroeder only used if source value > 0, meaning uptake by root)
+                // switch to enable/disable Schroeder and check for macroscopic flow from soil to root (Schroeder only used if source value > 0, meaning uptake by root)
 
                     // STEP 0) GRAB NEEDED VARIABLES FROM RICHARDSPROBLEM + ID-DEFINITIONS
                     const auto& soilSpatialParams = couplingManager_->problem(Dune::index_constant<0>{}).spatialParams();
@@ -438,14 +416,14 @@ public:
                     const Scalar r_root = rootRadius*100; // [cm]
                     //MFP at root_surface according to non-stressed equation of Schroeder et al. 2008 (equation 4) [cm²/d]
                     const Scalar MFP_nostress_root = MFP_soil + (q_root * r_root - q_out *r_out) * (pow(r,2) / pow(r_root, 2) / (2*(1-pow(rho,2)))
-                        + pow(rho,2) / (1-pow(rho,2)) * (log(r_out/r) -0.5)) + q_out * r_out * log(r / r_out);
+                    + pow(rho,2) / (1-pow(rho,2)) * (log(r_out/r) -0.5)) + q_out * r_out * log(r / r_out);
 
 
                     // STEP 3) TRANSFER MFP at root-surface back to a pressure value
                     // parameters for Brent algorithm (finds zero of a function in a bracketing interval)
                     double tolerance = brent::r8_epsilon ( );
                     // error-tolerance parameter of brent-algorithm
-                    auto MFP_to_pressure3D = function_builder(lowBound_pc,  0, bulkElement,   n,   dx,   kc, MFP_nostress_root);
+                    auto MFP_to_pressure3D = brent::funcLambda([=](double x) { return  pc_to_MFP(bulkElement, x, n, dx, kc) - MFP_nostress_root; });
                     double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D);
                     const Scalar pressure3D_pc_new = z;
                     const Scalar pressure3D_new = -1*(z-pRef_);
@@ -462,17 +440,17 @@ public:
                     if(sourceValue < 0) {
                         //discards Schroeder if it leads to inversion of flow (e.g. macroscopic-flow soil => root, schroeder-flow root => soil. Jan thinks this clause may be exluded)
                         source = 0;
-                    }
+                        }
 
                     //Prints (can be enabled / disabled via Schroeder print in coupled input-file)
                     const Scalar print = getParam<Scalar>("Schroeder.print");
                     if (print == 1) {
-                        std::cout << "rootsproblem sourceID_root:" << source.id() << "\n" << " MFP_soil = " << MFP_soil <<  "   MFP_no_stress_root= " << MFP_nostress_root << "   deltaMFP= "
-                            << MFP_soil-MFP_nostress_root << "  soil_r_out= " << r_out << "   root_radius= " << rootRadius*100 << "   q_root= " << q_root << "\n"
-                            << " pressure3D_head(soil)= " << toHead_(pressure3D) << "   pressure3D_head(root_surface)= " << toHead_(pressure3D_new) << "\n"
-                            << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n" << "\n";
+                                    std::cout << "rootsproblem sourceID_root:" << source.id() << "\n" << " MFP_soil = " << MFP_soil <<  "   MFP_no_stress_root= " << MFP_nostress_root << "   deltaMFP= "
+                                    << MFP_soil-MFP_nostress_root << "  soil_r_out= " << r_out << "   root_radius= " << rootRadius*100 << "   q_root= " << q_root << "\n"
+                                    << " pressure3D_head(soil)= " << toHead_(pressure3D) << "   pressure3D_head(root_surface)= " << toHead_(pressure3D_new) << "\n"
+                                    << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n" << "\n";
+                        }
                     }
-                }
             }
         }
     }
@@ -599,17 +577,17 @@ public:
         couplingManager_ = cm;
     }
 
-    private:
-    //Tobias: inserted toPa_ and toHead here
+private:
+//Tobias: inserted toPa_ and toHead here
     //! cm pressure head -> Pascal
-    Scalar toPa_(Scalar ph) const {
-        return pRef_ + ph / 100. * rho_ * g_;
-    }
+	Scalar toPa_(Scalar ph) const {
+		return pRef_ + ph / 100. * rho_ * g_;
+	}
 
-    //! Pascal -> cm pressure head
-    Scalar toHead_(Scalar p) const {
-        return (p - pRef_) * 100. / rho_ / g_;
-    }
+	//! Pascal -> cm pressure head
+	Scalar toHead_(Scalar p) const {
+		return (p - pRef_) * 100. / rho_ / g_;
+	}
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
         return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
