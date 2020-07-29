@@ -13,7 +13,7 @@ target_compile_definitions(coupled_ug PUBLIC DGF GRIDTYPE=Dune::UGGrid<3>)
 add_executable(coupled_rb EXCLUDE_FROM_ALL coupled.cc)
 target_compile_definitions(coupled_rb PUBLIC ROOTBOX)
 
-add_executable(coupled_schroeder EXCLUDE_FROM_ALL coupled_schroeder.cc)
+add_executable(coupled_schroeder EXCLUDE_FROM_ALL coupled_schroeder.cc ../../../dumux/external/brent/brent.cpp)
 target_compile_definitions(coupled_schroeder PUBLIC DGF)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
