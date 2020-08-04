@@ -1,5 +1,6 @@
-""" coupling with DuMux as solver for the soil part, run in dumux-rosi """
+""" coupling with DuMux as solver for the soil part """
 import sys
+from builtins import isinstance
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 sys.path.append("../solvers/")  # for pure python solvers
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
@@ -14,6 +15,34 @@ import matplotlib.pyplot as plt
 import timeit
 
 
+class SoilNN(pb.SoilLookUp):
+
+    def __init__(self, soil):
+        super(SoilNN, self).__init__()
+        self.soil = soil
+
+    def getValue(self, pos, organ):
+        return self.soil.getSolutionAt(self.soil.pick([pos.x, pos.y, pos.z]))
+
+
+class SoilLinear(pb.SoilLookUp):
+
+    def __init__(self, soil):
+        super(SoilLinear, self).__init__()
+        self.soil = soil
+        self.update()
+
+    def update(self):
+        self.points = self.soil.getDofCoordinates() / 100.
+        self.sol = self.soil.getSolution()
+
+    def getValue(self, pos, organ):
+        p = np.array(pos)
+        p = np.expand_dims(p, axis = 0)  # make 1x3
+        v = self.soil.interpolate_(p, self.points, self.sol)
+        return v
+
+
 def sinusoidal(t):
     return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
 
@@ -21,17 +50,19 @@ def sinusoidal(t):
 """ Parameters """
 min_b = [-4., -4., -25.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 25]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8, 8, 25]  # [16, 16, 30]  # [32, 32, 60]
 periodic = False
 
-name = "DuMux_1cm"
+path = "../modelparameter/rootsystem/"
+name = "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 loam = [0.08, 0.43, 0.04, 1.6, 50]
-initial = -659.8 + 7.5  # -659.8
+initial = -659.8 + 12.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
+sim_time = 7  # [day] for task b
+rs_age = 3  # root system initial age
 age_dependent = False  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
@@ -48,44 +79,56 @@ s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model """
 rs = pb.MappedRootSystem()
-path = "../modelparameter/rootsystem/"
-name = "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 rs.readParameters(path + name + ".xml")
 if not periodic:
-    sdf = pb.SDF_PlantBox(7, 7, 25)
-    # sdf = pb.SDF_PlantBox(0.99 * (max_b[0] - min_b[0]), 0.99 * (max_b[1] - min_b[1]), max_b[2] - min_b[2])
-    rs.setGeometry(sdf)
-rs.initialize()
-rs.simulate(10., False)
+    sdf = pb.SDF_PlantBox(0.99 * (max_b[0] - min_b[0]), 0.99 * (max_b[1] - min_b[1]), max_b[2] - min_b[2])
+else :
+    sdf = pb.SDF_PlantBox(np.Inf, np.Inf, max_b[2] - min_b[2])
+rs.setGeometry(sdf)
 r = XylemFluxPython(rs)
 init_conductivities(r, age_dependent)
 
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
-r.rs.setRectangularGrid(pb.Vector3d(min_b), pb.Vector3d(max_b), pb.Vector3d(cell_number))
+r.rs.setRectangularGrid(pb.Vector3d(min_b), pb.Vector3d(max_b), pb.Vector3d(cell_number), True)
+
+# Manually set tropism to hydrotropism for the first ten root types
+sigma = [0.4, 1., 1., 1., 1. ] * 2
+for p in rs.getRootRandomParameter():
+        p.dx = 0.25  # adjust resolution
+        p.tropismT = pb.TropismType.hydro
+        p.tropismN = 2  # strength of tropism
+        p.tropismS = sigma[p.subType - 1]
+
+soil = SoilNN(s)
+rs.setSoil(soil)
+
+rs.initialize()
+rs.simulate(rs_age, False)
+r.test()  # sanity checks
 nodes = r.get_nodes()
-cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
-rs_age = np.max(r.get_ages())
+cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # cell index
 
-""" Numerical solution (a) """
+""" Numerical solution """
 start_time = timeit.default_timer()
-x_, y_, w_, cpx, cps = [], [], [], [], []
+x_, y_ = [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-
 N = round(sim_time / dt)
 t = 0.
 
 for i in range(0, N):
 
+    if isinstance(soil, SoilLinear):
+        soil.update()  # for hydrotropism look up
+    rs.simulate(dt)
+
     rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point)  # xylem_flux.py
     x_.append(t)
-    y_.append(float(r.collar_flux(rs_age + t, rx, sx)))  # exact root collar flux
-    print(-trans * sinusoidal(t), r.collar_flux(rs_age + t, rx, sx))
+    y_.append(float(r.collar_flux(rs_age + t, rx, sx)))
 
     fluxes = r.soilFluxes(rs_age + t, rx, sx, False)
     s.setSource(fluxes)  # richards.py
-    # s.ddt = dt / 10
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
 

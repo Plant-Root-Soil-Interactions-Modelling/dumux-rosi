@@ -32,7 +32,7 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards (Pyth
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [4, 4, 7]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "dumux_c12_2cm"
@@ -43,7 +43,7 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # 0.65  # 0.25  # [day]
+sim_time = 7  # 0.65  # 0.25  # [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 
@@ -73,7 +73,7 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 r = XylemFluxPython("../grids/RootSystem.rsml")
 print("number of segments", len(r.get_segments()))
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]))
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 init_conductivities(r, age_dependent)
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
@@ -184,7 +184,7 @@ for i in range(0, NT):
 
     if i % skip == 0:
         out_times.append(t)
-        collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, 0, False))
+        collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, False))
         min_rsx.append(np.min(np.array(rsx)))
         collar_sx.append(csx)
         min_rx.append(np.min(np.array(rx)))

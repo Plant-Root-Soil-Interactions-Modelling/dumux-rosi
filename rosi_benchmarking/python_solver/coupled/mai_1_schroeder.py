@@ -132,7 +132,7 @@ for i in range(0, 4):  # nodes
 for i in range(0, len(n) - 1):  # segments
     segs.append(pb.Vector2i(i, i + 1))
 rs = pb.MappedSegments(n, segs, [r_root] * len(segs))  # a single root
-rs.setRectangularGrid(pb.Vector3d(-1.5, -1.5, -3.), pb.Vector3d(1.5, 1.5, 0.), pb.Vector3d(3, 3, N))
+rs.setRectangularGrid(pb.Vector3d(-1.5, -1.5, -3.), pb.Vector3d(1.5, 1.5, 0.), pb.Vector3d(3, 3, N), False)
 r = XylemFluxPython(rs)
 r.setKr([kr])
 r.setKx([kx])
