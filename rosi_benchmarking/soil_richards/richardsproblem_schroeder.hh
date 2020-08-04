@@ -361,46 +361,24 @@ public:
 	 */
 
     // T.S: Function definition: integration by hand (calculate matric-flux-potential based on the currenct absolute pressure)
-    const Scalar pc_to_MFP(const Element &element, const Scalar pressure3D_pc, int n, const Scalar dx, const Scalar kc) const
+    const Scalar pc_to_MFP(const Element &element, Scalar lower,  Scalar pressure3D_pc, int n) const
     {
-        Scalar cumSum =0;
-        for (int i=0; i<n+1; i++)
-        {
+        MaterialLawParams params = this->spatialParams().materialLawParams(element);
+        Scalar kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
+        std::function<double(double)> f = [=] (double x) { return MaterialLaw::krw(params, MaterialLaw::sw(params, x))*kc*86400; };
+        return CPlantBox::Function::quad(f, lower, pressure3D_pc, n);
 
-            MaterialLawParams params = this->spatialParams().materialLawParams(element);
-            Scalar xi = pressure3D_pc +i*dx; // pc value for sw call
-            Scalar funValue = MaterialLaw::sw(params, xi);
-            Scalar funValue2 = MaterialLaw::krw(params, funValue);
-            Scalar rectangleArea = funValue2*dx*kc; // height * base length
-            cumSum += rectangleArea*86400;
-            // CHECK UNITS! MFP from cm²/s into cm²/day for comparison with python script, assumption was that MFP should be m²/day, results indicate otherwise
-        }
-        return cumSum;
-    }
-
-    // Templates for brent-algorithm taken from https://stackoverflow.com/questions/51931479/conversion-between-stdfunctiondoubledouble-to-double-double
-    // note: function-builder-base and function builder need to be adapteded with 2x const each
-
-    template <class Lambda>
-    class FunctionWithState : public brent::func_base, public Lambda {
-      public:
-         FunctionWithState(const Lambda & lambda): Lambda(lambda) {}
-         double operator()(double x) override
-         { return Lambda::operator()(x); }
-    };
-
-    template<class Lambda>
-    const auto function_builder_base (Lambda lambda) const
-    {
-        return FunctionWithState<decltype(lambda)>(lambda);
-    }
-
-
-    const auto function_builder(double a, double b, const Element &element, int n, const Scalar dx, const Scalar kc, const Scalar MFP_nostress_root) const
-    {
-        return function_builder_base([=]( double x) {
-            return  pc_to_MFP(element, x, n, dx, kc) - MFP_nostress_root;
-        });
+//        Scalar cumSum =0;
+//        for (int i=0; i<n+1; i++)
+//        {
+//            Scalar xi = pressure3D_pc +i*dx; // pc value for sw call
+//            Scalar funValue = MaterialLaw::sw(params, xi);
+//            Scalar funValue2 = MaterialLaw::krw(params, funValue);
+//            Scalar rectangleArea = funValue2*dx*kc; // height * base length
+//            cumSum += rectangleArea*86400;
+//            // CHECK UNITS! MFP from cm²/s into cm²/day for comparison with python script, assumption was that MFP should be m²/day, results indicate otherwise
+//        }
+//        return cumSum;
     }
 
 	template<class ElementVolumeVariables>
@@ -442,12 +420,8 @@ public:
                 // lower integration boundary (-15.000 cm) for MFP [pc]
                 const int n = getParam<int>("Schroeder.n");
                 // integration-steps (10000 gives good results for clay & loam, 40000 needed for sand & still not perfect)
-                const Scalar dx = (const Scalar) (lowBound_pc - pressure3D_pc)/n;
-                // step-length for integration
-                MaterialLawParams params = this->spatialParams().materialLawParams(element);
-                Scalar kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
                 // hydraulic conductivity of soil voxel
-                const Scalar MFP_soil = pc_to_MFP(element, pressure3D_pc, n, dx, kc);
+                const Scalar MFP_soil = pc_to_MFP(element, lowBound_pc, pressure3D_pc, n);
                 // MFP of source-point soil voxel, call to integration function
 
 
@@ -477,7 +451,6 @@ public:
                 // flux at root cylinder with radius r_root. sourceValue Conversion from Dumux units [kg s⁻¹ m⁻1] into Schroeder units [cm³ cm⁻² d⁻¹] <=> [cm/day]
                 // this has to be *-1, MFP_soil < MFP_root
 
-
                 // r, radial coordinate for MFP calculation. For us always r = root, double definition for readibility of MFP_nostress_root equation
                 const Scalar r = rootRadius*100; // [cm]
                 const Scalar r_root = rootRadius*100; // [cm]
@@ -485,19 +458,17 @@ public:
                 const Scalar MFP_nostress_root = MFP_soil + (q_root * r_root - q_out *r_out) * (pow(r,2) / pow(r_root, 2) / (2*(1-pow(rho,2)))
                 + pow(rho,2) / (1-pow(rho,2)) * (log(r_out/r) -0.5)) + q_out * r_out * log(r / r_out);
 
-
                 // STEP 3) TRANSFER MFP at root-surface back to a pressure value
                 // parameters for Brent algorithm (finds zero of a function in a bracketing interval)
                 double tolerance = brent::r8_epsilon ( );
                 // error-tolerance parameter of brent-algorithm
-                auto MFP_to_pressure3D = function_builder(lowBound_pc,  0, element,   n,   dx,   kc, MFP_nostress_root);
+                auto MFP_to_pressure3D = brent::funcLambda([=](double x) { return  pc_to_MFP(element, lowBound_pc, x, n) - MFP_nostress_root; });
                 double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D);
                 const Scalar pressure3D_pc_new = z;
                 const Scalar pressure3D_new = -1*(z-pRef_);
 
-
-
                 // STEP 4) PASS NEW PRESSURE3D TO SOURCE-TERM
+                MaterialLawParams params = this->spatialParams().materialLawParams(element);
                 const Scalar pressure3D_s_new = MaterialLaw::sw(params, pressure3D_pc_new);
                 const Scalar krw = MaterialLaw::krw(params, pressure3D_s_new); // pass new pressure3D_s to calculate krw
                 const Scalar krw_scaled_to_rootRadius = krw / rootRadius;      // soil hydraulic conductivity scaled to root radius (radius used as proxy)

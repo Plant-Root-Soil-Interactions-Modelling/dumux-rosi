@@ -309,21 +309,28 @@ public:
     // note: function-builder-base and function builder need to be adapteded with 2x const each
 
     // T.S: Function definition: integration by hand (calculate matric-flux-potential based on the currenct absolute pressure)
-    const Scalar pc_to_MFP(const auto& bulkElement, const Scalar pressure3D_pc, int n, const Scalar dx, const Scalar kc) const
+//    const Scalar pc_to_MFP(const auto& bulkElement, const Scalar pressure3D_pc, int n, const Scalar dx, const Scalar kc) const
+    const Scalar pc_to_MFP(const auto& element, Scalar lower,  Scalar pressure3D_pc, int n) const
     {
-        Scalar cumSum =0;
-        for (int i=0; i<n+1; i++)
-        {
-            const auto& soilSpatialParams = couplingManager_->problem(Dune::index_constant<0>{}).spatialParams();
-            MaterialLawParams params = soilSpatialParams.materialLawParams(bulkElement);
-            Scalar xi = pressure3D_pc +i*dx; // pc value for sw call
-            Scalar funValue = MaterialLaw::sw(params, xi);
-            Scalar funValue2 = MaterialLaw::krw(params, funValue);
-            Scalar rectangleArea = funValue2*dx*kc; // height * base length
-            cumSum += rectangleArea*86400;
-            // CHECK UNITS! MFP from cm²/s into cm²/day for comparison with python script, assumption was that MFP should be m²/day, results indicate otherwise
-        }
-        return cumSum;
+        const auto& soilSpatialParams = couplingManager_->problem(Dune::index_constant<0>{}).spatialParams();
+        const auto& params = soilSpatialParams.materialLawParams(element);
+        Scalar kc = soilSpatialParams.hydraulicConductivity(element); // [m/s]
+        std::function<double(double)> f = [=] (double x) { return MaterialLaw::krw(params, MaterialLaw::sw(params, x))*kc*86400; };
+        return CPlantBox::Function::quad(f, lower, pressure3D_pc, n);
+
+//        Scalar cumSum =0;
+//        for (int i=0; i<n+1; i++)
+//        {
+//            const auto& soilSpatialParams = couplingManager_->problem(Dune::index_constant<0>{}).spatialParams();
+//            MaterialLawParams params = soilSpatialParams.materialLawParams(bulkElement);
+//            Scalar xi = pressure3D_pc +i*dx; // pc value for sw call
+//            Scalar funValue = MaterialLaw::sw(params, xi);
+//            Scalar funValue2 = MaterialLaw::krw(params, funValue);
+//            Scalar rectangleArea = funValue2*dx*kc; // height * base length
+//            cumSum += rectangleArea*86400;
+//            // CHECK UNITS! MFP from cm²/s into cm²/day for comparison with python script, assumption was that MFP should be m²/day, results indicate otherwise
+//        }
+//        return cumSum;
     }
 
 
@@ -377,11 +384,8 @@ public:
                     // lower integration boundary (-15.000 cm) for MFP [pc]
                     const int n = getParam<int>("Schroeder.n");
                     // integration-steps (10000 gives good results for clay & loam, 40000 needed for sand & still not perfect)
-                    const Scalar dx = (const Scalar) (lowBound_pc - pressure3D_pc)/n;
-                    // step-length for integration
-                    Scalar kc = soilSpatialParams.hydraulicConductivity(bulkElement); // [m/s]
                     // hydraulic conductivity of soil voxel
-                    const Scalar MFP_soil = pc_to_MFP(bulkElement, pressure3D_pc, n, dx, kc);
+                    const Scalar MFP_soil = pc_to_MFP(bulkElement, lowBound_pc, pressure3D_pc, n);
                     // MFP of source-point soil voxel, call to integration function
                     //std::cout << " pointSource_root " << source.id() << "MFP_soil (rootsproblem)= " << MFP_soil << "\n";
 
@@ -423,8 +427,8 @@ public:
                     // parameters for Brent algorithm (finds zero of a function in a bracketing interval)
                     double tolerance = brent::r8_epsilon ( );
                     // error-tolerance parameter of brent-algorithm
-                    auto MFP_to_pressure3D = brent::funcLambda([=](double x) { return  pc_to_MFP(bulkElement, x, n, dx, kc) - MFP_nostress_root; });
-                    double z = brent::zero (lowBound_pc, 0, tolerance, MFP_to_pressure3D);
+                    auto MFP_to_pressure3D = brent::funcLambda([=](double x) { return  pc_to_MFP(bulkElement, lowBound_pc, x, n) - MFP_nostress_root; });
+                    double z = brent::zero(lowBound_pc, 0, tolerance, MFP_to_pressure3D);
                     const Scalar pressure3D_pc_new = z;
                     const Scalar pressure3D_new = -1*(z-pRef_);
 
