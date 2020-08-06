@@ -2,11 +2,11 @@ import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 sys.path.append("../solvers/")  # for pure python solvers
 
-from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
-import solver.plantbox as pb
-import solver.rsml_reader as rsml
+from xylem_flux import XylemFluxPython  # Python hybrid solver
+import plantbox as pb
+import rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from solver.richards import RichardsWrapper  # Python part
+from richards import RichardsWrapper  # Python part
 import van_genuchten as vg
 
 from math import *

@@ -99,17 +99,23 @@ class XylemFluxPython(XylemFlux):
 
         return x
 
-    def collar_flux(self, sim_time, rx, sx, k_soil = [], seg_ind = 0, cells = True):
+    def collar_flux(self, sim_time, rx, sx, k_soil = [], cells = True):
         """ returns the exact transpirational flux of the xylem model solution @param rx [g/cm] 
             @param sim_time [day]     needed for age dependent conductivities (age = sim_time - segment creation time)        
             @param rx [cm]            root xylem pressure
             @param sxx [cm]           soil matric potentials 
         """
+        for i, s in enumerate(self.rs.segments):  # find root collar, asumming node[0] is base
+            if s.x == 0:
+                seg_ind = i
+                break
         s = self.rs.segments[seg_ind]  # collar segment
+
         if len(k_soil) > 0:
             ksoil = k_soil[seg_ind]
         else:
             ksoil = 1000
+
         i, j = int(s.x), int(s.y)  # node indices
         n1, n2 = self.rs.nodes[i], self.rs.nodes[j]  # nodes
         v = n2.minus(n1)

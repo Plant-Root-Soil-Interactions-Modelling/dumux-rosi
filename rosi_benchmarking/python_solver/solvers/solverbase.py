@@ -206,7 +206,19 @@ class SolverWrapper():
             yi = np.zeros((xi.shape[0]))
             for i in range(0, xi.shape[0]):
                 yi[i] = griddata(points, solution[:, eq], xi / 100., method = 'linear', rescale = True)  # cm -> m
-            return y
+            return yi
+        else:
+            return []
+
+    def interpolate_(self, xi, points, solution, eq = 0):
+        """ interpolates the solution at position ix [cm] (same es interpolate_ but passes points and solution),
+        model dependent units """
+        self.checkInitialized()
+        if rank == 0:
+            yi = np.zeros((xi.shape[0]))
+            for i in range(0, xi.shape[0]):
+                yi[i] = griddata(points, solution[:, eq], xi / 100., method = 'linear')  # cm -> m
+            return yi
         else:
             return []
 

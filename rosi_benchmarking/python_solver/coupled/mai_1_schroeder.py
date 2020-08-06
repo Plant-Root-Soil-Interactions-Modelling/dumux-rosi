@@ -63,7 +63,7 @@ def getInnerHead(p, q_root, q_out, r_in, r_out, soil):
         mfp = (matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
         h = matric_potential_mfp(mfp, soil)
         print("Stressed head", h)
-        input()
+        # input()
     h = min(h, p)
     h = max(h, -15000.)
     return h

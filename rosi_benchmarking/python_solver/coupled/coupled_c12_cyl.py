@@ -69,7 +69,7 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 """ Initialize xylem model (a)"""
 r = XylemFluxPython("../grids/RootSystem.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]))
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 r.setKr([kr])  # [cm^3/day] # todo check order of age (segs are sorted)
 r.setKx([kx])  # [1/day]
 picker = lambda x, y, z : s.pick([x, y, z])

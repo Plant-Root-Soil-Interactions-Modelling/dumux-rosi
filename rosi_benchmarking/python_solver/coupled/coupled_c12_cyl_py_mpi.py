@@ -2,16 +2,16 @@ import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 sys.path.append("../solvers/")  # for pure python solvers
 
-from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
-import solver.plantbox as pb
-import solver.rsml_reader as rsml
+from xylem_flux import XylemFluxPython  # Python hybrid solver
+import plantbox as pb
+import rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 # from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
-from solver.richards import RichardsWrapper  # Python part
-import solver.van_genuchten as vg
+from richards import RichardsWrapper  # Python part
+import van_genuchten as vg
 from root_conductivities import *
-from solver.fv_grid import *
-import solver.richards_solver as rich
+from fv_grid import *
+import richards as rich
 import vtk_plot as vp
 import vtk_tools as vt
 
@@ -79,7 +79,7 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 r = XylemFluxPython("../grids/RootSystem.rsml")  # XylemFluxPython(rs)  # <-- or final of you root system "../grids/RootSystem.rsml"
 print("number of segments", len(r.get_segments()))
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]))
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 init_conductivities(r, age_dependent)
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments

@@ -47,7 +47,7 @@ def solve(soil, simtimes, q_r, N):
     seg2 = pb.Vector2i(1, 2)
     #  rs = pb.MappedSegments([n1, n3], [seg1], [r_root])  # a single root
     rs = pb.MappedSegments([n1, n2, n3], [seg1, seg2], [r_root, r_root])  # a single root
-    rs.setRectangularGrid(pb.Vector3d(-l, -l, -1.), pb.Vector3d(l, l, 0.), pb.Vector3d(N, N, 1))
+    rs.setRectangularGrid(pb.Vector3d(-l, -l, -1.), pb.Vector3d(l, l, 0.), pb.Vector3d(N, N, 1), False)
     r = XylemFluxPython(rs)
     r.setKr([1.e-7])
     r.setKx([1.e-7])
