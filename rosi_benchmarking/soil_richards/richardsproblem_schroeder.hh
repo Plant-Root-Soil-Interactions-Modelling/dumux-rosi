@@ -366,7 +366,7 @@ public:
         MaterialLawParams params = this->spatialParams().materialLawParams(element);
         Scalar kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
         std::function<double(double)> f = [=] (double x) { return MaterialLaw::krw(params, MaterialLaw::sw(params, x))*kc*86400; };
-        return CPlantBox::Function::quad(f, lower, pressure3D_pc, n);
+        return CPlantBox::Function::quad(f, pressure3D_pc, lower, n);
 
 //        Scalar cumSum =0;
 //        for (int i=0; i<n+1; i++)
