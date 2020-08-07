@@ -1,0 +1,20 @@
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600 #upped to 3600 due to wallclocktime
+
+[Soil.Grid]
+#Cells = 4 4 8
+#Cells = 8 8 15
+Cells = 16 16 30
+
+[Schroeder]
+gradients = 1                 # set 1 to enable Schröder, set to zero for default model
+print= 0		      # set 1 to enable print-loops, set to zero for no prints
+n=100     		      # integration steps for k(h) => MFP, 10000 gives good results, but is way too slow
+
+[Problem]
+Name = benchmarkC12_default_schroeder_0.5cm_loam_n100
+RootName = ../roots_1p/input/benchmarkC12_schroeder.input
+SoilName = ../soil_richards/input/benchmarkC12_3d_schroeder.input
