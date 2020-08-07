@@ -487,7 +487,8 @@ public:
                     std::cout << " soilproblem sourceID_soil:" << source.id() << "\n" << " MFP_soil = " << MFP_soil <<  "   MFP_no_stress_root= " << MFP_nostress_root << "   deltaMFP= "
                     << MFP_soil-MFP_nostress_root << "  soil_r_out= " << r_out << "   root_radius= " << rootRadius*100 << "   q_root= " << q_root << "\n"
                     << " pressure3D_head(soil)= " << toHead_(pressure3D) << "   pressure3D_head(root_surface)= " << toHead_(pressure3D_new) << "\n"
-                    << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n" << "\n";
+                    << " pressure3D_Pa(soil)  = " << pressure3D << "  pressure3D_Pa(root_surface) = " << pressure3D_new << "\n"
+                    << " pressure1D_Pa(root)  = " << pressure1D << "  pressure1D_head(root)       = " << toHead_(pressure1D) << "\n" << "\n";
                     }
                 }
 		     }
