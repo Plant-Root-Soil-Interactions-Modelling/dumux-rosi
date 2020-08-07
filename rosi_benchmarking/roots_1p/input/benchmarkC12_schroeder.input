@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 360 
 
 [RootSystem.Grid]
-File = grids/schroeder_test(Glycine_max_2days).dgf
+File =  grids/DAP8_RootSys.dgf
 InitialT = 8 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -31,4 +31,3 @@ Z = -.15 0.
 [Vtk]
 AddProcessRank = "false"
 AddVelocity = "true"
-
