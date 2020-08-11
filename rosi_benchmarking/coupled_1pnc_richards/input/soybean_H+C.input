@@ -4,7 +4,7 @@ RootName = ../roots_1pnc/input/soybean.input
 SoilName = ../soil_richards/input/soybean_HLCT.input
 
 [TimeLoop]
-TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
@@ -18,9 +18,9 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-#[Soil.IC]
-#P = -150 -300
-#Z = -1.5 0. 
+[Soil.IC]
+P = -150 -300
+Z = -1.5 0. 
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -28,14 +28,20 @@ CritCollarP = -100000 # pressure, when to switch to dirichlet
 CritCollarPAlpha = -5500 # for alpha
 CritTipP = -4500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
-ProductionAge = 1 # [day]
+ProductionAge = 200 # [day]
+ProductionGrowth = true
 Decay = 0.693 # [day-1]
-b = 10193.68 # [cm] pressure head
-c = 0.7 # [1] cavitation ON
+b = 1.e8 # [cm] pressure head
+c = 200 # [1] 
 sH = 1e-4 # [cm-1]
 sC = 5e+10 # [cm3/mol]
+mL = 0 # Only used if simulation is restarted, else 0 (will have a value from console where the simulation does not converge)
 
-[Restart]
-Time = 7.77236e+06
-SoilFile = ./results_soybean_H+C_cavitation_2/soybean_H+C-00081.vtu
-RootFile = ./results_soybean_H+C_cavitation_2/soybean_H+C-00081.vtp
+[RootSystem.Leaf]
+Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
+VolumeT = 0	1	7	14	21	30	45	60	90	154
+
+#[Restart]
+#Time = 5616000
+#SoilFile = ./results_PR_soybean_H+C/PR_soybean_H+C-00448.vtu
+#RootFile = ./results_PR_soybean_H+C/PR_soybean_H+C-00448.vtp

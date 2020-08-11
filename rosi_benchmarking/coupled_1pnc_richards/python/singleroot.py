@@ -7,8 +7,8 @@ import van_genuchten as vg
 import math
 import numpy as np
 
-name = "singleroot_HLCT"  # this name should be unique
-suffix = "_atmospheric"
+name = "singleroot_Honly"  # this name should be unique
+suffix = ""
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +16,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
 
 # run simulation
-os.system("./coupled_periodic_1pnc_richards input/" + name + ".input -Problem.SoilName ../soil_richards/input/singleroot_atmospheric_HLCT.input")
+os.system("./coupled_periodic_1pnc_richards input/" + name + ".input -Problem.SoilName ../soil_richards/input/singleroot_HLCT.input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):

@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "soybean_Honly"  # this name should be unique
-suffix = "_154d"
+suffix = "_1"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled_periodic input/" + name + ".input -RootSystem.Grid.File grids/Glycine_max_154days.dgf")
+os.system("./coupled_periodic input/" + name + ".input -RootSystem.Grid.InitialT 1")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
@@ -31,25 +31,25 @@ c = 24 * 3600  # s / day
 t = d[:, 0] / c  # [s] -> [day]
 
 """ Plot transpiration """
-fig, ax3 = plt.subplots()
-ax3.plot(t, 1000 * d[:, 2] * c, 'k')  # potential transpiration
-ax3.plot(t, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
+fig, ax1 = plt.subplots()
+ax1.plot(t, 1000 * d[:, 2] * c, 'k')  # potential transpiration
+ax1.plot(t, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
 
-ax3b = ax3.twinx()
+ax1b = ax1.twinx()
 ctrans = np.cumsum(np.multiply(1000 * d[1:, 1] * c, (t[1:] - t[:-1])))
-ax3b.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
-ax3b.tick_params(axis= 'y', labelcolor = 'b')
-ax3.set_xlabel("time (days)")
-ax3.set_ylabel("transpiration (mL/day)")
-ax3b.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
-ax3.legend(["potential", "actual", "cumulative"], loc = 'upper left')
+ax1b.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
+ax1b.tick_params(axis= 'y', labelcolor = 'b')
+ax1.set_xlabel("Time [days]")
+ax1.set_ylabel("Transpiration [mL/day]")
+ax1b.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
+ax1.legend(["potential", "actual", "cumulative"], loc = 'upper left')
 plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300)
 
 """ Plot root collar pressure """
-fig, ax4 = plt.subplots()
-ax4.plot(d[:, 0] / c, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root colalr pressure head (convert from Pa to Head)  
-ax4.set_xlabel("time (days)")
-ax4.set_ylabel("Pressure at root collar (cm)")
+fig, ax2 = plt.subplots()
+ax2.plot(d[:, 0] / c, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root colalr pressure head (convert from Pa to Head)  
+ax2.set_xlabel("Time [days]")
+ax2.set_ylabel("Pressure at root collar [cm]")
 plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300)
 
 plt.show()

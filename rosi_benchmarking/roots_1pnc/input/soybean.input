@@ -10,6 +10,11 @@ MaxTimeStepSize = 3600
 [RootSystem.Grid]
 File =  grids/Glycine_max_154days.dgf
 InitialT = 1 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
 Grow = true
 
 [RootSystem.Conductivity]
