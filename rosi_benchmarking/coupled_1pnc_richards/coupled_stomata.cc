@@ -141,7 +141,7 @@ int main(int argc, char** argv) try
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
         // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
-        rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
+        rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(size[0]*100, size[1]*100, size[2]*100));
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         rootGrid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh

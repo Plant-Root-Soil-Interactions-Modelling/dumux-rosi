@@ -110,9 +110,9 @@ int main(int argc, char** argv) try
         rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
         if (hasParam("RootSystem.Grid.Confined")) {
             auto box = getParam<std::vector<double>>("RootSystem.Grid.Confined");
-            rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(box.at(0)*100, box.at(1)*100, box.at(2)*100));
+            rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(box.at(0)*100, box.at(1)*100, box.at(2)*100));
         } else { // half plane
-            rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
+            rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_HalfPlane>(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         }
         rootSystem->initialize();
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
@@ -138,8 +138,8 @@ int main(int argc, char** argv) try
     ////////////////////////////////////////////////////////////
 
     // the solution vector
-//    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
-//    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
 
     // root growth
     GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
@@ -166,8 +166,8 @@ int main(int argc, char** argv) try
     Scalar restartTime = getParam<Scalar>("Restart.Time", 0);
 
     // the solution vector
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
-    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+//    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+//    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
     if (restartTime > 0)
     {
         using IOFields = GetPropType<TypeTag, Properties::IOFields>;

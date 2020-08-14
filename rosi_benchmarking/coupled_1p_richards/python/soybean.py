@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "soybean_Honly"  # this name should be unique
-suffix = "_1"
+suffix = "_20d"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))

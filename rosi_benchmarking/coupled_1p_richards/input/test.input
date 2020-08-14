@@ -1,4 +1,0 @@
-[Problem]
-Name = test
-RootName = ../roots_1p/input/small.input
-SoilName = ../soil_richards/input/small_3d.input
