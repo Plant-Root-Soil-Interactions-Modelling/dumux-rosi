@@ -1,4 +1,4 @@
-''' Run Benchmakrk C12periodic '''
+''' Run Benchmakrk C12periodic (like benchmarkC12.py but with periodic boundary conditions)'''
 
 import os
 import matplotlib.pyplot as plt

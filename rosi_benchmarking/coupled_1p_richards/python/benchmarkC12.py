@@ -1,4 +1,4 @@
-''' Run Benchmakrk C12 '''
+''' Run Benchmakrk C12 (classic sink)'''
 
 import os
 import matplotlib.pyplot as plt

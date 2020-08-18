@@ -1,4 +1,4 @@
-''' Run Benchmakrk C12b '''
+''' Run Benchmakrk C12b (age depenent conductivities, classic sink) '''
 
 import os
 import matplotlib.pyplot as plt

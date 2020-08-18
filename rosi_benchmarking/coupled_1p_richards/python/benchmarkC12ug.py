@@ -1,4 +1,4 @@
-''' Run Benchmakrk C12b '''
+''' Run Benchmakrk C12b with an unstructured grid'''
 
 import os
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ ctrans = np.cumsum(np.multiply(d[1:, 1] * c, (t[1:] - t[:-1])))
 ax2.plot(t[1:], ctrans, 'c--')  # cumulative transpiration (neumann)
 
 ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-#ax1.axis((0, t[-1], 0, 0.13))
+# ax1.axis((0, t[-1], 0, 0.13))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
 ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
