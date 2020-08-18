@@ -4,7 +4,7 @@ RootName = ../roots_1p/input/soybean.input
 SoilName = ../soil_richards/input/soybean_HLCT.input
 
 [TimeLoop]
-TEnd =  1728000 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
+TEnd =  13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
