@@ -171,8 +171,9 @@ class XylemFluxPython(XylemFlux):
         # 2 check for small segments
         seg_length = self.segLength()
         c = 0
-        for l in seg_length:
+        for i, l in enumerate(seg_length):
             if l < 1e-5:
+                print(i, l)
                 c += 1
         print(c, "segments with length < 1.e-5")
 

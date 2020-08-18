@@ -30,17 +30,15 @@ class SoilLinear(pb.SoilLookUp):
     def __init__(self, soil):
         super(SoilLinear, self).__init__()
         self.soil = soil
+        self.points = self.soil.getDofCoordinates() / 100.
         self.update()
 
     def update(self):
-        self.points = self.soil.getDofCoordinates() / 100.
         self.sol = self.soil.getSolution()
 
     def getValue(self, pos, organ):
-        p = np.array(pos)
-        p = np.expand_dims(p, axis = 0)  # make 1x3
-        v = self.soil.interpolate_(p, self.points, self.sol)
-        return v
+        p = np.expand_dims(np.array(pos), axis = 0)  # make 1x3
+        return self.soil.interpolate_(p, self.points, self.sol)
 
 
 def sinusoidal(t):
@@ -101,7 +99,7 @@ for p in rs.getRootRandomParameter():
         p.tropismN = 2  # strength of tropism
         p.tropismS = sigma[p.subType - 1]
 
-soil = SoilNN(s)
+soil = SoilLinear(s)  # SoilLinear(s)
 rs.setSoil(soil)
 
 rs.initialize()

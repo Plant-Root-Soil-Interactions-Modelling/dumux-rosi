@@ -97,7 +97,7 @@ def get_parameter(polylines :list, funcs :dict, props :dict) -> (list, list, lis
     radii, cts, types = [], [], []
     for i, p in enumerate(polylines):
         for j in range(0, len(p)):
-            radii.append(fdiam[i][j] / 2)
+            radii.append(fdiam[i][j] / 2.)
             cts.append(fet[i][j])
             types.append(ptype[i])
     return radii[1:], cts[1:], types[1:]

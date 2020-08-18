@@ -29,10 +29,12 @@ r = XylemFluxPython("../grids/RootSystem.rsml")
 r.setKr([kr])
 r.setKx([kz])
 
+r.test()
+
 # for i, n in enumerate(r.rs.nodes):
 #     r.rs.nodes[i] = pb.Vector3d(n.x / 10, n.y / 10, n.z / 10)
-# # for i, _ in enumerate(r.rs.segments):
-# #     r.rs.radii[i] = r.rs.radii[i] / 10
+# for i, _ in enumerate(r.rs.segments):
+#     r.rs.radii[i] = r.rs.radii[i] / 10
 
 nodes = r.get_nodes()
 soil_index = lambda x, y, z : 0
@@ -70,7 +72,7 @@ plt.show()
 
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
-ana.addData("rx", rx_b)  # node data are converted to segment data
-pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "rx"])
+ana.addData("rx", rx_a)  # node data are converted to segment data
+pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx"])
 vp.plot_roots(pd, "rx")
 
