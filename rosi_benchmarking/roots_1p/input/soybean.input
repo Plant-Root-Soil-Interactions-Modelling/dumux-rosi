@@ -9,12 +9,13 @@ MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
 File =  grids/Glycine_max_154days.dgf
-InitialT = 90 # days
+InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
 ctIdx = 7
 krIdx = 6
 kxIdx = 5
+Grow = true
 
 [RootSystem.Conductivity]
 Kx0 = 0.0006736268	0.0006736268 0.074759246 0.08296797 0.09207803 0.102188394 0.113408897 0.125861436 0.13968129 0.155018593 0.172039965 0.190930319 0.211894875 0.235161384 0.260982605 0.289639051 0.321442035 0.356737056  4.3	4.3    # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
@@ -44,6 +45,7 @@ KrAge3 = -154	0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 60	1e20	# days
 [RootSystem.Collar]
 CSVFile = input/soybean_transpiration_2003.csv # kg/day 
 Sinusoidal = True
+CritCollarP = -1.5e4
 
 #[Soil.IC]
 #P = -5000

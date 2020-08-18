@@ -1,10 +1,10 @@
 [Problem]
 Name = soybean_Honly
-RootName = ../roots_1pnc/input/soybean.input
+RootName = ../roots_1p/input/soybean.input
 SoilName = ../soil_richards/input/soybean_HLCT.input
 
 [TimeLoop]
-TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+TEnd =  13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
@@ -18,11 +18,11 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-#[Soil.IC]
-#P = -150 -300
-#Z = -1.5 0. 
+[Soil.IC]
+P = -150 -300
+Z = -1.5 0. 
 
-[Restart]
-Time = 7776000
-SoilFile = ./results_soybean_Honly_90d/soybean_Honly-01440.vtu
-RootFile = ./results_soybean_Honly_90d/soybean_Honly-01440.vtp
+#[Restart]
+#Time = 97311.6
+#SoilFile = ./results_soybean_Honly/soybean_Honly-00027.vtu
+#RootFile = ./results_soybean_Honly/soybean_Honly-00027.vtp

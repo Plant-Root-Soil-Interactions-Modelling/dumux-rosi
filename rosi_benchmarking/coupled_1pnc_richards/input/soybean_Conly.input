@@ -28,14 +28,20 @@ CritCollarP = -100000 # pressure, when to switch to dirichlet
 CritCollarPAlpha = -5500 # for alpha
 CritTipP = 0 # when production starts
 ProductionRate = 3.26e-15 # [mol kg-1 Pa-1 s-1]
-ProductionAge = 2 # [day]
+ProductionAge = 200 # [day]
+ProductionGrowth = true
 Decay = 0.693 # [day-1]
 b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
+mL = 0.12168992 # Only used if simulation is restarted, else 0 (will have a value from console)
+
+[RootSystem.Leaf]
+Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
+VolumeT = 0	1	7	14	21	30	45	60	90	154
 
 [Restart]
-Time = 4.32729e+06
-SoilFile = ./results_soybean_Conly_1/soybean_Conly-00063.vtu
-RootFile = ./results_soybean_Conly_1/soybean_Conly-00063.vtp
+Time = 9.61927e+06
+SoilFile = ./results_soybean_Conly_2/soybean_Conly-01542.vtu
+RootFile = ./results_soybean_Conly_2/soybean_Conly-01542.vtp

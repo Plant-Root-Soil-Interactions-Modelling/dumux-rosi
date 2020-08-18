@@ -81,6 +81,7 @@ public:
             bcType_ = bcNeumann;
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
+        criticalCollarPressure_ = toPa_(getParam<double>("RootSystem.Collar.CritCollarP", -1.5e4));  // cm -> Pa
     }
 
     //! Destructor - close transpiration file
@@ -444,6 +445,11 @@ public:
     }
 
 private:
+
+    //! cm pressure head -> Pascal
+    Scalar toPa_(Scalar ph) const {
+        return pRef_ + ph / 100. * rho_ * g_;
+    }
 
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
         return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
