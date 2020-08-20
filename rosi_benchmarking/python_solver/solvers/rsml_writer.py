@@ -111,6 +111,7 @@ class LinkedPolylines:
 
     def __init__(self):
         self.branchnumber = -1
+        self.parent_node = -1
         self.polyline = []
         self.laterals = []
 
@@ -144,6 +145,7 @@ class LinkedPolylines:
         properties = ET.SubElement(root, "properties")  # defined by root
         for p in meta.properties:
             properties.append(ET.Element(p.label, dict(value = str(p.data[self.branchnumber - 1]))))
+        properties.append(ET.Element("parent-node", dict(value = str(self.parent_node))))
         for r in self.laterals:
             if r:  # ends with an empty list
                 r.write_root(root, nodes, nodedata, Renumber = kwargs.get("Renumber", True))
@@ -155,7 +157,7 @@ class LinkedPolylines:
                 fun.append(ET.Element("sample", dict(value = str(nodedata[i][p]))))
 
 
-def follow_(i :int, A) -> LinkedPolylines:
+def follow_(i0 :int, i :int, A) -> LinkedPolylines:
     """ Recursively follows the roots
     
     Args:
@@ -172,6 +174,7 @@ def follow_(i :int, A) -> LinkedPolylines:
         newlines = LinkedPolylines()
         newlines.branchnumber = A[i, j_[0]]
         newlines.polyline = [i]
+        newlines.parent_node = i0
 
         done = False
         while not done:
@@ -182,7 +185,7 @@ def follow_(i :int, A) -> LinkedPolylines:
                     done = False
                 else:
                     # print("lateral", j)
-                    newlines.laterals.append(follow_(j, A))  # follow lateral
+                    newlines.laterals.append(follow_(len(newlines.polyline) - 1, j, A))  # follow lateral
             if not done:
                 i = newlines.polyline[-1]  # jump to next node
                 _, j_ = A[i, :].nonzero()
@@ -207,7 +210,7 @@ def segs2polylines(axes :list, segs :list, segdata :list) -> list:
     A = sparse.csr_matrix((segdata, (segs[:, 0], segs[:, 1])), dtype = np.int64, shape = (n, n))
     polylines = []
     for a in axes:
-        polylines.append(follow_(a, A))
+        polylines.append(follow_(-1, a, A))
     return polylines
 
 

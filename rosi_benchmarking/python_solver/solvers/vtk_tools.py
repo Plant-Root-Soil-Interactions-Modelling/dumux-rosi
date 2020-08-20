@@ -1,6 +1,6 @@
 import vtk
 import numpy as np
-# from rsml_writer import write_rsml # to write a rsml
+from rsml_writer import write_rsml as write_rsml2  # to write a rsml
 
 """ 
 VTK Tools, by Daniel Leitner (refurbished 6/2020) 
@@ -99,6 +99,7 @@ def np_data(polydata, data_index = 0, cell = True):
         data = polydata.GetCellData()
     else:
         data = polydata.GetPointData()
+    # print(data)
     p = data.GetArray(data_index)
     noa = p.GetNumberOfTuples()
     p_ = np.ones(noa,)
@@ -268,7 +269,7 @@ def write_vtu(name, grid):
     writer.Write()
 
 
-def write_rsml(name, pd, meta):
+def write_rsml(name, pd, meta, id_ind = 5):
     """ Writes a RMSL file from vtkPolyDat using rsml_reader.write_rsml """
 
     nodes = np_points(pd)
@@ -279,21 +280,21 @@ def write_rsml(name, pd, meta):
     node_data = np.zeros((n, nodes.shape[0]))
     for i in range(0, n):
         node_data [i, :] = np_data(pd, i, False)
-    n = pd.GetCellData().GetNumberOfArrays()
 
+    n = pd.GetCellData().GetNumberOfArrays()
     print("Cell Data", n)
     seg_data = np.zeros((n, segs.shape[0]))
     for i in range(0, n):
         seg_data[i, :] = np_data(pd, i, True)
 
-    types = np.array(seg_data[3, :], dtype = int) + 2
+    ids = np.array(seg_data[id_ind, :], dtype = int) + 2
     segs = np.array(segs, dtype = int)
 
-    print("Orders:", types)
+    print("Orders:", ids)
     print("Segments")
     print(segs)
     print("Nodes")
     print(nodes)
 
-    write_rsml(name, [0], segs, types  , nodes, node_data, meta, Renumber = False)
+    write_rsml2(name, [0], segs, ids, nodes, node_data, meta, Renumber = True)  #
 

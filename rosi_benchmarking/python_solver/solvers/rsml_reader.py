@@ -81,6 +81,8 @@ def get_segments(polylines :list, props :dict) -> (list, list):
     for i, p in enumerate(polylines):
         ni = props["parent-node"][i]
         pi = props["parent-poly"][i]
+        print(i , "pn", ni, "parent", pi, len(polylines[pi]))
+        assert ni < len(polylines[pi]), "parent node index exceeds number of parent nodes"
         if (pi >= 0):
             segs.append([offset[pi] + ni, offset[i]])
         for j in range(0, len(p) - 1):
@@ -93,13 +95,19 @@ def get_parameter(polylines :list, funcs :dict, props :dict) -> (list, list, lis
     """
     fdiam = funcs["diameter"]
     fet = funcs["emergence_time"]
-    ptype = props["type"]
+    if "type" in props:
+        ptype = props["type"]
+    else:
+        ptype = funcs["type"]  # otherwise we are in trouble
     radii, cts, types = [], [], []
     for i, p in enumerate(polylines):
         for j in range(0, len(p)):
             radii.append(fdiam[i][j] / 2.)
             cts.append(fet[i][j])
-            types.append(ptype[i])
+            if "type" in props:
+                types.append(ptype[i])
+            else:
+                types.append(ptype[i][j])
     return radii[1:], cts[1:], types[1:]
 
 
