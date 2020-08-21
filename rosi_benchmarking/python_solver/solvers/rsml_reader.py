@@ -81,7 +81,7 @@ def get_segments(polylines :list, props :dict) -> (list, list):
     for i, p in enumerate(polylines):
         ni = props["parent-node"][i]
         pi = props["parent-poly"][i]
-        print(i , "pn", ni, "parent", pi, len(polylines[pi]))
+        # print(i , "pn", ni, "parent", pi, len(polylines[pi]))
         assert ni < len(polylines[pi]), "parent node index exceeds number of parent nodes"
         if (pi >= 0):
             segs.append([offset[pi] + ni, offset[i]])

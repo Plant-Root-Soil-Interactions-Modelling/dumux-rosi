@@ -72,7 +72,7 @@ plt.show()
 
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
-ana.addData("rx", rx_a)  # node data are converted to segment data
+ana.addData("rx", rx_b)  # node data are converted to segment data
 pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx"])
 vp.plot_roots(pd, "rx")
 

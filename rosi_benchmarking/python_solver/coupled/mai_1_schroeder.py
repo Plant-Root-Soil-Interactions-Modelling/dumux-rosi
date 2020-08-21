@@ -16,52 +16,18 @@ import matplotlib.pyplot as plt
 import timeit
 
 
-def water_content(h, sp):
-    """ returns the volumetric water content [1] at a given matric potential [cm] according to the VanGenuchten model (Eqn 21) """
-    return sp.theta_R + (sp.theta_S - sp.theta_R) / pow(1. + pow(sp.alpha * abs(h), sp.n), sp.m)
-
-
-def effective_saturation(h, sp):
-    """ returns the effective saturation [1] at a given matric potential [cm] according to the VanGenuchten model (dimensionless water content, Eqn 2) """
-    h = min(h, 0)  # pressure head is negative, zero the maximum
-    theta = water_content(h, sp)
-    se = (theta - sp.theta_R) / (sp.theta_S - sp.theta_R)
-    return se
-
-
-def hydraulic_conductivity(h, sp):
-    """ returns the hydraulic conductivity [cm/day] at a given matric potential [cm] according to the van genuchten model (Eqn 8) """
-    se = effective_saturation(h, sp)
-    K = sp.Ksat * (se ** 0.5) * ((1. - pow(1. - pow(se, 1. / sp.m), sp.m)) ** 2)
-    return K
-
-
-def matric_flux_potential(h, sp):
-    """ returns the matric flux potential [cm2/day] for a matric potential [cm]"""
-    K = lambda h: hydraulic_conductivity(h, sp)  # integrand
-    MFP, err = integrate.quad(K, -15000, h)
-    return MFP
-
-
-def matric_potential_mfp(mfp, sp):
-    """ returns the matric potential [cm] from the matric flux potential [cm2/day]"""
-    mfp_ = lambda psi: matric_flux_potential(psi, sp) - mfp
-    h = optimize.brentq(mfp_, -15000, 0)
-    return h
-
-
 def getInnerHead(p, q_root, q_out, r_in, r_out, soil):
     """ returns the pressure head at the root surface according to Schroeder et al. """
     r = r_in  # we are only interested in the root soil interface
     rho = r_out / r_in
-    mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+    mfp = vg.matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
     if mfp > 0:
         print("mfp", mfp, p)
-        mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
-        h = matric_potential_mfp(mfp, soil)
+        mfp = vg.matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+        h = vg.matric_potential_mfp(mfp, soil)
     else:
-        mfp = (matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
-        h = matric_potential_mfp(mfp, soil)
+        mfp = (vg.matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
+        h = vg.matric_potential_mfp(mfp, soil)
         print("Stressed head", h)
         # input()
     h = min(h, p)
@@ -74,18 +40,18 @@ def getInnerFlux(p, q_root, q_out, r_in, r_out, soil):
     dx = 0.00001
     r = r_in  # we are only interested in the root soil interface
     rho = r_out / r_in
-    mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+    mfp = vg.matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
     if mfp > 0:
-        h0 = matric_potential_mfp(mfp, soil)
+        h0 = vg.matric_potential_mfp(mfp, soil)
         r = r_in + dx
-        mfp = matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
-        h1 = matric_potential_mfp(mfp, soil)
+        mfp = vg.matric_flux_potential(p, soil) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+        h1 = vg.matric_potential_mfp(mfp, soil)
     else:
         h0 = -15000.
         r = r_in + dx
-        mfp = (matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
-        h1 = matric_potential_mfp(mfp, soil)
-    k = hydraulic_conductivity(h0, soil)
+        mfp = (vg.matric_flux_potential(p, soil) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
+        h1 = vg.matric_potential_mfp(mfp, soil)
+    k = vg.hydraulic_conductivity(h0, soil)
     return k * (h1 - h0) / dx  # cm / day
 
 """ 

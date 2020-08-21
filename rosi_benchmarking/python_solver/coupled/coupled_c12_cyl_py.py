@@ -30,9 +30,9 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards (Pyth
 """
 
 """ Parameters """
-min_b = [-4., -4., -15.]
-max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+min_b = [-5., -5., -20.]
+max_b = [5., 5., 0.]
+cell_number = [10, 10, 20]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "dumux_c12_2cm"
