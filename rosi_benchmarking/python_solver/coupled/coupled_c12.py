@@ -42,7 +42,7 @@ wilting_point = -15000  # cm
 
 sim_time = 1  # [day] for task b
 age_dependent = True  # conductivities
-dt = 60. / (24 * 3600)  # [days] Time step must be very small
+dt = 1. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -59,7 +59,7 @@ s.setCriticalPressure(wilting_point)
 """ Initialize xylem model (a) or (b)"""
 r = XylemFluxPython("../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
 init_conductivities(r, age_dependent)
 r.rs.sort()  # ensures segment is located at index s.y-1
 r.test()  # sanity checks
@@ -82,8 +82,9 @@ t = 0.
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py
-        fluxes = r.soilFluxes(rs_age + t, rx, sx, approx = False)  # class XylemFlux is defined in MappedOrganism.h
+
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py, cells = True
+        fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
 
         sum_flux = 0.
         for f in fluxes.values():
