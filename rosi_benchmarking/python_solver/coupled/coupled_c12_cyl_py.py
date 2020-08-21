@@ -30,9 +30,9 @@ Benchmark M1.2 static root system in soil, coupled to cylindrical richards (Pyth
 """
 
 """ Parameters """
-min_b = [-5., -5., -20.]
-max_b = [5., 5., 0.]
-cell_number = [10, 10, 20]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+min_b = [-4., -4., -15.]
+max_b = [4., 4., 0.]
+cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "dumux_c12_2cm"
@@ -70,7 +70,7 @@ s.setRegularisation(1.e-4, 1.e-4)
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a) or (b)"""
-r = XylemFluxPython("../grids/RootSystem.rsml")
+r = XylemFluxPython("../grids/RootSystem8.rsml")
 print("number of segments", len(r.get_segments()))
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)

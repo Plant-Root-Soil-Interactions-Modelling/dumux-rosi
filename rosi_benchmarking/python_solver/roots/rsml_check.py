@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 checks the rsml
 """
 
-file_name = "../grids/RootSystem.rsml"
+file_name = "../grids/RootSystem8.rsml"
 
 """ root problem """
 r = XylemFluxPython(file_name)
@@ -39,5 +39,5 @@ for i in range(1, len(polylines)):
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
 pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length"])
-vp.plot_roots(pd, "creationTime")
+vp.plot_roots(pd, "subType")
 

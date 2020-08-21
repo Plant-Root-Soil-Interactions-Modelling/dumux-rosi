@@ -41,8 +41,8 @@ trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
 sim_time = 1  # [day] for task b
-age_dependent = False  # conductivities
-dt = 120. / (24 * 3600)  # [days] Time step must be very small
+age_dependent = True  # conductivities
+dt = 60. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -57,7 +57,7 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
-r = XylemFluxPython("../grids/RootSystem.rsml")
+r = XylemFluxPython("../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 init_conductivities(r, age_dependent)

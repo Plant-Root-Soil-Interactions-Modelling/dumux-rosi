@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 Converts a DuMux output vtp to a RSML
 """
 
-file_in = "../grids/benchmark2-00000.vtp"
-file_out = "../grids/RootSystem.rsml"
+file_in = "../grids/RootSystem8.vtp"
+file_out = "../grids/RootSystem8.rsml"
 
 """ read vtp """
 pd = vt.read_vtp(file_in)
@@ -52,6 +52,7 @@ order_id = 4
 types = np.zeros((segs.shape[0] + 1,))
 types[1:] = vt.np_data(pd, order_id, True)
 types[0] = types[1]
+types = (types > 0) + np.ones(types.shape)  # <---------------------------
 pd.GetPointData().AddArray(vt.vtk_data(types))
 
 meta = rsmlw.Metadata()
