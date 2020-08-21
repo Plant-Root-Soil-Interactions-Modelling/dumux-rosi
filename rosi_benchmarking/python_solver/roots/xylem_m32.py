@@ -43,6 +43,7 @@ r.rs.setSoilGrid(soil_index)
 """ Numerical solution (a) """
 rx_a = r.solve_dirichlet(0., p0, p_s, [p_s], True)
 print("Transpiration", r.collar_flux(0., rx_a, [p_s]), "cm3/day")
+np.savetxt("python_m32a", np.vstack((nodes[:, 2], rx_a)), delimiter = ',')
 
 ax1.plot(rx_a, nodes[:, 2] , "r*")
 ax1.set_xlabel("Xylem pressure (cm)")
@@ -62,6 +63,7 @@ r.setKxTables([kx0[:, 1], kx1[:, 1], kx1[:, 1], kx1[:, 1]], [kx0[:, 0], kx1[:, 0
 
 rx_b = r.solve_dirichlet(simtime, p0, p_s, [p_s], True)
 print("Transpiration", r.collar_flux(simtime, rx_b, [p_s]), "cm3/day")
+np.savetxt("python_m32b", np.vstack((nodes[:, 2], rx_b)), delimiter = ',')
 
 ax2.plot(rx_b, nodes[:, 2] , "r*")
 ax2.set_xlabel("Xylem pressure (cm)")
