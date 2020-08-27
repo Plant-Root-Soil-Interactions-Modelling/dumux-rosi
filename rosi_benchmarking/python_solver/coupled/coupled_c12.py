@@ -30,7 +30,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [16, 16, 30]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "DuMux_1cm"
@@ -40,9 +40,9 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
-age_dependent = True  # conductivities
-dt = 1. / (24 * 3600)  # [days] Time step must be very small
+sim_time = 3  # [day] for task b
+age_dependent = False  # conductivities
+dt = 120. / (24 * 3600)/10  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
