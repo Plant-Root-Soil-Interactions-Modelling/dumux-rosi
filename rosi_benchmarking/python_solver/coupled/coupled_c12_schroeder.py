@@ -23,7 +23,13 @@ def sinusoidal(t):
 
 
 def mfp(h, soil):
-    return vg.matric_flux_potential(h, soil)
+#     return vg.matric_flux_potential(h, soil)
+    return vg.fast_mfp[soil](h)
+
+
+def imfp(mfp, soil):
+#     return vg.matric_potential_mfp(h, soil)
+    return vg.fast_imfp[soil](mfp)
 
 """ 
 Benchmark M1.2 static root system in soil (with the classic sink)
@@ -38,7 +44,12 @@ cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8,
 periodic = False
 
 name = "DuMux_1cm"
+sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+clay = [0.1, 0.4, 0.01, 1.1, 10]
+
+sp = vg.Parameters(loam)
+vg.create_mfp_lookup(sp)
 initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
@@ -76,30 +87,37 @@ r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
 """ MFP for Schroeder """
-mfp_ = lambda h: mfp(h, vg.Parameters(loam))
+mfp_ = lambda h: mfp(h, sp)
+imfp_ = lambda mfp: imfp(mfp, sp)
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
+rsx = []
 
 N = round(sim_time / dt)
 t = 0.
 
 for i in range(0, N):
 
-    if rank == 0:  # Root part is not parallel
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py,
+    if rank == 0:  # Root simulation is not parallel
 
-        # fluxes = r.soilFluxes(rs_age + t, rx, sx, approx = False)  # class XylemFlux is defined in MappedOrganism.h
+        if rsx:
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # xylem_flux.py,
+        else:  # first call
+            print("first")
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py,
 
-        seg_fluxes = r.segFluxesSchroeder(rs_age + t, rx, sx, wilting_point, mfp_)  # (double simTime, std::vector<double> rx, const std::vector<double>& sx, double critP, std::function<double(double)> mpf);
+        # seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
+        rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
+        seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)
 
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("Fluxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(rs_age + t, rx, sx))
+        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
 
     else:
         fluxes = None
@@ -107,6 +125,7 @@ for i in range(0, N):
     fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
 
+    # simualte soil (parallel)
     s.ddt = dt / 10
     s.solve(dt)
 

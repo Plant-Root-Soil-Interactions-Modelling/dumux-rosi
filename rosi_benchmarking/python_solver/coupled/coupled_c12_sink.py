@@ -2,11 +2,11 @@ import sys
 sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
 sys.path.append("../solvers/")  # for pure python solvers
 
-from solver.xylem_flux import XylemFluxPython  # Python hybrid solver
-import solver.plantbox as pb
-import solver.rsml_reader as rsml
+from xylem_flux import XylemFluxPython  # Python hybrid solver
+import plantbox as pb
+import rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from solver.richards import RichardsWrapper  # Python part
+from richards import RichardsWrapper  # Python part
 import van_genuchten as vg
 
 from math import *
@@ -72,7 +72,7 @@ s = RichardsWrapper(cpp_base)
 s.initialize()
 
 s.createGrid([-4., -4., -15.], [4., 4., 0.], [8, 8, 15])  # [cm]
-r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -15.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 15))  # cut root segments to grid (segments are not mapped after)
+r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -15.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 15), True)  # cut root segments to grid (segments are not mapped after)
 
 # s.createGrid([-4., -4., -20.], [4., 4., 0.], [8, 8, 20])  # [cm]
 # r.rs.setRectangularGrid(pb.Vector3d(-4., -4., -20.), pb.Vector3d(4., 4., 0.), pb.Vector3d(8, 8, 20))  # cut root segments to grid (segments are not mapped after)

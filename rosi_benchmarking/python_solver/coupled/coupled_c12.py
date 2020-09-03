@@ -30,7 +30,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [16, 16, 30]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "DuMux_1cm"
@@ -40,9 +40,9 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 3  # [day] for task b
+sim_time = 1  # [day] for task b
 age_dependent = False  # conductivities
-dt = 120. / (24 * 3600)/10  # [days] Time step must be very small
+dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -89,7 +89,7 @@ for i in range(0, N):
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("Fluxes ", sum_flux, "= prescribed", -trans * sinusoidal(t) , "= collar flux", r.collar_flux(rs_age + t, rx, sx))
+        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
 
     else:
         fluxes = None
