@@ -36,6 +36,21 @@ def getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil):
     else:  # flux into soil
         return p  # don't use schröder
 
+
+def getInnerHead2(p, rp, q_root, q_out, r_in, r_out, soil):
+    print("q_root_0", q_root, "@", p)
+    l = 1
+    kr = 0.0001695168
+    rsx = getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil)
+    q_root = kr * l * (rsx - rp)
+    print("q_root_1", q_root, "@", rsx)
+    for i in range(0, 5):
+        rsx = getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil)
+        q_root = kr * l * (rsx - rp)
+        print("q_root_i", q_root, "@", rsx)
+    print()
+    return rsx
+
 """ 
 Mai et al (2019) scenario 1 water movement (Schöder approximation)
 """
@@ -50,7 +65,6 @@ kr = 2.e-13 * 1000 * 9.81  # [m / (Pa s)] -> [ 1 / s ]
 kx = 5.e-17 * 1000 * 9.81  # [m^4 / (Pa s)] -> [m3 / s]
 kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
-# print(kr, kx)
 
 NC = 10  # dof of the cylindrical problem
 logbase = 1.5
@@ -137,7 +151,7 @@ for i in range(0, NT):
         p = sx[r.rs.seg2cell[j]]  # soil cell matric potential [cm]
         q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
         q_out = -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]
-        rsx[j] = getInnerHead(p, rx[j], q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
+        rsx[j] = getInnerHead2(p, rx[j], q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
 
     # fluxes per segment according to schröder guess
     seg_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False)  # [cm3/day]
@@ -232,3 +246,4 @@ plt.show()
 # plt.show()
 
 print("fin")
+
