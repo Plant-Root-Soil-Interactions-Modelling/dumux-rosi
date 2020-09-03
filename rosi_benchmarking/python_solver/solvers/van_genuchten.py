@@ -4,7 +4,8 @@
 import numpy as np
 from scipy import optimize
 from scipy import integrate
-
+from scipy import interpolate
+import matplotlib.pyplot as plt
 
 def pa2head(pa_, pnref=1.e5, g=9.81):
     """ pascal to pressure head, converts a numpy array """
@@ -90,3 +91,34 @@ def matric_potential_mfp(mfp, sp):
     h = optimize.brentq(mfp_, -15000, 0)
     return h
 
+fast_mfp = {}
+""" fast_mfp[sp](h):returns the matric flux potential [cm2/day] for a matric potential [cm], 
+    call create_mfp_lookup first, once for each soil parameter @param sp"""
+
+fast_imfp = {}
+""" fast_imfp[sp](mfp): returns the matric potential [cm] from the matric flux potential [cm2/day], 
+    call create_mfp_lookup first, once for each soil parameter @param sp"""
+    
+def create_mfp_lookup(sp, wilting_point = -15000, n = 15001):
+    """ initializes the look up tables for soil parameter to use fast_mfp, and fast_imfp """
+    print("initializing look up tables")
+    global fast_mfp 
+    global fast_imfp
+
+    h_ = -np.logspace(np.log10(1.), np.log10(np.abs(wilting_point)), n) 
+    h_ = h_ + np.ones((n,))
+    
+    mfp = np.zeros(h_.shape)
+    for i, h in enumerate(h_):
+        mfp[i] = matric_flux_potential(h,sp)
+    fast_mfp[sp] = interpolate.interp1d(h_, mfp, bounds_error=False, fill_value = (mfp[0], mfp[-1])) # 
+#     print("Table")
+#     print(h_[0], h_[-1])
+#     print(mfp[0], mfp[-1])
+    
+    imfp = np.zeros(h_.shape)
+    for i, _ in enumerate(mfp):
+        imfp[i] = h_[i]   
+    fast_imfp[sp] = interpolate.interp1d(mfp, imfp, bounds_error=False, fill_value = (imfp[0], imfp[-1])) # 
+    
+    print("done")
