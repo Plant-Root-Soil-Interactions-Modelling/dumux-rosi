@@ -67,7 +67,7 @@ def getInnerHead2(p, rp, q_root, q_out, r_in, r_out, soil):
 def getInnerHead3(p, rp, q_root, q_out, r_in, r_out, soil):
     """ find rsx so that it correspond to q_root """
     f = lambda q_root: kr * (getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil) - rp) - q_root
-    sol = optimize.root_scalar(f, x0 = q_root, x1 = 0.5 * q_root)
+    sol = optimize.root_scalar(f, x0 = q_root, x1 = 0.5 * (q_root + 1.e-6))
     rsx = getInnerHead(p, rp, sol.root, q_out, r_in, r_out, soil)
     print("q_root", sol.root, "@", rsx, "initial", q_root, rp, p)
     return rsx
@@ -90,7 +90,7 @@ logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day]
 sim_time = 20  # [day]
-NT = 50000  # iteration
+NT = 5000  # iteration
 
 critP = -15000  # [cm]
 
@@ -134,7 +134,7 @@ cci = picker(0, 0, 0)  # collar cell index
 
 """ Simulation """
 sx = s.getSolutionHead()  # [cm]
-rsx = np.zeros((ns,))  # xylem pressure at the root soil interface
+rsx = np.ones((ns,)) * initial  # xylem pressure at the root soil interface
 seg_fluxes = np.zeros((ns,))
 seg_outer_fluxes = np.zeros((ns,))
 dt = sim_time / NT
@@ -162,7 +162,7 @@ for i in range(0, NT):
     # solves root model
     rx = r.solve(0., -q_r, sx[cci], rsx, False, critP)  # [cm]
 
-#     # fluxes per segment according to the classic sink
+    # fluxes per segment according to the classic sink
     seg_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
 
     # solutions of previous time step
@@ -170,7 +170,8 @@ for i in range(0, NT):
         p = sx[r.rs.seg2cell[j]]  # soil cell matric potential [cm]
         q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
         q_out = 0.  # -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]
-        rsx[j] = getInnerHead(p, rx[j], q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
+        rp = 0.5 * (rx[segs[j].x] + rx[segs[j].y])  #
+        rsx[j] = getInnerHead(p, rp, q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
 
     # fluxes per segment according to schröder guess
     seg_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False)  # [cm3/day]

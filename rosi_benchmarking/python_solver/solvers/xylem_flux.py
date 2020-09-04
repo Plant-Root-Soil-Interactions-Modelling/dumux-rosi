@@ -103,7 +103,7 @@ class XylemFluxPython(XylemFlux):
         """ returns the exact transpirational flux of the xylem model solution @param rx [g/cm] 
             @param sim_time [day]     needed for age dependent conductivities (age = sim_time - segment creation time)        
             @param rx [cm]            root xylem pressure
-            @param sxx [cm]           soil matric potentials 
+            @param sx [cm]           soil matric potentials 
         """
         for i, s in enumerate(self.rs.segments):  # find root collar, asumming node[0] is base
             if s.x == 0:

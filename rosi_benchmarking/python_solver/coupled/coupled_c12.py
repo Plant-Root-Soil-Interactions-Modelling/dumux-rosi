@@ -85,6 +85,8 @@ for i in range(0, N):
 
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py, cells = True
         fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
+#         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
+#         fluxes = r.sumSoilFluxes(seg_fluxes) # two lines does the same as soilFluxes (CHECK)
 
         sum_flux = 0.
         for f in fluxes.values():
@@ -113,7 +115,7 @@ for i in range(0, N):
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
         f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
         x_.append(t)
-        y_.append(f)
+        y_.append(sum_flux)
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))

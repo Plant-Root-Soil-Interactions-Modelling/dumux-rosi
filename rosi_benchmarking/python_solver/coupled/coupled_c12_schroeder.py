@@ -50,7 +50,7 @@ clay = [0.1, 0.4, 0.01, 1.1, 10]
 
 sp = vg.Parameters(loam)
 vg.create_mfp_lookup(sp)
-initial = -659.8 + 7.5  # -659.8
+initial = -200 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
@@ -104,20 +104,21 @@ for i in range(0, N):
     if rank == 0:  # Root simulation is not parallel
 
         if rsx:
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # xylem_flux.py,
+            rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
         else:  # first call
-            print("first")
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py,
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # this works
 
-        # seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
-        seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)  # classic sink
+        seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
+#         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)
 
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
+        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, rsx, [], cells = False), "= prescribed", -trans * sinusoidal(t))
+        # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
 
     else:
         fluxes = None
@@ -142,7 +143,7 @@ for i in range(0, N):
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
         f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
         x_.append(t)
-        y_.append(f)
+        y_.append(sum_flux)
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))

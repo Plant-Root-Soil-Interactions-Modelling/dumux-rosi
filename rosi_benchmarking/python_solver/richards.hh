@@ -74,7 +74,7 @@ public:
     	if (this->isBox) {
             throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
         } else {
-        	if (cellVolume.size()==0) {
+        	if (cellVolume.size()==0) { // buffer cell volumes [m3]
         		cellVolume = this->getCellVolumes();
         	}
         	const auto& params = this->problem->spatialParams();
@@ -88,9 +88,9 @@ public:
                 	double newS = (s[c] - sink/(cellVolume[c]*phi)); // s - sink/(V*phi)
                 	const auto& param = params.materialLawParams(e);
                 	double p = -MaterialLaw::pc(param, newS);
-                	std::cout << "change in s " << sink *1.e9 << " vol " << cellVolume[c] << " phi " << phi <<
-                			" changed " << (sx[gIdx] - 1.e5) * 100. / 1000. / 9.81 << " cm to " << p * 100. / 1000. / 9.81
-							<< " cm; saturation " << s[c] << " to " << newS << "\n";
+//                	std::cout << "change in s " << sink *1.e9 << " vol " << cellVolume[c] << " phi " << phi <<
+//                			" changed " << (sx[gIdx] - 1.e5) * 100. / 1000. / 9.81 << " cm to " << p * 100. / 1000. / 9.81
+//							<< " cm; saturation " << s[c] << " to " << newS << "\n";
                 	if (p<critP) {
                 		std::cout << "*";
                     	sx[gIdx] = critP;
