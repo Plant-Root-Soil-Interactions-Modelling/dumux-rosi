@@ -48,7 +48,7 @@ sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
 
-sp = vg.Parameters(loam)
+sp = vg.Parameters(clay)
 vg.create_mfp_lookup(sp)
 initial = -200 + 7.5  # -659.8
 

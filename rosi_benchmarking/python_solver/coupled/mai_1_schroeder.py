@@ -169,7 +169,7 @@ for i in range(0, NT):
     for j in range(0, ns):  # for each segment
         p = sx[r.rs.seg2cell[j]]  # soil cell matric potential [cm]
         q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
-        q_out = 0.  # -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]
+        q_out = -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]
         rp = 0.5 * (rx[segs[j].x] + rx[segs[j].y])  #
         rsx[j] = getInnerHead(p, rp, q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
 
