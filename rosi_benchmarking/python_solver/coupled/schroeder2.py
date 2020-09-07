@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import van_genuchten as vg
 from root_conductivities import *
 
+
 def mfp(h, soil):
 #     return vg.matric_flux_potential(h, soil)
     return vg.fast_mfp[soil](h)
@@ -55,11 +56,10 @@ soil_names = ["sand","loam", "clay"]
 
 fig, (ax) = plt.subplots(1, 3)
 
-a = 0.02 
+a = 0.04 
 L = 0.9
 r_ = np.linspace(a, L, 200)
 
-q_root = 0.2 # positive is flux into root, both work
 q_out = 0. # something wrong with positive q_out
     
 for j,s in enumerate(soils):
@@ -67,21 +67,17 @@ for j,s in enumerate(soils):
     vg.create_mfp_lookup(sp)
     h0 = np.zeros(r_.shape)
     h0s = np.zeros(r_.shape)
+    q_root = stressed_flux(-700,  q_out, a, L, sp)
+    print(soil_names[j],"flux", q_root)    
     for i, r in enumerate(r_):
-        h0[i] = schroder_nostress(r, -700,  q_root, q_out, a, L, sp)
-        h0s[i] = schroder_stress(r, -700,  q_out, a, L, sp)
-
-        
-    q_root_s = stressed_flux(-700,  q_out, a, L, sp)
-    q_root_ns = schroeder_flux(-700,  q_root, q_out, a, L, sp)
-    print(soil_names[j], q_root, "stress", q_root_s, "nostress", q_root_ns)
-
+         h0[i] = schroder_nostress(r, -700,  q_root, q_out, a, L, sp)
+         h0s[i] = schroder_stress(r, -700,  q_out, a, L, sp)
         
     h0s[0] = -15000    
     ax[j].plot(r_,h0,"b", label = "no stress")
     ax[j].plot(r_,h0s, "r", label = "stress")
     ax[j].set_title(soil_names[j])
-    print(soil_names[j], h0[0], h0s[1])
+    print(soil_names[j], "flux", q_root, h0[0], h0s[1])
     ax[j].legend()
 
 plt.show()

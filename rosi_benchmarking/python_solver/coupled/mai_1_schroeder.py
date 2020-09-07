@@ -30,7 +30,7 @@ def getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil):
         r = r_in
         rho = r_out / r_in
         mfp = vg.fast_mfp[soil](p) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
-        if mfp > 0:
+        if mfp > -1:
             h = vg.fast_imfp[soil](mfp)
         else:
             h = -15000.
