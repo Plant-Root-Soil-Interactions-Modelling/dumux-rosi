@@ -23,61 +23,42 @@ getInnerHead2, getInnerHead3 are expiremental and show unstable behaviour
 """
 
 
-def getInner(p, rp, q_root, q_out, r_in, r_out, soil):
-    """ returns the pressure head and flux at the root surface according to Schroeder et al. """
-    # print(rp,p)
-    if rp < p:  # flux into root
-
-        r = r_in
-        rho = r_out / r_in
-        mfp = vg.fast_mfp[soil](p) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
-        if mfp > -1:
-            h = vg.fast_imfp[soil](mfp)
-        else:
-            h = -15000.
-
-        if rp <= h:  # flux into root
-            # print("hello", rp, h, p)
-            return h, f
-        else:  # flux into soil
-            return rp, 0.  # don't use schröder
-
-    else:  # flux into soil
-
-        return p, 0.  # don't use schröder
+def schroder_nostress(r, p, q_root, q_out, r_in, r_out, soil):
+    rho = r_out / r_in
+    mfp = vg.fast_mfp[soil](p) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
+    return vg.fast_imfp[soil](mfp)
 
 
-def getInnerHead2(p, rp, q_root, q_out, r_in, r_out, soil):
-    """ fix point iteration """
-    print("q_root_0", q_root, "@", p)
-    kr = 0.0001695168
-    rsx = p
-    for i in range(0, 10):
-        rsx_ = rsx
-        rsx = getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil)
-        if rsx - rp < 1.e-5:
-#             q_root_ = kr * (rsx - rp)
-#             q_root = 0.5 * (q_root_ + q_root)
-            q_root = kr * (0.5 * (rsx + rsx_) - rp)
-            print("q_root_i", q_root, "@", rsx, rsx_)
-        else:
-            q_root = kr * (rsx - rp)
-            print("q_root_i", q_root, "@", rsx)
-    print()
-    return rsx
+def schroder_stress(r, p, q_out, r_in, r_out, soil):
+    rho = r_out / r_in
+    mfp = (vg.fast_mfp[soil](p) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
+    return vg.fast_imfp[soil](mfp)
 
 
-def getInnerHead3(p, rp, q_root, q_out, r_in, r_out, soil):
-    """ find rsx so that it correspond to q_root """
-    f = lambda q_root: kr * (getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil) - rp) - q_root
-    sol = optimize.root_scalar(f, x0 = q_root, x1 = 0.5 * (q_root + 1.e-6))
-    rsx = getInnerHead(p, rp, sol.root, q_out, r_in, r_out, soil)
-    print("q_root", sol.root, "@", rsx, "initial", q_root, rp, p)
-    return rsx
+def schroeder_flux(p, q_root, q_out, r_in, r_out, soil):
+    r = r_in
+    dx = 1.e-6  # [cm]
+    h0 = schroder_nostress(r, p, q_root, q_out, r_in, r_out, soil)
+    h1 = schroder_nostress(r + dx, p, q_root, q_out, r_in, r_out, soil)
+    hc = vg.hydraulic_conductivity(h0, soil)
+    f = hc * (h1 - h0) / dx
+    return f
+
+
+def stressed_flux(p, q_out, r_in, r_out, soil):
+    r = r_in
+    dx = 1.e-6  # [cm]
+    h0 = -15000
+    h1 = schroder_stress(r + dx, p, q_out, r_in, r_out, soil)
+    hc = vg.hydraulic_conductivity(h0, soil)
+    f = hc * (h1 - h0) / dx
+    return f
 
 
 N = 3  # number of cells in each dimension
+sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+clay = [0.1, 0.4, 0.01, 1.1, 10]
 sp = vg.Parameters(loam)
 vg.create_mfp_lookup(sp)
 initial = -100.  # [cm] initial soil matric potential
@@ -138,6 +119,7 @@ cci = picker(0, 0, 0)  # collar cell index
 """ Simulation """
 sx = s.getSolutionHead()  # [cm]
 rsx = np.ones((ns,)) * initial  # xylem pressure at the root soil interface
+seg_soil_fluxes = np.zeros((ns,))
 seg_fluxes = np.zeros((ns,))
 seg_outer_fluxes = np.zeros((ns,))
 dt = sim_time / NT
@@ -162,22 +144,21 @@ for i in range(0, NT):
 
     sx = s.getSolutionHead()  # [cm]
 
-    # solves root model
-    rx = r.solve(0., -q_r, sx[cci], rsx, False, critP)  # [cm]
+    # solves root model [classic]
+    rx = r.solve(0., -q_r, sx[cci], sx, True, critP)  # [cm]
 
-    # fluxes per segment according to the classic sink
-    seg_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
+    # fluxes per segment according to the classic sink (including hydraulic conductivities as linmit)
+    seg_root_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
 
-    # solutions of previous time step
+    # fluxes per segment according to schröders stressed sink
     for j in range(0, ns):  # for each segment
         p = sx[r.rs.seg2cell[j]]  # soil cell matric potential [cm]
-        q_in = -seg_fluxes[j] / (2. * np.pi * inner_radii[j])  # [cm / day]
-        q_out = -seg_outer_fluxes[j] / (2. * np.pi * outer_radii[j])  # [cm / day]
-        rp = 0.5 * (rx[segs[j].x] + rx[segs[j].y])  #
-        rsx[j] = getInnerHead(p, rp, q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
+        seg_soil_fluxes[j] = stressed_flux(p, 0., inner_radii[j], outer_radii[j], sp)  # [cm]
+        seg_soil_fluxes[j] *= -2. * np.pi * inner_radii[j]
 
-    # fluxes per segment according to schröder guess
-    seg_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False)  # [cm3/day]
+#     print(seg_root_fluxes)
+#     print(seg_soil_fluxes)
+    seg_fluxes = np.maximum(seg_root_fluxes, seg_soil_fluxes)
 
     # water for net flux
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
@@ -186,11 +167,6 @@ for i in range(0, NT):
     water_cell.append(soil_water[cci])
     min_rx.append(np.min(np.array(rx)));
     p1d.append(np.min(np.array(rsx)));
-    print("Minimal root xylem pressure", min_rx[-1])
-    print("Cylindrical models at root surface", rsx, "cm")
-    # print("soil water", np.sum(soil_water))
-
-    seg_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
 
     soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day]
     sum_flux = 0.
@@ -199,7 +175,7 @@ for i in range(0, NT):
     sum_flux2 = 0.
     for f in seg_fluxes:
          sum_flux2 += f
-    print("Summed fluxes {:g} == {:g},  predescribed {:g}".format(float(sum_flux), float(sum_flux2), -q_r))
+    # print("Summed fluxes {:g} == {:g},  predescribed {:g}".format(float(sum_flux), float(sum_flux2), -q_r))
     uptake.append(sum_flux)
 
     # run macroscopic soil model
@@ -208,13 +184,6 @@ for i in range(0, NT):
 
     x0 = s.getSolutionHeadAt(cci)  # [cm]
     collar.append(x0)
-
-    # calculate net fluxes
-    net_flux = (np.multiply(np.array(s.getWaterContent()), cell_volumes) - soil_water)
-    for k, v in soil_fluxes.items():
-        net_flux[k] -= v * dt;
-    # print(net_flux / dt)
-    # print("sum", np.sum(net_flux))
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
