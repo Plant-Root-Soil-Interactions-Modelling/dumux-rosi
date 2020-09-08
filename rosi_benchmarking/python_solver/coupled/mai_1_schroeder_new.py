@@ -59,7 +59,7 @@ N = 3  # number of cells in each dimension
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-sp = vg.Parameters(loam)
+sp = vg.Parameters(clay)
 vg.create_mfp_lookup(sp)
 initial = -100.  # [cm] initial soil matric potential
 
@@ -73,7 +73,7 @@ NC = 10  # dof of the cylindrical problem
 logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day]
-sim_time = 20  # [day]
+sim_time = 13  # [day]
 NT = 5000  # iteration
 
 critP = -15000  # [cm]
@@ -135,11 +135,6 @@ water_domain = []
 cell_volumes = s.getCellVolumes()
 net_flux = np.zeros(cell_volumes.shape)
 
-# initial
-sx = s.getSolutionHead()  # [cm]
-rx = r.solve(0., -q_r, sx[cci], rsx, False, critP)  # [cm]
-seg_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
-
 for i in range(0, NT):
 
     sx = s.getSolutionHead()  # [cm]
@@ -156,8 +151,8 @@ for i in range(0, NT):
         seg_soil_fluxes[j] = stressed_flux(p, 0., inner_radii[j], outer_radii[j], sp)  # [cm]
         seg_soil_fluxes[j] *= -2. * np.pi * inner_radii[j]
 
-#     print(seg_root_fluxes)
-#     print(seg_soil_fluxes)
+    print(seg_root_fluxes,p)
+    print(seg_soil_fluxes,p)
     seg_fluxes = np.maximum(seg_root_fluxes, seg_soil_fluxes)
 
     # water for net flux
