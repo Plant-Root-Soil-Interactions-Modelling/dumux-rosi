@@ -98,7 +98,7 @@ water_uptake = []
 N = round(sim_time / dt)
 t = 0.
 
-hc = vg.hydraulic_conductivity(wilting_point, sp)  # hydraulic conductivity at wilting point
+k = vg.hydraulic_conductivity(wilting_point, sp)  # hydraulic conductivity at wilting point
 
 for i in range(0, N):
 
@@ -110,7 +110,7 @@ for i in range(0, N):
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point)  # [cm]
 
         seg_root_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)
-        seg_soil_fluxes = r.segSchroederStressedFlux(sx, wilting_point, hc, mfp_, imfp_)
+        seg_soil_fluxes = r.segSchroederStressedFlux(sx, wilting_point, k, mfp_, imfp_)
 
 #         print(seg_root_fluxes[0:10])
 #         print(seg_soil_fluxes[0:10])

@@ -149,10 +149,10 @@ for i in range(0, NT):
     for j in range(0, ns):  # for each segment
         p = sx[r.rs.seg2cell[j]]  # soil cell matric potential [cm]
         seg_soil_fluxes[j] = stressed_flux(p, 0., inner_radii[j], outer_radii[j], sp)  # [cm]
-        seg_soil_fluxes[j] *= -2. * np.pi * inner_radii[j]
+        seg_soil_fluxes[j] *= -2. * np.pi * inner_radii[j]  # * l (=1)
 
-    print(seg_root_fluxes,p)
-    print(seg_soil_fluxes,p)
+    print(seg_root_fluxes, p)
+    print(seg_soil_fluxes, p)
     seg_fluxes = np.maximum(seg_root_fluxes, seg_soil_fluxes)
 
     # water for net flux
