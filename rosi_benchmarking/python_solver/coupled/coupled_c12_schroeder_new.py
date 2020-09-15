@@ -108,10 +108,11 @@ for i in range(0, N):
 
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # [cm] in xylem_flux.py, cells = True
 
-        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink term in case of no stress
+        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink in case of no stress
 
         seg_stress = np.array(r.segSchroederStressedFlux(sx, wilting_point, k, mfp_, imfp_))  # steady rate approximation in case of stress
-        seg_stress = np.maximum(-trans * sinusoidal(t) * np.ones(seg_stress.shape), seg_stress)  # limit by potential transpiration
+        seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
+        seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
 
         seg_head = np.array(r.segSchroeder(rs_age + t, rx, sx, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
