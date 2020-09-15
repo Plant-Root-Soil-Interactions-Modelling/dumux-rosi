@@ -104,12 +104,12 @@ for i in range(0, N):
     if rank == 0:  # Root simulation is not parallel
 
         if rsx:
-            rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
+            rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
         else:  # first call
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # this works
 
-        rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
+        rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
         seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
 #         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)

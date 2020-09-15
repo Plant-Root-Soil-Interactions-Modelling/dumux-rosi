@@ -23,7 +23,7 @@ getInnerHead2, getInnerHead3 are expiremental and show unstable behaviour
 """
 
 
-def getInner(p, rp, q_root, q_out, r_in, r_out, soil):
+def getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil):
     """ returns the pressure head and flux at the root surface according to Schroeder et al. """
     # print(rp,p)
     if rp < p:  # flux into root
@@ -38,13 +38,13 @@ def getInner(p, rp, q_root, q_out, r_in, r_out, soil):
 
         if rp <= h:  # flux into root
             # print("hello", rp, h, p)
-            return h, f
+            return h
         else:  # flux into soil
-            return rp, 0.  # don't use schröder
+            return rp  # don't use schröder
 
     else:  # flux into soil
 
-        return p, 0.  # don't use schröder
+        return p  # don't use schröder
 
 
 def getInnerHead2(p, rp, q_root, q_out, r_in, r_out, soil):

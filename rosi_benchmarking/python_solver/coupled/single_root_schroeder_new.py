@@ -23,23 +23,23 @@ getInnerHead2, getInnerHead3 are expiremental and show unstable behaviour
 """
 
 
-def schroder_nostress(r, p, q_root, q_out, r_in, r_out, soil):
+def sra_nostress(r, p, q_root, q_out, r_in, r_out, soil):
     rho = r_out / r_in
     mfp = vg.fast_mfp[soil](p) + (q_root * r_in - q_out * r_out) * (r ** 2 / r_in ** 2 / (2 * (1 - rho ** 2)) + rho ** 2 / (1 - rho ** 2) * (np.log(r_out / r) - 0.5)) + q_out * r_out * np.log(r / r_out)
     return vg.fast_imfp[soil](mfp)
 
 
-def schroder_stress(r, p, q_out, r_in, r_out, soil):
+def sra_stress(r, p, q_out, r_in, r_out, soil):
     rho = r_out / r_in
     mfp = (vg.fast_mfp[soil](p) + q_out * r_out * np.log(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * np.log(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * np.log(1 / rho))) + q_out * r_out * np.log(r / r_in)
     return vg.fast_imfp[soil](mfp)
 
 
-def schroeder_flux(p, q_root, q_out, r_in, r_out, soil):
+def sra_flux(p, q_root, q_out, r_in, r_out, soil):
     r = r_in
     dx = 1.e-6  # [cm]
-    h0 = schroder_nostress(r, p, q_root, q_out, r_in, r_out, soil)
-    h1 = schroder_nostress(r + dx, p, q_root, q_out, r_in, r_out, soil)
+    h0 = sra_nostress(r, p, q_root, q_out, r_in, r_out, soil)
+    h1 = sra_nostress(r + dx, p, q_root, q_out, r_in, r_out, soil)
     hc = vg.hydraulic_conductivity(h0, soil)
     f = hc * (h1 - h0) / dx
     return f
@@ -49,7 +49,7 @@ def stressed_flux(p, q_out, r_in, r_out, soil):
     r = r_in
     dx = 1.e-6  # [cm]
     h0 = -15000
-    h1 = schroder_stress(r + dx, p, q_out, r_in, r_out, soil)
+    h1 = sra_stress(r + dx, p, q_out, r_in, r_out, soil)
     hc = vg.hydraulic_conductivity(h0, soil)
     f = hc * (h1 - h0) / dx
     return f
