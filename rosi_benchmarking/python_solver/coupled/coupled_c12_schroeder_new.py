@@ -55,8 +55,8 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
-age_dependent = False  # conductivities
+sim_time = 3  # [day] for task b
+age_dependent = True  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
@@ -108,21 +108,19 @@ for i in range(0, N):
 
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # [cm] in xylem_flux.py, cells = True
 
-        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))
-        seg_stress = np.array(r.segSchroederStressedFlux(sx, wilting_point, k, mfp_, imfp_))
-        seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
+        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink term in case of no stress
+
+        seg_stress = np.array(r.segSchroederStressedFlux(sx, wilting_point, k, mfp_, imfp_))  # steady rate approximation in case of stress
+        seg_stress = np.maximum(-trans * sinusoidal(t) * np.ones(seg_stress.shape), seg_stress)  # limit by potential transpiration
 
         seg_head = np.array(r.segSchroeder(rs_age + t, rx, sx, mfp_, imfp_))  # to determine if stressed or not
-
         seg_fluxes = np.zeros(seg_nostress.shape)
-
-#         # loop version (of below)
-#         for j in range(0, seg_fluxes.shape[0]):
-#             seg_fluxes[j] = (seg_head[j] > -1) * seg_stress[j] + (seg_head[j] <= -1) * seg_nostress[j]
-
         ii = seg_head > -1  # indices of stressed segments
         seg_fluxes[ii] = seg_stress[ii]
         seg_fluxes[~ii] = seg_nostress[~ii]  # ~ = boolean not
+#         # loop version (of above)
+#         for j in range(0, seg_fluxes.shape[0]):
+#             seg_fluxes[j] = (seg_head[j] > -1) * seg_stress[j] + (seg_head[j] <= -1) * seg_nostress[j]
 
         fluxes = r.sumSoilFluxes(seg_fluxes)
 
