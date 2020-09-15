@@ -84,6 +84,7 @@ for i in range(0, N):
     if rank == 0:  # Root part is not parallel
 
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py, cells = True
+
         fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
 #         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
 #         fluxes = r.sumSoilFluxes(seg_fluxes) # two lines does the same as soilFluxes (CHECK)
