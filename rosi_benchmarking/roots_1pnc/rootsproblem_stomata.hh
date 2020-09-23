@@ -386,41 +386,36 @@ public:
         PrimaryVariables sourceValue;
 
         if (couplingManager_!=nullptr) { // compute source at every integration point
-
-            Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[pressureIdx];
-            Scalar tipP_ = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
-            // const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-            // eIdx == lowDimElementIdx ?
-            Scalar kr = this->spatialParams().kr(eIdx); //  [m^2 s/kg]
-            Scalar rootRadius = this->spatialParams().radius(eIdx); // [m]
-            double density = 1000.; // [kg /m^3]
-            sourceValue[conti0EqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - tipP_)*density; // [kg/m/s]
-            sourceValue[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
-
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
-            if (!grow_) { // for static root system, static root tips should not age
-                rootAge -= time_ / (24. * 3600.);
-            }
-
-            if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
-                if (tipP_  <= critPTips_) {
-                    double volume;
-                    if (isBox) { // would elemVolVars[scv] work? not sure...
-                        volume = scv.volume()*elemVolVars[scv.localDofIndex()].extrusionFactor(); // m3
+            if(rootAge>0) {
+                Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[pressureIdx];
+                Scalar tipP_ = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
+                Scalar kr = this->spatialParams().kr(eIdx); //  [m^2 s/kg]
+                Scalar rootRadius = this->spatialParams().radius(eIdx); // [m]
+                double density = 1000.; // [kg /m^3]
+                sourceValue[conti0EqIdx] = 2* M_PI *rootRadius * kr *(pressure3D - tipP_)*density; // [kg/m/s]
+                sourceValue[conti0EqIdx] *= source.quadratureWeight()*source.integrationElement(); // [kg /s]
+                if (!grow_) { // for static root system, static root tips should not age
+                    rootAge -= time_ / (24. * 3600.);
+                }
+                if ((rootAge>=0) && (rootAge <= age_)) { // negative root age means, the root is not born (if grow_ = true)
+                    if (tipP_  <= critPTips_) {
+                        double volume;
+                        if (isBox) { // would elemVolVars[scv] work? not sure...
+                            volume = scv.volume()*elemVolVars[scv.localDofIndex()].extrusionFactor(); // m3
+                        } else {
+                            volume = scv.volume()*elemVolVars[scv.dofIndex()].extrusionFactor(); // m3
+                        }
+                        sourceValue[transportEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*volume*molarMass; // [kg / s]
                     } else {
-                        volume = scv.volume()*elemVolVars[scv.dofIndex()].extrusionFactor(); // m3
-                    }
-                    // std::cout << 1.e9*volume << " mm3, ";
-                    sourceValue[transportEqIdx] = a_*std::abs(critPTips_ - tipP_)*dm_*volume*molarMass; // [kg / s]
+                        sourceValue[transportEqIdx] = 0.;
+                        }
                 } else {
                     sourceValue[transportEqIdx] = 0.;
                 }
-            } else {
-                sourceValue[transportEqIdx] = 0.;
-            }
             source = sourceValue;
-
+            }
         } else { // should not happen...
             std::cout << "RootsOnePTwoCProblem::pointSource(): Coupling manager must be set in main file \n";
             source = sourceValue;

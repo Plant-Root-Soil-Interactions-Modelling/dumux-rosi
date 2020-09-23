@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 
 name = "soybean_H+C"  # this name should be unique
-suffix = "_PR1"
+suffix = ""
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +15,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
 
 # run simulation
-os.system("./coupled_periodic_1pnc_richards input/" + name + ".input -RootSystem.Grid.InitialT 1")
+os.system("./coupled_periodic_1pnc_richards input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
