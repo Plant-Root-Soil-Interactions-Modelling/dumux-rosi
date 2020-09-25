@@ -18,9 +18,9 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-[Soil.IC]
-P = -150 -300
-Z = -1.5 0. 
+#[Soil.IC]
+#P = -150 -300
+#Z = -1.5 0. 
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -35,13 +35,13 @@ b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 sH = 1e-4 # [cm-1]
 sC = 5e+10 # [cm3/mol]
-mL = 0 # Only used if simulation is restarted, else 0 (will have a value from console where the simulation does not converge)
 
 [RootSystem.Leaf]
 Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
 VolumeT = 0	1	7	14	21	30	45	60	90	154
 
-#[Restart]
-#Time = 2.77229e+06
-#SoilFile = ./results_soybean_H+C/soybean_H+C-00770.vtu
-#RootFile = ./results_soybean_H+C/soybean_H+C-00770.vtp
+[Restart]
+Time = 1.09192e+07
+mL = 3.24005e-11 # value of mL at last time step
+SoilFile = ./results_soybean_H+C_3/soybean_H+C-00013.vtu
+RootFile = ./results_soybean_H+C_3/soybean_H+C-00013.vtp

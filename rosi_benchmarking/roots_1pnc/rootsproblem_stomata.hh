@@ -617,7 +617,7 @@ protected:
     double a_; // Maximal hormone production rate in mol per dry mass per pressure (mol kg-1 Pa-1 s-1)
     double age_;
 
-    double mL_ = getParam<double>("Control.mL", 0)/1.e+6; // (kg) mass of hormones in the leaf
+    double mL_ = getParam<double>("Restart.mL", 0); // (kg) mass of hormones in the leaf
     double mRoot_ = 0.; // (kg) mass of hormones in the root system
     double mLRate_ = 0.; // (kg / s) production rate of hormones flowing into the leaf volume
     InputFileFunction leafVolume_; // (m^3)
