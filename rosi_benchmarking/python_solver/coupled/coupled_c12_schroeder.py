@@ -48,14 +48,14 @@ sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
 
-sp = vg.Parameters(clay)
+sp = vg.Parameters(loam)
 vg.create_mfp_lookup(sp)
 initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7  # [day] for task b
+sim_time = 1  # [day] for task b
 age_dependent = False  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
@@ -67,7 +67,7 @@ s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
-s.setVGParameters([clay])
+s.setVGParameters([loam])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -105,11 +105,14 @@ for i in range(0, N):
 
         if rsx:
             rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
+            # rsx = r.segSRAStressedFlux(rx, sx, mfp_, imfp_)
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
         else:  # first call
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # this works
 
         rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
+        # rsx = r.segSRAStressedFlux(rx, sx, mfp_, imfp_)
+
         seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
 #        seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)
@@ -144,7 +147,7 @@ for i in range(0, N):
         #  = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
         f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False)
         x_.append(t)
-        y_.append(f) # sum_flux
+        y_.append(f)  # sum_flux
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))

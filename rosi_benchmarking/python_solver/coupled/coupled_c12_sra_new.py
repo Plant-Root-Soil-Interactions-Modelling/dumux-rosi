@@ -47,16 +47,17 @@ name = "DuMux_1cm_schroeder_clay"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
+soil = clay
 
-sp = vg.Parameters(loam)
+sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp)
-initial = -659.8 + 7.5  # -659.8
+initial = -659.8 + 7.5  # -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 3  # [day] for task b
-age_dependent = True  # conductivities
+sim_time = 1  # [day] for task b
+age_dependent = False  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
@@ -67,7 +68,7 @@ s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
-s.setVGParameters([loam])
+s.setVGParameters([soil])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -99,6 +100,7 @@ N = round(sim_time / dt)
 t = 0.
 
 k = vg.hydraulic_conductivity(wilting_point, sp)  # hydraulic conductivity at wilting point
+rx = []
 
 for i in range(0, N):
 
@@ -106,13 +108,21 @@ for i in range(0, N):
 
     if rank == 0:  # Root simulation is not parallel
 
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # [cm] in xylem_flux.py, cells = True
+#         if len(rx) > 0:
+#             rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
+#             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
+#         else:  # first time step
 
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # [cm] in xylem_flux.py, cells = True
         seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink in case of no stress
 
         seg_stress = np.array(r.segSRAStressedFlux(sx, wilting_point, k, mfp_, imfp_))  # steady rate approximation in case of stress
+        print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
+        print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
+
         seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
         seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
+        seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
 
         seg_head = np.array(r.segSRA(rs_age + t, rx, sx, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
@@ -123,7 +133,7 @@ for i in range(0, N):
 #         for j in range(0, seg_fluxes.shape[0]):
 #             seg_fluxes[j] = (seg_head[j] > -1) * seg_stress[j] + (seg_head[j] <= -1) * seg_nostress[j]
 
-        fluxes = r.sumSoilFluxes(seg_fluxes)
+        fluxes = r.sumSoilFluxes(seg_stress)  # seg_fluxes
 
         sum_flux = 0.
         for f in fluxes.values():
@@ -135,7 +145,10 @@ for i in range(0, N):
         fluxes = None
 
     fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+
     s.setSource(fluxes)  # richards.py
+#     sx = s.applySource(dt, sx, fluxes, wilting_point)
+#     s.setInitialCondition(sx)
 
     # simualte soil (parallel)
     s.ddt = dt / 10

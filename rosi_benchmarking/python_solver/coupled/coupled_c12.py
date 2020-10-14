@@ -34,7 +34,11 @@ cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8,
 periodic = False
 
 name = "DuMux_1cm"
+sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+clay = [0.1, 0.4, 0.01, 1.1, 10]
+soil = clay
+
 initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
@@ -45,6 +49,7 @@ age_dependent = False  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
+sp = vg.Parameters(soil)  # for debugging
 cpp_base = RichardsSP()
 s = RichardsWrapper(cpp_base)
 s.initialize()
@@ -52,7 +57,7 @@ s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
-s.setVGParameters([loam])
+s.setVGParameters([soil])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -79,6 +84,8 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 N = round(sim_time / dt)
 t = 0.
 
+cell_volumes = np.array(s.getCellVolumes())
+
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
@@ -98,7 +105,20 @@ for i in range(0, N):
         fluxes = None
 
     fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
-    s.setSource(fluxes)  # richards.py
+
+    # s.setSource(fluxes)  # richards.py
+
+    water = np.multiply(vg.water_content(sx, sp), cell_volumes)
+    water_change = np.zeros(water.shape)
+    for key, value in fluxes.items():
+        water_change[key] = value * dt
+    new_water = water + water_change
+    new_theta = np.divide(new_water, cell_volumes)
+    for j, theta_ in enumerate(new_theta):
+        sx[j] = vg.pressure_head(theta_, sp)
+    sx = np.maximum(sx, wilting_point * np.ones(sx.shape))
+#     sx = s.applySource(dt, sx, fluxes, wilting_point)
+    s.setInitialCondition(sx)
 
     s.ddt = dt / 10
     s.solve(dt)

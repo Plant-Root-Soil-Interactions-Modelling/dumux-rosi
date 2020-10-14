@@ -47,10 +47,11 @@ name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
+soil = loam
 
-sp = vg.Parameters(clay)
+sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp)
-initial = -200 + 7.5  # -659.8
+initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
@@ -67,7 +68,7 @@ s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
-s.setVGParameters([loam])
+s.setVGParameters([soil])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -104,12 +105,12 @@ for i in range(0, N):
     if rank == 0:  # Root simulation is not parallel
 
         if rsx:
-            rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
+            rsx = r.segSRA(rs_age + t, rx, sx, mfp_, imfp_)  # ! more unstable in case of mai scenario
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
         else:  # first call
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # this works
 
-        rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
+        rsx = r.segSRA(rs_age + t, rx, sx, mfp_, imfp_)
         seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
 #         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)
@@ -141,7 +142,8 @@ for i in range(0, N):
         max_rx = np.max(rx)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
-        f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
+        # f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
+        f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False),
         x_.append(t)
         y_.append(sum_flux)
         w_.append(water)

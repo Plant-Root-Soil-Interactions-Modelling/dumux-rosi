@@ -55,7 +55,7 @@ def stressed_flux(p, q_out, r_in, r_out, soil):
     return f
 
 
-N = 3  # number of cells in each dimension
+N = 5  # number of cells in z dimension
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
