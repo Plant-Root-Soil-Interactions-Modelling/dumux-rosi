@@ -143,12 +143,13 @@ public:
                 d = kx * ((sol[i1] - sol[i0]) / length - rho_ * g_); // m^3 / s
                 d = 24.*3600*1.e6*d; // [m^3/s] -> [cm^3/day]
             }
-            if (name=="pSoil") {
+            if (name=="pXylem") { // this is the segment xylem pressure as 0.5*(node1 + node2)
                 auto i0 = vMapper.subIndex(e, 0, 1);
                 auto i1 = vMapper.subIndex(e, 1, 1);
                 d = 0.5 * (sol[i1][0] + sol[i0][0]);
                 d = 100. * (d - pRef_) / rho_ / g_;  // Pa -> cm
             }
+            // pSoil is set in postTimeStep
             userData_[name][eIdx] = d;
         }
     }
@@ -164,6 +165,8 @@ public:
     std::vector<Scalar>& initialPressure() { return userData_["initialPressure"]; }
     std::vector<Scalar>& id() { return userData_["id"]; }
     std::vector<Scalar>& p() { return userData_["pSoil"]; }
+    std::vector<Scalar>& pXylem() { return userData_["pXylem"]; }
+
 
     //! calculates transpiraton, as the sum of radial fluxes (slow but accurate) [cm^3/day]
     Scalar transpiration(const SolutionVector& sol) {
@@ -405,8 +408,18 @@ public:
                     collarP_ = p; // [Pa]
                 }
             }
+            if (couplingManager_!=nullptr) {
+                const auto& gridView = this->fvGridGeometry().gridView();
+                if (userData_.count("pSoil")) {
+                    userData_["pSoil"].resize(gridView.size(0));
+                } else {
+                    userData_["pSoil"] = std::vector<Scalar>(gridView.size(0));
+                }
+                for (const auto& scv : scvs(fvGeometry)) {
+                    scvSoilMatricPotential_(e, fvGeometry, elemVolVars, scv); //
+                }
+            }
         }
-
     }
 
     /*!
@@ -418,6 +431,30 @@ public:
     void writeTranspirationRate() {
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
             << 0. << ", "<< time_ << "\n";
+    }
+
+    /*!
+     * much copy paste from FVProblem::scvPointSources
+     * stores the matric potential of the soil cell in userData_
+     */
+    void scvSoilMatricPotential_(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) {
+        auto scvIdx = scv.indexInElement();
+        auto key = std::make_pair(this->fvGridGeometry().elementMapper().index(element), scvIdx);
+        if (this->pointSourceMap().count(key)) {
+            auto pointSources = this->pointSourceMap().at(key);
+            for (auto&& pointSource : pointSources) {
+                pointSource.update(this->asImp_(), element, fvGeometry, elemVolVars, scv);
+                    auto eIdx = couplingManager_->pointSourceData(pointSource.id()).lowDimElementIdx();
+                    Scalar age = this->spatialParams().age(eIdx);
+                    if (age>0) {
+                        // compute source at every integration point
+                        Scalar pressure3D = couplingManager_->bulkPriVars(pointSource.id())[Indices::pressureIdx];
+                        userData_["pSoil"].at(eIdx) =  100. * (pressure3D - pRef_) / rho_ / g_;  // Pa -> cm
+                    }
+
+
+            }
+        }
     }
 
     /**
