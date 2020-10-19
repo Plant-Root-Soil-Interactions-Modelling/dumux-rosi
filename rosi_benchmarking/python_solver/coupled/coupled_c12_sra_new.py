@@ -56,9 +56,10 @@ initial = -659.8 + 7.5  # -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
+sim_time = 7  # [day] for task b
 age_dependent = False  # conductivities
-dt = 120. / (24 * 3600)  # [days] Time step must be very small
+dt = 3600. / (24 * 3600)  # [days] Time step must be very small
+dx = 1.e-4
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -71,6 +72,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([soil])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
+# s.setRegularisation(1.e-4, 1.e-4)
 
 """ Initialize xylem model (a) or (b)"""
 r = XylemFluxPython("../grids/RootSystem8.rsml")
@@ -116,7 +118,7 @@ for i in range(0, N):
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # [cm] in xylem_flux.py, cells = True
         seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink in case of no stress
 
-        seg_stress = np.array(r.segSRAStressedFlux(sx, wilting_point, k, mfp_, imfp_))  # steady rate approximation in case of stress
+        seg_stress = np.array(r.segSRAStressedFlux(sx, wilting_point, k, mfp_, imfp_, dx))  # steady rate approximation in case of stress
         print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
         print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
 
@@ -133,7 +135,7 @@ for i in range(0, N):
 #         for j in range(0, seg_fluxes.shape[0]):
 #             seg_fluxes[j] = (seg_head[j] > -1) * seg_stress[j] + (seg_head[j] <= -1) * seg_nostress[j]
 
-        fluxes = r.sumSoilFluxes(seg_stress)  # seg_fluxes
+        fluxes = r.sumSoilFluxes(seg_fluxes)  # seg_fluxes
 
         sum_flux = 0.
         for f in fluxes.values():
@@ -151,8 +153,16 @@ for i in range(0, N):
 #     s.setInitialCondition(sx)
 
     # simualte soil (parallel)
-    s.ddt = dt / 10
-    s.solve(dt)
+
+    try:
+        s.ddt = dt
+        s.solve(dt)
+    except:
+        print("TRYING AGAIN")
+        s.setInitialCondition(sx)
+        s.ddt = dt / 100
+        s.solve(dt / 2)
+        s.solve(dt / 2)
 
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
@@ -165,9 +175,9 @@ for i in range(0, N):
         max_rx = np.max(rx)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
-        f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
+        # f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
         x_.append(t)
-        y_.append(sum_flux)
+        y_.append(sum_flux)  # sum_flux
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))

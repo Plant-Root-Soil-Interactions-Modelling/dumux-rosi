@@ -44,9 +44,9 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
+sim_time = 7  # [day] for task b
 age_dependent = False  # conductivities
-dt = 120. / (24 * 3600)  # [days] Time step must be very small
+dt = 3600. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
@@ -86,6 +86,18 @@ t = 0.
 
 cell_volumes = np.array(s.getCellVolumes())
 
+#     sx = np.maximum(sx, wilting_point * np.ones(sx.shape))
+# #     sx = s.applySource(dt, sx, fluxes, wilting_point)
+#     s.setInitialCondition(sx)
+#
+#     try:
+#         s.ddt = dt / 100
+#         s.solve(dt)
+#     except:
+#         print("FAILED WITH")
+#         print(sx)
+#         quit()
+
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
@@ -120,8 +132,13 @@ for i in range(0, N):
 #     sx = s.applySource(dt, sx, fluxes, wilting_point)
     s.setInitialCondition(sx)
 
-    s.ddt = dt / 10
-    s.solve(dt)
+    try:
+        s.ddt = dt / 100
+        s.solve(dt)
+    except:
+        print("FAILED WITH")
+        print(sx)
+        quit()
 
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()

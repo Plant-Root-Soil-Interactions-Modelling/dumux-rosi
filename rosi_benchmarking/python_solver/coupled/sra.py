@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import van_genuchten as vg
 from root_conductivities import *
 
+wilting_point = -10000
+
 
 def mfp(h, soil):
 #     return vg.matric_flux_potential(h, soil)
@@ -44,7 +46,7 @@ def sra_flux(p, q_root, q_out, r_in, r_out, soil):
 def stressed_flux(p, q_out, r_in, r_out, soil):
     r = r_in
     dx = 1.e-4  # [cm]
-    h0 = -15000
+    h0 = wilting_point
     h1 = sra_stress(r + dx, p, q_out, r_in, r_out, soil)
     hc = vg.hydraulic_conductivity(h0, soil)
     f = hc * (h1 - h0) / dx
@@ -81,7 +83,7 @@ for j, s in enumerate(soils):
     q_root_ns = sra_flux(intial, q_root, q_out, a, L, sp)
     print(soil_names[j], q_root, "stress", q_root_s, "nostress", q_root_ns)
 
-    h0s[0] = -15000
+    h0s[0] = wilting_point
     ax[j].plot(r_, h0, "b", label = "no stress")
     ax[j].plot(r_, h0s, "r", label = "stress")
     ax[j].set_title(soil_names[j])

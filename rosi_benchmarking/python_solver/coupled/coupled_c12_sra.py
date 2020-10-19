@@ -110,9 +110,9 @@ for i in range(0, N):
         else:  # first call
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # this works
 
-        rsx = r.segSRA(rs_age + t, rx, sx, mfp_, imfp_)
-        seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
-#         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
+#         rsx = r.segSRA(rs_age + t, rx, sx, mfp_, imfp_)
+#         seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
+        seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)
 
         sum_flux = 0.

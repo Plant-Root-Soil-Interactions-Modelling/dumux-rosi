@@ -36,14 +36,16 @@ cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8,
 periodic = False
 
 name = "dumux_c12_2cm"
+sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
-soil = vg.Parameters(loam)
+clay = [0.1, 0.4, 0.01, 1.1, 10]
+soil = vg.Parameters(clay)
 initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7  # 0.65  # 0.25  # [day]
+sim_time = 5  # 0.65  # 0.25  # [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 
@@ -51,7 +53,7 @@ NC = 10  # dof+1
 logbase = 1.5
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
-NT = round(10 * sim_time * 24 * 3600 / 1200)
+NT = round(7 * sim_time * 24 * 3600 / 3600)
 skip = 1  # for output and results, skip iteration
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
@@ -63,7 +65,7 @@ s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
-s.setVGParameters([loam])
+s.setVGParameters([clay])
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.setRegularisation(1.e-4, 1.e-4)
