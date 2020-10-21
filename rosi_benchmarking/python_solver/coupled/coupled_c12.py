@@ -37,7 +37,7 @@ name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-soil = clay
+soil = loam
 
 initial = -659.8 + 7.5  # -659.8
 
@@ -46,7 +46,7 @@ wilting_point = -15000  # cm
 
 sim_time = 7  # [day] for task b
 age_dependent = False  # conductivities
-dt = 3600. / (24 * 3600)  # [days] Time step must be very small
+dt = 120. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
@@ -84,20 +84,6 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 N = round(sim_time / dt)
 t = 0.
 
-cell_volumes = np.array(s.getCellVolumes())
-
-#     sx = np.maximum(sx, wilting_point * np.ones(sx.shape))
-# #     sx = s.applySource(dt, sx, fluxes, wilting_point)
-#     s.setInitialCondition(sx)
-#
-#     try:
-#         s.ddt = dt / 100
-#         s.solve(dt)
-#     except:
-#         print("FAILED WITH")
-#         print(sx)
-#         quit()
-
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
@@ -105,8 +91,6 @@ for i in range(0, N):
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py, cells = True
 
         fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
-#         seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
-#         fluxes = r.sumSoilFluxes(seg_fluxes) # two lines does the same as soilFluxes (CHECK)
 
         sum_flux = 0.
         for f in fluxes.values():
@@ -117,28 +101,10 @@ for i in range(0, N):
         fluxes = None
 
     fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    s.setSource(fluxes)  # richards.py
 
-    # s.setSource(fluxes)  # richards.py
-
-    water = np.multiply(vg.water_content(sx, sp), cell_volumes)
-    water_change = np.zeros(water.shape)
-    for key, value in fluxes.items():
-        water_change[key] = value * dt
-    new_water = water + water_change
-    new_theta = np.divide(new_water, cell_volumes)
-    for j, theta_ in enumerate(new_theta):
-        sx[j] = vg.pressure_head(theta_, sp)
-    sx = np.maximum(sx, wilting_point * np.ones(sx.shape))
-#     sx = s.applySource(dt, sx, fluxes, wilting_point)
-    s.setInitialCondition(sx)
-
-    try:
-        s.ddt = dt / 100
-        s.solve(dt)
-    except:
-        print("FAILED WITH")
-        print(sx)
-        quit()
+   #  s.ddt = dt / 10
+    s.solve(dt)
 
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
@@ -157,7 +123,6 @@ for i in range(0, N):
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))
-
         # print("Time:", t, ", collar flux", f, "cm^3/day at", rx[0], "cm xylem ", float(sx_old[cci]), "cm soil", "; domain water", s.getWaterVolume(), "cm3")
 
     t += dt
@@ -167,10 +132,7 @@ s.writeDumuxVTK(name)
 """ Plot """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-
-    # VTK vizualisation
-    vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)
-
+    vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
     fig, ax1 = plt.subplots()
     ax1.plot(x_, trans * sinusoidal(x_), 'k')  # potential transpiration
     ax1.plot(x_, -np.array(y_), 'g')  # actual transpiration (neumann)
