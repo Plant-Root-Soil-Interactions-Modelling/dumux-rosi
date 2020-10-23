@@ -25,7 +25,7 @@ class SolverWrapper():
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose)
 
-    def createGrid(self, modelParamGroup = ""):
+    def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
         self.base.createGrid(modelParamGroup)
 

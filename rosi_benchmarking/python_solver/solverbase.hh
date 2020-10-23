@@ -124,7 +124,7 @@ public:
      * Grid.Overlap (should = 0 for box, = 1 for CCTpfa), automatically set in SolverBase::initialize
      */
     virtual void createGrid(std::string modelParamGroup = "") {
-        std::string pstr =  Dumux::getParam<std::string>("Grid.Periodic", "");
+        std::string pstr =  Dumux::getParam<std::string>("Grid.Periodic", " ");
         periodic = ((pstr.at(0)=='t') || (pstr.at(0)=='T')); // always x,y, not z
         GridManagerFix<Grid> gridManager;
         gridManager.init(modelParamGroup);
@@ -200,45 +200,45 @@ public:
         gridGeometry->update();
     }
 
-//    /**
-//     * Creates a 1D grid with number of cells = [1,1,points.size()-1] where points are the cell centers for 3d/3d
-//     */
-//    virtual void createGrid3d(const std::vector<VectorType>& points, const std::vector<VectorType>& p0) {
-//        assert(dim==3 && "SolverBase::createGrid3d: works only for dim==3");
-//        Dune::GridFactory<Grid> factory;
-//        constexpr auto cube = Dune::GeometryTypes::hexahedron;
-//        std::array<Dune::FieldVector<double, dim>,4> p0_;
-//        for (int j=0; j<4; j++) {
-//            for (int i=0; i<dim; i++) {
-//                p0_[j][i] = p0.at(j).at(i);
-//            }
-//        }
-//        Dune::FieldVector<double, dim> p;
-//        for (int i=0; i<dim; i++) {
-//            p[i] = points.at(0).at(i);
-//        }
-//        for (int i=0; i<4; i++) {
-//            factory.insertVertex(p+p0_[i]);
-//        }
-//        for (int k = 1; k<points.size(); k++) {
-//            for (int i=0; i<3; i++) {
-//                p[i] = points.at(k).at(i);
-//            }
-//            for (int i=0; i<4; i++) {
-//                factory.insertVertex(p+p0_[i]);
-//            }
-//        }
-//        for (int k = 0; k<points.size()-1; k++) {
-//            factory.insertElement(cube,  {
-//                static_cast<unsigned int>(4*k), static_cast<unsigned int>(4*k+1),
-//                static_cast<unsigned int>(4*k+2), static_cast<unsigned int>(4*k+3),
-//                static_cast<unsigned int>(4*k+4), static_cast<unsigned int>(4*k+5),
-//                static_cast<unsigned int>(4*k+6), static_cast<unsigned int>(4*k+7)});
-//        }
-//        grid = std::shared_ptr<Grid>(factory.createGrid());
-//        gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
-//        gridGeometry->update();
-//    }
+    //    /**
+    //     * Creates a 1D grid with number of cells = [1,1,points.size()-1] where points are the cell centers for 3d/3d
+    //     */
+    //    virtual void createGrid3d(const std::vector<VectorType>& points, const std::vector<VectorType>& p0) {
+    //        assert(dim==3 && "SolverBase::createGrid3d: works only for dim==3");
+    //        Dune::GridFactory<Grid> factory;
+    //        constexpr auto cube = Dune::GeometryTypes::hexahedron;
+    //        std::array<Dune::FieldVector<double, dim>,4> p0_;
+    //        for (int j=0; j<4; j++) {
+    //            for (int i=0; i<dim; i++) {
+    //                p0_[j][i] = p0.at(j).at(i);
+    //            }
+    //        }
+    //        Dune::FieldVector<double, dim> p;
+    //        for (int i=0; i<dim; i++) {
+    //            p[i] = points.at(0).at(i);
+    //        }
+    //        for (int i=0; i<4; i++) {
+    //            factory.insertVertex(p+p0_[i]);
+    //        }
+    //        for (int k = 1; k<points.size(); k++) {
+    //            for (int i=0; i<3; i++) {
+    //                p[i] = points.at(k).at(i);
+    //            }
+    //            for (int i=0; i<4; i++) {
+    //                factory.insertVertex(p+p0_[i]);
+    //            }
+    //        }
+    //        for (int k = 0; k<points.size()-1; k++) {
+    //            factory.insertElement(cube,  {
+    //                static_cast<unsigned int>(4*k), static_cast<unsigned int>(4*k+1),
+    //                static_cast<unsigned int>(4*k+2), static_cast<unsigned int>(4*k+3),
+    //                static_cast<unsigned int>(4*k+4), static_cast<unsigned int>(4*k+5),
+    //                static_cast<unsigned int>(4*k+6), static_cast<unsigned int>(4*k+7)});
+    //        }
+    //        grid = std::shared_ptr<Grid>(factory.createGrid());
+    //        gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
+    //        gridGeometry->update();
+    //    }
 
     /**
      * Creates a grid from a file
@@ -825,51 +825,49 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
-					    // initialization
-	    				    .def(py::init<>())
-	    				    .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
-	    				    .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid, py::arg("modelParamGroup") = "") // overloads, defaults
-	    				    .def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid,
-	    				        py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false) // overloads, defaults
-	    				        .def("createGrid1d", &Solver::createGrid1d)
-	    				        // .def("createGrid3d", &Solver::createGrid3d)
-	    				        .def("readGrid", &Solver::readGrid)
-	    				        .def("getGridBounds", &Solver::getGridBounds)
-	    				        .def("setParameter", &Solver::setParameter)
-	    				        .def("getParameter", &Solver::getParameter)
-	    				        .def("initializeProblem", &Solver::initializeProblem)
-	    				        .def("setInitialCondition", &Solver::setInitialCondition)
-	    				        .def("setInitialConditionHead", &Solver::setInitialConditionHead)
-	    				        // simulation
-	    				        .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
-	    				        .def("solveSteadyState", &Solver::solveSteadyState)
-	    				        // post processing (vtk naming)
-	    				        .def("getPoints", &Solver::getPoints) //
-	    				        .def("getCellCenters", &Solver::getCellCenters)
-	    				        .def("getCells", &Solver::getCells)
-	    				        .def("getCellVolumes", &Solver::getCellVolumes)
-	    				        .def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
-	    				        .def("getDofCoordinates", &Solver::getDofCoordinates)
-	    				        .def("getPointIndices", &Solver::getPointIndices)
-	    				        .def("getCellIndices", &Solver::getCellIndices)
-	    				        .def("getDofIndices", &Solver::getDofIndices)
-	    				        .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
-	    				        .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
-	    				        .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
-	    				        .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
-	    				        .def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
-	    				        .def("pickCell", &Solver::pickCell)
-	    				        .def("pick", &Solver::pick)
-	    				        // members
-	    				        .def_readonly("simTime", &Solver::simTime) // read only
-	    				        .def_readwrite("ddt", &Solver::ddt) // initial internal time step
-	    				        .def_readonly("rank", &Solver::rank) // read only
-	    				        .def_readonly("maxRank", &Solver::maxRank) // read only
-	    				        .def_readonly("numberOfCells", &Solver::numberOfCells) // read only
-	    				        .def_readonly("periodic", &Solver::periodic) // read only
-	    				        // useful
-	    				        .def("__str__",&Solver::toString)
-	    				        .def("checkInitialized", &Solver::checkInitialized);
+            .def(py::init<>()) // initialization
+            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+            .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid) // overloads, defaults , py::arg("modelParamGroup") = ""
+            .def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid) // overloads, defaults , py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false
+            .def("createGrid1d", &Solver::createGrid1d)
+            // .def("createGrid3d", &Solver::createGrid3d)
+            .def("readGrid", &Solver::readGrid)
+            .def("getGridBounds", &Solver::getGridBounds)
+            .def("setParameter", &Solver::setParameter)
+            .def("getParameter", &Solver::getParameter)
+            .def("initializeProblem", &Solver::initializeProblem)
+            .def("setInitialCondition", &Solver::setInitialCondition)
+            .def("setInitialConditionHead", &Solver::setInitialConditionHead)
+            // simulation
+            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
+            .def("solveSteadyState", &Solver::solveSteadyState)
+            // post processing (vtk naming)
+            .def("getPoints", &Solver::getPoints) //
+            .def("getCellCenters", &Solver::getCellCenters)
+            .def("getCells", &Solver::getCells)
+            .def("getCellVolumes", &Solver::getCellVolumes)
+            .def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
+            .def("getDofCoordinates", &Solver::getDofCoordinates)
+            .def("getPointIndices", &Solver::getPointIndices)
+            .def("getCellIndices", &Solver::getCellIndices)
+            .def("getDofIndices", &Solver::getDofIndices)
+            .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
+            .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
+            .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
+            .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
+            .def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
+            .def("pickCell", &Solver::pickCell)
+            .def("pick", &Solver::pick)
+            // members
+            .def_readonly("simTime", &Solver::simTime) // read only
+            .def_readwrite("ddt", &Solver::ddt) // initial internal time step
+            .def_readonly("rank", &Solver::rank) // read only
+            .def_readonly("maxRank", &Solver::maxRank) // read only
+            .def_readonly("numberOfCells", &Solver::numberOfCells) // read only
+            .def_readonly("periodic", &Solver::periodic) // read only
+            // useful
+            .def("__str__",&Solver::toString)
+            .def("checkInitialized", &Solver::checkInitialized);
 }
 
 #endif

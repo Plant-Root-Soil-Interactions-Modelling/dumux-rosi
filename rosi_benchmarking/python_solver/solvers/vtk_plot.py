@@ -422,7 +422,7 @@ def plot_roots_and_soil(rs, pname :str, rp, s, periodic :bool, min_b, max_b, cel
     soil_grid.GetCellData().AddArray(soil_pressure)
 
     rootActor, rootCBar = plot_roots(pd, pname, "", False)
-    meshActors, meshCBar = plot_mesh_cuts(soil_grid, pname, 4, "", False)
+    meshActors, meshCBar = plot_mesh_cuts(soil_grid, pname, 7, "", False)
     lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
     rootActor.GetMapper().SetLookupTable(lut)
     meshActors.extend([rootActor])
