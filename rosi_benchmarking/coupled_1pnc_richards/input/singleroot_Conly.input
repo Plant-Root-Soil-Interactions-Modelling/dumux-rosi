@@ -10,7 +10,8 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [Soil.IC]
-P = -300
+P = -285 -300
+Z = -.15 0.
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation

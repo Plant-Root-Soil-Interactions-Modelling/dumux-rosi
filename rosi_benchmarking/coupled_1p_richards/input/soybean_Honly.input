@@ -22,6 +22,10 @@ Overlap = 1
 P = -150 -300
 Z = -1.5 0. 
 
+[RootSystem.Leaf]
+Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
+VolumeT = 0	1	7	14	21	30	45	60	90	154
+
 #[Restart]
 #Time = 97311.6
 #SoilFile = ./results_soybean_Honly/soybean_Honly-00027.vtu

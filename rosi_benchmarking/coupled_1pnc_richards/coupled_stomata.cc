@@ -262,7 +262,7 @@ int main(int argc, char** argv) try
     if (tEnd > 0) { // dynamic problem
         grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
         auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
-        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
+        timeLoop = std::make_shared<CheckPointTimeLoop<double>>(restartTime, initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
         if (hasParam("TimeLoop.CheckTimes")) {
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
@@ -282,12 +282,13 @@ int main(int argc, char** argv) try
     using SoilSolution = std::decay_t<decltype(sol[soilDomainIdx])>;
     VtkOutputModule<SoilGridVariables, SoilSolution> soilVtkWriter(*soilGridVariables, sol[soilDomainIdx], soilProblem->name());
     GetPropType<SoilTypeTag, Properties::VtkOutputFields>::initOutputModule(soilVtkWriter);
-    soilVtkWriter.write(0.0);
+    soilVtkWriter.write(restartTime);
 
     using RootSolution = std::decay_t<decltype(sol[rootDomainIdx])>;
     VtkOutputModule<RootGridVariables, RootSolution> rootVtkWriter(*rootGridVariables, sol[rootDomainIdx], rootProblem->name());
     GetPropType<RootTypeTag, Properties::VtkOutputFields>::initOutputModule(rootVtkWriter);
 
+    rootProblem->userData("pXylem", sol[rootDomainIdx]);
     rootProblem->userData("pSoil", sol[rootDomainIdx]);
     rootProblem->userData("radius", sol[rootDomainIdx]);
     rootProblem->userData("order", sol[rootDomainIdx]);
@@ -298,7 +299,8 @@ int main(int argc, char** argv) try
     rootProblem->userData("initialPressure",sol[rootDomainIdx]);
     rootProblem->userData("kr", sol[rootDomainIdx]);
     rootProblem->userData("kx", sol[rootDomainIdx]);
-    rootVtkWriter.addField(rootProblem->p(), "p [cm]");
+    rootVtkWriter.addField(rootProblem->p(), "p soil [cm]");
+    rootVtkWriter.addField(rootProblem->pXylem(), "p xylem [cm]");
     rootVtkWriter.addField(rootProblem->radius(), "radius [m]"); // not in cm, because of tube plot
     rootVtkWriter.addField(rootProblem->order(), "order [1]");
     rootVtkWriter.addField(rootProblem->id(), "id [1]");
@@ -308,7 +310,7 @@ int main(int argc, char** argv) try
     rootVtkWriter.addField(rootProblem->initialPressure(), "initial pressure [cm]");
     rootVtkWriter.addField(rootProblem->kr(), "kr [cm/hPa/d]");
     rootVtkWriter.addField(rootProblem->kx(), "kx [cm4/hPa/day]");
-    rootVtkWriter.write(0.0);
+    rootVtkWriter.write(restartTime);
 
     // the assembler with time loop for instationary problem
     using Assembler = MultiDomainFVAssembler<Traits, CouplingManager, DiffMethod::numeric>;

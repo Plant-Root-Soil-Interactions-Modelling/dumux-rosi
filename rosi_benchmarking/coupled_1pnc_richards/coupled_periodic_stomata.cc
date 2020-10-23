@@ -303,6 +303,7 @@ int main(int argc, char** argv) try
     VtkOutputModule<RootGridVariables, RootSolution> rootVtkWriter(*rootGridVariables, sol[rootDomainIdx], rootProblem->name());
     GetPropType<RootTypeTag, Properties::VtkOutputFields>::initOutputModule(rootVtkWriter);
 
+    rootProblem->userData("pXylem", sol[rootDomainIdx]);
     rootProblem->userData("pSoil", sol[rootDomainIdx]);
     rootProblem->userData("radius", sol[rootDomainIdx]);
     rootProblem->userData("order", sol[rootDomainIdx]);
@@ -313,7 +314,8 @@ int main(int argc, char** argv) try
     rootProblem->userData("initialPressure",sol[rootDomainIdx]);
     rootProblem->userData("kr", sol[rootDomainIdx]);
     rootProblem->userData("kx", sol[rootDomainIdx]);
-    rootVtkWriter.addField(rootProblem->p(), "p [cm]");
+    rootVtkWriter.addField(rootProblem->p(), "p soil [cm]");
+    rootVtkWriter.addField(rootProblem->pXylem(), "p xylem [cm]");
     rootVtkWriter.addField(rootProblem->radius(), "radius [m]"); // not in cm, because of tube plot
     rootVtkWriter.addField(rootProblem->order(), "order [1]");
     rootVtkWriter.addField(rootProblem->id(), "id [1]");
