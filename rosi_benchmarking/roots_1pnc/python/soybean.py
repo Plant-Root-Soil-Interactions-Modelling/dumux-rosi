@@ -6,7 +6,7 @@ from vtk_tools import *
 from math import *
 
 name = "soybean"  # this name should be unique
-suffix = "_154days_HLCT"
+suffix = ""
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -14,7 +14,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
 
 # run dumux
-os.system("./rootsystem_periodic_stomata input/" + name + ".input -RootSystem.Grid.File grids/Glycine_max_154days.dgf")
+os.system("./rootsystem_periodic_stomata input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):

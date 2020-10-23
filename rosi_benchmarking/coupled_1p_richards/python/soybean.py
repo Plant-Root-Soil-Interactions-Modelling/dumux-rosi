@@ -43,15 +43,13 @@ ax1.set_xlabel("Time [days]")
 ax1.set_ylabel("Transpiration [mL/day]")
 ax1b.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
 ax1.legend(["potential", "actual", "cumulative"], loc = 'upper left')
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300)
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300, bbox_inches='tight')
 
 """ Plot root collar pressure """
 fig, ax2 = plt.subplots()
 ax2.plot(t, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root collar pressure head (convert from Pa to Head)  
 ax2.set_xlabel("Time [days]")
 ax2.set_ylabel("Pressure at root collar [cm]")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300)
-
-""" Equivalent soil water potential """
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300, bbox_inches='tight')
 
 plt.show()

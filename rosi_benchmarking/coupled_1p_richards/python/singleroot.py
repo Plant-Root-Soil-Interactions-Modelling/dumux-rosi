@@ -7,16 +7,16 @@ import van_genuchten as vg
 import math
 import numpy as np
 
-name = "singleroot_HLCT"  # this name should be unique
-suffix = "_atmospheric"
+name = "singleroot_Honly"  # this name should be unique
+suffix = ""
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
 
-# # run simulation
-os.system("./coupled_periodic input/" + name + ".input -Problem.SoilName ../soil_richards/input/singleroot_atmospheric_HLCT.input")
+# run simulation
+os.system("./coupled_periodic input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
@@ -35,21 +35,26 @@ print("potential", d[-1, 2] * c)
 print("actual", d[-1, 1] * c)
 print("actual", d[-1, 5] / 1000)  # Strange behaviour of simplistically calculated radial flows
 
-# Plot collar transpiration & pressure
+""" Plot transpiration """
 fig, ax1 = plt.subplots()
-
-# 0 time, 1 actual transpiration, 2 potential transpiration, 3 maximal transpiration, 4 collar pressure, 5 calculated actual transpiration
 ax1.plot(t, 1000 * d[:, 2] * c, 'k')  # potential transpiration
-ax1.plot(t, 1000 * d[:, 1] * c, 'r-')  # actual transpiration (neumann)
+ax1.plot(t, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
 
-ax2 = ax1.twinx()
+ax1b = ax1.twinx()
 ctrans = np.cumsum(np.multiply(1000 * d[1:, 1] * c, (t[1:] - t[:-1])))
-ax2.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
-ax2.tick_params(axis= 'y', labelcolor = 'b')
-ax1.set_xlabel("time (days)")
-ax1.set_ylabel("transpiration rate (mL/day)")
-ax2.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
-ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-plt.savefig("results_" + name + suffix + ".pdf", dpi=300)
-plt.show()
+ax1b.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
+ax1b.tick_params(axis= 'y', labelcolor = 'b')
+ax1.set_xlabel("Time [days]")
+ax1.set_ylabel("Transpiration [mL/day]")
+ax1b.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
+ax1.legend(["potential", "actual", "cumulative"], loc = 'upper left')
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300, bbox_inches='tight')
 
+""" Plot root collar pressure """
+fig, ax2 = plt.subplots()
+ax2.plot(t, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root collar pressure head (convert from Pa to Head)  
+ax2.set_xlabel("Time [days]")
+ax2.set_ylabel("Pressure at root collar [cm]")
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300, bbox_inches='tight')
+
+plt.show()

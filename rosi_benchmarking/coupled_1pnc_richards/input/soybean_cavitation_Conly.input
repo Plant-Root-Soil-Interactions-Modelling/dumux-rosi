@@ -18,9 +18,9 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-#[Soil.IC]
-#P = -150 -300
-#Z = -1.5 0. 
+[Soil.IC]
+P = -150 -300
+Z = -1.5 0. 
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -35,13 +35,13 @@ b = 10193.68 # [cm] pressure head
 c = 0.7 # [1] cavitation ON
 sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
-mL = 0.52748746 # Only used if simulation is restarted, else 0 (will have a value from console where the simulation does not converge)
 
 [RootSystem.Leaf]
 Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
 VolumeT = 0	1	7	14	21	30	45	60	90	154
 
-[Restart]
-Time = 1.2526e+07
-SoilFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly-00666.vtu
-RootFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly-00666.vtp
+#[Restart]
+#Time = 1.2526e+07
+#mL = 3.24005e-11 # value of mL at last time step
+#SoilFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly-00666.vtu
+#RootFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly-00666.vtp

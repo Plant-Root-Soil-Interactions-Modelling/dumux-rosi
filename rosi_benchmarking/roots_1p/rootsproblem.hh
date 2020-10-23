@@ -82,6 +82,7 @@ public:
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
         criticalCollarPressure_ = toPa_(getParam<double>("RootSystem.Collar.CritCollarP", -1.5e4));  // cm -> Pa
+
     }
 
     //! Destructor - close transpiration file

@@ -45,6 +45,10 @@ parameters 10 # id0, id1, order, branchId, surf[cm2], length[cm], radius[cm], kz
 18 19 0 1 0.628319 0.5 0.2 0 0 9.5 1 2
 19 20 0 1 0.628319 0.5 0.2 0 0 10 1 2
 #
+BOUNDARYSEGMENTS
+2 0
+3 20
+#
 BOUNDARYDOMAIN 
 default 1
 #

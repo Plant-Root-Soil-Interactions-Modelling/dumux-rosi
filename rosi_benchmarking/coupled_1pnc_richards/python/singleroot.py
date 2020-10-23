@@ -7,7 +7,7 @@ import van_genuchten as vg
 import math
 import numpy as np
 
-name = "singleroot_Honly"  # this name should be unique
+name = "singleroot_Conly"  # this name should be unique
 suffix = ""
 
 # go to the right place
@@ -16,7 +16,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
 
 # run simulation
-os.system("./coupled_periodic_1pnc_richards input/" + name + ".input -Problem.SoilName ../soil_richards/input/singleroot_HLCT.input")
+os.system("./coupled_periodic_1pnc_richards input/" + name + ".input")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):
@@ -38,27 +38,27 @@ fig, ax1 = plt.subplots()
 
 ax1.plot(d[:, 0] / c, 1000 * d[:, 8] * c, "r")
 ax1.tick_params(axis = 'y', labelcolor = "r")
-ax1.set_ylabel("leaves (g/day)", color = "r")
+ax1.set_ylabel("Leaves [g/day]", color = "r")
 ax1b = ax1.twinx()
 ax1b.plot(d[:, 0] / c, 1000 * d[:, 10] * c, "b")
 ax1b.tick_params(axis = 'y', labelcolor = "b")
-ax1b.set_ylabel("root system (g/day)", color = "b")
-ax1.set_xlabel("time (days)")
+ax1b.set_ylabel("Root system [g/day]", color = "b")
+ax1.set_xlabel("Time [days]")
 ax1.set_title("Hormone production rate")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_productionrate.pdf', dpi=300)
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_productionrate.pdf', dpi=300, bbox_inches='tight')
 
 fig, ax2 = plt.subplots()
 
 ax2.plot(d[:, 0] / c, 1000 * d[:, 7], "r")
 ax2.tick_params(axis = 'y', labelcolor = "r")
-ax2.set_ylabel("leaves (g)", color = "r")
+ax2.set_ylabel("Leaves [g]", color = "r")
 ax2b = ax2.twinx()
 ax2b.plot(d[:, 0] / c, 1000 * d[:, 9], "b")
 ax2b.tick_params(axis = 'y', labelcolor = "b")
-ax2b.set_ylabel("root system (g)", color = "b")
-ax2.set_xlabel("time (days)")
+ax2b.set_ylabel("Root system [g]", color = "b")
+ax2.set_xlabel("Time [days]")
 ax2.set_title("Hormone mass")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_hormoneMass.pdf', dpi=300)
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_hormoneMass.pdf', dpi=300, bbox_inches='tight')
 
 """ Plot transpiration """
 fig, ax3 = plt.subplots()
@@ -66,20 +66,33 @@ ax3.plot(t, 1000 * d[:, 2] * c, 'k')  # potential transpiration
 ax3.plot(t, 1000 * d[:, 1] * c, 'r-,')  # actual transpiration
 ax3b = ax3.twinx()
 ctrans = np.cumsum(np.multiply(1000 * d[1:, 1] * c, (t[1:] - t[:-1])))
-np.savetxt('results_' + name + suffix + "/" + name + suffix + '_ctrans.txt', ctrans, delimiter = '\n')   # save cumulative transpiration file
 ax3b.plot(t[1:], ctrans, 'c--', color = 'blue')  # cumulative transpiration (neumann)
 ax3b.tick_params(axis= 'y', labelcolor = 'b')
-ax3.set_xlabel("time (days)")
-ax3.set_ylabel("transpiration (mL/day)")
+ax3.set_xlabel("Time [days]")
+ax3.set_ylabel("Transpiration [mL/day]")
 ax3b.set_ylabel("Cumulative transpiration $[mL]$", color = "b")
 ax3.legend(["potential", "actual", "cumulative"], loc = 'upper left')
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300)
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_transpiration.pdf', dpi=300, bbox_inches='tight')
 
 """ Plot root collar pressure """
 fig, ax4 = plt.subplots()
-ax4.plot(d[:, 0] / c, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root colalr pressure head (convert from Pa to Head)  
-ax4.set_xlabel("time (days)")
-ax4.set_ylabel("Pressure at root collar (cm)")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300)
+ax4.plot(d[:, 0] / c, (d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # root collar pressure head (convert from Pa to Head)  
+ax4.set_xlabel("Time [days]")
+ax4.set_ylabel("Pressure at root collar [cm]")
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300, bbox_inches='tight')
+
+""" Plot xylem pressure """
+fig, ax5 = plt.subplots()
+ax5.plot(d[:, 0] / c, (d[:, 11] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # xylem pressure head (convert from Pa to Head)  
+ax5.set_xlabel("Time [days]")
+ax5.set_ylabel("Xylem pressure [cm]")
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_xylemPressure.pdf', dpi=300, bbox_inches='tight')
+
+""" Plot weighted soil pressure """
+fig, ax6 = plt.subplots()
+ax6.plot(d[:, 0] / c, (d[:, 12] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # weighted soil pressure head (convert from Pa to Head)  
+ax6.set_xlabel("Time [days]")
+ax6.set_ylabel("Weighted soil pressure [cm]")
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_weightedsoilPressure.pdf', dpi=300, bbox_inches='tight')
 
 plt.show()

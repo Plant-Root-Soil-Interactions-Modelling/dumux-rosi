@@ -33,7 +33,7 @@ Qr = 0.0045
 Qs = 0.489
 Alpha =  0.1978# [1/cm] 
 N =  1.1457
-Ks = 1488 # [cm/d] 	
+Ks = 857 # [cm/d] 	
 
 [Climate]
 # Precipitation = 0.8 # [cm day-1]
