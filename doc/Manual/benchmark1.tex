@@ -17,8 +17,8 @@ freeDrainage = 5.
 
 \section*{The input files}
 Model parameters, initial and boundary conditions can be specified via the input file such that no re-building of the code is required. 
-Here is the listing of the input file \lstinline{dumux-rosi/rosi_benchmarking/soil/benchmarks_1d/b1a.input}: 
-\lstinputlisting[language={}, caption=input file]{dumux-rosi/rosi_benchmarking/soil/benchmarks_1d/b1a.input}	
+Here is the listing of the input file \lstinline{dumux-rosi/rosi_benchmarking/soil_richards/input/b1a_1d.input}: 
+\lstinputlisting[language={}, caption=input file]{dumux-rosi/rosi_benchmarking/soil_richards/input/b1a_1d.input}	
 
 \section*{The DuMu$^x$ code representation of model equations}
 In this section, we explain where the different terms of the model equations can be found in the DuMu$^x$ code, i.e., the storage, flux and sink terms. 
@@ -43,12 +43,12 @@ The flux term is hidden in deeper layers of the code as part of the numerical sc
 %\lstinputlisting[firstline=245,lastline=265, language=C++, caption=sink term]{dumux-rosi/rosi_examples/richardsrootsystem/richardstestproblem.hh}	
 
 The implementation of the boundary conditions specified in the input file are implemented in the file\\ 
-\verb+ dumux-rosi/rosi_benchmarking/soil/richardsproblem.hh+.\\
-\lstinputlisting[firstline=188,lastline=224, language=C++, caption=Boundary conditions]{dumux-rosi/rosi_benchmarking/soil/richardsproblem.hh},
+\verb+ dumux-rosi/rosi_benchmarking/soil_richards/richardsproblem.hh+.\\
+\lstinputlisting[firstline=188,lastline=224, language=C++, caption=Boundary conditions]{dumux-rosi/rosi_benchmarking/soil_richards/richardsproblem.hh},
 %
-\lstinputlisting[firstline=229,lastline=252, language=C++, caption=Boundary conditions]{dumux-rosi/rosi_benchmarking/soil/richardsproblem.hh}	
+\lstinputlisting[firstline=229,lastline=252, language=C++, caption=Boundary conditions]{dumux-rosi/rosi_benchmarking/soil_richards/richardsproblem.hh}	
 and
-\lstinputlisting[firstline=257,lastline=334, language=C++, caption=Boundary conditions]{dumux-rosi/rosi_benchmarking/soil/richardsproblem.hh}.		
+\lstinputlisting[firstline=257,lastline=334, language=C++, caption=Boundary conditions]{dumux-rosi/rosi_benchmarking/soil_richards/richardsproblem.hh}.		
 											
 
 \section*{Results}

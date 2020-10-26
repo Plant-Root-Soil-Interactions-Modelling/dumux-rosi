@@ -50,7 +50,7 @@ In all dune modules we stay in version 2.6, the latest stable release version.
 		\hspace{\parindent} \texttt{cd ..}\\
 \texttt{git clone https://gitlab.dune-project.org/core/dune-istl.git}\\
     \hspace{\parindent} \texttt{cd dune-istl}\\
-    \hspace{\parindent} \texttt{git checkout releases/2.6}\\
+    \hspace{\parindent} \texttt{git checkout releases/2.6}\\ 
 		\hspace{\parindent} \texttt{cd ..}\\
 \texttt{git clone https://gitlab.dune-project.org/core/dune-localfunctions.git}\\
     \hspace{\parindent} \texttt{cd dune-localfunctions}\\
@@ -65,6 +65,14 @@ In all dune modules we stay in version 2.6, the latest stable release version.
     \hspace{\parindent} \texttt{cd dune-grid-glue}\\
     \hspace{\parindent} \texttt{git checkout master\footnote{There is no release 2.6}}\\
 		\hspace{\parindent} \texttt{cd ..}\\
+\texttt{git clone https://github.com/dune-community/dune-pybindxi.git}\\
+	\hspace{\parindent} \texttt{cd dune-pybindxi}\\
+	\hspace{\parindent} \texttt{git checkout master}\\
+	\hspace{\parindent} \texttt{cd ..}\\		
+	
+If the file ´´mpicommunication.hh" in the folder \texttt{dune-common/dune/common/parallel} is not downloaded automatically during cloning, create a file ´´mpicommunication.hh" in the folder and copy  the code from: 
+\texttt{https://www.dune-project.org/doxygen/master/mpicommunication_8hh_source.html}.
+	
 
 -Download dumux and dumux-rosi and the grid manageres alugrid, uggrid and spgrid:\\
 \texttt{git clone https://git.iws.uni-stuttgart.de/dumux-repositories/dumux.git}\\
@@ -100,6 +108,9 @@ To build CRootBox and its python shared library, move again into the CRootBox fo
 (If building CRootBox on the cluster, two lines in the file \lstinline{CRootBox/CMakeLists.txt} need to be outcommented before:\\ 
 \lstinline{set(CMAKE_C_COMPILER "/usr/bin/gcc")}\\
 \lstinline{set(CMAKE_CXX_COMPILER "/usr/bin/g++")})\\
+
+Now add the systems path of CPlantBox to your Python scripts so they can find the python shared library of CPlantBox. Alternatively, copy the shared library (a file with a name similar to “plantbox.cpython-38-x86_64-linux-gnu.so”) to the folder
+\lstinline{"/dumux-rosi/rosi_benchmarking/python_solver/solvers")\\ 
 
 Now build DuMu$^{x}$ with the CRootBox module: \\
 -The configuration file \lstinline{cmake.opts} is stored in the dumux folder. Move a copy of this file to your DuMu$^x$ working folder (one level up, DUMUX)\\
