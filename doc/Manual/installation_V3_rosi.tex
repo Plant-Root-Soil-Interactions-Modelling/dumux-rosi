@@ -1,9 +1,12 @@
 \chapter*{Installation}
 This installation guidelines are for the new version of DuMu$^{x}$, version 3, coupled with CRootBox, in Linux systems (e.g. Ubuntu). 
 
+On Windows or Mac, install a virtual machine with a Linux system, e.g. using \texttt{VMWare}. Provide at least 60 GB disk space when setting up the virtual machine. 
+
 \section*{Required compilers and tools}
 %
-If on a recent Ubuntu system, the c++ compiler and python that come with the distribution are recent enough. Otherwise, please make sure you have a recent c++ compiler (e.g. \lstinline{sudo apt-get install clang}), fortran compiler (sudo apt-get install gfortran) and python3 (e.g. \lstinline{sudo apt-get install python3.7}). 
+
+If on a recent Ubuntu system, the c++ compiler and python that come with the distribution are recent enough. Otherwise, please make sure you have a recent c++ compiler (e.g. \lstinline{sudo apt-get install clang}) and python3 (e.g. \lstinline{sudo apt-get install python3.6}). 
 
 - Install git: \\
 \lstinline{sudo apt-get install git}\\
@@ -18,9 +21,7 @@ If on a recent Ubuntu system, the c++ compiler and python that come with the dis
 - Install the python package scipy:\\
 \lstinline{pip3 install scipy}\\
 - Install the python package matplotlib:\\
-\lstinline{pip3 install matplotlib}\footnote{Known bug in ubuntu 18.04: needs sudo apt-get install libfreetype6-dev libxft-dev installed before.}\\
-- Install the python package VTK:\\alug
-\lstinline {pip3 install vtk}\\
+\lstinline{pip3 install matplotlib}\\
 - Install the java runtime environment:\\
 \lstinline{sudo apt-get install default-jre}\\
 - Install Paraview\\
@@ -30,9 +31,16 @@ If on a recent Ubuntu system, the c++ compiler and python that come with the dis
 \lstinline{}\\
 
 \section*{DuMu$^x$ installation}
-In all dune modules we stay in version 2.6, the latest stable release version. 
+In all dune modules we stay in version 2.6, the latest stable release version. The final folder structure of the different modules should look like in Fig. \ref{fig:folderStructure}: 
+\begin{figure}[ht]
+	\centering
+  \includegraphics[width=1\textwidth]{folderStructure.png}
+	\captionsetup{labelformat=empty}
+	\caption{Folder structure of DuMu$^x$, Dune and CPlantBox modules}
+	\label{fig:folderStructure}
+\end{figure}
 
-- Create a DuMu$^x$ working folder\\
+- Create a DUMUX folder\\
 \lstinline{mkdir DUMUX}\\
 \lstinline{cd DUMUX}\\
 - Download DUNE core modules:\\
@@ -50,7 +58,7 @@ In all dune modules we stay in version 2.6, the latest stable release version.
 		\hspace{\parindent} \texttt{cd ..}\\
 \texttt{git clone https://gitlab.dune-project.org/core/dune-istl.git}\\
     \hspace{\parindent} \texttt{cd dune-istl}\\
-    \hspace{\parindent} \texttt{git checkout releases/2.6}\\ 
+    \hspace{\parindent} \texttt{git checkout releases/2.6}\\
 		\hspace{\parindent} \texttt{cd ..}\\
 \texttt{git clone https://gitlab.dune-project.org/core/dune-localfunctions.git}\\
     \hspace{\parindent} \texttt{cd dune-localfunctions}\\
@@ -63,18 +71,10 @@ In all dune modules we stay in version 2.6, the latest stable release version.
 		\hspace{\parindent} \texttt{cd ..}\\
 \texttt{git clone https://gitlab.dune-project.org/extensions/dune-grid-glue.git}\\
     \hspace{\parindent} \texttt{cd dune-grid-glue}\\
-    \hspace{\parindent} \texttt{git checkout master\footnote{There is no release 2.6}}\\
+    \hspace{\parindent} \texttt{git checkout releases/2.6}\\
 		\hspace{\parindent} \texttt{cd ..}\\
-\texttt{git clone https://github.com/dune-community/dune-pybindxi.git}\\
-	\hspace{\parindent} \texttt{cd dune-pybindxi}\\
-	\hspace{\parindent} \texttt{git checkout master}\\
-	\hspace{\parindent} \texttt{cd ..}\\		
-	
-If the file ´´mpicommunication.hh" in the folder \texttt{dune-common/dune/common/parallel} is not downloaded automatically during cloning, create a file ´´mpicommunication.hh" in the folder and copy  the code from: 
-\texttt{https://www.dune-project.org/doxygen/master/mpicommunication_8hh_source.html}.
-	
 
--Download dumux and dumux-rosi and the grid manageres alugrid, uggrid and spgrid:\\
+-Download dumux and dumux-rosi and alugrid (used for unstructured grids):\\
 \texttt{git clone https://git.iws.uni-stuttgart.de/dumux-repositories/dumux.git}\\
     \hspace{\parindent} \texttt{cd dumux}\\
     \hspace{\parindent} \texttt{git checkout releases/3.0}\\
@@ -84,40 +84,24 @@ If the file ´´mpicommunication.hh" in the folder \texttt{dune-common/dune/comm
     \hspace{\parindent} \texttt{git checkout master}\\
 		\hspace{\parindent} \texttt{cd ..}\\
 \texttt{git clone https://gitlab.dune-project.org/extensions/dune-alugrid.git}\\
-    \hspace{\parindent} \texttt{cd dune-alugrid}\\
-    \hspace{\parindent} \texttt{git checkout releases/2.6}\\
-		\hspace{\parindent} \texttt{cd ..}\\
-\texttt{git clone https://gitlab.dune-project.org/staging/dune-uggrid}\\
-    \hspace{\parindent} \texttt{cd dune-uggrid}\\
-    \hspace{\parindent} \texttt{git checkout releases/2.6}\\
-		\hspace{\parindent} \texttt{cd ..}\\
-\texttt{git clone https://gitlab.dune-project.org/extensions/dune-spgrid}\\
-    \hspace{\parindent} \texttt{cd dune-spgrid}\\
-    \hspace{\parindent} \texttt{git checkout releases/2.6}\\
-		\hspace{\parindent} \texttt{cd ..}\\				
 
 -Download CRootBox (only needed if root growth is used):\\
-\texttt{git clone https://github.com/Plant-Root-Soil-Interactions-Modelling/CRootBox.git}\\
-    \hspace{\parindent} \texttt{cd CRootBox}\\
+\texttt{git clone https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox.git}\\
+    \hspace{\parindent} \texttt{cd CPlantBox}\\
     \hspace{\parindent} \texttt{git checkout master}\\
 		\hspace{\parindent} \texttt{cd ..}\\
-To build CRootBox and its python shared library, move again into the CRootBox folder and type into the console:\\
-\lstinline {cd CRootBox}\\
-\lstinline{cmake .}\footnote{It may be necessary on your installation to check the CRootBox/src/CMakeLists.txt file regarding required python version and out-commenting line 34.}\\
+To build CPlantBox and its python shared library, move again into the CPlantBox folder and type into the console:\\
+\lstinline{cmake .}\\
 \lstinline{make}\\
-(If building CRootBox on the cluster, two lines in the file \lstinline{CRootBox/CMakeLists.txt} need to be outcommented before:\\ 
+(If building CPlantBox on the cluster, two lines in the file \lstinline{CPlantBox/CMakeLists.txt} need to be outcommented before:\\ 
 \lstinline{set(CMAKE_C_COMPILER "/usr/bin/gcc")}\\
 \lstinline{set(CMAKE_CXX_COMPILER "/usr/bin/g++")})\\
 
-Now add the systems path of CPlantBox to your Python scripts so they can find the python shared library of CPlantBox. Alternatively, copy the shared library (a file with a name similar to “plantbox.cpython-38-x86_64-linux-gnu.so”) to the folder
-\lstinline{"/dumux-rosi/rosi_benchmarking/python_solver/solvers")\\ 
-
-Now build DuMu$^{x}$ with the CRootBox module: \\
--The configuration file \lstinline{cmake.opts} is stored in the dumux folder. Move a copy of this file to your DuMu$^x$ working folder (one level up, DUMUX)\\
+Now build DuMu$^{x}$ with the CPlantBox module: \\
+-The configuration file \lstinline{optim.opts} is stored in the dumux folder. Move a copy of this file to your DuMu$^x$ working folder (one level up)\\
 
 - To build all downloaded modules and check whether all dependencies and prerequisites are met, run dunecontrol:\\
-\lstinline{cd ..} \\
-\lstinline{./dune-common/bin/dunecontrol --opts=cmake.opts all}\\
+\lstinline{./dune-common/bin/dunecontrol --opts=optim.opts all}\\
 
 Installation done! Good luck!
 
