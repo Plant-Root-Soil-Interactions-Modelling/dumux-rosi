@@ -30,14 +30,14 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8,8,15]# [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-soil = loam
+soil = clay
 
 initial = -659.8 + 7.5  # -659.8
 
@@ -58,8 +58,11 @@ s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil])
+s.setParameter("Newton.EnableChop", "True") 
+s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
+
 
 """ Initialize xylem model (a) or (b)"""
 r = XylemFluxPython("../grids/RootSystem8.rsml")
