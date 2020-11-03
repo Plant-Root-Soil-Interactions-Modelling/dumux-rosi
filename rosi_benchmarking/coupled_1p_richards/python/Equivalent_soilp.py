@@ -2,14 +2,14 @@
 
 import matplotlib.pyplot as plt
 from vtk_tools_SUF import *
-import van_genuchten as vg
 import math
 import numpy as np
-from scipy.linalg import block_diag
+#from scipy.linalg import block_diag
 import glob
+from scipy.sparse import block_diag
 
 # go to the right place
-name = 'singleroot_Honly'						# problem name
+name = 'soybean_Honly_2003'					# problem name
 Hseq_t = []
 Pseq_t = []
 
@@ -27,7 +27,7 @@ for filepath in sorted(filelist):
     diag_kr = np.diag(kr)						# create a diagonal matrix of kr
     diag_k = block_diag(diag_kx, diag_kr)				# create a big diagonal matrix of kx and kr
     
-    IM = np.zeros(shape=(np.shape(diag_k)))				# create IM matrix with all zeros
+    IM = scipy.sparse(shape=(np.shape(diag_k)))			# create IM matrix with all zeros
     np.fill_diagonal(IM, 1)						# fill all diagonal elements with "1"
     for i in range(len(diag_kx)):
         IM[i][i+1] = -1						# fill IM[i][j+1] with "-1" 
@@ -69,7 +69,7 @@ for filepath in sorted(filelist):
 
 #    Figure
 fig, ax1 = plt.subplots()
-time = np.linspace(0,7,169)						# (initial day, final day, number of vtps)
+time = np.linspace(0,154,3697)						# (initial day, final day, number of vtps)
 ax1.plot(time, Pseq_t, 'r-')						# time vs equivalent xylem pressure using SUF as a weighing factor
 ax1.plot(time, Hseq_t, 'b-')    					# time vs equivalent soil pressure using SUF as a weighing factor 
 ax1.set_xlabel("Time [days]")
