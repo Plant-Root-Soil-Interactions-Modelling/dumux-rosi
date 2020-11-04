@@ -81,18 +81,4 @@ ax4.set_xlabel("Time [days]")
 ax4.set_ylabel("Pressure at root collar [cm]")
 plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300, bbox_inches='tight')
 
-""" Plot xylem pressure """
-fig, ax5 = plt.subplots()
-ax5.plot(d[:, 0] / c, (d[:, 11] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # xylem pressure head (convert from Pa to Head)  
-ax5.set_xlabel("Time [days]")
-ax5.set_ylabel("Xylem pressure [cm]")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_xylemPressure.pdf', dpi=300, bbox_inches='tight')
-
-""" Plot weighted soil pressure """
-fig, ax6 = plt.subplots()
-ax6.plot(d[:, 0] / c, (d[:, 12] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # weighted soil pressure head (convert from Pa to Head)  
-ax6.set_xlabel("Time [days]")
-ax6.set_ylabel("Weighted soil pressure [cm]")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_weightedsoilPressure.pdf', dpi=300, bbox_inches='tight')
-
 plt.show()

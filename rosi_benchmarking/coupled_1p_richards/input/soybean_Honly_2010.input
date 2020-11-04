@@ -1,7 +1,7 @@
 [Problem]
-Name = soybean_Honly
-RootName = ../roots_1p/input/soybean.input
-SoilName = ../soil_richards/input/soybean_HLCT.input
+Name = soybean_Honly_2010
+RootName = ../roots_1p/input/soybean_2010.input
+SoilName = ../soil_richards/input/soybean_HLCT_2010.input
 
 [TimeLoop]
 TEnd =  13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
@@ -23,6 +23,6 @@ P = -150 -300
 Z = -1.5 0. 
 
 #[Restart]
-#Time = 97311.6
-#SoilFile = ./results_soybean_Honly/soybean_Honly-00027.vtu
-#RootFile = ./results_soybean_Honly/soybean_Honly-00027.vtp
+#Time = 4.39211e+06
+#SoilFile = ./results_soybean_Honly_2010/soybean_Honly_2010-01220.vtu
+#RootFile = ./results_soybean_Honly_2010/soybean_Honly_2010-01220.vtp

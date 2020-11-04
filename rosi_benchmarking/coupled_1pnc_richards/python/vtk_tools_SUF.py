@@ -34,28 +34,29 @@ def read3D_vtp_soilp(name):
         d = p.GetTuple(i)
         p_[i] = d[0]
 
-    points = polydata.GetPoints()
+    return p_
+    
+def read3D_vtp_xylemp(name):
+    polydata = read_polydata(name)
 
-    if cc:
-        Nc = polydata.GetNumberOfLines()  # GetPointId (int ptId)
-        z_ = np.zeros((Nc, 3))
-        for i in range(0, Nc):
-            c = polydata.GetCell(i)
-            ids = c.GetPointIds()
-            p1 = np.zeros(3,)
-            points.GetPoint(ids.GetId(0), p1)
-            p2 = np.zeros(3,)
-            points.GetPoint(ids.GetId(1), p2)
-            z_[i, :] = 0.5 * (p1 + p2)
-        return p_, z_
-    else:  # not cell
-        Np = polydata.GetNumberOfPoints()
-        z_ = np.zeros((Np, 3))
-        for i in range(0, Np):
-            p = np.zeros(3,)
-            points.GetPoint(i, p)
-            z_[i, :] = p
-        return p_, z_
+    try:  # Box
+        data = polydata.GetPointData()
+        nocd = data.GetNumberOfArrays()
+        p = data.GetArray(0)  # xylem pressure
+        noa = p.GetNumberOfTuples()
+        cc = False
+    except:  # CCTpfa
+        data = polydata.GetCellData()
+        nocd = data.GetNumberOfArrays()
+        p = data.GetArray(0)  # xylem pressure
+        noa = p.GetNumberOfTuples()
+        cc = True
+    p_ = np.ones(noa,)
+    for i in range(0, noa):
+        d = p.GetTuple(i)
+        p_[i] = d[0]
+
+    return p_
         
 def read3D_vtp_kx(name):
     polydata = read_polydata(name)
@@ -78,28 +79,7 @@ def read3D_vtp_kx(name):
         d = kx.GetTuple(i)
         kx_[i] = d[0]
 
-    points = polydata.GetPoints()
-
-    if cc:
-        Nc = polydata.GetNumberOfLines()  # GetPointId (int ptId)
-        z_ = np.zeros((Nc, 3))
-        for i in range(0, Nc):
-            c = polydata.GetCell(i)
-            ids = c.GetPointIds()
-            p1 = np.zeros(3,)
-            points.GetPoint(ids.GetId(0), p1)
-            p2 = np.zeros(3,)
-            points.GetPoint(ids.GetId(1), p2)
-            z_[i, :] = 0.5 * (p1 + p2)
-        return kx_, z_
-    else:  # not cell
-        Np = polydata.GetNumberOfPoints()
-        z_ = np.zeros((Np, 3))
-        for i in range(0, Np):
-            p = np.zeros(3,)
-            points.GetPoint(i, p)
-            z_[i, :] = p
-        return kx_, z_
+    return kx_
         
 def read3D_vtp_kr(name):
     polydata = read_polydata(name)
@@ -122,28 +102,7 @@ def read3D_vtp_kr(name):
         d = kr.GetTuple(i)
         kr_[i] = d[0]
 
-    points = polydata.GetPoints()
-
-    if cc:
-        Nc = polydata.GetNumberOfLines()  # GetPointId (int ptId)
-        z_ = np.zeros((Nc, 3))
-        for i in range(0, Nc):
-            c = polydata.GetCell(i)
-            ids = c.GetPointIds()
-            p1 = np.zeros(3,)
-            points.GetPoint(ids.GetId(0), p1)
-            p2 = np.zeros(3,)
-            points.GetPoint(ids.GetId(1), p2)
-            z_[i, :] = 0.5 * (p1 + p2)
-        return kr_, z_
-    else:  # not cell
-        Np = polydata.GetNumberOfPoints()
-        z_ = np.zeros((Np, 3))
-        for i in range(0, Np):
-            p = np.zeros(3,)
-            points.GetPoint(i, p)
-            z_[i, :] = p
-        return kr_, z_
+    return kr_
 
 def read3D_vtp_nodes(name):
     polydata = read_polydata(name)

@@ -56,18 +56,4 @@ ax2.set_xlabel("Time [days]")
 ax2.set_ylabel("Pressure at root collar [cm]")
 plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300, bbox_inches='tight')
 
-""" Equivalent root water potential """
-fig, ax3 = plt.subplots()
-ax3.plot(t, (d[:, 7] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # xylem pressure head (convert from Pa to Head)  
-ax3.set_xlabel("Time [days]")
-ax3.set_ylabel("Xylem Pressure [cm]")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_xylemPressure.pdf', dpi=300, bbox_inches='tight')
-
-""" Weighted soil water potential """
-fig, ax4 = plt.subplots()
-ax4.plot(t, (d[:, 8] - 1.e5) * 100. / 1.e3 / 9.81, 'r-')  # weighted soil pressure head (convert from Pa to Head)  
-ax4.set_xlabel("Time [days]")
-ax4.set_ylabel("Weighted soil water potential [cm]")
-plt.savefig("results_" + name + suffix + "/" + name + suffix + '_weighedsoilPressure.pdf', dpi=300, bbox_inches='tight')
-
 plt.show()
