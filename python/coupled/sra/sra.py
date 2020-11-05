@@ -1,4 +1,5 @@
 import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
+sys.path.append("../")
 
 import numpy as np
 import matplotlib.pyplot as plt

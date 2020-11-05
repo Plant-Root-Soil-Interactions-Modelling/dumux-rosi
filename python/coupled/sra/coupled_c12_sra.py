@@ -1,6 +1,5 @@
-import sys
-sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-sys.path.append("../solvers/")  # for pure python solvers
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
+sys.path.append("../")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -73,7 +72,7 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
-r = XylemFluxPython("../grids/RootSystem8.rsml")
+r = XylemFluxPython("../../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 init_conductivities(r, age_dependent)
@@ -118,7 +117,7 @@ for i in range(0, N):
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, rsx, [], cells = False), "= prescribed", -trans * sinusoidal(t))
+        # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, rsx, [], cells = False), "= prescribed", -trans * sinusoidal(t))
         # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
 
     else:
@@ -143,7 +142,7 @@ for i in range(0, N):
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
         # f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
-        f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False),
+        # f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False),
         x_.append(t)
         y_.append(sum_flux)
         w_.append(water)

@@ -1,6 +1,5 @@
-import sys
-sys.path.append("../../../build-cmake/rosi_benchmarking/python_solver/")
-sys.path.append("../solvers/")  # for pure python solvers
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
+sys.path.append("../")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -56,7 +55,7 @@ initial = -659.8 + 7.5  # -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7  # [day] for task b
+sim_time = 1  # [day] for task b
 age_dependent = False  # conductivities
 dt = 3600. / (24 * 3600)  # [days] Time step must be very small
 dx = 1.e-2
@@ -75,7 +74,7 @@ s.setCriticalPressure(wilting_point)
 # s.setRegularisation(1.e-4, 1.e-4)
 
 """ Initialize xylem model (a) or (b)"""
-r = XylemFluxPython("../grids/RootSystem8.rsml")
+r = XylemFluxPython("../../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 init_conductivities(r, age_dependent)

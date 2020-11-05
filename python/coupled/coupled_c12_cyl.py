@@ -65,7 +65,7 @@ s.setRegularisation(1.e-4, 1.e-4)
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a)"""
-r = XylemFluxPython("../grids/RootSystem.rsml")
+r = XylemFluxPython("../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 r.setKr([kr])  # [cm^3/day] # todo check order of age (segs are sorted)
@@ -108,7 +108,7 @@ for i in range(0, ns):
         cyls.append(cyl)
     else:
         cyls.append([])
-        print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
+        print("Segment not in domain", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
         input()
 
 """ Simulation """
@@ -144,7 +144,7 @@ for i in range(0, NT):
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), inner_radii)  # only valid for homogenous soil
     print("Conductivities", np.min(soil_k), kr)
     rx = r.solve(t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
-    collar_flux.append(r.collar_flux(t, rx, rsx, soil_k, 0, False))
+    collar_flux.append(r.collar_flux(t, rx, rsx, soil_k, False))
 
     min_rsx.append(np.min(np.array(rsx)))
     collar_sx.append(csx)
@@ -242,7 +242,7 @@ meshActors, meshCBar = vp.plot_mesh_cuts(soil_grid, "pressure head", 5, "", Fals
 lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
 rootActor.GetMapper().SetLookupTable(lut)
 meshActors.extend([rootActor])
-vp.render_window(meshActors, name + " at {:g} days".format(sim_time) , meshCBar).Start()
+vp.render_window(meshActors, name + " at {:g} days".format(sim_time) , meshCBar, soil_grid.GetBounds()).Start()
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
