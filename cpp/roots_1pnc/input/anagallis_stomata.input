@@ -1,0 +1,40 @@
+[Problem]
+Name = anagallis_roots
+
+[TimeLoop]
+TEnd = 864000 # 7 days [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 86400
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  grids/anagallis15.dgf
+InitialT = 15 # days
+
+[RootSystem.Conductivity]
+Kx = 4.3        # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 7.5e-2     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem.Collar]
+Transpiration = 2e-2 # 2.36478e-07 # kg/day 
+Sinusoidal = True
+
+[Soil.IC]
+P = -400
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -10000
+CritCollarPAlpha = -1000
+CritTipP = 0
+ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
+ProductionAge = 5
+ProductionGrowth = "true"
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

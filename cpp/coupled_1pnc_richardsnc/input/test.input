@@ -1,0 +1,33 @@
+[Problem]
+Name = test
+RootName = ../roots_1pnc/input/test.input
+SoilName = ../soil_richards/input/small_3d.input
+
+[TimeLoop]
+TEnd = 259200 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600
+
+[RootSystem.Collar]
+Transpiration = 2.36478e-07 # kg/day 
+Sinusoidal = True
+
+# 75 x 15 x 126 cm
+[Soil.Grid]
+LowerLeft = -0.375 -0.075 -1.26
+UpperRight = 0.375 0.075 0.0
+Cells = 37 8 63
+
+[Soil.IC]
+P = -200
+
+[Soil.VanGenuchten]
+Qr = 0.0045
+Qs = 1
+Alpha = 2e-4
+N = 1.41
+Ks = 10.7 # cm/day
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation

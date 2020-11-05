@@ -1,0 +1,40 @@
+[Problem]
+Name = benchmark_phosphate
+
+[TimeLoop]
+TEnd = 1209600 # 14 days, 0 is steady state
+DtInitial =  3600 # [s]
+MaxTimeStepSize = 86400 # 1 days [s] 
+
+[Soil.Grid]
+LowerLeft = -2.e-2 -2.e-2 -1.e-2
+UpperRight = 2.e-2  2.e-2  0.
+Cells = 20 20 1
+
+[Soil.BC.Top]
+Type = 2 
+Value = 0 
+
+[Soil.BC.Bot]
+Type = 2  
+Value = 0  
+
+[Soil.IC]
+P = 0. # cm
+C = 1.e-3 # * rho = 1 kg/m3
+
+[Soil.VanGenuchten] 
+# Sand, Loam, Clay 
+Qr = 0.045 0.08 0.1 	 
+Qs = 0.43 0.43 0.3
+Alpha =  0.15 0.04 0.01# [1/cm] 
+N =  3 1.6 1.1
+Ks = 1000 50 10 # [cm/d] 		
+
+[Soil.Layer]
+Number = 2 # pick soil type here ...
+
+[Component]
+LiquidDiffusionCoefficient = 1.e-9 # m2/s
+MolarMass = 0.2 # ???
+BufferPower = 140

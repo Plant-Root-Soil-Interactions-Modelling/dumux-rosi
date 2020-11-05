@@ -1,0 +1,47 @@
+[Problem]
+Name = soybean_Conly_2010
+RootName = ../roots_1pnc/input/soybean_2010.input
+SoilName = ../soil_richards/input/soybean_HLCT_2010.input
+
+[TimeLoop]
+TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600
+
+[Soil.Grid]
+Cells = 18 3 75 # 37*6*150
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1
+
+[Soil.IC]
+P = -150 -300
+Z = -1.5 0. 
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -5500 # for alpha
+CritTipP = 0 # when production starts
+ProductionRate = 3.26e-15 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 200 # [day]
+ProductionGrowth = true
+Decay = 0.693 # [day-1]
+b = 1.e8 # [cm] pressure head
+c = 200 # [1] 
+sH = 0 # [cm-1]
+sC = 5e+7 # [cm3/mol]
+
+[RootSystem.Leaf]
+Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
+VolumeT = 0	1	7	14	21	30	45	60	90	154
+
+#[Restart]
+#Time = 9.61927e+06
+#mL = 3.24005e-11 # value of mL at last time step
+#SoilFile = ./results_soybean_Conly_2/soybean_Conly-01542.vtu
+#RootFile = ./results_soybean_Conly_2/soybean_Conly-01542.vtp

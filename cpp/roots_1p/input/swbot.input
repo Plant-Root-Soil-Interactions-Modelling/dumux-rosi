@@ -1,0 +1,20 @@
+[Problem]
+Name = swbot 
+
+[TimeLoop]
+TEnd = 43200 # half a day
+CheckTimes = 10800 21600 32400 # 1/8 days 
+DtInitial = 360 # [s]
+MaxTimeStepSize = 3600 # 1 h
+
+[RootSystem.Collar]
+Transpiration = 0.6 # [kg/day]
+Sinusoidal = True
+
+[Soil.IC]
+P = -101.937 -101.937 -3058.104 -3058.104  # -1e4Pa + ref, -3e5Pa + ref - > cm pressure head , ref = 1e5 Pa 
+Z = -1.26 -.43 -.41 0
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

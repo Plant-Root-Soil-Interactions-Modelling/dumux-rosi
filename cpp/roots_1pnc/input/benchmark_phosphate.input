@@ -1,0 +1,33 @@
+[Problem]
+Name = benchmark_phosphate
+
+[TimeLoop]
+TEnd = 1209600 # 14 days
+DtInitial = 360 # [s]
+MaxTimeStepSize = 86400 # 1 h
+# CheckTimes = 86400 # half a day
+
+[RootSystem.Grid]
+File =  grids/singleC11.dgf
+# radiusIdx = 4
+Radius = 0.02
+
+[RootSystem.Conductivity]
+Kx = 1 # axial conductivity [cm^4/hPa/day]
+Kr = 1 # radial conductivity [cm/hPa/day] 
+
+[RootSystem.Collar]
+Transpiration = -1.0857e-06 # kg/day
+
+[Component]
+liquidDiffCoeff = 1e-9
+MolarMass = 0.2 # ???
+
+[RootSystem.Uptake]
+Vmax = 86.4 # g/cm2/day
+Km = 0.1 # g / cm3 
+ActiveTransport = 0
+
+[Soil.IC]
+P = -1
+

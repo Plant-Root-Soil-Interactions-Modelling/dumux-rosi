@@ -1,0 +1,42 @@
+[Problem]
+Name = benchmark1d_1a
+
+[TimeLoop]
+TEnd = 864000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+
+[Soil.Grid]
+LowerLeft = -2.
+UpperRight = 0.
+Cells = 199
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = 0.5 # [cm/d]
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -30 
+C = 0 0 0.1 0 0
+CZ = -2. -.55 -.5 -.45 0. 
+
+[Soil.VanGenuchten] 
+# Loam over sand 
+Qr = 0.08  0.045	
+Qs = 0.43 0.43
+Alpha = 0.04  0.15 # [1/cm] 
+N = 1.6  3
+Ks = 50 1000 # [cm/d] 
+
+[Soil.Layer]
+Z = -2 -0.5 -0.5 0
+Number = 2 2 1 1	
+
+[Component]
+LiquidDiffusionCoefficient = 1.e-8
+Name = "D2O"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
+

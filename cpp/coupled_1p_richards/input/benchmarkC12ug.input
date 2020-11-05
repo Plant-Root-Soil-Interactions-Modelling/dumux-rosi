@@ -1,0 +1,10 @@
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 360
+
+[Problem]
+Name = benchmarkC12cug
+RootName = ../roots_1p/input/benchmarkC12.input
+SoilName = ../soil_richards/input/benchmarkC12ug_3d.input

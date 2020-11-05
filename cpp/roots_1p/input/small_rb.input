@@ -1,0 +1,31 @@
+[Problem]
+Name = small_rb
+
+[TimeLoop]
+TEnd = 604800 # 604800 a week [s] # 86400 # a day
+CheckTimes = 43200 # half a day
+DtInitial = 360 # [s]
+MaxTimeStepSize = 3600 # 1 h
+
+[RootSystem.Grid]
+File =  Anagallis_femina_Leitner_2010  # Triticum_aestivum_a_Bingham_2011  # Anagallis_femina_Leitner_2010
+InitialT = 1 # days
+Grow = True
+Confined = .08 .04 .24
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day]
+Kr = 1.728e-4 # radial conductivity [cm/hPa/day] 
+
+ShootKx = 4.32e-2 # for dicots that seems legit
+
+[RootSystem.Collar]
+Transpiration = 1.6e-2 # 1.6e-2 [kg/day], 0.5 cm/day at 4 * 8 = 16 cm^3/day = 1.6e-2 kg/day
+# Sinusoidal = True
+
+[Soil.IC]
+P = -100  
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

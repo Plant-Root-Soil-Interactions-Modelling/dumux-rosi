@@ -1,0 +1,34 @@
+[Problem]
+Name = benchmark1 
+
+[TimeLoop]
+TEnd = 1e9 # 1e9 # [s]
+DtInitial = 1 # [s]
+
+[RootSystem.Grid]
+File =  grids/singleroot.dgf
+Radius = 0.2 # cm
+
+[RootSystem.Conductivity]
+# Kx = 0.173      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+# Kr = 2.6e-3     # radial conductivity [cm/hPa/day] similar (1 / day) 
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[Soil.IC]
+P = -200 # cm pressure head
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
+ProductionRate = 0
+# ProductionRate = 3.26e-16 #  [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+ProductionAge = 5
+ProductionGrowth = "true"
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

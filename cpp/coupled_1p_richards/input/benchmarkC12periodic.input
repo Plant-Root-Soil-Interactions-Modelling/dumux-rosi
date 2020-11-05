@@ -1,0 +1,21 @@
+[TimeLoop]
+TEnd = 86400 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 360
+
+[Soil.Grid]
+LowerLeft = -0.015 -0.015 -.15
+UpperRight = 0.015  0.015  0.
+Cells = 12 12 30
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1 
+
+[Problem]
+Name = benchmarkC12periodic
+RootName = ../roots_1p/input/benchmarkC12.input
+SoilName = ../soil_richards/input/benchmarkC12_3d.input

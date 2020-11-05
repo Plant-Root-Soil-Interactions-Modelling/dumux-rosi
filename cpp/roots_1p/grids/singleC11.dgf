@@ -1,0 +1,18 @@
+DGF
+Vertex
+0 0 0 
+0 0 -0.005 
+0 0 -0.01 
+#
+Simplex
+parameters 5
+0 1 0 0.02 0 1 1 
+1 2 0 0.02 0 1 1 
+#
+BOUNDARYSEGMENTS
+2 0
+3 2
+#
+BOUNDARYDOMAIN
+default 1
+#

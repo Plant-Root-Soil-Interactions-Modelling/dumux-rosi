@@ -1,0 +1,36 @@
+[Problem]
+Name = benchmark1d_3a
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 25920 # 0.3 days [s] 
+MaxTimeStepSize = 1800 # 3600 # an hour [s] 
+CheckTimes = 8640 17280  
+
+[Soil.Grid]
+UpperRight = 0
+LowerLeft = -2
+Cells = 199 
+
+[Soil.BC.Top]
+Type = 2 # 4 # atmospheric BC with surface run off
+Value = 100 
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -400
+
+[Soil.VanGenuchten] 
+# Sand: 
+Qr = 0.045 
+Qs = 0.43 
+Alpha = 0.15  # [1/cm] 
+N = 3
+Ks = 1000 # [cm/d] 
+
+[Climate]
+Time = 1e10 # const value 
+Precipitation = 100 # [cm/day]
+

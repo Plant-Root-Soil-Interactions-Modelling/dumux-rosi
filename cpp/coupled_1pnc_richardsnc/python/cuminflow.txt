@@ -1,0 +1,9 @@
+% Model:              rhizosphere_equilibrium.mph
+% Version:            COMSOL 5.4.0.388
+% Date:               Jan 27 2020, 10:17
+% Dimension:          0
+% Nodes:              1
+% Expressions:        15
+% Description:        Zustandsvariable cinflow
+% cinflow (g/cm) @ t=0    cinflow (g/cm) @ t=86400 cinflow (g/cm) @ t=1.728E5 cinflow (g/cm) @ t=2.592E5 cinflow (g/cm) @ t=3.456E5 cinflow (g/cm) @ t=4.32E5 cinflow (g/cm) @ t=5.184E5 cinflow (g/cm) @ t=6.048E5 cinflow (g/cm) @ t=6.912E5 cinflow (g/cm) @ t=7.776E5 cinflow (g/cm) @ t=8.64E5 cinflow (g/cm) @ t=9.504E5 cinflow (g/cm) @ t=1.0368E6 cinflow (g/cm) @ t=1.1232E6 cinflow (g/cm) @ t=1.2096E6
+1.6045013739471927E-6     6.756936484566019E-4     0.0010640294923143809    0.001400458310682861     0.001708844234532947     0.0019987918293649315    0.002275245147771835     0.0025412908462614163    0.002798974508955004     0.003049644044850749     0.003294348560403453     0.003533893434410652     0.003768919668421165     0.003999936679868102     0.004227359507484222

@@ -1,0 +1,45 @@
+[Problem]
+Name = cylinder_1d_water
+EnableGravity = "false"
+
+[TimeLoop]
+TEnd = 864000
+DtInitial =  1 # [s]
+MaxTimeStepSize = 86400 # 10 days [s]
+CheckTimes = 864000 
+
+[Soil.Grid]
+UpperRight = 0.0002
+LowerLeft = 0.006
+Cells = 100
+
+[Soil.BC.Top]
+Type = 3 # constant flux (cylindrical)
+Value =  0. # [cm/d]
+
+[Soil.BC.Bot]
+Type = 3 # constant flux (cylindrical)
+Value =  -0.1   #[cm/d]
+
+[Soil]
+CriticalPressure = -15000
+
+[Soil.IC]
+P = -100 # cm pressure head (initial guess)
+
+[Soil.VanGenuchten] 
+# Loam 
+Qr = 0.045 	
+Qs = 0.43
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d] 	
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "false"
+
+[Component]
+LiquidDiffusionCoefficient = 1.e-8
+Name = "D2O"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O

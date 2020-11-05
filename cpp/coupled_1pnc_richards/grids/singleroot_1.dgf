@@ -1,0 +1,16 @@
+DGF
+Vertex
+0 0 -0.03
+0.000836742 -0.00174615 -0.0398108
+0.00251316 -0.00408953 -0.0493867
+0.00297041 -0.00480035 -0.0511993
+#
+SIMPLEX
+parameters 10 # id0, id1, order, branchId, surf[cm2], length[cm], radius[cm], kz[cm4 hPa-1 d-1], kr[cm hPa-1 d-1], emergence time [d], subType, organType 
+0 1 0 1 0.314159 1 0.05 0 0 0.333375 1 2
+1 2 0 1 0.314159 1 0.05 0 0 1.31884 1 2
+2 3 0 1 0.0628319 0.2 0.05 0 0 14 1 2
+#
+BOUNDARYDOMAIN 
+default 1
+#

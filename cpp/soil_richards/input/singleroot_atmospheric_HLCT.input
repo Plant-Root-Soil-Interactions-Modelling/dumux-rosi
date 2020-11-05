@@ -1,0 +1,40 @@
+[Problem]
+Name = singleroot_atmospheric_HLCT
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 1209600 # 0.3 days [s] 
+MaxTimeStepSize = 3600 # 3600 # an hour [s] 
+PeriodicCheckTimes = 86400  
+
+[Soil.Grid]
+UpperRight = 0.005 0.005 0. 
+LowerLeft = -0.005 -0.005 -0.15
+Cells = 10 10 150 
+Periodic = true true false
+Overlap = 1
+
+[Grid]
+Periodic = true true false
+Overlap = 1
+
+[Soil.BC.Top]
+Type = 4 # atmospheric 
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+[Soil.IC]
+P = -500
+
+[Soil.VanGenuchten]
+# Hollabrunn_Convectional Tillage
+Qr = 0.0045	 
+Qs = 0.489
+Alpha =  0.1978# [1/cm] 
+N =  1.1457
+Ks = 857 # [cm/d] 	
+
+[Climate]
+# Precipitation = 0.8 # [cm day-1]
+CSVFile = input/singleroot_precipitation.csv # [cm day-1]

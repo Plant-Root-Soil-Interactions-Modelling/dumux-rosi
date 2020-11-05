@@ -1,0 +1,25 @@
+[Problem]
+Name = anagallis
+RootName = ../roots_1pnc/input/anagallis_stomata_grow.input # anagallis_stomata.input  # 
+SoilName = ../soil_richards/input/sunflower_HLCT.input # sunflower_HLCT
+
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 3600 # [s]
+PeriodicCheckTimes = 21600
+MaxTimeStepSize = 3600
+
+[Soil.IC]
+P = -400
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -10000
+CritCollarPAlpha = -5500
+CritTipP = -1000 #-4500
+ProductionRate = 3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+Age = 1
+
+[RootSystem.Collar]
+Transpiration = 2e-2 # 2.36478e-07 # kg/day 
+Sinusoidal = True

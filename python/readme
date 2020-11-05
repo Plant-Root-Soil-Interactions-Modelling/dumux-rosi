@@ -1,0 +1,12 @@
+Examples that are using the dumux-rosi Python binding. They are organized in three sub folders regarding their simulation domain (soil, roots, or coupled):
+
+soil/ 			bulk soil only (e.g. water and or solute transport)
+roots/ 			root system only (e.g. water or hormone movement within the xylem)
+coupled/		root soil interaction models 
+
+Additionally, folders for common resources are: 
+
+modules/		the Python modules of dumux-rosi: auxiliary tools (vtk, rsml, ...), the Python part of the XylemFlux class, and the Python part of the DuMux bindings
+modelparameter/		CPlantBox parameters
+grids/			numerical grids (vtp, dgf, msh, ...)
+grid_generation		scripts for grid generation (TODO) not quite sure what is in there

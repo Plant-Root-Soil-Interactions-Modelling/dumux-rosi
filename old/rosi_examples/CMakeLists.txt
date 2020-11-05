@@ -1,0 +1,5 @@
+add_subdirectory("RosiRichards2cbuffer")
+add_subdirectory("RosiRichards2cDiff")
+add_subdirectory("RosiRichards2cExud")
+add_subdirectory("growingrootsystem")
+add_subdirectory("richardsrootsystem")

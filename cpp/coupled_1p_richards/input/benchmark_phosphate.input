@@ -1,0 +1,13 @@
+[TimeLoop]
+TEnd = 1209600 # 14 days
+DtInitial =  1 
+PeriodicCheckTimes = 86400 # 0.1 day
+MaxTimeStepSize = 3600
+
+[Soil.Grid]
+Cells = 41 41 1
+
+[Problem]
+Name = benchmark_phosphate2
+RootName = ../roots_1pnc/input/benchmark_phosphate.input
+SoilName = ../soil_richardsnc/input/benchmark_phosphate.input

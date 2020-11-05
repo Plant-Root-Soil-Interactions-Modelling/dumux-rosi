@@ -1,0 +1,48 @@
+[Problem]
+Name = singleroot
+
+[TimeLoop]
+TEnd = 604800 # 7 days [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  grids/singleRoot.dgf
+InitialT = 10 # [days]
+Radius = 0.02 # cm
+
+[RootSystem.Conductivity]
+Kx = 0.000006736268	0.000006736268 0.074759246 0.08296797 0.09207803 0.102188394 0.113408897 0.125861436 0.13968129 0.155018593 0.172039965 0.190930319 0.211894875 0.235161384 0.260982605 0.289639051 0.321442035 0.356737056  4.3	4.3    # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
+KxAge = -154	0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32	60	1e20	# days
+
+Kr = 	0.00000109	0.00000109 0.00109 0.00103 0.000983 0.000935 0.00089 0.000847 0.000806 0.000767 0.00073 0.000695 0.000662 0.00063 0.000599 0.00057 0.000543 0.000517 0.0008 0.0008  
+KrAge = -154	0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32 	60	1e20	# days
+
+[RootSystem.Collar]
+Transpiration = 5e-4 # kg/day
+Sinusoidal = True
+
+[RootSystem.Leaf]
+Volume = 0.0125 # [cm^3] equals root volume
+
+#[Soil.IC]
+#P = -300
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 # [kg mol-1] Molar mass of ABA is 264.321 g/mol
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -5500 # for alpha
+CritTipP = -4500 # when production starts
+ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 100
+ProductionGrowth = "true"
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

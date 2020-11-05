@@ -1,0 +1,34 @@
+[Problem]
+Name = singleroot_Conly
+RootName = ../roots_1pnc/input/singleroot.input 
+SoilName = ../soil_richards/input/singleroot_HLCT.input
+
+[TimeLoop]
+TEnd = 1209600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], three weeks 1814400 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600
+
+[Soil.IC]
+P = -285 -300
+Z = -.15 0.
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -5500 # for alpha
+CritTipP = 0 # when production starts
+ProductionRate = 3.26e-15 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 100 # [day]
+Decay = 0.693 # [day-1]
+b = 1.e8 # [cm] pressure head
+c = 200 # [1] 
+sH = 0 # [cm-1]
+sC = 5e+7 # [cm3/mol]
+
+[RootSystem.Collar]
+Transpiration = 5e-4 # [kg/day] = 0.5cm3/day 
+Sinusoidal = True
+
+[RootSystem.Leaf]
+Volume = 0.0125 # [cm^3] equals root volume

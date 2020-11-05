@@ -1,0 +1,42 @@
+[Problem]
+Name = singleroot
+
+[TimeLoop]
+TEnd = 8640000 # 7 days [s]
+DtInitial = 7200 # [s]
+PeriodicCheckTimes = 86400
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  grids/singleroot.dgf
+InitialT = 25 # days
+Radius = 0.2 # cm
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem.Collar]
+Transpiration = 0.001728 # like in Benchmark 1
+Sinusoidal = False
+
+[Soil.IC]
+P = -200
+
+[Component]
+liquidDiffCoeff = 1.2e-9
+MolarMass = 0.26432 			# Molar mass of ABA is 264.321 g/mol
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -10000
+CritCollarPAlpha = -1000
+CritTipP = 0
+ProductionRate =3.26e-16 # TODO [kg-1 Pa-1 s-1], or [mol Pa-1 s-1] (if useMoles)
+ProductionAge = 5
+ProductionGrowth = "true"
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+
