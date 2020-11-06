@@ -4,6 +4,8 @@
 #
 # D. Leitner, 2018
 #
+import sys; sys.path.append("../../../python/modules/")
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
@@ -13,17 +15,17 @@ import analytic_b2
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
+os.chdir("../../../build-cmake/cpp/soil_richards")
 
 # run dumux
 os.system("./richards1d input/b2_1d.input")
-os.system("./richards1d input/b2_1d.input -Soil.Grid.Cells 1000")  # high res looks nice
+# os.system("./richards1d input/b2_1d.input -Soil.Grid.Cells 1000")  # high res looks nice
 
 # result dumux jan1 (Figure 2a)
-s_, p_, z_ = read1D_vtp_data("benchmark1d_2-00001.vtp")
+p_, z_ = read3D_vtp_data("benchmark1d_2-00001.vtp", 2, None)  # pressure [PA] is at index 2
 h_ = vg.pa2head(p_)
-plt.plot(h_, z_ * 100, "r+")
+plt.plot(h_, z_[:, 0] * 100, "r+")  # z coordinate is at position 0 in 1D models
 
-np.savetxt("dumux1d_b2", np.vstack((z_, h_)), delimiter = ",")
+np.savetxt("dumux1d_b2", np.vstack((z_[:, 0], h_)), delimiter = ",")
 
 plt.show()

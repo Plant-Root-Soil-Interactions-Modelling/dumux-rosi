@@ -8,13 +8,14 @@
 
  D. Leitner, 2019
 """
+import sys; sys.path.append("../../../python/modules/")
 
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
-from math import *
 import van_genuchten as vg
 import numpy as np
+from math import *
 
 g = 9.81  # gravitational acceleration (m/s^2)
 rho = 1.e3  # density of water, (kg/m^3)
@@ -70,7 +71,7 @@ pr3 = list(map(p_r3, za_))
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
+os.chdir("../../../build-cmake/cpp/roots_1p")
 
 # delete old results
 os.system("rm benchmark1-00001.vtp")
@@ -79,19 +80,18 @@ os.system("rm benchmark1c-00001.vtp")
 
 # run dumux
 os.system("./rootsystem input/b1.input")
-p_ = read1D_vtp_data("benchmark1-00001.vtp")
+p_, z_ = read3D_vtp_data("benchmark1-00001.vtp")
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
-p2_ = read1D_vtp_data("benchmark1b-00001.vtp")
+p2_, z_ = read3D_vtp_data("benchmark1b-00001.vtp")
 os.system("./rootsystem input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
-p3_ = read1D_vtp_data("benchmark1c-00001.vtp")
+p3_, z_ = read3D_vtp_data("benchmark1c-00001.vtp")
 
 # plot
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
 # benchmark 1
-z_ = np.linspace(0, -0.5, len(p_))
 h_ = vg.pa2head(p_)
-ax1.plot(h_, z_, "r+")
+ax1.plot(h_, z_[:, 2], "r+")
 ax1.plot(pr, za_, "b")
 ax1.set_ylabel("Depth (m)")
 ax1.set_xlabel("Xylem pressure (cm)")
@@ -99,7 +99,7 @@ ax1.set_title("Benchmark 1")
 
 # benchmark without gravity
 h_ = vg.pa2head(p2_)
-ax2.plot(h_, np.linspace(0, -0.5, len(p2_)), "r+")
+ax2.plot(h_, z_[:, 2], "r+")
 ax2.plot(pr, za_, "c")
 ax2.plot(pr2, za_, "b")
 ax2.set_ylabel("Depth (m)")
@@ -108,19 +108,19 @@ ax2.set_title("Benchmark 1 - neglecting gravitation")
 
 # benchmark predescribed transpiration
 h_ = vg.pa2head(p3_)
-ax3.plot(h_, z_, "r+")
+ax3.plot(h_, z_[:, 2], "r+")
 ax3.plot(pr3, za_, "b")
 ax3.set_ylabel("Depth (m)")
 ax3.set_xlabel("Xylem pressure (cm)")
 ax3.set_title("Predescribed transpiration")
 
 # save benchmark M31
-z_ = np.linspace(0, -0.5, len(p_))
+z_ = z_[:, 2]
 h_ = vg.pa2head(p_)
-np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter=',')
+np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter = ',')
 
 with open("benchmark1c_actual_transpiration.txt", 'r') as f:
-    d = np.loadtxt(f, delimiter=',')
+    d = np.loadtxt(f, delimiter = ',')
 
 print()
 c = 24 * 3600  #  [kg/s] -> [kg/per day]

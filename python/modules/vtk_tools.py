@@ -13,7 +13,7 @@ writing: vtp, vtu, msh, dgf, rsml
 
 
 def vtk_points(p):
-    """ Creates vtkPoints from an numpy array """
+    """ creates vtkPoints from an numpy array """
     da = vtk.vtkDataArray.CreateDataArray(vtk.VTK_DOUBLE)
     da.SetNumberOfComponents(3)  # vtk point dimension is always 3
     da.SetNumberOfTuples(p.shape[0])
@@ -28,7 +28,7 @@ def vtk_points(p):
 
 
 def vtk_cells(t):
-    """ Creates vtkCells from an numpy array """
+    """ creates vtkCells from an numpy array """
     cellArray = vtk.vtkCellArray()
     for vert in t:
         if t.shape[1] == 2:
@@ -93,48 +93,38 @@ def np_cells(polydata):
     return z_
 
 
-def np_data(polydata, data_index = 0, cell = True):
-    """ The cell or vertex data from vtkPolyData as numpy array """
-    if cell:
-        data = polydata.GetCellData()
-    else:
-        data = polydata.GetPointData()
-    # print(data)
-    p = data.GetArray(data_index)
-    noa = p.GetNumberOfTuples()
+def np_data(polydata, data_index = 0, cell = None):
+    """ The cell or point data from vtkPolyData as numpy array 
+    @param polydata    grid as a vtkPolyData object 
+    @param data_index  index of the vtk cell or point data
+    @param cell        True = cell data, False = point data, (default) None = auto detect
+    @return cell or point data of data_index, a flag if it is cell data or not (interesting in case of auto detect)
+    """
+    if cell is None:  # auto detect
+        try:
+            data = polydata.GetCellData()
+            p = data.GetArray(data_index)
+            noa = p.GetNumberOfTuples()
+            cell = True
+        except:
+            data = polydata.GetPointData()
+            p = data.GetArray(data_index)
+            noa = p.GetNumberOfTuples()
+            cell = False
+    else:  # use information
+        if cell:
+            data = polydata.GetCellData()
+            p = data.GetArray(data_index)
+            noa = p.GetNumberOfTuples()
+        else:
+            data = polydata.GetPointData()
+            p = data.GetArray(data_index)
+            noa = p.GetNumberOfTuples()
     p_ = np.ones(noa,)
     for i in range(0, noa):
         d = p.GetTuple(i)
         p_[i] = d[0]
-    return p_
-
-
-def rebuild_grid(p, t):
-    """ Deletes unused points and updates elements """
-    pp = np.zeros(p.shape[0], dtype = "bool")  # initially all are unused
-    for t_ in t:  # find unused points
-        for n in t_:
-            pp[n] = 1  # used
-    upi = np.argwhere(pp == 0)  # unused point indices
-    for k in upi[::-1]:  # reverse
-        for i, t_ in enumerate(t):  # update triangle indices
-            for j, n in enumerate(t_):
-                if n > k:
-                    t[i][j] -= 1
-    p = np.delete(p, upi, axis = 0)  # delete unused points
-    return p, t
-
-
-def snap_to_box(p, box, eps = 1e-6):
-    """ Snap points to a bounding box """
-    for i, p_ in enumerate(p):
-        for j in range(0, 3):
-            if p_[j] < box[j] + eps:
-                p[i, j] = box[j]
-        for j in range(3, 6):
-            if p_[j - 3] > box[j] - eps:
-                p[i, j - 3] = box[j]
-    return p
+    return p_, cell
 
 
 def read_vtp(name):
@@ -147,7 +137,7 @@ def read_vtp(name):
 
 
 def read_vtu(name):
-    """ Opens a vtp and returns the vtkUnstructuredGrid class """
+    """ Opens a vtu and returns the vtkUnstructuredGrid class """
     reader = vtk.vtkXMLUnstructuredGridReader()
     reader.SetFileName(name)
     reader.Update()
@@ -296,5 +286,87 @@ def write_rsml(name, pd, meta, id_ind = 5):
     print("Nodes")
     print(nodes)
 
-    write_rsml2(name, [0], segs, ids, nodes, node_data, meta, Renumber = True)  #
+    write_rsml2(name, [0], segs, ids, nodes, node_data, meta, Renumber = True)
+
+
+def read3D_vtp_data(name, data_index = 0, cell = None):
+    """ returns the cell or vertex data of vtp or vtu file and the corresponding coordinates
+    @param name         filename of the vtp representing a root system
+    @param cell         cell or point data 
+    """
+    if name.endswith('.vtp') or name.endswith('.VTP'):
+        polydata = read_vtp(name)
+    else:
+        polydata = read_vtu(name)
+    points = polydata.GetPoints()
+    p_, cell = np_data(polydata, data_index, cell)
+    if not cell:
+        Np = polydata.GetNumberOfPoints()
+        z_ = np.zeros((Np, 3))
+        for i in range(0, Np):
+            p = np.zeros(3,)
+            points.GetPoint(i, p)
+            z_[i, :] = p
+        return p_, z_
+    if cell:
+        Nc = polydata.GetNumberOfLines()
+        z_ = np.zeros((Nc, 3))
+        for i in range(0, Nc):
+            c = polydata.GetCell(i)
+            ids = c.GetPointIds()
+            p1 = np.zeros(3,)
+            points.GetPoint(ids.GetId(0), p1)
+            p2 = np.zeros(3,)
+            points.GetPoint(ids.GetId(1), p2)
+            z_[i, :] = 0.5 * (p1 + p2)
+        return p_, z_
+
+
+def read3D_vtp_data_parallel(prename, postname, n, data_index = 0):
+    """ returns the cell or vertex data of parallel vtp files """
+    z_ = np.ones((0, 3))
+    d_ = np.ones(0,)
+    for i in range(0, n):
+        n_ = prename + "{:04d}-".format(i) + postname + ".vtu"
+        print("opening: ", n_)
+        d, z = read3D_vtp_data(n_, data_index, None)
+        z_ = np.hstack((z_, z))
+        d_ = np.hstack((d_, d))
+    return d_, z_
+
+
+def read3D_data(name, np = 1, data_index = 0):
+    """ Opens a vtu (parallel or not) and returns the vtkUnstructuredGrid class """
+    if np == 1:
+        print("read3D_data: open single")
+        return read3D_vtp_data(name + ".vtu", data_index, None)
+    else:
+        print("read3D_data: open multiple")
+        return read3D_vtp_data_parallel("s{:04d}-p".format(np), name, np, data_index)
+
+# def rebuild_grid(p, t):
+#     """ Deletes unused points and updates elements """
+#     pp = np.zeros(p.shape[0], dtype = "bool")  # initially all are unused
+#     for t_ in t:  # find unused points
+#         for n in t_:
+#             pp[n] = 1  # used
+#     upi = np.argwhere(pp == 0)  # unused point indices
+#     for k in upi[::-1]:  # reverse
+#         for i, t_ in enumerate(t):  # update triangle indices
+#             for j, n in enumerate(t_):
+#                 if n > k:
+#                     t[i][j] -= 1
+#     p = np.delete(p, upi, axis = 0)  # delete unused points
+#     return p, t
+#
+#
+# def snap_to_box(p, box, eps = 1e-6):
+#     """ Snap points to a bounding box """
+#     for i, p_ in enumerate(p):
+#         for j in range(0, 3):
+#             if p_[j] < box[j] + eps:
+#                 p[i, j] = box[j]
+#         for j in range(3, 6):
+#             if p_[j - 3] > box[j] - eps:
+#                 p[i, j - 3] = box[j]
 

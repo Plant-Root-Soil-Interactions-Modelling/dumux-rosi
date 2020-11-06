@@ -1,16 +1,15 @@
 """ "Benchmark C12b root system part """
+import sys; sys.path.append("../../../python/modules/")
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
-from math import *
 import van_genuchten as vg
-import threading
-import time
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
+os.chdir("../../../build-cmake/cpp/roots_1p")
 
 # run dumux
 os.system("./rootsystem input/benchmarkC12b.input")
@@ -38,7 +37,7 @@ ax1.plot(t, d[:, 5] / 1000, 'r-,')  # actual transpiration (calculated)
 ax1.plot(t, d[:, 1] * c, 'g:')  # actual transpiration (neumann)
 
 ax1.legend(['Potential', 'Actual', 'Actual'], loc = 'upper left')
-ax1.axis((0, t[-1], 0, 0.13))
+ax1.axis((0, t[-1], 0, 0.013))
 ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
 

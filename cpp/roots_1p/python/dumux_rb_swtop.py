@@ -1,6 +1,8 @@
 #
 # Wet top scenario for 3 phenotypes in static soil
 #
+import sys; sys.path.append("../../../python/modules/")
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
@@ -52,7 +54,7 @@ print("kx1", np.array([0.01e-3, 0.01e-3, 0.1e-3, 0.6e-3, 0.6e-3, 1.7e-3, 1.7e-3]
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p")
+os.chdir("../../../build-cmake/cpp/roots_1p")
 
 p1 = "-RootSystem.Grid.InitialT 63.5 -RootSystem.Grid.File maize_p1_zero_std"  # 63.5
 p2 = "-RootSystem.Grid.InitialT 55.5 -RootSystem.Grid.File maize_p2_zero_std"

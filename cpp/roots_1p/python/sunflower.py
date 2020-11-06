@@ -1,3 +1,8 @@
+"""
+TODO input file is missing ?
+"""
+import sys; sys.path.append("../../../python/modules/")
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
@@ -9,7 +14,7 @@ name = "sunflower_14days"  # this name should be unique
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1p/")
+os.chdir("../../../build-cmake/cpp/roots_1p/")
 
 # run dumux
 os.system("./rootsystem_periodic input/" + name + ".input")
