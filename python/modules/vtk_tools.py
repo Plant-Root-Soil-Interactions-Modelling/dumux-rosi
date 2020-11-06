@@ -344,29 +344,3 @@ def read3D_data(name, np = 1, data_index = 0):
         print("read3D_data: open multiple")
         return read3D_vtp_data_parallel("s{:04d}-p".format(np), name, np, data_index)
 
-# def rebuild_grid(p, t):
-#     """ Deletes unused points and updates elements """
-#     pp = np.zeros(p.shape[0], dtype = "bool")  # initially all are unused
-#     for t_ in t:  # find unused points
-#         for n in t_:
-#             pp[n] = 1  # used
-#     upi = np.argwhere(pp == 0)  # unused point indices
-#     for k in upi[::-1]:  # reverse
-#         for i, t_ in enumerate(t):  # update triangle indices
-#             for j, n in enumerate(t_):
-#                 if n > k:
-#                     t[i][j] -= 1
-#     p = np.delete(p, upi, axis = 0)  # delete unused points
-#     return p, t
-#
-#
-# def snap_to_box(p, box, eps = 1e-6):
-#     """ Snap points to a bounding box """
-#     for i, p_ in enumerate(p):
-#         for j in range(0, 3):
-#             if p_[j] < box[j] + eps:
-#                 p[i, j] = box[j]
-#         for j in range(3, 6):
-#             if p_[j - 3] > box[j] - eps:
-#                 p[i, j - 3] = box[j]
-

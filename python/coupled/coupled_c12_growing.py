@@ -1,4 +1,4 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules/"); sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../../CPlantBox/");
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -31,7 +31,7 @@ max_b = [4., 4., 0.]
 cell_number = [8, 8, 25]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
-path = "../modelparameter/rootsystem/"
+path = "../../../CPlantBox//modelparameter/rootsystem/"
 name = "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 initial = -659.8 + 7.5  # -659.8

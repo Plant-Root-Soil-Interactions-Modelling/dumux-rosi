@@ -1,4 +1,5 @@
 """  Wet Bot Scenario Felicien, 1 cm^3 resolution """
+import sys; sys.path.append("../../../python/modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
+os.chdir("../../../build-cmake/cpp/soil_richards")
 
 np_ = 4  # number of processors
 

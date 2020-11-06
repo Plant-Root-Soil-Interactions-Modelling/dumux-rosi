@@ -9,9 +9,9 @@ from van_genuchten import *
 from scipy import integrate
 from math import *
 
-sand = Parameters(0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24)
-loam = Parameters(0.08, 0.43, 0.04, 1.6, 5.7870e-06 * 100 * 3600 * 24)
-clay = Parameters(0.1, 0.4, 0.01, 1.1, 1.1574e-06 * 100 * 3600 * 24)
+sand = Parameters([0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24])
+loam = Parameters([0.08, 0.43, 0.04, 1.6, 5.7870e-06 * 100 * 3600 * 24])
+clay = Parameters([0.1, 0.4, 0.01, 1.1, 1.1574e-06 * 100 * 3600 * 24])
 
 jwpot_ = [-0.1, -0.1, -0.3, -0.3]
 head_i_ = [-40, -200, -200, -200]

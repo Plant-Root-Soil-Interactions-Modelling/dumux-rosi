@@ -1,4 +1,4 @@
-""" Benchmark C11, single root in thin soil layer, root part """
+""" Benchmark C11, single root in thin soil layer, root part (TODO?)"""
 import sys; sys.path.append("../../../python/modules/")
 
 import os
@@ -17,6 +17,8 @@ os.system("./rootsystem input/benchmarkC11.input")
 # plot
 p_, z_ = read3D_vtp_data("benchmarkC11-00001.vtp")
 h_ = vg.pa2head(p_)
+print(h_.shape, p_.shape)  # ???
+
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")

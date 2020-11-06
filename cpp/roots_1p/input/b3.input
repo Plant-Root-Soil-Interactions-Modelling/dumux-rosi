@@ -6,7 +6,7 @@ TEnd = 0 # [s]
 DtInitial = 1 # [s]
 
 [RootSystem.Grid]
-File =  grids/RootSystem.dgf
+File =  ../../../grids/RootSystem.dgf
 InitialT = 14 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4

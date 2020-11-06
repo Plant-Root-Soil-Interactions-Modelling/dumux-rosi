@@ -75,7 +75,7 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a) or (b)"""
 
-r = XylemFluxPython("../grids/RootSystem.rsml")  # XylemFluxPython(rs)  # <-- or final of you root system "../grids/RootSystem.rsml"
+r = XylemFluxPython("../../grids/RootSystem.rsml")  # XylemFluxPython(rs)  # <-- or final of you root system "../grids/RootSystem.rsml"
 print("number of segments", len(r.get_segments()))
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
@@ -356,7 +356,7 @@ np.savetxt(name, np.vstack((x_, -np.array(collar_flux), -np.array(water_uptake))
 
 plt.show()
 
-# old_rs = XylemFluxPython("../grids/RootSystem_big.rsml")
+# old_rs = XylemFluxPython("../../grids/RootSystem_big.rsml")
 # ana = pb.SegmentAnalyser(old_rs.rs)
 # ana.filter("creationTime", 0., 8)
 # ana.crop(pb.SDF_PlantBox(7.76, 7.76, 14.76))

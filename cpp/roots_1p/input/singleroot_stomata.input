@@ -8,7 +8,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/singleroot.dgf
+File =  ../../../grids/singleroot.dgf
 InitialT = 25 # days
 
 [RootSystem.Conductivity]

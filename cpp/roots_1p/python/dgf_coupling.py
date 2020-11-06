@@ -49,7 +49,7 @@ if __name__ == "__main__":
     kr_ = np.ones((1, nnz)) * 1.8e-5  # cm hPa-1 d-1 #
     kz_ = np.ones((1, nnz)) * 4.3;  #  cm4 hPa-1 d-1  # not used by dumux root-growth
     params = np.vstack((order, order, age, age, a_, age, age, age))  # ONLY put 0 and radius (a_)
-    createDGF_1Droots("../grids/singlerootC.dgf", nodes, seg, params)
+    createDGF_1Droots("../../../grids/singlerootC.dgf", nodes, seg, params)
 
     print("its done.")
 

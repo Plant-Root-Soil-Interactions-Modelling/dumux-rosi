@@ -55,10 +55,10 @@ if __name__ == "__main__":
     kz_ = 0.;  # cm^4/hPa/day, = 5.e-13 m/Pa/s;
     dx_ = o_ * (L / (nnz - 1))
     params = np.vstack((z_, o_, 2 * math.pi * np.multiply(dx_, a_), dx_, a_, z_, z_, ct_, o_, 2 * o_))
-    createDGF_1Droots("../grids/singleroot.dgf", nodes, seg, params)
+    createDGF_1Droots("../../../grids/singleroot.dgf", nodes, seg, params)
     nodes2 = np.transpose(np.vstack((nodes[:, 2], nodes[:, 0], nodes[:, 1] - 1.e-4)))  # 1e.-4 to make it easier with the BC
     nodes2[0, 2] = 0  # collar BC
-    createDGF_1Droots("../grids/singlerootH.dgf", nodes2, seg, params)
+    createDGF_1Droots("../../../grids/singlerootH.dgf", nodes2, seg, params)
 
     # create grid for benchmark 2
     nodes = [ [0.00, 0.00, -2.9], [0.00, 0.00, -3.00], [-0.00, -0.01, -3.48], [-0.85, 0.48, -3.71], [-1.69, 0.99, -3.90], [-2.58, 1.32, -4.21], [-3.48, 1.67, -4.49], [-4.38, 2.00, -4.77], [-5.24, 2.40, -5.09], [-6.08, 2.82, -5.42], [-6.93, 3.27, -5.69], [-6.96, 3.29, -5.70], [-0.00, 0.01, -3.97], [0.20, -0.95, -4.20], [0.43, -1.88, -4.49], [0.65, -2.81, -4.77], [0.84, -3.75, -5.06], [1.04, -4.70, -5.31], [1.27, -5.64, -5.54], [1.43, -6.58, -5.84], [1.48, -6.91, -5.94], [-0.01, 0.03, -4.45], [0.75, 0.68, -4.48], [1.52, 1.32, -4.50], [2.30, 1.94, -4.46], [3.07, 2.58, -4.41], [3.88, 3.16, -4.46], [4.73, 3.69, -4.50], [5.34, 4.05, -4.53], [-0.03, 0.06, -4.97], [-0.73, 0.63, -5.40], [-1.46, 1.20, -5.79], [-2.15, 1.80, -6.18], [-2.76, 2.48, -6.59], [-3.16, 3.16, -7.21], [-3.63, 3.90, -7.64], [-0.06, 0.07, -5.42], [0.07, 1.04, -5.61], [0.23, 2.00, -5.82], [0.46, 2.93, -6.11], [0.72, 3.85, -6.40], [0.99, 4.77, -6.69], [1.06, 5.11, -6.78], [-0.10, 0.08, -5.96], [0.35, 0.90, -6.31], [0.80, 1.72, -6.65], [1.23, 2.55, -7.01], [1.62, 3.41, -7.34], [1.70, 3.58, -7.41], [-0.14, 0.10, -6.46], [0.05, -0.81, -6.83], [0.29, -1.72, -7.18], [0.43, -2.62, -7.59], [0.50, -3.12, -7.84], [-0.19, 0.12, -7.02], [0.32, 0.98, -7.03], [0.82, 1.84, -6.95], [1.07, 2.23, -6.88], [-0.23, 0.17, -7.56], [0.68, -0.18, -7.80], [1.12, -0.35, -7.93], [-0.24, 0.21, -8.14], [-0.01, 0.36, -8.22], [-0.25, 0.24, -8.69], [-0.24, 0.25, -9.25], [-0.24, 0.26, -9.71], [-0.26, 0.26, -10.09], [-0.28, 0.25, -10.57], [-0.26, 0.24, -11.05], [-0.26, 0.21, -11.58], [-0.25, 0.19, -12.06], [-0.25, 0.17, -12.55], [-0.23, 0.15, -13.00], [-0.23, 0.12, -13.46], [-0.22, 0.12, -13.99], [-0.21, 0.15, -14.54], [-0.19, 0.20, -15.07], [-0.17, 0.24, -15.60], [-0.17, 0.31, -16.17], [-0.15, 0.36, -16.64], [-0.12, 0.43, -17.18], [-0.11, 0.48, -17.70], [-0.07, 0.52, -18.23], [-0.06, 0.53, -18.53] ]
@@ -80,14 +80,14 @@ if __name__ == "__main__":
     seg = np.array(seg)  # convert from list to numpy array
     order = np.array(types) - 1;
     params = np.vstack((order, a_, age, kr_, kz_))
-    createDGF_1Droots("../grids/rootsystem_b2.dgf", nodes, seg, params)
+    createDGF_1Droots("../../../grids/rootsystem_b2.dgf", nodes, seg, params)
 
     kz = lambda age: kz0 * (age <= 3) + kz1 * (age > 3)
     kr = lambda age: kr1 * (age <= 3) + kr1 * (age > 3)
     kr_ = list(map(kr, age))  # m / (Pa s)
     kz_ = list(map(kz, age))  # m^4 / (Pa s)
     params = np.vstack((order, a_, age, kr_, kz_))
-    createDGF_1Droots("../grids/rootsystem_b3.dgf", nodes, seg, params)
+    createDGF_1Droots("../../../grids/rootsystem_b3.dgf", nodes, seg, params)
 
     # create grid for benchmark 1
     L = 0.01  #  1 cm
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     kr_ = np.ones((1, nnz)) * 1.;  # cm/hPa/day
     kz_ = np.ones((1, nnz)) * 1.;  # cm^4/hPa/day
     params = np.vstack((order, a_, age, kr_, kz_))
-    createDGF_1Droots("../grids/singleC11.dgf", nodes, seg, params)
+    createDGF_1Droots("../../../grids/singleC11.dgf", nodes, seg, params)
 
     print("its done.")
 

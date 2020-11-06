@@ -8,7 +8,7 @@ DtInitial = 360 # [s]
 MaxTimeStepSize = 360 # 1 h
 
 [RootSystem.Grid]
-File =  grids/singleC11.dgf
+File =  ../../../grids/singleC11.dgf
 # radiusIdx = 4
 Radius = 0.02
 

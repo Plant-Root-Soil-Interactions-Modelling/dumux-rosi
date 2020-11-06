@@ -23,7 +23,7 @@ p0 = -500  # dircichlet bc at top
 simtime = 14  # [day] for task b
 
 """ root problem """
-r = XylemFluxPython("../grids/RootSystem8.rsml")
+r = XylemFluxPython("../../grids/RootSystem8.rsml")
 r.setKr([kr])
 r.setKx([kz])
 

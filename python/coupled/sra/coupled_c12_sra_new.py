@@ -74,7 +74,7 @@ s.setCriticalPressure(wilting_point)
 # s.setRegularisation(1.e-4, 1.e-4)
 
 """ Initialize xylem model (a) or (b)"""
-r = XylemFluxPython("../../grids/RootSystem8.rsml")
+r = XylemFluxPython("../../../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 init_conductivities(r, age_dependent)

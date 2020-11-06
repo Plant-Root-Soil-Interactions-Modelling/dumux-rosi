@@ -8,7 +8,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/singleRoot.dgf
+File =  ../../../grids/singleRoot.dgf
 InitialT = 10 # [days]
 Radius = 0.02 # cm
 

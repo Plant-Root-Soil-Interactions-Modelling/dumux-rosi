@@ -6,7 +6,7 @@ TEnd = 1e9 # 1e9 # [s]
 DtInitial = 1 # [s]
 
 [RootSystem.Grid]
-File =  grids/singleroot.dgf
+File =  ../../../grids/singleroot.dgf
 
 [RootSystem.Conductivity]
 Kx = 0.173      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 

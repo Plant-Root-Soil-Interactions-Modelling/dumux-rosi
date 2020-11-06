@@ -4,6 +4,7 @@
 #
 # D. Leitner, 2018
 #
+import sys; sys.path.append("../../../python/modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ from scipy.interpolate import interp1d
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
+os.chdir("../../../build-cmake/cpp/soil_richards")
 
 # run dumux
 np_ = 8  # number of processors

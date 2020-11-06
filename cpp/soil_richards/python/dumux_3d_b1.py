@@ -4,6 +4,7 @@
 #
 # D. Leitner, 2018
 #
+import sys; sys.path.append("../../../python/modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ import time
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards")
+os.chdir("../../../build-cmake/cpp/soil_richards")
 
 # run dumux
 t = time.time()
@@ -33,19 +34,19 @@ elapsed = time.time() - t
 print("Time elapsed", elapsed)
 
 # Figure 2a
-s_, p_, z1_ = read3D_vtp("benchmark3d_1a-00001", np_)
+p_, z1_ = read3D_vtp("benchmark3d_1a-00001", np_)
 h1_ = vg.pa2head(p_)
-ax1.plot(h1_, z1_ * 100, "r+")
+ax1.plot(h1_, z1_[:, 2] * 100, "r+")
 
 # Figure 2b
-s_, p_, z2_ = read3D_vtp("benchmark3d_1b-00001", np_)
+p_, z2_ = read3D_vtp("benchmark3d_1b-00001", np_)
 h2_ = vg.pa2head(p_)
-ax2.plot(h2_, z2_ * 100, "r+")
+ax2.plot(h2_, z2_[:, 2] * 100, "r+")
 
 # Figure 2c
-s_, p_, z3_ = read3D_vtp("benchmark3d_1c-00001", np_)
+p_, z3_ = read3D_vtp("benchmark3d_1c-00001", np_)
 h3_ = vg.pa2head(p_)
-ax3.plot(h3_, z3_ * 100, "r+")
+ax3.plot(h3_, z3_[:, 2] * 100, "r+")
 
 # np.savetxt("dumux3d_b1", np.vstack((z1_, h1_, z2_, h2_, z3_, h3_)), delimiter = ",")
 

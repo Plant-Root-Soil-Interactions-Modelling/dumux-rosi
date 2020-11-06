@@ -31,8 +31,6 @@ s.solveSteadyState()
 z = s.getDofCoordinates()
 x = s.getSolutionHead()
 
-print(z)
-
 if rank == 0:
     plt.plot(x, z[:, 2], "r*")
     plt.show()

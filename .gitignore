@@ -31,3 +31,4 @@ __pycache__
 *.cmake
 CMakeFiles
 Makefile
+CMakeCache.txt
