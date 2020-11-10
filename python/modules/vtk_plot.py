@@ -14,9 +14,9 @@ to make interactive vtk plot of root systems and soil grids
 
 def segs_to_polydata(rs, zoom_factor = 1., param_names = ["age", "radius", "type", "creationTime"]):
     """ Creates vtkPolydata from a RootSystem or Plant using vtkLines to represent the root segments 
-    @param rs             A RootSystem, Plant, or SegmentAnalyser
-    @param zoom_factor    The radial zoom factor, since root are sometimes too thin for vizualisation
-    @param param_names    Parameter names of scalar fields, that are copied to the polydata    
+    @param rs             a RootSystem, Plant, or SegmentAnalyser
+    @param zoom_factor    a radial zoom factor, since root are sometimes too thin for vizualisation
+    @param param_names    parameter names of scalar fields, that are copied to the polydata object   
     @return A vtkPolydata object of the root system
     """
     if isinstance(rs, pb.Organism):
@@ -40,8 +40,7 @@ def segs_to_polydata(rs, zoom_factor = 1., param_names = ["age", "radius", "type
             pd.GetCellData().AddArray(data)
         else:
             print("segs_to_polydata: Warning parameter " + n + " is sikpped because of wrong size", param.shape[0], "instead of", segs.shape[0])
-
-    c2p = vtk.vtkCellDataToPointData()
+    c2p = vtk.vtkCellDataToPointData()  # set cell and point data
     c2p.SetPassCellData(True)
     c2p.SetInputData(pd)
     c2p.Update()
@@ -53,10 +52,10 @@ def uniform_grid(min_, max_, res):
     @param min_    minimum of bounding rectangle
     @param max_    maximum of bounding rectangle
     @param res_    cell resolution
-    @return The vtkUniformGrid
+    @return A vtkUniformGrid
     """
     grid = vtk.vtkUniformGrid()
-    grid.SetDimensions(int(res[0]) + 1, int(res[1]) + 1, int(res[2]) + 1)  # cell to point resolution
+    grid.SetDimensions(int(res[0]) + 1, int(res[1]) + 1, int(res[2]) + 1)  # cells to corner points
     grid.SetOrigin(min_[0], min_[1], min_[2])
     s = (max_ - min_) / res
     grid.SetSpacing(s[0], s[1], s[2])
@@ -399,6 +398,7 @@ def plot_roots_and_soil(rs, pname :str, rp, s, periodic :bool, min_b, max_b, cel
     """ Plots soil slices and roots, additionally saves both grids as files
     @param rs            some Organism (e.g. RootSystem, MappedRootSystem, ...) or MappedSegments
     @param pname         root and soil parameter that will be visualized ("pressure head", or "water content")
+    @param s
     @param rp            root parameter segment data (will be added)
     @param periodic      if yes the root system will be mapped into the domain 
     @param min_b         minimum of domain boundaries
@@ -447,7 +447,7 @@ def plot_roots_and_soil_files(filename : str, pname :str):
     lut = meshActors[-1].GetMapper().GetLookupTable()  # same same
     rootActor.GetMapper().SetLookupTable(lut)
     meshActors.extend([rootActor])
-    render_window(meshActors, filename, meshCBar).Start()
+    render_window(meshActors, filename, meshCBar, soil_grid.GetBounds()).Start()
 
 
 class AnimateRoots:

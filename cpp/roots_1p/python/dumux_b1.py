@@ -32,9 +32,9 @@ def toHead(pa):  # Pascal (kg/ (m s^2)) to cm pressure head
 
 L = 0.5  # length of single straight root (m)
 a = 2.e-3  # radius (m)
-kz = 0.173  # 4.32e-2  # axial conductivity [cm^4/hPa/day] similar (cm^3 / day)
+kz = 4.32e-2  #  axial conductivity [cm^4/hPa/day] similar (cm^3 / day)
 kz = 1e-6 * kz / (rho * g) / (24 * 3600)
-kr = 2.6e-3  # 1.728e-4  # radial conductivity [cm/hPa/day] similar (1 / day)
+kr = 1.728e-4  # radial conductivity [cm/hPa/day] similar (1 / day)
 kr = kr / (rho * g) / (24 * 3600)
 
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)

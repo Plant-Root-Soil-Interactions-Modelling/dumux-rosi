@@ -66,7 +66,7 @@ r_ = np.linspace(a, L, 200)
 
 intial = -1000
 
-q_root = 0.1  # positive is flux into root, both work
+q_root = 1  # positive is flux into root, both work
 q_out = 0.  # something wrong with positive q_out
 
 for j, s in enumerate(soils):

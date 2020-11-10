@@ -1,0 +1,100 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+%opening
+\title{Discretisation of the advection diffusion equation}
+\author{Daniel Leitner @ SimWerk}
+
+\begin{document}
+
+\maketitle
+
+\section{Equation}
+
+The advection diffusion equation with linear buffering is given by
+\begin{eqnarray}
+ (b+\theta) \frac{\partial c}{\partial t}  = \mathbf{\nabla} \cdot (D_e \mathbf{\nabla} c) - \mathbf{\nabla} \cdot (\mathbf{u} c) + R,  
+\end{eqnarray}
+where $t$ is the time [day], $c$  solute concentration [g/cm$^3$], $b$ buffer power [1], $\theta$ water content [1], $D_e$ effective diffusion [cm$^2$], $\mathbf{u}$ velocity field [cm/day], and $R$ reaction term [g/cm$^3$/day]    
+
+The effective diffusion $D_e$ is often given as function of the water content, e.g.
+\begin{eqnarray}
+ D_e = D \theta  \tau,  
+\end{eqnarray}
+where $D$ is the diffusion constant of the solute in water, $\theta$ variable water content (e.g. from the Richards equation), and $\tau$ constant tortuosity factor. Or, by Millington and Quirk (1961), as 
+\begin{eqnarray}
+D_e = \phi S_w^3 \theta^{\frac13} D,
+\end{eqnarray}
+where $\phi$ is the porosity, and $S_w$ water content.
+
+The term $R$ could be a source or sink from a chemical reaction with another solute or a decay term.
+
+\section{Finite volume discretisation in space}
+
+For a single control volume, which is a single cell with index $i$ the divergence can be written as sum of mass fluxes entering and leaving the volume, i.e.
+\begin{eqnarray}
+ (b+\theta_i) \frac{\partial c_i}{\partial t}  = \sum_{j \in N(i)} \frac{a_{ij}}{v_i}  F_{ij} - \frac{a_{ij}}{v_i}(\mathbf{u}_{ij} \cdot \mathbf{n}_{ij}) c_i + R_i,  \label{eqn:fv}
+\end{eqnarray}
+where $N(i)$ are the indices of the neigbouring cells of $i$, $a_{ij}$ is the area of the face between the cells $i$ and $j$ [cm$^2$], $v_i$ volume of cell $i$ [cm$^3$], $F_{ij}$ the mass flux between the cells $i$ and $j$ [g/cm$^2$/day], $\mathbf{u}_{ij}$ is the velocity at the center of the face, and $\mathbf{n}_{ij}$ is the outward normal [1].
+
+The value $\frac{a_{ij}}{v_i}$ is constant and can be computed exactly from the grid geometry. 
+
+We approximate the flux $F_{ij}$ by first order finite difference
+\begin{eqnarray}
+F_{ij}  \approx D_{e,ij} \frac{c_j - c_i} {d_{ij}},   
+\end{eqnarray}
+where $d_{ij}$ is the distance between the two cell centers with index $i$ and $j$ [cm], and
+\begin{eqnarray}
+D_{e,ij} = \frac12 (D_{e,i} + D_{e,j})
+\end{eqnarray}
+Note that for a equidisant grid this equals the second order difference quotient in space. 
+
+The velocity is approximated by
+\begin{eqnarray}
+\mathbf{u}_{ij} \approx \frac12 (\mathbf{u}_i + \mathbf{u}_j).  
+\end{eqnarray}
+
+For mass conservation it must be assured that $a_{ij} = a_{ji}$,  $F_{ij} = -F_{ji}$,  $u_{ij}= u_{ij}$, and $\mathbf{n}_{ij}$ = - $\mathbf{n}_{ji}$.
+
+Inserting the approximations in Eqn (\ref{eqn:fv}) yields
+\begin{eqnarray}
+ (b+\theta_i) \frac{\partial c_i}{\partial t}  =\sum_{j \in N(i)}  \frac{a_{ij}}{v_i} \left( D_{e,ij} \frac{c_j - c_i} {d_{ij}} - (\mathbf{u}_{ij}\cdot \mathbf{n}_{ij}) c_i \right) + R_i,  \label{eqn:fv2}
+\end{eqnarray}
+
+This equation can be written as matrix vector multiplication
+\begin{eqnarray}
+\frac{\partial \mathbf{c}}{\partial t}  = A \mathbf{c},  \label{eqn:matrix} \label{eq:ode}
+\end{eqnarray}
+where, matrix $A=(a_{ij})_{ij}$ has diagonal entries
+\begin{eqnarray}
+a_{ii} = - \frac{1}{v_i (b+\theta_i)} \sum_{j \in N(i)}  a_{ij} (\frac{D_{e,ij}}{d_{ij}} - \mathbf{u}_{ij}\cdot \mathbf{n}_{ij} ),
+\end{eqnarray}
+and secondary diagonals
+\begin{eqnarray}
+a_{ij} = \frac{1}{v_i (b+\theta_i)} \sum_{j \in N(i)} a_{ij} \frac{D_{e,ij}}{d_{ij}}.
+\end{eqnarray}
+
+Such finite volumes schemes work for any grid dimensions and for cylindric or branched geometries. Information needed from the grid is neigbourhood information $N$, area per volume ($\frac{a_{ij}}{v_i}$), distance between cell centers ($d_{ij}$).
+
+If the grid is not equidistant, the appoximations of $D_e$ and $\mathbf{u}$ will introduce some first order error (in the second order scheme). 
+
+
+\section{Discretisation in time}
+
+After spatial discretisation we obtain the ODE given by Eqn (\ref{eq:ode}). We can discretise in time as we choose, most common are (a) forward (exlplicit) Euler:
+\begin{eqnarray}
+\frac{\mathbf{c}^{k+1}-\mathbf{c}^k}{dt} &=& A \mathbf{c}^k \\
+\mathbf{c}^{k+1} &=& (dt A + I)\mathbf{c}^k  
+\end{eqnarray}
+where $dt$ is the time step [day], and $ I(\mathbf{b}+\mathbf{\theta})$ is a diagonal matrix with entries $b+\theta_i$. Then, (b) backward (implicit) Euler:
+\begin{eqnarray}
+ \frac{\mathbf{c}^{k+1}-\mathbf{c}^k}{dt} &=& A \mathbf{c}^{k+1} \\
+  \mathbf{c}^{k} &=& (I-dt A ) \mathbf{c}^{k+1} ,  
+\end{eqnarray}
+where a linear system has to be solved. And, Crank Nicolson, which is just the arithmetic mean of the forward and backward Euler solutions. 
+
+
+\section{Implementation notes}
+
+
+\end{document}
