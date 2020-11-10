@@ -269,13 +269,14 @@ def write_rsml(name, pd, meta, id_ind = 5):
     print("Node Data", n)
     node_data = np.zeros((n, nodes.shape[0]))
     for i in range(0, n):
-        node_data [i, :] = np_data(pd, i, False)
+        node_data [i, :],_ = np_data(pd, i, False)
 
     n = pd.GetCellData().GetNumberOfArrays()
     print("Cell Data", n)
     seg_data = np.zeros((n, segs.shape[0]))
     for i in range(0, n):
-        seg_data[i, :] = np_data(pd, i, True)
+        print(i)
+        seg_data[i, :],_ = np_data(pd, i, True)
 
     ids = np.array(seg_data[id_ind, :], dtype = int) + 2
     segs = np.array(segs, dtype = int)
