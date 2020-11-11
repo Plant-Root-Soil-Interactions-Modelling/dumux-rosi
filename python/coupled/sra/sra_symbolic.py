@@ -30,7 +30,7 @@ ksat = symbols('K')
 water_content = theta_R + (theta_S - theta_R) / pow(1 + pow(alpha * h, n), m)
 effective_saturation = (water_content - theta_R) / (theta_S - theta_R)
 hydraulic_conductivity = ksat * (effective_saturation ** Rational(1, 2)) * ((1 - pow(1 - pow(effective_saturation, 1 / m), m)) ** 2)
-matric_flux_potential = Integral(hydraulic_conductivity, (h, hh, oo))
+phi = Integral(hydraulic_conductivity, (h, hh, oo))
 
 print("water_content             ", water_content)
 print("water_content             ", simplify(water_content))
@@ -38,7 +38,7 @@ print("effective_saturation      ", effective_saturation)
 print("effective_saturation      ", simplify(effective_saturation))
 print("hydraulic_conductivity    ", hydraulic_conductivity)
 print("hydraulic_conductivity    ", simplify(hydraulic_conductivity))
-print("matric_flux_potential     ", matric_flux_potential)
+print("phi                       ", phi)
 # print("matric_flux_potential     ", simplify(matric_flux_potential))  # generally too hard?
 # print("matric_flux_potential-200 ", matric_flux_potential.evalf(subs = {hh:-200.})) # generally too hard?
 
@@ -48,16 +48,16 @@ r_in = symbols('r_in')
 r_out = symbols('r_out')
 rho = r_out / r_in
 r = symbols('r')  # r = r_in # -> mfp_ = 0 -> h = -15000
-mfp = symbols("mfp")
-mfp_ = (mfp + q_out * r_out * ln(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * ln(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * ln(1 / rho))) + q_out * r_out * ln(r / r_in)
+phi = symbols("phi")
+f = (phi + q_out * r_out * ln(1 / rho)) * ((r ** 2 / r_in ** 2 - 1 + 2 * rho ** 2 * ln(r_in / r)) / (rho ** 2 - 1 + 2 * rho ** 2 * ln(1 / rho))) + q_out * r_out * ln(r / r_in)
 
-dmfpdr = simplify(diff(mfp_, r))
+dfdr = simplify(diff(f, r))
 
-print("mfp                       ", mfp_)
-print("mfp                       ", simplify(mfp_))
+print("f                       ", f)
+print("f                       ", simplify(f))
 
-print("dmfp/dr                   ", dmfpdr)
-print("dmfp/dr                   ", simplify(dmfpdr.subs(r, r_in)))
+print("df/dr                   ", dfdr)
+print("df/dr                   ", simplify(dfdr.subs(r, r_in)))
 
 # print("matric_potential_mfp   ", matric_potential_mfp)
 # print("i try...")
