@@ -75,6 +75,10 @@ print("phi(h_)                 ", phi_)
 print()
 dfdr_  = dfdr0.evalf(subs = {phi:phi_, r_in : 0.02, r_out : 0.6})
 print("df/dr                   ", dfdr_)
+k_ = hydraulic_conductivity.subs({h: 15000, theta_R : sp.theta_R, theta_S : sp.theta_S, alpha : sp.alpha, n : sp.n, ksat : sp.Ksat})
+print("k_                      ", k_)
+print("dh/dr                   ", dfdr_/k_) # isn't this value by k_ in order to get the matric flux potential?
+
 
 
 # print(latex(water_content))
