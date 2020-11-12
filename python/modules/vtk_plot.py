@@ -12,6 +12,22 @@ to make interactive vtk plot of root systems and soil grids
 """
 
 
+def solver_to_polydata(solver, min_, max_, res_):
+    """ Creates vtkPolydata from dumux-rosi solver as a structured grid
+    @param solver
+    @param min_ 
+    @param max_ 
+    @param res_
+    """
+    pd = uniform_grid(min_, max_, res_)
+    data = solver.getSolutionHead()
+    # print("Data range from {:g} to {:g}".format(np.min(data), np.max(data)))
+    data_array = vtk_data(data)
+    data_array.SetName("pressure head")
+    pd.GetCellData().AddArray(data_array)
+    return pd
+
+
 def segs_to_polydata(rs, zoom_factor = 1., param_names = ["age", "radius", "type", "creationTime"]):
     """ Creates vtkPolydata from a RootSystem or Plant using vtkLines to represent the root segments 
     @param rs             a RootSystem, Plant, or SegmentAnalyser
