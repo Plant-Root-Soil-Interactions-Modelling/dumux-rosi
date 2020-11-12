@@ -60,6 +60,8 @@ print("f                       ", simplify(f))
 
 print()
 print("df/dr                   ", simplify(dfdr))
+der = (phi + q_out*r_out*ln(1/rho)) / (rho**2 - 1 + 2*rho**2*ln(1/rho)) * (2*r/r_in**2 - 2*rho**2/r) + q_out*r_out/r
+print("der                     ", simplify(der))
 dfdr_r_in = simplify(dfdr.subs(r, r_in))
 print("df/dr, r=r_in          ", simplify(dfdr_r_in))
 dfdr0 = simplify(dfdr_r_in.subs(q_out, Integer(0)))
