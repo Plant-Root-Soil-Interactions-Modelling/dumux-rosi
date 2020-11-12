@@ -74,7 +74,6 @@ class XylemFluxPython(XylemFlux):
             @return [cm] root xylem pressure
         """
         eps = 1
-        x = [wilting_point - sx - 1]
 
         if sx >= wilting_point - eps:
 
