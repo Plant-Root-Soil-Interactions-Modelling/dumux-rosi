@@ -287,10 +287,10 @@ def plot_roots(pd, p_name, win_title = "", render = True):
     @return a tuple of a vtkActor and the corresponding color bar vtkScalarBarActor
     """
     if isinstance(pd, pb.RootSystem):
-        pd = segs_to_polydata(pd, 1.)
+        pd = segs_to_polydata(pd, 1., [p_name, "radius"])
 
     if isinstance(pd, pb.SegmentAnalyser):
-        pd = segs_to_polydata(pd, 1.)
+        pd = segs_to_polydata(pd, 1., [p_name, "radius"])
 
     if win_title == "":
         win_title = p_name
@@ -298,7 +298,7 @@ def plot_roots(pd, p_name, win_title = "", render = True):
     pd.GetPointData().SetActiveScalars("radius")  # for the the filter
     tubeFilter = vtk.vtkTubeFilter()
     tubeFilter.SetInputData(pd)
-    tubeFilter.SetNumberOfSides(9)
+    tubeFilter.SetNumberOfSides(9)  #
     tubeFilter.SetVaryRadiusToVaryRadiusByAbsoluteScalar()
     tubeFilter.Update()
 
