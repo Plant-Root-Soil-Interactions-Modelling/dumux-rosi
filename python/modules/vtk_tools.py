@@ -128,12 +128,16 @@ def np_data(polydata, data_index = 0, cell = None):
 
 
 def read_vtp(name):
-    """ Opens a vtp and returns the vtkPolydata class """
+    """ Opens a vtp and returns the vtkPolydata class, converts all cell data (additionally) to point data """
     reader = vtk.vtkXMLPolyDataReader()
     reader.SetFileName(name)
     reader.Update()
-    polydata = reader.GetOutput()
-    return polydata
+    pd = reader.GetOutput()
+    c2p = vtk.vtkCellDataToPointData()  # set cell and point data
+    c2p.SetPassCellData(True)
+    c2p.SetInputData(pd)
+    c2p.Update()
+    return c2p.GetPolyDataOutput()
 
 
 def read_vtu(name):
@@ -263,20 +267,23 @@ def write_rsml(name, pd, meta, id_ind = 5):
     """ Writes a RMSL file from vtkPolyDat using rsml_reader.write_rsml """
 
     nodes = np_points(pd)
-    segs = np_cells(pd)
+    try:
+        segs = np_cells(pd)
+    except:
+        print("write_rsml error: write rsml expects a root system represented as line segments, propably the file consists of polylines")
 
     n = pd.GetPointData().GetNumberOfArrays()
     print("Node Data", n)
     node_data = np.zeros((n, nodes.shape[0]))
     for i in range(0, n):
-        node_data [i, :],_ = np_data(pd, i, False)
+        node_data [i, :], _ = np_data(pd, i, False)
 
     n = pd.GetCellData().GetNumberOfArrays()
     print("Cell Data", n)
     seg_data = np.zeros((n, segs.shape[0]))
     for i in range(0, n):
         print(i)
-        seg_data[i, :],_ = np_data(pd, i, True)
+        seg_data[i, :], _ = np_data(pd, i, True)
 
     ids = np.array(seg_data[id_ind, :], dtype = int) + 2
     segs = np.array(segs, dtype = int)
