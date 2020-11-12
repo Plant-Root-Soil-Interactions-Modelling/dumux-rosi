@@ -8,7 +8,7 @@ import rsml_writer
 plot DuMux .vtp output, converts it to a rsml file
 
 TODO radius is not working, needed as PointData, called "radius"
-TODO properties and functions need to be written (improve example) 
+TODO properties and functions need to be written (remove META argument, improve example) 
 TODO testing 
 """
 
