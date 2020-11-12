@@ -54,7 +54,6 @@ class XylemFluxPython(XylemFlux):
             self.linearSystem(sim_time, sxx, cells, soil_k)  # C++
         else:
             self.linearSystem(sim_time, sxx, cells)
-        self.linearSystem(sim_time, sxx, cells)  # C++
         Q = sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ))))
         Q = sparse.csr_matrix(Q)
         Q, b = self.bc_dirichlet(Q, self.aB, [0], [float(value)])
