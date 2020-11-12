@@ -12,21 +12,20 @@ import matplotlib.pyplot as plt
 """ Parameters """
 kz = 4.32e-2  # axial conductivity [cm^3/day]
 kr = 1.728e-4  # radial conductivity [1/day]
-simtime = 14  # [day] for task b
+simtime = 154  # [day] for task b
 
 """ root system """
 rs = pb.MappedRootSystem()
-p_s = np.linspace(-200, -400, 2001)  # 2 meter down, from -200 to -400, resolution in mm
+p_s = np.linspace(-200, -500, 3001)  # 3 meter down, from -200 to -500, resolution in mm
 soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
 rs.setSoilGrid(soil_index)
 
 path = "../../../../CPlantBox//modelparameter/rootsystem/"
-name = "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
+name = "Glycine_max"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")
 rs.initialize()
 rs.simulate(simtime, False)
-p_s = np.linspace(-200, -400, 2001)  # 2 meter down, resolution in mm
 
 """ set up xylem parameters """
 r = XylemFluxPython(rs)
@@ -43,5 +42,5 @@ suf = np.array(fluxes) / -1.  # [1]
 
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
-ana.addData("SUF", np.minimum(suf, 1.e-2))  # cut off for vizualisation
+ana.addData("SUF", np.minimum(suf, 1.e-3))  # cut off for vizualisation
 vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"

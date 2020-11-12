@@ -22,26 +22,30 @@ import vtk_tools as vt
 import numpy as np
 import matplotlib.pyplot as plt
 
+import time
+
 """ 1. SUF """
 
 """ Parameters """
 kz = 4.32e-2  # axial conductivity [cm^3/day]
 kr = 1.728e-4  # radial conductivity [1/day]
-simtime = 14  # [day] for task b
+simtime = 154  # [day] for task b
 
 """ root system """
 rs = pb.MappedRootSystem()
-p_s = np.linspace(-200, -400, 2001)  # 2 meter down, from -200 to -400, resolution in mm
+p_s = np.linspace(-200, -500, 3001)  # 3 meter down, from -200 to -500, resolution in mm
 soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
 rs.setSoilGrid(soil_index)
 
+soilcore = pb.SDF_PlantBox(1e6, 1e6, 149.9)
+rs.setGeometry(soilcore)
+
 path = "../../../../CPlantBox//modelparameter/rootsystem/"
-name = "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
+name = "Glycine_max"  # Zea_mays_1_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")
 rs.initialize()
 rs.simulate(simtime, False)
-p_s = np.linspace(-200, -400, 2001)  # 2 meter down, resolution in mm
 
 """ set up xylem parameters """
 r = XylemFluxPython(rs)
@@ -92,9 +96,19 @@ s.setInitialCondition(data)  # put data to the grid
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 
-""" EQUIVALENT SOIL WATER POTENTIAL """
+# """ 3. EQUIVALENT SOIL WATER POTENTIAL """
+t = time.time()
 eswp = 0.
-for i, _ in enumerate(ana.segments):
-    eswp += suf[i] * data[r.rs.seg2cell[i]]
-print(eswp)
+n = len(ana.segments)
+seg2cell = r.rs.seg2cell
+for i in range(0, n):
+    d = 0.
+    try:
+        d = suf[i] * data[seg2cell[i]]
+    except:  # out of domain!
+        d = 0.
+    eswp += d
 
+print(eswp)
+elapsed = time.time() - t
+print("Time elapsed: ", elapsed)
