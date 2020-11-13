@@ -8,26 +8,29 @@ import rsml_writer
 plot DuMux .vtp output, converts it to a rsml file
 
 TODO testing 
-
 TODO properties and functions need to be written (remove META argument, improve example) 
-TODO non-periodic .vtp do not work (propably if multiple basal roots are present)
+TODO scale Axes 
 """
 
-# name = "soybean_Honly-00001"
+name = "soybean_Honly-00001"
 # name = "dumux_c12_2cm"  # to not convert m->cm for this file
-name = "Glycine_max_154days"
+# name = "Glycine_max_154days" # consists of polylines, cannot written as rsml
 
 pd = vp.read_vtp(name + ".vtp")
 print(pd.GetBounds())  # xmin, xmax, ymin, ymax, zmin, zmax
 
+# Rename radius for plot_roots
+radius = pd.GetPointData().GetAbstractArray("radius [m]")
+radius.SetName("radius")
+
 # Convert from m to cm
 np_points = vt.np_points(pd)
-# np_points = np_points * 100 # m -> cm
+# np_points = np_points * 100  # m -> cm
 points = vt.vtk_points(np_points)
 pd.SetPoints(points)
 print("Number of points opened: ", np_points.shape[0])
 
-vp.plot_roots(pd, "subType")  # "p xylem [cm]"
+vp.plot_roots(pd, "p xylem [cm]")  # "p xylem [cm]", "subType"
 
 # write RSML - this will only work for non-periodic vtp
 # roots of periodic vtp will end at domain boundary (since no connection is defined in the vtp)
