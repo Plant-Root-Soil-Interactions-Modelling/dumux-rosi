@@ -36,12 +36,16 @@ kz0 = np.array([[-154, 0.0006736268], [0, 0.0006736268], [2, 0.074759246], [4, 0
 kz1 = np.array([[-154, 0.0006736268], [0, 0.0006736268], [2, 0.074759246], [4, 0.08296797], [6, 0.09207803], [8, 0.102188394], [10, 0.113408897], [12, 0.125861436], [14, 0.13968129], [16, 0.155018593], [18, 0.172039965], [20, 0.190930319], [22, 0.211894875], [24, 0.235161384], [26, 0.260982605], [28, 0.289639051], [30, 0.321442035], [32, 0.356737056], [60, 4.3], [1e20, 4.3]])
 kz2 = np.array([[-154, 0.000407], [0, 0.000407], [1, 0.0005], [2, 0.000615], [4, 0.000756], [6, 0.00093], [8, 0.00114], [10, 0.00141], [12, 0.00173], [14, 0.00212], [16, 0.00261], [18, 0.00321], [20, 0.00395], [22, 0.00486], [24, 0.00597], [26, 0.00734], [28, 0.00903], [30, 0.0111], [32, 0.0136], [60, 0.43], [1e20, 0.43]])
 kz3 = np.array([[-154, 0.000407], [0, 0.000407], [1, 0.0005], [2, 0.000615], [4, 0.000756], [6, 0.00093], [8, 0.00114], [10, 0.00141], [12, 0.00173], [14, 0.00212], [16, 0.00261], [18, 0.00321], [20, 0.00395], [22, 0.00486], [24, 0.00597], [26, 0.00734], [28, 0.00903], [30, 0.0111], [32, 0.0136], [60, 0.43], [1e20, 0.43]])
+
+kz = 4.32e-2  # axial conductivity [cm^3/day]
+kr = 1.728e-4  # radial conductivity [1/day]
+
 simtime = 154  # [day] for task b
 
 """ root system """
 rs = pb.MappedRootSystem()
-p_s = np.linspace(-200, -500, 3001)  # 3 meter down, from -200 to -500, resolution in mm
-soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
+p_s = np.linspace(-500, -200, 3001)  # 3 meter down, from -200 to -500, resolution in mm
+soil_index = lambda x, y, z : int(-10. * z)  # maps to p_s (hydrostatic equilibirum)
 rs.setSoilGrid(soil_index)
 
 soilcore = pb.SDF_PlantBox(1e6, 1e6, 149.9)
@@ -69,8 +73,10 @@ suf = np.array(fluxes) / -1.  # [1]
 
 # """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
-ana.addData("SUF", np.minimum(suf, 1.e-2))  # cut off for vizualisation
+ana.addData("SUF", np.minimum(suf, 1.e-3))  # cut off for vizualisation
 # vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"
+
+print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
 
 """ 2. SOIL MATRIC POTENTIAL """
 
@@ -78,7 +84,7 @@ name = "soybean_Honly-00001"
 
 # Open .vtu
 pd = vp.read_vtu(name + ".vtu")
-print(pd.GetBounds())  # xmin, xmax, ymin, ymax, zmin, zmax
+print("Bounds", pd.GetBounds())  # xmin, xmax, ymin, ymax, zmin, zmax
 print("Number of cells", vt.np_cells(pd).shape[0])
 
 data, _ = vt.np_data(pd, 9, True)  # grid, data_index, cell data
@@ -103,37 +109,13 @@ s.setInitialCondition(data.copy())  # put data to the grid
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 
-# """ 3. EQUIVALENT SOIL WATER POTENTIAL """
+""" 3. EQUIVALENT SOIL WATER POTENTIAL """
 t = time.time()
 eswp = 0.
 n = len(ana.segments)
 seg2cell = r.rs.seg2cell
-suf[suf < 0] = 0.
-print("Data range from {:g} to {:g}".format(np.min(data), np.max(data)), "sum of suf", np.sum(suf), np.min(suf), np.max(suf))
-
-print(n, len(suf), len(data))
-inds = []
 for i in range(0, n):
-    inds.append(seg2cell[i])
-inds = np.array(inds)
-print(inds.shape, np.max(inds), np.min(inds))
-print("\nEquivalent soil water potential", np.sum(np.multiply(suf, data[inds])))
-d2 = data[inds]
-print("Data range from {:g} to {:g}".format(np.min(d2), np.max(d2)))
-
-for i in range(0, n):
-    d = 0.
-    try:
-        h = data[seg2cell[i]]
-        if h < np.min(data):
-            print("?????????")
-        k = int(seg2cell[i])
-        d = suf[i] * data[inds[i]]  # np.min(data)  # data[seg2cell[i]]  # seg2cell[i]
-    except:  # out of domain!
-        print("warning: ", i, "not mapped")
-        d = 0.
-    eswp += d
-
+    eswp += suf[i] * data[seg2cell[i]]
 print("\nEquivalent soil water potential", eswp)
 
 elapsed = time.time() - t

@@ -33,7 +33,7 @@ simtime = 154  # [day] for task b
 
 """ root system """
 rs = pb.MappedRootSystem()
-p_s = np.linspace(-200, -500, 3001)  # 3 meter down, from -200 to -500, resolution in mm
+p_s = np.linspace(-500, -200, 3001)  # 3 meter down, from -200 to -500, resolution in mm
 soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
 rs.setSoilGrid(soil_index)
 
@@ -64,6 +64,8 @@ suf = np.array(fluxes) / -1.  # [1]
 ana = pb.SegmentAnalyser(r.rs)
 ana.addData("SUF", np.minimum(suf, 1.e-2))  # cut off for vizualisation
 # vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"
+
+print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
 
 """ 2. SOIL MATRIC POTENTIAL """
 
@@ -96,19 +98,13 @@ s.setInitialCondition(data)  # put data to the grid
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 
-# """ 3. EQUIVALENT SOIL WATER POTENTIAL """
+""" 3. EQUIVALENT SOIL WATER POTENTIAL """
 t = time.time()
 eswp = 0.
 n = len(ana.segments)
 seg2cell = r.rs.seg2cell
 for i in range(0, n):
-    d = 0.
-    try:
-        d = suf[i] * data[seg2cell[i]]
-    except:  # out of domain!
-        d = 0.
-    eswp += d
-
-print(eswp)
+    eswp += suf[i] * data[seg2cell[i]]
+print("\nEquivalent soil water potential", eswp)
 elapsed = time.time() - t
-print("Time elapsed: ", elapsed)
+print("\nTime elapsed: ", elapsed)
