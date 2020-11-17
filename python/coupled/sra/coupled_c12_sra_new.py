@@ -39,7 +39,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8, 8, 15] # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "DuMux_1cm_schroeder_clay"
@@ -50,14 +50,14 @@ soil = loam
 
 sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp)
-initial = -659.8 + 7.5  # -659.8 + 7.5  # -659.8
+initial = -300.+ 7.5 # -659.8 + 7.5  # -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
 sim_time = 1  # [day] for task b
 age_dependent = False  # conductivities
-dt = 3600. / (24 * 3600)  # [days] Time step must be very small
+dt = 360. / (24 * 3600)  # [days] Time step must be very small
 dx = 1.e-5
 
 """ Initialize macroscopic soil model """
@@ -122,16 +122,19 @@ for i in range(0, N):
         print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
         print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
 
-        # seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
         # seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
-        # seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
 
         seg_head = np.array(r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
         ii = seg_head <= (wilting_point+1)  # indices of stressed segments
         print("stessed", sum(ii.flat), ii.shape)
-        seg_fluxes[ii] = seg_stress[ii]
-        seg_fluxes[~ii] = seg_nostress[~ii]  # ~ = boolean not
+        if sum(ii.flat)>0:        
+            seg_fluxes = np.maximum(seg_stress, seg_nostress)
+        else:
+            seg_fluxes = seg_nostress 
+
+#         seg_fluxes[ii] = np.maximum(seg_stress[ii], seg_nostress[ii])
+#         seg_fluxes[~ii] = seg_nostress[~ii]
         
 #         # loop version (of above)
 #         for j in range(0, seg_fluxes.shape[0]):
