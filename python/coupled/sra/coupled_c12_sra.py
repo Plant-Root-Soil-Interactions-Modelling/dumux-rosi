@@ -55,9 +55,9 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
+sim_time = 0.5  # [day] for task b
 age_dependent = False  # conductivities
-dt = 120. / (24 * 3600)  # [days] Time step must be very small
+dt = 360. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -94,7 +94,7 @@ imfp_ = lambda mfp: imfp(mfp, sp)
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-rsx = []
+rx = r.solve(rs_age, 0., sx[cci], sx, True, wilting_point, []) 
 
 N = round(sim_time / dt)
 t = 0.
@@ -103,22 +103,27 @@ for i in range(0, N):
 
     if rank == 0:  # Root simulation is not parallel
 
-        if rsx:
-            rsx = r.segSRA(rs_age + t, rx, sx, mfp_, imfp_)  # ! more unstable in case of mai scenario
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
-        else:  # first call
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # this works
 
-#         rsx = r.segSRA(rs_age + t, rx, sx, mfp_, imfp_)
-#         seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
-        seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
+        rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])          
+        
+        # seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))
+        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False))
+        seg_stress = np.array(r.segSRAStressedAnalyticalFlux(sx, mfp_)) 
+        
+        seg_head = np.array(r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_))  # to determine if stressed or not
+        seg_fluxes = np.zeros(seg_nostress.shape)
+        # ii = seg_head <= (wilting_point+1)  # indices of stressed segments
+        ii = (seg_head <= wilting_point+1) # indices of stressed segments
+        print("stessed", sum(ii.flat), ii.shape)
+        seg_fluxes[ii] = seg_stress[ii]
+        seg_fluxes[~ii] = seg_nostress[~ii]  # ~ = boolean not        
+        
         fluxes = r.sumSoilFluxes(seg_fluxes)
 
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, rsx, [], cells = False), "= prescribed", -trans * sinusoidal(t))
-        # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
 
     else:
         fluxes = None
