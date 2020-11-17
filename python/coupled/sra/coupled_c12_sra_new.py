@@ -46,7 +46,7 @@ name = "DuMux_1cm_schroeder_clay"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-soil = clay
+soil = loam
 
 sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp)
@@ -58,7 +58,7 @@ wilting_point = -15000  # cm
 sim_time = 1  # [day] for task b
 age_dependent = False  # conductivities
 dt = 3600. / (24 * 3600)  # [days] Time step must be very small
-dx = 1.e-2
+dx = 1.e-5
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -118,18 +118,21 @@ for i in range(0, N):
         seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink in case of no stress
 
         seg_stress = np.array(r.segSRAStressedFlux(sx, wilting_point, k, mfp_, imfp_, dx))  # steady rate approximation in case of stress
+        # seg_stress = np.array(r.segSRAStressedAnalyticalFlux(sx, mfp_)) 
         print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
         print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
 
         # seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
-        seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
+        # seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
         # seg_stress = np.minimum(np.zeros(seg_stress.shape), seg_stress)  # use only for inflow
 
         seg_head = np.array(r.segSRA(rs_age + t, rx, sx, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
         ii = seg_head > -1  # indices of stressed segments
+        print("stessed", sum(ii.flat), ii.shape)
         seg_fluxes[ii] = seg_stress[ii]
         seg_fluxes[~ii] = seg_nostress[~ii]  # ~ = boolean not
+        
 #         # loop version (of above)
 #         for j in range(0, seg_fluxes.shape[0]):
 #             seg_fluxes[j] = (seg_head[j] > -1) * seg_stress[j] + (seg_head[j] <= -1) * seg_nostress[j]
