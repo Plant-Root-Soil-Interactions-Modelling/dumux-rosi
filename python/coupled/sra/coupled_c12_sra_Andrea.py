@@ -55,7 +55,7 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
+sim_time = 0.5  # [day] for task b
 age_dependent = False  # conductivities
 dt = 360. / (24 * 3600)  # [days] Time step must be very small
 
@@ -94,7 +94,7 @@ imfp_ = lambda mfp: imfp(mfp, sp)
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-rx = r.solve(rs_age + 0., -trans * sinusoidal(0.), sx[cci], sx, True, wilting_point, [])
+rx = r.solve(rs_age + 0., 0., sx[cci], sx, True, wilting_point, [])
 
 N = round(sim_time / dt)
 t = 0.
