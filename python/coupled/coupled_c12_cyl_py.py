@@ -22,7 +22,7 @@ from multiprocessing import Pool
 
 def sinusoidal(t):
     """ sinusoidal function (used for transpiration) """
-    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
+    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.   # TODO: for growing root systems: adapt to either LAI or root system size
 
 """ 
 Benchmark M1.2 static root system in soil, coupled to cylindrical richards (Python solver)
@@ -38,21 +38,24 @@ name = "dumux_c12_2cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-soil = vg.Parameters(clay)
-initial = -659.8 + 7.5  # -659.8
+soil_ = loam
+soil = vg.Parameters(soil_)
+initial = -659.8 + (max_b[2]-min_b[2])/2   # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 5  # 0.65  # 0.25  # [day]
+sim_time = 2  # 0.65  # 0.25  # [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
+rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
 NC = 10  # dof+1
-logbase = 1.5
+logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
-NT = round(7 * sim_time * 24 * 3600 / 3600)
+dt = 360/(24*3600)   # time step
+NT = int(np.ceil(sim_time / dt))
 skip = 1  # for output and results, skip iteration
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
@@ -64,26 +67,27 @@ s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
-s.setVGParameters([clay])
+s.setVGParameters([soil_])
+#s.setParameter("Newton.EnableChop", "True")
+s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
-s.setRegularisation(1.e-4, 1.e-4)
+#s.setRegularisation(1.e-4, 1.e-4)
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a) or (b)"""
 r = XylemFluxPython("../../grids/RootSystem8.rsml")
 print("number of segments", len(r.get_segments()))
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
-init_conductivities(r, age_dependent)
-picker = lambda x, y, z : s.pick([x, y, z])
-r.rs.setSoilGrid(picker)  # maps segments
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # True: root segments are cut according to the soil grid so that each segment is completely within one soil control element(works only for rectangular grids so far)
+init_conductivities(r, age_dependent)   #age_dependent is a boolean, root conductivies are given in the file /root_conductivities.py
+picker = lambda x, y, z : s.pick([x, y, z])   #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions 
 r.rs.sort()  # <- ensures segment is located at index s.y-1
 
 nodes = r.get_nodes()
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 segs = r.get_segments()
-rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 seg_ages = r.get_ages(rs_age)
 seg_types = r.rs.types
 seg_length = r.segLength()
@@ -106,7 +110,7 @@ print("Initial pressure head", s.getSolutionHeadAt(cci), s.getSolutionHeadAt(pic
 """ Initialize local soil models (around each root segment) """
 ns = len(seg_length)  # number of segments
 cyls = [None] * ns
-ndof = NC - 1
+ndof = NC - 1    # rhizosphere grid (dofs live on the cells)
 
 
 def initialize_cyl(i):
@@ -119,7 +123,7 @@ def initialize_cyl(i):
         # points = np.linspace(a_in, a_out, NC)
         grid = FVGrid1Dcyl(points)
         cyl = rich.FVRichards1D(grid, loam)
-        cyl.x0 = np.ones((ndof,)) * (initial - 7.5 - z)
+        cyl.x0 = np.ones((ndof,)) * (initial - (max_b[2]-min_b[2])/2 - z)
         return cyl
     else:
         print("Segment", i, "[", a_in, a_out, "]")  # this happens if elements are not within the domain
@@ -151,9 +155,6 @@ print ("Initialized in", timeit.default_timer() - start_time, " s")
 print("Starting simulation")
 start_time = timeit.default_timer()
 
-rsx = np.zeros((ns,))  # xylem pressure at the root soil interface
-dt = sim_time / NT
-
 min_rx, min_rsx, collar_sx, collar_flux, out_times = [], [], [], [], []  # cm
 water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
@@ -180,7 +181,7 @@ for i in range(0, NT):
 
     wall_root_model = timeit.default_timer()
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), inner_radii)  # only valid for homogenous soil
-    rx = r.solve(rs_age + t, -trans * sinusoidal(t), csx, rsx, False, wilting_point, soil_k)  # [cm]
+    rx = r.solve(rs_age + t, -trans * sinusoidal(t), csx, rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
     wall_root_model = timeit.default_timer() - wall_root_model
 
     if i % skip == 0:
@@ -219,13 +220,13 @@ for i in range(0, NT):
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
 
     for j, cyl in enumerate(cyls):  # res
-        realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * inner_radii[j] * seg_length[j]) / dt
+        realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * inner_radii[j] * seg_length[j]) / dt # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
 
     """
     Macroscopic soil model
     """
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]
+    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
 
     wall_soil_model = timeit.default_timer()
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
