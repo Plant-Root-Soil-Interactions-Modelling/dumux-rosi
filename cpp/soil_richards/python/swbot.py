@@ -1,5 +1,5 @@
 """  Wet Bot Scenario Felicien, 1 cm^3 resolution """
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt

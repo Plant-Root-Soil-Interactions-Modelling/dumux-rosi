@@ -1,9 +1,9 @@
-""" "Test root system part of the stomata model"""
+""" "Test root system part of the stomata model TODO Glycine_max_154days.dgf missing """
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
-from math import *
 
 name = "soybean"  # this name should be unique
 suffix = ""
@@ -11,7 +11,7 @@ suffix = ""
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
+os.chdir("../../../build-cmake/cpp/roots_1pnc")
 
 # run dumux
 os.system("./rootsystem_periodic_stomata input/" + name + ".input")

@@ -1,5 +1,5 @@
 """ soil part of small 3d simulation """
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -20,10 +20,9 @@ else:
     os.system("mpirun -n " + str(np_) + " ./richards3d input/anagallis_3d.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_data("anagallis_soil-00001", np_)
+p_, z1_ = read3D_data("anagallis_soil-00001", np_)
 h1_ = vg.pa2head(p_)
 plt.plot(h1_, z1_ * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
-
 plt.show()

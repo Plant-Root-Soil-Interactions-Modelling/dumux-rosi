@@ -3,11 +3,13 @@
  
  We predescribe constant transpiration -2e-8 under constant soil pressure
 """
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
+from math import *
+import numpy as np
 import matplotlib.pyplot as plt
 from vtk_tools import *
-from math import *
 import van_genuchten as vg
 
 g = 9.81  # gravitational acceleration (m/s^2)
@@ -53,16 +55,15 @@ pr3 = list(map(p_r3, za_))
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
+os.chdir("../../../build-cmake/cpp/roots_1pnc")
 
 # run dumux
 os.system("./rootsystem_stomata2 input/singleroot_stomata.input")
 
 """ benchmark pressure head in single root """
-p_ = read1D_vtp_data("singleroot-00001.vtp")
-z_ = np.linspace(0, -0.5, len(p_))
+p_, z_ = read3D_vtp_data("singleroot-00001.vtp")
 h_ = vg.pa2head(p_)
-plt.plot(h_, z_, "r+")
+plt.plot(h_, z_[:, 2], "r+")
 plt.plot(pr3, za_, "b")
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")

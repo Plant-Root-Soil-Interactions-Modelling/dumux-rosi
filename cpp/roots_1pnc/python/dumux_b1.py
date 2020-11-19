@@ -1,4 +1,6 @@
 """
+TODO not working
+
  Benchmark M31
 
  Compares the dumux solution of 1d single root to its analytical solution
@@ -8,6 +10,7 @@
 
  D. Leitner, 2019
 """
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -69,7 +72,7 @@ pr3 = list(map(p_r3, za_))
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/roots_1pnc")
+os.chdir("../../../build-cmake/cpp/roots_1pnc")
 
 # delete old results
 os.system("rm benchmark1-00001.vtp")

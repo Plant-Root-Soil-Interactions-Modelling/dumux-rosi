@@ -1,5 +1,5 @@
 #
-# Wet top scenario for 3 phenotypes in static soil (TODO DGF names wrong????)
+# Wet top scenario for 3 phenotypes in static soil (TODO Reference DGF missing)
 #
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
