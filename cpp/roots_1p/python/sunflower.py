@@ -1,5 +1,5 @@
 """
-TODO input file is missing ?
+TODO input file is missing ? grid file is missing
 """
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 

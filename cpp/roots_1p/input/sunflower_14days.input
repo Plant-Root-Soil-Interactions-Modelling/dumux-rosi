@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  ../../../grids/Sunflower_154days.dgf
+File =  ../../../grids/Sunflower_14days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
