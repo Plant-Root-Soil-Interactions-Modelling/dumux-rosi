@@ -1,4 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../../CPlantBox/");
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules");
+sys.path.append("../../build-cmake/cpp/python_binding/"); 
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
