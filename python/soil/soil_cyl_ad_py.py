@@ -1,6 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../modules/fv/")  # TODO where shall we put these?
-
+import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/");  sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+ 
 import van_genuchten as vg
 from fv_grid import *
 import fv_advectiondiffusion as ad  # Python solver
