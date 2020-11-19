@@ -1,3 +1,6 @@
+# create a link to the grid file and the input file in the build directory
+dune_symlink_to_source_files(FILES "modelparameter")
+
 add_subdirectory("roots_1p")
 add_subdirectory("roots_1pnc")
 add_subdirectory("soil_richards")

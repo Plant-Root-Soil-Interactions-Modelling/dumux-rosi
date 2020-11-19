@@ -1,5 +1,5 @@
 """ Benchmark C11, single root in thin soil layer, root part (TODO?)"""
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt

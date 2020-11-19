@@ -5,7 +5,7 @@
 
  D. Leitner, 2019
 """
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -44,7 +44,7 @@ with open("rb_singleT_actual_transpiration.txt", 'r') as f:
 print("Transpiration ", d[0, 1])
 print("Transpiration ", d2[0, 1])
 
-dumux_b1.ax1.plot(h_, z_[:, 2] + 0.03, "k+")  # cell data
-dumux_b1.ax3.plot(h2_, z2_[:, 2] + 0.03, "k+")  # cell data
+dumux_b1.ax1.plot(h_, z_[:, 2] + 0.03, "r+")  # cell data
+dumux_b1.ax3.plot(h2_, z2_[:, 2] + 0.03, "r+")  # cell data
 dumux_b1.plt.show()
 
