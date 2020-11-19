@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
- # TODO where shall we put these?
+import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules")   
+sys.path.append("../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
