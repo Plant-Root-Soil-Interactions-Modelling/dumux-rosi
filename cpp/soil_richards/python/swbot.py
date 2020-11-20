@@ -20,9 +20,9 @@ else:
     os.system("mpirun -n " + str(np_) + " ./richards3d input/swbot_3d.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("swbot-00000", np_)
+p_, z1_ = read3D_data("swbot-00000", np_, 2)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, z1_ * 100, "r+")
+plt.plot(h1_, z1_[:,2] * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

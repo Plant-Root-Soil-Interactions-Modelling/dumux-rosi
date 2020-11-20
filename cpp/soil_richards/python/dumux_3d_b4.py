@@ -22,7 +22,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/soil_richards")
 
 # run dumux
-np_ = 8  # number of processors
+np_ = 1  # number of processors
 if np_ == 1:
     os.system("./richards3d input/b4a_3d.input")
     os.system("./richards3d input/b4b_3d.input")
