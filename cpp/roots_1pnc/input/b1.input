@@ -7,7 +7,7 @@ DtInitial = 1 # [s]
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  grids/singleroot.dgf
+File =  ../../../grids/singleroot.dgf
 InitialT = 15 # days
 Radius = 0.2 # cm
 

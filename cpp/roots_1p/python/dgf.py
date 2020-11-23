@@ -1,4 +1,3 @@
-import math
 import numpy as np
 
 '''
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     kr_ = 0.;  # cm/hPa/day, = 2.e-9 m/Pa/s;
     kz_ = 0.;  # cm^4/hPa/day, = 5.e-13 m/Pa/s;
     dx_ = o_ * (L / (nnz - 1))
-    params = np.vstack((z_, o_, 2 * math.pi * np.multiply(dx_, a_), dx_, a_, z_, z_, ct_, o_, 2 * o_))
+    params = np.vstack((z_, o_, 2 * np.pi * np.multiply(dx_, a_), dx_, a_, z_, z_, ct_, o_, 2 * o_))
     createDGF_1Droots("../../../grids/singleroot.dgf", nodes, seg, params)
     nodes2 = np.transpose(np.vstack((nodes[:, 2], nodes[:, 0], nodes[:, 1] - 1.e-4)))  # 1e.-4 to make it easier with the BC
     nodes2[0, 2] = 0  # collar BC

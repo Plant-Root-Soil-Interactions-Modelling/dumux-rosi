@@ -1,4 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../../CPlantBox/");
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules")
+sys.path.append("../../build-cmake/cpp/python_binding/"); 
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -39,7 +40,7 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7  # [day] for task b
+sim_time = 2  # [day] for task b
 rs_age = 7
 age_dependent = False  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small

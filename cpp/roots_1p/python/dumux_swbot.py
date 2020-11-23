@@ -1,7 +1,7 @@
 #
-# Wet bot scenario for 3 phenotypes in static soil (TODO DGF names wrong?)
+# Wet bot scenario for 3 phenotypes in static soil (TODO Reference DGF missing)
 #
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt

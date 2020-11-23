@@ -4,7 +4,8 @@
 #
 # D. Leitner, 2018
 #
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
 import matplotlib.pyplot as plt
@@ -34,21 +35,22 @@ elapsed = time.time() - t
 print("Time elapsed", elapsed)
 
 # Figure 2a
-p_, z1_ = read3D_vtp("benchmark3d_1a-00001", np_)
+p_, z1_ = read3D_data("benchmark3d_1a-00001", np_, 2)
 h1_ = vg.pa2head(p_)
+print(h1_)
 ax1.plot(h1_, z1_[:, 2] * 100, "r+")
 
 # Figure 2b
-p_, z2_ = read3D_vtp("benchmark3d_1b-00001", np_)
+p_, z2_ = read3D_data("benchmark3d_1b-00001", np_, 2)
 h2_ = vg.pa2head(p_)
 ax2.plot(h2_, z2_[:, 2] * 100, "r+")
 
 # Figure 2c
-p_, z3_ = read3D_vtp("benchmark3d_1c-00001", np_)
+p_, z3_ = read3D_data("benchmark3d_1c-00001", np_, 2)
 h3_ = vg.pa2head(p_)
 ax3.plot(h3_, z3_[:, 2] * 100, "r+")
 
-# np.savetxt("dumux3d_b1", np.vstack((z1_, h1_, z2_, h2_, z3_, h3_)), delimiter = ",")
+np.savetxt("dumux3d_b1", np.vstack((z1_[:, 2], h1_, z2_[:, 2], h2_, z3_[:, 2], h3_)), delimiter = ",")
 
 plt.show()
 

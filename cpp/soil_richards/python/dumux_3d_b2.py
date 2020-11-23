@@ -4,7 +4,8 @@
 #
 # D. Leitner, 2018
 #
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
 import matplotlib.pyplot as plt
@@ -25,10 +26,10 @@ else:
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b2_3d.input -Grid.Overlap 0")
 
 # result dumux jan1 (Figure 2a)
-s_, p_, z_ = read3D_vtp("benchmark3d_2-00001", np_)
+p_, z_ = read3D_data("benchmark3d_2-00001", np_, 2)
 h_ = vg.pa2head(p_)
-plt.plot(h_, z_ * 100, "r+")
+plt.plot(h_, z_[:, 2] * 100, "r+")
 
-np.savetxt("dumux3d_b2", np.vstack((z_, h_)), delimiter = ",")
+np.savetxt("dumux3d_b2", np.vstack((z_[:, 2], h_)), delimiter = ",")
 
 plt.show()

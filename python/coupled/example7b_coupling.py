@@ -1,7 +1,9 @@
 """ CPLantBox tutorial example 7b (see CPlantBox/tutorial/latex/PlantBox_RootSystem/tutorial.tex) """
 
 """ coupling with DuMux as solver for the soil part """
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
+sys.path.append("../../build-cmake/cpp/python_binding/")
+
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 from xylem_flux import XylemFluxPython  # Python hybrid solver

@@ -1,5 +1,5 @@
 # create a link to the grid file and the input file in the build directory
-dune_symlink_to_source_files(FILES "grids" "input" "modelparameter" "python")
+dune_symlink_to_source_files(FILES "grids" "input" "python")
 
 add_executable(rootsystem_stomata2 EXCLUDE_FROM_ALL rootsystem_stomata.cc)
 target_compile_definitions(rootsystem_stomata2 PUBLIC DGF)

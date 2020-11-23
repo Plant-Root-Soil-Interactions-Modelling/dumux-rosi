@@ -86,7 +86,7 @@ int main(int argc, char** argv) try
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CPlantBox::RootSystem>();
-        rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
+        rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "../modelparameter/");
         if (hasParam("RootSystem.Grid.Confined")) {
             auto box = getParam<std::vector<double>>("RootSystem.Grid.Confined");
             rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(box.at(0)*100, box.at(1)*100, box.at(2)*100));

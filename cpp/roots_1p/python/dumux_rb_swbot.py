@@ -1,12 +1,11 @@
 #
 # Wet bot scenario for 3 phenotypes in static soil
 #
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
-from math import *
 import van_genuchten as vg
 import threading
 import time

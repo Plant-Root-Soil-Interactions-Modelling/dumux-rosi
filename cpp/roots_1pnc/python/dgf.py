@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 '''
 Creates dgf files for the root system benchmarks 1 (and old benchmark 2 and 3), and C11
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     kr_ = 0.;  # cm/hPa/day, = 2.e-9 m/Pa/s;
     kz_ = 0.;  # cm^4/hPa/day, = 5.e-13 m/Pa/s;
     dx_ = o_ * (L / (nnz - 1))
-    params = np.vstack((z_, o_, 2 * math.pi * np.multiply(dx_, a_), dx_, a_, z_, z_, ct_, o_, 2 * o_))
+    params = np.vstack((z_, o_, 2 * np.pi * np.multiply(dx_, a_), dx_, a_, z_, z_, ct_, o_, 2 * o_))
 
     createDGF_1Droots("../grids/singleroot.dgf", nodes, seg, params)
 

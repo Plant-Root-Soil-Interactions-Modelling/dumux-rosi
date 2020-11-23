@@ -4,7 +4,7 @@
 #
 # D. Leitner, 2018
 #
-import sys; sys.path.append("../../../python/modules/")
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
@@ -26,17 +26,17 @@ os.system("./richards1d input/b1b_1d.input")
 os.system("./richards1d input/b1c_1d.input")
 
 # Figure 2a
-p_, z1_ = read3D_vtp_data("benchmark1d_1a-00001.vtp", 2, None)  # pressure [PA] is at index 2
+p_, z1_ = read3D_data("benchmark1d_1a-00001.vtp",1, 2, None)  # pressure [PA] is at index 2
 h1_ = vg.pa2head(p_)
 ax1.plot(h1_, z1_[:, 0] * 100, "r+")  # z coordinate is at position 0 in 1D models
 
 # Figure 2b
-p_, z2_ = read3D_vtp_data("benchmark1d_1b-00001.vtp", 2, None)
+p_, z2_ = read3D_data("benchmark1d_1b-00001.vtp", 1, 2, None)
 h2_ = vg.pa2head(p_)
 ax2.plot(h2_, z2_[:, 0] * 100, "r+")
 
 # Figure 2c
-p_, z3_ = read3D_vtp_data("benchmark1d_1c-00001.vtp", 2, None)
+p_, z3_ = read3D_data("benchmark1d_1c-00001.vtp",1, 2, None)
 h3_ = vg.pa2head(p_)
 ax3.plot(h3_, z3_[:, 0] * 100, "r+")
 

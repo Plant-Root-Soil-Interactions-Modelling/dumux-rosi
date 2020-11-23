@@ -1,5 +1,5 @@
-""" sunflower_HLCT, soil part """
-import sys; sys.path.append("../../../python/modules/")
+""" sunflower_HLCT, soil part NOT WORKING? """
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -12,6 +12,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/soil_richards")
 
 np_ = 1  # number of processors
+
 # run dumux
 if np_ == 1:
     os.system("./richards3d input/sunflower_HLCT.input")
@@ -19,9 +20,9 @@ else:
     os.system("mpirun -n " + str(np_) + " ./richards3d input/sunflower_HLCT.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("sunflower_HLCT-00001", np_)
+p_, z1_ = read3D_data("sunflower_HLCT-00001", np_, 2)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, z1_ * 100, "r+")
+plt.plot(h1_, z1_[:,2] * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('z axis (cm)')
 plt.show()
