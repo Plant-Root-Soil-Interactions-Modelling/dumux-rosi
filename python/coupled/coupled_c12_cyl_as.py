@@ -305,7 +305,7 @@ ax1.plot(out_times, trans * sinusoidal(out_times), 'k', label = "potential")  # 
 ax1.plot(out_times, -np.array(water_uptake), 'g', label = "actual")  # actual transpiration (neumann)
 ax1.plot(out_times, -np.array(collar_flux), 'r:', label = "collar flux")  # actual transpiration (neumann)
 ax2 = ax1.twinx()
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
+ax2.plot(out_times, np.array(min_rx), label = "root collar")
 ax1.set_xlabel("Time [d]")
 ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
 ax2.set_ylabel("Min collar pressure $[cm]$")
