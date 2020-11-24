@@ -6,6 +6,7 @@
 #
 # D. Leitner, 2020
 #
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -15,16 +16,16 @@ import van_genuchten as vg
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc")
+os.chdir("../../../build-cmake/cpp/soil_richardsnc")
 
-# # run dumux
-# os.system("./richardsnc1d_cyl input/cylinder_1d_water.input")
-# 
-# # plot dumux results
-# s_, c_, z_ = read1D_vtp_data("cylinder_1d-00001.vtp", 13)
-# plt.plot((z_ - 0.0002) * 100, c_, "b:",)
-# s_, c_, z_ = read1D_vtp_data("cylinder_1d-00002.vtp", 13)
-# plt.plot((z_ - 0.0002) * 100, c_, "b",)
+# run dumux
+os.system("./richardsnc1d_cyl input/cylinder_1d_water.input")
+ 
+# plot dumux results
+c_, z_ = read3D_vtp_data("cylinder_1d-00001.vtp", 13)
+plt.plot((z_[:,0] - 0.0002) * 100, c_, "b:",)
+c_, z_ = read3D_vtp_data("cylinder_1d-00002.vtp", 13)
+plt.plot((z_[:,0] - 0.0002) * 100, c_, "b",)
 
 # read and plot comsol data
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc/python")

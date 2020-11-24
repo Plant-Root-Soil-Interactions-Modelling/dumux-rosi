@@ -6,6 +6,8 @@
 #
 # D. Leitner, 2020
 #
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
 import matplotlib.pyplot as plt
