@@ -1,4 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
+sys.path.append("../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -48,7 +49,7 @@ wilting_point = -15000  # cm
 NC = 10  # dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 0.5  #  [day]
+sim_time = 0.2  #  [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
@@ -158,7 +159,7 @@ for i in range(0, NT):
 #             print("strange segment", j, "in cell", r.rs.seg2cell[j], "root soil interface", rsx[j], "vs macro soil", s.getSolutionHeadAt(r.rs.seg2cell[j]))
 
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), inner_radii)  # only valid for homogenous soil
-    print("Conductivities", np.min(soil_k), kr)
+    # print("Conductivities", np.min(soil_k), kr)
     rx = r.solve(t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
 
     if i % skip == 0:
@@ -173,7 +174,7 @@ for i in range(0, NT):
     """
     Local soil model
     """
-    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx = False)  # [cm3/day]
+    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
     local_models_time = timeit.default_timer()
     for j, cyl in enumerate(cyls):  # run cylindrical models
@@ -194,7 +195,7 @@ for i in range(0, NT):
             plt.close()
         realized_inner_fluxes[j] = -float(cyl.getInnerFlux()) * (2 * np.pi * inner_radii[j] * l) / inner_radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
 
-    print ("Local models solved in ", timeit.default_timer() - local_models_time, " s")
+    # print ("Local models solved in ", timeit.default_timer() - local_models_time, " s")
 
     """
     Macroscopic soil model
@@ -300,7 +301,7 @@ ax4.set_ylabel("cm3")
 plt.show()
 
 fig, ax1 = plt.subplots()
-ax1.plot(out_times, trans * sinusoidal(x_), 'k', label = "potential")  # potential transpiration * sinusoidal(x_)
+ax1.plot(out_times, trans * sinusoidal(out_times), 'k', label = "potential")  # potential transpiration * sinusoidal(x_)
 ax1.plot(out_times, -np.array(water_uptake), 'g', label = "actual")  # actual transpiration (neumann)
 ax1.plot(out_times, -np.array(collar_flux), 'r:', label = "collar flux")  # actual transpiration (neumann)
 ax2 = ax1.twinx()
@@ -310,6 +311,6 @@ ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
 ax2.set_ylabel("Min collar pressure $[cm]$")
 fig.legend()
 
-np.savetxt("results/" + name, np.vstack((x_, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
+np.savetxt("results/" + name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
 
 plt.show()
