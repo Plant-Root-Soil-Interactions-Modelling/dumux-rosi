@@ -182,7 +182,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getOuterFlux(self):
         """ [cm / day]"""
-        return self.getOuterFlux() / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        return self.base.getOuterFlux() / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def setOuterPressure(self, value_top = 0.):
         """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""

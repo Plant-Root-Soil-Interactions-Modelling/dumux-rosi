@@ -128,17 +128,13 @@ for i in range(0, N):
         seg_fluxes = np.zeros(seg_nostress.shape)
         ii = seg_head <= (wilting_point+1)  # indices of stressed segments
         print("stessed", sum(ii.flat), ii.shape)
-        if sum(ii.flat)>0:        
+        if sum(ii.flat)>0:       
             seg_fluxes = np.maximum(seg_stress, seg_nostress)
         else:
             seg_fluxes = seg_nostress 
 
 #         seg_fluxes[ii] = np.maximum(seg_stress[ii], seg_nostress[ii])
 #         seg_fluxes[~ii] = seg_nostress[~ii]
-        
-#         # loop version (of above)
-#         for j in range(0, seg_fluxes.shape[0]):
-#             seg_fluxes[j] = (seg_head[j] > -1) * seg_stress[j] + (seg_head[j] <= -1) * seg_nostress[j]
 
         fluxes = r.sumSoilFluxes(seg_fluxes)  # seg_fluxes
 

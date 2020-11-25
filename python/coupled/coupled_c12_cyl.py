@@ -49,16 +49,16 @@ wilting_point = -15000  # cm
 NC = 10  # dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 0.2  #  [day]
+sim_time = 1  #  [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
-split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
+split_type = 1  # type 0 == volume, type 1 == surface, type 2 == length
 
-dt = 120/(24*3600)   # time step
+dt = 36/(24*3600)   # time step
 NT = int(np.ceil(sim_time / dt))
-skip = 10  # for output and results, skip iteration
+skip = 1  # for output and results, skip iteration
 
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
@@ -91,6 +91,7 @@ r.rs.sort()  # <- ensures segment is located at index s.y-1
 
 nodes = r.get_nodes()
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
+
 segs = r.get_segments()
 seg_ages = r.get_ages(rs_age)
 seg_types = r.rs.types
@@ -160,7 +161,7 @@ for i in range(0, NT):
 
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), inner_radii)  # only valid for homogenous soil
     # print("Conductivities", np.min(soil_k), kr)
-    rx = r.solve(t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
+    rx = r.solve(rs_age+t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
 
     if i % skip == 0:
         out_times.append(t)
@@ -174,7 +175,7 @@ for i in range(0, NT):
     """
     Local soil model
     """
-    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False)  # [cm3/day]
+    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
     local_models_time = timeit.default_timer()
     for j, cyl in enumerate(cyls):  # run cylindrical models
@@ -190,9 +191,12 @@ for i in range(0, NT):
             plt.plot(x, y)
             plt.xlabel("x (cm)")
             plt.ylabel("pressure (cm)")
-            plt.show(block=False)
-            plt.pause(3)
-            plt.close()
+            print("in",proposed_inner_fluxes[j] / (2 * np.pi * inner_radii[j] * l),"out", proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l) )
+            print("inner", inner_radii[j], "outer", outer_radii[j], "l", l )
+            plt.show()
+            raise
+            #plt.pause(3)
+            #plt.close()
         realized_inner_fluxes[j] = -float(cyl.getInnerFlux()) * (2 * np.pi * inner_radii[j] * l) / inner_radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
 
     # print ("Local models solved in ", timeit.default_timer() - local_models_time, " s")
