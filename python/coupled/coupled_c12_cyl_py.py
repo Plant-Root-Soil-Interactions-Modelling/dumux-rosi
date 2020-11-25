@@ -247,8 +247,9 @@ for i in range(0, NT):
                 max_soil_fluxes = v
             if min_soil_fluxes > v:
                 min_soil_fluxes = v
-        print("Fluxes: realized per segment", summed_soil_fluxes, np.sum(realized_inner_fluxes), "predescribed: ", collar_flux[-1], -trans * sinusoidal(t))
-        print("      : min {:g}, max {:g}".format(min_soil_fluxes, max_soil_fluxes))
+        print("Fluxes: summed", summed_soil_fluxes, "predescribed", -trans * sinusoidal(t), 
+              "collar flux", collar_flux[-1])
+        # print("      : min {:g}, max {:g}".format(min_soil_fluxes, max_soil_fluxes))
         # print("Summed net flux {:g}, min movement {:g}, max {:g} cm3".format(np.sum(net_flux), np.min(net_flux), np.max(net_flux)))  # summed fluxes should equal zero
 
     """ 

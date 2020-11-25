@@ -49,14 +49,14 @@ wilting_point = -15000  # cm
 NC = 10  # dof of the cylindrical problem
 logbase = 1.5
 
-sim_time = 1  #  [day]
+sim_time = 7  #  [day]
 age_dependent = False  # conductivities
 predefined_growth = False  # growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
 split_type = 1  # type 0 == volume, type 1 == surface, type 2 == length
 
-dt = 36/(24*3600)   # time step
+dt = 60/(24*3600)   # time step
 NT = int(np.ceil(sim_time / dt))
 skip = 1  # for output and results, skip iteration
 
@@ -165,7 +165,7 @@ for i in range(0, NT):
 
     if i % skip == 0:
         out_times.append(t)
-        collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, False))
+        collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, cells = False))
         min_rsx.append(np.min(np.array(rsx)))
         collar_sx.append(csx)
         min_rx.append(np.min(np.array(rx)))
@@ -224,8 +224,9 @@ for i in range(0, NT):
                 max_soil_fluxes = v
             if min_soil_fluxes > v:
                 min_soil_fluxes = v
-        print("Fluxes: realized per segment", summed_soil_fluxes, np.sum(realized_inner_fluxes), "predescribed: ", collar_flux[-1], -trans * sinusoidal(t))
-        print("      : min {:g}, max {:g}".format(min_soil_fluxes, max_soil_fluxes))
+        print("Fluxes: realized", summed_soil_fluxes, "proposed", np.sum(proposed_inner_fluxes), 
+              "predescribed", -trans * sinusoidal(t), "collar flux", collar_flux[-1])    
+         # print("      : min {:g}, max {:g}".format(min_soil_fluxes, max_soil_fluxes))
 
     """ 
     Water (for output)
@@ -246,7 +247,7 @@ for i in range(0, NT):
                 r2 = grids[k][j + 1]
                 cyl_water += np.pi * (r2 * r2 - r1 * r1) * seg_length[k] * wc
 
-        print("Water volume cylindric", cyl_water, "soil", soil_water[cci], cyl_water / soil_water[cci], cci)
+        #print("Water volume cylindric", cyl_water, "soil", soil_water[cci], cyl_water / soil_water[cci], cci)
         water_cyl.append(cyl_water)
 
         n = round(float(i) / float(NT) * 100.)
