@@ -17,7 +17,7 @@ Type = 2 # constant flux
 Value = -0.5 # [cm day-1]
 
 [Soil.BC.Bot]
-Type = 1 # constant pressure head
+Type = 5 # free drainage, should be = 1 constant pressure head, not implemented yet
 Value = 0 # [cm] fully saturated
 
 [Soil.IC]

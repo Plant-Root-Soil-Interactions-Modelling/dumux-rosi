@@ -6,6 +6,7 @@
 #
 # D. Leitner, 2020
 #
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -22,14 +23,14 @@ os.chdir(path)
 #os.system("./tracer_cyl input/cylinder_1d.input")
 
 #read in data
-os.chdir("../../../rosi_benchmarking/soil_tracer/python")
+os.chdir("../../../cpp/soil_tracer/python")
 data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows=8)
 z_comsol = data[:,0]
 c_comsol = data[:,-1]
 
 # Figure 
-#s_, c_, z_ = read1D_vtp_data("cylinder_1d-00001.vtp", 13)
-#plt.plot(c_, z_ * 100, "r:")
+#c_, z_ = read3D_vtp_data("cylinder_1d-00001.vtp", 13)
+#plt.plot(c_, z_[:,0] * 100, "r:")
 plt.plot(z_comsol, c_comsol, "r:")
 
 plt.xlabel('distance from the root surface (cm)')

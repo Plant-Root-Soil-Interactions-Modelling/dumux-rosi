@@ -29,7 +29,7 @@ P = -100 #[cm]
 # C = 1e-8 #[mol/m³]
 
 [Soil.VanGenuchten] 
-# Loam over sand 
+# Loam 
 Qr = 0.45
 Qs = 0.43
 Alpha = 0.04 # [1/cm] 

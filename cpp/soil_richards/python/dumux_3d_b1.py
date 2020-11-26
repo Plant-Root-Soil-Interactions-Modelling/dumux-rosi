@@ -19,7 +19,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 os.chdir("../../../build-cmake/cpp/soil_richards")
 
-# run dumux
+# # run dumux
 t = time.time()
 np_ = 1  # number of processors
 if np_ == 1:

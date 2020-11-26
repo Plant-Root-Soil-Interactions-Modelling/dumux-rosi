@@ -1,4 +1,5 @@
 ''' Run Benchmakrk C12b with an unstructured grid'''
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt

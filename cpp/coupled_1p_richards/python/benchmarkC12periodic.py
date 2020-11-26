@@ -1,4 +1,5 @@
 ''' Run Benchmakrk C12periodic (like benchmarkC12.py but with periodic boundary conditions)'''
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt

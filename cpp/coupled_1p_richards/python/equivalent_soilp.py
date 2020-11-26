@@ -1,7 +1,11 @@
 ''' Script to compute equivalent soil water potential using SUF from Meunier et al., 2017 '''
 
+""" NOT WORKING result folder is missing & depricated, use XylemFlux and MappedSegments instead """
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+
 import matplotlib.pyplot as plt
-from vtk_tools_SUF import *
+# from vtk_tools_SUF import *
+from vtk_tools import *
 import math
 import numpy as np
 import glob
@@ -13,19 +17,22 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
     csr_matrix, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
+index_kr = 10
+index_kx = 11
+index_p = 0
+
 # go to the right place
 name = 'soybean_Honly_2003'							# problem name
 Hseq_t = []
 Pseq_t = []
 
-filelist = glob.iglob(r'../../../build-cmake/rosi_benchmarking/coupled_1p_richards/results_' + name + '/*.vtp')
+filelist = glob.iglob(r'../../../build-cmake/cpp/coupled_1p_richards/results_' + name + '/*.vtp')
 
 for filepath in sorted(filelist):
-	kr = read3D_vtp_kr(filepath)						# get radial conductivity from root vtp
-	kx = read3D_vtp_kx(filepath)						# get axial conductivity from root vtp
-	nodes = read3D_vtp_nodes(filepath)					# get RA connectivity from root vtp
-	p = read3D_vtp_soilp(filepath)					# get soil voxel pressure from root vtp
-	xylemP = read3D_vtp_xylemp(filepath)					# get xylem pressure from root vtp
+	kr,_ = read3D_vtp_data(filepath, index_kr)						# get radial conductivity from root vtp
+	kx, nodes = read3D_vtp_data(filepath, index_kx)						# get axial conductivity from root vtp
+	p = read3D_vtp_data(filepath, index_p)					# get soil voxel pressure from root vtp
+	xylemP = read3D_vtp_data(filepath, index_p)					# get xylem pressure from root vtp
 	xylemP = (xylemP- 1.e5) * 100. / 1.e3 / 9.81				# convert from Pa-->cm
 	
 	diag_kx = sp.diags(-kx)						# create a sparse diagonal matrix of kx
@@ -73,5 +80,5 @@ ax1.plot(time, Hseq_t, 'b-')    						# time vs equivalent soil pressure using S
 ax1.set_xlabel("Time [days]")
 ax1.set_ylabel("Water potential [cm]")
 ax1.legend(["xylem", "soil"], loc = 'upper left')
-fig.savefig("../../../build-cmake/rosi_benchmarking/coupled_1p_richards/results_" + name + "/" + name + "_equivalent_p.pdf", bbox_inches='tight')
+fig.savefig("../../../build-cmake/cpp/coupled_1p_richards/results_" + name + "/" + name + "_equivalent_p.pdf", bbox_inches='tight')
 plt.show()

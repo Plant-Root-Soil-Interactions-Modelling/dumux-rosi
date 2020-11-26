@@ -1,4 +1,5 @@
 ''' Run sunflower periodic '''
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt

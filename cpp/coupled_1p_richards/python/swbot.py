@@ -1,6 +1,8 @@
 #
 # Wet bot scenario for 3 phenotypes in static soil
 #
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *

@@ -28,7 +28,7 @@ os.system("./richardsnc1d input/b1b_1d.input")
 os.system("./richardsnc1d input/b1c_1d.input")
 
 # Figure 2a
-p_, z1_ = read3D_vtp_data("benchmark1d_1a-00001.vtp")  # matric potential
+p_, z1_ = read3D_vtp_data("benchmark1d_1a-00001.vtp", 2)  # matric potential
 h1_ = vg.pa2head(p_)
 ax1.plot(h1_, z1_[:,0] * 100, "r+")
 ax1b = ax1.twiny()
@@ -39,7 +39,7 @@ c_, z_ = read3D_vtp_data("benchmark1d_1a-00001.vtp", 13)
 ax1b.plot(c_, z_[:,0] * 100, "r:")
 
 # Figure 2b
-p_, z2_ = read3D_vtp_data("benchmark1d_1b-00001.vtp")
+p_, z2_ = read3D_vtp_data("benchmark1d_1b-00001.vtp",2)
 h2_ = vg.pa2head(p_)
 ax2.plot(h2_, z2_[:,0] * 100, "r+")
 ax2b = ax2.twiny()
@@ -49,7 +49,7 @@ c_, z_ = read3D_vtp_data("benchmark1d_1b-00001.vtp", 13)
 ax2b.plot(c_, z_[:,0] * 100, "r:")
 
 # Figure 2c
-p_, z3_ = read3D_vtp_data("benchmark1d_1c-00001.vtp")
+p_, z3_ = read3D_vtp_data("benchmark1d_1c-00001.vtp",2)
 h3_ = vg.pa2head(p_)
 ax3.plot(h3_, z3_[:,0] * 100, "r+")
 ax3b = ax3.twiny()

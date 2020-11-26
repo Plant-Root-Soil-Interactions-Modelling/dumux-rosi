@@ -122,8 +122,9 @@ public:
 		// Output
 		std::string filestr = this->name() + ".csv"; // output file
 		myfile_.open(filestr.c_str());
-		std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValue_  << ", gravitation " << gravityOn_ <<", Critical pressure "
+		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
+				<<  bcBotType_ << ", " << bcBotValue_  << " bcSTopType " << bcSTopType_ << "; bcSBotType " << bcSBotType_
+				<< ", gravitation " << gravityOn_ <<", Critical pressure "
 				<< criticalPressure_ << "\n" << std::flush;
 	}
 
@@ -260,7 +261,7 @@ public:
 					}
 					break;
 				}
-				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
+				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water): unknown error");
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
@@ -291,7 +292,7 @@ public:
 					f = krw * kc * rho_; // * 1 [m]
 					break;
 				}
-				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
+				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water): unknown error");
 				}
 			}
 		}
@@ -330,7 +331,7 @@ public:
 				break;
 			}
 			default:
-				DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann: unknown error");
+				DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute): unknown error");
 			}
 		} else if (onLowerBoundary_(pos)) { // bot bc Solute
 			switch (bcSBotType_) {
@@ -361,7 +362,7 @@ public:
 				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
 				break;
 			}
-			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
+			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
 			}
 		} else {
 			flux[transportEqIdx] = 0.;

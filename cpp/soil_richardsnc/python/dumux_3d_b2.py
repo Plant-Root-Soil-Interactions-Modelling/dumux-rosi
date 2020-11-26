@@ -6,6 +6,8 @@
 #
 # D. Leitner, 2020
 #
+""" TODO mixed bc are not implemented yet, bot boundary is free drainage for now """
+
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
@@ -24,24 +26,24 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/soil_richardsnc")
 
 # run dumux
-os.system("./richardsnc3d input/b2_3d.input")
+#os.system("./richardsnc3d input/b2_3d.input")
 
 ax2 = ax1.twiny()
 
 # Soil matric potential
-p_, z_ = read3D_vtp("benchmark3d_2-00000")
+p_, z_ = read3D_data("benchmark3d_2-00000", 1, 2)
 h_ = vg.pa2head(p_)
 ax1.plot(h_, z_[:,2] * 100, "g+")
-p_, z_ = read3D_vtp("benchmark3d_2-00001")
+p_, z_ = read3D_data("benchmark3d_2-00001", 1, 2)
 h_ = vg.pa2head(p_)
 ax1.plot(h_, z_[:,2] * 100, "r+")
 
 ax1.legend(["analytic", "initial", "numeric"])
 
 # Solute concentration
-c_, z_ = read3D_vtp("benchmark3d_2-00000", 1, 13)
+c_, z_ = read3D_data("benchmark3d_2-00000", 1, 13)
 ax2.plot(c_, z_[:,2] * 100, "g:")
-c_, z_ = read3D_vtp("benchmark3d_2-00001", 1, 13)
+c_, z_ = read3D_data("benchmark3d_2-00001", 1, 13)
 ax2.plot(c_, z_[:,2] * 100, "r:")
 
 ax2.legend(["initial", "final"])

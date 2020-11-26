@@ -1,7 +1,6 @@
 """analysis of results using signed distance functions"""
-import sys
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/"); sys.path.append("../../..")
 from cmath import pi
-sys.path.append("../../..")
 import plantbox as pb
 import numpy as np
 import matplotlib.pyplot as plt

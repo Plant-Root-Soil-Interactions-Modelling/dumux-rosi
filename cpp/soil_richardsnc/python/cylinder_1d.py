@@ -6,6 +6,7 @@
 #
 # D. Leitner, 2020
 #
+""" TODO not working: Dune reported error: NumericalProblem check parameters """
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
@@ -19,12 +20,12 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/soil_richardsnc")
 
 # run dumux
-os.system("./richardsnc1d_cyl input/cylinder_1d_water.input")
+os.system("./richardsnc1d_cyl input/cylinder_1d.input")
  
 # plot dumux results
-c_, z_ = read3D_vtp_data("cylinder_1d-00001.vtp", 13)
+c_, z_ = read3D_data("cylinder_1d-00001.vtp", data_index = 13)
 plt.plot((z_[:,0] - 0.0002) * 100, c_, "b:",)
-c_, z_ = read3D_vtp_data("cylinder_1d-00002.vtp", 13)
+c_, z_ = read3D_data("cylinder_1d-00002.vtp", data_index = 13)
 plt.plot((z_[:,0] - 0.0002) * 100, c_, "b",)
 
 # read and plot comsol data
