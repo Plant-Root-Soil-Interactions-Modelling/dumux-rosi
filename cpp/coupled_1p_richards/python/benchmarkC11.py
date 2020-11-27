@@ -1,4 +1,6 @@
 ''' Run Benchmakrk C11 (classic sink)'''
+
+""" todo: check results, make a nicer plot """
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
@@ -10,7 +12,7 @@ import math
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
+os.chdir("../../../build-cmake/cpp/coupled_1p_richards")
 
 soils = ["Sand", "Loam", "Clay"]
 
@@ -25,21 +27,16 @@ def simulate(soiltype, q_root, simtime, checktimes, maxtimestep):
 def plot_number(ax1, i, tend, soiltype, q_root, export):
 
     print("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i))
-    p_, y_ = read3D_vtp_data_line("benchmarkC11" + soils[soiltype] + "-000{0:02d}.vtu".format(i), 1.e-4)
-    h1_ = vg.pa2head(p_)  #
-    print("h", np.min(h1_), np.max(h1_))
-    print("y", np.min(y_), np.max(y_))
-
-    ax1.plot(np.array(y_) * 100, h1_)
-    export.append(np.array(y_) * 100)
+    p_, y_ = read3D_data("benchmarkC11" + soils[soiltype] + "-000{0:02d}".format(i), 1, 2)
+    h1_ = vg.pa2head(p_) 
+    ax1.plot(np.array(y_[:,0]) * 100, h1_)
+    export.append(np.array(y_[:,0]) * 100)
     export.append(h1_)
-
     ax1.legend([str(tend) + " days"])
     ax1.set_ylabel('$water potential$ (cm)')
     ax1.set_xlabel('r (cm)')
     ax1.set_title(soils[soiltype] + ", q_{root}=" + str(q_root) + "cm/d")
-    ax1.axis([0., 0.5, -5000, 0.])
-
+    #ax1.axis([0., 0.5, -5000, 0.])
 
 def plot_actual(ax1, soiltype, q_root):
     with open("benchmarkC11" + soils[soiltype] + "_actual_transpiration.txt", 'r') as f:

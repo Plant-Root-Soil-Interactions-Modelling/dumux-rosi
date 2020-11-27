@@ -23,7 +23,7 @@ else:
 # Figure
 p_, z_ = read3D_data("benchmarkC11-00001", np_, 1)
 h1_ = vg.pa2head(p_)
-plt.plot(z_[:, 2] * 100, h1_, "r+")
+plt.plot(z_[:, 1] * 100, h1_, "r+")
 plt.ylabel('$\psi$ (cm)')
 plt.xlabel('y axis (cm)')
 plt.show()

@@ -13,7 +13,7 @@ suffix = ""
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1p_richards")
+os.chdir("../../../build-cmake/cpp/coupled_1p_richards")
 
 # run simulation
 os.system("./coupled_periodic input/" + name + ".input")

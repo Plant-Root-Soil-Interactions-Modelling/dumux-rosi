@@ -182,7 +182,7 @@ for i in range(0, NT):
         l = seg_length[j]
         cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * inner_radii[j] * l))  # [cm3/day] -> [cm /day]
         cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-        cyl.ddt = 1.e-5  # [day] initial time step
+        # cyl.ddt = 1.e-5  # [day] initial time step
         try:
             cyl.solve(dt)
         except:
@@ -195,8 +195,6 @@ for i in range(0, NT):
             print("inner", inner_radii[j], "outer", outer_radii[j], "l", l )
             plt.show()
             raise
-            #plt.pause(3)
-            #plt.close()
         realized_inner_fluxes[j] = -float(cyl.getInnerFlux()) * (2 * np.pi * inner_radii[j] * l) / inner_radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
 
     # print ("Local models solved in ", timeit.default_timer() - local_models_time, " s")
