@@ -1,6 +1,8 @@
 # Run decoupled senarios
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
+""" NOT WORKING something is wrong after 30% """
+
 import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
@@ -20,9 +22,9 @@ else:
     os.system("mpirun -n " + str(np_) + " ./coupled_seq_rb input/small_rb.input -Grid.Overlap 0")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("small_rb-00001", np_)
+p_, z1_ = read3D_data("small_rb-00001", np_)
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, z1_ * 100, "r+")
+plt.plot(h1_, z1_[:,2] * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

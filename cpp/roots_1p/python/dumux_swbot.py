@@ -1,6 +1,7 @@
 #
 # Wet bot scenario for 3 phenotypes in static soil (TODO Reference DGF missing)
 #
+""" reference dgf is missing """
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os

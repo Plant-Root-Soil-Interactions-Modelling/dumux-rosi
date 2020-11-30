@@ -7,8 +7,9 @@ calculates the equivalent soil water potential
 
 TODO cut segments along grid
 """
-import sys; sys.path.append("../../../python/modules/"); sys.path.append("../../../../CPlantBox/")
-sys.path.append("../../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules")
+sys.path.append("../../python/modules/")
+sys.path.append("../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 
@@ -40,7 +41,7 @@ rs.setSoilGrid(soil_index)
 soilcore = pb.SDF_PlantBox(1e6, 1e6, 149.9)
 rs.setGeometry(soilcore)
 
-path = "../../../../CPlantBox//modelparameter/rootsystem/"
+path = "../../../CPlantBox//modelparameter/rootsystem/"
 name = "Glycine_max"  # Zea_mays_1_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")

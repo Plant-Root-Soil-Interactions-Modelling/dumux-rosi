@@ -1,7 +1,9 @@
 """ 
 soil uptake fraction of a root system (soil is in hydrostatic equilibrium) 
 """
-import sys; sys.path.append("../../../python/modules/"); sys.path.append("../../../../CPlantBox/")
+import sys; sys.path.append("../../python/modules/"); sys.path.append("../../../CPlantBox/"); 
+sys.path.append("../../../CPlantBox/src/python_modules")
+
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
 import vtk_plot as vp
@@ -20,7 +22,7 @@ p_s = np.linspace(-500, -200, 3001)  #  -200.*np.ones((2001, 1))   # 3 meter dow
 soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
 rs.setSoilGrid(soil_index)
 
-path = "../../../../CPlantBox//modelparameter/rootsystem/"
+path = "../../../CPlantBox//modelparameter/rootsystem/"
 name = "Anagallis_femina_Leitner_2010"  # "Glycine_max"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")

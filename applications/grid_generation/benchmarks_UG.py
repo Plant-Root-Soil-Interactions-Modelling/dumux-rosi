@@ -1,3 +1,5 @@
+import sys; sys.path.append("../../../python/modules/"); sys.path.append("../../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules")
+
 from distmeshnd import *
 import sdf
 from vtk_tools import *
@@ -77,20 +79,19 @@ for i, t_ in enumerate(tetmid):
 #
 # Make the unstructured grid
 #
-points = vtkPoints(p)
-cells = vtkCells(t)
+points = vtk_points(p)
+cells = vtk_cells(t)
 grid = vtk.vtkUnstructuredGrid()
 grid.SetPoints(points)
 grid.SetCells(vtk.VTK_TETRA, cells)
 if celldata.shape[0] > 0:
-    grid.GetCellData().SetScalars(vtkData(celldata))
+    grid.GetCellData().SetScalars(vtk_data(celldata))
 
 #
 print()
 print("Points: ", p.shape)
 print("Triangles", t.shape)
 print()
-grid_quality(p, t)
 
 # write vtu
 writer = vtk.vtkXMLUnstructuredGridWriter()

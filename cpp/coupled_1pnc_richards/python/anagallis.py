@@ -1,4 +1,5 @@
 ''' Test '''
+import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ import math
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
-os.chdir("../../../build-cmake/rosi_benchmarking/coupled_1pnc_richards")
+os.chdir("../../../build-cmake/cpp/coupled_1pnc_richards")
 
 # # run simulation
 os.system("./coupled_periodic_1pnc_richards input/anagallis.input")

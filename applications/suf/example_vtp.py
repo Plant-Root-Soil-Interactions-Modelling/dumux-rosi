@@ -1,4 +1,6 @@
-import sys; sys.path.append("../../../python/modules/"); sys.path.append("../../../../CPlantBox/")
+import sys; sys.path.append("../../python/modules/"); sys.path.append("../../../CPlantBox/"); 
+sys.path.append("../../../CPlantBox/src/python_modules")
+
 
 import vtk_plot as vp
 import vtk_tools as vt

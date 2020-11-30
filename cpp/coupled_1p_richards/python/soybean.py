@@ -1,4 +1,5 @@
 ''' Soybean model '''
+""" NOT WORKING dgf is missing"""
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os

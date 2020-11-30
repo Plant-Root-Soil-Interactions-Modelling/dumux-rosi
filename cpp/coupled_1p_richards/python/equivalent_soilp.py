@@ -1,10 +1,9 @@
 ''' Script to compute equivalent soil water potential using SUF from Meunier et al., 2017 '''
 
-""" NOT WORKING result folder is missing & depricated, use XylemFlux and MappedSegments instead """
+""" NOT WORKING since soybean vtp are missing & depricated, use XylemFlux and MappedSegments instead """
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import matplotlib.pyplot as plt
-# from vtk_tools_SUF import *
 from vtk_tools import *
 import math
 import numpy as np

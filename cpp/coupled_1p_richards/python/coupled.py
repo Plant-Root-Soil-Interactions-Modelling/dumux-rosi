@@ -14,9 +14,9 @@ os.chdir("../../../build-cmake/cpp/coupled_1p_richards")
 os.system("./coupled input/benchmark_phosphate.input")
 
 # Figure
-s_, p_, z1_ = read3D_vtp("benchmark_phosphate2-00011", 1)
+p_, z1_ = read3D_data("benchmark_phosphate2-00011.vtp")
 h1_ = vg.pa2head(p_)
-plt.plot(h1_, z1_ * 100, "r+")
+plt.plot(h1_, z1_[:,0] * 100, "r+")
 plt.xlabel('$\psi$ (cm)')
 plt.ylabel('Depth (cm)')
 

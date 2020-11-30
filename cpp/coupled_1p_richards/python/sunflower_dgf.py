@@ -1,11 +1,12 @@
 """analysis of results using signed distance functions"""
-import sys; sys.path.append("../../../../CPlantBox/src/python_modules/"); sys.path.append("../../..")
+import sys; sys.path.append("../../../../CPlantBox"); sys.path.append("../../../../CPlantBox/src/python_modules/"); sys.path.append("../../..")
+
 from cmath import pi
 import plantbox as pb
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = "../modelparameter/rootsystem/"
+path = "../../../../CPlantBox/modelparameter/rootsystem/"
 name = "Heliantus_Pagès_2013"  # ""
 
 rs = pb.RootSystem()

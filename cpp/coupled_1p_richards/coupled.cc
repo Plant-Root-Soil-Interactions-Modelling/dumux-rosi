@@ -153,7 +153,8 @@ int main(int argc, char** argv) try
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CPlantBox::RootSystem>();
-        rootSystem->readParameters("modelparameter/rootsystem/"+getParam<std::string>("RootSystem.Grid.File")+".xml");
+        rootSystem->readParameters("../../../../CPlantBox/modelparameter/rootsystem/"+
+        		getParam<std::string>("RootSystem.Grid.File")+".xml");
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
         // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
