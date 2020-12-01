@@ -26,6 +26,7 @@ path = "../../../CPlantBox//modelparameter/rootsystem/"
 name = "Anagallis_femina_Leitner_2010"  # "Glycine_max"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")
+rs.getRootSystemParameter().seedPos.z = -0.1
 rs.initialize()
 rs.simulate(simtime, False)
 
