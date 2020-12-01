@@ -18,19 +18,78 @@ import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 
-def sinusoidal(t):
-    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
-
 """ 
 Benchmark M1.2 static root system in soil (with the classic sink)
 
 also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
+"""Functions"""
+def sinusoidal(t):
+    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
+
+def ESWP():
+    """SUF"""
+    r = XylemFluxPython("../../grids/RootSystem8.rsml")
+    p_s = np.linspace(-500, -200, 3001)  # 3 meter down, from -200 to -500, resolution in mm
+    init_conductivities(r, age_dependent)
+    r.rs.sort()  # ensures segment is located at index s.y-1
+    nodes = r.get_nodes()
+    rs_age = np.max(r.get_ages())
+    soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
+    r.rs.setSoilGrid(soil_index)
+    """ numerical solution of transpiration -10000 cm3/day"""
+    rx = r.solve_neumann(sim_time, -10000, p_s, True)  # True: matric potential given per cell (not per segment)
+    fluxes = r.segFluxes(sim_time, rx, p_s, False, True)  # cm3/day (double simTime,  rx,  sx,  approx, cells
+    print("Transpiration", r.collar_flux(sim_time, rx, p_s), np.sum(fluxes), "cm3/day")
+    suf = np.array(fluxes) / -10000.  # [1]
+    print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
+
+
+    """Equivalent soil water potential"""
+    min_b = [-4., -4., -15.]
+    max_b = [4., 4., 0.]
+    cell_number = [8, 8, 15]  
+    periodic=False;
+
+    s = RichardsWrapper(RichardsSP())
+    s.initialize()
+    s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
+    loam = [0.08, 0.43, 0.04, 1.6, 50]  # we do not plan to calculate a thing, but we need parameters for initialisation
+    s.setVGParameters([loam])
+    s.setTopBC("noFlux")
+    s.setBotBC("noFlux")
+    s.initializeProblem()
+    # Open .vtu
+    pd = vp.read_vtu("DuMux_1cm-00000.vtu")
+    print(pd.GetBounds())  # xmin, xmax, ymin, ymax, zmin, zmax
+    print("Number of cells", vt.np_cells(pd).shape[0])
+
+    data, _ = vt.np_data(pd,0, True)  # grid, data_index, cell data
+    data = s.to_head(data)
+    print("Data range from {:g} to {:g}".format(np.min(data), np.max(data)))
+    s.setInitialCondition(data)  # put data to the grid
+
+
+    """ Coupling (map indices) """
+    picker = lambda x, y, z : s.pick([x, y, z])
+    r.rs.setSoilGrid(picker)  # maps segments
+
+    """ 3. EQUIVALENT SOIL WATER POTENTIAL """
+    eswp = 0.
+    ana = pb.SegmentAnalyser(r.rs)
+    n = len(ana.segments)
+    seg2cell_ = r.rs.seg2cell
+    for i in range(0, n):
+        eswp += suf[i] * data[seg2cell_[i]]
+    print("\nEquivalent soil water potential", eswp)
+    return eswp
+
+
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8, 8, 15]  
 periodic = False
 
 name = "DuMux_1cm"
@@ -55,7 +114,7 @@ s = RichardsWrapper(cpp_base)
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
-s.setTopBC("noFlux")
+s.setTopBC("atmospheric", 0.5, [[0., 0.5,1.,1.e10], [0.1,0.1,1., 1.]])
 s.setBotBC("noFlux")
 s.setVGParameters([soil])
 s.setParameter("Newton.EnableChop", "True")
@@ -85,7 +144,7 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 N = round(sim_time / dt)
 t = 0.
-"""
+
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
@@ -130,7 +189,7 @@ for i in range(0, N):
     t += dt
 
 s.writeDumuxVTK(name)
-
+print("Root collar potential: ",rx[0]," eswp: ",ESWP())
 
 
 if rank == 0:
@@ -146,65 +205,5 @@ if rank == 0:
     ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
     plt.show()
-"""
 
-
-"""SUF"""
-r = XylemFluxPython("../../grids/RootSystem8.rsml")
-p_s = np.linspace(-500, -200, 3001)  # 3 meter down, from -200 to -500, resolution in mm
-init_conductivities(r, age_dependent)
-r.rs.sort()  # ensures segment is located at index s.y-1
-nodes = r.get_nodes()
-rs_age = np.max(r.get_ages())
-soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
-r.rs.setSoilGrid(soil_index)
-""" numerical solution of transpiration -10000 cm3/day"""
-rx = r.solve_neumann(sim_time, -10000, p_s, True)  # True: matric potential given per cell (not per segment)
-fluxes = r.segFluxes(sim_time, rx, p_s, False, True)  # cm3/day (double simTime,  rx,  sx,  approx, cells
-print("Transpiration", r.collar_flux(sim_time, rx, p_s), np.sum(fluxes), "cm3/day")
-suf = np.array(fluxes) / -10000.  # [1]
-print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
-
-
-"""Equivalent soil water potential"""
-# Open .vtu
-#pd = vp.read_vtu("soybean_Honly-00001.vtu")
-pd = vp.read_vtu("DuMux_1cm-00000.vtu")
-print(pd.GetBounds())  # xmin, xmax, ymin, ymax, zmin, zmax
-print("Number of cells", vt.np_cells(pd).shape[0])
-
-data, _ = vt.np_data(pd,0, True)  # grid, data_index, cell data
-data = s.to_head(data)
-print("Data range from {:g} to {:g}".format(np.min(data), np.max(data)))
-
-
-min_b = [-4., -4., -15.]
-max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  
-periodic=False;
-
-s = RichardsWrapper(RichardsSP())
-s.initialize()
-s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
-loam = [0.08, 0.43, 0.04, 1.6, 50]  # we do not plan to calculate a thing, but we need parameters for initialisation
-s.setVGParameters([loam])
-s.setTopBC("noFlux")
-s.setBotBC("noFlux")
-print("--")
-s.initializeProblem()
-s.setInitialCondition(data)  # put data to the grid
-print("i.c.")
-
-""" Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
-r.rs.setSoilGrid(picker)  # maps segments
-
-""" 3. EQUIVALENT SOIL WATER POTENTIAL """
-eswp = 0.
-ana = pb.SegmentAnalyser(r.rs)
-n = len(ana.segments)
-seg2cell_ = r.rs.seg2cell
-for i in range(0, n):
-    eswp += suf[i] * data[seg2cell_[i]]
-print("\nEquivalent soil water potential", eswp)
 
