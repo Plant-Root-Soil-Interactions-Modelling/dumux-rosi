@@ -148,6 +148,7 @@ if rank == 0:
     plt.show()
 """
 
+
 """SUF"""
 r = XylemFluxPython("../../grids/RootSystem8.rsml")
 p_s = np.linspace(-500, -200, 3001)  # 3 meter down, from -200 to -500, resolution in mm
@@ -163,6 +164,7 @@ fluxes = r.segFluxes(sim_time, rx, p_s, False, True)  # cm3/day (double simTime,
 print("Transpiration", r.collar_flux(sim_time, rx, p_s), np.sum(fluxes), "cm3/day")
 suf = np.array(fluxes) / -10000.  # [1]
 print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
+
 
 """Equivalent soil water potential"""
 # Open .vtu
@@ -180,9 +182,10 @@ min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 cell_number = [8, 8, 15]  
 periodic=False;
-s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
+
 s = RichardsWrapper(RichardsSP())
 s.initialize()
+s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 loam = [0.08, 0.43, 0.04, 1.6, 50]  # we do not plan to calculate a thing, but we need parameters for initialisation
 s.setVGParameters([loam])
 s.setTopBC("noFlux")
@@ -202,7 +205,6 @@ ana = pb.SegmentAnalyser(r.rs)
 n = len(ana.segments)
 seg2cell_ = r.rs.seg2cell
 for i in range(0, n):
-    print(eswp)
-    eswp += suf[i] * data[ind]
+    eswp += suf[i] * data[seg2cell_[i]]
 print("\nEquivalent soil water potential", eswp)
 
