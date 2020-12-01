@@ -1,0 +1,4 @@
+Applications that are using dumux-rosi, or are relevant to dumux-rosi models
+
+grid_generation 		numerical grid generation using DistMesh
+suf 					how to compute surface uptake fraction, and equivalent soil water potential

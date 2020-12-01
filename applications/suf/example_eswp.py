@@ -54,12 +54,12 @@ r.setKr([kr])  # or use setKrTables, see XylemFlux.h
 r.setKx([kz])
 
 """ numerical solution of transpiration -1 cm3/day"""
-rx = r.solve_neumann(simtime, -1, p_s, True)  # True: matric potential given per cell (not per segment)
+rx = r.solve_neumann(simtime, -10000, p_s, True)  # True: matric potential given per cell (not per segment)
 print("solved")
 
 fluxes = r.segFluxes(simtime, rx, p_s, False, True)  # cm3/day (double simTime,  rx,  sx,  approx, cells
 print("Transpiration", r.collar_flux(simtime, rx, p_s), np.sum(fluxes), "cm3/day")
-suf = np.array(fluxes) / -1.  # [1]
+suf = np.array(fluxes) / -10000.  # [1]
 
 # """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
