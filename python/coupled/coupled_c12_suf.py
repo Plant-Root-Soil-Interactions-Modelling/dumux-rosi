@@ -153,7 +153,6 @@ r = XylemFluxPython("../../grids/RootSystem8.rsml")
 p_s = np.linspace(-500, -200, 3001)  # 3 meter down, from -200 to -500, resolution in mm
 init_conductivities(r, age_dependent)
 r.rs.sort()  # ensures segment is located at index s.y-1
-r.test()  # sanity checks
 nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
 soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
@@ -172,23 +171,26 @@ pd = vp.read_vtu("DuMux_1cm-00000.vtu")
 print(pd.GetBounds())  # xmin, xmax, ymin, ymax, zmin, zmax
 print("Number of cells", vt.np_cells(pd).shape[0])
 
-data, _ = vt.np_data(pd,9, True)  # grid, data_index, cell data
+data, _ = vt.np_data(pd,0, True)  # grid, data_index, cell data
+data = s.to_head(data)
 print("Data range from {:g} to {:g}".format(np.min(data), np.max(data)))
 
-min_ = np.array([-18.5, -3, -150])
-max_ = np.array([18.5, 3, 0.])
-res_ = np.array([18, 3, 75])
-periodic = True
 
+min_b = [-4., -4., -15.]
+max_b = [4., 4., 0.]
+cell_number = [8, 8, 15]  
+periodic=False;
+s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s = RichardsWrapper(RichardsSP())
 s.initialize()
-s.createGrid(min_, max_, res_, periodic)  # [cm]
 loam = [0.08, 0.43, 0.04, 1.6, 50]  # we do not plan to calculate a thing, but we need parameters for initialisation
 s.setVGParameters([loam])
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
+print("--")
 s.initializeProblem()
 s.setInitialCondition(data)  # put data to the grid
+print("i.c.")
 
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
@@ -198,8 +200,9 @@ r.rs.setSoilGrid(picker)  # maps segments
 eswp = 0.
 ana = pb.SegmentAnalyser(r.rs)
 n = len(ana.segments)
-seg2cell = r.rs.seg2cell
+seg2cell_ = r.rs.seg2cell
 for i in range(0, n):
-    eswp += suf[i] * data[seg2cell[i]]
+    print(eswp)
+    eswp += suf[i] * data[ind]
 print("\nEquivalent soil water potential", eswp)
 
