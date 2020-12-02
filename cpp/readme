@@ -1,0 +1,16 @@
+Examples that use DuMux directly:
+roots_1p
+roots_1pnc
+soil_richards
+soil_richardsnc
+soil_tracer
+coupled_1p_richards
+coupled_1pnc_richards
+coupled_1pnc_richardsnc
+
+Scripts to run the models are located in the python/ subfolder, 
+DuMux input files in the input/ subfolder, and numerical grids in the grids/ subfolder
+
+modelparameter 		CPlantBox parameters in old depricated format. This is still used in the c++ examples from above
+
+python_binding 		for using DuMux as PDE solver, where teh simulation loop is in python pyhton

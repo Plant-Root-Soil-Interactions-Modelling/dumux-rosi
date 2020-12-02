@@ -1,0 +1,40 @@
+[Problem]
+Name = benchmark1 
+
+[TimeLoop]
+TEnd = 864000 # 1e9 # [s]
+DtInitial = 1 # [s]
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  ../../../grids/singleroot.dgf
+InitialT = 15 # days
+Radius = 0.2 # cm
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem.Collar]
+P = -1000 # cm pressure head
+
+[Soil.IC]
+P = -200 # cm pressure head
+
+[Component]
+liquidDiffCoeff = 2.3e-9
+Name = "D2O"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -10000
+CritCollarPAlpha = -1000
+CritTipP = 0
+ProductionRate = 3.26e-16 #  [mol kg-1 Pa-1 s-1] 
+ProductionAge = 5
+ProductionGrowth = "true"
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

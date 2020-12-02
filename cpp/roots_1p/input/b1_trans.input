@@ -1,0 +1,25 @@
+[Problem]
+Name = benchmark1 
+
+[TimeLoop]
+TEnd = 1e9 # 1e9 # [s]
+DtInitial = 1 # [s]
+
+[RootSystem.Grid]
+File =  ../../../grids/singleroot.dgf
+
+[RootSystem.Conductivity]
+# Kx = 0.173      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+# Kr = 2.6e-3     # radial conductivity [cm/hPa/day] similar (1 / day) 
+Kx =  4.32e-2     # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem]
+Radius = 0.2 # cm
+
+[Soil.IC]
+P = -200 # cm pressure head
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

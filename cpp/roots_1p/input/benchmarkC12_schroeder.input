@@ -1,0 +1,33 @@
+[Problem]
+Name = benchmarkC12
+
+[TimeLoop]
+TEnd = 43200 # half day [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 7200
+MaxTimeStepSize = 360 
+
+[RootSystem.Grid]
+File =  ../../../grids/DAP8_RootSys.dgf
+InitialT = 8 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2      # axial conductivity [cm^4/hPa/day] similar (cm^3 / day) 
+Kr = 1.728e-4     # radial conductivity [cm/hPa/day] similar (1 / day) 
+
+[RootSystem.Collar]
+Transpiration = 6.4e-3 # kg/day 
+Sinusoidal = True
+
+[Soil.IC]
+P = -644.8 -659.8
+Z = -.15 0.
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

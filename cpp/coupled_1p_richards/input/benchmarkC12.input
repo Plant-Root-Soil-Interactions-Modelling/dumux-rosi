@@ -1,0 +1,14 @@
+[TimeLoop]
+TEnd = 604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 360
+
+[Soil.Grid]
+Cells = 8 8 15
+# Cells = 16 16 30
+
+[Problem]
+Name = benchmarkC12c
+RootName = ../roots_1p/input/benchmarkC12.input
+SoilName = ../soil_richards/input/benchmarkC12_3d.input

@@ -1,0 +1,28 @@
+[Problem]
+Name = small 
+
+[TimeLoop]
+TEnd = 604800 # 604800 a week [s] # 86400 # a day
+CheckTimes = 43200 # half a day
+DtInitial = 360 # [s]
+MaxTimeStepSize = 360 # 1 h
+
+[RootSystem.Grid]
+File =  ../../../grids/example_3e.dgf
+InitialT = 0
+radiusIdx = 4
+
+[RootSystem.Conductivity]
+Kx = 4.32e-2 # axial conductivity [cm^4/hPa/day]
+Kr = 1.728e-4 # radial conductivity [cm/hPa/day] 
+
+[RootSystem.Collar]
+Transpiration = 1e-2 # 1.6e-2 [kg/day], 0.5 cm/day at 4 * 8 = 16 cm^3/day = 1.6e-2 kg/day
+# Sinusoidal = True
+
+[Soil.IC]
+P = -100  
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"

@@ -1,0 +1,35 @@
+[Problem]
+Name = sunflower_HLCT
+
+[TimeLoop]
+TEnd = 31536000 # a year, 0 is steady state
+DtInitial =  3600 # [s]
+MaxTimeStepSize = 86400 
+
+[Soil.Grid]
+LowerLeft = -0.25 -0.165 -1.50
+UpperRight = 0.25 0.165 0.
+Cells = 25 17 75 #50 * 33 * 150
+
+
+[Soil.BC.Top]
+Type = 4 # atmospheric
+
+[Climate]
+CSVFile = input/sunflower_precipitation_2003.csv # [cm day-1]
+#Precipitation = 1
+
+[Soil.BC.Bot]
+Type = 5 # 5 free drainage, 1 constant pressure 
+
+#[Soil.IC]
+P = -300
+
+[Soil.VanGenuchten] 
+# Hollabrunn_Convectional Tillage
+Qr = 0.0045	 
+Qs = 0.489
+Alpha =  0.1978# [1/cm] 
+N =  1.1457
+Ks = 857 # [cm/d] 		
+

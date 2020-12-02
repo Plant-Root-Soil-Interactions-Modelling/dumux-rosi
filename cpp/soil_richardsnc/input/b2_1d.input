@@ -1,0 +1,44 @@
+[Problem]
+Name = benchmark1d_2
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 604800 # 31536000 # a year [s] hopefully steady steate is reached after 1 year
+MaxTimeStepSize = 360 # 86400 # a day [s] 
+
+[Soil.Grid]
+UpperRight = 0
+LowerLeft = -0.53
+Cells = 52
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = -0.5 # [cm day-1]
+
+[Soil.BC.Bot]
+Type = 5 # free drainage, should be = 1 constant pressure head, not implemented yet
+Value = 0 # [cm] fully saturated
+# SType = 2 # SType = 0 is default (outflow), with no flux, solute accumulates 
+
+[Soil.IC]
+Z = -0.53 0.
+P = 0 -53. 
+C = 0 0 1.e-7 0 0
+CZ = -.53 -.25 -.2 -.15 0 
+
+[Soil.VanGenuchten] 
+# Loam: 
+Qr = 0.08 
+Qs = 0.43 
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d]  hydrus verdoppelt
+
+[Component]
+LiquidDiffusionCoefficient = 1.e-9  # 2.3e-9
+Name = "D2O"
+MolarMass = 2.e-5 # in kg/mol, molar mass heavy water D2O
+
+[Flux]
+UpwindWeight = 1
+
