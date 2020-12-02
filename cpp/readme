@@ -8,8 +8,10 @@ coupled_1p_richards
 coupled_1pnc_richards
 coupled_1pnc_richardsnc
 
+Subfolders:
 Scripts to run the models are located in the python/ subfolder, 
-DuMux input files in the input/ subfolder, and numerical grids in the grids/ subfolder
+DuMux input files in the input/ subfolder, 
+and numerical grids in the grids/ subfolder
 
 modelparameter 		CPlantBox parameters in old depricated format. This is still used in the c++ examples from above
 
