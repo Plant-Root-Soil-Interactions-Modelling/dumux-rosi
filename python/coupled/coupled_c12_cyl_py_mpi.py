@@ -89,7 +89,7 @@ cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 segs = r.get_segments()
 rs_age = 8 * (not predefined_growth)  # rs_age = 0 in case of growth, else 8 days
 seg_ages = r.get_ages(rs_age)
-seg_types = r.rs.types
+seg_types = r.rs.subTypes
 seg_length = r.segLength()
 inner_radii = np.array(r.rs.radii)
 outer_radii = r.segOuterRadii(split_type)
