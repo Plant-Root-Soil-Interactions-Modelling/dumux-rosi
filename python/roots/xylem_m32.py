@@ -71,8 +71,19 @@ ax2.set_title("Age dependent conductivities")
 plt.show()
 
 """ Additional vtk plot """
+radial_fluxes = r.radial_fluxes(simtime, rx_b, [p_s]) 
+axial_fluxes = r.axial_fluxes(simtime, rx_b, [p_s])
+
+axial_i = np.array([r.axial_flux(i, simtime, rx_b, [p_s], [], True, True) for i in range(0, len(axial_fluxes))]) # same as axial_fluxes, but in node j
+axial_j = np.array([r.axial_flux(i, simtime, rx_b, [p_s], [], True, False) for i in range(0, len(axial_fluxes))]) # same as axial_fluxes, but in node j
+
+
 ana = pb.SegmentAnalyser(r.rs)
 ana.addData("rx", rx_b)  # node data are converted to segment data
-pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx"])
-vp.plot_roots(pd, "rx")
+ana.addData("radial", radial_fluxes)
+ana.addData("axial", axial_fluxes)
+ana.addData("net", axial_i-axial_j-radial_fluxes) # np.maximum(1.e-2,)
+pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx", "axial", "radial", "net"])
+vp.plot_roots(pd, "net") # axial, radial, rx
+
 
