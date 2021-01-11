@@ -49,10 +49,10 @@ public:
         time0_ = Dumux::getParam<double>("RootSystem.Grid.InitialT", 14)*24*3600; // days -> s
         kr_ = InputFileFunction("RootSystem.Conductivity", "Kr", "KrAge", krIdx_, orderIdx_); // [cm/hPa/day] ([day])
         kr_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
-        kr_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        kr_.setFunctionScale(1.0/(24.*3600.*1000*9.81)); // [cm/hPa/day] -> [m/Pa/s]
         kx_ = InputFileFunction("RootSystem.Conductivity","Kx", "KxAge", kxIdx_, orderIdx_); // [cm^4/hPa/day] ([day])
         kx_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
-        kx_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+        kx_.setFunctionScale(1e-6/(24.*3600.*1000*9.81)); // [cm^4/hPa/day] -> [m^4/Pa/s]
         radius_ = InputFileFunction("RootSystem.Grid", "Radius", "RadiusAge", radiusIdx_, orderIdx_); // [cm] ([day])
         radius_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius_.setFunctionScale(1.e-2); // [cm] -> [m]
@@ -64,10 +64,10 @@ public:
         // Conductivities and radius of (artificial) shoot
         kx0_ = InputFileFunction("RootSystem.Conductivity" , "ShootKx", "ShootKxAge", 1.); // default = high axial flux
         kx0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
-        kx0_.setFunctionScale(1.e-10/(24.*3600.)); // [cm^4/hPa/day] -> [m^4/Pa/s]
+        kx0_.setFunctionScale(1.0/(24.*3600.*1000*9.81)); // [cm^4/hPa/day] -> [m^4/Pa/s]
         kr0_ = InputFileFunction("RootSystem.Conductivity", "ShootKr", "ShootKrAge", 0.); // default = no radial flux
         kr0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
-        kr0_.setFunctionScale(1.e-4/(24.*3600.)); // [cm/hPa/day] -> [m/Pa/s]
+        kr0_.setFunctionScale(1e-6/(24.*3600.*1000*9.81)); // [cm/hPa/day] -> [m/Pa/s]
         radius0_ = InputFileFunction("RootSystem.Conductivity", "ShootRadius", "ShootRadiusAge", 0.5); // default = large radius
         radius0_.setVariableScale(1./(24.*3600.)); // [s] -> [day]
         radius0_.setFunctionScale(1.e-2); // [cm] -> [m]
