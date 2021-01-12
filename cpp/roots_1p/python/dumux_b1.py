@@ -17,7 +17,7 @@ import van_genuchten as vg
 import numpy as np
 from math import *
 
-g = 9.81  # gravitational acceleration (m/s^2)
+g = 10 #9.81  # gravitational acceleration (m/s^2)
 rho = 1.e3  # density of water, (kg/m^3)
 ref = 1.e5  # Pa
 
