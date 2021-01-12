@@ -23,10 +23,12 @@ soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibir
 rs.setSoilGrid(soil_index)
 
 path = "../../../CPlantBox//modelparameter/rootsystem/"
-name = "Anagallis_femina_Leitner_2010"  # "Glycine_max"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
+name = "Glycine_max"  # "Glycine_max"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 rs.setSeed(1)
 rs.readParameters(path + name + ".xml")
 rs.getRootSystemParameter().seedPos.z = -0.1
+# for p in rs.getRootRandomParameter():
+#     p.dx = 0.01
 rs.initialize()
 rs.simulate(simtime, False)
 
@@ -36,16 +38,16 @@ r.setKr([kr])  # or use setKrTables, see XylemFlux.h
 r.setKx([kz])
 
 """ numerical solution of transpiration -1 cm3/day"""
-rx = r.solve_neumann(simtime, -1., p_s, True)  # True: matric potential given per cell (not per segment)
+rx = r.solve_neumann(simtime, -1.e5, p_s, True)  # True: matric potential given per cell (not per segment) high number to recuce spurious fluxes
 # rx = r.solve_dirichlet(simtime, -200, 0., p_s, True)
 print("solved")
 
-fluxes = r.segFluxes(simtime, rx, p_s, False, True)  # cm3/day (double simTime,  rx,  sx,  approx, cells
+fluxes = r.segFluxes(simtime, rx, p_s, False, True)  # cm3/day, simTime,  rx,  sx,  approx, cells
 print("Transpiration", r.collar_flux(simtime, rx, p_s), np.sum(fluxes), "cm3/day")
-suf = np.array(fluxes) / -1.  # [1]
-print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
+suf = np.array(fluxes) / -1.e5  # [1]
+print("Sum of SUF", np.sum(suf), "from", np.min(suf), "to", np.max(suf), "summed positive", np.sum(suf[suf>=0]))
 
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
-ana.addData("SUF", np.minimum(suf, 1.e-2))  # cut off for vizualisation
+ana.addData("SUF", np.minimum(suf, np.minimum(suf,0.)))  # cut off for vizualisation
 vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"

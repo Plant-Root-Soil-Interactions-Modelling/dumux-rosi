@@ -52,29 +52,36 @@ fluxes = r.segFluxes(simtime, rx, p_s, False, True)  # cm3/day (double simTime, 
 print("Transpiration", r.collar_flux(simtime, rx, p_s), np.sum(fluxes), "cm3/day")
 suf = np.array(fluxes) / -10000.  # [1]
 
-# """ vtk plot """
-ana = pb.SegmentAnalyser(r.rs)
-ana.addData("SUF", np.minimum(suf, 1.e-4))  # cut off for vizualisation
-vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"
+# # """ vtk plot """
+# ana = pb.SegmentAnalyser(r.rs)
+# ana.addData("SUF", suf) # cut off for vizualisation np.minimum(suf, 1.e-4)
+# vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"
 
 print("Sum of suf", np.sum(suf), "from", np.min(suf), "to", np.max(suf))
 
 """ 2. Equivalent soil water potential """
 #nodes = r.get_nodes()
-p_s = np.linspace(-14000, -10000, 3001); p_s[0:10]=-300;  # 3 meter down, resolution in mm, dry with moist top
-soil_index = lambda x, y, z : 0
+p_s = np.linspace(-14000, -10000, 3001)
+p_s[0:10]=-300;  # 3 meter down, resolution in mm, dry with moist top
+soil_index = lambda x, y, z : int(-10 * z)
 r.rs.setSoilGrid(soil_index)
 
 """ Numerical solution"""
-rx = r.solve_neumann(simtime, -0.1, p_s, True)  # True: matric potential given per cell (not per segment)
+rx = r.solve_neumann(simtime, -0., p_s, True)  # True: matric potential given per cell (not per segment)
+
 print("Transpiration", r.collar_flux(0., rx, [p_s]), "cm3/day")
 eswp = 0.
-n = len(ana.segments)
+n = len(r.rs.segments)
 seg2cell = r.rs.seg2cell
 for i in range(0, n):
     eswp += suf[i] * p_s[seg2cell[i]]
-print("\nEquivalent soil water potential", eswp)
-print("\nRoot collar potential", rx[0])
+
+print()
+print("Equivalent soil water potential", eswp)
+
+z = r.rs.nodes[1].z
+print("Root collar potential          ", rx[1], "node z", z, "psi", p_s[soil_index(0,0,z)])
+print()
 
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
