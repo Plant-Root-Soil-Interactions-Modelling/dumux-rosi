@@ -33,6 +33,7 @@ def solve(soil, simtime, evap, NZ, ic = -200):
 
     s.setVGParameters([soil])
     s.setHomogeneousIC(ic)  # cm pressure head
+    # s.setParameter("Problem.EnableGravity", "false")
     s.initializeProblem()
     s.setCriticalPressure(-10000)
     s.setRegularisation(1.e-6, 0.)

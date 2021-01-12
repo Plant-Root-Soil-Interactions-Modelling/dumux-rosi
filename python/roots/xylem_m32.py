@@ -20,7 +20,7 @@ kz = 4.32e-2  # [cm^3/day]
 kr = 1.728e-4  # [1/day]
 p_s = -200  # static soil pressure [cm]
 p0 = -500  # dircichlet bc at top
-simtime = 14  # [day] for task b
+simtime = 8 # [day] for task b
 
 """ root problem """
 r = XylemFluxPython("../../grids/RootSystem8.rsml")
@@ -48,6 +48,7 @@ ax1.set_xlabel("Xylem pressure (cm)")
 ax1.set_ylabel("Depth (m)")
 ax1.set_title("Constant conductivities")
 
+
 print()
 
 """ Numerical solution (b) """
@@ -70,20 +71,20 @@ ax2.set_title("Age dependent conductivities")
 
 plt.show()
 
-""" Additional vtk plot """
-radial_fluxes = r.radial_fluxes(simtime, rx_b, [p_s]) 
-axial_fluxes = r.axial_fluxes(simtime, rx_b, [p_s])
+# """ Additional vtk plot """
+# radial_fluxes = r.radial_fluxes(simtime, rx_b, [p_s]) 
+# axial_fluxes = r.axial_fluxes(simtime, rx_b, [p_s]) # = axial_i
+# 
+# axial_i = np.array([r.axial_flux(i, simtime, rx_b, [p_s], [], True, True) for i in range(0, len(axial_fluxes))]) # same as axial_fluxes, but in node j
+# axial_j = np.array([r.axial_flux(i, simtime, rx_b, [p_s], [], True, False) for i in range(0, len(axial_fluxes))]) # same as axial_fluxes, but in node j
+# 
+# ana = pb.SegmentAnalyser(r.rs)
+# ana.addData("rx", rx_b)  # node data are converted to segment data
+# ana.addData("radial", radial_fluxes)
+# ana.addData("axial", axial_fluxes)
+# ana.addData("net", axial_i-axial_j-radial_fluxes) # np.maximum(1.e-2,)
+# pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx", "axial", "radial", "net"])
+# vp.plot_roots(pd, "net") # axial, radial, rx
 
-axial_i = np.array([r.axial_flux(i, simtime, rx_b, [p_s], [], True, True) for i in range(0, len(axial_fluxes))]) # same as axial_fluxes, but in node j
-axial_j = np.array([r.axial_flux(i, simtime, rx_b, [p_s], [], True, False) for i in range(0, len(axial_fluxes))]) # same as axial_fluxes, but in node j
-
-
-ana = pb.SegmentAnalyser(r.rs)
-ana.addData("rx", rx_b)  # node data are converted to segment data
-ana.addData("radial", radial_fluxes)
-ana.addData("axial", axial_fluxes)
-ana.addData("net", axial_i-axial_j-radial_fluxes) # np.maximum(1.e-2,)
-pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx", "axial", "radial", "net"])
-vp.plot_roots(pd, "net") # axial, radial, rx
 
 
