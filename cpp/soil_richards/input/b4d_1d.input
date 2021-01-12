@@ -1,5 +1,6 @@
 [Problem]
 Name = benchmark1d_4d
+EnableGravity = false
 
 [TimeLoop]
 DtInitial =  1 # [s]
