@@ -74,8 +74,6 @@ r.test()  # sanity checks
 nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
 
-input()
-
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
