@@ -63,7 +63,9 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
-r = XylemFluxPython("../../grids/RootSystem8.rsml")
+fname = "../../../CPlantBox/tutorial/examples/python/results/example_3c.rsml" 
+# fname = "../../grids/RootSystem8.rsml"
+r = XylemFluxPython(fname)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
 init_conductivities(r, age_dependent)
@@ -71,6 +73,8 @@ r.rs.sort()  # ensures segment is located at index s.y-1
 r.test()  # sanity checks
 nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
+
+input()
 
 """ Coupling (map indices) """
 picker = lambda x, y, z : s.pick([x, y, z])
