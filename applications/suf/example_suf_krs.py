@@ -19,7 +19,7 @@ simtime = 20  # [day] for task b
 """ root system """
 rs = pb.MappedRootSystem()
 p_s = np.linspace(-500, -200, 3001)  #  -200.*np.ones((2001, 1))   # 3 meter down, from -200 to -500, resolution in mm
-soil_index = lambda x, y, z : int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
+soil_index = lambda x, y, z: int(-10 * z)  # maps to p_s (hydrostatic equilibirum)
 rs.setSoilGrid(soil_index)
 
 path = "../../../CPlantBox//modelparameter/rootsystem/"
@@ -31,6 +31,10 @@ rs.getRootSystemParameter().seedPos.z = -0.1
 #     p.dx = 0.01
 rs.initialize()
 rs.simulate(simtime, False)
+
+print()
+print("Shoot segments: ", [str(s) for s in rs.getShootSegments()])
+print()
 
 """ set up xylem parameters """
 r = XylemFluxPython(rs)
@@ -45,7 +49,7 @@ print("solved")
 fluxes = r.segFluxes(simtime, rx, p_s, False, True)  # cm3/day, simTime,  rx,  sx,  approx, cells
 print("Transpiration", r.collar_flux(simtime, rx, p_s), np.sum(fluxes), "cm3/day")
 suf = np.array(fluxes) / -1.e5  # [1]
-print("Sum of SUF", np.sum(suf), "from", np.min(suf), "to", np.max(suf), "summed positive", np.sum(suf[suf>=0]))
+print("Sum of SUF", np.sum(suf), "from", np.min(suf), "to", np.max(suf), "summed positive", np.sum(suf[suf >= 0]))
 
 eswp = 0.
 n = len(r.rs.segments)
@@ -53,11 +57,11 @@ seg2cell = r.rs.seg2cell
 for i in range(0, n):
     eswp += suf[i] * p_s[seg2cell[i]]
 
-Krs = -1.e5/(eswp - rx[0])
+Krs = -1.e5 / (eswp - rx[1])
 
-print("Krs: ",Krs)
+print("Krs: ", Krs)
 
 """ Additional vtk plot """
 ana = pb.SegmentAnalyser(r.rs)
-ana.addData("SUF", np.minimum(suf, np.minimum(suf,0.)))  # cut off for vizualisation
+ana.addData("SUF", np.minimum(suf, np.minimum(suf, 0.)))  # cut off for vizualisation
 vp.plot_roots(ana, "SUF", "Soil uptake fraction (cm3 day)")  # "fluxes"
