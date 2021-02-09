@@ -26,7 +26,11 @@ nodes = vt.np_points(pd)
 pd.SetPoints(vt.vtk_points(100.*nodes))
 
 """ convert from cell to point data """
-print(pd.GetCellData())
+# print(pd.GetCellData())
+n = pd.GetPointData().GetNumberOfArrays()
+for i in range(0,n):
+    pd.GetPointData().RemoveArray(0)
+    
 segs = vt.np_cells(pd)
 
 # age (age [s] -> emergence_time [day])
