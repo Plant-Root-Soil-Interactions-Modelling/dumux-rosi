@@ -93,10 +93,10 @@ public:
 		bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
 
 		// Component
-		bcSTopType_ = getParam<int>("Soil.BC.Top.SType", outflow);
-		bcSBotType_ = getParam<int>("Soil.BC.Bot.SType", outflow);
-		bcSTopValue_ = getParam<Scalar>("Soil.BC.Top.CValue", 0.);
-		bcSBotValue_ = getParam<Scalar>("Soil.BC.Bot.CValue", 0.);
+		bcSTopType_[0] = getParam<int>("Soil.BC.Top.SType", outflow);
+		bcSBotType_[0] = getParam<int>("Soil.BC.Bot.SType", outflow);
+		bcSTopValue_[0] = getParam<Scalar>("Soil.BC.Top.CValue", 0.);
+		bcSBotValue_[0] = getParam<Scalar>("Soil.BC.Bot.CValue", 0.);
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
@@ -123,7 +123,7 @@ public:
 		std::string filestr = this->name() + ".csv"; // output file
 		myfile_.open(filestr.c_str());
 		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValue_  << " bcSTopType " << bcSTopType_ << "; bcSBotType " << bcSBotType_
+				<<  bcBotType_ << ", " << bcBotValue_  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
 				<< criticalPressure_ << "\n" << std::flush;
 	}
@@ -302,19 +302,19 @@ public:
 		 * SOLUTE
 		 */
 		if (onUpperBoundary_(pos)) { // top bc Solute
-			switch (bcSTopType_) {
+			switch (bcSTopType_[0]) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
-				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				break;
 
 			}
 			case constantFlux: {
-				flux[transportEqIdx] = -bcSTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+				flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 				break;
 			}
 			case outflow: {
@@ -334,19 +334,19 @@ public:
 				DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute): unknown error");
 			}
 		} else if (onLowerBoundary_(pos)) { // bot bc Solute
-			switch (bcSBotType_) {
+			switch (bcSBotType_[0]) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
-				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
 				break;
 			}
 			case constantFlux: {
-				flux[transportEqIdx] = -bcSBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+				flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 				break;
 			}
 			case outflow: {
@@ -563,15 +563,16 @@ public:
     	this->spatialParams().setRegularisation(pcEps,krEps);
     }
 
-	// BC, direct access for Python binding (setBcTop, setBcBot)
+	// BC, direct access for Python binding (setTopBC, setBotBC, in richards.hh)
 	int bcTopType_;
 	int bcBotType_;
 	Scalar bcTopValue_;
 	Scalar bcBotValue_;
-	int bcSTopType_;
-	int bcSBotType_;
-	Scalar bcSTopValue_;
-	Scalar bcSBotValue_;
+
+	std::vector<int> bcSTopType_ = std::vector<int>(1); // one solute
+	std::vector<int> bcSBotType_ = std::vector<int>(1);
+	std::vector<double> bcSTopValue_ = std::vector<double>(1);
+	std::vector<double> bcSBotValue_= std::vector<double>(1);
 
 
 private:

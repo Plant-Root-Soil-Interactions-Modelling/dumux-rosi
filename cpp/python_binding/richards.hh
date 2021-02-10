@@ -276,6 +276,28 @@ public:
     	this->problem->bcBotValue_ = value;
     }
 
+    /**
+     * Changes solute boundary condition in initialized problem (e.g. within the simulation loop)
+     * Dirichlet types: value [cm] TODO Units?
+     * Neumann types: value [cm/day] = [cm3/cm2/day]
+     */
+    void setSTopBC(std::vector<int> types, std::vector<double> values) {
+    	this->checkInitialized();
+    	this->problem->bcSTopType_ = types;
+    	this->problem->bcSTopValue_ = values;
+    }
+
+    /**
+     * Changes solute boundary condition in initialized problem (e.g. within the simulation loop)
+     * Dirichlet types: value [cm] TODO Units?
+     * Neumann types: value [cm/day] = [cm3/cm2/day]
+     */
+    void setSBotBC(std::vector<int> types, std::vector<double> values) {
+    	this->checkInitialized();
+    	this->problem->bcSBotType_ = types;
+    	this->problem->bcSBotValue_ = values;
+    }
+
 protected:
 
     std::vector<double> cellVolume;
@@ -302,24 +324,28 @@ protected:
  * pybind11
  */
 template<class Problem, class Assembler, class LinearSolver>
-void init_richardssp(py::module &m, std::string name) {
-    using RichardsSP = Richards<Problem, Assembler, LinearSolver>;
-	py::class_<RichardsSP, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
+void init_richards(py::module &m, std::string name) {
+    using Richards_ = Richards<Problem, Assembler, LinearSolver>;
+	py::class_<Richards_, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
-   .def("initialize", &RichardsSP::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
-   .def("setSource", &RichardsSP::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
-   .def("applySource", &RichardsSP::applySource)
-   .def("setCriticalPressure", &RichardsSP::setCriticalPressure)
-   .def("getSolutionHead", &RichardsSP::getSolutionHead, py::arg("eqIdx") = 0)
-   .def("getSolutionHeadAt", &RichardsSP::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
-   .def("getWaterContent",&RichardsSP::getWaterContent)
-   .def("getSaturation",&RichardsSP::getSaturation)
-   .def("getWaterVolume",&RichardsSP::getWaterVolume)
-   .def("getVelocity1D", &RichardsSP::getVelocity1D)
-   .def("writeDumuxVTK",&RichardsSP::writeDumuxVTK)
-   .def("setRegularisation",&RichardsSP::setRegularisation)
-   .def("setTopBC",&RichardsSP::setTopBC)
-   .def("setBotBC",&RichardsSP::setBotBC);
+   .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+   .def("setSource", &Richards_::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
+   .def("applySource", &Richards_::applySource)
+   .def("setCriticalPressure", &Richards_::setCriticalPressure)
+   .def("getSolutionHead", &Richards_::getSolutionHead, py::arg("eqIdx") = 0)
+   .def("getSolutionHeadAt", &Richards_::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
+   .def("getWaterContent",&Richards_::getWaterContent)
+   .def("getSaturation",&Richards_::getSaturation)
+   .def("getWaterVolume",&Richards_::getWaterVolume)
+   .def("getVelocity1D", &Richards_::getVelocity1D)
+   .def("writeDumuxVTK",&Richards_::writeDumuxVTK)
+   .def("setRegularisation",&Richards_::setRegularisation)
+   .def("setTopBC",&Richards_::setTopBC)
+   .def("setBotBC",&Richards_::setBotBC)
+   .def("setSTopBC",&Richards_::setSTopBC)
+   .def("setSBotBC",&Richards_::setSBotBC);
+
 }
+
 
 #endif

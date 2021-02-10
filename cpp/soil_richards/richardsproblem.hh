@@ -525,6 +525,12 @@ public:
 	double bcTopValue_;
 	double bcBotValue_;
 
+	// dummy for richardsnc types (needed by richards.hh)
+	std::vector<int> bcSTopType_ = std::vector<int>(0); // zero solutes
+	std::vector<int> bcSBotType_ = std::vector<int>(0);
+	std::vector<double> bcSTopValue_ = std::vector<double>(0);
+	std::vector<double> bcSBotValue_= std::vector<double>(0);
+
 private:
 
 	//! cm pressure head -> Pascal

@@ -3,6 +3,9 @@
 #ifndef RICHARDSNC_PROPERTIES_NOCOUPLING_HH
 #define RICHARDSNC_PROPERTIES_NOCOUPLING_HH
 
+
+#include <dumux/multidomain/embedded/integrationpointsource.hh>
+
 namespace Dumux {
 namespace Properties {
 

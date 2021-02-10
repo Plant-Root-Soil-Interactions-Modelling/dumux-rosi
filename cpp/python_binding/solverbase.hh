@@ -116,7 +116,7 @@ public:
     /**
      * Creates the Grid and gridGeometry from the (global) DuMux parameter tree.
      *
-     * Parameters known to me are:
+     * Parameters are (there might be more):
      * Grid.UpperRight
      * Grid.LowerLeft
      * Grid.Cells
