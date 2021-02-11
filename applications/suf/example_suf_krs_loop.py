@@ -13,37 +13,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 """ Parameters """
-# kr0 = np.array([[0, 2.1e-7], [100, 2.1e-7]])
-kr0 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
-kr1 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
-# kr1 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
-# kr2 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
-kr2 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
-kr3 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
-kr4 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
-kr5 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
-kr0 = np.array([[-154, 0.], [0, 1.e-12], [1e20, 1.e-12]])
 
-# kz0 = np.array([[0, 5.752278e-2], [100, 5.752278e-2]])
-kz0 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
-kz1 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
-# kz1 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
-# kz2 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
-kz2 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
-kz3 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
-kz4 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
-kz5 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
+# artificial shoot
+kr0 = np.array([[-154, 0.], [0, 1.e-12], [1e20, 1.e-12]])
 kz0 = np.array([[-154, 0.], [0, 1.], [1e20, 1.]])
 
-# kr0 = np.array([[-154, 0.], [0, 1.728e-4], [1e20, 1.728e-4]])
+# Doussan et al. TODO distance to age
+kr1 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
+kr2 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
+kr3 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
+kz1 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
+kz2 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
+kz3 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
+
+# Const
 # kr1 = np.array([[-154, 0.], [0, 1.728e-4], [1e20, 1.728e-4]])
 # kr2 = np.array([[-154, 0.], [0, 1.728e-4], [1e20, 1.728e-4]])
 # kr3 = np.array([[-154, 0.], [0, 1.728e-4], [1e20, 1.728e-4]])
-# 
-# kz0 = np.array([[-154, 0.], [0, 4.32e-2], [1e20, 4.32e-2]])
 # kz1 = np.array([[-154, 0.], [0, 4.32e-2], [1e20, 4.32e-2]])
 # kz2 = np.array([[-154, 0.], [0, 4.32e-2], [1e20, 4.32e-2]])
 # kz3 = np.array([[-154, 0.], [0, 4.32e-2], [1e20, 4.32e-2]])
+
+# Old values ???
+# kr1 = np.array([[-1e4, 1.e-9], [0., 1.e-9], [0, 1.14e-03], [2, 1.09e-03], [4, 1.03e-03], [6, 9.83e-04], [8, 9.35e-04], [10, 8.90e-04], [12, 8.47e-04], [14, 8.06e-04], [16, 7.67e-04], [18, 7.30e-04], [20, 6.95e-04], [22, 6.62e-04], [24, 6.30e-04], [26, 5.99e-04], [28, 5.70e-04], [30, 5.43e-04], [32, 5.17e-04]])
+# kr2 = np.array([[-1e4, 1.e-9], [0., 1.e-9], [0, 4.11e-03], [1, 3.89e-03], [2, 3.67e-03], [3, 3.47e-03], [4, 3.28e-03], [5, 3.10e-03], [6, 2.93e-03], [7, 2.77e-03], [8, 2.62e-03], [9, 2.48e-03], [10, 2.34e-03], [11, 2.21e-03], [12, 2.09e-03], [13, 1.98e-03], [14, 1.87e-03], [15, 1.77e-03], [16, 1.67e-03], [17, 1.58e-03]])
+# kr3 = np.array([[-1e4, 1.e-9], [0., 1.e-9], [0, 4.11e-03], [1, 3.89e-03], [2, 3.67e-03], [3, 3.47e-03], [4, 3.28e-03], [5, 3.10e-03], [6, 2.93e-03], [7, 2.77e-03], [8, 2.62e-03], [9, 2.48e-03], [10, 2.34e-03], [11, 2.21e-03], [12, 2.09e-03], [13, 1.98e-03], [14, 1.87e-03], [15, 1.77e-03], [16, 1.67e-03], [17, 1.58e-03]])
+# kz1 = np.array([[0, 6.74e-02], [2, 7.48e-02], [4, 8.30e-02], [6, 9.21e-02], [8, 1.02e-01], [10, 1.13e-01], [12, 1.26e-01], [14, 1.40e-01], [16, 1.55e-01], [18, 1.72e-01], [20, 1.91e-01], [22, 2.12e-01], [24, 2.35e-01], [26, 2.61e-01], [28, 2.90e-01], [30, 3.21e-01], [32, 3.57e-01]])
+# kz2 = np.array([[0, 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03], [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03], [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
+# kz3 = np.array([[0, 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03], [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03], [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
 
 simtime = 60  # [day] for task b
 
@@ -60,40 +57,57 @@ rs.setSeed(2)
 rs.readParameters(path + name + ".xml")
 rs.getRootSystemParameter().seedPos.z = -3
 
+# # quick fix assuming linear growth
+# ir = []
 # for p in rs.getRootRandomParameter():
-#     p.dx = 0.01
-rs.initialize()
+#     p.dx = 0.1
+#     ir.append(p.r)
+#     # print(p.r, p.subType)
+# kr1[:, 0] = kr1[:, 0] / ir[1] 
+# kz1[:, 0] = kz1[:, 0] / ir[1]  
+# kr2[:, 0] = kr2[:, 0] / ir[2] 
+# kz2[:, 0] = kz2[:, 0] / ir[2] 
+# kr3[:, 0] = kr3[:, 0] / ir[3] 
+# kz3[:, 0] = kz3[:, 0] / ir[3] 
 
+rs.initialize()
 rs.simulate(simtime, False)
 # rs.simulate(9, False)
 
 """ set up xylem parameters """
 r = XylemFluxPython(rs)
+# defaults...
+kr4 = kr1  # basal
+kr5 = kr1  # shoot borne
+kz4 = kz1
+kz5 = kz1
 r.setKrTables([kr0[:, 1], kr1[:, 1], kr2[:, 1], kr3[:, 1], kr4[:, 1], kr5[:, 1]], [kr0[:, 0], kr1[:, 0], kr2[:, 0], kr3[:, 0], kr4[:, 0], kr5[:, 0]])
 r.setKxTables([kz0[:, 1], kz1[:, 1], kz2[:, 1], kz3[:, 1], kz4[:, 1], kz5[:, 1]], [kz0[:, 0], kz1[:, 0], kz2[:, 0], kz3[:, 0], kz4[:, 0], kz5[:, 0]])
 
-# alter shoot subType
+""" for debugging """
+r.test()
+r.plot_conductivities()
 shoot_segs = rs.getShootSegments()
 print("Shoot segments", [str(s) for s in shoot_segs])
 print("Shoot type", rs.subTypes[0])
 
-r.test()
-
 Krs_ = []
 l_ = []
 eswp_ = []
+suf_ = []
 """ numerical solution of transpiration -1 cm3/day"""
+simtime += 1
 for j in range(10, simtime):
     
     # rs.simulate(1., False)
     
     rx = r.solve_neumann(j, -1.e5, p_s, True)  # True: matric potential given per cell (not per segment) high number to recuce spurious fluxes
-    print("solved")
-
     fluxes = r.segFluxes(j, rx, p_s, False, True)  # cm3/day, simTime,  rx,  sx,  approx, cells
-    print("Transpiration", r.collar_flux(j, rx, p_s), np.sum(fluxes), "cm3/day")
     suf = np.array(fluxes) / -1.e5  # [1]
     print("Sum of SUF", np.sum(suf), "from", np.min(suf), "to", np.max(suf), "summed positive", np.sum(suf[suf >= 0]))
+
+    if j > 10 and j % 10 == 0:
+        suf_.append(suf)
 
     eswp = 0.
     n = len(r.rs.segments)
@@ -101,7 +115,8 @@ for j in range(10, simtime):
     for i in range(0, n):
         eswp += suf[i] * p_s[seg2cell[i]]
 
-    Krs = 1.e5 / (eswp - rx[1])  # 
+    # r.solve_neumann(j, -1, p_s, True)
+    Krs = 1. / (eswp - rx[0])  # 
     print("Krs: ", Krs, "rx[1]:", rx[1])
 
     Krs_.append(Krs)
@@ -113,6 +128,24 @@ plt.plot(time, Krs_)
 plt.xlabel("Number of days")
 plt.ylabel("Global root system conductance $[cm^3 hPa^{-1} d^{-1}]$")
 # plt.ylim(0., 0.0016)
-plt.savefig("Krs_const_soybean.pdf")
+# plt.savefig("Krs_const_soybean.pdf")
+plt.show()
+
+""" SUF plot """
+fig, (ax) = plt.subplots(1, len(suf_))
+ax[0].set_ylabel("depth [cm]")
+
+for i, suf in enumerate(suf_):
+    cols = ["r", "g", "b", "m"]
+    x_ = np.linspace(0, -100, 100)    
+    for j in range(0, 4):
+        ana = pb.SegmentAnalyser(r.rs) 
+        ana.addData("SUF", suf)    
+        ana.filter("subType", j + 1)
+        y_ = ana.distribution("SUF", 0, -100, 100, True)
+        ax[i].plot(y_, x_, cols[j])
+    ax[i].set_title(str(20 + 10 * i))
+    ax[i].set_xlabel("SUF [-]")
+    ax[i].legend([str(j) for j in range(1, 5)])
 plt.show()
 
