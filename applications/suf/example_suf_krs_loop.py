@@ -2,7 +2,7 @@
 soil uptake fraction of a root system (soil is in hydrostatic equilibrium) 
 """
 import sys; sys.path.append("../../python/modules/"); sys.path.append("../../../CPlantBox/"); 
-from astropy.units import dd
+from cmath import isnan
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
@@ -12,6 +12,12 @@ import vtk_plot as vp
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+def get_age(l, r, k):
+    l = np.minimum(l, k - 0.001)  # to avoid nans
+    return -k / r * np.log(1 - l / k)
+
+
 """ Parameters """
 
 # artificial shoot
@@ -19,9 +25,9 @@ kr0 = np.array([[-154, 0.], [0, 1.e-12], [1e20, 1.e-12]])
 kz0 = np.array([[-154, 0.], [0, 1.], [1e20, 1.]])
 
 # Doussan et al. TODO distance to age
-kr1 = np.array([[0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
-kr2 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
-kr3 = np.array([[0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
+kr1 = np.array([[-1e4, 1.e-12], [0., 1.e-12], [0, 2.55e-6], [12.5, 2.55e-6], [20.9, 8.9e-7], [44.6, 8.9e-7], [62.7, 2.1e-7], [100, 2.1e-7]])
+kr2 = np.array([[-1e4, 1.e-12], [0., 1.e-12], [0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
+kr3 = np.array([[-1e4, 1.e-12], [0., 1.e-12], [0, 2.e-4], [10, 2.e-4], [15, 3.e-5], [20, 3.e-5]])
 kz1 = np.array([[0, 2.3148e-4], [18.3, 2.3148e-4], [27.8, 4.0509e-3], [36.4, 4.0509e-3], [51.1, 5.752278e-2], [100, 5.752278e-2]])
 kz2 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
 kz3 = np.array([[0, 1.e-6], [9, 2.e-4], [13, 6.e-4], [20, 6.e-4]])
@@ -53,22 +59,22 @@ rs.setSoilGrid(soil_index)
 
 path = "../../../CPlantBox//modelparameter/rootsystem/"
 name = "Zea_mays_1_Leitner_2010"  # "Glycine_max"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
-rs.setSeed(2)
 rs.readParameters(path + name + ".xml")
 rs.getRootSystemParameter().seedPos.z = -3
+rs.setSeed(2)  # random
 
-# # quick fix assuming linear growth
-# ir = []
-# for p in rs.getRootRandomParameter():
-#     p.dx = 0.1
-#     ir.append(p.r)
-#     # print(p.r, p.subType)
-# kr1[:, 0] = kr1[:, 0] / ir[1] 
-# kz1[:, 0] = kz1[:, 0] / ir[1]  
-# kr2[:, 0] = kr2[:, 0] / ir[2] 
-# kz2[:, 0] = kz2[:, 0] / ir[2] 
-# kr3[:, 0] = kr3[:, 0] / ir[3] 
-# kz3[:, 0] = kz3[:, 0] / ir[3] 
+# quick fix
+r_, k_ = [], []
+for p in rs.getRootRandomParameter():
+    p.dx = 0.1
+    r_.append(p.r)
+    k_.append(p.lmax)
+kr1[2:, 0] = get_age(kr1[2:, 0], r_[1], k_[1]) 
+kz1[:, 0] = get_age(kz1[:, 0], r_[1], k_[1]) 
+kr2[2:, 0] = get_age(kr2[2:, 0], r_[2], k_[2]) 
+kz2[:, 0] = get_age(kz2[:, 0], r_[2], k_[2])
+kr3[2:, 0] = get_age(kr3[2:, 0], r_[3], k_[3]) 
+kz3[:, 0] = get_age(kz3[:, 0], r_[3], k_[3]) 
 
 rs.initialize()
 rs.simulate(simtime, False)
@@ -91,7 +97,7 @@ shoot_segs = rs.getShootSegments()
 print("Shoot segments", [str(s) for s in shoot_segs])
 print("Shoot type", rs.subTypes[0])
 
-Krs_ = []
+krs_ = []
 l_ = []
 eswp_ = []
 suf_ = []
@@ -100,41 +106,42 @@ simtime += 1
 for j in range(10, simtime):
     
     # rs.simulate(1., False)
-    
+        
     rx = r.solve_neumann(j, -1.e5, p_s, True)  # True: matric potential given per cell (not per segment) high number to recuce spurious fluxes
     fluxes = r.segFluxes(j, rx, p_s, False, True)  # cm3/day, simTime,  rx,  sx,  approx, cells
     suf = np.array(fluxes) / -1.e5  # [1]
     print("Sum of SUF", np.sum(suf), "from", np.min(suf), "to", np.max(suf), "summed positive", np.sum(suf[suf >= 0]))
 
+#     eswp = 0.
+#     seg2cell = r.rs.seg2cell
+#     for i in range(0, len(r.rs.segments)):
+#         eswp += suf[i] * p_s[seg2cell[i]] # total potential, not matric potential 
+#     print("eswp", eswp)   
+    eswp = -500  # cm
+
+#     rx = r.solve_neumann(j, -1, p_s, True)  # self, sim_time:float, value:list, sxc:float, sxx, cells:bool, soil_k=[]
+#     krs = 1. / (eswp - rx[1])  # 
+
+    rx = r.solve_dirichlet(j, -15000, 0., p_s, True)  #  sim_time:float, value:list, sxc:float, sxx, cells:bool, 
+    jw = -r.collar_flux(j, rx, p_s)  #      collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+    krs2 = jw / (eswp - rx[0])  
+    print("flux {:g} cm3 day-1, eswp {:g} cm, rx {:g}, krs {:g} cm2 day-1".format(jw, eswp, rx[0], krs2))
+
+    krs_.append(krs2)
+    eswp_.append(eswp) 
+    l_.append(rs.getSummed("length"))
     if j > 10 and j % 10 == 0:
         suf_.append(suf)
 
-    eswp = 0.
-    n = len(r.rs.segments)
-    seg2cell = r.rs.seg2cell
-    for i in range(0, n):
-        eswp += suf[i] * p_s[seg2cell[i]]
-
-    # r.solve_neumann(j, -1, p_s, True)
-    Krs = 1. / (eswp - rx[0])  # 
-    print("Krs: ", Krs, "rx[1]:", rx[1])
-
-    Krs_.append(Krs)
-    eswp_.append(eswp) 
-    l_.append(rs.getSummed("length"))
-
 time = np.linspace(10, simtime, simtime - 10)
-plt.plot(time, Krs_)
+plt.plot(time, krs_)
 plt.xlabel("Number of days")
 plt.ylabel("Global root system conductance $[cm^3 hPa^{-1} d^{-1}]$")
-# plt.ylim(0., 0.0016)
-# plt.savefig("Krs_const_soybean.pdf")
 plt.show()
 
 """ SUF plot """
 fig, (ax) = plt.subplots(1, len(suf_))
 ax[0].set_ylabel("depth [cm]")
-
 for i, suf in enumerate(suf_):
     cols = ["r", "g", "b", "m"]
     x_ = np.linspace(0, -100, 100)    
