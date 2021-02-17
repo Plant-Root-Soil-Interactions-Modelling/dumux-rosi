@@ -39,7 +39,7 @@ loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
 soil_ = loam
 soil = vg.Parameters(soil_)
-initial = -659.8 + (max_b[2]-min_b[2])/2 
+initial = -659.8 + (max_b[2] - min_b[2]) / 2 
 
 kx = 4.32e-2
 kr = 1.73e-4
@@ -56,7 +56,7 @@ rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in ca
 
 split_type = 1  # type 0 == volume, type 1 == surface, type 2 == length
 
-dt = 60/(24*3600)   # time step
+dt = 60 / (24 * 3600)  # time step
 NT = int(np.ceil(sim_time / dt))
 skip = 1  # for output and results, skip iteration
 
@@ -71,21 +71,21 @@ s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
-#s.setParameter("Newton.EnableChop", "True")
+# s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
-#s.setRegularisation(1.e-4, 1.e-4)
+# s.setRegularisation(1.e-4, 1.e-4)
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a)"""
 r = XylemFluxPython("../../grids/RootSystem8.rsml")
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
-#r.setKr([kr])  # [cm^3/day] # todo check order of age (segs are sorted)
-#r.setKx([kx])  # [1/day]
-init_conductivities(r, age_dependent)   #age_dependent is a boolean, root conductivies are given in the file /root_conductivities.py
-picker = lambda x, y, z : s.pick([x, y, z])
+# r.setKr([kr])  # [cm^3/day] # todo check order of age (segs are sorted)
+# r.setKx([kx])  # [1/day]
+init_conductivities(r, age_dependent)  # age_dependent is a boolean, root conductivies are given in the file /root_conductivities.py
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 r.rs.sort()  # <- ensures segment is located at index s.y-1
 
@@ -113,14 +113,14 @@ for i in range(0, ns):
         cpp_base = RichardsCylFoam()
         cyl = RichardsWrapper(cpp_base)
         cyl.initialize()
-        points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base = logbase)
+        points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), NC, base=logbase)
         grids.append(points)  # to remember
         cyl.createGrid1d(points)
         cyl.setHomogeneousIC(initial)  # cm pressure head
         cyl.setVGParameters([soil_])
         cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
         cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]
-        #cyl.setParameter("Newton.EnableChop", "True")
+        # cyl.setParameter("Newton.EnableChop", "True")
         cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
         cyl.initializeProblem()
         cyl.setCriticalPressure(wilting_point)  # cm pressure head
@@ -161,11 +161,14 @@ for i in range(0, NT):
 
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), inner_radii)  # only valid for homogenous soil
     # print("Conductivities", np.min(soil_k), kr)
-    rx = r.solve(rs_age+t, -trans * sinusoidal(t) , csx, rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
+    rx = r.solve(rs_age + t, -trans * sinusoidal(t) , 0., rsx, False, wilting_point, soil_k)  # [cm]   * sinusoidal(t)
+    print(rx[0], np.min(soil_k), np.max(soil_k))
+    input()
+    input()
 
     if i % skip == 0:
         out_times.append(t)
-        collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, cells = False))
+        collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, cells=False))
         min_rsx.append(np.min(np.array(rsx)))
         collar_sx.append(csx)
         min_rx.append(np.min(np.array(rx)))
@@ -175,7 +178,7 @@ for i in range(0, NT):
     """
     Local soil model
     """
-    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
+    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
     local_models_time = timeit.default_timer()
     for j, cyl in enumerate(cyls):  # run cylindrical models
@@ -191,8 +194,8 @@ for i in range(0, NT):
             plt.plot(x, y)
             plt.xlabel("x (cm)")
             plt.ylabel("pressure (cm)")
-            print("in",proposed_inner_fluxes[j] / (2 * np.pi * inner_radii[j] * l),"out", proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l) )
-            print("inner", inner_radii[j], "outer", outer_radii[j], "l", l )
+            print("in", proposed_inner_fluxes[j] / (2 * np.pi * inner_radii[j] * l), "out", proposed_outer_fluxes[j] / (2 * np.pi * outer_radii[j] * l))
+            print("inner", inner_radii[j], "outer", outer_radii[j], "l", l)
             plt.show()
             raise
         realized_inner_fluxes[j] = -float(cyl.getInnerFlux()) * (2 * np.pi * inner_radii[j] * l) / inner_radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
@@ -222,7 +225,7 @@ for i in range(0, NT):
                 max_soil_fluxes = v
             if min_soil_fluxes > v:
                 min_soil_fluxes = v
-        print("Fluxes: realized", summed_soil_fluxes, "proposed", np.sum(proposed_inner_fluxes), 
+        print("Fluxes: realized", summed_soil_fluxes, "proposed", np.sum(proposed_inner_fluxes),
               "predescribed", -trans * sinusoidal(t), "collar flux", collar_flux[-1])    
          # print("      : min {:g}, max {:g}".format(min_soil_fluxes, max_soil_fluxes))
 
@@ -245,7 +248,7 @@ for i in range(0, NT):
                 r2 = grids[k][j + 1]
                 cyl_water += np.pi * (r2 * r2 - r1 * r1) * seg_length[k] * wc
 
-        #print("Water volume cylindric", cyl_water, "soil", soil_water[cci], cyl_water / soil_water[cci], cci)
+        # print("Water volume cylindric", cyl_water, "soil", soil_water[cci], cyl_water / soil_water[cci], cci)
         water_cyl.append(cyl_water)
 
         n = round(float(i) / float(NT) * 100.)
@@ -277,16 +280,16 @@ vp.render_window(meshActors, name + " at {:g} days".format(sim_time) , meshCBar,
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
 ax1.set_title("Water amount")
-ax1.plot(out_times, np.array(water_collar_cell), label = "water cell")
-ax1.plot(out_times, np.array(water_cyl), label = "water cylindric")
+ax1.plot(out_times, np.array(water_collar_cell), label="water cell")
+ax1.plot(out_times, np.array(water_cyl), label="water cylindric")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(out_times, np.array(collar_sx), label = "soil at root collar")
-ax2.plot(out_times, np.array(min_rx), label = "root collar")
-ax2.plot(out_times, np.array(min_rsx), label = "1d model at root surface")
+ax2.plot(out_times, np.array(collar_sx), label="soil at root collar")
+ax2.plot(out_times, np.array(min_rx), label="root collar")
+ax2.plot(out_times, np.array(min_rsx), label="1d model at root surface")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
@@ -304,16 +307,16 @@ ax4.set_ylabel("cm3")
 plt.show()
 
 fig, ax1 = plt.subplots()
-ax1.plot(out_times, trans * sinusoidal(out_times), 'k', label = "potential")  # potential transpiration * sinusoidal(x_)
-ax1.plot(out_times, -np.array(water_uptake), 'g', label = "actual")  # actual transpiration (neumann)
-ax1.plot(out_times, -np.array(collar_flux), 'r:', label = "collar flux")  # actual transpiration (neumann)
+ax1.plot(out_times, trans * sinusoidal(out_times), 'k', label="potential")  # potential transpiration * sinusoidal(x_)
+ax1.plot(out_times, -np.array(water_uptake), 'g', label="actual")  # actual transpiration (neumann)
+ax1.plot(out_times, -np.array(collar_flux), 'r:', label="collar flux")  # actual transpiration (neumann)
 ax2 = ax1.twinx()
-ax2.plot(out_times, np.array(min_rx), label = "root collar")
+ax2.plot(out_times, np.array(min_rx), label="root collar")
 ax1.set_xlabel("Time [d]")
 ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
 ax2.set_ylabel("Min collar pressure $[cm]$")
 fig.legend()
 
-np.savetxt("results/" + name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
+np.savetxt("results/" + name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
 
 plt.show()
