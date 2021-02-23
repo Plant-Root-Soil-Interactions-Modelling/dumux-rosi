@@ -29,7 +29,8 @@ also works parallel with mpiexec (slower, due to overhead?)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15]  # [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [20, 20, 45]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+# [7, 7, 15], [14,14,30] works ???
 periodic = False
 
 name = "DuMux_1cm"
@@ -43,9 +44,9 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 0.5  # [day] for task b
+sim_time = 3  # [day] for task b
 age_dependent = False  # conductivities
-dt = 120. / (24 * 3600)  # [days] Time step must be very small
+dt = 60. / (24 * 3600)  # [days] Time step must be very small
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
@@ -63,7 +64,8 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
-fname = "../../../CPlantBox/tutorial/examples/python/results/example_3c.rsml"  # fname = "../../grids/RootSystem8.rsml"
+# fname = "../../../CPlantBox/tutorial/examples/python/results/example_3c.rsml"   
+fname = "../../grids/RootSystem8.rsml"
 r = XylemFluxPython(fname)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
@@ -71,12 +73,12 @@ init_conductivities(r, age_dependent)
 # r.plot_conductivities()
 r.test()  # sanity checks
 rs_age = np.max(r.get_ages())
-# input()
+# print("press any key"); input()
 
 """ Coupling (map indices) """
-picker = lambda x, y, z: s.pick([x, y, z])
-r.rs.setSoilGrid(picker)  # maps segments
+picker = lambda x, y, z: s.pick([x, y, z])    
 cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell index
+r.rs.setSoilGrid(picker)  # maps segment
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
@@ -90,20 +92,19 @@ skip = 10
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-
+ 
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # xylem_flux.py, cells = True
         fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
-
+ 
     else:
         fluxes = None
-
+ 
     fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
-    s.setSource(fluxes)  # richards.py # TODO each MPI processs sets all sources
+    s.setSource(fluxes.copy())  # richards.py 
     s.solve(dt)
-
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
-
+ 
     if rank == 0 and i % skip == 0:
         min_sx = np.min(sx)
         min_rx = np.min(rx)

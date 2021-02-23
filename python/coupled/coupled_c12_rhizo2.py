@@ -1,4 +1,4 @@
-import sys; sys.path.append("../modules/");  sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
+import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 import plantbox as pb  # CPlantBox
@@ -14,13 +14,14 @@ from root_conductivities import *
 import numpy as np
 import timeit
 import matplotlib.pyplot as plt
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
 """ 
 Benchmark M1.2 static root system in soil
 
-Coupled to cylindrical rhizosphere models using 1d richards equation (DUMUX solver)
+Coupled to cylindrical rhizosphere models using 1d richards equation (Python solver)
 
-No MPI support !!!
+TODO mpi support 
 """
 
 """ 
@@ -78,7 +79,7 @@ print()
 """ 
 Initialize xylem model 
 """
-rs = RhizoMappedSegments("../../grids/RootSystem8.rsml", wilting_point, NC, logbase)
+rs = RhizoMappedSegments("../../grids/RootSystem8.rsml", wilting_point, NC, logbase, "python")
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 # True: root segments are cut  to the soil grid so that each segment is completely within one soil control element, this works only for rectangular grids so far
@@ -86,6 +87,7 @@ picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions 
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments 
 init_conductivities(r, age_dependent)  # age_dependent is a boolean, root conductivies are given in the file /root_conductivities.py
+rs.set_xylem_flux(r)  # r wraps rs, and rs knows r 
 print()
 # For debugging
 # r.plot_conductivities()
@@ -95,9 +97,16 @@ print()
 Initialize local soil models (around each root segment) 
 """
 start_time = timeit.default_timer()
-x = s.getSolutionHead()  # initial condition of soil [cm] 
-rs.initialize(soil_, x)
-print ("Initialized in {:g} s".format(timeit.default_timer() - start_time))
+x = s.getSolutionHead()  # initial condition of soil [cm]
+x = comm.bcast(x, root=0)  # Soil part runs parallel 
+ns = len(rs.segments)
+dcyl = int(np.floor(ns / max_rank))
+if rank + 1 == max_rank:
+    rs.initialize(soil_, x, np.array(range(rank * dcyl, ns))) 
+    print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time)) 
+else:
+    rs.initialize(soil_, x, np.array(range(rank * dcyl, (rank + 1) * dcyl)))   
+    print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
 # print("press any key"); input()
 
 """ 
@@ -134,9 +143,8 @@ for i in range(0, NT):
 
     """ 2. local soil models """
     wall_rhizo_models = timeit.default_timer()
-    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type) 
-    rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)
+    rs.solve(dt, rx, proposed_outer_fluxes)
     realized_inner_fluxes = rs.get_inner_fluxes() 
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
 
@@ -175,7 +183,7 @@ for i in range(0, NT):
         print("Fluxes: summed local fluxes {:g}, collar flux {:g}, predescribed {:g}".format(summed_soil_fluxes, collar_flux[-1], -trans * sinusoidal(t)))
         water_domain.append(np.min(soil_water))  # cm3
         water_collar_cell.append(soil_water[cci])  # cm3 
-        water_cyl.append(np.sum(rs.get_water_volume()))  # cm3
+        # water_cyl.append(np.sum(rs.get_water_volume()))  # cm3
         water_uptake.append(summed_soil_fluxes)  # cm3/day    
         n = round(float(i) / float(NT) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], {:g} days".format(s.simTime))
@@ -188,5 +196,5 @@ print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s"
 """ plots and output """
 vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
 plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
-plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
+# plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
 np.savetxt("results/" + name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
