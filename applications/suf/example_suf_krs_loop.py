@@ -18,7 +18,6 @@ def get_age(l, r, k):
 
 
 """ Parameters """
-
 # artificial shoot
 kr0 = np.array([[-154, 0.], [0, 1.e-12], [1e20, 1.e-12]])
 kz0 = np.array([[-154, 0.], [0, 1.], [1e20, 1.]])
@@ -62,7 +61,6 @@ rs.readParameters(path + name + ".xml")
 rs.getRootSystemParameter().seedPos.z = -3
 rs.setSeed(2)  # random
 
-print("hello0")
 # quick fix
 r_, k_ = [], []
 for p in rs.getRootRandomParameter():
@@ -75,13 +73,9 @@ kr2[2:, 0] = get_age(kr2[2:, 0], r_[2], k_[2])
 kz2[:, 0] = get_age(kz2[:, 0], r_[2], k_[2])
 kr3[2:, 0] = get_age(kr3[2:, 0], r_[3], k_[3]) 
 kz3[:, 0] = get_age(kz3[:, 0], r_[3], k_[3]) 
-print("hello1")
 
 rs.initialize()
-print("hello2")
-
 rs.simulate(simtime, False)
-# rs.simulate(9, False)
 
 """ set up xylem parameters """
 r = XylemFluxPython(rs)
@@ -103,46 +97,21 @@ print("Shoot type", rs.subTypes[0])
 jc_, krs_, l_, eswp_, suf_ = [], [], [], [], []
 """ numerical solution of transpiration -1 cm3/day"""
 simtime += 1
-for j in range(10, simtime):
+for t in range(10, simtime):
+          
+    suf = r.get_suf(t)
+    eswp = -500  # cm    
+    krs = r.get_krs(t)    
+    krs_.append(krs)
     
-    # rs.simulate(1., False)
-        
-    rx = r.solve_neumann(j, -1.e5, p_s, True)  # True: matric potential given per cell (not per segment) high number to recuce spurious fluxes
-    fluxes = r.segFluxes(j, rx, p_s, False, True)  # cm3/day, simTime,  rx,  sx,  approx, cells
-    suf = np.array(fluxes) / -1.e5  # [1]
-    print("Sum of SUF", np.sum(suf), "from", np.min(suf), "to", np.max(suf), "summed positive", np.sum(suf[suf >= 0]))
-
-#     eswp = 0.
-#     seg2cell = r.rs.seg2cell
-#     for i in range(0, len(r.rs.segments)):
-#         eswp += suf[i] * p_s[seg2cell[i]] # total potential, not matric potential 
-#     print("eswp", eswp)   
-    eswp = -500  # cm
-
-#     rx = r.solve_neumann(j, -1, p_s, True)  # self, sim_time:float, value:list, sxc:float, sxx, cells:bool, soil_k=[]
-#     krs = 1. / (eswp - rx[1])  # 
-
-    rx = r.solve_dirichlet(j, -15000, 0., p_s, True)  #  sim_time:float, value:list, sxc:float, sxx, cells:bool, 
-    jc = -r.collar_flux(j, rx, p_s)  #      collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
-    krs2 = jc / (eswp - rx[0])  
-    print("flux {:g} cm3 day-1, eswp {:g} cm, rx {:g}, krs {:g} cm2 day-1".format(jc, eswp, rx[0], krs2))
-
-    jc_.append(jc)
-    krs_.append(krs2)
-    eswp_.append(eswp) 
-    l_.append(rs.getSummed("length"))
-    if j > 10 and j % 10 == 0:
+    if t > 10 and t % 10 == 0:
+        print(t)
         suf_.append(suf)
 
 time = np.linspace(10, simtime, simtime - 10)
-# plt.plot(time, krs_)
-# plt.xlabel("simulation time")
-# plt.ylabel("root system conductance $krs$ $[cm^2 d^{-1}]$")
-# plt.show()
-
-plt.plot(time, jc_)
+plt.plot(time, krs_)
 plt.xlabel("simulation time")
-plt.ylabel("transpiration $cm^3 day^{-1}$")
+plt.ylabel("root system conductance $krs$ $[cm^2 d^{-1}]$")
 plt.show()
 
 """ SUF plot """
