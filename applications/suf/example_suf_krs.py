@@ -55,9 +55,9 @@ eswp = 0.
 n = len(r.rs.segments)
 seg2cell = r.rs.seg2cell
 for i in range(0, n):
-    eswp += suf[i] * p_s[seg2cell[i]]
+    eswp += suf[i] * p_s[seg2cell[i]]  ############# ESWP 
 
-Krs = -1.e5 / (eswp - rx[1])
+Krs = -1.e5 / (eswp - rx[1])  # 
 
 print("Krs: ", Krs)
 

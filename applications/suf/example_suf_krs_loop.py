@@ -2,7 +2,6 @@
 soil uptake fraction of a root system (soil is in hydrostatic equilibrium) 
 """
 import sys; sys.path.append("../../python/modules/"); sys.path.append("../../../CPlantBox/"); 
-from cmath import isnan
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
@@ -63,6 +62,7 @@ rs.readParameters(path + name + ".xml")
 rs.getRootSystemParameter().seedPos.z = -3
 rs.setSeed(2)  # random
 
+print("hello0")
 # quick fix
 r_, k_ = [], []
 for p in rs.getRootRandomParameter():
@@ -75,8 +75,11 @@ kr2[2:, 0] = get_age(kr2[2:, 0], r_[2], k_[2])
 kz2[:, 0] = get_age(kz2[:, 0], r_[2], k_[2])
 kr3[2:, 0] = get_age(kr3[2:, 0], r_[3], k_[3]) 
 kz3[:, 0] = get_age(kz3[:, 0], r_[3], k_[3]) 
+print("hello1")
 
 rs.initialize()
+print("hello2")
+
 rs.simulate(simtime, False)
 # rs.simulate(9, False)
 
