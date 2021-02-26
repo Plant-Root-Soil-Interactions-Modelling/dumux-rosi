@@ -19,15 +19,16 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/soil_richards")
 
 # run dumux
-np_ = 4  # number of processors
+np_ = 1  # number of processors
 if np_ == 1:
     os.system("./richards3d input/b3a_3d.input")
-    os.system("./richards3d input/b3b_3d.input")
-    os.system("./richards3d input/b3c_3d.input")
+#     os.system("./richards3d input/b3b_3d.input")
+#     os.system("./richards3d input/b3c_3d.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3a_3d.input -Grid.Overlap 1")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3b_3d.input -Grid.Overlap 1")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3c_3d.input -Grid.Overlap 1")
+    pass
+#    os.system("mpirun -n " + str(np_) + " ./richards3d input/b3a_3d.input -Grid.Overlap 1")
+#     os.system("mpirun -n " + str(np_) + " ./richards3d input/b3b_3d.input -Grid.Overlap 1")
+#     os.system("mpirun -n " + str(np_) + " ./richards3d input/b3c_3d.input -Grid.Overlap 1")
 
 ex = []  # list for data for export
 
@@ -58,7 +59,7 @@ for i in range(0, 3):
     ex.append(z_[:, 2])
     ex.append(theta_)
 
-np.savetxt("dumux3d_b3", np.vstack(ex), delimiter = ",")
+np.savetxt("dumux3d_b3", np.vstack(ex), delimiter=",")
 
 plt.show()
 

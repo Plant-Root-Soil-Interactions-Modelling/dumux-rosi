@@ -65,7 +65,7 @@ int main(int argc, char** argv) try
     using TypeTag = Properties::TTag::RichardsBox; // RichardsCC, RichardsBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
-    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
+    const auto& mpiHelper = Dune::FakeMPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
 
     // print dumux start message
     if (mpiHelper.rank() == 0) { // rank is the process number

@@ -24,12 +24,12 @@ t = time.time()
 np_ = 1  # number of processors
 if np_ == 1:
     os.system("./richards3d input/b1a_3d.input")
-    os.system("./richards3d input/b1b_3d.input")
-    os.system("./richards3d input/b1c_3d.input")
+#     os.system("./richards3d input/b1b_3d.input")
+#     os.system("./richards3d input/b1c_3d.input")
 else:
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1a_3d.input")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1b_3d.input")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b1c_3d.input")
+    os.system("mpiexec -n " + str(np_) + " ./richards3d input/b1a_3d.input")
+#     os.system("mpirun -n " + str(np_) + " ./richards3d input/b1b_3d.input")
+#     os.system("mpirun -n " + str(np_) + " ./richards3d input/b1c_3d.input")
 
 elapsed = time.time() - t
 print("Time elapsed", elapsed)
@@ -50,7 +50,7 @@ p_, z3_ = read3D_data("benchmark3d_1c-00001", np_, 2)
 h3_ = vg.pa2head(p_)
 ax3.plot(h3_, z3_[:, 2] * 100, "r+")
 
-np.savetxt("dumux3d_b1", np.vstack((z1_[:, 2], h1_, z2_[:, 2], h2_, z3_[:, 2], h3_)), delimiter = ",")
+np.savetxt("dumux3d_b1", np.vstack((z1_[:, 2], h1_, z2_[:, 2], h2_, z3_[:, 2], h3_)), delimiter=",")
 
 plt.show()
 

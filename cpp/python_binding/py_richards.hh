@@ -68,7 +68,7 @@ struct Grid<TypeTag, TTag::RichardsUGTT> { using type = Dune::UGGrid<3>; };
  */
 using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // CC!
 using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric>;
-using RichardsSPLinearSolver = Dumux::AMGBackend<RSPTT>;
+using RichardsSPLinearSolver = Dumux::AMGBackend<RSPTT>; // UMFPackBackend AMGBackend
 using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 
 using RUGTT = Dumux::Properties::TTag::RichardsUGCC;
