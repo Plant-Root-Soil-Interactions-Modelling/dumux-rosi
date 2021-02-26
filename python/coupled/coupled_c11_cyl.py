@@ -6,7 +6,8 @@ import plantbox as pb
 import rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
-from richards import RichardsWrapper  # Python part
+from richards import RichardsWrapper  # for soil part wrappring RichardsSP
+from richards_no_mpi import RichardsNoMPIWrapper  # for cylindrical part, RichardsCylFoam must be compiled disabeling MPI
 
 from math import *
 import numpy as np
@@ -48,15 +49,14 @@ def solve(soil, simtimes, q_r, N):
     seg1 = pb.Vector2i(0, 1)
     seg2 = pb.Vector2i(1, 2)
     rs = pb.MappedSegments([n1, n3], [seg1], [r_root])  # a single root
-    # rs = pb.MappedSegments([n1, n2, n3], [seg1, seg2], [r_root, r_root])  # a single root
+    # rs = pb.MappedSegments([n1, n2, n3], [seg1, seg2], [r_root, r_root])  # a single root with 2 segments
     rs.setRectangularGrid(pb.Vector3d(-l, -l, -1.), pb.Vector3d(l, l, 0.), pb.Vector3d(N, N, 1), False)
     r = XylemFluxPython(rs)
     r.setKr([1.e-7])
     r.setKx([1.e-7])
 
     """ Soil problem """
-    cpp_base = RichardsSP()
-    s = RichardsWrapper(cpp_base)
+    s = RichardsWrapper(RichardsSP())
     s.initialize()
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
@@ -72,8 +72,7 @@ def solve(soil, simtimes, q_r, N):
     ns = len(r.rs.segments)
     rsx = np.zeros((ns,))  # root soil interface
     for i in range(0, ns):
-        cpp_base = RichardsCylFoam()
-        rcyl = RichardsWrapper(cpp_base)
+        rcyl = RichardsNoMPIWrapper(RichardsCylFoam())
         rcyl.initialize([""], False)  # [""], False
         rcyl.createGrid([r_root], [r_out], [N])  # [cm]
         rcyl.setHomogeneousIC(-100.)  # cm pressure head
@@ -116,8 +115,8 @@ def solve(soil, simtimes, q_r, N):
 
             fluxes_exact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h
             collar_flux = r.collar_flux(0., rx, sx)
-            print("fluxes at ", cci, "exact", fluxes_exact[cci], "collar flux", collar_flux, "[g day-1]")  # == cm3 / day
-            print("fluxes at ", cci, "exact", soil_fluxes[cci])
+            print("fluxes at {:g}, exact {:g}, collar flux {:g} [g day-1]".format(cci, fluxes_exact[cci], collar_flux[0])) 
+            print("fluxes at {:g},  soil {:g}".format(cci, soil_fluxes[cci]))
 
             fluxes = soil_fluxes
             sum_flux = 0.
@@ -128,10 +127,9 @@ def solve(soil, simtimes, q_r, N):
             # run cylindrical model
             for j, rc in enumerate(rich_cyls):  # set sources
                 l = 1.
-                print("Set inner flux to", seg_fluxes[j] / (2 * np.pi * r_root * l), "[cm day-1]")
+                print("Set inner flux to {:g} [cm day-1]\n".format(seg_fluxes[j] / (2 * np.pi * r_root * l)))
                 rsx[j] = rc.setInnerFluxCyl(seg_fluxes[j] / (2 * np.pi * r_root * l))  # /
             for j, rc in enumerate(rich_cyls):  # simualte time step
-                print("Solving segment", j)
                 rc.solve(dt)
         else:
             fluxes = None
@@ -142,14 +140,14 @@ def solve(soil, simtimes, q_r, N):
         s.solve(dt)
 
         x0 = s.getSolutionHeadAt(cci)
-        if x0 < -14000:
+        if x0 < -15000:
             if rank == 0:
                 print("Simulation time at -15000 cm > {:.3f} cm after {:.3f} days".format(float(x0), s.simTime))
-            y = s.to_head(s.interpolateNN(x_))
+            y = s.to_head(np.array(s.interpolateNN(x_)))
             yc = rich_cyls[-1].getSolutionHead()
             return y, yc, x_[:, 1], s.simTime
 
-    y = s.to_head(s.interpolateNN(x_))
+    y = s.to_head(np.array(s.interpolateNN(x_)))
     yc = rich_cyls[-1].getSolutionHead()
     return yc, y, x_[:, 1], s.simTime
 

@@ -23,13 +23,15 @@ def sinusoidal(t):
 """ 
 similar to Benchmark M1.2 but with simulatied growing root system in soil (with the classic sink)
 
+NOT working in parallel, needs revisions
+
 also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 """ Parameters """
 min_b = [-4., -4., -25.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 25]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [7, 7, 53]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 path = "../../../CPlantBox//modelparameter/rootsystem/"
@@ -64,7 +66,7 @@ if not periodic:
     rs.setGeometry(sdf)
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 rs.setSoilGrid(picker)  # maps segments
 rs.setRectangularGrid(pb.Vector3d(min_b), pb.Vector3d(max_b), pb.Vector3d(cell_number), True)
 
@@ -75,19 +77,11 @@ r = XylemFluxPython(rs)
 init_conductivities(r, age_dependent)
 nodes = r.get_nodes()
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
-# for i, s_ in enumerate(r.rs.segments):  # find root collar, asumming node[0] is base
-#     if s_.x == 0:
-#         seg_ind = i
-#         break
-# print(r.rs.segments[seg_ind])
-# r.test()
-# input()
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-
 N = round(sim_time / dt)
 t = 0.
 
@@ -96,14 +90,14 @@ t = 0.
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # xylem_flux.py
-        fluxes = r.soilFluxes(rs_age + t, rx, sx, approx = False)  # class XylemFlux is defined in MappedOrganism.h
-        x_.append(t)
-        y_.append(float(r.collar_flux(rs_age + t, rx, sx)))  # exact root collar flux
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # xylem_flux.py
+        fluxes = r.soilFluxes(rs_age + t, rx, sx, approx=False)  # class XylemFlux is defined in MappedOrganism.h
+#         x_.append(t)
+#         y_.append(float(r.collar_flux(rs_age + t, rx, sx)))  # exact root collar flux
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
     s.solve(dt)
 
@@ -148,7 +142,7 @@ if rank == 0:
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     plt.show()
 

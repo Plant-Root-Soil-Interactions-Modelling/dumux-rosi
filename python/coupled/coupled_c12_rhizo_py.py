@@ -27,7 +27,7 @@ with MPI support
 """ 
 Parameters  
 """
-name = "dumux_c12_1cm_dl"  # scenario name, to save results 
+name = "c12_rhizo_1cm_py"  # scenario name, to save results 
 
 """ soil """
 min_b = [-4., -4., -15.]  # cm
@@ -183,8 +183,7 @@ for i in range(0, NT):
         if rank == 0: 
             out_times.append(t)
             collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, False))
-            min_rsx.append(np.min(np.array(rsx)))
-            
+            min_rsx.append(np.min(np.array(rsx)))            
             min_rx.append(np.min(np.array(rx)))
             print("Cylindrical model: minimum root soil interface {:g} cm, soil {:g} cm, root xylem {:g} cm".format(min_rsx[-1], min_sx[-1], min_rx[-1]))
             min_soil_fluxes, max_soil_fluxes, summed_soil_fluxes = 1.e9, -1.e9, 0.
@@ -200,9 +199,8 @@ for i in range(0, NT):
             water_uptake.append(summed_soil_fluxes)  # cm3/day    
             n = round(float(i) / float(NT) * 100.)
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], {:g} days".format(s.simTime))
-            print("Iteration {:g} took {:g} seconds [{:g}% root, {:g}% rhizo {:g}% soil ]".
+            print("Iteration {:g} took {:g} seconds [{:g}% root, {:g}% rhizo {:g}% soil ]\n".
                   format(i, wall_iteration, wall_root_model / wall_iteration, wall_rhizo_models / wall_iteration, wall_soil_model / wall_iteration))
-            print()
 
 """ plots and output """
 if rank == 0:

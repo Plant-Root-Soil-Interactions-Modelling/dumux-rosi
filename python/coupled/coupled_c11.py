@@ -16,6 +16,8 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 """ 
 Benchmark M1.1 single root in in soil (using the classic sink)
 
+additionally, compares exact root system flux (Meunier et al.) with approximation
+
 also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
@@ -44,15 +46,14 @@ def solve(soil, simtimes, q_r, N):
     seg1 = pb.Vector2i(0, 1)
     seg2 = pb.Vector2i(1, 2)
     #  rs = pb.MappedSegments([n1, n3], [seg1], [r_root])  # a single root
-    rs = pb.MappedSegments([n1, n2, n3], [seg1, seg2], [r_root, r_root])  # a single root
+    rs = pb.MappedSegments([n1, n2, n3], [seg1, seg2], [r_root, r_root])  # a single root with 2 segments
     rs.setRectangularGrid(pb.Vector3d(-l, -l, -1.), pb.Vector3d(l, l, 0.), pb.Vector3d(N, N, 1), False)
     r = XylemFluxPython(rs)
     r.setKr([1.e-7])
     r.setKx([1.e-7])
 
     """ Soil problem """
-    cpp_base = RichardsSP()
-    s = RichardsWrapper(cpp_base)
+    s = RichardsWrapper(RichardsSP())
     s.initialize()
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
@@ -87,25 +88,25 @@ def solve(soil, simtimes, q_r, N):
             fluxes_exact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h
             collar_flux = r.collar_flux(0., rx, sx)
             off = abs(100 * (1 - fluxes_approx[cci] / (-trans)))
-            print("fluxes at ", cci, ": approx", fluxes_approx[cci], "exact", fluxes_exact[cci], "collar flux", collar_flux, "[g day-1]", "approximation is {:.6}% off".format(off))
+            print("fluxes at {:g}: approx {:g}, exact {:g}, collar flux {:g} [g day-1], approximation is {:g}% off"
+                  .format(cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux[0], off))  
             fluxes = fluxes_exact
             sum_flux = 0.
             for f in fluxes.values():
                 sum_flux += f
-            print("Summed fluxes ", sum_flux, "=", -trans, "[g day-1]", "index 0:", fluxes[cci])
+            print("Summed fluxes {:g} = {:g} [g day-1],  index 0: {:g}\n".format(sum_flux, -trans, fluxes[cci]))
         else:
             fluxes = None
 
         fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
         s.setSource(fluxes)  # g day-1, richards.py
-
         s.solve(dt)
 
         x0 = s.getSolutionHeadAt(cci)
         if x0 < -15000:
             if rank == 0:
                 print("Simulation time at -15000 cm > {:.3f} cm after {:.3f} days".format(float(x0), s.simTime))
-            y = s.to_head(s.interpolateNN(x_))
+            y = s.to_head(np.array(s.interpolateNN(x_)))
             return y, x_[:, 1], s.simTime
 
     y = s.toHead(s.interpolateNN(x_))
