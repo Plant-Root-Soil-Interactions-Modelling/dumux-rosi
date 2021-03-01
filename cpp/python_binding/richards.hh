@@ -61,16 +61,15 @@ public:
     }
 
     /**
-     * Applies source term (operator splitting)
+     * Applies source term (operator splitting) to the current solution
      *
      * Limits soil pressure with wilting point from below
      *
      * @param dt 			current time step [s]
-     * @param sx 			soil matric potential [Pa]
      * @param soilFluxes 	fluxes between root and soil [kg/s] (negative fluxes are a sink)
      * @param critP 		critical Pressure or wilting point [Pa]
      */
-    virtual std::vector<double> applySource(double dt, std::vector<double>& sx, const std::map<int, double>& soilFluxes, double critP) {
+    virtual void applySource(double dt, const std::map<int, double>& soilFluxes, double critP) {
     	if (this->isBox) {
             throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
         } else {
@@ -78,29 +77,29 @@ public:
         		cellVolume = this->getCellVolumes();
         	}
         	const auto& params = this->problem->spatialParams();
-        	auto s = this->getSaturation();
-            int c = 0;
+        	auto wc = this->getWaterContent();
             for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {  // local elements
+            	auto eIdx = this->gridGeometry->elementMapper().index(e);
             	int gIdx = this->cellIdx->index(e); // global index
-            	double phi = params.porosity(e);
             	if (soilFluxes.count(gIdx)>0) {
-                	double sink = soilFluxes.at(gIdx)*dt/1000.; // [kg / s] -> [m3]
-                	double newS = (s[c] - sink/(cellVolume[c]*phi)); // s - sink/(V*phi)
-                	const auto& param = params.materialLawParams(e);
-                	double p = -MaterialLaw::pc(param, newS);
-//                	std::cout << "change in s " << sink *1.e9 << " vol " << cellVolume[c] << " phi " << phi <<
-//                			" changed " << (sx[gIdx] - 1.e5) * 100. / 1000. / 9.81 << " cm to " << p * 100. / 1000. / 9.81
-//							<< " cm; saturation " << s[c] << " to " << newS << "\n";
+            		const auto& param = params.materialLawParams(e);
+                	double sink = soilFluxes.at(gIdx)/1000.; // [kg / s] -> [m3]
+                	double new_wc = (wc[eIdx]*cellVolume[eIdx] + dt*sink) / cellVolume[eIdx];
+                	// new_wc -> effective saturation
+                    double sw = new_wc/params.porosity(e); // water_content -> saturation
+                	double p = pRef_-MaterialLaw::pc(param, sw);
+//        			double h = -(p * 100. / rho_ / g_); // cm
+//                	std::cout << wc[eIdx] << ", " << new_wc << ", " << sw << ", " << p << ", "<< h  << "\n";
                 	if (p<critP) {
-                		std::cout << "*";
-                    	sx[gIdx] = critP;
+//                		std::cout << "*"<< this->x[eIdx]  << ", " << pRef_-p << "; critP" << critP << "\n";;
+                    	this->x[eIdx] = critP;
                 	} else {
-                    	sx[gIdx] = p;
+                		//std::cout << this->x[eIdx]  << ", " << pRef_-p << "; critP" << critP << "\n";
+                		this->x[eIdx] = p;
                 	}
             	}
             }
         }
-    	return sx;
     }
 
     /**
