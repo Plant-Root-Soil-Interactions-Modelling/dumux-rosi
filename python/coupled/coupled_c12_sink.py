@@ -25,7 +25,7 @@ Benchmark M1.2 static root system in soil
 
 The classic sink is decoupled from movement, 
 i.e. water movement is calculated first, in a second step water is taken up by the roots (classical sink)
-python implementation was for developing RichardsWrapper.applySink 
+python implementation for developing RichardsWrapper.applySink 
 
 also works parallel with mpiexec (slower, due to overhead?)
 """
@@ -33,7 +33,7 @@ also works parallel with mpiexec (slower, due to overhead?)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [7, 7, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [32, 32, 60]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 # [7, 7, 15], [14,14,30] works ???
 periodic = False
 
@@ -50,7 +50,8 @@ wilting_point = -15000  # cm
 
 sim_time = 3  # [day] for task b
 age_dependent = False  # conductivities
-dt = 60. / (24 * 3600)  # [days] Time step must be very small
+dt = 720 / (24 * 3600)  # [days] Time step must be very small
+skip = 1  
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  
@@ -89,13 +90,15 @@ x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 N = round(sim_time / dt)
+
 t = 0.
-skip = 10
 
 vols = s.getCellVolumes()  # cell volumes [cm3]
 vols = comm.bcast(vols, root=0)  # Soil part runs parallel
 
 for i in range(0, N):
+
+    sx = s.getSolutionHead()
 
     if rank == 0:  # Root part is not parallel
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # xylem_flux.py, cells = True
@@ -103,21 +106,25 @@ for i in range(0, N):
     else:
         fluxes = None 
     fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
+
+    s.applySource(dt, fluxes.copy(), wilting_point)    
+
     s.solve(dt)    
 
-    water_content = s.getWaterContent()
-    wvs = np.multiply(vols, water_content)
-    wvs = comm.bcast(wvs, root=0)  # Soil part runs parallel        
-    sink = np.zeros(wvs.shape)  # convert fluxes to sink
-    for key, value in fluxes.items():
-        sink[key] += value      
-    wvs = wvs + dt * sink          
-    water_content = np.divide(wvs, vols)
-    sx = vg.pressure_head(water_content, sp)    
-    sx = np.maximum(sx, wilting_point)
-    s.setInitialCondition(sx)  # need to revise method
+# #    Python version:
+#     water_content = s.getWaterContent()
+#     wvs = np.multiply(vols, water_content)
+#     wvs = comm.bcast(wvs, root=0)  # Soil part runs parallel        
+#     sink = np.zeros(wvs.shape)  # convert fluxes to sink
+#     for key, value in fluxes.items():
+#         sink[key] += value      
+#     wvs = wvs + dt * sink          
+#     water_content = np.divide(wvs, vols)
+#     sx = vg.pressure_head(water_content, sp)    
+#     sx = np.maximum(sx, wilting_point)
+#     s.setInitialCondition(sx)  # need to revise method
       
-    # s.applySink(fluxes)
+# #     cpp version does the same
       
     if rank == 0 and i % skip == 0:
         min_sx = np.min(sx)
@@ -128,7 +135,7 @@ for i in range(0, N):
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        print("soil [{:g}-{:g}] cm, sink [{:g}-{:g}] cm3/day, w [{:g}-{:g}] cm3".format(np.min(sx), np.max(sx), np.min(sink), np.max(sink), np.min(wvs), np.max(wvs)))
+        # print("soil [{:g}-{:g}] cm, sink [{:g}-{:g}] cm3/day, w [{:g}-{:g}] cm3".format(np.min(sx), np.max(sx), np.min(sink), np.max(sink), np.min(wvs), np.max(wvs)))
         print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
         y_.append(sum_flux)  # cm4/day
         cf.append(float(r.collar_flux(rs_age + t, rx, sx)))  # cm3/day
