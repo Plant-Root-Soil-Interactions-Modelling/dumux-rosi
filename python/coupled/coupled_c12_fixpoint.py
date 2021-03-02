@@ -21,18 +21,19 @@ def sinusoidal(t):
     return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
 
 """ 
-Benchmark M1.2 static root system in soil (with the classic sink)
+Benchmark M1.2 static root system in soil
 
-The plan is to use a fix point iteration to have more stable results 
-NOT WORKING, TODO
+The classic sink is decoupled from movement, 
+i.e. water movement is calculated first, in a second step water is taken up by the roots (classical sink)
+python implementation for developing RichardsWrapper.applySink 
 
-also works parallel with mpiexec (slower, due to overhead?)
+MPI todo
 """
 
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [20, 20, 45]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [7, 7, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 # [7, 7, 15], [14,14,30] works ???
 periodic = False
 
@@ -49,12 +50,12 @@ wilting_point = -15000  # cm
 
 sim_time = 3  # [day] for task b
 age_dependent = False  # conductivities
-dt = 60. / (24 * 3600)  # [days] Time step must be very small
+dt = 360 / (24 * 3600)  # [days] Time step must be very small
+skip = 1  
 
 """ Initialize macroscopic soil model """
-sp = vg.Parameters(soil)  # for debugging
-cpp_base = RichardsSP()
-s = RichardsWrapper(cpp_base)
+sp = vg.Parameters(soil)  
+s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
@@ -84,55 +85,73 @@ cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell i
 r.rs.setSoilGrid(picker)  # maps segment
 
 """ Numerical solution (a) """
-start_time = timeit.default_timer() 
-x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
-sx_k = s.getSolutionHead()  # inital condition, solverbase.py
+start_time = timeit.default_timer()
+x_, y_, y2_, cpx, cps, cf = [], [], [], [], [], []
+sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 N = round(sim_time / dt)
+
 t = 0.
-skip = 10
+vols = s.getCellVolumes()  # cell volumes [cm3] 
 
 for i in range(0, N):
-        
-    s.solve(dt)  # macroscopic water movement
-    sx_k = s.getSolutionHead()  # richards.py
-    sx = sx_k
+
+    # old time step
+    old_water_volume = s.getWaterVolume()
+    sx_k = s.getSolutionHead()
+    w_k = np.multiply(vols, s.getWaterContent())
+
+    sx = sx_k.copy()  # initial value
+    w = w_k.copy()
     
-    """ fix point iteration """    
     iter = 0
-    n = 1
-    while  n >= 1.: 
-        """ sink(rx, sx) """        
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # xylem_flux.py, cells = True
-        fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True 
-        sink = np.zeros(sx_k.shape)  # convert fluxes to sink
+    while True:
+
+        # f(sx,trans)
+        if rank == 0: 
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # xylem_flux.py, cells = True
+            fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
+        else:
+            fluxes = None     
+        fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
+
+        # sink(sx, trans)
+        sink = np.zeros(w.shape)  # convert fluxes to sink    
         for key, value in fluxes.items():
-            sink[key] += value    
-        """ TODO matric potential to water volume """    
-        sx = sx_k + dt * sink  # sink := sink(sx,rx)          
-        n = np.linalg.norm(sink)
-                      
-        """ and again"""
-        iter += 1
-        print(iter, n)
+            sink[key] += value
         
-        if iter > 10:
-            print(np.max(sx), np.min(sx), np.max(sx_k), np.min(sx_k), dt, np.max(sink), np.min(sink))
-            input()
-    
-    # sx and rx have values, so that sx - s_k = dt*sink(sx, rx) 
-     
+        w_old = w          
+        w = w_k + dt * sink         
+        eps = np.linalg.norm(w_old - w)  # other norm?!
+        eps = np.max(np.abs(w_old - w))
+                          
+        wc = np.divide(w, vols)
+        sx = vg.pressure_head(wc, sp)           
+        sx = np.maximum(sx, -1.e6)  # only to avoid nan 
+            
+        iter += 1
+        print(eps)
+        if eps < 1.e-5 or iter > 10: 
+            break
+        
+    s.setInitialCondition(sx)  # need to revise method
+    s.solve(dt)    
+
+    uptake = float((s.getWaterVolume() - old_water_volume) / dt)  # the actual uptake in this time step 
+
     if rank == 0 and i % skip == 0:
-        min_sx = np.min(sx)
-        min_rx = np.min(rx)
-        max_sx = np.max(sx)
-        max_rx = np.max(rx)                
         x_.append(t)
+        min_sx = np.min(sx)
+        max_sx = np.max(sx)
+        min_rx = np.min(rx)        
+        max_rx = np.max(rx)   
         sum_flux = 0.
         for f in fluxes.values():
-            sum_flux += f
-        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
-        y_.append(sum_flux)  # cm4/day
+            sum_flux += f                             
+        print("Uptake {:g} summed fluxes {:g} = collar flux {:g} = prescribed {:g}"
+              .format(uptake, sum_flux, float(r.collar_flux(rs_age + t, rx, sx)), -trans * sinusoidal(t)))
+        y_.append(uptake)  # cm3/day
+        y2_.append(sum_flux)  # cm3/day
         cf.append(float(r.collar_flux(rs_age + t, rx, sx)))  # cm3/day
         cpx.append(rx[0])  # cm
         cps.append(float(sx[cci]))  # cm
@@ -151,11 +170,12 @@ if rank == 0:
     fig, ax1 = plt.subplots()
     ax1.plot(x_, trans * sinusoidal(x_), 'k')  # potential transpiration
     ax1.plot(x_, -np.array(y_), 'g')  # actual transpiration (neumann)
+    ax1.plot(x_, -np.array(y2_), 'b:')  # actual transpiration (neumann)
     ax2 = ax1.twinx()
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    ax1.legend(['Potential', 'Actual', 'Root fluxes', 'Cumulative'], loc='upper left')
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     plt.show()
 

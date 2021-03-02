@@ -23,14 +23,14 @@ def sinusoidal(t):
 """ 
 Benchmark M1.2 static root system in soil (with the classic sink)
 
-also works parallel with mpiexec (only slightly faster, due to overhead)
+using an unstructured grid
 """
 
 """ Parameters """
 # not needed for UG, only for vg-plots
-#min_b = [-4., -4., -15]
-#max_b = [4., 4., 0.]
-#cell_number = [8, 8, 15]  # [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+# min_b = [-4., -4., -15]
+# max_b = [4., 4., 0.]
+# cell_number = [8, 8, 15]  # [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "UG_test"
@@ -38,7 +38,7 @@ sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
 soil = loam
-initial = -659.8 + 7.5 # -659.8
+initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal) TESTING, DEFAULT IS 6.4!
 wilting_point = -15000  # cm
@@ -53,8 +53,8 @@ cpp_base = RichardsUG()
 s = RichardsWrapper(cpp_base)
 s.initialize()
 
-#s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
-#s.readGrid("../../grids/cylinder_tobi_fast_r2.81.msh")  # [cm] MRI_default_file (old dumux dimenions, dimensionsin vtu % vtp off by factor 100, root system is very large)
+# s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
+# s.readGrid("../../grids/cylinder_tobi_fast_r2.81.msh")  # [cm] MRI_default_file (old dumux dimenions, dimensionsin vtu % vtp off by factor 100, root system is very large)
 s.readGrid("../../grids/cylinder_tobi_fast_r2.81(x100).msh")  # [cm] MRI_default_file scaled x100, dimensions of vtu & vtp in paraview match, but initial pressure distribution (with equilibrium) is totally off 
 
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium Homogenious IC does not work with cylinder_tobi_fast_r2.81(x100).msh
@@ -68,15 +68,15 @@ s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
 r = XylemFluxPython("../../grids/RootSystem8.rsml")
-#r = XylemFluxPython("../../grids/III_Soil_1W-00000.rsml")") # vtp2rsml-script rsml does not work yet (too many orders, emergence time way off, etc)
+# r = XylemFluxPython("../../grids/III_Soil_1W-00000.rsml")") # vtp2rsml-script rsml does not work yet (too many orders, emergence time way off, etc)
 
-#r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),  	# only for vp plot
+# r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),  	# only for vp plot
 #                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
 kz = 4.32e-2
 kr = 1.728e-4
 r.setKr([kr])
 r.setKx([kz])
-#init_conductivities(r, age_dependent)
+# init_conductivities(r, age_dependent)
 
 r.rs.sort()  # ensures segment is located at index s.y-1
 r.test()  # sanity checks
@@ -84,7 +84,7 @@ nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
@@ -112,7 +112,7 @@ for i in range(0, N):
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
 
    #  s.ddt = dt / 10
@@ -140,8 +140,8 @@ for i in range(0, N):
     test += 1
     t += dt
     
-    s.writeDumuxVTK(name+str(test))
-#s.writeDumuxVTK(name)
+    s.writeDumuxVTK(name + str(test))
+# s.writeDumuxVTK(name)
 
 # vp-plot not functional or useful with UG simulation
 """
