@@ -88,19 +88,23 @@ public:
                 	// new_wc -> effective saturation
                     double sw = new_wc/params.porosity(e); // water_content -> saturation
                 	double p = pRef_-MaterialLaw::pc(param, sw);
-//        			double h = -(p * 100. / rho_ / g_); // cm
-//                	std::cout << wc[eIdx] << ", " << new_wc << ", " << sw << ", " << p << ", "<< h  << "\n";
                 	if (p<critP) {
-//                		std::cout << "*"<< this->x[eIdx]  << ", " << pRef_-p << "; critP" << critP << "\n";;
                     	this->x[eIdx] = critP;
                 	} else {
-                		//std::cout << this->x[eIdx]  << ", " << pRef_-p << "; critP" << critP << "\n";
                 		this->x[eIdx] = p;
                 	}
             	}
             }
         }
     }
+
+
+
+
+
+
+
+
 
     /**
      * Sets critical pressure, used for constantFlux, constantFluxCyl, or atmospheric boundary conditions,
