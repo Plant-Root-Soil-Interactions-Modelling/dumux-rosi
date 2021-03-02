@@ -46,7 +46,8 @@ wilting_point = -15000  # cm
 
 sim_time = 3  # [day] for task b
 age_dependent = False  # conductivities
-dt = 60. / (24 * 3600)  # [days] Time step must be very small
+dt = 360. / (24 * 3600)  # [days] Time step must be very small
+skip = 1
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
@@ -60,6 +61,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([soil])
 s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -87,7 +89,6 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 N = round(sim_time / dt)
 t = 0.
-skip = 10
 
 for i in range(0, N):
 

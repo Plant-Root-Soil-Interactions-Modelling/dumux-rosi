@@ -1,4 +1,5 @@
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/") 
+from cmath import isnan
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
@@ -50,7 +51,7 @@ wilting_point = -15000  # cm
 
 sim_time = 3  # [day] for task b
 age_dependent = False  # conductivities
-dt = 360 / (24 * 3600)  # [days] Time step must be very small
+dt = 120 / (24 * 3600)  # [days] Time step must be very small
 skip = 1  
 
 """ Initialize macroscopic soil model """
@@ -123,17 +124,21 @@ for i in range(0, N):
         w_old = w          
         w = w_k + dt * sink         
         eps = np.linalg.norm(w_old - w)  # other norm?!
-        eps = np.max(np.abs(w_old - w))
+        # eps = np.max(np.abs(w_old - w))
                           
         wc = np.divide(w, vols)
         sx = vg.pressure_head(wc, sp)           
-        sx = np.maximum(sx, -1.e6)  # only to avoid nan 
+        sx = np.maximum(sx, wilting_point)  # only to avoid nan 
             
         iter += 1
         print(eps)
         if eps < 1.e-5 or iter > 10: 
+            if isnan(eps):
+                input() 
+            
             break
         
+    sx = np.maximum(sx, wilting_point)    
     s.setInitialCondition(sx)  # need to revise method
     s.solve(dt)    
 

@@ -85,6 +85,7 @@ public:
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
+		sourceSlope_ = getParam<double>("Soil.SourceSlope", -1.); // cm, negative value disables regularisation
 		// precipitation
 		if (bcTopType_==atmospheric) {
 			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
@@ -337,24 +338,25 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 		if ((source_ != nullptr)) {
- 		    auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-		    return source_->at(eIdx)/scv.volume();
-//		    double slope = 5000.;
-//		    Scalar s = elemVolVars[scv].saturation();
-//            MaterialLawParams params = this->spatialParams().materialLawParams(element);
-//            Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
-//            Scalar h = -toHead_(p); // cm
-//            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
-//            if (h<criticalPressure_) {
-//                return 0.;
-//            } else if (h<=criticalPressure_+slope) { //  h in [crit, crit+slope]
-//                double theta = (h - criticalPressure_)/slope;
-//                std::cout << "REGULARIZE! " << h << ", "<< theta << "\n" << std::flush;
-//                return theta* source_->at(eIdx)/scv.volume();;
-//            } else  {
-//                return source_->at(eIdx)/scv.volume();
-//            }
-
+			if (sourceSlope_<0.) {
+				auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+				return source_->at(eIdx)/scv.volume();
+			} else {
+			    Scalar s = elemVolVars[scv].saturation();
+	            MaterialLawParams params = this->spatialParams().materialLawParams(element);
+	            Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
+	            Scalar h = -toHead_(p); // cm
+	            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+	            if (h<criticalPressure_) {
+	                return 0.;
+	            } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
+	                double theta = (h - criticalPressure_)/sourceSlope_;
+	                // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
+	                return theta* source_->at(eIdx)/scv.volume();;
+	            } else  {
+	                return source_->at(eIdx)/scv.volume();
+	            }
+			}
 		} else {
 			return 0.;
 		}
@@ -565,6 +567,7 @@ private:
 	Scalar criticalPressure_; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;
+	Scalar sourceSlope_ = -1.; // slope for regularization, negative values disables regularisation
 
 	bool writeFile_ = true;
 	std::ofstream myfile_;

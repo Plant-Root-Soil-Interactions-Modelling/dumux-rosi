@@ -58,7 +58,7 @@ split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 sim_time = 0.5  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 10  # for output and results, skip iteration
+skip = 1  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -160,7 +160,8 @@ for i in range(0, NT):
     water_content = comm.bcast(water_content, root=0) 
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
-    s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
+    # s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
+    s.applySource(dt, soil_fluxes.copy(), wilting_point)
     s.solve(dt)  # in solverbase.py     
     
     """ 3b. calculate net fluxes """ 
