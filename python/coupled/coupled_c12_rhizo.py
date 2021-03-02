@@ -71,6 +71,7 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -160,8 +161,8 @@ for i in range(0, NT):
     water_content = comm.bcast(water_content, root=0) 
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
-    # s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
-    s.applySource(dt, soil_fluxes.copy(), wilting_point)
+    s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
+    # s.applySource(dt, soil_fluxes.copy(), wilting_point)
     s.solve(dt)  # in solverbase.py     
     
     """ 3b. calculate net fluxes """ 

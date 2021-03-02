@@ -9,6 +9,7 @@ from richards import RichardsWrapper  # Python part
 import vtk_plot as vp
 import van_genuchten as vg
 from root_conductivities import *
+from rhizo_models import plot_transpiration
 
 from math import *
 import numpy as np
@@ -133,14 +134,6 @@ s.writeDumuxVTK(name)
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
     # vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
-    fig, ax1 = plt.subplots()
-    ax1.plot(x_, trans * sinusoidal(x_), 'k')  # potential transpiration
-    ax1.plot(x_, -np.array(y_), 'g')  # actual transpiration (neumann)
-    ax2 = ax1.twinx()
-    ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
-    ax1.set_xlabel("Time [d]")
-    ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
-    plt.show()
 

@@ -219,15 +219,28 @@ class RhizoMappedSegments(pb.MappedSegments):
             return []
     
 
-def plot_transpiration(t, water_uptake, collar_flux, trans):
-    """ potential and actual transpiration over time """
+def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
+    """ plots potential and actual transpiration over time 
+    
+    depending on discretisation soil_uptake and root_uptake might differ  
+    
+    @param t                  times [day]
+    @param soil_uptake        actual transpiration [cm3/day] of soil 
+    @param root_uptake        actual transpiration [cm3/day] according to root model 
+    @param potential_trans    function in t stating the potential transpiration [cm3/day]
+    """
     fig, ax1 = plt.subplots()
-    ax1.plot(t, trans(t), 'k', label="potential")  # potential transpiration
-    ax1.plot(t, -np.array(water_uptake), 'g', label="actual")  # actual transpiration 
-    ax1.plot(t, -np.array(collar_flux), 'r:', label="collar flux")  # actual transpiration
+    ax1.plot(t, potential_trans(t), 'k', label="potential transpiration")  # potential transpiration
+    ax1.plot(t, -np.array(soil_uptake), 'g', label="soil uptake")  # actual transpiration  according to soil model
+    ax1.plot(t, -np.array(root_uptake), 'r:', label="root system uptake")  # actual transpiration according root model
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    fig.legend()
+    ax2 = ax1.twinx()
+    dt = np.diff(t)
+    so = np.array(soil_uptake)
+    ax2.plot(t[1:], np.cumsum(-np.multiply(so[:-1], dt)), 'c--')  # cumulative transpiration (neumann)
+    ax2.set_ylabel("Cumulative soil uptake $[cm^3]$")    
+    fig.legend()        
     plt.show()
 
 
