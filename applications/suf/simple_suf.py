@@ -12,21 +12,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# sets all standard deviation to a percantage, i.e. value*s
+# sets all standard deviation to a percantage of the mean value, i.e. value*s
 def set_all_sd(rs, s):
     for p in rs.getRootRandomParameter():
-        print(p)
-        p.lmaxs = p.lmaxs * s
+        p.lmaxs = p.lmax * s
         p.lbs = p.lb * s
         p.las = p.la * s
         p.lns = p.ln * s
         p.rs = p.r * s
         p.a_s = p.a * s
+        p.thetas = p.theta * s        
         p.dx = 0.1  # cm
 
 
 """ Parameters """
-name = "single_root"  # single_root, Zea_mays_1_Leitner_2010
+name = "Zea_mays_1_Leitner_2010"  # single_root, Zea_mays_1_Leitner_2010
 simtime = 60  # days
 kx_ = [4.e3, 4.e2, 4, 4.e-1, 4.e-2, 4.e-3]  # 4000, 4, 0.004
 kr = 0.002 
@@ -77,7 +77,7 @@ for ii, kx in enumerate(kx_):
 #     print("Shoot type", rs.subTypes[0])
     
     """ numerical solution of transpiration -1 cm3/day"""
-    krs_, l_ = [], []
+    krs_, l_, jc_ = [], [], []
     for t in range(10, simtime + 1):
         
         # l_.append(rs.getSummed("length")) # does not work, since rs is precomputed
@@ -87,24 +87,27 @@ for ii, kx in enumerate(kx_):
              
         suf = r.get_suf(t)   
         
-        krs = r.get_krs(t)    
+        krs, jc = r.get_krs(t)    
         krs_.append(krs)
+        jc_.append(jc)
         
         if t > 10 and t % 10 == 0:  # for the suf plot
             suf_[-1].append(suf)
     
     time = np.linspace(10, simtime, simtime - 10 + 1)
-    plt.plot(time, krs_, cols[ii], label=labels[ii])
+    # plt.plot(time, krs_, cols[ii], label=labels[ii])
+    plt.plot(time, jc_, cols[ii], label=labels[ii])
 
-""" Krs plot """
+# """ Krs plot """
 plt.xlabel("simulation time")
-plt.ylabel("root system conductance $krs$ $[cm^2 d^{-1}]$")
+# plt.ylabel("root system conductance $krs$ $[cm^2 d^{-1}]$")
+plt.ylabel("Transpiration at eswp -500 cm $[cm^3/day]$")
 plt.legend()
 plt.show()
 
 """ Root system length """
 plt.xlabel("simulation time")
-plt.ylabel("root system length$[cm]$")
+plt.ylabel("root system length $[cm]$")
 plt.plot(time, l_)
 plt.show()
 
