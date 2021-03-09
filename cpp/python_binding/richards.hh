@@ -98,14 +98,6 @@ public:
         }
     }
 
-
-
-
-
-
-
-
-
     /**
      * Sets critical pressure, used for constantFlux, constantFluxCyl, or atmospheric boundary conditions,
      * to limit maximal the flow.
@@ -118,12 +110,29 @@ public:
     }
 
     /**
+     * Sets the initial conditions, for a MPI process (TODO for more than 1 equation)
+     *
+     *  @param init         globally shared initial data, sorted by global index [Pa]
+     */
+    virtual void setInitialConditionHead(std::vector<double> init) {
+        if (this->isBox) {
+            throw std::invalid_argument("Richards::setInitialCondition: Not implemented yet (sorry)");
+        } else {
+            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
+                int eIdx = this->gridGeometry->elementMapper().index(e);
+                int gIdx = this->cellIdx->index(e);
+                this->x[eIdx] = toPa(init[gIdx]);
+            }
+        }
+    }
+
+    /**
      * Returns the current solution for a single mpi process in cm pressure head at a global cell index
      * @see SolverBase::getSolutionAt
      */
     virtual double getSolutionHeadAt(int gIdx, int eqIdx = 0) {
         double sol = this->getSolutionAt(gIdx, eqIdx); // Pa
-        return (sol - 1.e5)*100. / 1.e3 / 9.81; // cm
+        return toHead(sol);
     }
 
     /**
@@ -132,8 +141,8 @@ public:
      */
     virtual std::vector<double> getSolutionHead(int eqIdx = 0) {
         std::vector<double> sol = this->getSolution(eqIdx);
-        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::plus<double>(), -1.e5));
-        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / 1.e3 / 9.81));
+        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::plus<double>(), -pRef_));
+        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / rho_ / g_));
         return sol;
     }
 
@@ -191,7 +200,7 @@ public:
     }
 
     /**
-     * Returns the total water volume [m3] within the domain
+     * Returns the total water volume [m3] within the domain, TODO wrong because of overlapping cells!
      */
     virtual double getWaterVolume()
     {
@@ -210,7 +219,7 @@ public:
     }
 
 	/**
-	 * Return the darcy (?) velocity in a 1D model TODO not working even in 1D TODO (for nD we would need to multipy with the outer normals)
+	 * Return the darcy (?) velocity in a 1D model TODO not working even in 1D TODO (for nD we would need to multiply with the outer normals)
 	 *
 	 * For a single mpi process. Gathering is done in Python
 	 */
@@ -265,7 +274,7 @@ public:
     void setTopBC(int type, double value) {
     	this->checkInitialized();
     	this->problem->bcTopType_ = type;
-    	this->problem->bcTopValue_ = value;
+    	this->problem->bcTopValues_[0] = value;
     }
 
     /**
@@ -276,7 +285,7 @@ public:
     void setBotBC(int type, double value) {
     	this->checkInitialized();
     	this->problem->bcBotType_ = type;
-    	this->problem->bcBotValue_ = value;
+    	this->problem->bcBotValues_[0] = value;
     }
 
     /**

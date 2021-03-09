@@ -60,9 +60,10 @@ public:
 	enum BCTypes {
 		constantPressure = 1,
 		constantFlux = 2,
-		constantFluxCyl = 3,
+		constantFluxCyl = 3, // for cylindrical models
 		atmospheric = 4,
-		freeDrainage = 5
+		freeDrainage = 5,
+		rootSystemExact = 6 // for cylindrical models with coupling to root system
 	};
 
 	enum GridParameterIndex {
@@ -80,8 +81,8 @@ public:
 		// BC
 		bcTopType_ = getParam<int>("Soil.BC.Top.Type");
 		bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
-		bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
-		bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
+		bcTopValues_.push_back(getParam<Scalar>("Soil.BC.Top.Value",0.));
+		bcBotValues_.push_back(getParam<Scalar>("Soil.BC.Bot.Value",0.));
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
@@ -100,8 +101,8 @@ public:
 		if (writeFile_) {
 			myfile_.open(filestr.c_str());
 		}
-		std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValue_ << ",  Output File " << writeFile_
+		std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+				<<  bcBotType_ << ", " << bcBotValues_.at(0) << ",  Output File " << writeFile_
 				<< ", Critical pressure " << criticalPressure_ << " gravity " << gravityOn_ << "\n" << std::flush;
 	}
 
@@ -176,6 +177,7 @@ public:
 			case constantFlux: bcTypes.setAllNeumann(); break;
 			case constantFluxCyl: bcTypes.setAllNeumann(); break;
 			case freeDrainage: bcTypes.setAllNeumann(); break;
+			case rootSystemExact: bcTypes.setAllNeumann(); break;
 			default: DUNE_THROW(Dune::InvalidStateException,"Bottom boundary type not implemented");
 			}
 		} else {
@@ -193,12 +195,12 @@ public:
 		PrimaryVariables values;
 		if (onUpperBoundary_(globalPos)) { // top bc
 			switch (bcTopType_) {
-			case constantPressure: values[Indices::pressureIdx] = toPa_(bcTopValue_); break;
+			case constantPressure: values[Indices::pressureIdx] = toPa_(bcTopValues_[0]); break;
 			default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Dirichlet: unknown boundary type");
 			}
 		} else if (onLowerBoundary_(globalPos)) { // bot bc
 			switch (bcBotType_) {
-			case constantPressure: values[Indices::pressureIdx] = toPa_(bcBotValue_); break;
+			case constantPressure: values[Indices::pressureIdx] = toPa_(bcBotValues_[0]); break;
 			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Dirichlet: unknown boundary type");
 			}
 		}
@@ -231,12 +233,12 @@ public:
 			Scalar h = -toHead_(p); // cm
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
-			Scalar krw = MaterialLaw::krw(params, s);
+			Scalar krw = MaterialLaw::krw(params, s); // [1]
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						// std::cout << "in:" << f <<", " << imax <<"\n";
@@ -249,7 +251,7 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // upper = outer, with switch for maximum in- or outflow
-					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
@@ -268,15 +270,15 @@ public:
 					} else { // evaporation
 						// std::cout << "out" << ", at " << h << " cm \n";
 					    Scalar p2 = toPa_(-10000);
-					    Scalar h3 = 0.5*(h + criticalPressure_);
-					    Scalar p3 = toPa_(h);
+					    // Scalar h3 = 0.5*(h + criticalPressure_);
+					    // Scalar p3 = toPa_(h);
 					    Scalar s2 = MaterialLaw::sw(params, -(p2- pRef_));
-                        Scalar s3 = MaterialLaw::sw(params, -(p3- pRef_)) ;
+                        // Scalar s3 = MaterialLaw::sw(params, -(p3- pRef_)) ;
 					    // std::cout << s2 << "\n";
 					    Scalar krw2 = MaterialLaw::krw(params, s2);
-					    Scalar krw3 = MaterialLaw::krw(params, s3);
+					    // Scalar krw3 = MaterialLaw::krw(params, s3);
                         Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
-					    Scalar harmonic = 2*krw2*krw/(krw2+krw);
+					    // Scalar harmonic = 2*krw2*krw/(krw2+krw);
 						Scalar emax = rho_ * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
 						f = std::min(prec, emax);
 					}
@@ -287,7 +289,7 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
@@ -301,19 +303,47 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // lower = inner, with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100. * pos[0]; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100. * pos[0]; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_)* pos[0]; // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
-//						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValue_
+//						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValues_.at(0)
 //								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
 						omax = std::max(omax, 0.); // must stay positive
 						f = std::min(f, omax);
+						// std::cout << f << "\n";
 					}
 					break;
+				}
+				case rootSystemExact: { // [x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), self.radii[j], l])
+
+					double x0 = bcBotValues_[0]; // node matric potential [cm]
+					double x1 = bcBotValues_[1]; // node matric potential [cm]
+					double kr = bcBotValues_[2]; // [1 day-1]
+					double kx = bcBotValues_[3]; // [cm3 day-1]
+					double l = bcBotValues_[4]; // [cm]
+					double h0 = bcBotValues_[5]; // matric potential at root soil interface, rsx [cm] (not dynamic, as python)
+					// double h0 = h; // dynamic
+					double a = 100.*pos[0]; // [cm]
+
+					double f_ = 2 * a * M_PI * kr;
+					double tau = std::sqrt(f_ / kx);  // sqrt(c) [cm-1]
+					double d = std::exp(-tau * l) - std::exp(tau * l);  //  det
+					double fExact = f_ * (1. / (tau * d)) * (x0 - h0 + x1 - h0) * (2. - std::exp(-tau * l) - std::exp(tau * l)); // h or h0?
+					f =  fExact / (2 * a * M_PI * l);  // [cm3 / cm2 / day]
+					f *= (rho_*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
+					f *= -pos[0]; // cylindrical coordinates
+
+					// classical approximation
+//					f = kr*(0.5*(x0+x1)-h); // [cm/day]
+//					f *= (rho_*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
+//					f = std::min(f, 0.);
+//					f *= -pos[0]; // cylindrical coordinates
+
+					break; // [kg/(m²*s)]
 				}
 				case freeDrainage: {
 					f = krw * kc * rho_; // * 1 [m]
@@ -323,7 +353,6 @@ public:
 				}
 			}
 		}
-
 		flux[conti0EqIdx] = f;
 		return flux;
 	}
@@ -524,8 +553,9 @@ public:
 	// BC, direct access for Python binding (setBcTop, setBcBot)
 	int bcTopType_;
 	int bcBotType_;
-	double bcTopValue_;
-	double bcBotValue_;
+	std::vector<double> bcTopValues_ = std::vector<double>(0);
+	std::vector<double> bcBotValues_ = std::vector<double>(0);
+
 
 	// dummy for richardsnc types (needed by richards.hh)
 	std::vector<int> bcSTopType_ = std::vector<int>(0); // zero solutes

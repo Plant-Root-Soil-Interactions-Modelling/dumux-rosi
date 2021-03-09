@@ -148,6 +148,8 @@ class RichardsWrapper(SolverWrapper):
             b = 3
         elif type_bot == "freeDrainage" or type_bot == "fleeFlow" or type_bot == "free":
             b = 5
+        elif type_bot == "rootSystem" or type_bot == "rootSystemExact":
+            b = 6
         elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
             b = 2
             assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
@@ -189,12 +191,26 @@ class RichardsWrapper(SolverWrapper):
         """ more appropriate name for cylindrical coordinates, calls setBotBC, @see setBotBC """
         self.setBotBC(type_bot, value_bot)
 
+    def setInnerBCRootSystem(self, params):
+        self.base.botValues_ = []
+
     def setOuterBC(self, type_top:str, value_top=0.):
         """ more appropriate name for cylindrical coordinates, calls setToptBC, @see setToptBC """
         self.setTopBC(type_top, value_top)
 
+    def setRootSystemBC(self, params):
+        """Couples the inner boundary of a cylindrical model to an exact root surface flow 
+        @params [x0, x1, kr, kx, l]
+               x0, x1        matric potential  
+               kr, kx        root system conductivities
+               l             length [cm]
+        """
+        #
+        # print("setRootSystemBC", params)
+        self.base.setRootSystemBC(params)
+
     def getInnerHead(self):
-        """  Gets the pressure head at the inner boundary [cm] """
+        """Gets the pressure head at the inner boundary [cm] """
         return self.base.getInnerHead()
 
     def setSource(self, source_map):

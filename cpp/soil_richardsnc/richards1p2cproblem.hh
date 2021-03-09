@@ -89,8 +89,8 @@ public:
 		// BC
 		bcTopType_ = getParam<int>("Soil.BC.Top.Type");
 		bcBotType_ = getParam<int>("Soil.BC.Bot.Type");
-		bcTopValue_ = getParam<Scalar>("Soil.BC.Top.Value",0.);
-		bcBotValue_ = getParam<Scalar>("Soil.BC.Bot.Value",0.);
+		bcTopValues_.push_back(getParam<Scalar>("Soil.BC.Top.Value",0.));
+		bcBotValues_.push_back(getParam<Scalar>("Soil.BC.Bot.Value",0.));
 
 		// Component
 		bcSTopType_[0] = getParam<int>("Soil.BC.Top.SType", outflow);
@@ -122,8 +122,8 @@ public:
 		// Output
 		std::string filestr = this->name() + ".csv"; // output file
 		myfile_.open(filestr.c_str());
-		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValue_ << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValue_  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
+		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+				<<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
 				<< criticalPressure_ << "\n" << std::flush;
 	}
@@ -229,7 +229,7 @@ public:
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcTopValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax);
@@ -240,7 +240,7 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcTopValue_*rho_/(24.*60.*60.)/100 * pos[0];
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
@@ -266,7 +266,7 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax);
@@ -277,13 +277,13 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcBotValue_*rho_/(24.*60.*60.)/100 * pos[0];
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
-						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_ << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
+						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
 						f = std::min(f, omax);
 					}
 					break;
@@ -566,8 +566,8 @@ public:
 	// BC, direct access for Python binding (setTopBC, setBotBC, in richards.hh)
 	int bcTopType_;
 	int bcBotType_;
-	Scalar bcTopValue_;
-	Scalar bcBotValue_;
+	std::vector<double> bcTopValues_ = std::vector<double>(0);
+	std::vector<double> bcBotValues_ = std::vector<double>(0);
 
 	std::vector<int> bcSTopType_ = std::vector<int>(1); // one solute
 	std::vector<int> bcSBotType_ = std::vector<int>(1);

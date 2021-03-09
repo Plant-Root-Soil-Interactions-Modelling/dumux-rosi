@@ -59,6 +59,17 @@ public:
     	return this->getSolutionHeadAt(innerIdx);
     }
 
+    /**
+     * Changes the exact root system BC (for coupling) in initialized problem (e.g. within the simulation loop)
+     * @parm params 	x0, x1, kr, kx, length
+     */
+    void setRootSystemBC(std::vector<double> params) {
+    	if (this->problem->bcBotType_!=6) {
+    		std::cout << "RichardsCyl::setRootSystemBC() warning, wrong bcBotTyp is set (!=6) "<< this->problem->bcBotType_<< "\n";
+    	}
+    	this->problem->bcBotValues_= params;
+    }
+
     // TODO getWaterVolume needs adjusting
 
     int innerIdx = -1;
@@ -94,6 +105,7 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getInnerFlux",&RichardsFoam::getInnerFlux)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux)
    .def("getInnerHead",&RichardsFoam::getInnerHead)
+   .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)

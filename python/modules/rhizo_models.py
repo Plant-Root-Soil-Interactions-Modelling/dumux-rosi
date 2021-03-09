@@ -53,7 +53,10 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.cyls = []
         if self.mode == "dumux":
             for i in eidx: 
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]]))
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False))
+        elif self.mode == "dumux_exact":
+            for i in eidx: 
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True))
         elif self.mode == "python": 
             for i in eidx: 
                 x0 = x[self.seg2cell[i]]
@@ -61,7 +64,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         else:
             raise "RhizoMappedSegments.initialize: unknown solver {}".format(mode)
 
-    def initialize_dumux_(self, i, x): 
+    def initialize_dumux_(self, i, x, exact): 
         """ Dumux RichardsCylFoam solver"""
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
@@ -74,8 +77,12 @@ class RhizoMappedSegments(pb.MappedSegments):
             cyl.setHomogeneousIC(x)  # cm pressure head                
             cyl.setVGParameters([self.soil])
             cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
-            cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]
+            if exact:
+                cyl.setInnerBC("rootSystemExact")  # parameters are passed with cyl.setRootSystemBC (defined in richards_cyl.hh)
+            else:
+                cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+            cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
             cyl.initializeProblem()
             cyl.setCriticalPressure(self.wilting_point)  # cm pressure head   
             return cyl             
@@ -106,7 +113,7 @@ class RhizoMappedSegments(pb.MappedSegments):
     def get_inner_heads(self):
         """ matric potential at the root surface interface [cm]"""
         rsx = np.zeros((len(self.cyls),))           
-        if self.mode == "dumux":
+        if self.mode == "dumux" or self.mode == "dumux_exact":
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 rsx[i] = cyl.getInnerHead()  # [cm], needed for conductiv                          
@@ -121,7 +128,7 @@ class RhizoMappedSegments(pb.MappedSegments):
     def get_inner_fluxes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
         fluxes = np.zeros((len(self.cyls),))
-        if self.mode == "dumux":
+        if self.mode == "dumux" or self.mode == "dumux_exact":
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 fluxes[i] = -float(cyl.getInnerFlux()) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)            
@@ -146,9 +153,39 @@ class RhizoMappedSegments(pb.MappedSegments):
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
                 try:
                     cyl.solve(dt)
+                    # input()
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"                
                     str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    raise str                
+        elif self.mode == "dumux_exact":
+            rx = argv[0]        
+            proposed_outer_fluxes = argv[1]
+            rsx = argv[2]              
+            soil_k = argv[3]
+            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                j = self.eidx[i]  # for one process j == i
+                l = self.seg_length[j]                
+                seg_ct = self.nodeCTs[self.segments[j].y]
+                age = 1.  # self.seg_ages[j] + t  # age  = (maxCT -nodeCT[j]) + t = (maxCT+t) - nodeCT[j] = rs_sim_time - nodeCT[j]
+                type_ = self.subTypes[j]
+                x0 = rx[self.segments[j].x]
+                x1 = rx[self.segments[j].y]
+                # print("solve dumux_exact", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
+                kr = self.rs.kr_f(age, type_)
+                if len(soil_k) > 0:
+                    kr = min(kr, soil_k[j])
+                kx = self.rs.kx_f(age, type_)
+                cyl.setRootSystemBC([x0, x1, kr, kx, l, rsx[j]]) 
+                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                # cyl.setOuterFluxCyl(0.)
+                try:
+                    # cyl.ddt = dt / 10
+                    cyl.solve(dt)
+                    # input()
+                except:
+                    str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"                
+                    str = str.format(proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
                     raise str                
         elif self.mode == "python": 
             rx = argv[0]        
@@ -164,12 +201,13 @@ class RhizoMappedSegments(pb.MappedSegments):
                 #         rx_approx = 0.5 * (x0 + x1)
                 #         cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, self.kr_f(age, type_)])
                 cyl.bc[(0, 0)] = ("rootsystem_exact", [x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), self.radii[j], l])                
+                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
                 ndof = self.NC - 1
                 dx_outer = cyl.grid.nodes[ndof] - cyl.grid.center(ndof - 1)
                 q_outer = proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l)
                 cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , self.wilting_point, dx_outer])
                 cyl.solve([dt], dt, False)
-                                        
+                # input()                                    
         else:
             raise "RhizoMappedSegments.initialize: unknown solver {}".format(self.mode)
         
@@ -217,7 +255,17 @@ class RhizoMappedSegments(pb.MappedSegments):
             return [item for sublist in xx for item in sublist]
         else:
             return []
-    
+
+    def plot_cylinder(self, i):
+        """ plots a specific cylinder (DUMUX only, TODO) """
+        cyl = self.cyls[i]
+        x_ = cyl.getDofCoordinates()
+        y_ = cyl.getSolutionHead()
+        plt.plot(x_, y_)
+        plt.xlabel("distance [cm]")
+        plt.ylabel("matric potential [cm]")
+        print("radius {:g} cm".format(x_[0][0]))  
+
 
 def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
     """ plots potential and actual transpiration over time 
@@ -258,6 +306,7 @@ def plot_info(x_, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_r
     ax2.plot(x_, np.array(min_sx), label="min soil")
     ax2.plot(x_, np.array(min_rx), label="min xylem")
     ax2.plot(x_, np.array(min_rsx), label="min 1d at root surface")
+    ax2.set_ylim([-15000, 0])
     ax2.legend()
     ax2.set_xlabel("Time (days)")
     ax2.set_ylabel("Matric potential (cm)")    
