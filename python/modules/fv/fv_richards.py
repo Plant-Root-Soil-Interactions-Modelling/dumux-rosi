@@ -300,9 +300,10 @@ class FVRichards1D(FVRichards):
         h = self.getInnerHead()
         k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]
         kr = min(kr, k / self.dx)
-        f = -2 * a * np.pi * kr
-        tau = np.sqrt(2 * a * np.pi * kr / kz)  # sqrt(c) [cm-1]
+        f = 2 * a * np.pi * kr
+        tau = np.sqrt(f / kz)  # sqrt(c) [cm-1]
         d = np.exp(-tau * l) - np.exp(tau * l)  #  det
-        fExact = -f * (1. / (tau * d)) * (rx0 - h + rx1 - h) * (2. - np.exp(-tau * l) - np.exp(tau * l))
+        fExact = f * (1. / (tau * d)) * (rx0 - h + rx1 - h) * (2. - np.exp(-tau * l) - np.exp(tau * l))
+        # print(10. / (24.*3600.) * fExact / (2 * a * np.pi * l))
         return fExact / (2 * a * np.pi * l)  # [cm3 / cm2 / day]
 
