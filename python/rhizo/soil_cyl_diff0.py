@@ -79,8 +79,8 @@ for i, dt in enumerate(np.diff(times)):
     x = s.getSolutionHead()
     y = np.array(s.getSolution(1))  # solute concentration kg/m3 -> g/cm3
 
-    ax1.plot(points[:], x, col[i % len(col)], label = "dumux {:g} days".format(s.simTime))
-    ax2.plot(points[:], y, col[i % len(col)], label = "dumux {:g} days".format(s.simTime))
+    ax1.plot(points[:], x, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
+    ax2.plot(points[:], y, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
 
     f.append(s.getNeumann(idx))  # [kg/kg] -> 1/1000 [kg/m3] [] -> 1 [g/cm3] # solute concentration
 
@@ -94,14 +94,14 @@ ax1.set_ylabel("soil matric potential (cm)")
 ax1.legend()
 
 # data = np.loadtxt("comsol_c_diff.txt", skiprows=8)  # linear effective diffusion model
-data = np.loadtxt("../../cpp/soil_richardsnc/python/c_diff_results.txt", skiprows = 8)  # buffer power = 140
+data = np.loadtxt("c_diff_results.txt", skiprows=8)  # buffer power = 140
 # data = np.loadtxt("c_diff_results_nob.txt", skiprows=8)  # buffer power = 0
 
 z_comsol = data[:, 0]
 # ax2.plot(z_comsol + 0.02, data[:, 1], "r", label="initial")
 # ax2.plot(z_comsol + 0.02, data[:, 2], "r", label="10 hours")
-ax2.plot(z_comsol + 0.02, data[:, 25], "r", label = "comsol 10 days")
-ax2.plot(z_comsol + 0.02, data[:, -1], "g", label = "comsol 20 days")
+ax2.plot(z_comsol + 0.02, data[:, 25], "r", label="comsol 10 days")
+ax2.plot(z_comsol + 0.02, data[:, -1], "g", label="comsol 20 days")
 ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()

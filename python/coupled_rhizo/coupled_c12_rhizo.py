@@ -50,7 +50,7 @@ predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
 """ rhizosphere models """
-mode = "dumux_exact"  # or "dumux" 
+mode = "dumux"  # or "dumux" 
 NC = 10  # dof+1
 logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
@@ -147,8 +147,7 @@ for i in range(0, NT):
         proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]    
     else: 
         proposed_inner_fluxes = None        
-        rx = None
-     
+        rx = None     
     wall_root_model = timeit.default_timer() - wall_root_model
 
     """ 2. local soil models """
@@ -159,7 +158,6 @@ for i in range(0, NT):
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)
     elif rs.mode == "dumux_exact":
         rx = comm.bcast(rx, root=0)
-        rsx = comm.bcast(rsx, root=0)
         soil_k = comm.bcast(soil_k, root=0)         
         rs.solve(dt, rx, proposed_outer_fluxes, rsx, soil_k)
     realized_inner_fluxes = rs.get_inner_fluxes() 

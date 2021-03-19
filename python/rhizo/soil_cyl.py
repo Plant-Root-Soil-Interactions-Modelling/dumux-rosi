@@ -47,14 +47,14 @@ for i, dt in enumerate(np.diff(times)):
     s.solve(dt)
     points = s.getDofCoordinates()
     x = s.getSolutionHead()
-    plt.plot(points[:], x, col[i % len(col)], label = "dumux {} days".format(s.simTime))
+    plt.plot(points[:], x, col[i % len(col)], label="dumux {} days".format(s.simTime))
 
 print("elapsed time", time.time() - t)
 
-data = np.loadtxt("../../cpp/soil_richards/python/cylinder_1d_Comsol.txt", skiprows = 8)
+data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows=8)
 z_comsol = data[:, 0]
-plt.plot(z_comsol + 0.02, data[:, 25], "k", label = "comsol 10 days")
-plt.plot(z_comsol + 0.02, data[:, -1], "k:", label = "comsol 20 days")
+plt.plot(z_comsol + 0.02, data[:, 25], "k", label="comsol 10 days")
+plt.plot(z_comsol + 0.02, data[:, -1], "k:", label="comsol 20 days")
 
 plt.xlabel("distance from root axis (cm)")
 plt.xlabel("soil matric potential (cm)")
