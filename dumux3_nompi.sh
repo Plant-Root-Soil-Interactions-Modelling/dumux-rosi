@@ -11,24 +11,24 @@ cd ..
 
 # delete all builds
 cd dumux
-rm build-cmake -rf
-rm CMakeCache.txt
+sudo rm build-cmake -rf
+sudo rm CMakeCache.txt
 cd ..
 
 cd dumux-rosi
-rm build-cmake -rf
-rm CMakeCache.txt
+sudo rm build-cmake -rf
+sudo rm CMakeCache.txt
 cd ..
 
 for MOD in common foamgrid geometry grid istl localfunctions pybindxi spgrid uggrid; do
 cd dune-$MOD
-rm build-cmake -rf
-rm CMakeCache.txt
+sudo rm build-cmake -rf
+sudo rm CMakeCache.txt
 cd ..
 done
 
 # build without MPI
-sudo ./dune-common/bin/dunecontrol --opts=dumux-rosi/cmake_nompi.opts all
+./dune-common/bin/dunecontrol --opts=dumux-rosi/cmake_nompi.opts all
 
 # copy richards_cyl to DUMUX/
 cp dumux-rosi/build-cmake/cpp/python_binding/rosi_richards_cyl*.so ./
@@ -36,19 +36,19 @@ cp dumux-rosi/build-cmake/cpp/python_binding/rosi_richards_cyl*.so ./
 
 # delete all builds
 cd dumux
-rm build-cmake -rf
-rm CMakeCache.txt
+sudo rm build-cmake -rf
+sudo rm CMakeCache.txt
 cd ..
 
 cd dumux-rosi
-rm build-cmake -rf
-rm CMakeCache.txt
+sudo rm build-cmake -rf
+sudo rm CMakeCache.txt
 cd ..
 
 for MOD in common foamgrid geometry grid istl localfunctions pybindxi spgrid uggrid; do
 cd dune-$MOD
-rm build-cmake -rf
-rm CMakeCache.txt
+sudo rm build-cmake -rf
+sudo rm CMakeCache.txt
 cd ..
 done
 
