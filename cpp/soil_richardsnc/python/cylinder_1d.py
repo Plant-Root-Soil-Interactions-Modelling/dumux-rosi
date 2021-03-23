@@ -23,10 +23,10 @@ os.chdir("../../../build-cmake/cpp/soil_richardsnc")
 os.system("./richardsnc1d_cyl input/cylinder_1d.input")
  
 # plot dumux results
-c_, z_ = read3D_data("cylinder_1d-00001.vtp", data_index = 13)
-plt.plot((z_[:,0] - 0.0002) * 100, c_, "b:",)
-c_, z_ = read3D_data("cylinder_1d-00002.vtp", data_index = 13)
-plt.plot((z_[:,0] - 0.0002) * 100, c_, "b",)
+# c_, z_ = read3D_data("cylinder_1d-00001.vtp", data_index = 13)
+# plt.plot((z_[:,0] - 0.0002) * 100, c_, "b:",)
+# c_, z_ = read3D_data("cylinder_1d-00002.vtp", data_index = 13)
+# plt.plot((z_[:,0] - 0.0002) * 100, c_, "b",)
 
 # read and plot comsol data
 os.chdir("../../../build-cmake/rosi_benchmarking/soil_richardsnc/python")

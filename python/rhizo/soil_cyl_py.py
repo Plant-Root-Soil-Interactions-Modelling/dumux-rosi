@@ -18,7 +18,7 @@ Cylindrical 1D model (Python solver) Water movement only
 higher accuracy results start to differ more (?)
 """
 
-ndof = 100  # ndof = 1000, dann passts
+ndof = 50  # ndof = 1000, dann passts
 nodes = np.logspace(np.log10(0.02), np.log10(0.6), ndof + 1)  # small spatial resolution requires smaller time step
 # nodes = np.linspace(0.02, 0.6, ndof + 1)
 grid = FVGrid1Dcyl(nodes)
@@ -33,7 +33,7 @@ rich.bc[(0, 0)] = ["flux_out", [-0.1, -15000, grid.center(0)]]  # dx = grid.cent
 # rich.bc[(0, 0)] = ["rootsystem", [-1500, 100000]]
 
 t = time.time()
-h = rich.solve(sim_times, 0.01)
+h = rich.solve(sim_times, 0.001, True)
 print("elapsed time", time.time() - t)
 
 # u = rich.darcy_velocity()

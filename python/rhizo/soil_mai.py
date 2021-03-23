@@ -10,18 +10,13 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 """ 
-Cylindrical 1D model, (DuMux solver) Advection Diffusion  
-
-everything scripted, no input file needed, also works parallel with mpiexec
-
-works fine at moderate resolution (100), overestimates water content in final step
-grid DOF 11 logspace is good 
+Cylindrical 1D model from Bauw et al. 2020
 """
 
 s = RichardsWrapper(RichardsNCCylFoam())
 s.initialize()
 
-N = 200
+N = 10
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 # points = np.linspace(0.02, 0.6, N)
 points = np.logspace(np.log10(0.02), np.log10(0.6), N)

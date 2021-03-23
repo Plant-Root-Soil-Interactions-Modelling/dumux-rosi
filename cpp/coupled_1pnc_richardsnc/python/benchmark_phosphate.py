@@ -19,8 +19,8 @@ trans = A * trans * (24.*3600.)  # kg/s -> kg/day
 print("Transpiration", trans, "kg/day")  # in the input file
 
 # # # Plot Comsol solution
-comsol = np.loadtxt("python/gradients.txt", skiprows = 9)
-comsol0b = np.loadtxt("python/gradients_0b.txt", skiprows = 9)
+comsol = np.loadtxt("python/gradients.txt", skiprows=9)
+comsol0b = np.loadtxt("python/gradients_0b.txt", skiprows=9)
 r_ = comsol[:, 0]
 c_ = comsol[:, 15]
 r0_ = comsol0b[:, 0]
@@ -30,8 +30,8 @@ plt.plot(r0_, c0_, "b:")
 
 os.system("./coupled_1p2c input/benchmark_phosphate.input")
 
-c_, y_ = read3D_vtp_data("benchmark_phosphate2-00001.vtu", 1e-4, 13)
-p_, y_ = read3D_vtp_data("benchmark_phosphate2-00001.vtu", 1e-4, 2)
+c_, y_ = read3D_vtp_data("benchmark_phosphate2-00001.vtu", 13)
+p_, y_ = read3D_vtp_data("benchmark_phosphate2-00001.vtu", 2)
 h1_ = vg.pa2head(p_)
 print(y_.shape)
 print("pressure head", np.min(h1_), np.max(h1_))
@@ -41,7 +41,7 @@ print("coordinate", np.min(y_), np.max(y_))
 # plt.plot(y_, h1_, "r")
 # plt.ylabel("$\psi$ cm pressure head")
 
-plt.plot(y_[:,0] * 100, c_, "r")  # c_ *rho [kg / m^3] == c_ *1000 [g/cm]
+plt.plot(y_[:, 0] * 100, c_, "r")  # c_ *rho [kg / m^3] == c_ *1000 [g/cm]
 plt.ylabel("g/cm3")
 plt.xlabel("cm")
 plt.legend(["Comsol", "Comsol_{b0}", "Dumux"])

@@ -314,7 +314,6 @@ public:
 //								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
 						omax = std::max(omax, 0.); // must stay positive
 						f = std::min(f, omax);
-						// std::cout << f << "\n";
 					}
 					break;
 				}
@@ -336,6 +335,9 @@ public:
 					f =  fExact / (2 * a * M_PI * l);  // [cm3 / cm2 / day]
 					f *= (rho_*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
 					f *= -pos[0]; // cylindrical coordinates
+
+					Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+					f = std::min(f, omax);
 
 					// classical approximation
 //					f = kr*(0.5*(x0+x1)-h); // [cm/day]
