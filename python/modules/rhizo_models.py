@@ -5,6 +5,7 @@ import plantbox as pb
 import xylem_flux  # to use its rsml reader 
 
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
+from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from fv_grid import *
 import fv_richards as rich  # local pure Python cylindrical models
@@ -60,24 +61,33 @@ class RhizoMappedSegments(pb.MappedSegments):
         elif self.mode == "dumux_exact":
             for i in eidx: 
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True))
+        elif self.mode == "dumux_nc":
+            for i in eidx: 
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
+        elif self.mode == "dumux_nc_exact":
+            for i in eidx: 
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True, True))  # not implemented yet
         elif self.mode == "python" or self.mode == "python_exact": 
             for i in eidx: 
                 x0 = x[self.seg2cell[i]]
                 self.cyls.append(self.initialize_python_(i, x0))
         else:
-            raise "RhizoMappedSegments.initialize: unknown solver {}".format(self.mode)
+            raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
 
-    def initialize_dumux_(self, i, x, exact): 
+    def initialize_dumux_(self, i, x, exact, nc=False): 
         """ Dumux RichardsCylFoam solver"""
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out: 
-            cyl = RichardsNoMPIWrapper(RichardsCylFoam())  # only works for RichardsCylFoam compiled without MPI
+            if nc:
+                cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
+            else:
+                cyl = RichardsNoMPIWrapper(RichardsCylFoam())  # only works for RichardsCylFoam compiled without MPI
             cyl.initialize()                
             lb = self.logbase     
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base=lb)
-            cyl.createGrid1d(points)                                          
-            cyl.setHomogeneousIC(x)  # cm pressure head                
+            cyl.createGrid1d(points)                                                      
+            cyl.setHomogeneousIC(x)  # cm pressure head             
             cyl.setVGParameters([self.soil])
             cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
             if exact:
@@ -86,6 +96,21 @@ class RhizoMappedSegments(pb.MappedSegments):
                 cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+            if nc:  # todo we need to pass the following currently hard coded arguments
+                cyl.setParameter("Component.MolarMass", "3.1e-2")  
+                cyl.setParameter("Component.LiquidDiffusionCoefficient", "6.e-10")  # m^2 s-1
+            
+                cyl.setParameter("Component.freundlichN_", "124.8.")  
+                cyl.setParameter("Component.freundlichK_", ".4")  
+                # cyl.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
+                cyl.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
+                cyl.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute Type)
+                # cyl.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+                # cyl.setParameter("Soil.BC.Top.CValue", "0.007")  # michaelisMenten=8 (SType = Solute Type)
+                cyl.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+                cyl.setParameter("Soil.BC.Bot.CValue", "0.")                            
+                cyl.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
+
             cyl.initializeProblem()
             cyl.setCriticalPressure(self.wilting_point)  # cm pressure head   
             return cyl             
@@ -115,10 +140,10 @@ class RhizoMappedSegments(pb.MappedSegments):
     def get_inner_heads(self, rx=None): 
         """ matric potential at the root surface interface [cm]"""
         rsx = np.zeros((len(self.cyls),))           
-        if self.mode == "dumux" or self.mode == "dumux_exact":
+        if self.mode.startswith("dumux"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 rsx[i] = cyl.getInnerHead()  # [cm]                   
-        elif self.mode == "python" or "python_exact":
+        elif self.mode.startswith("python"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 rsx[i] = cyl.get_inner_head()  # [cm]
         else:
@@ -128,17 +153,39 @@ class RhizoMappedSegments(pb.MappedSegments):
     def get_inner_fluxes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
         fluxes = np.zeros((len(self.cyls),))
-        if self.mode == "dumux" or self.mode == "dumux_exact":
+        if self.mode.startswith("dumux"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 fluxes[i] = -float(cyl.getInnerFlux()) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)            
-        elif self.mode == "python" or self.mode == "python_exact":
+        elif self.mode.startswith("python"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 fluxes[i] = cyl.get_inner_flux() * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.last_dt  # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
         else:
             print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))        
         return self._map(self._flat0(comm.gather(fluxes, root=0)))  # gathers and maps correctly 
+     
+    def get_inner_concentrations(self):  # TODO
+        """ solute concentration at the root surface interface [g / cm3]"""
+        rsx = np.zeros((len(self.cyls),))           
+        if self.mode.startswith("dumux"):
+#             for i, cyl in enumerate(self.cyls):  # run cylindrical models
+#                 rsx[i] = cyl.getInnerHead()  # [cm]
+            pass  # currently zero flux !!!!!!
+        else:
+            print("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
+        return self._map(self._flat0(comm.gather(rsx, root=0)))  # gathers and maps correctly 
+    
+    def get_inner_mass_fluxes(self):  # TODO 
+        """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
+        fluxes = np.zeros((len(self.cyls),))
+        if self.mode.startswith("dumux"):
+            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                j = self.eidx[i]  # for one process j == i
+                fluxes[i] = -float(cyl.getInnerFlux(1)) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)            
+        else:
+            print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))        
+        return self._map(self._flat0(comm.gather(fluxes, root=0)))  # gathers and maps correctly        
        
     def solve(self, dt, *argv): 
         """ set bc for cyl and solves it """
@@ -156,7 +203,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"                
                     str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    raise str                
+                    raise Exception(str)                
         elif self.mode == "dumux_exact":
             rx = argv[0]        
             proposed_outer_fluxes = argv[1]
@@ -182,7 +229,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"                
                     str = str.format(proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    raise str       
+                    raise Exception(str)       
         elif self.mode == "python": 
             proposed_inner_fluxes = argv[0] 
             proposed_outer_fluxes = argv[1]
@@ -217,13 +264,27 @@ class RhizoMappedSegments(pb.MappedSegments):
                 ndof = self.NC - 1
                 cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , self.wilting_point])
                 cyl.solve([dt], dt, False)
+        elif self.mode == "dumux_nc":
+            proposed_inner_fluxes = argv[0] 
+            proposed_outer_fluxes = argv[1]
+            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                j = self.eidx[i]  # for one process j == i
+                l = self.seg_length[j]
+                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                try:
+                    cyl.solve(dt)
+                except:
+                    str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"                
+                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    raise Exception(str)                      
         else:
-            raise "RhizoMappedSegments.initialize: unknown solver {}".format(self.mode)
+            raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
         
     def get_water_volume(self):
         """ returns the water volume of the cylindrical models [cm3] """
         volumes = np.zeros((len(self.cyls),))
-        if self.mode == "dumux" or self.mode == "dumux_exact":
+        if self.mode.startswith("dumux"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 cyl_water = 0.
@@ -234,7 +295,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                     r2 = nodes[k + 1]
                     cyl_water += np.pi * (r2 * r2 - r1 * r1) * self.seg_length[j] * wc
                 volumes[i] = cyl_water
-        elif self.mode == "python" or self.mode == "python_exact":
+        elif self.mode.startswith("python"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 cyl_water = 0.
@@ -245,7 +306,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                     cyl_water += np.pi * (r2 * r2 - r1 * r1) * self.seg_length[j] * wc            
                 volumes[i] = cyl_water
         else:
-            raise "RhizoMappedSegments.get_water_volume: unknown solver {}".format(self.mode)                
+            raise Exception("RhizoMappedSegments.get_water_volume: unknown solver {}".format(self.mode))                
         return self._map(self._flat0(comm.gather(volumes, root=0)))  # gathers and maps correctly 
     
     def _map(self, x):

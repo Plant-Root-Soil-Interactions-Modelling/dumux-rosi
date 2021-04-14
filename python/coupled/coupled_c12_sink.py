@@ -44,6 +44,7 @@ name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
+loam = [0.03, 0.345, 0.01, 2.5, 28.6]  #####################################################################
 soil = loam
 
 initial = -659.8 + 7.5  # -659.8
@@ -53,7 +54,7 @@ wilting_point = -15000  # cm
 
 sim_time = 3  # [day] for task b
 age_dependent = False  # conductivities
-dt = 360 / (24 * 3600)  # [days] Time step must be very small
+dt = 30 / (24 * 3600)  # [days] Time step must be very small
 skip = 1  
 
 """ Initialize macroscopic soil model """
@@ -68,7 +69,7 @@ s.setVGParameters([soil])
 s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.initializeProblem()
-s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
+s.setParameter("Soil.SourceSlope", "2000")  # turns regularisation of the source term on
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""

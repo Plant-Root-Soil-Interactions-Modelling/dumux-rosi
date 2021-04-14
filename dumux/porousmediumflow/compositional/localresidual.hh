@@ -95,24 +95,28 @@ public:
         const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx)
         { return useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx); };
 
-        double b = problem.getBufferPower(scv, volVars);
 
         // compute storage term of all components within all phases
         for (int phaseIdx = 0; phaseIdx < numPhases; ++phaseIdx)
         {
             for (int compIdx = 0; compIdx < numComponents; ++compIdx)
             {
-                auto eqIdx = conti0EqIdx + compIdx;
-                if (eqIdx != replaceCompEqIdx)
+            	auto eqIdx = conti0EqIdx + compIdx;
+            	Scalar b = problem.bufferPower(scv, volVars, compIdx);
+                if (eqIdx != replaceCompEqIdx) {
                     storage[eqIdx] += (volVars.porosity()*volVars.saturation(phaseIdx)+b)
                                       * massOrMoleDensity(volVars, phaseIdx)
                                       * massOrMoleFraction(volVars, phaseIdx, compIdx);
+                }
             }
 
             // in case one balance is substituted by the total mole balance
-            if (useTotalMoleOrMassBalance)
+            if (useTotalMoleOrMassBalance) {
+            	auto compIdx = replaceCompEqIdx- conti0EqIdx;
+            	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
                                              *  (volVars.porosity()*volVars.saturation(phaseIdx)+b);
+            }
 
             //! The energy storage in the fluid phase with index phaseIdx
             EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, phaseIdx);

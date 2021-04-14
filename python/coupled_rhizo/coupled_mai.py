@@ -2,7 +2,7 @@ import sys; sys.path.append("../modules/");  sys.path.append("../../../CPlantBox
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 import plantbox as pb  # CPlantBox
-from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richardsnc import RichardsNCSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from xylem_flux import *  # root system Python hybrid solver
 from rhizo_models import *  # Helper class for cylindrical rhizosphere models
@@ -35,38 +35,51 @@ max_b = [4., 4., 0.]  # cm
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
-sand = [0.045, 0.43, 0.15, 3, 1000]
-loam = [0.08, 0.43, 0.04, 1.6, 50]
-clay = [0.1, 0.4, 0.01, 1.1, 10]
-loam = [0.03, 0.345, 0.01, 2.5, 28.6]
-soil_ = loam
+soil_ = [0.03, 0.345, 0.01, 2.5, 28.6]
 soil = vg.Parameters(soil_)
 initial = -659.8 + (max_b[2] - min_b[2]) / 2  # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
 
 """ root system """
-trans = 3.2  # 6.4  # average per day [cm3 /day] (sinusoidal)
+trans = 6.4  # average per day [cm3 /day] (sinusoidal)
 wilting_point = -15000  # [cm]
 age_dependent = False  # conductivities
 predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
 """ rhizosphere models """
-mode = "dumux"  # or "dumux" 
+mode = "dumux_nc"  # or "dumux" 
 NC = 10  # dof+1
 logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
 sim_time = 1  # 0.65  # 0.25  # [day]
-dt = 60 / (24 * 3600)  # time step [day]
+dt = 30 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
 """
-s = RichardsWrapper(RichardsSP())
+s = RichardsWrapper(RichardsNCSP())
 s.initialize()
+
+s.setParameter("Component.MolarMass", "3.1e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
+s.setParameter("Component.LiquidDiffusionCoefficient", "6.e-10")  # m^2 s-1
+s.setParameter("Component.freundlichN_", "124.8.")  
+s.setParameter("Component.freundlichK_", ".4")  
+# s.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
+s.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
+s.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
+s.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute Type)
+# s.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+# s.setParameter("Soil.BC.Top.CValue", "0.007")  # michaelisMenten=8 (SType = Solute Type)
+s.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+s.setParameter("Soil.BC.Bot.CValue", "0.")
+# s.setParameter("Soil.BC.Bot.SType", "8")  # michaelisMenten (SType = Solute Type)
+# s.setParameter("RootSystem.Uptake.Vmax", s.dumux_str(3.26e-6 * 24 * 3600))  # (mol)g /cm^2 / s - > (mol)g /cm^2 / day
+# s.setParameter("RootSystem.Uptake.Km", s.dumux_str(5.8e-3))  # (mol)g / cm3
+
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
@@ -154,24 +167,31 @@ for i in range(0, NT):
     """ 2. local soil models """
     wall_rhizo_models = timeit.default_timer()    
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
-    if rs.mode == "dumux":
+    # 
+    # TODO: outer solute fluxes
+    # 
+    if rs.mode == "dumux_nc":
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)
-        rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)
-    elif rs.mode == "dumux_exact":
-        rx = comm.bcast(rx, root=0)
-        soil_k = comm.bcast(soil_k, root=0)         
-        rs.solve(dt, rx, proposed_outer_fluxes, rsx, soil_k)
+        rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # mass fluxes?
+    else:
+        raise Exception("this script is for dumux_nc only")  
     realized_inner_fluxes = rs.get_inner_fluxes() 
-    realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root=0)  
+    realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root=0)
+    realized_mass_fluxes = rs.get_inner_mass_fluxes()   
+    realized_mass_fluxes = comm.bcast(realized_mass_fluxes, root=0)
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
 
     """ 3a. macroscopic soil model """
-    wall_soil_model = timeit.default_timer()
+    wall_soil_model = timeit.default_timer()    
     water_content = np.array(s.getWaterContent())
-    water_content = comm.bcast(water_content, root=0) 
-    soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
+    water_content = comm.bcast(water_content, root=0)
+    soil_water = np.multiply(water_content, cell_volumes)          
+    solute_conc = np.array(s.getSolution(1))  # solute concentration            
+    solutes = np.multiply(solute_conc, cell_volumes)  # water per cell [cm3]    
     soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
+    soil_mass_fluxes = r.sumSoilFluxes(realized_mass_fluxes)  # [cm3/day]  per soil cell        
+    s.setSource(soil_mass_fluxes.copy(), 1)  # TODO UNITS ???? [cm3/day], in richards.py        
     s.solve(dt)  # in solverbase.py     
     
     """ 3b. calculate net fluxes """ 
@@ -180,10 +200,20 @@ for i in range(0, NT):
     new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
     for k, root_flux in soil_fluxes.items():
-        net_flux[k] -= root_flux * dt
-    soil_water = new_soil_water
-    wall_soil_model = timeit.default_timer() - wall_soil_model
+        net_flux[k] -= root_flux * dt        
 
+    solute_conc = np.array(s.getSolution(1))  # solute concentration            
+    solute_conc = comm.bcast(solute_conc, root=0) 
+    new_solutes = np.multiply(solute_conc, cell_volumes)  # water per cell [cm3]    
+    net_mass_flux = new_solutes - solutes    
+    for k, root_flux in soil_mass_fluxes.items():
+        net_mass_flux[k] -= root_flux * dt
+        
+    soil_water = new_soil_water
+    solutes = new_solutes
+    
+    wall_soil_model = timeit.default_timer() - wall_soil_model
+    
     wall_iteration = timeit.default_timer() - wall_iteration
 
     if i % skip == 0:

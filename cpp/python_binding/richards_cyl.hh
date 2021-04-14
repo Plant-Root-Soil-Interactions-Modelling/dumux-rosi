@@ -41,15 +41,15 @@ public:
     /**
      * [ kg / (m^2 \cdot s)]
      */
-    double getInnerFlux() {
-    	return this->getNeumann(innerIdx); //  [ kg / (m^2 \cdot s)]
+    double getInnerFlux(int eqIdx = 0) {
+    	return this->getNeumann(innerIdx, eqIdx); //  [ kg / (m^2 \cdot s)]
     }
 
     /**
      *
      */
-    double getOuterFlux() {
-    	return this->getNeumann(outerIdx); //  [ kg / (m^2 \cdot s)]
+    double getOuterFlux(int eqIdx = 0) {
+    	return this->getNeumann(outerIdx, eqIdx); //  [ kg / (m^2 \cdot s)]
     }
 
     /**
@@ -102,8 +102,8 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("setTopBC",&RichardsFoam::setTopBC)
    .def("setBotBC",&RichardsFoam::setBotBC)
 
-   .def("getInnerFlux",&RichardsFoam::getInnerFlux)
-   .def("getOuterFlux",&RichardsFoam::getOuterFlux)
+   .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
+   .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
    .def("getInnerHead",&RichardsFoam::getInnerHead)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 

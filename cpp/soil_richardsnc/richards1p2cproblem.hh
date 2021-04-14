@@ -118,6 +118,8 @@ public:
 
 		// Buffer power
 		b_ = getParam<Scalar>("Component.BufferPower", 0.);
+		freundlichN_ = getParam<Scalar>("Component.FreundlichN", 0.);
+		freundlichK_ = getParam<Scalar>("Component.FreundlichK", 0.);
 
 		// Output
 		std::string filestr = this->name() + ".csv"; // output file
@@ -125,7 +127,8 @@ public:
 		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
-				<< criticalPressure_ << "\n" << std::flush;
+				<< criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_ << ", Freundlich " << freundlichK_ << ", " <<
+				freundlichN_ << "\n" << std::flush;
 	}
 
 	/**
@@ -164,8 +167,20 @@ public:
 	 *
 	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
 	 */
-	Scalar getBufferPower(const SubControlVolume& scv, const VolumeVariables& volVars) const {
-		return b_;
+	Scalar bufferPower(const SubControlVolume& scv, const VolumeVariables& volVars, int compIdx = 0) const {
+		if (b_>0.) {
+			return b_;
+		} else {
+			if (freundlichK_==0.) {
+				return 0.;
+			}
+			if (volVars.massFraction(h2OIdx, compIdx) <= 0) {
+				return 0.;
+			} else {
+                Scalar c = volVars.massFraction(h2OIdx, compIdx)*volVars.density(h2OIdx); // mass concentration
+                return bulkDensity_*freundlichK_*std::pow(c*1e3, freundlichN_)*1e-6/c; //kg/m3 = 1e3 mg/l ; mg/kg = 1e-6 kg/kg
+			}
+		}
 	}
 
 	/*!
@@ -180,7 +195,6 @@ public:
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoilP_.f(z,eIdx));
 		v[soluteIdx] = initialSoilC_.f(z,eIdx);
-		// std::cout << v[soluteIdx] << "\n";//////////////////////////////////////////////////////////////
 		return v;
 	}
 
@@ -627,6 +641,9 @@ private:
 	Scalar sigma_;// 1 for passive transport, 0 for active transport
 
 	Scalar b_; // buffer power
+	Scalar freundlichK_; // Freundlich parameters
+	Scalar freundlichN_;
+	Scalar bulkDensity_ = 1.4; // TODO check with Mai, buffer power (1+b) or b
 
 };
 

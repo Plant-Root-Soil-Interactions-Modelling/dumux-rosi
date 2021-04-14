@@ -168,9 +168,9 @@ class RichardsWrapper(SolverWrapper):
         """
         self.base.setBotBC(3, flux)
 
-    def getInnerFlux(self):
+    def getInnerFlux(self, eq_idx=0):
         """ [cm3 / cm2 / day] """
-        return self.base.getInnerFlux() * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
+        return self.base.getInnerFlux(eq_idx) * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
 
     def setOuterFluxCyl(self, flux):
         """ 
@@ -179,9 +179,9 @@ class RichardsWrapper(SolverWrapper):
         """
         self.base.setTopBC(3, flux)
 
-    def getOuterFlux(self):
+    def getOuterFlux(self, eq_idx=0):
         """ [cm / day]"""
-        return self.base.getOuterFlux() / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        return self.base.getOuterFlux(eq_idx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def setOuterPressure(self, value_top=0.):
         """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
@@ -213,12 +213,12 @@ class RichardsWrapper(SolverWrapper):
         """Gets the pressure head at the inner boundary [cm] """
         return self.base.getInnerHead()
 
-    def setSource(self, source_map):
+    def setSource(self, source_map, eq_idx=0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         for key, value in source_map.items():
             source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
-        self.base.setSource(source_map)
+        self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """

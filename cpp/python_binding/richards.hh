@@ -57,7 +57,7 @@ public:
                 ls->at(eIdx) = sourceMap.at(gIdx);
             }
         }
-        this->problem->setSource(ls);
+        this->problem->setSource(ls, eqIdx);
     }
 
     /**
