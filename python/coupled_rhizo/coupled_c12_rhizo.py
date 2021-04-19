@@ -36,9 +36,9 @@ domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
 sand = [0.045, 0.43, 0.15, 3, 1000]
-loam = [0.08, 0.43, 0.04, 1.6, 50]
+# loam = [0.08, 0.43, 0.04, 1.6, 50]
+loam = [0.03, 0.345, 0.01, 2.5, 28.6]  # mai
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-loam = [0.03, 0.345, 0.01, 2.5, 28.6]
 soil_ = loam
 soil = vg.Parameters(soil_)
 initial = -659.8 + (max_b[2] - min_b[2]) / 2  # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
@@ -52,13 +52,13 @@ rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in ca
 
 """ rhizosphere models """
 mode = "dumux"  # or "dumux" 
-NC = 10  # dof+1
+NC = 30  # dof+1
 logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 1  # 0.65  # 0.25  # [day]
-dt = 60 / (24 * 3600)  # time step [day]
+sim_time = 0.5  # 0.65  # 0.25  # [day]
+dt = 15 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
 
@@ -66,7 +66,7 @@ skip = 1  # for output and results, skip iteration
 Initialize macroscopic soil model (Dumux binding)
 """
 s = RichardsWrapper(RichardsSP())
-s.initialize()
+s.initialize() 
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
@@ -219,7 +219,9 @@ for i in range(0, NT):
 """ plots and output """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")    
+
     # vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    
 #     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]    
 #     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
 #     rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)
@@ -230,12 +232,11 @@ if rank == 0:
 #     ana.addData("fluxes", fluxes)            
 #     vp.plot_roots(ana, "rsx")  # VTK vizualisation
 #     vp.plot_roots(ana, "fluxes")  # VTK vizualisation
-#     crit_i = np.argmin(rsx)
-#     print("critical segment", crit_i)
-#     cidx = rs.seg2cell[crit_i]
-#     print("mapped to cell",)
-#     print("cell water content", water_content[cidx], "matric potential", s.getSolutionHeadAt(cidx))
-#     rs.plot_cylinder(crit_i)    
-    plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
-    plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
-    np.savetxt("results/" + name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
+
+    crit_min_i, crit_max_i, crit_min_o, crit_max_o = rs.plot_cylinders()    
+    rs.plot_cylinder(crit_min_i)    
+    
+    # plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
+    # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
+    
+    # np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')

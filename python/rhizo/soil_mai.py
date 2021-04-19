@@ -19,10 +19,10 @@ s.initialize()
 N = 100
 
 # loam = [0.045, 0.43, 0.04, 1.6, 50]
-loam = [0.03, 0.345, 0.01, 2.5, 28.6]
+loam = [0.03, 0.345, 0.01, 2.5, 28.6]  #  qr, qs, alpha, n, ks
 
-# points = np.linspace(0.02, 0.6, N)
-points = np.logspace(np.log10(0.02), np.log10(0.6), N)
+points = np.linspace(0.02, 0.6, N)
+# points = np.logspace(np.log10(0.02), np.log10(0.6), N)
 s.createGrid1d(points)  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
@@ -35,8 +35,8 @@ s.setInnerBC("fluxCyl", -0.1)  # [cm/day] -0.1
 s.setParameter("Component.MolarMass", "3.1e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
 s.setParameter("Component.LiquidDiffusionCoefficient", "6.e-10")  # m^2 s-1
 
-s.setParameter("Component.freundlichN_", "124.8.")  
-s.setParameter("Component.freundlichK_", ".4")  
+s.setParameter("Component.FreundlichK", "124")  # 124.8
+s.setParameter("Component.FreundlichN", ".4")
 # s.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
 
 s.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
@@ -66,7 +66,7 @@ if rank == 0:
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
 days_ = np.linspace(0, 20, 49)  # COMSOL time steps
-times = [0., days_[10], days_[15], days_[20], days_[30], days_[48]]  # days   , 25, 30
+times = [0., days_[10], days_[15], days_[20], days_[30], days_[48]]  # days   , 25, 30 days_[1], 
 print("times", times, "days")
 s.ddt = 1.e-5
 
@@ -98,6 +98,23 @@ for i, dt in enumerate(np.diff(times)):
 ax1.set_xlabel("distance from root axis (cm)")
 ax1.set_ylabel("soil matric potential (cm)")
 ax1.legend()
+ax2.set_xlabel('distance from the root axis (cm)')
+ax2.set_ylabel('solute concentration (g/cm3)')
+ax2.legend()
+
+data = np.loadtxt("bau2020_pressure.txt", skiprows=8)
+print(data.shape)
+z_comsol = data[:, 0]
+ax1.plot(z_comsol + 0.02, data[:, 1], "k*")
+ax1.plot(z_comsol + 0.02, data[:, 49], "k*")
+ax1.set_xlabel("distance from root axis (cm)")
+ax1.set_ylabel("soil matric potential (cm)")
+ax1.legend()
+
+data = np.loadtxt("bau2020_concentration.txt", skiprows=8)  # buffer power = 100
+z_comsol = data[:, 0]
+ax2.plot(z_comsol + 0.02, data[:, 1], "k*")  # indices = days_ indicdes +1 (radii)
+ax2.plot(z_comsol + 0.02, data[:, 49], "k*")
 ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()

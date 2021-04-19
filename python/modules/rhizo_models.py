@@ -29,9 +29,9 @@ class RhizoMappedSegments(pb.MappedSegments):
     
     # todo copy mapped segments constructors ...
         
-    def __init__(self, rs, wilting_point, NC, logbase, mode="dumux"):
+    def __init__(self, file_name, wilting_point, NC, logbase, mode="dumux"):
         """ @param rs is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
-        ms = xylem_flux.XylemFluxPython.read_rsml(rs)
+        ms = xylem_flux.XylemFluxPython.read_rsml(file_name)
         super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes) 
         self.cyls = []        
         self.wilting_point = wilting_point
@@ -50,7 +50,8 @@ class RhizoMappedSegments(pb.MappedSegments):
         if eidx is None: 
             eidx = np.array(range(0, len(self.radii)), np.int64)  # segment indices for process
         self.eidx = np.array(eidx, np.int64)
-        self.outer_radii = np.array(self.segOuterRadii())  # not parallel yet        
+        self.outer_radii = np.array(self.segOuterRadii())  # not parallel yet
+        # self.outer_radii = np.minimum(np.array(self.segOuterRadii()), 1.)  # not parallel yet               
         self.seg_length = self.segLength()
         self.soil = soil
         self.vg_soil = vg.Parameters(soil) 
@@ -203,6 +204,9 @@ class RhizoMappedSegments(pb.MappedSegments):
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"                
                     str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    print("node ", self.nodes[self.segments[j].y])
+                    self.plot_cylinder(j)
+                    self.plot_cylinders()
                     raise Exception(str)                
         elif self.mode == "dumux_exact":
             rx = argv[0]        
@@ -336,7 +340,28 @@ class RhizoMappedSegments(pb.MappedSegments):
         plt.plot(x_, y_)
         plt.xlabel("distance [cm]")
         plt.ylabel("matric potential [cm]")
-        print("radius {:g} cm".format(x_[0][0]))  
+        plt.show()  
+
+    def plot_cylinders(self):
+        """ plots a specific cylinder (DUMUX only, TODO) """
+        inner, outer = [], []
+        zz = -self.minBound.z
+        for i, cyl in enumerate(self.cyls):
+            x_ = cyl.getDofCoordinates()
+            y_ = cyl.getSolutionHead()
+            inner.append(y_[0])
+            outer.append(y_[-1])
+            j = self.segments[i].y
+            z = self.nodes[j].z 
+            col_i = int(-z / zz * 255.)
+            c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
+            plt.plot(x_, y_, alpha=0.1, c=c_)                      
+        plt.xlabel("distance [cm], deeper roots are yellow")
+        plt.ylabel("matric potential [cm]")
+        plt.xlim([0., 1. ])
+        plt.ylim([-20000, 0. ])
+        plt.show()  
+        return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 
 
 def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):

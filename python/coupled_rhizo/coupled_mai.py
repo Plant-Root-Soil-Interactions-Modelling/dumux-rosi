@@ -35,7 +35,9 @@ max_b = [4., 4., 0.]  # cm
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
-soil_ = [0.03, 0.345, 0.01, 2.5, 28.6]
+loam = [0.08, 0.43, 0.04, 1.6, 50]
+loam = [0.03, 0.345, 0.01, 2.5, 28.6]
+soil_ = loam
 soil = vg.Parameters(soil_)
 initial = -659.8 + (max_b[2] - min_b[2]) / 2  # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
 
