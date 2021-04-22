@@ -32,14 +32,14 @@ s.setInnerBC("fluxCyl", -0.1)  # [cm/day] -0.1
 # from publication branch input file... (for P)
 # MolarMass = 31e-3 #[kg/mol]
 # liquidDiffCoeff = 0.6e-9 # [m2 s-1] # http://www.aqion.de/site/194
-s.setParameter("Component.MolarMass", "3.1e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
+s.setParameter("Component.MolarMass", "1.801528e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
 s.setParameter("Component.LiquidDiffusionCoefficient", "6.e-10")  # m^2 s-1
 
-s.setParameter("Component.FreundlichK", "124")  # 124.8
-s.setParameter("Component.FreundlichN", ".4")
-# s.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
+s.setParameter("Component.FreundlichN", ".1")
+s.setParameter("Component.FreundlichK", "0.0001")  # 124 -> 0.0311 [g^0.6 * g^-0.4 * cm^3^0.4] 
+# s.setParameter("Component.BufferPower", "600")  # buffer power = \rho * Kd [1]
 
-s.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
+s.setParameter("Soil.IC.C", "0.02")  # (mol)g / cm3  # TODO specialised setter?
 
 s.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
 s.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute Type)
@@ -66,7 +66,7 @@ if rank == 0:
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
 days_ = np.linspace(0, 20, 49)  # COMSOL time steps
-times = [0., days_[10], days_[15], days_[20], days_[30], days_[48]]  # days   , 25, 30 days_[1], 
+times = [0., 0.1, 1, 2, 5, days_[24], days_[48]]  # days   , 25, 30 days_[1], 
 print("times", times, "days")
 s.ddt = 1.e-5
 
@@ -75,7 +75,7 @@ col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
 idx = s.pick([0.02])
 print("boundary element ", idx)
 f = []
-maxDt = 0.01
+maxDt = 0.1
 
 for i, dt in enumerate(np.diff(times)):
 
@@ -88,7 +88,7 @@ for i, dt in enumerate(np.diff(times)):
     points = s.getDofCoordinates()
 
     x = s.getSolutionHead()
-    y = s.getSolution(1) * 1  # [kg/kg] -> 1/1000 [kg/m3] [] -> 1 [g/cm3] # solute concentration
+    y = s.getSolution(1) * 1.  # [kg/kg] -> 1/1000 [kg/m3] [] -> 1 [g/cm3] # solute concentration
 
     ax1.plot(points[:], x, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
     ax2.plot(points[:], y, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
@@ -102,19 +102,21 @@ ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()
 
-data = np.loadtxt("bau2020_pressure.txt", skiprows=8)
+# data = np.loadtxt("bauw2020_pressure.txt", skiprows=8)
+data = np.loadtxt("pressure.txt", skiprows=8)
 print(data.shape)
 z_comsol = data[:, 0]
-ax1.plot(z_comsol + 0.02, data[:, 1], "k*")
-ax1.plot(z_comsol + 0.02, data[:, 49], "k*")
+ax1.plot(z_comsol + 0.02, data[:, 25], "k--")
+ax1.plot(z_comsol + 0.02, data[:, 49], "k--")
 ax1.set_xlabel("distance from root axis (cm)")
 ax1.set_ylabel("soil matric potential (cm)")
 ax1.legend()
 
-data = np.loadtxt("bau2020_concentration.txt", skiprows=8)  # buffer power = 100
+# data = np.loadtxt("bauw2020_concentration.txt", skiprows=8)  # buffer power = 100
+data = np.loadtxt("concentration.txt", skiprows=8)  # buffer power = 100
 z_comsol = data[:, 0]
-ax2.plot(z_comsol + 0.02, data[:, 1], "k*")  # indices = days_ indicdes +1 (radii)
-ax2.plot(z_comsol + 0.02, data[:, 49], "k*")
+# ax2.plot(z_comsol + 0.02, data[:, 25], "k--")  # indices = days_ indicdes +1 (radii)
+# ax2.plot(z_comsol + 0.02, data[:, 49], "k--")
 ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()
