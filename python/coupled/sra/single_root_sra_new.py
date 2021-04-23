@@ -1,5 +1,5 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
-sys.path.append("../")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
+sys.path.append("../../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -108,7 +108,7 @@ seg_length = r.segLength()
 ns = len(seg_length)
 
 """ Coupling soil and root model (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)
 cci = picker(0, 0, 0)  # collar cell index
 # print("collar index", cci)
@@ -142,7 +142,7 @@ for i in range(0, NT):
     rx = r.solve(0., -q_r, sx[cci], sx, True, critP)  # [cm]
 
     # fluxes per segment according to the classic sink (including hydraulic conductivities as linmit)
-    seg_root_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
+    seg_root_fluxes = r.segFluxes(0., rx, sx, approx=False, cells=True)  # [cm3/day]
 
     # fluxes per segment according to schröders stressed sink
     for j in range(0, ns):  # for each segment
@@ -182,15 +182,15 @@ for i in range(0, NT):
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cell), label = "water cell")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cell), label="water cell")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label = "soil voxel at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label = "1d cylindrical model at root surface")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="soil voxel at root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="1d cylindrical model at root surface")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")

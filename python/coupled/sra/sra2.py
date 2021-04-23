@@ -1,4 +1,4 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
 sys.path.append("../")
 
 import numpy as np
@@ -76,8 +76,8 @@ for j, s in enumerate(soils):
          h0s[i] = sra_stress(r, -700, q_out, a, L, sp)
 
     h0s[0] = -15000
-    ax[j].plot(r_, h0, "b", label = "no stress")
-    ax[j].plot(r_, h0s, "r", label = "stress")
+    ax[j].plot(r_, h0, "b", label="no stress")
+    ax[j].plot(r_, h0s, "r", label="stress")
     ax[j].set_title(soil_names[j])
     print(soil_names[j], "flux", q_root, h0[0], h0s[1])
     ax[j].legend()

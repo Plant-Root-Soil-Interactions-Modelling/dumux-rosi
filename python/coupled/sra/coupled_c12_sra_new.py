@@ -1,5 +1,5 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
-sys.path.append("../")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
+sys.path.append("../../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -39,7 +39,7 @@ also works parallel with mpiexec (only slightly faster, due to overhead)
 """ Parameters """
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
-cell_number = [8, 8, 15] # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
+cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
 name = "DuMux_1cm_schroeder_clay"
@@ -50,7 +50,7 @@ soil = loam
 
 sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp)
-initial = -300.+ 7.5 # -659.8 + 7.5  # -659.8 + 7.5  # -659.8
+initial = -300. + 7.5  # -659.8 + 7.5  # -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
@@ -84,7 +84,7 @@ nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
@@ -115,7 +115,7 @@ for i in range(0, N):
 #         else:  # first time step
 
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point, [])  # [cm] in xylem_flux.py, cells = True
-        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink in case of no stress
+        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx=False, cells=True))  # classic sink in case of no stress
 
         # seg_stress = np.array(r.segSRAStressedFlux(sx, wilting_point, k, mfp_, imfp_, dx))  # steady rate approximation in case of stress
         seg_stress = np.array(r.segSRAStressedAnalyticalFlux(sx, mfp_)) 
@@ -126,9 +126,9 @@ for i in range(0, N):
 
         seg_head = np.array(r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
-        ii = seg_head <= (wilting_point+1)  # indices of stressed segments
+        ii = seg_head <= (wilting_point + 1)  # indices of stressed segments
         print("stessed", sum(ii.flat), ii.shape)
-        if sum(ii.flat)>0:       
+        if sum(ii.flat) > 0: 
             seg_fluxes = np.maximum(seg_stress, seg_nostress)
         else:
             seg_fluxes = seg_nostress 
@@ -142,12 +142,12 @@ for i in range(0, N):
         for f in fluxes.values():
             sum_flux += f
         water_uptake.append(sum_flux)
-        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx, [], cells = True), "= prescribed", -trans * sinusoidal(t))
+        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx, [], cells=True), "= prescribed", -trans * sinusoidal(t))
 
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
 
     s.setSource(fluxes)  # richards.py
 #     sx = s.applySource(dt, sx, fluxes, wilting_point)
@@ -203,10 +203,10 @@ if rank == 0:
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
 
-    np.savetxt(name, np.vstack((x_, -np.array(y_), -np.array(water_uptake))), delimiter = ';')
+    np.savetxt(name, np.vstack((x_, -np.array(y_), -np.array(water_uptake))), delimiter=';')
 
     plt.show()
 

@@ -1,4 +1,4 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
 
 import van_genuchten as vg
 from sympy import *
@@ -57,10 +57,9 @@ print()
 print("f                       ", f)
 print("f                       ", simplify(f))
 
-
 print()
 print("df/dr                   ", simplify(dfdr))
-der = (phi + q_out*r_out*ln(1/rho)) / (rho**2 - 1 + 2*rho**2*ln(1/rho)) * (2*r/r_in**2 - 2*rho**2/r) + q_out*r_out/r
+der = (phi + q_out * r_out * ln(1 / rho)) / (rho ** 2 - 1 + 2 * rho ** 2 * ln(1 / rho)) * (2 * r / r_in ** 2 - 2 * rho ** 2 / r) + q_out * r_out / r
 print("der                     ", simplify(der))
 dfdr_r_in = simplify(dfdr.subs(r, r_in))
 print("df/dr, r=r_in          ", simplify(dfdr_r_in))
@@ -68,19 +67,17 @@ dfdr0 = simplify(dfdr_r_in.subs(q_out, Integer(0)))
 print("df/dr, q_out=0          ", simplify(dfdr0))
 
 print()
-h_ = 500 # = -500 cm  
-phi_integral_ = phi_integral.subs({hh: h_, theta_R : sp.theta_R, theta_S : sp.theta_S, alpha : sp.alpha, n : sp.n, ksat : sp.Ksat})
+h_ = 500  # = -500 cm  
+phi_integral_ = phi_integral.subs({hh: h_, theta_R: sp.theta_R, theta_S: sp.theta_S, alpha: sp.alpha, n: sp.n, ksat: sp.Ksat})
 # print(phi_integral_)
 phi_ = phi_integral_.evalf()
 print("phi(h_)                 ", phi_)
 
 print()
-dfdr_  = dfdr0.evalf(subs = {phi:phi_, r_in : 0.02, r_out : 0.6})
+dfdr_ = dfdr0.evalf(subs={phi:phi_, r_in: 0.02, r_out: 0.6})
 print("df/dr                   ", dfdr_)
-k_ = hydraulic_conductivity.subs({h: 15000, theta_R : sp.theta_R, theta_S : sp.theta_S, alpha : sp.alpha, n : sp.n, ksat : sp.Ksat})
+k_ = hydraulic_conductivity.subs({h: 15000, theta_R: sp.theta_R, theta_S: sp.theta_S, alpha: sp.alpha, n: sp.n, ksat: sp.Ksat})
 print("k_                      ", k_)
-print("dh/dr                   ", dfdr_/k_) # isn't this value by k_ in order to get the matric flux potential?
-
-
+print("dh/dr                   ", dfdr_ / k_)  # isn't this value by k_ in order to get the matric flux potential?
 
 # print(latex(water_content))

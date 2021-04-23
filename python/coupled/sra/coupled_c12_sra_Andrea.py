@@ -1,5 +1,5 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
-sys.path.append("../")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
+sys.path.append("../../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -82,7 +82,7 @@ nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
@@ -106,10 +106,10 @@ for i in range(0, N):
         rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
 
-        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False))  # classic sink in case of no stress
+        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False))  # classic sink in case of no stress
         seg_stress = np.array(r.segSRAStressedAnalyticalFlux(sx, mfp_)) 
-        #print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
-        #print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
+        # print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
+        # print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
 
         seg_head = np.array(r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
@@ -129,7 +129,7 @@ for i in range(0, N):
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
 
     # simualte soil (parallel)
@@ -150,7 +150,7 @@ for i in range(0, N):
         f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
         # f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False),
         x_.append(t)
-        #y_.append(sum_flux)
+        # y_.append(sum_flux)
         y_.append(f)
         w_.append(water)
         cpx.append(rx[0])
@@ -176,7 +176,7 @@ if rank == 0:
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     plt.show()
 

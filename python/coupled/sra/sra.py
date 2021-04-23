@@ -1,4 +1,4 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
 sys.path.append("../")
 
 import numpy as np
@@ -61,12 +61,12 @@ soil_names = ["sand", "loam", "clay"]
 fig, (ax) = plt.subplots(1, 3)
 
 a = 0.02
-L = 0.9
+L = 0.6
 r_ = np.linspace(a, L, 200)
 
 intial = -1000
 
-q_root = 1  # positive is flux into root, both work
+q_root = 0.1  # positive is flux into root, both work
 q_out = 0.  # something wrong with positive q_out
 
 for j, s in enumerate(soils):
@@ -83,8 +83,8 @@ for j, s in enumerate(soils):
     print(soil_names[j], q_root, "stress", q_root_s, "nostress", q_root_ns)
 
     h0s[0] = wilting_point
-    ax[j].plot(r_, h0, "b", label = "no stress")
-    ax[j].plot(r_, h0s, "r", label = "stress")
+    ax[j].plot(r_, h0, "b", label="no stress")
+    ax[j].plot(r_, h0s, "r", label="stress")
     ax[j].set_title(soil_names[j])
     print(soil_names[j])  # , h0[0], h0s[1])
     ax[j].legend()

@@ -1,5 +1,5 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../build-cmake/cpp/python_binding/")
-sys.path.append("../")
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
+sys.path.append("../../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -81,7 +81,7 @@ nodes = r.get_nodes()
 rs_age = np.max(r.get_ages())
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
@@ -112,7 +112,7 @@ for i in range(0, N):
         rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)
         # rsx = r.segSRAStressedFlux(rx, sx, mfp_, imfp_)
 
-        seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
+        seg_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False)
 #        seg_fluxes = r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True)  # classic sink
         fluxes = r.sumSoilFluxes(seg_fluxes)
 
@@ -125,7 +125,7 @@ for i in range(0, N):
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
 
     # simualte soil (parallel)
@@ -144,7 +144,7 @@ for i in range(0, N):
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
         #  = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
-        f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False)
+        f = r.collar_flux(rs_age + t, rx, rsx, [], cells=False)
         x_.append(t)
         y_.append(f)  # sum_flux
         w_.append(water)
@@ -171,7 +171,7 @@ if rank == 0:
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     plt.show()
 
