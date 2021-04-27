@@ -86,7 +86,7 @@ template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsCaviationDGF<FVGridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif

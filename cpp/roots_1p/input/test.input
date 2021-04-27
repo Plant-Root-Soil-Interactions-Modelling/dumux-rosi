@@ -1,0 +1,64 @@
+[Problem]
+Name = test
+
+[TimeLoop]
+TEnd = 5184000 # 60 day [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 7200
+MaxTimeStepSize = 3600 
+
+[RootSystem.Grid]
+File =  Zea_mays_1_Leitner_2010 # Anagallis_femina_Leitner_2010, Zea_mays_1_Leitner_2010, Zea_mays_4_Leitner_2014
+InitialT = 0.1 # days
+Grow = True
+
+[RootSystem.Conductivity]
+Kr0 = 2.1e-7	2.1e-7      # axial conductivity (cm^3 / day) # setting overrides kr, kx from grid data, age is calculated from grid data   
+KrAge0 = 0	100 # days
+
+Kr1 = 2.55e-6	2.55e-6	8.9e-7	8.9e-7	2.1e-7	2.1e-7 
+KrAge1 = 0	12.5	20.9	44.6	62.7	100 # days
+
+Kr2 = 2.e-4	2.e-4	3.e-5	3.e-5 
+KrAge2 = 0	10	15	20 # days
+
+Kr3 = 2.e-4	2.e-4	3.e-5	3.e-5 
+KrAge3 = 0	10	15	20 # days
+
+Kr4 = 2.55e-6	2.55e-6	8.9e-7	8.9e-7	2.1e-7	2.1e-7 
+KrAge4 = 0	12.5	20.9	44.6	62.7	100 # days
+
+Kr5 = 2.55e-6	2.55e-6	8.9e-7	8.9e-7	2.1e-7	2.1e-7 
+KrAge5 = 0	12.5	20.9	44.6	62.7	100 # days
+
+Kx0 = 5.75e-2	5.75e-2  
+KxAge0 = 0	100 # days
+
+Kx1 = 2.31e-4	2.31e-4	4.05e-3	4.05e-3	5.75e-2	5.75e-2
+KxAge1 = 0	18.3	27.8	36.4	51.1	100
+
+Kx2 = 1e-6	2e-4	6e-4	6e-4
+KxAge2 = 0	9	13	20
+
+Kx3 = 1e-6	2e-4	6e-4	6e-4
+KxAge3 = 0	9	13	20
+
+Kx4 = 2.31e-4	2.31e-4	4.05e-3	4.05e-3	5.75e-2	5.75e-2
+KxAge4 = 0	18.3	27.8	36.4	51.1	100
+
+Kx5 = 2.31e-4	2.31e-4	4.05e-3	4.05e-3	5.75e-2	5.75e-2
+KxAge5 = 0	18.3	27.8	36.4	51.1	100
+
+[RootSystem.Collar]
+#P = -15000 # cm pressure head
+Transpiration = 50e-3 # kg/day 
+Sinusoidal = False
+
+[Soil.IC]
+P = -300	-300	-300	-10000
+Z = -1.2	-0.80	-0.40	0
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "true"
+

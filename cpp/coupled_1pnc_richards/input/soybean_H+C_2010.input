@@ -25,8 +25,8 @@ Z = -1.5 0.
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
 CritCollarP = -100000 # pressure, when to switch to dirichlet
-CritCollarPAlpha = -5500 # for alpha
-CritTipP = -4500 # when production starts
+CritCollarPAlpha = -8500 # for alpha
+CritTipP = -7500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
 ProductionAge = 200 # [day]
 ProductionGrowth = true

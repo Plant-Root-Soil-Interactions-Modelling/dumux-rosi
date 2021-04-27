@@ -11,7 +11,7 @@
 #include <dumux/growth/soillookup.hh>
 
 #if DGF
-#include "rootspatialparams_dgf.hh"
+#include "rootspatialparams_cavitation_dgf.hh"
 #endif
 #if ROOTBOX
 #include "rootspatialparams_rb.hh"
@@ -82,6 +82,11 @@ public:
         }
         file_at_.open(this->name() + "_actual_transpiration.txt");
         criticalCollarPressure_ = toPa_(getParam<double>("RootSystem.Collar.CritCollarP", -1.5e4));  // cm -> Pa
+        
+        // Optionally give cavitation parameter
+        double b = getParam<double>("Control.b", 1.e16); // cm pressure head
+        double c = getParam<double>("Control.c", 1);
+        this->spatialParams().setParameter(b,c);
 
     }
 

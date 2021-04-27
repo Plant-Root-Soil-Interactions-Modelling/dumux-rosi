@@ -7,7 +7,7 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "soybean_Conly_2013"  # this name should be unique
+name = "soybean_cavitation_H+C"  # this name should be unique
 suffix = ""
 
 # go to the right place

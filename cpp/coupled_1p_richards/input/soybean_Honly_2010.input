@@ -18,11 +18,11 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-[Soil.IC]
-P = -150 -300
-Z = -1.5 0. 
+#[Soil.IC]
+#P = -150 -300
+#Z = -1.5 0. 
 
-#[Restart]
-#Time = 4.39211e+06
-#SoilFile = ./results_soybean_Honly_2010/soybean_Honly_2010-01220.vtu
-#RootFile = ./results_soybean_Honly_2010/soybean_Honly_2010-01220.vtp
+[Restart]
+Time = 6.69595e+06
+SoilFile = ./results_soybean_Honly_2010/soybean_Honly_2010-01859.vtu
+RootFile = ./results_soybean_Honly_2010/soybean_Honly_2010-01859.vtp
