@@ -491,7 +491,7 @@ public:
                 }
             }
 
-            double cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
+            cL = mL_ / leafVolume_.f(time_); // mL from last time step [kg], leaf volume at simulation time [m^3]
 
             for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 
@@ -547,11 +547,11 @@ public:
      *
      * 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
      * 4 collar pressure [Pa], 5 - (0.), 6 simtime [s], 7 hormone leaf mass [kg],
-     * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg], 10 hormone source rate [kg/s]
+     * 8 hormone collar flow rate [kg/s], 9 hormone root system mass [kg], 10 hormone source rate [kg/s], 11 chemical concentration in buffer [kg/m^3]
      */
     void writeTranspirationRate() {
         file_at_ << neumannTime_ << ", " << actualTrans_ << ", " << potentialTrans_ << ", " << maxTrans_ << ", " << collarP_ << ", "
-            << 0. << ", "<< time_ << " , " << mL_ << ", "<< mLRate_  << ", " << mRoot_ << ", " << mRootRate_ << "\n";
+            << 0. << ", "<< time_ << " , " << mL_ << ", "<< mLRate_  << ", " << mRoot_ << ", " << mRootRate_ << ", " << cL << "\n";
     }
     
     /*!
@@ -662,6 +662,7 @@ protected:
     Scalar molarMass; // (kg/mol)
 
     double decay_ = 0.; // (s-1)
+    double cL = 0.;
 
 };
 

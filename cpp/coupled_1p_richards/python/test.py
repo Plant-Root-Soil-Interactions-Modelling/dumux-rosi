@@ -1,4 +1,5 @@
 ''' Soybean model '''
+""" NOT WORKING dgf is missing"""
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
@@ -7,8 +8,8 @@ from vtk_tools import *
 import van_genuchten as vg
 import math
 
-name = "soybean_Honly_2013"  # this name should be unique
-suffix = ""
+name = "test"  # this name should be unique
+suffix = "_2cm"
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +17,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled_periodic input/" + name + ".input")
+os.system("./coupled_periodic input/" + name + ".input -RootSystem.Grid.InitialT 1")
 
 # move results to folder 'name'
 if not os.path.exists("results_" + name + suffix):

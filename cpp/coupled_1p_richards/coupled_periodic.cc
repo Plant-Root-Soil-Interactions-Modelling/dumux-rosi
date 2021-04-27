@@ -255,14 +255,14 @@ int main(int argc, char** argv) try
         loadSolution(sol[soilDomainIdx], soilfileName, soilpvName, *soilGridGeometry);
 
         // root
-        /*using rootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
+        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+        using rootIOFields = GetPropType<RootTypeTag, Properties::IOFields>;
         using rootPrimaryVariables = GetPropType<RootTypeTag, Properties::PrimaryVariables>;
         using rootModelTraits = GetPropType<RootTypeTag, Properties::ModelTraits>;
         using rootFluidSystem = GetPropType<RootTypeTag, Properties::FluidSystem>;
         const auto rootfileName = getParam<std::string>("Restart.RootFile");
         const auto rootpvName = createPVNameFunction<rootIOFields, rootPrimaryVariables, rootModelTraits, rootFluidSystem>();
-        loadSolution(sol[rootDomainIdx], rootfileName, rootpvName, *rootGridGeometry);*/
-        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+        loadSolution(sol[rootDomainIdx], rootfileName, rootpvName, *rootGridGeometry);
     }
     else
     {

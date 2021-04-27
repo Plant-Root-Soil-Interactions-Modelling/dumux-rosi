@@ -18,15 +18,15 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-[Soil.IC]
-P = -150 -300
-Z = -1.5 0. 
+#[Soil.IC]
+#P = -150 -300
+#Z = -1.5 0. 
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
 CritCollarP = -100000 # pressure, when to switch to dirichlet
-CritCollarPAlpha = -5500 # for alpha
-CritTipP = -4500 # when production starts
+CritCollarPAlpha = -8500 # for alpha
+CritTipP = -7500 # when production starts
 ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
 ProductionAge = 200 # [day]
 ProductionGrowth = true
@@ -40,8 +40,11 @@ sC = 5e+10 # [cm3/mol]
 Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
 VolumeT = 0	1	7	14	21	30	45	60	90	154
 
-#[Restart]
-#Time = 1.09192e+07
-#mL = 3.24005e-11 # value of mL at last time step
-#SoilFile = ./results_soybean_H+C_3/soybean_H+C-00013.vtu
-#RootFile = ./results_soybean_H+C_3/soybean_H+C-00013.vtp
+[Newton]
+MaxRelativeShift = 1.e-4
+
+[Restart]
+Time = 1.08898e+07
+mL = 3.44467e-11 # value of mL at last time step
+SoilFile = ./results_soybean_H+C_1/soybean_H+C_1-02995.vtu
+RootFile = ./results_soybean_H+C_1/soybean_H+C_1-02995.vtp

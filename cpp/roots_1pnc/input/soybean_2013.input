@@ -1,5 +1,5 @@
 [Problem]
-Name = soybean
+Name = soybean_2013
 
 [TimeLoop]
 TEnd = 604800 # 7 days [s]
@@ -43,7 +43,7 @@ Kr3 =  0.0006736268	0.0006736268 0.00389 0.00367 0.00347 0.00328 0.0031 0.00293 
 KrAge3 = -154	0 1 2 3 4  5  6  7  8  9 10 11  12  13  14 15 16 17 60	1e20	# days
 
 [RootSystem.Collar]
-CSVFile = input/soybean_transpiration_2003.csv # kg/day 
+CSVFile = input/soybean_transpiration_2013.csv # kg/day 
 Sinusoidal = True
 
 #[Soil.IC]
