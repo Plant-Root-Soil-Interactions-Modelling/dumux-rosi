@@ -31,14 +31,19 @@ also works parallel with mpiexec (slower, due to overhead?)
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 cell_number = [7, 7, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
-# [7, 7, 15], [14,14,30] works ???
 periodic = False
+fname = "../../grids/RootSystem8.rsml"
+
+# min_b = [-6.25, -1.5, -180.]  # cm
+# max_b = [6.25, 1.5, 1]  # cm
+# cell_number = [13, 3, 180]
+# periodic = True
+# fname = "spring_barley_CF12_107d.rsml"
 
 name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
-loam = [0.03, 0.345, 0.01, 2.5, 28.6]  ######################################################## s.setParameter("Soil.SourceSlope", "5000")  # turns regularisation of the source term on
 soil = loam
 
 initial = -659.8 + 7.5  # -659.8
@@ -46,7 +51,7 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 3  # [day] for task b
+sim_time = 1  # [day] for task b
 age_dependent = False  # conductivities
 dt = 30. / (24 * 3600)  # [days] Time step must be very small
 skip = 1
@@ -68,21 +73,22 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
-# fname = "../../../CPlantBox/tutorial/examples/python/results/example_3c.rsml"   
-fname = "../../grids/RootSystem8.rsml"
+
 r = XylemFluxPython(fname)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
 init_conductivities(r, age_dependent)
-# r.plot_conductivities()
-r.test()  # sanity checks
-rs_age = np.max(r.get_ages())
-# print("press any key"); input()
 
 """ Coupling (map indices) """
 picker = lambda x, y, z: s.pick([x, y, z])    
 cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell index
 r.rs.setSoilGrid(picker)  # maps segment
+
+""" sanity checks """
+# r.plot_conductivities()
+r.test()  # sanity checks
+rs_age = np.max(r.get_ages())
+# print("press any key"); input()
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
@@ -134,7 +140,7 @@ s.writeDumuxVTK(name)
 """ Plot """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-    # vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
 
