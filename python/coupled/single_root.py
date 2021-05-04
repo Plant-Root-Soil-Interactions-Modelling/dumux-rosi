@@ -17,8 +17,9 @@ import timeit
 """ 
 Mai et al (2019) Scenario 1 water movement (Dumux solver for cylindrical model) 
 """
-N = 3  # number of cells in each dimension
+N = 1  # number of cells in each dimension
 loam = [0.08, 0.43, 0.04, 1.6, 50]
+sp = vg.Parameters(loam)
 initial = -100.  # [cm] initial soil matric potential
 
 r_root = 0.02  # [cm] root radius
@@ -32,14 +33,13 @@ NC = 10  #  NC-1 are the dof of the cylindrical problem
 logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day] # transpiration
-sim_time = 20  # [day]
-NT = 500  # iteration
+sim_time = 15  # [day]
+NT = 200  # iteration
 
 critP = -15000  # [cm]
 
 """ Initialize macroscopic soil model """
-cpp_base = RichardsSP()
-s = RichardsWrapper(cpp_base)
+s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.setParameter("Problem.EnableGravity", "false")  # important in 1d axial-symmetric problem
 s.setHomogeneousIC(initial)  # cm pressure head
@@ -62,7 +62,7 @@ r = XylemFluxPython(rs)
 r.setKr([kr])
 r.setKx([kx])
 
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)
 cci = picker(0, 0, 0)  # collar cell index
 # print("collar index", cci)
@@ -74,13 +74,11 @@ seg_length = r.segLength()
 
 """ Initialize local soil models (around each root segment) """
 cyls = []
-points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base = logbase)
+points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base=logbase)
 ns = len(seg_length)  # number of segments
 for i in range(0, ns):
-    cpp_base = RichardsCylFoam()
-    cyl = RichardsWrapper(cpp_base)
+    cyl = RichardsWrapper(RichardsCylFoam())
     cyl.initialize()
-    # plt.plot(points, [0.] * len(points), "b*"); plt.show()
     cyl.createGrid1d(points)
     cyl.setHomogeneousIC(initial)  # cm pressure head
     cyl.setVGParameters([loam])
@@ -88,7 +86,6 @@ for i in range(0, ns):
     cyl.setInnerBC("fluxCyl", 0.)  # [cm/day]
     cyl.initializeProblem()
     cyl.setCriticalPressure(critP)  # cm pressure head
-    # cyl.setRegularisation(1.e-9, 1.e-9)
     cyls.append(cyl)
 
 """ Simulation """
@@ -111,7 +108,8 @@ for i in range(0, NT):
     for j, cyl in enumerate(cyls):  # for each segment
         rsx[j] = cyl.getInnerHead()  # [cm]
 
-    rx = r.solve(0., -q_r, csx, rsx, False, critP)  # [cm]
+    soil_k = vg.hydraulic_conductivity(rsx, sp) / r_root
+    rx = r.solve(0., -q_r, 0., rsx, False, critP, soil_k)  # [cm]
 
     min_rsx.append(np.min(np.array(rsx)))
     collar_sx.append(csx)
@@ -121,7 +119,7 @@ for i in range(0, NT):
     """
     Local soil model
     """
-    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx = False)  # [cm3/day]
+    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
     for j, cyl in enumerate(cyls):  # set cylindrical model fluxes
         l = seg_length[j]
@@ -166,19 +164,19 @@ for i in range(0, NT):
     water_collar_cell.append(soil_water[cci])
     water_cyl.append(cyl_water)
 
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label = "water cell")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cyl), label = "water cylindric")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label="water in domain")
+# ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cyl), label="water cylindric")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(collar_sx), label = "soil at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rsx), label = "1d model at root surface")
+# ax2.plot(np.linspace(0, sim_time, NT), np.array(collar_sx), label="soil at root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="minimum hx")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rsx), label="minimum hrs")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
@@ -188,35 +186,36 @@ ax3.set_title("Water uptake")
 ax3.plot(np.linspace(0, sim_time, NT), -np.array(water_uptake))
 ax3.set_xlabel("Time (days)")
 ax3.set_ylabel("Uptake (cm/day)")
+ 
+# ax4.set_title("Water in domain")
+# ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
+# ax4.set_xlabel("Time (days)")
+# ax4.set_ylabel("cm3")
 
-ax4.set_title("Water in domain")
-ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
-ax4.set_xlabel("Time (days)")
-ax4.set_ylabel("cm3")
 plt.show()
 
-plt.title("Pressure")
-h = np.array(cyls[0].getSolutionHead())
-x = np.array(cyls[0].getDofCoordinates())
-plt.plot(x, h, "b*")
-plt.xlabel("x (cm)")
-plt.ylabel("Matric potential (cm)")
-plt.show()
-
-plt.title("Darcy velocity")
-h = np.array(cyls[0].getSolutionHead())
-x = np.array(cyls[0].getDofCoordinates())
-print(np.diff(x, axis = 0))
-print(np.diff(h, axis = 0))
-dhdx = np.divide(np.diff(h, axis = 0), np.diff(x, axis = 0))
-sp = vg.Parameters(loam)
-hc = []
-for h_ in h[1:]:
-    hc.append(vg.hydraulic_conductivity(h_, sp))  # mid heads
-velocity = np.multiply(np.array(hc), dhdx)
-plt.plot(x[0:-1], velocity / 100. / 24. / 3600., "b*")
-plt.xlabel("x (cm)")
-plt.ylabel("Velocity (m/s)")
-plt.show()
+# plt.title("Pressure")
+# h = np.array(cyls[0].getSolutionHead())
+# x = np.array(cyls[0].getDofCoordinates())
+# plt.plot(x, h, "b*")
+# plt.xlabel("x (cm)")
+# plt.ylabel("Matric potential (cm)")
+# plt.show()
+# 
+# plt.title("Darcy velocity")
+# h = np.array(cyls[0].getSolutionHead())
+# x = np.array(cyls[0].getDofCoordinates())
+# print(np.diff(x, axis=0))
+# print(np.diff(h, axis=0))
+# dhdx = np.divide(np.diff(h, axis=0), np.diff(x, axis=0))
+# sp = vg.Parameters(loam)
+# hc = []
+# for h_ in h[1:]:
+#     hc.append(vg.hydraulic_conductivity(h_, sp))  # mid heads
+# velocity = np.multiply(np.array(hc), dhdx)
+# plt.plot(x[0:-1], velocity / 100. / 24. / 3600., "b*")
+# plt.xlabel("x (cm)")
+# plt.ylabel("Velocity (m/s)")
+# plt.show()
 
 print("fin")

@@ -33,7 +33,7 @@ def getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil):
         return p  # don't use schröder
 
 """ 
-Mai et al (2019) scenario 1 water movement (Schöder approximation)
+Mai et al (2019) scenario 1 water movement SINK only, No macroscopic flux
 """
 N = 3  # number of cells in each dimension
 loam = [0.08, 0.43, 0.04, 1.6, 50]
@@ -42,7 +42,7 @@ vg.create_mfp_lookup(sp)
 initial = -100.  # [cm] initial soil matric potential
 
 r_root = 0.02  # [cm] root radius
-kr = 2.e-13 * 1000 * 9.81  # [m / (Pa s)] -> [ 1 / s ]
+kr = 10 * 2.e-13 * 1000 * 9.81  # [m / (Pa s)] -> [ 1 / s ]
 kx = 5.e-17 * 1000 * 9.81  # [m^4 / (Pa s)] -> [m3 / s]
 kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
@@ -52,7 +52,7 @@ NC = 10  # dof of the cylindrical problem
 logbase = 1.5
 
 q_r = 1.e-5 * 24 * 3600 * (2 * np.pi * r_root * 3)  # [cm / s] -> [cm3 / day]
-sim_time = 20  # [day]
+sim_time = 15  # [day]
 NT = 5000  # iteration
 
 critP = -15000  # [cm]
@@ -65,7 +65,7 @@ s.initialize()
 s.setHomogeneousIC(initial)  # cm pressure head
 s.setTopBC("noflux")
 s.setBotBC("noflux")
-s.createGrid([-1.5, -1.5, -3.], [1.5, 1.5, 0.], [3, 3, N])  # [cm] 3x3x3
+s.createGrid([-1.5, -1.5, -3.], [1.5, 1.5, 0.], [N, N, N])  # [cm] 3x3x3
 s.setVGParameters([loam])
 s.initializeProblem()
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -88,7 +88,7 @@ seg_length = r.segLength()
 ns = len(seg_length)
 
 """ Coupling soil and root model (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)
 cci = picker(0, 0, 0)  # collar cell index
 # print("collar index", cci)
@@ -104,6 +104,7 @@ dt = sim_time / NT
 
 uptake = []
 min_rx = []
+
 collar = []
 p1d = []
 
@@ -131,7 +132,7 @@ for i in range(0, NT):
         rsx[j] = p  # getInnerHead(p, rx[j], q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
 
     # fluxes per segment according to schröder guess
-    seg_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False)  # [cm3/day]
+    seg_fluxes = r.segFluxes(0., rx, rsx, approx=False, cells=False)  # [cm3/day]
 
     # water for net flux
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
@@ -170,32 +171,32 @@ for i in range(0, NT):
     # print(net_flux / dt)
     # print("sum", np.sum(net_flux))
 
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+fig, (ax1, ax2) = plt.subplots(2, 1)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cell), label = "water cell")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_domain), label="water in domain")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label = "soil voxel at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label = "1d cylindrical model at root surface")
+# ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="soil voxel at root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="minimum hx")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="minimum hrs")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
 ax2.set_ylim(-15000, 0)
 
-ax3.set_title("Water uptake")
-ax3.plot(np.linspace(0, sim_time, NT), -np.array(uptake))
-ax3.set_xlabel("Time (days)")
-ax3.set_ylabel("Uptake (cm/day)")
-
-ax4.set_title("Water in domain")
-ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
-ax4.set_xlabel("Time (days)")
-ax4.set_ylabel("cm3")
+# ax3.set_title("Water uptake")
+# ax3.plot(np.linspace(0, sim_time, NT), -np.array(uptake))
+# ax3.set_xlabel("Time (days)")
+# ax3.set_ylabel("Uptake (cm/day)")
+# 
+# ax4.set_title("Water in domain")
+# ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
+# ax4.set_xlabel("Time (days)")
+# ax4.set_ylabel("cm3")
 plt.show()
 
 # plt.title("Pressure")

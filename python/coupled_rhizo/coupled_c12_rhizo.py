@@ -67,7 +67,7 @@ split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
 sim_time = 1  # 0.65  # 0.25  # [day]
-dt = 10 / (24 * 3600)  # time step [day], 120 schwankt stark
+dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
 

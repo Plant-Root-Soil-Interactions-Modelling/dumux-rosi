@@ -29,7 +29,7 @@ class RhizoMappedSegments(pb.MappedSegments):
     
     # todo copy mapped segments constructors ...
         
-    def __init__(self, file_name, wilting_point, NC, logbase, mode="dumux"):
+    def __init__(self, file_name, wilting_point, NC, logbase, periodic, mode="dumux"):
         """ @param rs is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         ms = xylem_flux.XylemFluxPython.read_rsml(file_name)
         super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes) 

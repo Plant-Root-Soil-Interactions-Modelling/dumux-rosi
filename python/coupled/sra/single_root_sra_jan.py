@@ -28,7 +28,7 @@ sp = vg.Parameters(clay)
 initial = -100.  # [cm] initial soil matric potential
 
 r_root = 0.02  # [cm] root radius
-kr = 2.e-13 * 1000 * 9.81  # [m / (Pa s)] -> [ 1 / s ]
+kr = 10 * 2.e-13 * 1000 * 9.81  # [m / (Pa s)] -> [ 1 / s ]
 kx = 5.e-17 * 1000 * 9.81  # [m^4 / (Pa s)] -> [m3 / s]
 kr = kr * 24 * 3600  # [ 1 / s ] -> [1/day]
 kx = kx * 1.e6 * 24 * 3600  # [ m3 / s ] -> [cm3/day]
@@ -128,7 +128,7 @@ for i in range(0, NT):
 #         k_soil = np.array([vg.hydraulic_conductivity(sx[rs.seg2cell[j]][0], sp) for j in range(0, ns)]) * b  #  resulting hrs >= hbs ???    
 #         k_soil = np.array([vg.hydraulic_conductivity(hrs[j], sp) for j in range(0, ns)]) * b             
         for j, _ in enumerate(hsb):
-            d = max(hsb[j] - hrs[j], 0.)  # at least [1 cm]
+            d = hsb[j] - hrs[j]  # at least [1 cm]
             k_soil[j] = (vg.matric_flux_potential(hsb[j], sp) - vg.matric_flux_potential(hrs[j], sp)) / d
     
         for j in range(0, ns): 

@@ -27,7 +27,7 @@ complicated MPI support (a non-mpi version of richards_cyl is needed, see script
 """ 
 Parameters  
 """
-name = "c12_rhizo_1cm"  # scenario name, to save results 
+name = "bauw_coupled_rhizo"   
 
 """ soil """
 min_b = [-4., -4., -15.]  # cm
@@ -36,7 +36,7 @@ domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
 loam = [0.08, 0.43, 0.04, 1.6, 50]
-loam = [0.03, 0.345, 0.01, 2.5, 28.6]
+# loam = [0.03, 0.345, 0.01, 2.5, 28.6]
 soil_ = loam
 soil = vg.Parameters(soil_)
 initial = -659.8 + (max_b[2] - min_b[2]) / 2  # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
@@ -76,7 +76,7 @@ s.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Ty
 s.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute Type)
 # s.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
 # s.setParameter("Soil.BC.Top.CValue", "0.007")  # michaelisMenten=8 (SType = Solute Type)
-s.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+s.setParameter("Soil.BC.Bot.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
 s.setParameter("Soil.BC.Bot.CValue", "0.")
 # s.setParameter("Soil.BC.Bot.SType", "8")  # michaelisMenten (SType = Solute Type)
 # s.setParameter("RootSystem.Uptake.Vmax", s.dumux_str(3.26e-6 * 24 * 3600))  # (mol)g /cm^2 / s - > (mol)g /cm^2 / day
@@ -270,4 +270,4 @@ if rank == 0:
 #     rs.plot_cylinder(crit_i)    
     plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
     plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
-    np.savetxt("results/" + name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
+    np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')

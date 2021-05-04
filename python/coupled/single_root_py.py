@@ -67,7 +67,7 @@ r = XylemFluxPython(rs)
 r.setKr([kr])
 r.setKx([kx])
 
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)
 cci = picker(0, 0, 0)  # collar cell index
 # print("collar index", cci)
@@ -81,7 +81,7 @@ seg_length = r.segLength()
 
 """ Initialize local soil models (around each root segment) """
 cyls = []
-points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base = logbase)
+points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base=logbase)
 grid = FVGrid1Dcyl(points)
 ndof = NC - 1
 ns = len(seg_length)  # number of segments
@@ -128,7 +128,7 @@ for i in range(0, NT):
     """
     csx = s.getSolutionHeadAt(cci)
     for j, cyl in enumerate(cyls):  # for each segment
-        rsx[j] = cyl.getInnerHead()  # [cm]
+        rsx[j] = cyl.get_inner_head()  # [cm]
 
     soil_k = vg.hydraulic_conductivity(rsx, cyls[0].soil) / r_root
     rx = r.solve(0., -q_r, csx, rsx, False, critP, soil_k)  # [cm]
@@ -146,9 +146,9 @@ for i in range(0, NT):
 
     for j, cyl in enumerate(cyls):  # boundary condtions
         l = seg_length[j]
-        # rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
-        # cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])
-        cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr, kx, r_root, l ])
+        rx_approx = 0.5 * (rx[segs[j][0]] + rx[segs[j][1]])
+        cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, kr])
+        # cyl.bc[(0, 0)] = ("rootsystem_exact", [rx[segs[j][0]], rx[segs[j][1]], kr, kx, r_root, l ])
         dx_outer = points[ndof] - grid.center(ndof - 1)
         q_outer = proposed_outer_fluxes[j] / (2 * np.pi * r_outer[j] * l)
         # print(q_outer)
@@ -157,7 +157,7 @@ for i in range(0, NT):
     cyls = pool.map(simulate_cyl, cyls)  # simulate
 
     for j, cyl in enumerate(cyls):  # res
-        realized_inner_fluxes[j] = cyl.getInnerFlux() * (2 * np.pi * r_root * seg_length[j]) / dt
+        realized_inner_fluxes[j] = cyl.get_inner_flux() * (2 * np.pi * r_root * seg_length[j]) / dt
 
     # print("Realized inner fluxes ", realized_inner_fluxes)
 
@@ -192,7 +192,7 @@ for i in range(0, NT):
         sum_flux += f
     water_uptake.append(sum_flux)  # cm3/day
 
-    cyl_water_content = cyls[0].getWaterContent()  # segment 0
+    cyl_water_content = cyls[0].get_water_content()  # segment 0
     cyl_water = 0.
     for i, wc in enumerate(cyl_water_content):
         r1 = points[i]
@@ -205,16 +205,16 @@ for i in range(0, NT):
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label = "water cell")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cyl), label = "water cylindric")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label="water cell")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cyl), label="water cylindric")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(collar_sx), label = "soil at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rsx), label = "1d model at root surface")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(collar_sx), label="soil at root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rsx), label="1d model at root surface")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
@@ -258,10 +258,10 @@ print(sim_time / NT)
 ax1.plot(x_, -np.array(water_uptake), 'g')  # actual transpiration (neumann)
 ax2 = ax1.twinx()
  # ax2.plot(x_, -np.cumsum(water_uptake), 'c--')  # cumulative transpiration (neumann)
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
 ax1.set_xlabel("Time [d]")
 ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
+ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
 plt.show()
 
 print("fin")
