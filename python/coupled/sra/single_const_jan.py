@@ -108,7 +108,7 @@ def soil_root_inerface(rx, sx, r, sp):
                 
                 rho = outer_r[i] / a
                 b = 2 * (rho * rho - 1) / (2 * rho * rho * (np.log(rho) - 0.5) + 1);
-                print(rho, a, outer_r)
+                # print(rho, a, outer_r)
                 b = outer_r[i] - a
                 b = 0.649559423771715
   
@@ -183,7 +183,7 @@ k_root = np.ones(z.shape) * kr
 # _, psiinterface1 = krsoilrootfunction2(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)  # Hx, Hsoil, lroot, rroot, B, k_root, zs, sp
 psiinterface1 = soil_root_inerface(psixlin[1:], psis1, r, sp)
 
-# plotme(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)
+plotme(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)
 
 psiinterface = psiinterface1.copy()
 for i in range(0, 9):

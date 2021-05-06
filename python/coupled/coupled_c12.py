@@ -31,14 +31,22 @@ also works parallel with mpiexec (slower, due to overhead?)
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 cell_number = [7, 7, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
-periodic = False
-fname = "../../grids/RootSystem8.rsml"
+# periodic = False
+# fname = "../../grids/RootSystem8.rsml"
 
 # min_b = [-6.25, -1.5, -180.]  # cm
 # max_b = [6.25, 1.5, 1]  # cm
 # cell_number = [13, 3, 180]
-# periodic = True
-# fname = "spring_barley_CF12_107d.rsml"
+periodic = True
+fname = "Lupinus_albus_Leitner_2014"  # "spring_barley_CF12_107d.rsml"
+
+rs = pb.RootSystem()
+path = "../../../CPlantBox/modelparameter/rootsystem/"
+rs.readParameters(path + fname + ".xml") 
+rs.setGeometry(pb.SDF_PlantBox(1e6, 1e6, -min_b[2]))  # to not let roots grow out of soil
+rs.initialize()
+rs.simulate(8, True)
+rs.write(fname + ".rsml"); fname = fname + ".rsml"
 
 name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
@@ -51,8 +59,8 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
-age_dependent = False  # conductivities
+sim_time = 7  # [day] for task b
+age_dependent = True  # conductivities
 dt = 30. / (24 * 3600)  # [days] Time step must be very small
 skip = 1
 
@@ -88,7 +96,7 @@ r.rs.setSoilGrid(picker)  # maps segment
 # r.plot_conductivities()
 r.test()  # sanity checks
 rs_age = np.max(r.get_ages())
-# print("press any key"); input()
+print("press any key"); input()
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
