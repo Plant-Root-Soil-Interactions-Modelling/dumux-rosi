@@ -31,24 +31,24 @@ also works parallel with mpiexec (slower, due to overhead?)
 min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 cell_number = [7, 7, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
-# periodic = False
-# fname = "../../grids/RootSystem8.rsml"
+periodic = False
+path = ""
+fname = "../../grids/RootSystem8.rsml"
 
 # min_b = [-6.25, -1.5, -180.]  # cm
 # max_b = [6.25, 1.5, 1]  # cm
 # cell_number = [13, 3, 180]
-periodic = True
-fname = "Lupinus_albus_Leitner_2014"  # "spring_barley_CF12_107d.rsml"
+# periodic = True
+# path = "../../../CPlantBox/modelparameter/rootsystem/"
+# fname = "Lupinus_albus_Leitner_2014"  # "spring_barley_CF12_107d.rsml"
+# rs = pb.RootSystem()
+# rs.readParameters(path + fname + ".xml") 
+# rs.setGeometry(pb.SDF_PlantBox(1e6, 1e6, -min_b[2]))  # to not let roots grow out of soil
+# rs.initialize()
+# rs.simulate(8, True)
+# rs.write(fname + ".rsml"); fname = fname + ".rsml"
 
-rs = pb.RootSystem()
-path = "../../../CPlantBox/modelparameter/rootsystem/"
-rs.readParameters(path + fname + ".xml") 
-rs.setGeometry(pb.SDF_PlantBox(1e6, 1e6, -min_b[2]))  # to not let roots grow out of soil
-rs.initialize()
-rs.simulate(8, True)
-rs.write(fname + ".rsml"); fname = fname + ".rsml"
-
-name = "DuMux_1cm"
+name = "classical360"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
@@ -60,14 +60,13 @@ trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
 sim_time = 7  # [day] for task b
-age_dependent = True  # conductivities
-dt = 30. / (24 * 3600)  # [days] Time step must be very small
+age_dependent = False  # conductivities
+dt = 360. / (24 * 3600)  # [days] Time step must be very small
 skip = 1
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
-cpp_base = RichardsSP()
-s = RichardsWrapper(cpp_base)
+s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
@@ -76,7 +75,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([soil])
 s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-s.setParameter("Soil.SourceSlope", "2000")  # turns regularisation of the source term on
+s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on, will change the shape of actual transpiration...
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -96,7 +95,7 @@ r.rs.setSoilGrid(picker)  # maps segment
 # r.plot_conductivities()
 r.test()  # sanity checks
 rs_age = np.max(r.get_ages())
-print("press any key"); input()
+# print("press any key"); input()
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()

@@ -23,6 +23,7 @@ def krsoilrootfunction2(Hx, Hsoil, lroot, rroot, B, k_root, zs, sp):
     
     ktemp = Hx * 0
     hin = Hx * 0
+    print(len(Hx))
     for i in range(0, len(Hx)):
         
         if (Hsoil[i] - zs[i]) < hintmax:
@@ -76,12 +77,16 @@ def plotme(Hx, Hsoil, lroot, rroot, B, k_root, zs, sp):
                 if i % 10 == 0: 
                     h_ = np.linspace(-16000, 0, 1000)
                     h2_ = [fun(h) for h in h_]
-                    ax1.plot(h_, h2_, label=str(i) + ", root " + str(Hx[i]))
                     ax1.plot([-16000, 0], [0., 0.])
 #                 r = optimize.least_squares(fun, Hx[i])                            
 #                 x = r.x                     
                     x = fsolve(fun, Hx[i])
+                    ax1.plot(h_, h2_, label="bulk {:g}, root {:g}, interface {:g} (cm)".format(Hsoil[i], Hx[i], x[0]))
                     ax1.plot(x, fun(x), "*")                
+
+    plt.xlabel("bulk soil [cm]")
+    plt.ylabel("fun(bulk soil) [cm]")
+    plt.legend()
     plt.show()
 
 
@@ -109,10 +114,11 @@ def soil_root_inerface(rx, sx, r, sp):
                 rho = outer_r[i] / a
                 b = 2 * (rho * rho - 1) / (2 * rho * rho * (np.log(rho) - 0.5) + 1);
                 # print(rho, a, outer_r)
-                b = outer_r[i] - a
+                # b = outer_r[i] - a
                 b = 0.649559423771715
   
-                fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i], x)) / (b * k_soilfun(sx[i], x) + a * kr) - x                                                 
+                # fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i], x)) / (b * k_soilfun(sx[i], x) + a * kr) - x        
+                fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i], x)) / (b * k_soilfun(sx[i], x) + a * kr) - x                                                
                 rsx[i] = fsolve(fun, rx[i])
                           
             else: 
@@ -127,9 +133,13 @@ def soil_root_inerface(rx, sx, r, sp):
 """
 
 """ soil parameter """
-alpha = 0.018
-n = 1.8
-Ks = 28.46
+alpha = 0.04 
+n = 1.6
+Ks = 50
+
+# alpha = 0.018
+# n = 1.8
+# Ks = 28.46
 soil = [0.08, .43, alpha, n, Ks]
 sp = vg.Parameters(soil)  # soil parameters to use with vg functions
 vg.create_mfp_lookup(sp, -1.e5, 1000)
@@ -144,7 +154,7 @@ print(fluxmp[0], fluxmp[60], fluxmp[90], fluxmp[99], hup[90])  # real low values
 
 """ root parameter """
 r_root = 0.05  # [cm] 
-kr = 1.81e-04  # units? []
+kr = 1.81e-04  # units? [1/day]
 kx = 0.1730  # units? []
 collar_p = -16000  # cm
 
@@ -180,26 +190,29 @@ rroot = np.ones(z.shape) * r_root
 b = np.ones(z.shape) * 0.649559423771715
 k_root = np.ones(z.shape) * kr
 
-# _, psiinterface1 = krsoilrootfunction2(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)  # Hx, Hsoil, lroot, rroot, B, k_root, zs, sp
 psiinterface1 = soil_root_inerface(psixlin[1:], psis1, r, sp)
+# _, psiinterface1 = krsoilrootfunction2(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)  # Hx, Hsoil, lroot, rroot, B, k_root, zs, sp
 
-plotme(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)
-
-psiinterface = psiinterface1.copy()
-for i in range(0, 9):
-    psixlin = r.solve_dirichlet(0., collar_p, 0, psiinterface, False) 
-    _, psiinterface = krsoilrootfunction2(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)  # Hx, Hsoil, lroot, rroot, B, k_root, zs, sp
-    # psiinterface1 = soil_root_inerface(psixlin[1:], psis1, r, sp)
+# psiinterface1 = soil_root_inerface(psixlin[1:], psis1, r, sp)
 
 # plotme(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)
- 
-psixlin = r.solve_dirichlet(0., collar_p, 0, psiinterface, False) 
-sink2 = np.array(r.segFluxes(0., psixlin, psiinterface, True, False))
 
 fig, (ax1) = plt.subplots(1, 1)
 ax1.set_title("Figure 4")
 ax1.plot(psis1, psiinterface1, label="1st iteration")
-ax1.plot(psis1, psiinterface, label="10th iteration")
+
+psiinterface = psiinterface1.copy()
+for i in range(0, 5):
+    psixlin = r.solve_dirichlet(0., collar_p, 0, psiinterface, False) 
+    # _, psiinterface = krsoilrootfunction2(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)  # Hx, Hsoil, lroot, rroot, B, k_root, zs, sp
+    psiinterface = soil_root_inerface(psixlin[1:], psis1, r, sp)
+    ax1.plot(psis1, psiinterface, label=str(i))
+
+# plotme(psixlin[1:], psis1, lroot, rroot, b, k_root, z, sp)
+
+psixlin = r.solve_dirichlet(0., collar_p, 0, psiinterface, False)
+sink2 = np.array(r.segFluxes(0., psixlin, psiinterface, True, False))
+
 ax1.legend()
 ax1.set_xlabel(r"$\psi$ soil")
 ax1.set_ylabel(r"$\psi$ interface")

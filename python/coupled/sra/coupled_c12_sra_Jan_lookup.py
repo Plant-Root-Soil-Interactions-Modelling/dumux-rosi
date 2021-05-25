@@ -25,61 +25,14 @@ def sinusoidal(t):
     return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
 
 
-def soil_root_inerface(rx, sx, r, sp, outer_r):
-    assert rx.shape == sx.shape
-  
-    hintmin = -1.e5
-    hintmax = -2.
-    #       
-    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
-          
-    rsx = np.zeros(rx.shape)
-    for i in range(0, len(rx)):
-          
-        s = r.rs.segments[i]
-        z = 0.5 * (r.rs.nodes[s.x].z + r.rs.nodes[s.y].z)  # segment mid point
-          
-        if (sx[i] - z) < hintmax:
-              
-            if (sx[i] - z) > hintmin:
-  
-                a = r.rs.radii[i]
-                kr = r.kr_f(1., 0)  #  kr_f = [](double age, int type, int orgtype, int numleaf) 
-                
-                rho = outer_r[i] / a  # Eqn [5]
-                rho2 = rho * rho
-                # b = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho) - 0.5))  # Eqn [4]
-                b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
-                # print(b, a, outer_r[i], rho)
-                # b = 0.649559423771715  
-                  
-                # print(rx, sx, kr)  
-                  
-                # fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i], x)) / (b * k_soilfun(sx[i], x) + a * kr) - x   
-                fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i] - z, x)) / (b * k_soilfun(sx[i] - z, x) + a * kr) - x                                               
-                rsx[i] = fsolve(fun, rx[i])
-                
-#                 res = optimize.least_squares(fun, rx[i])                            
-#                 rsx[i] = res.x                 
-                          
-            else: 
-                rsx[i] = rx[i]
-        else:
-            rsx[i] = sx[i]
-    
-    return rsx
-
-
 def soil_root_interface_table(rx, sx, r, sp, outer_r, f):
-    assert rx.shape == sx.shape
-          
-    rsx = np.zeros(rx.shape)
+    assert rx.shape == sx.shape          
+    inner_ = np.zeros(rx.shape)
+    outer_ = np.zeros(rx.shape)
     for i in range(0, len(rx)):
-        
-        rho = outer_r[i] / r.rs.radii[i]
-        rho = max(min(rho, 100.), 1.)        
-        rsx[i] = f((rx[i], sx[i], rho))       
-                                               
+        inner_[i] = max(min(r.rs.radii[i] , 0.2), 0.01)
+        outer_[i] = max(min(outer_r[i] , 20), 0.1)      
+    rsx = f((rx, sx, inner_ , outer_))                                                      
     return rsx
 
 """ 
@@ -93,7 +46,7 @@ cell_number = [7, 7, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8
 periodic = False
 fname = "../../../grids/RootSystem8.rsml"
 
-name = "jan_sra360"
+name = "jan_lookup2"
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 soil = loam
 
@@ -142,12 +95,17 @@ rs_age = np.max(r.get_ages())
 seg_length = r.segLength()
 ns = len(seg_length)
 # print("press any key"); input()
+print("outer radii", np.min(outer_r) , np.max(outer_r))
+radii = r.rs.radii
+print("inner radii", np.min(radii) , np.max(radii))
 
 sra_table_lookup = open_sra_lookup("table")
 
 # quick check
 # rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]), r, sp, outer_r)   
-# rsx3 = sra_table_lookup((-15000, -700, 4.13839174077809))   
+# print(r.rs.radii[0])
+# print(outer_r[0])
+# rsx3 = sra_table_lookup((-15000, -700, 0.1679960056208074, 0.6952332821448589))   
 # print(rsx2, rsx3)        
 
 """ Numerical solution (a) """
@@ -162,21 +120,20 @@ t = 0.
 
 for i in range(0, N):
 
-    # rsx = hsb.copy()  # initial values for fix point iteration 
-
     if rank == 0:  # root part is not parallel
  
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
-        rsx = soil_root_inerface(rx[1:], hsb, r, sp, outer_r)
-        # rsx = soil_root_interface_table(rx[1:], hsb, r, sp, outer_r, sra_table_lookup)
+        if i == 0:  # only first time
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False        
+ 
+        rsx = soil_root_interface_table(rx[1:], hsb, r, sp, outer_r, sra_table_lookup)
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False        
         rx_old = rx.copy()
         
         err = 1.e6
         c = 1
         while err > 1. and c < 100:
+            rsx = soil_root_interface_table(rx[1:], hsb, r, sp, outer_r, sra_table_lookup)
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
-            rsx = soil_root_inerface(rx[1:], hsb, r, sp, outer_r)
-            # rsx = soil_root_interface_table(rx[1:], hsb, r, sp, outer_r, sra_table_lookup)
             err = np.linalg.norm(rx - rx_old)
             # print(err)
             rx_old = rx.copy()
