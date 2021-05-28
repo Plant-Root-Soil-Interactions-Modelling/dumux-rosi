@@ -89,10 +89,10 @@ rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indic
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments 
 init_conductivities(r, age_dependent)  # age_dependent is a boolean, root conductivies are given in the file /root_conductivities.py
 rs.set_xylem_flux(r)  # r wraps rs, and rs knows r 
-print()
 # For debugging
 # r.plot_conductivities()
 # r.test()  # sanity checks (todo need improvements...)
+# input()
 
 """ 
 Initialize local soil models (around each root segment) 
