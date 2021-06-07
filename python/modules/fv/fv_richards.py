@@ -305,7 +305,7 @@ class FVRichards1D(FVRichards):
         """
         h = self.get_inner_head()  # value at self.grid.nodes[0]
         k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]
-        # dx = self.grid.nodes[0]  # = radius [cm]       
+        dx = self.grid.nodes[0]  # = radius [cm]       
         kr = min(kr, k / dx)  
         f = 2 * a * np.pi * kr
         tau = np.sqrt(f / kz)  # sqrt(c) [cm-1]
