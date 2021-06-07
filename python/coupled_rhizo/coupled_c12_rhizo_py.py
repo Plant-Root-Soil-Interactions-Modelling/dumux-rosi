@@ -50,7 +50,7 @@ predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
 """ rhizosphere models """
-mode = "python"
+mode = "python_exact"
 NC = 10  # dof+1
 logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
@@ -80,7 +80,7 @@ print()
 """ 
 Initialize xylem model 
 """
-rs = RhizoMappedSegments("../../grids/RootSystem8.rsml", wilting_point, NC, logbase, mode)
+rs = RhizoMappedSegments("../../grids/RootSystem8.rsml", wilting_point, NC, logbase, periodic, mode)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 # True: root segments are cut  to the soil grid so that each segment is completely within one soil control element, this works only for rectangular grids so far

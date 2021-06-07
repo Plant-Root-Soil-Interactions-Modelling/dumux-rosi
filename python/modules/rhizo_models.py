@@ -337,9 +337,21 @@ class RhizoMappedSegments(pb.MappedSegments):
         cyl = self.cyls[i]
         x_ = cyl.getDofCoordinates()
         y_ = cyl.getSolutionHead()
+
+        SMALL_SIZE = 22
+        MEDIUM_SIZE = 22
+        BIGGER_SIZE = 22        
+        plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+        plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
+        plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+        plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+        plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+        plt.xlim([0., 0.2 ])        
         plt.plot(x_, y_)
         plt.xlabel("distance [cm]")
-        plt.ylabel("matric potential [cm]")
+        plt.ylabel("matric potential [cm]")        
         plt.show()  
 
     def plot_cylinders(self):
@@ -359,7 +371,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         plt.xlabel("distance [cm], deeper roots are yellow")
         plt.ylabel("matric potential [cm]")
         plt.xlim([0., 1. ])
-        plt.ylim([-20000, 0. ])
+        plt.ylim([-15000, 0. ])
         plt.show()  
         return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 
