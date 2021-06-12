@@ -27,33 +27,24 @@ complicated MPI support (a non-mpi version of richards_cyl is needed, see script
 """ 
 Parameters  
 """
-name = "c12_rhizo_1cm"  # scenario name, to save results 
 
 """ soil """
-min_b = [-4., -4., -15.]  # cm
-max_b = [4., 4., 0.]  # cm
-cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
-periodic = False
-fname = "../../grids/RootSystem8.rsml"
-
-# min_b = [-6.25, -1.5, -180.]  # cm
-# max_b = [6.25, 1.5, 1]  # cm
-# cell_number = [13, 3, 180]
-# periodic = True
-# fname = "spring_barley_CF12_107d.rsml" 
+min_b = [-7.5, -37.5, -110.]
+max_b = [7.5, 37.5, 0.]
+cell_number = [1, 1, 110]  # full is very slow
+periodic = True  # check data first
+fname = "../../grids/RootSystem_verysimple.rsml" 
 
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
-sand = [0.045, 0.43, 0.15, 3, 1000]
+name = "jan_scenario_rhizo"  # name to export resutls
 loam = [0.08, 0.43, 0.04, 1.6, 50]
-# loam = [0.03, 0.345, 0.01, 2.5, 28.6]  # mai
-clay = [0.1, 0.4, 0.01, 1.1, 10]
 soil_ = loam
 soil = vg.Parameters(soil_)
 initial = -659.8 + (max_b[2] - min_b[2]) / 2  # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
 
 """ root system """
-trans = 6.4  # average per day [cm3 /day] (sinusoidal)
+trans = 0.5 * 15 * 75  # average per day [cm3 /day] (sinusoidal)
 wilting_point = -15000  # [cm]
 age_dependent = False  # conductivities
 predefined_growth = False  # root growth by setting radial conductivities
@@ -66,7 +57,7 @@ logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 7  # 0.65  # 0.25  # [day]
+sim_time = 0.5  # 0.65  # 0.25  # [day]
 dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
@@ -135,8 +126,6 @@ start_time = timeit.default_timer()
 # for post processing 
 min_sx, min_rx, min_rsx, collar_sx, collar_flux = [], [], [], [], []  # cm
 water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
-sink1d = []
-sink1d2 = []
 out_times = []  # days
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
@@ -226,18 +215,6 @@ for i in range(0, NT):
 #                 print("breaksim time ", sim_time)
 #                 break          
 
-        """ Additional sink plot """
-        if i % (60 * 12) == 0:  # every 6h
-            ana = pb.SegmentAnalyser(r.rs)
-            fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # cm3/day
-            ana.addData("fluxes", fluxes)  # cut off for vizualisation
-            ana.addData("fluxes2", realized_inner_fluxes)  # cut off for vizualisation
-            flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, True) 
-            flux1d2 = ana.distribution("fluxes2", max_b[2], min_b[2], 15, True) 
-            sink1d.append(np.array(flux1d))
-            sink1d2.append(np.array(flux1d2))
-            # realized_inner_fluxes!!!!!!!!!!!!
-
 """ plots and output """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")    
@@ -264,9 +241,3 @@ if rank == 0:
     # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
     
     np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
-    
-    sink1d = np.array(sink1d)
-    np.save("sink1d_rhizo", sink1d)
-    np.save("sink1d2_rhizo", sink1d2)
-
-    print(sink1d.shape)    

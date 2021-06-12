@@ -42,7 +42,7 @@ soil = vg.Parameters(soil_)
 initial = -659.8 + (max_b[2] - min_b[2]) / 2  # -659.8 + 7.5 because -659.8 is the value at the top, but we need the average value in the domain
 
 """ root system """
-trans = 6.4  # average per day [cm3 /day] (sinusoidal)
+trans = 0 * 6.4  # average per day [cm3 /day] (sinusoidal)
 wilting_point = -15000  # [cm]
 age_dependent = False  # conductivities
 predefined_growth = False  # root growth by setting radial conductivities
@@ -97,7 +97,7 @@ print()
 """ 
 Initialize xylem model 
 """
-rs = RhizoMappedSegments("../../grids/RootSystem8.rsml", wilting_point, NC, logbase, mode)  
+rs = RhizoMappedSegments("../../grids/RootSystem8.rsml", wilting_point, NC, logbase, periodic, mode)  
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 # True: root segments are cut  to the soil grid so that each segment is completely within one soil control element, this works only for rectangular grids so far
@@ -141,7 +141,7 @@ start_time = timeit.default_timer()
 
 # for post processing 
 min_sx, min_rx, min_rsx, collar_sx, collar_flux = [], [], [], [], []  # cm
-water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
+water_uptake, water_collar_cell, water_cyl, water_domain, solute_uptake = [], [], [], [], []  # cm3
 out_times = []  # days
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
@@ -176,6 +176,7 @@ for i in range(0, NT):
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # mass fluxes?
     else:
+        print(rs.mode)
         raise Exception("this script is for dumux_nc only")  
     realized_inner_fluxes = rs.get_inner_fluxes() 
     realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root=0)
@@ -239,7 +240,11 @@ for i in range(0, NT):
             print("Fluxes: summed local fluxes {:g}, collar flux {:g}, predescribed {:g}".format(summed_soil_fluxes, collar_flux[-1], -trans * sinusoidal(t)))
             water_domain.append(np.min(soil_water))  # cm3
             water_collar_cell.append(soil_water[cci])  # cm3 
-            water_uptake.append(summed_soil_fluxes)  # cm3/day    
+            water_uptake.append(summed_soil_fluxes)  # cm3/day 
+            summed_mass_fluxes = 0.
+            for k, v in soil_mass_fluxes.items():
+                summed_mass_fluxes += v
+            solute_uptake.append(summed_mass_fluxes)   
             n = round(float(i) / float(NT) * 100.)
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], {:g} days".format(s.simTime))
             print("Iteration {:g} took {:g} seconds [{:g}% root, {:g}% rhizo {:g}% soil ]\n".
@@ -251,7 +256,7 @@ for i in range(0, NT):
 """ plots and output """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")    
-    # vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name, 1)  # VTK vizualisation
 #     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]    
 #     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
 #     rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)
@@ -268,6 +273,20 @@ if rank == 0:
 #     print("mapped to cell",)
 #     print("cell water content", water_content[cidx], "matric potential", s.getSolutionHeadAt(cidx))
 #     rs.plot_cylinder(crit_i)    
+    vp.write_soil("mai", s, min_b, max_b, cell_number, ["phosphate"])
+
+    fig, (ax1) = plt.subplots(1, 1)    
+    ax1.set_title("phosphate uptake")
+    uptake = -np.array(solute_uptake)
+    ax1.plot(out_times, uptake, label="phosphate uptake")
+    ax2 = ax1.twinx()
+    ax2.plot(out_times, np.cumsum(uptake), 'c--', label="cumulative uptake")
+    ax1.legend()
+    ax1.set_xlabel("Time (days)")
+    ax1.set_ylabel("g/cm3")    
+    plt.show()
+
     plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
     plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
     np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
+

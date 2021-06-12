@@ -100,6 +100,7 @@ rs_age = np.max(r.get_ages())
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
+sink1d = []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 N = round(sim_time / dt)
@@ -140,6 +141,14 @@ for i in range(0, N):
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
 
+        """ Additional sink plot """
+        if i % 60 == 0:  # every 6h
+            ana = pb.SegmentAnalyser(r.rs)
+            fluxes = r.segFluxes(rs_age + t, rx, sx, False, cells=True)  # cm3/day
+            ana.addData("fluxes", fluxes)  # cut off for vizualisation
+            flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, True) 
+            sink1d.append(np.array(flux1d))
+
     t += dt
 
 s.writeDumuxVTK(name)
@@ -150,4 +159,7 @@ if rank == 0:
     vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
+    sink1d = np.array(sink1d)
+    np.save("sink1d", sink1d)
+    print(sink1d.shape)
 
