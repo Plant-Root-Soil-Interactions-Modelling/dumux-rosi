@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize import fsolve
 
 """
-    creates a 4d look up table, keeps soil and kr constant varies rx, sx, innter radius, and outer radius
+    creates a 4d look up table, keeps soil and kr constant varies rx, sx, inner radius, and outer radius
 """
 
 
@@ -39,8 +39,10 @@ def soil_root_interface(rx, sx, inner_r, outer_r, kr, z, sp):
     return rsx
 
 
+filename = "table_jan"
+
 kr = 1.73e-4 
-soil = [0.08, 0.43, 0.04, 1.6, 50]  # loam
+soil = [0.08, 0.43, 0.018, 1.8, 28.46]  # loam
 sp = vg.Parameters(soil)  
 vg.create_mfp_lookup(sp, -1.e5, 1000)  # creates the matrix flux potential look up table
 
@@ -61,7 +63,7 @@ print(inner_)
 outern = 60
 outer_ = np.logspace(np.log10(0.1), np.log10(20.), outern)  # np.linspace(0.1, 1., outern)
 
-np.save("table_", [rx_, sx_, inner_, outer_, kr, soil])  # additional data
+np.save(filename + "_", [rx_, sx_, inner_, outer_, kr, soil])  # additional data
 
 print("calculating", rxn * sxn * innern * outern, "supporting points")
 
@@ -73,5 +75,5 @@ for i, rx in enumerate(rx_):
             for l, outer in enumerate(outer_): 
                 interface[i, j, k, l] = soil_root_interface(rx, sx, inner, outer, kr, 0., sp)
 
-np.save("table", interface)  # data
+np.save(filename, interface)  # data
 
