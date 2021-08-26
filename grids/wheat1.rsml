@@ -1,0 +1,1275 @@
+<rsml>
+    <metadata>
+        <version>1</version>
+        <unit>cm</unit>
+        <resolution>1</resolution>
+        <last-modified>14-4-2021</last-modified>
+        <software>OrganicBox</software>
+    </metadata>
+    <scene>
+        <plant>
+            <root ID="1">
+                <geometry>
+                    <polyline>
+                        <point x="0" y="0" z="-3"/>
+                        <point x="0.069287747" y="-0.095820889" z="-3.2202671"/>
+                        <point x="0.10799403" y="-0.16636352" z="-3.4569643"/>
+                        <point x="0.12580048" y="-0.23616509" z="-3.6963606"/>
+                        <point x="0.14108096" y="-0.3050735" z="-3.9361901"/>
+                        <point x="0.15145944" y="-0.44318858" z="-4.1443162"/>
+                        <point x="0.18937831" y="-0.58667684" z="-4.3454962"/>
+                        <point x="0.18377629" y="-0.78248292" z="-4.5008297"/>
+                        <point x="0.1967012" y="-0.97980434" z="-4.6537914"/>
+                        <point x="0.19577356" y="-1.0866252" z="-4.7596292"/>
+                        <point x="0.21671414" y="-1.2558267" z="-4.9424744"/>
+                        <point x="0.19062082" y="-1.4063804" z="-5.1403446"/>
+                        <point x="0.18620418" y="-1.4241188" z="-5.1644497"/>
+                        <point x="0.11803505" y="-1.5633432" z="-5.3605862"/>
+                        <point x="0.055472739" y="-1.7071366" z="-5.5552893"/>
+                        <point x="-0.093687527" y="-1.7451413" z="-5.752284"/>
+                        <point x="-0.21864977" y="-1.788744" z="-5.9643764"/>
+                        <point x="-0.32905632" y="-1.8120176" z="-6.1874657"/>
+                        <point x="-0.3865127" y="-1.8797482" z="-6.3255548"/>
+                        <point x="-0.48909849" y="-1.9713272" z="-6.5343356"/>
+                        <point x="-0.58814389" y="-2.0578949" z="-6.7469292"/>
+                        <point x="-0.72899699" y="-2.175277" z="-6.9168758"/>
+                        <point x="-0.90708208" y="-2.1896899" z="-7.0917416"/>
+                        <point x="-0.97133332" y="-2.1245313" z="-7.1953959"/>
+                        <point x="-1.0903783" y="-2.1437209" z="-7.4143939"/>
+                        <point x="-1.2114432" y="-2.1650352" z="-7.6320844"/>
+                        <point x="-1.280139" y="-2.2051044" z="-7.8690977"/>
+                        <point x="-1.3857619" y="-2.2486937" z="-8.0914574"/>
+                        <point x="-1.5279433" y="-2.3162184" z="-8.2856865"/>
+                        <point x="-1.668431" y="-2.3517742" z="-8.489399"/>
+                        <point x="-1.8110874" y="-2.3794777" z="-8.6928234"/>
+                        <point x="-1.8989708" y="-2.4050636" z="-8.8206129"/>
+                        <point x="-2.034441" y="-2.4812768" z="-9.0164175"/>
+                        <point x="-2.1333201" y="-2.5312755" z="-9.2405224"/>
+                        <point x="-2.2317414" y="-2.5671902" z="-9.4675102"/>
+                        <point x="-2.3243017" y="-2.5934505" z="-9.6982546"/>
+                        <point x="-2.2719476" y="-2.5862813" z="-9.8257093"/>
+                        <point x="-2.2527676" y="-2.5068579" z="-10.06198"/>
+                        <point x="-2.2024884" y="-2.4030676" z="-10.283791"/>
+                        <point x="-2.1315041" y="-2.2848496" z="-10.492323"/>
+                        <point x="-2.0329912" y="-2.1581981" z="-10.684037"/>
+                        <point x="-1.9260958" y="-2.0413721" z="-10.877493"/>
+                        <point x="-1.7996604" y="-1.9469134" z="-11.071379"/>
+                        <point x="-1.7705207" y="-1.8704686" z="-11.307613"/>
+                        <point x="-1.7189125" y="-1.7830863" z="-11.536089"/>
+                        <point x="-1.7298561" y="-1.7117248" z="-11.726971"/>
+                        <point x="-1.7629801" y="-1.6133041" z="-11.954383"/>
+                        <point x="-1.7813388" y="-1.5177233" z="-12.184659"/>
+                        <point x="-1.9010493" y="-1.4638289" z="-12.397414"/>
+                        <point x="-2.0380385" y="-1.4543695" z="-12.606327"/>
+                        <point x="-2.1928213" y="-1.4487838" z="-12.802569"/>
+                        <point x="-2.220587" y="-1.437739" z="-12.860229"/>
+                        <point x="-2.3792453" y="-1.4052927" z="-13.050689"/>
+                        <point x="-2.5278895" y="-1.3436733" z="-13.242022"/>
+                        <point x="-2.6885464" y="-1.3180615" z="-13.431846"/>
+                        <point x="-2.8496113" y="-1.2914903" z="-13.621192"/>
+                        <point x="-3.0110843" y="-1.2599627" z="-13.809427"/>
+                        <point x="-3.1635401" y="-1.2270683" z="-14.004812"/>
+                        <point x="-3.165036" y="-1.2276188" z="-14.006668"/>
+                        <point x="-3.3123832" y="-1.2811047" z="-14.20142"/>
+                        <point x="-3.4568124" y="-1.3390683" z="-14.397074"/>
+                        <point x="-3.546545" y="-1.4221052" z="-14.61514"/>
+                        <point x="-3.6353703" y="-1.5036715" z="-14.834131"/>
+                        <point x="-3.7045872" y="-1.5911083" z="-15.05788"/>
+                        <point x="-3.6958771" y="-1.5983554" z="-15.307624"/>
+                        <point x="-3.64902" y="-1.5852754" z="-15.552844"/>
+                        <point x="-3.6614187" y="-1.5563935" z="-15.80086"/>
+                        <point x="-3.6652827" y="-1.5558463" z="-15.813868"/>
+                        <point x="-3.7517669" y="-1.5165855" z="-16.045124"/>
+                        <point x="-3.7477784" y="-1.511332" z="-16.295036"/>
+                        <point x="-3.7428567" y="-1.5151438" z="-16.544958"/>
+                        <point x="-3.7174451" y="-1.5372994" z="-16.792675"/>
+                        <point x="-3.6741102" y="-1.5606505" z="-17.037781"/>
+                        <point x="-3.6200404" y="-1.6095648" z="-17.276913"/>
+                        <point x="-3.5902905" y="-1.6420227" z="-17.523005"/>
+                        <point x="-3.5486298" y="-1.6527927" z="-17.766512"/>
+                        <point x="-3.5372493" y="-1.7243946" z="-18.005768"/>
+                        <point x="-3.443398" y="-1.8023361" z="-18.223982"/>
+                        <point x="-3.3153906" y="-1.8186471" z="-18.438103"/>
+                        <point x="-3.2128704" y="-1.7775215" z="-18.662376"/>
+                        <point x="-3.1101308" y="-1.7416329" z="-18.887447"/>
+                        <point x="-3.0858927" y="-1.7364084" z="-18.947765"/>
+                        <point x="-2.9433084" y="-1.6385981" z="-19.128328"/>
+                        <point x="-2.8508275" y="-1.5118065" z="-19.322933"/>
+                        <point x="-2.7592585" y="-1.3894379" z="-19.520775"/>
+                        <point x="-2.7097104" y="-1.3267307" z="-19.757656"/>
+                        <point x="-2.6517262" y="-1.3022515" z="-19.91293"/>
+                        <point x="-2.5667005" y="-1.2602901" z="-20.144253"/>
+                        <point x="-2.5474651" y="-1.2250286" z="-20.391005"/>
+                        <point x="-2.5173399" y="-1.1231719" z="-20.57852"/>
+                        <point x="-2.4557409" y="-1.0796463" z="-20.816872"/>
+                        <point x="-2.3859587" y="-1.094461" z="-21.056477"/>
+                        <point x="-2.4122934" y="-1.1282665" z="-21.302776"/>
+                        <point x="-2.4378564" y="-1.1654317" z="-21.548674"/>
+                        <point x="-2.4557636" y="-1.1490386" z="-21.797491"/>
+                        <point x="-2.4548492" y="-1.1337725" z="-22.042637"/>
+                        <point x="-2.4163973" y="-1.0732099" z="-22.282124"/>
+                        <point x="-2.4280214" y="-1.0278831" z="-22.527704"/>
+                        <point x="-2.4392807" y="-0.98339331" z="-22.773457"/>
+                        <point x="-2.4590394" y="-0.95330822" z="-22.819715"/>
+                        <point x="-2.5378208" y="-0.84605759" z="-23.031353"/>
+                        <point x="-2.6156616" y="-0.7280578" z="-23.237549"/>
+                        <point x="-2.7180328" y="-0.58110762" z="-23.41198"/>
+                        <point x="-2.803932" y="-0.47260192" z="-23.593029"/>
+                        <point x="-2.9207602" y="-0.41797575" z="-23.807194"/>
+                        <point x="-3.0672369" y="-0.34328642" z="-23.99552"/>
+                        <point x="-3.205759" y="-0.27350247" z="-24.191586"/>
+                        <point x="-3.296422" y="-0.26118761" z="-24.42424"/>
+                        <point x="-3.3034563" y="-0.25573406" z="-24.450161"/>
+                        <point x="-3.3892164" y="-0.21202871" z="-24.680889"/>
+                        <point x="-3.455965" y="-0.17760094" z="-24.91934"/>
+                        <point x="-3.5024548" y="-0.14327618" z="-25.162571"/>
+                        <point x="-3.5054448" y="-0.1392215" z="-25.170149"/>
+                        <point x="-3.599685" y="-0.053243887" z="-25.385153"/>
+                        <point x="-3.7050974" y="0.043245003" z="-25.590281"/>
+                        <point x="-3.8229718" y="0.15654455" z="-25.779408"/>
+                        <point x="-3.8399184" y="0.30075499" z="-25.956064"/>
+                        <point x="-3.7739992" y="0.35536259" z="-26.190954"/>
+                        <point x="-3.6840415" y="0.49084899" z="-26.380825"/>
+                        <point x="-3.6460483" y="0.61416751" z="-26.594948"/>
+                        <point x="-3.6161726" y="0.69159943" z="-26.754156"/>
+                        <point x="-3.6153595" y="0.74409097" z="-26.867531"/>
+                    </polyline>
+                </geometry>
+                <properties>
+                    <organType value="2"/>
+                    <subType value="1"/>
+                    <length value="27.610626"/>
+                    <age value="14"/>
+                    <parent-node value="-1"/>
+                    <diameter value="0.1"/>
+                </properties>
+                <root ID="22">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.037814591" y="-1.1378276" z="-4.6867256"/>
+                            <point x="-0.26931402" y="-1.2068682" z="-4.6223717"/>
+                            <point x="-0.50683868" y="-1.2635154" z="-4.5687704"/>
+                            <point x="-0.65359086" y="-1.2976172" z="-4.536334"/>
+                            <point x="-0.90065622" y="-1.2873908" z="-4.4995356"/>
+                            <point x="-1.1485089" y="-1.2878876" z="-4.4668427"/>
+                            <point x="-1.361899" y="-1.2820066" z="-4.472156"/>
+                            <point x="-1.5165402" y="-1.2697495" z="-4.4581957"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.7734047"/>
+                        <age value="7.5667815"/>
+                        <parent-node value="9"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <root ID="23">
+                        <geometry>
+                            <polyline>
+                                <point x="-0.75213861" y="-1.3550403" z="-4.3138685"/>
+                                <point x="-0.76080596" y="-1.4970936" z="-4.1867609"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.44081566"/>
+                            <age value="2.8127766"/>
+                            <parent-node value="4"/>
+                            <diameter value="0.039999999"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="12.337654517518899"/>
+                                <sample value="13.688254545956829"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="15"/>
+                                <sample value="16"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.0105052519970732"/>
+                            <sample value="7.7355053456551088"/>
+                            <sample value="8.5534728016162411"/>
+                            <sample value="9.1154444289996519"/>
+                            <sample value="10.147431584509933"/>
+                            <sample value="11.378929107911087"/>
+                            <sample value="12.659240101026294"/>
+                            <sample value="13.787284764012565"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="11"/>
+                            <sample value="12"/>
+                            <sample value="13"/>
+                            <sample value="14"/>
+                            <sample value="17"/>
+                            <sample value="18"/>
+                            <sample value="19"/>
+                            <sample value="20"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="25">
+                    <geometry>
+                        <polyline>
+                            <point x="0.013006972" y="-1.5358078" z="-5.0229282"/>
+                            <point x="-0.14753519" y="-1.7092333" z="-4.9413815"/>
+                            <point x="-0.30821812" y="-1.8372597" z="-4.9059153"/>
+                            <point x="-0.46995464" y="-2.0217841" z="-4.8580394"/>
+                            <point x="-0.60190219" y="-2.2282612" z="-4.8084722"/>
+                            <point x="-0.7000795" y="-2.4485009" z="-4.7424741"/>
+                            <point x="-0.71192306" y="-2.4744692" z="-4.7376628"/>
+                            <point x="-0.86482346" y="-2.6626177" z="-4.7197986"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.7305329"/>
+                        <age value="7.2992105"/>
+                        <parent-node value="12"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <root ID="26">
+                        <geometry>
+                            <polyline>
+                                <point x="-0.55164391" y="-1.7995759" z="-4.8632092"/>
+                                <point x="-0.77800083" y="-1.7606182" z="-4.8110051"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.48554277"/>
+                            <age value="3.0052614"/>
+                            <parent-node value="3"/>
+                            <diameter value="0.039999999"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="12.126987471346204"/>
+                                <sample value="13.710167256609772"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="27"/>
+                                <sample value="28"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.2783598574556096"/>
+                            <sample value="8.0047333305899713"/>
+                            <sample value="8.6817671332500197"/>
+                            <sample value="9.6027708249068375"/>
+                            <sample value="10.681485800639942"/>
+                            <sample value="11.983315644992395"/>
+                            <sample value="12.15296411536921"/>
+                            <sample value="13.792840416543735"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="24"/>
+                            <sample value="25"/>
+                            <sample value="26"/>
+                            <sample value="29"/>
+                            <sample value="30"/>
+                            <sample value="31"/>
+                            <sample value="32"/>
+                            <sample value="33"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="28">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.61487865" y="-1.7808887" z="-6.3495507"/>
+                            <point x="-0.84038883" y="-1.6822696" z="-6.3057394"/>
+                            <point x="-1.0844635" y="-1.6294783" z="-6.293879"/>
+                            <point x="-1.3321406" y="-1.5955595" z="-6.2962427"/>
+                            <point x="-1.3655757" y="-1.5910407" z="-6.2957077"/>
+                            <point x="-1.581989" y="-1.4753281" z="-6.2480021"/>
+                            <point x="-1.7853513" y="-1.3310225" z="-6.2658834"/>
+                            <point x="-1.9339697" y="-1.2430841" z="-6.2570405"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.7066561"/>
+                        <age value="6.5799747"/>
+                        <parent-node value="18"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <root ID="29">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.2326199" y="-1.7485536" z="-6.1542425"/>
+                                <point x="-1.1210999" y="-1.8288822" z="-5.9902377"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.46397883"/>
+                            <age value="3.3552127"/>
+                            <parent-node value="5"/>
+                            <diameter value="0.039999999"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="11.841601497788902"/>
+                                <sample value="13.623156052571611"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="45"/>
+                                <sample value="46"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.9946894686129513"/>
+                            <sample value="8.7095321006366202"/>
+                            <sample value="9.5057091007834558"/>
+                            <sample value="10.404133690962977"/>
+                            <sample value="10.534727882064091"/>
+                            <sample value="11.586517982328434"/>
+                            <sample value="12.824639956826619"/>
+                            <sample value="13.830183021811552"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="40"/>
+                            <sample value="41"/>
+                            <sample value="42"/>
+                            <sample value="43"/>
+                            <sample value="44"/>
+                            <sample value="47"/>
+                            <sample value="48"/>
+                            <sample value="49"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="31">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.2118081" y="-2.078517" z="-7.1448536"/>
+                            <point x="-1.4194164" y="-1.9494878" z="-7.0924106"/>
+                            <point x="-1.5566627" y="-1.8659606" z="-7.0468063"/>
+                            <point x="-1.7898707" y="-1.7864654" z="-7.0044446"/>
+                            <point x="-1.9840455" y="-1.6508173" z="-6.9244714"/>
+                            <point x="-2.1798108" y="-1.5100471" z="-6.8584433"/>
+                            <point x="-2.1864741" y="-1.5060421" z="-6.8556089"/>
+                            <point x="-2.2091463" y="-1.4961996" z="-6.8484468"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.45102"/>
+                        <age value="5.9950285"/>
+                        <parent-node value="23"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <root ID="32">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.6091992" y="-1.7345654" z="-7.1928205"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.20333421"/>
+                            <age value="3.0423801"/>
+                            <parent-node value="3"/>
+                            <diameter value="0.039999999"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="12.737778434107865"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="58"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="8.5870264011250548"/>
+                            <sample value="9.3334618559766422"/>
+                            <sample value="9.8962938894804555"/>
+                            <sample value="10.865801289406399"/>
+                            <sample value="12.047227443265562"/>
+                            <sample value="13.55990109251559"/>
+                            <sample value="13.61796009364982"/>
+                            <sample value="13.802590705219956"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="55"/>
+                            <sample value="56"/>
+                            <sample value="57"/>
+                            <sample value="59"/>
+                            <sample value="60"/>
+                            <sample value="61"/>
+                            <sample value="62"/>
+                            <sample value="63"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="34">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.8436488" y="-2.5208659" z="-9.0351572"/>
+                            <point x="-1.8167771" y="-2.5980771" z="-9.1328793"/>
+                            <point x="-1.7340796" y="-2.7752385" z="-9.2886829"/>
+                            <point x="-1.6531605" y="-2.9164758" z="-9.4784307"/>
+                            <point x="-1.558084" y="-3.0691082" z="-9.6521082"/>
+                            <point x="-1.5300443" y="-3.1011891" z="-9.6992998"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.1909896"/>
+                        <age value="5.0025702"/>
+                        <parent-node value="31"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <root ID="35">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.5856663" y="-2.5066388" z="-9.1059189"/>
+                                <point x="-1.4603229" y="-2.4575436" z="-9.0868483"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.38595957"/>
+                            <age value="3.939497"/>
+                            <parent-node value="2"/>
+                            <diameter value="0.039999999"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="11.490299067572884"/>
+                                <sample value="13.333937873147267"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="74"/>
+                                <sample value="75"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="9.5876400847235317"/>
+                            <sample value="9.9695065717262334"/>
+                            <sample value="10.832502723281513"/>
+                            <sample value="11.909237934654517"/>
+                            <sample value="13.341705048596134"/>
+                            <sample value="13.795713045450348"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="72"/>
+                            <sample value="73"/>
+                            <sample value="76"/>
+                            <sample value="77"/>
+                            <sample value="78"/>
+                            <sample value="79"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="37">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.3445704" y="-2.8167927" z="-9.7617531"/>
+                            <point x="-2.5029404" y="-3.0047121" z="-9.7158699"/>
+                            <point x="-2.615871" y="-3.1162488" z="-9.7169619"/>
+                            <point x="-2.8128414" y="-3.2700145" z="-9.7093029"/>
+                            <point x="-3.0113437" y="-3.4219222" z="-9.704731"/>
+                            <point x="-3.0366554" y="-3.4408286" z="-9.7050924"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.1903242"/>
+                        <age value="4.4028411"/>
+                        <parent-node value="36"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <root ID="38">
+                        <geometry>
+                            <polyline>
+                                <point x="-2.6125689" y="-3.3141944" z="-9.7495604"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.20063902"/>
+                            <age value="1.1902983"/>
+                            <parent-node value="3"/>
+                            <diameter value="0.039999999"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="13.72417470952762"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="88"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="10.1801988632826"/>
+                            <sample value="10.932136846355823"/>
+                            <sample value="11.472597555116826"/>
+                            <sample value="12.456421630854603"/>
+                            <sample value="13.669349594950955"/>
+                            <sample value="13.844794129692399"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="85"/>
+                            <sample value="86"/>
+                            <sample value="87"/>
+                            <sample value="89"/>
+                            <sample value="90"/>
+                            <sample value="91"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="40">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.9726809" y="-1.6987847" z="-11.785011"/>
+                            <point x="-2.1973567" y="-1.6511977" z="-11.883785"/>
+                            <point x="-2.4110827" y="-1.6066315" z="-12.005585"/>
+                            <point x="-2.580641" y="-1.5399892" z="-12.176783"/>
+                            <point x="-2.5869374" y="-1.5339609" z="-12.185287"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.0121784"/>
+                        <age value="3.2247257"/>
+                        <parent-node value="45"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="11.351880329450093"/>
+                            <sample value="12.077179904534368"/>
+                            <sample value="12.895798324524794"/>
+                            <sample value="13.835344640060303"/>
+                            <sample value="13.884852830697831"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="101"/>
+                            <sample value="102"/>
+                            <sample value="103"/>
+                            <sample value="104"/>
+                            <sample value="105"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="41">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.2583425" y="-1.6841328" z="-12.879325"/>
+                            <point x="-2.3815424" y="-1.8949145" z="-12.93311"/>
+                            <point x="-2.5101976" y="-2.1051445" z="-12.974957"/>
+                            <point x="-2.5486717" y="-2.2653582" z="-12.94655"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="0.91719943"/>
+                        <age value="2.5112033"/>
+                        <parent-node value="51"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="12.050837629532351"/>
+                            <sample value="12.718947466535003"/>
+                            <sample value="13.421581327310854"/>
+                            <sample value="13.912610191348261"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="112"/>
+                            <sample value="113"/>
+                            <sample value="114"/>
+                            <sample value="115"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="42">
+                    <geometry>
+                        <polyline>
+                            <point x="-3.2321243" y="-1.4562852" z="-14.082238"/>
+                            <point x="-3.3149519" y="-1.683113" z="-14.146959"/>
+                            <point x="-3.324224" y="-1.7246443" z="-14.166141"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="0.54667705"/>
+                        <age value="1.6858958"/>
+                        <parent-node value="58"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="12.909357532251898"/>
+                            <sample value="13.719882020294312"/>
+                            <sample value="13.89199694708816"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="123"/>
+                            <sample value="124"/>
+                            <sample value="125"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="43">
+                    <geometry>
+                        <polyline>
+                            <point x="-3.6174419" y="-1.7174662" z="-15.935488"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="0.20784892"/>
+                        <age value="0.56254387"/>
+                        <parent-node value="67"/>
+                        <diameter value="0.059999999"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="13.914572583714733"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="135"/>
+                        </function>
+                    </functions>
+                </root>
+                <functions>
+                    <function domain="polyline" name="node_creation_time">
+                        <sample value="0"/>
+                        <sample value="0.10235603268557547"/>
+                        <sample value="0.21628081440932459"/>
+                        <sample value="0.3304124847344202"/>
+                        <sample value="0.44475179645190327"/>
+                        <sample value="0.55929950646897553"/>
+                        <sample value="0.67405637583911204"/>
+                        <sample value="0.78902316979234421"/>
+                        <sample value="0.9042006577659264"/>
+                        <sample value="0.97358259780496526"/>
+                        <sample value="1.0890991273301909"/>
+                        <sample value="1.204828372504825"/>
+                        <sample value="1.2188471136799328"/>
+                        <sample value="1.3348157482667171"/>
+                        <sample value="1.4509987683467356"/>
+                        <sample value="1.5673969680360407"/>
+                        <sample value="1.684011145871132"/>
+                        <sample value="1.8008421048418766"/>
+                        <sample value="1.8776887881853099"/>
+                        <sample value="1.9948806778621946"/>
+                        <sample value="2.1122915038988328"/>
+                        <sample value="2.2299220858546644"/>
+                        <sample value="2.3477732478996067"/>
+                        <sample value="2.4130486613177502"/>
+                        <sample value="2.531244045373942"/>
+                        <sample value="2.6496621348366975"/>
+                        <sample value="2.7683037705399078"/>
+                        <sample value="2.8871697980883813"/>
+                        <sample value="3.0062610678939796"/>
+                        <sample value="3.1255784352121756"/>
+                        <sample value="3.245122760178849"/>
+                        <sample value="3.320403375864911"/>
+                        <sample value="3.4403192132174976"/>
+                        <sample value="3.5604642928568961"/>
+                        <sample value="3.6808394929439601"/>
+                        <sample value="3.8014456966952199"/>
+                        <sample value="3.8681073444428811"/>
+                        <sample value="3.9890738033154953"/>
+                        <sample value="4.1102735429121582"/>
+                        <sample value="4.2317074647234847"/>
+                        <sample value="4.3533764754757716"/>
+                        <sample value="4.47528148717167"/>
+                        <sample value="4.5974234171311403"/>
+                        <sample value="4.7198031880329294"/>
+                        <sample value="4.8424217279563582"/>
+                        <sample value="4.942694634082911"/>
+                        <sample value="5.0657492449994193"/>
+                        <sample value="5.1890452680889796"/>
+                        <sample value="5.3125836524328909"/>
+                        <sample value="5.4363653527202969"/>
+                        <sample value="5.5603913292923925"/>
+                        <sample value="5.5926500288602536"/>
+                        <sample value="5.7169851138863956"/>
+                        <sample value="5.8415666664025805"/>
+                        <sample value="5.9663956654872123"/>
+                        <sample value="6.0914730960643286"/>
+                        <sample value="6.2167999489502099"/>
+                        <sample value="6.3423772209004552"/>
+                        <sample value="6.3436075475045346"/>
+                        <sample value="6.469438707024243"/>
+                        <sample value="6.5955223070316755"/>
+                        <sample value="6.7218593624475274"/>
+                        <sample value="6.8484508943254871"/>
+                        <sample value="6.9752979299016937"/>
+                        <sample value="7.1024015026448035"/>
+                        <sample value="7.2297626523064853"/>
+                        <sample value="7.3573824249724327"/>
+                        <sample value="7.3643221160219179"/>
+                        <sample value="7.4922156999148761"/>
+                        <sample value="7.6203700758973758"/>
+                        <sample value="7.7487863097227736"/>
+                        <sample value="7.8774654736907443"/>
+                        <sample value="8.0064086467010611"/>
+                        <sample value="8.1356169143078088"/>
+                        <sample value="8.2650913687742733"/>
+                        <sample value="8.3934202205894284"/>
+                        <sample value="8.5234274269001951"/>
+                        <sample value="8.6537041255300498"/>
+                        <sample value="8.7842514360630251"/>
+                        <sample value="8.9150704850744908"/>
+                        <sample value="9.0461624061895325"/>
+                        <sample value="9.0804051555359582"/>
+                        <sample value="9.2118427592540186"/>
+                        <sample value="9.3435558243488277"/>
+                        <sample value="9.475545507846304"/>
+                        <sample value="9.6078129740774951"/>
+                        <sample value="9.6966119434379703"/>
+                        <sample value="9.8293459730456565"/>
+                        <sample value="9.962360930627419"/>
+                        <sample value="10.077251456454087"/>
+                        <sample value="10.210792694193394"/>
+                        <sample value="10.344618290825986"/>
+                        <sample value="10.478729459947898"/>
+                        <sample value="10.613127422940948"/>
+                        <sample value="10.747813409039431"/>
+                        <sample value="10.880422152027545"/>
+                        <sample value="11.015682805007527"/>
+                        <sample value="11.151235194570296"/>
+                        <sample value="11.287080581899085"/>
+                        <sample value="11.318971931764027"/>
+                        <sample value="11.455180761452119"/>
+                        <sample value="11.59168543667848"/>
+                        <sample value="11.728487245393875"/>
+                        <sample value="11.853446752818323"/>
+                        <sample value="11.990820157084213"/>
+                        <sample value="12.128494493016763"/>
+                        <sample value="12.266471081959368"/>
+                        <sample value="12.404751253977317"/>
+                        <sample value="12.41992910948067"/>
+                        <sample value="12.558547713133335"/>
+                        <sample value="12.697472734759012"/>
+                        <sample value="12.83670553204013"/>
+                        <sample value="12.841779282028861"/>
+                        <sample value="12.981332500044301"/>
+                        <sample value="13.121196286543697"/>
+                        <sample value="13.261372026918988"/>
+                        <sample value="13.389864227264548"/>
+                        <sample value="13.530641163364821"/>
+                        <sample value="13.671734144642041"/>
+                        <sample value="13.813144593336892"/>
+                        <sample value="13.914897634265325"/>
+                        <sample value="13.985802484366735"/>
+                    </function>
+                    <function domain="polyline" name="node_index">
+                        <sample value="1"/>
+                        <sample value="2"/>
+                        <sample value="3"/>
+                        <sample value="4"/>
+                        <sample value="5"/>
+                        <sample value="6"/>
+                        <sample value="7"/>
+                        <sample value="8"/>
+                        <sample value="9"/>
+                        <sample value="10"/>
+                        <sample value="21"/>
+                        <sample value="22"/>
+                        <sample value="23"/>
+                        <sample value="34"/>
+                        <sample value="35"/>
+                        <sample value="36"/>
+                        <sample value="37"/>
+                        <sample value="38"/>
+                        <sample value="39"/>
+                        <sample value="50"/>
+                        <sample value="51"/>
+                        <sample value="52"/>
+                        <sample value="53"/>
+                        <sample value="54"/>
+                        <sample value="64"/>
+                        <sample value="65"/>
+                        <sample value="66"/>
+                        <sample value="67"/>
+                        <sample value="68"/>
+                        <sample value="69"/>
+                        <sample value="70"/>
+                        <sample value="71"/>
+                        <sample value="80"/>
+                        <sample value="81"/>
+                        <sample value="82"/>
+                        <sample value="83"/>
+                        <sample value="84"/>
+                        <sample value="92"/>
+                        <sample value="93"/>
+                        <sample value="94"/>
+                        <sample value="95"/>
+                        <sample value="96"/>
+                        <sample value="97"/>
+                        <sample value="98"/>
+                        <sample value="99"/>
+                        <sample value="100"/>
+                        <sample value="106"/>
+                        <sample value="107"/>
+                        <sample value="108"/>
+                        <sample value="109"/>
+                        <sample value="110"/>
+                        <sample value="111"/>
+                        <sample value="116"/>
+                        <sample value="117"/>
+                        <sample value="118"/>
+                        <sample value="119"/>
+                        <sample value="120"/>
+                        <sample value="121"/>
+                        <sample value="122"/>
+                        <sample value="126"/>
+                        <sample value="127"/>
+                        <sample value="128"/>
+                        <sample value="129"/>
+                        <sample value="130"/>
+                        <sample value="131"/>
+                        <sample value="132"/>
+                        <sample value="133"/>
+                        <sample value="134"/>
+                        <sample value="136"/>
+                        <sample value="137"/>
+                        <sample value="138"/>
+                        <sample value="139"/>
+                        <sample value="140"/>
+                        <sample value="141"/>
+                        <sample value="142"/>
+                        <sample value="143"/>
+                        <sample value="144"/>
+                        <sample value="145"/>
+                        <sample value="146"/>
+                        <sample value="147"/>
+                        <sample value="148"/>
+                        <sample value="149"/>
+                        <sample value="150"/>
+                        <sample value="151"/>
+                        <sample value="152"/>
+                        <sample value="153"/>
+                        <sample value="154"/>
+                        <sample value="155"/>
+                        <sample value="156"/>
+                        <sample value="157"/>
+                        <sample value="158"/>
+                        <sample value="159"/>
+                        <sample value="160"/>
+                        <sample value="161"/>
+                        <sample value="162"/>
+                        <sample value="163"/>
+                        <sample value="164"/>
+                        <sample value="165"/>
+                        <sample value="166"/>
+                        <sample value="167"/>
+                        <sample value="168"/>
+                        <sample value="169"/>
+                        <sample value="170"/>
+                        <sample value="171"/>
+                        <sample value="172"/>
+                        <sample value="173"/>
+                        <sample value="174"/>
+                        <sample value="175"/>
+                        <sample value="176"/>
+                        <sample value="177"/>
+                        <sample value="178"/>
+                        <sample value="179"/>
+                        <sample value="180"/>
+                        <sample value="181"/>
+                        <sample value="182"/>
+                        <sample value="183"/>
+                        <sample value="184"/>
+                        <sample value="185"/>
+                        <sample value="186"/>
+                        <sample value="187"/>
+                        <sample value="188"/>
+                        <sample value="189"/>
+                    </function>
+                </functions>
+            </root>
+            <root ID="2">
+                <geometry>
+                    <polyline>
+                        <point x="0" y="0" z="-3"/>
+                        <point x="0.10426476" y="0.19469455" z="-3.1171448"/>
+                        <point x="0.19052242" y="0.40715012" z="-3.2167552"/>
+                        <point x="0.24758159" y="0.62638962" z="-3.3224828"/>
+                        <point x="0.2808167" y="0.86079937" z="-3.4027789"/>
+                        <point x="0.31074524" y="1.1060042" z="-3.4412351"/>
+                        <point x="0.33913153" y="1.3455384" z="-3.5069437"/>
+                        <point x="0.37088397" y="1.585363" z="-3.5699983"/>
+                        <point x="0.37588298" y="1.8307457" z="-3.6175628"/>
+                        <point x="0.4691515" y="2.0420954" z="-3.7131257"/>
+                        <point x="0.4515059" y="2.1496165" z="-3.938132"/>
+                        <point x="0.42699438" y="2.246423" z="-4.1673212"/>
+                        <point x="0.37899598" y="2.3842077" z="-4.3703275"/>
+                        <point x="0.36306956" y="2.5222099" z="-4.5781779"/>
+                        <point x="0.29061386" y="2.6250079" z="-4.7942395"/>
+                        <point x="0.22386916" y="2.7152367" z="-5.0176315"/>
+                        <point x="0.14007805" y="2.8077655" z="-5.2342358"/>
+                        <point x="0.14696884" y="2.9535229" z="-5.4372315"/>
+                        <point x="0.13554615" y="3.0694332" z="-5.6584425"/>
+                        <point x="0.11515467" y="3.1785219" z="-5.8824601"/>
+                        <point x="0.11629247" y="3.2709219" z="-6.1147552"/>
+                        <point x="0.11479921" y="3.3582721" z="-6.3489938"/>
+                        <point x="0.16973519" y="3.4169152" z="-6.5857277"/>
+                        <point x="0.20642947" y="3.4018586" z="-6.8325615"/>
+                        <point x="0.2165473" y="3.3842206" z="-7.0817332"/>
+                        <point x="0.21127699" y="3.2547848" z="-7.2955523"/>
+                        <point x="0.23688269" y="3.0792117" z="-7.4716725"/>
+                        <point x="0.27060968" y="2.9113982" z="-7.6538844"/>
+                        <point x="0.34436667" y="2.7311771" z="-7.8106651"/>
+                        <point x="0.39380407" y="2.5758858" z="-8.0002451"/>
+                        <point x="0.50486898" y="2.44028" z="-8.178503"/>
+                        <point x="0.61704582" y="2.3054633" z="-8.3566618"/>
+                        <point x="0.68352634" y="2.1790369" z="-8.5618372"/>
+                        <point x="0.73842907" y="2.0764372" z="-8.7831039"/>
+                        <point x="0.80575126" y="2.0106728" z="-9.0147133"/>
+                        <point x="0.79193884" y="2.039278" z="-9.2626867"/>
+                        <point x="0.73972064" y="1.9802551" z="-9.4999409"/>
+                        <point x="0.7309376" y="1.9693205" z="-9.749547"/>
+                        <point x="0.72516102" y="1.9492099" z="-9.9986696"/>
+                        <point x="0.60352272" y="1.8505269" z="-10.193518"/>
+                        <point x="0.51810694" y="1.7479841" z="-10.404916"/>
+                        <point x="0.44790605" y="1.6436677" z="-10.620995"/>
+                        <point x="0.35314962" y="1.5223229" z="-10.817964"/>
+                        <point x="0.28884172" y="1.3810078" z="-11.013908"/>
+                        <point x="0.21138766" y="1.2604617" z="-11.218773"/>
+                        <point x="0.13781592" y="1.1454251" z="-11.428185"/>
+                        <point x="0.028959967" y="1.058284" z="-11.635687"/>
+                        <point x="-0.057543058" y="0.97437918" z="-11.854724"/>
+                        <point x="-0.1541249" y="0.88303798" z="-12.066452"/>
+                        <point x="-0.24589655" y="0.78927505" z="-12.279259"/>
+                        <point x="-0.27864081" y="0.68835944" z="-12.50563"/>
+                        <point x="-0.20257634" y="0.65665036" z="-12.741656"/>
+                        <point x="-0.15443856" y="0.67732805" z="-12.986105"/>
+                        <point x="-0.1156833" y="0.69046241" z="-13.232734"/>
+                        <point x="-0.028188946" y="0.72257614" z="-13.464711"/>
+                        <point x="-0.0077287052" y="0.73535895" z="-13.54801"/>
+                    </polyline>
+                </geometry>
+                <properties>
+                    <organType value="2"/>
+                    <subType value="4"/>
+                    <length value="13.586722"/>
+                    <age value="14"/>
+                    <parent-node value="-1"/>
+                    <diameter value="0.1"/>
+                </properties>
+                <functions>
+                    <function domain="polyline" name="node_creation_time">
+                        <sample value="0"/>
+                        <sample value="0.10300500780696277"/>
+                        <sample value="0.21920783414654121"/>
+                        <sample value="0.33731417385918383"/>
+                        <sample value="0.45738742972147245"/>
+                        <sample value="0.57949422599392009"/>
+                        <sample value="0.70370463043049558"/>
+                        <sample value="0.83009239574874516"/>
+                        <sample value="0.95873522264409583"/>
+                        <sample value="1.0897150466969547"/>
+                        <sample value="1.2231183518254398"/>
+                        <sample value="1.3590365132867135"/>
+                        <sample value="1.4975661736338404"/>
+                        <sample value="1.6388096555023774"/>
+                        <sample value="1.7828754156428857"/>
+                        <sample value="1.9298785452459752"/>
+                        <sample value="2.0799413223419019"/>
+                        <sample value="2.2331938229172237"/>
+                        <sample value="2.3897745984010581"/>
+                        <sample value="2.5498314283629488"/>
+                        <sample value="2.713522158669889"/>
+                        <sample value="2.8810156370169282"/>
+                        <sample value="3.0524927597298794"/>
+                        <sample value="3.2281476461095839"/>
+                        <sample value="3.408188959431945"/>
+                        <sample value="3.5928413971457505"/>
+                        <sample value="3.7823473769591551"/>
+                        <sample value="3.9769689505508818"/>
+                        <sample value="4.1769899828075339"/>
+                        <sample value="4.3827186420618256"/>
+                        <sample value="4.5944902561603618"/>
+                        <sample value="4.8126706008089704"/>
+                        <sample value="5.0376597011654356"/>
+                        <sample value="5.2698962459152368"/>
+                        <sample value="5.5098627361984711"/>
+                        <sample value="5.7580915212640678"/>
+                        <sample value="6.0151719106585171"/>
+                        <sample value="6.2817586019160094"/>
+                        <sample value="6.558581726988467"/>
+                        <sample value="6.8464589054735416"/>
+                        <sample value="7.1463098057650285"/>
+                        <sample value="7.4591738676078156"/>
+                        <sample value="7.7862320472490874"/>
+                        <sample value="8.128833733143102"/>
+                        <sample value="8.4885303815372719"/>
+                        <sample value="8.867117991490689"/>
+                        <sample value="9.2666913623243694"/>
+                        <sample value="9.6897142871570026"/>
+                        <sample value="10.139111651736165"/>
+                        <sample value="10.618392191034346"/>
+                        <sample value="11.131815028988227"/>
+                        <sample value="11.684620189795103"/>
+                        <sample value="12.283355040356485"/>
+                        <sample value="12.936348957002345"/>
+                        <sample value="13.65442511945219"/>
+                        <sample value="13.921219856008541"/>
+                    </function>
+                    <function domain="polyline" name="node_index">
+                        <sample value="1"/>
+                        <sample value="190"/>
+                        <sample value="191"/>
+                        <sample value="192"/>
+                        <sample value="193"/>
+                        <sample value="194"/>
+                        <sample value="195"/>
+                        <sample value="196"/>
+                        <sample value="197"/>
+                        <sample value="198"/>
+                        <sample value="199"/>
+                        <sample value="200"/>
+                        <sample value="201"/>
+                        <sample value="202"/>
+                        <sample value="203"/>
+                        <sample value="204"/>
+                        <sample value="205"/>
+                        <sample value="206"/>
+                        <sample value="207"/>
+                        <sample value="208"/>
+                        <sample value="209"/>
+                        <sample value="210"/>
+                        <sample value="211"/>
+                        <sample value="212"/>
+                        <sample value="213"/>
+                        <sample value="214"/>
+                        <sample value="215"/>
+                        <sample value="216"/>
+                        <sample value="217"/>
+                        <sample value="218"/>
+                        <sample value="219"/>
+                        <sample value="220"/>
+                        <sample value="221"/>
+                        <sample value="222"/>
+                        <sample value="223"/>
+                        <sample value="224"/>
+                        <sample value="225"/>
+                        <sample value="226"/>
+                        <sample value="227"/>
+                        <sample value="228"/>
+                        <sample value="229"/>
+                        <sample value="230"/>
+                        <sample value="231"/>
+                        <sample value="232"/>
+                        <sample value="233"/>
+                        <sample value="234"/>
+                        <sample value="235"/>
+                        <sample value="236"/>
+                        <sample value="237"/>
+                        <sample value="238"/>
+                        <sample value="239"/>
+                        <sample value="240"/>
+                        <sample value="241"/>
+                        <sample value="242"/>
+                        <sample value="243"/>
+                        <sample value="244"/>
+                    </function>
+                </functions>
+            </root>
+            <root ID="3">
+                <geometry>
+                    <polyline>
+                        <point x="0" y="0" z="-3"/>
+                        <point x="0.083607316" y="0.20885958" z="-3.1090298"/>
+                        <point x="0.14375257" y="0.43151623" z="-3.2055004"/>
+                        <point x="0.20697951" y="0.65517628" z="-3.2975793"/>
+                        <point x="0.25945735" y="0.87149501" z="-3.4113874"/>
+                        <point x="0.26192412" y="1.1129721" z="-3.4760613"/>
+                        <point x="0.26074609" y="1.235728" z="-3.5077043"/>
+                        <point x="0.22747837" y="1.4833523" z="-3.5163934"/>
+                        <point x="0.24894543" y="1.7269676" z="-3.5682662"/>
+                        <point x="0.29732847" y="1.8886462" z="-3.5774081"/>
+                        <point x="0.3996968" y="2.1165621" z="-3.568743"/>
+                        <point x="0.48365363" y="2.3519683" z="-3.5746777"/>
+                        <point x="0.58689803" y="2.5705755" z="-3.6383286"/>
+                        <point x="0.72763211" y="2.7748501" z="-3.6694057"/>
+                        <point x="0.76640779" y="2.8318532" z="-3.6766672"/>
+                        <point x="0.90376514" y="3.0385079" z="-3.7071114"/>
+                        <point x="1.0209354" y="3.2497511" z="-3.7715116"/>
+                        <point x="1.0412797" y="3.3535461" z="-3.8148401"/>
+                        <point x="1.0013555" y="3.587575" z="-3.8931763"/>
+                        <point x="0.99576253" y="3.6073558" z="-3.8993254"/>
+                        <point x="0.96033049" y="3.8548181" z="-3.9019673"/>
+                        <point x="0.85885906" y="4.0832405" z="-3.9071429"/>
+                        <point x="0.76442939" y="4.3077774" z="-3.9634116"/>
+                        <point x="0.6861999" y="4.5417395" z="-4.0039325"/>
+                        <point x="0.64954895" y="4.6621156" z="-4.0250506"/>
+                        <point x="0.55961925" y="4.884932" z="-4.0940828"/>
+                        <point x="0.47029817" y="5.1069336" z="-4.166451"/>
+                        <point x="0.385968" y="5.3339152" z="-4.228642"/>
+                        <point x="0.29666433" y="5.5212622" z="-4.2138953"/>
+                        <point x="0.18364371" y="5.7438626" z="-4.200654"/>
+                        <point x="0.01917419" y="5.9315858" z="-4.1861696"/>
+                        <point x="-0.18309335" y="6.0784554" z="-4.1820397"/>
+                        <point x="-0.23902757" y="6.1002131" z="-4.1852279"/>
+                        <point x="-0.42721453" y="6.2581563" z="-4.2314844"/>
+                        <point x="-0.62046617" y="6.4009175" z="-4.300571"/>
+                        <point x="-0.85128415" y="6.4957547" z="-4.285439"/>
+                        <point x="-1.084659" y="6.583087" z="-4.2652097"/>
+                        <point x="-1.314163" y="6.6816683" z="-4.2756815"/>
+                        <point x="-1.5435557" y="6.7807574" z="-4.2834501"/>
+                        <point x="-1.7696335" y="6.8873658" z="-4.2882924"/>
+                        <point x="-1.8209262" y="6.912035" z="-4.2903295"/>
+                        <point x="-1.9084612" y="7.0194998" z="-4.2840967"/>
+                        <point x="-2.0135455" y="7.2361798" z="-4.3512301"/>
+                        <point x="-2.1296716" y="7.4462724" z="-4.4210582"/>
+                        <point x="-2.2161052" y="7.6667418" z="-4.5011983"/>
+                        <point x="-2.2893867" y="7.8679643" z="-4.6301918"/>
+                        <point x="-2.3374512" y="7.9700837" z="-4.6969223"/>
+                        <point x="-2.4301331" y="8.1516457" z="-4.8416476"/>
+                        <point x="-2.5119474" y="8.2942066" z="-4.963953"/>
+                    </polyline>
+                </geometry>
+                <properties>
+                    <organType value="2"/>
+                    <subType value="4"/>
+                    <length value="10.428317"/>
+                    <age value="5"/>
+                    <parent-node value="-1"/>
+                    <diameter value="0.1"/>
+                </properties>
+                <functions>
+                    <function domain="polyline" name="node_creation_time">
+                        <sample value="9"/>
+                        <sample value="9.1023855517732883"/>
+                        <sample value="9.2164127496450714"/>
+                        <sample value="9.3307207238444434"/>
+                        <sample value="9.4453108605316913"/>
+                        <sample value="9.5601845561574788"/>
+                        <sample value="9.6185454342277286"/>
+                        <sample value="9.7338491417838"/>
+                        <sample value="9.8494399552326204"/>
+                        <sample value="9.9277475076504427"/>
+                        <sample value="10.043822742299655"/>
+                        <sample value="10.160188942746448"/>
+                        <sample value="10.276847571385337"/>
+                        <sample value="10.393800101663617"/>
+                        <sample value="10.426282193205257"/>
+                        <sample value="10.543612282008869"/>
+                        <sample value="10.661239669761486"/>
+                        <sample value="10.715118698756745"/>
+                        <sample value="10.83318201875136"/>
+                        <sample value="10.843328827114814"/>
+                        <sample value="10.961719085851527"/>
+                        <sample value="11.080412047405018"/>
+                        <sample value="11.199409263658458"/>
+                        <sample value="11.318712298459884"/>
+                        <sample value="11.379719066937755"/>
+                        <sample value="11.499486991711333"/>
+                        <sample value="11.619564714406128"/>
+                        <sample value="11.73995384185808"/>
+                        <sample value="11.840387959275496"/>
+                        <sample value="11.961351873338565"/>
+                        <sample value="12.08263181159748"/>
+                        <sample value="12.204229429636108"/>
+                        <sample value="12.233509781227328"/>
+                        <sample value="12.355503771212556"/>
+                        <sample value="12.477819197712686"/>
+                        <sample value="12.600457759081051"/>
+                        <sample value="12.723421167166865"/>
+                        <sample value="12.846711147458587"/>
+                        <sample value="12.970329439229216"/>
+                        <sample value="13.094277795683512"/>
+                        <sample value="13.122561046627634"/>
+                        <sample value="13.191534514732226"/>
+                        <sample value="13.316075699554393"/>
+                        <sample value="13.440951902444167"/>
+                        <sample value="13.566164930673708"/>
+                        <sample value="13.691716606178865"/>
+                        <sample value="13.757700253138569"/>
+                        <sample value="13.883771724461198"/>
+                        <sample value="13.987345795836285"/>
+                    </function>
+                    <function domain="polyline" name="node_index">
+                        <sample value="1"/>
+                        <sample value="245"/>
+                        <sample value="246"/>
+                        <sample value="247"/>
+                        <sample value="248"/>
+                        <sample value="249"/>
+                        <sample value="250"/>
+                        <sample value="251"/>
+                        <sample value="252"/>
+                        <sample value="253"/>
+                        <sample value="254"/>
+                        <sample value="255"/>
+                        <sample value="256"/>
+                        <sample value="257"/>
+                        <sample value="258"/>
+                        <sample value="259"/>
+                        <sample value="260"/>
+                        <sample value="261"/>
+                        <sample value="262"/>
+                        <sample value="263"/>
+                        <sample value="264"/>
+                        <sample value="265"/>
+                        <sample value="266"/>
+                        <sample value="267"/>
+                        <sample value="268"/>
+                        <sample value="269"/>
+                        <sample value="270"/>
+                        <sample value="271"/>
+                        <sample value="272"/>
+                        <sample value="273"/>
+                        <sample value="274"/>
+                        <sample value="275"/>
+                        <sample value="276"/>
+                        <sample value="277"/>
+                        <sample value="278"/>
+                        <sample value="279"/>
+                        <sample value="280"/>
+                        <sample value="281"/>
+                        <sample value="282"/>
+                        <sample value="283"/>
+                        <sample value="284"/>
+                        <sample value="285"/>
+                        <sample value="286"/>
+                        <sample value="287"/>
+                        <sample value="288"/>
+                        <sample value="289"/>
+                        <sample value="290"/>
+                        <sample value="291"/>
+                        <sample value="292"/>
+                    </function>
+                </functions>
+            </root>
+        </plant>
+    </scene>
+</rsml>

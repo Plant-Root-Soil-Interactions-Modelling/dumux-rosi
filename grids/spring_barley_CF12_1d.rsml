@@ -1,0 +1,78 @@
+<rsml>
+    <metadata>
+        <version>1</version>
+        <unit>cm</unit>
+        <resolution>1</resolution>
+        <last-modified>5-5-2021</last-modified>
+        <software>OrganicBox</software>
+    </metadata>
+    <scene>
+        <plant>
+            <root ID="1">
+                <geometry>
+                    <polyline>
+                        <point x="0" y="0" z="-3"/>
+                        <point x="-0.058406226" y="0.18770812" z="-2.9631982"/>
+                        <point x="-0.10523196" y="0.38177258" z="-2.9511011"/>
+                        <point x="-0.15070798" y="0.5764277" z="-2.944674"/>
+                        <point x="-0.18815787" y="0.77288967" z="-2.9442103"/>
+                        <point x="-0.21874534" y="0.96962678" z="-2.963155"/>
+                        <point x="-0.24486846" y="1.1642442" z="-3.0011239"/>
+                        <point x="-0.30194929" y="1.3517109" z="-3.0410993"/>
+                        <point x="-0.34945533" y="1.5412956" z="-3.0835352"/>
+                        <point x="-0.39134961" y="1.7349796" z="-3.1105788"/>
+                        <point x="-0.43202859" y="1.92702" z="-3.1488638"/>
+                        <point x="-0.46547005" y="2.1174397" z="-3.2000694"/>
+                        <point x="-0.50112689" y="2.310333" z="-3.2390654"/>
+                        <point x="-0.52910787" y="2.5060778" z="-3.2690835"/>
+                        <point x="-0.54712147" y="2.6099732" z="-3.2834692"/>
+                    </polyline>
+                </geometry>
+                <properties>
+                    <organType value="2"/>
+                    <subType value="1"/>
+                    <length value="2.7064221"/>
+                    <age value="1"/>
+                    <parent-node value="-1"/>
+                    <diameter value="0.064999998"/>
+                </properties>
+                <functions>
+                    <function domain="polyline" name="node_creation_time">
+                        <sample value="0"/>
+                        <sample value="0.066152981631487376"/>
+                        <sample value="0.13971531505664478"/>
+                        <sample value="0.21333987693200676"/>
+                        <sample value="0.28702677262833332"/>
+                        <sample value="0.36077610778421682"/>
+                        <sample value="0.43458798830702938"/>
+                        <sample value="0.50846252037382578"/>
+                        <sample value="0.5823998104322502"/>
+                        <sample value="0.65639996520149546"/>
+                        <sample value="0.73046309167316847"/>
+                        <sample value="0.80458929711225757"/>
+                        <sample value="0.87877868905805545"/>
+                        <sample value="0.95303137532508442"/>
+                        <sample value="0.992567870495768"/>
+                    </function>
+                    <function domain="polyline" name="node_index">
+                        <sample value="1"/>
+                        <sample value="2"/>
+                        <sample value="3"/>
+                        <sample value="4"/>
+                        <sample value="5"/>
+                        <sample value="6"/>
+                        <sample value="7"/>
+                        <sample value="8"/>
+                        <sample value="9"/>
+                        <sample value="10"/>
+                        <sample value="11"/>
+                        <sample value="12"/>
+                        <sample value="13"/>
+                        <sample value="14"/>
+                        <sample value="15"/>
+                    </function>
+                </functions>
+            </root>
+        </plant>
+    </scene>
+</rsml>
