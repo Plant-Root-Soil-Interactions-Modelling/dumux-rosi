@@ -25,8 +25,9 @@ def sinusoidal(t):
     return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
 
 
-def soil_root_inerface(rx, sx, r, sp, outer_r):
+def soil_root_inerface(rx, sx, r, sp, outer_r, inner_r):
     assert rx.shape == sx.shape
+    segs = r.rs.segments
   
     hintmin = -1.e5
     hintmax = -2.
@@ -36,14 +37,14 @@ def soil_root_inerface(rx, sx, r, sp, outer_r):
     rsx = np.zeros(rx.shape)
     for i in range(0, len(rx)):
           
-        s = r.rs.segments[i]
+        s = segs[i]
         z = 0.5 * (r.rs.nodes[s.x].z + r.rs.nodes[s.y].z)  # segment mid point
           
         if (sx[i] - z) < hintmax:
               
             if (sx[i] - z) > hintmin:
   
-                a = r.rs.radii[i]
+                a = inner_r[i]
                 kr = r.kr_f(1., 0)  #  kr_f = [](double age, int type, int orgtype, int numleaf) 
                 
                 rho = outer_r[i] / a  # Eqn [5]
@@ -67,19 +68,6 @@ def soil_root_inerface(rx, sx, r, sp, outer_r):
         else:
             rsx[i] = sx[i]
     
-    return rsx
-
-
-def soil_root_interface_table(rx, sx, r, sp, outer_r, f):
-    assert rx.shape == sx.shape
-          
-    rsx = np.zeros(rx.shape)
-    for i in range(0, len(rx)):
-        
-        rho = outer_r[i] / r.rs.radii[i]
-        rho = max(min(rho, 100.), 1.)        
-        rsx[i] = f((rx[i], sx[i], rho))       
-                                               
     return rsx
 
 """ 
@@ -152,9 +140,11 @@ sra_table_lookup = open_sra_lookup("table")
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
+inner_r = r.rs.radii
+mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
 x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-hsb = np.array([sx[r.rs.seg2cell[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
+hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
 rsx = hsb.copy()  # initial values for fix point iteration 
 
 N = round(sim_time / dt)
@@ -167,7 +157,7 @@ for i in range(0, N):
     if rank == 0:  # root part is not parallel
  
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
-        rsx = soil_root_inerface(rx[1:], hsb, r, sp, outer_r)
+        rsx = soil_root_inerface(rx[1:], hsb, r, sp, outer_r, inner_r)
         # rsx = soil_root_interface_table(rx[1:], hsb, r, sp, outer_r, sra_table_lookup)
         rx_old = rx.copy()
         
@@ -175,7 +165,7 @@ for i in range(0, N):
         c = 1
         while err > 1. and c < 100:
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
-            rsx = soil_root_inerface(rx[1:], hsb, r, sp, outer_r)
+            rsx = soil_root_inerface(rx[1:], hsb, r, sp, outer_r, inner_r)
             # rsx = soil_root_interface_table(rx[1:], hsb, r, sp, outer_r, sra_table_lookup)
             err = np.linalg.norm(rx - rx_old)
             # print(err)
@@ -201,7 +191,7 @@ for i in range(0, N):
     s.setSource(fluxes.copy())  # richards.py 
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
-    hsb = np.array([sx[r.rs.seg2cell[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment    
+    hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment    
     water = s.getWaterVolume()
  
     if rank == 0 and i % skip == 0:

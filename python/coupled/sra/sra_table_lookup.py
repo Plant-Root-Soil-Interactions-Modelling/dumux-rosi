@@ -19,5 +19,6 @@ def open_sra_lookup(filename):
     print(sra_table.shape)
     print(inner_.shape)
     print(outer_.shape)
-    return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)  # TODO check how fast is NN
+    return RegularGridInterpolator((kx_, sx_, outer_, inner_), sra_table)  # method = "nearest" fill_value = None , bounds_error=False
 
+# TODO create table 2 again, witch outer_, and inner_ !!!!
