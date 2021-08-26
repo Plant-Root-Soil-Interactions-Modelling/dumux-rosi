@@ -9,6 +9,16 @@ DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
+[RootSystem.Grid]
+File =  ../../../grids/Moraesetal_2018_154days.dgf
+InitialT = 1 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
+Grow = true
+
 [Soil.Grid]
 Cells = 18 3 75 # 37*6*150
 Periodic = true true false
@@ -21,6 +31,9 @@ Overlap = 1
 [Soil.IC]
 P = -150 -300
 Z = -1.5 0. 
+
+#[Newton]
+#MaxRelativeShift = 1.e-6
 
 #[Restart]
 #Time = 6.69595e+06

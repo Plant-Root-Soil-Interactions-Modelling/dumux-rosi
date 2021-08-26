@@ -30,4 +30,4 @@ N =  1.1457
 Ks = 1488 # [cm/d] 	
 
 [Climate]
-CSVFile = input/soybean_precipitation_2010.csv # [cm day-1]
+CSVFile = input/soybean_precipitation_2010_kc.csv # [cm day-1]

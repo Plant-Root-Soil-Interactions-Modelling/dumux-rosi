@@ -1,0 +1,41 @@
+[Problem]
+Name = soybean_Honly_2007
+RootName = ../roots_1p/input/soybean_2007.input
+SoilName = ../soil_richards/input/soybean_HLCT_2007.input
+
+[TimeLoop]
+TEnd =  13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600
+
+[RootSystem.Grid]
+File =  ../../../grids/Moraesetal_2018_154days.dgf
+InitialT = 1 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
+Grow = true
+
+[Soil.Grid]
+Cells = 18 3 75 # 37*6*150
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1
+
+[Soil.IC]
+P = -150 -300
+Z = -1.5 0. 
+
+#[Newton]
+#MaxRelativeShift = 1.e-6
+
+#[Restart]
+#Time = 1.17964e+07
+#SoilFile = ./results_soybean_Honly_2007_1/soybean_Honly_2007_1-01918.vtu
+#RootFile = ./results_soybean_Honly_2007_1/soybean_Honly_2007_1-01918.vtp

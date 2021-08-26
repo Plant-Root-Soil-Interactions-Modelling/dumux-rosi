@@ -12,7 +12,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/roots_1p")
 
 # run dumux
-os.system("./rootsystem_rb input/test.input")
+os.system("./rootsystem_periodic input/soybean_2018.input")
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]

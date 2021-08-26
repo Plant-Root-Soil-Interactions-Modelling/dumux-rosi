@@ -8,7 +8,7 @@ import van_genuchten as vg
 import math
 import numpy as np
 
-name = "singleroot_Honly"  # this name should be unique
+name = "singleroot_Honly_atm"  # this name should be unique
 suffix = ""
 
 # go to the right place

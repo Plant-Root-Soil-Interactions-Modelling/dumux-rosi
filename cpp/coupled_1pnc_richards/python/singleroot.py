@@ -9,7 +9,7 @@ import van_genuchten as vg
 import math
 import numpy as np
 
-name = "singleroot_H+C"  # this name should be unique
+name = "singleroot_H+C_atm"  # this name should be unique
 suffix = ""
 
 # go to the right place

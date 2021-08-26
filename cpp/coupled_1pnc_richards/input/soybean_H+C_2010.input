@@ -9,6 +9,19 @@ DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
+[RootSystem.Grid]
+File =  ../../../grids/Moraesetal_2018_154days.dgf
+InitialT = 1 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
+Grow = true
+
+[RootSystem.Leaf]
+CSVFile = input/Moraesetal_2018_volume.csv
+
 [Soil.Grid]
 Cells = 18 3 75 # 37*6*150
 Periodic = true true false
@@ -35,10 +48,6 @@ b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 sH = 1e-4 # [cm-1]
 sC = 5e+10 # [cm3/mol]
-
-[RootSystem.Leaf]
-Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
-VolumeT = 0	1	7	14	21	30	45	60	90	154
 
 #[Restart]
 #Time = 1.09192e+07

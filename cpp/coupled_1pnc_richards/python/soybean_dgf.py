@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 path = "../modelparameter/rootsystem/"
-name = "Glycine_max"  # ""
+name = "Glycine_max_lmax"  # ""
 
 rs = pb.RootSystem()
 rs.readParameters(path + name + ".xml")
