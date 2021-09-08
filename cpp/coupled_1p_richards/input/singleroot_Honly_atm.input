@@ -17,8 +17,8 @@ Z = -.15 0.
 Transpiration = 5e-4 # [kg/day] = 0.5cm3/day 
 Sinusoidal = True
 
-[Newton]
-MaxRelativeShift = 1.e-6
+#[Newton]
+#MaxRelativeShift = 1.e-7
 
 [RootSystem.Leaf]
 Volume = 0.0125 # [cm^3] equals root volume

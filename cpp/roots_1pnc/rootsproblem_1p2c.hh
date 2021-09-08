@@ -231,6 +231,15 @@ public:
     Scalar getBufferPower(const SubControlVolume& scv, const VolumeVariables& volVars) const {
         return 0.;
     }
+    
+    /**
+	 * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
+	 *
+	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
+	 */
+	Scalar bufferPower(const SubControlVolume& scv, const VolumeVariables& volVars, int compIdx = 0) const {
+        return 0.;
+	}
 
     /*!
      * \brief Evaluate the initial value for a control volume.

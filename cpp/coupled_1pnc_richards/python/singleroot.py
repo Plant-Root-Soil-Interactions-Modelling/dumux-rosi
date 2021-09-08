@@ -83,4 +83,10 @@ ax4.set_xlabel("Time [days]")
 ax4.set_ylabel("Pressure at root collar [cm]")
 plt.savefig("results_" + name + suffix + "/" + name + suffix + '_collarPressure.pdf', dpi=300, bbox_inches='tight')
 
+fig, ax5 = plt.subplots()
+ax5.plot((d[:, 4] - 1.e5) * 100. / 1.e3 / 9.81, d[:, 1] / d[:, 2], '*')  # root collar pressure head (convert from Pa to Head)  
+ax5.set_xlabel("Pressure at root collar [cm]")
+ax5.set_ylabel("Alpha")
+plt.savefig("results_" + name + suffix + "/" + name + suffix + '_AlphacollarPressure.pdf', dpi=300, bbox_inches='tight')
+
 plt.show()

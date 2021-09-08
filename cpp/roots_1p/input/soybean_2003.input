@@ -17,7 +17,7 @@ krIdx = 6
 kxIdx = 5
 Grow = true
 
-[RootSystem.Conductivity]	# axial conductivity (cm^3 / day), radial conductivity (1 / day)
+[RootSystem.Conductivity]
 # artificial shoot
 ShootKx =	0.356832	0.356832   
 ShootKxAge =	0	1e20	# days
