@@ -19,11 +19,8 @@ Grow = true
 
 [RootSystem.Conductivity]
 # artificial shoot
-ShootKx =	0.356832	0.356832   
-ShootKxAge =	0	1e20	# days
-
-ShootKr =	1.e-20	1.e-20
-ShootKrAge =	0	1e20
+ShootKx =	0.356832
+ShootKr =	1.e-20
 
 # tap root
 Kx0 = 1.e-20	1.e-20	0.067392	0.074736	0.082944	0.092448	0.101952	0.113184	0.126144	0.139968	0.154656	0.171936	0.190944	0.21168	0.235008	0.260928	0.28944	0.321408	0.356832	0.356832   

@@ -5,7 +5,7 @@ import os
 import matplotlib.pyplot as plt
 from vtk_tools import *
 
-name = "soybean"  # this name should be unique
+name = "soybean_2018"  # this name should be unique
 suffix = ""
 
 # Go to the right place
