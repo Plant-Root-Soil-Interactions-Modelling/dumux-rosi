@@ -20,10 +20,10 @@ kxIdx = 5
 Grow = true
 
 [RootSystem.Leaf]
-CSVFile = input/Moraesetal_2018_volume.csv
+CSVFile = input/Moraesetal2020_volume.csv
 
 [Soil.Grid]
-Cells = 18 3 75 # 37*6*150
+Cells = 37 6 160 # 37*6*160
 Periodic = true true false
 Overlap = 1 
 
@@ -32,8 +32,8 @@ Periodic = true true false
 Overlap = 1
 
 [Soil.IC]
-P = -150 -300
-Z = -1.5 0. 
+P = -140 -300
+Z = -1.6 0. 
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
