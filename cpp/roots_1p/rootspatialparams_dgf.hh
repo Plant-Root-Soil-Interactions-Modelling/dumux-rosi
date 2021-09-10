@@ -117,7 +117,8 @@ public:
 
     //! segment radius [m]
     Scalar radius(std::size_t eIdx) const {
-        if (eIdx==0) { // todo (will not always be zero)
+        int o = (int) order_.f(eIdx);
+        if (o<0) {
             return radius0_.f(this->age(eIdx), eIdx);
         }
         return radius_.f(this->age(eIdx), eIdx);
@@ -130,7 +131,8 @@ public:
 
     //! radial conductivity [m/Pa/s] == [m^2 s/kg]
     Scalar kr(std::size_t eIdx) const {
-        if (eIdx==0) { // todo (will not always be zero)
+        int o = (int) order_.f(eIdx);
+        if (o<0) {
             return kr0_.f(this->age(eIdx), eIdx);
         }
         return kr_.f(this->age(eIdx), eIdx);
@@ -138,7 +140,8 @@ public:
 
     //! axial conductivity [m^4/Pa/s]
     Scalar kx(std::size_t eIdx) const {
-        if (eIdx==0) { //  todo (will not always be zero)
+        int o = (int) order_.f(eIdx);
+        if (o<0) {
             return kx0_.f(this->age(eIdx), eIdx);
         }
         return kx_.f(this->age(eIdx), eIdx);
