@@ -1,7 +1,7 @@
 [Problem]
 Name = soybean_Honly_2010
 RootName = ../roots_1p/input/soybean_2010.input
-SoilName = ../soil_richards/input/soybean_HLCT_2010.input
+SoilName = ../soil_richards/input/soybean_2010.input
 
 [TimeLoop]
 TEnd =  13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2018_154days.dgf
+File =  ../../../grids/Moraesetal_2020_dx_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -30,7 +30,7 @@ Overlap = 1
 
 [Soil.IC]
 P = -140 -300
-Z = -1.6 0. 
+Z = -1.6 0.
 
 #[Newton]
 #MaxRelativeShift = 1.e-6

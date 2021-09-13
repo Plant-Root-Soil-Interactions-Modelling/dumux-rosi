@@ -8,7 +8,7 @@ PeriodicCheckTimes = 7200
 MaxTimeStepSize = 3600 
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2020_154days.dgf
+File =  ../../../grids/Moraesetal_2020_dx_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -58,7 +58,7 @@ Kr4 =	1.e-20	1.e-20	1.14048e-3	1.08864e-3	1.0368e-3	9.8486e-4	9.3312e-4	8.8992e-
 KrAge4 = -1e20	0	0	2	4	6	8	10	12	14	16	18	20	22	24	26	28	30	32	1e20
 
 [RootSystem.Collar]
-CSVFile = input/soybean_transpiration_2010_kc.csv # kg/day 
+CSVFile = input/soybean_transpiration_2010.csv # kg/day 
 Sinusoidal = True
 CritCollarP = -1.5e4
 

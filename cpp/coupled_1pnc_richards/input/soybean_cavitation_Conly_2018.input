@@ -1,7 +1,7 @@
 [Problem]
-Name = soybean_cavitation_Conly
-RootName = ../roots_1pnc/input/soybean.input
-SoilName = ../soil_richards/input/soybean_HLCT.input
+Name = soybean_cavitation_Conly_2018
+RootName = ../roots_1pnc/input/soybean_2018.input
+SoilName = ../soil_richards/input/soybean_2018.input
 
 [TimeLoop]
 TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], # 154 days 13305600
@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 18 3 75 # 37*6*150
+Cells = 37 6 160 # 37*6*160
 Periodic = true true false
 Overlap = 1 
 
@@ -18,9 +18,9 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-#[Soil.IC]
-#P = -150 -300
-#Z = -1.5 0. 
+[Soil.IC]
+P = -140 -300
+Z = -1.6 0.
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -37,11 +37,10 @@ sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
 
 [RootSystem.Leaf]
-Volume = 0.0125	0.68610	5.5743	12.1374	18.68389	26.277012	36.047858	42.4518248	48.68727	51.39649 # [cm^3] equals root volume
-VolumeT = 0	1	7	14	21	30	45	60	90	154
+CSVFile = input/Moraesetal2020_dx_volume.csv
 
-[Restart]
-Time = 3.49206e+06
-mL = 5.00179e-08 # value of mL at last time step
-SoilFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly_1-00941.vtu
-RootFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly_1-00941.vtp
+#[Restart]
+#Time = 3.49206e+06
+#mL = 5.00179e-08 # value of mL at last time step
+#SoilFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly_1-00941.vtu
+#RootFile = ./results_soybean_cavitation_Conly_1/soybean_cavitation_Conly_1-00941.vtp

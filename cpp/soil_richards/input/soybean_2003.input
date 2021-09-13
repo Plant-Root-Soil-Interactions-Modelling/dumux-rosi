@@ -1,5 +1,5 @@
 [Problem]
-Name = soybean_HLCT_2013
+Name = soybean_HLCT_2003
 
 [TimeLoop]
 DtInitial =  86400 # [s]
@@ -30,4 +30,4 @@ N =  1.1457
 Ks = 1488 # [cm/d] 	
 
 [Climate]
-CSVFile = input/soybean_precipitation_2013_kc.csv # [cm day-1]
+CSVFile = input/soybean_precipitation_2003.csv # [cm day-1]

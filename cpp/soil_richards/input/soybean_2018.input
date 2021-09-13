@@ -1,5 +1,5 @@
 [Problem]
-Name = test
+Name = soybean_HLCT_2018
 
 [TimeLoop]
 DtInitial =  86400 # [s]
@@ -8,9 +8,9 @@ MaxTimeStepSize = 3600 # an hour [s]
 # CheckTimes = 17280 43200 
 
 [Soil.Grid]
-LowerLeft = -0.04 -0.04 -.15
-UpperRight = 0.04  0.04  0.
-Cells = 8 8 15
+LowerLeft = 0.185 0.03 0.
+UpperRight = -0.185 -0.03 -1.60.
+Cells = 37 6 160 # 37*6*160
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off
@@ -30,4 +30,4 @@ N =  1.1457
 Ks = 1488 # [cm/d] 	
 
 [Climate]
-CSVFile = input/test.csv # [cm day-1]
+CSVFile = input/soybean_precipitation_2018.csv # [cm day-1]
