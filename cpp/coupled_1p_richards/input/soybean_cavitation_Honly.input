@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [Soil.Grid]
-Cells = 18 3 75 # 37*6*150
+Cells = 18 3 80 # 37*6*160
 Periodic = true true false
 Overlap = 1 
 
@@ -18,18 +18,18 @@ Overlap = 1
 Periodic = true true false
 Overlap = 1
 
-#[Soil.IC]
-#P = -150 -300
-#Z = -1.5 0. 
+[Soil.IC]
+P = -140 -300
+Z = -1.6 0. 
+
+[Newton]
+MaxRelativeShift = 1.e-6 
 
 [Control]
 b = 10193.68 # [cm] pressure head
 c = 0.7 # [1] cavitation ON
 
-[Newton]
-MaxRelativeShift = 1.e-6
-
-[Restart]
-Time = 3.348e+06
-SoilFile = ./results_soybean_cavitation_Honly/soybean_cavitation_Honly-00929.vtu
-RootFile = ./results_soybean_cavitation_Honly/soybean_cavitation_Honly-00929.vtp
+#[Restart]
+#Time = 3.348e+06
+#SoilFile = ./results_soybean_cavitation_Honly/soybean_cavitation_Honly-00929.vtu
+#RootFile = ./results_soybean_cavitation_Honly/soybean_cavitation_Honly-00929.vtp
