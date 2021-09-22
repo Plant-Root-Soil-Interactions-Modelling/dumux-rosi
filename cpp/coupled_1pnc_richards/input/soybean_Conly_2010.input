@@ -1,7 +1,7 @@
 [Problem]
 Name = soybean_Conly_2010
 RootName = ../roots_1pnc/input/soybean_2010.input
-SoilName = ../soil_richards/input/soybean_HLCT_2010.input
+SoilName = ../soil_richards/input/soybean_2010.input
 
 [TimeLoop]
 TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2018_154days.dgf
+File =  ../../../grids/Moraesetal_2020_dx_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -19,21 +19,21 @@ krIdx = 6
 kxIdx = 5
 Grow = true
 
+[Grid]
+Periodic = true true false
+Overlap = 1
+
 [RootSystem.Leaf]
-CSVFile = input/Moraesetal2020_volume.csv
+CSVFile = input/Moraesetal2020_dx_volume.csv
 
 [Soil.Grid]
 Cells = 37 6 160 # 37*6*160
 Periodic = true true false
 Overlap = 1 
 
-[Grid]
-Periodic = true true false
-Overlap = 1
-
 [Soil.IC]
 P = -140 -300
-Z = -1.6 0. 
+Z = -1.6 0.
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -48,6 +48,9 @@ b = 1.e8 # [cm] pressure head
 c = 200 # [1] 
 sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
+
+#[Newton]
+#MaxRelativeShift = 1.e-6
 
 #[Restart]
 #Time = 9.61927e+06

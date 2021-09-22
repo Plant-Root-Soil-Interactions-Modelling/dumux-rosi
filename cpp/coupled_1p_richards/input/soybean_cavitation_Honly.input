@@ -26,8 +26,8 @@ Overlap = 1
 b = 10193.68 # [cm] pressure head
 c = 0.7 # [1] cavitation ON
 
-#[Newton]
-#MaxRelativeShift = 1.e-6
+[Newton]
+MaxRelativeShift = 1.e-6
 
 [Restart]
 Time = 3.348e+06

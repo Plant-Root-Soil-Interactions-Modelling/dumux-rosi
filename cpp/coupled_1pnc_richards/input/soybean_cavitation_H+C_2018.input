@@ -1,0 +1,49 @@
+[Problem]
+Name = soybean_cavitation_H+C_2018
+RootName = ../roots_1pnc/input/soybean_2018.input
+SoilName = ../soil_richards/input/soybean_2018.input
+
+[TimeLoop]
+TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
+DtInitial = 360 # [s]
+PeriodicCheckTimes = 3600
+MaxTimeStepSize = 3600
+
+[Soil.Grid]
+Cells = 37 6 160 # 37*6*160
+Periodic = true true false
+Overlap = 1 
+
+[Grid]
+Periodic = true true false
+Overlap = 1
+
+[Soil.IC]
+P = -140 -300
+Z = -1.6 0.
+
+[Control]
+cD = 0 # 0 -> interaction between pressure and chemical regulation
+CritCollarP = -100000 # pressure, when to switch to dirichlet
+CritCollarPAlpha = -8500 # for alpha
+CritTipP = -7500 # when production starts
+ProductionRate = 3.26e-16 # [mol kg-1 Pa-1 s-1]
+ProductionAge = 200 # [day]
+ProductionGrowth = true
+Decay = 0.693 # [day-1]
+b = 10193.68 # [cm] pressure head
+c = 0.7 # [1] cavitation ON
+sH = 1e-4 # [cm-1]
+sC = 5e+10 # [cm3/mol]
+
+[RootSystem.Leaf]
+CSVFile = input/Moraesetal2020_dx_volume.csv
+
+#[Newton]
+#MaxRelativeShift = 1.e-4
+
+#[Restart]
+#Time = 1.1996e+07
+#mL = 1.94575e-12 # value of mL at last time step
+#SoilFile = ./results_soybean_cavitation_H+C/soybean_cavitation_H+C-03332.vtu
+#RootFile = ./results_soybean_cavitation_H+C/soybean_cavitation_H+C-03332.vtp

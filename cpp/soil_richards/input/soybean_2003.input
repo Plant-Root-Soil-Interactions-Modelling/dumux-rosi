@@ -1,0 +1,33 @@
+[Problem]
+Name = soybean_HLCT_2003
+
+[TimeLoop]
+DtInitial =  86400 # [s]
+TEnd = 86400 # a day [s] 
+MaxTimeStepSize = 3600 # an hour [s] 
+# CheckTimes = 17280 43200 
+
+[Soil.Grid]
+LowerLeft = 0.185 0.03 0.
+UpperRight = -0.185 -0.03 -1.60.
+Cells = 37 6 160 # 37*6*160
+
+[Soil.BC.Top]
+Type = 4 # atmospheric BC with surface run off
+
+[Soil.BC.Bot]
+Type = 5 # free drainage
+
+#[Soil.IC]
+#P = -200
+
+[Soil.VanGenuchten] 
+# Hollabrunn_Convectional Tillage
+Qr = 0.0045	 
+Qs = 0.489
+Alpha =  0.1978# [1/cm] 
+N =  1.1457
+Ks = 1488 # [cm/d] 	
+
+[Climate]
+CSVFile = input/soybean_precipitation_2003.csv # [cm day-1]
