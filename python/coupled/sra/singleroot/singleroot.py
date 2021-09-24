@@ -178,6 +178,7 @@ for i in range(0, NT + 1):
     s.solve(dt)  # in modules/solverbase.py
 
     """ 3b. calculate net fluxes """
+    water_content = np.array(s.getWaterContent())
     new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
     for k, root_flux in soil_fluxes.items():
