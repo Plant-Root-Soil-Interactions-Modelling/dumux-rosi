@@ -137,6 +137,8 @@ out_times = []  # days
 psi_x_ = []
 psi_s_ = []
 sink_ = []
+collar_vfr = []
+sink_sum = []
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
@@ -207,6 +209,8 @@ for i in range(0, NT):
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
         sink_.append(fluxes.copy())
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
 
@@ -221,4 +225,7 @@ df2.to_excel(file2, index = False, header = False)
 file3 = 'results/sink_singleroot_sra_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
 df3.to_excel(file3, index = False, header = False)
+
+print(collar_vfr)
+print(sink_sum)
 

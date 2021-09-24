@@ -36,10 +36,10 @@ path = "results/"
 # labels = ["python"]
 
 # # """ DRY cylindric models """
-sink = ["sink_singleroot_sra_constkrkx_dry.xls", "sink_singleroot_cyl_constkrkx_dry.xls"]
-psi_x = ["psix_singleroot_sra_constkrkx_dry.xls", "psix_singleroot_cyl_constkrkx_dry.xls"]
-psi_interface = ["psiinterface_singleroot_sra_constkrkx_dry.xls", "psiinterface_singleroot_cyl_constkrkx_dry.xls"]
-labels = ["python sra", "python cylindrical"]
+# sink = ["sink_singleroot_sra_constkrkx_dry.xls", "sink_singleroot_cyl_constkrkx_dry.xls"]
+# psi_x = ["psix_singleroot_sra_constkrkx_dry.xls", "psix_singleroot_cyl_constkrkx_dry.xls"]
+# psi_interface = ["psiinterface_singleroot_sra_constkrkx_dry.xls", "psiinterface_singleroot_cyl_constkrkx_dry.xls"]
+# labels = ["python sra", "python cylindrical"]
 
 # """ WET """
 # sink = ["sink_singleroot_constkrkx_wet.xls", "sink_singleroot_sra_constkrkx_wet.xls"]
@@ -54,10 +54,10 @@ labels = ["python sra", "python cylindrical"]
 # labels = ["python"]
 
 # # """ WET cylindric models """
-# sink = ["sink_singleroot_sra_constkrkx_wet.xls", "sink_singleroot_cyl_constkrkx_wet.xls"]
-# psi_x = ["psix_singleroot_sra_constkrkx_wet.xls", "psix_singleroot_cyl_constkrkx_wet.xls"]
-# psi_interface = ["psiinterface_singleroot_sra_constkrkx_wet.xls", "psiinterface_singleroot_cyl_constkrkx_wet.xls"]
-# labels = ["python sra", "python cylindrical"]
+sink = ["sink_singleroot_sra_constkrkx_wet.xls", "sink_singleroot_cyl_constkrkx_wet.xls"]
+psi_x = ["psix_singleroot_sra_constkrkx_wet.xls", "psix_singleroot_cyl_constkrkx_wet.xls"]
+psi_interface = ["psiinterface_singleroot_sra_constkrkx_wet.xls", "psiinterface_singleroot_cyl_constkrkx_wet.xls"]
+labels = ["python sra", "python cylindrical"]
 
 fig, ax = plt.subplots(1, 3, figsize = (15, 10))
 ax[0].set_title("$\psi_x$")

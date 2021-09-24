@@ -39,9 +39,9 @@ alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -5000  # -5000 (dry), -310 (wet)
+p_top = -300  # -5000 (dry), -300 (wet)
 p_bot = -200  #
-sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 
@@ -58,9 +58,9 @@ split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
 sim_time = 0.51  # 0.65  # 0.25  # [day]
-dt = 2 / (24 * 3600)  # time step [day], 120 schwankt stark
+dt = 20 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 30 * 1 * 60  # for output and results, skip iteration
+skip = 3 * 1 * 60  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -126,6 +126,8 @@ out_times = []  # days
 psi_x_ = []
 psi_s_ = []
 sink_ = []
+collar_vfr = []
+sink_sum = []
 
 water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
@@ -136,29 +138,39 @@ net_flux = np.zeros(cell_volumes.shape)
 
 for i in range(0, NT + 1):
 
-    wall_iteration = timeit.default_timer()
-
     """ 1. xylem model """
-    wall_root_model = timeit.default_timer()
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    rsx_old = rsx.copy()
-    soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-    rx = r.solve_dirichlet(0., [collar], 0., rsx, cells = False, soil_k = soil_k)
-    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
-    wall_root_model = timeit.default_timer() - wall_root_model
+    soil_k = np.divide(vg.hydraulic_conductivity(rsx.copy(), soil), rs.radii)  # only valid for homogenous soil
+
+    rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k.copy())
+    # rx = r.solve(0., -100, 0., rsx, False, wilting_point, soil_k = soil_k.copy())
+
+    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
+    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
+
+    err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
+
+    if err > 1.e-10:
+        print("error" , err)
+        print(rx)
+        print(np.min(rx), np.max(rx))
+        print(np.min(rsx), np.max(rsx))
+        print(np.min(soil_k), np.max(soil_k))
+        print(np.min(proposed_inner_fluxes), np.max(proposed_inner_fluxes))
+        print(collar_flux)
+        ddd
 
     """ 2. local soil models """
-    wall_rhizo_models = timeit.default_timer()
-
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
+    # print(np.min(proposed_outer_fluxes), np.max(proposed_outer_fluxes), np.sum(proposed_outer_fluxes))
     rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # left and right neumann fluxes
     realized_inner_fluxes = rs.get_inner_fluxes()  # identical for mode = "dumux"
 
-    wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
+    err = np.linalg.norm(np.array(proposed_inner_fluxes) - np.array(realized_inner_fluxes))
+    if err > 1.e-15:
+        print("relative error" , err)
 
     """ 3a. macroscopic soil model """
-    wall_soil_model = timeit.default_timer()
-
     water_content = np.array(s.getWaterContent())  # theta per cell [1]
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
@@ -166,23 +178,24 @@ for i in range(0, NT + 1):
     s.solve(dt)  # in modules/solverbase.py
 
     """ 3b. calculate net fluxes """
-    water_content = np.array(s.getWaterContent())
     new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
     for k, root_flux in soil_fluxes.items():
         net_flux[k] -= root_flux * dt
+        # net_flux[k] = 0  # same as SRA approach (currently no-flux at boundary)
     soil_water = new_soil_water
-
-    wall_soil_model = timeit.default_timer() - wall_soil_model
-    wall_iteration = timeit.default_timer() - wall_iteration
 
     """ remember results ... """
     if i % skip == 0:
-        print(i / skip)
+        fluxes = np.array(proposed_inner_fluxes)
+        collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
+        print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
         rx_ = rx[1:]
         psi_x_.append(rx_)
-        psi_s_.append(np.array(rsx_old))
-        sink_.append(np.array(rs.get_inner_fluxes()))
+        psi_s_.append(np.array(rsx.copy()))
+        sink_.append(fluxes.copy())
+        collar_vfr.append(collar_flux)  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        sink_sum.append(np.sum(fluxes))
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
@@ -200,3 +213,5 @@ file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
 df3.to_excel(file3, index = False, header = False)
 
+print(collar_vfr)
+print(sink_sum)
