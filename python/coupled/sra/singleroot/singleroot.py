@@ -32,22 +32,21 @@ Parameters
 name = "singleroot"  # name to export resutls
 min_b = [-0.5, -0.5, -50.]
 max_b = [0.5, 0.5, 0.]
-cell_number = [1, 1, 50]  # # full is very slow
+cell_number = [1, 1, 100]  # # full is very slow
 periodic = False  # check data first
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -300  # -5000 (dry), -310 (wet)
+p_top = -5000  # -5000 (dry), -310 (wet)
 p_bot = -200  #
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 
 """ root system """
-rs_age = 0.  # in case of age dep conductivitities
-# we are using -8000 dirichle
-trans = 0.5  # * 15 * 75  # average per day [cm3 /day] (sinusoidal),
+collar = -8000  # dirichlet
 radius = 0.05  # cm
 wilting_point = -15000
 
@@ -58,10 +57,10 @@ logbase = 0.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 1.  # 0.65  # 0.25  # [day]
-dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
+sim_time = 0.51  # 0.65  # 0.25  # [day]
+dt = 2 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 6 * 60  # for output and results, skip iteration
+skip = 30 * 1 * 60  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -69,7 +68,6 @@ Initialize macroscopic soil model (Dumux binding)
 s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
-# s.setHomogeneousIC(initial_sp)
 s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
@@ -79,7 +77,6 @@ s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
-print()
 
 """ 
 Initialize xylem model 
@@ -141,17 +138,14 @@ for i in range(0, NT + 1):
 
     wall_iteration = timeit.default_timer()
 
-    t = i * dt  # current simulation time
-
     """ 1. xylem model """
     wall_root_model = timeit.default_timer()
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
+    rsx_old = rsx.copy()
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-    # rx = r.solve(rs_age + t, -trans, 0., rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
-    rx = r.solve_dirichlet(rs_age + t, [-8000.], 0., rsx, cells = False, soil_k = soil_k)
-    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
+    rx = r.solve_dirichlet(0., [collar], 0., rsx, cells = False, soil_k = soil_k)
+    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
     wall_root_model = timeit.default_timer() - wall_root_model
-    # print(proposed_inner_fluxes)
 
     """ 2. local soil models """
     wall_rhizo_models = timeit.default_timer()
@@ -178,62 +172,31 @@ for i in range(0, NT + 1):
     for k, root_flux in soil_fluxes.items():
         net_flux[k] -= root_flux * dt
     soil_water = new_soil_water
-    wall_soil_model = timeit.default_timer() - wall_soil_model
 
+    wall_soil_model = timeit.default_timer() - wall_soil_model
     wall_iteration = timeit.default_timer() - wall_iteration
 
     """ remember results ... """
     if i % skip == 0:
         print(i / skip)
+        rx_ = rx[1:]
+        psi_x_.append(rx_)
+        psi_s_.append(np.array(rsx_old))
+        sink_.append(np.array(rs.get_inner_fluxes()))
 
-        rsx_ = 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, i convert to per segment
-        psi_x_.append(rsx_)
+print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-        psi_s = rs.get_inner_heads()
-        psi_s_.append(psi_s)
+""" xls file output """
 
-        # sink_.append(np.array(rs.get_inner_fluxes()))
-        sink_.append(proposed_inner_fluxes)
+file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
+df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
+df1.to_excel(file1, index = False, header = False)
 
-""" plots and output """
-if rank == 0:
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'
+df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
+df2.to_excel(file2, index = False, header = False)
 
-    # np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
-    # sink1d = np.array(sink1d)
-    # np.save(name + "_sink", sink1d)
-    #
-    # rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]
-    # soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-    # rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)
-    # fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)
-    # # ana = pb.SegmentAnalyser(r.rs)
-    # # ana.addData("rsx", rsx)
-    # # ana.addData("rx", rx)
-    # # ana.addData("fluxes", fluxes)
-    # # vp.plot_roots(ana, "rsx")  # VTK vizualisation
-    # # vp.plot_roots(ana, "fluxes")  # VTK vizualisation
-    #
-    # crit_min_i, crit_max_i, crit_min_o, crit_max_o = rs.plot_cylinders()
-    # print(crit_min_i)
-    # rs.plot_cylinder(crit_min_i)
-    # print(rs.radii[crit_min_i])
-    #
-    # plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
-    # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
-    #
-    # # vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
-
-    # # convert your array into a dataframe
-    file1 = 'psix_singleroot_constkrkx_wet.xls'
-    df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-    df1.to_excel(file1, index = False)
-
-    file2 = 'psiinterface_singleroot_constkrkx_wet.xls'
-    df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-    df2.to_excel(file2, index = False)
-
-    file3 = 'sink_singleroot_constkrkx_wet2.xls'
-    df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-    df3.to_excel(file3, index = False)
+file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
+df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
+df3.to_excel(file3, index = False, header = False)
 
