@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 opens and vtk plots the rsml
 """
 
-file_name = "../../grids/RootSystem8.rsml"
+file_name = "../../grids/RootSys_verysimple.rsml"
 
 """ root problem """
 r = XylemFluxPython(file_name)
