@@ -5,7 +5,7 @@ SoilName = ../soil_richards/input/soybean_2018.input
 
 [TimeLoop]
 TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
-DtInitial = 360 # [s]
+DtInitial = 720 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
@@ -50,10 +50,10 @@ sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
 
 #[Newton]
-#MaxRelativeShift = 1.e-5
+#MaxRelativeShift = 1.e-4
 
 #[Restart]
-#Time = 376293
-#mL = 4.6198e-10 # value of mL at last time step
-#SoilFile = ./results_soybean_Conly_2018_1/soybean_Conly_2018_1-00034.vtu
-#RootFile = ./results_soybean_Conly_2018_1/soybean_Conly_2018_1-00034.vtp
+#Time = 845550 
+#mL = 1.0688e-08 # value of mL at last time step
+#SoilFile = ./results_soybean_Conly_2018_1/soybean_Conly_2018_1-00163.vtu
+#RootFile = ./results_soybean_Conly_2018_1/soybean_Conly_2018_1-00163.vtp
