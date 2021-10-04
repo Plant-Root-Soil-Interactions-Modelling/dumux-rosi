@@ -8,9 +8,9 @@ MaxTimeStepSize = 3600 # an hour [s]
 # CheckTimes = 17280 43200 
 
 [Soil.Grid]
-LowerLeft = 0.185 0.03 0.
-UpperRight = -0.185 -0.03 -1.5
-Cells = 37 6 150 # 37*6*150
+LowerLeft = 0.185 0.025 0.
+UpperRight = -0.185 -0.025 -1.5
+Cells = 37 5 150 # 37*5*150
 
 [Soil.BC.Top]
 Type = 4 # atmospheric BC with surface run off
@@ -25,7 +25,7 @@ Type = 5 # free drainage
 # Hollabrunn_Convectional Tillage
 Qr = 0.0045	 
 Qs = 0.489
-Alpha =  0.1978# [1/cm] 
+Alpha =  0.1978 # [1/cm] 
 N =  1.1457
 Ks = 1488 # [cm/d] 	
 
