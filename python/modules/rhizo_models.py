@@ -90,6 +90,7 @@ class RhizoMappedSegments(pb.MappedSegments):
             cyl.initialize()
             lb = self.logbase
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+            print("dx0", a_in, a_out, 0.5 * (points[1] - points[0]))
             cyl.createGrid1d(points)
             cyl.setHomogeneousIC(x)  # cm pressure head
             cyl.setVGParameters([self.soil])
@@ -371,10 +372,11 @@ class RhizoMappedSegments(pb.MappedSegments):
             col_i = int(-z / zz * 255.)
             c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
             plt.plot(x_, y_, alpha = 0.1, c = c_)
+
         plt.xlabel("distance [cm], deeper roots are yellow")
         plt.ylabel("matric potential [cm]")
-        plt.xlim([0., 1. ])
-        plt.ylim([-15000, 0. ])
+        plt.xlim([0.05, 0.6])
+        plt.ylim([-8500, 0. ])
         plt.show()
         return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 

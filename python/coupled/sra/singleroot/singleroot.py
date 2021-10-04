@@ -39,9 +39,9 @@ alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -300  # -5000 (dry), -300 (wet)
+p_top = -5000  # -5000 (dry), -300 (wet)
 p_bot = -200  #
-sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_dryHR"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 
@@ -158,7 +158,6 @@ for i in range(0, NT + 1):
         print(np.min(soil_k), np.max(soil_k))
         print(np.min(proposed_inner_fluxes), np.max(proposed_inner_fluxes))
         print(collar_flux)
-        ddd
 
     """ 2. local soil models """
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
@@ -201,6 +200,8 @@ for i in range(0, NT + 1):
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
 """ xls file output """
+
+rs.plot_cylinders()
 
 file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))

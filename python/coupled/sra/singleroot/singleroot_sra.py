@@ -67,9 +67,9 @@ alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -300  # -5000 (dry), -300 (wet)
+p_top = -5000  # -5000 (dry), -300 (wet)
 p_bot = -200  #
-sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
