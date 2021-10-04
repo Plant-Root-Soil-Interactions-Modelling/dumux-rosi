@@ -8,7 +8,10 @@ from scipy.interpolate import RegularGridInterpolator
 def open_sra_lookup(filename):
     """ opens the look from a file """
     sra_table = np.load(filename + ".npy")
-    x = np.load(filename + "_.npy", allow_pickle = True)
+    
+    print("shape", sra_table.shape)
+    
+    x = np.load(filename + "_.npy", allow_pickle=True)
     kx_ = x[0]
     sx_ = x[1]
     inner_ = x[2]

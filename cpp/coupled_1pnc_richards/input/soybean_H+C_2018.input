@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2020_154days.dgf
+File =  ../../../grids/Moraesetal_2020_lmax_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4

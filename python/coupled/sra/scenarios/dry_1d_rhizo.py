@@ -155,13 +155,19 @@ for i in range(0, NT):
     """ 1. xylem model """
     wall_root_model = timeit.default_timer()
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]    
-    soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
+    # soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
+    if i > 0:
+        soil_k = rs.get_soil_k(rx)
+    else:
+        soil_k = []
+    
     if rank == 0:
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
         proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]    
     else: 
         proposed_inner_fluxes = None        
-        rx = None     
+        rx = None         
+    rx = comm.bcast(rx, root=0)  # needed by rs.get_soil_k
     wall_root_model = timeit.default_timer() - wall_root_model
 
     """ 2. local soil models """
@@ -170,8 +176,7 @@ for i in range(0, NT):
     if rs.mode == "dumux":
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)        
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)        
-    elif rs.mode == "dumux_exact":
-        rx = comm.bcast(rx, root=0)
+    elif rs.mode == "dumux_exact": 
         soil_k = comm.bcast(soil_k, root=0)         
         rs.solve(dt, rx, proposed_outer_fluxes, rsx, soil_k)
     realized_inner_fluxes = rs.get_inner_fluxes() 
@@ -183,7 +188,7 @@ for i in range(0, NT):
     water_content = np.array(s.getWaterContent())
     water_content = comm.bcast(water_content, root=0) 
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
+    soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
     s.solve(dt)  # in solverbase.py     
     
@@ -269,5 +274,5 @@ if rank == 0:
     # plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
     # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
     
-    vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation    
+   #  vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation    
 

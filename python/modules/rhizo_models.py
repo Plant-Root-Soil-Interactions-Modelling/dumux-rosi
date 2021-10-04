@@ -58,7 +58,9 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.seg_length = self.segLength()
         self.soil = soil
         self.vg_soil = vg.Parameters(soil)
+        vg.create_mfp_lookup(self.vg_soil, -1.e5, 1000)
         self.cyls = []
+        self.dx2 = []
         if self.mode == "dumux":
             for i in eidx:
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False))
@@ -90,8 +92,8 @@ class RhizoMappedSegments(pb.MappedSegments):
             cyl.initialize()
             lb = self.logbase
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
-            print("dx0", a_in, a_out, 0.5 * (points[1] - points[0]))
             cyl.createGrid1d(points)
+            self.dx2.append(0.5 * (points[1] - points[0]))
             cyl.setHomogeneousIC(x)  # cm pressure head
             cyl.setVGParameters([self.soil])
             cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
@@ -154,6 +156,25 @@ class RhizoMappedSegments(pb.MappedSegments):
         else:
             print("RhizoMappedSegments.get_inner_heads: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+
+    def get_soil_k(self, rx):
+        """ TODO """
+        soil_k = np.zeros((len(self.cyls),))
+        if self.mode.startswith("dumux"):
+            for i, idx in enumerate(self.eidx):  # run cylindrical models
+                rsx = self.cyls[i].getInnerHead()
+                nidx = idx + 1  # segment index+1 = node index
+                try:
+                    soil_k[i] = ((vg.fast_mfp[self.vg_soil](rsx) - vg.fast_mfp[self.vg_soil](rx[nidx])) / (rsx - rx[nidx])) / self.dx2[i]
+                except:
+                    print(rsx, rx[nidx])
+        else:
+            print("RhizoMappedSegments.get_soil_k: Warning, mode {:s} not implemented or unknown".format(self.mode))
+        return self._map(self._flat0(comm.gather(soil_k, root = 0)))
+
+    def get_dx2(self):
+        """ TODO doc me AND only for mode="dumux" yet (set in initialize)"""
+        return self._map(self._flat0(comm.gather(self.dx2, root = 0)))
 
     def get_inner_fluxes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
@@ -372,7 +393,6 @@ class RhizoMappedSegments(pb.MappedSegments):
             col_i = int(-z / zz * 255.)
             c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
             plt.plot(x_, y_, alpha = 0.1, c = c_)
-
         plt.xlabel("distance [cm], deeper roots are yellow")
         plt.ylabel("matric potential [cm]")
         plt.xlim([0.05, 0.6])
