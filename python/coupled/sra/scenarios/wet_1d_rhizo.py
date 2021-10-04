@@ -34,9 +34,8 @@ min_b = [-7.5, -37.5, -110.]
 max_b = [7.5, 37.5, 0.]
 cell_number = [1, 1, 55]  # # full is very slow
 periodic = True  # check data first
-fname = "../../../../grids/RootSystem_verysimple2.rsml" 
-
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
+fname = "../../../../grids/RootSystem_verysimple2.rsml" 
 
 name = "wet_1d_rhizo"  # name to export resutls
 
@@ -83,7 +82,6 @@ s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
-print()
 
 """ 
 Initialize xylem model 
@@ -92,16 +90,13 @@ rs = RhizoMappedSegments(fname, wilting_point, NC, logbase, mode)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments 
-
 # init_conductivities_growth(r, age_dependent, 0.05)  # age_dependent is a boolean, root conductivies are given in the file src/python_modules/root_conductivities.py
 init_conductivities_scenario_jan(r)
-
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions 
 rs.set_xylem_flux(r)  
 
 """ sanity checks """
-
 # r.plot_conductivities()
 types = r.rs.subTypes
 types = (np.array(types) == 12) * 1  # all 0, only 12 are laterals
@@ -155,13 +150,19 @@ for i in range(0, NT):
     """ 1. xylem model """
     wall_root_model = timeit.default_timer()
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]    
-    soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
+    # soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
+    if i > 0:
+        soil_k = rs.get_soil_k(rx)
+    else:
+        soil_k = []
+        
     if rank == 0:
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
         proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]    
     else: 
         proposed_inner_fluxes = None        
         rx = None     
+    rx = comm.bcast(rx, root=0)  # needed by rs.get_soil_k
     wall_root_model = timeit.default_timer() - wall_root_model
 
     """ 2. local soil models """
@@ -170,8 +171,7 @@ for i in range(0, NT):
     if rs.mode == "dumux":
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)        
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)        
-    elif rs.mode == "dumux_exact":
-        rx = comm.bcast(rx, root=0)
+    elif rs.mode == "dumux_exact": 
         soil_k = comm.bcast(soil_k, root=0)         
         rs.solve(dt, rx, proposed_outer_fluxes, rsx, soil_k)
     realized_inner_fluxes = rs.get_inner_fluxes() 
@@ -183,7 +183,7 @@ for i in range(0, NT):
     water_content = np.array(s.getWaterContent())
     water_content = comm.bcast(water_content, root=0) 
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
+    soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
     s.solve(dt)  # in solverbase.py     
     
@@ -248,7 +248,6 @@ if rank == 0:
     sink1d = np.array(sink1d)
     np.save(name + "_sink", sink1d)
 
-    # 
 #    
 #     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]    
 #     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil

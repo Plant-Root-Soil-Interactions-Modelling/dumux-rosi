@@ -43,7 +43,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
         self.last_dt = 0.
 
-    def initialize(self, soil, x, eidx = None):
+    def initialize(self, soil, x, eidx=None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -58,10 +58,12 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.seg_length = self.segLength()
         self.soil = soil
         self.vg_soil = vg.Parameters(soil)
+        vg.create_mfp_lookup(self.vg_soil, -1.e5, 1000) 
         self.cyls = []
+        self.dx2 = []
         if self.mode == "dumux":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False))
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False))                
         elif self.mode == "dumux_exact":
             for i in eidx:
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True))
@@ -78,7 +80,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         else:
             raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
 
-    def initialize_dumux_(self, i, x, exact, nc = False):
+    def initialize_dumux_(self, i, x, exact, nc=False):
         """ Dumux RichardsCylFoam solver"""
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
@@ -87,10 +89,11 @@ class RhizoMappedSegments(pb.MappedSegments):
                 cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
             else:
                 cyl = RichardsNoMPIWrapper(RichardsCylFoam())  # only works for RichardsCylFoam compiled without MPI
-            cyl.initialize()
+            cyl.initialize()            
             lb = self.logbase
-            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base=lb)
             cyl.createGrid1d(points)
+            self.dx2.append(0.5 * (points[1] - points[0]))
             cyl.setHomogeneousIC(x)  # cm pressure head
             cyl.setVGParameters([self.soil])
             cyl.setOuterBC("fluxCyl", 0.)  # [cm/day]
@@ -128,7 +131,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         a_out = self.outer_radii[i]
         if a_in < a_out:
             lb = self.logbase
-            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base=lb)
             grid = FVGrid1Dcyl(points)
             cyl = rich.FVRichards1D(grid, self.soil)
             cyl.x0 = np.ones((self.NC - 1,)) * x
@@ -141,7 +144,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         """ we need XylemFlux for the kr and kx call back functions (for python)"""
         self.rs = rs
 
-    def get_inner_heads(self, rx = None):
+    def get_inner_heads(self, rx=None):
         """ matric potential at the root surface interface [cm]"""
         rsx = np.zeros((len(self.cyls),))
         if self.mode.startswith("dumux"):
@@ -152,7 +155,26 @@ class RhizoMappedSegments(pb.MappedSegments):
                 rsx[i] = cyl.get_inner_head()  # [cm]
         else:
             print("RhizoMappedSegments.get_inner_heads: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+        return self._map(self._flat0(comm.gather(rsx, root=0)))  # gathers and maps correctly
+
+    def get_soil_k(self, rx):
+        """ TODO """
+        soil_k = np.zeros((len(self.cyls),))
+        if self.mode.startswith("dumux"):
+            for i, idx in enumerate(self.eidx):  # run cylindrical models
+                rsx = self.cyls[i].getInnerHead()        
+                nidx = idx + 1  # segment index+1 = node index                                
+                try:
+                    soil_k[i] = ((vg.fast_mfp[self.vg_soil](rsx) - vg.fast_mfp[self.vg_soil](rx[nidx])) / (rsx - rx[nidx])) / self.dx2[i]
+                except:
+                    print(rsx, rx[nidx])                
+        else: 
+            print("RhizoMappedSegments.get_soil_k: Warning, mode {:s} not implemented or unknown".format(self.mode))
+        return self._map(self._flat0(comm.gather(soil_k, root=0)))
+    
+    def get_dx2(self):
+        """ TODO doc me AND only for mode="dumux" yet (set in initialize)"""
+        return self._map(self._flat0(comm.gather(self.dx2, root=0)))
 
     def get_inner_fluxes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
@@ -167,7 +189,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                 fluxes[i] = cyl.get_inner_flux() * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.last_dt  # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
         else:
             print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
+        return self._map(self._flat0(comm.gather(fluxes, root=0)))  # gathers and maps correctly
 
     def get_inner_concentrations(self):  # TODO
         """ solute concentration at the root surface interface [g / cm3]"""
@@ -178,7 +200,7 @@ class RhizoMappedSegments(pb.MappedSegments):
             pass  # currently zero flux !!!!!!
         else:
             print("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+        return self._map(self._flat0(comm.gather(rsx, root=0)))  # gathers and maps correctly
 
     def get_inner_mass_fluxes(self):  # TODO
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
@@ -189,7 +211,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                 fluxes[i] = -float(cyl.getInnerFlux(1)) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
         else:
             print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
+        return self._map(self._flat0(comm.gather(fluxes, root=0)))  # gathers and maps correctly
 
     def solve(self, dt, *argv):
         """ set bc for cyl and solves it """
@@ -314,14 +336,14 @@ class RhizoMappedSegments(pb.MappedSegments):
                 volumes[i] = cyl_water
         else:
             raise Exception("RhizoMappedSegments.get_water_volume: unknown solver {}".format(self.mode))
-        return self._map(self._flat0(comm.gather(volumes, root = 0)))  # gathers and maps correctly
+        return self._map(self._flat0(comm.gather(volumes, root=0)))  # gathers and maps correctly
 
     def _map(self, x):
         """Converts @param x to a numpy array and maps it to the right indices                 """
-        indices = self._flat0(comm.gather(self.eidx, root = 0))  # segment indices
+        indices = self._flat0(comm.gather(self.eidx, root=0))  # segment indices
         if indices:  # only for rank 0 it is not empty
             assert len(indices) == len(x), "RhizoMappedSegments._map: indices and values have different length"
-            p = np.zeros((len(x),), dtype = np.float64)
+            p = np.zeros((len(x),), dtype=np.float64)
             for i in range(0, len(indices)):  #
                 p[indices[i]] = x[i]
             return p
@@ -344,13 +366,13 @@ class RhizoMappedSegments(pb.MappedSegments):
         SMALL_SIZE = 22
         MEDIUM_SIZE = 22
         BIGGER_SIZE = 22
-        plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
-        plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
-        plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
-        plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-        plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-        plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
-        plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
+        plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+        plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
+        plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+        plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+        plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
         # plt.xlim([0., 0.2 ])
         plt.plot(x_, y_)
         plt.xlabel("distance [cm]")
@@ -370,7 +392,7 @@ class RhizoMappedSegments(pb.MappedSegments):
             z = self.nodes[j].z
             col_i = int(-z / zz * 255.)
             c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
-            plt.plot(x_, y_, alpha = 0.1, c = c_)
+            plt.plot(x_, y_, alpha=0.1, c=c_)
         plt.xlabel("distance [cm], deeper roots are yellow")
         plt.ylabel("matric potential [cm]")
         plt.xlim([0., 1. ])
@@ -390,9 +412,9 @@ def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
     @param potential_trans    function in t stating the potential transpiration [cm3/day]
     """
     fig, ax1 = plt.subplots()
-    ax1.plot(t, potential_trans(t), 'k', label = "potential transpiration")  # potential transpiration
-    ax1.plot(t, -np.array(soil_uptake), 'g', label = "soil uptake")  # actual transpiration  according to soil model
-    ax1.plot(t, -np.array(root_uptake), 'r:', label = "root system uptake")  # actual transpiration according root model
+    ax1.plot(t, potential_trans(t), 'k', label="potential transpiration")  # potential transpiration
+    ax1.plot(t, -np.array(soil_uptake), 'g', label="soil uptake")  # actual transpiration  according to soil model
+    ax1.plot(t, -np.array(root_uptake), 'r:', label="root system uptake")  # actual transpiration according root model
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
     ax2 = ax1.twinx()
@@ -408,16 +430,16 @@ def plot_info(x_, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_r
     """ 2x2 plot with additional information """
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     ax1.set_title("Water amount")
-    ax1.plot(x_, np.array(water_collar_cell), label = "water cell")
-    ax1.plot(x_, np.array(water_cyl), label = "water cylindric")
+    ax1.plot(x_, np.array(water_collar_cell), label="water cell")
+    ax1.plot(x_, np.array(water_cyl), label="water cylindric")
     ax1.legend()
     ax1.set_xlabel("Time (days)")
     ax1.set_ylabel("(cm3)")
     ax2.set_title("Pressure")
-    ax2.plot(x_, np.array(collar_sx), label = "soil at root collar")
-    ax2.plot(x_, np.array(min_sx), label = "min soil")
-    ax2.plot(x_, np.array(min_rx), label = "min xylem")
-    ax2.plot(x_, np.array(min_rsx), label = "min 1d at root surface")
+    ax2.plot(x_, np.array(collar_sx), label="soil at root collar")
+    ax2.plot(x_, np.array(min_sx), label="min soil")
+    ax2.plot(x_, np.array(min_rx), label="min xylem")
+    ax2.plot(x_, np.array(min_rsx), label="min 1d at root surface")
     ax2.set_ylim([-15000, 0])
     ax2.legend()
     ax2.set_xlabel("Time (days)")

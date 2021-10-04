@@ -67,9 +67,9 @@ alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -300  # -5000 (dry), -300 (wet)
+p_top = -5000  # -5000 (dry), -300 (wet)
 p_bot = -200  #
-sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
@@ -154,7 +154,7 @@ for i in range(0, NT):
     wall_fixpoint = timeit.default_timer()
 
     if i == 0:  # only first time
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells=False, soil_k=[])
         rx_old = rx.copy()
 
     err = 1.e6
@@ -174,7 +174,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells=False, soil_k=[])
         # rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem
@@ -209,22 +209,22 @@ for i in range(0, NT):
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
         sink_.append(fluxes.copy())
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
 
 file1 = 'results/psix_singleroot_sra_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index = False, header = False)
+df1.to_excel(file1, index=False, header=False)
 
 file2 = 'results/psiinterface_singleroot_sra_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index = False, header = False)
+df2.to_excel(file2, index=False, header=False)
 
 file3 = 'results/sink_singleroot_sra_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index = False, header = False)
+df3.to_excel(file3, index=False, header=False)
 
 print(collar_vfr)
 print(sink_sum)

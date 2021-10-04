@@ -44,6 +44,7 @@ p_bot = -200  #
 sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
+vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
 
 """ root system """
 collar = -8000  # dirichlet
@@ -52,7 +53,7 @@ wilting_point = -15000
 
 """ rhizosphere models """
 mode = "dumux"
-NC = 10  # dof+1
+NC = 10  # dof+1, i.e. dof = 9
 logbase = 0.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
@@ -133,20 +134,49 @@ water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root = 0)
+cell_volumes = comm.bcast(cell_volumes, root=0)
 net_flux = np.zeros(cell_volumes.shape)
 
 for i in range(0, NT + 1):
 
     """ 1. xylem model """
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    soil_k = np.divide(vg.hydraulic_conductivity(rsx.copy(), soil), rs.radii)  # only valid for homogenous soil
+    if i == 0:
+        rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells=False, soil_k=[])
+    
+    # exact 
+    
+    soil_k0 = np.zeros(rsx.shape)
+    for j in range(0, rsx.shape[0]):
+        hsoil = rsx[j]
+        hint = rx[j + 1]
+        soil_k0[j] = (vg.fast_mfp[soil](hsoil) - vg.fast_mfp[soil](hint)) / (hsoil - hint)    
+    soil_k00 = np.divide(soil_k0, rs.get_dx2())  # only valid for homogenous soil
+    soil_k000 = rs.get_soil_k(rx)
+        
+    # approx
+    soil_k1 = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.get_dx2())  # only valid for homogenous soil
+    
+    # approx2 rs.get_dx2()
+    soil_k2 = np.divide(vg.hydraulic_conductivity(rx[1:], soil), rs.get_dx2())  # only valid for homogenous soil
+    
+    # old     
+    soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
+        
+    if i % skip == 0:
+        print("exact  ", np.min(soil_k000), np.max(soil_k000))
+        print("exact  ", np.min(soil_k00), np.max(soil_k00))
+        print("approx1", np.min(soil_k1), np.max(soil_k1))
+        print("approx2", np.min(soil_k2), np.max(soil_k2))
+        print("old    ", np.min(soil_k), np.max(soil_k), "\n")
 
-    rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k.copy())
+    soil_k = soil_k00
+
+    rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells=False, soil_k=soil_k.copy())
     # rx = r.solve(0., -100, 0., rsx, False, wilting_point, soil_k = soil_k.copy())
 
-    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
-    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
+    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx=False, cells=False, soil_k=soil_k.copy())  # [cm3/day]
+    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil=soil_k.copy(), cells=False)
 
     err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
 
@@ -189,7 +219,7 @@ for i in range(0, NT + 1):
     """ remember results ... """
     if i % skip == 0:
         fluxes = np.array(proposed_inner_fluxes)
-        collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
+        collar_flux = r.collar_flux(0., rx, rsx, k_soil=soil_k, cells=False)
         print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
         rx_ = rx[1:]
         psi_x_.append(rx_)
@@ -204,15 +234,15 @@ print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s"
 
 file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index = False, header = False)
+df1.to_excel(file1, index=False, header=False)
 
 file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index = False, header = False)
+df2.to_excel(file2, index=False, header=False)
 
 file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index = False, header = False)
+df3.to_excel(file3, index=False, header=False)
 
 print(collar_vfr)
 print(sink_sum)

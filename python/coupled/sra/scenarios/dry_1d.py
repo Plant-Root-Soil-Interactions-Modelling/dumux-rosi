@@ -203,7 +203,7 @@ for i in range(0, NT):
         fluxes = None
          
     wall_soil = timeit.default_timer()  
-    fluxes = comm.bcast(r.sumSoilFluxes(fluxes), root=0)  # Soil part runs parallel
+    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root=0)  # Soil part runs parallel
     s.setSource(fluxes.copy())  # richards.py 
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
