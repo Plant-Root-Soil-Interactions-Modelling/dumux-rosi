@@ -33,17 +33,13 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
     rho            geometry factor [1]
     sp             soil van Genuchten parameters (type vg.Parameters)
     """
-
     k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
-
     # rho = outer_r / inner_r  # Eqn [5]
     rho2 = rho * rho  # rho squared
     # b = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho) - 0.5))  # Eqn [4]
     b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
-
     fun = lambda x: (inner_kr * rx + b * sx * k_soilfun(sx, x)) / (b * k_soilfun(sx, x) + inner_kr) - x
     rsx = fsolve(fun, rx)
-
     return rsx
 
 
@@ -67,24 +63,25 @@ alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -300  # -5000 (dry), -300 (wet)
+p_top = -5000  # -5000 (dry), -300 (wet)
 p_bot = -200  #
-sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
 sra_table_lookup = open_sra_lookup("../table_jan2")
 
 """ root system """
-collar = -8000  # dirichlet
+# collar = -8000  # dirichlet
+trans = 0.5  # 0.5
 radius = 0.05  # cm
 wilting_point = -15000
 
 """ simulation time """
-sim_time = 0.51  # 0.65  # 0.25  # [day]
+sim_time = 7  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 1 * 60  # for output and results, skip iteration
+skip = 1 * 60 * 6  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -139,6 +136,7 @@ psi_s_ = []
 sink_ = []
 collar_vfr = []
 sink_sum = []
+x_, y_ = [], []
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
@@ -150,11 +148,14 @@ rs_age = 0.
 
 for i in range(0, NT):
 
+    t = i * dt  # current simulation time
+
     wall_iteration = timeit.default_timer()
     wall_fixpoint = timeit.default_timer()
 
     if i == 0:  # only first time
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
+        # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     err = 1.e6
@@ -174,8 +175,8 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        # rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
+        # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem
         # print(err)
@@ -203,6 +204,13 @@ for i in range(0, NT):
     wall_iteration = timeit.default_timer() - wall_iteration
 
     """ remember results ... """
+    if i % (skip / 60) == 0:
+        x_.append(t)
+        sum_flux = 0.
+        for f in soil_fluxes.values():
+            sum_flux += f
+        y_.append(sum_flux)  # cm3/day
+
     if i % skip == 0:
         print(i / skip)
         rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
@@ -214,17 +222,21 @@ for i in range(0, NT):
 
 """ xls file output """
 
-file1 = 'results/psix_singleroot_sra_constkrkx' + sstr + '.xls'
+file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
 df1.to_excel(file1, index = False, header = False)
 
-file2 = 'results/psiinterface_singleroot_sra_constkrkx' + sstr + '.xls'
+file2 = 'results/psiinterface_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
 df2.to_excel(file2, index = False, header = False)
 
-file3 = 'results/sink_singleroot_sra_constkrkx' + sstr + '.xls'
+file3 = 'results/sink_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
 df3.to_excel(file3, index = False, header = False)
+
+file4 = 'results/transpiration_singleroot_sra_dynamic_constkrkx' + sstr
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+print(file4)
 
 print(collar_vfr)
 print(sink_sum)
