@@ -24,21 +24,17 @@ colors = prop_cycle.by_key()['color']
 path = "results/"
 
 # """ DRY cylindric models """
-sink = ["sink_singleroot_sra_dynamic_constkrkx_dry.xls", "sink_singleroot_cyl_dynamic_constkrkx_dry.xls"]
-psi_x = ["psix_singleroot_sra_dynamic_constkrkx_dry.xls", "psix_singleroot_cyl_dynamic_constkrkx_dry.xls"]
-psi_interface = ["psiinterface_singleroot_sra_dynamic_constkrkx_dry.xls", "psiinterface_singleroot_cyl_dynamic_constkrkx_dry.xls"]
-labels = ["python sra", "python cylindrical"]
+# sink = ["sink_singleroot_sra_dynamic_constkrkx_dry.xls", "sink_singleroot_cyl_dynamic_constkrkx_dry.xls"]
+
+sink = ["sink_singleroot_sra_dynamic_constkrkx_dry.xls", "sink_singleroot_sra_dynamicA_constkrkx_dry.xls"]
 
 # """ WET cylindric models """
 # sink = ["sink_singleroot_sra_dynamic_constkrkx_wet.xls", "sink_singleroot_cyl_dynamic_constkrkx_wet.xls"]
-# psi_x = ["psix_singleroot_sra_dynamic_constkrkx_wet.xls", "psix_singleroot_cyl_dynamic_constkrkx_wet.xls"]
-# psi_interface = ["psiinterface_singleroot_sra_dynamic_constkrkx_wet.xls", "psiinterface_singleroot_cyl_dynamic_constkrkx_wet.xls"]
-# labels = ["python sra", "python cylindrical"]
-#
+
 # sink = ["sink_singleroot_sra_dynamic_constkrkx_wet2.xls", "sink_singleroot_cyl_dynamic_constkrkx_wet2.xls"]
-# psi_x = ["psix_singleroot_sra_dynamic_constkrkx_wet2.xls", "psix_singleroot_cyl_dynamic_constkrkx_wet2.xls"]
-# psi_interface = ["psiinterface_singleroot_sra_dynamic_constkrkx_wet2.xls", "psiinterface_singleroot_cyl_dynamic_constkrkx_wet2.xls"]
-# labels = ["python sra", "python cylindrical"]
+
+# labels = ["sra peak", "sra redistribution", "cyl peak", "cyl redistribution"]
+labels = ["sra peak", "sra redistribution", "detached peak", "detached redistribution"]
 
 fig, ax = plt.subplots(1, 2, figsize = (15, 10))
 ax[0].set_ylabel("depth [cm]")
@@ -50,7 +46,6 @@ ax[1].set_xlabel("uptake per root segment [cm$^3$/day]")
 
 days = 7
 
-labels = ["sra peak", "sra redistribution", "cyl peak", "cyl redistribution"]
 reds = [[1. / (i / 3 + 1), 0., 0.] for i in range(0, days)]
 greens = [[0., 1. / (i / 3 + 1), 0.] for i in range(0, days)]
 ls = ['-', '-.']
