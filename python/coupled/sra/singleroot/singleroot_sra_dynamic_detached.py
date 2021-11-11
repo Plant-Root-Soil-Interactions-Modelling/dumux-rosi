@@ -11,7 +11,7 @@ sys.path.append("../");
 import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
-from xylem_flux import *  # root system Python hybrid solver
+from xylem_flux_detached import *  # root system Python hybrid solver
 from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
 import vtk_plot as vp
@@ -115,11 +115,10 @@ for i in range(0, 100):
 rs = pb.MappedSegments(nodes, segs, radii)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
-r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
+r = XylemFluxDetached(rs)  # wrap the xylem model around the MappedSegments
 init_singleroot_contkrkx(r)
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-
 detached_conductivities(r)
 
 """ sanity checks """
@@ -173,7 +172,6 @@ for i in range(0, NT):
 
         """ interpolation """
         wall_interpolation = timeit.default_timer()
-
         rsx = soil_root_interface_table2(rx[1:] , hsb, inner_kr_, rho_, sra_table_lookup)
         # rsx = soil_root_interface(rx[1:] , hsb, inner_kr_, rho_, soil)
         wall_interpolation = timeit.default_timer() - wall_interpolation
