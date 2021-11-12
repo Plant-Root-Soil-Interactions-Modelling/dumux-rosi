@@ -19,8 +19,7 @@ Periodic = true true false
 Overlap = 1
 
 [Soil.BC.Top]
-Type = 2 # constant flux 
-Value = 0
+Type = 4 # atmospheric 
 
 [Soil.BC.Bot]
 Type = 5 # free drainage
@@ -35,3 +34,7 @@ Qs = 0.489
 Alpha =  0.1978# [1/cm] 
 N =  1.1457
 Ks = 1488 # [cm/d] 	
+
+[Climate]
+# Precipitation = 0.8 # [cm day-1]
+CSVFile = input/singleroot_precipitation.csv # [cm day-1]

@@ -4,13 +4,13 @@ RootName = ../roots_1p/input/soybean_2018.input
 SoilName = ../soil_richards/input/soybean_2018.input
 
 [TimeLoop]
-TEnd =  604800 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
+TEnd =  13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], 154 days 13305600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
-MaxTimeStepSize = 3600
+MaxTimeStepSize = 900
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2020_7days.dgf
+File =  ../../../grids/Glycine_max_Moraes2020_opt2_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -20,7 +20,7 @@ kxIdx = 5
 Grow = true
 
 [Soil.Grid]
-Cells = 37 5 150 # 37*5*150
+Cells = 19 3 75 # 38*6*150
 Periodic = true true false
 Overlap = 1 
 
@@ -32,10 +32,10 @@ Overlap = 1
 P = -150 -300
 Z = -1.5 0. 
 
-#[Newton]
-#MaxRelativeShift = 1.e-6
+[Newton]
+MaxRelativeShift = 1.e-7
 
 #[Restart]
-#Time = 194881
-#SoilFile = ./results_soybean_Honly_2018/soybean_Honly_2018-00054.vtu
-#RootFile = ./results_soybean_Honly_2018/soybean_Honly_2018-00054.vtp
+#Time = 1.23481e+07
+#SoilFile = ./results_soybean_HCM_2018_1/soybean_HCM_2018_1-03143.vtu
+#RootFile = ./results_soybean_HCM_2018_1/soybean_HCM_2018_1-03143.vtp

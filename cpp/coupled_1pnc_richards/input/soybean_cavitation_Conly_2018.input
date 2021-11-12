@@ -4,23 +4,36 @@ RootName = ../roots_1pnc/input/soybean_2018.input
 SoilName = ../soil_richards/input/soybean_2018.input
 
 [TimeLoop]
-TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s], # 154 days 13305600
+TEnd = 13305600 # a day 86400 [s], a week 604800 [s], two weeks 1209600 [s]
 DtInitial = 360 # [s]
 PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
-[Soil.Grid]
-Cells = 37 6 160 # 37*6*160
-Periodic = true true false
-Overlap = 1 
+[RootSystem.Grid]
+File =  ../../../grids/Glycine_max_Moraes2020_opt2_154days.dgf
+InitialT = 1 # days
+orderIdx = 0 # Parameter positions in Magdalena's DGF
+radiusIdx = 4
+ctIdx = 7
+krIdx = 6
+kxIdx = 5
+Grow = true
 
 [Grid]
 Periodic = true true false
 Overlap = 1
 
+[RootSystem.Leaf]
+CSVFile = input/Glycine_max_Moraes2020_opt2_volume.csv
+
+[Soil.Grid]
+Cells = 19 3 75 # 38*6*150
+Periodic = true true false
+Overlap = 1 
+
 [Soil.IC]
-P = -140 -300
-Z = -1.6 0.
+P = -150 -300
+Z = -1.5 0. 
 
 [Control]
 cD = 0 # 0 -> interaction between pressure and chemical regulation
@@ -36,8 +49,8 @@ c = 0.7 # [1] cavitation ON
 sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
 
-[RootSystem.Leaf]
-CSVFile = input/Moraesetal2020_dx_volume.csv
+#[Newton]
+#MaxRelativeShift = 1.e-7
 
 #[Restart]
 #Time = 3.49206e+06

@@ -16,6 +16,3 @@ Z = -.15 0.
 [RootSystem.Collar]
 Transpiration = 5e-4 # [kg/day] = 0.5cm3/day 
 Sinusoidal = True
-
-[RootSystem.Leaf]
-Volume = 0.0125 # [cm^3] equals root volume

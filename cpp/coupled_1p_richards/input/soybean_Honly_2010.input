@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2020_154days.dgf
+File =  ../../../grids/Glycine_max_Moraes2020_opt2_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -20,7 +20,7 @@ kxIdx = 5
 Grow = true
 
 [Soil.Grid]
-Cells = 37 5 150 # 37*5*150
+Cells = 19 3 75 # 38*6*150
 Periodic = true true false
 Overlap = 1 
 
@@ -33,7 +33,7 @@ P = -150 -300
 Z = -1.5 0. 
 
 #[Newton]
-#MaxRelativeShift = 1.e-6
+#MaxRelativeShift = 1.e-7
 
 #[Restart]
 #Time = 6.69595e+06

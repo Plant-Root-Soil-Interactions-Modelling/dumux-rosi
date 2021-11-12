@@ -10,7 +10,7 @@ PeriodicCheckTimes = 3600
 MaxTimeStepSize = 3600
 
 [RootSystem.Grid]
-File =  ../../../grids/Moraesetal_2020_lmax_154days.dgf
+File =  ../../../grids/Glycine_max_Moraes2020_opt2_154days.dgf
 InitialT = 1 # days
 orderIdx = 0 # Parameter positions in Magdalena's DGF
 radiusIdx = 4
@@ -24,10 +24,10 @@ Periodic = true true false
 Overlap = 1
 
 [RootSystem.Leaf]
-CSVFile = input/Moraesetal2020_volume.csv
+CSVFile = input/Glycine_max_Moraes2020_opt2_volume.csv
 
 [Soil.Grid]
-Cells = 37 6 150 # 37*6*150
+Cells = 19 3 75 # 38*6*150
 Periodic = true true false
 Overlap = 1 
 
@@ -53,7 +53,7 @@ sC = 5e+10 # [cm3/mol]
 #MaxRelativeShift = 1.e-6
 
 #[Restart]
-#Time = 7.50601e+06
-#mL = 1.80007e-18 # value of mL at last time step
-#SoilFile = ./results_soybean_H+C_2018_1/soybean_H+C_2018_1-00553.vtu
-#RootFile = ./results_soybean_H+C_2018_1/soybean_H+C_2018_1-00553.vtp
+#Time = 5.11231e+06
+#mL = 8.25831e-11 # value of mL at last time step
+#SoilFile = ./results_soybean_HCCM_2018/soybean_HCCM_2018-01420.vtu
+#RootFile = ./results_soybean_HCCM_2018/soybean_HCCM_2018-01420.vtp
