@@ -24,9 +24,14 @@ colors = prop_cycle.by_key()['color']
 path = "results/"
 
 # """ DRY cylindric models """
-sink = ["sink_singleroot_sra_dynamic_constkrkx_dry.xls", "sink_singleroot_cyl_dynamic_constkrkx_dry.xls"]
-psi_x = ["psix_singleroot_sra_dynamic_constkrkx_dry.xls", "psix_singleroot_cyl_dynamic_constkrkx_dry.xls"]
-psi_interface = ["psiinterface_singleroot_sra_dynamic_constkrkx_dry.xls", "psiinterface_singleroot_cyl_dynamic_constkrkx_dry.xls"]
+# sink = ["sink_singleroot_sra_dynamic_constkrkx_dry.xls", "sink_singleroot_cyl_dynamic_constkrkx_dry.xls"]
+# psi_x = ["psix_singleroot_sra_dynamic_constkrkx_dry.xls", "psix_singleroot_cyl_dynamic_constkrkx_dry.xls"]
+# psi_interface = ["psiinterface_singleroot_sra_dynamic_constkrkx_dry.xls", "psiinterface_singleroot_cyl_dynamic_constkrkx_dry.xls"]
+# labels = ["python sra", "python cylindrical"]
+
+sink = ["sink_singleroot_sra_dynamic_constkrkx_dry.xls", "sink_singleroot_sra_dynamicA_constkrkx_dry.xls"]
+psi_x = ["psix_singleroot_sra_dynamic_constkrkx_dry.xls", "psix_singleroot_sra_dynamicA_constkrkx_dry.xls"]
+psi_interface = ["psiinterface_singleroot_sra_dynamic_constkrkx_dry.xls", "psiinterface_singleroot_sra_dynamicA_constkrkx_dry.xls"]
 labels = ["python sra", "python cylindrical"]
 
 # """ WET cylindric models """

@@ -46,11 +46,11 @@ Parameters
 """ soil """
 min_b = [-7.5, -37.5, -110.]
 max_b = [7.5, 37.5, 0.]
-cell_number = [8, 38, 55]  # 2*2*2 cm3
+cell_number = [2 * 8, 2 * 38, 2 * 55]  # 2*2*2 cm3
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
 
-name = "dry_3d"  # name to export resutls
+name = "dry_3d_2"  # name to export resutls
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;

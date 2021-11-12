@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # names = ["results/transpiration_singleroot_sra_dynamic_constkrkx_wet2", "results/transpiration_singleroot_cyl_dynamic_constkrkx_wet2"]
-names = ["results/transpiration_singleroot_sra_dynamic_constkrkx_dry", "results/transpiration_singleroot_cyl_dynamic_constkrkx_dry"]
+# names = ["results/transpiration_singleroot_sra_dynamic_constkrkx_dry", "results/transpiration_singleroot_cyl_dynamic_constkrkx_dry"]
+names = ["results/transpiration_singleroot_sra_dynamic_constkrkx_dry", "results/transpiration_singleroot_sra_dynamicA_constkrkx_dry"]
 
 trans = 0.5  # 0.5
 n = len(names)

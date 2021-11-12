@@ -1,22 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# name1 = "dry_3d"
-# name2 = "dry_3d_rhizo"
-# names = [name1, name2]  # works for 2,3,...
-# xrange = [-8, 2.]  # for second plot
-# yrange = [0., 350.]  # for first cumulative plot
-# title_names = ["Steady rate approach, 3d macrogrid, dry", "Cylindrical models, 3d macrogrid, dry"]
-
-name1 = "dry_1d"
-name2 = "dry_1d_rhizo"
+name1 = "dry_3d2"
+name2 = "dry_3d2"  # "dry_3d_rhizo"
 names = [name1, name2]  # works for 2,3,...
 xrange = [-8, 2.]  # for second plot
 yrange = [0., 350.]  # for first cumulative plot
-title_names = ["Steady rate approach, 1d macrogrid, dry", "Cylindrical models, 1d macrogrid, dry"]
+title_names = ["Steady rate approach, 3d macrogrid, dry", "Cylindrical models, 3d macrogrid, dry"]
 
-# name1 = "wet_3d"
-# name2 = "wet_3d_rhizo"
+# name1 = "dry_1d"
+# name2 = "dry_1d_rhizo"
+# names = [name1, name2]  # works for 2,3,...
+# xrange = [-8, 2.]  # for second plot
+# yrange = [0., 350.]  # for first cumulative plot
+# title_names = ["Steady rate approach, 1d macrogrid, dry", "Cylindrical models, 1d macrogrid, dry"]
+
+# name1 = "wet_3d2"
+# name2 = "wet_3d2"  # "wet_3d_rhizo"
 # names = [name1, name2]
 # xrange = [-100, 10]  # for second plot
 # yrange = [0., 3500.]  # for first cumulative plot
@@ -95,7 +95,7 @@ plt.show()
 """ 1d sink plot """
 fig, axes = plt.subplots(1, n, figsize = (15, 15))
 
-layers = 55
+layers = 2 * 55
 depth = -110
 days = 7  # (measurements every 6h)
 
