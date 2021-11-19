@@ -23,7 +23,6 @@ pd = vt.read_vtp(file_in)
 meta = rsml.Metadata()
 meta.unit = "m"
 meta.add_property(rsml.Property("radius [m]", "float", "m", None))
-meta.software = "serious"
 
 order_id = 4
 
