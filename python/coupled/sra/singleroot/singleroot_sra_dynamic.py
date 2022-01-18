@@ -155,7 +155,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k=[])
         rx_old = rx.copy()
 
     err = 1.e6
@@ -176,7 +176,7 @@ for i in range(0, NT):
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem
         # print(err)
@@ -187,9 +187,10 @@ for i in range(0, NT):
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, rsx, False)
+    fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False)
     min_rsx = np.min(rsx)  # for console output
     max_rsx = np.max(rsx)
+    # print("from", min_rsx, "to", max_rsx)    
 
     wall_soil = timeit.default_timer()
 
@@ -217,25 +218,25 @@ for i in range(0, NT):
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
         sink_.append(fluxes.copy())
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
 
 file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index = False, header = False)
+df1.to_excel(file1, index=False, header=False)
 
 file2 = 'results/psiinterface_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index = False, header = False)
+df2.to_excel(file2, index=False, header=False)
 
 file3 = 'results/sink_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index = False, header = False)
+df3.to_excel(file3, index=False, header=False)
 
 file4 = 'results/transpiration_singleroot_sra_dynamic_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
 print(file4)
 
 print(collar_vfr)

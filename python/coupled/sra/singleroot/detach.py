@@ -12,8 +12,8 @@ import plantbox as pb  # CPlantBox
 
 
 def detached_conductivities(rs:pb.XylemFlux):
-    suf = rs.get_suf(sim_time = 0.)  # TODO this possibly is time dependent
-    krs, _ = rs.get_krs(sim_time = 0.)  # TODO this possibly is time dependent
+    suf = rs.get_suf(sim_time=0.)  # TODO this possibly is time dependent
+    krs, _ = rs.get_krs(sim_time=0.)  # TODO this possibly is time dependent
 
     a = 0.05
     l = 0.5
@@ -30,5 +30,3 @@ def detached_conductivities(rs:pb.XylemFlux):
 
     print("kr", np.min(kr_), np.max(kr_), np.mean(kr_))
     print("kx", np.min(kx_), np.max(kx_), np.mean(kx_))
-
-    dd

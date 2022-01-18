@@ -47,7 +47,10 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
 
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     assert rx.shape == sx.shape
-    rsx = f((rx, sx, inner_kr_ , rho_))
+    try:
+        rsx = f((rx, sx, inner_kr_ , rho_))
+    except:
+        print("failed:", rx, sx, inner_kr_ , rho_)
     return rsx
 
 """ 
@@ -77,7 +80,7 @@ sra_table_lookup = open_sra_lookup("../table_jan2")
 # collar = -8000  # dirichlet
 trans = 0.5  # 0.5
 radius = 0.05  # cm
-wilting_point = -15000
+wilting_point = -10000
 
 """ simulation time """
 sim_time = 7  # 0.65  # 0.25  # [day]
@@ -179,25 +182,32 @@ for i in range(0, NT):
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False        
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem
         # print(err)
         rx_old = rx.copy()
         c += 1
-#         print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
-    print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
-
+        # print(c, ": ", rx[0], np.min(rsx))  # np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
+    # print(c, "iterations", rx[0])  # wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem)
     wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, rsx, False)
+    fluxes = r.segFluxes_detached(rs_age + t, rx, rsx, approx=False, cells=False)
+    
     min_rsx = np.min(rsx)  # for console output
     max_rsx = np.max(rsx)
+    # print("from", min_rsx, "to", max_rsx)
 
     wall_soil = timeit.default_timer()
 
     soil_fluxes = r.sumSegFluxes(fluxes)
     s.setSource(soil_fluxes.copy())  # richards.py
+    
+#     print(i)
+#     print(rsx)
+#     print(fluxes)
+#     print(soil_fluxes)
+#     ddd
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
     hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
@@ -210,17 +220,23 @@ for i in range(0, NT):
     if i % (skip / 60) == 0:
         x_.append(t)
         sum_flux = 0.
+        min_flux = 1.e6
+        max_flux = -1.e6
         for f in soil_fluxes.values():
-            sum_flux += f
+            sum_flux += f  # TODO MINMAX
+            min_flux = min(f, min_flux)  # for console output
+            max_flux = max(f, max_flux) 
         y_.append(sum_flux)  # cm3/day
-
+        print("target", -trans * sinusoidal(t), "real sink", y_[-1])  #  "real collar", r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False), 
+        # print("min flux", min_flux, "max flux", max_flux)        
     if i % skip == 0:
         print(i / skip)
         rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
         sink_.append(fluxes.copy())
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        # collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        # TODO collar flux is currently not working for detached 
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
@@ -241,6 +257,5 @@ file4 = 'results/transpiration_singleroot_sra_dynamicA_constkrkx' + sstr
 np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
 print(file4)
 
-print(collar_vfr)
 print(sink_sum)
 
