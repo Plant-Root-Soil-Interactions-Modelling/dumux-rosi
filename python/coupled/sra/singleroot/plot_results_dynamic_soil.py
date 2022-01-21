@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-z_ = np.linspace(-0.25, -49.75, 100)  # single root 100 segments, 0 - (-50) cm, segment mids
+z_ = np.linspace(-49.75, -0.25, 100)  # single root 100 segments, 0 - (-50) cm, segment mids
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -24,23 +24,20 @@ colors = prop_cycle.by_key()['color']
 path = "results/"
 
 # """ DRY cylindric models """
-# sink = ["sink_singleroot_cyl_dynamic_constkrkx_dry.xls", "sink_singleroot_sra_dynamic_constkrkx_dry.xls"]
-# sink = ["sink_singleroot_cyl_dynamic_constkrkx_dry.xls", "sink_singleroot_sra_dynamicA_constkrkx_dry.xls"]
+# sink = ["soil_singleroot_cyl_dynamic_constkrkx_dry.xls", "soil_singleroot_sra_dynamic_constkrkx_dry.xls"]
+sink = ["soil_singleroot_cyl_dynamic_constkrkx_dry.xls", "soil_singleroot_sra_dynamicA_constkrkx_dry.xls"]
 
 # """ WET cylindric models """
-# sink = ["sink_singleroot_cyl_dynamic_constkrkx_wet.xls", "sink_singleroot_sra_dynamic_constkrkx_wet.xls"]
-sink = ["sink_singleroot_cyl_dynamic_constkrkx_wet.xls", "sink_singleroot_sra_dynamicA_constkrkx_wet.xls"]
+# sink = ["soil_singleroot_cyl_dynamic_constkrkx_wet.xls", "soil_singleroot_sra_dynamic_constkrkx_wet.xls"]
+# sink = ["soil_singleroot_cyl_dynamic_constkrkx_wet.xls", "soil_singleroot_sra_dynamicA_constkrkx_wet.xls"]
 
 # labels = ["cyl peak", "cyl redistribution", "sra peak", "sra redistribution"]
 labels = ["cyl peak", "cyl redistribution", "detached peak", "detached redistribution"]
 
 fig, ax = plt.subplots(1, 2, figsize = (15, 10))
 ax[0].set_ylabel("depth [cm]")
-ax[0].set_xlabel("uptake per root segment [cm$^3$/day]")
-ax[1].set_xlabel("uptake per root segment [cm$^3$/day]")
-
-# ax[1].plot(np.linspace(-300, -200, 100), z_, "k:", label = "classic sink") # initial wet
-# ax[1].plot(np.linspace(-5000, -200, 100), z_, "k:", label = "classic sink") # initial dry
+ax[0].set_xlabel("water content [1]")
+ax[1].set_xlabel("water content [1]")
 
 days = 7
 
@@ -52,10 +49,14 @@ for i in range(0, 2):
 
     df2 = pd.read_excel(path + sink[i], header = None)
     sink_ = df2.to_numpy()
-    ax[1].plot(sink_[:, 0], z_, "k:")  # initial
+
+    if i == 0:
+        ax[1].plot(sink_[:, 0], z_, "k:", label = "initial")  # initial
+    else:
+        ax[1].plot(sink_[:, 0], z_, "k:")  # initial
 
     for j in range(0, days):
-        if j == 0:
+        if j == 0:  # label or not
             ax[0].plot(sink_[:, 2 + j * 4], z_, ls[i], label = labels[2 * i + 0], color = reds[j])
             ax[1].plot(sink_[:, 4 + j * 4], z_, ls[i], label = labels[2 * i + 1], color = greens[j])
         else:
