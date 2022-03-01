@@ -6,4 +6,20 @@ Please read the manual (Manual.pdf on this repository)
 - getting started with examples
 - folder structure is explained in the dumux-rosi wiki https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi/wiki/Folder-structure
 
+## build local
+### windows
+CPlantBox-Dumux is currently not available on windows. 
+Some pointers to setup a linux environment on windows are given on the CPlantBox-wiki 
+https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox/wiki/Help-for-windows-users
+
+### linux
+If you have ubuntu >= 20.04, you can download the python file "installDumuxRosiWithUbuntu2004.py" from the CPlantBox repository
+https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox
+This file is based on the dumux installation file. 
+run:
+python3 installDumuxRosiWithUbuntu2004.py
+
+It will create a "DUMUX" folder and install inside the dependencies necessary to run dumux-rosi.
+This script might work on other linux OS but has not been tested.
+
 
