@@ -54,6 +54,6 @@ sC = 5e+7 # [cm3/mol]
 
 #[Restart]
 #Time = 1.28018e+07
-#mL = 6.35468e-08 # value of mL at last time step
-#SoilFile = ./results_soybean_CCM_2007_1/soybean_CCM_2007_1-02282.vtu
-#RootFile = ./results_soybean_CCM_2007_1/soybean_CCM_2007_1-02282.vtp
+#mL = 6.35473e-08 # value of mL at last time step
+#SoilFile = ./results_soybean_Conly_2007_1/soybean_Conly_2007_1-02282.vtu
+#RootFile = ./results_soybean_Conly_2007_1/soybean_Conly_2007_1-02282.vtp

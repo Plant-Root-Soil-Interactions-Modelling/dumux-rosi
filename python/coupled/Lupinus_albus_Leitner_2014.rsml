@@ -1,0 +1,2224 @@
+<rsml>
+    <metadata>
+        <version>1</version>
+        <unit>cm</unit>
+        <resolution>1</resolution>
+        <last-modified>4-5-2021</last-modified>
+        <software>OrganicBox</software>
+    </metadata>
+    <scene>
+        <plant>
+            <root ID="1">
+                <geometry>
+                    <polyline>
+                        <point x="0" y="0" z="-3"/>
+                        <point x="0.0015365628" y="0.0017893476" z="-3.497488"/>
+                        <point x="-0.0061879368" y="0.0063310419" z="-3.9106855"/>
+                        <point x="-0.36282915" y="-0.12539232" z="-4.4482555"/>
+                        <point x="-0.48198724" y="-0.15166503" z="-4.6593966"/>
+                        <point x="-0.6749903" y="-0.1244419" z="-5.1913705"/>
+                        <point x="-0.76164865" y="-0.11553574" z="-5.4849381"/>
+                        <point x="-0.83965963" y="-0.037814643" z="-5.966177"/>
+                        <point x="-0.84997547" y="-0.019245237" z="-6.1734791"/>
+                        <point x="-0.84997672" y="-0.019246049" z="-6.1734886"/>
+                        <point x="-0.91803885" y="-0.035151336" z="-6.4262118"/>
+                        <point x="-0.85560805" y="0.11106347" z="-7.0526233"/>
+                        <point x="-0.99973667" y="0.25435871" z="-7.6771126"/>
+                        <point x="-0.99973756" y="0.25435829" z="-7.6771226"/>
+                        <point x="-1.0646937" y="0.27142531" z="-8.134779"/>
+                        <point x="-1.1181321" y="0.2628881" z="-8.71947"/>
+                        <point x="-1.3943595" y="0.4508788" z="-9.1538124"/>
+                        <point x="-1.4205509" y="0.45555204" z="-9.1828041"/>
+                        <point x="-1.5402462" y="0.48512924" z="-9.3338566"/>
+                        <point x="-1.7163057" y="0.37994042" z="-9.7986288"/>
+                        <point x="-1.81736" y="0.29284024" z="-10.373483"/>
+                        <point x="-1.817361" y="0.29283664" z="-10.373492"/>
+                        <point x="-1.877346" y="0.21192725" z="-10.681946"/>
+                        <point x="-1.8773489" y="0.21192893" z="-10.681955"/>
+                        <point x="-1.8773483" y="0.21193273" z="-10.681965"/>
+                        <point x="-1.8773458" y="0.2119365" z="-10.681973"/>
+                        <point x="-1.8773443" y="0.21194236" z="-10.681982"/>
+                        <point x="-1.8174865" y="0.64736068" z="-11.285476"/>
+                        <point x="-1.6882515" y="1.0121833" z="-11.905454"/>
+                        <point x="-1.7476152" y="1.0221156" z="-12.021838"/>
+                        <point x="-1.7476153" y="1.0221151" z="-12.021848"/>
+                        <point x="-1.8079157" y="1.0024585" z="-12.270406"/>
+                        <point x="-1.7368505" y="1.0452592" z="-12.758443"/>
+                        <point x="-1.744874" y="1.0455561" z="-12.784749"/>
+                        <point x="-1.7901522" y="1.053405" z="-13.128963"/>
+                        <point x="-1.8703892" y="1.037047" z="-13.51129"/>
+                        <point x="-1.9858843" y="1.0664623" z="-13.966606"/>
+                        <point x="-2.0011513" y="1.0735717" z="-14.099537"/>
+                        <point x="-2.0011542" y="1.0735759" z="-14.099545"/>
+                        <point x="-2.1360006" y="1.2514544" z="-14.479983"/>
+                        <point x="-2.4171715" y="1.9470606" z="-14.765355"/>
+                        <point x="-2.3888888" y="2.460932" z="-14.851915"/>
+                        <point x="-2.3888884" y="2.460942" z="-14.851917"/>
+                        <point x="-2.2596591" y="2.6805665" z="-14.822003"/>
+                        <point x="-1.7847285" y="3.0786099" z="-14.559732"/>
+                        <point x="-1.4137614" y="3.4840562" z="-14.360509"/>
+                        <point x="-1.2771242" y="3.821892" z="-14.241487"/>
+                        <point x="-1.2771221" y="3.8219016" z="-14.241485"/>
+                        <point x="-1.2274431" y="3.9099278" z="-14.219343"/>
+                        <point x="-0.73384964" y="4.4821849" z="-14.079605"/>
+                        <point x="-0.42314604" y="4.8678236" z="-14.004546"/>
+                        <point x="-0.087432764" y="4.8655744" z="-13.924381"/>
+                        <point x="0.52100736" y="4.2782068" z="-13.957511"/>
+                        <point x="0.70811224" y="4.1392522" z="-14.089279"/>
+                        <point x="0.78904659" y="4.0647678" z="-14.161992"/>
+                        <point x="0.78905123" y="4.0647621" z="-14.161999"/>
+                        <point x="1.120908" y="3.5276146" z="-14.846452"/>
+                        <point x="1.2847828" y="3.177346" z="-14.902127"/>
+                        <point x="1.4737881" y="2.8714302" z="-14.93361"/>
+                    </polyline>
+                </geometry>
+                <properties>
+                    <organType value="2"/>
+                    <subType value="1"/>
+                    <length value="20.248308"/>
+                    <age value="8"/>
+                    <parent-node value="-1"/>
+                    <diameter value="0.1749603"/>
+                </properties>
+                <root ID="2">
+                    <geometry>
+                        <polyline>
+                            <point x="0.80335736" y="0.076144531" z="-4.0904088"/>
+                            <point x="1.7339545" y="0.21890274" z="-4.4274678"/>
+                            <point x="2.2116523" y="0.43997169" z="-4.642096"/>
+                            <point x="3.0386932" y="0.79252505" z="-5.0799427"/>
+                            <point x="3.6251707" y="1.1500261" z="-5.3363118"/>
+                            <point x="4.3706002" y="1.4820073" z="-5.9143457"/>
+                            <point x="4.5927653" y="1.5816547" z="-6.0714698"/>
+                            <point x="5.1026306" y="1.7873183" z="-6.42835"/>
+                            <point x="5.1211772" y="1.7997344" z="-6.4401703"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="6.2720795"/>
+                        <age value="7.687458"/>
+                        <parent-node value="1"/>
+                        <diameter value="0.12470659"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="1.2416474105796611"/>
+                            <sample value="2.3506582256060202"/>
+                            <sample value="3.0065890881741684"/>
+                            <sample value="4.2095455363738807"/>
+                            <sample value="5.1346664245767304"/>
+                            <sample value="6.4618617452620093"/>
+                            <sample value="6.8617162197431192"/>
+                            <sample value="7.7935214207536436"/>
+                            <sample value="7.8302170439181662"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="3"/>
+                            <sample value="4"/>
+                            <sample value="5"/>
+                            <sample value="6"/>
+                            <sample value="7"/>
+                            <sample value="8"/>
+                            <sample value="9"/>
+                            <sample value="10"/>
+                            <sample value="11"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="7">
+                    <geometry>
+                        <polyline>
+                            <point x="0.17048854" y="-0.082381114" z="-3.6871226"/>
+                            <point x="0.56320035" y="-0.3143526" z="-3.2834249"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.90753931"/>
+                        <age value="7.5850124"/>
+                        <parent-node value="2"/>
+                        <diameter value="0.13491441"/>
+                    </properties>
+                    <root ID="8">
+                        <geometry>
+                            <polyline>
+                                <point x="0.19575924" y="-0.21507372" z="-3.6317403"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.1459901"/>
+                            <age value="1.1438042"/>
+                            <parent-node value="1"/>
+                            <diameter value="0.15846606"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.4209726612822626"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="14"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="1.8379923827379874"/>
+                            <sample value="6.9979984397346682"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="13"/>
+                            <sample value="15"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="9">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.4123264" y="-0.10357306" z="-4.4947791"/>
+                            <point x="-0.8593455" y="-0.25433034" z="-5.0504465"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.80026478"/>
+                        <age value="7.4186382"/>
+                        <parent-node value="3"/>
+                        <diameter value="0.12302035"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="0.55656275472872763"/>
+                            <sample value="6.9383781602744659"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="17"/>
+                            <sample value="18"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="11">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.85591149" y="0.034029372" z="-4.8052111"/>
+                            <point x="-1.0087531" y="0.017837202" z="-4.9783201"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.67371982"/>
+                        <age value="7.3559985"/>
+                        <parent-node value="4"/>
+                        <diameter value="0.10845153"/>
+                    </properties>
+                    <root ID="12">
+                        <geometry>
+                            <polyline>
+                                <point x="-0.48197827" y="-0.1516694" z="-4.6593957"/>
+                                <point x="-0.44800282" y="-0.18453395" z="-4.671699"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.048854548"/>
+                            <age value="0.39598811"/>
+                            <parent-node value="0"/>
+                            <diameter value="0.16004287"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="7.5789962985388755"/>
+                                <sample value="7.5789962985388755"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="20"/>
+                                <sample value="21"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="4.0163598729507166"/>
+                            <sample value="6.6955859459725646"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="22"/>
+                            <sample value="23"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="18">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.30889609" y="0.28403172" z="-5.319984"/>
+                            <point x="-0.15492581" y="0.3941316" z="-5.3880134"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.76453674"/>
+                        <age value="7.2082667"/>
+                        <parent-node value="5"/>
+                        <diameter value="0.15344974"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="4.9188345375009099"/>
+                            <sample value="6.923780387516377"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="25"/>
+                            <sample value="26"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="20">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.45506683" y="0.56082737" z="-5.4653435"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.74286163"/>
+                        <age value="7.1270995"/>
+                        <parent-node value="6"/>
+                        <diameter value="0.11469688"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9537805017635126"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="28"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="21">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.274104" y="-0.15836608" z="-6.2317348"/>
+                            <point x="-1.3279322" y="-0.21230815" z="-6.2444558"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.60051441"/>
+                        <age value="6.9942274"/>
+                        <parent-node value="7"/>
+                        <diameter value="0.098271899"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.8027848613990596"/>
+                            <sample value="6.7371313518193308"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="30"/>
+                            <sample value="31"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="23">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.54181719" y="-0.66422218" z="-6.5402169"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.80340135"/>
+                        <age value="6.9373732"/>
+                        <parent-node value="8"/>
+                        <diameter value="0.17809539"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.0422360586887081"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="33"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="25">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.13106851" y="0.0088094436" z="-6.4784055"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.78140271"/>
+                        <age value="6.9373708"/>
+                        <parent-node value="9"/>
+                        <diameter value="0.13583754"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9856255607326689"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="35"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="27">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.91804582" y="-0.035155091" z="-6.4262056"/>
+                            <point x="-1.2066816" y="-0.23475116" z="-6.0888662"/>
+                            <point x="-1.3120896" y="-0.30881819" z="-5.9644809"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.66585881"/>
+                        <age value="6.8651686"/>
+                        <parent-node value="10"/>
+                        <diameter value="0.14103951"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="1.1080553787469869"/>
+                            <sample value="4.6442713263235458"/>
+                            <sample value="6.6796136383362468"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="37"/>
+                            <sample value="38"/>
+                            <sample value="39"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="31">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.37112296" y="-0.43063641" z="-7.0989876"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.72822678"/>
+                        <age value="6.6839619"/>
+                        <parent-node value="11"/>
+                        <diameter value="0.17637618"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9406823780374767"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="41"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="32">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.4389237" y="0.26014206" z="-8.094698"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.60604954"/>
+                        <age value="6.4948807"/>
+                        <parent-node value="12"/>
+                        <diameter value="0.14484662"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.6827230230154262"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="43"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="33">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.33586541" y="0.23968174" z="-7.8506613"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.6863361"/>
+                        <age value="6.4948778"/>
+                        <parent-node value="13"/>
+                        <diameter value="0.1483779"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.939288633982768"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="45"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="34">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.92389536" y="0.28377819" z="-7.5624876"/>
+                            <point x="-0.91272855" y="0.30958354" z="-7.5349216"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.62886256"/>
+                        <age value="6.3585634"/>
+                        <parent-node value="14"/>
+                        <diameter value="0.15361211"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.2825120462761319"/>
+                            <sample value="6.7386673162986517"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="47"/>
+                            <sample value="48"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="36">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.62312424" y="-0.39659643" z="-9.2851973"/>
+                            <point x="-0.15226644" y="-1.0190548" z="-9.747529"/>
+                            <point x="0.045766544" y="-1.3555682" z="-9.9411983"/>
+                            <point x="0.45240203" y="-2.1614628" z="-10.371525"/>
+                            <point x="0.47722495" y="-2.2167745" z="-10.40235"/>
+                            <point x="0.89610654" y="-3.081475" z="-10.679535"/>
+                            <point x="1.0915356" y="-3.4613974" z="-10.888243"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="4.8865008"/>
+                        <age value="6.181601"/>
+                        <parent-node value="15"/>
+                        <diameter value="0.12395308"/>
+                    </properties>
+                    <root ID="37">
+                        <geometry>
+                            <polyline>
+                                <point x="0.035606261" y="-0.87996292" z="-9.7429352"/>
+                                <point x="0.035612632" y="-0.87996346" z="-9.7429428"/>
+                                <point x="0.12139726" y="-0.96383679" z="-9.8171711"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.37489256"/>
+                            <age value="3.3989766"/>
+                            <parent-node value="2"/>
+                            <diameter value="0.13727018"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="5.5615387120884447"/>
+                                <sample value="5.5616255232787548"/>
+                                <sample value="6.8496992326191171"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="52"/>
+                                <sample value="53"/>
+                                <sample value="54"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="41">
+                        <geometry>
+                            <polyline>
+                                <point x="0.13508426" y="-1.5296074" z="-10.047532"/>
+                                <point x="0.1341728" y="-1.6440171" z="-10.099286"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.34822696"/>
+                            <age value="2.8464983"/>
+                            <parent-node value="3"/>
+                            <diameter value="0.16698138"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="5.9545320786237284"/>
+                                <sample value="6.9843435339796649"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="56"/>
+                                <sample value="57"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="43">
+                        <geometry>
+                            <polyline>
+                                <point x="0.60837704" y="-2.192167" z="-10.358034"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.14060701"/>
+                            <age value="1.4284242"/>
+                            <parent-node value="5"/>
+                            <diameter value="0.19173515"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.8162114578561424"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="60"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="2.8001030334897248"/>
+                            <sample value="3.8706124210004309"/>
+                            <sample value="4.4048665321168059"/>
+                            <sample value="5.6841252080124756"/>
+                            <sample value="5.7740044885095507"/>
+                            <sample value="7.1415560549539645"/>
+                            <sample value="7.8241681779356709"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="50"/>
+                            <sample value="51"/>
+                            <sample value="55"/>
+                            <sample value="58"/>
+                            <sample value="59"/>
+                            <sample value="61"/>
+                            <sample value="62"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="44">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.81262875" y="0.092459396" z="-9.8839674"/>
+                            <point x="-0.30152792" y="-0.39899987" z="-10.452895"/>
+                            <point x="-0.28116527" y="-0.41621384" z="-10.475854"/>
+                            <point x="0.25631249" y="-1.1994356" z="-10.788394"/>
+                            <point x="0.56337589" y="-1.6371009" z="-10.962069"/>
+                            <point x="0.56338102" y="-1.6371089" z="-10.962071"/>
+                            <point x="0.9138186" y="-2.3508298" z="-11.568533"/>
+                            <point x="1.0996228" y="-2.4454975" z="-11.847174"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="4.8544526"/>
+                        <age value="6.01231"/>
+                        <parent-node value="16"/>
+                        <diameter value="0.12998544"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="2.989387828374225"/>
+                            <sample value="4.0669386263232354"/>
+                            <sample value="4.1093915154479017"/>
+                            <sample value="5.3403658867564907"/>
+                            <sample value="6.0539650683609025"/>
+                            <sample value="6.0539779068881518"/>
+                            <sample value="7.3645983120018661"/>
+                            <sample value="7.8337727196173779"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="64"/>
+                            <sample value="65"/>
+                            <sample value="66"/>
+                            <sample value="67"/>
+                            <sample value="68"/>
+                            <sample value="69"/>
+                            <sample value="70"/>
+                            <sample value="71"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="49">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.2969204" y="0.31673211" z="-9.8152342"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.65918386"/>
+                        <age value="5.9999948"/>
+                        <parent-node value="17"/>
+                        <diameter value="0.14122038"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9772979086119831"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="73"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="50">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.8154477" y="0.15836844" z="-9.9094877"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.71684062"/>
+                        <age value="5.9386477"/>
+                        <parent-node value="18"/>
+                        <diameter value="0.12123416"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.0788350132065077"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="75"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="51">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.2747831" y="0.2144441" z="-9.8885403"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.5893811"/>
+                        <age value="5.7762375"/>
+                        <parent-node value="19"/>
+                        <diameter value="0.17110237"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.7185863974532785"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="77"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="52">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.4713846" y="-0.14357387" z="-10.556512"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.58622152"/>
+                        <age value="5.5827098"/>
+                        <parent-node value="20"/>
+                        <diameter value="0.14063391"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.8943611754329783"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="79"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="53">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.9376431" y="0.27144012" z="-10.402303"/>
+                            <point x="-2.240747" y="0.40219417" z="-10.144675"/>
+                            <point x="-2.2478468" y="0.40553293" z="-10.137354"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.55498916"/>
+                        <age value="5.5827065"/>
+                        <parent-node value="21"/>
+                        <diameter value="0.13324538"/>
+                    </properties>
+                    <root ID="54">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.8415521" y="-0.27391022" z="-10.510014"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.56412959"/>
+                            <age value="4.6019015"/>
+                            <parent-node value="1"/>
+                            <diameter value="0.12384362"/>
+                        </properties>
+                        <root ID="55">
+                            <geometry>
+                                <polyline>
+                                    <point x="-1.9249432" y="0.31126612" z="-10.345516"/>
+                                    <point x="-1.878052" y="0.54154104" z="-9.9691401"/>
+                                </polyline>
+                            </geometry>
+                            <properties>
+                                <organType value="2"/>
+                                <subType value="3"/>
+                                <length value="0.51422912"/>
+                                <age value="4.6019015"/>
+                                <parent-node value="0"/>
+                                <diameter value="0.16502364"/>
+                            </properties>
+                            <functions>
+                                <function domain="polyline" name="node_creation_time">
+                                    <sample value="2.5758261676444438"/>
+                                    <sample value="6.2243608205878438"/>
+                                </function>
+                                <function domain="polyline" name="node_index">
+                                    <sample value="82"/>
+                                    <sample value="83"/>
+                                </function>
+                            </functions>
+                        </root>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.2557989147309545"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="84"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="57">
+                        <geometry>
+                            <polyline>
+                                <point x="-2.2360868" y="0.41931096" z="-10.140533"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.018216908"/>
+                            <age value="0.15109639"/>
+                            <parent-node value="2"/>
+                            <diameter value="0.17311899"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.5244631160888318"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="86"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="2.5758261676444438"/>
+                            <sample value="6.5244631160888318"/>
+                            <sample value="6.6541470758283232"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="81"/>
+                            <sample value="85"/>
+                            <sample value="87"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="59">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.8773376" y="0.21193124" z="-10.681943"/>
+                            <point x="-1.6055322" y="0.47023872" z="-10.333865"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.51163399"/>
+                        <age value="5.4739685"/>
+                        <parent-node value="22"/>
+                        <diameter value="0.1233482"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="2.493592606767848"/>
+                            <sample value="6.7731559802868606"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="89"/>
+                            <sample value="90"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="63">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.9963923" y="0.060830597" z="-10.763113"/>
+                            <point x="-1.8671625" y="-0.31468368" z="-10.776446"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.60613132"/>
+                        <age value="5.4739652"/>
+                        <parent-node value="23"/>
+                        <diameter value="0.14837947"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="3.418640319998385"/>
+                            <sample value="7.0072683830904134"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="92"/>
+                            <sample value="93"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="65">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.6256263" y="-0.082516812" z="-10.923321"/>
+                            <point x="-1.5565103" y="-0.14382952" z="-10.966849"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.55854976"/>
+                        <age value="5.4739618"/>
+                        <parent-node value="24"/>
+                        <diameter value="0.13868459"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.8466128221196572"/>
+                            <sample value="6.8959348400930045"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="95"/>
+                            <sample value="96"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="67">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.2021372" y="-0.63737458" z="-11.098125"/>
+                            <point x="-2.4150302" y="-1.347626" z="-11.769109"/>
+                            <point x="-2.6285765" y="-2.0842793" z="-12.410778"/>
+                            <point x="-2.7725544" y="-2.8511848" z="-13.036179"/>
+                            <point x="-2.7909341" y="-2.8823707" z="-13.070844"/>
+                            <point x="-2.9796743" y="-3.1595287" z="-13.312633"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="4.463522"/>
+                        <age value="5.4739585"/>
+                        <parent-node value="25"/>
+                        <diameter value="0.1185495"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="3.511837506882415"/>
+                            <sample value="4.6900146028037284"/>
+                            <sample value="5.9217961933350924"/>
+                            <sample value="7.2122935282300382"/>
+                            <sample value="7.2786208586036896"/>
+                            <sample value="7.8319880521274037"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="98"/>
+                            <sample value="99"/>
+                            <sample value="100"/>
+                            <sample value="101"/>
+                            <sample value="102"/>
+                            <sample value="103"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="69">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.8800915" y="-0.058157407" z="-10.891477"/>
+                            <point x="-2.0121572" y="-0.84236711" z="-11.497755"/>
+                            <point x="-2.0150118" y="-0.85746706" z="-11.510776"/>
+                            <point x="-2.015013" y="-0.8574748" z="-11.510782"/>
+                            <point x="-2.0276179" y="-1.0463692" z="-11.612759"/>
+                            <point x="-2.0350094" y="-1.8960828" z="-12.139951"/>
+                            <point x="-2.0620484" y="-2.6670809" z="-12.606138"/>
+                            <point x="-2.0974395" y="-3.0560129" z="-12.948706"/>
+                            <point x="-2.1116896" y="-3.2161283" z="-13.064479"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="4.1959977"/>
+                        <age value="5.4739552"/>
+                        <parent-node value="26"/>
+                        <diameter value="0.14936993"/>
+                    </properties>
+                    <root ID="70">
+                        <geometry>
+                            <polyline>
+                                <point x="-2.2053199" y="-0.00096921652" z="-10.779616"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.40302837"/>
+                            <age value="3.38429"/>
+                            <parent-node value="0"/>
+                            <diameter value="0.1353568"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="7.0881109747236399"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="105"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="71">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.6916745" y="0.11116026" z="-11.062922"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.30588111"/>
+                            <age value="2.9502892"/>
+                            <parent-node value="1"/>
+                            <diameter value="0.15785599"/>
+                        </properties>
+                        <root ID="72">
+                            <geometry>
+                                <polyline>
+                                    <point x="-1.9412117" y="-0.092976801" z="-11.082881"/>
+                                    <point x="-1.9365239" y="-0.10106426" z="-11.258938"/>
+                                </polyline>
+                            </geometry>
+                            <properties>
+                                <organType value="2"/>
+                                <subType value="3"/>
+                                <length value="0.38022554"/>
+                                <age value="2.9502892"/>
+                                <parent-node value="0"/>
+                                <diameter value="0.13082965"/>
+                            </properties>
+                            <functions>
+                                <function domain="polyline" name="node_creation_time">
+                                    <sample value="5.6871231224022605"/>
+                                    <sample value="7.0549325007218098"/>
+                                </function>
+                                <function domain="polyline" name="node_index">
+                                    <sample value="107"/>
+                                    <sample value="108"/>
+                                </function>
+                            </functions>
+                        </root>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.8367399981763164"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="109"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="74">
+                        <geometry>
+                            <polyline>
+                                <point x="-2.0150168" y="-0.85746562" z="-11.510767"/>
+                                <point x="-2.0192075" y="-0.82720459" z="-11.324465"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.18880077"/>
+                            <age value="1.5537879"/>
+                            <parent-node value="3"/>
+                            <diameter value="0.15611386"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.2953906262234351"/>
+                                <sample value="7.0130011131308541"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="112"/>
+                                <sample value="113"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="78">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.9967841" y="-0.71549386" z="-11.648335"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.19852315"/>
+                            <age value="1.5537734"/>
+                            <parent-node value="4"/>
+                            <diameter value="0.1350159"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="7.0523815174826545"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="115"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="80">
+                        <geometry>
+                            <polyline>
+                                <point x="-2.0255466" y="-1.0751127" z="-11.631518"/>
+                                <point x="-1.9900303" y="-1.1814083" z="-11.674624"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.15446261"/>
+                            <age value="1.2376051"/>
+                            <parent-node value="5"/>
+                            <diameter value="0.12053505"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.6090236535053881"/>
+                                <sample value="7.0412970219349784"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="117"/>
+                                <sample value="118"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="2.7499633124494842"/>
+                            <sample value="3.8719102132981478"/>
+                            <sample value="3.895614976682924"/>
+                            <sample value="3.8956267570804766"/>
+                            <sample value="4.1516392967168665"/>
+                            <sample value="5.4191947085427907"/>
+                            <sample value="6.6883088395949999"/>
+                            <sample value="7.4852925528247392"/>
+                            <sample value="7.803623601134821"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="106"/>
+                            <sample value="110"/>
+                            <sample value="111"/>
+                            <sample value="114"/>
+                            <sample value="116"/>
+                            <sample value="119"/>
+                            <sample value="120"/>
+                            <sample value="121"/>
+                            <sample value="122"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="84">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.95010549" y="1.0708433" z="-11.546843"/>
+                            <point x="-0.070199639" y="1.502039" z="-11.746432"/>
+                            <point x="0.47964111" y="1.7873867" z="-11.883371"/>
+                            <point x="1.303091" y="2.2771411" z="-12.169851"/>
+                            <point x="1.3920417" y="2.326859" z="-12.200309"/>
+                            <point x="1.4087743" y="2.3358684" z="-12.206256"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="3.7606986"/>
+                        <age value="5.2171502"/>
+                        <parent-node value="27"/>
+                        <diameter value="0.12925912"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="3.863866858374303"/>
+                            <sample value="5.1915702123804524"/>
+                            <sample value="6.0892066726824634"/>
+                            <sample value="7.6045583393708132"/>
+                            <sample value="7.7737089546848051"/>
+                            <sample value="7.8055602998119866"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="124"/>
+                            <sample value="125"/>
+                            <sample value="126"/>
+                            <sample value="127"/>
+                            <sample value="128"/>
+                            <sample value="129"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="87">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.8485667" y="1.4486618" z="-12.099841"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.50398487"/>
+                        <age value="4.9562659"/>
+                        <parent-node value="28"/>
+                        <diameter value="0.12268824"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9397983724876573"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="131"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="88">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.564438" y="1.5938562" z="-12.066594"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.60203356"/>
+                        <age value="4.9084492"/>
+                        <parent-node value="29"/>
+                        <diameter value="0.16256371"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.1093398790778863"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="133"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="89">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.7578244" y="1.0494356" z="-11.963606"/>
+                            <point x="-1.9027032" y="1.0489644" z="-11.792548"/>
+                            <point x="-2.0692976" y="1.0358196" z="-11.603234"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.54182345"/>
+                        <age value="4.9084454"/>
+                        <parent-node value="30"/>
+                        <diameter value="0.10865277"/>
+                    </properties>
+                    <root ID="90">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.3919849" y="1.0039737" z="-12.100102"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.39311129"/>
+                            <age value="3.429846"/>
+                            <parent-node value="1"/>
+                            <diameter value="0.15049501"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.5286201943766233"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="136"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="91">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.799036" y="0.92722034" z="-11.788448"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.15995401"/>
+                            <age value="1.3922594"/>
+                            <parent-node value="2"/>
+                            <diameter value="0.18181698"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.1971649947378715"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="138"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="3.0564989745569928"/>
+                            <sample value="4.657047047132254"/>
+                            <sample value="6.9781440706428235"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="135"/>
+                            <sample value="137"/>
+                            <sample value="139"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="93">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.1824849" y="1.1548589" z="-11.933485"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.52634954"/>
+                        <age value="4.8138723"/>
+                        <parent-node value="31"/>
+                        <diameter value="0.15109931"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.974220893320588"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="141"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="94">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.6900687" y="1.2846216" z="-12.943052"/>
+                            <point x="-3.5865765" y="1.5088406" z="-13.325151"/>
+                            <point x="-4.4789748" y="1.8097157" z="-13.661454"/>
+                            <point x="-4.4959006" y="1.8054153" z="-13.662878"/>
+                            <point x="-4.579515" y="1.7949084" z="-13.696986"/>
+                            <point x="-5.1126857" y="1.7875223" z="-13.920364"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="3.6865551"/>
+                        <age value="4.627666"/>
+                        <parent-node value="32"/>
+                        <diameter value="0.092312895"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="4.3626731513759758"/>
+                            <sample value="5.5752309468022663"/>
+                            <sample value="6.8736039015399317"/>
+                            <sample value="6.8971927839689169"/>
+                            <sample value="7.0200745587208964"/>
+                            <sample value="7.8213514351691664"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="143"/>
+                            <sample value="144"/>
+                            <sample value="145"/>
+                            <sample value="146"/>
+                            <sample value="147"/>
+                            <sample value="148"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="97">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.3610311" y="0.81638306" z="-12.031203"/>
+                            <point x="-2.8593154" y="0.64533329" z="-11.504899"/>
+                            <point x="-2.8593218" y="0.64533252" z="-11.504891"/>
+                            <point x="-2.8593285" y="0.6453293" z="-11.504885"/>
+                            <point x="-2.8593352" y="0.64532644" z="-11.504878"/>
+                            <point x="-3.0868628" y="0.59075439" z="-11.306117"/>
+                            <point x="-3.5724514" y="0.47626439" z="-10.879347"/>
+                            <point x="-3.6621504" y="0.38327834" z="-10.77371"/>
+                            <point x="-3.6621556" y="0.38327345" z="-10.773703"/>
+                            <point x="-3.9185236" y="0.24251798" z="-10.591503"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="3.2197208"/>
+                        <age value="4.6171737"/>
+                        <parent-node value="33"/>
+                        <diameter value="0.1485004"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="4.4940072178011361"/>
+                            <sample value="5.5187073389830879"/>
+                            <sample value="5.5187216050865278"/>
+                            <sample value="5.5187358712042229"/>
+                            <sample value="5.5187501373361671"/>
+                            <sample value="5.9635867459890486"/>
+                            <sample value="6.9640895912427574"/>
+                            <sample value="7.2299941557372591"/>
+                            <sample value="7.2300102381603679"/>
+                            <sample value="7.7952135846816022"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="150"/>
+                            <sample value="151"/>
+                            <sample value="152"/>
+                            <sample value="153"/>
+                            <sample value="154"/>
+                            <sample value="155"/>
+                            <sample value="156"/>
+                            <sample value="157"/>
+                            <sample value="158"/>
+                            <sample value="159"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="106">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.7355186" y="0.83674836" z="-13.119223"/>
+                            <point x="-1.735516" y="0.836739" z="-13.11922"/>
+                            <point x="-1.649039" y="0.54966676" z="-13.105181"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.52380407"/>
+                        <age value="4.4833231"/>
+                        <parent-node value="34"/>
+                        <diameter value="0.1650639"/>
+                    </properties>
+                    <root ID="107">
+                        <geometry>
+                            <polyline>
+                                <point x="-2.0096188" y="0.83572388" z="-13.313315"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.33586329"/>
+                            <age value="2.7451262"/>
+                            <parent-node value="1"/>
+                            <diameter value="0.12991741"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.3093247314864893"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="162"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <root ID="108">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.4929287" y="0.85762823" z="-12.874389"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.34529305"/>
+                            <age value="2.7450433"/>
+                            <parent-node value="2"/>
+                            <diameter value="0.12439147"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="6.3000104182942955"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="164"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="4.4131400647380774"/>
+                            <sample value="4.4132182037962302"/>
+                            <sample value="6.9858203796337861"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="161"/>
+                            <sample value="163"/>
+                            <sample value="165"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="110">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.6383071" y="0.97651368" z="-13.536212"/>
+                            <point x="-1.5302241" y="0.90691537" z="-13.550693"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.37050396"/>
+                        <age value="4.3294849"/>
+                        <parent-node value="35"/>
+                        <diameter value="0.16627763"/>
+                    </properties>
+                    <root ID="111">
+                        <geometry>
+                            <polyline>
+                                <point x="-1.7409817" y="1.0797954" z="-13.663364"/>
+                            </polyline>
+                        </geometry>
+                        <properties>
+                            <organType value="2"/>
+                            <subType value="3"/>
+                            <length value="0.19333102"/>
+                            <age value="1.7703332"/>
+                            <parent-node value="1"/>
+                            <diameter value="0.15848979"/>
+                        </properties>
+                        <functions>
+                            <function domain="polyline" name="node_creation_time">
+                                <sample value="5.8741293613263394"/>
+                            </function>
+                            <function domain="polyline" name="node_index">
+                                <sample value="168"/>
+                            </function>
+                        </functions>
+                    </root>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.0365651736467401"/>
+                            <sample value="6.5627490745523698"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="167"/>
+                            <sample value="169"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="112">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.5470259" y="1.1577098" z="-14.037314"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.45378682"/>
+                        <age value="4.139699"/>
+                        <parent-node value="36"/>
+                        <diameter value="0.13286716"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9557182148944783"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="171"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="113">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.038965" y="0.20350315" z="-13.608058"/>
+                            <point x="-2.375695" y="-0.53775096" z="-13.027408"/>
+                            <point x="-2.399327" y="-0.59353101" z="-12.982221"/>
+                            <point x="-2.3993304" y="-0.59353834" z="-12.982215"/>
+                            <point x="-3.0523331" y="-1.146873" z="-12.630987"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="3.0007629"/>
+                        <age value="4.084712"/>
+                        <parent-node value="37"/>
+                        <diameter value="0.13603775"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.0426264440288877"/>
+                            <sample value="6.3956130065650552"/>
+                            <sample value="6.5004456819530327"/>
+                            <sample value="6.5004595779557119"/>
+                            <sample value="7.815085057760669"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="173"/>
+                            <sample value="174"/>
+                            <sample value="175"/>
+                            <sample value="176"/>
+                            <sample value="177"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="116">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.2837443" y="0.85182744" z="-14.759962"/>
+                            <point x="-0.33220896" y="0.60897923" z="-14.948656"/>
+                            <point x="0.66766316" y="0.60966408" z="-14.932676"/>
+                            <point x="0.66864365" y="0.60902685" z="-14.932737"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="3.0011711"/>
+                        <age value="4.0847082"/>
+                        <parent-node value="38"/>
+                        <diameter value="0.13773826"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.01378905120146"/>
+                            <sample value="6.3609937376525405"/>
+                            <sample value="7.8081917974237518"/>
+                            <sample value="7.8099510737236919"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="179"/>
+                            <sample value="180"/>
+                            <sample value="181"/>
+                            <sample value="182"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="117">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.662871" y="0.51124018" z="-14.957719"/>
+                            <point x="-1.4577326" y="-0.46738422" z="-14.972297"/>
+                            <point x="-1.0076135" y="-1.3531587" z="-14.859175"/>
+                            <point x="-0.94306934" y="-1.5110395" z="-14.857629"/>
+                            <point x="-0.94306237" y="-1.5110453" z="-14.857625"/>
+                            <point x="-0.91725856" y="-1.5389218" z="-14.851973"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="3.2089858"/>
+                        <age value="3.9005818"/>
+                        <parent-node value="39"/>
+                        <diameter value="0.13707387"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.0863629998214535"/>
+                            <sample value="6.285820802882423"/>
+                            <sample value="7.5532032762605574"/>
+                            <sample value="7.7767318228643578"/>
+                            <sample value="7.7767449931799542"/>
+                            <sample value="7.8273817919518915"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="184"/>
+                            <sample value="185"/>
+                            <sample value="186"/>
+                            <sample value="187"/>
+                            <sample value="188"/>
+                            <sample value="189"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="120">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.7003424" y="1.8035204" z="-14.78004"/>
+                            <point x="-2.7524195" y="1.7775486" z="-14.782675"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.37606689"/>
+                        <age value="3.5525198"/>
+                        <parent-node value="40"/>
+                        <diameter value="0.15962003"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.3617176041964365"/>
+                            <sample value="6.9301409807076562"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="191"/>
+                            <sample value="192"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="122">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.5520012" y="2.3266912" z="-14.536514"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.37961063"/>
+                        <age value="3.3165662"/>
+                        <parent-node value="41"/>
+                        <diameter value="0.1148172"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.0544485691152605"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="194"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="123">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.5975323" y="2.6205344" z="-14.626168"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.3463589"/>
+                        <age value="3.3165617"/>
+                        <parent-node value="42"/>
+                        <diameter value="0.14071251"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9570683390600587"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="196"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="124">
+                    <geometry>
+                        <polyline>
+                            <point x="-2.2275021" y="3.6800308" z="-14.815934"/>
+                            <point x="-2.2198179" y="4.6748805" z="-14.714864"/>
+                            <point x="-2.2794001" y="5.0389228" z="-14.759394"/>
+                            <point x="-2.3107305" y="5.2433028" z="-14.786163"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="2.5800569"/>
+                        <age value="3.1975715"/>
+                        <parent-node value="43"/>
+                        <diameter value="0.12559702"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.7785940730969081"/>
+                            <sample value="7.0258636356806496"/>
+                            <sample value="7.5248774139801444"/>
+                            <sample value="7.8143575055471928"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="198"/>
+                            <sample value="199"/>
+                            <sample value="200"/>
+                            <sample value="201"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="126">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.7786605" y="2.9543805" z="-14.534691"/>
+                            <point x="-1.6725912" y="2.8154254" z="-14.422302"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.33469653"/>
+                        <age value="2.8755305"/>
+                        <parent-node value="44"/>
+                        <diameter value="0.10676224"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="5.2927530027529315"/>
+                            <sample value="7.0450097182740219"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="203"/>
+                            <sample value="204"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="130">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.6662518" y="3.6979046" z="-14.457972"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.34493688"/>
+                        <age value="2.5831993"/>
+                        <parent-node value="45"/>
+                        <diameter value="0.13711067"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.1572198468581503"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="206"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="131">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.29301757" y="3.8138282" z="-14.418882"/>
+                            <point x="-0.25731897" y="3.8126388" z="-14.424615"/>
+                            <point x="-0.25730902" y="3.812639" z="-14.424616"/>
+                            <point x="0.74239957" y="3.7983406" z="-14.405165"/>
+                            <point x="0.88476831" y="3.8065293" z="-14.425281"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="2.1802013"/>
+                        <age value="2.3846188"/>
+                        <parent-node value="46"/>
+                        <diameter value="0.16483165"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.5006732452350819"/>
+                            <sample value="6.5396081482511583"/>
+                            <sample value="6.539618926326666"/>
+                            <sample value="7.6621589494976501"/>
+                            <sample value="7.8316698580365944"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="208"/>
+                            <sample value="209"/>
+                            <sample value="210"/>
+                            <sample value="211"/>
+                            <sample value="212"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="134">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.4414599" y="3.9197564" z="-14.427541"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.26683217"/>
+                        <age value="2.3846135"/>
+                        <parent-node value="47"/>
+                        <diameter value="0.14866179"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.0360574737520594"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="214"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="136">
+                    <geometry>
+                        <polyline>
+                            <point x="-1.9848775" y="4.2950706" z="-13.692125"/>
+                            <point x="-2.7022159" y="4.695734" z="-13.180546"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.9678943"/>
+                        <age value="2.3300335"/>
+                        <parent-node value="48"/>
+                        <diameter value="0.14521299"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.6613980673559654"/>
+                            <sample value="7.8269655458036116"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="216"/>
+                            <sample value="217"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="138">
+                    <geometry>
+                        <polyline>
+                            <point x="0.23798445" y="4.5151176" z="-13.846251"/>
+                            <point x="0.25613609" y="4.5169997" z="-13.836881"/>
+                            <point x="0.96864891" y="4.6381226" z="-13.476454"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.8281361"/>
+                        <age value="1.9107392"/>
+                        <parent-node value="49"/>
+                        <diameter value="0.15240702"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9541312614509101"/>
+                            <sample value="6.9755510548800501"/>
+                            <sample value="7.8379189015121273"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="219"/>
+                            <sample value="220"/>
+                            <sample value="221"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="140">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.28303018" y="4.8651166" z="-13.903334"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.17286929"/>
+                        <age value="1.623273"/>
+                        <parent-node value="50"/>
+                        <diameter value="0.14623602"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="6.9976709806613959"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="223"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="141">
+                    <geometry>
+                        <polyline>
+                            <point x="-0.4872337" y="3.9778259" z="-13.696211"/>
+                            <point x="-0.56240118" y="3.8342519" z="-13.685781"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="1.1623957"/>
+                        <age value="1.4180691"/>
+                        <parent-node value="51"/>
+                        <diameter value="0.16039741"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.6160857143950249"/>
+                            <sample value="7.8183625346653223"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="225"/>
+                            <sample value="226"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="142">
+                    <geometry>
+                        <polyline>
+                            <point x="0.53346062" y="4.2306938" z="-13.873889"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.096980765"/>
+                        <age value="0.88783252"/>
+                        <parent-node value="52"/>
+                        <diameter value="0.12468187"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.0518606470626821"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="228"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="143">
+                    <geometry>
+                        <polyline>
+                            <point x="0.18693484" y="3.9657502" z="-14.183745"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="2"/>
+                        <length value="0.55736238"/>
+                        <age value="0.71136481"/>
+                        <parent-node value="53"/>
+                        <diameter value="0.13429946"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.8091482978533984"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="230"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="144">
+                    <geometry>
+                        <polyline>
+                            <point x="0.71787339" y="4.0380306" z="-14.190017"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.081029899"/>
+                        <age value="0.62279123"/>
+                        <parent-node value="54"/>
+                        <diameter value="0.13304165"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.3147487337027677"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="232"/>
+                        </function>
+                    </functions>
+                </root>
+                <root ID="145">
+                    <geometry>
+                        <polyline>
+                            <point x="0.7253508" y="4.0504231" z="-14.186153"/>
+                        </polyline>
+                    </geometry>
+                    <properties>
+                        <organType value="2"/>
+                        <subType value="3"/>
+                        <length value="0.069618978"/>
+                        <age value="0.6227845"/>
+                        <parent-node value="55"/>
+                        <diameter value="0.15452813"/>
+                    </properties>
+                    <functions>
+                        <function domain="polyline" name="node_creation_time">
+                            <sample value="7.3147554381715967"/>
+                        </function>
+                        <function domain="polyline" name="node_index">
+                            <sample value="234"/>
+                        </function>
+                    </functions>
+                </root>
+                <functions>
+                    <function domain="polyline" name="node_creation_time">
+                        <sample value="0"/>
+                        <sample value="0.094165337778717093"/>
+                        <sample value="0.19343786884024267"/>
+                        <sample value="0.35456158803608545"/>
+                        <sample value="0.41519277990555115"/>
+                        <sample value="0.55811838665031399"/>
+                        <sample value="0.63660278428953598"/>
+                        <sample value="0.76501764983820508"/>
+                        <sample value="0.81993936864615691"/>
+                        <sample value="0.81994201458404214"/>
+                        <sample value="0.88966786455490487"/>
+                        <sample value="1.0645511424609151"/>
+                        <sample value="1.2468626001898027"/>
+                        <sample value="1.2468654127588574"/>
+                        <sample value="1.3781889221307979"/>
+                        <sample value="1.548530806121841"/>
+                        <sample value="1.7113355444265013"/>
+                        <sample value="1.7231730047807523"/>
+                        <sample value="1.7821282775864147"/>
+                        <sample value="1.9381075949704707"/>
+                        <sample value="2.1237821808640263"/>
+                        <sample value="2.123785369344509"/>
+                        <sample value="2.2280189716774808"/>
+                        <sample value="2.2280222080589374"/>
+                        <sample value="2.2280254444418919"/>
+                        <sample value="2.2280286808263452"/>
+                        <sample value="2.2280319172122964"/>
+                        <sample value="2.4739277003644378"/>
+                        <sample value="2.7233304217597207"/>
+                        <sample value="2.7689981568075641"/>
+                        <sample value="2.7690016535950033"/>
+                        <sample value="2.8592825490048677"/>
+                        <sample value="3.0368737171130822"/>
+                        <sample value="3.046874024759382"/>
+                        <sample value="3.1743863655593434"/>
+                        <sample value="3.3207959050602591"/>
+                        <sample value="3.501199963537978"/>
+                        <sample value="3.5534231286900839"/>
+                        <sample value="3.5534270407308566"/>
+                        <sample value="3.7281473734965691"/>
+                        <sample value="4.0577742563481438"/>
+                        <sample value="4.2807272729024506"/>
+                        <sample value="4.2807316138921445"/>
+                        <sample value="4.3930068271793097"/>
+                        <sample value="4.6963243877971399"/>
+                        <sample value="4.9709426360224729"/>
+                        <sample value="5.1570880336939924"/>
+                        <sample value="5.157092954481505"/>
+                        <sample value="5.2081967214081493"/>
+                        <sample value="5.5999227400585587"/>
+                        <sample value="5.8675770326029388"/>
+                        <sample value="6.0581677208246303"/>
+                        <sample value="6.5487512728458421"/>
+                        <sample value="6.7113937695156292"/>
+                        <sample value="6.7929059953146549"/>
+                        <sample value="6.7929122134968045"/>
+                        <sample value="7.3973434558200584"/>
+                        <sample value="7.6673750608864397"/>
+                        <sample value="7.9264858398808649"/>
+                    </function>
+                    <function domain="polyline" name="node_index">
+                        <sample value="1"/>
+                        <sample value="2"/>
+                        <sample value="12"/>
+                        <sample value="16"/>
+                        <sample value="19"/>
+                        <sample value="24"/>
+                        <sample value="27"/>
+                        <sample value="29"/>
+                        <sample value="32"/>
+                        <sample value="34"/>
+                        <sample value="36"/>
+                        <sample value="40"/>
+                        <sample value="42"/>
+                        <sample value="44"/>
+                        <sample value="46"/>
+                        <sample value="49"/>
+                        <sample value="63"/>
+                        <sample value="72"/>
+                        <sample value="74"/>
+                        <sample value="76"/>
+                        <sample value="78"/>
+                        <sample value="80"/>
+                        <sample value="88"/>
+                        <sample value="91"/>
+                        <sample value="94"/>
+                        <sample value="97"/>
+                        <sample value="104"/>
+                        <sample value="123"/>
+                        <sample value="130"/>
+                        <sample value="132"/>
+                        <sample value="134"/>
+                        <sample value="140"/>
+                        <sample value="142"/>
+                        <sample value="149"/>
+                        <sample value="160"/>
+                        <sample value="166"/>
+                        <sample value="170"/>
+                        <sample value="172"/>
+                        <sample value="178"/>
+                        <sample value="183"/>
+                        <sample value="190"/>
+                        <sample value="193"/>
+                        <sample value="195"/>
+                        <sample value="197"/>
+                        <sample value="202"/>
+                        <sample value="205"/>
+                        <sample value="207"/>
+                        <sample value="213"/>
+                        <sample value="215"/>
+                        <sample value="218"/>
+                        <sample value="222"/>
+                        <sample value="224"/>
+                        <sample value="227"/>
+                        <sample value="229"/>
+                        <sample value="231"/>
+                        <sample value="233"/>
+                        <sample value="235"/>
+                        <sample value="236"/>
+                        <sample value="237"/>
+                    </function>
+                </functions>
+            </root>
+        </plant>
+    </scene>
+</rsml>

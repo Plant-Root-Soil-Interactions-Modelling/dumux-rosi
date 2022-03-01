@@ -50,10 +50,10 @@ sH = 1e-4 # [cm-1]
 sC = 5e+10 # [cm3/mol]
 
 #[Newton]
-#MaxRelativeShift = 1.e-6
+#MaxRelativeShift = 1.e-7
 
 #[Restart]
-#Time = 5.11231e+06
-#mL = 8.25831e-11 # value of mL at last time step
-#SoilFile = ./results_soybean_HCCM_2018/soybean_HCCM_2018-01420.vtu
-#RootFile = ./results_soybean_HCCM_2018/soybean_HCCM_2018-01420.vtp
+#Time = 5.11274e+06
+#mL = 8.23357e-11 # value of mL at last time step
+#SoilFile = ./results_soybean_H+C_2018/soybean_H+C_2018-01420.vtu
+#RootFile = ./results_soybean_H+C_2018/soybean_H+C_2018-01420.vtp

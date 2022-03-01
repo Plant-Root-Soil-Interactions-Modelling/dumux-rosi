@@ -32,10 +32,13 @@ Overlap = 1
 P = -150 -300
 Z = -1.5 0. 
 
-[Newton]
-MaxRelativeShift = 1.e-7
+[RootSystem.Collar]
+CritCollarP = -8.5e3
+
+#[Newton]
+#MaxRelativeShift = 1.e-6
 
 #[Restart]
-#Time = 255600
-#SoilFile = ./results_soybean_HCM_2003/soybean_HCM_2003-00071.vtu
-#RootFile = ./results_soybean_HCM_2003/soybean_HCM_2003-00071.vtp
+#Time = 1.13533e+07
+#SoilFile = ./results_soybean_Honly_2003_1/soybean_Honly_2003_1-00720.vtu
+#RootFile = ./results_soybean_Honly_2003_1/soybean_Honly_2003_1-00720.vtp

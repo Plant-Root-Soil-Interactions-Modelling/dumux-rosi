@@ -32,8 +32,11 @@ Overlap = 1
 P = -150 -300
 Z = -1.5 0. 
 
+[RootSystem.Collar]
+CritCollarP = -8.5e3
+
 #[Newton]
-#MaxRelativeShift = 1.e-7
+#MaxRelativeShift = 1.e-6
 
 #[Restart]
 #Time = 6.69595e+06

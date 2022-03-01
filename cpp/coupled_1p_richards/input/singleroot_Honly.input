@@ -14,5 +14,8 @@ P = -285 -300
 Z = -.15 0.
 
 [RootSystem.Collar]
+CritCollarP = -8.5e3
+
+[RootSystem.Collar]
 Transpiration = 5e-4 # [kg/day] = 0.5cm3/day 
 Sinusoidal = True

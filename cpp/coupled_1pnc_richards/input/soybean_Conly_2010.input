@@ -49,8 +49,8 @@ c = 200 # [1]
 sH = 0 # [cm-1]
 sC = 5e+7 # [cm3/mol]
 
-#[Newton]
-#MaxRelativeShift = 1.e-6
+[Newton]
+MaxRelativeShift = 1.e-6
 
 #[Restart]
 #Time = 9.61927e+06
