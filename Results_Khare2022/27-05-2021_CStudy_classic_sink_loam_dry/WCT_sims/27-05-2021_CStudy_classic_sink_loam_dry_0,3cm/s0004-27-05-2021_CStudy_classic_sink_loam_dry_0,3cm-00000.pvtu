@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<VTKFile type="PUnstructuredGrid" version="0.1" byte_order="LittleEndian">
+  <PUnstructuredGrid GhostLevel="0">
+    <PPointData>
+    </PPointData>
+    <PCellData Scalars="p (Pa)">
+      <PDataArray type="Float32" Name="p (Pa)" NumberOfComponents="1"/>
+      <PDataArray type="Float32" Name="saturation" NumberOfComponents="1"/>
+      <PDataArray type="Float32" Name="process rank" NumberOfComponents="1"/>
+    </PCellData>
+    <PPoints>
+      <PDataArray type="Float32" Name="Coordinates" NumberOfComponents="3"/>
+    </PPoints>
+    <Piece  Source="s0004-p0000-27-05-2021_CStudy_classic_sink_loam_dry_0,3cm-00000.vtu"/>
+    <Piece  Source="s0004-p0001-27-05-2021_CStudy_classic_sink_loam_dry_0,3cm-00000.vtu"/>
+    <Piece  Source="s0004-p0002-27-05-2021_CStudy_classic_sink_loam_dry_0,3cm-00000.vtu"/>
+    <Piece  Source="s0004-p0003-27-05-2021_CStudy_classic_sink_loam_dry_0,3cm-00000.vtu"/>
+  </PUnstructuredGrid>
+</VTKFile>

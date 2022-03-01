@@ -1,0 +1,6 @@
+<?xml version="1.0"?> 
+<VTKFile type="Collection" version="0.1" byte_order="LittleEndian"> 
+<Collection> 
+<DataSet timestep="0" group="" part="0" name="" file="s0004-11-08-2021_CStudy_classic_sink_WCT_loam_dry_0,6cm-00000.pvtu"/> 
+</Collection> 
+</VTKFile> 
