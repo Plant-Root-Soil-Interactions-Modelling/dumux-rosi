@@ -98,12 +98,12 @@ Initialize macroscopic soil model (Dumux binding)
 s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
-s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
+s.setLinearIC(p_top, p_bot)  # cm pressure head
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
+s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -122,7 +122,7 @@ for i in range(0, 100):
 
 rs = pb.MappedSegments(nodes, segs, radii)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut=False)
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
 init_singleroot_contkrkx(r)
 suf = r.get_suf(0.)
@@ -134,14 +134,14 @@ radii = np.array([ 0. if i % 2 == 0 else radius for i in range(0, ns)])  # to ha
 nodes = [pb.Vector3d(0, 0, 0)]  # ns+1
 segs = []
 for i in range(0, int(ns / 2)):
-    nodes.append(pb.Vector3d(0, 0, -(i + 1) * 0.5 + 0.25))  # node 2*i+1 
+    nodes.append(pb.Vector3d(0, 0, -(i + 1) * 0.5 + 0.25))  # node 2*i+1
     nodes.append(pb.Vector3d(0.5, 0, -(i + 1) * 0.5 + 0.25))  # node 2*i+2 - 0.25
     segs.append(pb.Vector2i(0, 2 * i + 1))  # artificial shoot segment
     segs.append(pb.Vector2i(2 * i + 1, 2 * i + 2))  # normal segment
 
 rs = pb.MappedSegments(nodes, segs, radii)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut=False)
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
 init_singleroot_contkrkx(r)
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
@@ -152,7 +152,7 @@ detached_conductivities2(r, suf, krs)
 """ sanity checks """
 r.test()  # sanity checks
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
-outer_r = r.rs.segOuterRadii() 
+outer_r = r.rs.segOuterRadii()
 inner_r = r.rs.radii
 types = r.rs.subTypes
 rho_ = np.divide(outer_r, np.array(inner_r))
@@ -174,7 +174,7 @@ x_, y_ = [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 cell_centers = s.getCellCenters()
 hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
-cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))]) 
+cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
 # print(s.getCellCenters())
@@ -191,28 +191,28 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k=[])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
         kr_[j] = r.kr_f(rs_age + t, types[j], 2, 2, j)
-    inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up  
-    
+    inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
+
     err = 1.e6
     c = 1
     while err > 1 and c < 100:
 
         """ interpolation """
-        # wall_interpolation = timeit.default_timer()                
+        # wall_interpolation = timeit.default_timer()
         rx_ = rx[1::2] - np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from total matric potential to matric potential
         hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
-        rsx = soil_root_interface_table2(rx_, hsb_, inner_kr_[1::2], rho_[1::2], sra_table_lookup)  # [1::2] every second entry, starting from 1                
-        rsx = rsx + np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from matric potential to total matric potential        
+        rsx = soil_root_interface_table2(rx_, hsb_, inner_kr_[1::2], rho_[1::2], sra_table_lookup)  # [1::2] every second entry, starting from 1
+        rsx = rsx + np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from matric potential to total matric potential
         # wall_interpolation = timeit.default_timer() - wall_interpolation
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         rx_old = rx.copy()
@@ -222,7 +222,7 @@ for i in range(0, NT):
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx=False, cells=False)
+    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx = False, cells = False)
 
 #     min_rsx = np.min(rsx)  # for console output
 #     max_rsx = np.max(rsx)
@@ -233,7 +233,7 @@ for i in range(0, NT):
     s.setSource(soil_fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
-    hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))]) 
+    hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])
     wall_soil = timeit.default_timer() - wall_soil
 
     wall_iteration = timeit.default_timer() - wall_iteration
@@ -254,29 +254,29 @@ for i in range(0, NT):
         dd = np.array(s.getWaterContent())
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes[1::2])
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
 
 file1 = 'results/psix_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 file4 = 'results/transpiration_singleroot_sra_dynamicA2_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 file5 = 'results/soil_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.transpose(np.array(psi_s2_)))
-df5.to_excel(file5, index=False, header=False)
+df5.to_excel(file5, index = False, header = False)
 
 print(collar_vfr)
 print(sink_sum)

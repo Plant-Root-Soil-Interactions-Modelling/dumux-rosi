@@ -1,64 +1,78 @@
 """ 
 Jan's new scenarios with the new SRA sink
 
-1d soil, 2 cm thick layers, dynamic conductivities (see root_conductivities.py)
+see aggregated rs
 """
 
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
 sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
 sys.path.append("../");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
-import plantbox as pb
-import rsml_reader as rsml
-from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from richards import RichardsWrapper  # Python part
+import plantbox as pb  # CPlantBox
+from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+from richards import RichardsWrapper  # Python part, macroscopic soil model
+from xylem_flux import *  # root system Python hybrid solver
+from rhizo_models import *  # Helper class for cylindrical rhizosphere models
+import aggregated_rs as agg
+
 import vtk_plot as vp
 import van_genuchten as vg
-from root_conductivities import *
-from rhizo_models import plot_transpiration
+from sra_table_lookup import *
 
-from math import *
-import numpy as np
 import matplotlib.pyplot as plt
-import timeit
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+import numpy as np
+import pandas as pd
 from scipy.optimize import fsolve
-from scipy import sparse
-import scipy.sparse.linalg as LA
-
-from sra_table_lookup import *  # <------- new
 
 
-def sinusoidal(t):
-    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
+def soil_root_interface(rx, sx, inner_kr, rho, sp):
+    """
+    rx             xylem matric potential [cm]
+    sx             bulk soil matric potential [cm]
+    inner_kr       root radius times hydraulic conductivity [cm/day] 
+    rho            geometry factor [1]
+    sp             soil van Genuchten parameters (type vg.Parameters)
+    """
+    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
+    # rho = outer_r / inner_r  # Eqn [5]
+    rho2 = rho * rho  # rho squared
+    # b = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho) - 0.5))  # Eqn [4]
+    b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
+    fun = lambda x: (inner_kr * rx + b * sx * k_soilfun(sx, x)) / (b * k_soilfun(sx, x) + inner_kr) - x
+    rsx = fsolve(fun, rx)
+    return rsx
 
 
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     assert rx.shape == sx.shape
-    rsx = f((rx, sx, inner_kr_ , rho_))
+    try:
+        rsx = f((rx, sx, inner_kr_ , rho_))
+    except:
+        print("failed:", rx, sx, inner_kr_ , rho_)
     return rsx
+
+
+def double_(rsx):
+    rsx2 = np.array([ 0. if i % 2 == 0 else rsx[int(i / 2)] for i in range(0, ns)])
+    return rsx2
 
 """ 
 Parameters  
 """
 
 """ soil """
+name = "dry_agg"  # name to export resutls
 min_b = [-7.5, -37.5, -110.]
 max_b = [7.5, 37.5, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
-
-name = "dry_1d"  # name to export resutls
-
-alpha = 0.018;  # (cm-1)
-n = 1.8;
-Ks = 28.46;  # (cm d-1)
+alpha = 0.018  # (cm-1)
+n = 1.8
+Ks = 28.46  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
 p_top = -5000  #  (dry), -310 (wet)
 p_bot = -200  #
-
 soil_ = loam
 soil = vg.Parameters(soil_)
 
@@ -78,35 +92,37 @@ skip = 20  # for output and results, skip iteration
 s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
-s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
+s.setLinearIC(p_top, p_bot)  # cm pressure head
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
-# s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
+s.ddt = 1.e-5  # [day] initial Dumux time step
 
-""" Initialize xylem model (a) or (b)"""
-r = XylemFluxPython(fname)
-r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
-init_conductivities_scenario_jan(r)
+""" 
+Initialize xylem model 
+"""
+rr = XylemFluxPython(fname)
+types = rr.rs.subTypes  # simplify root types
+types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
+rr.rs.subTypes = list(types)
+agg.init_conductivities(rr)
+r = agg.create_aggregated_rs(rr, rs_age, min_b, max_b, cell_number)
 
 """ Coupling (map indices) """
 picker = lambda x, y, z: s.pick([x, y, z])
-cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell index
 r.rs.setSoilGrid(picker)  # maps segment
 outer_r = r.rs.segOuterRadii()
 
 """ sanity checks """
 # r.plot_conductivities()
-
 types = r.rs.subTypes
 types = (np.array(types) == 12) * 1  # all 0, only 12 are laterals
 r.rs.subTypes = list(types)
-r.test()  # sanity checks
+# r.test()  # sanity checks
 
 seg_length = r.segLength()
 ns = len(seg_length)
@@ -126,7 +142,7 @@ print("inner_r*kr", kr_min * radius_min, kr_max * radius_max)
 sra_table_lookup = open_sra_lookup("../table_jan2")
 
 # quick check
-# rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]), r, sp, outer_r)
+# rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]predefined_growth), r, sp, outer_r)
 # print(r.rs.radii[0])
 # print(outer_r[0])
 # rsx3 = sra_table_lookup((-15000, -700, 0.1679960056208074, 0.6952332821448589))
