@@ -81,6 +81,7 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
     surf_ = ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False)
     l_ = ana.distribution("length", max_b[2], min_b[2], cell_number[2], False)
     a_ = np.divide(surf_, l_)
+    np.nan_to_num(a_, nan = 0.)
 
     return krs, suf_, kr_surf_, surf_, l_, a_  # ALL NEEDED ????
 
@@ -88,20 +89,24 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
 def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     """  one segment per layer connected by artificial segments"""
     krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
-    l = 0.5
 
-    ns = 2 * cell_number[2]
-    radii = np.array([ 0. if i % 2 == 0 else a_[int(i / 2)] for i in range(0, ns)])  # to have correct outer rhizosphere radius, artificial segments are set to 0
-    nodes = [pb.Vector3d(0, 0, 0)]  # ns+1 nodes
-    segs = []  # ns segments
+    n = int(cell_number[2])
+    nodes = [pb.Vector3d(0, 0, 0)]  # maximal ns+1 nodes
+    segs, radii = [], []  # maximal ns segments
     dx = (max_b[2] - min_b[2]) / cell_number[2]
-    z_ = np.linspace(max_b[2] - dx / 2, min_b[2] + dx / 2, cell_number[2])
+    z_ = np.linspace(max_b[2] - dx / 2, min_b[2] + dx / 2, n)  # cell centers
     # print(z_)
-    for i in range(0, int(ns / 2)):
-        nodes.append(pb.Vector3d(0, 0, z_[i]))  # node 2*i+1
-        nodes.append(pb.Vector3d(l, 0, z_[i]))  # node 2*i+2
-        segs.append(pb.Vector2i(0, 2 * i + 1))  # artificial shoot segment
-        segs.append(pb.Vector2i(2 * i + 1, 2 * i + 2))  # normal segment
+    c = 0
+    for i in range(0, n):
+        if l_[i] > 0:
+            nodes.append(pb.Vector3d(0, 0, z_[i]))  # node 2*i+1
+            nodes.append(pb.Vector3d(l_[i], 0, z_[i]))  # node 2*i+2
+            segs.append(pb.Vector2i(0, 2 * c + 1))  # artificial shoot segment
+            radii.append(0.)
+            segs.append(pb.Vector2i(2 * c + 1, 2 * c + 2))  # normal segment
+            radii.append(a_[i])
+            c += 1
+
     rs = pb.MappedSegments(nodes, segs, radii)
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
@@ -120,17 +125,18 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     # print(kr_surf_)
 
     kr_up, kx_up = [], []
-    for i in range(0, int(ns / 2)):
-        kr_up.append(0.)  # artificial segment
-        if surf_[i] > 0:
-            kr_up.append(kr_surf_[i] / surf_[i])  # mean layer kr [1/day]
-        else:  # no segments in layer
-            kr_up.append(0.)  # regular segment
-        if kr_surf_[i] - suf_krs[i] > 0:
-            kx_up.append(ll[i] * (suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment
-        else:  # no segments in layer
-            kx_up.append(0.)
-        kx_up.append(1.)  # regular segment
+    for i in range(0, n):
+        if l_[i] > 0:
+            kr_up.append(0.)  # artificial segment
+            if surf_[i] > 0:
+                kr_up.append(kr_surf_[i] / surf_[i])  # mean layer kr [1/day]
+            else:  # no segments in layer
+                kr_up.append(0.)  # regular segment
+            if kr_surf_[i] - suf_krs[i] > 0:
+                kx_up.append(ll[i] * (suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment
+            else:  # no segments in layer
+                kx_up.append(0.)
+            kx_up.append(1.)  # regular segment
     r2.setKrValues(kr_up)
     r2.setKxValues(kx_up)
 
@@ -143,45 +149,45 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
 
-    # vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
+    vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
     return r2
 
 
 if __name__ == "__main__":
 
     """ root system """
-    # min_b = [-7.5, -37.5, -110.]
-    # max_b = [7.5, 37.5, 0.]
-    # cell_number = [1, 1, 55]
-    #
-    # fname = "../../../../grids/RootSystem_verysimple2.rsml"
-    # r = XylemFluxPython(fname)
-    # rs_age = 78  # for calculating age dependent conductivities
-    #
-    # types = r.rs.subTypes  # simplify root types
-    # types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
-    # r.rs.subTypes = list(types)
-    #
-    # init_conductivities(r)
-    # # init_conductivities_const(r)
-    # # r.test()  # sanity checks
-    #
-    # # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
-    # # z_ = np.linspace(0, -110, 55)
-    # # plt.plot(suf_, z_)
-    # # plt.show()
-#     create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
-
-    """ single root """
-    min_b = [-7.5, -37.5, -50.]
+    min_b = [-7.5, -37.5, -110.]
     max_b = [7.5, 37.5, 0.]
-    cell_number = [1, 1, 100]
-    r = create_singleroot()
-    init_conductivities_const(r)
+    cell_number = [1, 1, 55]
 
-    krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, 0., min_b, max_b, cell_number)
-    z_ = np.linspace(0, min_b[2], cell_number[2])
-    plt.plot(suf_, z_)
-    plt.show()
+    fname = "../../../../grids/RootSystem_verysimple2.rsml"
+    r = XylemFluxPython(fname)
+    rs_age = 78  # for calculating age dependent conductivities
 
-    r = create_aggregated_rs(r, 0., min_b, max_b, cell_number)
+    types = r.rs.subTypes  # simplify root types
+    types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
+    r.rs.subTypes = list(types)
+
+    init_conductivities(r)
+    # init_conductivities_const(r)
+    # r.test()  # sanity checks
+
+    # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
+    # z_ = np.linspace(0, -110, 55)
+    # plt.plot(suf_, z_)
+    # plt.show()
+    create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
+
+    # """ single root """
+    # min_b = [-7.5, -37.5, -50.]
+    # max_b = [7.5, 37.5, 0.]
+    # cell_number = [1, 1, 100]
+    # r = create_singleroot()
+    # init_conductivities_const(r)
+    #
+    # krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, 0., min_b, max_b, cell_number)
+    # z_ = np.linspace(0, min_b[2], cell_number[2])
+    # plt.plot(suf_, z_)
+    # plt.show()
+    #
+    # r = create_aggregated_rs(r, 0., min_b, max_b, cell_number)

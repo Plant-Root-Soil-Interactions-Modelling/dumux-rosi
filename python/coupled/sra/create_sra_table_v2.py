@@ -51,10 +51,8 @@ sx_ = sx_[::-1]
 akrn = 100
 akrn_ = np.logspace(np.log10(1.e-7), np.log10(1.e-4), akrn)
 
-rhon = 20
-rho_ = np.logspace(np.log10(10), np.log10(200), rhon)
-
-np.save(filename + "_", [rx_, sx_, akrn_, rho_, soil])  # additional data
+rhon = 30
+rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)
 
 print("calculating", rxn * sxn * rhon * akrn, "supporting points")
 
@@ -67,4 +65,4 @@ for i, rx in enumerate(rx_):
                 interface[i, j, k, l] = soil_root_interface(rx, sx, akr, rho, sp)
 
 np.save(filename, interface)  # data
-
+np.save(filename + "_", [rx_, sx_, akrn_, rho_, soil])  # meta data
