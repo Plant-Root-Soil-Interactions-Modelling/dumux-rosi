@@ -25,7 +25,7 @@ path = "results/"
 
 # """ DRY cylindric models """
 # sink = ["soil_singleroot_cyl_dynamic_constkrkx_dry.xls", "soil_singleroot_sra_dynamic_constkrkx_dry.xls"]
-sink = ["soil_singleroot_sra_dynamic_constkrkx_dry.xls", "soil_singleroot_sra_dynamicA2_constkrkx_dry.xls"]
+sink = ["soil_singleroot_sra_dynamicA3_constkrkx_dry.xls", "soil_singleroot_sra_dynamicA2_constkrkx_dry.xls"]
 
 # """ WET cylindric models """
 # sink = ["soil_singleroot_cyl_dynamic_constkrkx_wet.xls", "soil_singleroot_sra_dynamic_constkrkx_wet.xls"]

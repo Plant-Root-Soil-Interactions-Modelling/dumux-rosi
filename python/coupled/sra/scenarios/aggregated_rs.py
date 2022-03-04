@@ -40,7 +40,7 @@ def init_conductivities_const(r):
                   [kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # values, age
 
 
-def create_singleroot(ns = 100, l = 50 , a = 0.05):
+def create_singleroot(ns=100, l=50 , a=0.05):
     """ creates a single root with @param ns segments, length l, and radius a """
     radii = np.array([a] * ns)
     nodes = [pb.Vector3d(0, 0, 0)]
@@ -80,9 +80,8 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
 
     surf_ = ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False)
     l_ = ana.distribution("length", max_b[2], min_b[2], cell_number[2], False)
-    a_ = np.divide(surf_, l_)
-    np.nan_to_num(a_, nan = 0.)
-
+    a_ = np.divide(surf_, 2 * np.pi * np.array(l_))
+    np.nan_to_num(a_, nan=0.)
     return krs, suf_, kr_surf_, surf_, l_, a_  # ALL NEEDED ????
 
 
@@ -99,6 +98,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     c = 0
     for i in range(0, n):
         if l_[i] > 0:
+            print(l_[i])
             nodes.append(pb.Vector3d(0, 0, z_[i]))  # node 2*i+1
             nodes.append(pb.Vector3d(l_[i], 0, z_[i]))  # node 2*i+2
             segs.append(pb.Vector2i(0, 2 * c + 1))  # artificial shoot segment
@@ -109,7 +109,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
 
     rs = pb.MappedSegments(nodes, segs, radii)
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut=False)
     r2 = XylemFluxPython(rs)  # wrap the xylem    # init_conductivities_const(r)
     # r.test()  # sanity checks
     # z_ = np.linspace(0, -110, 55)
@@ -142,14 +142,16 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
 
     kr_ = np.array(kr_up)
     kx_ = np.array(kx_up)
-    # print(kr_)
-    # print(kx_)
+
+    print(np.array(kr_up))
+    print(kx_up)   
+
     print("krs", krs)
     print("suf", np.min(suf_), np.max(suf_), np.sum(suf_))
     print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
 
-    vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
+    # vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
     return r2
 
 

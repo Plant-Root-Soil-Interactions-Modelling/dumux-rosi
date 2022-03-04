@@ -19,9 +19,8 @@ def detached_conductivities2(rs:pb.XylemFlux, suf, krs):
     a = 0.05
     l = 0.5
     L = 50
-    LL = np.linspace(0.25, L - 0.25, int(n / 2))
-#     print(LL)
-#     dd
+    LL = np.linspace(0.25, L - 0.25, int(n / 2))     
+    # print(LL)
 
     suf_krs = suf * krs
     
@@ -35,6 +34,9 @@ def detached_conductivities2(rs:pb.XylemFlux, suf, krs):
 
     rs.setKrValues(np.array(kr_up) / (2 * a * l * np.pi))
     rs.setKxValues(kx_up) 
+
+    print(np.array(kr_up) / (2 * a * l * np.pi))
+    print(kx_up)
 
     kr_ = np.array(kr_up) / (2 * a * l * np.pi)
     kx_ = np.array(kx_up) 
