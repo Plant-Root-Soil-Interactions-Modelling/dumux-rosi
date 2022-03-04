@@ -80,8 +80,8 @@ vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential loo
 sra_table_lookup = open_sra_lookup("../table_jan2")
 
 """ root system """
-trans = 0.5  # * 15 * 75  # average per day [cm3 /day] (sinusoidal)
-wilting_point = -10000  # [cm]
+trans = 0.5 * 15 * 75  # * 15 * 75  # average per day [cm3 /day] (sinusoidal)
+wilting_point = -15000  # [cm]
 predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 78  # initial root system age
 
@@ -142,6 +142,7 @@ start_time = timeit.default_timer()
 # print(s.getCellCenters())
 
 # for post processing
+sink1d = []
 out_times = []  # days
 psi_x_ = []
 psi_s_ = []
@@ -171,7 +172,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k=[])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -192,7 +193,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         rx_old = rx.copy()
@@ -202,7 +203,7 @@ for i in range(0, NT):
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx=False, cells=False)
+    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx = False, cells = False)
 
 #     min_rsx = np.min(rsx)  # for console output
 #     max_rsx = np.max(rsx)
@@ -234,29 +235,40 @@ for i in range(0, NT):
         dd = np.array(s.getWaterContent())
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes[1::2])
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
+
+    """ Additional sink plot """
+    if i % (60 * 6) == 0:  # every 6h
+        ana = pb.SegmentAnalyser(r.rs)
+        ana.addData("fluxes", fluxes)  # cut off for vizualisation
+        flux1d = ana.distribution("fluxes", max_b[2], min_b[2], cell_number[2], True)
+        sink1d.append(np.array(flux1d))
 
 """ xls file output """
 
+np.savetxt(name, np.vstack((x_, -np.array(y_), -np.array(y_))), delimiter = ';')
+sink1d = np.array(sink1d)
+np.save(name + "_sink", sink1d)
+
 file1 = 'results/psix_rootsystem_agg_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_rootsystem_agg_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_rootsystem_agg_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 file4 = 'results/transpiration_rootsystem_agg_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 file5 = 'results/soil_rootsystem_agg_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.transpose(np.array(psi_s2_)))
-df5.to_excel(file5, index=False, header=False)
+df5.to_excel(file5, index = False, header = False)
 
 print(collar_vfr)
 print(sink_sum)
