@@ -44,14 +44,14 @@ Parameters
 """
 
 """ soil """
-min_b = [-7.5, -37.5, -110.]
-max_b = [7.5, 37.5, 0.]
+min_b = [-7.5, -37.5 / 2, -110.]
+max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 fname = "../../../../grids/RootSystem_verysimple.rsml"
 
-name = "wet_1d"  # name to export resutls
+name = "wet_small_1d"  # name to export resutls
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
@@ -71,7 +71,7 @@ predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 78  # initial root system age
 
 """ simulation time """
-sim_time = 7  # 0.65  # 0.25  # [day]
+sim_time = 7.1  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 20  # for output and results, skip iteration

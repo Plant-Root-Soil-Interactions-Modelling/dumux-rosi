@@ -44,13 +44,13 @@ Parameters
 """
 
 """ soil """
-min_b = [-7.5, -37.5, -110.]
-max_b = [7.5, 37.5, 0.]
+min_b = [-7.5, -37.5 / 2, -110.]
+max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
 
-name = "dry_1d"  # name to export resutls
+name = "dry_small_1d"  # name to export resutls
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
@@ -203,7 +203,7 @@ for i in range(0, NT):
         fluxes = None
 
     wall_soil = timeit.default_timer()
-    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root=0)  # Soil part runs parallel
     s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
@@ -222,7 +222,7 @@ for i in range(0, NT):
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
+        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil=[], cells=False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         y_.append(sum_flux)  # cm3/day
         w_.append(water)  # cm3
@@ -250,7 +250,7 @@ s.writeDumuxVTK(name)
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     sink1d = np.array(sink1d)
     np.save(name + "_sink", sink1d)
 

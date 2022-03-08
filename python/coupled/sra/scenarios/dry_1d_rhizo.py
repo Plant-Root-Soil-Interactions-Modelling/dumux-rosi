@@ -30,15 +30,15 @@ Parameters
 """
 
 """ soil """
-min_b = [-7.5, -37.5, -110.]
-max_b = [7.5, 37.5, 0.]
+min_b = [-7.5, -37.5 / 2, -110.]
+max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # # full is very slow
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
 
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
-name = "dry_1d_rhizo"  # name to export resutls
+name = "dry__small_1d_rhizo"  # name to export resutls
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
@@ -113,7 +113,7 @@ Initialize local soil models (around each root segment)
 """
 start_time = timeit.default_timer()
 x = s.getSolutionHead()  # initial condition of soil [cm]
-x = comm.bcast(x, root = 0)  # Soil part runs parallel
+x = comm.bcast(x, root=0)  # Soil part runs parallel
 ns = len(rs.segments)
 dcyl = int(np.floor(ns / max_rank))
 if rank + 1 == max_rank:
@@ -143,7 +143,7 @@ sink1d2 = []
 out_times = []  # days
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root = 0)
+cell_volumes = comm.bcast(cell_volumes, root=0)
 net_flux = np.zeros(cell_volumes.shape)
 
 for i in range(0, NT):
@@ -163,30 +163,30 @@ for i in range(0, NT):
 
     if rank == 0:
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
-        proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
+        proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]
     else:
         proposed_inner_fluxes = None
         rx = None
-    rx = comm.bcast(rx, root = 0)  # needed by rs.get_soil_k
+    rx = comm.bcast(rx, root=0)  # needed by rs.get_soil_k
     wall_root_model = timeit.default_timer() - wall_root_model
 
     """ 2. local soil models """
     wall_rhizo_models = timeit.default_timer()
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
     if rs.mode == "dumux":
-        proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root = 0)
+        proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)
     elif rs.mode == "dumux_exact":
-        soil_k = comm.bcast(soil_k, root = 0)
+        soil_k = comm.bcast(soil_k, root=0)
         rs.solve(dt, rx, proposed_outer_fluxes, rsx, soil_k)
     realized_inner_fluxes = rs.get_inner_fluxes()
-    realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root = 0)
+    realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root=0)
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
 
     """ 3a. macroscopic soil model """
     wall_soil_model = timeit.default_timer()
     water_content = np.array(s.getWaterContent())
-    water_content = comm.bcast(water_content, root = 0)
+    water_content = comm.bcast(water_content, root=0)
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
@@ -194,7 +194,7 @@ for i in range(0, NT):
 
     """ 3b. calculate net fluxes """
     water_content = np.array(s.getWaterContent())
-    water_content = comm.bcast(water_content, root = 0)
+    water_content = comm.bcast(water_content, root=0)
     new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
     for k, root_flux in soil_fluxes.items():
@@ -237,7 +237,7 @@ for i in range(0, NT):
             """ Additional sink plot """
             if i % (60 * 6 * 2) == 0:  # every 6h
                 ana = pb.SegmentAnalyser(r.rs)
-                fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # cm3/day
+                fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # cm3/day
                 ana.addData("fluxes", fluxes)  # cut off for vizualisation
                 ana.addData("fluxes2", realized_inner_fluxes)  # cut off for vizualisation
                 flux1d = ana.distribution("fluxes", max_b[2], min_b[2], cell_number[2], True)
@@ -249,7 +249,7 @@ for i in range(0, NT):
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
+    np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter=';')
     sink1d = np.array(sink1d)
     np.save(name + "_sink", sink1d)
 

@@ -46,7 +46,7 @@ Parameters
 """ soil """
 min_b = [-7.5, -37.5, -110.]
 max_b = [7.5, 37.5, 0.]
-cell_number = [2 * 8, 2 * 38, 2 * 55]  # 2*2*2 cm3
+cell_number = [8, 38, 55]  # 2*2*2 cm3
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
 
@@ -69,7 +69,7 @@ predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 78  # initial root system age
 
 """ simulation time """
-sim_time = 7  # 0.65  # 0.25  # [day]
+sim_time = 7.1  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 20  # for output and results, skip iteration
@@ -206,7 +206,7 @@ for i in range(0, NT):
         fluxes = None
 
     wall_soil = timeit.default_timer()
-    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root=0)  # Soil part runs parallel
     s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
@@ -225,7 +225,7 @@ for i in range(0, NT):
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
+        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil=[], cells=False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         y_.append(sum_flux)  # cm3/day
         w_.append(water)  # cm3
@@ -253,7 +253,7 @@ s.writeDumuxVTK(name)
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     sink1d = np.array(sink1d)
     np.save(name + "_sink", sink1d)
 
