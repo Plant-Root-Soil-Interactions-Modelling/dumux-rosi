@@ -112,7 +112,10 @@ rr = XylemFluxPython(fname)
 types = rr.rs.subTypes  # simplify root types
 types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
 rr.rs.subTypes = list(types)
-agg.init_conductivities(rr)
+
+# agg.init_conductivities(rr)
+agg.init_conductivities_const(rr)
+
 r = agg.create_aggregated_rs(rr, rs_age, min_b, max_b, cell_number)
 nodes = r.rs.nodes
 

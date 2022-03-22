@@ -18,7 +18,7 @@ from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
 import vtk_plot as vp
 import van_genuchten as vg
-from root_conductivities import *
+import aggregated_rs as agg
 
 import numpy as np
 import timeit
@@ -90,8 +90,11 @@ rs = RhizoMappedSegments(fname, wilting_point, NC, logbase, mode)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
+
 # init_conductivities_growth(r, age_dependent, 0.05)  # age_dependent is a boolean, root conductivies are given in the file src/python_modules/root_conductivities.py
-init_conductivities_scenario_jan(r)
+# init_conductivities_scenario_jan(r)
+agg.init_conductivities_const(r)
+
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 rs.set_xylem_flux(r)

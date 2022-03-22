@@ -29,12 +29,19 @@ def init_conductivities(r):
 
 def init_conductivities_const(r):
     """ Hydraulic conductivities - for Jans scenarios, but constant """
-    kr_const = 2.843148e-5 / (2 * np.pi * 0.05 * 0.5)  # in case of table look up, the values must agree, = 0.00018100042
+
+#     # Scenario 1
+#     kr_const = 2.843148e-5 / (2 * np.pi * 0.05 * 0.5)  # in case of table look up, the values must agree, = 0.00018100042
+#     kx_const = 0.346 * 0.5  # [cm3/day] = 0.173
+    
+    # Scenario 2
+    kr_const = 0.00018100042  # in case of table look up, the values must agree, = 0.00018100042
+    kx_const = 0.1 * 0.173  # [cm3/day] = 0.173
+    
     kr = np.array([[0., kr_const], [1e4, kr_const]])
     r.setKrTables([kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
                   [kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
 
-    kx_const = 0.346 * 0.5  # [cm3/day] = 0.173
     kx = np.array([[0., kx_const], [1e4, kx_const]])
     r.setKxTables([kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
                   [kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # values, age

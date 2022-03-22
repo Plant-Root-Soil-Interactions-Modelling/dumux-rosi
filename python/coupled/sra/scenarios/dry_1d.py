@@ -15,10 +15,9 @@ from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 import vtk_plot as vp
 import van_genuchten as vg
-from root_conductivities import *
+import aggregated_rs as agg
 from rhizo_models import plot_transpiration
 
-from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
@@ -31,7 +30,7 @@ from sra_table_lookup import *  # <------- new
 
 
 def sinusoidal(t):
-    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
+    return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
 
 
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
@@ -92,7 +91,9 @@ s.setCriticalPressure(wilting_point)
 r = XylemFluxPython(fname)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
-init_conductivities_scenario_jan(r)
+
+# init_conductivities_scenario_jan(r)
+agg.init_conductivities_const(r)
 
 """ Coupling (map indices) """
 picker = lambda x, y, z: s.pick([x, y, z])
