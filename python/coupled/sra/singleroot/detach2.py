@@ -6,7 +6,8 @@ import numpy as np
 import plantbox as pb  # CPlantBox
 
 """
-    Jans upsacling:
+    old experimental, use aggregated_rs.py insead
+    
     detaching the root segments and predermining effective conductivities (= krs*suf)
 """
 
@@ -19,11 +20,11 @@ def detached_conductivities2(rs:pb.XylemFlux, suf, krs):
     a = 0.05
     l = 0.5
     L = 50
-    LL = np.linspace(0.25, L - 0.25, int(n / 2))     
+    LL = np.linspace(0.25, L - 0.25, int(n / 2))
     # print(LL)
 
     suf_krs = suf * krs
-    
+
     kr_up = []
     kx_up = []
     for i in range(0, int(n / 2)):
@@ -33,13 +34,13 @@ def detached_conductivities2(rs:pb.XylemFlux, suf, krs):
         kx_up.append(1.)  # regular segment
 
     rs.setKrValues(np.array(kr_up) / (2 * a * l * np.pi))
-    rs.setKxValues(kx_up) 
+    rs.setKxValues(kx_up)
 
     print(np.array(kr_up) / (2 * a * l * np.pi))
     print(kx_up)
 
     kr_ = np.array(kr_up) / (2 * a * l * np.pi)
-    kx_ = np.array(kx_up) 
+    kx_ = np.array(kx_up)
 
     print("krs", krs)
     print("suf", np.min(suf), np.max(suf), np.sum(suf))

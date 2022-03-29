@@ -1,7 +1,7 @@
 """ 
-Jan's single root scenario
+Single root scenario: Soil depletion due to constant Dirichlet collar potential
 
-steady rate approach (to check if numbers agree to Matlab) 
+using steady rate approach and fix point iteration
 """
 
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
@@ -57,23 +57,24 @@ Parameters
 """
 
 """ soil """
-name = "singleroot"  # name to export resutls
+p_top = -5000  # -5000 (_dry), -300 (_wet)
+p_bot = -200  #
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+
 min_b = [-0.5, -0.5, -50.]
 max_b = [0.5, 0.5, 0.]
-cell_number = [1, 1, 100]  # # full is very slow
-periodic = False  # check data first
+cell_number = [1, 1, 100]
+periodic = False
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-alpha = 0.018;  # (cm-1)
+
+alpha = 0.018;  # (cm-1) # spoil
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -5000  # -5000 (dry), -300 (wet)
-p_bot = -200  #
-sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
-sra_table_lookup = open_sra_lookup("../table_jan2")
+sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
 
 """ root system """
 collar = -8000  # dirichlet
@@ -97,7 +98,6 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -154,7 +154,7 @@ for i in range(0, NT):
     wall_fixpoint = timeit.default_timer()
 
     if i == 0:  # only first time
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells=False, soil_k=[])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
         rx_old = rx.copy()
 
     err = 1.e6
@@ -174,7 +174,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells=False, soil_k=[])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
         # rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem
@@ -209,22 +209,22 @@ for i in range(0, NT):
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
         sink_.append(fluxes.copy())
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
 
 file1 = 'results/psix_singleroot_sra_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_singleroot_sra_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_singleroot_sra_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 print(collar_vfr)
 print(sink_sum)

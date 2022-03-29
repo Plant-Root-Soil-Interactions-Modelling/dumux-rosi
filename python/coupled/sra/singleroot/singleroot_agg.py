@@ -1,12 +1,12 @@
 """ 
-Single root scenario: Soil depletion due to sinusoidal transpiration
+Single root scenario: Soil depletion due to constant Dirichlet collar potential
 
-using an (old experimental) aggregated root system, and steady rate approach and fix point iteration
+using an aggregated root system, and steady rate approach and fix point iteration
 """
 
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
 sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
-sys.path.append("../");
+sys.path.append("../"); sys.path.append("../scenarios/");
 
 import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
@@ -19,6 +19,7 @@ import van_genuchten as vg
 from detach2 import *
 from root_conductivities import *
 from sra_table_lookup import *
+import aggregated_rs as agg
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -62,35 +63,35 @@ Parameters
 """
 
 """ soil """
-name = "singleroot"  # name to export resutls
-min_b = [-0.5, -0.5, -50.]
-max_b = [0.5, 0.5, 0.]
-cell_number = [1, 1, 100]  # # full is very slow
-periodic = False  # check data first
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-alpha = 0.018;  # (cm-1)
-n = 1.8;
-Ks = 28.46;  # (cm d-1)
-loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -5000  # -5000 (_dry), -1000 (_wet)
+p_top = -5000  # -5000 (_dry), -300 (_wet)
 p_bot = -200  #
 sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+
+min_b = [-0.5, -0.5, -50.]  # domain
+max_b = [0.5, 0.5, 0.]
+cell_number = [1, 1, 100]
+periodic = False
+domain_volume = np.prod(np.array(max_b) - np.array(min_b))
+
+alpha = 0.018  # (cm-1) soil
+n = 1.8
+Ks = 28.46  # (cm d-1)
+loam = [0.08, 0.43, alpha, n, Ks]
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
-sra_table_lookup = open_sra_lookup("../table_jan2")
+sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
 
 """ root system """
-# collar = -8000  # dirichlet
-trans = 0.5  # 0.5
+collar = -8000  # dirichlet
 radius = 0.05  # cm
-wilting_point = -10000
+wilting_point = -15000
 
 """ simulation time """
-sim_time = 7.1  # 0.65  # 0.25  # [day]
+sim_time = 0.51  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 1 * 60 * 6  # for output and results, skip iteration
+skip = 1 * 60  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -103,7 +104,6 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -111,56 +111,24 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 """ 
 Initialize xylem model 
 """
-""" normal root system for krs, suf """
-ns = 100  # 50 cm root, 100 segments, 0.5 cm each
-radii = np.array([radius] * ns)
-nodes = [pb.Vector3d(0, 0, 0)]
-segs = []
-for i in range(0, 100):
-    nodes.append(pb.Vector3d(0, 0, -(i + 1) * 0.5))
-    segs.append(pb.Vector2i(i, i + 1))
+r = agg.create_singleroot()  # normal root system for krs, suf
+agg.init_conductivities_const(r)
 
-rs = pb.MappedSegments(nodes, segs, radii)
-rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
-init_singleroot_contkrkx(r)
-suf = r.get_suf(0.)
-krs, _ = r.get_krs(0.)
+r = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)  # aggregated root system, based on properties of the 'normal' one
 
-""" detached root system linked with artificial segments """
-ns = 200  # 50 cm root, 100 segments, 0.5 cm each
-radii = np.array([ 0. if i % 2 == 0 else radius for i in range(0, ns)])  # to have correct outer rhizosphere radius
-nodes = [pb.Vector3d(0, 0, 0)]  # ns+1
-segs = []
-for i in range(0, int(ns / 2)):
-    nodes.append(pb.Vector3d(0, 0, -(i + 1) * 0.5 + 0.25))  # node 2*i+1
-    nodes.append(pb.Vector3d(0.5, 0, -(i + 1) * 0.5 + 0.25))  # node 2*i+2 - 0.25
-    segs.append(pb.Vector2i(0, 2 * i + 1))  # artificial shoot segment
-    segs.append(pb.Vector2i(2 * i + 1, 2 * i + 2))  # normal segment
-
-rs = pb.MappedSegments(nodes, segs, radii)
-rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
-init_singleroot_contkrkx(r)
-picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-detached_conductivities2(r, suf, krs)
+picker = lambda x, y, z: s.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 # vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
-
-""" CHECK """
-# print(r.rs.nodes[0], r.rs.nodes[1], r.rs.nodes[2], r.rs.nodes[3], r.rs.nodes[-4], r.rs.nodes[-3], r.rs.nodes[-2], r.rs.nodes[-1])
-# print(r.rs.segments[0], r.rs.segments[1], r.rs.segments[2], r.rs.segments[3], r.rs.segments[-4], r.rs.segments[-3], r.rs.segments[-2], r.rs.segments[-1])
+nodes = r.rs.nodes
 
 """ sanity checks """
+ns = len(r.rs.segments)
 r.test()  # sanity checks
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
 outer_r = r.rs.segOuterRadii()
 inner_r = r.rs.radii
 types = r.rs.subTypes
 rho_ = np.divide(outer_r, np.array(inner_r))
-
 # print(outer_r)
 # print(inner_r)
 # print(types)
@@ -200,7 +168,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells = False, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -221,7 +189,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells = False, soil_k = [])
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         rx_old = rx.copy()
@@ -268,22 +236,22 @@ for i in range(0, NT):
 
 """ xls file output """
 
-file1 = 'results/psix_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
+file1 = 'results/psix_singleroot_agg_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
 df1.to_excel(file1, index = False, header = False)
 
-file2 = 'results/psiinterface_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
+file2 = 'results/psiinterface_singleroot_agg_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
 df2.to_excel(file2, index = False, header = False)
 
-file3 = 'results/sink_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
+file3 = 'results/sink_singleroot_agg_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
 df3.to_excel(file3, index = False, header = False)
 
-file4 = 'results/transpiration_singleroot_sra_dynamicA2_constkrkx' + sstr
+file4 = 'results/transpiration_singleroot_agg_constkrkx' + sstr
 np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
-file5 = 'results/soil_singleroot_sra_dynamicA2_constkrkx' + sstr + '.xls'
+file5 = 'results/soil_singleroot_agg_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.transpose(np.array(psi_s2_)))
 df5.to_excel(file5, index = False, header = False)
 

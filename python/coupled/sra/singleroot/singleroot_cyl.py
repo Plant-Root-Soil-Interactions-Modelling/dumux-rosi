@@ -1,9 +1,7 @@
 """ 
-Jan's new scenario
+Single root scenario: Soil depletion due to constant Dirichlet collar potential
 
-Coupled to cylindrical rhizosphere models using 1d richards equation (DUMUX solver)
-
-complicated MPI support (a non-mpi version of richards_cyl is needed, see script dumux3_nompi.sh)
+coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver)
 """
 
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
@@ -29,19 +27,20 @@ Parameters
 """
 
 """ soil """
-name = "singleroot"  # name to export resutls
-min_b = [-0.5, -0.5, -50.]
+p_top = -5000  # -5000 (_dry), -300 (_wet)
+p_bot = -200  #
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+
+min_b = [-0.5, -0.5, -50.]  # domain
 max_b = [0.5, 0.5, 0.]
-cell_number = [1, 1, 100]  # # full is very slow
-periodic = False  # check data first
+cell_number = [1, 1, 100]
+periodic = False
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-alpha = 0.018;  # (cm-1)
+
+alpha = 0.018;  # (cm-1) # soil
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -300  # -5000 (dry), -300 (wet)
-p_bot = -200  #
-sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
@@ -74,7 +73,6 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -151,6 +149,7 @@ for i in range(0, NT + 1):
         hsoil = rsx[j]
         hint = rx[j + 1]
         soil_k0[j] = (vg.fast_mfp[soil](hsoil) - vg.fast_mfp[soil](hint)) / (hsoil - hint)
+
     soil_k00 = np.divide(soil_k0, rs.get_dx2())  # only valid for homogenous soil
     soil_k000 = rs.get_soil_k(rx)
 
@@ -231,7 +230,7 @@ print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s"
 
 """ xls file output """
 
-rs.plot_cylinders()
+# rs.plot_cylinders()
 
 file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))

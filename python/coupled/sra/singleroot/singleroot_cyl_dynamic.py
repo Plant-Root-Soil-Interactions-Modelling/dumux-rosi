@@ -1,9 +1,7 @@
 """ 
-Jan's new scenario
+Single root scenario: Soil depletion due to sinusoidal transpiration
 
-Coupled to cylindrical rhizosphere models using 1d richards equation (DUMUX solver)
-
-complicated MPI support (a non-mpi version of richards_cyl is needed, see script dumux3_nompi.sh)
+coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver)
 """
 
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
@@ -29,28 +27,28 @@ Parameters
 """
 
 """ soil """
-name = "singleroot"  # name to export resutls
+p_top = -5000  # -5000 (_dry), -1000 (_wet)
+p_bot = -200  #
+sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+
 ns = 100  # 50 cm root, 100 segments, 0.5 cm each
 L = 50.  # cm
 min_b = [-0.5, -0.5, -L]
 max_b = [0.5, 0.5, 0.]
-cell_number = [1, 1, ns]  # # full is very slow
-periodic = False  # check data first
+cell_number = [1, 1, ns]
+periodic = False
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-alpha = 0.018;  # (cm-1)
-n = 1.8;
-Ks = 28.46;  # (cm d-1)
+
+alpha = 0.018  # (cm-1) soil
+n = 1.8
+Ks = 28.46  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -1000  # 50000.5  # -5000 (_dry), -1000 (_wet)
-p_bot = -200  #
-sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
 
 """ root system """
-# collar = -8000  # dirichlet
-trans = 0.5  # 0.5
+trans = 0.5  # cm3/day
 radius = 0.05  # cm
 wilting_point = -10000
 
@@ -88,7 +86,7 @@ Initialize xylem model
 radii = np.array([radius] * ns)
 nodes = [pb.Vector3d(0, 0, 0)]
 segs = []
-for i in range(0, ns): 
+for i in range(0, ns):
     # print(((i + 1) / ns) * L)
     nodes.append(pb.Vector3d(0, 0, -((i + 1) / ns) * L))  # node i+1
     segs.append(pb.Vector2i(i, i + 1))
@@ -98,10 +96,11 @@ rs = RhizoMappedSegments(ms, wilting_point, NC, logbase, mode)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
-init_singleroot_contkrkx(r)
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 rs.set_xylem_flux(r)
+
+init_singleroot_contkrkx(r)
 
 """ sanity checks """
 r.test()  # sanity checks
@@ -139,7 +138,7 @@ water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root=0)
+cell_volumes = comm.bcast(cell_volumes, root = 0)
 net_flux = np.zeros(cell_volumes.shape)
 
 t = 0.
@@ -153,7 +152,7 @@ for i in range(0, NT + 1):
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
     if i == 0:
         # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells=False, wilting_point=wilting_point, soil_k=[])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
 
     # exact
     soil_k0 = np.zeros(rsx.shape)
@@ -183,10 +182,10 @@ for i in range(0, NT + 1):
     soil_k = soil_k00
 
     # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k)
-    rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells=False, wilting_point=wilting_point, soil_k=soil_k)
+    rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = soil_k)
 
-    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx=False, cells=False, soil_k=soil_k.copy())  # [cm3/day]
-    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil=soil_k.copy(), cells=False)
+    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
+    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
 
     err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
 
@@ -235,7 +234,7 @@ for i in range(0, NT + 1):
 
     if i % skip == 0:
         fluxes = np.array(proposed_inner_fluxes)
-        collar_flux = r.collar_flux(0., rx, rsx, k_soil=soil_k, cells=False)
+        collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
         print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
         rx_ = rx[1:]
         psi_x_.append(rx_)
@@ -251,22 +250,22 @@ print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s"
 """ xls file output """
 file1 = 'results/psix_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 file4 = 'results/transpiration_singleroot_cyl_dynamic_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 file5 = 'results/soil_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.transpose(np.array(psi_s2_)))
-df5.to_excel(file5, index=False, header=False)
+df5.to_excel(file5, index = False, header = False)
 
 # rs.plot_cylinders()
 
