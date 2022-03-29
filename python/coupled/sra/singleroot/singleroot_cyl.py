@@ -60,7 +60,7 @@ split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 sim_time = 0.51  # 0.65  # 0.25  # [day]
 dt = 20 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 3 * 1 * 60  # for output and results, skip iteration
+skip = 3  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -123,24 +123,27 @@ start_time = timeit.default_timer()
 # for post processing
 out_times = []  # days
 psi_x_ = []
-psi_s_ = []
+psi_s_, psi_s2_ = [], []
 sink_ = []
 collar_vfr = []
 sink_sum = []
+x_, y_ = [], []
 
 water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root = 0)
+cell_volumes = comm.bcast(cell_volumes, root=0)
 net_flux = np.zeros(cell_volumes.shape)
 
 for i in range(0, NT + 1):
 
+    t = i * dt  # current simulation time
+
     """ 1. xylem model """
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
     if i == 0:
-        rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = [])
+        rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells=False, soil_k=[])
 
     # exact
 
@@ -171,11 +174,11 @@ for i in range(0, NT + 1):
 
     soil_k = soil_k00
 
-    rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k.copy())
+    rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells=False, soil_k=soil_k.copy())
     # rx = r.solve(0., -100, 0., rsx, False, wilting_point, soil_k = soil_k.copy())
 
-    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
-    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
+    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx=False, cells=False, soil_k=soil_k.copy())  # [cm3/day]
+    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil=soil_k.copy(), cells=False)
 
     err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
 
@@ -216,12 +219,19 @@ for i in range(0, NT + 1):
 
     """ remember results ... """
     if i % skip == 0:
+        x_.append(t)
+        sum_flux = 0.
+        for f in soil_fluxes.values():
+            sum_flux += f
+        y_.append(sum_flux)  # cm3/day
         fluxes = np.array(proposed_inner_fluxes)
-        collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
+        collar_flux = r.collar_flux(0., rx, rsx, k_soil=soil_k, cells=False)
         print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
         rx_ = rx[1:]
         psi_x_.append(rx_)
         psi_s_.append(np.array(rsx.copy()))
+        dd = np.array(s.getSolutionHead())
+        psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy())
         collar_vfr.append(collar_flux)  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
@@ -229,20 +239,29 @@ for i in range(0, NT + 1):
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
 """ xls file output """
-
-# rs.plot_cylinders()
+print("writing xls")
 
 file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
-df1 = pd.DataFrame(np.transpose(np.array(psi_x_)))
-df1.to_excel(file1, index = False, header = False)
+df1 = pd.DataFrame(np.array(psi_x_))
+df1.to_excel(file1, index=False, header=False)
 
 file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'
-df2 = pd.DataFrame(np.transpose(np.array(psi_s_)))
-df2.to_excel(file2, index = False, header = False)
+df2 = pd.DataFrame(np.array(psi_s_))
+df2.to_excel(file2, index=False, header=False)
 
 file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
-df3 = pd.DataFrame(-np.transpose(np.array(sink_)))
-df3.to_excel(file3, index = False, header = False)
+df3 = pd.DataFrame(-np.array(sink_))
+df3.to_excel(file3, index=False, header=False)
 
-print(collar_vfr)
-print(sink_sum)
+file4 = 'results/transpiration_singleroot_cyl_constkrkx' + sstr
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+
+file5 = 'results/soil_singleroot_cyl_constkrkx' + sstr + '.xls'
+df5 = pd.DataFrame(np.array(psi_s2_))
+df5.to_excel(file5, index=False, header=False)
+
+print("fin")
+# print(collar_vfr)
+# print(sink_sum)
+
+# rs.plot_cylinders()
