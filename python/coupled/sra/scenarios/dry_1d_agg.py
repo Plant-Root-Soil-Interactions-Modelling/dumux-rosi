@@ -62,18 +62,21 @@ Parameters
 
 """ soil """
 name = "dry_small_agg"  # name to export resutls
+
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
+
+p_top = -5000  # -5000 (_dry), -310 (_wet)
+p_bot = -200
+sstr = "_dry"
+
 alpha = 0.018  # (cm-1)
 n = 1.8
 Ks = 28.46  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -5000  # -5000 (_dry), -310 (_wet)
-p_bot = -200  #
-sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
@@ -223,45 +226,34 @@ for i in range(0, NT):
     wall_iteration = timeit.default_timer() - wall_iteration
 
     """ remember results ... """
-    if i % (skip / 60) == 0:
+    if i % skip == 0:
+        print(i / skip)
         x_.append(t)
         sum_flux = 0.
         for f in soil_fluxes.values():
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
-
-    if i % skip == 0:
-        print(i / skip)
         rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
-        dd = np.array(s.getWaterContent())
+        dd = np.array(s.getSolutionHead())
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes[1::2])
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))
         sink_sum.append(np.sum(fluxes))
-    #
-    # """ Additional sink plot """
-    # if i % (60 * 6) == 0:  # every 6h
-    #     ana = pb.SegmentAnalyser(r.rs)
-    #     ana.addData("fluxes", fluxes)  # cut off for vizualisation
-    #     flux1d = ana.distribution("fluxes", max_b[2], min_b[2], cell_number[2], True)
-    #     sink1d.append(np.array(flux1d))
 
 """ xls file output """
 print("writing xls")
 
-# np.savetxt(name, np.vstack((x_, -np.array(y_), -np.array(y_))), delimiter=';')
-# sink1d = np.array(sink1d)
-# np.save(name + "_sink", sink1d)
+file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
+# df1 = pd.DataFrame(np.array(psi_x_))
+# df1.to_excel(file1, index = False, header = False)
+np.save(file1, np.array(psi_x_))
 
-file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
-df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index = False, header = False)
-
-file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'
-df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index = False, header = False)
+file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
+# df2 = pd.DataFrame(np.array(psi_s_))
+# df2.to_excel(file2, index = False, header = False)
+np.save(file1, np.array(psi_s_))
 
 file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.array(sink_))

@@ -31,23 +31,23 @@ Parameters
 """
 
 """ soil """
+name = "dry_small_1d_rhizo"  # name to export resutls
+
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # # full is very slow
 periodic = True  # check data first
 fname = "../../../../grids/RootSystem_verysimple2.rsml"
-
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
-name = "dry_small_1d_rhizo"  # name to export resutls
+p_top = -5000  # -5000 (dry), -310 (wet)
+p_bot = -200
+sstr = "_dry"
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -5000  # -5000 (dry), -310 (wet)
-p_bot = -200  #
-
 soil_ = loam
 soil = vg.Parameters(soil_)
 
@@ -64,7 +64,7 @@ logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 7.1  # 0.65  # 0.25  # [day]
+sim_time = 0.01  # 7.1  # 0.65  # 0.25  # [day]
 dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 2  # for output and results, skip iteration
@@ -94,8 +94,6 @@ rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
 
-# init_conductivities_growth(r, age_dependent, 0.05)  # age_dependent is a boolean, root conductivies are given in the file src/python_modules/root_conductivities.py
-# init_conductivities_scenario_jan(r)
 agg.init_conductivities_const(r)
 
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
@@ -138,14 +136,14 @@ print("Starting simulation")
 start_time = timeit.default_timer()
 
 # for post processing
-water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
-x_ = []  # days
+water_domain = []  # cm3
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
 cell_volumes = comm.bcast(cell_volumes, root = 0)
 net_flux = np.zeros(cell_volumes.shape)
 
 psi_x_, psi_s_, sink_, psi_s2_ = [], [], [], []  # for xls output
+x_, y_ = [], []
 
 for i in range(0, NT):
 
@@ -207,61 +205,55 @@ for i in range(0, NT):
 
     if i % skip == 0:
         min_sx = np.min(s.getSolutionHead())
-        # water_cyl = np.sum(rs.get_water_volume())  # cm3
+        dd = np.array(s.getSolutionHead())
 
         if rank == 0:
             x_.append(t)
             psi_x_.append(rx[1:])
             psi_s_.append(rsx)
             collar_flux = r.collar_flux(rs_age + t, rx, rsx, soil_k, False)
-            min_rsx = np.min(np.array(rsx))
-            min_rx = np.min(np.array(rx))
-            print("Cylindrical model: minimum root soil interface {:g} cm, soil {:g} cm, root xylem {:g} cm"
-                  .format(min_rsx, min_sx, min_rx))
+
             min_soil_fluxes, max_soil_fluxes, summed_soil_fluxes = 1.e9, -1.e9, 0.
+            sink = np.zeros(water_content.shape)
             for k, v in soil_fluxes.items():
+                sink[k] += v
                 summed_soil_fluxes += v
                 if max_soil_fluxes < v:
                     max_soil_fluxes = v
                 if min_soil_fluxes > v:
                     min_soil_fluxes = v
+            sink_.append(sink)
+            y_.append(summed_soil_fluxes)  # cm3/day
+            psi_s2_.append(dd[:, 0])
+            water_domain.append(np.min(soil_water))  # cm3
+
+            min_rsx = np.min(np.array(rsx))
+            min_rx = np.min(np.array(rx))
+            print("Cylindrical model: minimum root soil interface {:g} cm, soil {:g} cm, root xylem {:g} cm"
+                  .format(min_rsx, min_sx, min_rx))
             print("Fluxes: summed local fluxes {:g}, collar flux {:g}, predescribed {:g}"
                   .format(summed_soil_fluxes, collar_flux, -trans * sinusoidal(t)))
-            water_domain.append(np.min(soil_water))  # cm3
-            water_collar_cell.append(soil_water[cci])  # cm3
-            water_uptake.append(summed_soil_fluxes)  # cm3/day
             n = round(float(i) / float(NT) * 100.)
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], {:g} days".format(s.simTime))
             print("Iteration {:g} took {:g} seconds [{:g}% root, {:g}% rhizo {:g}% soil ]\n".
                   format(i, wall_iteration, wall_root_model / wall_iteration, wall_rhizo_models / wall_iteration, wall_soil_model / wall_iteration))
-#             if min_rsx[-1] < -16000:
-#                 print("breaksim time ", sim_time)
-#                 break
-
-            # """ Additional sink plot """
-            # if i % (60 * 6 * 2) == 0:  # every 6h
-            #     ana = pb.SegmentAnalyser(r.rs)
-            #     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # cm3/day
-            #     ana.addData("fluxes", fluxes)  # cut off for vizualisation
-            #     ana.addData("fluxes2", realized_inner_fluxes)  # cut off for vizualisation
-            #     flux1d = ana.distribution("fluxes", max_b[2], min_b[2], cell_number[2], True)
-            #     flux1d2 = ana.distribution("fluxes2", max_b[2], min_b[2], cell_number[2], True)
-            #     sink1d.append(np.array(flux1d))
-            #     sink1d2.append(np.array(flux1d2))
 
 """ plots and output """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
     file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-    df1 = pd.DataFrame(np.array(psi_x_))
-    df1.to_excel(file1, index = False, header = False)
+    # df1 = pd.DataFrame(np.array(psi_x_))
+    # df1.to_excel(file1, index = False, header = False)
+    np.save(file1, np.array(psi_x_))
 
     file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-    df2 = pd.DataFrame(np.array(psi_s_))
-    df2.to_excel(file2, index = False, header = False)
+    # df2 = pd.DataFrame(np.array(psi_s_))
+    # df2.to_excel(file2, index = False, header = False)
+    np.save(file1, np.array(psi_s_))
 
-    file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'  #
+    file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
+    print(np.array(sink_), shape)
     df3 = pd.DataFrame(-np.array(sink_))
     df3.to_excel(file3, index = False, header = False)
 

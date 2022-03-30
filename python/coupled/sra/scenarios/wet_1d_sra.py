@@ -44,6 +44,8 @@ Parameters
 """
 
 """ soil """
+name = "wet_small_1d"  # name to export resutls
+
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
@@ -51,15 +53,14 @@ periodic = True  # check data first
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 fname = "../../../../grids/RootSystem_verysimple.rsml"
 
-name = "wet_small_1d"  # name to export resutls
+p_top = -310  # -5000 (dry), -310 (wet)
+p_bot = -200
+sstr = "_wet"
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
 Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
-p_top = -310  # -5000 (dry), -310 (wet)
-p_bot = -200  #
-
 soil_ = loam
 soil = vg.Parameters(soil_)
 sra_table_lookup = open_sra_lookup("../table_jan2")
@@ -194,15 +195,7 @@ for i in range(0, NT):
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-        # rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
         fluxes = r.segFluxes(rs_age + t, rx, rsx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
-        min_rsx = np.min(rsx)  # for console output
-        max_rsx = np.max(rsx)
-
-#         sum_flux = 0.
-#         for f in fluxes.values():
-#             sum_flux += f
-#         print(sum_flux, r.collar_flux(rs_age + t, rx, rsx))
 
     else:
         fluxes = None
@@ -218,34 +211,31 @@ for i in range(0, NT):
 
     wall_iteration = timeit.default_timer() - wall_iteration
 
-    if rank == 0 and i % skip == 0:
+    if rank == 0 and i % skip == 0:  # remember results
+        x_.append(t)
+        psi_x.append(rs[1,:])
+        psi_s_.append(rsx.copy())
+        sum_flux = 0.
+        sink = np.zeros(sx.shape)
+        for k, v in fluxes.items():
+            sink[k] += v
+            sum_flux += v
+        y_.append(sum_flux)  # cm3/day
+        sink_.append(sink)  # cm3/day
+        psi_s2_.append(sx.copy())
+        w_.append(water)  # cm3
+
         min_sx = np.min(sx)
         max_sx = np.max(sx)
         min_rx = np.min(rx)
         max_rx = np.max(rx)
-        x_.append(t)
-        sum_flux = 0.
-        for f in fluxes.values():
-            sum_flux += f
         cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
-        y_.append(sum_flux)  # cm3/day
-        w_.append(water)  # cm3
         cf.append(cf_)  # cm3/day
-        cpx.append(rx[0])  # cm
-        cps.append(float(sx[cci]))  # cm
         n = round(float(i) / float(NT) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil sx [{:g}, {:g}], interface [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days"
               .format(min_sx, max_sx, min_rsx, max_rsx, min_rx, max_rx, s.simTime))
         print("Iteration {:g} took {:g} seconds [{:g} fixpoint iteration, {:g} soil] \n".format(i, wall_iteration, wall_fixpoint, wall_soil))
-
-        # """ Additional sink plot """
-        # if i % (60 * 6) == 0:  # every 6h
-        #     ana = pb.SegmentAnalyser(r.rs)
-        #     fluxes = r.segFluxes(rs_age + t, rx, rsx, False)
-        #     ana.addData("fluxes", fluxes)  # cut off for vizualisation
-        #     flux1d = ana.distribution("fluxes", max_b[2], min_b[2], cell_number[2], True)
-        #     sink1d.append(np.array(flux1d))
 
     t += dt
 
@@ -255,13 +245,15 @@ s.writeDumuxVTK(name)
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'
-    df1 = pd.DataFrame(np.array(psi_x_))
-    df1.to_excel(file1, index = False, header = False)
+    file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
+    # df1 = pd.DataFrame(np.array(psi_x_))
+    # df1.to_excel(file1, index = False, header = False)
+    np.save(file1, np.array(psi_x_))
 
-    file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'
-    df2 = pd.DataFrame(np.array(psi_s_))
-    df2.to_excel(file2, index = False, header = False)
+    file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
+    # df2 = pd.DataFrame(np.array(psi_s_))
+    # df2.to_excel(file2, index = False, header = False)
+    np.save(file1, np.array(psi_s_))
 
     file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
     df3 = pd.DataFrame(-np.array(sink_))
