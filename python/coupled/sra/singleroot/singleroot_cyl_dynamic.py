@@ -27,9 +27,9 @@ Parameters
 """
 
 """ soil """
-p_top = -5000  # -5000 (_dry), -1000 (_wet)
+p_top = -1000  # -5000 (_dry), -1000 (_wet)
 p_bot = -200  #
-sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 
 ns = 100  # 50 cm root, 100 segments, 0.5 cm each
 L = 50.  # cm
@@ -138,7 +138,7 @@ water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
 
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root=0)
+cell_volumes = comm.bcast(cell_volumes, root = 0)
 net_flux = np.zeros(cell_volumes.shape)
 
 t = 0.
@@ -152,7 +152,7 @@ for i in range(0, NT + 1):
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
     if i == 0:
         # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells=False, wilting_point=wilting_point, soil_k=[])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
 
     # exact
     soil_k0 = np.zeros(rsx.shape)
@@ -182,10 +182,10 @@ for i in range(0, NT + 1):
     soil_k = soil_k00
 
     # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k)
-    rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells=False, wilting_point=wilting_point, soil_k=soil_k)
+    rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = soil_k)
 
-    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx=False, cells=False, soil_k=soil_k.copy())  # [cm3/day]
-    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil=soil_k.copy(), cells=False)
+    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
+    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
 
     err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
 
@@ -232,7 +232,7 @@ for i in range(0, NT + 1):
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
         fluxes = np.array(proposed_inner_fluxes)
-        collar_flux = r.collar_flux(0., rx, rsx, k_soil=soil_k, cells=False)
+        collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
         print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
         rx_ = rx[1:]
         psi_x_.append(rx_)
@@ -249,22 +249,22 @@ print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s"
 print("write xls")
 file1 = 'results/psix_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 file4 = 'results/transpiration_singleroot_cyl_dynamic_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 file5 = 'results/soil_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index=False, header=False)
+df5.to_excel(file5, index = False, header = False)
 
 print("fin")
 # rs.plot_cylinders()

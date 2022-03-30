@@ -26,6 +26,15 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import fsolve
 
+""" 
+Parameters  
+"""
+
+""" soil """
+p_top = -300  # -5000 (_dry), -300 (_wet)
+p_bot = -200  #
+sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
+
 
 def soil_root_interface(rx, sx, inner_kr, rho, sp):
     """
@@ -61,11 +70,6 @@ def double_(rsx):
 """ 
 Parameters  
 """
-
-""" soil """
-p_top = -5000  # -5000 (_dry), -300 (_wet)
-p_bot = -200  #
-sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
 
 min_b = [-0.5, -0.5, -50.]  # domain
 max_b = [0.5, 0.5, 0.]
@@ -168,7 +172,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells=False, soil_k=[])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells = False, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -189,7 +193,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells=False, soil_k=[])
+        rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells = False, soil_k = [])
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         rx_old = rx.copy()
@@ -199,7 +203,7 @@ for i in range(0, NT):
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx=False, cells=False)
+    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx = False, cells = False)
 
 #     min_rsx = np.min(rsx)  # for console output
 #     max_rsx = np.max(rsx)
@@ -221,39 +225,35 @@ for i in range(0, NT):
         sum_flux = 0.
         for f in soil_fluxes.values():
             sum_flux += f
-        y_.append(sum_flux)  # cm3/day        
+        y_.append(sum_flux)  # cm3/day
         rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
-        psi_x_.append(rx_)
-        psi_s_.append(rsx.copy())
+        psi_x_.append(rx_[1::2])
+        psi_s_.append(rsx)
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes[1::2])
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
-        sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
 print("writing xls")
 
 file1 = 'results/psix_singleroot_agg_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_singleroot_agg_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_singleroot_agg_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 file4 = 'results/transpiration_singleroot_agg_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 file5 = 'results/soil_singleroot_agg_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index=False, header=False)
+df5.to_excel(file5, index = False, header = False)
 
 print("fin")
-# print(collar_vfr)
-# print(sink_sum)
 

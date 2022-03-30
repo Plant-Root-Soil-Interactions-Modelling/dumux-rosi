@@ -53,9 +53,9 @@ Parameters
 """
 
 """ soil """
-p_top = -5000  # -5000 (_dry), -1000 (_wet)
+p_top = -1000  # -5000 (_dry), -1000 (_wet)
 p_bot = -200  #
-sstr = "_dry"  # <---------------------------------------------------------- (dry or wet)
+sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 
 ns = 100  # 50 cm root, 100 segments, 0.5 cm each
 L = 50.  # cm
@@ -114,7 +114,7 @@ for i in range(0, ns):
 
 rs = pb.MappedSegments(nodes, segs, radii)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut=False)
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
@@ -162,7 +162,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k=[])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -183,7 +183,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         # print(err)
@@ -194,7 +194,7 @@ for i in range(0, NT):
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False)
+    fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
 
     min_rsx = np.min(rsx)  # for console output
     max_rsx = np.max(rsx)
@@ -214,19 +214,19 @@ for i in range(0, NT):
 
     """ remember results ... """
     if i % skip == 0:
-        print(i / skip)        
+        print(i / skip)
         x_.append(t)
         sum_flux = 0.
         for f in soil_fluxes.values():
             sum_flux += f
-        y_.append(sum_flux)  # cm3/day        
+        y_.append(sum_flux)  # cm3/day
         rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
         psi_x_.append(rx_)
         psi_s_.append(rsx.copy())
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy())
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil=[], cells=False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
@@ -234,22 +234,22 @@ print("write xls")
 
 file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index=False, header=False)
+df1.to_excel(file1, index = False, header = False)
 
 file2 = 'results/psiinterface_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index=False, header=False)
+df2.to_excel(file2, index = False, header = False)
 
 file3 = 'results/sink_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index=False, header=False)
+df3.to_excel(file3, index = False, header = False)
 
 file4 = 'results/transpiration_singleroot_sra_dynamic_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 file5 = 'results/soil_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
 df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index=False, header=False)
+df5.to_excel(file5, index = False, header = False)
 
 print("fin")
 # print(collar_vfr)
