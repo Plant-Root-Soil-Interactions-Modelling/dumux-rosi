@@ -92,7 +92,7 @@ rs_age = 78  # initial root system age
 sim_time = 7.1  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 1 * 60 * 6  # for output and results, skip iteration
+skip = 5  # for output and results, skip iteration
 
 """ Initialize macroscopic soil model """
 s = RichardsWrapper(RichardsSP())

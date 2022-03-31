@@ -73,7 +73,7 @@ rs_age = 78  # initial root system age
 sim_time = 7.1  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 20  # for output and results, skip iteration
+skip = 5  # for output and results, skip iteration
 
 """ Initialize macroscopic soil model """
 s = RichardsWrapper(RichardsSP())
@@ -151,7 +151,7 @@ hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric po
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
 
-psi_x_, psi_s_, sink_, psi_s2_ = [], [], []
+psi_x_, psi_s_, sink_, psi_s2_ = [], [], [], []
 t = 0.
 
 for i in range(0, NT):
@@ -207,28 +207,24 @@ for i in range(0, NT):
 
     if rank == 0 and i % skip == 0:  # remember results
         x_.append(t)
-        psi_x.append(rs[1,:])
+        psi_x_.append(rx[1:])
         psi_s_.append(rsx.copy())
         sum_flux = 0.
-        sink = np.zeros(sx.shape)
+        sink = np.zeros(sx[:, 0].shape)
         for k, v in fluxes.items():
             sink[k] += v
             sum_flux += v
         y_.append(sum_flux)  # cm3/day
         sink_.append(sink)  # cm3/day
-        psi_s2_.append(sx.copy())
+        psi_s2_.append(sx[:, 0])
         w_.append(water)  # cm3
 
-        min_sx = np.min(sx)
-        max_sx = np.max(sx)
-        min_rx = np.min(rx)
-        max_rx = np.max(rx)
         cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         cf.append(cf_)  # cm3/day
         n = round(float(i) / float(NT) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil sx [{:g}, {:g}], interface [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days"
-              .format(min_sx, max_sx, min_rsx, max_rsx, min_rx, max_rx, s.simTime))
+              .format(np.min(sx), np.max(sx), np.min(rsx), np.max(rsx), np.min(rx), np.max(rx), s.simTime))
         print("Iteration {:g} took {:g} seconds [{:g} fixpoint iteration, {:g} soil] \n".format(i, wall_iteration, wall_fixpoint, wall_soil))
 
     t += dt

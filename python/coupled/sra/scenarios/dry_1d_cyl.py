@@ -64,10 +64,10 @@ logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 0.01  # 7.1  # 0.65  # 0.25  # [day]
+sim_time = 7.1  # 7.1  # 0.65  # 0.25  # [day]
 dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 2  # for output and results, skip iteration
+skip = 2 * 5  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -214,7 +214,7 @@ for i in range(0, NT):
             collar_flux = r.collar_flux(rs_age + t, rx, rsx, soil_k, False)
 
             min_soil_fluxes, max_soil_fluxes, summed_soil_fluxes = 1.e9, -1.e9, 0.
-            sink = np.zeros(water_content.shape)
+            sink = np.zeros(water_content[:, 0].shape)
             for k, v in soil_fluxes.items():
                 sink[k] += v
                 summed_soil_fluxes += v
@@ -253,7 +253,6 @@ if rank == 0:
     np.save(file1, np.array(psi_s_))
 
     file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
-    print(np.array(sink_), shape)
     df3 = pd.DataFrame(-np.array(sink_))
     df3.to_excel(file3, index = False, header = False)
 
