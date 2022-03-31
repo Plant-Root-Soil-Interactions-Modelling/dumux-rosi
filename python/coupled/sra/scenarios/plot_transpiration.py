@@ -1,10 +1,16 @@
+"""
+transpiration plot (one column, number of rows as number of filenames)
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-names = ["results/transpiration_rootsystem_agg_constkrkx_dry", "results/transpiration_rootsystem_agg_constkrkx_dry"]
+add_str = "_dry0"
 
-trans = 0.5  # 0.5
-n = len(names)
+fnames = ["results/transpiration_" + "small_sra" + add_str,
+          "results/transpiration_" + "small_sra" + add_str]
+titles = ["Aggregated steady rate", "Aggregated steady rate"]  # "Rhizosphere", "Steady rate", "Aggregated steady rate"
+trans = 0.5 * 15 * 75  # potential transpiration cm3/day
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -26,18 +32,20 @@ def sinusoidal(t):
 potential_trans = lambda t: trans * sinusoidal(t)
 
 # load data
-data = [np.loadtxt(n, delimiter = ';')  for n in names]
+n = len(fnames)
+data = [np.loadtxt(n_, delimiter = ';')  for n_ in fnames]
 
-fig, ax = plt.subplots(n, 1, figsize = (15, 10))
+fig, ax = plt.subplots(n, 1, figsize = (14, 12))
 
 for i in range(0, n):
     t = data[i][0]
     y = data[i][1]
-    ax[i].plot(t, potential_trans(t), 'k', label = "potential transpiration")  # potential transpiration
+    if trans > 0:
+        ax[i].plot(t, potential_trans(t), 'k', label = "potential transpiration")  # potential transpiration
     ax[i].plot(t, y, 'g', label = " actual transpiration")  # actual transpiration  according to soil model
     # ax[i].set_xlabel("Time [d]")
-    ax[i].set_title(names[i])
-    ax[i].set_ylabel("Transpiration [cm$^3$ d$^{-1}$]")
+    ax[i].set_title(titles[i] + " (" + add_str[1:] + ")")
+    ax[i].set_ylabel("[cm$^3$ day$^{-1}$]")
     # ax[i].set_ylim([0., 1150.])
     ax[i].legend(loc = 'upper left')
     ax2 = ax[i].twinx()
@@ -45,9 +53,10 @@ for i in range(0, n):
     so = np.array(y)
     cup = np.cumsum(np.multiply(so[:-1], dt))
     ax2.plot(t[1:], cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
-    ax2.set_ylabel("Cumulative soil uptake [cm$^3$]")
+    ax2.set_ylabel("cumulative [cm$^3$]")
     # ax2.set_ylim(yrange)
-    ax2.legend(loc = 'lower right')
-    print("cumulative uptake", cup[-1], "cm3")
+    ax2.legend(loc = 'center right')
+    print(i, "cumulative uptake", cup[-1], "cm3")
 
+plt.tight_layout()
 plt.show()

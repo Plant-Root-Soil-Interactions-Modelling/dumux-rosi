@@ -44,7 +44,7 @@ Parameters
 """
 
 """ soil """
-name = "wet_small_1d"  # name to export resutls
+name = "small_sra"  # name to export resutls
 
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
@@ -72,7 +72,7 @@ predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 78  # initial root system age
 
 """ simulation time """
-sim_time = 0.01  # 0.65  # 0.25  # [day]
+sim_time = 7.1  # 0.65  # 0.25  # [day]
 dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 5  # for output and results, skip iteration
@@ -96,7 +96,6 @@ r = XylemFluxPython(fname)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
 
-# init_conductivities_scenario_jan(r)
 agg.init_conductivities_const(r)
 
 """ Coupling (map indices) """
@@ -154,10 +153,11 @@ hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric po
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
 
-t = 0.
 psi_x_, psi_s_, sink_, psi_s2_ = [], [], [], []
 
 for i in range(0, NT):
+
+    t = i * dt  # current simulation time
 
     wall_iteration = timeit.default_timer()
 
@@ -233,35 +233,20 @@ for i in range(0, NT):
               .format(np.min(sx), np.max(sx), np.min(rsx), np.max(rsx), np.min(rx), np.max(rx), s.simTime))
         print("Iteration {:g} took {:g} seconds [{:g} fixpoint iteration, {:g} soil] \n".format(i, wall_iteration, wall_fixpoint, wall_soil))
 
-    t += dt
-
-s.writeDumuxVTK(name)
-
-""" Plot """
 if rank == 0:
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-
-    file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-    # df1 = pd.DataFrame(np.array(psi_x_))
-    # df1.to_excel(file1, index = False, header = False)
+    print("writing xls")
+    file1 = 'results/psix_' + name + sstr  # per segment
     np.save(file1, np.array(psi_x_))
-
-    file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-    # df2 = pd.DataFrame(np.array(psi_s_))
-    # df2.to_excel(file2, index = False, header = False)
-    np.save(file1, np.array(psi_s_))
-
-    file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
+    file2 = 'results/psiinterface_' + name + sstr  # per segment
+    np.save(file2, np.array(psi_s_))
+    file3 = 'results/sink_' + name + sstr + '.xls'
     df3 = pd.DataFrame(-np.array(sink_))
     df3.to_excel(file3, index = False, header = False)
-
-    file4 = 'results/transpiration_singleroot_cyl_constkrkx' + sstr
+    file4 = 'results/transpiration_' + name + sstr
     np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
-
-    file5 = 'results/soil_singleroot_cyl_constkrkx' + sstr + '.xls'
+    file5 = 'results/soil_' + name + sstr + '.xls'
     df5 = pd.DataFrame(np.array(psi_s2_))
     df5.to_excel(file5, index = False, header = False)
-
     print("fin")
 
     # np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')

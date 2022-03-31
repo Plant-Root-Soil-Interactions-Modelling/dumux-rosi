@@ -7,6 +7,7 @@ sys.path.append("../");
 
 import plantbox as pb  # CPlantBox
 from xylem_flux import *  # root system Python hybrid solver
+from rhizo_models import *
 import vtk_plot as vp
 import van_genuchten as vg
 
@@ -38,13 +39,15 @@ def init_conductivities_const(r):
     # kr_const = 0.00018100042  # in case of table look up, the values must agree, = 0.00018100042
     # kx_const = 0.1 * 0.173  # [cm3/day] = 0.173
 
-    kr = np.array([[0., kr_const], [1e4, kr_const]])
-    r.setKrTables([kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
-                  [kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
+    # kr = np.array([[0., kr_const], [1e4, kr_const]])
+    # r.setKrTables([kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
+    #               [kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
+    # kx = np.array([[0., kx_const], [1e4, kx_const]])
+    # r.setKxTables([kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
+    #               [kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # values, age
 
-    kx = np.array([[0., kx_const], [1e4, kx_const]])
-    r.setKxTables([kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
-                  [kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # values, age
+    r.setKr([kr_const])
+    r.setKx([kx_const])
 
 
 def create_singleroot(ns = 100, l = 50 , a = 0.05):
@@ -59,6 +62,24 @@ def create_singleroot(ns = 100, l = 50 , a = 0.05):
         segs.append(pb.Vector2i(i, i + 1))
     rs = pb.MappedSegments(nodes, segs, radii)
     return XylemFluxPython(rs)
+
+
+def get_scenario_z():
+    """
+    get z-coordinates of segments for the small scenario
+    """
+    min_b = [-7.5, -37.5 / 2, -110.]
+    max_b = [7.5, 37.5 / 2, 0.]
+    cell_number = [1, 1, 55]  # # full is very slow
+    fname = "../../../../grids/RootSystem_verysimple2.rsml"
+    rs = RhizoMappedSegments(fname, -15000, 1, 1.5, 0)
+    rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
+    nodes = rs.nodes
+    nodesz = np.array([n.z for n in rs.nodes])
+    segs = rs.segments
+    nodes_z = np.array([0.5 * (nodesz[s.x] + nodesz[s.y]) for s in segs])
+    return nodes_z
 
 
 def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):

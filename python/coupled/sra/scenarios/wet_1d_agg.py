@@ -61,7 +61,7 @@ Parameters
 """
 
 """ soil """
-name = "wet_small_agg"  # name to export resutls
+name = "small_agg"  # name to export resutls
 
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
@@ -116,7 +116,6 @@ types = rr.rs.subTypes  # simplify root types
 types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
 rr.rs.subTypes = list(types)
 
-# agg.init_conductivities(rr)
 agg.init_conductivities_const(rr)
 
 r = agg.create_aggregated_rs(rr, rs_age, min_b, max_b, cell_number)
@@ -229,41 +228,33 @@ for i in range(0, NT):
     if i % skip == 0:
         print(i / skip)
         x_.append(t)
-        sum_flux = 0.
-        for f in soil_fluxes.values():
-            sum_flux += f
-        y_.append(sum_flux)  # cm3/day
-        rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
-        psi_x_.append(rx_)
+        psi_x_.append(rx[1:])
         psi_s_.append(rsx.copy())
+        sum_flux = 0.
+        sink = np.zeros(sx[:, 0].shape)
+        for k, v in soil_fluxes.items():
+            sink[k] += v
+            sum_flux += v
+        y_.append(sum_flux)  # cm3/day
+        sink_.append(sink)
         dd = np.array(s.getSolutionHead())
         psi_s2_.append(dd[:, 0])
-        sink_.append(fluxes[1::2])
-        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))
-        sink_sum.append(np.sum(fluxes))
+        # collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))
+        # sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
+
 print("writing xls")
-
-file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-# df1 = pd.DataFrame(np.array(psi_x_))
-# df1.to_excel(file1, index = False, header = False)
+file1 = 'results/psix_' + name + sstr  # per segment
 np.save(file1, np.array(psi_x_))
-
-file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-# df2 = pd.DataFrame(np.array(psi_s_))
-# df2.to_excel(file2, index = False, header = False)
-np.save(file1, np.array(psi_s_))
-
-file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
+file2 = 'results/psiinterface_' + name + sstr  # per segment
+np.save(file2, np.array(psi_s_))
+file3 = 'results/sink_' + name + sstr + '.xls'
 df3 = pd.DataFrame(-np.array(sink_))
 df3.to_excel(file3, index = False, header = False)
-
-file4 = 'results/transpiration_singleroot_cyl_constkrkx' + sstr
+file4 = 'results/transpiration_' + name + sstr
 np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
-
-file5 = 'results/soil_singleroot_cyl_constkrkx' + sstr + '.xls'
+file5 = 'results/soil_' + name + sstr + '.xls'
 df5 = pd.DataFrame(np.array(psi_s2_))
 df5.to_excel(file5, index = False, header = False)
-
 print("fin")

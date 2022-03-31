@@ -31,7 +31,7 @@ Parameters
 """
 
 """ soil """
-name = "wet_small_1d_rhizo"  # name to export resutls
+name = "small_cyl"  # name to export resutls
 
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
@@ -42,7 +42,7 @@ fname = "../../../../grids/RootSystem_verysimple2.rsml"
 
 p_top = -310  # -5000 (dry), -310 (wet)
 p_bot = -200  #
-sstr = "wet"
+sstr = "_wet"
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
@@ -235,31 +235,20 @@ for i in range(0, NT):
             print("Iteration {:g} took {:g} seconds [{:g}% root, {:g}% rhizo {:g}% soil ]\n".
                   format(i, wall_iteration, wall_root_model / wall_iteration, wall_rhizo_models / wall_iteration, wall_soil_model / wall_iteration))
 
-""" plots and output """
 if rank == 0:
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-
-    file1 = 'results/psix_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-    # df1 = pd.DataFrame(np.array(psi_x_))
-    # df1.to_excel(file1, index = False, header = False)
+    print("writing xls")
+    file1 = 'results/psix_' + name + sstr  # per segment
     np.save(file1, np.array(psi_x_))
-
-    file2 = 'results/psiinterface_singleroot_cyl_constkrkx' + sstr + '.xls'  # per segment
-    # df2 = pd.DataFrame(np.array(psi_s_))
-    # df2.to_excel(file2, index = False, header = False)
-    np.save(file1, np.array(psi_s_))
-
-    file3 = 'results/sink_singleroot_cyl_constkrkx' + sstr + '.xls'
+    file2 = 'results/psiinterface_' + name + sstr  # per segment
+    np.save(file2, np.array(psi_s_))
+    file3 = 'results/sink_' + name + sstr + '.xls'
     df3 = pd.DataFrame(-np.array(sink_))
     df3.to_excel(file3, index = False, header = False)
-
-    file4 = 'results/transpiration_singleroot_cyl_constkrkx' + sstr
+    file4 = 'results/transpiration_' + name + sstr
     np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
-
-    file5 = 'results/soil_singleroot_cyl_constkrkx' + sstr + '.xls'
+    file5 = 'results/soil_' + name + sstr + '.xls'
     df5 = pd.DataFrame(np.array(psi_s2_))
     df5.to_excel(file5, index = False, header = False)
-
     print("fin")
 
 #
