@@ -7,14 +7,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-add_str = "_dry0"
+add_str = "_dry"
+fnames = ["results/soil_" + "small_soil" + add_str + ".xls",
+          "results/soil_" + "small_soil" + add_str + ".xls"]
+titles = ["soil only", "soil only"]  # "steady rate", "aggregated", "rhizosphere",
+days = 7.1
 
-fnames = ["results/soil_" + "small_sra" + add_str + ".xls",
-          "results/soil_" + "small_sra" + add_str + ".xls"]
+# add_str = "_dry"
+# fnames = ["results/soil_" + "small_sra" + add_str + ".xls",
+#           "results/soil_" + "small_sra" + add_str + ".xls"]
 days = 7.1
 titles = ["steady rate", "aggregated"]  # "steady rate", "aggregated", "rhizosphere",
 
-plot_times = range(0, 7)
+plot_times = range(0, int(days))
 L = 110  # soil depth
 
 SMALL_SIZE = 16
