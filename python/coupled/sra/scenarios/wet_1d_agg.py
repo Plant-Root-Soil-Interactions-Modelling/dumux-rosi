@@ -177,7 +177,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k=[])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -198,7 +198,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., double_(rsx), False, wilting_point, soil_k=[])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         rx_old = rx.copy()
@@ -208,7 +208,7 @@ for i in range(0, NT):
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx = False, cells = False)
+    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx=False, cells=False)
 
 #     min_rsx = np.min(rsx)  # for console output
 #     max_rsx = np.max(rsx)
@@ -251,10 +251,10 @@ file2 = 'results/psiinterface_' + name + sstr  # per segment
 np.save(file2, np.array(psi_s_))
 file3 = 'results/sink_' + name + sstr + '.xls'
 df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index = False, header = False)
+df3.to_excel(file3, index=False, header=False)
 file4 = 'results/transpiration_' + name + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
 file5 = 'results/soil_' + name + sstr + '.xls'
 df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index = False, header = False)
+df5.to_excel(file5, index=False, header=False)
 print("fin")

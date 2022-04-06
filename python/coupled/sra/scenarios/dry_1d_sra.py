@@ -71,9 +71,9 @@ rs_age = 78  # initial root system age
 
 """ simulation time """
 sim_time = 7.1  # 0.65  # 0.25  # [day]
-dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
+dt = 5 * 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 5  # for output and results, skip iteration
+skip = 1  # for output and results, skip iteration
 
 """ Initialize macroscopic soil model """
 s = RichardsWrapper(RichardsSP())
@@ -194,7 +194,7 @@ for i in range(0, NT):
         fluxes = None
 
     wall_soil = timeit.default_timer()
-    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root = 0)  # Soil part runs parallel
+    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root=0)  # Soil part runs parallel
     s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
@@ -218,7 +218,7 @@ for i in range(0, NT):
         psi_s2_.append(sx[:, 0])
         w_.append(water)  # cm3
 
-        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
+        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil=[], cells=False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         cf.append(cf_)  # cm3/day
         n = round(float(i) / float(NT) * 100.)
@@ -235,12 +235,12 @@ if rank == 0:
     np.save(file2, np.array(psi_s_))
     file3 = 'results/sink_' + name + sstr + '.xls'
     df3 = pd.DataFrame(-np.array(sink_))
-    df3.to_excel(file3, index = False, header = False)
+    df3.to_excel(file3, index=False, header=False)
     file4 = 'results/transpiration_' + name + sstr
-    np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
     file5 = 'results/soil_' + name + sstr + '.xls'
     df5 = pd.DataFrame(np.array(psi_s2_))
-    df5.to_excel(file5, index = False, header = False)
+    df5.to_excel(file5, index=False, header=False)
     print("fin")
 
 #     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))

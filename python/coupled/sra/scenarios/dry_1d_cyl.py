@@ -113,7 +113,7 @@ Initialize local soil models (around each root segment)
 """
 start_time = timeit.default_timer()
 x = s.getSolutionHead()  # initial condition of soil [cm]
-x = comm.bcast(x, root = 0)  # Soil part runs parallel
+x = comm.bcast(x, root=0)  # Soil part runs parallel
 ns = len(rs.segments)
 dcyl = int(np.floor(ns / max_rank))
 if rank + 1 == max_rank:
@@ -139,7 +139,7 @@ start_time = timeit.default_timer()
 water_domain = []  # cm3
 cci = picker(rs.nodes[0].x, rs.nodes[0].y, rs.nodes[0].z)  # collar cell index
 cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root = 0)
+cell_volumes = comm.bcast(cell_volumes, root=0)
 net_flux = np.zeros(cell_volumes.shape)
 
 psi_x_, psi_s_, sink_, psi_s2_ = [], [], [], []  # for xls output
@@ -162,30 +162,30 @@ for i in range(0, NT):
 
     if rank == 0:
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
-        proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # [cm3/day]
+        proposed_inner_fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)  # [cm3/day]
     else:
         proposed_inner_fluxes = None
         rx = None
-    rx = comm.bcast(rx, root = 0)  # needed by rs.get_soil_k
+    rx = comm.bcast(rx, root=0)  # needed by rs.get_soil_k
     wall_root_model = timeit.default_timer() - wall_root_model
 
     """ 2. local soil models """
     wall_rhizo_models = timeit.default_timer()
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
     if rs.mode == "dumux":
-        proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root = 0)
+        proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)
     elif rs.mode == "dumux_exact":
-        soil_k = comm.bcast(soil_k, root = 0)
+        soil_k = comm.bcast(soil_k, root=0)
         rs.solve(dt, rx, proposed_outer_fluxes, rsx, soil_k)
     realized_inner_fluxes = rs.get_inner_fluxes()
-    realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root = 0)
+    realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root=0)
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
 
     """ 3a. macroscopic soil model """
     wall_soil_model = timeit.default_timer()
     water_content = np.array(s.getWaterContent())
-    water_content = comm.bcast(water_content, root = 0)
+    water_content = comm.bcast(water_content, root=0)
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
     soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
@@ -193,7 +193,7 @@ for i in range(0, NT):
 
     """ 3b. calculate net fluxes """
     water_content = np.array(s.getWaterContent())
-    water_content = comm.bcast(water_content, root = 0)
+    water_content = comm.bcast(water_content, root=0)
     new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
     net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
     for k, root_flux in soil_fluxes.items():
@@ -247,12 +247,12 @@ if rank == 0:
     np.save(file2, np.array(psi_s_))
     file3 = 'results/sink_' + name + sstr + '.xls'
     df3 = pd.DataFrame(-np.array(sink_))
-    df3.to_excel(file3, index = False, header = False)
+    df3.to_excel(file3, index=False, header=False)
     file4 = 'results/transpiration_' + name + sstr
-    np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+    np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
     file5 = 'results/soil_' + name + sstr + '.xls'
     df5 = pd.DataFrame(np.array(psi_s2_))
-    df5.to_excel(file5, index = False, header = False)
+    df5.to_excel(file5, index=False, header=False)
     print("fin")
 
     # np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')

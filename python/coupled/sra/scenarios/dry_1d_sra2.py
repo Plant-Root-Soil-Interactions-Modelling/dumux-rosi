@@ -1,6 +1,8 @@
 """ 
 Jan's new scenarios with the new SRA sink
 
+Experimental (trying to get rid of Picard iteration)
+
 1d soil, 2 cm thick layers, dynamic conductivities (see root_conductivities.py)
 """
 
@@ -39,23 +41,28 @@ def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     rsx = f((rx, sx, inner_kr_ , rho_))
     return rsx
 
+
+def get_soil_k(rx, hsb, rsx, n, dx2, soil):
+    # soil_k = np.divide(np.divide(vg.fast_mfp[soil](rsx) - vg.fast_mfp[soil](rx[1:]), rsx - rx[1:]), dx2)
+    soil_k = np.divide(np.divide(vg.fast_mfp[soil](hsb) - vg.fast_mfp[soil](rsx), hsb - rsx), dx2)
+    return soil_k
+
 """ 
 Parameters  
 """
 
 """ soil """
-name = "small_sra"  # name to export resutls
+name = "small_sra2"  # name to export resutls
 
 min_b = [-7.5, -37.5 / 2, -110.]
 max_b = [7.5, 37.5 / 2, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-fname = "../../../../grids/RootSystem_verysimple.rsml"
+fname = "../../../../grids/RootSystem_verysimple2.rsml"
 
-p_top = -310  # -5000 (dry), -310 (wet)
+p_top = -5000  #  (dry), -310 (wet)
 p_bot = -200
-sstr = "_wet0"
+sstr = "_dry"
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
@@ -63,8 +70,8 @@ Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
 soil_ = loam
 soil = vg.Parameters(soil_)
-sra_table_lookup = open_sra_lookup("../table_jan2")
-
+vg.create_mfp_lookup(soil)
+                  
 """ root system """
 trans = 0.5 * 15 * 75  # average per day [cm3 /day] (sinusoidal)
 wilting_point = -15000  # [cm]
@@ -73,9 +80,9 @@ rs_age = 78  # initial root system age
 
 """ simulation time """
 sim_time = 7.1  # 0.65  # 0.25  # [day]
-dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
+dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 5  # for output and results, skip iteration
+skip = 2 * 5  # for output and results, skip iteration
 
 """ Initialize macroscopic soil model """
 s = RichardsWrapper(RichardsSP())
@@ -85,11 +92,11 @@ s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
 s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
+# s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
+s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
-s.ddt = 1.e-5  # [day] initial Dumux time step
 
 """ Initialize xylem model (a) or (b)"""
 r = XylemFluxPython(fname)
@@ -103,10 +110,10 @@ picker = lambda x, y, z: s.pick([x, y, z])
 cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell index
 r.rs.setSoilGrid(picker)  # maps segment
 outer_r = r.rs.segOuterRadii()
+nn = len(r.rs.segments)
 
 """ sanity checks """
 # r.plot_conductivities()
-
 types = r.rs.subTypes
 types = (np.array(types) == 12) * 1  # all 0, only 12 are laterals
 r.rs.subTypes = list(types)
@@ -127,6 +134,8 @@ kr_max = 0.000181
 kr_min = 0.0000173
 print("inner_r*kr", kr_min * radius_min, kr_max * radius_max)
 
+sra_table_lookup = open_sra_lookup("../table_jan2")
+
 # quick check
 # rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]), r, sp, outer_r)
 # print(r.rs.radii[0])
@@ -141,13 +150,11 @@ for i in range(0, len(outer_r)):
     inner_[i] = max(min(radii[i] , 0.2), 0.01)
     outer_[i] = max(min(outer_r[i] , 20), 0.1)
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
+domain_r = np.array(outer_) - np.array(inner_)
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
-x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
-sink1d = []
-sink1d2 = []
-out_times = []  # days
+x_, y_, w_, cf = [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
 kr_ = np.zeros((ns,))
@@ -169,40 +176,46 @@ for i in range(0, NT):
             rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
             rx_old = rx.copy()
 
-        err = 1.e6
-        c = 1
-        while err > 1. and c < 100:
-
-            """ interpolation """
-            wall_interpolation = timeit.default_timer()
-            for j in range(0, len(outer_r)):  # determine kr at this time step
-                kr_[j] = r.kr_f(rs_age + t, types[j])
-            inner_kr_ = np.multiply(radii, kr_)  # multiply for table look up
+        """ interpolation """
+        wall_interpolation = timeit.default_timer()
+        for j in range(0, len(outer_r)):  # determine kr at this time step
+            kr_[j] = r.kr_f(rs_age + t, types[j])
+        inner_kr_ = np.multiply(radii, kr_)  # multiply for table look up
+        try:
             rsx = soil_root_interface_table2(rx[1:], hsb, inner_kr_, rho_, sra_table_lookup)
-            wall_interpolation = timeit.default_timer() - wall_interpolation
+        except:
+            print("failed")
+            print(rx)
+            print(inner_kr_)
+            raise
+        wall_interpolation = timeit.default_timer() - wall_interpolation
+        
+        """ xylem matric potential """
 
-            """ xylem matric potential """
-            wall_xylem = timeit.default_timer()
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
-            err = np.linalg.norm(rx - rx_old)
-            wall_xylem = timeit.default_timer() - wall_xylem
-            # print(err)
-            rx_old = rx.copy()
-            c += 1
+        wall_soilk = timeit.default_timer()
+        if i > 0:
+            # soil_k = get_soil_k(rx, hsb, rsx, nn, radii, soil)
+            soil_k = get_soil_k(rx, hsb, rsx, nn, domain_r, soil)
+        else:
+            soil_k = []
+        wall_soilk = timeit.default_timer() - wall_soilk
 
-#         print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
-#         print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
+        wall_xylem = timeit.default_timer()        
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
+        err = np.linalg.norm(rx - rx_old)
+        wall_xylem = timeit.default_timer() - wall_xylem
+
+        rx_old = rx.copy()
+        fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=[])  # class XylemFlux is defined in MappedOrganism.h, approx = True
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
-
-        fluxes = r.segFluxes(rs_age + t, rx, rsx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
 
     else:
         fluxes = None
 
     wall_soil = timeit.default_timer()
     fluxes = comm.bcast(r.sumSegFluxes(fluxes), root=0)  # Soil part runs parallel
-    s.setSource(fluxes.copy())  # richards.py, scales fluxes to SI for DuMux side
+    s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
     hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
@@ -231,9 +244,11 @@ for i in range(0, NT):
         n = round(float(i) / float(NT) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil sx [{:g}, {:g}], interface [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days"
               .format(np.min(sx), np.max(sx), np.min(rsx), np.max(rsx), np.min(rx), np.max(rx), s.simTime))
-        print("Iteration {:g} took {:g} seconds [{:g} fixpoint iteration, {:g} soil] \n".format(i, wall_iteration, wall_fixpoint, wall_soil))
+        print("Iteration {:g} took {:g} seconds [Xylem part {:g}, (interpolation {:g}, soil_k {:g}, xylem {:g}), soil {:g}] \n".
+              format(i, wall_iteration, wall_fixpoint, wall_interpolation, wall_soilk, wall_xylem, wall_soil))
 
 if rank == 0:
+    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
     print("writing xls")
     file1 = 'results/psix_' + name + sstr  # per segment
     np.save(file1, np.array(psi_x_))
@@ -249,14 +264,10 @@ if rank == 0:
     df5.to_excel(file5, index=False, header=False)
     print("fin")
 
-    # np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
-    # sink1d = np.array(sink1d)
-    # np.save(name + "_sink", sink1d)
-
 #     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
 #
 #     ana = pb.SegmentAnalyser(r.rs)
 #     ana.addData("pressure", rx)
 #     vp.plot_roots(ana, "pressure")
 
-#    vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    # vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
