@@ -1,5 +1,6 @@
-import sys; sys.path.append("../modules/");  sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/") 
+sys.path.append("/opt/dumux/lib64/"); sys.path.append("../../build-cmake/cpp/python_binding/")
+
 
 import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
@@ -180,7 +181,7 @@ for i in range(0, NT):
     water_content = np.array(s.getWaterContent())
     water_content = comm.bcast(water_content, root=0) 
     soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
+    soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell    
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
     s.solve(dt)  # in solverbase.py     
     
