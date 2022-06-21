@@ -226,17 +226,17 @@ for i in range(0, NT):
 #                 print("breaksim time ", sim_time)
 #                 break
 
-        """ Additional sink plot """
-        if i % (60 * 12) == 0:  # every 6h
-            ana = pb.SegmentAnalyser(r.rs)
-            fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # cm3/day
-            ana.addData("fluxes", fluxes)  # cut off for vizualisation
-            ana.addData("fluxes2", realized_inner_fluxes)  # cut off for vizualisation
-            flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, False)
-            flux1d2 = ana.distribution("fluxes2", max_b[2], min_b[2], 15, False)
-            sink1d.append(np.array(flux1d))
-            sink1d2.append(np.array(flux1d2))
-            # realized_inner_fluxes!!!!!!!!!!!!
+            """ Additional sink plot """
+            if i % (60 * 12) == 0:  # every 6h
+                ana = pb.SegmentAnalyser(r.rs)
+                fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False, soil_k = soil_k)  # cm3/day
+                ana.addData("fluxes", fluxes)  # cut off for vizualisation
+                ana.addData("fluxes2", realized_inner_fluxes)  # cut off for vizualisation
+                flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, False)
+                flux1d2 = ana.distribution("fluxes2", max_b[2], min_b[2], 15, False)
+                sink1d.append(np.array(flux1d))
+                sink1d2.append(np.array(flux1d2))
+                # realized_inner_fluxes!!!!!!!!!!!!
 
 """ plots and output """
 if rank == 0:
