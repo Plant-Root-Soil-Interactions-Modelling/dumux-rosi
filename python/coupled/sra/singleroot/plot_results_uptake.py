@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-add_str = "_wet"  # "_wet", "_dry"
+add_str = "_comp"  # "_wet", "_dry"
 # fnames = ["singleroot_cyl_constkrkx" + add_str + ".xls",
 #           "singleroot_agg_constkrkx" + add_str + ".xls"]  #
 # days = 0.51
@@ -53,6 +53,7 @@ ax[2].set_xlabel("root uptake [cm$^3$/day]")
 
 ls = ['-', '-.']
 for i in range(0, len(fnames)):
+
     df = pd.read_excel(path + type_names[0] + fnames[i], header = None)
     psi_x_ = df.to_numpy()
     df1 = pd.read_excel(path + type_names[1] + fnames[i], header = None)

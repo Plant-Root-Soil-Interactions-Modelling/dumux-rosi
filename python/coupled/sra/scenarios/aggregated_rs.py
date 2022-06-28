@@ -50,6 +50,15 @@ def init_conductivities_const(r):
     r.setKx([kx_const])
 
 
+def init_comp_conductivities_const(r):
+    """ Hydraulic conductivities - for Jans scenarios, but constant """
+    # Scenario 1
+    kr_const = 1.8e-4  # [1/day]
+    kx_const = 0.1  # [cm3/day]
+    r.setKr([kr_const])
+    r.setKx([kx_const])
+
+
 def create_singleroot(ns = 100, l = 50 , a = 0.05):
     """ creates a single root with @param ns segments, length l, and radius a """
     radii = np.array([a] * ns)
