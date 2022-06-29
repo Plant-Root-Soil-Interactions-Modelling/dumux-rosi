@@ -26,11 +26,11 @@ from scipy.optimize import fsolve
 
 """ soil """
 p_top = -330
-p_bot = -480
+p_bot = -180
 sstr = "_comp"
 
 
-def soil_root_interface(rx, sx, inner_kr, rho, sp):
+def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     """
     rx             xylem matric potential [cm]
     sx             bulk soil matric potential [cm]
@@ -38,17 +38,11 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
     rho            geometry factor [1]
     sp             soil van Genuchten parameters (type vg.Parameters)
     """
-    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
-    # rho = outer_r / inner_r  # Eqn [5]
-    rho2 = rho * rho  # rho squared
-    # b = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho) - 0.5))  # Eqn [4]
-    b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
-    fun = lambda x: (inner_kr * rx + b * sx * k_soilfun(sx, x)) / (b * k_soilfun(sx, x) + inner_kr) - x
-    rsx = fsolve(fun, rx)
-    return rsx
-
-
-def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
+    # rho2 = rho_ * rho_  # rho squared
+    # b4 = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho_) - 0.5))  # Eqn [4]
+    # b7 = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho_) + np.log(0.53)))  # Eqn [7]
+    # print(b7)
+    # print(b4)
     assert rx.shape == sx.shape
     rsx = f((rx, sx, inner_kr_ , rho_))
     return rsx
@@ -72,9 +66,9 @@ vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential loo
 sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
 
 """ root system """
-trans = 0.6  # cm3/day
+trans = 0.6 * 4  # cm3/day
 radius = 0.05  # cm
-wilting_point = -10000
+wilting_point = -15000
 
 """ simulation time """
 sim_time = 21  #  [day]
@@ -151,7 +145,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -172,7 +166,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         # print(err)
@@ -203,7 +197,6 @@ for i in range(0, NT):
 
     """ remember results ... """
     if i % skip == 0:
-        print(i / skip)
         x_.append(t)
         sum_flux = 0.
         for f in soil_fluxes.values():
@@ -216,31 +209,24 @@ for i in range(0, NT):
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy())
         collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        print(sum_flux, collar_vfr[-1])
         sink_sum.append(np.sum(fluxes))
 
 """ xls file output """
-print("write xls")
+file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr
+np.save(file1, np.array(psi_x_))
 
-file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
-df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index = False, header = False)
+file2 = 'results/psiinterface_singleroot_sra_dynamic_constkrkx' + sstr
+np.save(file2, np.array(psi_s2_))
 
-file2 = 'results/psiinterface_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
-df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index = False, header = False)
-
-file3 = 'results/sink_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
-df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index = False, header = False)
+file3 = 'results/sink_singleroot_sra_dynamic_constkrkx' + sstr
+np.save(file3, -np.array(sink_))
 
 file4 = 'results/transpiration_singleroot_sra_dynamic_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+np.save(file4, np.vstack((x_, -np.array(y_))))
 
-file5 = 'results/soil_singleroot_sra_dynamic_constkrkx' + sstr + '.xls'
-df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index = False, header = False)
+file5 = 'results/soil_singleroot_sra_dynamic_constkrkx' + sstr
+np.save(file5, np.array(psi_s2_))
 
 print("fin")
-# print(collar_vfr)
-# print(sink_sum)
 

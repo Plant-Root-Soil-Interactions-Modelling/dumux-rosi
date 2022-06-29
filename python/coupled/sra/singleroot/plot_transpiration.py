@@ -1,9 +1,12 @@
 """
 transpiration plot (one column, number of rows as number of filenames)
 """
+import sys; sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+from xylem_flux import *
 
 add_str = "_comp"  # _wet, _dry
 
@@ -16,7 +19,7 @@ add_str = "_comp"  # _wet, _dry
 # Dynamic scanrios
 fnames = ["results/transpiration_singleroot_sra_dynamic_constkrkx" + add_str,
           "results/transpiration_singleroot_agg_dynamic_constkrkx" + add_str]
-trans = 0.6  # potential transpiration cm3/day
+trans = 0.6 * 4  # potential transpiration cm3/day
 
 titles = ["Steady rate", "Aggregated steady rate"]
 
@@ -31,17 +34,12 @@ plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
 plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
-
-def sinusoidal(t):
-    return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
-
-
 """ transpiration plot """
-potential_trans = lambda t: trans * sinusoidal(t)
+potential_trans = lambda t: trans * sinusoidal2(t)
 
 # load data
 n = len(fnames)
-data = [np.loadtxt(n_, delimiter = ';')  for n_ in fnames]
+data = [np.load(n_ + ".npy")  for n_ in fnames]
 
 fig, ax = plt.subplots(n, 1, figsize = (14, 12))
 
