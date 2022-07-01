@@ -41,8 +41,10 @@ def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     # rho2 = rho_ * rho_  # rho squared
     # b4 = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho_) - 0.5))  # Eqn [4]
     # b7 = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho_) + np.log(0.53)))  # Eqn [7]
+    # print(rho_)
     # print(b7)
     # print(b4)
+    # dd
     assert rx.shape == sx.shape
     rsx = f((rx, sx, inner_kr_ , rho_))
     return rsx
@@ -96,7 +98,7 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 Initialize xylem model 
 """
 ns = 100
-r = agg.create_singleroot(ns, 100, 0.05)
+r = agg.create_singleroot(ns, l = 100, a = 0.05)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
@@ -107,7 +109,7 @@ nodes = r.rs.nodes
 """ sanity checks """
 r.test()  # sanity checks
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
-outer_r = r.rs.segOuterRadii()
+outer_r = r.rs.segOuterRadii()  # std::sqrt(targetV/(M_PI*l)+radii[i]*radii[i]) = sqrt(4/pi+0.05*0.05) = 1.1294864075
 inner_r = r.rs.radii
 types = r.rs.subTypes
 rho_ = np.divide(outer_r, np.array(inner_r))
@@ -128,8 +130,8 @@ x_, y_ = [], []
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 cell_centers = s.getCellCenters()
-hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
 cell_centers_z = np.array([cell_centers[mapping[j]][2] for j in range(0, ns)])
+hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
 
@@ -144,8 +146,7 @@ for i in range(0, NT):
     wall_fixpoint = timeit.default_timer()
 
     if i == 0:  # only first time
-        # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t), 0., rsx, False, wilting_point, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -166,22 +167,22 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         # print(err)
         rx_old = rx.copy()
         c += 1
 #         print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
-#        print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
+        print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
 
-    min_rsx = np.min(rsx)  # for console output
-    max_rsx = np.max(rsx)
-    # print("from", min_rsx, "to", max_rsx)
+    # min_rsx = np.min(rsx)  # for console output
+    # max_rsx = np.max(rsx)
+    # # print("from", min_rsx, "to", max_rsx)
 
     wall_soil = timeit.default_timer()
 
@@ -209,24 +210,24 @@ for i in range(0, NT):
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy())
         collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
-        print(sum_flux, collar_vfr[-1])
         sink_sum.append(np.sum(fluxes))
+        print(sum_flux, collar_vfr[-1], -trans * sinusoidal2(t, dt))
 
-""" xls file output """
+""" file output """
 file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr
-np.save(file1, np.array(psi_x_))
+np.save(file1, np.array(psi_x_))  # xylem pressure head per segment [cm]
 
 file2 = 'results/psiinterface_singleroot_sra_dynamic_constkrkx' + sstr
-np.save(file2, np.array(psi_s2_))
+np.save(file2, np.array(psi_s_))  # pressure head at interface per segment [cm]
 
 file3 = 'results/sink_singleroot_sra_dynamic_constkrkx' + sstr
-np.save(file3, -np.array(sink_))
+np.save(file3, -np.array(sink_))  # sink per segment [cm3/day]
 
 file4 = 'results/transpiration_singleroot_sra_dynamic_constkrkx' + sstr
-np.save(file4, np.vstack((x_, -np.array(y_))))
+np.save(file4, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]
 
 file5 = 'results/soil_singleroot_sra_dynamic_constkrkx' + sstr
-np.save(file5, np.array(psi_s2_))
+np.save(file5, np.array(psi_s2_))  # soil potential per cell [cm]
 
 print("fin")
 

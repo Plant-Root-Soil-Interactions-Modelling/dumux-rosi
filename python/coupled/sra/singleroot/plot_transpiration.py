@@ -35,7 +35,8 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ transpiration plot """
-potential_trans = lambda t: trans * sinusoidal2(t)
+dt_ = 60 / (24 * 3600)
+potential_trans = lambda t, dt: trans * sinusoidal2(t, dt)
 
 # load data
 n = len(fnames)
@@ -47,7 +48,7 @@ for i in range(0, n):
     t = data[i][0]
     y = data[i][1]
     if trans > 0:
-        ax[i].plot(t, potential_trans(t), 'k', label = "potential transpiration")  # potential transpiration
+        ax[i].plot(t, potential_trans(t, dt_ * np.ones(t.shape)), 'k', label = "potential transpiration")  # potential transpiration
     ax[i].plot(t, y, 'g', label = " actual transpiration")  # actual transpiration  according to soil model
     # ax[i].set_xlabel("Time [d]")
     ax[i].set_title(titles[i] + " (" + add_str[1:] + ")")

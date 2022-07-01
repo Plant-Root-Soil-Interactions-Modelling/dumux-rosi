@@ -88,7 +88,7 @@ sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soi
 """ root system """
 trans = 0.6 * 4  # cm3/day
 radius = 0.05  # cm
-wilting_point = -10000
+wilting_point = -15000
 
 """ simulation time """
 sim_time = 21  #  [day]
@@ -178,7 +178,7 @@ for i in range(0, NT):
 
     if i == 0:  # only first time
         # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t), 0., double_(rsx), False, wilting_point, soil_k = [])
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx), False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
     for j in range(0, len(outer_r)):  # determine kr at this time step
@@ -199,7 +199,7 @@ for i in range(0, NT):
 
         """ xylem matric potential """
         # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
         # wall_xylem = timeit.default_timer() - wall_xylem
         rx_old = rx.copy()
@@ -227,7 +227,6 @@ for i in range(0, NT):
 
     """ remember results ... """
     if i % skip == 0:
-        print(i / skip)
         x_.append(t)
         sum_flux = 0.
         for f in soil_fluxes.values():
@@ -238,8 +237,9 @@ for i in range(0, NT):
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy()[1::2])
+        print(i / skip, y_[-1], t)
 
-""" xls file output """
+""" xls output """
 file1 = 'results/psix_singleroot_agg_dynamic_constkrkx' + sstr
 np.save(file1, np.array(psi_x_))  # , delimiter = ';'
 
@@ -253,6 +253,6 @@ file4 = 'results/transpiration_singleroot_agg_dynamic_constkrkx' + sstr
 np.save(file4, np.vstack((x_, -np.array(y_))))
 
 file5 = 'results/soil_singleroot_agg_dynamic_constkrkx' + sstr
-np.save(file4, np.array(psi_s2_))
+np.save(file5, np.array(psi_s2_))
 
 print("fin")
