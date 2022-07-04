@@ -27,7 +27,7 @@ from scipy.optimize import fsolve
 """ soil """
 p_top = -330
 p_bot = -180
-sstr = "_comp"
+sstr = "_hess"
 
 
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
@@ -106,6 +106,8 @@ r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid ind
 agg.init_comp_conductivities_const(r)
 nodes = r.rs.nodes
 
+r.linearSystem = r.linearSystem_doussan  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+
 """ sanity checks """
 r.test()  # sanity checks
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
@@ -174,12 +176,12 @@ for i in range(0, NT):
         # print(err)
         rx_old = rx.copy()
         c += 1
-#        print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
-#         print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
+#         print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
+#        print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
+    fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = True, cells = False)
 
     # min_rsx = np.min(rsx)  # for console output
     # max_rsx = np.max(rsx)
@@ -212,7 +214,7 @@ for i in range(0, NT):
         sink_.append(fluxes.copy())
         collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
         sink_sum.append(np.sum(fluxes))
-        print(sum_flux, collar_vfr[-1], -trans * sinusoidal2(t, dt))
+        print(sum_flux, -trans * sinusoidal2(t, dt))  # collar_vfr[-1],
 
 """ file output """
 file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr

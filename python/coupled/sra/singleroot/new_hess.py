@@ -42,3 +42,7 @@ Lbc[0, 0] = 1  # found no readable cheap way to do it
 print("\nLbc")
 print(Lbc.todense())
 
+Lm = L[1:, 1:]
+print("\nLm")
+print(Lm.todense())
+
