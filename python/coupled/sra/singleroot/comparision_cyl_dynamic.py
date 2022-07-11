@@ -201,8 +201,7 @@ for i in range(0, NT + 1):
         fluxes = np.array(proposed_inner_fluxes)
         collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
         print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
-        rx_ = rx[1:]
-        psi_x_.append(rx_)
+        psi_x_.append(rx.copy())
         psi_s_.append(np.array(rsx.copy()))
         dd = np.array(s.getSolutionHead())
         psi_s2_.append(dd[:, 0])

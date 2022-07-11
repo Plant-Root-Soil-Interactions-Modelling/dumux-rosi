@@ -61,13 +61,13 @@ def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     rho            geometry factor [1]
     f              look up function  
     """
-    try:
-        rsx = f((rx, sx, inner_kr_ , rho_))
-    except:
-        print(rx)
-        print(sx)
-        print(inner_kr_)
-        print(rho_)
+    # try:
+    rsx = f((rx, sx, inner_kr_ , rho_))
+    # except:
+    #     print(rx)
+    #     print(sx)
+    #     print(inner_kr_)
+    #     print(rho_)
     return rsx
 
 
@@ -223,7 +223,7 @@ for i in range(0, NT):
         for f in soil_fluxes.values():
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
-        psi_x_.append(rx.copy()[1::2])
+        psi_x_.append(rx.copy())
         psi_s_.append(rsx)
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])

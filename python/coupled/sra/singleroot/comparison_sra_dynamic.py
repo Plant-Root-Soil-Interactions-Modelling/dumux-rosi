@@ -210,8 +210,7 @@ for i in range(0, NT):
         for f in soil_fluxes.values():
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
-        rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
-        psi_x_.append(rx_)
+        psi_x_.append(rx.copy())
         psi_s_.append(rsx.copy())
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])

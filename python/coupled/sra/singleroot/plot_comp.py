@@ -46,7 +46,7 @@ fnames3 = ["soil_singleroot_sra_dynamic_constkrkx" + add_str,
            "soil_singleroot_agg_dynamic_constkrkx" + add_str2]  # for figure 3 & 4
 
 fnames4 = ["psix_singleroot_sra_dynamic_constkrkx" + add_str,
-           "psix_singleroot_agg_dynamic_constkrkx" + add_str2]  # for figure 4
+           "psix_singleroot_agg_dynamic_constkrkx" + add_str2]  # for figure 2
 days = 21
 titles = ["steady rate", "parallel"]  # "steady rate", , "aggregated" "rhizosphere"
 
@@ -82,10 +82,8 @@ for i in range(0, n):
     psi_s = np.load(path + fnames3[i] + ".npy")
     t_ = np.linspace(0, days, psi_x.shape[0])
 
-    print(psi_s.shape)
-
     psii = np.sum(np.multiply(suf, psi_i), axis = 1)
-    psis = np.mean(psi_s, axis = 1)  # mean
+    # psis = np.mean(psi_s, axis = 1)  # mean
 
     ax[i].plot(t_, psi_x[:, 0], label = "collar", color = col[0])
     # ax[i].plot(t_, psi_i[:, 0], label = "soil-root interface", color = col[1])
@@ -154,20 +152,21 @@ plt.show()
 fig, ax = plt.subplots(1, n, figsize = (18, 8))
 
 for i in range(0, n):
-    psi_x = np.load(path + fnames2[i] + ".npy")
+    psi_i = np.load(path + fnames2[i] + ".npy")
     psi_s = np.load(path + fnames3[i] + ".npy")
+    # psi_x = np.load(path + fnames4[i] + ".npy")
 
-    z_ = np.linspace(-L + dx / 2., -dx / 2., psi_x.shape[1])  # segment mids
+    z_ = np.linspace(-L + dx / 2., -dx / 2., psi_i.shape[1])  # segment mids
     z_ = z_[::-1]
     zs_ = np.linspace(-150 + 1. / 2., -1. / 2., psi_s.shape[1])  # segment mids
 
-    peak_id = np.round(psi_x.shape[0] / days * np.array([0.5 + i for i in plot_times]))
+    peak_id = np.round(psi_i.shape[0] / days * np.array([0.5 + i for i in plot_times]))
     peak_id = peak_id.astype(int)
 
-    for j in range(0, psi_x.shape[0]):
+    for j in range(0, psi_i.shape[0]):
         if j in peak_id:
             ind = np.argwhere(j == peak_id)[0][0]
-            ax[i].plot(z_, psi_x[j,:], label = "{:g}d".format(plot_times[ind]), color = col[ind])
+            ax[i].plot(z_, psi_i[j,:], label = "{:g}d".format(plot_times[ind]), color = col[ind])
             ax[i].plot(zs_, psi_s[j,:], label = "bulk {:g}d".format(plot_times[ind]), color = col[ind], linestyle = "--")
     ax[i].set_title(titles[i])
     ax[i].set_ylabel("pressure head at interface [cm]")
