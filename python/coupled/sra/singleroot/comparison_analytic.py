@@ -30,24 +30,6 @@ p_bot = -180
 sstr = "_comp"
 
 
-def soil_root_interface(rx, sx, inner_kr, rho, sp):
-    """
-    rx             xylem matric potential [cm]
-    sx             bulk soil matric potential [cm]
-    inner_kr       root radius times hydraulic conductivity [cm/day] 
-    rho            geometry factor [1]
-    sp             soil van Genuchten parameters (type vg.Parameters)
-    """
-    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
-    # rho = outer_r / inner_r  # Eqn [5]
-    rho2 = rho * rho  # rho squared
-    # b = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho) - 0.5))  # Eqn [4]
-    b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
-    fun = lambda x: (inner_kr * rx + b * sx * k_soilfun(sx, x)) / (b * k_soilfun(sx, x) + inner_kr) - x
-    rsx = fsolve(fun, rx)
-    return rsx
-
-
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     """
     rx             xylem matric potential [cm]
@@ -56,6 +38,14 @@ def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     rho            geometry factor [1]
     sp             soil van Genuchten parameters (type vg.Parameters)
     """
+    # rho2 = rho_ * rho_  # rho squared
+    # b4 = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho_) - 0.5))  # Eqn [4]
+    # b7 = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho_) + np.log(0.53)))  # Eqn [7]
+    # print(rho_)
+    # print(b7)
+    # print(b4)
+    # dd
+    assert rx.shape == sx.shape
     rsx = f((rx, sx, inner_kr_ , rho_))
     return rsx
 
@@ -75,18 +65,12 @@ loam = [0.025, 0.403, alpha, n, Ks]
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
-sra_table_lookup = open_sra_lookup("../table_jan_comp")  # opens the precomputed soil root interface potentials
+sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
 
 """ root system """
 trans = 0.6 * 4  # cm3/day
 radius = 0.05  # cm
 wilting_point = -15000
-
-""" simulation time """
-sim_time = 21  #  [day]
-dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
-NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 1  # for output and results, skip iteration
 
 """ 
 Initialize macroscopic soil model (Dumux binding)
@@ -99,7 +83,6 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -108,14 +91,13 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 Initialize xylem model 
 """
 ns = 100
-r = agg.create_singleroot(ns = ns, l = 100, a = 0.05)
+r = agg.create_singleroot(ns, l = 100, a = 0.05)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 agg.init_comp_conductivities_const(r)
 nodes = r.rs.nodes
-segs = r.rs.segments
 
 """ sanity checks """
 r.test()  # sanity checks
@@ -128,19 +110,23 @@ print("Krs", r.get_krs(0.))
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
+# print(s.getCellCenters())
 
 # for post processing
+out_times = []  # days
 psi_x_ = []
 psi_s_ = []
 psi_s2_ = []
 sink_ = []
+collar_vfr = []
+sink_sum = []
 x_, y_ = [], []
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 cell_centers = s.getCellCenters()
 cell_centers_z = np.array([cell_centers[mapping[j]][2] for j in range(0, ns)])
-seg_centers_z = np.array([0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs])
 hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
+kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
 
 t = 0.
@@ -153,43 +139,44 @@ for i in range(0, NT):
     wall_iteration = timeit.default_timer()
     wall_fixpoint = timeit.default_timer()
 
-    if i == 0:  # initial
+    if i == 0:  # only first time
         rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
-    kr_ = np.array([r.kr_f(rs_age + t, types[j]) for j in range(0, len(outer_r))])
-    inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
+    for j in range(0, len(outer_r)):  # determine kr at this time step
+        kr_[j] = r.kr_f(rs_age + t, types[j])
 
-    err = 1.e6  # cm
+    err = 1.e6
     c = 1
-    while err > 1 and c < 1000:
+    while err > 1 and c < 100:
 
         """ interpolation """
-        wall_interpolation = timeit.default_timer()
-        rx_ = rx[1:] - seg_centers_z  # from total matric potenti    al to matric potential
+        # wall_interpolation = timeit.default_timer()
+        inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
+        rx_ = rx[1:] - np.array([nodes[ii].z for ii in range(1, ns + 1)])  # from total matric potential to matric potential
         hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
         rsx = soil_root_interface_table2(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)  # rsx = soil_root_interface(rx[1:] , hsb, inner_kr_, rho_, soil)
-        rsx = rsx + seg_centers_z  # from matric potential to total matric potential
-        wall_interpolation = timeit.default_timer() - wall_interpolation
+        rsx = rsx + np.array([nodes[ii].z for ii in range(1, ns + 1)])  # from matric potential to total matric potential
+        # wall_interpolation = timeit.default_timer() - wall_interpolation
 
         """ xylem matric potential """
-        wall_xylem = timeit.default_timer()
+        # wall_xylem = timeit.default_timer()
         rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
-        wall_xylem = timeit.default_timer() - wall_xylem
-
+        # wall_xylem = timeit.default_timer() - wall_xylem
+        # print(err)
         rx_old = rx.copy()
         c += 1
-
-    print(i, c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
+#        print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
+#         print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
-    collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)
-    err = np.linalg.norm(np.sum(fluxes) - collar_flux)
-    if err > 1.e-10:
-        print("error: summed root surface fluxes and root collar flux differ" , err)
+
+    # min_rsx = np.min(rsx)  # for console output
+    # max_rsx = np.max(rsx)
+    # # print("from", min_rsx, "to", max_rsx)
 
     wall_soil = timeit.default_timer()
 
@@ -216,8 +203,9 @@ for i in range(0, NT):
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy())
-
-print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+        collar_vfr.append(r.collar_flux(0, rx.copy(), rsx.copy(), k_soil = [], cells = False))  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
+        sink_sum.append(np.sum(fluxes))
+        print(sum_flux, collar_vfr[-1], -trans * sinusoidal2(t, dt))
 
 """ file output """
 file1 = 'results/psix_singleroot_sra_dynamic_constkrkx' + sstr

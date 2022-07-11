@@ -29,7 +29,7 @@ Parameters
 """ soil """
 p_top = -330
 p_bot = -180
-sstr = "_comp"
+sstr = "_hess"
 
 min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
@@ -96,6 +96,8 @@ picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 rs.set_xylem_flux(r)
 agg.init_comp_conductivities_const(r)
+
+r.linearSystem = r.linearSystem_doussan  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
 
 """ sanity checks """
 r.test()  # sanity checks
@@ -179,19 +181,19 @@ for i in range(0, NT + 1):
     # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k)
     rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = soil_k)
 
-    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
-    collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
-
-    err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
-
-    if err > 1.e-10:
-        print("error" , err)
-        print(rx)
-        print(np.min(rx), np.max(rx))
-        print(np.min(rsx), np.max(rsx))
-        print(np.min(soil_k), np.max(soil_k))
-        print(np.min(proposed_inner_fluxes), np.max(proposed_inner_fluxes))
-        print(collar_flux)
+    proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = True, cells = False, soil_k = soil_k.copy())  # [cm3/day]
+    # collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
+    #
+    # err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
+    #
+    # if err > 1.e-10:
+    #     print("error" , err)
+    #     print(rx)
+    #     print(np.min(rx), np.max(rx))
+    #     print(np.min(rsx), np.max(rsx))
+    #     print(np.min(soil_k), np.max(soil_k))
+    #     print(np.min(proposed_inner_fluxes), np.max(proposed_inner_fluxes))
+    #     print(collar_flux)
 
     """ 2. local soil models """
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)

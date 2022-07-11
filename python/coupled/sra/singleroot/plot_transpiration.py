@@ -21,7 +21,7 @@ fnames = ["results/transpiration_singleroot_sra_dynamic_constkrkx" + add_str,
           "results/transpiration_singleroot_agg_dynamic_constkrkx" + add_str]
 trans = 0.6 * 4  # potential transpiration cm3/day
 
-titles = ["Steady rate", "Aggregated steady rate"]
+titles = ["Steady rate", "Parallel (steady rate)"]
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -42,7 +42,7 @@ potential_trans = lambda t, dt: trans * sinusoidal2(t, dt)
 n = len(fnames)
 data = [np.load(n_ + ".npy")  for n_ in fnames]
 
-fig, ax = plt.subplots(n, 1, figsize = (14, 12))
+fig, ax = plt.subplots(1, n, figsize = (18, 8))
 
 for i in range(0, n):
     t = data[i][0]

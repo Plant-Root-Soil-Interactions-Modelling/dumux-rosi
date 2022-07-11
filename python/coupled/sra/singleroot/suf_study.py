@@ -30,13 +30,19 @@ a = 0.05  # cm
 """ 
 Initialize xylem model 
 """
+fig, ax = plt.subplots(1, 2, figsize = (18, 8))
 print("Meunier")
 for n in [10, 50, 100, 200]:
     r = agg.create_singleroot(ns = 100, l = 100 , a = a)
     agg.init_comp_conductivities_const(r)
-    krs, j = r.get_krs(0.)
-    print(n, ": krs", krs, "j", j, krs / (2 * a * np.pi), krs / (2 * a * np.pi * 50))  # krs / (root surface) ~= kr
-    print()
+    segs = r.rs.segments
+    nodes = r.rs.nodes
+    z_ = [0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs]
+    suf_ = r.get_suf(0.)
+    ax[0].plot(suf_, z_, label = "{:g} segments".format(n))
+ax[0].set_xlabel("SUF (1)")
+ax[0].set_ylabel("depth (cm)")
+ax[0].legend()
 
 print("\nDoussan")
 for n in [10, 50, 100, 200]:
@@ -44,9 +50,12 @@ for n in [10, 50, 100, 200]:
     agg.init_comp_conductivities_const(r)
     r.linearSystem = r.linearSystem_doussan  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     krs, j = r.get_krs(0.)
-    print(n, ": krs", krs, "j", j, krs / (2 * a * np.pi), krs / (2 * a * np.pi * 50))  # krs / (root surface) ~= kr
-    print()
+    z_ = [0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs]
+    suf_ = r.get_suf(0.)
+    ax[1].plot(suf_, z_, label = "{:g} segments".format(n))
+ax[1].set_xlabel("SUF (1)")
+ax[1].set_ylabel("depth (cm)")
+ax[1].legend()
 
-    # segs = r.rs.segments
-    # nodes = r.rs.nodes
-    # z_ = [0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs]
+plt.show()
+

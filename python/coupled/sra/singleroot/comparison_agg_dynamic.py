@@ -54,22 +54,30 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
 
 
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
-    assert rx.shape == sx.shape
+    """
+    rx             xylem matric potential [cm]
+    sx             bulk soil matric potential [cm]
+    inner_kr       root radius times hydraulic conductivity [cm/day] 
+    rho            geometry factor [1]
+    f              look up function  
+    """
     try:
         rsx = f((rx, sx, inner_kr_ , rho_))
     except:
-        print("failed:", rx, sx, inner_kr_ , rho_)
+        print(rx)
+        print(sx)
+        print(inner_kr_)
+        print(rho_)
     return rsx
 
 
-def double_(rsx):
-    rsx2 = np.array([ 0. if i % 2 == 0 else rsx[int(i / 2)] for i in range(0, ns)])
-    return rsx2
-
+def double_(rsx, rsx2):
+    """ inserts dummy values for the artificial segments """
+    rsx2[:, 1] = rsx  # rsx2.shape = (ns, 2)
+    return np.array(rsx2.flat)  # 0, rsx[0], 0, rsx[1], ...
 """ 
 Parameters  
 """
-
 min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
@@ -83,7 +91,7 @@ loam = [0.025, 0.403, alpha, n, Ks]
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
-sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
+sra_table_lookup = open_sra_lookup("../table_jan_comp")  # opens the precomputed soil root interface potentials
 
 """ root system """
 trans = 0.6 * 4  # cm3/day
@@ -116,55 +124,44 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 Initialize xylem model 
 """
 """ normal root system for krs, suf """
-
-r = agg.create_singleroot(100, 100, 0.05)
+r = agg.create_singleroot(ns = 100, l = 100, a = 0.05)
 agg.init_comp_conductivities_const(r)
-
 r = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
 picker = lambda x, y, z: s.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-# vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
 nodes = r.rs.nodes
-
-""" CHECK """
-# print(r.rs.nodes[0], r.rs.nodes[1], r.rs.nodes[2], r.rs.nodes[3], r.rs.nodes[-4], r.rs.nodes[-3], r.rs.nodes[-2], r.rs.nodes[-1])
-# print(r.rs.segments[0], r.rs.segments[1], r.rs.segments[2], r.rs.segments[3], r.rs.segments[-4], r.rs.segments[-3], r.rs.segments[-2], r.rs.segments[-1])
+segs = r.rs.segments
 
 """ sanity checks """
+# print(r.rs.nodes[0], r.rs.nodes[1], r.rs.nodes[2], r.rs.nodes[3], r.rs.nodes[-4], r.rs.nodes[-3], r.rs.nodes[-2], r.rs.nodes[-1])
+# print(r.rs.segments[0], r.rs.segments[1], r.rs.segments[2], r.rs.segments[3], r.rs.segments[-4], r.rs.segments[-3], r.rs.segments[-2], r.rs.segments[-1])
+# vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
 ns = len(r.rs.segments)
-r.test()  # sanity checks
+# r.test()  # sanity checks
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
 outer_r = r.rs.segOuterRadii()
 inner_r = r.rs.radii
 types = r.rs.subTypes
 rho_ = np.divide(outer_r, np.array(inner_r))
 
-# print(outer_r)
-# print(inner_r)
-# print(types)
-# print(rho_)
-
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
-# print(s.getCellCenters())
 
 # for post processing
-out_times = []  # days
 psi_x_ = []
 psi_s_ = []
 psi_s2_ = []
 sink_ = []
-collar_vfr = []
-sink_sum = []
 x_, y_ = [], []
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 cell_centers = s.getCellCenters()
-hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
 cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
+seg_centers_z = np.array([0.5 * (nodes[segs[2 * j + 1].x].z + nodes[segs[2 * j + 1].y].z)  for j in range(0, int(ns / 2))])
+hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
-# print(s.getCellCenters())
+rsx2 = np.zeros((rsx.shape[0], 2))
 
 t = 0.
 rs_age = 0.
@@ -176,44 +173,38 @@ for i in range(0, NT):
     wall_iteration = timeit.default_timer()
     wall_fixpoint = timeit.default_timer()
 
-    if i == 0:  # only first time
-        # rx = r.solve_dirichlet(rs_age + t, [collar], 0., rsx, cells = False, soil_k = [])
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx), False, wilting_point, soil_k = [])
+    if i == 0:  # initial
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
-    for j in range(0, len(outer_r)):  # determine kr at this time step
-        kr_[j] = r.kr_f(rs_age + t, types[j], 2, 2, j)
+    kr_ = np.array([r.kr_f(rs_age + t, types[j], 2, 2, j) for j in range(0, len(outer_r))])
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
 
     err = 1.e6
     c = 1
-    while err > 1 and c < 100:
+    while err > 1 and c < 1000:
 
         """ interpolation """
-        # wall_interpolation = timeit.default_timer()
-        rx_ = rx[1::2] - np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from total matric potential to matric potential
+        wall_interpolation = timeit.default_timer()
+        rx_ = rx[1::2] - seg_centers_z  # from total matric potential to matric potential
         hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
         rsx = soil_root_interface_table2(rx_, hsb_, inner_kr_[1::2], rho_[1::2], sra_table_lookup)  # [1::2] every second entry, starting from 1
-        rsx = rsx + np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from matric potential to total matric potential
-        # wall_interpolation = timeit.default_timer() - wall_interpolation
+        rsx = rsx + seg_centers_z  # from matric potential to total matric potential
+        wall_interpolation = timeit.default_timer() - wall_interpolation
 
         """ xylem matric potential """
-        # wall_xylem = timeit.default_timer()
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+        wall_xylem = timeit.default_timer()
+        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
         err = np.linalg.norm(rx - rx_old)
-        # wall_xylem = timeit.default_timer() - wall_xylem
+        wall_xylem = timeit.default_timer() - wall_xylem
+
         rx_old = rx.copy()
         c += 1
-#         print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
-#        print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
+    print(i, c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx = False, cells = False)
-
-#     min_rsx = np.min(rsx)  # for console output
-#     max_rsx = np.max(rsx)
-#     print("from", min_rsx, "to", max_rsx)
+    fluxes = r.segFluxes(rs_age + t, rx, double_(rsx, rsx2), approx = False, cells = False)
 
     wall_soil = timeit.default_timer()
     soil_fluxes = r.sumSegFluxes(fluxes)
@@ -237,9 +228,10 @@ for i in range(0, NT):
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy()[1::2])
-        print(i / skip, y_[-1], t)
 
-""" xls output """
+print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+
+""" file output """
 file1 = 'results/psix_singleroot_agg_dynamic_constkrkx' + sstr
 np.save(file1, np.array(psi_x_))  # , delimiter = ';'
 
