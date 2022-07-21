@@ -22,7 +22,6 @@ import aggregated_rs as agg
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy.optimize import fsolve
 
 """ 
@@ -33,7 +32,6 @@ Parameters
 p_top = -330
 p_bot = -180
 sstr = "_hess"
-
 
 def soil_root_interface(rx, sx, inner_kr, rho, sp):
     """
@@ -54,11 +52,7 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
 
 
 def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
-    assert rx.shape == sx.shape
-    try:
-        rsx = f((rx, sx, inner_kr_ , rho_))
-    except:
-        print("failed:", rx, sx, inner_kr_ , rho_)
+    rsx = f((rx, sx, inner_kr_ , rho_))
     return rsx
 
 
@@ -74,7 +68,6 @@ min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
 periodic = False
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 alpha = 0.0383  # (cm-1) soil
 n = 1.3774
@@ -83,7 +76,7 @@ loam = [0.025, 0.403, alpha, n, Ks]
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
-sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
+sra_table_lookup = open_sra_lookup("../table_jan_comp")  # opens the precomputed soil root interface potentials
 
 """ root system """
 trans = 0.6 * 4  # cm3/day

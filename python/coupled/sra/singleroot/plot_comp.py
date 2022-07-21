@@ -9,7 +9,6 @@ sys.path.append("../"); sys.path.append("../scenarios/");
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import aggregated_rs as agg
 
 cmap = plt.get_cmap('Set1')

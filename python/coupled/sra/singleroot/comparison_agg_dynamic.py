@@ -22,7 +22,6 @@ import aggregated_rs as agg
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy.optimize import fsolve
 
 """ 
@@ -61,13 +60,7 @@ def soil_root_interface_table2(rx, sx, inner_kr_, rho_, f):
     rho            geometry factor [1]
     f              look up function  
     """
-    # try:
     rsx = f((rx, sx, inner_kr_ , rho_))
-    # except:
-    #     print(rx)
-    #     print(sx)
-    #     print(inner_kr_)
-    #     print(rho_)
     return rsx
 
 
@@ -75,6 +68,7 @@ def double_(rsx, rsx2):
     """ inserts dummy values for the artificial segments """
     rsx2[:, 1] = rsx  # rsx2.shape = (ns, 2)
     return np.array(rsx2.flat)  # 0, rsx[0], 0, rsx[1], ...
+
 """ 
 Parameters  
 """
@@ -82,7 +76,6 @@ min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
 periodic = False
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 alpha = 0.0383  # (cm-1) soil
 n = 1.3774
@@ -200,6 +193,7 @@ for i in range(0, NT):
 
         rx_old = rx.copy()
         c += 1
+    
     print(i, c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
@@ -224,7 +218,7 @@ for i in range(0, NT):
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
         psi_x_.append(rx.copy())
-        psi_s_.append(rsx)
+        psi_s_.append(rsx.copy())
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy()[1::2])

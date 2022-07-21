@@ -92,7 +92,14 @@ def get_scenario_z():
 
 
 def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
-    """ krs, and per layer: suf, mean radius, total length """
+    """ returns krs, and per layer: suf_, kr_surf_, surf_, l_, a_    
+        krs [cm2/day]         root system conductivity 
+        suf_ [1]              standard uptake fraction
+        kr_surf_ [cm2/day]    kr times surface (summed up per layer)
+        surf_ [cm2]           surface (summed up per layer)
+        l_ [cm]               length (summed up per layer)
+        a_ [cm]               mean layer radius 
+    """
     ana = pb.SegmentAnalyser(r.rs)
     krs, _ = r.get_krs(rs_age)
 
@@ -115,17 +122,31 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
     ana.addData("kr_surf", kr_surf)
     kr_surf_ = ana.distribution("kr_surf", max_b[2], min_b[2], cell_number[2], False)
 
-    surf_ = ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False)
-    l_ = ana.distribution("length", max_b[2], min_b[2], cell_number[2], False)
-    a_ = np.divide(surf_, 2 * np.pi * np.array(l_))
-    np.nan_to_num(a_, nan = 0.)
-    return krs, suf_, kr_surf_, surf_, l_, a_  # ALL NEEDED ????
+    surf_ = np.array(ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False))
+    l_ = np.array(ana.distribution("length", max_b[2], min_b[2], cell_number[2], False))
+    a_ = np.divide(surf_, 2 * np.pi * l_)
+    return krs, np.array(suf_), np.array(kr_surf_), surf_, l_, a_  
 
 
 def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     """  one segment per layer connected by artificial segments"""
     krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
-
+    
+    
+    print("krs")
+    print(krs)
+    print("\nSUF", suf_.shape)
+    print(suf_)
+    print("\nkr*surf", kr_surf_.shape)
+    print(kr_surf_)
+    print("\nsurface", surf_.shape)
+    print(surf_)
+    print("\nlength", l_.shape)
+    print(l_)
+    print("\nradius", a_.shape)
+    print(a_)
+    print("\n\n")
+    
     n = int(cell_number[2])
     nodes = [pb.Vector3d(0, 0, 0)]  # maximal ns+1 nodes
     segs, radii = [], []  # maximal ns segments
@@ -142,20 +163,21 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
             segs.append(pb.Vector2i(2 * c + 1, 2 * c + 2))  # normal segment
             radii.append(a_[i])
             c += 1
+    # print("number of segments", len(segs))
 
     rs = pb.MappedSegments(nodes, segs, radii)
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-    r2 = XylemFluxPython(rs)  # wrap the xylem    # init_conductivities_const(r)
-    # r.test()  # sanity checks
-    # z_ = np.linspace(0, -110, 55)
-    # plt.plot(suf_, z_)
-    # plt.show()
+    r2 = XylemFluxPython(rs)  # wrap the xylem
+    r.test()  # sanity checks
+    z_ = np.linspace(0, -150, 150)
+    plt.plot(suf_[0:100], z_[0:100])
+    plt.show()
 
     ll = np.abs(z_)
     # print(ll)
 
-    suf_krs = np.array(suf_) * krs
+    suf_krs = suf_ * krs
     # print(krs)
     # print(suf_krs)
     # print(kr_surf_)
@@ -163,18 +185,20 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     kr_up, kx_up = [], []
     for i in range(0, n):
         if l_[i] > 0:
+            
             kr_up.append(0.)  # artificial segment
             if surf_[i] > 0:
                 kr_up.append(kr_surf_[i] / surf_[i])  # mean layer kr [1/day]
             else:  # no segments in layer
                 kr_up.append(0.)  # regular segment
+            
             if kr_surf_[i] - suf_krs[i] > 0:
-                kx_up.append(ll[i] * (suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment
+                kx_up.append((suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment ll[i] *  
+                # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q 
             else:  # no segments in layer
-                print("!!!!")
-                raise
-                kx_up.append(0.)
+                raise ValueError('create_aggregated_rs() no segment in layer')
             kx_up.append(1.e6)  # regular segment
+            
     r2.setKrValues(kr_up)
     r2.setKxValues(kx_up)
 
@@ -188,6 +212,10 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     print("suf", np.min(suf_), np.max(suf_), np.sum(suf_))
     print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
+    print("kx_up", kx_.shape)
+    print("kx_up") 
+    print(kx_[0::2])
+    # dd
 
     # vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
     return r2
