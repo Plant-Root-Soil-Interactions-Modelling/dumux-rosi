@@ -1,7 +1,5 @@
 """
 single root plots - compares two sink in one axis
-
-from xls result files (in results/) 
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +8,8 @@ import pandas as pd
 add_str = "_comp"  # "_wet", "_dry"
 
 fnames = ["sink_singleroot_sra_dynamic_constkrkx" + add_str,
-          "sink_singleroot_agg_dynamic_constkrkx" + add_str]  #
+          "sink_singleroot_agg_dynamic_constkrkx" + add_str]
+
 days = 21
 titles = ["steady rate", "aggregated"]  # "steady rate", , "aggregated" "rhizosphere"
 

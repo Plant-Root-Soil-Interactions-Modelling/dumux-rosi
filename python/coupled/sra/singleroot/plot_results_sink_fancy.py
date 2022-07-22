@@ -5,14 +5,13 @@ from xls result files (in results/)
 """
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-add_str = "_wet"  # "_wet", "_dry"
+add_str = "_comp"  # "_wet", "_dry"
 # fnames = ["sink_singleroot_cyl_constkrkx" + add_str + ".xls",
 #           "sink_singleroot_agg_constkrkx" + add_str + ".xls"]  #
 # days = 0.51
-fnames = ["sink_singleroot_cyl_dynamic_constkrkx" + add_str + ".xls",
-          "sink_singleroot_agg_dynamic_constkrkx" + add_str + ".xls"]  #
+fnames = ["sink_singleroot_cyl_dynamic_constkrkx" + add_str,
+          "sink_singleroot_agg_dynamic_constkrkx" + add_str]
 days = 7.1
 titles = ["Steady rate", "Aggregated"]  # "Steady rate", , "Aggregated steady rate", "Rhizosphere"
 

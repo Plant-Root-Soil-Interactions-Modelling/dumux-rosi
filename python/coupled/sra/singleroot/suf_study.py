@@ -1,5 +1,5 @@
 """ 
- tests resolution dependency of krs, of a single root 
+ Tests resolution dependency of SUF, of a single root 
  
  gladly, no dependency 
 """
@@ -33,26 +33,27 @@ Initialize xylem model
 fig, ax = plt.subplots(1, 2, figsize = (18, 8))
 print("Meunier")
 for n in [10, 50, 100, 200]:
-    r = agg.create_singleroot(ns = 100, l = 100 , a = a)
+    r = agg.create_singleroot(ns = n, l = 100 , a = a)
     agg.init_comp_conductivities_const(r)
     segs = r.rs.segments
     nodes = r.rs.nodes
     z_ = [0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs]
     suf_ = r.get_suf(0.)
-    ax[0].plot(suf_, z_, label = "{:g} segments".format(n))
+    ax[0].plot(suf_ * n, z_, label = "{:g} segments".format(n))
 ax[0].set_xlabel("SUF (1)")
 ax[0].set_ylabel("depth (cm)")
 ax[0].legend()
 
 print("\nDoussan")
 for n in [10, 50, 100, 200]:
-    r = agg.create_singleroot(ns = 100, l = 100 , a = a)
+    r = agg.create_singleroot(ns = n, l = 100 , a = a)
     agg.init_comp_conductivities_const(r)
-    r.linearSystem = r.linearSystem_doussan  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-    krs, j = r.get_krs(0.)
+    r.linearSystem = r.linearSystem_doussan  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    segs = r.rs.segments
+    nodes = r.rs.nodes
     z_ = [0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs]
-    suf_ = r.get_suf(0.)
-    ax[1].plot(suf_, z_, label = "{:g} segments".format(n))
+    suf_ = r.get_suf(0., approx = True)  # there is a huge difference using approx = False for low resolution...
+    ax[1].plot(suf_ * n, z_, label = "{:g} segments".format(n))
 ax[1].set_xlabel("SUF (1)")
 ax[1].set_ylabel("depth (cm)")
 ax[1].legend()

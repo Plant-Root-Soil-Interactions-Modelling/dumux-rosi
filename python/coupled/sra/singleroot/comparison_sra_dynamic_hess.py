@@ -16,12 +16,11 @@ from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
 import vtk_plot as vp
 import van_genuchten as vg
-import aggregated_rs as agg
 from sra_table_lookup import *
+import aggregated_rs as agg
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy.optimize import fsolve
 
 """ soil """
@@ -56,7 +55,6 @@ min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
 periodic = False
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 alpha = 0.0383  # (cm-1) soil
 n = 1.3774
@@ -65,7 +63,7 @@ loam = [0.025, 0.403, alpha, n, Ks]
 soil_ = loam
 soil = vg.Parameters(soil_)
 vg.create_mfp_lookup(soil, -1.e5, 1000)  # creates the matrix flux potential look up table (in case for exact)
-sra_table_lookup = open_sra_lookup("../table_jan2")  # opens the precomputed soil root interface potentials
+sra_table_lookup = open_sra_lookup("../table_jan_comp")  # opens the precomputed soil root interface potentials
 
 """ root system """
 trans = 0.6 * 4  # cm3/day
@@ -74,7 +72,7 @@ wilting_point = -15000
 
 """ simulation time """
 sim_time = 21  #  [day]
-dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
+dt = 60 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
 

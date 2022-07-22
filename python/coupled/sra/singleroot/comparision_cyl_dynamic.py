@@ -71,7 +71,6 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step

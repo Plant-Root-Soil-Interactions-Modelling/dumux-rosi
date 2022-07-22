@@ -125,18 +125,18 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
     surf_ = np.array(ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False))
     l_ = np.array(ana.distribution("length", max_b[2], min_b[2], cell_number[2], False))
     a_ = np.divide(surf_, 2 * np.pi * l_)
-    return krs, np.array(suf_), np.array(kr_surf_), surf_, l_, a_  
+    return krs, np.array(suf_), np.array(kr_surf_), surf_, l_, a_
 
 
 def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     """  one segment per layer connected by artificial segments"""
     krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
-    
-    
+
     print("krs")
     print(krs)
     print("\nSUF", suf_.shape)
     print(suf_)
+    print(list(suf_[0:100]))
     print("\nkr*surf", kr_surf_.shape)
     print(kr_surf_)
     print("\nsurface", surf_.shape)
@@ -146,13 +146,14 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     print("\nradius", a_.shape)
     print(a_)
     print("\n\n")
-    
+
     n = int(cell_number[2])
     nodes = [pb.Vector3d(0, 0, 0)]  # maximal ns+1 nodes
     segs, radii = [], []  # maximal ns segments
     dx = (max_b[2] - min_b[2]) / cell_number[2]
     z_ = np.linspace(max_b[2] - dx / 2, min_b[2] + dx / 2, n)  # cell centers
     # print(z_)
+
     c = 0
     for i in range(0, n):
         if l_[i] > 0:
@@ -170,9 +171,9 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
     r2 = XylemFluxPython(rs)  # wrap the xylem
     r.test()  # sanity checks
-    z_ = np.linspace(0, -150, 150)
-    plt.plot(suf_[0:100], z_[0:100])
-    plt.show()
+    # z_ = np.linspace(0, -150, 150)
+    # plt.plot(suf_[0:100], z_[0:100])
+    # plt.show()
 
     ll = np.abs(z_)
     # print(ll)
@@ -185,20 +186,21 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     kr_up, kx_up = [], []
     for i in range(0, n):
         if l_[i] > 0:
-            
+
             kr_up.append(0.)  # artificial segment
             if surf_[i] > 0:
                 kr_up.append(kr_surf_[i] / surf_[i])  # mean layer kr [1/day]
             else:  # no segments in layer
                 kr_up.append(0.)  # regular segment
-            
+
             if kr_surf_[i] - suf_krs[i] > 0:
-                kx_up.append((suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment ll[i] *  
-                # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q 
+                # kx_up.append(ll[i] * kx_up_[i])
+                kx_up.append((ll[i] * suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment ll[i] *
+                # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q
             else:  # no segments in layer
                 raise ValueError('create_aggregated_rs() no segment in layer')
-            kx_up.append(1.e6)  # regular segment
-            
+            kx_up.append(1.e1)  # regular segment
+
     r2.setKrValues(kr_up)
     r2.setKxValues(kx_up)
 
@@ -213,9 +215,11 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
     print("kx_up", kx_.shape)
-    print("kx_up") 
-    print(kx_[0::2])
-    # dd
+    print("kx_up")
+    print(list(kx_[0::2]))
+
+    print(kr_surf_[0])
+    print(suf_krs[0])
 
     # vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
     return r2

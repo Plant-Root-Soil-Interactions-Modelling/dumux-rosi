@@ -20,7 +20,6 @@ import aggregated_rs as agg
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 """ 
 Parameters  
@@ -35,7 +34,6 @@ min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
 periodic = False
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 alpha = 0.0383  # (cm-1) soil
 n = 1.3774

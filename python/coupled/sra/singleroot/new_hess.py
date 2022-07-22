@@ -2,7 +2,11 @@ import numpy as np
 import scipy
 from scipy import sparse
 
-""" Andreas example """
+""" 
+    Andreas example 
+    
+    (pre-study for building doussan matrix)
+"""
 segs = [ [0, 1], [1, 2], [1, 3], [3, 4] ]
 vn = len(segs)  # number of edges
 nn = 5  # number of nodes

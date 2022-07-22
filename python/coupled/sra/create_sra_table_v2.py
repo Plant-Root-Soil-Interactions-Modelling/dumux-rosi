@@ -32,9 +32,16 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
     return rsx
 
 
-filename = "table_jan2"
+filename = "table_jan_comp"
 
-soil = [0.08, 0.43, 0.018, 1.8, 28.46]  # loam
+# for single root comparison
+alpha = 0.0383  # (cm-1) soil
+n = 1.3774
+Ks = 60.  # (cm d-1)
+soil = [0.025, 0.403, alpha, n, Ks]
+
+# soil = [0.08, 0.43, 0.018, 1.8, 28.46]  # standard loam
+
 sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp, -1.e5, 1000)  # creates the matrix flux potential look up table
 

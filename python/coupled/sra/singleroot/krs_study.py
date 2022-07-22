@@ -32,7 +32,7 @@ Initialize xylem model
 """
 print("Meunier")
 for n in [10, 50, 100, 200]:
-    r = agg.create_singleroot(ns = 100, l = 100 , a = a)
+    r = agg.create_singleroot(ns = n, l = 100 , a = a)
     agg.init_comp_conductivities_const(r)
     krs, j = r.get_krs(0.)
     print(n, ": krs", krs, "j", j, krs / (2 * a * np.pi), krs / (2 * a * np.pi * 50))  # krs / (root surface) ~= kr
@@ -40,7 +40,7 @@ for n in [10, 50, 100, 200]:
 
 print("\nDoussan")
 for n in [10, 50, 100, 200]:
-    r = agg.create_singleroot(ns = 100, l = 100 , a = a)
+    r = agg.create_singleroot(ns = n, l = 100 , a = a)
     agg.init_comp_conductivities_const(r)
     r.linearSystem = r.linearSystem_doussan  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     krs, j = r.get_krs(0.)

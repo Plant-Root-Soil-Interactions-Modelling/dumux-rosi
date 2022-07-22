@@ -6,7 +6,7 @@ coupled to cylindrical rhizosphere models using 1d axi-symetric richards equatio
 
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
 sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
-sys.path.append("../");
+sys.path.append("../"); sys.path.append("../scenarios/");
 
 import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
@@ -16,11 +16,10 @@ from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
 import vtk_plot as vp
 import van_genuchten as vg
-from root_conductivities import *
+import aggregated_rs as agg
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 """ 
 Parameters  
@@ -31,13 +30,10 @@ p_top = -1000  # -5000 (_dry), -1000 (_wet)
 p_bot = -200  #
 sstr = "_wet"  # <---------------------------------------------------------- (dry or wet)
 
-ns = 100  # 50 cm root, 100 segments, 0.5 cm each
-L = 50.  # cm
-min_b = [-0.5, -0.5, -L]
+min_b = [-0.5, -0.5, -50]
 max_b = [0.5, 0.5, 0.]
-cell_number = [1, 1, ns]
+cell_number = [1, 1, 100]
 periodic = False
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 alpha = 0.018  # (cm-1) soil
 n = 1.8
@@ -75,7 +71,6 @@ s.setTopBC("noFlux")
 s.setBotBC("noFlux")
 s.setVGParameters([soil_])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -83,24 +78,19 @@ s.ddt = 1.e-5  # [day] initial Dumux time step
 """ 
 Initialize xylem model 
 """
-radii = np.array([radius] * ns)
-nodes = [pb.Vector3d(0, 0, 0)]
-segs = []
-for i in range(0, ns):
-    # print(((i + 1) / ns) * L)
-    nodes.append(pb.Vector3d(0, 0, -((i + 1) / ns) * L))  # node i+1
-    segs.append(pb.Vector2i(i, i + 1))
-
-ms = pb.MappedSegments(nodes, segs, radii)
-rs = RhizoMappedSegments(ms, wilting_point, NC, logbase, mode)
+ns = 100  # 50 cm root, 100 segments, 0.5 cm each
+r = agg.create_singleroot(ns = ns, l = 50, a = radius)
+r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+rs = RhizoMappedSegments(r.rs, wilting_point, NC, logbase, mode)
 rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
-r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 rs.set_xylem_flux(r)
-
-init_singleroot_contkrkx(r)
+agg.init_comp_conductivities_const(r)
 
 """ sanity checks """
 r.test()  # sanity checks
@@ -125,13 +115,10 @@ print("Starting simulation")
 start_time = timeit.default_timer()
 
 # for post processing
-out_times = []  # days
 psi_x_ = []
 psi_s_ = []  # root soil interface
 psi_s2_ = []  # soil
 sink_ = []
-collar_vfr = []
-sink_sum = []
 x_, y_ = [], []
 
 water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
@@ -151,62 +138,41 @@ for i in range(0, NT + 1):
     """ 1. xylem model """
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
     if i == 0:
-        # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = [])
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
 
-    # exact
-    soil_k0 = np.zeros(rsx.shape)
+    # different choices of limitting conductivitiy
+    soil_k0 = np.zeros(rsx.shape)  # exact
     for j in range(0, rsx.shape[0]):
         hsoil = rsx[j]
         hint = rx[j + 1]
         soil_k0[j] = (vg.fast_mfp[soil](hsoil) - vg.fast_mfp[soil](hint)) / (hsoil - hint)
     soil_k00 = np.divide(soil_k0, rs.get_dx2())  # only valid for homogenous soil
     soil_k000 = rs.get_soil_k(rx)
-
     # approx
     soil_k1 = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.get_dx2())  # only valid for homogenous soil
-
     # approx2 rs.get_dx2()
     soil_k2 = np.divide(vg.hydraulic_conductivity(rx[1:], soil), rs.get_dx2())  # only valid for homogenous soil
-
     # old
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-
-    if i % skip == 0:
-        print("exact  ", np.min(soil_k000), np.max(soil_k000))
-        print("exact  ", np.min(soil_k00), np.max(soil_k00))
-        print("approx1", np.min(soil_k1), np.max(soil_k1))
-        print("approx2", np.min(soil_k2), np.max(soil_k2))
-        print("old    ", np.min(soil_k), np.max(soil_k), "\n")
-
     soil_k = soil_k00
-
-    # rx = r.solve_dirichlet(0., [collar], 0., rsx.copy(), cells = False, soil_k = soil_k)
     rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = soil_k)
 
+    # validity check
     proposed_inner_fluxes = r.segFluxes(0., rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
     collar_flux = r.collar_flux(0., rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
-
     err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
-
     if err > 1.e-10:
-        print("error" , err)
-        print(rx)
-        print(np.min(rx), np.max(rx))
-        print(np.min(rsx), np.max(rsx))
-        print(np.min(soil_k), np.max(soil_k))
-        print(np.min(proposed_inner_fluxes), np.max(proposed_inner_fluxes))
-        print(collar_flux)
+        print("error: summed root surface fluxes and root collar flux differ" , err)
 
     """ 2. local soil models """
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
-    # print(np.min(proposed_outer_fluxes), np.max(proposed_outer_fluxes), np.sum(proposed_outer_fluxes))
     rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # left and right neumann fluxes
     realized_inner_fluxes = rs.get_inner_fluxes()  # identical for mode = "dumux"
 
+    # validity check
     err = np.linalg.norm(np.array(proposed_inner_fluxes) - np.array(realized_inner_fluxes))
     if err > 1.e-15:
-        print("relative error" , err)
+        print("error: summed root surface fluxes and cylindric model fluxes differ" , err)
 
     """ 3a. macroscopic soil model """
     water_content = np.array(s.getWaterContent())  # theta per cell [1]
@@ -234,40 +200,29 @@ for i in range(0, NT + 1):
         fluxes = np.array(proposed_inner_fluxes)
         collar_flux = r.collar_flux(0., rx, rsx, k_soil = soil_k, cells = False)
         print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
-        rx_ = rx[1:]
-        psi_x_.append(rx_)
+        psi_x_.append(rx.copy())
         psi_s_.append(np.array(rsx.copy()))
         dd = np.array(s.getSolutionHead())
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy())
-        collar_vfr.append(collar_flux)  # def collar_flux(self, sim_time, rx, sxx, k_soil=[], cells=True):
-        sink_sum.append(np.sum(fluxes))
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-""" xls file output """
-print("write xls")
-file1 = 'results/psix_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
-df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index = False, header = False)
+""" file output """
+file1 = 'results/psix_singleroot_cyl_dynamic_constkrkx' + sstr
+np.save(file1, np.array(psi_x_))
 
-file2 = 'results/psiinterface_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
-df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index = False, header = False)
+file2 = 'results/psiinterface_singleroot_cyl_dynamic_constkrkx' + sstr
+np.save(file2, np.array(psi_s_))
 
-file3 = 'results/sink_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
-df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index = False, header = False)
+file3 = 'results/sink_singleroot_cyl_dynamic_constkrkx' + sstr
+np.save(file3, -np.array(sink_))
 
 file4 = 'results/transpiration_singleroot_cyl_dynamic_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+np.save(file4, np.vstack((x_, -np.array(y_))))
 
-file5 = 'results/soil_singleroot_cyl_dynamic_constkrkx' + sstr + '.xls'
-df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index = False, header = False)
+file5 = 'results/soil_singleroot_cyl_dynamic_constkrkx' + sstr
+np.save(file5, np.array(psi_s2_))
 
 print("fin")
-# rs.plot_cylinders()
 
-# print(collar_vfr)
-# print(sink_sum)

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from xylem_flux import *
 
-add_str = "_comp"  # _wet, _dry
+add_str = "_hess"  # _wet, _dry
 
 # # Constant scenarios
 # fnames = ["results/transpiration_singleroot_cyl_constkrkx" + add_str,

@@ -1,8 +1,7 @@
 """
-single root plots - compares two sink in one axis
-
-from xls result files (in results/) 
+recreates the plots from Jan's slides (to compare to Matlab implementation)
 """
+
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
 sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
 sys.path.append("../"); sys.path.append("../scenarios/");
@@ -151,22 +150,27 @@ plt.show()
 fig, ax = plt.subplots(1, n, figsize = (18, 8))
 
 for i in range(0, n):
+
     psi_i = np.load(path + fnames2[i] + ".npy")
     psi_s = np.load(path + fnames3[i] + ".npy")
-    # psi_x = np.load(path + fnames4[i] + ".npy")
+    psi_x = np.load(path + fnames4[i] + ".npy")
 
-    z_ = np.linspace(-L + dx / 2., -dx / 2., psi_i.shape[1])  # segment mids
-    z_ = z_[::-1]
-    zs_ = np.linspace(-150 + 1. / 2., -1. / 2., psi_s.shape[1])  # segment mids
+    z_ = np.linspace(-dx / 2., -L + dx / 2., psi_i.shape[1])  # segment mids
+    zsoil_ = np.linspace(-150 + 1. / 2., -1. / 2., psi_s.shape[1])  # cell mids
 
     peak_id = np.round(psi_i.shape[0] / days * np.array([0.5 + i for i in plot_times]))
     peak_id = peak_id.astype(int)
 
+    redistribution_id = np.round(sink_.shape[0] / days * np.array([i for i in plot_times]))
+    redistribution_id = redistribution_id.astype(int)
+
     for j in range(0, psi_i.shape[0]):
         if j in peak_id:
             ind = np.argwhere(j == peak_id)[0][0]
-            ax[i].plot(z_, psi_i[j,:], label = "{:g}d".format(plot_times[ind]), color = col[ind])
-            ax[i].plot(zs_, psi_s[j,:], label = "bulk {:g}d".format(plot_times[ind]), color = col[ind], linestyle = "--")
+            ax[i].plot(z_, psi_i[j,:], label = "rsx {:g}d".format(plot_times[ind]), color = col[ind])
+            # ax[i].plot(z_, psi_x[j, 1:], label = "rx {:g}d".format(plot_times[ind]), color = col[ind], linestyle = "-.")
+            ax[i].plot(zsoil_, psi_s[j,:], label = "bulk {:g}d".format(plot_times[ind]), color = col[ind], linestyle = "--")
+
     ax[i].set_title(titles[i])
     ax[i].set_ylabel("pressure head at interface [cm]")
     ax[i].set_xlabel("depth [cm]")

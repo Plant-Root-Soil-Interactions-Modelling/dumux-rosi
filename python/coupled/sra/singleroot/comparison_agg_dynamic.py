@@ -16,11 +16,9 @@ from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
 import vtk_plot as vp
 import van_genuchten as vg
-from detach2 import *
 from sra_table_lookup import *
 import aggregated_rs as agg
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import fsolve
 
@@ -93,7 +91,7 @@ wilting_point = -15000
 
 """ simulation time """
 sim_time = 21  #  [day]
-dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
+dt = 60 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
 
@@ -105,13 +103,15 @@ s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setLinearIC(p_top, p_bot)  # cm pressure head
 s.setTopBC("noFlux")
-s.setBotBC("noFlux")
+s.setBotBC("freeDrainage")
 s.setVGParameters([soil_])
-s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+# s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 # s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
+
+water0 = s.getWaterVolume()
 
 """ 
 Initialize xylem model 
@@ -152,6 +152,9 @@ cell_centers = s.getCellCenters()
 cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
 seg_centers_z = np.array([0.5 * (nodes[segs[2 * j + 1].x].z + nodes[segs[2 * j + 1].y].z)  for j in range(0, int(ns / 2))])
 hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
+
+# print(list([mapping[2 * j + 1] for j in range(0, int(ns / 2))]))
+
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration
 rsx2 = np.zeros((rsx.shape[0], 2))
@@ -174,8 +177,8 @@ for i in range(0, NT):
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
 
     err = 1.e6
-    c = 1
-    while err > 1 and c < 1000:
+    c = 0
+    while err > 1 and c < 100:
 
         """ interpolation """
         wall_interpolation = timeit.default_timer()
@@ -193,19 +196,27 @@ for i in range(0, NT):
 
         rx_old = rx.copy()
         c += 1
-    
+
     print(i, c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
 #    wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
     fluxes = r.segFluxes(rs_age + t, rx, double_(rsx, rsx2), approx = False, cells = False)
+    err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - np.sum(fluxes))
+    if r.last == "neumann":
+        if err2 > 1.e-8:
+            print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, -trans * sinusoidal2(t, dt), np.sum(fluxes))
+            print(fluxes)
+            raise
 
     wall_soil = timeit.default_timer()
+
     soil_fluxes = r.sumSegFluxes(fluxes)
     s.setSource(soil_fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
     hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])
+
     wall_soil = timeit.default_timer() - wall_soil
 
     wall_iteration = timeit.default_timer() - wall_iteration
@@ -217,13 +228,16 @@ for i in range(0, NT):
         for f in soil_fluxes.values():
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
-        psi_x_.append(rx.copy())
+        psi_x_.append(rx.copy()[::2])
         psi_s_.append(rsx.copy())
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
         sink_.append(fluxes.copy()[1::2])
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+
+water_end = s.getWaterVolume()
+print("\ntotal uptake", water0 - water_end, "cm3")
 
 """ file output """
 file1 = 'results/psix_singleroot_agg_dynamic_constkrkx' + sstr
