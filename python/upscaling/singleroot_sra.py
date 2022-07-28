@@ -33,6 +33,9 @@ s, soil = scenario.create_soil_model(min_b, max_b, cell_number, p_top = -330, p_
 r = scenario.create_mapped_singleroot(min_b, max_b, cell_number, s, ns = 100, l = 100, a = 0.05)
 r.test()  # sanity checks
 
+""" Numerical solution """
+start_time = timeit.default_timer()
+
 nodes = r.rs.nodes
 segs = r.rs.segments
 ns = len(segs)
@@ -42,9 +45,6 @@ inner_r = r.rs.radii
 types = r.rs.subTypes
 rho_ = np.divide(outer_r, np.array(inner_r))
 # print("Krs", r.get_krs(0.))
-
-""" Numerical solution (a) """
-start_time = timeit.default_timer()
 
 psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
@@ -62,8 +62,9 @@ t = 0.
 rs_age = 0.
 rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, False, wilting_point, soil_k = [])
 rx_old = rx.copy()
-kr_ = np.array([r.kr_f(rs_age + t, types[j]) for j in range(0, len(outer_r))])
-inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up #  TODO move UP
+
+kr_ = np.array([r.kr_f(rs_age + t, types[j]) for j in range(0, len(outer_r))])  # here const
+inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
 
 for i in range(0, NT):
 
@@ -99,8 +100,7 @@ for i in range(0, NT):
 
     wall_soil = timeit.default_timer()
     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
-    # validity check
-    collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)
+    collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
     err = np.linalg.norm(np.sum(fluxes) - collar_flux)
     if err > 1.e-10:
         print("error: summed root surface fluxes and root collar flux differ" , err)
