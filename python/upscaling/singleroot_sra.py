@@ -26,10 +26,8 @@ sim_time = 21  #  [day]
 dt = 60 / (24 * 3600)  # time step [day]
 
 """ initialize """
-sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure soil corresponds to look up table
-
+sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 s, soil = scenario.create_soil_model(min_b, max_b, cell_number, p_top = -330, p_bot = -180)
-
 r = scenario.create_mapped_singleroot(min_b, max_b, cell_number, s, ns = 100, l = 100, a = 0.05)
 r.test()  # sanity checks
 
