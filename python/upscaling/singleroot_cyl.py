@@ -1,12 +1,10 @@
 """ 
 Single root scenario - soil depletion due to sinusoidal transpiration over 21 days
 
-coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver)
+coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver) (cyl)
 """
-
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/fv/");
-sys.path.append("../");
+sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/fv/"); sys.path.append("../")
 
 import plantbox as pb  # CPlantBox
 from xylem_flux import *  # root system Python hybrid solver
