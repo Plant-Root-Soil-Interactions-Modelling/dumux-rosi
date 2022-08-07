@@ -1,4 +1,4 @@
-""" functions to simplify setup """
+""" functions to simplify setup of the scenarios """
 
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/");
 sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../../../CPlantBox/");
@@ -6,14 +6,15 @@ sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../..
 import numpy as np
 
 import plantbox as pb  # CPlantBox
-from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
-from richards import RichardsWrapper  # Python part, macroscopic soil model
+import van_genuchten as vg
 from xylem_flux import XylemFluxPython
 
-import van_genuchten as vg
+from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 
-def create_soil_model(min_b , max_b , cell_number, p_top, p_bot,):
+
+def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil type is fixed  
@@ -21,11 +22,7 @@ def create_soil_model(min_b , max_b , cell_number, p_top, p_bot,):
         initial potentials are linear from @param p_top to @param p_bot
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
-    """
-    alpha = 0.0383  # (cm-1) soil
-    n = 1.3774
-    Ks = 60.  # (cm d-1)
-    soil_ = [0.025, 0.403, alpha, n, Ks]  # corresponding soil root interface potentials table is  "../table_jan_comp"
+    """  
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
     if (cell_number[0] == 1 and cell_number[1] == 1):  # 1D
