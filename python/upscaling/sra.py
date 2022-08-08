@@ -61,24 +61,25 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     rsx = f((rx, sx, inner_kr_ , rho_))
     return rsx
 
-def simulate_const(s,r, sra_table_lookup, trans, sim_time, dt):
+def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
         conductivities are not changing over time
         
-    s
-    r
-    sra_table_lookup
-    trans
-    sim_time    
-    dt
+    s                            soil model (RichardsWrapper(RichardsSP()))
+    r                            xylem flux model (XylemFluxPython wrapping MappedSegments mapped to soil @param s)
+    sra_table_lookup             potentials a root soil interface    
+    trans                        daily transpiration
+    sim_time                     simulation time
+    dt                           time step
     
     TODO recyle factorisation of left hand side ... 
     """
     wilting_point = -15000 # cm
     skip = 1  # for output and results, skip iteration
-    rs_age = 0. #    
+    rs_age = 0.     
+    max_iter = 1000 # maximum for fix point iteration
     
     start_time = timeit.default_timer()
     
@@ -101,15 +102,15 @@ def simulate_const(s,r, sra_table_lookup, trans, sim_time, dt):
     hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
     
-    NT = int(np.ceil(sim_time / dt))  # number of iterations
-
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
     rx_old = rx.copy()
     
     kr_ = np.array([r.kr_f(rs_age, types[j]) for j in range(0, len(outer_r))])  # here const
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
     
-    for i in range(0, NT):
+    N = int(np.ceil(sim_time / dt))  # number of iterations
+
+    for i in range(0, N):
     
         t = i * dt  # current simulation time
     
@@ -118,14 +119,14 @@ def simulate_const(s,r, sra_table_lookup, trans, sim_time, dt):
     
         err = 1.e6  # cm
         c = 0
-        while err > 1 and c < 1000:
+        while err > 1 and c < max_iter:
     
             """ interpolation """
             wall_interpolation = timeit.default_timer()
-            rx_ = rx[1:] - seg_centers_z  # from total matric potenti    al to matric potential
+            rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
             hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
-            # rsx = sra.soil_root_interface_table(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)  
-            rsx = soil_root_interface(rx[1:] , hsb, inner_kr_, rho_, sra_table_lookup) # put soil to sra_table_lookup
+            rsx = soil_root_interface_table(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)  
+            # rsx = soil_root_interface(rx[1:] , hsb, inner_kr_, rho_, sra_table_lookup) # put soil to sra_table_lookup
             rsx = rsx + seg_centers_z  # from matric potential to total matric potential
             wall_interpolation = timeit.default_timer() - wall_interpolation
     

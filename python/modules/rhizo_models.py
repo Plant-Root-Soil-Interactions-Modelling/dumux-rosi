@@ -27,7 +27,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         "python_exact"       inner boundary is rootsystem_exact (slower, for experiments...)
     """
 
-    # todo copy mapped segments constructors ...
+    # TODO copy mapped segments constructors (!)...  
 
     def __init__(self, file_name, wilting_point, NC, logbase, mode):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
@@ -35,7 +35,18 @@ class RhizoMappedSegments(pb.MappedSegments):
             ms = xylem_flux.XylemFluxPython.read_rsml(file_name)
         elif isinstance(file_name, pb.MappedSegments):  # should also be true for MappedRootSystem (since MappedSegments is base class)
             ms = file_name
-        super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes)
+        super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes)        
+        
+        # TODO replace by a copy constructor or copy() at some point
+        self.seg2cell = ms.seg2cell
+        self.cell2seg = ms.cell2seg
+        self.soil_index = ms.soil_index
+        self.minBound = ms.minBound
+        self.maxBound = ms.maxBound
+        self.resolution= ms.resolution
+        # self.cutAtGrid = ms.cutAtGrid # TODO export in pybind11     
+        
+        # additional variables 
         self.cyls = []
         self.wilting_point = wilting_point
         self.NC = NC

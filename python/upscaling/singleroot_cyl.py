@@ -4,181 +4,50 @@ Single root scenario - soil depletion due to sinusoidal transpiration over 21 da
 coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver) (cyl)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/fv/"); sys.path.append("../")
-
-import plantbox as pb  # CPlantBox
-from xylem_flux import *  # root system Python hybrid solver
-from rhizo_models import *  # Helper class for cylindrical rhizosphere models
-
-import vtk_plot as vp
-import van_genuchten as vg
-import aggregated_rs as agg
-
-import matplotlib.pyplot as plt
-import numpy as np
+sys.path.append("../../build-cmake/cpp/python_binding/") # DUMUX solver   
 
 import scenario_setup as scenario
+from rhizo_models import RhizoMappedSegments
+import cyl
 
-""" Parameters """
-
-min_b = [-1, -1, -150.]
+""" parameters   """
+min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
 
-sstr = ""  # additional string added to filename
+theta_r = 0.025
+theta_s = 0.403
+alpha = 0.0383  # (cm-1) soil
+n = 1.3774
+k_sat = 60.  # (cm d-1)
+soil_ = [theta_r, theta_s, alpha, n, k_sat]
 
 trans = 0.6 * 4  # cm3/day
-wilting_point = -15000
 
-sim_time = 21  # 0.65  # 0.25  # [day]
-dt = 20 / (24 * 3600)  # time step [day], 120 schwankt stark
-NT = int(np.ceil(sim_time / dt))  # number of iterations
-skip = 3  # for output and results, skip iteration
+sim_time = 21  #  [day]
+dt = 20 / (24 * 3600)  # time step [day]
 
-""" Initialize """
-s, soil = scenario.create_soil_model(min_b, max_b, cell_number, p_top = -330, p_bot = -180)
-
-""" rhizosphere models """
-mode = "dumux"
-NC = 10  # dof+1, i.e. dof = 9
+""" rhizosphere model parameters """
+wilting_point = -15000 # cm
+nc = 10  # dof+1
 logbase = 0.5  # according to Mai et al. (2019)
-split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
+mode = "dumux"
 
-""" 
-Initialize xylem model 
-"""
-ns = 100
-r = agg.create_singleroot(ns = ns, l = 100, a = 0.05)
-r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-rs = RhizoMappedSegments(r.rs, wilting_point, NC, logbase, mode)
-rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-rs.set_xylem_flux(r)
-agg.init_comp_conductivities_const(r)
+""" initialize """
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
+r = scenario.create_mapped_singleroot(min_b, max_b, cell_number, s, ns = 100, l = 100, a = 0.05)
+rs = RhizoMappedSegments(r.rs, wilting_point, nc, logbase, mode)
+rs.set_xylem_flux(r) # TODO revise (move into constructor)
 
 """ sanity checks """
 r.test()  # sanity checks
 
-""" 
-Initialize local soil models (around each root segment) 
-"""
-start_time = timeit.default_timer()
-x = s.getSolutionHead()  # initial condition of soil [cm]
-rs.initialize(list(soil), x)
+""" numerical solution """
+water0 = s.getWaterVolume() # total initial water volume in domain
 
-""" 
-Simulation 
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
 
-loop
-1. xylem model
-2. local soil models
-3. macroscopic soil model 
-"""
-print("Starting simulation")
-start_time = timeit.default_timer()
+scenario.write_files("singleroot_cyl", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
-# for post processing
-psi_x_ = []
-psi_s_ = []  # root soil interface
-psi_s2_ = []  # soil
-sink_ = []
-x_, y_ = [], []
-
-water_uptake, water_collar_cell, water_cyl, water_domain = [], [], [], []  # cm3
-
-cell_volumes = s.getCellVolumes()  # cm3
-cell_volumes = comm.bcast(cell_volumes, root = 0)
-net_flux = np.zeros(cell_volumes.shape)
-
-t = 0.
-rs_age = 0.
-
-for i in range(0, NT + 1):
-
-    t = i * dt  # current simulation time
-
-    """ 1. xylem model """
-    rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    if i == 0:  # initial
-        rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
-
-    # different choices of limitting conductivitiy
-    soil_k0 = np.zeros(rsx.shape)  # exact
-    for j in range(0, rsx.shape[0]):
-        hsoil = rsx[j]
-        hint = rx[j + 1]
-        soil_k0[j] = (vg.fast_mfp[soil](hsoil) - vg.fast_mfp[soil](hint)) / (hsoil - hint)
-    soil_k00 = np.divide(soil_k0, rs.get_dx2())
-    soil_k000 = rs.get_soil_k(rx)
-    # approx
-    soil_k1 = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.get_dx2())  # only valid for homogenous soil
-    # approx2 rs.get_dx2()
-    soil_k2 = np.divide(vg.hydraulic_conductivity(rx[1:], soil), rs.get_dx2())  # only valid for homogenous soil
-    # old
-    soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-    soil_k = soil_k00
-    rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = soil_k)
-
-    # validity check
-    proposed_inner_fluxes = r.segFluxes(rs_age + t, rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
-    collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
-    err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
-    if err > 1.e-10:
-        print("error: summed root surface fluxes and root collar flux differ" , err)
-
-    """ 2. local soil models """
-    proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)
-    rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # left and right neumann fluxes
-    realized_inner_fluxes = rs.get_inner_fluxes()  # identical for mode = "dumux"
-
-    # validity check
-    err = np.linalg.norm(np.array(proposed_inner_fluxes) - np.array(realized_inner_fluxes))
-    if err > 1.e-15:
-        print("error: summed root surface fluxes and cylindric model fluxes differ" , err)
-
-    """ 3a. macroscopic soil model """
-    water_content = np.array(s.getWaterContent())  # theta per cell [1]
-    soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
-    s.setSource(soil_fluxes.copy())  # [cm3/day], in moduels/richards.py
-    s.solve(dt)  # in modules/solverbase.py
-
-    """ 3b. calculate net fluxes """
-    water_content = np.array(s.getWaterContent())
-    new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
-    net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
-    for k, root_flux in soil_fluxes.items():
-        net_flux[k] -= root_flux * dt
-        # net_flux[k] = 0  # same as SRA approach (currently no-flux at boundary)
-    soil_water = new_soil_water
-
-    """ remember results ... """
-    if i % skip == 0:
-        x_.append(t)
-        sum_flux = 0.
-        for f in soil_fluxes.values():
-            sum_flux += f
-        y_.append(sum_flux)  # cm3/day
-        fluxes = np.array(proposed_inner_fluxes)
-        print(i / skip, collar_flux, np.sum(fluxes), np.min(fluxes), np.max(fluxes))
-        psi_x_.append(rx.copy())
-        psi_s_.append(np.array(rsx.copy()))
-        dd = np.array(s.getSolutionHead())
-        psi_s2_.append(dd[:, 0])
-        sink_.append(fluxes.copy())
-
-print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-
-""" file output """
-np.save('results/psix_singleroot_cyl' + sstr, np.array(psi_x_))
-np.save('results/psiinterface_singleroot_cyl' + sstr, np.array(psi_s_))
-np.save('results/sink_singleroot_cyl' + sstr, -np.array(sink_))
-np.save('results/transpiration_singleroot_cyl' + sstr, np.vstack((x_, -np.array(y_))))
-np.save('results/soil_singleroot_cyl' + sstr, np.array(psi_s2_))
-
+print("\ntotal uptake", water0 - s.getWaterVolume(), "cm3")
 print("fin")

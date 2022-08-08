@@ -17,7 +17,7 @@ from richards import RichardsWrapper  # Python part, macroscopic soil model
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
-        soil type is fixed  
+        soil type is fixed and homogeneous 
         domain is periodic (if 2d or 3d)
         initial potentials are linear from @param p_top to @param p_bot
         
@@ -84,10 +84,10 @@ def create_mapped_rootsystem(soil_model):
     return r
 
 
-def write_files(file_name, psi_x, psi_rs, sink, times, trans, psi_s):
+def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s):
     """  saves numpy arrays ass npy files """
     np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
-    np.save('results/psiinterface_' + file_name, np.array(psi_s))  # pressure head at interface per segment [cm]
+    np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
     np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
     np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
     np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
@@ -100,3 +100,5 @@ if __name__ == '__main__':
         print()
         print(s)
         print(soil)
+        
+        """ TODO: tests would be nice, or a minimal example setup ... """

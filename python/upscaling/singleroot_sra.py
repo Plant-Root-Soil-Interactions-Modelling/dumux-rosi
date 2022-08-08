@@ -4,9 +4,6 @@ Single root scenario - soil depletion due to sinusoidal transpiration over 21 da
 using steady rate approach and fix point iteration (sra)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/");  sys.path.append("../")
-
-import van_genuchten as vg
 
 import scenario_setup as scenario
 import sra
@@ -31,20 +28,21 @@ dt = 60 / (24 * 3600)  # time step [day]
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
 r = scenario.create_mapped_singleroot(min_b, max_b, cell_number, s, ns = 100, l = 100, a = 0.05)
-sra_table_lookup = soil # sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
+sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
+# sra_table_lookup = soil # without using the lookup table... TODO make automatic in simulate...
 
 """ sanity checks """
 r.test()  # we might add more
 # print("Krs", r.get_krs(0.))
 
-""" Numerical solution """
+""" numerical solution """
 water0 = s.getWaterVolume() # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s,r, sra_table_lookup, trans, 0.001*sim_time, dt)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 scenario.write_files("singleroot_sra", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
-water_end = s.getWaterVolume()
-
-print("\ntotal uptake", water0 - water_end, "cm3")
+print("\ntotal uptake", water0 - s.getWaterVolume(), "cm3")
 print("fin")
+
+

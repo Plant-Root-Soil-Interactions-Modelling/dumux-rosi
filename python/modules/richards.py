@@ -12,6 +12,7 @@ class RichardsWrapper(SolverWrapper):
 
     def __init__(self, base):
         super().__init__(base)
+        self.soils = []
         self.param_group = "Soil."
 
     def  setParameterGroup(self, group:str):
@@ -50,6 +51,8 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "VanGenuchten.Alpha", self.dumux_str(alpha))
         self.setParameter(self.param_group + "VanGenuchten.N", self.dumux_str(n))
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
+        
+        self.soils = soils.copy()
 
     def setLayersZ(self, number:list, z:list = []):
         """ sets depth dependent layers 
