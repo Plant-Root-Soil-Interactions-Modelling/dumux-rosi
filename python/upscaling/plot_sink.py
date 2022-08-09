@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 name = "singleroot"
-str_ = ["cyl", "sra"]
-# str = ["cyl", "sra", "agg", "ups"]
+# str_ = ["cyl", "sra"]
+str_ = ["agg", "agg2"]
+# str_ = ["cyl", "sra", "agg", "ups"]
 
 fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
 

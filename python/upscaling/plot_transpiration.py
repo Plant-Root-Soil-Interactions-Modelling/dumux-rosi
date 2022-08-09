@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 from xylem_flux import sinusoidal2
 
 name = "singleroot"
-str_ = ["cyl", "sra"]
-titles = ["cylindrical", "steady rate"]
-# str = ["cyl", "sra", "agg", "upp"]
+# str_ = ["cyl", "sra"]
+# titles = ["cylindrical", "steady rate"]
+str_ = ["cyl", "sra", "agg"]
+titles = ["cylindrical", "steady rate", "parallel"]
+# str_ = ["cyl", "sra", "agg", "upp"]
 # titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
 
 fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])

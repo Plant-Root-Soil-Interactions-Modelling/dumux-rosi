@@ -36,12 +36,9 @@ r_agg = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
 sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 # sra_table_lookup = soil  # without using the lookup table.
 
-# """ normal root system for krs, suf """
-# r = agg.create_singleroot(ns = 100, l = 100, a = 0.05)
-# agg.init_comp_conductivities_const(r)
-# r = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
-# picker = lambda x, y, z: s.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-# r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+picker = lambda x, y, z: s.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+r_agg.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+# TODO move to create_aggregated
 
 """ sanity checks """
 nodes = r_agg.rs.nodes
@@ -56,7 +53,7 @@ water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = agg.simulate_const(s, r_agg, sra_table_lookup, trans, sim_time, dt)
 
-scenario.write_files("singleroot_agg", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+scenario.write_files("singleroot_agg2", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
 print("\ntotal uptake", water0 - s.getWaterVolume(), "cm3")
 print("fin")
