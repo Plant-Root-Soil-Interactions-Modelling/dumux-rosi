@@ -1,18 +1,21 @@
 """
 functions for the aggregated approach
 """
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/");  sys.path.append("../")
+import numpy as np
+from scipy.interpolate import RegularGridInterpolator
+import matplotlib.pyplot as plt  # for debugging, e.g. to check suf
+
+import plantbox as pb  # CPlantBox
+from xylem_flux import *  # root system Python hybrid solver
+import vtk_plot as vp  # for debugging
+
+import sra
 
 
-# import plantbox as pb  # CPlantBox
-# # from xylem_flux import *  # root system Python hybrid solver
-# # from rhizo_models import *
-# import vtk_plot as vp
-# import van_genuchten as vg
-# 
-# import numpy as np
-# import matplotlib.pyplot as plt
+def double_(rsx, rsx2):
+    """ inserts dummy values for the artificial segments """
+    rsx2[:, 1] = rsx  # rsx2.shape = (ns, 2)
+    return np.array(rsx2.flat)  # 0, rsx[0], 0, rsx[1], ...
 
 
 def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
@@ -33,7 +36,6 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
     """
     ana = pb.SegmentAnalyser(r.rs)
     krs, _ = r.get_krs(rs_age)
-
     suf = r.get_suf(rs_age)  # SUF per layer
     print("suf", np.sum(suf))
     ana.addData("suf", suf)
@@ -165,54 +167,126 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     return r2
 
 
+def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
+    """     
+    simulates the coupled scenario       
+        root architecture is not gowing  
+        conductivities are not changing over time
+        
+    s
+    r
+    sra_table_lookup             potentials a root soil interface  
+    trans
+    sim_time    
+    dt
+    
+    TODO recyle factorisation of left hand side ... 
+    """
+    wilting_point = -15000  # cm
+    skip = 1  # for output and results, skip iteration
+    rs_age = 0.
+    max_iter = 1000  # maximum for fix point iteration
 
+    if isinstance(sra_table_lookup, RegularGridInterpolator):
+        root_interface = sra.soil_root_interface_table
+    else:
+        root_interface = sra.soil_root_interface
 
-def simulate_const(s,r, sra_table_lookup, trans, sim_time, dt):
-    pass
+    start_time = timeit.default_timer()
 
+    nodes = r.rs.nodes
+    segs = r.rs.segments
+    ns = len(r.rs.segments)
+    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
+    outer_r = r.rs.segOuterRadii()
+    inner_r = r.rs.radii
+    types = r.rs.subTypes
+    rho_ = np.divide(outer_r, np.array(inner_r))
 
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
+    sx = s.getSolutionHead()  # inital condition, solverbase.py
+    cell_centers = s.getCellCenters()
+    cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
+    seg_centers_z = np.array([0.5 * (nodes[segs[2 * j + 1].x].z + nodes[segs[2 * j + 1].y].z)  for j in range(0, int(ns / 2))])
+    hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
 
+    # print(list([mapping[2 * j + 1] for j in range(0, int(ns / 2))]))
 
+    kr_ = np.zeros((ns,))
+    rsx = hsb.copy()  # initial values for fix point iteration
+    rsx2 = np.zeros((rsx.shape[0], 2))
 
+    N = int(np.ceil(sim_time / dt))  # number of iterations
 
+    for i in range(0, N):
 
+        t = i * dt  # current simulation time
 
-if __name__ == "__main__":
+        wall_iteration = timeit.default_timer()
+        wall_fixpoint = timeit.default_timer()
 
-    """ root system """
-    min_b = [-7.5, -37.5, -110.]
-    max_b = [7.5, 37.5, 0.]
-    cell_number = [1, 1, 55]
+        if i == 0:  # initial
+            rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
+            rx_old = rx.copy()
 
-    fname = "../../../../grids/RootSystem_verysimple2.rsml"
-    r = XylemFluxPython(fname)
-    rs_age = 78  # for calculating age dependent conductivities
+        kr_ = np.array([r.kr_f(rs_age + t, types[j], 2, 2, j) for j in range(0, len(outer_r))])
+        inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
 
-    types = r.rs.subTypes  # simplify root types
-    types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
-    r.rs.subTypes = list(types)
+        err = 1.e6
+        c = 0
+        while err > 1 and c < max_iter:
 
-    init_conductivities(r)
-    # init_conductivities_const(r)
-    # r.test()  # sanity checks
+            """ interpolation """
+            wall_interpolation = timeit.default_timer()
+            rx_ = rx[1::2] - seg_centers_z  # from total matric potential to matric potential
+            hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
+            rsx = root_interface(rx_, hsb_, inner_kr_[1::2], rho_[1::2], sra_table_lookup)  # [1::2] every second entry, starting from 1
+            rsx = rsx + seg_centers_z  # from matric potential to total matric potential
+            wall_interpolation = timeit.default_timer() - wall_interpolation
 
-    # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
-    # z_ = np.linspace(0, -110, 55)
-    # plt.plot(suf_, z_)
-    # plt.show()
-    create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
+            """ xylem matric potential """
+            wall_xylem = timeit.default_timer()
+            rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+            err = np.linalg.norm(rx - rx_old)
+            wall_xylem = timeit.default_timer() - wall_xylem
 
-    # """ single root """
-    # min_b = [-7.5, -37.5, -50.]
-    # max_b = [7.5, 37.5, 0.]
-    # cell_number = [1, 1, 100]
-    # r = create_singleroot()
-    # init_conductivities_const(r)
-    #
-    # krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, 0., min_b, max_b, cell_number)
-    # z_ = np.linspace(0, min_b[2], cell_number[2])
-    # plt.plot(suf_, z_)
-    # plt.show()
-    #
-    # r = create_aggregated_rs(r, 0., min_b, max_b, cell_number)
+            rx_old = rx.copy()
+            c += 1
+
+        wall_fixpoint = timeit.default_timer() - wall_fixpoint
+
+        wall_soil = timeit.default_timer()
+        fluxes = r.segFluxes(rs_age + t, rx, double_(rsx, rsx2), approx = False, cells = False)
+        err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - np.sum(fluxes))
+        if r.last == "neumann":
+            if err2 > 1.e-8:
+                print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, -trans * sinusoidal2(t, dt), np.sum(fluxes))
+                print(fluxes)
+                raise
+        soil_fluxes = r.sumSegFluxes(fluxes)
+        s.setSource(soil_fluxes.copy())  # richards.py
+        s.solve(dt)
+        sx = s.getSolutionHead()[:, 0]  # richards.py
+        hsb = np.array([sx[mapping[2 * j + 1]] for j in range(0, int(ns / 2))])
+        wall_soil = timeit.default_timer() - wall_soil
+
+        wall_iteration = timeit.default_timer() - wall_iteration
+
+        """ remember results ... """
+        if i % skip == 0:
+            psi_x_.append(rx.copy()[::2])  # cm
+            psi_s_.append(rsx.copy())  # cm
+            sink = np.zeros(sx.shape)
+            for k, v in soil_fluxes.items():
+                sink[k] += v
+            sink_.append(sink)  # cm3/day
+            x_.append(t)  # day
+            y_.append(np.sum(sink))  # cm3/day
+            psi_s2_.append(np.array(sx))  # cm
+            print("{:g}/{:g} {:g} iterations".format(i, N, c), wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
+
+    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_
+

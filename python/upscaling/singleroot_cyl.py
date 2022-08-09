@@ -4,7 +4,7 @@ Single root scenario - soil depletion due to sinusoidal transpiration over 21 da
 coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver) (cyl)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/") # DUMUX solver   
+sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
 
 import scenario_setup as scenario
 from rhizo_models import RhizoMappedSegments
@@ -28,7 +28,7 @@ sim_time = 21  #  [day]
 dt = 20 / (24 * 3600)  # time step [day]
 
 """ rhizosphere model parameters """
-wilting_point = -15000 # cm
+wilting_point = -15000  # cm
 nc = 10  # dof+1
 logbase = 0.5  # according to Mai et al. (2019)
 mode = "dumux"
@@ -36,14 +36,13 @@ mode = "dumux"
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
 r = scenario.create_mapped_singleroot(min_b, max_b, cell_number, s, ns = 100, l = 100, a = 0.05)
-rs = RhizoMappedSegments(r.rs, wilting_point, nc, logbase, mode)
-rs.set_xylem_flux(r) # TODO revise (move into constructor)
+rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
 
 """ sanity checks """
 r.test()  # sanity checks
 
 """ numerical solution """
-water0 = s.getWaterVolume() # total initial water volume in domain
+water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
 

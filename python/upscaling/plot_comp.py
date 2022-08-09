@@ -1,5 +1,6 @@
 """
 Recreates the plots from Jan's presentation (to compare to Matlab implementation)
+only works for single root 
 """
 import scenario_setup as scenario
 
@@ -7,23 +8,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 name = "singleroot"
-str_ = ["cyl", "sra"]  
+str_ = ["cyl", "sra"]
 titles = ["cylindrical", "steady rate"]
-# str = ["cyl", "sra", "agg", "upp"] 
+# str = ["cyl", "sra", "agg", "upp"]
 # titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
 
-fnames = np.array([[var_str+"_"+name+"_"+ s for var_str in ["psix", "psiinterface", "sink", "transpiration", "soil"]] for s in str_ ]) 
-# print(fnames[0,:]) # [str_, var_str]
+fnames = np.array([[var_str + "_" + name + "_" + s for var_str in ["psix", "psiinterface", "sink", "transpiration", "soil"]] for s in str_ ])
 
 days = 21
 L = 100  # cm root length
-a = 0.05 # cm radius
+a = 0.05  # cm radius
 dx = 1.  # cm root segment size
 plot_times = [1., 5, 10, 15, 20]
 path = "results/"
-
-n = fnames.shape[0]
-# print(n) # == len(str_)
 
 cmap = plt.get_cmap('Set1')
 col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
@@ -42,15 +39,16 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 """ hydraulic heads at root collar """
+n = fnames.shape[0]
 fig, ax = plt.subplots(1, n, figsize = (18, 8))
 
-r = scenario.create_singleroot(ns = int(np.ceil(L/dx)), l = L, a = a)
+r = scenario.create_singleroot(ns = int(np.ceil(L / dx)), l = L, a = a)
 scenario.init_conductivities_const(r)
 suf = r.get_suf(0.)
 
 for i in range(0, n):
     psi_i = np.load(path + fnames[i, 1] + ".npy")
-    # print(psi_i.shape, fnames[i, 1])        
+    # print(psi_i.shape, fnames[i, 1])
     psi_x = np.load(path + fnames[i, 0] + ".npy")
     # print(psi_x.shape, fnames[i, 0])
     psi_s = np.load(path + fnames[i, 4] + ".npy")
@@ -131,7 +129,6 @@ for i in range(0, n):
     psi_i = np.load(path + fnames[i, 1] + ".npy")
     psi_x = np.load(path + fnames[i, 0] + ".npy")
     psi_s = np.load(path + fnames[i, 4] + ".npy")
-
 
     z_ = np.linspace(-dx / 2., -L + dx / 2., psi_i.shape[1])  # segment mids
     zsoil_ = np.linspace(-150 + 1. / 2., -1. / 2., psi_s.shape[1])  # cell mids
