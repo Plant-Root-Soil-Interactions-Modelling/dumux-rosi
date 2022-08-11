@@ -184,7 +184,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     """
     wilting_point = -15000  # cm
     skip = 1  # for output and results, skip iteration
-    rs_age = 0.
+    rs_age = 0.  # day
     max_iter = 1000  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
@@ -217,21 +217,21 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     rsx = hsb.copy()  # initial values for fix point iteration
     rsx2 = np.zeros((rsx.shape[0], 2))
 
+    rx = r.solve(rs_age, -trans * sinusoidal2(0., dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
+    rx_old = rx.copy()
+
+    kr_ = np.array([r.kr_f(rs_age, types[j], 2, 2, j) for j in range(0, len(outer_r))])
+    inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
+
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
+    """ simualtion loop """
     for i in range(0, N):
 
         t = i * dt  # current simulation time
 
         wall_iteration = timeit.default_timer()
         wall_fixpoint = timeit.default_timer()
-
-        if i == 0:  # initial
-            rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
-            rx_old = rx.copy()
-
-        kr_ = np.array([r.kr_f(rs_age + t, types[j], 2, 2, j) for j in range(0, len(outer_r))])
-        inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
 
         err = 1.e6
         c = 0
@@ -247,7 +247,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
-            rx = r.solve(rs_age + t, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+            rx = r.solve(rs_age, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
 
@@ -257,7 +257,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
         wall_soil = timeit.default_timer()
-        fluxes = r.segFluxes(rs_age + t, rx, double_(rsx, rsx2), approx = False, cells = False)
+        fluxes = r.segFluxes(rs_age, rx, double_(rsx, rsx2), approx = False, cells = False)
         err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - np.sum(fluxes))
         if r.last == "neumann":
             if err2 > 1.e-8:
@@ -275,15 +275,15 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
 
         """ remember results ... """
         if i % skip == 0:
-            psi_x_.append(rx.copy()[::2])  # cm
-            psi_s_.append(rsx.copy())  # cm
+            psi_x_.append(rx.copy()[::2])  # cm (per root node)
+            psi_s_.append(rsx.copy())  # cm (per root segment)
             sink = np.zeros(sx.shape)
             for k, v in soil_fluxes.items():
                 sink[k] += v
-            sink_.append(sink)  # cm3/day
+            sink_.append(sink)  # cm3/day (per soil cell)
             x_.append(t)  # day
             y_.append(np.sum(sink))  # cm3/day
-            psi_s2_.append(np.array(sx))  # cm
+            psi_s2_.append(np.array(sx))  # cm (per soil cell)
             print("{:g}/{:g} {:g} iterations".format(i, N, c), wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")

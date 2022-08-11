@@ -73,7 +73,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     """
     wilting_point = -15000  # cm
     skip = 1  # for output and results, skip iteration
-    rs_age = 0.
+    rs_age = 0.  # day
     max_iter = 1000  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
@@ -86,9 +86,9 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     nodes = r.rs.nodes
     segs = r.rs.segments
     ns = len(segs)
-    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
+    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])  # because seg2cell is a map
     cell_centers = s.getCellCenters()
-    cell_centers_z = np.array([cell_centers[mapping[j]][2] for j in range(0, ns)])
+    cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
     seg_centers_z = np.array([0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs])
 
     outer_r = r.rs.segOuterRadii()
@@ -99,7 +99,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
     sx = s.getSolutionHead()  # inital condition, solverbase.py
-    hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
+    hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
@@ -110,6 +110,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
+    """ simulation loop """
     for i in range(0, N):
 
         t = i * dt  # current simulation time
@@ -156,7 +157,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)
         sx = s.getSolutionHead()[:, 0]  # richards.py
-        hsb = np.array([sx[mapping[j]] for j in range(0, ns)])  # soil bulk matric potential per segment
+        hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
         wall_soil = timeit.default_timer() - wall_soil
 
         wall_iteration = timeit.default_timer() - wall_iteration

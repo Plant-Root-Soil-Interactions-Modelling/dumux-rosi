@@ -6,7 +6,7 @@ import numpy as np
 
 name = "singleroot"
 # str_ = ["cyl", "sra"]
-str_ = ["agg", "agg2"]
+str_ = ["cyl", "sra", "agg"]
 # str_ = ["cyl", "sra", "agg", "ups"]
 
 fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
@@ -41,7 +41,7 @@ n = len(fnames)
 data = [np.load(path + n_ + ".npy")  for n_ in fnames]
 
 """ sink plot """
-fig, ax = plt.subplots(1, 2, figsize = (14, 14))
+fig, ax = plt.subplots(1, 2, figsize = (18, 10))
 ax[0].set_ylabel("depth [cm]")
 ax[0].set_xlabel("sink term at noon [1/day]")
 ax[1].set_xlabel("sink term at night [1/day]")

@@ -4,14 +4,15 @@ import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.a
 sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../../../CPlantBox/");
 
 import numpy as np
+import timeit
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
-from xylem_flux import XylemFluxPython
+from xylem_flux import *  # XylemFluxPython, sinusoidal2
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
-
 
 
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot):
@@ -22,7 +23,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot):
         initial potentials are linear from @param p_top to @param p_bot
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
-    """  
+    """
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
     if (cell_number[0] == 1 and cell_number[1] == 1):  # 1D
@@ -79,8 +80,13 @@ def create_singleroot(ns = 100, l = 50 , a = 0.05):
     return XylemFluxPython(rs)
 
 
-def create_mapped_rootsystem(soil_model):
-
+def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname):
+    r = XylemFluxPython(fname)  # see rootsystem.py (in upscaling)
+    r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+    picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+    r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+    init_conductivities_const(r)
     return r
 
 
@@ -93,12 +99,78 @@ def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s):
     np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
 
 
+def simulate_const(s, r, trans, sim_time, dt):
+    """ 
+    TODO 
+    """
+    wilting_point = -15000  # cm
+    skip = 1  # for output and results, skip iteration
+    rs_age = 0.  # day
+
+    start_time = timeit.default_timer()
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
+    sx = s.getSolutionHead()  # inital condition, solverbase.py
+    ns = len(r.rs.segments)
+    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])  # because seg2cell is a map
+
+    N = int(np.ceil(sim_time / dt))
+
+    """ simulation loop """
+    for i in range(0, N):
+
+        t = i * dt  # current simulation time
+
+        """ 1. xylem model """
+        if rank == 0:  # Root part is not parallel
+            rx = r.solve(rs_age, -trans * sinusoidal2(t, dt), 0., sx, cells = True, wilting_point = wilting_point)  # xylem_flux.py
+            fluxes = r.soilFluxes(rs_age, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = False
+        else:
+            fluxes = None
+        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+
+        """ 2. soil model """
+        s.setSource(fluxes)  # richards.py
+        s.solve(dt)
+        sx = s.getSolutionHead()  # richards.py
+        sx = comm.bcast(sx, root = 0)  # soil part runs parallel
+
+        """ remember results ... """
+        if rank == 0 and i % skip == 0:
+
+            sx_ = sx[:, 0]
+            psi_x_.append(rx.copy())  # cm (per root node)
+            psi_s_.append(np.array([sx_[ci] for ci in mapping]))  # cm (per root segment)
+            sink = np.zeros(sx_.shape)
+            for k, v in fluxes.items():
+                sink[k] += v
+            sink_.append(sink)  # cm3/day (per soil cell)
+            x_.append(t)  # day
+            y_.append(np.sum(sink))  # cm3/day
+            psi_s2_.append(sx_)  # cm (per soil cell)
+
+            min_sx, min_rx, max_sx, max_rx = np.min(sx), np.min(rx), np.max(sx), np.max(rx)
+            n = round(float(i) / float(N) * 100.)
+            print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}, {:g}"
+                    .format(min_sx, max_sx, min_rx, max_rx, s.simTime, np.sum(sink), -trans * sinusoidal2(t, dt)))
+
+    if rank == 0:
+        print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_
+
+
 if __name__ == '__main__':
 
-        s, soil = create_soil_model([-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200)
+    theta_r = 0.025
+    theta_s = 0.403
+    alpha = 0.0383  # (cm-1) soil
+    n = 1.3774
+    k_sat = 60.  # (cm d-1)
+    soil_ = [theta_r, theta_s, alpha, n, k_sat]
+    s, soil = create_soil_model(soil_, [-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200)
 
-        print()
-        print(s)
-        print(soil)
-        
-        """ TODO: tests would be nice, or a minimal example setup ... """
+    print()
+    print(s)
+    print(soil)
+
+    """ TODO: tests would be nice, or a minimal example setup ... """

@@ -15,10 +15,15 @@ str_ = ["cyl", "sra", "agg"]
 titles = ["cylindrical", "steady rate", "parallel"]
 # str_ = ["cyl", "sra", "agg", "upp"]
 # titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
+trans = 0.6 * 4  # potential transpiration cm3/day
+
+# name = "wheat"
+# str_ = ["classic"]
+# titles = ["classic"]
+# trans = 0.6 * (12 * 3)  # potential transpiration cm3/day
 
 fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])
 
-trans = 0.6 * 4  # potential transpiration cm3/day
 path = "results/"
 
 SMALL_SIZE = 16
@@ -41,6 +46,8 @@ n = len(fnames)
 data = [np.load(path + n_ + ".npy")  for n_ in fnames]
 
 fig, ax = plt.subplots(n, 1, figsize = (18, 8))
+if n == 1:
+    ax = [ax]
 
 for i in range(0, n):
     t = data[i][0]
