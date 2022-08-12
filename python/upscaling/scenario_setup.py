@@ -107,7 +107,7 @@ def simulate_const(s, r, trans, sim_time, dt):
     TODO 
     """
     wilting_point = -15000  # cm
-    skip = 1  # for output and results, skip iteration
+    skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
 
     start_time = timeit.default_timer()

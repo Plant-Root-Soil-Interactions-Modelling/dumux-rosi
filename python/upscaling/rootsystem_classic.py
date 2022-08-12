@@ -56,6 +56,6 @@ if rank == 0:
     print("\ntotal uptake", water0 - water, "cm3")
     print("fin")
 
-    """ VTK visualisation (does not work for MPI)"""
-    periodic = True
-    vp.plot_roots_and_soil(r.rs, "pressure head", psi_x_[-1], s, periodic, np.array(min_b), np.array(max_b), cell_number, "wheat_classic")
+    # """ VTK visualisation (does not work for MPI)"""
+    # periodic = True
+    # vp.plot_roots_and_soil(r.rs, "pressure head", psi_x_[-1], s, periodic, np.array(min_b), np.array(max_b), cell_number, "wheat_classic")

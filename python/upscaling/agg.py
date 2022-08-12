@@ -181,7 +181,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     TODO recyle factorisation of left hand side ... 
     """
     wilting_point = -15000  # cm
-    skip = 1  # for output and results, skip iteration
+    skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
     max_iter = 1000  # maximum for fix point iteration
 

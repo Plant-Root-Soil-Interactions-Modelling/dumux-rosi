@@ -17,10 +17,10 @@ titles = ["cylindrical", "steady rate", "parallel"]
 # titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
 trans = 0.6 * 4  # potential transpiration cm3/day
 
-# name = "wheat"
-# str_ = ["classic"]
-# titles = ["classic"]
-# trans = 0.6 * (12 * 3)  # potential transpiration cm3/day
+name = "rootsystem"
+str_ = ["classic"]
+titles = ["classic"]
+trans = 0.6 * (12 * 3)  # potential transpiration cm3/day
 
 fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])
 

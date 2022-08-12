@@ -75,7 +75,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     TODO recyle factorisation of left hand side ... 
     """
     wilting_point = -15000  # cm
-    skip = 1  # for output and results, skip iteration
+    skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
     max_iter = 1000  # maximum for fix point iteration
 
@@ -151,12 +151,12 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         fluxes = r.segFluxes(rs_age, rx, rsx, approx = False, cells = False)
         collar_flux = r.collar_flux(rs_age, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
-        if err > 1.e-8:
+        if err > 1.e-6:
             print("error: summed root surface fluxes and root collar flux differ" , err)
             raise
         err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - collar_flux)
         if r.last == "neumann":
-            if err2 > 1.e-8:
+            if err2 > 1.e-6:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
                 raise
         soil_fluxes = r.sumSegFluxes(fluxes)
