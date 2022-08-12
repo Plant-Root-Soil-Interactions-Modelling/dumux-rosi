@@ -52,7 +52,10 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     rho            geometry factor [1]
     f              function to look up the potentials
     """
-    rsx = f((rx, sx, inner_kr_ , rho_))
+    try:
+        rsx = f((rx, sx, inner_kr_ , rho_))
+    except:
+        print("rho", np.min(rho_), np.max(rho_))
     return rsx
 
 
@@ -95,12 +98,15 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     inner_r = r.rs.radii
     types = r.rs.subTypes
     rho_ = np.divide(outer_r, np.array(inner_r))
+    rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
     sx = s.getSolutionHead()  # inital condition, solverbase.py
     hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
+
+    r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
     rx_old = rx.copy()
@@ -145,12 +151,12 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         fluxes = r.segFluxes(rs_age, rx, rsx, approx = False, cells = False)
         collar_flux = r.collar_flux(rs_age, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
-        if err > 1.e-10:
+        if err > 1.e-8:
             print("error: summed root surface fluxes and root collar flux differ" , err)
             raise
         err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - collar_flux)
         if r.last == "neumann":
-            if err2 > 1.e-10:
+            if err2 > 1.e-8:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
                 raise
         soil_fluxes = r.sumSegFluxes(fluxes)

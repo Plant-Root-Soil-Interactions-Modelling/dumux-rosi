@@ -57,6 +57,7 @@ def init_conductivities_const(r):
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, l = 50 , a = 0.05):
     """ creates a single root mapped to a soil with @param ns segments, length l, and radius a """
+    global picker  # make sure it is not garbage collected away...
     r = create_singleroot(ns, l, a)
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
@@ -81,6 +82,8 @@ def create_singleroot(ns = 100, l = 50 , a = 0.05):
 
 
 def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname):
+    """ loads a rsml file and maps it to the soil_model """
+    global picker  # make sure it is not garbage collected away...
     r = XylemFluxPython(fname)  # see rootsystem.py (in upscaling)
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
@@ -111,7 +114,9 @@ def simulate_const(s, r, trans, sim_time, dt):
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
     sx = s.getSolutionHead()  # inital condition, solverbase.py
     ns = len(r.rs.segments)
-    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])  # because seg2cell is a map
+    if rank == 0:
+        map_ = r.rs.seg2cell  # because seg2cell is a map
+        mapping = np.array([map_[j] for j in range(0, ns)], dtype = np.int64)  # convert to a list
 
     N = int(np.ceil(sim_time / dt))
 
@@ -129,10 +134,11 @@ def simulate_const(s, r, trans, sim_time, dt):
         fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
 
         """ 2. soil model """
-        s.setSource(fluxes)  # richards.py
+        s.setSource(fluxes.copy())  # richards.py
         s.solve(dt)
         sx = s.getSolutionHead()  # richards.py
-        sx = comm.bcast(sx, root = 0)  # soil part runs parallel
+
+        """ validity check """
 
         """ remember results ... """
         if rank == 0 and i % skip == 0:
@@ -150,8 +156,8 @@ def simulate_const(s, r, trans, sim_time, dt):
 
             min_sx, min_rx, max_sx, max_rx = np.min(sx), np.min(rx), np.max(sx), np.max(rx)
             n = round(float(i) / float(N) * 100.)
-            print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}, {:g}"
-                    .format(min_sx, max_sx, min_rx, max_rx, s.simTime, np.sum(sink), -trans * sinusoidal2(t, dt)))
+            print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g}, {:g}"
+                    .format(min_sx, max_sx, min_rx, max_rx, np.sum(sink), -trans * sinusoidal2(t, dt)))
 
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")

@@ -19,12 +19,14 @@ def double_(rsx, rsx2):
 
 
 def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
-    """ returns aggregated root system parameters (krs, and per layer: suf_, kr_surf_, surf_, l_, a_)
-        r
-        rs_age 
-        min_b
-        max_b
-        cell_number
+    """ returns aggregated root system parameters krs, and per layer: suf_, kr_surf_, surf_, l_, a_, 
+        ordered top to bot 
+        
+        r                     XylemFluxPython
+        rs_age                root system age [day]
+        min_b                 minimal soil bounds [cm]
+        max_b                 maximal soil bounds [cm]
+        cell_number           spatial resolution of fv scheme [1] 
     
         returns:
         krs [cm2/day]         root system conductivity 
@@ -36,25 +38,21 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
     """
     ana = pb.SegmentAnalyser(r.rs)
     krs, _ = r.get_krs(rs_age)
-    suf = r.get_suf(rs_age)  # SUF per layer
-    print("suf", np.sum(suf))
+    suf = r.get_suf(rs_age)  # SUF per segment
     ana.addData("suf", suf)
-    suf_ = ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)
-    print("suf_", np.sum(suf_))
-
-    kr_surf = []  # kr times surface summed up per layer
+    suf_ = ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)  # SUF per layer
     segs = r.rs.segments
     nodeCTs = r.rs.nodeCTs
     subTypes = r.rs.subTypes
     lengths = r.rs.segLength()
     radii = r.rs.radii
+    kr_surf = np.zeros((len(segs),))  # kr times surface summed up per layer
     for i, s in enumerate(segs):
         age = rs_age - nodeCTs[s.y]
-        t = subTypes[i]
-        kr_surf.append(2 * radii[i] * np.pi * lengths[i] * r.kr_f(age, t))  # [cm2 / day]
+        st = subTypes[i]
+        kr_surf[i] = 2 * radii[i] * np.pi * lengths[i] * r.kr_f(age, st)  # [cm2 / day]
     ana.addData("kr_surf", kr_surf)
     kr_surf_ = ana.distribution("kr_surf", max_b[2], min_b[2], cell_number[2], False)
-
     surf_ = np.array(ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False))
     l_ = np.array(ana.distribution("length", max_b[2], min_b[2], cell_number[2], False))
     a_ = np.divide(surf_, 2 * np.pi * l_)
@@ -66,38 +64,40 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
         connected to the root collar by an artificial segments,
         with adjsuted conductivities
     
-        r
+        r                XylemFluxPython
         rs_age 
         min_b
         max_b
         cell_number    
     """
-    krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
+    krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)  # TODO check if it holds for RS
 
-    print("krs")
-    print(krs)
-    print("\nSUF", suf_.shape)
-    print(suf_)
-    print(list(suf_[0:100]))
-    print("\nkr*surf", kr_surf_.shape)
-    print(kr_surf_)
-    print("\nsurface", surf_.shape)
-    print(surf_)
-    print("\nlength", l_.shape)
-    print(l_)
-    print("\nradius", a_.shape)
-    print(a_)
-    print("\n\n")
+    print("krs", krs)
+    print("\nSUF", suf_.shape, np.sum(suf_))
+    # print(suf_)
+    # print(list(suf_[0:100]))
+    # print("\nkr*surf", kr_surf_.shape)
+    # print(kr_surf_)
+    # print("\nsurface", surf_.shape)
+    # print(surf_)
+    # print("\nlength", l_.shape)
+    # print(l_)
+    # print("\nradius", a_.shape)
+    # print(a_)
+    # print("\n\n")
+    # z_ = np.linspace(max_b[2], min_b[2], cell_number[2])  # top to bot
+    # plt.plot(suf_, z_)
+    # plt.show()
 
-    n = int(cell_number[2])
-    nodes = [pb.Vector3d(0, 0, 0)]  # maximal ns+1 nodes
+    nz = int(cell_number[2])
+    nodes = [pb.Vector3d(0, 0, 0)]
     segs, radii = [], []  # maximal ns segments
     dx = (max_b[2] - min_b[2]) / cell_number[2]
-    z_ = np.linspace(max_b[2] - dx / 2, min_b[2] + dx / 2, n)  # cell centers
+    z_ = np.linspace(max_b[2] - dx / 2, min_b[2] + dx / 2, nz)  # cell centers
     # print(z_)
 
     c = 0
-    for i in range(0, n):
+    for i in range(0, nz):
         if l_[i] > 0:
             nodes.append(pb.Vector3d(0, 0, z_[i]))  # node 2*i+1
             nodes.append(pb.Vector3d(l_[i], 0, z_[i]))  # node 2*i+2
@@ -111,11 +111,9 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     rs = pb.MappedSegments(nodes, segs, radii)
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+    rs.setSoilGrid(r.rs.soil_index)  # copy the picker...
     r2 = XylemFluxPython(rs)  # wrap the xylem
     r.test()  # sanity checks
-    # z_ = np.linspace(0, -150, 150)
-    # plt.plot(suf_[0:100], z_[0:100])
-    # plt.show()
 
     ll = np.abs(z_)
     # print(ll)
@@ -126,7 +124,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     # print(kr_surf_)
 
     kr_up, kx_up = [], []
-    for i in range(0, n):
+    for i in range(0, nz):
         if l_[i] > 0:
 
             kr_up.append(0.)  # artificial segment
@@ -137,7 +135,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
 
             if kr_surf_[i] - suf_krs[i] > 0:
                 # kx_up.append(ll[i] * kx_up_[i])
-                kx_up.append((ll[i] * suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment ll[i] *
+                kx_up.append((ll[i] * suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment
                 # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q
             else:  # no segments in layer
                 raise ValueError('create_aggregated_rs() no segment in layer')
@@ -216,6 +214,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     kr_ = np.zeros((ns,))
     rsx = hsb.copy()  # initial values for fix point iteration
     rsx2 = np.zeros((rsx.shape[0], 2))
+
+    # r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0., dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
     rx_old = rx.copy()

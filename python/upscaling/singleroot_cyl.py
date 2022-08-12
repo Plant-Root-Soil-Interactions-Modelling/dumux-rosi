@@ -39,7 +39,6 @@ mode = "dumux"
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
 r = scenario.create_mapped_singleroot(min_b, max_b, cell_number, s, ns = 100, l = 100, a = 0.05)
 rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
-ddd
 
 """ sanity checks """
 if rank == 0:

@@ -36,11 +36,11 @@ def simulate_const(s, rs, trans, sim_time, dt):
     ns = len(rs.segments)
     dcyl = int(np.floor(ns / max_rank))
     if rank + 1 == max_rank:
+        print ("Initialized final rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)))
-        print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
     else:
-        rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, (rank + 1) * dcyl)))
         print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
+        rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, (rank + 1) * dcyl)))
 
     r = rs.rs  # rename (XylemFluxPython)
 
@@ -55,6 +55,8 @@ def simulate_const(s, rs, trans, sim_time, dt):
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
     if rank == 0:
         rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
+    else:
+        rx = None
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
@@ -65,9 +67,10 @@ def simulate_const(s, rs, trans, sim_time, dt):
 
         """ 1. xylem model """
         rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
+        rx = comm.bcast(rx, root = 0)
+        soil_k = rs.get_soil_k(rx)
         if rank == 0:
             # soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-            soil_k = rs.get_soil_k(rx)
             rx = r.solve(rs_age, -trans * sinusoidal2(t, dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = soil_k)
             proposed_inner_fluxes = r.segFluxes(rs_age, rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = soil_k.copy())  # [cm3/day]
         else:
@@ -78,7 +81,7 @@ def simulate_const(s, rs, trans, sim_time, dt):
         if rank == 0:
             collar_flux = r.collar_flux(rs_age, rx.copy(), rsx.copy(), k_soil = soil_k.copy(), cells = False)
             err = np.linalg.norm(np.sum(proposed_inner_fluxes) - collar_flux)
-            if err > 1.e-10:
+            if err > 1.e-8:
                 print("error: summed root surface fluxes and root collar flux differ" , err)
 
         """ 2. local soil models """
@@ -90,7 +93,7 @@ def simulate_const(s, rs, trans, sim_time, dt):
 
         # validity check
         err = np.linalg.norm(np.array(proposed_inner_fluxes) - np.array(realized_inner_fluxes))
-        if err > 1.e-15:
+        if err > 1.e-8:
             print("error: summed root surface fluxes and cylindric model fluxes differ" , err)
 
         """ 3a. macroscopic soil model """
@@ -113,9 +116,9 @@ def simulate_const(s, rs, trans, sim_time, dt):
 
         """ remember results ... """
         if i % skip == 0:
-            sx = s.getSolutionHead()[:, 0]
-            x = comm.bcast(sx, root = 0)  # Soil part runs parallel
+            sx = s.getSolutionHead()
             if rank == 0:
+                sx = sx[:, 0]
                 psi_x_.append(rx.copy())  # cm (per root node)
                 psi_s_.append(rsx.copy())  # cm (per root segment)
                 sink = np.zeros(sx.shape)
