@@ -1,18 +1,20 @@
 """
-single root plots - compares two sink in one axis
+Sink plot (noon and midnight), of a 1d soil 
 """
 import matplotlib.pyplot as plt
 import numpy as np
 
-name = "singleroot"
-# str_ = ["cyl", "sra"]
-str_ = ["cyl", "sra", "agg"]
-# str_ = ["cyl", "sra", "agg", "ups"]
+name = "rootsystem"
+str_ = ["classic"]
+
+min_b = [-6, -1.5, -150.]  # domain 12cm x 3cm x 150cm
+max_b = [6, 1.5, 0.]
+cell_number = [12, 3, 150]  # 1 cm3
 
 fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
 
 cmap = plt.get_cmap('Set1')
-col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
+col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot    sink_ = data[i]
 
 days = 21
 l = 150  # cm soil depth
@@ -53,6 +55,10 @@ ls = ["-", "--", "-.", ":"]
 for i in range(0, n):
 
     sink_ = data[i]
+    sink_ = sink_.reshape((sink_.shape[0], 150, 12, 3))
+    sink_ = np.sum(sink_, 2)
+    sink_ = np.sum(sink_, 2)
+
     soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
     peak_id = np.round(sink_.shape[0] / days * np.array([0.5 + i for i in plot_times]))
@@ -69,6 +75,10 @@ for i in range(0, n):
 for i in range(0, n):
 
     sink_ = data[i]
+    sink_ = sink_.reshape((sink_.shape[0], 150, 12, 3))
+    sink_ = np.sum(sink_, 2)
+    sink_ = np.sum(sink_, 2)
+
     soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
     redistribution_id = np.round(sink_.shape[0] / days * np.array([i for i in plot_times]))

@@ -26,10 +26,11 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot):
     """
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
-    if (cell_number[0] == 1 and cell_number[1] == 1):  # 1D
-        periodic = False
-    else:  # 2D or 3D
-        periodic = True
+    # if (cell_number[0] == 1 and cell_number[1] == 1):  # 1D
+    #     periodic = False
+    # else:  # 2D or 3D
+    #     periodic = True
+    periodic = True
     s = RichardsWrapper(RichardsSP())
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]

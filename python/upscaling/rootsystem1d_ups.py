@@ -1,18 +1,18 @@
 """ 
-Single root scenario: Soil depletion due to sinusoidal transpiration over 21 days
+Single root scenario - soil depletion due to sinusoidal transpiration over 21 days
 
-using an aggregated root system, and steady rate approach and fix point iteration (agg)
+using upscaling, steady rate approach and fix point iteration (ups)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 
 import scenario_setup as scenario
 import sra
-import agg
+import ups
 
 """ parameters   """
 min_b = [-6, -1.5, -150.]  # domain 12cm x 3cm x 150cm
 max_b = [6, 1.5, 0.]
-cell_number = [12, 3, 150]  # 1 cm3
+cell_number = [1, 1, 150]  # 12x3x1 cm3 - 1d soil
 
 theta_r = 0.025
 theta_s = 0.403
@@ -24,34 +24,24 @@ soil_ = [theta_r, theta_s, alpha, n, k_sat]
 trans = 0.6 * (12 * 3)  # cm3/day
 
 sim_time = 21  #  [day]
-dt = 120 / (24 * 3600)  # time step [day]
+dt = 60 / (24 * 3600)  # time step [day]
 
-""" 
-Initialize xylem model 
-"""
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/wheat.rsml")  # created by rootsystem.py
-r_agg = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
 sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 # sra_table_lookup = soil  # without using the lookup table.
-picker = lambda x, y, z: s.pick([0., 0., z])
-r_agg.rs.setSoilGrid(picker)
 
 """ sanity checks """
-nodes = r_agg.rs.nodes
-segs = r_agg.rs.segments
-# print(r.rs.nodes[0], r.rs.nodes[1], r.rs.nodes[2], r.rs.nodes[3], r.rs.nodes[-4], r.rs.nodes[-3], r.rs.nodes[-2], r.rs.nodes[-1])
-# print(r.rs.segments[0], r.rs.segments[1], r.rs.segments[2], r.rs.segments[3], r.rs.segments[-4], r.rs.segments[-3], r.rs.segments[-2], r.rs.segments[-1])
-# vp.plot_roots(pb.SegmentAnalyser(rs), "radius")
-# r.test()  # sanity checks
+r.test()  # we might add more
+# print("Krs", r.get_krs(0.))
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = agg.simulate_const(s, r_agg, sra_table_lookup, trans, sim_time, dt)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = ups.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
-scenario.write_files("rootsystem_agg", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+scenario.write_files("rootsystem1d_sra", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)  # 1d soil
 
 print("\ntotal uptake", water0 - s.getWaterVolume(), "cm3")
 print("fin")

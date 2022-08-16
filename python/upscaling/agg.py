@@ -200,6 +200,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     inner_r = r.rs.radii
     types = r.rs.subTypes
     rho_ = np.divide(outer_r, np.array(inner_r))
+    rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
