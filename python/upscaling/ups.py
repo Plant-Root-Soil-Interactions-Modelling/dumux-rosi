@@ -2,9 +2,11 @@
 functions for the steady rate approach
 """
 import numpy as np
+from scipy import sparse
 from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import fsolve
 import timeit
+import matplotlib.pyplot as plt
 
 from xylem_flux import sinusoidal2
 
@@ -14,30 +16,56 @@ from sra import soil_root_interface
 from sra import soil_root_interface_table
 
 
-def layer_sumB(r, b):
-    """ sums up the xylem matric potential vector"""
+def reduction_matrix(r):
+    """ """
     segs = r.rs.segments
     ns = len(segs)
-    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
-    cell_max = np.max(mapping)
-    b_ups = np.zeros((cell_max + 1,))
-    mapping[0] = -1  # ignrore first entry
-    b_ups[0] = b[0]
-    for i in range(0, cell_max):
-        b_ups[i + 1] = np.sum(b[mapping == i])
-    return b_ups
+    map = r.rs.seg2cell
+    mapping = np.array([map[j] for j in range(0, ns)])
+    i_ = [0]
+    j_ = [0]
+    v_ = [1]
+    for s in segs:
+        j = s.y  # node index
+        i = mapping[j - 1]  # cell index of segment index
+        i_.append(i + 1)  # the first row is reserved for the root collar node
+        j_.append(j)
+        v_.append(1.)
+    Q = sparse.coo_matrix((np.array(v_), (np.array(i_), np.array(j_))))
+    return Q
 
 
-def layer_sumA(r, A):
-    """ sums up the system matrix """
-    segs = r.rs.segments
-    ns = len(segs)
-    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
-    rx_ = rx[1:]
-    cell_max = np.max(mapping)
-    for i in range(0, cell_max):
-        rx_small[i] = np.sum(rx_[mapping == i])
-    return rx_small
+def init_solve_upscaled(r, sim_time:float, sxx, cells:bool, wilting_point, soil_k = []):
+    """ speeds up computation for static root system (not growing, no change in conductivities), 
+    by computing LU factorizations of the upscaled matrix 
+    """
+    print("switching to static solve (static root system, static conductivities) and upscaled to cell volumes")
+
+    if len(soil_k) > 0:
+        r.linearSystem(sim_time, sxx, cells, soil_k)  # C++ (see XylemFlux.cpp)
+    else:
+        r.linearSystem(sim_time, sxx, cells)  # C++ (see XylemFlux.cpp)
+
+    Q = reduction_matrix(r)
+    Qt = Q.transpose()
+    A = sparse.csc_matrix(sparse.coo_matrix((np.array(r.aV), (np.array(r.aI), np.array(r.aJ)))))
+    Aups = Q @ A @ Qt
+
+    print(Q.shape)
+    print(Qt.shape)
+    print(Aups.shape)
+    b = Q @ r.aB
+    print(r.aB, b.shape)
+    plt.spy(Aups)
+    plt.show()
+
+    self.neumannB = LA.splu(Aups)
+
+    Q, b = self.bc_dirichlet(Aups, Q @ self.aB, [0], [wilting_point])
+    self.dirichletB = LA.splu(Q)
+
+    r.solveD_ = self.solveDups_
+    r.solveN_ = self.solveNups_
 
 
 def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
@@ -70,7 +98,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     nodes = r.rs.nodes
     segs = r.rs.segments
     ns = len(segs)
-    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])  # because seg2cell is a map
+    map = r.rs.seg2cell
+    mapping = np.array([map[j] for j in range(0, ns)])  # because seg2cell is a map
     cell_centers = s.getCellCenters()
     cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
     seg_centers_z = np.array([0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs])
@@ -87,12 +116,14 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
 
-    # r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
+    init_solve_upscaled(r, rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
+
+    Q = reduction_matrix(r)
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
-    print(rx.shape)
-    rx = layer_sumB(r, rx)
-    print(rx.shape)
+    # print(rx.shape)
+    # rx = layer_sumB(r, rx)
+    # print(rx.shape)
     rx_old = rx.copy()
     ddd
 

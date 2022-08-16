@@ -57,7 +57,7 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     except:
         print("rx", np.min(rx), np.max(rx))
         print("sx", np.min(sx), np.max(sx))
-        print("inner_kr", np.min(inner_kr_), np.max(inner_kr_) )
+        print("inner_kr", np.min(inner_kr_), np.max(inner_kr_))
         print("rho", np.min(rho_), np.max(rho_))
     return rsx
 
@@ -80,7 +80,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 1000  # maximum for fix point iteration
+    max_iter = 10  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = soil_root_interface_table
@@ -92,7 +92,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     nodes = r.rs.nodes
     segs = r.rs.segments
     ns = len(segs)
-    mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])  # because seg2cell is a map
+    map = r.rs.seg2cell
+    mapping = np.array([map[j] for j in range(0, ns)])  # because seg2cell is a map
     cell_centers = s.getCellCenters()
     cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
     seg_centers_z = np.array([0.5 * (nodes[s.x].z + nodes[s.y].z) for s in segs])
@@ -109,7 +110,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
 
-    # r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
+    r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
     rx_old = rx.copy()
@@ -156,12 +157,10 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
         if err > 1.e-6:
             print("error: summed root surface fluxes and root collar flux differ" , err)
-            raise
         err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - collar_flux)
         if r.last == "neumann":
             if err2 > 1.e-6:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
-                raise
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)
