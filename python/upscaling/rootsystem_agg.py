@@ -24,7 +24,7 @@ soil_ = [theta_r, theta_s, alpha, n, k_sat]
 trans = 0.6 * (12 * 3)  # cm3/day
 
 sim_time = 21  #  [day]
-dt = 60 / (24 * 3600)  # time step [day]
+dt = 120 / (24 * 3600)  # time step [day]
 
 """ 
 Initialize xylem model 
@@ -35,6 +35,8 @@ r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/whe
 r_agg = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
 sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 # sra_table_lookup = soil  # without using the lookup table.
+picker = lambda x, y, z: s.pick([0., 0., z])
+r_agg.rs.setSoilGrid(picker)
 
 """ sanity checks """
 nodes = r_agg.rs.nodes

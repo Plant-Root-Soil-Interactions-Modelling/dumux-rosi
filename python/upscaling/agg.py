@@ -183,7 +183,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 1000  # maximum for fix point iteration
+    max_iter = 10000  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = sra.soil_root_interface_table
@@ -215,7 +215,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     rsx = hsb.copy()  # initial values for fix point iteration
     rsx2 = np.zeros((rsx.shape[0], 2))
 
-    # r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
+    # r.init_solve_static(rs_age, double_(rsx, rsx2), False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0., dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
     rx_old = rx.copy()
@@ -283,7 +283,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
             sink_.append(sink)  # cm3/day (per soil cell)
             x_.append(t)  # day
             y_.append(np.sum(sink))  # cm3/day
-            psi_s2_.append(np.array(sx))  # cm (per soil cell)
+            psi_s2_.append(sx.copy())  # cm (per soil cell)
             print("{:g}/{:g} {:g} iterations".format(i, N, c), wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")

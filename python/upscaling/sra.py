@@ -55,6 +55,9 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     try:
         rsx = f((rx, sx, inner_kr_ , rho_))
     except:
+        print("rx", np.min(rx), np.max(rx))
+        print("sx", np.min(sx), np.max(sx))
+        print("inner_kr", np.min(inner_kr_), np.max(inner_kr_) )
         print("rho", np.min(rho_), np.max(rho_))
     return rsx
 
@@ -106,7 +109,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
 
-    r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
+    # r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
     rx_old = rx.copy()
@@ -178,7 +181,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
             sink_.append(sink)  # cm3/day (per soil cell)
             x_.append(t)  # day
             y_.append(np.sum(sink))  # cm3/day
-            psi_s2_.append(np.array(sx))  # cm (per soil cell)
+            psi_s2_.append(sx.copy())  # cm (per soil cell)
             print("{:g}/{:g} {:g} iterations".format(i, N, c), wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
