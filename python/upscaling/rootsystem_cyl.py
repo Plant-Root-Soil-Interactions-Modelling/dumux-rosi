@@ -27,10 +27,10 @@ soil_ = [theta_r, theta_s, alpha, n, k_sat]
 trans = 0.6 * (12 * 3)  # cm3/day
 
 sim_time = 21  #  [day]
-dt = 60 / (24 * 3600)  # time step [day]
+dt = 20 / (24 * 3600)  # time step [day]
 
 """ rhizosphere model parameters """
-wilting_point = -15000  # cm
+wilting_point = -10000  # cm
 nc = 10  # dof+1
 logbase = 0.5  # according to Mai et al. (2019)
 mode = "dumux"

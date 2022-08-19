@@ -112,7 +112,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
     rs.setSoilGrid(r.rs.soil_index)  # copy the picker...
-    r2 = XylemFluxPython(rs)  # wrap the xylem
+    r2 = XylemFluxPython(rs)  # wrap the root system with the xylem model
     r.test()  # sanity checks
 
     ll = np.abs(z_)
@@ -129,7 +129,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
 
             kr_up.append(0.)  # artificial segment
             if surf_[i] > 0:
-                kr_up.append(kr_surf_[i] / surf_[i])  # mean layer kr [1/day]
+                kr_up.append(kr_surf_[i] / surf_[i])  # regular segment mean, layer kr [1/day]
             else:  # no segments in layer
                 kr_up.append(0.)  # regular segment
 
@@ -139,7 +139,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
                 # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q
             else:  # no segments in layer
                 raise ValueError('create_aggregated_rs() no segment in layer')
-            kx_up.append(1.e1)  # regular segment
+            kx_up.append(1.e3)  # regular segment
 
     r2.setKrValues(kr_up)
     r2.setKxValues(kx_up)
@@ -183,7 +183,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 10000  # maximum for fix point iteration
+    max_iter = 100  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = sra.soil_root_interface_table
@@ -200,7 +200,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     inner_r = r.rs.radii
     types = r.rs.subTypes
     rho_ = np.divide(outer_r, np.array(inner_r))
-    rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
+    # rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
@@ -209,7 +209,6 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
     seg_centers_z = np.array([0.5 * (nodes[segs[2 * j + 1].x].z + nodes[segs[2 * j + 1].y].z)  for j in range(0, int(ns / 2))])
     hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
-
     # print(list([mapping[2 * j + 1] for j in range(0, int(ns / 2))]))
 
     kr_ = np.zeros((ns,))

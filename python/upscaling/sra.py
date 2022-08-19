@@ -15,11 +15,11 @@ def open_sra_lookup(filename):
     """ opens the look-up table from a file, to quickly find soil root interface potential """
     sra_table = np.load(filename + ".npy")
     x = np.load(filename + "_.npy", allow_pickle = True)
-    kx_ = x[0]
+    rx_ = x[0]
     sx_ = x[1]
     inner_ = x[2]
     outer_ = x[3]
-    return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)  # method = "nearest" fill_value = None , bounds_error=False
+    return RegularGridInterpolator((rx_, sx_, inner_, outer_), sra_table)  # method = "nearest" fill_value = None , bounds_error=False
 
 
 def soil_root_interface(rx, sx, inner_kr, rho, sp):
@@ -55,10 +55,10 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     try:
         rsx = f((rx, sx, inner_kr_ , rho_))
     except:
-        print("rx", np.min(rx), np.max(rx))
-        print("sx", np.min(sx), np.max(sx))
-        print("inner_kr", np.min(inner_kr_), np.max(inner_kr_))
-        print("rho", np.min(rho_), np.max(rho_))
+        print("rx", np.min(rx), np.max(rx))  # 0, -16000
+        print("sx", np.min(sx), np.max(sx))  # 0, -16000
+        print("inner_kr", np.min(inner_kr_), np.max(inner_kr_))  # 1.e-7 - 1.e-4
+        print("rho", np.min(rho_), np.max(rho_))  # 1. - 200.
     return rsx
 
 
@@ -77,7 +77,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     
     TODO recyle factorisation of left hand side ... 
     """
-    wilting_point = -15000  # cm
+    wilting_point = -10000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
     max_iter = 10  # maximum for fix point iteration

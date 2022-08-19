@@ -5,13 +5,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 name = "rootsystem"
-str_ = ["classic"]
+str_ = ["classic", "sra"]
+fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
+
+# name = "rootsystem"
+# str_ = ["cyl"]
+# fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
 
 min_b = [-6, -1.5, -150.]  # domain 12cm x 3cm x 150cm
 max_b = [6, 1.5, 0.]
 cell_number = [12, 3, 150]  # 1 cm3
-
-fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
 
 cmap = plt.get_cmap('Set1')
 col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot    sink_ = data[i]

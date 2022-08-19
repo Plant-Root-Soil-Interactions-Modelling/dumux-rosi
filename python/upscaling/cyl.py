@@ -22,8 +22,8 @@ def simulate_const(s, rs, trans, sim_time, dt):
     
     TODO recyle factorisation of left hand side ... 
     """
-    wilting_point = -15000  # cm
-    skip = 6  # for output and results, skip iteration
+    wilting_point = -10000  # cm
+    skip = 3 * 6  # for output and results, skip iteration
     rs_age = 0.  # day
     split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
