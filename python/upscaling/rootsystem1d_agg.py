@@ -31,7 +31,7 @@ Initialize xylem model
 """
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
-r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/wheat.rsml")  # created by rootsystem.py
+r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/wheat_nobasals.rsml")  # created by rootsystem.py
 r_agg = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
 # sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 sra_table_lookup = soil  # without using the lookup table.
@@ -51,7 +51,7 @@ water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = agg.simulate_const(s, r_agg, sra_table_lookup, trans, sim_time, dt)
 
-scenario.write_files("rootsystem1d_agg", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+scenario.write_files("rootsystem_nobasals1d_agg", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
 print("\ntotal uptake", water0 - s.getWaterVolume(), "cm3")
 print("fin")

@@ -5,6 +5,7 @@ using upscaling, steady rate approach and fix point iteration (ups)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 
+import plantbox as pb # for debugging
 import scenario_setup as scenario
 import sra
 import ups
@@ -12,7 +13,7 @@ import ups
 """ parameters   """
 min_b = [-6, -1.5, -150.]  # domain 12cm x 3cm x 150cm
 max_b = [6, 1.5, 0.]
-cell_number = [1, 1, 150]  # 12x3x1 cm3 - 1d soil
+cell_number = [1, 1, 10]  # 12x3x1 cm3 - 1d soil
 
 theta_r = 0.025
 theta_s = 0.403
@@ -35,6 +36,9 @@ sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make 
 """ sanity checks """
 r.test()  # we might add more
 # print("Krs", r.get_krs(0.))
+print("hallo")
+print(pb.SegmentAnalyser(r.rs).getMinBounds())
+print()
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain

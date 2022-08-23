@@ -27,7 +27,7 @@ dt = 60 / (24 * 3600)  # time step [day]
 
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
-r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/wheat.rsml")  # created by rootsystem.py
+r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/wheat_nobasals.rsml")  # created by rootsystem.py
 sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 # sra_table_lookup = soil  # without using the lookup table.
 
@@ -40,7 +40,7 @@ water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
-scenario.write_files("rootsystem1d_sra", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)  # 1d soil
+scenario.write_files("rootsystem_nobasals1d_sra", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)  # 1d soil
 
 print("\ntotal uptake", water0 - s.getWaterVolume(), "cm3")
 print("fin")

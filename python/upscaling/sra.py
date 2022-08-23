@@ -77,10 +77,10 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     
     TODO recyle factorisation of left hand side ... 
     """
-    wilting_point = -10000  # cm
+    wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 10  # maximum for fix point iteration
+    max_iter = 100  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = soil_root_interface_table
@@ -110,7 +110,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
 
-    r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
+    # r.init_solve_static(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
     rx_old = rx.copy()

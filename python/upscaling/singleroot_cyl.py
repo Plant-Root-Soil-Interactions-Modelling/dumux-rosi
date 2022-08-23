@@ -17,14 +17,14 @@ min_b = [-1, -1, -150.]  # domain
 max_b = [1, 1, 0.]
 cell_number = [1, 1, 150]
 
-# theta_r = 0.025
-# theta_s = 0.403
-# alpha = 0.0383  # (cm-1) soil
-# n = 1.3774
-# k_sat = 60.  # (cm d-1)
-# soil_ = [theta_r, theta_s, alpha, n, k_sat]
+theta_r = 0.025
+theta_s = 0.403
+alpha = 0.0383  # (cm-1) soil
+n = 1.3774
+k_sat = 60.  # (cm d-1)
+soil_ = [theta_r, theta_s, alpha, n, k_sat]
 
-soil_ = [0.045, 0.43, 0.15, 3, 1000]
+# soil_ = [0.045, 0.43, 0.15, 3, 1000]
 
 trans = 0.6 * 4  # cm3/day
 
@@ -55,7 +55,7 @@ water = s.getWaterVolume()
 
 """ output """
 if rank == 0:
-    scenario.write_files("singleroot_sand_cyl", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+    scenario.write_files("singleroot_cyl", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
     print("\ntotal uptake", water0 - water, "cm3")
     print("fin")

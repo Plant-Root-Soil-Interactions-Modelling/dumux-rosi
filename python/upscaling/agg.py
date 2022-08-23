@@ -262,8 +262,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         if r.last == "neumann":
             if err2 > 1.e-8:
                 print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, -trans * sinusoidal2(t, dt), np.sum(fluxes))
-                print(fluxes)
-                raise
+                
+            
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)

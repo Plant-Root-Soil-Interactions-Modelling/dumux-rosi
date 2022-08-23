@@ -4,12 +4,12 @@ functions for the steady rate approach
 import numpy as np
 from scipy import sparse
 from scipy.interpolate import RegularGridInterpolator
+import scipy.sparse.linalg as LA
 from scipy.optimize import fsolve
 import timeit
 import matplotlib.pyplot as plt
 
 from xylem_flux import sinusoidal2
-
 import van_genuchten as vg
 
 from sra import soil_root_interface
@@ -17,21 +17,30 @@ from sra import soil_root_interface_table
 
 
 def reduction_matrix(r):
-    """ """
+    """ 
+    creates a sparse matrix (m,n), that maps node indices to soil cells, 
+    but does not change the equation for the collar node with index = 0: 
+    m ... is the number of soil cells - number of empty cells + 1 (collar node)
+    n ... number of nodes 
+    """
     segs = r.rs.segments
     ns = len(segs)
     map = r.rs.seg2cell
     mapping = np.array([map[j] for j in range(0, ns)])
-    i_ = [0]
+    shift = np.min(mapping)
+    print(np.unique(mapping))
+    print("shift", shift)
+
+    i_ = [0] # exclude first node ...
     j_ = [0]
-    v_ = [1]
-    for s in segs:
+    v_ = [1] 
+    for s in segs: 
         j = s.y  # node index
-        i = mapping[j - 1]  # cell index of segment index
+        i = mapping[j - 1] - shift # cell index of segment index
         i_.append(i + 1)  # the first row is reserved for the root collar node
         j_.append(j)
         v_.append(1.)
-    Q = sparse.coo_matrix((np.array(v_), (np.array(i_), np.array(j_))))
+    Q = sparse.coo_matrix((np.array(v_), (np.array(i_), np.array(j_))))    
     return Q
 
 
@@ -50,19 +59,20 @@ def init_solve_upscaled(r, sim_time:float, sxx, cells:bool, wilting_point, soil_
     Qt = Q.transpose()
     A = sparse.csc_matrix(sparse.coo_matrix((np.array(r.aV), (np.array(r.aI), np.array(r.aJ)))))
     Aups = Q @ A @ Qt
-
-    print(Q.shape)
-    print(Qt.shape)
-    print(Aups.shape)
+    # print(Q @ Qt)
+    # plt.spy(Q @ Qt)
+    # plt.show()    
+    
     b = Q @ r.aB
-    print(r.aB, b.shape)
+    print(b.shape)
+    print(Aups)
     plt.spy(Aups)
     plt.show()
 
-    self.neumannB = LA.splu(Aups)
+    r.neumannB = LA.splu(Aups)
 
-    Q, b = self.bc_dirichlet(Aups, Q @ self.aB, [0], [wilting_point])
-    self.dirichletB = LA.splu(Q)
+    Q, b = r.bc_dirichlet(Aups, b, [0], [wilting_point])
+    r.dirichletB = LA.splu(Q)
 
     r.solveD_ = self.solveDups_
     r.solveN_ = self.solveNups_
