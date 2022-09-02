@@ -9,8 +9,8 @@ import numpy as np
 # str_ = ["cyl", "sra", "agg"]
 # # str_ = ["cyl", "sra", "agg", "ups"]
 
-name = "rootsystem_nobasals1d"
-str_ = ["sra", "agg"]
+name = "rootsystem1d"
+str_ = ["sra", "ups"]
 
 fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
 

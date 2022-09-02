@@ -9,7 +9,8 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
-from xylem_flux import *  # XylemFluxPython, sinusoidal2
+from xylem_flux import sinusoidal2
+from ups import XylemFluxUps  # == XylemFluxPython with upscaling stuff added
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
@@ -79,13 +80,13 @@ def create_singleroot(ns = 100, l = 50 , a = 0.05):
         nodes.append(pb.Vector3d(0, 0, z_[i]))
         segs.append(pb.Vector2i(i, i + 1))
     rs = pb.MappedSegments(nodes, segs, radii)
-    return XylemFluxPython(rs)
+    return XylemFluxUps(rs)
 
 
 def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname):
     """ loads a rsml file and maps it to the soil_model """
     global picker  # make sure it is not garbage collected away...
-    r = XylemFluxPython(fname)  # see rootsystem.py (in upscaling)
+    r = XylemFluxUps(fname)  # see rootsystem.py (in upscaling)
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)

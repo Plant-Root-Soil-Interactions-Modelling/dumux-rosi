@@ -8,27 +8,27 @@ import matplotlib.pyplot as plt
 
 from xylem_flux import sinusoidal2
 
-name = "singleroot"
-# str_ = ["cyl", "sra"]
-# titles = ["cylindrical", "steady rate"]
-str_ = ["cyl", "sra", "agg"]
-titles = ["cylindrical", "steady rate", "parallel"]
-# str_ = ["cyl", "sra", "agg", "upp"]
-# titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
-trans = 0.6 * 4  # potential transpiration cm3/day
-fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])
-
-# name = "rootsystem"
-# str_ = ["classic", "sra"]
-# titles = ["classic", "steady rate"]
-# trans = 0.6 * (12 * 3)  # potential transpiration cm3/day
+# name = "singleroot"
+# # str_ = ["cyl", "sra"]
+# # titles = ["cylindrical", "steady rate"]
+# str_ = ["cyl", "sra", "agg"]
+# titles = ["cylindrical", "steady rate", "parallel"]
+# # str_ = ["cyl", "sra", "agg", "upp"]
+# # titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
+# trans = 0.6 * 4  # potential transpiration cm3/day
 # fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])
 
-names = ["rootsystem_nobasals1d_sra", "rootsystem_nobasals1d_agg"]
-str_ = ["sra", "agg"]
-titles = names
+name = "rootsystem1d"
+str_ = ["sra", "ups", "agg"]
+titles = ["steady rate", "upscaled", "parallel"]
 trans = 0.6 * (12 * 3)  # potential transpiration cm3/day
-fnames = np.array(["transpiration_" + name for name in names])
+fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])
+
+# names = ["rootsystem_nobasals1d_sra", "rootsystem_nobasals1d_agg"]
+# str_ = ["sra", "agg"]
+# titles = names
+# trans = 0.6 * (12 * 3)  # potential transpiration cm3/day
+# fnames = np.array(["transpiration_" + name for name in names])
 
 path = "results/"
 

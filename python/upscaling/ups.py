@@ -9,73 +9,87 @@ from scipy.optimize import fsolve
 import timeit
 import matplotlib.pyplot as plt
 
-from xylem_flux import sinusoidal2
+from xylem_flux import *
 import van_genuchten as vg
 
 from sra import soil_root_interface
 from sra import soil_root_interface_table
 
 
-def reduction_matrix(r):
-    """ 
-    creates a sparse matrix (m,n), that maps node indices to soil cells, 
-    but does not change the equation for the collar node with index = 0: 
-    m ... is the number of soil cells - number of empty cells + 1 (collar node)
-    n ... number of nodes 
-    """
-    segs = r.rs.segments
-    ns = len(segs)
-    map = r.rs.seg2cell
-    mapping = np.array([map[j] for j in range(0, ns)])
-    shift = np.min(mapping)
-    print(np.unique(mapping))
-    print("shift", shift)
+class XylemFluxUps(XylemFluxPython):
+    """ add upscaling ideas to XylemFluxPython """
 
-    i_ = [0] # exclude first node ...
-    j_ = [0]
-    v_ = [1] 
-    for s in segs: 
-        j = s.y  # node index
-        i = mapping[j - 1] - shift # cell index of segment index
-        i_.append(i + 1)  # the first row is reserved for the root collar node
-        j_.append(j)
-        v_.append(1.)
-    Q = sparse.coo_matrix((np.array(v_), (np.array(i_), np.array(j_))))    
-    return Q
+    def reduction_matrix(self):
+        """ 
+        creates a sparse matrix (m,n), that maps node indices to soil cells, 
+        but does not change the equation for the collar node with index = 0: 
+        m ... is the number of soil cells - number of empty cells + 1 (collar node)
+        n ... number of nodes 
+        """
+        segs = self.rs.segments
+        ns = len(segs)
+        map = self.rs.seg2cell
+        mapping = np.array([map[j] for j in range(0, ns)])
+        shift = np.min(mapping)
+        print(np.unique(mapping))
+        print("shift", shift)
 
+        i_ = [0]  # exclude first node ...
+        j_ = [0]
+        v_ = [1]
+        for s in segs:
+            j = s.y  # node index
+            i = mapping[j - 1] - shift  # cell index of segment index
+            i_.append(i + 1)  # the first row is reserved for the root collar node
+            j_.append(j)
+            v_.append(1.)
+        Q = sparse.coo_matrix((np.array(v_), (np.array(i_), np.array(j_))))
+        return Q
 
-def init_solve_upscaled(r, sim_time:float, sxx, cells:bool, wilting_point, soil_k = []):
-    """ speeds up computation for static root system (not growing, no change in conductivities), 
-    by computing LU factorizations of the upscaled matrix 
-    """
-    print("switching to static solve (static root system, static conductivities) and upscaled to cell volumes")
+    def solveDups_(self, value):
+        Q, b = self.bc_dirichlet(self.Q, self.aB, self.dirichlet_ind, value)
+        rxc = self.dirichletB.solve(self.T @ np.array(b))
+        return self.Tt @ rxc
 
-    if len(soil_k) > 0:
-        r.linearSystem(sim_time, sxx, cells, soil_k)  # C++ (see XylemFlux.cpp)
-    else:
-        r.linearSystem(sim_time, sxx, cells)  # C++ (see XylemFlux.cpp)
+    def solveNups_(self, value):
+        Q, b = self.bc_neumann(self.Q, self.aB, self.neumann_ind, value)
+        rxc = self.neumannB.solve(self.T @ np.array(b))
+        return self.Tt @ rxc
 
-    Q = reduction_matrix(r)
-    Qt = Q.transpose()
-    A = sparse.csc_matrix(sparse.coo_matrix((np.array(r.aV), (np.array(r.aI), np.array(r.aJ)))))
-    Aups = Q @ A @ Qt
-    # print(Q @ Qt)
-    # plt.spy(Q @ Qt)
-    # plt.show()    
-    
-    b = Q @ r.aB
-    print(b.shape)
-    print(Aups)
-    plt.spy(Aups)
-    plt.show()
+    def init_solve_upscaled(self, sim_time:float, sxx, cells:bool, wilting_point, soil_k = []):
+        """ speeds up computation for static root system (not growing, no change in conductivities), 
+        by computing LU factorizations of the upscaled matrix 
+        """
+        print("switching to static solve (static root system, static conductivities) and upscaled to cell volumes")
 
-    r.neumannB = LA.splu(Aups)
+        if len(soil_k) > 0:
+            self.linearSystem(sim_time, sxx, cells, soil_k)  # C++ (see XylemFlux.cpp)
+        else:
+            self.linearSystem(sim_time, sxx, cells)  # C++ (see XylemFlux.cpp)
 
-    Q, b = r.bc_dirichlet(Aups, b, [0], [wilting_point])
-    r.dirichletB = LA.splu(Q)
+        Q = self.reduction_matrix()
+        Qt = Q.transpose()
+        A = sparse.csc_matrix(sparse.coo_matrix((np.array(self.aV), (np.array(self.aI), np.array(self.aJ)))))
+        Aups = Q @ A @ Qt
+        # print(Q @ Qt)
+        # plt.spy(Q @ Qt)
+        # plt.show()
 
-    r.solveD_ = self.solveDups_
-    r.solveN_ = self.solveNups_
+        b = Q @ self.aB
+        # print(b.shape)
+        # print(Aups)
+        # plt.spy(Aups)
+        # plt.show()
+
+        self.T = Q
+        self.Tt = Qt
+        self.neumannB = LA.splu(Aups)
+
+        Q, b = self.bc_dirichlet(Aups, b, [0], [wilting_point])
+        self.dirichletB = LA.splu(Q)
+
+        self.solveD_ = self.solveDups_
+        self.solveN_ = self.solveNups_
 
 
 def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
@@ -96,7 +110,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 1000  # maximum for fix point iteration
+    max_iter = 100  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = soil_root_interface_table
@@ -126,16 +140,13 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     hsb = np.array([sx[j][0] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
 
-    init_solve_upscaled(r, rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
-
-    Q = reduction_matrix(r)
+    r.init_solve_upscaled(rs_age, rsx, False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0, dt), 0., rsx, False, wilting_point, soil_k = [])
-    # print(rx.shape)
-    # rx = layer_sumB(r, rx)
-    # print(rx.shape)
     rx_old = rx.copy()
-    ddd
+
+    # print(np.min(rx), np.max(rx))
+    # dd
 
     kr_ = np.array([r.kr_f(rs_age, types[j]) for j in range(0, len(outer_r))])  # here const
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
@@ -149,6 +160,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
 
         wall_iteration = timeit.default_timer()
         wall_fixpoint = timeit.default_timer()
+
+        print("(", end = "")
 
         err = 1.e6  # cm
         c = 0
@@ -171,9 +184,13 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
             rx_old = rx.copy()
             c += 1
 
+        print(")", end = "")
+
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
         wall_soil = timeit.default_timer()
+        print("*", end = "")
+
         fluxes = r.segFluxes(rs_age, rx, rsx, approx = False, cells = False)
         collar_flux = r.collar_flux(rs_age, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
@@ -185,6 +202,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
             if err2 > 1.e-6:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
                 raise
+        print(".", end = "")
+
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)

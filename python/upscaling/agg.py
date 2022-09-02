@@ -183,7 +183,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 100  # maximum for fix point iteration
+    max_iter = 10  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = sra.soil_root_interface_table
@@ -200,7 +200,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     inner_r = r.rs.radii
     types = r.rs.subTypes
     rho_ = np.divide(outer_r, np.array(inner_r))
-    # rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
+    rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
 
@@ -215,7 +215,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     rsx = hsb.copy()  # initial values for fix point iteration
     rsx2 = np.zeros((rsx.shape[0], 2))
 
-    # r.init_solve_static(rs_age, double_(rsx, rsx2), False, wilting_point, soil_k = [])  # speed up & and forever static...
+    r.init_solve_static(rs_age, double_(rsx, rsx2), False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0., dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
     rx_old = rx.copy()
@@ -262,8 +262,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         if r.last == "neumann":
             if err2 > 1.e-8:
                 print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, -trans * sinusoidal2(t, dt), np.sum(fluxes))
-                
-            
+
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)
