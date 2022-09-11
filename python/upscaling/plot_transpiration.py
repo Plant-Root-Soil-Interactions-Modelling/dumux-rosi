@@ -11,8 +11,8 @@ from xylem_flux import sinusoidal2
 # name = "singleroot"
 # # str_ = ["cyl", "sra"]
 # # titles = ["cylindrical", "steady rate"]
-# str_ = ["cyl", "sra", "agg"]
-# titles = ["cylindrical", "steady rate", "parallel"]
+# str_ = ["sra", "ups", "agg"]
+# titles = ["steady rate", "upscaling", "parallel"]  # "cylindrical"
 # # str_ = ["cyl", "sra", "agg", "upp"]
 # # titles = ["cylindrical", "steady rate", "parallel", "upscaled"]
 # trans = 0.6 * 4  # potential transpiration cm3/day

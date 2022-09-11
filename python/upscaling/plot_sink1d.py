@@ -4,13 +4,13 @@ Sink plot (noon and midnight), of a 1d soil
 import matplotlib.pyplot as plt
 import numpy as np
 
-# name = "singleroot"
-# # str_ = ["cyl", "sra"]
-# str_ = ["cyl", "sra", "agg"]
-# # str_ = ["cyl", "sra", "agg", "ups"]
-
-name = "rootsystem1d"
+name = "singleroot"
 str_ = ["sra", "ups"]
+# str_ = ["cyl", "sra", "agg"]
+# str_ = ["cyl", "sra", "agg", "ups"]
+
+# name = "rootsystem1d"
+# str_ = ["sra", "ups"]
 
 fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
 

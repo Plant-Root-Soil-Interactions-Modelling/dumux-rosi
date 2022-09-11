@@ -30,30 +30,36 @@ class XylemFluxUps(XylemFluxPython):
         ns = len(segs)
         map = self.rs.seg2cell
         mapping = np.array([map[j] for j in range(0, ns)])
-        shift = np.min(mapping)
-        print(np.unique(mapping))
-        print("shift", shift)
+        map_min = np.min(mapping)
+        map_max = np.max(mapping)
+        print(mapping[0:10])  # 9 9 9 9 makes sense
+        print(np.unique(mapping), map_min, map_max)
 
         i_ = [0]  # exclude first node ...
         j_ = [0]
         v_ = [1]
         for s in segs:
             j = s.y  # node index
-            i = mapping[j - 1] - shift  # cell index of segment index
-            i_.append(i + 1)  # the first row is reserved for the root collar node
+            ci = mapping[j - 1]  # cell index of segment index (j-1)
+            i = map_max - ci  # we flip the rows, because uppter bc is at row 0
+            i_.append(i + 1)  # if the first row is reserved for the root collar node +1
             j_.append(j)
             v_.append(1.)
         Q = sparse.coo_matrix((np.array(v_), (np.array(i_), np.array(j_))))
+        print(np.unique(i_))
+
         return Q
 
     def solveDups_(self, value):
-        Q, b = self.bc_dirichlet(self.Q, self.aB, self.dirichlet_ind, value)
-        rxc = self.dirichletB.solve(self.T @ np.array(b))
+        b = np.array(self.aB)
+        b[0] = value
+        rxc = self.dirichletB.solve(self.T @ b)
         return self.Tt @ rxc
 
     def solveNups_(self, value):
-        Q, b = self.bc_neumann(self.Q, self.aB, self.neumann_ind, value)
-        rxc = self.neumannB.solve(self.T @ np.array(b))
+        b = np.array(self.aB)
+        b[0] += value
+        rxc = self.neumannB.solve(self.T @ b)
         return self.Tt @ rxc
 
     def init_solve_upscaled(self, sim_time:float, sxx, cells:bool, wilting_point, soil_k = []):
@@ -110,7 +116,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     wilting_point = -15000  # cm
     skip = 6  # for output and results, skip iteration
     rs_age = 0.  # day
-    max_iter = 100  # maximum for fix point iteration
+    max_iter = 10  # maximum for fix point iteration
 
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = soil_root_interface_table
@@ -161,19 +167,19 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         wall_iteration = timeit.default_timer()
         wall_fixpoint = timeit.default_timer()
 
-        print("(", end = "")
-
         err = 1.e6  # cm
         c = 0
         while err > 1 and c < max_iter:
 
             """ interpolation """
+            # print("(", end = "")
             wall_interpolation = timeit.default_timer()
             rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
             hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
             rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)
             rsx = rsx + seg_centers_z  # from matric potential to total matric potential
             wall_interpolation = timeit.default_timer() - wall_interpolation
+            # print("i", end = "")
 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
@@ -184,7 +190,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
             rx_old = rx.copy()
             c += 1
 
-        print(")", end = "")
+            # print(")", end = "")
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
@@ -201,7 +207,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         if r.last == "neumann":
             if err2 > 1.e-6:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
-                raise
+
         print(".", end = "")
 
         soil_fluxes = r.sumSegFluxes(fluxes)
