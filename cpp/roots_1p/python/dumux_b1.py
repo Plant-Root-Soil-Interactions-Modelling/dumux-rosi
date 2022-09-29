@@ -129,5 +129,5 @@ print("actual", d[-1, 1] * c)
 print("actual", d[-1, 5] / 1000)
 print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
 
-if __name__ == "__main__":
-    plt.show()
+# if __name__ == "__main__":
+#     plt.show()

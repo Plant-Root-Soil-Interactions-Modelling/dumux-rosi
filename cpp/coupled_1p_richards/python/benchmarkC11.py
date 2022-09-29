@@ -99,12 +99,12 @@ for j in range(0, 2):
         simulate(soiltype, q_root, tend, tend, 3600)
         plot_number(axes[j, i], 1, times[i][j], soiltype, q_root, export)
 
-plt.show()
+# plt.show()
 
 # for e in export:
 #     print(e.shape)
 
-# np.savetxt("dumux_c11", np.vstack(export), delimiter = ",")
+np.savetxt("dumux_c11", np.vstack(export), delimiter = ",")
 
 # ex.append(z_)
 # ex.append(theta_)

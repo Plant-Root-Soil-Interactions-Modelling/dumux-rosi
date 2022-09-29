@@ -83,5 +83,5 @@ ax4.set_ylim(0, 0.31)
 # ax2.set_xlim(0, 10)
 # ax2.set_xlim(0, 10)
 
-plt.show()
+# plt.show()
 

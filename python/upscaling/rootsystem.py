@@ -40,7 +40,7 @@ name = "wheat_Morandage"  ####################################### TODO Ref
 rs.readParameters(path + name + ".xml")
 
 srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)  # print(srp[0])
-srp[0].firstB = 1.e9 #3
+srp[0].firstB = 3
 srp[0].delayB = 3
 
 rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
@@ -56,7 +56,7 @@ rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit 
 # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
 # print()
 
-rs.writeParameters(name + "_nobasals_modified" + ".xml")  # remember the modifications
+rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
 
 # Initialize
 print()
@@ -107,8 +107,8 @@ plt.show()
 #
 
 # Export final results
-rs.write("results/wheat_nobasals.vtp")
-rs.write("results/wheat_nobasals.rsml")
+rs.write("results/wheat.vtp")
+rs.write("results/wheat.rsml")
 
 # Plot, using vtk
 # vp.plot_roots(rs, "creationTime")
