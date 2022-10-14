@@ -55,8 +55,8 @@ public:
     /**
      * Gets the pressure head at the inner boundary [cm]
      */
-    double getInnerHead() {
-    	return this->getSolutionHeadAt(innerIdx);
+    double getInnerHead(int shift = 0) {
+    	return this->getSolutionHeadAt(innerIdx+shift);
     }
 
     /**
@@ -71,6 +71,17 @@ public:
     }
 
     // TODO getWaterVolume needs adjusting
+    /**
+     * Gets the pressure head at the inner boundary [cm]
+     */
+    virtual double getWaterVolume() {
+        std::vector<double> volumes = this->getCellVolumesCyl();
+        std::vector<double> water_content = this->getWaterContent();
+        double s = 0.;
+        for (int i =0; i<volumes.size(); i++)
+            s += volumes.at(i)*water_content.at(i);
+        return s;
+    }
 
     int innerIdx = -1;
     int outerIdx = -1;
@@ -104,7 +115,7 @@ void init_richards_cyl(py::module &m, std::string name) {
 
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
-   .def("getInnerHead",&RichardsFoam::getInnerHead)
+   .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)

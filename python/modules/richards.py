@@ -15,7 +15,7 @@ class RichardsWrapper(SolverWrapper):
         self.soils = []
         self.param_group = "Soil."
 
-    def  setParameterGroup(self, group:str):
+    def setParameterGroup(self, group:str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
         self.param_group = group
 
@@ -51,7 +51,7 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "VanGenuchten.Alpha", self.dumux_str(alpha))
         self.setParameter(self.param_group + "VanGenuchten.N", self.dumux_str(n))
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
-        
+
         self.soils = soils.copy()
 
     def setLayersZ(self, number:list, z:list = []):
@@ -178,6 +178,15 @@ class RichardsWrapper(SolverWrapper):
         """
         self.base.setBotBC(3, flux)
 
+    def setInnerMatricPotential(self, x):
+        """ 
+        Sets the dirichlet BC directly in the problem (problem must be initialized), 
+        calls base.setBotBC, @see setBotBC in richards.hh
+        
+        @param flux      [cm] xylem matric potentail          
+        """
+        self.base.setBotBC(1, x)
+
     def getInnerFlux(self, eq_idx = 0):
         """ [cm3 / cm2 / day] """
         return self.base.getInnerFlux(eq_idx) * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
@@ -194,7 +203,7 @@ class RichardsWrapper(SolverWrapper):
         return self.base.getOuterFlux(eq_idx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def setOuterPressure(self, value_top = 0.):
-        """ sets the flux directly i the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
+        """ sets the flux directly in the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
         self.base.setTopBC(1, value_top)
 
     def setInnerBC(self, type_bot:str, value_bot = 0.):
@@ -219,9 +228,13 @@ class RichardsWrapper(SolverWrapper):
         # print("setRootSystemBC", params)
         self.base.setRootSystemBC(params)
 
-    def getInnerHead(self):
+    def setSoluteTopBC(self, type_top, value_top):
+        """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        self.base.setSTopBC(type_top, value_top)
+
+    def getInnerHead(self, shift = 0):
         """Gets the pressure head at the inner boundary [cm] """
-        return self.base.getInnerHead()
+        return self.base.getInnerHead(shift)
 
     def setSource(self, source_map, eq_idx = 0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
