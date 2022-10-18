@@ -138,6 +138,8 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
         kr_ = np.array([r.kr_f(rs_age + t, types[j]) for j in range(0, len(outer_r))])  # here const
         inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
+        inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
+        inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
 
         wall_iteration = timeit.default_timer()
         wall_fixpoint = timeit.default_timer()
@@ -269,6 +271,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None):
 
     kr_ = np.array([r.kr_f(rs_age, types[j]) for j in range(0, len(outer_r))])  # here const
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
+    inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 

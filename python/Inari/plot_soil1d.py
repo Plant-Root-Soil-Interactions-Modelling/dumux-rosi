@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-name = "maize"
+name = "soybean"
 str_ = "sra2"  # "cyl"
 
 fname = "soil_" + name + "_" + str_

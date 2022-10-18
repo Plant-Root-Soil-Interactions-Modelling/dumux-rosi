@@ -26,7 +26,7 @@ soil_ = [theta_r, theta_s, alpha, n, k_sat]
 
 trans = 0.6 * (38 * 5)  # cm3/day (38 * 5 = 190)
 
-sim_time = 1.*87.5  # [day]
+sim_time = 0.5 * 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 """ initialize """
@@ -34,6 +34,10 @@ s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -
 
 xml_name = "Glycine_max_Moraes2020_opt2" + "_modified" + ".xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
+# scenario.init_conductivities_const_growth(r)
+scenario.init_dynamic_conductivities_growth(r)
+# r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
+
 # rsml_name = "results/soybean.rsml"  # created by rootsystem_soybean.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
 

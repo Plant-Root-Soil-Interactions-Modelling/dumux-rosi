@@ -89,20 +89,23 @@ def init_conductivities_const(r):
     """ Hydraulic conductivities """
     kr_const = 1.8e-4  # [1/day]
     kx_const = 0.1  # [cm3/day]
-    r.setKr([kr_const])
-    r.setKx([kx_const])
+    r.setKr([0, kr_const, kr_const, kr_const, kr_const, kr_const])
+    r.setKx([1.e3, kx_const, kx_const, kx_const, kx_const, kx_const])
 
 
 def init_conductivities_const_growth(r, dt = 1):
     """ Hydraulic conductivities """
     kr_const = 1.8e-4  # [1/day]
     kx_const = 0.1  # [cm3/day]
-    kr = np.array([[-1e4, 1.e-9], [0., 1.e-9], [dt, kr_const_], [1.e4, kr_const_]])
-    kx = np.array([[0, kx_const_], [1e4, kx_const_]])
-    r.setKrTables([kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
-                  [kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])  # for each subtype
-    r.setKxTables([kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
-                  [kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # for each subtype
+    kr = np.array([[-1e4, 1.e-9], [0., 1.e-9], [dt, kr_const], [1.e4, kr_const]])
+    kx = np.array([[0, kx_const], [1e4, kx_const]])
+    kr00 = np.array([[0., 0.]])
+    kx00 = np.array([[0., 1.e3]])
+
+    r.setKrTables([kr00[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
+                  [kr00[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])  # for each subtype
+    r.setKxTables([kx00[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
+                  [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # for each subtype
 
 
 def init_dynamic_conductivities_growth(r, dt = 0.1):
@@ -119,6 +122,9 @@ def init_dynamic_conductivities_growth(r, dt = 0.1):
         kr0[i, 0] = kr0[i, 0] + dt
         kr1[i, 0] = kr1[i, 0] + dt
 
+    kr00 = np.array([[0., 0.]])
+    kx00 = np.array([[0., 1.e3]])
+
     kx0 = np.array([[0, 6.74e-02], [2, 7.48e-02], [4, 8.30e-02], [6, 9.21e-02], [8, 1.02e-01], [10, 1.13e-01],
                     [12, 1.26e-01], [14, 1.40e-01], [16, 1.55e-01], [18, 1.72e-01], [20, 1.91e-01], [22, 2.12e-01], [24, 2.35e-01],
                     [26, 2.61e-01], [28, 2.90e-01], [30, 3.21e-01], [32, 3.57e-01]])
@@ -126,10 +132,10 @@ def init_dynamic_conductivities_growth(r, dt = 0.1):
                     [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03],
                     [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
 
-    r.setKrTables([kr0[:, 1], kr1[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
-                  [kr0[:, 0], kr1[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])  # [cm^3/day]
-    r.setKxTables([kx0[:, 1], kx1[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
-                  [kx0[:, 0], kx1[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])  # [1/day]
+    r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
+                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])  # [cm^3/day]
+    r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
+                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])  # [1/day]
 
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, l = 50 , a = 0.05):

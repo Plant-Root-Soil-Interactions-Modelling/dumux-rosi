@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 
 from xylem_flux import sinusoidal2
 
-# name = "soybean"
-# str_ = ["sra2"]
-# trans = 0.6 * (38 * 5)  # cm3/day  for soybean
-# sim_time = 87.5
-# potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
+name = "soybean"
+str_ = ["sra2"]
+trans = 0.6 * (38 * 5)  # cm3/day  for soybean
+sim_time = 0.5 * 87.5
+potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
 
-name = "maize"
-str_ = ["cyl2"]
-trans = 0.6 * (75 * 15)  # cm3/day  for soybean
-sim_time = .5 * 95
-potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # maize
+# name = "maize"
+# str_ = ["cyl2"]
+# trans = 0.6 * (75 * 15)  # cm3/day  for soybean
+# sim_time = .5 * 95
+# potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # maize
 
 # name = "maize"
 # str_ = ["sra2"]
