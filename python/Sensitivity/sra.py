@@ -7,6 +7,8 @@ from scipy.optimize import fsolve
 import timeit
 
 from xylem_flux import sinusoidal2
+import vtk_plot as vtk
+import plantbox as pb
 
 import van_genuchten as vg
 
@@ -79,7 +81,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
     """
     wilting_point = -15000  # cm
     skip = 10  # for output and results, skip iteration
-    rs_age = 0.  # day
+    rs_age = 1.  # day
     max_iter = 10  # maximum for fix point iteration
 
     """ tabularized values for finding the zeros """
@@ -151,12 +153,16 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         rx = r.solve(rs_age + t, trans_f(t, dt), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
+        hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
+        hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
+        hsb_ = np.minimum(hsb_, np.zeros(hsb_.shape))  ############################################ (too keep within table)
+
         while err > 1 and c < max_iter:
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
             rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
-            hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
+            rx_ = np.maximum(rx_, np.ones(rx_.shape) * -15000.)  ############################################ (too keep within table)
             rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)
             rsx = rsx + seg_centers_z  # from matric potential to total matric potential
             wall_interpolation = timeit.default_timer() - wall_interpolation
@@ -190,10 +196,28 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
         wall_iteration = timeit.default_timer() - wall_iteration
 
+        # if rs_age + t > 24.5:
+        #     pass
+        #     min_b = [-19, -2.5, -200.]  # for soybean
+        #     max_b = [19, 2.5, 0.]
+        #     cell_number = [1, 1, 200]
+        #     vtk.plot_roots_and_soil(rs, "fluxes", fluxes.copy()[1:], s, True, min_b, max_b, cell_number, "nice_plot")
+        #     # vtk.plot_roots(pd, p_name:str, win_title:str = "", render:bool = True):
+        #     # ind0 = s.pick([0, 0, -3.5])
+        #     # ind1 = s.pick([0, 0, -15.])
+        #     # ind2 = s.pick([0, 0, -25.])
+        #     # print("cell0", ind0)
+        #     # print("cell1", ind1)
+        #     # print("cell2", ind2)
+        #     # cell2seg = r.rs.cell2seg
+        #     # segs0 = cell2seg[ind0]
+        #     # # segs1 = cell2seg[ind1]
+        #     # # segs2 = cell2seg[ind2]
+        #     # for i in segs:
+        #     #     rs.plot_cylinder(i)
+        #     dd
+
         """ remember results ... """
-        print("{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
-              wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
-              "number of segments", rs.getNumberOfSegments())
         sink = np.zeros(sx.shape)
         for k, v in soil_fluxes.items():
             sink[k] += v
@@ -202,6 +226,9 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         y_.append(np.sum(sink))  # cm3/day
         psi_s2_.append(sx.copy())  # cm (per soil cell)
         if i % skip == 0:
+            print("{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
+                  wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
+                  "number of segments", rs.getNumberOfSegments(), "root collar", rx_[0])
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segmen
 

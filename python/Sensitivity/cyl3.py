@@ -6,9 +6,11 @@ import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
 from xylem_flux import sinusoidal2
+import vtk_plot as vtk
+import plantbox as pb
 
 
-def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
+def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -19,15 +21,12 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
     trans
     sim_time    
     dt
+    trans_f
+    rs_age
     """
     wilting_point = -15000  # cm
     skip = 10  # 3 * 6  # for output and results, skip iteration
-    rs_age = 0.  # day
     split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
-
-    """ set defalut potential transpiration """
-    if not trans_f:
-        trans_f = lambda age, dt:-trans * sinusoidal2(age, dt)
 
     """ 
     Initialize local soil models (around each root segment) 
@@ -35,21 +34,24 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
     start_time = timeit.default_timer()
     sx = s.getSolutionHead()  # initial condition of soil [cm]
     sx = comm.bcast(sx, root = 0)  # Soil part runs parallel
+    comm.barrier()
     ns = len(rs.segments)
     dcyl = int(np.floor(ns / max_rank))
     if rank + 1 == max_rank:
-        print ("Initialized final rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)))
+        print ("\nInitialized final rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
     else:
-        print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, (rank + 1) * dcyl)))
+        print ("\nInitialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
 
     r = rs.rs  # rename (XylemFluxPython)
+    comm.barrier()
 
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
+    rsx = comm.bcast(rsx, root = 0)  # Soil part runs parallel
     print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx))
     if rank == 0:
-        rx = r.solve(rs_age, trans_f(0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
+        rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
     else:
         rx = None
 
@@ -69,30 +71,34 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
         t = i * dt  # current simulation time
 
         """ 1. xylem model """
-        if rank == 0:
-            print("[x", end = "")
+        # if rank == 0:
+        #     print("[x", end = "")
         wall_xylem = timeit.default_timer()
 
         rsx = rs.get_inner_heads(1)  # matric potential at the root soil interface, 2nd node  [cm]
-
+        comm.barrier()
         if rank == 0:
-            print("rsx", np.min(rsx), np.max(rsx))
-            rx = r.solve(rs_age + t, trans_f(t, dt), 0., rsx, cells = False, wilting_point = wilting_point)  # soil_k = soil_k
+            print("rsx", np.min(rsx), np.max(rsx), "trans", trans_f(rs_age + t, dt), "time", rs_age + t)
+            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)  # soil_k = soil_k
+            # print("*", end = "")
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
             # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
+            # print("*", end = "")
         else:
             rx = None
             seg_fluxes = None
+        comm.barrier()
         rx = comm.bcast(rx, root = 0)
+        # print("*", end = "")
         seg_fluxes = comm.bcast(seg_fluxes, root = 0)
 
-        if rank == 0:
-            print("]", end = "")
+        # if rank == 0:
+        #     print("]", end = "")
         wall_xylem = timeit.default_timer() - wall_xylem
 
         """ 2. local soil models """
-        if rank == 0:
-            print("[l", end = "")
+        # if rank == 0:
+        #     print("[l", end = "")
         wall_local = timeit.default_timer()
 
         seg_rx = np.array([0.5 * (rx[s.x] + rx[s.y]) for s in segs])
@@ -102,12 +108,12 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
         # rs.plot_cylinders()
 
         wall_local = timeit.default_timer() - wall_local
-        if rank == 0:
-            print("]", end = "")
+        # if rank == 0:
+        #     print("]", end = "")
 
         """ 3a. macroscopic soil model """
-        if rank == 0:
-            print("[m", end = "")
+        # if rank == 0:
+        #     print("[m", end = "")
         wall_macro = timeit.default_timer()
 
         water_content = np.array(s.getWaterContent())  # theta per cell [1]
@@ -118,12 +124,12 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
         s.solve(dt)  # in modules/solverbase.py
 
         wall_macro = timeit.default_timer() - wall_macro
-        if rank == 0:
-            print("]", end = "")
+        # if rank == 0:
+        #     print("]", end = "")
 
         """ 3b. calculate net fluxes """
-        if rank == 0:
-            print("[n", end = "")
+        # if rank == 0:
+        #     print("[n", end = "")
         wall_netfluxes = timeit.default_timer()
         water_content = np.array(s.getWaterContent())
         water_content = comm.bcast(water_content, root = 0)
@@ -135,12 +141,35 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
         soil_water = new_soil_water
 
         wall_netfluxes = timeit.default_timer() - wall_netfluxes
-        if rank == 0:
-            print("]", end = "")
+        # if rank == 0:
+        #     print("]", end = "")
+        # if rank == 0:
+        #     if rs_age + t > 1.5:
+        #         print(ns)
+        #         print(len(rs.cyls))
+        #         min_b = [-19, -2.5, -200.]  # for soybean
+        #         max_b = [19, 2.5, 0.]
+        #         cell_number = [1, 1, 200]
+        #         # vtk.plot_roots_and_soil(rs, "fluxes", seg_fluxes.copy(), s, True, min_b, max_b, cell_number, "nice_plot")
+        #         # vtk.plot_roots(pd, p_name:str, win_title:str = "", render:bool = True):
+        #         ind0 = s.pick([0, 0, -3.5])
+        #         # ind1 = s.pick([0, 0, -15.])
+        #         # ind2 = s.pick([0, 0, -25.])
+        #         print("cell0", ind0)
+        #         # print("cell1", ind1)
+        #         # print("cell2", ind2)
+        #         cell2seg = r.rs.cell2seg
+        #         segs0 = cell2seg[ind0]
+        #         # # segs1 = cell2seg[ind1]
+        #         # # segs2 = cell2seg[ind2]
+        #         print(segs0)
+        #         for i in segs0:
+        #             rs.plot_cylinder(i)
+        #         dd
 
         """ remember results ... """
-        if rank == 0:
-            print("[r", end = "")
+        # if rank == 0:
+        #     print("[r", end = "")
 
         sx = s.getSolutionHead()
         if rank == 0:
@@ -149,22 +178,22 @@ def simulate_const(s, rs, trans, sim_time, dt, trans_f = None):
             for k, v in soil_fluxes.items():
                 sink[k] += v
             sink_.append(sink)  # cm3/day (per soil cell)
-            x_.append(t)  # day
+            x_.append(rs_age + t)  # day
             y_.append(np.sum(sink))  # cm3/day
             psi_s2_.append(sx)  # cm (per soil cell)
-            print("{:g}/{:g} iterations".format(i, N), "time", t, "wallt times",
+            print("{:g}/{:g} iterations".format(i, N), "time", rs_age + t, "wallt times",
                   wall_xylem / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_local / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_netfluxes / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
-                  "number of segments", rs.getNumberOfSegments())
+                  "segments:", rs.getNumberOfSegments(), "root collar:", rx[0], "\n")
 
         if i % skip and rank == 0:
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segment)
 
-        if rank == 0:
-            print("]")
+        # if rank == 0:
+        #     print("]")
 
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")

@@ -7,9 +7,9 @@ import numpy as np
 # maize_cyl 5% simtime, maize_sra 100% simtime
 
 name = "soybean"
-str_ = ["sra2"]
+str_ = ["sra0"]
 
-days = 0.5 * 87.5  # soybean
+days = 0.25 * 87.5  # soybean
 # days = 0.5 * 95  #  maize
 
 fnames = np.array(["sink_" + name + "_" + s for s in str_ ])
@@ -22,7 +22,7 @@ dx = 1  # cm resolution
 ylim = 99.5
 
 cell_volume = 4  # cm3
-plot_times = [1., 5, 10, 15, 20, 30, 40]
+plot_times = [1., 5, 10, 15, 20]  # , 30, 40
 path = "results/"
 
 SMALL_SIZE = 16

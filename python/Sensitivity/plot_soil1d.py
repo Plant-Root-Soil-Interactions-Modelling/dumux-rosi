@@ -6,12 +6,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-name = "soybean"
-str_ = "sra2"  # "cyl"
+# name = "soybean"
+# str_ = "sra0"
+# days = 0.25 * 87.5
+
+name = "maize"
+str_ = "sra0"
+days = 0.25 * 95
+
+# name = "maize"
+# str_ = "cyl0"
+# days = 0.25 * 95
 
 fname = "soil_" + name + "_" + str_
 
-days = 0.5 * 87.5
 l = 200  # cm soil depth
 dx = 1  # cm resolution
 ylim = 99.5
@@ -44,7 +52,7 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 
 cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-im = ax.imshow(data, cmap = cmap_reversed, interpolation = 'bicubic', aspect = 'auto', extent = [0, days, -200, 0])
+im = ax.imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0, days, -200, 0])  #  interpolation = 'bicubic', interpolation = 'nearest',
 
 cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
 cb.ax.get_yaxis().labelpad = 30

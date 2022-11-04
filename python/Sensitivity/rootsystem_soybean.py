@@ -71,6 +71,8 @@ print("\nnumber of roots", len(rs.getRoots()))
 print("types", np.sum(orders == 1), np.sum(orders == 2), np.sum(orders == 3), np.sum(orders == 4), np.sum(orders == 5))
 print("number of nodes", len(ana.nodes))
 print("number of segments", len(ana.segments))
+print("volume", np.sum(ana.getParameter("volume")), "cm3")
+print("surface", np.sum(ana.getParameter("surface")), "cm2")
 
 print("\nunconfined")
 print(ana.getMinBounds(), "-", ana.getMaxBounds())
@@ -104,7 +106,7 @@ ana.write("results/soybean.vtp")  # rs.write writes polylines, ana.write writes 
 rs.write("results/soybean.rsml")
 
 # Plot, using vtk
-# vp.plot_roots(rs, "creationTime")
+vp.plot_roots(ana, "subType")
 # vp.plot_roots(ana, "creationTime")
 
 w = np.array(max_b) - np.array(min_b)

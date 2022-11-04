@@ -38,7 +38,7 @@ from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic so
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 
-def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type):
+def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil type is fixed and homogeneous 
@@ -64,7 +64,10 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type):
     s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
     # Water
     s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
-    s.setTopBC("noFlux")
+    if times:
+        s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
+    else:
+        s.setTopBC("noFlux")
     s.setBotBC("freeDrainage")
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
@@ -85,57 +88,76 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type):
     return s, soil
 
 
-def init_conductivities_const(r):
-    """ Hydraulic conductivities """
-    kr_const = 1.8e-4  # [1/day]
-    kx_const = 0.1  # [cm3/day]
+def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
+    """ Hydraulic conductivities  kr [1/day], kx [cm3/day] """
     r.setKr([0, kr_const, kr_const, kr_const, kr_const, kr_const])
     r.setKx([1.e3, kx_const, kx_const, kx_const, kx_const, kx_const])
 
 
-def init_conductivities_const_growth(r, dt = 1):
-    """ Hydraulic conductivities """
-    kr_const = 1.8e-4  # [1/day]
-    kx_const = 0.1  # [cm3/day]
-    kr = np.array([[-1e4, 1.e-9], [0., 1.e-9], [dt, kr_const], [1.e4, kr_const]])
+def init_conductivities_const_growth(r, kr_const = 1.8e-4, kx_const = 0.1):
+    """ Hydraulic conductivities kr [1/day], kx [cm3/day] """
+    kr = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr_const], [1.e4, kr_const]])
     kx = np.array([[0, kx_const], [1e4, kx_const]])
-    kr00 = np.array([[0., 0.]])
-    kx00 = np.array([[0., 1.e3]])
-
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
     r.setKrTables([kr00[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
                   [kr00[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])  # for each subtype
     r.setKxTables([kx00[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # for each subtype
 
 
-def init_dynamic_conductivities_growth(r, dt = 0.1):
-    """ same as init_conductivities but with a 1 day slope if segments emerge
-        @param dt     time span after emergence to reach full kr value
-    """
-    kr0 = np.array([[-1e4, 1.e-9], [0., 0.], [0, 1.14e-03], [2, 1.09e-03], [4, 1.03e-03], [6, 9.83e-04], [8, 9.35e-04], [10, 8.90e-04],
+def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1):
+    """ a simplified parametrisation, based on init_dynamic_conductivities_growth """
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+    dt0 = 30.
+    dt1 = 15.
+    kr_f = 0.5
+    kx_f = 5.
+    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr0], [dt0, kr_f * kr0]])  # primals
+    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr1], [dt1, kr_f * kr1]])  # laterals
+    kx0 = np.array([[0., kx0], [dt0, kx_f * kx0]])  # primals
+    kx1 = np.array([[0., kx1], [dt1, kx_f * kx1]])  # laterals
+    r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
+                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
+                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+
+
+def init_maize_conductivities(r):
+    """ Hydraulic conductivities for maize following Couvreur et al. (2012) originally from Doussan et al. (1998) """
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [8., 0.000181], [10, 0.0000648], [18, 0.0000648], [25, 0.0000173], [300, 0.0000173]])
+    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [10., 0.000181], [16, 0.0000173], [300, 0.0000173]])
+    kx0 = np.array([[0., 0.0000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
+    kx1 = np.array([[0., 0.0000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
+    r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
+                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
+                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+
+
+def init_lupine_conductivities(r):
+    """ Hydraulic conductivities for lupine following Zarebanadkouki et al. (2016) """
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+    kr0 = np.array([[-1.e4, 0.], [-0.1, 0.], [0., 1.14e-03], [2, 1.09e-03], [4, 1.03e-03], [6, 9.83e-04], [8, 9.35e-04], [10, 8.90e-04],
                     [12, 8.47e-04], [14, 8.06e-04], [16, 7.67e-04], [18, 7.30e-04], [20, 6.95e-04], [22, 6.62e-04], [24, 6.30e-04], [26, 5.99e-04],
                     [28, 5.70e-04], [30, 5.43e-04], [32, 5.17e-04]])
-    kr1 = np.array([[-1e4, 1.e-9], [0., 0.], [0, 4.11e-03], [1, 3.89e-03], [2, 3.67e-03], [3, 3.47e-03], [4, 3.28e-03],
+    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 4.11e-03], [1, 3.89e-03], [2, 3.67e-03], [3, 3.47e-03], [4, 3.28e-03],
                     [5, 3.10e-03], [6, 2.93e-03], [7, 2.77e-03], [8, 2.62e-03], [9, 2.48e-03], [10, 2.34e-03], [11, 2.21e-03],
                     [12, 2.09e-03], [13, 1.98e-03], [14, 1.87e-03], [15, 1.77e-03], [16, 1.67e-03], [17, 1.58e-03]])
-    for i in range(2, kr0.shape[0]):
-        kr0[i, 0] = kr0[i, 0] + dt
-        kr1[i, 0] = kr1[i, 0] + dt
-
-    kr00 = np.array([[0., 0.]])
-    kx00 = np.array([[0., 1.e3]])
-
-    kx0 = np.array([[0, 6.74e-02], [2, 7.48e-02], [4, 8.30e-02], [6, 9.21e-02], [8, 1.02e-01], [10, 1.13e-01],
+    kx0 = np.array([[0., 6.74e-02], [2, 7.48e-02], [4, 8.30e-02], [6, 9.21e-02], [8, 1.02e-01], [10, 1.13e-01],
                     [12, 1.26e-01], [14, 1.40e-01], [16, 1.55e-01], [18, 1.72e-01], [20, 1.91e-01], [22, 2.12e-01], [24, 2.35e-01],
                     [26, 2.61e-01], [28, 2.90e-01], [30, 3.21e-01], [32, 3.57e-01]])
-    kx1 = np.array([[0, 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03],
+    kx1 = np.array([[0., 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03],
                     [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03],
                     [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
-
     r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
-                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])  # [cm^3/day]
+                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
-                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])  # [1/day]
+                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, l = 50 , a = 0.05):
@@ -164,7 +186,31 @@ def create_singleroot(ns = 100, l = 50 , a = 0.05):
     return XylemFluxPython(rs)
 
 
-def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname):
+def set_all_sd(rs, s):
+    """ # sets all standard deviation to a percantage, i.e. value*s """
+    for p in rs.getRootRandomParameter():
+        p.a_s = p.a * s
+        p.lbs = p.lb * s
+        p.las = p.la * s
+        p.lns = p.ln * s
+        p.lmaxs = p.lmax * s
+        p.rs = p.r * s
+        p.thetas = p.theta * s
+        p.rlts = p.rlt * s  # no used
+        p.ldelays = p.ldelay * s
+    seed = rs.getRootSystemParameter()  # SeedRandomParameter
+    seed.firstBs = seed.firstB * s
+    seed.delayBs = seed.delayB * s
+    seed.maxBs = seed.maxB * s
+    seed.firstSBs = seed.firstSB * s
+    seed.delaySBs = seed.delaySB * s
+    seed.delayRCs = seed.delayRC * s
+    seed.nCs = seed.nCs * s
+    seed.nzs = seed.nzs * s
+    # todo seed position s
+
+
+def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     global picker  # make sure it is not garbage collected away...
@@ -173,26 +219,42 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname):
         r = XylemFluxPython(fname)
     elif fname.endswith(".xml"):
         if rank == 0:
-            seed = np.random.randint(0, 1e6)
+            if stochastic:
+                seed = np.random.randint(0, 1e6)
+            else:
+                seed = 1  # always the same random seed
         else:
             seed = None
         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
         rs = pb.MappedRootSystem()
         rs.setSeed(seed)
         rs.readParameters(fname)
-        rs.initialize()
+        if not stochastic:
+            set_all_sd(rs, 0.)
+        rs.initializeDB(4, 5)
         rs.simulate(1., True)
         r = XylemFluxPython(rs)
 
+        # print("HERE***********************************")
+        # print([s.x for s in r.rs.segments])
+        # print([s.y for s in r.rs.segments])
+        # # for i in range(0, len(r.rs.segments)): # ????????
+        # #     print(r.rs.seg2cell[i])
+
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+
+    # print("HERE***********************************")
+    # print([s.x for s in r.rs.segments])
+    # print([s.y for s in r.rs.segments])
+    # ss
     comm.barrier()
-    print("survived setRectangularGrid", rank)
+    # print("survived setRectangularGrid", rank)
 
     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     comm.barrier()
-    print("survived setSoilGrid", rank)
+    # print("survived setSoilGrid", rank)
 
     if rank == 0:
         init_conductivities_const(r)

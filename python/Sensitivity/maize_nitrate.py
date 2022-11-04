@@ -11,6 +11,7 @@ import numpy as np
 import scenario_setup as scenario
 from rhizo_models import RhizoMappedSegments
 from xylem_flux import sinusoidal2
+import evapotranspiration as evap
 import cyl3
 
 """
@@ -22,17 +23,22 @@ min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
 max_b = [37.5, 7.5, 0.]
 cell_number = [1, 1, 200]  # 1 cm3
 
-theta_r = 0.025  # sandy loam
-theta_s = 0.403
-alpha = 0.0383  # (cm-1) soil
-n = 1.3774
-k_sat = 60.  # (cm d-1)
-soil_ = [theta_r, theta_s, alpha, n, k_sat]
+soil0 = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
+soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
+soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
+soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
+soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
+soil_ = soil0
 
-trans = 0.6 * (75 * 15)  # cm3/day
+area = 75 * 15  # cm2
+trans = 0.6 * area  # cm3/day
 
-sim_time = 7  # 95  #  [day]
+sim_time = 0.25 * 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
+
+range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
+x_, y_ = evap.net_infiltration_table('data/95.pkl', range_)
+trans_wheat = evap.get_transpiration('data/95.pkl', range_, area)
 
 """ rhizosphere model parameters """
 wilting_point = -15000  # cm
@@ -42,11 +48,15 @@ mode = "dumux_dirichlet"
 
 """ initialize """
 start_time = timeit.default_timer()
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180, type = 2)
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -130, type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-xml_name = "Zeamays_synMRI.xml"  # root growth model parameter file
+xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
+scenario.init_maize_conductivities(r)
+
+trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt)  # Guilaumes questions - 0.01
+trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / (.5 * 95))  # growing potential transpiration
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = [], [], [], [], [], []
 
@@ -55,14 +65,11 @@ for i in range(0, int(sim_time)):
     print("Day", i)
 
     r.rs.simulate(1.)  # simulate for 1 day
-    rs_age = i
+    rs_age = i + 1
 
     rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
 
-    trans_f1 = lambda age, dt:-trans * sinusoidal2(age, dt)  # Guilaumes questions - 0.01
-    trans_f2 = lambda age, dt:-trans * sinusoidal2(age, dt) * ((rs_age + age) / (.5 * 95))  # growing potential transpiration
-
-    psi_x, psi_s, sink, x, y, psi_s2 = cyl3.simulate_const(s, rs, trans, 1., dt, trans_f2)  # trans_f
+    psi_x, psi_s, sink, x, y, psi_s2 = cyl3.simulate_const(s, rs, 1., dt, trans_wheat, rs_age)  # trans_f
 
     # collect results
     if rank == 0:
@@ -70,7 +77,7 @@ for i in range(0, int(sim_time)):
         psi_s_.extend(psi_s)
         sink_.extend(sink)
         x = np.array(x)
-        x_.extend(x + np.ones(x.shape) * rs_age)
+        x_.extend(x)
         y_.extend(y)
         psi_s2_.extend(psi_s2)
 
@@ -79,7 +86,7 @@ water = s.getWaterVolume()
 """ output """
 if rank == 0:
 
-    scenario.write_files("maize_cyl2", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+    scenario.write_files("maize_cyl0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
     print("\ntotal uptake", water0 - water, "cm3")
     print ("Overall simulation wall time", timeit.default_timer() - start_time, " s")
     print("fin")

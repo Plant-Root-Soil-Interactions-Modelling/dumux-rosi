@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 import plantbox as pb
 import vtk_plot as vp
+from xylem_flux import *
+import scenario_setup as scenario
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -26,9 +28,9 @@ colors = prop_cycle.by_key()['color']
 min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
 max_b = [37.5, 7.5, 0.]
 cell_number = [75, 15, 200]  # 1 cm3
-simtime = 0.1 * 95  # between 90-100 days
+simtime = 35  # 95  # between 90-100 days
 
-rs = pb.RootSystem()
+rs = pb.MappedRootSystem()  # RootSystem
 
 # Open plant and root parameter from a file
 path = "../../../CPlantBox/modelparameter/rootsystem/"
@@ -45,62 +47,118 @@ rs.readParameters(path + name + ".xml")
 
 srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
 print(srp[0])
-srp[0].delayB = 1.5
-srp[0].maxB = 30
+# print("original seminals")  # between two and six seminal root
+# print("first", srp[0].firstB)
+# print("delay", srp[0].delayB)
+# print("max", srp[0].maxB)
+# print("original shootborne")  # The maize rootstock develops ∼70 shoot-borne roots in the course of development (Hoppe et al., 1986)
+# print("first", srp[0].firstSB)
+# print("delay", srp[0].delaySB)
+# print("delayRC", srp[0].delayRC)
+# print("number of crowns", srp[0].nC)
+# print("shift in crowns", srp[0].nz)
+# print()
 
+srp[0].seedPos.z = -3.
+
+""" Seminal roots """
+srp[0].firstB = 0.5
+srp[0].delayB = 0.1
+srp[0].maxB = 4  # between two and six seminal root
+
+""" Shoot borne roots (brace roots, nodal roots) """
+srp[0].firstSB = 1
+srp[0].delaySB = 1.5
+srp[0].delayRC = 15 * 1.5
+srp[0].nC = 15  # number of roots per root crown
+srp[0].nz = 0.1
+
+""" root parameters """
+# add shoot borne parameter set (copy subType 4)
 rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
-for p in rrp:
-    print("\nSubType", p.subType)
-    print("Lmax", p.lmax)
-    print("Radius", p.a)
-    print("dx", p.dx, "cm")
-    print("changed to 0.5 cm to be faster...")
+rp5 = rrp[4].copy(rs)
+rp5.subType = 5
+rp5.name = "shootborne"
+rs.setOrganRandomParameter(rp5)
+print(rp5)
+
+print(rrp[2].lmax, rrp[2].lmaxs)
+rrp[2].lmaxs = rrp[2].lmax
+# rrp[4].lmax = 75  # wild guess
+# rrp[4].theta = 85. / 180 * np.pi  # wild guess
+# rrp[4].ln = 0.2
+# rrp[4].r = 0.5
+#
+# rrp[2].ldelay = 6
+#
+# rrp[2].r = 0.5
+# rrp[3].r = 0.5
+
+for i, p in enumerate(rrp[1:]):
+    p.la = p.ln  # Never use la for delay based
+
+# scenario.set_all_sd(rs, 0)
+rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
+for i, p in enumerate(rrp[1:]):
+    if i == 0:
+        p.theta = 0
+        p.thetas = 0
+    print("\nsubType", p.subType, p.name)
+    print("lmax", p.lmax)
+    print("ln", p.ln)
+    print("lb", p.lb)
+    print("la", p.la)
+    # print("radius", p.a)
+    print("initial growth rate", p.r)
+    # print("theta", p.theta / np.pi * 180)
+    print("delay", p.ldelay)
+    print("lnk", p.lnk)
+    p.dxMin = 0.
+    # print(p.dxMin)
+    # print("successor", p.successor)
     p.dx = 0.5  # probably enough
-    p.dxMin = 0.05
+    # p.dxMin = 0.05
 
-rrp[2].lmax *= 2
-
-#
-# # print(rrp[0])
-# rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
-# # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
-# # print()
-#
-# rs.writeParameters(name + "_nobasals_modified" + ".xml")  # remember the modifications
-
-# Initialize
-print()
+""" simulation """
 rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-rs.initialize()
-
-# Simulate
+rs.initializeLB()
+rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
+print("'Resulting number of shoot segments", len(rs.getShootSegments()))  # due to crown root nodes
 rs.simulate(simtime, True)
 
 # Analyse
-ana = pb.SegmentAnalyser(rs)
+r = XylemFluxPython(rs)
+scenario.init_maize_conductivities(r)
+ana = pb.SegmentAnalyser(rs.mappedSegments())
+ana.addConductivities(r, simtime)
+
+vp.plot_roots(rs, "subType", name)
+# vp.plot_roots(ana, "kr", name + "_kr")
+# vp.plot_roots(ana, "kx", name + "_kx")
+# dd
 
 orders = np.array(rs.getParameter("subType"))
 print("\nnumber of roots", len(rs.getRoots()))
 print("types", np.sum(orders == 1), np.sum(orders == 2), np.sum(orders == 3), np.sum(orders == 4), np.sum(orders == 5))
 print("number of nodes", len(ana.nodes))
 print("number of segments", len(ana.segments))
-
-print("\nunconfined")
-print(ana.getMinBounds(), "-", ana.getMaxBounds())
+print("volume", np.sum(ana.getParameter("volume")), "cm3")
+print("surface", np.sum(ana.getParameter("surface")), "cm2")
+print("\nunconfined", ana.getMinBounds(), "-", ana.getMaxBounds())
 
 # w = np.array(max_b) - np.array(min_b)
 # ana.mapPeriodic(w[0], w[1])
 # print("periodic")
 # print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
+""" RLD """
 dz = 0.5
-exact = True
+exact = False
 domain_size = np.array(max_b) - np.array(min_b)
 slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
 z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
 rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
 rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
-
 fig, ax = plt.subplots(1, 1, figsize = (10, 10))
 ax = [ax]
 ax[0].plot(rld, z_)
@@ -111,15 +169,14 @@ ax[0].set_ylabel("depth [cm]")
 # ax[1].set_ylabel("depth [cm]")
 plt.tight_layout()
 plt.savefig("results/" + name + "_rld" + ".png")
-plt.show()
+plt.show()  # e.g. compare to Zhuang et al. 2001
 
-# Export final results
+""" export """
 ana.write("results/maize.vtp")  # rs.write writes polylines, ana.write writes segments
 rs.write("results/maize.rsml")
 
-# # Plot, using vtk
 # pd = vp.segs_to_polydata(ana, 1., ["creationTime", "radius", "organType"])
-# plantActor, scalar_bar = vp.plot_roots(ana, "creationTime", name, False)
+# plantActor, scalar_bar = vp.plot_roots(ana, "kr", name, False)
 # iren = vp.render_window(plantActor, name, scalar_bar, pd.GetBounds())
 # renWin = iren.GetRenderWindow()
 # vp.write_png(renWin, name)
