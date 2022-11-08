@@ -59,7 +59,7 @@ def net_infiltration_table(filename, range_):
     return x_, y_
 
 
-def get_transpiraton_beers(filename, range_, time, lai_f, Kc):
+def get_transpiration_beers(filename, range_, area, time, lai_f, Kc):
 
     with open(filename, 'rb') as f:
         data = pickle.load(f)
@@ -89,7 +89,7 @@ def get_transpiraton_beers(filename, range_, time, lai_f, Kc):
 
     trans = lambda t, dt:-tpot[int((t + dt / 2) * 24)] * area  # day -> hour
 
-    return tpot
+    return trans
 
 
 def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
@@ -122,8 +122,8 @@ def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
     tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot
     evap = -evap
+    net_inf = precip + evap
 
-    # net_inf = precip + evap
     # # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
     # # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
     # ax[1].plot(t_, precip, 'r', label = "precipitation")

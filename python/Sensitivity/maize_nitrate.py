@@ -28,17 +28,19 @@ soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
 soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
 soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
 soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
-soil_ = soil0
+soil_ = soil5
+
+Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
 
 area = 75 * 15  # cm2
 trans = 0.6 * area  # cm3/day
 
-sim_time = 0.25 * 95  #  [day]
+sim_time = 7  # 0.25 * 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
-range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
-x_, y_ = evap.net_infiltration_table('data/95.pkl', range_)
-trans_wheat = evap.get_transpiration('data/95.pkl', range_, area)
+range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
+x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 95, evap.lai_maize, Kc_maize)
+trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
 
 """ rhizosphere model parameters """
 wilting_point = -15000  # cm
@@ -55,10 +57,13 @@ xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 scenario.init_maize_conductivities(r)
 
+if rank == 0:
+    r.test()  # sanity checks
+
 trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt)  # Guilaumes questions - 0.01
 trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / (.5 * 95))  # growing potential transpiration
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = [], [], [], [], [], []
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, soil_c_ = [], [], [], [], [], [], []
 
 for i in range(0, int(sim_time)):
 
@@ -69,10 +74,9 @@ for i in range(0, int(sim_time)):
 
     rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
 
-    psi_x, psi_s, sink, x, y, psi_s2 = cyl3.simulate_const(s, rs, 1., dt, trans_wheat, rs_age)  # trans_f
+    psi_x, psi_s, sink, x, y, psi_s2, soil_c = cyl3.simulate_const(s, rs, 1., dt, trans_maize, rs_age)
 
-    # collect results
-    if rank == 0:
+    if rank == 0:  # collect results
         psi_x_.extend(psi_x)
         psi_s_.extend(psi_s)
         sink_.extend(sink)
@@ -80,13 +84,14 @@ for i in range(0, int(sim_time)):
         x_.extend(x)
         y_.extend(y)
         psi_s2_.extend(psi_s2)
+        soil_c_.extend(soil_c)
 
 water = s.getWaterVolume()
 
 """ output """
 if rank == 0:
 
-    scenario.write_files("maize_cyl0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+    scenario.write_files("maize_cyl5", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, soil_c_)
     print("\ntotal uptake", water0 - water, "cm3")
     print ("Overall simulation wall time", timeit.default_timer() - start_time, " s")
     print("fin")

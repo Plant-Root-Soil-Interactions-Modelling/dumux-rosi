@@ -60,6 +60,13 @@ public:
     }
 
     /**
+     * Gets the concentration at the inner boundary [cm]
+     */
+    double getInnerSolutes(int shift = 0) {
+        return this->getSolutionHeadAt(innerIdx+shift,1);
+    }
+
+    /**
      * Changes the exact root system BC (for coupling) in initialized problem (e.g. within the simulation loop)
      * @parm params 	x0, x1, kr, kx, length
      */
@@ -116,6 +123,7 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
+   .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)

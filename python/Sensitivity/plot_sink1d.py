@@ -7,7 +7,7 @@ import numpy as np
 # maize_cyl 5% simtime, maize_sra 100% simtime
 
 name = "soybean"
-str_ = ["sra0"]
+str_ = ["sra5"]
 
 days = 0.25 * 87.5  # soybean
 # days = 0.5 * 95  #  maize

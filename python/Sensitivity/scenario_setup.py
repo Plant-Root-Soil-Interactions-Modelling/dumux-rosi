@@ -49,35 +49,44 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     """
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
-    # if (cell_number[0] == 1 or cell_number[1] == 1):  # 1D
-    #     periodic = False
-    # else:  # 2D or 3D
-    periodic = True
+
     if type == 1:
-        s = RichardsWrapper(RichardsSP())  # water
+        s = RichardsWrapper(RichardsSP())  # water only
     elif type == 2:
         s = RichardsWrapper(RichardsNCSP())  # water and one solute
     else:
         print("choose type, 1 = Richards, 2 = RichardsNCSP")
-    # s = RichardsWrapper(RichardsSP()) # water only
+
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
-    # Water
+    s.createGrid(min_b, max_b, cell_number, True)  # [cm]
+
+    # Initial conditions
+    if type == 2:  # solute IC
+        z_ = [0., -80., -80., -200.]
+        v_ = [2.e-5, 2.e-5, 1.e-5, 1.e-5]  # [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
+        s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
     s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
+
+    # BC
     if times:
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
     s.setBotBC("freeDrainage")
+
+    if type == 2:  # solute BC
+        sol_times = [0., 1., 1., 2., 2., 5., 5., 6., 6., 1.e3]
+        sol_influx = -np.array([0., 0., 1.e-5, 1.e-5, 0., 0., 1.e-5, 1.e-5, 0., 0.])
+        s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
+        # s.setTopBC_solute("constantFlux", 0.)
+        s.setBotBC_solute("outflow", 0.)
+
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+
     # Solutes
-    s.setParameter("Component.MolarMass", "3.1e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
-    s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-9")  # m2 s-1
-    s.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
-    s.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute Type)
-    s.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
-    s.setParameter("Soil.BC.Bot.CValue", "0.")
+    s.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
+    s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
     # s.setParameter("Component.BufferPower", "140") # amonium has around 50?, no buffering for nitrate (in Kirk & Kronzuchiker 2005)
 
     s.initializeProblem()
@@ -233,6 +242,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             set_all_sd(rs, 0.)
         rs.initializeDB(4, 5)
         rs.simulate(1., True)
+        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         r = XylemFluxPython(rs)
 
         # print("HERE***********************************")
@@ -261,13 +271,15 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     return r
 
 
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s):
+def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, conc = None):
     """  saves numpy arrays ass npy files """
     np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
     np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
     np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
     np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
     np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
+    if conc is not None:
+        np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
 
 
 def simulate_const(s, r, trans, sim_time, dt):

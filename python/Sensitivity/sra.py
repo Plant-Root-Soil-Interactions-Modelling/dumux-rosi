@@ -91,7 +91,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         root_interface = soil_root_interface  # function defined above
 
     """ set defalut potential transpiration """
-    if not trans_f:
+    if trans_f is None:
         trans_f = lambda age, dt:-trans * sinusoidal2(age, dt)
 
     start_time = timeit.default_timer()

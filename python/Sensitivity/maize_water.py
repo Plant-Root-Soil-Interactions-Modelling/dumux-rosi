@@ -25,8 +25,10 @@ soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
 soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
 soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
 soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
-table_name = "envirotype0"
-soil_ = soil0
+table_name = "envirotype5"
+soil_ = soil5
+
+Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
 
 area = 75 * 15  # cm2
 trans = 0.6 * area  # cm3/day (75 * 15 = 1125 cm2)
@@ -34,41 +36,18 @@ trans = 0.6 * area  # cm3/day (75 * 15 = 1125 cm2)
 sim_time = 0.25 * 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
-range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
-x_, y_ = evap.net_infiltration_table('data/95.pkl', range_)
-trans_wheat = evap.get_transpiration('data/95.pkl', range_, area)
+range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']  # 95 - 88 = 7
+x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 95, evap.lai_maize, Kc_maize)
+trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
 
 """ initialize """
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -130, type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
+p_top = -5000
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 
 xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 scenario.init_maize_conductivities(r)
 
-# r.rs.simulate(sim_time)
-# ana = pb.SegmentAnalyser(r.rs.mappedSegments())  ############# <-----
-# ana.addConductivities(r, sim_time)
-# ana.addCellIds(r.rs)
-# print("number of segments", len(r.rs.segments))
-# print(len(r.rs.seg2cell))
-# print(r.rs.seg2cell)
-# print([s.x for s in r.rs.segments])
-# print([s.y for s in r.rs.segments])
-# print([n.z for n in r.rs.nodes])
-# # for i in range(0, len(r.rs.segments)):
-# #     print(r.rs.seg2cell[i])
-#
-segments = r.rs.getShootSegments()
-print([s.x for s in segments])
-print([s.y for s in segments])
-print([n.z for n in r.rs.nodes])
-for i in range(0, len(segments)):
-    print(r.rs.seg2cell[i])
-# # vp.plot_roots(rs, "creationTime", name)
-# # vp.plot_roots(ana, "kr", "_kr")
-# # vp.plot_roots(ana, "kx", "_kx")
-# # vp.plot_roots(ana, "cell_id", "_kx")
-#
 # # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
 # # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
 
@@ -86,7 +65,7 @@ water0 = s.getWaterVolume()  # total initial water volume in domain
 
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_wheat)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_maize)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()
@@ -94,7 +73,7 @@ water = s.getWaterVolume()
 """ output """
 if rank == 0:
 
-    scenario.write_files("maize_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+    scenario.write_files("maize_sra5", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
     print("\ntotal uptake", water0 - water, "cm3")
     print("fin")
