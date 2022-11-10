@@ -241,7 +241,7 @@ public:
 					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
-						// std::cout << "in:" << f <<", " << imax <<"\n";
+//						 std::cout << "in:" << f <<", " << imax <<"\n";
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)

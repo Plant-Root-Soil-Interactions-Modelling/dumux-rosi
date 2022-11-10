@@ -111,18 +111,17 @@ public:
         if (bcSTopType_[0]==managed) {
             soluteInput_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
             soluteInput_.setVariableScale(1./(24.*60.*60.)); // s -> day
-            soluteInput_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s) ################ TODO
+            soluteInput_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 //            for (int i=0; i<27; i++) {
 //                std::cout << soluteInput_.f(i*0.333*24.*60.*60.) << "\n";
 //            }
         }
 		// IC
 		initialSoilP_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
-		initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); //
+		initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); // kg/m2
 //		for (int i=0; i<100; i++) {
 //		    std::cout << initialSoilC_.f(-i*0.02) << "\n";
 //		}
-		// initialSoilC_.setFunctionScale(1.e3/rho_ /* = 1*/); // [g cm-3] -> [kg / kg]
 
 		// Uptake params
 		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/(10./24./3600.))/24./3600.*1e1; //  [g cm-2 day-1] -> [kg m-2 s-1]

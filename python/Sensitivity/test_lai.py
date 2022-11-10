@@ -9,10 +9,10 @@ def sigmoid(x, L , x0, k, b):
 
 
 times_soybean = [20., 30, 50, 60, 70, 80, 90 ]
-lai_soybean = [0.2, 0.3, 3., 4.1, 6.5, 8., 7. ]  # Priscila et al. 2013
+lai_soybean = [0.2, 0.3, 3., 4.1, 6.5, 8., 7. ]  # Priscila et al. (2013)
 
 times_maize = [0., 20, 40, 60, 80, 100]
-lai_maize = [0.01, 0.5, 3.1, 4., 3.5, 2.5 ]  # Boedhram et al. 2001
+lai_maize = [0.01, 0.5, 3.1, 4., 3.5, 2.5 ]  # Boedhram et al. (2001)
 
 p0_soy = [max(lai_soybean), np.median(times_soybean), 1, min(lai_soybean)]  # this is an mandatory initial guess
 p0_maize = [max(lai_maize), np.median(times_maize), 1, min(lai_maize)]
@@ -30,14 +30,14 @@ plt.plot(times_soybean, lai_soybean, "*")
 plt.plot(x1_, y1_)
 plt.title("Soybean")
 plt.xlabel("Time")
-plt.xlabel("LAI")
+plt.ylabel("LAI")
 plt.show()
 
 plt.plot(times_maize, lai_maize, "*")
 plt.title("Maize")
 plt.plot(x2_, y2_)
 plt.xlabel("Time")
-plt.xlabel("LAI")
+plt.ylabel("LAI")
 plt.show()
 
 print("soybean")

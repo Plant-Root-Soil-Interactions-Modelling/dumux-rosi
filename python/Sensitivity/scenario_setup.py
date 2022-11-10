@@ -63,7 +63,9 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     # Initial conditions
     if type == 2:  # solute IC
         z_ = [0., -80., -80., -200.]
-        v_ = [2.e-5, 2.e-5, 1.e-5, 1.e-5]  # [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
+        v_ = np.array([1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4])  # kg / m3 (~4.e-4)
+        # [1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4]  # kg/m3 [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
+        # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3)
         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
     s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
 
@@ -75,8 +77,12 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     s.setBotBC("freeDrainage")
 
     if type == 2:  # solute BC
-        sol_times = [0., 1., 1., 2., 2., 5., 5., 6., 6., 1.e3]
-        sol_influx = -np.array([0., 0., 1.e-5, 1.e-5, 0., 0., 1.e-5, 1.e-5, 0., 0.])
+        v1 = 0.33 * 62  # g/m2
+        v2 = 0.66 * 62  # g/m2
+        v1 = v1 * 1.e-4  # g/cm2
+        v2 = v2 * 1.e-4  # g/cm2
+        sol_times = [0., 15., 15., 16., 16., 28., 28., 29., 29., 1.e3]
+        sol_influx = -np.array([0., 0., v1, v1, 0., 0., v2, v2, 0., 0.])  # g/(cm2 day)
         s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
         # s.setTopBC_solute("constantFlux", 0.)
         s.setBotBC_solute("outflow", 0.)
@@ -85,9 +91,10 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 
     # Solutes
-    s.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
-    s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
-    # s.setParameter("Component.BufferPower", "140") # amonium has around 50?, no buffering for nitrate (in Kirk & Kronzuchiker 2005)
+    if type == 2:
+        s.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
+        s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
+        # s.setParameter("Component.BufferPower", "140") # amonium has around 50?, no buffering for nitrate (in Kirk & Kronzuchiker 2005)
 
     s.initializeProblem()
     wilting_point = -15000
@@ -271,7 +278,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     return r
 
 
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, conc = None):
+def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, conc = None, c_ = None):
     """  saves numpy arrays ass npy files """
     np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
     np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
@@ -280,6 +287,8 @@ def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, conc = None)
     np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
     if conc is not None:
         np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
+    if c_ is not None:
+        np.save('results/nitrate_' + file_name, np.array(c_))  # soil potential per cell [cm]
 
 
 def simulate_const(s, r, trans, sim_time, dt):

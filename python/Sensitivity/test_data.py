@@ -8,6 +8,9 @@ from evapotranspiration import *
 with open('data/95.pkl', 'rb') as f:
     data = pickle.load(f)
 
+area_maize = 75 * 15  # cm2
+area_soybean = 38 * 5  # cm2
+
 # print(type(data))
 # print(data)
 
@@ -44,9 +47,10 @@ print(data.info())
 Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
 Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
 
-range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
-# get_transpiraton_beers('data/95.pkl', range_, 87.5, lai_f = lai_soybean, Kc = Kc_soybean)
-get_transpiraton_beers('data/95.pkl', range_, 87.5, lai_f = lai_maize, Kc = Kc_maize)
+range_soybean = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
+range_maize = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
+get_transpiration_beers('data/95.pkl', range_soybean, area_soybean, 87.5, lai_f = lai_soybean, Kc = Kc_soybean)
+get_transpiration_beers('data/95.pkl', range_maize, area_maize, 95, lai_f = lai_maize, Kc = Kc_maize)
 
 # net_infiltration_table_beers('data/95.pkl', range_, 87.5, lai_f = lai_soybean, Kc = Kc_soybean)
 # net_infiltration_table_beers('data/95.pkl', range_, 87.5, lai_f = lai_maize, Kc = Kc_maize)

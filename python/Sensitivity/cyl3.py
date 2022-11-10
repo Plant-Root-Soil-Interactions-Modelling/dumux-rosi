@@ -8,9 +8,10 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 from xylem_flux import sinusoidal2
 import vtk_plot as vtk
 import plantbox as pb
+import evapotranspiration as evap
 
 
-def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
+def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -37,7 +38,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
     cc = s.getSolution(1)  # UNITS?
     cc = comm.bcast(cc, root = 0)  # soil part might run parallel
     comm.barrier()
-    ns = len(rs.segments)
+    segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
+    seg2cell = rs.rs.rs.seg2cell
+    ns = len(segs)
     dcyl = int(np.floor(ns / max_rank))
     if rank + 1 == max_rank:
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)), cc)
@@ -50,20 +53,22 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
     comm.barrier()
 
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    rsx = comm.bcast(rsx, root = 0)  # Soil part runs parallel
-    print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx))
+    if type == 1:
+        rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
+    else:
+        rsc = rs.get_inner_solutes(1)  # kg/m3
+
+    print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx), np.min(rsc), np.max(rsc))
     if rank == 0:
         rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
     else:
         rx = None
 
-    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_ = [], [], [], [], [], [], []  # for post processing
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ = [], [], [], [], [], [], [], []  # for post processing
 
     cell_volumes = s.getCellVolumes()  # cm3
     cell_volumes = comm.bcast(cell_volumes, root = 0)
     net_flux = np.zeros(cell_volumes.shape)
-
-    segs = r.rs.segments
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
@@ -78,7 +83,11 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
         wall_xylem = timeit.default_timer()
 
         rsx = rs.get_inner_heads(1)  # matric potential at the root soil interface, 2nd node  [cm]
-        rsc = rs.get_inner_solutes(1)  # TODO UNITS !
+        if type == 1:
+            rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
+            # print(np.min(rsc), np.max(rsc))
+        else:
+            rsc = rs.get_inner_solutes(1)  # kg/m3
         comm.barrier()
         if rank == 0:
             rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)  # soil_k = soil_k
@@ -86,16 +95,16 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
             # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
             # print("*", end = "")
-
-            seg_sol_fluxes = np.array(r.solute_fluxes(rsc))
+            seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [cm3/day]
         else:
             rx = None
             seg_fluxes = None
-        comm.barrier()
+            seg_sol_fluxes = None
+
         rx = comm.bcast(rx, root = 0)
-        # print("*", end = "")
         seg_fluxes = comm.bcast(seg_fluxes, root = 0)
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
+        # print("*", end = "")
 
         # if rank == 0:
         #     print("]", end = "")
@@ -126,9 +135,10 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
         # TODO mass source
 
         soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
-        soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)
+        soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # # [cm3/day]
+        evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-5)
         s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in moduels/richards.py
-        # s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)
+        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [cm3/day], in moduels/richards.py
         s.solve(dt)  # in modules/solverbase.py
 
         wall_macro = timeit.default_timer() - wall_macro
@@ -181,6 +191,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
         #     print("[r", end = "")
 
         sx = s.getSolutionHead()
+        cc = s.getSolution(1)  # [kg/m3]
+        cc = comm.bcast(cc, root = 0)  # soil part might run parallel
+        cc = cc[:, 0]
         if rank == 0:
             sx = sx[:, 0]
             sink = np.zeros(sx.shape)
@@ -189,9 +202,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
             sink_.append(sink)  # cm3/day (per soil cell)
             x_.append(rs_age + t)  # day
             y_.append(np.sum(sink))  # cm3/day
+            c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
             psi_s2_.append(sx)  # cm (per soil cell)
-            cc = s.getSolution(1)[:, 0]  # UNITS?
-            soil_c_.append(cc)
+            soil_c_.append(cc)  # [kg/m3]
 
         if i % skip == 0 and rank == 0:
             print("{:g}/{:g} iterations".format(i, N), "time", rs_age + t, "wallt times",
@@ -200,7 +213,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
                   wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_netfluxes / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   "segments:", rs.getNumberOfSegments(), "root collar:", rx[0], "\n")
-            print("rsx", np.min(rsx), np.max(rsx), "trans", trans_f(rs_age + t, dt), "time", rs_age + t)
+            print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc), "trans", trans_f(rs_age + t, dt))
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segment)
 
@@ -210,5 +223,5 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age):
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, soil_c_
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, soil_c_, c_
 

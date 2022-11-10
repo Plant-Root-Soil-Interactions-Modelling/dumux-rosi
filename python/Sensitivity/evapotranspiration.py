@@ -142,3 +142,16 @@ def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
 
     return x_, y_
 
+
+def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-5):
+    """
+    adds a consant nitrate source @param nit_flux due to nitrification [cm3/day] 
+    """
+    z_ = np.linspace(-0.5, -89.5, 90)
+    for z in z_:
+        i = s.pick([0, 0, z])  # cell index
+        if i in soil_sol_fluxes:
+            soil_sol_fluxes[i] += nit_flux
+        else:
+            soil_sol_fluxes[i] = nit_flux
+

@@ -27,7 +27,7 @@ colors = prop_cycle.by_key()['color']
 min_b = [-19, -2.5, -200.]  # Domain [38 cm Reihe, 6 cm Pflanzen]
 max_b = [19, 2.5, 0.]
 cell_number = [38, 5, 200]  # 1 cm3
-simtime = 0.25 * 87.5  # between 75-100 days
+simtime = 1. * 87.5  # between 75-100 days
 
 rs = pb.RootSystem()
 
@@ -65,6 +65,7 @@ rs.simulate(simtime, True)
 
 # Analyse
 ana = pb.SegmentAnalyser(rs)
+ana.addAge(simtime)
 
 orders = np.array(rs.getParameter("subType"))
 print("\nnumber of roots", len(rs.getRoots()))
@@ -82,31 +83,31 @@ print(ana.getMinBounds(), "-", ana.getMaxBounds())
 # print("periodic")
 # print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
-dz = 0.5
-exact = False
-domain_size = np.array(max_b) - np.array(min_b)
-slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
-z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
-rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
-rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
-
-fig, ax = plt.subplots(1, 1, figsize = (10, 10))
-ax = [ax]
-ax[0].plot(rld, z_)
-ax[0].set_xlabel("root length density [cm / cm3]")
-ax[0].set_ylabel("depth [cm]")
-# ax[1].plot(rsd, z_)
-# ax[1].set_xlabel("root surface density [cm2 / cm3]")
-# ax[1].set_ylabel("depth [cm]")
-plt.tight_layout()
-plt.show()
+# dz = 0.5
+# exact = False
+# domain_size = np.array(max_b) - np.array(min_b)
+# slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
+# z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
+# rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
+# rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
+#
+# fig, ax = plt.subplots(1, 1, figsize = (10, 10))
+# ax = [ax]
+# ax[0].plot(rld, z_)
+# ax[0].set_xlabel("root length density [cm / cm3]")
+# ax[0].set_ylabel("depth [cm]")
+# # ax[1].plot(rsd, z_)
+# # ax[1].set_xlabel("root surface density [cm2 / cm3]")
+# # ax[1].set_ylabel("depth [cm]")
+# plt.tight_layout()
+# plt.show()
 
 # Export final results
 ana.write("results/soybean.vtp")  # rs.write writes polylines, ana.write writes segments
 rs.write("results/soybean.rsml")
 
 # Plot, using vtk
-vp.plot_roots(ana, "subType")
+vp.plot_roots(ana, "age")
 # vp.plot_roots(ana, "creationTime")
 
 w = np.array(max_b) - np.array(min_b)

@@ -76,19 +76,19 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.dx2 = []
         if self.mode == "dumux":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, False, False))
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, False))
         elif self.mode == "dumux_exact":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True, False, False))
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True, False))
         elif self.mode == "dumux_dirichlet":
+            for i in eidx:
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
+        elif self.mode == "dumux_dirichlet_nc":
             for i in eidx:
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
         elif self.mode == "dumux_nc":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True, False))
-        elif self.mode == "dumux_nc_exact":
-            for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True, True, False))  # not implemented yet
+                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
         elif self.mode == "python" or self.mode == "python_exact":
             for i in eidx:
                 x0 = x[self.seg2cell[i]]
@@ -108,9 +108,9 @@ class RhizoMappedSegments(pb.MappedSegments):
             cyl.createGrid1d(points)
             self.dx2.append(0.5 * (points[1] - points[0]))
             cyl.setHomogeneousIC(x)  # cm pressure head
-            cyl.setICZ_solute(c)  # UNITS?        cyl.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
+            cyl.setICZ_solute(c)  # [kg/m2]
             cyl.setInnerBC("pressure", 0.)  # [cm/day]
-            cyl.setInnerBC_solute("constantConcentration", c[0])  # [cm/day]
+            cyl.setInnerBC_solute("constantConcentration", c[0])  # [kg/m2]
             cyl.setOuterBC("fluxCyl", 0.)
             cyl.setOuterBC_solute("fluxCyl", 0.)
 
@@ -291,8 +291,24 @@ class RhizoMappedSegments(pb.MappedSegments):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 l = self.seg_length[j]
-                cyl.setInnerMatricPotential(rx[i])  # [cm3/day] -> [cm /day]
-
+                cyl.setInnerMatricPotential(rx[i])
+                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                try:
+                    cyl.solve(dt)
+                except:
+                    # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
+                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    # print("node ", self.nodes[self.segments[j].y])
+                    self.plot_cylinder(j)
+                    self.plot_cylinders()
+                    raise Exception(str)
+        elif self.mode == "dumux_dirichlet_nc":
+            rx = argv[0]
+            proposed_outer_fluxes = argv[1]
+            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                j = self.eidx[i]  # for one process j == i
+                l = self.seg_length[j]
+                cyl.setInnerMatricPotential(rx[i])
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
                 try:
                     cyl.solve(dt)

@@ -79,7 +79,7 @@ class RichardsWrapper(SolverWrapper):
     def setICZ_solute(self, c:list, z:list = []):
         """ sets depth dependent initial condtions for solutes 
         
-        @param p     list of pressures at the z-positions (if given), or per soil layer, [cm] pressure head.      
+        @param p     list of concentrations at the z-positions (if given), or per soil layer, [g/cm3].      
         @param z     list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
         """
         self.setParameter(self.param_group + "IC.C", self.dumux_str(c))

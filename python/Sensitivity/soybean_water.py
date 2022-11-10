@@ -1,5 +1,5 @@
 """ 
-    Soybean (water only) TODO
+    Soybean (water only) 
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
@@ -24,15 +24,15 @@ soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
 soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
 soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
 soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
-table_name = "envirotype5"
-soil_ = soil5
+table_name = "envirotype0"
+soil_ = soil0
 
 Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
 
 area = (38 * 5)
 trans = 0.6 * area  # cm3/day (38 * 5 = 190)
 
-sim_time = 0.25 * 87.5  # [day]
+sim_time = 1. * 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
@@ -43,7 +43,7 @@ trans_soybean = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, 
 # dd
 
 """ initialize """
-p_top = -5000
+p_top = -330
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 
 xml_name = "Glycine_max_Moraes2020_opt2" + "_modified" + ".xml"  # root growth model parameter file
@@ -76,7 +76,7 @@ water = s.getWaterVolume()
 """ output """
 if rank == 0:
 
-    scenario.write_files("soybean_sra5", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+    scenario.write_files("soybean_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
 
     print("\ntotal uptake", water0 - water, "cm3")
     print("fin")

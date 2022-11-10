@@ -7,16 +7,16 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # name = "soybean"
-# str_ = "sra5"
-# days = 0.25 * 87.5
-#
+# str_ = "sra0"
+# days = 87.5
+
 # name = "maize"
-# str_ = "sra5"
-# days = 0.25 * 95
+# str_ = "sra0"
+# days = 95
 
 name = "maize"
-str_ = "cyl5"
-days = 7  # 0.25 * 95
+str_ = "cyl0"
+days = 0.5 * 95
 
 fname = "soilc_" + name + "_" + str_
 
@@ -52,11 +52,14 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 
 cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-im = ax.imshow(data, cmap = cmap_reversed, aspect = 'auto')  #  interpolation = 'bicubic', interpolation = 'nearest',
+im = ax.imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0 , days, -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
 
 cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
 cb.ax.get_yaxis().labelpad = 30
-cb.set_label('Soil matric potential [cm]', rotation = 270)
+if fname.startswith("soilc_"):
+    cb.set_label('Nitrate concentration [kg/m3]', rotation = 270)
+else:
+    cb.set_label('Soil matric potential [cm]', rotation = 270)
 
 ax.set_ylabel("depth [cm]")
 ax.set_xlabel("time [days]")

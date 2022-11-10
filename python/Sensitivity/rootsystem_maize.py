@@ -28,7 +28,7 @@ colors = prop_cycle.by_key()['color']
 min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
 max_b = [37.5, 7.5, 0.]
 cell_number = [75, 15, 200]  # 1 cm3
-simtime = 20  # 95  # between 90-100 days
+simtime = 21  # 1.* 95  # between 90-100 days
 
 rs = pb.MappedRootSystem()  # RootSystem
 
@@ -64,14 +64,14 @@ srp[0].seedPos.z = -3.
 """ Seminal roots """
 srp[0].firstB = 0.5
 srp[0].delayB = 0.1
-srp[0].maxB = 4  # between two and six seminal root
+srp[0].maxB = 6  # between two and six seminal root, Andrea 0-10
 
 """ Shoot borne roots (brace roots, nodal roots) """
 srp[0].firstSB = 1
 srp[0].delaySB = 1.5
 srp[0].delayRC = 15
 srp[0].nC = 11  # number of roots per root crown
-srp[0].nz = 0.2
+srp[0].nz = 0.1
 
 """ root parameters """
 # add shoot borne parameter set (copy subType 4)
@@ -161,8 +161,9 @@ rs.simulate(simtime, True)
 """ Analyse """
 ana = pb.SegmentAnalyser(rs.mappedSegments())
 ana.addConductivities(r, simtime)
+ana.addAge(simtime)
 
-vp.plot_roots(ana, "subType", name)
+vp.plot_roots(ana, "age", name)
 # vp.plot_roots(ana, "kr", name + "_kr")
 # vp.plot_roots(ana, "kx", name + "_kx")
 # dd
