@@ -43,7 +43,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
     cell2seg = rs.rs.rs.cell2seg
     ns = len(segs)
 
-    # check cell2seg mapping
+    # check cell2seg mapping (always passes)
     for key, value in cell2seg.items():
         for v in value:
             if not (v >= 0 and v < ns):
@@ -121,6 +121,18 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
         # print("*", end = "")
 
+        if rank == 0:
+            collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
+            err = np.linalg.norm(np.sum(seg_fluxes) - collar_flux)
+            if err > 1.e-6:
+                print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(seg_fluxes))
+            err2 = np.linalg.norm(trans_f(rs_age + t, dt) - collar_flux)
+            if r.last == "neumann":
+                if err2 > 1.e-6:
+                    print("error: potential transpiration differs root collar flux in Neumann case" , err2)
+
+        comm.barrier()
+
         # if rank == 0:
         #     print("]", end = "")
         wall_xylem = timeit.default_timer() - wall_xylem
@@ -130,7 +142,31 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         #     print("[l", end = "")
         wall_local = timeit.default_timer()
 
-        proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)  # if this fails, a segment is not mapped, i.e. out of soil domain
+        if rank == 0:
+            print(net_flux.shape)
+            segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
+            seg2cell = rs.rs.rs.seg2cell
+            cell2seg = rs.rs.rs.cell2seg
+            ns = len(segs)
+
+            # check cell2seg mapping (always passes)
+            for key, value in cell2seg.items():
+                for v in value:
+                    if not (v >= 0 and v < ns):
+                        print("segments", ns)
+                        print("value", v)
+                        print("age", rs_age, "rank", rank, "dt", dt)
+                        print("Mapping error in cell", key)
+                        print("mapped to segments", value)
+                        ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
+                        ana.addCellIds(rs.rs.rs.mappedSegments())
+                        vp.plot_roots(ana, "cell_id")
+
+            proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)  # if this fails, a segment is not mapped, i.e. out of soil domain
+        else:
+            proposed_outer_fluxes = None
+        proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
+
         seg_rx = np.array([0.5 * (rx[s.x] + rx[s.y]) for s in segs])
         rs.solve(dt, seg_rx, proposed_outer_fluxes)  # left dirchlet, right neumann <----
         # TODO mass_net_fluxes
@@ -147,7 +183,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         water_content = np.array(s.getWaterContent())  # theta per cell [1]
         water_content = comm.bcast(water_content, root = 0)
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-        # TODO mass source
+        # TODO for nitrate
 
         soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
         soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]

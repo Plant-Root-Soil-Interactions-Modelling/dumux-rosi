@@ -189,7 +189,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
             # print("Segment size from Python ", len(r.rs.segments), ns)
-            rx = r.solve(rs_age + t, trans_f(t, dt), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
 
@@ -203,8 +203,8 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
         if err > 1.e-6:
-            print("error: summed root surface fluxes and root collar flux differ" , err)
-        err2 = np.linalg.norm(trans_f(t, dt) - collar_flux)
+            print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(fluxes))
+        err2 = np.linalg.norm(trans_f(rs_age + t, dt) - collar_flux)
         if r.last == "neumann":
             if err2 > 1.e-6:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
