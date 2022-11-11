@@ -471,7 +471,9 @@ public:
 	 * \copydoc FVProblem::source
 	 *
 	 * called by FVLocalResidual:computeSource(...)
-	 */
+	 *
+     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f
+     */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 

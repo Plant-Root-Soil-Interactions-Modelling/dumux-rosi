@@ -27,7 +27,7 @@ colors = prop_cycle.by_key()['color']
 min_b = [-19, -2.5, -200.]  # Domain [38 cm Reihe, 6 cm Pflanzen]
 max_b = [19, 2.5, 0.]
 cell_number = [38, 5, 200]  # 1 cm3
-simtime = 1. * 87.5  # between 75-100 days
+simtime = 14  # 87.5  # between 75-100 days
 
 rs = pb.RootSystem()
 
@@ -67,7 +67,7 @@ rs.simulate(simtime, True)
 ana = pb.SegmentAnalyser(rs)
 ana.addAge(simtime)
 
-orders = np.array(rs.getParameter("subType"))
+orders = np.array(rs.getParameter("age"))
 print("\nnumber of roots", len(rs.getRoots()))
 print("types", np.sum(orders == 1), np.sum(orders == 2), np.sum(orders == 3), np.sum(orders == 4), np.sum(orders == 5))
 print("number of nodes", len(ana.nodes))

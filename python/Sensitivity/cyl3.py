@@ -35,12 +35,27 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
     start_time = timeit.default_timer()
     sx = s.getSolutionHead()  # initial condition of soil [cm]
     sx = comm.bcast(sx, root = 0)  # soil part might run parallel
-    cc = s.getSolution(1)  # UNITS?
+    cc = s.getSolution(1)  # kg/m3
     cc = comm.bcast(cc, root = 0)  # soil part might run parallel
     comm.barrier()
     segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
     seg2cell = rs.rs.rs.seg2cell
+    cell2seg = rs.rs.rs.cell2seg
     ns = len(segs)
+
+    # check cell2seg mapping
+    for key, value in cell2seg.items():
+        for v in value:
+            if not (v >= 0 and v < ns):
+                print("segments", ns)
+                print("value", v)
+                print("age", rs_age, "rank", rank, "dt", dt)
+                print("Mapping error in cell", key)
+                print("mapped to segments", value)
+                ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
+                ana.addCellIds(rs.rs.rs.mappedSegments())
+                vp.plot_roots(ana, "cell_id")
+
     dcyl = int(np.floor(ns / max_rank))
     if rank + 1 == max_rank:
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)), cc)
@@ -58,8 +73,8 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
     else:
         rsc = rs.get_inner_solutes(1)  # kg/m3
 
-    print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx), np.min(rsc), np.max(rsc))
     if rank == 0:
+        print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx), np.min(rsc), np.max(rsc))
         rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
     else:
         rx = None
@@ -82,7 +97,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         #     print("[x", end = "")
         wall_xylem = timeit.default_timer()
 
-        rsx = rs.get_inner_heads(1)  # matric potential at the root soil interface, 2nd node  [cm]
+        rsx = rs.get_inner_heads(1)  # matric potential at the root soil interface, 2nd node  [cm] (in rhizo_models.py)
         if type == 1:
             rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
             # print(np.min(rsc), np.max(rsc))
@@ -95,7 +110,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
             # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
             # print("*", end = "")
-            seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [cm3/day]
+            seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [g/day]
         else:
             rx = None
             seg_fluxes = None
@@ -115,8 +130,8 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         #     print("[l", end = "")
         wall_local = timeit.default_timer()
 
-        seg_rx = np.array([0.5 * (rx[s.x] + rx[s.y]) for s in segs])
         proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)  # if this fails, a segment is not mapped, i.e. out of soil domain
+        seg_rx = np.array([0.5 * (rx[s.x] + rx[s.y]) for s in segs])
         rs.solve(dt, seg_rx, proposed_outer_fluxes)  # left dirchlet, right neumann <----
         # TODO mass_net_fluxes
 
@@ -135,10 +150,10 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         # TODO mass source
 
         soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
-        soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # # [cm3/day]
-        evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-5)
+        soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
+        evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # 1.e-5
         s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in moduels/richards.py
-        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [cm3/day], in moduels/richards.py
+        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
         s.solve(dt)  # in modules/solverbase.py
 
         wall_macro = timeit.default_timer() - wall_macro
@@ -212,7 +227,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
                   wall_local / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_netfluxes / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
-                  "segments:", rs.getNumberOfSegments(), "root collar:", rx[0], "\n")
+                  "segments:", rs.getNumberOfMappedSegments(), "root collar:", rx[0], "\n")
             print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc), "trans", trans_f(rs_age + t, dt))
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segment)

@@ -6,19 +6,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# name = "soybean"
-# str_ = "sra0"
-# days = 87.5
+name = "soybean"
+str_ = "sra0"
+days = 87.5
 
 # name = "maize"
 # str_ = "sra0"
 # days = 95
 
-name = "maize"
-str_ = "cyl0"
-days = 0.5 * 95
+# name = "maize"
+# str_ = "cyl0"
+# days = 0.5 * 95
 
-fname = "soilc_" + name + "_" + str_
+fname = "soil_" + name + "_" + str_
 
 l = 200  # cm soil depth
 dx = 1  # cm resolution

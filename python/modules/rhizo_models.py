@@ -47,6 +47,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.minBound = ms.minBound
         self.maxBound = ms.maxBound
         self.resolution = ms.resolution
+
         # self.cutAtGrid = ms.cutAtGrid # TODO export in pybind11
 
         # additional variables
@@ -56,6 +57,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.logbase = logbase
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
         self.last_dt = 0.
+        self.outer_radii = None
 
     def initialize(self, soil, x, eidx = None, cc = None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
@@ -183,7 +185,7 @@ class RhizoMappedSegments(pb.MappedSegments):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 # print("inner head", cyl.getInnerHead())
                 # print("innerIdx", cyl.base.innerIdx)
-                rsx[i] = cyl.getInnerHead(shift)  # [cm]
+                rsx[i] = cyl.getInnerHead(shift)  # [cm] (in richards.py, then richards_cyl.hh)
         elif self.mode.startswith("python"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 rsx[i] = cyl.get_inner_head()  # [cm]

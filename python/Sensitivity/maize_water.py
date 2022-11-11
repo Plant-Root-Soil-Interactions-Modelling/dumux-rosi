@@ -33,7 +33,7 @@ Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
 area = 75 * 15  # cm2
 trans = 0.6 * area  # cm3/day (75 * 15 = 1125 cm2)
 
-sim_time = 1.* 95  #  [day]
+sim_time = 1. * 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
 range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']  # 95 - 88 = 7

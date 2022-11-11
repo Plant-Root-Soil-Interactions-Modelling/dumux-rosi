@@ -123,6 +123,25 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         """ grow root system and update everything"""
         rs.simulate(dt, False)
 
+        # """ check cell2seg mapping """
+        # ns = rs.getNumberOfMappedSegments()
+        # cell2seg = rs.cell2seg
+        # for key, value in cell2seg.items():
+        #     for v in value:
+        #         if not (v >= 0 and v < ns):
+        #             print(type(rs))
+        #             print("number of segments (getter)", ns)
+        #             print("number of segments", len(rs.segments))
+        #             print("number of nodes", len(rs.nodes))
+        #             print("Mapping error in cell", key)
+        #             print("mapped to segments", value)
+        #             print([str(n) for n in rs.nodes])
+        #             print([str(s) for s in rs.segments])
+        #             raise
+        #             # ana = pb.SegmentAnalyser(rs.mappedSegments())
+        #             # ana.addCellIds(rs.mappedSegments())
+        #            #  vp.plot_roots(ana, "cell_id")
+
         mapping = rs.getSegmentMapper()
         sx = s.getSolutionHead()[:, 0]  # richards.py
         hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
@@ -138,7 +157,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         rho_ = np.divide(outer_r, np.array(inner_r))
         rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
-        kr_ = np.array([r.kr_f(rs_age + t, types[j]) for j in range(0, len(outer_r))])  # here const
+        kr_ = r.getKr(rs_age + t)
         inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
         inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
         inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
@@ -296,7 +315,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None):
     rx = r.solve(rs_age, trans_f(0, dt), 0., rsx, False, wilting_point, soil_k = [])
     rx_old = rx.copy()
 
-    kr_ = np.array([r.kr_f(rs_age, types[j]) for j in range(0, len(outer_r))])  # here const
+    kr_ = r.getKr(rs_age + t)
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
     inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
 

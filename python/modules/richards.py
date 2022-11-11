@@ -304,7 +304,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getInnerHead(self, shift = 0):
         """Gets the pressure head at the inner boundary [cm] """
-        return self.base.getInnerHead(shift)
+        return self.base.getInnerHead(shift)  # -> richards_cyl.hh
 
     def getInnerSolutes(self, shift = 0):
         """Gets the concentration at the inner boundary [cm] """
@@ -314,7 +314,7 @@ class RichardsWrapper(SolverWrapper):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         for key, value in source_map.items():
-            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
+            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):

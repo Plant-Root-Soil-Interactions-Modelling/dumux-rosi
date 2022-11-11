@@ -12,22 +12,22 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-# name = "soybean"
-# str_ = ["sra0"]
-# sim_time = 87.5
-# potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
-# area = 38 * 5
-# range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']  # TODO fix range for maize
-# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
-# trans = 1
-
-name = "maize"
-str_ = ["cyl0"]
-sim_time = 0.5 * 95
-area = 75 * 15  # cm2
-range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
-potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+name = "soybean"
+str_ = ["sra0"]
+sim_time = 87.5
+potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
+area = 38 * 5
+range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']  # TODO fix range for maize
+potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
 trans = 1
+
+# name = "maize"
+# str_ = ["cyl0"]
+# sim_time = 0.5 * 95
+# area = 75 * 15  # cm2
+# range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
+# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+# trans = 1
 
 # name = "maize"
 # str_ = ["sra0"]

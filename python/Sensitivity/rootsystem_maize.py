@@ -27,10 +27,12 @@ colors = prop_cycle.by_key()['color']
 
 min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
 max_b = [37.5, 7.5, 0.]
-cell_number = [75, 15, 200]  # 1 cm3
+cell_number = [1, 1, 200]  # 1 cm3
 simtime = 21  # 1.* 95  # between 90-100 days
 
 rs = pb.MappedRootSystem()  # RootSystem
+rs.setRectangularGrid(pb.Vector3d(100 * min_b[0], 100 * min_b[1], min_b[2]), pb.Vector3d(100 * max_b[0], 100 * max_b[1], max_b[2]),
+                      pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 
 # Open plant and root parameter from a file
 path = "../../../CPlantBox/modelparameter/rootsystem/"
@@ -162,8 +164,9 @@ rs.simulate(simtime, True)
 ana = pb.SegmentAnalyser(rs.mappedSegments())
 ana.addConductivities(r, simtime)
 ana.addAge(simtime)
+ana.addCellIds(rs.mappedSegments())
 
-vp.plot_roots(ana, "age", name)
+vp.plot_roots(ana, "cell_id", name)
 # vp.plot_roots(ana, "kr", name + "_kr")
 # vp.plot_roots(ana, "kx", name + "_kx")
 # dd

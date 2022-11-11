@@ -383,7 +383,7 @@ public:
 	            } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
 	                double theta = (h - criticalPressure_)/sourceSlope_;
 	                // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
-	                return theta* source_->at(eIdx)/scv.volume();;
+	                return theta* source_->at(eIdx)/scv.volume();
 	            } else  {
 	                return source_->at(eIdx)/scv.volume();
 	            }

@@ -42,6 +42,7 @@ trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt)  # Guilaumes questions - 0.0
 trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / (.5 * 95))  # growing potential transpiration
 
 """ set up simulator """
+y_ = 0.*np.array(y_)
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -130, type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 
 """ simulation loop """
@@ -51,6 +52,10 @@ N = int(np.ceil(sim_time / dt))
 for i in range(0, N):
     t = i * dt  # current simulation time
     print(t)
+    soil_sol_fluxes = {}  # empy dict
+    evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-3)
+    # print(soil_sol_fluxes)
+    s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # richards.py
     s.solve(dt)
     c.append(s.getSolution(1)[:, 0])
 
