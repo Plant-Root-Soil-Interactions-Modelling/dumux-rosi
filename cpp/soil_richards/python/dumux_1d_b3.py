@@ -54,5 +54,5 @@ for i in range(0, 3):
 
 np.savetxt("dumux1d_b3", np.vstack(ex), delimiter = ",")
 
-plt.show()
+# plt.show()
 

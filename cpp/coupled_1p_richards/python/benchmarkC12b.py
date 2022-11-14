@@ -45,7 +45,7 @@ ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
 ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
 
-plt.show()
+# plt.show()
 
 # trans = interpolate.interp1d(t, d[:, 1] * c)
 # print(t.shape)

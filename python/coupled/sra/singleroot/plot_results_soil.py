@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-add_str = "_wet"  # "_wet", "_dry"
+add_str = "_comp"  # "_wet", "_dry"
 # fnames = ["soil_singleroot_cyl_constkrkx" + add_str + ".xls",
 #           "soil_singleroot_agg_constkrkx" + add_str + ".xls"]  #
 # days = 0.51

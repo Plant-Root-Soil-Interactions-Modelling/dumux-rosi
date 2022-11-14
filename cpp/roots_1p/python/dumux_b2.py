@@ -31,5 +31,5 @@ plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
 np.savetxt("dumux_m32a", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
-plt.show()
+# plt.show()
 

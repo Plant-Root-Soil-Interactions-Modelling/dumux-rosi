@@ -55,7 +55,7 @@ fname = "../../../../grids/RootSystem_verysimple.rsml"
 
 p_top = -310  # -5000 (dry), -310 (wet)
 p_bot = -200
-sstr = "_wet0"
+sstr = "_wet"
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
@@ -201,7 +201,7 @@ for i in range(0, NT):
         fluxes = None
 
     wall_soil = timeit.default_timer()
-    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root=0)  # Soil part runs parallel
+    fluxes = comm.bcast(r.sumSegFluxes(fluxes), root = 0)  # Soil part runs parallel
     s.setSource(fluxes.copy())  # richards.py, scales fluxes to SI for DuMux side
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
@@ -225,7 +225,7 @@ for i in range(0, NT):
         psi_s2_.append(sx[:, 0])
         w_.append(water)  # cm3
 
-        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil=[], cells=False)
+        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         cf.append(cf_)  # cm3/day
         n = round(float(i) / float(NT) * 100.)
@@ -234,29 +234,14 @@ for i in range(0, NT):
         print("Iteration {:g} took {:g} seconds [{:g} fixpoint iteration, {:g} soil] \n".format(i, wall_iteration, wall_fixpoint, wall_soil))
 
 if rank == 0:
-    print("writing xls")
     file1 = 'results/psix_' + name + sstr  # per segment
     np.save(file1, np.array(psi_x_))
     file2 = 'results/psiinterface_' + name + sstr  # per segment
     np.save(file2, np.array(psi_s_))
-    file3 = 'results/sink_' + name + sstr + '.xls'
-    df3 = pd.DataFrame(-np.array(sink_))
-    df3.to_excel(file3, index=False, header=False)
+    file3 = 'results/sink_' + name + sstr
+    np.save(file3, -np.array(sink_))
     file4 = 'results/transpiration_' + name + sstr
-    np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter=';')
-    file5 = 'results/soil_' + name + sstr + '.xls'
-    df5 = pd.DataFrame(np.array(psi_s2_))
-    df5.to_excel(file5, index=False, header=False)
+    np.save(file4, np.vstack((x_, -np.array(y_))))
+    file5 = 'results/soil_' + name + sstr
+    np.save(file5, np.array(psi_s2_))
     print("fin")
-
-    # np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
-    # sink1d = np.array(sink1d)
-    # np.save(name + "_sink", sink1d)
-
-#     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
-#
-#     ana = pb.SegmentAnalyser(r.rs)
-#     ana.addData("pressure", rx)
-#     vp.plot_roots(ana, "pressure")
-
-#    vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation

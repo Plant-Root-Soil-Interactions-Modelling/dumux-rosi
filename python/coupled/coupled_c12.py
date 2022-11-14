@@ -1,4 +1,4 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/") 
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
@@ -42,7 +42,7 @@ fname = "../../grids/RootSystem8.rsml"
 # path = "../../../CPlantBox/modelparameter/rootsystem/"
 # fname = "Lupinus_albus_Leitner_2014"  # "spring_barley_CF12_107d.rsml"
 # rs = pb.RootSystem()
-# rs.readParameters(path + fname + ".xml") 
+# rs.readParameters(path + fname + ".xml")
 # rs.setGeometry(pb.SDF_PlantBox(1e6, 1e6, -min_b[2]))  # to not let roots grow out of soil
 # rs.initialize()
 # rs.simulate(8, True)
@@ -87,7 +87,7 @@ r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(m
 init_conductivities(r, age_dependent)
 
 """ Coupling (map indices) """
-picker = lambda x, y, z: s.pick([x, y, z])    
+picker = lambda x, y, z: s.pick([x, y, z])
 cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell index
 r.rs.setSoilGrid(picker)  # maps segment
 
@@ -109,24 +109,25 @@ t = 0.
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
- 
+
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., sx, True, wilting_point, [])  # xylem_flux.py, cells = True
         fluxes = r.soilFluxes(rs_age + t, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
- 
+
     else:
         fluxes = None
- 
-    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
-    s.setSource(fluxes.copy())  # richards.py 
+
+    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+    s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
+    old_sx = sx.copy()
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
- 
+
     if rank == 0 and i % skip == 0:
         min_sx = np.min(sx)
         min_rx = np.min(rx)
         max_sx = np.max(sx)
-        max_rx = np.max(rx)                
+        max_rx = np.max(rx)
         x_.append(t)
         sum_flux = 0.
         for f in fluxes.values():
@@ -144,10 +145,11 @@ for i in range(0, N):
         """ Additional sink plot """
         if i % 60 == 0:  # every 6h
             ana = pb.SegmentAnalyser(r.rs)
-            fluxes = r.segFluxes(rs_age + t, rx, sx, False, cells=True)  # cm3/day
+            fluxes = r.segFluxes(rs_age + t, rx, old_sx, False, cells = True)  # cm3/day WRONG sx, should be old sx
             ana.addData("fluxes", fluxes)  # cut off for vizualisation
-            flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, True) 
+            flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, False)
             sink1d.append(np.array(flux1d))
+            print("\nSink integral = ", np.sum(np.array(flux1d)), "\n")
 
     t += dt
 
@@ -158,8 +160,9 @@ if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
     vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
     sink1d = np.array(sink1d)
     np.save("sink1d", sink1d)
     print(sink1d.shape)
+    print(sink1d[-1])
 

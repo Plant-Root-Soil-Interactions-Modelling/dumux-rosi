@@ -16,14 +16,10 @@ from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
 import vtk_plot as vp
 import van_genuchten as vg
-from detach2 import *
-from root_conductivities import *
 from sra_table_lookup import *
 import aggregated_rs as agg
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy.optimize import fsolve
 
 """ 
@@ -75,7 +71,6 @@ min_b = [-0.5, -0.5, -50.]  # domain
 max_b = [0.5, 0.5, 0.]
 cell_number = [1, 1, 100]
 periodic = False
-domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
 alpha = 0.018  # (cm-1) soil
 n = 1.8
@@ -112,6 +107,8 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
 
+water0 = s.getWaterVolume()
+
 """ 
 Initialize xylem model 
 """
@@ -143,13 +140,10 @@ start_time = timeit.default_timer()
 # print(s.getCellCenters())
 
 # for post processing
-out_times = []  # days
 psi_x_ = []
 psi_s_ = []
 psi_s2_ = []
 sink_ = []
-collar_vfr = []
-sink_sum = []
 x_, y_ = [], []
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
@@ -175,8 +169,7 @@ for i in range(0, NT):
         rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells = False, soil_k = [])
         rx_old = rx.copy()
 
-    for j in range(0, len(outer_r)):  # determine kr at this time step
-        kr_[j] = r.kr_f(rs_age + t, types[j], 2, 2, j)
+    kr_ = np.array([r.kr_f(rs_age + t, types[j], 2, 2, j) for j in range(0, len(outer_r))])
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
 
     err = 1.e6
@@ -184,30 +177,25 @@ for i in range(0, NT):
     while err > 1 and c < 100:
 
         """ interpolation """
-        # wall_interpolation = timeit.default_timer()
+        wall_interpolation = timeit.default_timer()
         rx_ = rx[1::2] - np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from total matric potential to matric potential
         hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
         rsx = soil_root_interface_table2(rx_, hsb_, inner_kr_[1::2], rho_[1::2], sra_table_lookup)  # [1::2] every second entry, starting from 1
         rsx = rsx + np.array([nodes[ii].z for ii in range(1, ns, 2)])  # from matric potential to total matric potential
-        # wall_interpolation = timeit.default_timer() - wall_interpolation
+        wall_interpolation = timeit.default_timer() - wall_interpolation
 
         """ xylem matric potential """
-        # wall_xylem = timeit.default_timer()
+        wall_xylem = timeit.default_timer()
         rx = r.solve_dirichlet(rs_age + t, [collar], 0., double_(rsx), cells = False, soil_k = [])
         err = np.linalg.norm(rx - rx_old)
-        # wall_xylem = timeit.default_timer() - wall_xylem
+        wall_xylem = timeit.default_timer() - wall_xylem
+
         rx_old = rx.copy()
         c += 1
-#         print(c, ": ", np.sum(rx[1:]), np.sum(hsb), np.sum(inner_kr_), np.sum(rho_))
-#        print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
-#    wall_fixpoint = timeit.default_timer() - wall_fixpoint
+    print(i, c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
     fluxes = r.segFluxes(rs_age + t, rx, double_(rsx), approx = False, cells = False)
-
-#     min_rsx = np.min(rsx)  # for console output
-#     max_rsx = np.max(rsx)
-#     print("from", min_rsx, "to", max_rsx)
 
     wall_soil = timeit.default_timer()
     soil_fluxes = r.sumSegFluxes(fluxes)
@@ -219,41 +207,39 @@ for i in range(0, NT):
 
     wall_iteration = timeit.default_timer() - wall_iteration
 
+    """ remember results ... """
     if i % skip == 0:
-        print(i / skip)
         x_.append(t)
         sum_flux = 0.
         for f in soil_fluxes.values():
             sum_flux += f
         y_.append(sum_flux)  # cm3/day
-        rx_ = rx[1:]  # 0.5 * (rx[0:-1] + rx[1:])  # psix is given per node, converted to per segment
-        psi_x_.append(rx_[1::2])
-        psi_s_.append(rsx)
+        psi_x_.append(rx.copy()[1::2])
+        psi_s_.append(rsx.copy())
         dd = np.array(sx)
         psi_s2_.append(dd[:, 0])
-        sink_.append(fluxes[1::2])
+        sink_.append(fluxes.copy()[1::2])
 
-""" xls file output """
-print("writing xls")
+print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-file1 = 'results/psix_singleroot_agg_constkrkx' + sstr + '.xls'
-df1 = pd.DataFrame(np.array(psi_x_))
-df1.to_excel(file1, index = False, header = False)
+water_end = s.getWaterVolume()
+print("\ntotal uptake", water0 - water_end, "cm3")
 
-file2 = 'results/psiinterface_singleroot_agg_constkrkx' + sstr + '.xls'
-df2 = pd.DataFrame(np.array(psi_s_))
-df2.to_excel(file2, index = False, header = False)
+""" file output """
+file1 = 'results/psix_singleroot_agg_constkrkx' + sstr
+np.save(file1, np.array(psi_x_))  # , delimiter = ';'
 
-file3 = 'results/sink_singleroot_agg_constkrkx' + sstr + '.xls'
-df3 = pd.DataFrame(-np.array(sink_))
-df3.to_excel(file3, index = False, header = False)
+file2 = 'results/psiinterface_singleroot_agg_constkrkx' + sstr
+np.save(file2, np.array(psi_s_))
+
+file3 = 'results/sink_singleroot_agg_constkrkx' + sstr
+np.save(file3, -np.array(sink_))
 
 file4 = 'results/transpiration_singleroot_agg_constkrkx' + sstr
-np.savetxt(file4, np.vstack((x_, -np.array(y_))), delimiter = ';')
+np.save(file4, np.vstack((x_, -np.array(y_))))
 
-file5 = 'results/soil_singleroot_agg_constkrkx' + sstr + '.xls'
-df5 = pd.DataFrame(np.array(psi_s2_))
-df5.to_excel(file5, index = False, header = False)
+file5 = 'results/soil_singleroot_agg_constkrkx' + sstr
+np.save(file5, np.array(psi_s2_))
 
 print("fin")
 

@@ -1,23 +1,20 @@
 """
 single root plots - compares two sink in one axis
-
-from xls result files (in results/) 
 """
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-add_str = "_wet"  # "_wet", "_dry"
-# fnames = ["sink_singleroot_cyl_constkrkx" + add_str + ".xls",
-#           "sink_singleroot_agg_constkrkx" + add_str + ".xls"]  #
-# days = 0.51
-fnames = ["sink_singleroot_sra_dynamic_constkrkx" + add_str + ".xls",
-          "sink_singleroot_cyl_dynamic_constkrkx" + add_str + ".xls"]  #
-days = 7.1
+add_str = "_comp"  # "_wet", "_dry"
+
+fnames = ["sink_singleroot_sra_dynamic_constkrkx" + add_str,
+          "sink_singleroot_agg_dynamic_constkrkx" + add_str]
+
+days = 21
 titles = ["steady rate", "aggregated"]  # "steady rate", , "aggregated" "rhizosphere"
 
 plot_times = range(0, 7)
-L = 50  # cm root length
+L = 100  # cm root length
 path = "results/"
 
 SMALL_SIZE = 16
@@ -40,8 +37,7 @@ ax[0].set_ylabel("depth [cm]")
 
 ls = ['-', '-.']
 for i in range(0, 2):
-    df2 = pd.read_excel(path + fnames[i], header = None)  # open file
-    sink_ = df2.to_numpy()
+    sink_ = np.load(path + fnames[i] + ".npy")
 
     z_ = np.linspace(-L + 0.25, -0.25, sink_.shape[1])  # single root 100 segments, 0 - (-50) cm, segment mids
 

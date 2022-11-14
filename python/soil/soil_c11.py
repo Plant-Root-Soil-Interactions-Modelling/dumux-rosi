@@ -85,15 +85,17 @@ if __name__ == "__main__":
     loam = [0.08, 0.43, 0.04, 1.6, 50, "Loam"]
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
-    sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
+    sim_times = np.linspace(0, 25, 2500)  # temporal resolution of 0.01 d
     fig, ax = plt.subplots(2, 3, figsize = (14, 14))
 
     if rank == 0:
         t0 = time.time()
-
+    
+    t_ = []
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
     for soil, qj, i, j in jobs:
         y, x, t = solve(soil, sim_times, qj, 41)
+        t_.append(t)
         if rank == 0:
             ax[i, j].plot(x, y, "r*")
             ax[i, j].set_xlabel("r (cm)")
@@ -103,5 +105,6 @@ if __name__ == "__main__":
 
     if rank == 0:
         print("Elapsed time: ", time.time() - t0, "s")
+        print(t_)
         plt.show()
 
