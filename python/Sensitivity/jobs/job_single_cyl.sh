@@ -7,7 +7,7 @@
 #SBATCH --time=10:00
 #SBATCH --mem=2G
 #SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END
-#SBATCH --mail-user=h.mustermann@fz-juelich.de
+#SBATCH --mail-user=d.leitner@fz-juelich.de
  
 cd ..
 module load openmpi/4.1.4
