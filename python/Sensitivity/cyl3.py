@@ -43,19 +43,6 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
     cell2seg = rs.rs.rs.cell2seg
     ns = len(segs)
 
-    # check cell2seg mapping (always passes)
-    for key, value in cell2seg.items():
-        for v in value:
-            if not (v >= 0 and v < ns):
-                print("segments", ns)
-                print("value", v)
-                print("age", rs_age, "rank", rank, "dt", dt)
-                print("Mapping error in cell", key)
-                print("mapped to segments", value)
-                ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
-                ana.addCellIds(rs.rs.rs.mappedSegments())
-                vp.plot_roots(ana, "cell_id")
-
     dcyl = int(np.floor(ns / max_rank))
     if rank + 1 == max_rank:
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)), cc)
@@ -143,24 +130,28 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         wall_local = timeit.default_timer()
 
         if rank == 0:
-            print(net_flux.shape)
-            segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
-            seg2cell = rs.rs.rs.seg2cell
-            cell2seg = rs.rs.rs.cell2seg
-            ns = len(segs)
-
-            # check cell2seg mapping (always passes)
-            for key, value in cell2seg.items():
-                for v in value:
-                    if not (v >= 0 and v < ns):
-                        print("segments", ns)
-                        print("value", v)
-                        print("age", rs_age, "rank", rank, "dt", dt)
-                        print("Mapping error in cell", key)
-                        print("mapped to segments", value)
-                        ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
-                        ana.addCellIds(rs.rs.rs.mappedSegments())
-                        vp.plot_roots(ana, "cell_id")
+            for key, value in cell2seg.items():  # check cell2seg
+                if key < 0:
+                    nodes = rs.rs.rs.nodes
+                    print("key is negative", key)
+                    print("segments", cell2seg[key])
+                    print("coresponding nodes")
+                    for s in cell2seg[key]:
+                        print(segs[s])
+                        print(nodes[segs[s].x], nodes[segs[s].y])
+                    ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
+                    ana.addCellIds(rs.rs.rs.mappedSegments())
+                    vp.plot_roots(ana, "cell_id")
+                # for v in value:
+                #     if not (v >= 0 and v < ns):
+                #         print("segments", ns)
+                #         print("value", v)
+                #         print("age", rs_age, "rank", rank, "dt", dt)
+                #         print("Mapping error in cell", key)
+                #         print("mapped to segments", value)
+                #         ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
+                #         ana.addCellIds(rs.rs.rs.mappedSegments())
+                #         vp.plot_roots(ana, "cell_id")
 
             proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)  # if this fails, a segment is not mapped, i.e. out of soil domain
         else:

@@ -12,30 +12,32 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "soybean"
-str_ = ["sra0"]
-sim_time = 87.5
-potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
-area = 38 * 5
-range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']  # TODO fix range for maize
-potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
-trans = 1
-
-# name = "maize"
-# str_ = ["cyl0"]
-# sim_time = 0.5 * 95
-# area = 75 * 15  # cm2
-# range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
-# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+# name = "soybean"
+# str_ = ["sra0"]
+# sim_time = 87.5
+# potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
+# area = 38 * 5
+# range_ = ['1995-03-15 00:00:00', '1995-06-12 11:00:00']
+# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
 # trans = 1
+
+name = "maize"
+str_ = ["cyl0"]
+sim_time = 0.5 * 95
+area = 75 * 15  # cm2
+range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']
+potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+trans = 1
 
 # name = "maize"
 # str_ = ["sra0"]
 # sim_time = 0.5 * 95
 # area = 75 * 15  # cm2
-# range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
+# range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']
 # potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
 # trans = 1
+
+rs_age = 1
 
 fnames = np.array(["transpiration_" + name + "_" + s for s in str_ ])
 fnames2 = np.array(["nitrate_" + name + "_" + s for s in str_ ])
@@ -71,7 +73,7 @@ for i in range(0, n):
     t = data[i][0]
     y = data[i][1]
     if trans > 0:
-        ax[i].plot(t, [ -potential_trans(t[i], dt_) / area for i in range(0, t.shape[0]) ], 'k', label = "potential transpiration")  # potential transpiration
+        ax[i].plot(t, [ -potential_trans(rs_age + t[i], dt_) / area for i in range(0, t.shape[0]) ], 'k', label = "potential transpiration")  # potential transpiration
     y = np.maximum(y, 0)
     ax[i].plot(t, y / area, 'g', label = "actual transpiration ({:s})".format(str_[i]))  # actual transpiration  according to soil model
     if data2 is not None:

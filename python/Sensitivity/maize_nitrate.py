@@ -37,7 +37,7 @@ area = 75 * 15  # cm2
 sim_time = 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
-range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
+range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']  # +3
 x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 95, evap.lai_maize, Kc_maize)
 trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
 

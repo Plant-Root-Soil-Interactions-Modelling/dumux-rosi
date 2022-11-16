@@ -42,7 +42,6 @@ trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt)  # Guilaumes questions - 0.0
 trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / (.5 * 95))  # growing potential transpiration
 
 """ set up simulator """
-y_ = 0.*np.array(y_)
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -130, type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 
 """ simulation loop """
@@ -64,6 +63,7 @@ z = s.getDofCoordinates()
 """ sink plot """
 c = np.transpose(c)
 c = c[:100:-1,:]
+c = np.minimum(c, 5.5e-4)
 
 fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 divider = make_axes_locatable(ax)

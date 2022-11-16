@@ -123,25 +123,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         """ grow root system and update everything"""
         rs.simulate(dt, False)
 
-        # """ check cell2seg mapping """
-        # ns = rs.getNumberOfMappedSegments()
-        # cell2seg = rs.cell2seg
-        # for key, value in cell2seg.items():
-        #     for v in value:
-        #         if not (v >= 0 and v < ns):
-        #             print(type(rs))
-        #             print("number of segments (getter)", ns)
-        #             print("number of segments", len(rs.segments))
-        #             print("number of nodes", len(rs.nodes))
-        #             print("Mapping error in cell", key)
-        #             print("mapped to segments", value)
-        #             print([str(n) for n in rs.nodes])
-        #             print([str(s) for s in rs.segments])
-        #             raise
-        #             # ana = pb.SegmentAnalyser(rs.mappedSegments())
-        #             # ana.addCellIds(rs.mappedSegments())
-        #            #  vp.plot_roots(ana, "cell_id")
-
+        cell2seg = rs.cell2seg  # for debugging
         mapping = rs.getSegmentMapper()
         sx = s.getSolutionHead()[:, 0]  # richards.py
         hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
@@ -211,6 +193,20 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)
+
+        for key, value in cell2seg.items():  # check cell2seg
+            if key < 0:
+                nodes = rs.rs.rs.nodes
+                print("key is negative", key)
+                print("segments", cell2seg[key])
+                print("coresponding nodes")
+                for s in cell2seg[key]:
+                    print(segs[s])
+                    print(nodes[segs[s].x], nodes[segs[s].y])
+                ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
+                ana.addCellIds(rs.rs.rs.mappedSegments())
+                vp.plot_roots(ana, "cell_id")
+
         wall_soil = timeit.default_timer() - wall_soil
 
         wall_iteration = timeit.default_timer() - wall_iteration

@@ -80,13 +80,14 @@ def get_transpiration_beers(filename, range_, area, time, lai_f, Kc):
     # plt.plot(t_, tpot, "r", label = "Potential transpiration")
     # plt.plot(t_, evap, "g", label = "Evaporation")
     # y_ = data["Tpot"]
-    # y = y_.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
-    # plt.plot(t_, y, "b:", label = "Potential transpiration Ullah")
+    # # y = y_.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
+    # # plt.plot(t_, y, "b:", label = "Potential transpiration Ullah")
     # plt.xlabel("time")
     # plt.ylabel("cm / day")
     # plt.legend()
     # plt.show()
 
+    # print("hourly potential transpiration len", len(tpot))
     trans = lambda t, dt:-tpot[int((t + dt / 2) * 24)] * area  # day -> hour
 
     return trans

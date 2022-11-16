@@ -79,8 +79,8 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     if type == 2:  # solute BC
         v1 = 0.33 * 62  # g/m2
         v2 = 0.66 * 62  # g/m2
-        v1 = 0.*v1 * 1.e-4  # g/cm2
-        v2 = 0.*v2 * 1.e-4  # g/cm2
+        v1 = v1 * 1.e-4  # g/cm2
+        v2 = v2 * 1.e-4  # g/cm2
         sol_times = [0., 15., 15., 16., 16., 28., 28., 29., 29., 1.e3]
         sol_influx = -np.array([0., 0., v1, v1, 0., 0., v2, v2, 0., 0.])  # g/(cm2 day)
         s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
@@ -247,9 +247,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         rs.readParameters(fname)
         if not stochastic:
             set_all_sd(rs, 0.)
-        rs.initializeDB(4, 5)
-        rs.simulate(49., True)  ##############################################################
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
+        rs.initializeDB(4, 5)
+        rs.simulate(1., True)  ##############################################################
         r = XylemFluxPython(rs)
 
         # print("HERE***********************************")

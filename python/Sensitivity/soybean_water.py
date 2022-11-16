@@ -35,7 +35,7 @@ trans = 0.6 * area  # cm3/day (38 * 5 = 190)
 sim_time = 1. * 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
-range_ = ['1995-03-15 00:00:00', '1995-06-10 11:00:00']
+range_ = ['1995-03-15 00:00:00', '1995-06-12 11:00:00']  # +2
 x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 87.5, evap.lai_soybean, Kc_soybean)
 trans_soybean = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
 # plt.plot(x_, y_)
