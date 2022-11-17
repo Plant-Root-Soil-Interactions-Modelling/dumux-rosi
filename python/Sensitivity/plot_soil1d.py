@@ -6,26 +6,37 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# name = "soybean"
-# str_ = "sra0"
-# days = 87.5
+import evapotranspiration as evap
+
+from datetime import *
+
+Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al (1998)
+Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
+
+""" pick... """
+
+name = "soybean"
+str_ = "sra0"
+Kc = Kc_soybean
+lai = evap.lai_soybean
+ylim_ = None
 
 # name = "maize"
 # str_ = "sra0"
-# days = 95
+# Kc = Kc_maize
+# lai = evap.lai_maize
+# ylim_ = -10
 
-name = "maize"
-str_ = "cyl0"
-days = 0.5 * 95
+# name = "maize"
+# str_ = "cyl0"
+# Kc = Kc_maize
+# lai = evap.lai_maize
+# ylim_ = -10
 
-fname = "soilc_" + name + "_" + str_
+fname = "soil_" + name + "_" + str_
 
-l = 200  # cm soil depth
-dx = 1  # cm resolution
-ylim = 99.5
-
-cell_volume = 4  # cm3
-plot_times = [1., 5, 10, 15, 20]
+start_date = '1995-03-15 00:00:00'  # added 1 day, since inital rs_age
+start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
 path = "results/"
 
 SMALL_SIZE = 16
@@ -42,31 +53,81 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 """ load data """
+fnames_t = np.array(["transpiration_" + name + "_" + str_ ])  # data currently not stored for rhizosphere models
+times = [np.load(path + n_ + ".npy")  for n_ in fnames_t]
+times = times[0][0,:]
+
+end_date = start_date + timedelta(times[-1], 0)
+range_ = [str(start_date), str(end_date)]
+t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, times[-1], lai, Kc)
+t_ = np.array(t_)
+y_ = np.array(y_)
+t_ = t_[::2]
+y_ = y_[::2]
+
 data = np.load(path + fname + ".npy")
 data = np.transpose(data)
 data = data[:100:-1,:]
-data = np.minimum(data, 0.001)
+# data = np.minimum(data, 0.001)
+
+fnames_depth = np.array(["depth_" + name + "_" + str_  ])
+depths = [np.load(path + n_ + ".npy")  for n_ in fnames_depth]
+depths = depths[0]
 
 """ sink plot """
-fig, ax = plt.subplots(1, 1, figsize = (18, 10))
-divider = make_axes_locatable(ax)
-cax = divider.append_axes('right', size = '5%', pad = 0.05)
-
-cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-im = ax.imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0 , days, -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-
-cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
-cb.ax.get_yaxis().labelpad = 30
 if fname.startswith("soilc_"):
+    fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
+
+    bar = ax[0].bar(t_, -np.array(y_), 0.035)
+    ax[0].set_ylabel("Net infiltration [cm/day]")
+    ax[0].set_xlim(0, times[-1])
+    if ylim_ is not None:
+        ax[0].set_ylim(ylim_, 1.)
+    divider = make_axes_locatable(ax[0])
+    cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
+
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes('right', size = '5%', pad = 0.05)
+    cmap_reversed = matplotlib.cm.get_cmap('jet_r')
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0 , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
+    cb.ax.get_yaxis().labelpad = 30
     cb.set_label('Nitrate concentration [kg/m3]', rotation = 270)
+    ax[1].set_ylabel("depth [cm]")
+    ax[1].set_xlabel("time [days]")
+    ax[1].scatter([15, 16, 28, 29], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
+
+    cb0 = fig.colorbar(im, cax = cax0, orientation = 'vertical')
+    cb0.set_label('', rotation = 270)
+    print("data ranges from", np.min(data), "to ", np.max(data), "[kg/m3]'")
+    plt.tight_layout()
+    plt.show()
+
 else:
+    fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
+
+    bar = ax[0].bar(t_, -np.array(y_), 0.035)
+    ax[0].set_ylabel("Net infiltration [cm/day]")
+    ax[0].set_xlim(0, times[-1])
+    if ylim_ is not None:
+        ax[0].set_ylim(ylim_, 1.)
+    divider = make_axes_locatable(ax[0])
+    cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
+
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes('right', size = '5%', pad = 0.05)
+    cmap_reversed = matplotlib.cm.get_cmap('jet_r')
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0 , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    ax[1].plot(times[::10], depths, 'k:')
+    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
+    cb.ax.get_yaxis().labelpad = 30
     cb.set_label('Soil matric potential [cm]', rotation = 270)
+    ax[1].set_ylabel("depth [cm]")
+    ax[1].set_xlabel("time [days]")
 
-ax.set_ylabel("depth [cm]")
-ax.set_xlabel("time [days]")
-
-print("range", np.min(data), np.max(data), "cm")
-
-plt.tight_layout()
-plt.show()
+    cb0 = fig.colorbar(im, cax = cax0, orientation = 'vertical')
+    cb0.set_label('', rotation = 270)
+    print("range", np.min(data), np.max(data), "[cm]")
+    plt.tight_layout()
+    plt.show()
 

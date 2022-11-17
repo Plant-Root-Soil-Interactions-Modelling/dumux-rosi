@@ -71,9 +71,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate
 water = s.getWaterVolume()
 
 """ output """
-if rank == 0:
-
-    scenario.write_files("soybean_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
-
-    print("\ntotal uptake", water0 - water, "cm3")
-    print("fin")
+scenario.write_files("soybean_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+print("\nnet water change in soil", water0 - water, "cm3")
+print("fin")

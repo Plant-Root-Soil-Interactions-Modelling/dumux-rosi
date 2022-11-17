@@ -43,7 +43,7 @@ def run_all(global_, file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax
     # create jobs
     jobs = []
     i = 0
-    if global_:
+    if global_:  # global sensitivity analysis
         for kr in kr_:
             for kx in kx_:
                 for lmax0 in lmax0_:
@@ -56,38 +56,49 @@ def run_all(global_, file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax
                                             for src in src_:
                                                 i += 1
                                                 jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-    else:
+    else:  # local sensitivity analysis
+        i += 1
+        jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
         if len(kr_) > 1:
             for kr in kr_:
                 i += 1
-                jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for kx in kx_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for lmax0 in lmax0_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for lmax1 in lmax1_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for lmax2 in lmax2_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for theta0 in theta0_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for r0 in r0_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for r1 in r1_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for a in a_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-        for src in src_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
+                jobs.append([i, kr, mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+        if len(kx_) > 1:
+            for kx in kx_:
+                i += 1
+                jobs.append([i, mid_(kr_), kx, mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+        if len(lmax0_) > 1:
+            for lmax0 in lmax0_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), lmax0, mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+        if len(lmax1_) > 1:
+            for lmax1 in lmax1_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), lmax1, mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+        if len(lmax2_) > 1:
+            for lmax2 in lmax2_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), lmax2, mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+        if len(theta0_) > 1:
+            for theta0 in theta0_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), theta0, mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+        if len(r0_) > 1:
+            for r0 in r0_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), r0, mid_(r1_), mid_(a_), mid_(src_)])
+        if len(r1_) > 1:
+            for r1 in r1_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), r1, mid_(a_), mid_(src_)])
+        if len(a_) > 1:
+            for a in a_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), a, mid_(src_)])
+        if len(src_) > 1:
+            for src in src_:
+                i += 1
+                jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), src])
 
     # distribute jobs
     jobs = np.array(jobs)
@@ -99,11 +110,12 @@ def run_all(global_, file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax
     if rank == size - 1:
         upper_bound = b
 
+    if rank == 0:
+        print("Total number of jobs", b)
     print("Rank", rank, "does job numbers from", lower_bound, "to", upper_bound - 1, flush = True)
 
     # run jobs
     for i in range(lower_bound, upper_bound):
-        print("Job", i)
         if root_type == "soybean":
             run_sra.run_soybean(file_name + str(int(jobs[i][0])), enviro_type, sim_time, *jobs[i, 1:])
         else:
@@ -125,6 +137,6 @@ if __name__ == "__main__":
     print(p)
     kr = 1.e-5
     kx = 1.e-3
-    run_all(True, file_name, root_type, enviro_type, sim_time, kr * p , kx * p , 1., 1., 1., 1., 1., 1., 1., [4])
+    run_all(True, file_name, root_type, enviro_type, sim_time, kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     print("fin")
 

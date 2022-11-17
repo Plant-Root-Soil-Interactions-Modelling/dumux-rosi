@@ -327,7 +327,7 @@ def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,
     np.save('results/vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
     np.save('results/surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
     np.save('results/krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
-    np.save('results/depth_' + file_name, np.array(krs_))  # root system depth [cm]
+    np.save('results/depth_' + file_name, np.array(depth_))  # root system depth [cm]
 
     if conc is not None:
         np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]

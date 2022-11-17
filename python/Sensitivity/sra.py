@@ -265,9 +265,9 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
                 anac.filter("subType", i)
                 vol_[i].append(anac.getSummed("volume"))
                 surf_[i].append(anac.getSummed("surface"))
-
-            krs_.append(r.get_krs(rs_age + t, [collar_ind]))  # KRS
-            depth_.append(ana.getMinBounds())
+            krs, _ = r.get_krs(rs_age + t, [collar_ind])
+            krs_.append(krs)  # KRS
+            depth_.append(ana.getMinBounds().z)
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 

@@ -106,10 +106,10 @@ def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
 
     # fig, ax = plt.subplots(2)
     # t_ = np.linspace(0, len(precip) / 24, len(precip))  # hourly data
-    # ax[0].plot(t_, precip, 'r', label = "precipitation")  # precipitation positive sign
-    # ax[0].plot(t_, evap, 'g', label = "evaporation")  # evaporation negative sign
-    # ax[0].plot(t_, y, 'k:', label = 'net infiltration')
-    # ax[0].plot(t_, precip + evap, 'k:', label = 'net infiltration')
+    # ax[0].bar(t_, precip)  # precipitation positive sign # , 'r', label = "precipitation"
+    # # ax[0].plot(t_, evap, 'g', label = "evaporation")  # evaporation negative sign
+    # # ax[0].bar(t_, y)  # 'k:', label = 'net infiltration'
+    # # ax[0].plot(t_, precip + evap, 'k:', label = 'net infiltration')
     # ax[0].legend()
     # ax[0].set_ylabel("cm / day")
 
@@ -125,8 +125,8 @@ def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
     evap = -evap
     net_inf = precip + evap
 
-    # # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
-    # # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
+    # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
+    # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
     # ax[1].plot(t_, precip, 'r', label = "precipitation")
     # ax[1].plot(t_, evap, 'g', label = "evaporation")
     # ax[1].plot(t_, net_inf, 'k:', label = 'net infiltration')

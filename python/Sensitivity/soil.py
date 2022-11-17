@@ -56,11 +56,11 @@ for i in range(0, N):
     # print(soil_sol_fluxes)
     s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # richards.py
     s.solve(dt)
-    c.append(s.getSolution(1)[:, 0])
+    c.append(s.getSolution_(1))
 
 z = s.getDofCoordinates()
 
-""" sink plot """
+""" nitrate plot """
 c = np.transpose(c)
 c = c[:100:-1,:]
 c = np.minimum(c, 5.5e-4)

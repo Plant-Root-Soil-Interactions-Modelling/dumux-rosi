@@ -27,7 +27,7 @@ colors = prop_cycle.by_key()['color']
 min_b = [-19, -2.5, -200.]  # Domain [38 cm Reihe, 6 cm Pflanzen]
 max_b = [19, 2.5, 0.]
 cell_number = [38, 5, 200]  # 1 cm3
-simtime = 14  # 87.5  # between 75-100 days
+simtime = 0.25 * 87.5  # between 75-100 days
 
 rs = pb.RootSystem()
 
