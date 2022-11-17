@@ -97,13 +97,21 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
     start_time = timeit.default_timer()
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
+    vol_ = [[], [], [], [], [], []]
+    surf_ = [[], [], [], [], [], []]
+    krs_ = []
+    depth_ = []
 
     nodes = r.rs.nodes
     segs = r.rs.segments
     ns = len(segs)
+    for i in range(0, len(segs)):
+        if segs[i].x == 0:
+            collar_ind = i  # segment index of root collar
+            break
     map = r.rs.seg2cell
     mapping = np.array([map[j] for j in range(0, ns)])  # because seg2cell is a map
-    sx = s.getSolutionHead()[:, 0]  # richards.py
+    sx = s.getSolutionHead_()  # richards.py
     hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
     rx = r.solve(rs_age, trans_f(0, dt), 0., rsx, False, wilting_point, soil_k = [])
@@ -125,11 +133,11 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
         cell2seg = rs.cell2seg  # for debugging
         mapping = rs.getSegmentMapper()
-        sx = s.getSolutionHead()[:, 0]  # richards.py
+        sx = s.getSolutionHead_()  # richards.py
         hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
         rsx = hsb.copy()  # initial values for fix point iteration
 
-        cell_centers = s.getCellCenters()
+        cell_centers = s.getCellCenters_()
         cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
         seg_centers_z = rs.getSegmentZ()
 
@@ -200,6 +208,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
                 print("key is negative", key)
                 print("segments", cell2seg[key])
                 print("coresponding nodes")
+                segs = r.rs.segments
                 for s in cell2seg[key]:
                     print(segs[s])
                     print(nodes[segs[s].x], nodes[segs[s].y])
@@ -241,15 +250,28 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         y_.append(np.sum(sink))  # cm3/day
         psi_s2_.append(sx.copy())  # cm (per soil cell)
         if i % skip == 0:
-            print("{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
-                  wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
-                  "number of segments", rs.getNumberOfSegments(), "root collar", rx_[0])
-            psi_x_.append(rx.copy())  # cm (per root node)
-            psi_s_.append(rsx.copy())  # cm (per root segmen
+
+            if i % (24 * skip) == 0:
+                print("{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
+                      wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
+                      "number of segments", rs.getNumberOfSegments(), "root collar", rx[0])
+
+            # psi_x_.append(rx.copy())  # cm (per root node)
+            # psi_s_.append(rsx.copy())  # cm (per root segment)
+
+            ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
+            for i in range(0, 6):  # root types
+                anac = pb.SegmentAnalyser(ana)
+                anac.filter("subType", i)
+                vol_[i].append(anac.getSummed("volume"))
+                surf_[i].append(anac.getSummed("surface"))
+
+            krs_.append(r.get_krs(rs_age + t, [collar_ind]))  # KRS
+            depth_.append(ana.getMinBounds())
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_
 
 
 def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None):

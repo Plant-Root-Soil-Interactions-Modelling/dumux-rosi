@@ -1,7 +1,7 @@
 from solverbase import SolverWrapper
 
 import numpy as np
-from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
+# from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
 
 
 class RichardsWrapper(SolverWrapper):
@@ -101,7 +101,7 @@ class RichardsWrapper(SolverWrapper):
             p = [p + m, p - m]
             self.setICZ(p, z)
         else:
-            self.setICZ(p)
+            self.setICZ([p])
 
     def setLinearIC(self, top, bot):
         """ sets linear initial conditions from @param top matric potential to @param bot matric potential """
@@ -334,6 +334,11 @@ class RichardsWrapper(SolverWrapper):
         self.checkInitialized()
         return self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0)
 
+    def getSolutionHead_(self, eqIdx = 0):
+        """ no mpi version of getSolutionHead() """
+        self.checkInitialized()
+        return np.array(self.base.getSolutionHead(eqIdx))
+
     def getSolutionHeadAt(self, gIdx, eqIdx = 0):
         """Returns the current solution at a cell index"""
         return self.base.getSolutionHeadAt(gIdx, eqIdx)
@@ -342,6 +347,11 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
         return self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2)
+
+    def getWaterContent_(self):
+        """no mpi version of getWaterContent() """
+        self.checkInitialized()
+        return np.array(self.base.getWaterContent())
 
     def getWaterVolume(self):
         """Returns total water volume of the domain [cm3]"""

@@ -33,11 +33,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
     Initialize local soil models (around each root segment) 
     """
     start_time = timeit.default_timer()
-    sx = s.getSolutionHead()  # initial condition of soil [cm]
-    sx = comm.bcast(sx, root = 0)  # soil part might run parallel
-    cc = s.getSolution(1)  # kg/m3
-    cc = comm.bcast(cc, root = 0)  # soil part might run parallel
-    comm.barrier()
+    sx = s.getSolutionHead_()  # initial condition of soil [cm]
+    cc = s.getSolution_(1)  # kg/m3
+
     segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
     seg2cell = rs.rs.rs.seg2cell
     cell2seg = rs.rs.rs.cell2seg
@@ -52,7 +50,6 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         print ("\nInitialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
 
     r = rs.rs  # rename (XylemFluxPython)
-    comm.barrier()
 
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
     if type == 1:
@@ -68,8 +65,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ = [], [], [], [], [], [], [], []  # for post processing
 
-    cell_volumes = s.getCellVolumes()  # cm3
-    cell_volumes = comm.bcast(cell_volumes, root = 0)
+    cell_volumes = s.getCellVolumes_()  # cm3
     net_flux = np.zeros(cell_volumes.shape)
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
@@ -91,6 +87,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         else:
             rsc = rs.get_inner_solutes(1)  # kg/m3
         comm.barrier()
+
         if rank == 0:
             rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)  # soil_k = soil_k
             # print("*", end = "")
@@ -158,7 +155,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
             proposed_outer_fluxes = None
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
 
-        seg_rx = np.array([0.5 * (rx[s.x] + rx[s.y]) for s in segs])
+        seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs])
         rs.solve(dt, seg_rx, proposed_outer_fluxes)  # left dirchlet, right neumann <----
         # TODO mass_net_fluxes
 
@@ -171,8 +168,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         #     print("[m", end = "")
         wall_macro = timeit.default_timer()
 
-        water_content = np.array(s.getWaterContent())  # theta per cell [1]
-        water_content = comm.bcast(water_content, root = 0)
+        water_content = np.array(s.getWaterContent_())  # theta per cell [1]
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
         # TODO for nitrate
 
@@ -191,8 +187,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         # if rank == 0:
         #     print("[n", end = "")
         wall_netfluxes = timeit.default_timer()
-        water_content = np.array(s.getWaterContent())
-        water_content = comm.bcast(water_content, root = 0)
+        water_content = np.array(s.getWaterContent_())
         new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
         net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
         for k, root_flux in soil_fluxes.items():
@@ -232,12 +227,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         # if rank == 0:
         #     print("[r", end = "")
 
-        sx = s.getSolutionHead()
-        cc = s.getSolution(1)  # [kg/m3]
-        cc = comm.bcast(cc, root = 0)  # soil part might run parallel
-        cc = cc[:, 0]
+        sx = s.getSolutionHead_()
+        cc = s.getSolution_(1)  # [kg/m3]
         if rank == 0:
-            sx = sx[:, 0]
             sink = np.zeros(sx.shape)
             for k, v in soil_fluxes.items():
                 sink[k] += v

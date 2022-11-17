@@ -32,15 +32,12 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
 area = (38 * 5)
 trans = 0.6 * area  # cm3/day (38 * 5 = 190)
 
-sim_time = 1. * 87.5  # [day]
+sim_time = 0.25 * 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 range_ = ['1995-03-15 00:00:00', '1995-06-12 11:00:00']  # +2
 x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 87.5, evap.lai_soybean, Kc_soybean)
 trans_soybean = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
-# plt.plot(x_, y_)
-# plt.show()
-# dd
 
 """ initialize """
 p_top = -330
@@ -68,7 +65,7 @@ if rank == 0:
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_soybean)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_soybean)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()
@@ -76,7 +73,7 @@ water = s.getWaterVolume()
 """ output """
 if rank == 0:
 
-    scenario.write_files("soybean_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_)
+    scenario.write_files("soybean_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
 
     print("\ntotal uptake", water0 - water, "cm3")
     print("fin")

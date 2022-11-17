@@ -226,7 +226,7 @@ def set_all_sd(rs, s):
     # todo seed position s
 
 
-def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False):
+def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False, mods = None):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     global picker  # make sure it is not garbage collected away...
@@ -242,14 +242,51 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         else:
             seed = None
         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
+
         rs = pb.MappedRootSystem()
         rs.setSeed(seed)
         rs.readParameters(fname)
         if not stochastic:
             set_all_sd(rs, 0.)
+
+        if mods is not None:  # apply modifications
+            rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
+            srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
+            if "lmax0" in mods:
+                rrp[0].lmax *= mods["lmax0"]
+                rrp[4].lmax *= mods["lmax0"]
+                if len(rrp) > 5:
+                    rrp[5].lmax *= mods["lmax0"]
+            if "lmax1" in mods:
+                rrp[1].lmax *= mods["lmax1"]
+            if "lmax2" in mods:
+                rrp[2].lmax *= mods["lmax2"]
+            if "theta0" in mods:
+                if len(rrp) > 5:
+                    print("shootbore theta0")
+                    rrp[5].theta *= mods["theta0"]
+                else:
+                    print("seminal theta0")
+                    rrp[4].theta *= mods["theta0"]
+            if "r0" in mods:
+                rrp[0].r *= mods["r0"]
+                rrp[4].r *= mods["r0"]
+                if len(rrp) > 5:
+                    rrp[5].r *= mods["r0"]
+            if "r1" in mods:
+                rrp[1].lmax *= mods["r1"]
+            if "r" in mods:
+                for i in range(0, len(rrp)):
+                    rrp[i].r *= mods["r"]
+            if "a" in mods:
+                for i in range(0, len(rrp)):
+                    rrp[i].a *= mods["a"]
+            if "src" in mods:
+                srp[0].maxB = mods["src"]
+
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
-        rs.simulate(1., True)  ##############################################################
+        rs.simulate(1., True)
         r = XylemFluxPython(rs)
 
         # print("HERE***********************************")
@@ -275,16 +312,24 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 
     if rank == 0:
         init_conductivities_const(r)
+
     return r
 
 
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, conc = None, c_ = None):
+def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):
     """  saves numpy arrays ass npy files """
+
     np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
     np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
     np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
     np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
     np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
+
+    np.save('results/vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
+    np.save('results/surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
+    np.save('results/krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
+    np.save('results/depth_' + file_name, np.array(krs_))  # root system depth [cm]
+
     if conc is not None:
         np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
     if c_ is not None:
