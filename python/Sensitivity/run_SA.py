@@ -12,6 +12,10 @@ import numpy as np
 import run_sra
 
 
+def mid_(l):
+    return l[len(l) // 2]
+
+
 def run_all(global_, file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
 
     # make lists out of values
@@ -53,9 +57,10 @@ def run_all(global_, file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax
                                                 i += 1
                                                 jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
     else:
-        for kr in kr_:
-            i += 1
-            jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
+        if len(kr_) > 1:
+            for kr in kr_:
+                i += 1
+                jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
         for kx in kx_:
             i += 1
             jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
@@ -98,8 +103,9 @@ def run_all(global_, file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax
 
     # run jobs
     for i in range(lower_bound, upper_bound):
+        print("Job", i)
         if root_type == "soybean":
-            run_sra.run_soybean(file_name + str(jobs[i][0]), enviro_type, sim_time, *jobs[i, 1:])
+            run_sra.run_soybean(file_name + str(int(jobs[i][0])), enviro_type, sim_time, *jobs[i, 1:])
         else:
             raise("Unknown root type " + root_type)
 
@@ -113,10 +119,12 @@ if __name__ == "__main__":
     root_type = "soybean"
     file_name = "test"
     enviro_type = 0
-    sim_time = 10.
+    sim_time = 25.
     p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     # p = np.array([1. + x for x in np.linspace(-0.5, 0.5, 7)])
     print(p)
-    run_all(True, file_name, root_type, enviro_type, sim_time, 1.e-4, 1.e-4, 1., 1., 1., 1., p, p, 1., [2, 4])
+    kr = 1.e-5
+    kx = 1.e-3
+    run_all(True, file_name, root_type, enviro_type, sim_time, kr * p , kx * p , 1., 1., 1., 1., 1., 1., 1., [4])
     print("fin")
 
