@@ -22,7 +22,6 @@ dumux NC story:
 """
 
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/");
-from hamcrest.core.core.isnone import none
 sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../../../CPlantBox/");
 
 import numpy as np
