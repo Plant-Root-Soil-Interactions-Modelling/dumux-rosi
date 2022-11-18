@@ -47,16 +47,17 @@ def run_jobs(file_name, jobs):
 
     jobs = np.array(jobs)
     b = jobs.shape[0]
+    if rank == 0:
+        print("Total number of jobs", b)
+
     num_per_rank = b // size
-    num_per_rank = np.min(1, num_per_rank)
+    num_per_rank = max(1, num_per_rank)
 
     lower_bound = rank * num_per_rank
     upper_bound = (rank + 1) * num_per_rank
     if rank == size - 1:
         upper_bound = b
 
-    if rank == 0:
-        print("Total number of jobs", b)
     print("Rank", rank, "does job numbers from", lower_bound, "to", upper_bound - 1, flush = True)
 
     for i in range(lower_bound, upper_bound):  # run jobs
@@ -166,10 +167,10 @@ if __name__ == "__main__":
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 87.5
+    sim_time = 10.
     p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     kr = 1.e-4
     kx = 1.e-3
-    # run_local(file_name, root_type, enviro_type, sim_time, kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
-    run_local(file_name, root_type, enviro_type, sim_time, kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [2, 3, 4, 5])
+    run_local(file_name, root_type, enviro_type, sim_time, kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
+    # run_local(file_name, root_type, enviro_type, sim_time, kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [2, 3, 4, 5])
 

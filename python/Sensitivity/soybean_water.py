@@ -32,7 +32,7 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
 area = (38 * 5)
 trans = 0.6 * area  # cm3/day (38 * 5 = 190)
 
-sim_time = 0.25 * 87.5  # [day]
+sim_time = 1.* 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 range_ = ['1995-03-15 00:00:00', '1995-06-12 11:00:00']  # +2

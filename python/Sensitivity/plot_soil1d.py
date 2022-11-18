@@ -15,11 +15,11 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 """ pick... """
 
-# name = "soybean"
-# str_ = "sra0"
-# Kc = Kc_soybean
-# lai = evap.lai_soybean
-# ylim_ = None
+name = "soybean"
+str_ = "sra0"
+Kc = Kc_soybean
+lai = evap.lai_soybean
+ylim_ = None
 
 # name = "maize"
 # str_ = "sra0"
@@ -67,7 +67,7 @@ y_ = y_[::2]
 
 data = np.load(path + fname + ".npy")
 data = np.transpose(data)
-data = data[:100:-1,:]
+data = data[:130:-1,:]
 # data = np.minimum(data, 0.001)
 
 fnames_depth = np.array(["depth_" + name + "_" + str_  ])
@@ -79,27 +79,28 @@ if fname.startswith("soilc_"):
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
     bar = ax[0].bar(t_, -np.array(y_), 0.035)
-    ax[0].set_ylabel("Net infiltration [cm/day]")
+    ax[0].set_ylabel("net infiltration [cm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
         ax[0].set_ylim(ylim_, 1.)
     divider = make_axes_locatable(ax[0])
     cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
+    cax0.axis('off')
 
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
-    cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    cmap = matplotlib.cm.get_cmap('jet')
+    im = ax[1].imshow(data, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], -130., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    # ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
-    cb.set_label('Nitrate concentration [kg/m3]', rotation = 270)
+    cb.set_label('nitrate concentration [kg/m3]', rotation = 270)
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
-    ax[1].scatter([15, 16, 28, 29], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
+    ax[1].scatter([16, 17, 29, 30], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
 
-    cb0 = fig.colorbar(im, cax = cax0, orientation = 'vertical')
-    cb0.set_label('', rotation = 270)
     print("data ranges from", np.min(data), "to ", np.max(data), "[kg/m3]'")
+    # print("final rs depth", depths[-1])
     plt.tight_layout()
     plt.show()
 
@@ -107,27 +108,27 @@ else:
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
     bar = ax[0].bar(t_, -np.array(y_), 0.035)
-    ax[0].set_ylabel("Net infiltration [cm/day]")
+    ax[0].set_ylabel("net infiltration [cm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
         ax[0].set_ylim(ylim_, 1.)
     divider = make_axes_locatable(ax[0])
     cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
+    cax0.axis('off')
 
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], -130., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
-    cb.set_label('Soil matric potential [cm]', rotation = 270)
+    cb.set_label('soil matric potential [cm]', rotation = 270)
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
 
-    cb0 = fig.colorbar(im, cax = cax0, orientation = 'vertical')
-    cb0.set_label('', rotation = 270)
     print("range", np.min(data), np.max(data), "[cm]")
+    print("final rs depth", depths[-1])
     plt.tight_layout()
     plt.show()
 
