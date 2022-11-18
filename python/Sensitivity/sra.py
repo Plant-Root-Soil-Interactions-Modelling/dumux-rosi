@@ -246,13 +246,13 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         for k, v in soil_fluxes.items():
             sink[k] += v
         sink_.append(sink)  # cm3/day (per soil cell)
-        x_.append(t)  # day
+        x_.append(rs_age + t)  # day
         y_.append(np.sum(sink))  # cm3/day
         psi_s2_.append(sx.copy())  # cm (per soil cell)
         if i % skip == 0:
 
             if i % (24 * skip) == 0:
-                print("{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
+                print("time", rs_age + t, "{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
                       wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
                       "number of segments", rs.getNumberOfSegments(), "root collar", rx[0])
 

@@ -15,11 +15,11 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 """ pick... """
 
-name = "soybean"
-str_ = "sra0"
-Kc = Kc_soybean
-lai = evap.lai_soybean
-ylim_ = None
+# name = "soybean"
+# str_ = "sra0"
+# Kc = Kc_soybean
+# lai = evap.lai_soybean
+# ylim_ = None
 
 # name = "maize"
 # str_ = "sra0"
@@ -35,7 +35,7 @@ ylim_ = None
 
 fname = "soil_" + name + "_" + str_
 
-start_date = '1995-03-15 00:00:00'  # added 1 day, since inital rs_age
+start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
 path = "results/"
 
@@ -80,7 +80,7 @@ if fname.startswith("soilc_"):
 
     bar = ax[0].bar(t_, -np.array(y_), 0.035)
     ax[0].set_ylabel("Net infiltration [cm/day]")
-    ax[0].set_xlim(0, times[-1])
+    ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
         ax[0].set_ylim(ylim_, 1.)
     divider = make_axes_locatable(ax[0])
@@ -89,7 +89,7 @@ if fname.startswith("soilc_"):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0 , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
     cb.set_label('Nitrate concentration [kg/m3]', rotation = 270)
@@ -108,7 +108,7 @@ else:
 
     bar = ax[0].bar(t_, -np.array(y_), 0.035)
     ax[0].set_ylabel("Net infiltration [cm/day]")
-    ax[0].set_xlim(0, times[-1])
+    ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
         ax[0].set_ylim(ylim_, 1.)
     divider = make_axes_locatable(ax[0])
@@ -117,7 +117,7 @@ else:
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [0 , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30

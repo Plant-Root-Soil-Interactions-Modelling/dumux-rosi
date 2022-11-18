@@ -73,6 +73,7 @@ twin_axes = ax[2].twinx()
 twin_axes.plot(t, krs_, "r")
 twin_axes.set_ylabel("krs [cm2/day]")
 print("max depth", np.max(y), "cm")
+print("final Krs", np.max(krs_), "cm2/day")
 
 ax[2].set_xlabel("Time [d]")
 plt.tight_layout()
