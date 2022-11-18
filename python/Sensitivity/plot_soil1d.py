@@ -15,17 +15,17 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 """ pick... """
 
-name = "soybean"
-str_ = "sra0"
-Kc = Kc_soybean
-lai = evap.lai_soybean
-ylim_ = None
-
-# name = "maize"
+# name = "soybean"
 # str_ = "sra0"
-# Kc = Kc_maize
-# lai = evap.lai_maize
-# ylim_ = -10
+# Kc = Kc_soybean
+# lai = evap.lai_soybean
+# ylim_ = None
+
+name = "maize"
+str_ = "sra0"
+Kc = Kc_maize
+lai = evap.lai_maize
+ylim_ = -10
 
 # name = "maize"
 # str_ = "cyl0"
@@ -65,14 +65,14 @@ y_ = np.array(y_)
 t_ = t_[::2]
 y_ = y_[::2]
 
-data = np.load(path + fname + ".npy")
-data = np.transpose(data)
-data = data[:130:-1,:]
-# data = np.minimum(data, 0.001)
-
 fnames_depth = np.array(["depth_" + name + "_" + str_  ])
 depths = [np.load(path + n_ + ".npy")  for n_ in fnames_depth]
 depths = depths[0]
+
+data = np.load(path + fname + ".npy")
+data = np.transpose(data)
+data = data[:np.abs(int(depths[-1])) + 10:-1,:]
+# data = np.minimum(data, 0.001)
 
 """ sink plot """
 if fname.startswith("soilc_"):
@@ -90,7 +90,7 @@ if fname.startswith("soilc_"):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap = matplotlib.cm.get_cmap('jet')
-    im = ax[1].imshow(data, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], -130., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     # ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
@@ -119,7 +119,7 @@ else:
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], -130., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30

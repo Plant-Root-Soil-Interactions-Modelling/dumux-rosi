@@ -21,7 +21,9 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, t
     area = 38 * 5  # cm2
     p_top = -330  # initial matric potential top (starts in equilibrium)
 
+    print(lmax0)
     # pick envirotype
+    enviro_type = int(enviro_type)
     enviro_soil = {}
     enviro_soil[0] = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
     enviro_soil[1] = [0.0874, 0.5359, 0.0087, 1.5231, 93]
@@ -55,4 +57,13 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, t
     psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate_dynamic(s, r, sra_table_lookup, 0., sim_time, dt, trans_soybean)
     scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
     print("finished " + file_name)
+
+
+if __name__ == "__main__":
+    print(sys.argv)
+    print(len(sys.argv[1:]))
+
+    file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src
+
+    run_soybean(*sys.argv[1:])
 

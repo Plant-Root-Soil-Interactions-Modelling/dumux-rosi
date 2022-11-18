@@ -11,4 +11,4 @@
  
 cd ..
 module load openmpi/4.1.4
-mpirun python3 run_localSA.py
+mpirun python3 run_SA.py

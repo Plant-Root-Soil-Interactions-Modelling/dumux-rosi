@@ -8,6 +8,7 @@ sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
 
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
 import numpy as np
+import os
 
 import run_sra
 
@@ -42,7 +43,7 @@ def make_lists(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
     return kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_
 
 
-def run_jobs(file_name, jobs):
+def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     """ distribute jobs to MPI ranks """
 
     jobs = np.array(jobs)
@@ -73,8 +74,46 @@ def run_jobs(file_name, jobs):
     print("finished", rank)
 
 
-def run_local(file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
-    """ creates the jobs for a local sensitivity analysis, and starts the simluation by calling run_local """
+def mkdir_p(dir):
+    '''make a directory (dir) if it doesn't exist'''
+
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+
+
+def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
+    """ send as individual jobs """
+
+    job_directory = os.path.join(os.getcwd(), file_name)
+    mkdir_p(job_directory)
+    print(job_directory)
+
+    for job in jobs:
+
+        print("Job", job[0], ":", file_name, enviro_type, sim_time, *job[1:])
+        job_name = file_name + str(job[0])
+        job_file = os.path.join(job_directory, job_name + ".job")
+
+        with open(job_file, 'w') as fh:
+
+            fh.writelines("#!/bin/bash\n")
+            fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
+            fh.writelines("#SBATCH --time=2:00:00\n")
+            fh.writelines("#SBATCH --mem=16G\n")
+            fh.writelines("#SBATCH --qos=normal\n")
+            fh.writelines("#SBATCH mail-type=BEGIN,TIME_LIMIT_50,END\n")
+            fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
+            fh.writelines("cd ..\n")
+            fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+                          format(job_name, enviro_type, sim_time, *job[1:]))
+
+        # os.system("sbatch {:s}".format(job_file))
+        os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+                          format(job_name, enviro_type, sim_time, *job[1:]))
+
+
+def make_local(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
+    """ creates the jobs for a local sensitivity analysis  """
 
     kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_ = make_lists(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_)
 
@@ -123,11 +162,11 @@ def run_local(file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax0_, lma
             i += 1
             jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), src])
 
-    run_jobs(file_name, jobs)
+    return jobs
 
 
-def run_global(file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
-    """ creates the jobs for a global sensitivity analysis, and starts the simluation by calling run_local """
+def make_global(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
+    """ creates the jobs for a global sensitivity analysis  """
 
     kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_ = make_lists(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_)
 
@@ -147,7 +186,7 @@ def run_global(file_name, root_type, enviro_type, sim_time, kr_, kx_, lmax0_, lm
                                             for src in src_:
                                                 i += 1
                                                 jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
-    run_jobs(file_name, jobs)
+    return jobs
 
 
 if __name__ == "__main__":
@@ -161,16 +200,17 @@ if __name__ == "__main__":
     # print(p)
     # kr = 1.e-5
     # kx = 1.e-3
-    # run_global(True, file_name, root_type, enviro_type, sim_time, kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
+    # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
 
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 10.
+    sim_time = 87.5
     p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     kr = 1.e-4
     kx = 1.e-3
-    run_local(file_name, root_type, enviro_type, sim_time, kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
-    # run_local(file_name, root_type, enviro_type, sim_time, kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [2, 3, 4, 5])
+    jobs = make_local(kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
+    # run_local(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [2, 3, 4, 5])
+    start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
