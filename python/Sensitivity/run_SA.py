@@ -99,8 +99,8 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
 
             fh.writelines("#!/bin/bash\n")
             fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
-            fh.writelines("SBATCH --ntasks=6")
-            fh.writelines("SBATCH --nodes=2 ")        
+            fh.writelines("SBATCH --ntasks=1")
+            fh.writelines("SBATCH --nodes=1")        
             fh.writelines("#SBATCH --time=2:00:00\n")
             fh.writelines("#SBATCH --mem=16G\n")
             fh.writelines("SBATCH --partition=cpu256")
@@ -110,7 +110,7 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))
 
-        # os.system("sbatch {:s}".format(job_file))
+        os.system("sbatch {:s}".format(job_file))
         # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
         #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
