@@ -87,8 +87,9 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     job_directory = os.path.join(os.getcwd(), file_name)
     mkdir_p(job_directory)
     print(job_directory)
+    jobs = np.array(jobs)
 
-    for job in jobs:
+    for job in jobs[0:1,:]:
 
         print("Job", job[0], ":", file_name, enviro_type, sim_time, *job[1:])
         job_name = file_name + str(job[0])
@@ -98,9 +99,11 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
 
             fh.writelines("#!/bin/bash\n")
             fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
+            fh.writelines("SBATCH --ntasks=6")
+            fh.writelines("SBATCH --nodes=2 ")        
             fh.writelines("#SBATCH --time=2:00:00\n")
             fh.writelines("#SBATCH --mem=16G\n")
-            fh.writelines("#SBATCH --qos=normal\n")
+            fh.writelines("SBATCH --partition=cpu256")
             fh.writelines("#SBATCH mail-type=BEGIN,TIME_LIMIT_50,END\n")
             fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
             fh.writelines("cd ..\n")
@@ -206,7 +209,7 @@ if __name__ == "__main__":
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 87.5
+    sim_time = 10. # 87.5
     p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     kr = 1.e-4
     kx = 1.e-3
