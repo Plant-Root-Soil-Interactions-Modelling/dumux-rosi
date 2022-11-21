@@ -111,8 +111,8 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
                           format(job_name, enviro_type, sim_time, *job[1:]))
 
         # os.system("sbatch {:s}".format(job_file))
-        os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
-                          format(job_name, enviro_type, sim_time, *job[1:]))
+        # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+        #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
 
 def make_local(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
