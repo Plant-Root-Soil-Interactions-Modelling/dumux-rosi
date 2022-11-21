@@ -105,8 +105,7 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("#SBATCH --mem=16G\n")
             fh.writelines("SBATCH --partition=cpu256")
             fh.writelines("#SBATCH mail-type=BEGIN,TIME_LIMIT_50,END\n")
-            fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
-            fh.writelines("cd ..\n")
+            fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")            
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))
 
