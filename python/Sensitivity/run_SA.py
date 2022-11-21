@@ -208,7 +208,7 @@ if __name__ == "__main__":
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 10. # 87.5
+    sim_time = 87.5
     p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     kr = 1.e-4
     kx = 1.e-3
