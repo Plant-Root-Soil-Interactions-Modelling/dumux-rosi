@@ -89,7 +89,7 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     print(job_directory)
     jobs = np.array(jobs)
 
-    for job in jobs[0:1,:]:
+    for job in jobs:
 
         print("Job", job[0], ":", file_name, enviro_type, sim_time, *job[1:])
         job_name = file_name + str(job[0])
