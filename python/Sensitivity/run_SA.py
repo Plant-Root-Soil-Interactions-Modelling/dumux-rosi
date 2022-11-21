@@ -91,8 +91,8 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
 
     for job in jobs:
 
-        print("Job", job[0], ":", file_name, enviro_type, sim_time, *job[1:])
         job_name = file_name + str(int(job[0]))
+        print("Job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])        
         job_file = os.path.join(job_directory, job_name + ".job")
 
         with open(job_file, 'w') as fh:
