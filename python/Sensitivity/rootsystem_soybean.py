@@ -51,8 +51,6 @@ for p in rrp:
 # # print(rrp[0])
 # rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 # # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
-# # print()
-
 rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
 
 # Initialize

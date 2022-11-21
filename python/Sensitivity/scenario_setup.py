@@ -252,7 +252,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
             srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
             if "lmax0" in mods:
-                rrp[0].lmax *= mods["lmax0"]
+                rrp[1].lmax *= mods["lmax0"]
                 rrp[4].lmax *= mods["lmax0"]
                 if len(rrp) > 5:
                     rrp[5].lmax *= mods["lmax0"]
@@ -263,12 +263,12 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "theta0" in mods:
                 if len(rrp) > 5:
                     print("shootbore theta0")
-                    rrp[5].theta *= mods["theta0"]
+                    rrp[5].theta = mods["theta0"]
                 else:
                     print("seminal theta0")
-                    rrp[4].theta *= mods["theta0"]
+                    rrp[4].theta = mods["theta0"]
             if "r0" in mods:
-                rrp[0].r *= mods["r0"]
+                rrp[1].r *= mods["r0"]
                 rrp[4].r *= mods["r0"]
                 if len(rrp) > 5:
                     rrp[5].r *= mods["r0"]
@@ -283,7 +283,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "src" in mods:
                 srp[0].maxB = mods["src"]
 
-        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
+        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, -0.1)) #################
         rs.initializeDB(4, 5)
         rs.simulate(1., True)
         r = XylemFluxPython(rs)
