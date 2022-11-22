@@ -26,7 +26,7 @@ sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../..
 
 import numpy as np
 import timeit
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+# from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
@@ -233,16 +233,17 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     if fname.endswith(".rsml"):
         r = XylemFluxPython(fname)
     elif fname.endswith(".xml"):
-        if rank == 0:
-            if stochastic:
-                seed = np.random.randint(0, 1e6)
-            else:
-                seed = 1  # always the same random seed
-        else:
-            seed = None
-        seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
+        # if rank == 0:
+        #     if stochastic:
+        #         seed = np.random.randint(0, 1e6)
+        #     else:
+        #         seed = 1  # always the same random seed
+        # else:
+        #     seed = None
+        # seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
+        seed = 1
 
-        rs = pb.MappedRootSystem()
+        rs = pb.MappedRootSystem()        
         rs.setSeed(seed)
         rs.readParameters(fname)
         if not stochastic:
@@ -283,7 +284,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "src" in mods:
                 srp[0].maxB = mods["src"]
 
-        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, -0.1)) #################
+        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
         rs.simulate(1., True)
         r = XylemFluxPython(rs)
@@ -301,16 +302,16 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     # print([s.x for s in r.rs.segments])
     # print([s.y for s in r.rs.segments])
     # ss
-    comm.barrier()
+    # comm.barrier()
     # print("survived setRectangularGrid", rank)
 
     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-    comm.barrier()
+    # comm.barrier()
     # print("survived setSoilGrid", rank)
 
-    if rank == 0:
-        init_conductivities_const(r)
+    #if rank == 0:
+    init_conductivities_const(r)
 
     return r
 

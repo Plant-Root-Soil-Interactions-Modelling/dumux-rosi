@@ -38,25 +38,36 @@ fig, ax = plt.subplots(3, 3, figsize = (16, 16))
 for i in range(0, 3):
     for j in range(0, 3):
         lind = i * 3 + j
-        print("producing sub-plot", name[lind])
+        print("\nproducing sub-plot", name[lind])
         file_start_ind = 2 + lind * sa_len
         trans = np.zeros((sa_len,))
         vol = np.zeros((sa_len,))
         krs = np.zeros((sa_len,))
         for k in range(0, sa_len):
-            trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-            trans[k] = np.sum(trans_[1,:])
-            vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
-            vol_ = vol_[:, -1]
-            vol[k] = np.sum(vol_)
-            krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
-            krs[k] = krs_[-1]
+            try:
+                trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
+                trans[k] = np.sum(trans_[1,:])    
+                print(trans[k])            
+            except:
+                trans[k] = np.nan
+                print("skipping file", file_name + str(file_start_ind + k))
+            try:
+                vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
+                vol_ = vol_[:, -1]
+                vol[k] = np.sum(vol_)                
+            except:                
+                vol[k] = np.nan
+            try:
+                krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
+                krs[k] = krs_[-1]
+            except:
+                krs[k] = np.nan
         trans = trans / trans[sa_len // 2]  # nondimensionalize
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
-        ax[i, j].plot(p2, trans, label = "uptake")
-        ax[i, j].plot(p2, vol, label = "volume")
-        ax[i, j].plot(p2, krs, label = "krs")
+        ax[i, j].plot(trans, '*', label = "uptake")
+        ax[i, j].plot(vol, '*', label = "volume")
+        ax[i, j].plot(krs,'*', label = "krs")
         ax[i, j].plot([0.], [1.], 'r*')
         ax[i, j].legend()
         ax[i, j].set_title(name[lind])

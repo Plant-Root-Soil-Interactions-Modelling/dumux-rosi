@@ -205,16 +205,19 @@ if __name__ == "__main__":
     # kx = 1.e-3
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
-
+    
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 87.5
-    p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-    kr = 1.e-4
-    kx = 1.e-3
-    theta_ = np.linspace(0, np.pi/2, 9)
-    jobs = make_local(kr * p , kx * p , p, p, p, theta_, p, p, p, [2, 3, 4, 5])
-    # run_local(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [2, 3, 4, 5])
-    start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
-
+    sim_time = 0.1*87.5    
+    if rank==0:        
+        p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        kr = 1.e-4
+        kx = 1.e-3
+        theta_ = np.linspace(0, np.pi/2, 9)
+        jobs = make_local(kr * p , kx * p , p, p, p, theta_, p, p, p, [2, 3, 4, 5])
+    else:
+        jobs = None
+    jobs = comm.bcast(jobs, root=0)
+    # start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
