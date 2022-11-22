@@ -100,19 +100,20 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("#!/bin/bash\n")
             fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
             fh.writelines("#SBATCH --ntasks=1\n")
-            fh.writelines("#SBATCH --nodes=1\n")        
+            fh.writelines("#SBATCH --nodes=1\n")    
+            fh.writelines("#SBATCH --nodelist=node10\n")                    
             fh.writelines("#SBATCH --time=5:00:00\n")
             fh.writelines("#SBATCH --mem=2G\n")
             fh.writelines("#SBATCH --partition=cpu256\n")
             fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
             fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")      
-            fh.writelines("module load openmpi/4.1.4\n")                  
-            fh.writelines("srun python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+            # fh.writelines("module load openmpi/4.1.4\n")                  
+            fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))
 
-        # os.system("sbatch {:s}".format(job_file))
-        os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
-                          format(job_name, enviro_type, sim_time, *job[1:]))
+        os.system("sbatch {:s}".format(job_file))
+        # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+        #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
 
 def make_local(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
