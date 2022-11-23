@@ -92,7 +92,7 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     for job in jobs:
 
         job_name = file_name + str(int(job[0]))
-        print("Job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])        
+        print("Job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])
         job_file = os.path.join(job_directory, job_name + ".job")
 
         with open(job_file, 'w') as fh:
@@ -100,14 +100,14 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("#!/bin/bash\n")
             fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
             fh.writelines("#SBATCH --ntasks=1\n")
-            fh.writelines("#SBATCH --nodes=1\n")    
-            fh.writelines("#SBATCH --nodelist=node10\n")                    
+            fh.writelines("#SBATCH --nodes=1\n")
+            fh.writelines("#SBATCH --nodelist=node10\n")
             fh.writelines("#SBATCH --time=5:00:00\n")
             fh.writelines("#SBATCH --mem=2G\n")
             fh.writelines("#SBATCH --partition=cpu256\n")
             fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
-            fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")      
-            # fh.writelines("module load openmpi/4.1.4\n")                  
+            fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
+            # fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))
 
@@ -206,19 +206,19 @@ if __name__ == "__main__":
     # kx = 1.e-3
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
-    
+
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 0.1*87.5    
-    if rank==0:        
+    sim_time = 0.5 * 87.5
+    if rank == 0:
         p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
         kr = 1.e-4
         kx = 1.e-3
-        theta_ = np.linspace(0, np.pi/2, 9)
+        theta_ = np.linspace(0, np.pi / 2, 9)
         jobs = make_local(kr * p , kx * p , p, p, p, theta_, p, p, p, [2, 3, 4, 5])
     else:
         jobs = None
-    jobs = comm.bcast(jobs, root=0)
+    jobs = comm.bcast(jobs, root = 0)
     # start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)

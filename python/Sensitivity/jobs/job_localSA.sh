@@ -6,7 +6,7 @@
 #SBATCH --nodelist=node10
 #SBATCH --partition=cpu256
 #SBATCH --time=5:00:00
-#SBATCH --mem=16G
+#SBATCH --mem=0
 #SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END
 #SBATCH --mail-user=d.leitner@fz-juelich.de
  
