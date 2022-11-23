@@ -28,6 +28,7 @@ cd ..
 done
 
 # build without MPI
-./dune-common/bin/dunecontrol --opts=dumux-rosi/cmake_nompi.opts all
+# ./dune-common/bin/dunecontrol --opts=dumux-rosi/cmake_nompi.opts all
+./dune-common/bin/dunecontrol --opts=dumux-rosi/cmake_nompi_cluster.opts all
 
 
