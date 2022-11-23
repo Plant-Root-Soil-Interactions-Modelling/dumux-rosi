@@ -15,10 +15,10 @@ GXX_RELEASE_OPTS=" \
     -march=native \
     -funroll-loops \
     -g0"
-BUILD="/opt/dumux"
-CMAKE="$BUILD/bin/cmake"
-MAKE="$BUILD/bin/make"
-#LD_LIBRARY_PATH=$HOME/COMPILERS/gcc-6.3.0/lib64:$LD_LIBRARY_PATH
+# BUILD="/opt/dumux"
+# CMAKE="$BUILD/bin/cmake"
+# MAKE="$BUILD/bin/make"
+# LD_LIBRARY_PATH=$HOME/COMPILERS/gcc-6.3.0/lib64:$LD_LIBRARY_PATH
 STDTHREAD_LINK_FLAGS="-pthread"
 # configure flags
 CMAKE_FLAGS=" 
