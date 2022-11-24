@@ -1,7 +1,7 @@
 from solverbase import SolverWrapper
 
 import numpy as np
-# from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
+from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
 
 
 class RichardsWrapper(SolverWrapper):

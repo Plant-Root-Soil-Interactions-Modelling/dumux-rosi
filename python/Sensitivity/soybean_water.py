@@ -8,7 +8,6 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
-from rhizo_models import RhizoMappedSegments
 from xylem_flux import sinusoidal2
 import cyl
 import sra

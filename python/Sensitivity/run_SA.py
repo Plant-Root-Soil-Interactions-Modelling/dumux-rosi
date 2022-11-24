@@ -18,29 +18,29 @@ def mid_(l):
     return l[len(l) // 2]
 
 
-def make_lists(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
+def make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
     """ turns single values into lists containing the value """
     if isinstance(kr_, float):
         kr_ = [kr_]
     if isinstance(kx_, float):
         kx_ = [kx_]
-    if isinstance(lmax0_, float):
-        lmax0_ = [lmax0_]
     if isinstance(lmax1_, float):
         lmax1_ = [lmax1_]
     if isinstance(lmax2_, float):
         lmax2_ = [lmax2_]
-    if isinstance(theta0_, float):
-        theta0_ = [theta0_]
-    if isinstance(r0_, float):
-        r0_ = [r0_]
+    if isinstance(lmax3_, float):
+        lmax3_ = [lmax3_]
+    if isinstance(theta1_, float):
+        theta1_ = [theta1_]
     if isinstance(r1_, float):
         r1_ = [r1_]
+    if isinstance(r2_, float):
+        r2_ = [r2_]
     if isinstance(a_, float):
         a_ = [a_]
     if isinstance(src_, int):
         src_ = [src_]
-    return kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_
+    return kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_
 
 
 def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
@@ -71,7 +71,8 @@ def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     if rank == 0:  # save index to values
         np.savetxt("results/" + file_name, jobs[:, 1:])
 
-    print("finished", rank)
+    comm.barrier()
+    MPI.Finalize()
 
 
 def mkdir_p(dir):
@@ -116,63 +117,63 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
         #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
 
-def make_local(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
+def make_local(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
     """ creates the jobs for a local sensitivity analysis  """
 
-    kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_ = make_lists(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_)
+    kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_ = make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_)
 
     # create local sa jobs
     jobs = []
     i = 1
-    jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+    jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
     if len(kr_) > 1:
         for kr in kr_:
             i += 1
-            jobs.append([i, kr, mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+            jobs.append([i, kr, mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
     if len(kx_) > 1:
         for kx in kx_:
             i += 1
-            jobs.append([i, mid_(kr_), kx, mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
-    if len(lmax0_) > 1:
-        for lmax0 in lmax0_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), lmax0, mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+            jobs.append([i, mid_(kr_), kx, mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
     if len(lmax1_) > 1:
         for lmax1 in lmax1_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), lmax1, mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
+            jobs.append([i, mid_(kr_), mid_(kx_), lmax1, mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
     if len(lmax2_) > 1:
         for lmax2 in lmax2_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), lmax2, mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
-    if len(theta0_) > 1:
-        for theta0 in theta0_:
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), lmax2, mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
+    if len(lmax3_) > 1:
+        for lmax3 in lmax3_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), theta0, mid_(r0_), mid_(r1_), mid_(a_), mid_(src_)])
-    if len(r0_) > 1:
-        for r0 in r0_:
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), lmax3, mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
+    if len(theta1_) > 1:
+        for theta1 in theta1_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), r0, mid_(r1_), mid_(a_), mid_(src_)])
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), theta1, mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
     if len(r1_) > 1:
         for r1 in r1_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), r1, mid_(a_), mid_(src_)])
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), r1, mid_(r2_), mid_(a_), mid_(src_)])
+    if len(r2_) > 1:
+        for r2 in r2_:
+            i += 1
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), r2, mid_(a_), mid_(src_)])
     if len(a_) > 1:
         for a in a_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), a, mid_(src_)])
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), a, mid_(src_)])
     if len(src_) > 1:
         for src in src_:
             i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax0_), mid_(lmax1_), mid_(lmax2_), mid_(theta0_), mid_(r0_), mid_(r1_), mid_(a_), src])
+            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), src])
 
     return jobs
 
 
-def make_global(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
+def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
     """ creates the jobs for a global sensitivity analysis  """
 
-    kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_ = make_lists(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_)
+    kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_ = make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_)
 
     # create global sa jobs
     jobs = []
@@ -180,16 +181,16 @@ def make_global(kr_, kx_, lmax0_, lmax1_, lmax2_, theta0_, r0_, r1_, a_, src_):
     if global_:
         for kr in kr_:
             for kx in kx_:
-                for lmax0 in lmax0_:
-                    for lmax1 in lmax1_:
-                        for lmax2 in lmax2_:
-                            for theta0 in theta0_:
-                                for r0 in r0_:
-                                    for r1 in r1_:
+                for lmax1 in lmax1_:
+                    for lmax2 in lmax2_:
+                        for lmax3 in lmax3_:
+                            for theta1 in theta1_:
+                                for r1 in r1_:
+                                    for r2 in r2_:
                                         for a in a_:
                                             for src in src_:
                                                 i += 1
-                                                jobs.append([i, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src])
+                                                jobs.append([i, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src])
     return jobs
 
 
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     root_type = "soybean"
     file_name = "local_SA_const"
     enviro_type = 0
-    sim_time = 0.5 * 87.5
+    sim_time = 0.05 * 87.5
     if rank == 0:
         p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
         kr = 1.e-4

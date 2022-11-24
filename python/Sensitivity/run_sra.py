@@ -12,7 +12,7 @@ import sra
 # import cyl
 
 
-def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src):
+def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src):
 
     # domain
     min_b = [-19, -2.5, -200.]  # Domain [38 cm row distance, 5 cm plant distance]
@@ -46,7 +46,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, t
 
     # initialize root system
     xml_name = "Glycine_max_Moraes2020_opt2" + "_modified" + ".xml"  # root growth model parameter file
-    mods = {"lmax0":lmax0, "lmax1":lmax1, "lmax2":lmax2, "theta0":theta0, "r0":r0, "r1":r1, "a":a, "src":src}
+    mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "theta45":theta1, "r145":r1, "r2":r2, "a":a, "src":src}
     r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)
     # scenario.init_lupine_conductivities(r)
     # scenario.init_dynamic_simple_growth TODO
@@ -59,25 +59,25 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, t
 
 
 if __name__ == "__main__":
-    
+
     # print(sys.argv)
     # print(len(sys.argv[1:]))
     # file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src
-    
-    file_name= sys.argv[1]
-    enviro_type = int(float(sys.argv[2])) 
-    sim_time = float(sys.argv[3])  
+
+    file_name = sys.argv[1]
+    enviro_type = int(float(sys.argv[2]))
+    sim_time = float(sys.argv[3])
     kr = float(sys.argv[4])
     kx = float(sys.argv[5])
     print("kr", kr, "kx", kx)
-    lmax0 = float(sys.argv[6]) 
-    lmax1 = float(sys.argv[7]) 
-    lmax2 = float(sys.argv[8]) 
-    theta0 = float(sys.argv[9]) 
-    r0 = float(sys.argv[10]) 
-    r1 = float(sys.argv[11]) 
-    a = float(sys.argv[12]) 
+    lmax1 = float(sys.argv[6])
+    lmax2 = float(sys.argv[7])
+    lmax3 = float(sys.argv[8])
+    theta1 = float(sys.argv[9])
+    r1 = float(sys.argv[10])
+    r2 = float(sys.argv[11])
+    a = float(sys.argv[12])
     src = int(float(sys.argv[13]))
-    
-    run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src)
+
+    run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src)
 

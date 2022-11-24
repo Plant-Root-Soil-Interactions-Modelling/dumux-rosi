@@ -109,7 +109,7 @@ r.test()  # sanity checks (todo need improvements...)
 Initialize local soil models (around each root segment) 
 """
 start_time = timeit.default_timer()
-x = s.getSolutionHead()  # initial condition of soil [cm]
+x = s.getSolutionHead()[:, 0]  # initial condition of soil [cm]
 x = comm.bcast(x, root = 0)  # Soil part runs parallel
 ns = len(rs.segments)
 dcyl = int(np.floor(ns / max_rank))
