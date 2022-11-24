@@ -11,19 +11,19 @@ cd ..
 
 # delete all builds
 cd dumux
-sudo rm build-cmake -rf
-sudo rm CMakeCache.txt
+rm build-cmake -rf
+rm CMakeCache.txt
 cd ..
 
 cd dumux-rosi
-sudo rm build-cmake -rf
-sudo rm CMakeCache.txt
+rm build-cmake -rf
+rm CMakeCache.txt
 cd ..
 
 for MOD in common foamgrid geometry grid istl localfunctions pybindxi spgrid uggrid alugrid; do
 cd dune-$MOD
-sudo rm build-cmake -rf
-sudo rm CMakeCache.txt
+rm build-cmake -rf
+rm CMakeCache.txt
 cd ..
 done
 

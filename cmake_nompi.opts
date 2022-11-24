@@ -42,6 +42,8 @@ OPM_FLAGS=""
 # set this to "ON" if you want to be able to have the headercheck target
 DUMUX_ENABLE_HEADERCHECK=OFF
 
+STDTHREAD_LINK_FLAGS="-pthread"
+
 # for debug opts you can set DCMAKE_BUILD_TYPE to "Debug" or "RelWithDebInfo"
 # you can also do this in any of the CMakeLists.txt in Dumux
 # just rerun cmake again afterwards (run cmake <path-to-build-dir>)

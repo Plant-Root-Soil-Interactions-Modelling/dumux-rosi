@@ -258,9 +258,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 if len(rrp) > 5:
                     rrp[5].lmax *= mods["lmax0"]
             if "lmax1" in mods:
-                rrp[1].lmax *= mods["lmax1"]
+                rrp[2].lmax *= mods["lmax1"]
             if "lmax2" in mods:
-                rrp[2].lmax *= mods["lmax2"]
+                rrp[3].lmax *= mods["lmax2"]
             if "theta0" in mods:
                 if len(rrp) > 5:
                     print("shootbore theta0")
@@ -274,7 +274,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 if len(rrp) > 5:
                     rrp[5].r *= mods["r0"]
             if "r1" in mods:
-                rrp[1].lmax *= mods["r1"]
+                rrp[2].r *= mods["r1"]
             if "r" in mods:
                 for i in range(0, len(rrp)):
                     rrp[i].r *= mods["r"]

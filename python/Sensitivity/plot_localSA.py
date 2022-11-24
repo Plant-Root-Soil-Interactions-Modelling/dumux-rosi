@@ -16,9 +16,9 @@ kr = 1.e-4
 kx = 1.e-3
 sa_lists = sa.make_lists(kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
 sa_len = len(sa_lists[0])  # assume they have the same size for all parameters
-p2 = np.linspace(-2., 2., 9)
 
 name = ["kr", "kx", "lmax0", "lmax1", "lmax2", "theta0", "r0", "r1", "a", "src"]
+ranges = [kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5]]
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -65,11 +65,15 @@ for i in range(0, 3):
         trans = trans / trans[sa_len // 2]  # nondimensionalize
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
-        ax[i, j].plot(trans, '*', label = "uptake")
-        ax[i, j].plot(vol, '*', label = "volume")
-        ax[i, j].plot(krs,'*', label = "krs")
-        ax[i, j].plot([0.], [1.], 'r*')
+        ax[i, j].plot(p, trans, label = "uptake")
+        ax[i, j].plot(p, vol,'-.', label = "volume")
+        ax[i, j].plot(p, krs,':', label = "krs")
+        ax[i, j].plot([1.], [1.], 'r*')
         ax[i, j].legend()
         ax[i, j].set_title(name[lind])
+        ax[i,j].set_ylim(0.5, 2)
+        ax[i, j].set_yscale('log', base=2)
+        ax[i, j].set_xscale('log', base=2)
 
+plt.tight_layout(pad = 4.)
 plt.show()
