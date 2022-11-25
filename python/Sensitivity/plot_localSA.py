@@ -46,16 +46,16 @@ for i in range(0, 3):
         for k in range(0, sa_len):
             try:
                 trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-                trans[k] = np.sum(trans_[1,:])    
-                print(trans[k])            
+                trans[k] = np.sum(trans_[1,:])
+                print(trans[k])
             except:
                 trans[k] = np.nan
                 print("skipping file", file_name + str(file_start_ind + k))
             try:
                 vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
                 vol_ = vol_[:, -1]
-                vol[k] = np.sum(vol_)                
-            except:                
+                vol[k] = np.sum(vol_)
+            except:
                 vol[k] = np.nan
             try:
                 krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
@@ -66,14 +66,14 @@ for i in range(0, 3):
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
         ax[i, j].plot(p, trans, label = "uptake")
-        ax[i, j].plot(p, vol,'-.', label = "volume")
-        ax[i, j].plot(p, krs,':', label = "krs")
+        ax[i, j].plot(p, vol, '-.', label = "volume")
+        ax[i, j].plot(p, krs, ':', label = "krs")
         ax[i, j].plot([1.], [1.], 'r*')
         ax[i, j].legend()
         ax[i, j].set_title(name[lind])
-        ax[i,j].set_ylim(0.5, 2)
-        ax[i, j].set_yscale('log', base=2)
-        ax[i, j].set_xscale('log', base=2)
+        ax[i, j].set_ylim(0.5, 2)
+        ax[i, j].set_yscale('log', base = 2)
+        ax[i, j].set_xscale('log', base = 2)
 
 plt.tight_layout(pad = 4.)
 plt.show()

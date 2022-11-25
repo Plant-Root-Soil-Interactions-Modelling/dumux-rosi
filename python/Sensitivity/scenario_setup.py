@@ -243,7 +243,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         # seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
         seed = 1
 
-        rs = pb.MappedRootSystem()        
+        rs = pb.MappedRootSystem()
         rs.setSeed(seed)
         rs.readParameters(fname)
         if not stochastic:
@@ -252,29 +252,34 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         if mods is not None:  # apply modifications
             rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
             srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
-            if "lmax0" in mods:
-                rrp[1].lmax *= mods["lmax0"]
-                rrp[4].lmax *= mods["lmax0"]
+            if "lmax" in mods:
+                for i in range(0, len(rrp)):
+                    rrp[i].lmax *= mods["lmax"]
+            if "lmax145" in mods:
+                rrp[1].lmax *= mods["lmax145"]
+                rrp[4].lmax *= mods["lmax145"]
                 if len(rrp) > 5:
-                    rrp[5].lmax *= mods["lmax0"]
-            if "lmax1" in mods:
-                rrp[2].lmax *= mods["lmax1"]
+                    rrp[5].lmax *= mods["lmax145"]
             if "lmax2" in mods:
-                rrp[3].lmax *= mods["lmax2"]
-            if "theta0" in mods:
+                rrp[2].lmax *= mods["lmax2"]
+            if "lmax3" in mods:
+                rrp[3].lmax *= mods["lmax3"]
+            if "lmax4" in mods:
+                rrp[4].lmax *= mods["lmax4"]
+            if "theta45" in mods:
                 if len(rrp) > 5:
-                    print("shootbore theta0")
-                    rrp[5].theta = mods["theta0"]
+                    print("shootbore (theta45)")
+                    rrp[5].theta = mods["theta45"]
                 else:
-                    print("seminal theta0")
-                    rrp[4].theta = mods["theta0"]
-            if "r0" in mods:
-                rrp[1].r *= mods["r0"]
-                rrp[4].r *= mods["r0"]
+                    print("seminal (theta45)")
+                    rrp[4].theta = mods["theta45"]
+            if "r145" in mods:
+                rrp[1].r *= mods["r145"]
+                rrp[4].r *= mods["r145"]
                 if len(rrp) > 5:
-                    rrp[5].r *= mods["r0"]
-            if "r1" in mods:
-                rrp[2].r *= mods["r1"]
+                    rrp[5].r *= mods["r145"]
+            if "r2" in mods:
+                rrp[2].r *= mods["r2"]
             if "r" in mods:
                 for i in range(0, len(rrp)):
                     rrp[i].r *= mods["r"]
@@ -310,7 +315,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     # comm.barrier()
     # print("survived setSoilGrid", rank)
 
-    #if rank == 0:
+    # if rank == 0:
     init_conductivities_const(r)
 
     return r

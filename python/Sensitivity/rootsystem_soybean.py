@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 import plantbox as pb
 import vtk_plot as vp
+import scenario_setup as scenario
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -27,7 +28,15 @@ colors = prop_cycle.by_key()['color']
 min_b = [-19, -2.5, -200.]  # Domain [38 cm Reihe, 6 cm Pflanzen]
 max_b = [19, 2.5, 0.]
 cell_number = [38, 5, 200]  # 1 cm3
-simtime = 0.25 * 87.5  # between 75-100 days
+soil0 = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
+soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
+soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
+soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
+soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
+table_name = "envirotype0"
+soil_ = soil0
+
+simtime = 1. * 87.5  # between 75-100 days
 
 rs = pb.RootSystem()
 
@@ -36,22 +45,37 @@ path = "../../../CPlantBox/modelparameter/rootsystem/"
 name = "Glycine_max_Moraes2020_opt2"
 rs.readParameters(path + name + ".xml")
 
-# srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)  # print(srp[0])
+srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)  # print(srp[0])
 # srp[0].firstB = 1.e9  # 3
 # srp[0].delayB = 3
-#
+src = srp[0].maxB
+
 rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
 for p in rrp:
     print("\nSubType", p.subType)
     print("Radius", p.a)
     print("dx", p.dx, "cm")
+    print("theta", p.theta, "cm")
+    print("lmax", p.lmax, "cm")
     print("changed to 0.5 cm to be faster...")
     p.dx = 0.5  # probably enough
-#
+
 # # print(rrp[0])
 # rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 # # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
 rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
+
+p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+kr = 1.e-4
+kx = 1.e-3
+p_top = -330
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1)  # , times = x_, net_inf = y_
+xml_name = name + "_modified" + ".xml"  # root growth model parameter file
+mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1., "src":src}
+r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+scenario.init_conductivities_const(r, kr, kx)
+
+rs = r.rs
 
 # Initialize
 print()
@@ -72,6 +96,7 @@ print("number of nodes", len(ana.nodes))
 print("number of segments", len(ana.segments))
 print("volume", np.sum(ana.getParameter("volume")), "cm3")
 print("surface", np.sum(ana.getParameter("surface")), "cm2")
+print("Krs", r.get_krs(simtime)[0], "cm2/day")
 
 print("\nunconfined")
 print(ana.getMinBounds(), "-", ana.getMaxBounds())
