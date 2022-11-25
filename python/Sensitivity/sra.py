@@ -244,11 +244,9 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         """ remember results ... """
         sink = np.zeros(sx.shape)
         for k, v in soil_fluxes.items():
-            sink[k] += v
-        sink_.append(sink)  # cm3/day (per soil cell)
+            sink[k] += v        
         x_.append(rs_age + t)  # day
         y_.append(np.sum(sink))  # cm3/day
-        psi_s2_.append(sx.copy())  # cm (per soil cell)
         if i % skip == 0:
 
             if i % (24 * skip) == 0:
@@ -258,6 +256,10 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
             # psi_x_.append(rx.copy())  # cm (per root node)
             # psi_s_.append(rsx.copy())  # cm (per root segment)
+            sink_.append(sink)  # cm3/day (per soil cell)            
+
+            psi_s2_.append(sx.copy())  # cm (per soil cell)
+
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
             for i in range(0, 6):  # root types

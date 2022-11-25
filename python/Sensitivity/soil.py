@@ -4,7 +4,7 @@
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
 
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+# from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np

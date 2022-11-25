@@ -125,9 +125,9 @@ def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1):
     """ a simplified parametrisation, based on init_dynamic_conductivities_growth """
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
-    dt0 = 30.
-    dt1 = 15.
-    kr_f = 0.5
+    dt0 = 14.
+    dt1 = 7.
+    kr_f = 0.25
     kx_f = 5.
     kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr0], [dt0, kr_f * kr0]])  # primals
     kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr1], [dt1, kr_f * kr1]])  # laterals

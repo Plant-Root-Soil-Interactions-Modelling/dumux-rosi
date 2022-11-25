@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "local_SA_const"
+file_name = "local_SA_const2_"
 path = "results/"
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
 kr = 1.e-4
