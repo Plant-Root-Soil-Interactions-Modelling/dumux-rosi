@@ -71,7 +71,7 @@ for i, kr0 in enumerate(kr0_):
 
                 """ numerical solution """
                 water0 = s.getWaterVolume()  # total initial water volume in domain
-                psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f2)
+                psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f2)
                 water = s.getWaterVolume()
 
                 """ output """

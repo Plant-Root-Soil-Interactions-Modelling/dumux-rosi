@@ -62,7 +62,8 @@ water0 = s.getWaterVolume()  # total initial water volume in domain
 
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_maize, type_ = 2)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
+    s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()

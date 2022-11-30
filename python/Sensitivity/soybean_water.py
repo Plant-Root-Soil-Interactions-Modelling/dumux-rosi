@@ -26,7 +26,6 @@ soil_ = soil0
 Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
 
 area = (38 * 5)
-trans = 0.6 * area  # cm3/day (38 * 5 = 190)
 
 sim_time = 1.* 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
@@ -48,7 +47,7 @@ scenario.init_lupine_conductivities(r)
 
 # rsml_name = "results/soybean.rsml"  # created by rootsystem_soybean.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
-
+trans = 0.6 * area  # cm3/day (38 * 5 = 190)
 trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt) - 0.01  # Guilaumes questions
 trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / sim_time)  # growing potential transpiration
 
@@ -61,7 +60,8 @@ if rank == 0:
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_soybean, type_ = 1)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
+    s, r, sra_table_lookup, sim_time, dt, trans_soybean, rs_age = 1., type_ = 1)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()

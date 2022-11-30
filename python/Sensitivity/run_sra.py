@@ -49,11 +49,11 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "theta45":theta1, "r145":r1, "r2":r2, "a":a, "src":src}
     r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)
     # scenario.init_lupine_conductivities(r)
-    scenario.init_dynamic_simple_growth(r, kr, kr, kx,kx)
+    scenario.init_dynamic_simple_growth(r, kr, kr, kx, kx)
     # scenario.init_conductivities_const(r, kr, kx)
 
     # numerical solution
-    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate_dynamic(s, r, sra_table_lookup, 0., sim_time, dt, trans_soybean)
+    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_soybean)
     scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
     print("finished " + file_name)
 

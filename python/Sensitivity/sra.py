@@ -6,7 +6,6 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import fsolve
 import timeit
 
-from xylem_flux import sinusoidal2
 import vtk_plot as vtk
 import plantbox as pb
 import van_genuchten as vg
@@ -64,7 +63,7 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     return rsx
 
 
-def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None, type_ = 1):
+def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1., type_ = 1):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -73,7 +72,6 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
     s                            soil model (RichardsWrapper(RichardsSP()))
     r                            xylem flux model (XylemFluxPython wrapping MappedSegments mapped to soil @param s)
     sra_table_lookup             potentials a root soil interface    
-    trans                        daily transpiration
     sim_time                     simulation time
     dt                           time step
     
@@ -81,7 +79,6 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
     """
     wilting_point = -15000  # cm
     skip = 10  # for output and results, skip iteration
-    rs_age = 1.  # day
     max_iter = 10  # maximum for fix point iteration
 
     """ tabularized values for finding the zeros """
@@ -89,10 +86,6 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         root_interface = soil_root_interface_table  # function defined above
     else:
         root_interface = soil_root_interface  # function defined above
-
-    """ set defalut potential transpiration """
-    if trans_f is None:
-        trans_f = lambda age, dt:-trans * sinusoidal2(age, dt)
 
     start_time = timeit.default_timer()
 
