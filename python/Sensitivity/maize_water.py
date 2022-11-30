@@ -1,10 +1,8 @@
 """ 
-    Maize (water only) TODO
+    Maize (water and nitrate, SRA)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
-
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 import scenario_setup as scenario
 from rhizo_models import RhizoMappedSegments
@@ -33,16 +31,16 @@ Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
 area = 75 * 15  # cm2
 trans = 0.6 * area  # cm3/day (75 * 15 = 1125 cm2)
 
-sim_time = 1. * 95  #  [day]
+sim_time = 0.5 * 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
 range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']  # 95 - 88 = 7 (+3)
-x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 95, evap.lai_maize, Kc_maize)
-trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, sim_time, evap.lai_maize, Kc_maize)
+trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, sim_time, evap.lai_maize, Kc_maize)
 
 """ initialize """
 p_top = -330
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 
 xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
@@ -57,20 +55,19 @@ trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / sim_time)  # growing 
 sra_table_lookup = sra.open_sra_lookup("data/" + table_name)  # make sure the soil parameters correspond to the look up table
 
 """ sanity checks """
-if rank == 0:
-    r.test()  # sanity checks
+r.test()  # sanity checks
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_maize)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_maize, type_ = 2)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("maize_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+scenario.write_files("maize_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

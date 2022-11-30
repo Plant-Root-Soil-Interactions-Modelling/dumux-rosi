@@ -9,8 +9,8 @@ import timeit
 from xylem_flux import sinusoidal2
 import vtk_plot as vtk
 import plantbox as pb
-
 import van_genuchten as vg
+import evapotranspiration as evap
 
 
 def open_sra_lookup(filename):
@@ -64,7 +64,7 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     return rsx
 
 
-def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None):
+def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None, type_ = 1):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -97,20 +97,22 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
     start_time = timeit.default_timer()
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
+    soil_c_, c_ = [], []
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
     krs_ = []
     depth_ = []
 
-    nodes = r.rs.nodes
-    segs = r.rs.segments
+    rs = r.rs
+    nodes = rs.nodes
+    segs = rs.segments
     ns = len(segs)
+    mapping = rs.getSegmentMapper()  # because seg2cell is a dict
     for i in range(0, len(segs)):
         if segs[i].x == 0:
             collar_ind = i  # segment index of root collar
             break
-    map = r.rs.seg2cell
-    mapping = np.array([map[j] for j in range(0, ns)])  # because seg2cell is a map
+
     sx = s.getSolutionHead_()  # richards.py
     hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
     rsx = hsb.copy()  # initial values for fix point iteration
@@ -118,8 +120,6 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
     rx_old = rx.copy()
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
-
-    rs = r.rs
 
     print("Starting simulation loop")
 
@@ -188,6 +188,14 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
+        if type_ == 2:
+            cc = s.getSolution_(1)  # kg/m3
+            rsc = np.array([cc[i] for i in mapping])  # kg/m3
+            seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [g/day]
+            soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
+            evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 15 * 1))  # = 1.14e-4 g/day
+            s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
+
         wall_soil = timeit.default_timer()
         fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
         collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
@@ -244,7 +252,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
         """ remember results ... """
         sink = np.zeros(sx.shape)
         for k, v in soil_fluxes.items():
-            sink[k] += v        
+            sink[k] += v
         x_.append(rs_age + t)  # day
         y_.append(np.sum(sink))  # cm3/day
         if i % skip == 0:
@@ -256,10 +264,13 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
             # psi_x_.append(rx.copy())  # cm (per root node)
             # psi_s_.append(rsx.copy())  # cm (per root segment)
-            sink_.append(sink)  # cm3/day (per soil cell)            
+            sink_.append(sink)  # cm3/day (per soil cell)
 
             psi_s2_.append(sx.copy())  # cm (per soil cell)
 
+            if type_ == 2:
+                c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
+                soil_c_.append(cc)  # [kg/m3]
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
             for i in range(0, 6):  # root types
@@ -273,7 +284,7 @@ def simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
 
 # def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, trans_f = None):
 #     """

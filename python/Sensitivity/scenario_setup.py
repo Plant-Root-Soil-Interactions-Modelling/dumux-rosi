@@ -26,7 +26,6 @@ sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../..
 
 import numpy as np
 import timeit
-# from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
@@ -62,9 +61,9 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     # Initial conditions
     if type == 2:  # solute IC
         z_ = [0., -80., -80., -200.]
-        v_ = np.array([1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4])  # kg / m3 (~4.e-4)
+        v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  # kg / m3 (~4.e-4)
         # [1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4]  # kg/m3 [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
-        # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3)
+        # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3) (nitrate 62 g/mol)
         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
     s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
 
@@ -76,14 +75,18 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     s.setBotBC("freeDrainage")
 
     if type == 2:  # solute BC
-        v1 = 0.33 * 62  # g/m2
-        v2 = 0.66 * 62  # g/m2
-        v1 = v1 * 1.e-4  # g/cm2
-        v2 = v2 * 1.e-4  # g/cm2
-        sol_times = [0., 15., 15., 16., 16., 28., 28., 29., 29., 1.e3]
-        sol_influx = -np.array([0., 0., v1, v1, 0., 0., v2, v2, 0., 0.])  # g/(cm2 day)
+        #  40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2
+        f1 = 4.08e-4  # g/cm2
+        f2 = 2.2e-5  # g/cm2
+        f3 = 6.3e-4  # g/cm2
+        # v1 = 0.33 * 62  # g/m2
+        # v2 = 0.66 * 62  # g/m2
+        # v1 = v1 * 1.e-4  # g/cm2
+        # v2 = v2 * 1.e-4  # g/cm2 # -> Fletcher et al. 2021
+        sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3])
+        sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0., f3, f3, 0., 0.])  # g/(cm2 day)
         s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
-        # s.setTopBC_solute("constantFlux", 0.)
+        # s.setTopBC_solute("outflow", 0.)
         s.setBotBC_solute("outflow", 0.)
 
     s.setVGParameters([soil_])

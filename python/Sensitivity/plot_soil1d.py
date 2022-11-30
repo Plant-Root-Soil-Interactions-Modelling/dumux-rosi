@@ -33,7 +33,7 @@ ylim_ = -10
 # lai = evap.lai_maize
 # ylim_ = -10
 
-fname = "soil_" + name + "_" + str_
+fname = "soilc_" + name + "_" + str_
 
 start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
@@ -65,7 +65,7 @@ y_ = np.array(y_)
 t_ = t_[::2]
 y_ = y_[::2]
 
-fnames_depth = np.array(["depth_" + name + "_" + str_  ])
+fnames_depth = np.array(["depth_" + name + "_" + "sra0" ])
 depths = [np.load(path + n_ + ".npy")  for n_ in fnames_depth]
 depths = depths[0]
 
@@ -97,7 +97,7 @@ if fname.startswith("soilc_"):
     cb.set_label('nitrate concentration [kg/m3]', rotation = 270)
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
-    ax[1].scatter([16, 17, 29, 30], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
+    # ax[1].scatter([16, 17, 29, 30], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
 
     print("data ranges from", np.min(data), "to ", np.max(data), "[kg/m3]'")
     # print("final rs depth", depths[-1])

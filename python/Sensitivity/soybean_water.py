@@ -4,9 +4,6 @@
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
 
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-import matplotlib.pyplot as plt
-
 import scenario_setup as scenario
 from xylem_flux import sinusoidal2
 import cyl
@@ -64,7 +61,7 @@ if rank == 0:
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_soybean)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(s, r, sra_table_lookup, trans, sim_time, dt, trans_soybean, type_ = 1)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()
