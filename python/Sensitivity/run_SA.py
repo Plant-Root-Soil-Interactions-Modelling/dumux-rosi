@@ -77,7 +77,6 @@ def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
 
 def mkdir_p(dir):
     '''make a directory (dir) if it doesn't exist'''
-
     if not os.path.exists(dir):
         os.mkdir(dir)
 
@@ -213,9 +212,9 @@ if __name__ == "__main__":
     sim_time = 87.5
     if rank == 0:
         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
         kr = 1.e-4
         kx = 1.e-3
-        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
         theta_ = np.linspace(0, np.pi / 2, 9)
         jobs = make_local(kr * p2 , kx * p2 , p1, p1, p1, theta_, p1, p1, p1, [2, 3, 4, 5])
     else:

@@ -15,7 +15,7 @@ import evapotranspiration as evap
 import cyl3
 
 """
- CURRENTLY I am at the state to get the rhizosphere running, whitout any nitrate
+ Cylindric rhizosphere models, nitrate from finite volumes
 """
 
 """ parameters   """

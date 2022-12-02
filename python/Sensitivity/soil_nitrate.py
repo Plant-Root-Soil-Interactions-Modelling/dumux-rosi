@@ -68,7 +68,8 @@ z = s.getDofCoordinates()
 
 """ nitrate plot """
 c = np.transpose(c)
-c = c[:100:-1,:]
+c = c[::-1,:]
+c = c[:150,:]
 c = np.minimum(c, 1.e-3)
 c = np.maximum(c, 0.)
 times = np.linspace(0., sim_time, N)
@@ -85,7 +86,7 @@ cax0.axis('off')
 divider = make_axes_locatable(ax[1])
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 cmap = matplotlib.cm.get_cmap('jet')
-im = ax[1].imshow(c, vmin = 0., vmax = 1.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], -100, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+im = ax[1].imshow(c, vmin = 0., vmax = 1.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], -150, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
 
 cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
 cb.ax.get_yaxis().labelpad = 30
@@ -93,9 +94,9 @@ cb.set_label('nitrate concentration [kg/m3]', rotation = 270)
 ax[1].set_ylabel("depth [cm]")
 ax[1].set_xlabel("time [days]")
 if sim_time > 17:
-    ax[1].scatter([0, 1, 17, 18, 53, 54], [-100, -100, -100, -100, -100, -100], 1.5 * np.array([40, 40, 40, 40, 40, 40]), color = 'k')  # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
-    ax[1].scatter([17.], [-100], np.array([60]), color = 'r')
-    ax[1].plot([17., 17.], [0., -100], 'k:')
+    ax[1].scatter([1, 18, 54], [-150]*3, 3 * np.array([40]*3), color = 'k') # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
+    ax[1].scatter([18.], [-150.], 3*np.array([40]), color = 'r')
+    ax[1].plot([18., 18.], [0., -150.], 'k:')
 print("data ranges from", np.min(c), "to ", np.max(c), "[kg/m3]'")
 plt.tight_layout()
 plt.show()

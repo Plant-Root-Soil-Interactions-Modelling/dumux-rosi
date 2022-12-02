@@ -31,7 +31,7 @@ ylim_ = -10
 # str_ = "cyl0"
 # Kc = Kc_maize
 # lai = evap.lai_maize
-# ylim_ = -10
+ylim_ = None # -10
 
 fname = "soilc_" + name + "_" + str_
 
@@ -71,7 +71,8 @@ depths = depths[0]
 
 data = np.load(path + fname + ".npy")
 data = np.transpose(data)
-data = data[:np.abs(int(depths[-1])) + 10:-1,:]
+data = data[::-1,:]
+data = data[:abs(int(depths[-1] - 10)),:]
 # data = np.minimum(data, 0.001)
 
 """ sink plot """
@@ -91,15 +92,15 @@ if fname.startswith("soilc_"):
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap = matplotlib.cm.get_cmap('jet')
     im = ax[1].imshow(data, vmin = 0., vmax = 1.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    # ax[1].plot(times[::10], depths, 'k:')
+    ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
     cb.set_label('nitrate concentration [kg/m3]', rotation = 270)
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
     # ax[1].scatter([16, 17, 29, 30], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
-    ax[1].scatter([0, 1, 17, 18, 53, 54] + 10 * np.ones((6,)),
-                  [depths[-1] - 10] * 6, 1.5 * np.array([40] * 6), color = 'k')  # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
+    ax[1].scatter([1, 18, 54],
+                  [depths[-1] - 10] * 3, 3 * np.array([40] * 3), color = 'k')  # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
 
     print("data ranges from", np.min(data), "to ", np.max(data), "[kg/m3]'")
     # print("final rs depth", depths[-1])

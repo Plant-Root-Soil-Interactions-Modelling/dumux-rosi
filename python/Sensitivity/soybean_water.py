@@ -54,8 +54,7 @@ trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / sim_time)  # growing 
 sra_table_lookup = sra.open_sra_lookup("data/" + table_name)  # make sure the soil parameters correspond to the look up table
 
 """ sanity checks """
-if rank == 0:
-    r.test()  # sanity checks
+r.test()  # sanity checks
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain

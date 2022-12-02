@@ -60,7 +60,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
 
     # Initial conditions
     if type == 2:  # solute IC
-        z_ = [0., -80., -80., -200.]
+        z_ = [0., -30., -30., -200.]
         v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  # kg / m3 (~4.e-4)
         # [1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4]  # kg/m3 [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
         # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3) (nitrate 62 g/mol)
@@ -85,7 +85,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
         # v2 = v2 * 1.e-4  # g/cm2 # -> Fletcher et al. 2021
         sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3])
         sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0., f3, f3, 0., 0.])  # g/(cm2 day)
-        s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
+        s.setTopBC_solute("managed", 0.5, [sol_times, 0.*sol_influx])
         # s.setTopBC_solute("outflow", 0.)
         s.setBotBC_solute("outflow", 0.)
 

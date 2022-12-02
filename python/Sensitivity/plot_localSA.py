@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "local_SA_const2_"
+file_name = "local_SA_test"
 path = "results/"
+
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
 kr = 1.e-4
 kx = 1.e-3
@@ -18,7 +19,11 @@ sa_lists = sa.make_lists(kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
 sa_len = len(sa_lists[0])  # assume they have the same size for all parameters
 
 name = ["kr", "kx", "lmax0", "lmax1", "lmax2", "theta0", "r0", "r1", "a", "src"]
-ranges = [kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5]]
+p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+theta_ = np.linspace(-1,1, 9)
+# ranges = [kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5]]
+ranges = [p2, p2, p1, p1, p1, theta_, p1, p1, p1, [2, 3, 4, 5]]
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -65,9 +70,9 @@ for i in range(0, 3):
         trans = trans / trans[sa_len // 2]  # nondimensionalize
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
-        ax[i, j].plot(p, trans, label = "uptake")
-        ax[i, j].plot(p, vol, '-.', label = "volume")
-        ax[i, j].plot(p, krs, ':', label = "krs")
+        ax[i, j].plot(ranges[lind], trans, label = "uptake")
+        ax[i, j].plot(ranges[lind], vol, '-.', label = "volume")
+        ax[i, j].plot(ranges[lind], krs, ':', label = "krs")
         ax[i, j].plot([1.], [1.], 'r*')
         ax[i, j].legend()
         ax[i, j].set_title(name[lind])
