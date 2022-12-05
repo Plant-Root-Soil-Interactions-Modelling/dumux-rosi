@@ -4,63 +4,40 @@
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
 
-import scenario_setup as scenario
-from rhizo_models import RhizoMappedSegments
-from xylem_flux import sinusoidal2
-import cyl
-import sra
-import evapotranspiration as evap
 import plantbox as pb
 import vtk_plot as vp
 
+import scenario_setup as scenario
+import evapotranspiration as evap
+import sra
+
+
 """ parameters   """
-min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
-max_b = [37.5, 7.5, 0.]
-cell_number = [1, 1, 200]  # 1 cm3
+soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 
-soil0 = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
-soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
-soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
-soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
-soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
-table_name = "envirotype0"
-soil_ = soil0
-
-Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
-
-area = 75 * 15  # cm2
-trans = 0.6 * area  # cm3/day (75 * 15 = 1125 cm2)
-
-sim_time = 95  #  [day]
+sim_time = 7  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
-range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']  # 95 - 88 = 7 (+3)
-x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, sim_time, evap.lai_maize, Kc_maize)
-trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, sim_time, evap.lai_maize, Kc_maize)
+start_date = '1995-03-15 00:00:00'
+x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, sim_time, evap.lai_maize, Kc)
+trans_maize = evap.get_transpiration_beers('data/95.pkl', start_date, sim_time, area, evap.lai_maize, Kc)
 
 """ initialize """
-p_top = -330
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
+sra_table_lookup = sra.open_sra_lookup("data/" + table_name)  # make sure the soil parameters correspond to the look up table
+
 
 xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
+# rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
+# r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
 scenario.init_maize_conductivities(r)
-
-# # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
-# # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
-
-trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt)  # Guilaumes questions
-trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / sim_time)  # growing potential transpiration
-
-sra_table_lookup = sra.open_sra_lookup("data/" + table_name)  # make sure the soil parameters correspond to the look up table
 
 """ sanity checks """
 r.test()  # sanity checks
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
-
-# psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
     s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)

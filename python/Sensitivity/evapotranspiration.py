@@ -1,6 +1,7 @@
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import *
 
 
 def sigmoid(x, L , x0, k, b):
@@ -59,7 +60,11 @@ def net_infiltration_table(filename, range_):
     return x_, y_
 
 
-def get_transpiration_beers(filename, range_, area, time, lai_f, Kc):
+def get_transpiration_beers(filename, start_date, sim_time, area, lai_f, Kc):
+
+    start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    end_date = start_date + timedelta(sim_time, 360) 
+    range_ = [str(start_date), str(end_date)]
 
     with open(filename, 'rb') as f:
         data = pickle.load(f)
@@ -71,8 +76,8 @@ def get_transpiration_beers(filename, range_, area, time, lai_f, Kc):
     etc = et0 * Kc
 
     """ 2. ETc -> Tpot, Evap """
-    k = 0.6  # ?????????????????
-    t_ = np.linspace(0, time, len(etc))
+    k = 0.6
+    t_ = np.linspace(0, sim_time, len(etc))
     tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot
 
@@ -86,14 +91,17 @@ def get_transpiration_beers(filename, range_, area, time, lai_f, Kc):
     # plt.ylabel("cm / day")
     # plt.legend()
     # plt.show()
-
     # print("hourly potential transpiration len", len(tpot))
-    trans = lambda t, dt:-tpot[int((t + dt / 2) * 24)] * area  # day -> hour
+    trans = lambda t, dt:-tpot[int((t-1 + dt / 2) * 24)] * area  # day -> hour
 
     return trans
 
 
-def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
+def net_infiltration_table_beers(filename, start_date, sim_time, lai_f, Kc):
+
+    start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    end_date = start_date + timedelta(sim_time, 360) # +dt
+    range_ = [str(start_date), str(end_date)]
 
     with open(filename, 'rb') as f:
         data = pickle.load(f)
@@ -118,8 +126,8 @@ def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
     et0 = yd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
     etc = et0 * Kc
     """ 2. ETc -> Tpot, Evap """
-    k = 0.6  # ?????????????????
-    t_ = np.linspace(0, time, len(etc))
+    k = 0.6  
+    t_ = np.linspace(0, sim_time, len(etc))
     tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot
     evap = -evap
@@ -146,7 +154,7 @@ def net_infiltration_table_beers(filename, range_, time, lai_f, Kc):
 
 def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-5):
     """
-    adds a consant nitrate source @param nit_flux due to nitrification [cm3/day] 
+    adds a consant nitrate source @param nit_flux due to nitrification [g/day] 
     """
     z_ = np.linspace(-0.5, -89.5, 90)
     for z in z_:

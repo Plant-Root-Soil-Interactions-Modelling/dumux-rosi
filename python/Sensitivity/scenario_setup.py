@@ -1,24 +1,5 @@
 """ 
-
 Functions to simplify setup of the scenarios for INARI
-
-
-dumux NC story: 
-
-    enum BCTypes {
-        constantPressure = 1,
-        constantConcentration = 1,
-        constantFlux = 2,
-        constantFluxCyl = 3,
-        atmospheric = 4,
-        freeDrainage = 5,
-        outflow = 6,
-        linear = 7,
-        michaelisMenten = 8
-    };
-
-
-
 """
 
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/");
@@ -34,6 +15,39 @@ from xylem_flux import *
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
+
+
+def vg_enviro_type(i :int):
+    """ Van Genuchten parameter for enviro-types """
+    soil = {}
+    soil[0] = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
+    soil[1] = [0.0874, 0.5359, 0.0087, 1.5231, 93]
+    soil[36] = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
+    soil[5] = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
+    soil[59] = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
+    table_name = "envirotype{:s}".format(str(i))
+    p_top = -330
+    return soil[i], table_name, p_top
+
+def maize(i :int):
+    """ parameters for maize simulation """    
+    soil, table_name, p_top= vg_enviro_type(i)
+    min_b = [-38, -7.5, -200.]  # data from INARI
+    max_b = [38, 7.5, 0.]
+    cell_number = [1, 1, 200]  
+    area = 76 * 16  # cm2    
+    Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
+    return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_maize
+
+def soybean(i :int):
+    """ parameters for soybean simulation """    
+    soil, table_name, p_top= vg_enviro_type(i)
+    min_b = [-38, -1.5, -200.]  # data from INARI
+    max_b = [38, 1.5, 0.]
+    cell_number = [1, 1, 200]
+    area = 76 * 3 # cm2    
+    Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
+    return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_soybean
 
 
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):
