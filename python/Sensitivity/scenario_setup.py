@@ -17,8 +17,8 @@ from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic so
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 
-def vg_enviro_type(i :int):
-    """ Van Genuchten parameter for enviro-types """
+def vg_enviro_type(i:int):
+    """ Van Genuchten parameter for enviro-types, called by maize() and soybean() """
     soil = {}
     soil[0] = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
     soil[1] = [0.0874, 0.5359, 0.0087, 1.5231, 93]
@@ -29,24 +29,31 @@ def vg_enviro_type(i :int):
     p_top = -330
     return soil[i], table_name, p_top
 
-def maize(i :int):
-    """ parameters for maize simulation """    
-    soil, table_name, p_top= vg_enviro_type(i)
-    min_b = [-38, -7.5, -200.]  # data from INARI
-    max_b = [38, 7.5, 0.]
-    cell_number = [1, 1, 200]  
-    area = 76 * 16  # cm2    
+
+def maize(i:int):
+    """ parameters for maize simulation """
+    soil, table_name, p_top = vg_enviro_type(i)
+    min_b = [-38, -8, -200.]  # data from INARI
+    max_b = [38, 8, 0.]
+    cell_number = [1, 1, 200]
+    area = 76 * 16  # cm2
     Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
+    # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
+    # 30, 40, 50, 50 = 170 (Idaho, USA)
+
     return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_maize
 
-def soybean(i :int):
-    """ parameters for soybean simulation """    
-    soil, table_name, p_top= vg_enviro_type(i)
+
+def soybean(i:int):
+    """ parameters for soybean simulation """
+    soil, table_name, p_top = vg_enviro_type(i)
     min_b = [-38, -1.5, -200.]  # data from INARI
     max_b = [38, 1.5, 0.]
     cell_number = [1, 1, 200]
-    area = 76 * 3 # cm2    
+    area = 76 * 3  # cm2
     Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
+    # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
+    # 20, 30/35, 60, 25 = 140 (Central USA)
     return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_soybean
 
 
@@ -99,7 +106,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
         # v2 = v2 * 1.e-4  # g/cm2 # -> Fletcher et al. 2021
         sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3])
         sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0., f3, f3, 0., 0.])  # g/(cm2 day)
-        s.setTopBC_solute("managed", 0.5, [sol_times, 0.*sol_influx])
+        s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
         # s.setTopBC_solute("outflow", 0.)
         s.setBotBC_solute("outflow", 0.)
 
@@ -138,14 +145,10 @@ def init_conductivities_const_growth(r, kr_const = 1.8e-4, kx_const = 0.1):
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])  # for each subtype
 
 
-def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1):
+def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1, dt0 = 14., dt1 = 7., kr_f = 0.25, kx_f = 5.):
     """ a simplified parametrisation, based on init_dynamic_conductivities_growth """
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
-    dt0 = 14.
-    dt1 = 7.
-    kr_f = 0.25
-    kx_f = 5.
     kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr0], [dt0, kr_f * kr0]])  # primals
     kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr1], [dt1, kr_f * kr1]])  # laterals
     kx0 = np.array([[0., kx0], [dt0, kx_f * kx0]])  # primals
@@ -158,16 +161,40 @@ def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1):
 
 def init_maize_conductivities(r):
     """ Hydraulic conductivities for maize following Couvreur et al. (2012) originally from Doussan et al. (1998) """
+
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
     kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [8., 0.000181], [10, 0.0000648], [18, 0.0000648], [25, 0.0000173], [300, 0.0000173]])
     kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [10., 0.000181], [16, 0.0000173], [300, 0.0000173]])
     kx0 = np.array([[0., 0.0000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
     kx1 = np.array([[0., 0.0000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
+
     r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+
+
+def init_maize_conductivities2(r):
+    """ Hydraulic conductivities for maize following Meunier et al (2018) """
+
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+
+    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.47e-4], [19., 0.47e-4], [19.5, 0.43e-4], [30., 0.28e-4], [300., 0.28e-4]])  # seminal
+    kr5 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.29e-4], [13., 0.25e-4], [13.1, 0.17e-4], [30., 0.17e-4], [300., 0.17e-4]])  # crown
+    # kr_brace = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.48e-4], [19., 0.48e-4], [20., 0.028e-4], [30., 0.02e-4], [300., 0.02e-4]])  # brace
+    kr12 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 5.62e-4], [1.e4, 5.62e-4]])  # lateral
+
+    kx0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 1.76e-4], [7., 1.91e-4], [10., 5.45e-4], [21., 14.85e-4], [40., 15.85e-4], [300., 15.85e-4]])  # seminal
+    kx5 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.82e-4], [11.2, 3.71e-4], [28.7, 24.44e-4], [34.3, 73.63e-4], [40., 73.63e-4], [300., 73.63e-4]])  # crown
+    # kx_brace = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.78e-4], [16.9, 2.56e-4], [27., 121.8e-4], [32.6, 195.6e-4], [40., 225.3e-4], [300., 225.3e-4]]) # brace
+    kx12 = np.array([[0., 0.62e-4], [5.5, 1.44e-4], [7.92, 4.22e-4], [15., 4.95e-4], [300., 4.95e-4]])  # lateral
+
+    r.setKrTables([kr00[:, 1], kr0[:, 1], kr12[:, 1], kr12[:, 1], kr0[:, 1], kr5[:, 1]],
+                  [kr00[:, 0], kr0[:, 0], kr12[:, 0], kr12[:, 0], kr0[:, 0], kr5[:, 0]])
+    r.setKxTables([kx00[:, 1], kx0[:, 1], kx12[:, 1], kx12[:, 1], kx0[:, 1], kx5[:, 1]],
+                  [kx00[:, 0], kx0[:, 0], kx12[:, 0], kx12[:, 0], kx0[:, 0], kx5[:, 0]])
 
 
 def init_lupine_conductivities(r):
@@ -190,6 +217,21 @@ def init_lupine_conductivities(r):
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+
+
+def init_lupine_conductivities2(r):
+    """ Hydraulic conductivities for maize following Meunier et al (2018) """
+
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+
+    kr = np.array([[-1e4, 0.], [-0.1, 0.], [0., 4.32e-4], [1.e4, 4.32e-4]])  # lateral
+    kx = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.62e-4], [5.5, 1.44e-4], [7.92, 4.22e-4], [15., 4.95e-4], [300., 4.95e-4]])  # lateral
+
+    r.setKrTables([kr00[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1], kr[:, 1]],
+                  [kr00[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
+    r.setKxTables([kx00[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1], kx[:, 1]],
+                  [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, l = 50 , a = 0.05):
@@ -430,7 +472,7 @@ if __name__ == '__main__':
     n = 1.3774
     k_sat = 60.  # (cm d-1)
     soil_ = [theta_r, theta_s, alpha, n, k_sat]
-    s, soil = create_soil_model(soil_, [-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200)
+    s, soil = create_soil_model(soil_, [-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200, 1)
 
     print()
     print(s)

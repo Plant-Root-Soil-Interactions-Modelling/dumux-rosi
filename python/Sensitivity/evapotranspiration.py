@@ -63,7 +63,7 @@ def net_infiltration_table(filename, range_):
 def get_transpiration_beers(filename, start_date, sim_time, area, lai_f, Kc):
 
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    end_date = start_date + timedelta(sim_time, 360) 
+    end_date = start_date + timedelta(sim_time + 1, 3600)  # root system starts to grow one day earlier (+max dat)
     range_ = [str(start_date), str(end_date)]
 
     with open(filename, 'rb') as f:
@@ -73,7 +73,7 @@ def get_transpiration_beers(filename, start_date, sim_time, area, lai_f, Kc):
     et0 = yd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
 
     """ 1. ET0 -> ETc """
-    etc = et0 * Kc
+    etc = et0 * Kc  # ETc = crop evapotranspiration
 
     """ 2. ETc -> Tpot, Evap """
     k = 0.6
@@ -92,7 +92,7 @@ def get_transpiration_beers(filename, start_date, sim_time, area, lai_f, Kc):
     # plt.legend()
     # plt.show()
     # print("hourly potential transpiration len", len(tpot))
-    trans = lambda t, dt:-tpot[int((t-1 + dt / 2) * 24)] * area  # day -> hour
+    trans = lambda t, dt:-tpot[int((t + dt / 2) * 24)] * area  # day -> hour
 
     return trans
 
@@ -100,7 +100,7 @@ def get_transpiration_beers(filename, start_date, sim_time, area, lai_f, Kc):
 def net_infiltration_table_beers(filename, start_date, sim_time, lai_f, Kc):
 
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    end_date = start_date + timedelta(sim_time, 360) # +dt
+    end_date = start_date + timedelta(sim_time + 1, 3600)  # root system starts to grow one day earlier (+max dat)
     range_ = [str(start_date), str(end_date)]
 
     with open(filename, 'rb') as f:
@@ -126,7 +126,7 @@ def net_infiltration_table_beers(filename, start_date, sim_time, lai_f, Kc):
     et0 = yd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
     etc = et0 * Kc
     """ 2. ETc -> Tpot, Evap """
-    k = 0.6  
+    k = 0.6
     t_ = np.linspace(0, sim_time, len(etc))
     tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot

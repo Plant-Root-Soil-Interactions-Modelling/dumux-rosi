@@ -11,12 +11,11 @@ import scenario_setup as scenario
 import evapotranspiration as evap
 import sra
 
-
 """ parameters   """
 soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 
-sim_time = 7  #  [day]
-dt = 360 / (24 * 3600)  # time step [day] 20
+sim_time = 95  #  [day]
+dt = 3600 / (24 * 3600)  # time step [day]
 
 start_date = '1995-03-15 00:00:00'
 x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, sim_time, evap.lai_maize, Kc)
@@ -24,14 +23,13 @@ trans_maize = evap.get_transpiration_beers('data/95.pkl', start_date, sim_time, 
 
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
-sra_table_lookup = sra.open_sra_lookup("data/" + table_name)  # make sure the soil parameters correspond to the look up table
-
+sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
 xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
-scenario.init_maize_conductivities(r)
+scenario.init_maize_conductivities2(r)
 
 """ sanity checks """
 r.test()  # sanity checks

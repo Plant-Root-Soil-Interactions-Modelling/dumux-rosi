@@ -1,5 +1,5 @@
 """ 
-    Maize (water only) TODO
+    Maize using rhizosphere models TODO part for nitrate is unstable 
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver

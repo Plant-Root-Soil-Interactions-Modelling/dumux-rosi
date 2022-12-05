@@ -211,8 +211,8 @@ if __name__ == "__main__":
     enviro_type = 0
     sim_time = 87.5
     if rank == 0:
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 1)])
+        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 1)])
         kr = 1.e-4
         kx = 1.e-3
         theta_ = np.linspace(0, np.pi / 2, 9)

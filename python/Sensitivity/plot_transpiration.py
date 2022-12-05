@@ -9,41 +9,34 @@ import matplotlib.pyplot as plt
 from xylem_flux import sinusoidal2
 import evapotranspiration as evap
 
+start_date = '1995-03-15 00:00:00'
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-# name = "soybean"
-# str_ = ["_sra0"]
-# sim_time = 87.5
-# area = 38 * 5
-# range_ = ['1995-03-15 00:00:00', '1995-06-12 11:00:00']
-# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
-# trans = 1
+name = "soybean"
+str_ = ["_sra0"]
+area = 76 * 3
+potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+trans = 1
 
 # name = "test1.0"
 # str_ = [""]
-# sim_time = 87.5
 # potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean
-# area = 38 * 5
-# range_ = ['1995-03-15 00:00:00', '1995-06-12 11:00:00']
-# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 87.5, evap.lai_soybean, Kc_soybean)
+# area = 76 * 3
+# potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
 # trans = 1
 
 # name = "maize"
 # str_ = ["_cyl0"]
-# sim_time = 0.5 * 95
-# area = 75 * 15  # cm2
-# range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']
-# potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+# area = 76 * 16   # cm2
+# potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
 # trans = 1
 
-name = "maize"
-str_ = ["_sra0"]
-sim_time = 0.5 * 95
-area = 75 * 15  # cm2
-range_ = ['1995-03-15 00:00:00', '1995-06-20 23:00:00']
-potential_trans = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
-trans = 1
+# name = "maize"
+# str_ = ["_sra0"]
+# area = 76 * 16  # cm2
+# potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, sim_time, area, evap.lai_maize, Kc_maize)
+# trans = 1
 
 rs_age = 1
 
@@ -87,7 +80,7 @@ for i in range(0, n):
     if data2 is not None:
         t = data[i][0]
         c = data2[i]
-        ax[i].plot(t[::10], 10*c, 'r:', label = "nitrate uptake 0.1*[g/day]")  # actual transpiration  according to soil model
+        ax[i].plot(t[::10], 10 * c, 'r:', label = "nitrate uptake 0.1*[g/day]")  # actual transpiration  according to soil model
         dt = np.diff(t[::10])
         cuc = np.cumsum(np.multiply(c[:-1], dt))
         print(str_[i], "cumulative nitrate uptake", cuc[-1] , "g")
@@ -101,7 +94,7 @@ for i in range(0, n):
     ax2.plot(t[1:], cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
     ax2.set_ylabel("cumulative [cm]")
     if data2 is not None:
-        ax2.plot(t[10::10], 10*cuc, 'r--', label = "cumulative nitrate uptake 0.1*[g/day]")  # cumulative transpiration (neumann)
+        ax2.plot(t[10::10], 10 * cuc, 'r--', label = "cumulative nitrate uptake 0.1*[g/day]")  # cumulative transpiration (neumann)
 
     ax2.legend(loc = 'center right')
     print(str_[i], "cumulative water uptake", cup[-1], "cm3")
