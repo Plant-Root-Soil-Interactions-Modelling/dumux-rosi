@@ -192,6 +192,60 @@ def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
     return jobs
 
 
+def write_ranges(file_name, names, ranges):
+    if rank == 0:  
+        assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
+        for i in range(0, len(ranges)):
+            with open("results/" + file_name+"_range", 'w') as file:
+                l = [str(r) for r in ranges[i]]
+                range_ = ', '.join(l)
+                print(names[i]+", "+ str(len(ranges[i]))+", "+range_)
+                file.write(names[i]+", "+ str(len(ranges[i]))+", "+range_+"\n")
+
+def local_soybean():
+    root_type = "soybean"
+    file_name = "local_SA_soybean"
+    enviro_type = 0
+    sim_time = 87.5
+    
+    if rank == 0:
+        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        theta_ = np.linspace(0, np.pi / 2, 9)
+        write_ranges(file_name,
+                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"], 
+                     [p2,p2,p1,p1,p1,theta_, p1, [2, 3, 4, 5]])
+        jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+    
+    else:
+        jobs = None
+    
+    jobs = comm.bcast(jobs, root = 0)
+    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+
+
+def local_maize(): # TODO !!!!
+    root_type = "maize"
+    file_name = "local_SA_maize"
+    enviro_type = 0
+    sim_time = 95
+    
+    if rank == 0:
+        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        theta_ = np.linspace(0, np.pi / 2, 9)
+        write_ranges(file_name,
+                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"], 
+                     [p2,p2,p1,p1,p1,theta_, p1, p1, p1, [2, 3, 4, 5]])
+        jobs = make_local(kr * p2 , kx * p2 , p1, p1, p1, theta_, p1, [2, 3, 4, 5])
+    
+    else:
+        jobs = None
+    
+    jobs = comm.bcast(jobs, root = 0)
+    # start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+    # run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+
 if __name__ == "__main__":
 
     # root_type = "soybean"
@@ -205,20 +259,6 @@ if __name__ == "__main__":
     # kx = 1.e-3
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
+    
+    local_soybean()
 
-    root_type = "soybean"
-    file_name = "local_SA_test"
-    enviro_type = 0
-    sim_time = 87.5
-    if rank == 0:
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 1)])
-        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 1)])
-        kr = 1.e-4
-        kx = 1.e-3
-        theta_ = np.linspace(0, np.pi / 2, 9)
-        jobs = make_local(kr * p2 , kx * p2 , p1, p1, p1, theta_, p1, p1, p1, [2, 3, 4, 5])
-    else:
-        jobs = None
-    jobs = comm.bcast(jobs, root = 0)
-    # start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
-    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
