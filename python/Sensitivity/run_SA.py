@@ -195,12 +195,27 @@ def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
 def write_ranges(file_name, names, ranges):
     if rank == 0:  
         assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
-        for i in range(0, len(ranges)):
-            with open("results/" + file_name+"_range", 'w') as file:
+        with open(file_name+"_range", 'w') as file:
+            for i in range(0, len(ranges)):            
                 l = [str(r) for r in ranges[i]]
-                range_ = ', '.join(l)
-                print(names[i]+", "+ str(len(ranges[i]))+", "+range_)
+                range_ = ', '.join(l)                
                 file.write(names[i]+", "+ str(len(ranges[i]))+", "+range_+"\n")
+                
+def read_ranges(file_name):
+    names = []
+    ranges = []
+    if rank == 0:  
+        with open(file_name+"_range", 'r') as file:
+           for line in file:
+                entries = line.rstrip().split(", ")
+                names.append(entries[0])
+                n = int(entries[1])                
+                ranges.append([])
+                for i in range(0,n):
+                    ranges[-1].append(float(entries[2+i]))
+    print(ranges)
+    print(names)
+    return names, ranges                
 
 def local_soybean():
     root_type = "soybean"
@@ -212,7 +227,7 @@ def local_soybean():
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
         theta_ = np.linspace(0, np.pi / 2, 9)
-        write_ranges(file_name,
+        write_ranges("results/"+file_name,
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"], 
                      [p2,p2,p1,p1,p1,theta_, p1, [2, 3, 4, 5]])
         jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
@@ -234,7 +249,7 @@ def local_maize(): # TODO !!!!
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
         theta_ = np.linspace(0, np.pi / 2, 9)
-        write_ranges(file_name,
+        write_ranges("results/"+file_name,
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"], 
                      [p2,p2,p1,p1,p1,theta_, p1, p1, p1, [2, 3, 4, 5]])
         jobs = make_local(kr * p2 , kx * p2 , p1, p1, p1, theta_, p1, [2, 3, 4, 5])

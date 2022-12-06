@@ -31,12 +31,11 @@ ylim_ = -10
 # str_ = "cyl0"
 # Kc = Kc_maize
 # lai = evap.lai_maize
-ylim_ = None # -10
+# ylim_ = None # -10
 
-fname = "soilc_" + name + "_" + str_
+fname = "soil_" + name + "_" + str_
 
 start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
-start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
 path = "results/"
 
 SMALL_SIZE = 16
@@ -57,9 +56,7 @@ fnames_t = np.array(["transpiration_" + name + "_" + str_ ])  # data currently n
 times = [np.load(path + n_ + ".npy")  for n_ in fnames_t]
 times = times[0][0,:]
 
-end_date = start_date + timedelta(times[-1], 0)
-range_ = [str(start_date), str(end_date)]
-t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, times[-1], lai, Kc)
+t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
 t_ = np.array(t_)
 y_ = np.array(y_)
 t_ = t_[::2]

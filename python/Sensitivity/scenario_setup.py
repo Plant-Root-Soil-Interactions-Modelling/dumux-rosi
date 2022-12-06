@@ -157,10 +157,10 @@ def init_lupine_conductivities2(r, skr=1., skx=1.):
     kr = np.array([[-1e4, 0.], [-0.1, 0.], [0., 4.32e-4], [1.e4, 4.32e-4]])  # lateral
     kx = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.62e-4], [5.5, 1.44e-4], [7.92, 4.22e-4], [15., 4.95e-4], [300., 4.95e-4]])  # lateral
 
-    r.setKrTables([kr00[:, 1], skr*kr[:, 1], skr*kr[:, 1], skr*kr[:, 1], skr*kr[:, 1], skr*kr[:, 1]],
+    r.setKrTables([kr00[:, 1], skr*kr[:, 1], skr*kr[:, 1], 2*skr*kr[:, 1], skr*kr[:, 1], skr*kr[:, 1]],
                   [kr00[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
     r.setKxTables([kx00[:, 1], skx*kx[:, 1], skx*kx[:, 1], skx*kx[:, 1], skx*kx[:, 1], skx*kx[:, 1]],
-                  [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
+                  [kx00[:, 0], 10*kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):

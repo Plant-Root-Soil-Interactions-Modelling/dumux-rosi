@@ -8,22 +8,23 @@ import matplotlib.pyplot as plt
 
 import run_SA as sa
 
-""" def SA """
-file_name = "local_SA_test"
-path = "results/"
+def start_index(ind, ranges):
+    s = 0
+    for i in range(0,ind):
+        if len(ranges)>1:        
+            s += len(ranges[i])
+    return s
+    
 
-# p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-# kr = 1.e-4
-# kx = 1.e-3
-# sa_lists = sa.make_lists(kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
-# sa_len = len(sa_lists[0])  # assume they have the same size for all parameters
-#
-# name = ["kr", "kx", "lmax0", "lmax1", "lmax2", "theta0", "r0", "r1", "a", "src"]
-# p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-# p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-# theta_ = np.linspace(-1,1, 9)
-# # ranges = [kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5]]
-# ranges = [p2, p2, p1, p1, p1, theta_, p1, p1, p1, [2, 3, 4, 5]]
+""" def SA """
+file_name = "local_SA_soybean"
+path = "results/"
+not_xlog = ["theta1", "src"]
+
+names, ranges = sa.read_ranges(path+file_name)
+trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
+times = trans_[0,:]
+print("Simulation time from", min(times), "to ", max(times), "days")
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -40,11 +41,14 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 """ make plots """
 fig, ax = plt.subplots(3, 3, figsize = (16, 16))
 
-for i in range(0, 3):
-    for j in range(0, 3):
-        lind = i * 3 + j
-        print("\nproducing sub-plot", name[lind])
-        file_start_ind = 2 + lind * sa_len
+ac = 0
+for lind in range(0,len(names)):
+    
+    file_start_ind = 2 + start_index(lind, ranges) # 1 is initial simulation
+    sa_len = len(ranges[lind])
+    print("\nproducing sub-plot", names[lind], "from", file_start_ind, "to", file_start_ind+sa_len)    
+    
+    if sa_len>1:
         trans = np.zeros((sa_len,))
         vol = np.zeros((sa_len,))
         krs = np.zeros((sa_len,))
@@ -70,15 +74,18 @@ for i in range(0, 3):
         trans = trans / trans[sa_len // 2]  # nondimensionalize
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
-        ax[i, j].plot(ranges[lind], trans, label = "uptake")
-        ax[i, j].plot(ranges[lind], vol, '-.', label = "volume")
-        ax[i, j].plot(ranges[lind], krs, ':', label = "krs")
-        ax[i, j].plot([1.], [1.], 'r*')
-        ax[i, j].legend()
-        ax[i, j].set_title(name[lind])
-        ax[i, j].set_ylim(0.5, 2)
-        ax[i, j].set_yscale('log', base = 2)
-        ax[i, j].set_xscale('log', base = 2)
+        x = ranges[lind][sa_len // 2]
+        ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
+        ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
+        ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")        
+        ax.flat[ac].plot([x], [1.], 'r*')
+        ax.flat[ac].legend()
+        ax.flat[ac].set_title(names[lind])
+        ax.flat[ac].set_ylim(0.5, 2)
+        ax.flat[ac].set_yscale('log', base = 2)
+        if not names[lind] in not_xlog:
+            ax.flat[ac].set_xscale('log', base = 2)
+        ac += 1
 
 plt.tight_layout(pad = 4.)
 plt.show()
