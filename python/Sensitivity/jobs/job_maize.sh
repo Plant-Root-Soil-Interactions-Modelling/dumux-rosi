@@ -1,17 +1,15 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
-#SBATCH --job-name=local_sensitivity_analysis
-#SBATCH --account=training2230
-#SBATCH --reservation=hands-on-20221125
-#SBATCH --ntasks=100
-#SBATCH --cpus-per-task=1
+#SBATCH --job-name=single_maize
+#SBATCH --ntasks=1
 #SBATCH --nodes=1
+#SBATCH --exclude=node02
 #SBATCH --partition=cpu256
-#SBATCH --time=5:00:00
-#SBATCH --mem=0
+#SBATCH --time=10:00:00
+#SBATCH --mem=16G
 #SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END
 #SBATCH --mail-user=d.leitner@fz-juelich.de
  
 cd ..
 module load openmpi/4.1.4
-mpirun -n 100 python3 run_SA.py
+mpirun python3 maize_water.py
