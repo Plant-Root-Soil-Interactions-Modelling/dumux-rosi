@@ -12,18 +12,18 @@ import run_SA as sa
 file_name = "local_SA_test"
 path = "results/"
 
-p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-kr = 1.e-4
-kx = 1.e-3
-sa_lists = sa.make_lists(kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
-sa_len = len(sa_lists[0])  # assume they have the same size for all parameters
-
-name = ["kr", "kx", "lmax0", "lmax1", "lmax2", "theta0", "r0", "r1", "a", "src"]
-p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-theta_ = np.linspace(-1,1, 9)
-# ranges = [kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5]]
-ranges = [p2, p2, p1, p1, p1, theta_, p1, p1, p1, [2, 3, 4, 5]]
+# p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+# kr = 1.e-4
+# kx = 1.e-3
+# sa_lists = sa.make_lists(kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5])
+# sa_len = len(sa_lists[0])  # assume they have the same size for all parameters
+#
+# name = ["kr", "kx", "lmax0", "lmax1", "lmax2", "theta0", "r0", "r1", "a", "src"]
+# p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+# p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+# theta_ = np.linspace(-1,1, 9)
+# # ranges = [kr * p , kx * p , p, p, p, p, p, p, p, [2, 3, 4, 5]]
+# ranges = [p2, p2, p1, p1, p1, theta_, p1, p1, p1, [2, 3, 4, 5]]
 
 """ font sizes """
 SMALL_SIZE = 12
