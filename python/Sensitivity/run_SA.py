@@ -218,7 +218,7 @@ def read_ranges(file_name):
     return names, ranges                
 
 def local_soybean():
-    root_type = "soybean"
+    root_type = "soybean_"
     file_name = "local_SA_soybean"
     enviro_type = 0
     sim_time = 87.5
