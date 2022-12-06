@@ -1,11 +1,10 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
 #SBATCH --job-name=local_sensitivity_analysis
-#SBATCH --account=training2230
-#SBATCH --reservation=hands-on-20221125
 #SBATCH --ntasks=100
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
+#SBATCH --exclude=node02
 #SBATCH --partition=cpu256
 #SBATCH --time=5:00:00
 #SBATCH --mem=0
