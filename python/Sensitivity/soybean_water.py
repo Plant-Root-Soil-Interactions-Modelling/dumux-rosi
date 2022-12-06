@@ -11,7 +11,7 @@ import sra
 """ parameters   """
 soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 
-sim_time = 0.5 * 87.5  # [day]
+sim_time = 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '1995-03-15 00:00:00'
