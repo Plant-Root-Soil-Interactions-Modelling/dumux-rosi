@@ -1,6 +1,7 @@
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from datetime import *
 
 
@@ -105,21 +106,38 @@ def net_infiltration_table_beers(filename, start_date, sim_time, lai_f, Kc):
 
     with open(filename, 'rb') as f:
         data = pickle.load(f)
-
+    #
     yd = data["Net_infilteration"]
     y = yd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
     evapd = data["Epot"]
     evap = -evapd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
     precip = y - evap
 
+    # start_date2 = '2020-03-15 00:00:00'
+    # start_date2 = datetime.strptime(start_date2, '%Y-%m-%d %H:%M:%S')
+    # end_date2 = start_date2 + timedelta(sim_time + 1, 3600)  # root system starts to grow one day earlier (+max dat)
+    # range2_ = [str(start_date2), str(end_date2)]
+    # df2 = pd.read_csv("WeatherSummary_K0_20-22.csv")  # amazing...
+    # df2['Datetime'] = pd.to_datetime(df2['date'], format = '%Y-%m-%d')
+    # df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
+    # df2 = df2.drop(['date'], axis = 1)
+    # yd2 = df2["prcp"].loc[range2_[0]: range2_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day ################## TODO
+    # precip = yd2
+    # print("\nSummary")
+    # print(type(df2))
+    # print(df2.info())
+    # print(type(yd2))
+    # print(yd2)
+
     # fig, ax = plt.subplots(2)
     # t_ = np.linspace(0, len(precip) / 24, len(precip))  # hourly data
-    # ax[0].bar(t_, precip)  # precipitation positive sign # , 'r', label = "precipitation"
+    # ax[0].bar(t_, precip, width = 0.01)  # precipitation positive sign # , 'r', label = "precipitation"
     # # ax[0].plot(t_, evap, 'g', label = "evaporation")  # evaporation negative sign
     # # ax[0].bar(t_, y)  # 'k:', label = 'net infiltration'
     # # ax[0].plot(t_, precip + evap, 'k:', label = 'net infiltration')
     # ax[0].legend()
     # ax[0].set_ylabel("cm / day")
+    # ax[0].set_xlabel("time")
 
     """ 1. ET0 -> ETc """
     yd = data["ET0"]
@@ -135,13 +153,13 @@ def net_infiltration_table_beers(filename, start_date, sim_time, lai_f, Kc):
 
     # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
     # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
-    # ax[1].plot(t_, precip, 'r', label = "precipitation")
+    # # ax[1].plot(t_, precip, 'r', label = "precipitation")
     # ax[1].plot(t_, evap, 'g', label = "evaporation")
-    # ax[1].plot(t_, net_inf, 'k:', label = 'net infiltration')
+    # # ax[1].plot(t_, net_inf, 'k:', label = 'net infiltration')
     # ax[1].legend()
     # ax[1].set_xlabel("time")
     # ax[1].set_ylabel("cm / day")
-    # plt.show()
+    plt.show()
 
     y_ = []
     x_ = []

@@ -56,6 +56,7 @@ def soybean(i:int):
     # 20, 30/35, 60, 25 = 140 (Central USA)
     return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_soybean
 
+
 def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
     """ Hydraulic conductivities  kr [1/day], kx [cm3/day] """
     r.setKr([0, kr_const, kr_const, kr_const, kr_const, kr_const])
@@ -88,7 +89,7 @@ def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1, dt0 = 14., dt1 = 7., kr_f 
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def init_maize_conductivities(r):
+def init_maize_conductivities(r, skr = 1., skx = 1.):
     """ Hydraulic conductivities for maize following Couvreur et al. (2012) originally from Doussan et al. (1998) """
 
     kr00 = np.array([[0., 0.]])  # artificial shoot
@@ -98,13 +99,13 @@ def init_maize_conductivities(r):
     kx0 = np.array([[0., 0.0000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
     kx1 = np.array([[0., 0.0000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
 
-    r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
+    r.setKrTables([kr00[:, 1], skr * kr0[:, 1], skr * kr1[:, 1], skr * kr1[:, 1], skr * kr0[:, 1], skr * kr0[:, 1]],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
-    r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
+    r.setKxTables([kx00[:, 1], skx * kx0[:, 1], skx * kx1[:, 1], skx * kx1[:, 1], skx * kx0[:, 1], skx * kx0[:, 1]],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def init_maize_conductivities2(r, skr=1., skx=1.):
+def init_maize_conductivities2(r, skr = 1., skx = 1.):
     """ Hydraulic conductivities for maize following Meunier et al (2018) """
 
     kr00 = np.array([[0., 0.]])  # artificial shoot
@@ -120,13 +121,13 @@ def init_maize_conductivities2(r, skr=1., skx=1.):
     # kx_brace = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.78e-4], [16.9, 2.56e-4], [27., 121.8e-4], [32.6, 195.6e-4], [40., 225.3e-4], [300., 225.3e-4]]) # brace
     kx12 = np.array([[0., 0.62e-4], [5.5, 1.44e-4], [7.92, 4.22e-4], [15., 4.95e-4], [300., 4.95e-4]])  # lateral
 
-    r.setKrTables([kr00[:, 1], skr*kr0[:, 1], skr*kr12[:, 1], skr*kr12[:, 1], skr*kr0[:, 1], skr*kr5[:, 1]],
+    r.setKrTables([kr00[:, 1], skr * kr0[:, 1], skr * kr12[:, 1], skr * kr12[:, 1], skr * kr0[:, 1], skr * kr5[:, 1]],
                   [kr00[:, 0], kr0[:, 0], kr12[:, 0], kr12[:, 0], kr0[:, 0], kr5[:, 0]])
-    r.setKxTables([kx00[:, 1], skx*kx0[:, 1], skx*kx12[:, 1], skx*kx12[:, 1], skx*kx0[:, 1], skx*kx5[:, 1]],
+    r.setKxTables([kx00[:, 1], skx * kx0[:, 1], skx * kx12[:, 1], skx * kx12[:, 1], skx * kx0[:, 1], skx * kx5[:, 1]],
                   [kx00[:, 0], kx0[:, 0], kx12[:, 0], kx12[:, 0], kx0[:, 0], kx5[:, 0]])
 
 
-def init_lupine_conductivities(r):
+def init_lupine_conductivities(r, skr = 1., skx = 1.):
     """ Hydraulic conductivities for lupine following Zarebanadkouki et al. (2016) """
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
@@ -142,14 +143,14 @@ def init_lupine_conductivities(r):
     kx1 = np.array([[0., 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03],
                     [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03],
                     [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
-    r.setKrTables([kr00[:, 1], kr0[:, 1], kr1[:, 1], kr1[:, 1], kr0[:, 1], kr0[:, 1]],
+    r.setKrTables([kr00[:, 1], skr * kr0[:, 1], skr * kr1[:, 1], skr * kr1[:, 1], skr * kr0[:, 1], skr * kr0[:, 1]],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
-    r.setKxTables([kx00[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1], kx0[:, 1], kx0[:, 1]],
+    r.setKxTables([kx00[:, 1], skx * kx0[:, 1], skx * kx1[:, 1], skx * kx1[:, 1], skx * kx0[:, 1], skx * kx0[:, 1]],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def init_lupine_conductivities2(r, skr=1., skx=1.):
-    """ Hydraulic conductivities for maize following Meunier et al (2018) """
+def init_lupine_conductivities2(r, skr = 1., skx = 1.):
+    """ Hydraulic conductivities for maize following Meunier et al. (2018) !altered for tap and seminal! """
 
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
@@ -157,10 +158,10 @@ def init_lupine_conductivities2(r, skr=1., skx=1.):
     kr = np.array([[-1e4, 0.], [-0.1, 0.], [0., 4.32e-4], [1.e4, 4.32e-4]])  # lateral
     kx = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.62e-4], [5.5, 1.44e-4], [7.92, 4.22e-4], [15., 4.95e-4], [300., 4.95e-4]])  # lateral
 
-    r.setKrTables([kr00[:, 1], skr*kr[:, 1], skr*kr[:, 1], 2*skr*kr[:, 1], skr*kr[:, 1], skr*kr[:, 1]],
+    r.setKrTables([kr00[:, 1], 0.1 * skr * kr[:, 1], skr * kr[:, 1], skr * kr[:, 1], 0.1 * skr * kr[:, 1], 0.1 * skr * kr[:, 1]],
                   [kr00[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
-    r.setKxTables([kx00[:, 1], skx*kx[:, 1], skx*kx[:, 1], skx*kx[:, 1], skx*kx[:, 1], skx*kx[:, 1]],
-                  [kx00[:, 0], 10*kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
+    r.setKxTables([kx00[:, 1], 20 * skx * kx[:, 1], skx * kx[:, 1], skx * kx[:, 1], 10 * skx * kx[:, 1], 10 * skx * kx[:, 1]],
+                  [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):
@@ -318,12 +319,16 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 rrp[4].lmax *= mods["lmax145"]
                 if len(rrp) > 5:
                     rrp[5].lmax *= mods["lmax145"]
+                print("scaling lmax145", mods["lmax145"])
             if "lmax2" in mods:
                 rrp[2].lmax *= mods["lmax2"]
+                # print("scaling lmax2", mods["lmax2"])
             if "lmax3" in mods:
                 rrp[3].lmax *= mods["lmax3"]
+                # print("scaling lmax3", mods["lmax3"])
             if "lmax4" in mods:
                 rrp[4].lmax *= mods["lmax4"]
+                # print("scaling lmax4", mods["lmax4"])
             if "theta45" in mods:
                 if len(rrp) > 5:
                     print("shootbore (theta45)")
@@ -336,10 +341,13 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 rrp[4].r *= mods["r145"]
                 if len(rrp) > 5:
                     rrp[5].r *= mods["r145"]
+                # print("scaling r145", mods["r145"])
             if "r2" in mods:
-                rrp[2].r *= mods["r2"]
+                # rrp[2].r *= mods["r2"]
+                print("scaling r2", mods["r2"])
             if "r3" in mods:
                 rrp[2].r *= mods["r3"]
+                # print("scaling r3", mods["r3"])
             if "r" in mods:
                 for i in range(0, len(rrp)):
                     rrp[i].r *= mods["r"]
