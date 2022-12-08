@@ -357,6 +357,10 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "src" in mods:
                 srp[0].maxB = mods["src"]
 
+        # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
+        # for p in rrp:
+        #     print(p.dx, p.dxMin)
+
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
         rs.simulate(1., True)

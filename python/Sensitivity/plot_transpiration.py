@@ -13,11 +13,11 @@ start_date = '1995-03-15 00:00:00'
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "soybean"
-str_ = ["_sra0"]
-area = 76 * 3
-potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
-trans = 1
+# name = "soybean"
+# str_ = ["_sra0"]
+# area = 76 * 3
+# potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+# trans = 1
 
 # name = "test1.0"
 # str_ = [""]
@@ -32,11 +32,11 @@ trans = 1
 # potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
 # trans = 1
 
-# name = "maize"
-# str_ = ["_sra0"]
-# area = 76 * 16  # cm2
-# potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
-# trans = 1
+name = "maize"
+str_ = ["_sra0"]
+area = 76 * 16  # cm2
+potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
+trans = 1
 
 rs_age = 1
 

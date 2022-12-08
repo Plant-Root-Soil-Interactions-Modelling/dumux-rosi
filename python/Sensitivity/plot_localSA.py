@@ -18,13 +18,29 @@ def start_index(ind, ranges):
 
 """ def SA """
 file_name = "local_SA_soybean"
+#file_name = "local_SA_maize"
 path = "results/"
 not_xlog = ["theta1", "src"]
+
+analysis_time = 100 # days
 
 names, ranges = sa.read_ranges(path+file_name)
 trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
 times = trans_[0,:]
+dt_ = np.diff(times)
+dt_ = np.array([0., *dt_])
 print("Simulation time from", min(times), "to ", max(times), "days")
+
+ind_ = np.argwhere(times>analysis_time)
+if len(ind_)>0:
+    ind = ind_[0][0]
+    print("plots for day", times[ind])
+    ind += 1 
+    ind10 = ind//10 # TODO check 
+    print(ind)
+else: 
+    ind = -1
+    ind10 = -1
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -55,20 +71,20 @@ for lind in range(0,len(names)):
         for k in range(0, sa_len):
             try:
                 trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-                trans[k] = np.sum(trans_[1,:])
+                trans[k] = np.sum(np.multiply(trans_[1,:ind], dt_[:ind]))
                 print(trans[k])
             except:
                 trans[k] = np.nan
                 print("skipping file", file_name + str(file_start_ind + k))
             try:
                 vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
-                vol_ = vol_[:, -1]
-                vol[k] = np.sum(vol_)
+                vol_ = vol_[:, ind10]
+                vol[k] = np.sum(vol_) # sum over sub-types                
             except:
                 vol[k] = np.nan
             try:
                 krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
-                krs[k] = krs_[-1]
+                krs[k] = krs_[ind10]
             except:
                 krs[k] = np.nan
         trans = trans / trans[sa_len // 2]  # nondimensionalize
