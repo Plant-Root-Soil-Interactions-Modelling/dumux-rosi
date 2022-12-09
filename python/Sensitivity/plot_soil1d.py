@@ -40,7 +40,7 @@ sim_time = 95
 fname = "soilc_" + name + "_" + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
-start_date = '2020-03-15 00:00:00' # INARI csv data 
+start_date = '2020-03-15 00:00:00'  # INARI csv data
 
 path = "results/"
 

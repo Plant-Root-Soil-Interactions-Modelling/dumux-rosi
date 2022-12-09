@@ -14,12 +14,11 @@ soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.soybean
 sim_time = 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
+start_date = '2020-05-10 00:00:00'  # INARI csv data
+x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean, Kc)
+trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean, Kc)
 
-start_date = '2020-03-15 00:00:00' # INARI csv data 
-x_, y_ = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_soybean, Kc)
-trans_soybean = evap.get_transpiration_beers_csv(start_date, sim_time, area, evap.lai_soybean, Kc)
-
-# start_date = '1995-03-15 00:00:00' # pickle data from germany
+# start_date = '1995-03-15 00:00:00'  # pickle data from germany
 # x_, y_ = evap.net_infiltration_table_beers_pickle('data/95.pkl', start_date, sim_time, evap.lai_soybean, Kc)
 # trans_soybean = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 

@@ -37,9 +37,8 @@ dt = 360 / (24 * 3600)  # time step [day] 20
 # x_, y_ = evap.net_infiltration_table_beers_pickle('data/95.pkl', start_date, sim_time, evap.lai_maize, Kc_maize)
 # trans_maize = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_maize, Kc_maize)
 
-start_date = '2020-03-15 00:00:00' # INARI csv data 
-x_, y_ = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_maize, Kc_maize)
-trans_maize = evap.get_transpiration_beers_csv(start_date, sim_time, area, evap.lai_maize, Kc_maize)
+start_date = '2020-03-15 00:00:00'  # INARI csv data
+x_, y_ = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_maize, Kc_maize)  # evap.lai_noroots
 
 """ set up simulator """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -130, type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
@@ -52,8 +51,7 @@ for i in range(0, N):
     t = i * dt  # current simulation time
     print(t)
     soil_sol_fluxes = {}  # empy dict
-    evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-3)
-    # print(soil_sol_fluxes)
+    evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))
     s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # richards.py
     s.solve(dt)
     c.append(s.getSolution_(1))
@@ -64,14 +62,14 @@ z = s.getDofCoordinates()
 c = np.transpose(c)
 c = c[::-1,:]
 c = c[:150]
-c = np.minimum(c, 5.5e-4)
+# c = np.minimum(c, 5.5e-4)
 
 fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 divider = make_axes_locatable(ax)
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 
 cmap_ = matplotlib.cm.get_cmap('jet')
-im = ax.imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -150., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+im = ax.imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -150., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest', vmin = 0., vmax = 1.e-3,
 
 cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
 cb.ax.get_yaxis().labelpad = 30

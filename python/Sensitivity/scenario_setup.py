@@ -7,14 +7,18 @@ sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../..
 
 import numpy as np
 import timeit
-
-import plantbox as pb  # CPlantBox
-import van_genuchten as vg
-from xylem_flux import *
+import matplotlib
+import matplotlib.pyplot as plt
 
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
+
+import plantbox as pb  # CPlantBox
+import van_genuchten as vg
+import evapotranspiration as evap
+from xylem_flux import *
+from datetime import *
 
 
 def vg_enviro_type(i:int):
@@ -162,6 +166,78 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
                   [kr00[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0], kr[:, 0]])
     r.setKxTables([kx00[:, 1], 20 * skx * kx[:, 1], skx * kx[:, 1], skx * kx[:, 1], 10 * skx * kx[:, 1], 10 * skx * kx[:, 1]],
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
+
+
+def create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_bot, start_date, end_date):
+    """
+        Creates initial soil conditions by simulating from 31.10 - 10.5
+    """
+    start_date2 = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
+    timedelta_ = end_date - start_date2
+    sim_time = timedelta_.days
+
+    soil = vg.Parameters(soil_)
+    vg.create_mfp_lookup(soil, -1.e5, 1000)
+    s = RichardsWrapper(RichardsNCSP())  # water and one solute
+    s.initialize()
+    s.createGrid(min_b, max_b, cell_number, True)  # [cm]
+    # IC
+    z_ = [0., -30., -30., -200.]
+    v_ = 0.*np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  # kg / m3 (~4.e-4)
+    s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
+    s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
+    # BC
+    times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, 1.)
+    s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
+    s.setBotBC("freeDrainage")
+    # hard coded initial fertilizer application
+    f1 = 4.08e-4  # g/cm2
+    sol_times = np.array([0., sim_time - 17, sim_time - 17, sim_time - 16, sim_time - 16, 1.e3])
+    sol_influx = -np.array([0., 0., f1, f1, 0., 0.])  # g/(cm2 day)
+    s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
+    s.setBotBC_solute("outflow", 0.)
+    s.setVGParameters([soil_])
+    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+    s.setParameter("Component.MolarMass", "6.2e-2")
+    s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")
+    s.initializeProblem()
+    wilting_point = -15000
+    s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
+    s.ddt = 1.e-5  # [day] initial Dumux time step
+    c, h = [], []  # resulting solute concentration
+    dt = 1. / 24.
+    N = int(np.ceil(sim_time / dt))
+    for i in range(0, N):
+        t = i * dt  # current simulation time
+        print(t)
+        soil_sol_fluxes = {}  # empy dict
+        evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))  # TODO nitrification debendent on tillage practice
+        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # richards.py
+        s.solve(dt)
+        c.append(s.getSolution_(1))
+        h.append(s.getSolutionHead_())
+
+    c = np.transpose(c)
+    c = c[::-1,:]
+    h = np.transpose(h)
+    h = h[::-1,:]
+    fig, ax = plt.subplots(2, 1, figsize = (18, 10))
+    cmap_reversed = matplotlib.cm.get_cmap('jet_r')
+    pos = ax[0].imshow(h, cmap = cmap_reversed, aspect = 'auto', extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest', vmin = 0., vmax = 1.e-3,
+    fig.colorbar(pos, ax = ax[0])
+    cmap_ = matplotlib.cm.get_cmap('jet')
+    pos = ax[1].imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest', vmin = 0., vmax = 1.e-3,
+    fig.colorbar(pos, ax = ax[1])
+    ax[0].set_ylabel("depth [cm]")
+    ax[1].set_ylabel("depth [cm]")
+    ax[1].set_xlabel("time [days]")
+    print("range", np.min(c), np.max(c), "g/cm3")
+    print("range", np.min(h), np.max(h), "cm")
+    plt.tight_layout()
+    plt.show()
+
+    return s.getSolution_(1), s.getSolutionHead_()  # matric potential, concentration
 
 
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):
@@ -479,16 +555,21 @@ def simulate_const(s, r, trans, sim_time, dt):
 
 if __name__ == '__main__':
 
-    theta_r = 0.025
-    theta_s = 0.403
-    alpha = 0.0383  # (cm-1) soil
-    n = 1.3774
-    k_sat = 60.  # (cm d-1)
-    soil_ = [theta_r, theta_s, alpha, n, k_sat]
-    s, soil = create_soil_model(soil_, [-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200, 1)
+    start_date = '2020-10-31 00:00:00'
+    end_date = '2021-05-10 00:00:00'
+    soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = soybean(0)
+    d = create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_top + 200, start_date, end_date)
 
-    print()
-    print(s)
-    print(soil)
-
-    """ TODO: tests would be nice, or a minimal example setup ... """
+    # theta_r = 0.025
+    # theta_s = 0.403
+    # alpha = 0.0383  # (cm-1) soil
+    # n = 1.3774
+    # k_sat = 60.  # (cm d-1)
+    # soil_ = [theta_r, theta_s, alpha, n, k_sat]
+    # s, soil = create_soil_model(soil_, [-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200, 1)
+    #
+    # print()
+    # print(s)
+    # print(soil)
+    #
+    # """ TODO: tests would be nice, or a minimal example setup ... """
