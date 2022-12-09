@@ -1,6 +1,8 @@
 """
 Sink plot (noon and midnight), of a 1d soil 
 """
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,12 +22,14 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 # Kc = Kc_soybean
 # lai = evap.lai_soybean
 # ylim_ = None
+# sim_time = 87.5
 
 name = "maize"
 str_ = "sra0"
 Kc = Kc_maize
 lai = evap.lai_maize
-ylim_ = -10
+ylim_ = None
+sim_time = 95
 
 # name = "maize"
 # str_ = "cyl0"
@@ -33,9 +37,11 @@ ylim_ = -10
 # lai = evap.lai_maize
 # ylim_ = None # -10
 
-fname = "soil_" + name + "_" + str_
+fname = "soilc_" + name + "_" + str_
 
-start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
+# start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
+start_date = '2020-03-15 00:00:00' # INARI csv data 
+
 path = "results/"
 
 SMALL_SIZE = 16
@@ -56,7 +62,9 @@ fnames_t = np.array(["transpiration_" + name + "_" + str_ ])  # data currently n
 times = [np.load(path + n_ + ".npy")  for n_ in fnames_t]
 times = times[0][0,:]
 
-t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
+# t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
+t_, y_ = evap.net_infiltration_table_beers_csv(start_date, sim_time, lai, Kc)
+# t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
 t_ = np.array(t_)
 y_ = np.array(y_)
 t_ = t_[::2]
@@ -76,7 +84,7 @@ data = data[:abs(int(depths[-1] - 10)),:]
 if fname.startswith("soilc_"):
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
-    bar = ax[0].bar(t_, -np.array(y_), 0.035)
+    bar = ax[0].bar(t_, np.array(y_), 0.4)
     ax[0].set_ylabel("net infiltration [cm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
@@ -107,7 +115,7 @@ if fname.startswith("soilc_"):
 else:
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
-    bar = ax[0].bar(t_, -np.array(y_), 0.035)
+    bar = ax[0].bar(t_, np.array(y_), 0.7)
     ax[0].set_ylabel("net infiltration [cm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:

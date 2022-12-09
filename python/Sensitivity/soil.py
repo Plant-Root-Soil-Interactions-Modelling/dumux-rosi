@@ -15,8 +15,8 @@ from xylem_flux import sinusoidal2
 import evapotranspiration as evap
 
 """ parameters   """
-min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
-max_b = [37.5, 7.5, 0.]
+min_b = [-38, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
+max_b = [38, 7.5, 0.]
 cell_number = [1, 1, 200]  # 1 cm3
 
 soil0 = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
@@ -28,18 +28,18 @@ soil_ = soil0
 
 Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
 
-area = 75 * 15  # cm2
+area = 76 * 15  # cm2
 
 sim_time = 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
-range_ = ['1995-03-15 00:00:00', '1995-06-17 23:00:00']
-x_, y_ = evap.net_infiltration_table_beers('data/95.pkl', range_, 95, evap.lai_maize, Kc_maize)
-trans_maize = evap.get_transpiration_beers('data/95.pkl', range_, area, 95, evap.lai_maize, Kc_maize)
+# start_date = '1995-03-15 00:00:00'
+# x_, y_ = evap.net_infiltration_table_beers_pickle('data/95.pkl', start_date, sim_time, evap.lai_maize, Kc_maize)
+# trans_maize = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_maize, Kc_maize)
 
-trans = 0.6 * area  # cm3/day
-trans_f1 = lambda t, dt:-trans * sinusoidal2(t, dt)  # Guilaumes questions - 0.01
-trans_f2 = lambda t, dt:-trans * sinusoidal2(t, dt) * (t / (.5 * 95))  # growing potential transpiration
+start_date = '2020-03-15 00:00:00' # INARI csv data 
+x_, y_ = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_maize, Kc_maize)
+trans_maize = evap.get_transpiration_beers_csv(start_date, sim_time, area, evap.lai_maize, Kc_maize)
 
 """ set up simulator """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -130, type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
@@ -62,15 +62,16 @@ z = s.getDofCoordinates()
 
 """ nitrate plot """
 c = np.transpose(c)
-c = c[:100:-1,:]
+c = c[::-1,:]
+c = c[:150]
 c = np.minimum(c, 5.5e-4)
 
 fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 divider = make_axes_locatable(ax)
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 
-cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-im = ax.imshow(c, cmap = cmap_reversed, aspect = 'auto', extent = [0 , sim_time, -100., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+cmap_ = matplotlib.cm.get_cmap('jet')
+im = ax.imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -150., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
 
 cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
 cb.ax.get_yaxis().labelpad = 30

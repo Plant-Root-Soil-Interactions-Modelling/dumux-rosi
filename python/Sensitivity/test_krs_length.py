@@ -43,7 +43,7 @@ for p in p1:
     krs1.append(krs)
 
 plt.plot(p1, krs1)
-plt.xlabel("days")
+plt.xlabel("length and growth rate altered")
 plt.ylabel("Krs [cm2/day]")
 plt.title("Soybean")
 plt.legend()
