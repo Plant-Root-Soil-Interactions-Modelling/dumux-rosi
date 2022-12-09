@@ -30,7 +30,7 @@ def vg_enviro_type(i:int):
     soil[5] = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
     soil[59] = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
     table_name = "envirotype{:s}".format(str(i))
-    p_top = -330
+    p_top = -430
     return soil[i], table_name, p_top
 
 
