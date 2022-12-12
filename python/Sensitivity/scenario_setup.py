@@ -9,6 +9,7 @@ import numpy as np
 import timeit
 import matplotlib
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
@@ -20,6 +21,19 @@ import evapotranspiration as evap
 from xylem_flux import *
 from datetime import *
 
+SMALL_SIZE = 16
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 16
+plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
+plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
+plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
+plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
+prop_cycle = plt.rcParams['axes.prop_cycle']
+colors = prop_cycle.by_key()['color']
+
 
 def vg_enviro_type(i:int):
     """ Van Genuchten parameter for enviro-types, called by maize() and soybean() """
@@ -30,17 +44,17 @@ def vg_enviro_type(i:int):
     soil[5] = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
     soil[59] = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
     table_name = "envirotype{:s}".format(str(i))
-    p_top = -430
+    p_top = -330
     return soil[i], table_name, p_top
 
 
 def maize(i:int):
     """ parameters for maize simulation """
     soil, table_name, p_top = vg_enviro_type(i)
-    min_b = [-38, -8, -200.]  # data from INARI
-    max_b = [38, 8, 0.]
+    min_b = [-38., -8., -200.]  # data from INARI
+    max_b = [38., 8., 0.]
     cell_number = [1, 1, 200]
-    area = 76 * 16  # cm2
+    area = 76. * 16  # cm2
     Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
     # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
     # 30, 40, 50, 50 = 170 (Idaho, USA)
@@ -168,7 +182,7 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
-def create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_bot, start_date, end_date):
+def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, start_date, end_date):
     """
         Creates initial soil conditions by simulating from 31.10 - 10.5
     """
@@ -186,7 +200,8 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_bot, start_
     z_ = [0., -30., -30., -200.]
     v_ = 0.*np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  # kg / m3 (~4.e-4)
     s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
-    s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
+    # s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
+    s.setLinearIC(-201., -1.)
     # BC
     times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, 1.)
     s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
@@ -202,15 +217,29 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_bot, start_
     s.setParameter("Component.MolarMass", "6.2e-2")
     s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")
     s.initializeProblem()
+
+    print()
+    print("1 m2 / area", 1.e4 / area)
+    print()
+
+    print("domain water volume", s.getWaterVolume(), "cm3  = ", s.getWaterVolume() / 1000, "l")
+    theta = s.getWaterContent()
+    print("water content to water volume", np.sum(theta) * area, "cm3")
+    print("domain water volume", s.getWaterVolume() / area, "cm  = ", s.getWaterVolume() / area * 10, "l/m2")
+    print("water content to water volume", np.sum(theta) * 1, "cm  = ", np.sum(theta) * 1 * 10, "l/m2")
+    print("sum net inf", np.sum(net_inf), "cm  = ", np.sum(net_inf) * 1 * 10, "l/m2")
+    print()
+
     wilting_point = -15000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
     c, h = [], []  # resulting solute concentration
-    dt = 1. / 24.
+    dt = 0.025 * 1. / 24.  # 1  # 0.025 *
     N = int(np.ceil(sim_time / dt))
     for i in range(0, N):
         t = i * dt  # current simulation time
-        print(t)
+        if i % 1000 == 0:
+            print(t)
         soil_sol_fluxes = {}  # empy dict
         evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))  # TODO nitrification debendent on tillage practice
         s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # richards.py
@@ -218,26 +247,53 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_bot, start_
         c.append(s.getSolution_(1))
         h.append(s.getSolutionHead_())
 
+    print("\nAFTER SIMULATION")
+    print("domain water volume", s.getWaterVolume(), "cm3  = ", s.getWaterVolume() / 1000, "l")
+    theta = s.getWaterContent()
+    print("water content to water volume", np.sum(theta) * area, "cm3")
+    print("domain water volume", s.getWaterVolume() / area, "cm  = ", s.getWaterVolume() / area * 10, "l/m2")
+    print("water content to water volume", np.sum(theta) * 1, "cm  = ", np.sum(theta) * 1 * 10, "l/m2")
+
     c = np.transpose(c)
     c = c[::-1,:]
     h = np.transpose(h)
     h = h[::-1,:]
-    fig, ax = plt.subplots(2, 1, figsize = (18, 10))
+
+    fig, ax = plt.subplots(3, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3, 3]})
+    bar = ax[0].bar(times, np.array(net_inf), 0.7)
+    ax[0].set_ylabel("net infiltration [cm/day]")
+    ax[0].set_xlim(times[0], times[-1])
+    divider = make_axes_locatable(ax[0])
+    cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
+    cax0.axis('off')
+
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    pos = ax[0].imshow(h, cmap = cmap_reversed, aspect = 'auto', extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest', vmin = 0., vmax = 1.e-3,
-    fig.colorbar(pos, ax = ax[0])
-    cmap_ = matplotlib.cm.get_cmap('jet')
-    pos = ax[1].imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest', vmin = 0., vmax = 1.e-3,
-    fig.colorbar(pos, ax = ax[1])
-    ax[0].set_ylabel("depth [cm]")
+    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -1000, vmax = 0, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
+    cb.ax.get_yaxis().labelpad = 30
+    cb.set_label('soil matric potential [cm]', rotation = 270)
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
+
+    divider = make_axes_locatable(ax[2])
+    cax = divider.append_axes('right', size = '5%', pad = 0.05)
+    cmap_ = matplotlib.cm.get_cmap('jet')
+    im = ax[2].imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
+    cb.ax.get_yaxis().labelpad = 30
+    cb.set_label('soil matric potential [cm]', rotation = 270)
+    ax[2].set_ylabel("depth [cm]")
+    ax[2].set_xlabel("time [days]")
+
+    print()
     print("range", np.min(c), np.max(c), "g/cm3")
     print("range", np.min(h), np.max(h), "cm")
     plt.tight_layout()
     plt.show()
 
-    return s.getSolution_(1), s.getSolutionHead_()  # matric potential, concentration
+    return s.getSolutionHead_(), s.getSolution_(1)  # matric potential [cm], concentration [kg/m3]
 
 
 def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):
@@ -305,6 +361,20 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     s.initializeProblem()
     wilting_point = -15000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
+
+    # IC
+    h = np.load("initial_potential.npy")
+    s.setInitialConditionHead(h)  # cm
+    if type == 2:
+        c = np.load("initial_concentration.npy")  # kg/m3
+        s.setInitialCondition(c, 1)  # kg/m3
+
+    plt.plot(h, np.linspace(-200., 0., h.shape[0]))
+    plt.xlabel("soil matric potential (cm)")
+    plt.ylabel("depth (cm)")
+    plt.show()
+    # plt.plot(c, np.linspace(200,0., c.shape[0]))
+    # plt.show()
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     return s, soil
@@ -555,10 +625,20 @@ def simulate_const(s, r, trans, sim_time, dt):
 
 if __name__ == '__main__':
 
-    start_date = '2020-10-31 00:00:00'
-    end_date = '2021-05-10 00:00:00'
-    soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = soybean(0)
-    d = create_initial_soil(soil_, min_b , max_b , cell_number, p_top, p_top + 200, start_date, end_date)
+    start_date = '2021-10-31 00:00:00'
+    end_date = '2022-05-10 00:00:00'
+    soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = maize(0)
+    s = vg.Parameters(soil_)
+    # s.plot_retention_curve()
+    print("theta at -100", vg.water_content(-100, s))
+    print("theta at -330", vg.water_content(-330, s))
+    print("theta at -350", vg.water_content(-350, s))
+    print("theta at -400", vg.water_content(-400, s))
+
+    h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_top + 200, start_date, end_date)
+
+    np.save("initial_potential21.npy", h)
+    np.save("initial_concentration12.npy", c)
 
     # theta_r = 0.025
     # theta_s = 0.403

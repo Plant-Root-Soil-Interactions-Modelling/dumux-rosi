@@ -121,7 +121,7 @@ public:
             for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
                 int eIdx = this->gridGeometry->elementMapper().index(e);
                 int gIdx = this->cellIdx->index(e);
-                this->x[eIdx] = toPa(init[gIdx]);
+                this->x[eIdx][0] = toPa(init[gIdx]);
             }
         }
     }
@@ -344,6 +344,7 @@ void init_richards(py::module &m, std::string name) {
    .def("setSource", &Richards_::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("applySource", &Richards_::applySource)
    .def("setCriticalPressure", &Richards_::setCriticalPressure)
+   .def("setInitialConditionHead", &Richards_::setInitialConditionHead)
    .def("getSolutionHead", &Richards_::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getSolutionHeadAt", &Richards_::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
    .def("getWaterContent",&Richards_::getWaterContent)

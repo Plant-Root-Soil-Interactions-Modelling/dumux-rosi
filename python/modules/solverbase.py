@@ -74,7 +74,11 @@ class SolverWrapper():
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
 
-    def setInitialCondition(self, ic):
+    def setInitialCondition(self, ic, eqIdx = 0):
+        """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
+        self.base.setInitialCondition(ic, eqIdx)
+
+    def setInitialConditionHead(self, ic):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 

@@ -17,19 +17,19 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 """ pick... """
 
-# name = "soybean"
-# str_ = "sra0"
-# Kc = Kc_soybean
-# lai = evap.lai_soybean
-# ylim_ = None
-# sim_time = 87.5
-
-name = "maize"
+name = "soybean"
 str_ = "sra0"
-Kc = Kc_maize
-lai = evap.lai_maize
+Kc = Kc_soybean
+lai = evap.lai_soybean
 ylim_ = None
-sim_time = 95
+sim_time = 0.25 * 87.5
+
+# name = "maize"
+# str_ = "sra0"
+# Kc = Kc_maize
+# lai = evap.lai_maize
+# ylim_ = None
+# sim_time = 95
 
 # name = "maize"
 # str_ = "cyl0"
@@ -40,7 +40,7 @@ sim_time = 95
 fname = "soil_" + name + "_" + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
-start_date = '2020-03-15 00:00:00'  # INARI csv data
+start_date = '2021-05-10 00:00:00'  # INARI csv data
 
 path = "results/"
 
@@ -63,7 +63,7 @@ times = [np.load(path + n_ + ".npy")  for n_ in fnames_t]
 times = times[0][0,:]
 
 # t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
-t_, y_ = evap.net_infiltration_table_beers_csv(start_date, sim_time, lai, Kc)
+t_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, lai, Kc)
 # t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
 t_ = np.array(t_)
 y_ = np.array(y_)
@@ -84,7 +84,7 @@ data = data[:abs(int(depths[-1] - 10)),:]
 if fname.startswith("soilc_"):
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
-    bar = ax[0].bar(t_, np.array(y_), 0.4)
+    bar = ax[0].bar(t_, np.array(y_), 0.4 / 24.)
     ax[0].set_ylabel("net infiltration [cm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
@@ -96,7 +96,7 @@ if fname.startswith("soilc_"):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap = matplotlib.cm.get_cmap('jet')
-    im = ax[1].imshow(data, vmin = 0., vmax = 1.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, vmin = 0., vmax = 2.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
@@ -104,8 +104,8 @@ if fname.startswith("soilc_"):
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
     # ax[1].scatter([16, 17, 29, 30], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
-    ax[1].scatter([1, 18, 54],
-                  [depths[-1] - 10] * 3, 3 * np.array([40] * 3), color = 'k')  # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
+    # ax[1].scatter([1, 18, 54],
+    #               [depths[-1] - 10] * 3, 3 * np.array([40] * 3), color = 'k')  # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
 
     print("data ranges from", np.min(data), "to ", np.max(data), "[kg/m3]'")
     # print("final rs depth", depths[-1])
@@ -115,7 +115,7 @@ if fname.startswith("soilc_"):
 else:
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
-    bar = ax[0].bar(t_, np.array(y_), 0.7)
+    bar = ax[0].bar(t_, np.array(y_), 0.7 / 24.)
     ax[0].set_ylabel("net infiltration [cm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
@@ -127,7 +127,7 @@ else:
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, cmap = cmap_reversed, aspect = 'auto', vmin = -2000, extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30

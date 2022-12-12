@@ -328,18 +328,18 @@ public:
     }
 
     /**
-     * Sets the initial conditions, for a MPI process (TODO for more than 1 equation)
+     * Sets the initial conditions, for a MPI process
      *
      *  @param init         globally shared initial data, sorted by global index [Pa]
      */
-    virtual void setInitialCondition(std::vector<double> init) {
+    virtual void setInitialCondition(std::vector<double> init, int eqIdx = 0) {
         if (isBox) {
             throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
         } else {
             for (const auto& e : Dune::elements(gridGeometry->gridView())) {
                 int eIdx = gridGeometry->elementMapper().index(e);
                 int gIdx = cellIdx->index(e);
-                x[eIdx] = init[gIdx];
+                x[eIdx][eqIdx] = init[gIdx];
             }
         }
     }
@@ -585,7 +585,7 @@ public:
      */
     double getSolutionAt(int gIdx, int eqIdx = 0) {
         if (isBox) {
-            throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
+            throw std::invalid_argument("SolverBase::getSolutionAt: Not implemented yet (sorry)");
         } else {
             double y = 0.;
             if (localCellIdx.count(gIdx)>0) {
@@ -820,7 +820,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("setParameter", &Solver::setParameter)
             .def("getParameter", &Solver::getParameter)
             .def("initializeProblem", &Solver::initializeProblem)
-            .def("setInitialCondition", &Solver::setInitialCondition)
+            .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
             // simulation
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
             .def("solveSteadyState", &Solver::solveSteadyState)
