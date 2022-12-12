@@ -369,12 +369,12 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
         c = np.load("initial_concentration.npy")  # kg/m3
         s.setInitialCondition(c, 1)  # kg/m3
 
-    plt.plot(h, np.linspace(-200., 0., h.shape[0]))
-    plt.xlabel("soil matric potential (cm)")
-    plt.ylabel("depth (cm)")
-    plt.show()
-    # plt.plot(c, np.linspace(200,0., c.shape[0]))
+    # plt.plot(h, np.linspace(-200., 0., h.shape[0]))
+    # plt.xlabel("soil matric potential (cm)")
+    # plt.ylabel("depth (cm)")
     # plt.show()
+    # # plt.plot(c, np.linspace(200,0., c.shape[0]))
+    # # plt.show()
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     return s, soil
