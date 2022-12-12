@@ -222,7 +222,7 @@ def read_ranges(file_name):
 
 
 def local_soybean():
-    root_type = "soybean_"
+    root_type = "soybean"
     file_name = "local_SA_soybean"
     enviro_type = 0
     sim_time = 87.5
@@ -279,6 +279,6 @@ if __name__ == "__main__":
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
 
-    # local_soybean()
-    local_maize()
+    local_soybean()
+    # local_maize()
 
