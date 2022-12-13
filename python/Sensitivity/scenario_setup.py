@@ -188,7 +188,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     start_date2 = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
     end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
     timedelta_ = end_date - start_date2
-    sim_time = timedelta_.days
+    sim_time = timedelta_.days  # = 191
 
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)

@@ -227,8 +227,6 @@ def net_infiltration_table_beers_pickle(filename, start_date, sim_time, lai_f, K
 def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     """ calculates net infiltration with Beer's law from start_date from INARI csv file"""
 
-    print(sim_time)
-
     sim_time += 1
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
     end_date = start_date + timedelta(sim_time, 3600)  # root system starts to grow one day earlier (+max dat)
@@ -241,6 +239,9 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     df = df.drop(['date'], axis = 1)
     yd = df["prcp"].loc[range_[0]: range_[1]].values * 2.54  # inches -> cm
     precip = yd
+    print(range_[0])
+    print(range_[1])
+    print("precip", precip.shape)
     t_ = np.linspace(0, len(precip), len(precip))  # relative time
 
     """ 1. load ET, ET0 -> ETc """

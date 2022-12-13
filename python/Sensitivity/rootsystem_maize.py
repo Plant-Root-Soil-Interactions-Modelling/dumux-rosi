@@ -25,10 +25,9 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-min_b = [-37.5, -7.5, -200.]  # Domain Mais: 60 cm Reihe, 10 cm Pflanzen
-max_b = [37.5, 7.5, 0.]
-cell_number = [1, 1, 200]  # 1 cm3
-simtime = 21  # 1.* 95  # between 90-100 days
+# typical domain for maize
+soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
+simtime = 95  # 1.* 95  # between 90-100 days
 
 rs = pb.MappedRootSystem()  # RootSystem
 rs.setRectangularGrid(pb.Vector3d(100 * min_b[0], 100 * min_b[1], min_b[2]), pb.Vector3d(100 * max_b[0], 100 * max_b[1], max_b[2]),
@@ -208,8 +207,10 @@ print("\nunconfined", ana.getMinBounds(), "-", ana.getMaxBounds())
 """ export """
 ana.write("results/maize.vtp")  # rs.write writes polylines, ana.write writes segments
 rs.write("results/maize.rsml")
-
 w = np.array(max_b) - np.array(min_b)
+print(w)
+rs.setGeometry(pb.SDF_PlantBox(w[0], w[1], w[2]))
+rs.write("results/maize_box.py")
 ana.mapPeriodic(w[0], w[1])
 ana.write("results/maize_periodic.vtp")
 

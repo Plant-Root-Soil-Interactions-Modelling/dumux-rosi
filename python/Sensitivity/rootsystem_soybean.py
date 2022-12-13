@@ -24,23 +24,12 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-# Typical doamin for soybean
-min_b = [-19, -2.5, -200.]  # Domain [38 cm Reihe, 6 cm Pflanzen]
-max_b = [19, 2.5, 0.]
-cell_number = [38, 5, 200]  # 1 cm3
-soil0 = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
-soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
-soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
-soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
-soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
-table_name = "envirotype0"
-soil_ = soil0
-
-simtime = 1. * 87.5  # between 75-100 days
-
-rs = pb.RootSystem()
+# typical domain for soybean
+soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
+simtime = 87.5  # between 75-100 days
 
 # Open plant and root parameter from a file
+rs = pb.RootSystem()
 path = "../../../CPlantBox/modelparameter/rootsystem/"
 name = "Glycine_max_Moraes2020_opt2"
 rs.readParameters(path + name + ".xml")
@@ -66,13 +55,15 @@ for p in rrp:
 rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
 
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-kr = 1.e-4
-kx = 1.e-3
+
 p_top = -330
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1)  # , times = x_, net_inf = y_
 xml_name = name + "_modified" + ".xml"  # root growth model parameter file
 mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1., "src":src}
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+
+kr = 1.e-4
+kx = 1.e-3
 scenario.init_conductivities_const(r, kr, kx)
 
 rs = r.rs
@@ -129,10 +120,14 @@ print(ana.getMinBounds(), "-", ana.getMaxBounds())
 ana.write("results/soybean.vtp")  # rs.write writes polylines, ana.write writes segments
 rs.write("results/soybean.rsml")
 
+w = np.array(max_b) - np.array(min_b)
+print(w)
+rs.setGeometry(pb.SDF_PlantBox(w[0], w[1], w[2]))
+rs.write("results/soybean_box.py")
+
 # Plot, using vtk
 vp.plot_roots(ana, "age")
 # vp.plot_roots(ana, "creationTime")
 
-w = np.array(max_b) - np.array(min_b)
 ana.mapPeriodic(w[0], w[1])
 ana.write("results/soybean_periodic.vtp")
