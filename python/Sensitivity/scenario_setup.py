@@ -58,7 +58,6 @@ def maize(i:int):
     Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
     # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
     # 30, 40, 50, 50 = 170 (Idaho, USA)
-
     return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_maize
 
 

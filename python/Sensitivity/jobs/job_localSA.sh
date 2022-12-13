@@ -1,14 +1,14 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
 #SBATCH --job-name=local_sensitivity_analysis
-#SBATCH --ntasks=100
+#SBATCH --ntasks=256
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
 #SBATCH --exclude=node02
 #SBATCH --partition=cpu256
 #SBATCH --time=48:00:00
 #SBATCH --mem=0
-#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END
+#SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=d.leitner@fz-juelich.de
  
 cd ..

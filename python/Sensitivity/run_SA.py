@@ -252,11 +252,12 @@ def local_maize():
     if rank == 0:
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        p3 = np.array([1.* 2 ** x for x in np.linspace(-3., 3., 19)])
         theta_ = np.linspace(0, np.pi / 2, 9)
         write_ranges("results/" + file_name,
-                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-                     [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
-        jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "delaySB"],
+                     [p3, p3, p1, p1, p1, theta_, p1, p1])
+        jobs = make_local(p3 , p3 , p1, p1, p1, theta_, 1., 1., p1, p1)
 
     else:
         jobs = None
@@ -323,6 +324,6 @@ if __name__ == "__main__":
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
 
-    local_soybean()
-    # local_maize()
+    # local_soybean()
+    local_maize()
 
