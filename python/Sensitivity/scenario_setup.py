@@ -457,24 +457,25 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         if mods is not None:  # apply modifications
             rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
             srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
-            if "lmax" in mods:
+            if "lmax" in mods:  # all types
                 for i in range(0, len(rrp)):
                     rrp[i].lmax *= mods["lmax"]
+                mods.pop("lmax")
             if "lmax145" in mods:
                 rrp[1].lmax *= mods["lmax145"]
                 rrp[4].lmax *= mods["lmax145"]
                 if len(rrp) > 5:
                     rrp[5].lmax *= mods["lmax145"]
-                print("scaling lmax145", mods["lmax145"])
+                mods.pop("lmax145")
             if "lmax2" in mods:
                 rrp[2].lmax *= mods["lmax2"]
-                # print("scaling lmax2", mods["lmax2"])
+                mods.pop("lmax2")
             if "lmax3" in mods:
                 rrp[3].lmax *= mods["lmax3"]
-                # print("scaling lmax3", mods["lmax3"])
+                mods.pop("lmax3")
             if "lmax4" in mods:
                 rrp[4].lmax *= mods["lmax4"]
-                # print("scaling lmax4", mods["lmax4"])
+                mods.pop("lmax4")
             if "theta45" in mods:
                 if len(rrp) > 5:
                     print("shootbore (theta45)")
@@ -482,26 +483,39 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 else:
                     print("seminal (theta45)")
                     rrp[4].theta = mods["theta45"]
+                mods.pop("theta45")
             if "r145" in mods:
                 rrp[1].r *= mods["r145"]
                 rrp[4].r *= mods["r145"]
                 if len(rrp) > 5:
                     rrp[5].r *= mods["r145"]
-                # print("scaling r145", mods["r145"])
+                mods.pop("r145")
             if "r2" in mods:
-                # rrp[2].r *= mods["r2"]
-                print("scaling r2", mods["r2"])
+                rrp[2].r *= mods["r2"]
+                mods.pop("r2")
             if "r3" in mods:
-                rrp[2].r *= mods["r3"]
-                # print("scaling r3", mods["r3"])
-            if "r" in mods:
+                rrp[3].r *= mods["r3"]
+                mods.pop("r3")
+            if "r" in mods:  # all types
                 for i in range(0, len(rrp)):
                     rrp[i].r *= mods["r"]
-            if "a" in mods:
+                mods.pop("r")
+            if "a" in mods:  # all types
                 for i in range(0, len(rrp)):
                     rrp[i].a *= mods["a"]
+                mods.pop("a")
             if "src" in mods:
                 srp[0].maxB = mods["src"]
+                mods.pop("src")
+            if "delaySB" in mods:
+                srp[0].delaySB = mods["delaySB"]
+                mods.pop("delaySB")
+
+        if dict:
+            print("\ncreate_mapped_rootsystem() WARNING mods have unused parameters:")
+            for k, v in mods.items():
+                print("key:", k)
+            print()
 
         # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
         # for p in rrp:

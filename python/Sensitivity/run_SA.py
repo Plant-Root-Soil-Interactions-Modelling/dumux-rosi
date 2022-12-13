@@ -223,7 +223,7 @@ def read_ranges(file_name):
 
 def local_soybean():
     root_type = "soybean"
-    file_name = "local_SA_soybean"
+    file_name = "local_soybean"
     enviro_type = 0
     sim_time = 87.5
 
@@ -245,7 +245,7 @@ def local_soybean():
 
 def local_maize():
     root_type = "maize"
-    file_name = "local_SA_maize"
+    file_name = "local_maize"
     enviro_type = 0
     sim_time = 95
 
@@ -258,6 +258,50 @@ def local_maize():
                      [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
         jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
 
+    else:
+        jobs = None
+
+    jobs = comm.bcast(jobs, root = 0)
+    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+
+
+def global1_soybean():
+    root_type = "soybean"
+    file_name = "global1_soybean"
+    enviro_type = 0
+    sim_time = 87.5
+
+    if rank == 0:
+        # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        # p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        # theta_ = np.linspace(0, np.pi / 2, 9)
+        # write_ranges("results/" + file_name,
+        #              ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
+        #              [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
+        # jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+        pass
+    else:
+        jobs = None
+
+    jobs = comm.bcast(jobs, root = 0)
+    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+
+
+def global1_maize():
+    root_type = "maize"
+    file_name = "global1_maize"
+    enviro_type = 0
+    sim_time = 95
+
+    if rank == 0:
+        # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        # p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        # theta_ = np.linspace(0, np.pi / 2, 9)
+        # write_ranges("results/" + file_name,
+        #              ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
+        #              [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
+        # jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+        pass
     else:
         jobs = None
 
