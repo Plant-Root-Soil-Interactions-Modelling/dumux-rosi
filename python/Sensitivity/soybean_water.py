@@ -9,7 +9,7 @@ import evapotranspiration as evap
 import sra
 
 """ parameters   """
-soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
+soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 
 sim_time = 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
@@ -23,7 +23,7 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 # trans_soybean = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 
 """ initialize """
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
 xml_name = "Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file

@@ -44,13 +44,12 @@ def vg_enviro_type(i:int):
     soil[5] = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
     soil[59] = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
     table_name = "envirotype{:s}".format(str(i))
-    p_top = -330
-    return soil[i], table_name, p_top
+    return soil[i], table_name
 
 
 def maize(i:int):
     """ parameters for maize simulation """
-    soil, table_name, p_top = vg_enviro_type(i)
+    soil, table_name = vg_enviro_type(i)
     min_b = [-38., -8., -200.]  # data from INARI
     max_b = [38., 8., 0.]
     cell_number = [1, 1, 200]
@@ -58,12 +57,12 @@ def maize(i:int):
     Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
     # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
     # 30, 40, 50, 50 = 170 (Idaho, USA)
-    return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_maize
+    return soil, table_name, min_b, max_b, cell_number, area, Kc_maize
 
 
 def soybean(i:int):
     """ parameters for soybean simulation """
-    soil, table_name, p_top = vg_enviro_type(i)
+    soil, table_name = vg_enviro_type(i)
     min_b = [-38, -1.5, -200.]  # data from INARI
     max_b = [38, 1.5, 0.]
     cell_number = [1, 1, 200]
@@ -71,7 +70,7 @@ def soybean(i:int):
     Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
     # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
     # 20, 30/35, 60, 25 = 140 (Central USA)
-    return soil, table_name, p_top, min_b, max_b, cell_number, area, Kc_soybean
+    return soil, table_name, min_b, max_b, cell_number, area, Kc_soybean
 
 
 def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
@@ -202,7 +201,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     # s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
     s.setLinearIC(-201., -1.)
     # BC
-    times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, 1.)
+    times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
     s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     s.setBotBC("freeDrainage")
     # hard coded initial fertilizer application
@@ -295,7 +294,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     return s.getSolutionHead_(), s.getSolution_(1)  # matric potential [cm], concentration [kg/m3]
 
 
-def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, times = None, net_inf = None):
+def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, net_inf = None):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil type is fixed and homogeneous 
@@ -317,14 +316,13 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, True)  # [cm]
 
-    # Initial conditions
+    # Initial conditions for fertilization
     if type == 2:  # solute IC
         z_ = [0., -30., -30., -200.]
         v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  # kg / m3 (~4.e-4)
         # [1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4]  # kg/m3 [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
         # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3) (nitrate 62 g/mol)
         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
-    s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
 
     # BC
     if times:
@@ -348,33 +346,34 @@ def create_soil_model(soil_, min_b , max_b , cell_number, p_top, p_bot, type, ti
         # s.setTopBC_solute("outflow", 0.)
         s.setBotBC_solute("outflow", 0.)
 
+    # Paramters
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-
-    # Solutes
     if type == 2:
         s.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
-        # s.setParameter("Component.BufferPower", "140") # amonium has around 50?, no buffering for nitrate (in Kirk & Kronzuchiker 2005)
-
     s.initializeProblem()
     wilting_point = -15000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
+    s.ddt = 1.e-5  # [day] initial Dumux time step
 
     # IC
-    h = np.load("initial_potential.npy")
+    h = np.load("initial_potential20.npy")
     s.setInitialConditionHead(h)  # cm
     if type == 2:
-        c = np.load("initial_concentration.npy")  # kg/m3
+        c = np.load("initial_concentration20.npy")  # kg/m3
         s.setInitialCondition(c, 1)  # kg/m3
 
     # plt.plot(h, np.linspace(-200., 0., h.shape[0]))
-    # plt.xlabel("soil matric potential (cm)")
+    # plt.xlabel("soil matric potential [cm]")
     # plt.ylabel("depth (cm)")
+    # plt.tight_layout()
     # plt.show()
-    # # plt.plot(c, np.linspace(200,0., c.shape[0]))
-    # # plt.show()
-    s.ddt = 1.e-5  # [day] initial Dumux time step
+    # plt.plot(c, np.linspace(-200, 0., c.shape[0]))
+    # plt.xlabel("nitrate concentration [g/cm3]")
+    # plt.ylabel("depth (cm)")
+    # plt.tight_layout()
+    # plt.show()
 
     return s, soil
 
@@ -509,12 +508,11 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "delaySB" in mods:
                 srp[0].delaySB = mods["delaySB"]
                 mods.pop("delaySB")
-
-        if dict:
-            print("\ncreate_mapped_rootsystem() WARNING mods have unused parameters:")
-            for k, v in mods.items():
-                print("key:", k)
-            print()
+            if mods:  # something unused in mods
+                print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
+                for k, v in mods.items():
+                    print("key:", k)
+                print()
 
         # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
         # for p in rrp:
@@ -638,9 +636,9 @@ def simulate_const(s, r, trans, sim_time, dt):
 
 if __name__ == '__main__':
 
-    start_date = '2021-10-31 00:00:00'
-    end_date = '2022-05-10 00:00:00'
-    soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = maize(0)
+    start_date = '2020-10-31 00:00:00'
+    end_date = '2021-05-10 00:00:00'
+    soil_, table_name, min_b, max_b, cell_number, area, Kc = maize(0)
     s = vg.Parameters(soil_)
     # s.plot_retention_curve()
     print("theta at -100", vg.water_content(-100, s))
@@ -648,10 +646,10 @@ if __name__ == '__main__':
     print("theta at -350", vg.water_content(-350, s))
     print("theta at -400", vg.water_content(-400, s))
 
-    h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_top + 200, start_date, end_date)
+    h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, -201., -1., start_date, end_date)
 
-    np.save("initial_potential21.npy", h)
-    np.save("initial_concentration12.npy", c)
+    np.save("initial_potential20.npy", h)
+    np.save("initial_concentration20.npy", c)
 
     # theta_r = 0.025
     # theta_s = 0.403
