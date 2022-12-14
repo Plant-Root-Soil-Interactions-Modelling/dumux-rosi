@@ -24,20 +24,28 @@ lai = evap.lai_soybean
 ylim_ = None
 sim_time = 87.5
 
+name = "local_soybean"
+str_ = "1"
+Kc = Kc_soybean
+lai = evap.lai_soybean
+ylim_ = None
+sim_time = 87.5
+
+
 # name = "maize"
-# str_ = "sra0"
+# str_ = "_sra0"
 # Kc = Kc_maize
 # lai = evap.lai_maize
 # ylim_ = None
 # sim_time = 95
 
 # name = "maize"
-# str_ = "cyl0"
+# str_ = "_cyl0"
 # Kc = Kc_maize
 # lai = evap.lai_maize
 # ylim_ = None # -10
 
-fname = "soil_" + name + "_" + str_
+fname = "soil_" + name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = '2020-05-10 00:00:00'  # INARI csv data
@@ -58,7 +66,7 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 """ load data """
-fnames_t = np.array(["transpiration_" + name + "_" + str_ ])  # data currently not stored for rhizosphere models
+fnames_t = np.array(["transpiration_" + name + str_ ])  # data currently not stored for rhizosphere models
 times = [np.load(path + n_ + ".npy")  for n_ in fnames_t]
 times = times[0][0,:]
 
@@ -70,7 +78,7 @@ y_ = np.array(y_)
 t_ = t_[::2]
 y_ = y_[::2]
 
-fnames_depth = np.array(["depth_" + name + "_" + "sra0" ])
+fnames_depth = np.array(["depth_" + name + str_ ])
 depths = [np.load(path + n_ + ".npy")  for n_ in fnames_depth]
 depths = depths[0]
 

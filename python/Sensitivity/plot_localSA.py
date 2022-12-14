@@ -17,8 +17,8 @@ def start_index(ind, ranges):
     
 
 """ def SA """
-file_name = "local_SA_soybean"
-#file_name = "local_SA_maize"
+file_name = "local_soybean"
+#file_name = "local_maize"
 path = "results/"
 not_xlog = ["theta1", "src"]
 
@@ -92,13 +92,13 @@ for lind in range(0,len(names)):
         krs = krs / krs[sa_len // 2]  # nondimensionalize
         x = ranges[lind][sa_len // 2]
         ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
-        ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
+        #ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")        
         ax.flat[ac].plot([x], [1.], 'r*')
         ax.flat[ac].legend()
         ax.flat[ac].set_title(names[lind])
-        ax.flat[ac].set_ylim(0.5, 2)
-        ax.flat[ac].set_yscale('log', base = 2)
+        #ax.flat[ac].set_ylim(0.5, 2)
+        #ax.flat[ac].set_yscale('log', base = 2)
         if not names[lind] in not_xlog:
             ax.flat[ac].set_xscale('log', base = 2)
         ac += 1

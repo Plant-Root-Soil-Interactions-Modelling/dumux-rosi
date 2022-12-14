@@ -21,6 +21,15 @@ start_date = '2021-05-10 00:00:00'  # INARI csv data
 potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
 trans = 1
 
+name = "local_soybean"
+str_ = ["1"]
+area = 76 * 3
+# start_date = '1995-03-15 00:00:00'
+# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+start_date = '2021-05-10 00:00:00'  # INARI csv data
+potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+trans = 1
+
 # name = "test1.0"
 # str_ = [""]
 # potential_trans = lambda t, dt: trans * sinusoidal2(t, dt) * t / sim_time  # soybean

@@ -324,8 +324,8 @@ if __name__ == "__main__":
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
 
-    # local_soybean()
+    local_soybean()
     # local_maize()
-    global_soybean()
-    global_maize()
+#    global_soybean()
+#    global_maize()
 
