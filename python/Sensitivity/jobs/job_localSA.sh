@@ -1,7 +1,7 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
 #SBATCH --job-name=local_sensitivity_analysis
-#SBATCH --ntasks=256
+#SBATCH --ntasks=128
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
 #SBATCH --exclude=node02
@@ -13,4 +13,4 @@
  
 cd ..
 module load openmpi/4.1.4
-mpirun -n 100 python3 run_SA.py
+mpirun -n 128 python3 run_SA.py
