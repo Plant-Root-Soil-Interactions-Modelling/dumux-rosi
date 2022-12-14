@@ -273,13 +273,13 @@ def global1_soybean():
     sim_time = 87.5
 
     if rank == 0:
-        # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        # p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-        # theta_ = np.linspace(0, np.pi / 2, 9)
-        # write_ranges("results/" + file_name,
-        #              ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-        #              [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
-        # jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        theta_ = np.linspace(0, np.pi / 2, 9)
+        write_ranges("results/" + file_name,
+                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
+                     [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
+        jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
         pass
     else:
         jobs = None
@@ -325,5 +325,7 @@ if __name__ == "__main__":
     # print("fin")
 
     # local_soybean()
-    local_maize()
+    # local_maize()
+    global_soybean()
+    global_maize()
 

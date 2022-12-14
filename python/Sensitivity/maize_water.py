@@ -29,7 +29,7 @@ trans_maize = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
-xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file
+xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)

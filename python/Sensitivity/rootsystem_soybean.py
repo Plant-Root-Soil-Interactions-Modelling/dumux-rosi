@@ -25,7 +25,7 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 # typical domain for soybean
-soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
+soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 simtime = 87.5  # between 75-100 days
 
 # Open plant and root parameter from a file
@@ -52,13 +52,12 @@ for p in rrp:
 # # print(rrp[0])
 # rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 # # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
-rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
+rs.writeParameters("data/" + name + "_modified" + ".xml")  # remember the modifications
 
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
 
-p_top = -330
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1)  # , times = x_, net_inf = y_
-xml_name = name + "_modified" + ".xml"  # root growth model parameter file
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)  # , times = x_, net_inf = y_
+xml_name = "data/" + name + "_modified" + ".xml"  # root growth model parameter file
 mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1., "src":src}
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
 

@@ -358,10 +358,10 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     # IC
-    h = np.load("initial_potential20.npy")
+    h = np.load("data/initial_potential.npy")
     s.setInitialConditionHead(h)  # cm
     if type == 2:
-        c = np.load("initial_concentration20.npy")  # kg/m3
+        c = np.load("data/initial_concentration.npy")  # kg/m3
         s.setInitialCondition(c, 1)  # kg/m3
 
     # plt.plot(h, np.linspace(-200., 0., h.shape[0]))
@@ -641,6 +641,7 @@ if __name__ == '__main__':
     soil_, table_name, min_b, max_b, cell_number, area, Kc = maize(0)
     s = vg.Parameters(soil_)
     # s.plot_retention_curve()
+
     print("theta at -100", vg.water_content(-100, s))
     print("theta at -330", vg.water_content(-330, s))
     print("theta at -350", vg.water_content(-350, s))
@@ -648,8 +649,8 @@ if __name__ == '__main__':
 
     h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, -201., -1., start_date, end_date)
 
-    np.save("initial_potential20.npy", h)
-    np.save("initial_concentration20.npy", c)
+    np.save("data/initial_potential20.npy", h)
+    np.save("data/initial_concentration20.npy", c)
 
     # theta_r = 0.025
     # theta_s = 0.403

@@ -14,7 +14,7 @@ import sra
 def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src):
 
     # parameters
-    soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
+    soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
     dt = 360 / (24 * 3600)  # time step [day]
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -26,7 +26,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     # trans_soybean = evap.get_transpiration_beers('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 
     # initialize soil
-    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1, times = x_, net_inf = y_)
+    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_)
     sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
     # initialize root system
@@ -51,7 +51,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
 def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
 
     # parameters
-    soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.maize(int(enviro_type))
+    soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(int(enviro_type))
     dt = 360 / (24 * 3600)  # time step [day]
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -63,7 +63,7 @@ def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, the
     # trans_soybean = evap.get_transpiration_beers('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 
     # initialize soil
-    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = p_top, p_bot = (p_top + 200), type = 1, times = x_, net_inf = y_)
+    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_)
     sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
     xml_name = "Zeamays_synMRI_modified.xml"  # root growth model parameter file

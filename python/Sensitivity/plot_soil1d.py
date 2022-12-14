@@ -17,19 +17,19 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 """ pick... """
 
-# name = "soybean"
-# str_ = "sra2"
-# Kc = Kc_soybean
-# lai = evap.lai_soybean
-# ylim_ = None
-# sim_time = 87.5
-
-name = "maize"
+name = "soybean"
 str_ = "sra0"
-Kc = Kc_maize
-lai = evap.lai_maize
+Kc = Kc_soybean
+lai = evap.lai_soybean
 ylim_ = None
-sim_time = 95
+sim_time = 87.5
+
+# name = "maize"
+# str_ = "sra0"
+# Kc = Kc_maize
+# lai = evap.lai_maize
+# ylim_ = None
+# sim_time = 95
 
 # name = "maize"
 # str_ = "cyl0"

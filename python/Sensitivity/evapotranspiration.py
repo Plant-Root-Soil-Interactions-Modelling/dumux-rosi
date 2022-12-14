@@ -103,7 +103,7 @@ def get_transpiration_beers_csv(start_date, sim_time, area, lai_f, Kc):
     range_ = [str(start_date), str(end_date)]
 
     """ 1. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
+    df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
     df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
     df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
     df2 = df2.drop(['Date'], axis = 1)
@@ -138,7 +138,7 @@ def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc):
     range_ = [str(start_date), str(end_date)]
 
     """ 1. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
+    df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
     df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
     df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
     df2 = df2.drop(['Date'], axis = 1)
@@ -233,19 +233,16 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     range_ = [str(start_date), str(end_date)]
 
     """ 0. load precipitation """
-    df = pd.read_csv("WeatherSummary_K0_20-22.csv")  # precipitation data
+    df = pd.read_csv("data/WeatherSummary_K0_20-22.csv")  # precipitation data
     df['Datetime'] = pd.to_datetime(df['date'], format = '%Y-%m-%d')
     df = df.set_index(pd.DatetimeIndex(df['Datetime']))
     df = df.drop(['date'], axis = 1)
     yd = df["prcp"].loc[range_[0]: range_[1]].values * 2.54  # inches -> cm
     precip = yd
-    print(range_[0])
-    print(range_[1])
-    print("precip", precip.shape)
     t_ = np.linspace(0, len(precip), len(precip))  # relative time
 
     """ 1. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
+    df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
     df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
     df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
     df2 = df2.drop(['Date'], axis = 1)
@@ -266,10 +263,10 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     # ax[0].set_ylabel("cm / day")
     # ax[0].set_xlabel("time")
     # ax[1].plot([0., t_[-1]], [0., 0.], 'k')
-    # ax[1].plot(t_, et0, 'k:', label = "evapotranspiration")
-    # ax[1].plot(t_, etc, 'k', label = "crop evapotranspiration")
+    # # ax[1].plot(t_, et0, 'k:', label = "evapotranspiration")
+    # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
     # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
-    # ax[1].plot(t_, -evap, 'g:', label = "evaporation")
+    # ax[1].plot(t_, -evap, 'g', label = "evaporation")
     # ax[1].legend()
     # ax[1].set_xlabel("time")
     # ax[1].set_ylabel("cm / day")
@@ -298,7 +295,7 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     range_ = [str(start_date), str(end_date)]
 
     """ 0. load precipitation """
-    df = pd.read_csv("WeatherSummary_K0_20-22.csv")  # precipitation data
+    df = pd.read_csv("data/WeatherSummary_K0_20-22.csv")  # precipitation data
     df['Datetime'] = pd.to_datetime(df['date'], format = '%Y-%m-%d')
     df = df.set_index(pd.DatetimeIndex(df['Datetime']))
     df = df.drop(['date'], axis = 1)
@@ -307,7 +304,7 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     precip = np.array([ yd[int(t)] for t in t_ ])
 
     """ 1. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
+    df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
     df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
     df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
     df2 = df2.drop(['Date'], axis = 1)
@@ -328,8 +325,8 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     # ax[0].set_ylabel("cm / day")
     # ax[0].set_xlabel("time")
     # ax[1].plot([0., t_[-1]], [0., 0.], 'k')
-    # ax[1].plot(t_, et0, 'k', label = "evapotranspiration")
-    # ax[1].plot(t_, etc, 'k', label = "crop evapotranspiration")
+    # # ax[1].plot(t_, et0, 'k', label = "evapotranspiration")
+    # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
     # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
     # ax[1].plot(t_, -evap, 'g', label = "evaporation")
     # ax[1].legend()

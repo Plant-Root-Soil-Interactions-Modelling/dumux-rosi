@@ -26,7 +26,7 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 # typical domain for maize
-soil_, table_name, p_top, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
+soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 simtime = 95  # 1.* 95  # between 90-100 days
 
 rs = pb.MappedRootSystem()  # RootSystem
@@ -132,7 +132,7 @@ for i, p in enumerate(rrp[1:]):
 """ initialize """
 rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
 rs.initializeDB()
-rs.writeParameters(name + "_modified" + ".xml")  # remember the modifications
+rs.writeParameters("data/" + name + "_modified" + ".xml")  # remember the modifications
 print("'Resulting number of shoot segments", len(rs.getShootSegments()))  # due to crown root nodes
 r = XylemFluxPython(rs)
 scenario.init_maize_conductivities(r)
