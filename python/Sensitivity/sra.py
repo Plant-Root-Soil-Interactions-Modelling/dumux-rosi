@@ -250,6 +250,9 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
             sink[k] += v
         x_.append(rs_age + t)  # day
         y_.append(np.sum(sink))  # cm3/day
+        if type_ == 2:
+            c_.append(-np.sum(seg_sol_fluxes))  # [g/day]        
+        
         if i % skip == 0:
 
             if i % (24 * skip) == 0:
@@ -262,7 +265,6 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
             psi_s2_.append(sx.copy())  # cm (per soil cell)
 
             if type_ == 2:
-                c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
                 soil_c_.append(cc)  # [g/day]
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
@@ -278,12 +280,12 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
             """ direct vtp output """
             # psi_x_.append(rx.copy())  # cm (per root node)
             # psi_s_.append(rsx.copy())  # cm (per root segment)
-            ana.addData("rx", rx[1:])
-            ana.addData("rsx", rsx)
-            ana.addAge(rs_age + t)  # "age"
-            ana.addConductivities(r, rs_age + t)  # "kr", "kx"
-            ana.addFluxes(r, rx, rsx, rs_age + t)  # "axial_flux", "radial_flux"
-            ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
+            # ana.addData("rx", rx[1:])
+            # ana.addData("rsx", rsx)
+            # ana.addAge(rs_age + t)  # "age"
+            # ana.addConductivities(r, rs_age + t)  # "kr", "kx"
+            # ana.addFluxes(r, rx, rsx, rs_age + t)  # "axial_flux", "radial_flux"
+            # ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 

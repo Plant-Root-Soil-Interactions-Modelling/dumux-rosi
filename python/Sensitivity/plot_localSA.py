@@ -18,8 +18,8 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean"
-# file_name = "local_maize"
+#file_name = "local_soybean"
+file_name = "local_maize"
 path = "results/"
 not_xlog = ["theta1", "src"]
 
@@ -29,7 +29,6 @@ names, ranges = sa.read_ranges(path + file_name)
 trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
 times = trans_[0,:]
 dt_ = np.diff(times)
-dt_ = np.array([0., *dt_])
 print("Simulation time from", min(times), "to ", max(times), "days")
 
 ind_ = np.argwhere(times > analysis_time)
@@ -89,6 +88,16 @@ for lind in range(0, len(names)):
                 krs[k] = krs_[ind10]
             except:
                 krs[k] = np.nan
+            
+            # n_ = np.load(path + "nitrate_" + file_name + str(file_start_ind + k) + ".npy")
+            # print(n_.shape)
+            # # n_ = n_[:, ind10]
+            # nitrate[k] = np.sum(np.multiply(n_[:ind - 1], dt_[:ind]))
+            # print(nitrate[k])
+            # # except:
+            # #     nitrate[k] = np.nan
+              
+                
         trans = trans / trans[sa_len // 2]  # nondimensionalize
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
