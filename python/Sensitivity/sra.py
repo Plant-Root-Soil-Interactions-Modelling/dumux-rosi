@@ -262,8 +262,8 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
             psi_s2_.append(sx.copy())  # cm (per soil cell)
 
             if type_ == 2:
-                c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
-                soil_c_.append(cc)  # [kg/m3]
+                c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
+                soil_c_.append(cc)  # [g/day]
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
             for j in range(0, 6):  # root types
