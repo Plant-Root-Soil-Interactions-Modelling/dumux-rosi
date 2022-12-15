@@ -245,7 +245,7 @@ def local_soybean():
 
 def local_maize():
     root_type = "maize"
-    file_name = "local_2maize"
+    file_name = "local_maize"
     enviro_type = 0
     sim_time = 95
 
