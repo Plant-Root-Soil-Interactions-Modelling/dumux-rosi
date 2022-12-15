@@ -245,7 +245,7 @@ def local_soybean():
 
 def local_maize():
     root_type = "maize"
-    file_name = "local_maize"
+    file_name = "local_2maize"
     enviro_type = 0
     sim_time = 95
 
@@ -324,8 +324,8 @@ if __name__ == "__main__":
     # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
     # print("fin")
 
-    local_soybean()
-    # local_maize()
+    # local_soybean()
+    local_maize()
 #    global_soybean()
 #    global_maize()
 
