@@ -1,5 +1,5 @@
 """
-Sink plot (noon and midnight), of a 1d soil 
+2d image of soil matric potential or concentration vs time (of a 1d soil)
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 
@@ -44,7 +44,7 @@ sim_time = 95
 # lai = evap.lai_maize
 # ylim_ = None # -10
 
-fname = "soil_" + name + str_
+fname = "soilc_" + name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -113,7 +113,6 @@ if fname.startswith("soilc_"):
     # ax[1].scatter([16, 17, 29, 30], [0, 0, 0, 0], [30, 30, 60, 60], color = 'w')
     # ax[1].scatter([1, 18, 54],
     #               [depths[-1] - 10] * 3, 3 * np.array([40] * 3), color = 'k')  # sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3]) [0, 0, 0, 0, 0, 0]
-
     print("data ranges from", np.min(data), "to ", np.max(data), "[kg/m3]'")
     # print("final rs depth", depths[-1])
     plt.tight_layout()

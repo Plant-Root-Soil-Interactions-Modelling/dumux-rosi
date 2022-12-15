@@ -187,7 +187,8 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
             rsc = np.array([cc[i] for i in mapping])  # kg/m3
             seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [g/day]
             soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
-            evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))  # = 1.14e-4 g/day
+            evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day
+            # evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))  # = 1.14e-4 g/day
             s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
 
         wall_soil = timeit.default_timer()

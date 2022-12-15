@@ -332,18 +332,13 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.setBotBC("freeDrainage")
 
     if type == 2:  # solute BC
-        #  40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2
-        f1 = 4.08e-4  # g/cm2
-        f2 = 2.2e-5  # g/cm2
-        f3 = 6.3e-4  # g/cm2
-        # v1 = 0.33 * 62  # g/m2
-        # v2 = 0.66 * 62  # g/m2
-        # v1 = v1 * 1.e-4  # g/cm2
-        # v2 = v2 * 1.e-4  # g/cm2 # -> Fletcher et al. 2021
-        sol_times = np.array([0., 1., 1., 17., 17., 18. , 18., 53., 53, 54, 54., 1.e3])
-        sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0., f3, f3, 0., 0.])  # g/(cm2 day)
+        #  90 lb/ha = 40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2
+        f0 = 4.08e-4  # g/cm2 (90)
+        f1 = 2.27e-5  # g/cm2 (5)
+        f2 = 5.43e-4  # g/cm2 (120)
+        sol_times = np.array([0., 1., 1., 50., 50., 51., 51., 1.e3])
+        sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0.])  # g/(cm2 day)
         s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
-        # s.setTopBC_solute("outflow", 0.)
         s.setBotBC_solute("outflow", 0.)
 
     # Paramters
