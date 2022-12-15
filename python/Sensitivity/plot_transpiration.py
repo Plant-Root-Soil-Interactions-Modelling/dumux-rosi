@@ -43,14 +43,14 @@ trans = 1
 # potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
 # trans = 1
 
-# name = "maize"
-# str_ = ["_sra0"]
-# area = 76 * 16  # cm2
-# # start_date = '1995-03-15 00:00:00'
-# # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
-# start_date = '2021-05-10 00:00:00'  # INARI csv data
-# potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize, Kc_maize)
-# trans = 1
+name = "maize"
+str_ = ["_sra0"]
+area = 76 * 16  # cm2
+# start_date = '1995-03-15 00:00:00'
+# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
+start_date = '2021-05-10 00:00:00'  # INARI csv data
+potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize, Kc_maize)
+trans = 1
 
 rs_age = 1
 

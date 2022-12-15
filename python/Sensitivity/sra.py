@@ -256,8 +256,6 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
                       wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
                       "number of segments", rs.getNumberOfSegments(), "root collar", rx[0])
 
-            # psi_x_.append(rx.copy())  # cm (per root node)
-            # psi_s_.append(rsx.copy())  # cm (per root segment)
             sink_.append(sink)  # cm3/day (per soil cell)
 
             psi_s2_.append(sx.copy())  # cm (per soil cell)
@@ -267,14 +265,24 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
                 soil_c_.append(cc)  # [kg/m3]
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
-            for i in range(0, 6):  # root types
+            for j in range(0, 6):  # root types
                 anac = pb.SegmentAnalyser(ana)
-                anac.filter("subType", i)
-                vol_[i].append(anac.getSummed("volume"))
-                surf_[i].append(anac.getSummed("surface"))
+                anac.filter("subType", j)
+                vol_[j].append(anac.getSummed("volume"))
+                surf_[j].append(anac.getSummed("surface"))
             krs, _ = r.get_krs(rs_age + t, [collar_ind])
             krs_.append(krs)  # KRS
             depth_.append(ana.getMinBounds().z)
+
+            """ direct vtp output """
+            # psi_x_.append(rx.copy())  # cm (per root node)
+            # psi_s_.append(rsx.copy())  # cm (per root segment)
+            ana.addData("rx", rx[1:])
+            ana.addData("rsx", rsx)
+            ana.addAge(rs_age + t)  # "age"
+            ana.addConductivities(r, rs_age + t)  # "kr", "kx"
+            ana.addFluxes(r, rx, rsx, rs_age + t)  # "axial_flux", "radial_flux"
+            ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 

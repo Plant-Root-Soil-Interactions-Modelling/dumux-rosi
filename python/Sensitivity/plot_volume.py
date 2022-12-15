@@ -12,8 +12,8 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "test"
-str_ = ["1"]
+name = "soybean"
+str_ = ["_sra0"]
 
 fnames_t = np.array(["transpiration_" + name + s for s in str_ ])
 fnames = np.array(["vol_" + name + s for s in str_ ])

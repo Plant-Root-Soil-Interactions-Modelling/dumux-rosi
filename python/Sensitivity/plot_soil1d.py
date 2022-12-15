@@ -18,26 +18,25 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 """ pick... """
 
 name = "soybean"
-str_ = "sra0"
+str_ = "_sra0"
 Kc = Kc_soybean
 lai = evap.lai_soybean
 ylim_ = None
 sim_time = 87.5
 
-name = "local_soybean"
-str_ = "1"
-Kc = Kc_soybean
-lai = evap.lai_soybean
-ylim_ = None
-sim_time = 87.5
-
-
-# name = "maize"
-# str_ = "_sra0"
-# Kc = Kc_maize
-# lai = evap.lai_maize
+# name = "local_soybean"
+# str_ = "1"
+# Kc = Kc_soybean
+# lai = evap.lai_soybean
 # ylim_ = None
-# sim_time = 95
+# sim_time = 87.5
+#
+name = "maize"
+str_ = "_sra0"
+Kc = Kc_maize
+lai = evap.lai_maize
+ylim_ = None
+sim_time = 95
 
 # name = "maize"
 # str_ = "_cyl0"
@@ -48,7 +47,7 @@ sim_time = 87.5
 fname = "soil_" + name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
-start_date = '2020-05-10 00:00:00'  # INARI csv data
+start_date = '2021-05-10 00:00:00'  # INARI csv data
 
 path = "results/"
 
@@ -104,7 +103,7 @@ if fname.startswith("soilc_"):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap = matplotlib.cm.get_cmap('jet')
-    im = ax[1].imshow(data, vmin = 0., vmax = 2.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(data, vmin = 0., vmax = 1.e-3, cmap = cmap, aspect = 'auto', extent = [times[0] , times[-1], depths[-1] - 10, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     ax[1].plot(times[::10], depths, 'k:')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
