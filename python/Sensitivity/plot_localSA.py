@@ -18,17 +18,17 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-# file_name = "local_soybean"
-file_name = "local_maizeT"
+file_name = "local_soybean"
+# file_name = "local_maize"
+file_name = "local_timing"
 path = "results/"
-not_xlog = ["theta1", "src"]
+not_xlog = ["kr", "theta1", "src"]
 
 analysis_time = 60  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
 times = trans_[0,:]
-dt_ = np.diff(times)
 print("Simulation time from", min(times), "to ", max(times), "days")
 
 ind_ = np.argwhere(times > analysis_time)
@@ -41,6 +41,8 @@ if len(ind_) > 0:
 else:
     ind = -1
     ind10 = -1
+
+dt_ = np.diff(times[:ind])
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -72,7 +74,7 @@ for lind in range(0, len(names)):
         for k in range(0, sa_len):
             try:
                 trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-                trans[k] = np.sum(np.multiply(trans_[1,:ind - 1], dt_[:ind]))
+                trans[k] = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
                 print(trans[k])
             except:
                 trans[k] = np.nan
@@ -100,8 +102,8 @@ for lind in range(0, len(names)):
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
-        # ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
-        ax.flat[ac].plot(ranges[lind], nitrate, label = "nitrate")
+        ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
+        # ax.flat[ac].plot(ranges[lind], nitrate, label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 

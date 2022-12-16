@@ -58,7 +58,7 @@ t_ = np.linspace(1., sim_time, water.shape[0])
 s = vg.Parameters(soil_)
 c_ = np.zeros((water.shape[0],))
 for i in range(0, water.shape[0]):
-    theta = vg.water_content(water[i,:], s)
+    theta = vg.water_content(water[i,:], s)  #################################################################
     c_[i] = np.sum(np.multiply(theta, nitrate[i,:]) * 1. * area)
 
 plt.plot(t_, c_)

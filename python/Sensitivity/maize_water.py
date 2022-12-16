@@ -33,7 +33,7 @@ xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter fil
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
-scenario.init_maize_conductivities(r, 2., 2.)
+scenario.init_maize_conductivities(r, 10., 10.)
 
 """ sanity checks """
 r.test()  # sanity checks
@@ -48,6 +48,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("maize_sra2", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+scenario.write_files("maize_sra10", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

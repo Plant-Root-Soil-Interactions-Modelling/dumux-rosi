@@ -105,6 +105,20 @@ def init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1, dt0 = 14., dt1 = 7., kr_f 
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
+def init_timing(r, kr0 = 1.e-2, kx0 = 1.e-1, dt = 1.):
+    """ a simplified parametrisation, based on init_dynamic_conductivities_growth """
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+
+    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr0], [dt, kr0], [dt, 0.], [1.e3, 0.]])  # primals
+    kx0 = np.array([[0., kx0], [1.e3, kx0]])  # primals
+
+    r.setKrTables([kr00[:, 1], kr0[:, 1], kr0[:, 1], kr0[:, 1], kr0[:, 1], kr0[:, 1]],
+                  [kr00[:, 0], kr0[:, 0], kr0[:, 0], kr0[:, 0], kr0[:, 0], kr0[:, 0]])
+    r.setKxTables([kx00[:, 1], kx0[:, 1], kx0[:, 1], kx0[:, 1], kx0[:, 1], kx0[:, 1]],
+                  [kx00[:, 0], kx0[:, 0], kx0[:, 0], kx0[:, 0], kx0[:, 0], kx0[:, 0]])
+
+
 def init_maize_conductivities(r, skr = 1., skx = 1.):
     """ Hydraulic conductivities for maize following Couvreur et al. (2012) originally from Doussan et al. (1998) """
 
@@ -232,7 +246,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
     c, h = [], []  # resulting solute concentration
-    dt = 0.025 * 1. / 24.  # 1  # 0.025 *
+
     N = int(np.ceil(sim_time / dt))
     for i in range(0, N):
         t = i * dt  # current simulation time

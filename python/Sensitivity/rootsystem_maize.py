@@ -165,10 +165,12 @@ ana.addConductivities(r, simtime)
 ana.addAge(simtime)
 ana.addCellIds(rs.mappedSegments())
 
-vp.plot_roots(ana, "cell_id", name)
+# vp.plot_roots(ana, "cell_id", name)
 # vp.plot_roots(ana, "kr", name + "_kr")
 # vp.plot_roots(ana, "kx", name + "_kx")
-# dd
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
+data = ana.data["cell_id"]
+vp.plot_roots_and_soil(rs.mappedSegments(), "cell_id", data, s, True, min_b, max_b, cell_number, "dummy")
 
 orders = np.array(rs.getParameter("subType"))
 print("\nnumber of roots", len(rs.getRoots()))

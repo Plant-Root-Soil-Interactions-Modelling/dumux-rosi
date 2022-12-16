@@ -265,6 +265,27 @@ def local_maize():
     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
 
+def local1_maize():
+    root_type = "maize"
+    file_name = "local_timing"
+    enviro_type = 0
+    sim_time = 30  # 95
+
+    if rank == 0:
+        timings = np.linspace(1., 20., 20)
+        theta_ = theta = 85. / 180 * np.pi
+        write_ranges("results/" + file_name,
+                     ["kr"],
+                     [timings])
+        jobs = make_local(timings , 1. , 1., 1., 1., theta_, 1., 1., 1., 1.)
+
+    else:
+        jobs = None
+
+    jobs = comm.bcast(jobs, root = 0)
+    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+
+
 def global1_soybean():
     root_type = "soybean"
     file_name = "global1_soybean"
@@ -322,7 +343,7 @@ if __name__ == "__main__":
     # print("fin")
 
     # local_soybean()
-    local_maize()
+    local1_maize()
 #    global_soybean()
 #    global_maize()
 
