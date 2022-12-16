@@ -18,8 +18,8 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-#file_name = "local_soybean"
-file_name = "local_maize"
+# file_name = "local_soybean"
+file_name = "local_maizeT"
 path = "results/"
 not_xlog = ["theta1", "src"]
 
@@ -88,23 +88,22 @@ for lind in range(0, len(names)):
                 krs[k] = krs_[ind10]
             except:
                 krs[k] = np.nan
-            
-            # n_ = np.load(path + "nitrate_" + file_name + str(file_start_ind + k) + ".npy")
-            # print(n_.shape)
-            # # n_ = n_[:, ind10]
-            # nitrate[k] = np.sum(np.multiply(n_[:ind - 1], dt_[:ind]))
-            # print(nitrate[k])
-            # # except:
-            # #     nitrate[k] = np.nan
-              
-                
+            try:
+                n_ = np.load(path + "nitrate_" + file_name + str(file_start_ind + k) + ".npy")
+                nitrate[k] = np.sum(np.multiply(n_[:ind - 1], dt_[:ind]))
+                # print(nitrate[k], 'g')
+            except:
+                nitrate[k] = np.nan
+
         trans = trans / trans[sa_len // 2]  # nondimensionalize
+        nitrate = nitrate / nitrate[sa_len // 2]  # nondimensionalize
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
         ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
+        ax.flat[ac].plot(ranges[lind], nitrate, label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
-        ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
+        # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 
         # center
         x = ranges[lind][sa_len // 2]

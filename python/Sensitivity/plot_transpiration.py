@@ -12,23 +12,23 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "soybean"
-str_ = ["_sra0"]
-area = 76 * 3
-# start_date = '1995-03-15 00:00:00'
-# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
-start_date = '2021-05-10 00:00:00'  # INARI csv data
-potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
-trans = 1
-
-name = "local_soybean"
-str_ = ["1"]
-area = 76 * 3
-# start_date = '1995-03-15 00:00:00'
-# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
-start_date = '2021-05-10 00:00:00'  # INARI csv data
-potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
-trans = 1
+# name = "soybean"
+# str_ = ["_sra0"]
+# area = 76 * 3
+# # start_date = '1995-03-15 00:00:00'
+# # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+# start_date = '2021-05-10 00:00:00'  # INARI csv data
+# potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+# trans = 1
+#
+# name = "local_soybean"
+# str_ = ["1"]
+# area = 76 * 3
+# # start_date = '1995-03-15 00:00:00'
+# # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+# start_date = '2021-05-10 00:00:00'  # INARI csv data
+# potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+# trans = 1
 
 # name = "test1.0"
 # str_ = [""]
@@ -44,7 +44,7 @@ trans = 1
 # trans = 1
 
 name = "maize"
-str_ = ["_sra0"]
+str_ = ["_sra2"]
 area = 76 * 16  # cm2
 # start_date = '1995-03-15 00:00:00'
 # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)

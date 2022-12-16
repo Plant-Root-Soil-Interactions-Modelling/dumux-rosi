@@ -38,7 +38,7 @@ def make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
         r2_ = [r2_]
     if isinstance(a_, float):
         a_ = [a_]
-    if isinstance(src_, int):
+    if isinstance(src_, float):
         src_ = [src_]
     return kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_
 
@@ -177,20 +177,19 @@ def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
 
     # create global sa jobs
     jobs = []
-    i = 0
-    if global_:
-        for kr in kr_:
-            for kx in kx_:
-                for lmax1 in lmax1_:
-                    for lmax2 in lmax2_:
-                        for lmax3 in lmax3_:
-                            for theta1 in theta1_:
-                                for r1 in r1_:
-                                    for r2 in r2_:
-                                        for a in a_:
-                                            for src in src_:
-                                                i += 1
-                                                jobs.append([i, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src])
+    i = 1
+    for kr in kr_:
+        for kx in kx_:
+            for lmax1 in lmax1_:
+                for lmax2 in lmax2_:
+                    for lmax3 in lmax3_:
+                        for theta1 in theta1_:
+                            for r1 in r1_:
+                                for r2 in r2_:
+                                    for a in a_:
+                                        for src in src_:
+                                            i += 1
+                                            jobs.append([i, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src])
     return jobs
 
 
@@ -233,8 +232,8 @@ def local_soybean():
         theta_ = np.linspace(0, np.pi / 2, 9)
         write_ranges("results/" + file_name,
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-                     [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
-        jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+                     [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
+        jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])
 
     else:
         jobs = None
@@ -245,9 +244,9 @@ def local_soybean():
 
 def local_maize():
     root_type = "maize"
-    file_name = "local_maize"
+    file_name = "local_maizeT"
     enviro_type = 0
-    sim_time = 95
+    sim_time = 1  # 95
 
     if rank == 0:
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
@@ -278,8 +277,8 @@ def global1_soybean():
         theta_ = np.linspace(0, np.pi / 2, 9)
         write_ranges("results/" + file_name,
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-                     [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
-        jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
+                     [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
+        jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])
         pass
     else:
         jobs = None
@@ -292,20 +291,18 @@ def global1_maize():
     root_type = "maize"
     file_name = "global1_maize"
     enviro_type = 0
-    sim_time = 95
+    sim_time = 60
 
     if rank == 0:
-        # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        # p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-        # theta_ = np.linspace(0, np.pi / 2, 9)
-        # write_ranges("results/" + file_name,
-        #              ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-        #              [p2, p2, p1, p1, p1, theta_, p1, [2, 3, 4, 5]])
-        # jobs = make_global(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2, 3, 4, 5])
-        pass
+        theta_ = theta = 85. / 180 * np.pi
+        kx = np.linspace(1., 100, 25)
+        kr = np.linspace(1., 100, 25)
+        write_ranges("results/" + file_name,
+                     ["kr", "kx"],
+                     [ kx , kr ])
+        jobs = make_global(kx , kr , 1., 1., 1., theta_, 1., 1., 1., 1.)
     else:
         jobs = None
-
     jobs = comm.bcast(jobs, root = 0)
     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
@@ -325,7 +322,7 @@ if __name__ == "__main__":
     # print("fin")
 
     # local_soybean()
-    local_maize()
+    global1_maize()
 #    global_soybean()
 #    global_maize()
 

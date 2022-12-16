@@ -38,7 +38,8 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     # scenario.init_lupine_conductivities2(r, kr, kx)  # altered
     scenario.init_lupine_conductivities(r, kr, kx)
 
-    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_soybean)
+    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
+        s, r, sra_table_lookup, sim_time, dt, trans_soybean, rs_age = 1., type_ = 1)
     # print("volume")
     # print(np.sum(vol_, axis = 0))
     # print("surface")
@@ -74,8 +75,11 @@ def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, the
     # scenario.init_maize_conductivities2(r, kr, kx)
     scenario.init_maize_conductivities(r, kr, kx)
 
-    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_maize)
-    scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
+        s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)
+    # scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+    np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]
+
     print("finished " + file_name)
 
 

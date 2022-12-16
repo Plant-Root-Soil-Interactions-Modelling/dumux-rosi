@@ -19,7 +19,7 @@ soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 """ pick... """
 
 name = "maize"
-str_ = "_sra0"
+str_ = "_sra2"
 lai = evap.lai_maize
 sim_time = 95
 
