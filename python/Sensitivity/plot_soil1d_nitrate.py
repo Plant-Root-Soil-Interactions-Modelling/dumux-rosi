@@ -54,14 +54,16 @@ colors = prop_cycle.by_key()['color']
 water = np.load(path + fname1 + ".npy")
 nitrate = np.load(path + fname2 + ".npy")
 t_ = np.linspace(1., sim_time, water.shape[0])
+z_ = np.linspace(-200, 0, 200)
 
 s = vg.Parameters(soil_)
 c_ = np.zeros((water.shape[0],))
 for i in range(0, water.shape[0]):
-    theta = vg.water_content(water[i,:], s)  #################################################################
+    theta = vg.water_content(water[i,:], s)  ################################################################# -z_ has no effect
     c_[i] = np.sum(np.multiply(theta, nitrate[i,:]) * 1. * area)
 
 plt.plot(t_, c_)
+# plt.plot(water[0,:], z_)
 plt.xlabel("time  [days]")
 plt.ylabel("nitrate [g]")
 plt.show()

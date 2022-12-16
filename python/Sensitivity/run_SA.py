@@ -9,6 +9,7 @@ sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
 import numpy as np
 import os
+import random
 
 import run_sra
 
@@ -45,6 +46,8 @@ def make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
 
 def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     """ distribute jobs to MPI ranks """
+
+    random.shuffle(jobs)  # apply magic (otherwise hard or easy jobs might aggregate)
 
     jobs = np.array(jobs)
     b = jobs.shape[0]

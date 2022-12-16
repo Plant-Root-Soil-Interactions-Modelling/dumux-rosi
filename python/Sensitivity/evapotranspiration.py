@@ -22,12 +22,21 @@ def sigmoid(x, L , x0, k, b):
     return (y)
 
 
+def exp2(x, L , x0, k, b):
+    y = L * np.exp(-k * (x - x0) * (x - x0)) + b
+    return (y)
+
+
 def lai_soybean(x):
     return sigmoid(x, 7.74397040e+00, 5.64296005e+01, 1.10652299e-01, 4.11185215e-02)  # see test_lai.py
 
 
 def lai_maize(x):
     return sigmoid(x, 3.32217629e+00, 2.78937950e+01, 2.22487303e-01, 6.42233521e-03)  # see test_lai.py
+
+
+def lai_maize2(x):
+    return exp2(x, 4.91147661e+00, 6.76845146e+01, 4.41858734e-04, -8.01979497e-01)  # see test_lai.py
 
 
 def lai_noroots(x):
@@ -319,24 +328,24 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     evap = -evap
     net_inf = precip + evap
 
-    # fig, ax = plt.subplots(3)
-    # ax[0].bar(t_, precip, width = 0.8 / 24., label = "precipiation")
-    # ax[0].legend()
-    # ax[0].set_ylabel("cm / day")
-    # ax[0].set_xlabel("time")
-    # ax[1].plot([0., t_[-1]], [0., 0.], 'k')
-    # # ax[1].plot(t_, et0, 'k', label = "evapotranspiration")
-    # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
-    # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
-    # ax[1].plot(t_, -evap, 'g', label = "evaporation")
-    # ax[1].legend()
-    # ax[1].set_xlabel("time")
-    # ax[1].set_ylabel("cm / day")
-    # ax[2].bar(t_, net_inf, width = 0.8 / 24., label = 'net infiltration')
-    # ax[2].set_xlabel("time")
-    # ax[2].set_ylabel("cm / day")
-    # ax[2].legend()
-    # plt.show()
+    fig, ax = plt.subplots(3)
+    ax[0].bar(t_, precip, width = 0.8 / 24., label = "precipiation")
+    ax[0].legend()
+    ax[0].set_ylabel("cm / day")
+    ax[0].set_xlabel("time")
+    ax[1].plot([0., t_[-1]], [0., 0.], 'k')
+    # ax[1].plot(t_, et0, 'k', label = "evapotranspiration")
+    ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
+    ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
+    ax[1].plot(t_, -evap, 'g', label = "evaporation")
+    ax[1].legend()
+    ax[1].set_xlabel("time")
+    ax[1].set_ylabel("cm / day")
+    ax[2].bar(t_, net_inf, width = 0.8 / 24., label = 'net infiltration')
+    ax[2].set_xlabel("time")
+    ax[2].set_ylabel("cm / day")
+    ax[2].legend()
+    plt.show()
 
     y_ = []
     x_ = []
