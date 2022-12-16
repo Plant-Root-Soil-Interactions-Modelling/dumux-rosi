@@ -244,9 +244,9 @@ def local_soybean():
 
 def local_maize():
     root_type = "maize"
-    file_name = "local_maizeT"
+    file_name = "local_maize"
     enviro_type = 0
-    sim_time = 1  # 95
+    sim_time = 95
 
     if rank == 0:
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
@@ -322,7 +322,7 @@ if __name__ == "__main__":
     # print("fin")
 
     # local_soybean()
-    global1_maize()
+    local_maize()
 #    global_soybean()
 #    global_maize()
 

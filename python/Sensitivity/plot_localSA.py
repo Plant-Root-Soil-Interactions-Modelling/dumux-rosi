@@ -23,7 +23,7 @@ file_name = "local_maizeT"
 path = "results/"
 not_xlog = ["theta1", "src"]
 
-analysis_time = 100  # days
+analysis_time = 60  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
@@ -100,7 +100,7 @@ for lind in range(0, len(names)):
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
-        ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
+        # ax.flat[ac].plot(ranges[lind], trans, label = "uptake")
         ax.flat[ac].plot(ranges[lind], nitrate, label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
