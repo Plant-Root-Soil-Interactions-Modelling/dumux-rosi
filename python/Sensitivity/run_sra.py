@@ -77,8 +77,8 @@ def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, the
 
     psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
         s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)
-    # scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
-    np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]
+    scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+    # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]
 
     print("finished " + file_name)
 
