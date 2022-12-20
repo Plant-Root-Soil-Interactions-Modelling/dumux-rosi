@@ -27,25 +27,6 @@ not_xlog = ["theta1", "src"]
 analysis_time = 100  # days
 
 names, ranges = sa.read_ranges(path + file_name)
-
-print(names)
-# SOYBEAN
-names[2] = "lmax, primaries" # seminal and tap
-# names[3] = "lmax, first order"
-# names[4] = "lmax, second order"
-# names[5] = "insertion angle, seminal roots"
-# names[6] = "root radii scale"
-# names[7] = "seminal root count"
-
-# MAIZE
-names[2] = "lmax, primaries" # brace, seminal and tap
-names[3] = "lmax, first order"
-names[4] = "lmax, second order"
-names[5] = "insertion angle, brace and seminals"
-names[6] = "root radii scale"
-names[7] = "brace root delay"
-
-
 trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
 times = trans_[0,:]
 print("Simulation time from", min(times), "to ", max(times), "days")

@@ -32,7 +32,7 @@ sim_time = 87.5
 # sim_time = 87.5
 #
 name = "maize"
-str_ = "_sra2"
+str_ = "_sra10"
 Kc = Kc_maize
 lai = evap.lai_maize
 ylim_ = None
@@ -44,7 +44,7 @@ sim_time = 95
 # lai = evap.lai_maize
 # ylim_ = None # -10
 
-fname = "soilc_" + name + str_
+fname = "soil_" + name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = '2021-05-10 00:00:00'  # INARI csv data
