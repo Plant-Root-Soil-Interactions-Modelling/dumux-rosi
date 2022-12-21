@@ -4,30 +4,25 @@ plots results of local sensitivity analysis
 import sys; sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 
 import run_SA as sa
 
-
-def start_index(ind, ranges):
-    s = 0
-    for i in range(0, ind):
-        if len(ranges) > 1:
-            s += len(ranges[i])
-    return s
-
-
 """ def SA """
-# file_name = "local_soybean"
-file_name = "local_maize"
-# file_name = "local_timing"
+file_name = "global1_maize"
 path = "results/"
-not_xlog = ["theta1", "src"]
 
-analysis_time = 100  # days
+analysis_time = 40  # days
 
 names, ranges = sa.read_ranges(path + file_name)
-trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
+
+kr_ = ranges[0]
+kx_ = ranges[1]
+n = len(kr_) * len(kx_)
+print(n)
+
+trans_ = np.load(path + "transpiration_" + file_name + "2" + ".npy")
 times = trans_[0,:]
 print("Simulation time from", min(times), "to ", max(times), "days")
 
@@ -44,6 +39,16 @@ else:
 
 dt_ = np.diff(times[:ind])
 
+print("index is", ind, "from", len(times))
+
+print("reading global analysis")
+data = np.zeros((len(kr_), len(kx_)))
+for i in range(0, len(kr_)):
+    for j in range(0, len(kx_)):
+        lind = i * len(kx_) + j
+        trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
+        data[i, j] = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
+
 """ font sizes """
 SMALL_SIZE = 12
 MEDIUM_SIZE = 16
@@ -57,67 +62,12 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(3, 3, figsize = (16, 16))
-
-ac = 0
-for lind in range(0, len(names)):
-
-    file_start_ind = 2 + start_index(lind, ranges)  # 1 is initial simulation
-    sa_len = len(ranges[lind])
-    print("\nproducing sub-plot", names[lind], "from", file_start_ind, "to", file_start_ind + sa_len)
-
-    if sa_len > 1:
-        trans = np.zeros((sa_len,))
-        vol = np.zeros((sa_len,))
-        krs = np.zeros((sa_len,))
-        nitrate = np.zeros((sa_len,))
-        for k in range(0, sa_len):
-            try:
-                trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-                trans[k] = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
-                print(trans[k])
-            except:
-                trans[k] = np.nan
-                print("skipping file", file_name + str(file_start_ind + k))
-            try:
-                vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
-                vol_ = vol_[:, ind10]
-                vol[k] = np.sum(vol_)  # sum over sub-types
-            except:
-                vol[k] = np.nan
-            try:
-                krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
-                krs[k] = krs_[ind10]
-            except:
-                krs[k] = np.nan
-            try:
-                n_ = np.load(path + "nitrate_" + file_name + str(file_start_ind + k) + ".npy")
-                nitrate[k] = np.sum(np.multiply(n_[:ind - 1], dt_))
-                # print(nitrate[k], 'g')
-            except:
-                nitrate[k] = np.nan
-
-        trans = trans / trans[sa_len // 2]  # nondimensionalize
-        nitrate = nitrate / nitrate[sa_len // 2]  # nondimensionalize
-        vol = vol / vol[sa_len // 2]  # nondimensionalize
-        krs = krs / krs[sa_len // 2]  # nondimensionalize
-
-        ax.flat[ac].plot(ranges[lind], trans, label = "water")
-        ax.flat[ac].plot(ranges[lind], nitrate, label = "nitrate")
-        # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
-        # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
-
-        # center
-        x = ranges[lind][sa_len // 2]
-        ax.flat[ac].plot([x], [1.], 'r*')
-
-        ax.flat[ac].legend()
-        ax.flat[ac].set_title(names[lind])
-        # ax.flat[ac].set_ylim(0.5, 2)
-        # ax.flat[ac].set_yscale('log', base = 2)
-        if not names[lind] in not_xlog:
-            ax.flat[ac].set_xscale('log', base = 2)
-        ac += 1
-
-plt.tight_layout(pad = 4.)
+fig, ax = plt.subplots(1, 1, figsize = (18, 10))
+ax = [ax]
+cmap = matplotlib.cm.get_cmap('nipy_spectral')
+im = ax[0].imshow(data, cmap = cmap, aspect = 'auto', extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]], interpolation = 'bicubic')  # vmin = 0., vmax = 1.e-3,
+ax[0].set_ylabel("kr scale")
+ax[0].set_xlabel("kx scale")
+cb = fig.colorbar(im, orientation = 'vertical', label = "water uptake")
 plt.show()
+

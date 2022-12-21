@@ -44,8 +44,9 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     # print(np.sum(vol_, axis = 0))
     # print("surface")
     # print(np.sum(surf_, axis = 0))
+    # scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
 
-    scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+    np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
     print("finished " + file_name)
 
 
@@ -73,13 +74,14 @@ def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, the
     # scenario.init_conductivities_const(r, kr, kx)
     # scenario.init_dynamic_simple_growth(r, kr, kr, kx, kx) # parametrisation of hydraulic conductivities
     # scenario.init_maize_conductivities2(r, kr, kx)
-    # scenario.init_maize_conductivities(r, kr, kx)
-    scenario.init_timing(r, kr0 = 1.e-4, kx0 = 1.e-2, dt = kr)
+    scenario.init_maize_conductivities(r, kr, kx)
+    # scenario.init_timing(r, kr0 = 1.e-4, kx0 = 1.e-2, dt = kr)
 
     psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
         s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)
-    scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
-    # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
+    # scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+    np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
+    np.save('results/nitrate_' + file_name, c_)  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
 
     print("finished " + file_name)
 

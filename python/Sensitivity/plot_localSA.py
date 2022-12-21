@@ -22,15 +22,15 @@ def start_index(ind, ranges):
 file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
-not_xlog = ["theta1", "src"]
+not_xlog = [5]
 
 analysis_time = 100  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
 print(names)
-# SOYBEAN
-names[2] = "lmax, primaries" # seminal and tap
+# # SOYBEAN
+# names[2] = "lmax, primaries"  # seminal and tap
 # names[3] = "lmax, first order"
 # names[4] = "lmax, second order"
 # names[5] = "insertion angle, seminal roots"
@@ -38,13 +38,12 @@ names[2] = "lmax, primaries" # seminal and tap
 # names[7] = "seminal root count"
 
 # MAIZE
-names[2] = "lmax, primaries" # brace, seminal and tap
+names[2] = "lmax, primaries"  # brace, seminal and tap
 names[3] = "lmax, first order"
 names[4] = "lmax, second order"
 names[5] = "insertion angle, brace and seminals"
 names[6] = "root radii scale"
 names[7] = "brace root delay"
-
 
 trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
 times = trans_[0,:]
@@ -77,6 +76,8 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
 fig, ax = plt.subplots(3, 3, figsize = (16, 16))
+final = []
+finaln = []
 
 ac = 0
 for lind in range(0, len(names)):
@@ -126,6 +127,9 @@ for lind in range(0, len(names)):
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 
+        final.append(trans[-1] / vol[-1])
+        finaln.append(nitrate[-1] / vol[-1])
+
         # center
         x = ranges[lind][sa_len // 2]
         ax.flat[ac].plot([x], [1.], 'r*')
@@ -134,9 +138,17 @@ for lind in range(0, len(names)):
         ax.flat[ac].set_title(names[lind])
         # ax.flat[ac].set_ylim(0.5, 2)
         # ax.flat[ac].set_yscale('log', base = 2)
-        if not names[lind] in not_xlog:
+        if not lind in not_xlog:
             ax.flat[ac].set_xscale('log', base = 2)
         ac += 1
 
 plt.tight_layout(pad = 4.)
 plt.show()
+
+print("final")
+print(names)
+print(final)
+
+print()
+print(names)
+print(finaln)

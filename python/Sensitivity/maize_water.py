@@ -33,7 +33,7 @@ xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter fil
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
-scenario.init_maize_conductivities(r, 10., 10.)
+scenario.init_maize_conductivities(r)
 
 """ sanity checks """
 r.test()  # sanity checks
