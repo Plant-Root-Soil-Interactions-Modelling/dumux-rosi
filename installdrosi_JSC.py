@@ -173,7 +173,7 @@ else:
 
 # CPlantBox
 if not os.path.exists("CPlantBox"):
-    git_clone('https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox.git', branch = '4JSC')
+    git_clone('https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox.git', branch = 'master')
     os.chdir("CPlantBox")
     subprocess.run(['cmake', '.']) 
     subprocess.run(['make']) 
