@@ -91,7 +91,7 @@ for module in modules :
     if "WARNING: Package(s) not found" in str(output) :
         subprocess.run(["conda", "install", module]) 
         #raise Exception("Some python library "+str(output)[29:]+" are not found, consider loading SciPy-Stack")
-raise Exception
+
 #for mymodule in modules:
 #	subprocess.run(["pip3", "install", mymodule]) 
       
