@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 """
+TO USE ONLY ON THE JÜLICH SUPERCOMPUTER
 One click install script for dumux
 created by the dumux team, adapted by Mona Giraud, Dirk Helmrich
 """
@@ -47,7 +48,7 @@ def git_clone(url, branch=None):
 # clear the log file
 open('installdumux.log', 'w').close()
 
-show_message("Do not forget to check for loaded modules and environments")
+show_message("TO USE ONLY ON THE JÜLICH SUPERCOMPUTER \nDo not forget to check for loaded modules and environments")
 
 #################################################################
 #################################################################
