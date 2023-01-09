@@ -212,7 +212,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
         final soil matric potential [cm] 
         final nitrate concentration [kg/m3]
     """
-    dt = 360. / (24.*3600)
+    dt = 12. / (24.*3600)
     z_ = [0., -30., -30., -200.]  # initial nitrate: top soil layer of 30 cm
     v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
     f_time = 17  # initial fertilisation time: days before planting
@@ -267,7 +267,9 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     print(N, dt)
     for i in range(0, N):
         t = i * dt  # current simulation time
-        if i % 1000 == 0:
+        if i % 100 == 0:
+            c.append(s.getSolution_(1))
+            h.append(s.getSolutionHead_())
             print(t)
         soil_sol_fluxes = {}  # empy dict
         evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))  # nitrification debendent on tillage practice
@@ -297,12 +299,12 @@ def plot_initial_soil(start_date, end_date):
     sim_time = timedelta_.days  # = 191
     times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
 
-    c = np.save("data/initial_potential_all.npy", h)
-    h = np.save("data/initial_concentration_all.npy", c)
-    # c = np.transpose(c)
-    # c = c[::-1,:]
-    # h = np.transpose(h)
-    # h = h[::-1,:]
+    h = np.load("data/initial_potential_all.npy")
+    c = np.load("data/initial_concentration_all.npy")
+    c = np.transpose(c)
+    c = c[::-1,:]
+    h = np.transpose(h)
+    h = h[::-1,:]
 
     fig, ax = plt.subplots(3, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3, 3]})
     bar = ax[0].bar(times, np.array(net_inf), 0.7)
@@ -335,6 +337,19 @@ def plot_initial_soil(start_date, end_date):
     print()
     print("range", np.min(c), np.max(c), "g/cm3")
     print("range", np.min(h), np.max(h), "cm")
+    plt.tight_layout()
+    plt.show()
+
+    h = h[:, -1]
+    c = c[:, -1]
+    plt.plot(h, np.linspace(0., -200, h.shape[0]))
+    plt.xlabel("soil matric potential [cm]")
+    plt.ylabel("depth (cm)")
+    plt.tight_layout()
+    plt.show()
+    plt.plot(c, np.linspace(0., -200, c.shape[0]))
+    plt.xlabel("nitrate concentration [g/cm3]")
+    plt.ylabel("depth (cm)")
     plt.tight_layout()
     plt.show()
 
@@ -678,6 +693,9 @@ if __name__ == '__main__':
 
     start_date = '2020-10-31 00:00:00'
     end_date = '2021-05-10 00:00:00'
+    # plot_initial_soil(start_date, end_date)
+    # dd
+
     soil_, table_name, min_b, max_b, cell_number, area, Kc = maize(0)
     s = vg.Parameters(soil_)
     # s.plot_retention_curve()
@@ -687,7 +705,7 @@ if __name__ == '__main__':
     print("theta at -350", vg.water_content(-350, s))
     print("theta at -400", vg.water_content(-400, s))
 
-    # cell_number = [1, 1, 400]
+    cell_number = [1, 1, 1000]
     h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, -201., -1., start_date, end_date)
 
     np.save("data/initial_potential.npy", h)
