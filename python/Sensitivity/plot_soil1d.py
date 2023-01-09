@@ -32,7 +32,7 @@ sim_time = 87.5
 # sim_time = 87.5
 #
 name = "maize"
-str_ = "_sra10"
+str_ = "_sra100"
 Kc = Kc_maize
 lai = evap.lai_maize
 ylim_ = None
