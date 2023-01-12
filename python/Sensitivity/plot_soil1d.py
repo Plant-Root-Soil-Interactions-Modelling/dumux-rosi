@@ -31,18 +31,18 @@ sim_time = 87.5
 # ylim_ = None
 # sim_time = 87.5
 #
-name = "maize"
-str_ = "_sra100"
-Kc = Kc_maize
-lai = evap.lai_maize
-ylim_ = None
-sim_time = 95
-
 # name = "maize"
-# str_ = "_cyl0"
+# str_ = "_sra100"
 # Kc = Kc_maize
 # lai = evap.lai_maize
-# ylim_ = None # -10
+# ylim_ = None
+# sim_time = 95
+
+name = "maize"
+str_ = "_sra0"
+Kc = Kc_maize
+lai = evap.lai_maize
+ylim_ = None  # -10
 
 fname = "soil_" + name + str_
 

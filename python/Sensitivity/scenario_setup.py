@@ -23,7 +23,7 @@ from datetime import *
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
-BIGGER_SIZE = 16
+BIGGER_SIZE = 164
 plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
 plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
 plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
@@ -194,166 +194,6 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
-def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, start_date, end_date):
-    """
-        Creates initial soil conditions by simulating from @param start_date to @param end_date
-        
-        soil_        van genuchten parameter as a list 
-        min_b        minimum of soil domain bounding box [cm]
-        max_b        maximum of soil domain bounding box [cm]
-        cell_number  resolution in x, y, and z direction [1]
-        area         area per plant (for debugging and plausibility) [cm2]
-        p_top        soil top matric potential [cm]
-        p_bot        soil bottom matric potential [cm]
-        start_date   start date (format '2020-10-31 00:00:00')
-        end_date     end date (format ''2020-10-31 00:00:00')
-        
-        returns:
-        final soil matric potential [cm] 
-        final nitrate concentration [kg/m3]
-    """
-    dt = 12. / (24.*3600)
-    z_ = [0., -30., -30., -200.]  # initial nitrate: top soil layer of 30 cm
-    v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
-    f_time = 17  # initial fertilisation time: days before planting
-    f1 = 4.08e-4  # initial fertilisation amount g/cm2
-
-    start_date2 = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
-    timedelta_ = end_date - start_date2
-    sim_time = timedelta_.days  # = 191
-
-    soil = vg.Parameters(soil_)
-    vg.create_mfp_lookup(soil, -1.e5, 1000)
-    s = RichardsWrapper(RichardsNCSP())  # water and one solute
-    s.initialize()
-    s.createGrid(min_b, max_b, cell_number, True)  # [cm]
-    # IC
-    s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
-    s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
-    # BC
-    times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
-    s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
-    s.setBotBC("freeDrainage")
-    # hard coded initial fertilizer application
-    sol_times = np.array([0., sim_time - f_time, sim_time - f_time, sim_time - f_time + 1, sim_time - f_time + 1, 1.e3])
-    sol_influx = -np.array([0., 0., f1, f1, 0., 0.])  # g/(cm2 day)
-    s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
-    s.setBotBC_solute("outflow", 0.)
-    s.setVGParameters([soil_])
-    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-    s.setParameter("Component.MolarMass", "6.2e-2")
-    s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")
-    s.initializeProblem()
-
-    print()
-    print("1 m2 / area", 1.e4 / area)
-    print()
-
-    print("domain water volume", s.getWaterVolume(), "cm3  = ", s.getWaterVolume() / 1000, "l")  # OK
-    theta = s.getWaterContent()
-    print("water content to water volume", np.sum(theta) * area, "cm3")  # OK
-    print("domain water volume", s.getWaterVolume() / area, "cm3/cm2  = ", s.getWaterVolume() / area * 10, "l/m2")  # OK
-    print("water content to water volume", np.sum(theta) * 1, "cm3/cm  = ", np.sum(theta) * 1 * 10, "l/m2")  # OK
-    print("sum net inf", np.sum(net_inf) * 10, "mm  = ", np.sum(net_inf) * 1 * 10, "l/m2")  # (cm m2)/m2 = 10 l / m2
-    print()
-
-    wilting_point = -15000
-    s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
-    s.ddt = 1.e-4  # [day] initial Dumux time step
-    c, h = [], []  # resulting solute concentration
-
-    N = int(np.ceil(sim_time / dt))
-    print(N, dt)
-    for i in range(0, N):
-        t = i * dt  # current simulation time
-        if i % 100 == 0:
-            c.append(s.getSolution_(1))
-            h.append(s.getSolutionHead_())
-            print(t)
-        soil_sol_fluxes = {}  # empy dict
-        evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-7 * (75 * 16 * 1))  # nitrification debendent on tillage practice
-        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # richards.py
-        s.solve(dt)
-        c.append(s.getSolution_(1))
-        h.append(s.getSolutionHead_())
-
-    print("\nAFTER SIMULATION")
-    print("domain water volume", s.getWaterVolume(), "cm3  = ", s.getWaterVolume() / 1000, "l")
-    theta = s.getWaterContent()
-    print("water content to water volume", np.sum(theta) * area, "cm3")
-    print("domain water volume", s.getWaterVolume() / area, "cm  = ", s.getWaterVolume() / area * 10, "l/m2")
-    print("water content to water volume", np.sum(theta) * 1, "cm  = ", np.sum(theta) * 1 * 10, "l/m2")
-
-    np.save("data/initial_potential_all.npy", h)
-    np.save("data/initial_concentration_all.npy", c)
-
-    return s.getSolutionHead_(), s.getSolution_(1)  # matric potential [cm], concentration [kg/m3]
-
-
-def plot_initial_soil(start_date, end_date):
-
-    start_date2 = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
-    timedelta_ = end_date - start_date2
-    sim_time = timedelta_.days  # = 191
-    times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
-
-    h = np.load("data/initial_potential_all.npy")
-    c = np.load("data/initial_concentration_all.npy")
-    c = np.transpose(c)
-    c = c[::-1,:]
-    h = np.transpose(h)
-    h = h[::-1,:]
-
-    fig, ax = plt.subplots(3, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3, 3]})
-    bar = ax[0].bar(times, np.array(net_inf), 0.7)
-    ax[0].set_ylabel("net infiltration [cm/day]")
-    ax[0].set_xlim(times[0], times[-1])
-    divider = make_axes_locatable(ax[0])
-    cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
-    cax0.axis('off')
-
-    divider = make_axes_locatable(ax[1])
-    cax = divider.append_axes('right', size = '5%', pad = 0.05)
-    cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -1000, vmax = 0, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
-    cb.ax.get_yaxis().labelpad = 30
-    cb.set_label('soil matric potential [cm]', rotation = 270)
-    ax[1].set_ylabel("depth [cm]")
-    ax[1].set_xlabel("time [days]")
-
-    divider = make_axes_locatable(ax[2])
-    cax = divider.append_axes('right', size = '5%', pad = 0.05)
-    cmap_ = matplotlib.cm.get_cmap('jet')
-    im = ax[2].imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
-    cb.ax.get_yaxis().labelpad = 30
-    cb.set_label('soil matric potential [cm]', rotation = 270)
-    ax[2].set_ylabel("depth [cm]")
-    ax[2].set_xlabel("time [days]")
-
-    print()
-    print("range", np.min(c), np.max(c), "g/cm3")
-    print("range", np.min(h), np.max(h), "cm")
-    plt.tight_layout()
-    plt.show()
-
-    h = h[:, -1]
-    c = c[:, -1]
-    plt.plot(h, np.linspace(0., -200, h.shape[0]))
-    plt.xlabel("soil matric potential [cm]")
-    plt.ylabel("depth (cm)")
-    plt.tight_layout()
-    plt.show()
-    plt.plot(c, np.linspace(0., -200, c.shape[0]))
-    plt.xlabel("nitrate concentration [g/cm3]")
-    plt.ylabel("depth (cm)")
-    plt.tight_layout()
-    plt.show()
-
-
 def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, net_inf = None):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
@@ -374,7 +214,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         print("choose type, 1 = Richards, 2 = RichardsNCSP")
 
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, True)  # [cm]
+    s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
 
     # Initial conditions for fertilization
     if type == 2:  # solute IC
@@ -385,11 +225,11 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
 
     # BC
-    if times:
+    if times is not None:
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
-    s.setBotBC("freeDrainage")
+    s.setBotBC("noFlux")
 
     if type == 2:  # solute BC
         #  90 lb/ha = 40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2
@@ -405,7 +245,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     if type == 2:
-        s.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
+        s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
     s.initializeProblem()
     wilting_point = -15000
@@ -594,7 +434,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     # comm.barrier()
     # print("survived setRectangularGrid", rank)
 
-    picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+    picker = lambda x, y, z: soil_model.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     # comm.barrier()
     # print("survived setSoilGrid", rank)
@@ -691,26 +531,7 @@ def simulate_const(s, r, trans, sim_time, dt):
 
 if __name__ == '__main__':
 
-    start_date = '2020-10-31 00:00:00'
-    end_date = '2021-05-10 00:00:00'
-    # plot_initial_soil(start_date, end_date)
-    # dd
-
-    soil_, table_name, min_b, max_b, cell_number, area, Kc = maize(0)
-    s = vg.Parameters(soil_)
-    # s.plot_retention_curve()
-
-    print("theta at -100", vg.water_content(-100, s))
-    print("theta at -330", vg.water_content(-330, s))
-    print("theta at -350", vg.water_content(-350, s))
-    print("theta at -400", vg.water_content(-400, s))
-
-    cell_number = [1, 1, 1000]
-    h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, -201., -1., start_date, end_date)
-
-    np.save("data/initial_potential.npy", h)
-    np.save("data/initial_concentration.npy", c)
-
+    pass
     # theta_r = 0.025
     # theta_s = 0.403
     # alpha = 0.0383  # (cm-1) soil

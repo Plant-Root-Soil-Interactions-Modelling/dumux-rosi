@@ -14,7 +14,7 @@ import sra
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 
-sim_time = 47  #  [day]
+sim_time = 95  # 47  # 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -33,8 +33,8 @@ xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter fil
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 # rsml_name = "results/maize.rsml"  # created by rootsystem_maize.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
-scenario.init_conductivities_const_growth(r, kr_const = 1.8e-3, kx_const = 0.01)
-# scenario.init_maize_conductivities(r, 100., 100.)
+# scenario.init_conductivities_const_growth(r, kr_const = 1.8e-3, kx_const = 0.01)
+scenario.init_maize_conductivities(r)
 
 """ sanity checks """
 r.test()  # sanity checks
@@ -49,6 +49,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("maize_sra_c", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+scenario.write_files("maize_sra0", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

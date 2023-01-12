@@ -18,7 +18,7 @@ Kc_soybean = 1.15
 # # start_date = '1995-03-15 00:00:00'
 # # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
 # start_date = '2021-05-10 00:00:00'  # INARI csv data
-# potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+# potential_trans = evap.get_transpiration_beers_csvS(start_date, 25, area, evap.lai_soybean, Kc_soybean)  # 87.5
 # trans = 1
 #
 # name = "local_soybean"
@@ -39,18 +39,18 @@ Kc_soybean = 1.15
 
 # name = "maize"
 # str_ = ["_cyl0"]
-# area = 76 * 16   # cm2
+# area = 76 * 16  # cm2
 # potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
 # trans = 1
 
-name = "maize"
-str_ = ["_sra100"]
-area = 76 * 16  # cm2
-# start_date = '1995-03-15 00:00:00'
-# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
-start_date = '2021-05-10 00:00:00'  # INARI csv data
-potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize, Kc_maize)
-trans = 1
+# name = "maize"
+# str_ = ["_sra0"]
+# area = 76 * 16  # cm2
+# # start_date = '1995-03-15 00:00:00'
+# # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize, Kc_maize)
+# start_date = '2021-05-10 00:00:00'  # INARI csv data
+# potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize, Kc_maize)
+# trans = 1
 
 rs_age = 1
 
@@ -113,7 +113,7 @@ for i in range(0, n):
     ax2.legend(loc = 'center right')
     print(str_[i], "cumulative water uptake", cup[-1], "cm3")
 
-ax[i].set_xlabel("Time [d]")
+ax[i].set_xlabel("time [day]")
 
 plt.tight_layout()
 plt.show()

@@ -163,10 +163,11 @@ def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc):
     evap = etc - tpot
 
     trans = lambda t, dt:-tpot[int((t + dt / 2))] * area * sinusoidal2(t, dt)
-    # t2_ = np.linspace(0, sim_time+0.4, len(etc)*24) # more points more fun...
-    # tpot2 = [-trans(t, 0.)/area for t in t2_]
+
+    # t2_ = np.linspace(0, sim_time + 0.4, len(etc) * 24)  # more points more fun...
+    # tpot2 = [-trans(t, 0.) / area for t in t2_]
     # # plt.bar(t_, etc, label = "Crop evapotranspiration")
-    # plt.bar(t_, tpot, align='edge', label = "Potential transpiration")
+    # plt.bar(t_, tpot, align = 'edge', label = "Potential transpiration")
     # plt.plot(t2_, tpot2, 'r', label = "Potential transpiration")
     # # plt.bar(t_, evap,  label = "Evaporation")
     # plt.xlabel("time")
@@ -249,7 +250,6 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     yd = df["prcp"].loc[range_[0]: range_[1]].values * 2.54  # inches -> cm
     precip = yd
     t_ = np.linspace(0, len(precip), len(precip))  # relative time
-    print("total precip", np.sum(precip) * 10, "mm")
 
     """ 1. load ET, ET0 -> ETc """
     df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
@@ -266,8 +266,15 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     evap = etc - tpot
     evap = -evap
     net_inf = precip + evap
+    print()
+    print("total precip", np.sum(precip) * 10, "mm")
     print("total evaporation", np.sum(evap) * 10, "mm")
     print("total net_inf", np.sum(net_inf) * 10, "mm")
+    print()
+
+    # print(net_inf.shape)
+    # np.savetxt("net_inf.csv", net_inf * 10, delimiter = ",")
+    # dd
 
     # fig, ax = plt.subplots(3)
     # ax[0].bar(t_, precip, width = 0.8, label = "precipiation")
@@ -286,7 +293,7 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     # ax[2].set_xlabel("time")
     # ax[2].set_ylabel("cm / day")
     # ax[2].legend()
-    # print("net change", np.sum(net_inf), "cm")
+    # print("net change", np.sum(net_inf) * 10, "mm")
     # plt.show()
 
     y_ = []
@@ -295,7 +302,7 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
         x_.extend([float(i), float(i + 1)])
         y_.extend([net_inf[i], net_inf[i]])
 
-    return x_, y_
+    return np.array(x_), np.array(y_)
 
 
 def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
@@ -314,8 +321,6 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     yd = df["prcp"].loc[range_[0]: range_[1]].values * 2.54  # inches -> cm
     t_ = np.linspace(0, sim_time, yd.shape[0] * 24)  # relative time in hours
     precip = np.array([ yd[int(t)] for t in t_ ])  # TODO precip / day
-    print("total precip", np.sum(yd), "cm")
-    dd
 
     """ 1. load ET, ET0 -> ETc """
     df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
@@ -332,6 +337,11 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     evap = etc - tpot
     evap = -evap
     net_inf = precip + evap
+    print()
+    print("total precip", np.sum(precip) * 10, "mm")
+    print("total evaporation", np.sum(evap) * 10, "mm")
+    print("total net_inf", np.sum(net_inf) * 10, "mm")
+    print()
 
     # fig, ax = plt.subplots(3)
     # ax[0].bar(t_, precip, width = 0.8 / 24., label = "precipiation")
@@ -358,7 +368,7 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
         x_.extend([t_[i], t_[i + 1]])  # hour -> day
         y_.extend([net_inf[i], net_inf[i]])
 
-    return x_, y_
+    return np.array(x_), np.array(y_)
 
 
 def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-5):

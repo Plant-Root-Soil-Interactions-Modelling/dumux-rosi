@@ -11,7 +11,7 @@ import sra
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 
-sim_time = 87.5  # [day]
+sim_time = 87.5  # 44  # 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -32,7 +32,6 @@ r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  #
 scenario.init_lupine_conductivities(r)
 # scenario.init_dynamic_simple_growth(r, 1.e-3, 4.e-3, 5.e-2, 2.e-3)
 # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
-
 # rsml_name = "results/soybean.rsml"  # created by rootsystem_soybean.py
 # r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, rsml_name)
 
