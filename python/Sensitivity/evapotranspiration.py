@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from datetime import *
 from xylem_flux import sinusoidal2
+from lxml.html.builder import DD
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -16,27 +17,43 @@ plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
 plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
+# Soybean
+# sigmoidal
+# [ 7.44990146 55.4283463   0.15200146  0.34325857]
+# neg exp^2
+# [8.83381831e+00 8.29555707e+01 1.15834259e-03 1.75018634e-01]
+#
+# Maize
+# sigmoidal
+# [ 3.32719912 28.89532431  0.22100482  0.08645908]
+# neg exp^2
+# [ 5.14321003e+00  6.65910800e+01  4.09254414e-04 -1.08617435e+00]
+
 
 def sigmoid(x, L , x0, k, b):
     y = L / (1 + np.exp(-k * (x - x0))) + b
-    return (y)
+    return max(y, 0)
 
 
 def exp2(x, L , x0, k, b):
     y = L * np.exp(-k * (x - x0) * (x - x0)) + b
-    return (y)
+    return max(y, 0)
 
 
 def lai_soybean(x):
-    return sigmoid(x, 7.74397040e+00, 5.64296005e+01, 1.10652299e-01, 4.11185215e-02)  # see test_lai.py
+    return sigmoid(x, 7.44990146, 55.4283463, 0.15200146, 0.34325857)  # see test_lai.py
+
+
+def lai_soybean2(x):
+    return exp2(x, 8.83381831e+00, 8.29555707e+01, 1.15834259e-03, 1.75018634e-01)  # see test_lai.py
 
 
 def lai_maize(x):
-    return sigmoid(x, 3.32217629e+00, 2.78937950e+01, 2.22487303e-01, 6.42233521e-03)  # see test_lai.py
+    return sigmoid(x, 3.32719912, 28.89532431, 0.22100482, 0.08645908)  # see test_lai.py
 
 
 def lai_maize2(x):
-    return exp2(x, 4.91147661e+00, 6.76845146e+01, 4.41858734e-04, -8.01979497e-01)  # see test_lai.py
+    return exp2(x, 5.14321003e+00, 6.65910800e+01, 4.09254414e-04, -1.08617435e+00)  # see test_lai.py
 
 
 def lai_noroots(x):
@@ -343,24 +360,25 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     print("total net_inf", np.sum(net_inf) * 10, "mm")
     print()
 
-    # fig, ax = plt.subplots(3)
-    # ax[0].bar(t_, precip, width = 0.8 / 24., label = "precipiation")
+    # fig, ax = plt.subplots(3, figsize = (18, 10))
+    # ax[0].bar(t_, precip * 10, width = 1. / 24., label = "precipiation")
     # ax[0].legend()
-    # ax[0].set_ylabel("cm / day")
-    # ax[0].set_xlabel("time")
+    # ax[0].set_ylabel("[mm/day]")
+    # # ax[0].set_xlabel("time")
     # ax[1].plot([0., t_[-1]], [0., 0.], 'k')
     # # ax[1].plot(t_, et0, 'k', label = "evapotranspiration")
-    # ax[1].plot(t_, etc, 'k:', label = "crop evapotranspiration")
-    # ax[1].plot(t_, tpot, 'r', label = "potential transpiration")
-    # ax[1].plot(t_, -evap, 'g', label = "evaporation")
+    # ax[1].plot(t_, etc * 10, 'k:', label = "crop evapotranspiration")
+    # ax[1].plot(t_, tpot * 10, 'r', label = "potential transpiration")
+    # ax[1].plot(t_, -evap * 10, 'g', label = "evaporation")
     # ax[1].legend()
-    # ax[1].set_xlabel("time")
-    # ax[1].set_ylabel("cm / day")
-    # ax[2].bar(t_, net_inf, width = 0.8 / 24., label = 'net infiltration')
-    # ax[2].set_xlabel("time")
-    # ax[2].set_ylabel("cm / day")
+    # # ax[1].set_xlabel("time")
+    # ax[1].set_ylabel("[mm/day]")
+    # ax[2].bar(t_, net_inf * 10, width = 1. / 24., label = 'net infiltration')
+    # ax[2].set_xlabel("time [day]")
+    # ax[2].set_ylabel("[mm/day]")
     # ax[2].legend()
     # plt.show()
+    # dd
 
     y_ = []
     x_ = []

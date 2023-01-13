@@ -205,19 +205,19 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)
 
-        for key, value in cell2seg.items():  # check cell2seg
-            if key < 0:
-                nodes = r.rs.nodes
-                print("key is negative", key)
-                print("segments", cell2seg[key])
-                print("coresponding nodes")
-                segs = r.rs.segments
-                for s in cell2seg[key]:
-                    print(segs[s])
-                    print(nodes[segs[s].x], nodes[segs[s].y])
-                ana = pb.SegmentAnalyser(r.rs.mappedSegments())
-                ana.addCellIds(r.rs.mappedSegments())
-                vtk.plot_roots(ana, "cell_id")
+        # for key, value in cell2seg.items():  # check cell2seg
+        #     if key < 0:
+        #         nodes = r.rs.nodes
+        #         print("key is negative", key)
+        #         print("segments", cell2seg[key])
+        #         print("coresponding nodes")
+        #         segs = r.rs.segments
+        #         for s in cell2seg[key]:
+        #             print(segs[s])
+        #             print(nodes[segs[s].x], nodes[segs[s].y])
+        #         ana = pb.SegmentAnalyser(r.rs.mappedSegments())
+        #         ana.addCellIds(r.rs.mappedSegments())
+        #         vtk.plot_roots(ana, "cell_id")
 
         wall_soil = timeit.default_timer() - wall_soil
 

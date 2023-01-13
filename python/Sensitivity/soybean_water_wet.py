@@ -1,5 +1,5 @@
 """ 
-    Soybean (water only) 
+    Soybean (water only), wet scenario 
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
@@ -23,7 +23,7 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 # trans_soybean = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 
 """ initialize """
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_, wet = False)  # , times = x_, net_inf = y_
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_, wet = True)  # , times = x_, net_inf = y_
 sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
@@ -48,6 +48,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("soybean_sra0d", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+scenario.write_files("soybean_sra0w", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

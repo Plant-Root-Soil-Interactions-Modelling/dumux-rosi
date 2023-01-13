@@ -1,5 +1,5 @@
 """ 
-    Maize (water and nitrate, SRA)
+    Maize (water and nitrate, SRA), wet scenario 
 """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
 sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
@@ -26,7 +26,7 @@ trans_maize = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap
 # trans_maize = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_maize, Kc)
 
 """ initialize """
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_, wet = False)  # , times = x_, net_inf = y_
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_, wet = True)  # , times = x_, net_inf = y_
 sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
 
 xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
@@ -50,6 +50,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("maize_sra0d", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+scenario.write_files("maize_sra0w", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

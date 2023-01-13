@@ -113,7 +113,8 @@ for i, p in enumerate(rrp[1:]):
     if i == 0:
         p.theta = 0
         p.thetas = 0
-    print("\nsubType", p.subType, p.name)
+    print("\nSubType", p.subType, p.name)
+    print("Radius", p.a)
     print("lmax", p.lmax)
     print("ln", p.ln)
     print("lb", p.lb)
@@ -170,7 +171,9 @@ ana.addCellIds(rs.mappedSegments())
 # vp.plot_roots(ana, "kx", name + "_kx")
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
 data = ana.data["cell_id"]
-vp.plot_roots_and_soil(rs.mappedSegments(), "cell_id", data, s, True, min_b, max_b, cell_number, "dummy")
+print(np.min(data), np.max(data))
+# vp.plot_roots_and_soil(rs.mappedSegments(), "cell_id", data, s, True, min_b, max_b, cell_number, "dummy")
+vp.plot_roots(ana, "cell_id")
 
 orders = np.array(rs.getParameter("subType"))
 print("\nnumber of roots", len(rs.getRoots()))
@@ -186,25 +189,25 @@ print("\nunconfined", ana.getMinBounds(), "-", ana.getMaxBounds())
 # print("periodic")
 # print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
-# """ RLD """
-# dz = 0.5
-# exact = False
-# domain_size = np.array(max_b) - np.array(min_b)
-# slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
-# z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
-# rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
-# rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
-# fig, ax = plt.subplots(1, 1, figsize = (10, 10))
-# ax = [ax]
-# ax[0].plot(rld, z_)
-# ax[0].set_xlabel("root length density [cm / cm3]")
-# ax[0].set_ylabel("depth [cm]")
-# # ax[1].plot(rsd, z_)
-# # ax[1].set_xlabel("root surface density [cm2 / cm3]")
-# # ax[1].set_ylabel("depth [cm]")
-# plt.tight_layout()
-# plt.savefig("results/" + name + "_rld" + ".png")
-# plt.show()  # e.g. compare to Zhuang et al. 2001
+""" RLD """
+dz = 0.5
+exact = False
+domain_size = np.array(max_b) - np.array(min_b)
+slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
+z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
+rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
+rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
+fig, ax = plt.subplots(1, 1, figsize = (10, 10))
+ax = [ax]
+ax[0].plot(rld, z_)
+ax[0].set_xlabel("root length density [cm / cm3]")
+ax[0].set_ylabel("depth [cm]")
+# ax[1].plot(rsd, z_)
+# ax[1].set_xlabel("root surface density [cm2 / cm3]")
+# ax[1].set_ylabel("depth [cm]")
+plt.tight_layout()
+plt.savefig("results/" + name + "_rld" + ".png")
+plt.show()  # e.g. compare to Zhuang et al. 2001
 
 """ export """
 ana.write("results/maize.vtp")  # rs.write writes polylines, ana.write writes segments

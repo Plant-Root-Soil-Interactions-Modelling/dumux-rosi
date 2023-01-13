@@ -120,14 +120,14 @@ def init_timing(r, kr0 = 1.e-2, kx0 = 1.e-1, dt = 1.):
 
 
 def init_maize_conductivities(r, skr = 1., skx = 1.):
-    """ Hydraulic conductivities for maize following Couvreur et al. (2012) originally from Doussan et al. (1998) """
+    """ Hydraulic conductivities for maize modified from Couvreur et al. (2012), originally from Doussan et al. (1998) """
 
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
-    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [8., 0.000181], [10, 0.0000648], [18, 0.0000648], [25, 0.0000173], [300, 0.0000173]])
-    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [10., 0.000181], [16, 0.0000173], [300, 0.0000173]])
-    kx0 = np.array([[0., 0.0000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
-    kx1 = np.array([[0., 0.0000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
+    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.00181], [8., 0.00181], [10, 0.000648], [18, 0.000648], [25, 0.000173], [300, 0.000173]])  # *10!
+    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.00181], [10., 0.00181], [16, 0.000173], [300, 0.000173]])  # *10!
+    kx0 = np.array([[0., 0.000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
+    kx1 = np.array([[0., 0.000864], [5., 0.000864], [10., 0.000864], [12., 0.006048], [20., 0.006048], [23., 0.0173], [300., 0.0173]])  # *10!
 
     r.setKrTables([kr00[:, 1], skr * kr0[:, 1], skr * kr1[:, 1], skr * kr1[:, 1], skr * kr0[:, 1], skr * kr0[:, 1]],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
@@ -142,9 +142,9 @@ def init_maize_conductivities2(r, skr = 1., skx = 1.):
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
 
     kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.47e-4], [19., 0.47e-4], [19.5, 0.43e-4], [30., 0.28e-4], [300., 0.28e-4]])  # seminal
-    kr5 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.29e-4], [13., 0.25e-4], [13.1, 0.17e-4], [30., 0.17e-4], [300., 0.17e-4]])  # crown
+    kr5 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.39e-4], [13., 0.25e-4], [13.1, 0.17e-4], [30., 0.17e-4], [300., 0.17e-4]])  # crown
     # kr_brace = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.48e-4], [19., 0.48e-4], [20., 0.028e-4], [30., 0.02e-4], [300., 0.02e-4]])  # brace
-    kr12 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 5.62e-4], [1.e4, 5.62e-4]])  # lateral
+    kr12 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 5.62e-5], [1.e4, 5.62e-5]])  # lateral
 
     kx0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 1.76e-4], [7., 1.91e-4], [10., 5.45e-4], [21., 14.85e-4], [40., 15.85e-4], [300., 15.85e-4]])  # seminal
     kx5 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.82e-4], [11.2, 3.71e-4], [28.7, 24.44e-4], [34.3, 73.63e-4], [40., 73.63e-4], [300., 73.63e-4]])  # crown
@@ -194,7 +194,7 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
-def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, net_inf = None):
+def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, net_inf = None, wet = False):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil type is fixed and homogeneous 
@@ -223,6 +223,9 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         # [1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4]  # kg/m3 [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
         # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3) (nitrate 62 g/mol)
         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
+
+    if wet:
+        s.setLinearIC(-300., -100.)
 
     # BC
     if times is not None:
@@ -253,8 +256,11 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     # IC
-    h = np.load("data/initial_potential.npy")
-    s.setInitialConditionHead(h)  # cm
+
+    if not wet:
+        h = np.load("data/initial_potential.npy")
+        s.setInitialConditionHead(h)  # cm
+
     if type == 2:
         c = np.load("data/initial_concentration.npy")  # kg/m3
         s.setInitialCondition(c, 1)  # kg/m3

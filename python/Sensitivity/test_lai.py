@@ -13,12 +13,12 @@ import matplotlib.pyplot as plt
 
 def sigmoid(x, L , x0, k, b):
     y = L / (1 + np.exp(-k * (x - x0))) + b
-    return (y)
+    return y
 
 
 def exp2(x, L , x0, k, b):
     y = L * np.exp(-k * (x - x0) * (x - x0)) + b
-    return (y)
+    return y
 
 
 typename = "length"
@@ -49,16 +49,21 @@ for i in range(0, 80):
 soy_vol_ = np.array(soy_vol_)
 soy_vol_ = soy_vol_ / soy_vol_[-1]
 
-times_soybean = [0., 20., 30, 50, 60, 70, 80, 90 ]
-lai_soybean = [0., 0.2, 0.3, 3., 4.1, 6.5, 8., 7. ]  # Priscila et al. (2013)
+""" data estimated from literature """
+times_soybean = [0., 20., 27, 38, 51, 45, 60, 65, 73, 80, 88, 95, 105]
+lai_soybean = [0., 0.2, 0.5, 1., 2.9, 2.2, 4.1, 7.2, 7.2, 9.3, 10., 5.9, 5.9 ]  # from Priscila et al. (2013)
 
-times_maize = [0., 20, 40, 60, 80, 100]
-lai_maize = [0.01, 0.5, 3.1, 4., 3.5, 2.5 ]  # Boedhram et al. (2001)
+times_maize = [0., 10, 20, 26, 32, 39, 50, 60, 65, 75, 81., 93, 102]
+lai_maize = [0.01, 0.2, 0.5, 1.3, 2.2, 3.1, 3.9, 3.9, 3.8, 3.7, 3.6, 2.8, 2.2 ]  # from Boedhram et al. (2001)
 
-p0_soy = [max(lai_soybean), np.median(times_soybean), 1, min(lai_soybean)]  # this is an mandatory initial guess
-p0_maize = [max(lai_maize), np.mean(times_maize), 1. / np.std(times_maize), min(lai_maize)]
+print(1. / np.std(times_maize))
+
+p0_soy = [max(lai_soybean), 90, 0.01, min(lai_soybean)]  # this is an mandatory initial guess
+p0_maize = [max(lai_maize), np.median(times_maize), 0.02, min(lai_maize)]
 
 popt1, pcov = curve_fit(sigmoid, times_soybean, lai_soybean, p0_soy, method = 'dogbox')
+popt1b, pcov = curve_fit(exp2, times_soybean, lai_soybean, p0_soy, method = 'dogbox')
+
 popt2, pcov = curve_fit(sigmoid, times_maize, lai_maize, p0_maize, method = 'dogbox')
 popt3, pcov = curve_fit(exp2, times_maize, lai_maize, p0_maize, method = 'dogbox')
 
@@ -66,6 +71,7 @@ popt3, pcov = curve_fit(exp2, times_maize, lai_maize, p0_maize, method = 'dogbox
 
 x1_ = np.linspace(np.min(times_soybean), np.max(times_soybean), 100)
 y1_ = np.array([sigmoid(x, popt1[0], popt1[1], popt1[2], popt1[3]) for x in x1_])
+y1b_ = np.array([exp2(x, popt1b[0], popt1b[1], popt1b[2], popt1b[3]) for x in x1_])
 x12_ = np.linspace(0, 80, 61)
 y12_ = maize_vol_ * np.max(lai_soybean)
 
@@ -75,30 +81,33 @@ y3_ = np.array([exp2(x, popt3[0], popt3[1], popt3[2], popt3[3]) for x in x2_])
 x4_ = np.linspace(0, 60, 61)
 y4_ = maize_vol_ * np.max(lai_maize)
 
-fig, ax = plt.subplots(2, 1, figsize = (8, 16))
+fig, ax = plt.subplots(1, 2, figsize = (18, 6))
 
 ax[0].plot(times_soybean, lai_soybean, "*")
-ax[0].plot(x1_, y1_, label = "sigmoid")
-ax[0].plot(x12_, y12_, 'r:', label = "proportional")
+# ax[0].plot(x1_, y1_, label = "sigmoid")
+ax[0].plot(x1_, y1b_, label = "normal distribution")
+# ax[0].plot(x12_, y12_, 'r:', label = "proportional")
 ax[0].set_title("Soybean")
-# ax[0].xlabel("Time")
+ax[0].set_xlabel("time [day]")
 ax[0].legend()
-ax[0].set_ylabel("LAI")
+ax[0].set_ylabel("leaf area index [1]")
 
 ax[1].plot(times_maize, lai_maize, "*")
 ax[1].set_title("Maize")
-ax[1].plot(x2_, y2_, label = "sigmoid")
-ax[1].plot(x2_, y3_, label = "normal distribution")
-ax[1].plot(x4_, y4_, 'r:', label = "proportional")
-ax[1].set_xlabel("Time")
-ax[1].set_ylabel("LAI")
+# ax[1].plot(x2_, y2_, label = "sigmoid")
+ax[1].plot(x2_, np.maximum(y3_, 0), label = "normal distribution")  # cut off negative values
+# ax[1].plot(x4_, y4_, 'r:', label = "proportional")
+ax[1].set_xlabel("time [day]")
 ax[1].legend()
 plt.show()
 
-print("soybean")
+print("\nSoybean")
+print("sigmoidal")
 print(popt1)
+print("neg exp^2")
+print(popt1b)
 
-print("maize")
+print("\nMaize")
 print("sigmoidal")
 print(popt2)
 print("neg exp^2")

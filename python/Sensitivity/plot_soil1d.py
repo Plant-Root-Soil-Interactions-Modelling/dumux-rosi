@@ -15,12 +15,16 @@ from datetime import *
 Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al (1998)
 Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
-""" pick... """
+""" pick... """  # name = "maize"
+# str_ = "_sra0"
+# Kc = Kc_maize
+# lai = evap.lai_maize2
+# ylim_ = None  # -10
 
 name = "soybean"
 str_ = "_sra0"
 Kc = Kc_soybean
-lai = evap.lai_soybean
+lai = evap.lai_soybean2
 ylim_ = None
 sim_time = 87.5
 
@@ -41,8 +45,9 @@ sim_time = 87.5
 name = "maize"
 str_ = "_sra0"
 Kc = Kc_maize
-lai = evap.lai_maize
+lai = evap.lai_maize2
 ylim_ = None  # -10
+sim_time = 95
 
 fname = "soil_" + name + str_
 
