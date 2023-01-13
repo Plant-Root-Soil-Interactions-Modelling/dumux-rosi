@@ -3,7 +3,6 @@
 #SBATCH --job-name=global_sensitivity_analysis
 #SBATCH --ntasks=700
 #SBATCH --cpus-per-task=1
-#SBATCH --nodes=1
 #SBATCH --exclude=node02
 #SBATCH --partition=cpu256
 #SBATCH --time=48:00:00
