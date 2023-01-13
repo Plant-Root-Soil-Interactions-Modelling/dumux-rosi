@@ -297,8 +297,8 @@ def global1_soybean():
 
     if rank == 0:
         theta_ = theta = 85. / 180 * np.pi
-        kx = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
-        kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
+        kx = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
+        kr = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
         write_ranges("results/" + file_name,
                      ["kr", "kx"],
                      [ kx , kr ])
@@ -311,7 +311,7 @@ def global1_soybean():
 
 def global1_maize():
     root_type = "maize"
-    file_name = "global_const_maize"
+    file_name = "global_maize"
     enviro_type = 0
     sim_time = 40
 
@@ -319,8 +319,8 @@ def global1_maize():
         theta_ = theta = 85. / 180 * np.pi
         # kx = np.linspace(1., 100, 25)
         # kr = np.linspace(1., 100, 25)
-        kx = np.array([10 ** x for x in np.linspace(-5., -1., 25)])
-        kr = np.array([10 ** x for x in np.linspace(-5., -1., 25)])
+        kx = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
+        kr = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
         write_ranges("results/" + file_name,
                      ["kr", "kx"],
                      [ kx , kr ])
@@ -333,20 +333,14 @@ def global1_maize():
 
 if __name__ == "__main__":
 
-    # root_type = "soybean"
-    # file_name = "test"
-    # enviro_type = 0
-    # sim_time = 25.
-    # p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-    # # p = np.array([1. + x for x in np.linspace(-0.5, 0.5, 7)])
-    # print(p)
-    # kr = 1.e-5
-    # kx = 1.e-3
-    # jobs = make_global(kr * 1. , kx * 1. , 1., 1., 1., 1., 1., 1., 1., [4])
-    # print("fin")
+    i = int(sys.argv[1])
 
-    # local_soybean()
-#     local1_maize()
-    global1_soybean()
-    # global1_maize()
+    if i == 1:
+        local_soybean()
+    if i == 2:
+        global1_soybean()
+    if i == 3:
+        local_maize()
+    if i == 4:
+        global1_maize()
 

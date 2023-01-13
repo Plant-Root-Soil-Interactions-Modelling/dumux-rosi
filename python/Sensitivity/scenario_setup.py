@@ -55,8 +55,6 @@ def maize(i:int):
     cell_number = [1, 1, 200]
     area = 76. * 16  # cm2
     Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
-    # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
-    # 30, 40, 50, 50 = 170 (Idaho, USA)
     return soil, table_name, min_b, max_b, cell_number, area, Kc_maize
 
 
@@ -68,8 +66,6 @@ def soybean(i:int):
     cell_number = [1, 1, 200]
     area = 76 * 3  # cm2
     Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
-    # Init. (Lini), Dev. (Ldev), Mid (Lmid), Late (Llate)
-    # 20, 30/35, 60, 25 = 140 (Central USA)
     return soil, table_name, min_b, max_b, cell_number, area, Kc_soybean
 
 
