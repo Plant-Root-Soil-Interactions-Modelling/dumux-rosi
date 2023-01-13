@@ -293,12 +293,12 @@ def global1_soybean():
     root_type = "soybean"
     file_name = "global_soybean"
     enviro_type = 0
-    sim_time = 60
+    sim_time = 44
 
     if rank == 0:
         theta_ = theta = 85. / 180 * np.pi
-        kx = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
-        kr = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
+        kx = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
+        kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
         write_ranges("results/" + file_name,
                      ["kr", "kx"],
                      [ kx , kr ])
@@ -313,14 +313,14 @@ def global1_maize():
     root_type = "maize"
     file_name = "global_maize"
     enviro_type = 0
-    sim_time = 40
+    sim_time = 47
 
     if rank == 0:
         theta_ = theta = 85. / 180 * np.pi
         # kx = np.linspace(1., 100, 25)
         # kr = np.linspace(1., 100, 25)
-        kx = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
-        kr = np.array([10 ** x for x in np.linspace(-2., 2., 25)])
+        kx = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
+        kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
         write_ranges("results/" + file_name,
                      ["kr", "kx"],
                      [ kx , kr ])
