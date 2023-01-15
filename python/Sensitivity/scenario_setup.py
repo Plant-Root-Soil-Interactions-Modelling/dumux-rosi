@@ -228,7 +228,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
-    s.setBotBC("noFlux")
+    s.setBotBC("free drainage")
 
     if type == 2:  # solute BC
         #  90 lb/ha = 40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2

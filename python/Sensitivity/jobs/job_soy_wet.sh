@@ -1,6 +1,6 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
-#SBATCH --job-name=single_soybean
+#SBATCH --job-name=single_soybean_wet
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --exclude=node02

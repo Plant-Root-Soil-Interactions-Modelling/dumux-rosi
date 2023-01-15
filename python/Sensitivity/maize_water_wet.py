@@ -15,7 +15,7 @@ import sra
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 
 sim_time = 95  # 47  # 95  #  [day]
-dt = 360 / (24 * 3600)  # time step [day]
+dt = 120 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data
 x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_maize2, Kc)

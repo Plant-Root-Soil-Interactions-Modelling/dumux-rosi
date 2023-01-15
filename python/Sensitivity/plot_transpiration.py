@@ -13,7 +13,7 @@ Kc_maize = 1.2
 Kc_soybean = 1.15
 
 # name = "soybean"
-# str_ = ["_sra0"]
+# str_ = ["_sra0d"]
 # area = 76 * 3
 # # start_date = '1995-03-15 00:00:00'
 # # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
@@ -44,7 +44,7 @@ Kc_soybean = 1.15
 # trans = 1
 
 name = "maize"
-str_ = ["_sra0w"]
+str_ = ["_sra0d"]
 area = 76 * 16  # cm2
 # start_date = '1995-03-15 00:00:00'
 # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize2,2 Kc_maize)
@@ -88,9 +88,9 @@ for i in range(0, n):
     t = data[i][0]
     y = data[i][1]
     if trans > 0:
-        ax[i].plot(t, [ -potential_trans(t[i], dt_) / area for i in range(0, t.shape[0]) ], 'k', label = "potential transpiration")  # potential transpiration
+        ax[i].plot(t, 10 * np.array([ -potential_trans(t[i], dt_) / area for i in range(0, t.shape[0]) ]), 'k', label = "potential transpiration")  # potential transpiration
     y = np.maximum(y, 0)
-    ax[i].plot(t, y / area, 'g', label = "actual transpiration")  # actual transpiration  according to soil model
+    ax[i].plot(t, 10 * y / area, 'g', label = "actual transpiration")  # actual transpiration  according to soil model
     if data2 is not None:
         t = data[i][0]
         c = data2[i]
@@ -99,19 +99,19 @@ for i in range(0, n):
         cuc = np.cumsum(np.multiply(c[:-1], dt))
         print(str_[i], "cumulative nitrate uptake", cuc[-1] , "g")
 
-    ax[i].set_ylabel("transpiration [cm/day]")
+    ax[i].set_ylabel("transpiration [mm/day]")
     ax[i].legend(loc = 'upper left')
     ax2 = ax[i].twinx()
     dt = np.diff(t)
     so = np.array(y) / area
     cup = np.cumsum(np.multiply(so[:-1], dt))
-    ax2.plot(t[1:], cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
-    ax2.set_ylabel("cumulative [cm]")
-    if data2 is not None:
-        ax2.plot(t[1:], 10 * cuc, 'r--', label = "cumulative nitrate uptake 0.1*[g/day]")  # cumulative transpiration (neumann)
+    ax2.plot(t[1:], 10 * cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
+    ax2.set_ylabel("cumulative [mm]")
+    # if data2 is not None:
+    #     ax2.plot(t[1:], 10 * cuc, 'r--', label = "cumulative nitrate uptake 0.1*[g/day]")  # cumulative transpiration (neumann)
 
     ax2.legend(loc = 'center right')
-    print(str_[i], "cumulative water uptake", cup[-1], "cm3")
+    print(str_[i], "cumulative water uptake", cup[-1], "cm")
 
 ax[i].set_xlabel("time [day]")
 

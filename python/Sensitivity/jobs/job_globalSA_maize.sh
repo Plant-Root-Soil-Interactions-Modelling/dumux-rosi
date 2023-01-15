@@ -1,6 +1,6 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
-#SBATCH --job-name=global_sensitivity_analysis
+#SBATCH --job-name=global_maize
 #SBATCH --ntasks=700
 #SBATCH --cpus-per-task=1
 #SBATCH --exclude=node02

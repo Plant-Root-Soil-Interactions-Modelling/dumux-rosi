@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "global1_maize"
+file_name = "global_maize"
 path = "results/"
 
-analysis_time = 40  # days
+analysis_time = 20  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -46,8 +46,14 @@ data = np.zeros((len(kr_), len(kx_)))
 for i in range(0, len(kr_)):
     for j in range(0, len(kx_)):
         lind = i * len(kx_) + j
-        trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
-        data[i, j] = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
+        try:
+            trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
+            sum_trans = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
+            # print(lind, sum_trans)
+        except:
+            print(i, j, lind)
+            sum_trans = np.nan
+        data[i, j] = sum_trans
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -65,7 +71,7 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 ax = [ax]
 cmap = matplotlib.cm.get_cmap('nipy_spectral')
-im = ax[0].imshow(data, cmap = cmap, aspect = 'auto', extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]], interpolation = 'bicubic')  # vmin = 0., vmax = 1.e-3,
+im = ax[0].imshow(data, cmap = cmap, aspect = 'auto', interpolation = 'nearest')  # vmin = 0., vmax = 1.e-3, extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]],
 ax[0].set_ylabel("kr scale")
 ax[0].set_xlabel("kx scale")
 cb = fig.colorbar(im, orientation = 'vertical', label = "water uptake")

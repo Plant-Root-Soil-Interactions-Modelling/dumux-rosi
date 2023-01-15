@@ -1,6 +1,6 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
-#SBATCH --job-name=local_sensitivity_analysis
+#SBATCH --job-name=local_maize
 #SBATCH --ntasks=128
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1

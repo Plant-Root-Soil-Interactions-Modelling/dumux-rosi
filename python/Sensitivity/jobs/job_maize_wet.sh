@@ -1,6 +1,6 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
-#SBATCH --job-name=single_maize
+#SBATCH --job-name=single_maize_wet
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --exclude=node02
