@@ -70,6 +70,7 @@ def create_table(filename, soil):
 if __name__ == "__main__":
 
     # from file "Van Genuchten.xls"
+    soil = {}
     soil[0] = [0.0639, 0.3698, 0.0096, 1.4646, 4.47]
     soil[1] = [0.0619, 0.3417, 0.0132, 1.3258, 2.03]
     soil[36] = [0.0760, 0.3863, 0.0091, 1.4430, 2.99]

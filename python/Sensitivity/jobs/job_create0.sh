@@ -1,6 +1,6 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
-#SBATCH --job-name=single_soybean
+#SBATCH --job-name=create_envirotype0
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --exclude=node02

@@ -38,11 +38,11 @@ colors = prop_cycle.by_key()['color']
 def vg_enviro_type(i:int):
     """ Van Genuchten parameter for enviro-types, called by maize() and soybean() """
     soil = {}
-    soil[0] = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
-    soil[1] = [0.0874, 0.5359, 0.0087, 1.5231, 93]
-    soil[36] = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
-    soil[5] = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
-    soil[59] = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
+    soil[0] = [0.0639, 0.3698, 0.0096, 1.4646, 4.47]
+    soil[1] = [0.0619, 0.3417, 0.0132, 1.3258, 2.03]
+    soil[36] = [0.0760, 0.3863, 0.0091, 1.4430, 2.99]
+    soil[5] = [ 0.0451, 0.3721, 0.0325, 1.4393, 34.03]
+    soil[59] = [0.0534, 0.3744, 0.0171, 1.4138, 13.09]
     table_name = "envirotype{:s}".format(str(i))
     return soil[i], table_name
 
@@ -92,10 +92,10 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     """
     dt = 3600. / (24.*3600)
     z_ = [0., -30., -30., -200.]  # initial nitrate: top soil layer of 30 cm
-    v_ = 0.*np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
+    v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
     f_time = 17  # initial fertilisation time: days before planting
     f1 = 4.08e-4  # initial fertilisation amount g/cm2
-    nit_flux = 1.e-7 * (75 * 16 * 1)  # nitrification rate [g/day]
+    nit_flux = 0 * 1.e-7 * (75 * 16 * 1)  # nitrification rate [g/day]
 
     start_date2 = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
     end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')

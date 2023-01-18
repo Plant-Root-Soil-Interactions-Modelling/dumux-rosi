@@ -85,7 +85,7 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
     if isinstance(sra_table_lookup, RegularGridInterpolator):
         root_interface = soil_root_interface_table  # function defined above
     else:
-        # raise
+        raise
         root_interface = soil_root_interface  # function defined above
 
     start_time = timeit.default_timer()
