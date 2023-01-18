@@ -43,7 +43,7 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 # sim_time = 95
 
 name = "maize"
-str_ = "_sra0d"
+str_ = "_sra0d_half"
 Kc = Kc_maize
 lai = evap.lai_maize2
 ylim_ = None  # -10

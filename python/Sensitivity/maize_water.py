@@ -10,11 +10,12 @@ import vtk_plot as vp
 import scenario_setup as scenario
 import evapotranspiration as evap
 import sra
+import van_genuchten as vg
 
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
 
-sim_time = 95  # 47  # 95  #  [day]
+sim_time = 25  # 47  # 95  #  [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -27,7 +28,10 @@ trans_maize = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap
 
 """ initialize """
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_, wet = False)  # , times = x_, net_inf = y_
-sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
+# sra_table_lookup = sra.open_sra_lookup("data/" + table_name)
+sra_table_lookup = vg.Parameters([0.0639, 0.3698, 0.0096, 1.4646, 4.47])
+vg.create_mfp_lookup(sra_table_lookup, wilting_point = -15000, n = 15001)
+# sra_table_lookup.plot_retention_curve()
 
 xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
@@ -50,6 +54,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("maize_sra0d", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+scenario.write_files("maize_sra0d_half", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

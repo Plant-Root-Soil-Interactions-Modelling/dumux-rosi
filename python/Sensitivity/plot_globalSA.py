@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "global_maize"
+file_name = "global_soybean"
 path = "results/"
 
-analysis_time = 20  # days
+analysis_time = 100  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 

@@ -70,19 +70,15 @@ def create_table(filename, soil):
 if __name__ == "__main__":
 
     # from file "Van Genuchten.xls"
+    soil[0] = [0.0639, 0.3698, 0.0096, 1.4646, 4.47]
+    soil[1] = [0.0619, 0.3417, 0.0132, 1.3258, 2.03]
+    soil[36] = [0.0760, 0.3863, 0.0091, 1.4430, 2.99]
+    soil[5] = [ 0.0451, 0.3721, 0.0325, 1.4393, 34.03]
+    soil[59] = [0.0534, 0.3744, 0.0171, 1.4138, 13.09]
 
-    # soil0 = [0.0809, 0.52, 0.0071, 1.5734, 99.49]
-    # create_table("envirotype0", soil0)
-
-    # soil1 = [0.0874, 0.5359, 0.0087, 1.5231, 93]
-    # create_table("envirotype1", soil1)
-
-    # soil36 = [0.0942, 0.5569, 0.0089, 1.4974, 87.79]
-    # create_table("envirotype36", soil36)
-
-    soil5 = [0.0539, 0.5193, 0.024, 1.4046, 208.78]
-    create_table("data/envirotype5", soil5)
-
-    # soil59 = [0.0675, 0.5109, 0.0111, 1.4756, 107.63]
-    # create_table("envirotype59", soil59)
+    create_table("envirotype0", soil[0])
+    # create_table("envirotype1", soil[1])
+    # create_table("envirotype36", soil[36])
+    # create_table("data/envirotype5", soil[5])
+    # create_table("envirotype59", soil[59])
 
