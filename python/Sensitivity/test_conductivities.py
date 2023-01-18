@@ -21,8 +21,10 @@ r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, fname)  # pa
 
 # # kr = 1.e-4
 # # kx = 1.e-3
+
 # scenario.init_lupine_conductivities(r)
-# # # scenario.init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1, dt0 = 30., dt1 = 17., kr_f = 0.25, kx_f = 5.)
+#  scenario.init_dynamic_simple_growth(r, kr0, kr1, kx0, kx1, dt0 = 30., dt1 = 17., kr_f = 0.25, kx_f = 5.)
+
 # # scenario.init_lupine_conductivities2(r)
 # r.plot_conductivities(monocot = False, axes_ind = [1, 4], lateral_ind = [2, 3])  # for soy
 

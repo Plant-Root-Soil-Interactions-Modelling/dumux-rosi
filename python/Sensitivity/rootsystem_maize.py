@@ -27,7 +27,7 @@ colors = prop_cycle.by_key()['color']
 
 # typical domain for maize
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
-simtime = 95  # 1.* 95  # between 90-100 days
+simtime = 30  # 1.* 95  # between 90-100 days
 
 rs = pb.MappedRootSystem()  # RootSystem
 rs.setRectangularGrid(pb.Vector3d(100 * min_b[0], 100 * min_b[1], min_b[2]), pb.Vector3d(100 * max_b[0], 100 * max_b[1], max_b[2]),
@@ -166,14 +166,15 @@ ana.addConductivities(r, simtime)
 ana.addAge(simtime)
 ana.addCellIds(rs.mappedSegments())
 
+vp.plot_roots(ana, "subType", name)
 # vp.plot_roots(ana, "cell_id", name)
 # vp.plot_roots(ana, "kr", name + "_kr")
 # vp.plot_roots(ana, "kx", name + "_kx")
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
-data = ana.data["cell_id"]
-print(np.min(data), np.max(data))
-# vp.plot_roots_and_soil(rs.mappedSegments(), "cell_id", data, s, True, min_b, max_b, cell_number, "dummy")
-vp.plot_roots(ana, "cell_id")
+# s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
+# data = ana.data["cell_id"]
+# print(np.min(data), np.max(data))
+# # vp.plot_roots_and_soil(rs.mappedSegments(), "cell_id", data, s, True, min_b, max_b, cell_number, "dummy")
+# vp.plot_roots(ana, "cell_id")
 
 orders = np.array(rs.getParameter("subType"))
 print("\nnumber of roots", len(rs.getRoots()))

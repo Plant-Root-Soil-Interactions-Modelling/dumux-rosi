@@ -21,12 +21,12 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 # lai = evap.lai_maize2
 # ylim_ = None  # -10
 
-name = "soybean"
-str_ = "_sra0d"
-Kc = Kc_soybean
-lai = evap.lai_soybean2
-ylim_ = None
-sim_time = 87.5
+# name = "soybean"
+# str_ = "_sra0d"
+# Kc = Kc_soybean
+# lai = evap.lai_soybean2
+# ylim_ = None
+# sim_time = 87.5
 
 # name = "local_soybean"
 # str_ = "1"
@@ -42,14 +42,14 @@ sim_time = 87.5
 # ylim_ = None
 # sim_time = 95
 
-# name = "maize"
-# str_ = "_sra0d"
-# Kc = Kc_maize
-# lai = evap.lai_maize2
-# ylim_ = None  # -10
-# sim_time = 95
+name = "maize"
+str_ = "_sra0d"
+Kc = Kc_maize
+lai = evap.lai_maize2
+ylim_ = None  # -10
+sim_time = 95
 
-fname = "soil_" + name + str_
+fname = "soilc_" + name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -96,7 +96,7 @@ data = data[:abs(int(depths[-1] - 10)),:]
 if fname.startswith("soilc_"):
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
-    bar = ax[0].bar(t_, 10 * np.array(y_), 0.4 / 24.)
+    bar = ax[0].bar(t_, 10 * np.array(y_), 1 / 24.)
     ax[0].set_ylabel("net inf [mm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
