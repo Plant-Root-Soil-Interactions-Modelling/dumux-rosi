@@ -117,8 +117,8 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     s.setVGParameters([soil_])
     s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     # s.setTopBC("noflux")
-    # s.setBotBC("freeDrainage")
-    s.setBotBC("noflux")  # to approximate deep drainage
+    s.setBotBC("freeDrainage")
+    # s.setBotBC("noflux")  # to approximate deep drainage
     # hard coded initial fertilizer application
     sol_times = np.array([0., sim_time - f_time, sim_time - f_time, sim_time - f_time + 1, sim_time - f_time + 1, 1.e3])
     sol_influx = -np.array([0., 0., f1, f1, 0., 0.])  # g/(cm2 day)
@@ -197,7 +197,7 @@ def plot_initial_soil(start_date, end_date):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -1.e3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     # vmin = -1000, vmax = 0,
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
@@ -263,6 +263,6 @@ if __name__ == '__main__':
     plot_initial_soil(start_date, end_date)
 
     # write initial soil conditions
-    np.save("data/initial_potential.npy", h)
-    np.save("data/initial_concentration.npy", c)
+    # np.save("data/initial_potential.npy", h)
+    # np.save("data/initial_concentration.npy", c)
 

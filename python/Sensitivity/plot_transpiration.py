@@ -13,7 +13,7 @@ Kc_maize = 1.2
 Kc_soybean = 1.15
 
 # name = "soybean"
-# str_ = ["_sra0d"]
+# str_ = ["_sra0d_half"]
 # area = 76 * 3
 # # start_date = '1995-03-15 00:00:00'
 # # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
@@ -44,7 +44,7 @@ Kc_soybean = 1.15
 # trans = 1
 
 name = "maize"
-str_ = ["_sra0d_half"]
+str_ = ["_sra0w_half"]
 area = 76 * 16  # cm2
 # start_date = '1995-03-15 00:00:00'
 # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize2,2 Kc_maize)

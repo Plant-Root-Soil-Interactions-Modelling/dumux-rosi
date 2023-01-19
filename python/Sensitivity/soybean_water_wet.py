@@ -11,7 +11,7 @@ import sra
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 
-sim_time = 87.5  # 44  # 87.5  # [day]
+sim_time = 87.5  # 87.5  # 44  # 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data

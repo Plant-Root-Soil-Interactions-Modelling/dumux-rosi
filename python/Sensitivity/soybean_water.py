@@ -11,7 +11,7 @@ import sra
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 
-sim_time = 87.5  # 44  # 87.5  # [day]
+sim_time = 87.5  # 87.5  # 44  # 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -48,6 +48,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("soybean_sra0d_fd", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+scenario.write_files("soybean_sra0d", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")
