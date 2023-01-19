@@ -225,7 +225,7 @@ def read_ranges(file_name):
 
 def local_soybean():
     root_type = "soybean"
-    file_name = "local_soybean_fd"
+    file_name = "local_soybean"
     enviro_type = 0
     sim_time = 87.5
 
@@ -247,7 +247,7 @@ def local_soybean():
 
 def local_maize():
     root_type = "maize"
-    file_name = "local_maize_fd"
+    file_name = "local_maize"
     enviro_type = 0
     sim_time = 95
 
@@ -332,6 +332,8 @@ def global1_maize():
 
 
 if __name__ == "__main__":
+
+    # local_maize()
 
     i = int(sys.argv[1])
 
