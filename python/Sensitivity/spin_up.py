@@ -117,8 +117,8 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     s.setVGParameters([soil_])
     s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     # s.setTopBC("noflux")
-    s.setBotBC("freeDrainage")
-    # s.setBotBC("noflux")  # to approximate deep drainage
+    # s.setBotBC("freeDrainage")
+    s.setBotBC("noflux")  # to approximate deep drainage
     # hard coded initial fertilizer application
     sol_times = np.array([0., sim_time - f_time, sim_time - f_time, sim_time - f_time + 1, sim_time - f_time + 1, 1.e3])
     sol_influx = -np.array([0., 0., f1, f1, 0., 0.])  # g/(cm2 day)

@@ -235,12 +235,8 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         f0 = 4.08e-4  # g/cm2 (90)
         f1 = 2.27e-5  # g/cm2 (5)
         f2 = 5.43e-4  # g/cm2 (120)
-        if not wet:
-            sol_times = np.array([0., 1., 1., 50., 50., 51., 51., 1.e3])
-            sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0.])  # g/(cm2 day)
-        else:
-            sol_times = np.array([0., 1., 1., 50., 50., 51., 51., 1.e3])
-            sol_influx = -np.array([f1 + f0, f1 + f0, 0., 0., f2, f2, 0., 0.])  # g/(cm2 day)
+        sol_times = np.array([0., 1., 1., 50., 50., 51., 51., 1.e3])
+        sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0.])  # g/(cm2 day)
         s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
         s.setBotBC_solute("outflow", 0.)
 

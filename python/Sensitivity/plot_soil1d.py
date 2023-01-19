@@ -49,7 +49,7 @@ lai = evap.lai_maize2
 ylim_ = None  # -10
 sim_time = 95
 
-fname = "soil_" + name + str_
+fname = "soilc_" + name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = '2021-05-10 00:00:00'  # INARI csv data
