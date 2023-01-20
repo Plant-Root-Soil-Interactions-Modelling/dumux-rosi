@@ -125,9 +125,13 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
     kx0 = np.array([[0., 0.000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
     kx1 = np.array([[0., 0.000864], [5., 0.000864], [10., 0.000864], [12., 0.006048], [20., 0.006048], [23., 0.0173], [300., 0.0173]])  # *10!
 
-    r.setKrTables([kr00[:, 1], skr * kr0[:, 1], skr * kr1[:, 1], skr * kr1[:, 1], skr * kr0[:, 1], skr * kr0[:, 1]],
+    kr01 = np.minimum(skr * kr0[:, 1], 1.)
+    kr11 = np.minimum(skr * kr1[:, 1], 1.)
+    r.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
-    r.setKxTables([kx00[:, 1], skx * kx0[:, 1], skx * kx1[:, 1], skx * kx1[:, 1], skx * kx0[:, 1], skx * kx0[:, 1]],
+    kx01 = np.minimum(skx * kx0[:, 1], 1.)
+    kx11 = np.minimum(skx * kx1[:, 1], 1.)
+    r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
@@ -169,9 +173,14 @@ def init_lupine_conductivities(r, skr = 1., skx = 1.):
     kx1 = np.array([[0., 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03],
                     [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03],
                     [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
-    r.setKrTables([kr00[:, 1], skr * kr0[:, 1], skr * kr1[:, 1], skr * kr1[:, 1], skr * kr0[:, 1], skr * kr0[:, 1]],
+
+    kr01 = np.minimum(skr * kr0[:, 1], 1.)
+    kr11 = np.minimum(skr * kr1[:, 1], 1.)
+    r.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
-    r.setKxTables([kx00[:, 1], skx * kx0[:, 1], skx * kx1[:, 1], skx * kx1[:, 1], skx * kx0[:, 1], skx * kx0[:, 1]],
+    kx01 = np.minimum(skx * kx0[:, 1], 1.)
+    kx11 = np.minimum(skx * kx1[:, 1], 1.)
+    r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
@@ -220,11 +229,10 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3) (nitrate 62 g/mol)
         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
 
-    if wet:
-        s.setLinearIC(-300., -100.)
-
     # BC
     if times is not None:
+        if wet:
+            net_inf[net_inf > 0] = net_inf[net_inf > 0] * 1.2  # increase precipitation for 20%
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
@@ -252,9 +260,8 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     # IC
-    if not wet:
-        h = np.load("data/initial_potential.npy")
-        s.setInitialConditionHead(h)  # cm
+    h = np.load("data/initial_potential.npy")
+    s.setInitialConditionHead(h)  # cm
 
     if type == 2:
         c = np.load("data/initial_concentration.npy")  # kg/m3

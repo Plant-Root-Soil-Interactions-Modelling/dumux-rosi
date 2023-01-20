@@ -45,13 +45,14 @@ print("reading global analysis")
 data = np.zeros((len(kr_), len(kx_)))
 for i in range(0, len(kr_)):
     for j in range(0, len(kx_)):
-        lind = i * len(kx_) + j
+        lind = 2 + i * len(kx_) + j
+        print(lind)
         try:
             trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
             sum_trans = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
             # print(lind, sum_trans)
         except:
-            print(i, j, lind)
+            print(lind, i, j)
             sum_trans = np.nan
         data[i, j] = sum_trans
 
