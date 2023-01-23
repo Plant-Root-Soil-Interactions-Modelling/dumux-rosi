@@ -233,6 +233,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     if times is not None:
         if wet:
             net_inf[net_inf > 0] = net_inf[net_inf > 0] * 1.2  # increase precipitation for 20%
+            net_inf[net_inf < 0] = net_inf[net_inf < 0] * 0.8 # decrease evaporation for 20%
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
