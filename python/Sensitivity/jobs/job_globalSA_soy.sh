@@ -1,7 +1,7 @@
 #!/bin/bash                                                                                                                                                
 #                                                                                                                                                          
 #SBATCH --job-name=global_soy
-#SBATCH --ntasks=700
+#SBATCH --ntasks=128
 #SBATCH --cpus-per-task=1
 #SBATCH --exclude=node02
 #SBATCH --partition=cpu256
@@ -12,4 +12,4 @@
  
 cd ..
 module load openmpi/4.1.4
-mpirun -n 700 python3 run_SA.py 2
+mpirun -n 128 python3 run_SA.py 2
