@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "global_soybean"
+file_name = "global_maize"
 path = "results/"
 
-analysis_time = 100  # days
+analysis_time = 20  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -22,7 +22,7 @@ kx_ = ranges[1]
 n = len(kr_) * len(kx_)
 print(n)
 
-trans_ = np.load(path + "transpiration_" + file_name + "2" + ".npy")
+trans_ = np.load(path + "transpiration_" + file_name + "3" + ".npy")
 times = trans_[0,:]
 print("Simulation time from", min(times), "to ", max(times), "days")
 
@@ -41,11 +41,12 @@ dt_ = np.diff(times[:ind])
 
 print("index is", ind, "from", len(times))
 
+sum_trans = 0
 print("reading global analysis")
 data = np.zeros((len(kr_), len(kx_)))
 for i in range(0, len(kr_)):
     for j in range(0, len(kx_)):
-        lind = 2 + i * len(kx_) + j
+        lind = i * len(kx_) + j
         print(lind)
         try:
             trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
@@ -53,7 +54,7 @@ for i in range(0, len(kr_)):
             # print(lind, sum_trans)
         except:
             print(lind, i, j)
-            sum_trans = np.nan
+            # sum_trans = np.nan
         data[i, j] = sum_trans
 
 """ font sizes """
@@ -72,7 +73,7 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 ax = [ax]
 cmap = matplotlib.cm.get_cmap('nipy_spectral')
-im = ax[0].imshow(data, cmap = cmap, aspect = 'auto', interpolation = 'nearest')  # vmin = 0., vmax = 1.e-3, extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]],
+im = ax[0].imshow(data[:,1:], cmap = cmap, aspect = 'auto', interpolation = 'nearest')  # vmin = 0., vmax = 1.e-3, extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]],
 ax[0].set_ylabel("kr scale")
 ax[0].set_xlabel("kx scale")
 cb = fig.colorbar(im, orientation = 'vertical', label = "water uptake")

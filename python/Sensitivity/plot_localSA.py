@@ -19,7 +19,7 @@ def start_index(ind, ranges):
 
 """ def SA """
 # file_name = "local_soybean"
-file_name = "local_soybean"
+file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
 not_xlog = [5]
@@ -122,8 +122,8 @@ for lind in range(0, len(names)):
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
-        ax.flat[ac].plot(ranges[lind], trans, label = "water")
-        ax.flat[ac].plot(ranges[lind], nitrate, label = "nitrate")
+        ax.flat[ac].plot(ranges[lind], trans,'*-', label = "water")
+        ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 

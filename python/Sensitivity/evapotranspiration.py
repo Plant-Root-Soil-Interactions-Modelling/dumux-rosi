@@ -354,11 +354,6 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     evap = etc - tpot
     evap = -evap
     net_inf = precip + evap
-    print()
-    print("total precip", np.sum(precip) * 10, "mm")
-    print("total evaporation", np.sum(evap) * 10, "mm")
-    print("total net_inf", np.sum(net_inf) * 10, "mm")
-    print()
 
     # fig, ax = plt.subplots(3, figsize = (18, 10))
     # ax[0].bar(t_, precip * 10, width = 1. / 24., label = "precipiation")
@@ -389,9 +384,9 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     return np.array(x_), np.array(y_)
 
 
-def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 1.e-5):
+def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.):
     """ adds a consant nitrate source @param nit_flux due to nitrification [g/day] """
-    z_ = np.linspace(-0.5, -89.5, 90)
+    z_ = np.linspace(-0.5, -29.5, 30)  # top 30 cm layers
     for z in z_:
         i = s.pick([0, 0, z])  # cell index
         if i in soil_sol_fluxes:
