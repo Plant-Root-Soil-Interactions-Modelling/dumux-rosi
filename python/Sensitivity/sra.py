@@ -102,6 +102,9 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
     segs = rs.segments
     ns = len(segs)
     mapping = rs.getSegmentMapper()  # because seg2cell is a dict
+    
+    print(mapping)
+    
     for i in range(0, len(segs)):
         if segs[i].x == 0:
             collar_ind = i  # segment index of root collar
