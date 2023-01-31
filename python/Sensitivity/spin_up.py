@@ -92,7 +92,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     """
     dt = 3600. / (24.*3600)
     z_ = [0., -30., -30., -200.]  # initial nitrate: top soil layer of 30 cm
-    v_ = 0*np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
+    v_ = 0 * np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
     f_time = 17  # initial fertilisation time: days before planting
     f1 = 4.08e-4  # initial fertilisation amount g/cm2
     nit_flux = 1.e-7 * (75 * 16 * 1)  # nitrification rate [g/day]
@@ -180,7 +180,7 @@ def plot_initial_soil(start_date, end_date):
     times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
 
     h = np.load("data/initial_concentration.npy")
-    print("mean initial",np.mean(h))
+    print("mean initial", np.mean(h))
 
     h = np.load("data/initial_potential_all.npy")
     c = np.load("data/initial_concentration_all.npy")
@@ -262,10 +262,10 @@ if __name__ == '__main__':
     print("theta at -400", vg.water_content(-400, s))
 
     # cell_number = [1, 1, 800] # to check stability regarding spatial resolution
-    h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, -301., -100., start_date, end_date)
+    # h, c = create_initial_soil(soil_, min_b , max_b , cell_number, area, -301., -100., start_date, end_date)
     plot_initial_soil(start_date, end_date)
 
     # write initial soil conditions
-    np.save("data/initial_potential.npy", h)
-    np.save("data/initial_concentration.npy", c)
+    # np.save("data/initial_potential.npy", h)
+    # np.save("data/initial_concentration.npy", c)
 

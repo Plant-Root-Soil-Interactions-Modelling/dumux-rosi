@@ -47,7 +47,7 @@ def make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
 def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     """ distribute jobs to MPI ranks """
 
-    random.shuffle(jobs)  # apply magic (otherwise hard or easy jobs might aggregate)
+    # random.shuffle(jobs)  # apply magic (otherwise hard or easy jobs might aggregate)
 
     jobs = np.array(jobs)
     b = jobs.shape[0]

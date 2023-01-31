@@ -74,9 +74,11 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
     sra_table_lookup             potentials a root soil interface    
     sim_time                     simulation time
     dt                           time step
-    
-    TODO recyle factorisation of left hand side ... 
+    trans_f                      potential transpiration function 
+    rs_age                       initial root system age  
+    type_                        1 = water only, 2 = water and nitrate
     """
+
     wilting_point = -15000  # cm
     skip = 10  # for output and results, skip iteration
     max_iter = 10  # maximum for fix point iteration
@@ -102,9 +104,7 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
     segs = rs.segments
     ns = len(segs)
     mapping = rs.getSegmentMapper()  # because seg2cell is a dict
-    
-    print(mapping)
-    
+
     for i in range(0, len(segs)):
         if segs[i].x == 0:
             collar_ind = i  # segment index of root collar
