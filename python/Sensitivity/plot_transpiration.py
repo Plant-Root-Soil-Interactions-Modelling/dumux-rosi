@@ -98,7 +98,7 @@ for i in range(0, n):
     if data2 is not None:
         t = data[i][0]
         c = data2[i]
-        ax[i].plot(t, 3.5*10 * c, 'r:', label = "nitrate uptake 1.e-2*[g/day]")  # actual transpiration  according to soil model
+        ax[i].plot(t, 10 * c, 'r:', label = "nitrate uptake 1.e-2*[g/day]")  # actual transpiration  according to soil model
         dt = np.diff(t)
         cuc = np.cumsum(np.multiply(c[:-1], dt))
         print(str_[i], "cumulative nitrate uptake", cuc[-1] , "g", c[0])
@@ -109,12 +109,12 @@ for i in range(0, n):
     dt = np.diff(t)
     so = np.array(y) / area
     cup = np.cumsum(np.multiply(so[:-1], dt))
-    cum_pot = np.cumsum(np.multiply(pt[:-1], dt))    
+    cum_pot = np.cumsum(np.multiply(pt[:-1], dt))
     ax2.plot(t[1:], 10 * cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
     print("cumulative pot transp", cum_pot[-1])
     ax2.set_ylabel("cumulative [mm]")
     if data2 is not None:
-        ax2.plot(t[1:], 3.5*10 * cuc, 'r--', label = "cumulative nitrate uptake 1.e-2*[g]")  # cumulative transpiration (neumann)
+        ax2.plot(t[1:], 10 * cuc, 'r--', label = "cumulative nitrate uptake 1.e-2*[g]")  # cumulative transpiration (neumann)
 
     ax2.legend(loc = 'center right')
     print(str_[i], "cumulative water uptake", cup[-1], "cm")

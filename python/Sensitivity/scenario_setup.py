@@ -120,10 +120,12 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
     kr00 = np.array([[0., 0.]])  # artificial shoot
     kx00 = np.array([[0., 1.e3]])  # artificial shoot
-    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.00181], [8., 0.00181], [10, 0.000648], [18, 0.000648], [25, 0.000173], [300, 0.000173]])  # *10!
-    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.00181], [10., 0.00181], [16, 0.000173], [300, 0.000173]])  # *10!
+
+    kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [8., 0.000181], [10, 0.0000648], [18, 0.0000648], [25, 0.0000173], [300, 0.0000173]])
+    kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [10., 0.000181], [16, 0.0000173], [300, 0.0000173]])
+
     kx0 = np.array([[0., 0.000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
-    kx1 = np.array([[0., 0.000864], [5., 0.000864], [10., 0.000864], [12., 0.006048], [20., 0.006048], [23., 0.0173], [300., 0.0173]])  # *10!
+    kx1 = np.array([[0., 0.000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
 
     kr01 = np.minimum(skr * kr0[:, 1], 1.)
     kr11 = np.minimum(skr * kr1[:, 1], 1.)
@@ -233,7 +235,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     if times is not None:
         if wet:
             net_inf[net_inf > 0] = net_inf[net_inf > 0] * 1.2  # increase precipitation for 20%
-            net_inf[net_inf < 0] = net_inf[net_inf < 0] * 0.8 # decrease evaporation for 20%
+            net_inf[net_inf < 0] = net_inf[net_inf < 0] * 0.8  # decrease evaporation for 20%
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
