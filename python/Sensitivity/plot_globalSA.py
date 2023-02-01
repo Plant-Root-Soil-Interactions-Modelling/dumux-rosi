@@ -10,15 +10,15 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "global_soybean_red"
+file_name = "global_maize"
 path = "results/"
 
 analysis_time = 30  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
-kr_ = ranges[0]
-kx_ = ranges[1]
+kx_ = ranges[0]
+kr_ = ranges[1]
 n = len(kr_) * len(kx_)
 print(n)
 
@@ -44,9 +44,9 @@ print("index is", ind, "from", len(times))
 sum_trans = 0
 print("reading global analysis")
 data = np.zeros((len(kr_), len(kx_)))
-for i in range(0, len(kr_)):
-    for j in range(0, len(kx_)):
-        lind = i * len(kx_) + j
+for i in range(0, len(kx_)):
+    for j in range(0, len(kr_)):
+        lind = i * len(kr_) + j
         print(lind)
         try:
             trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
@@ -70,12 +70,14 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
+ext_ = [np.log10(kx_[0]) , np.log10(kx_[-1]), np.log10(kr_[-1]), np.log10(kr_[0])]
+
 fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 ax = [ax]
 cmap = matplotlib.cm.get_cmap('nipy_spectral')
-im = ax[0].imshow(data[:,1:], cmap = cmap, aspect = 'auto', interpolation = 'nearest')  # vmin = 0., vmax = 1.e-3, extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]],
-ax[0].set_ylabel("kr scale")
-ax[0].set_xlabel("kx scale")
+im = ax[0].imshow(data, cmap = cmap, aspect = 'auto', interpolation = 'nearest', extent = ext_)  # vmin = 0., vmax = 1.e-3, extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]],
+ax[0].set_xlabel("kr scale (10$^x$)")
+ax[0].set_ylabel("kx scale (10$^x$)")
 cb = fig.colorbar(im, orientation = 'vertical', label = "water uptake")
 plt.show()
 
