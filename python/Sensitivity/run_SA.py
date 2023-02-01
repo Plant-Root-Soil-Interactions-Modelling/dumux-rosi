@@ -312,7 +312,7 @@ def global1_soybean():
 
 def global1_maize():
     root_type = "maize"
-    file_name = "global_maize_inc"
+    file_name = "global_maize_inc2"
     enviro_type = 0
     sim_time = 30
 
@@ -320,8 +320,8 @@ def global1_maize():
         theta_ = theta = 85. / 180 * np.pi
         # kx = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
         # kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
-        kx = np.array([10 ** x for x in np.linspace(0., 2., 25)])  # _inc
-        kr = np.array([10 ** x for x in np.linspace(0., 2., 25)])
+        kx = np.array([10 ** x for x in np.linspace(-1., 1., 10)])  # _inc
+        kr = np.array([10 ** x for x in np.linspace(0., 4., 50)])
         write_ranges("results/" + file_name,
                      ["kr", "kx"],
                      [ kx , kr ])

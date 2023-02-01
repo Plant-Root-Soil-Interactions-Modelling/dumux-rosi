@@ -45,7 +45,7 @@ names[5] = "insertion angle, brace and seminals"
 names[6] = "root radii scale"
 names[7] = "brace root delay"
 
-trans_ = np.load(path + "transpiration_" + file_name + "1" + ".npy")
+trans_ = np.load(path + "transpiration_" + file_name + "2" + ".npy")
 times = trans_[0,:]
 print("Simulation time from", min(times), "to ", max(times), "days")
 

@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "global_maize"
+file_name = "global_soybean_red"
 path = "results/"
 
-analysis_time = 20  # days
+analysis_time = 30  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -22,7 +22,7 @@ kx_ = ranges[1]
 n = len(kr_) * len(kx_)
 print(n)
 
-trans_ = np.load(path + "transpiration_" + file_name + "3" + ".npy")
+trans_ = np.load(path + "transpiration_" + file_name + "2" + ".npy")
 times = trans_[0,:]
 print("Simulation time from", min(times), "to ", max(times), "days")
 
@@ -54,7 +54,7 @@ for i in range(0, len(kr_)):
             # print(lind, sum_trans)
         except:
             print(lind, i, j)
-            # sum_trans = np.nan
+            sum_trans = np.nan
         data[i, j] = sum_trans
 
 """ font sizes """
