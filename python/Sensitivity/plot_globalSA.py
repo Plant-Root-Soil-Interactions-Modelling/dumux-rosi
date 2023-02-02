@@ -17,8 +17,8 @@ analysis_time = 30  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
-kx_ = ranges[0]
-kr_ = ranges[1]
+kr_ = ranges[0]   # 0 is y-axis
+kx_ = ranges[1]   # 1 is x-axis (in imshow)
 n = len(kr_) * len(kx_)
 print(n)
 
@@ -44,9 +44,9 @@ print("index is", ind, "from", len(times))
 sum_trans = 0
 print("reading global analysis")
 data = np.zeros((len(kr_), len(kx_)))
-for i in range(0, len(kx_)):
-    for j in range(0, len(kr_)):
-        lind = i * len(kr_) + j
+for i in range(0, len(kr_)):
+    for j in range(0, len(kx_)):
+        lind = i * len(kx_) + j
         print(lind)
         try:
             trans_ = np.load(path + "transpiration_" + file_name + str(2 + lind) + ".npy")  # TODO try catch
@@ -76,8 +76,8 @@ fig, ax = plt.subplots(1, 1, figsize = (18, 10))
 ax = [ax]
 cmap = matplotlib.cm.get_cmap('nipy_spectral')
 im = ax[0].imshow(data, cmap = cmap, aspect = 'auto', interpolation = 'nearest', extent = ext_)  # vmin = 0., vmax = 1.e-3, extent = [kx_[0] , kx_[-1], kr_[-1], kr_[0]],
-ax[0].set_xlabel("kr scale (10$^x$)")
-ax[0].set_ylabel("kx scale (10$^x$)")
+ax[0].set_ylabel("kr scale (10$^x$)")
+ax[0].set_xlabel("kx scale (10$^x$)")
 cb = fig.colorbar(im, orientation = 'vertical', label = "water uptake")
 plt.show()
 
