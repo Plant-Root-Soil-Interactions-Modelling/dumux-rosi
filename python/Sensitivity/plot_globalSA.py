@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import run_SA as sa
 
 """ def SA """
-file_name = "global_maize"
+file_name = "global_maize_inc2"
 path = "results/"
 
 analysis_time = 30  # days
@@ -56,6 +56,8 @@ for i in range(0, len(kr_)):
             print(lind, i, j)
             sum_trans = np.nan
         data[i, j] = sum_trans
+
+print(data.shape)
 
 """ font sizes """
 SMALL_SIZE = 12
