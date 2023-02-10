@@ -52,12 +52,14 @@ def set_scenario1D(sstr, doussan = False):
     """ Initialize macroscopic soil model """
     s = RichardsWrapper(RichardsSP())
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, True)  # [cm]
+    s.createGrid(min_b, max_b, cell_number, False)  # [cm]
     s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
     s.setTopBC("noFlux")
     s.setBotBC("noFlux")
     s.setVGParameters([soil_])
+    s.setParameter("Newton.EnableChop", "True")
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+    # s.setParameter("Soil.SourceSlope", "1000")
     s.initializeProblem()
     wilting_point = -15000  # [cm]
     s.setCriticalPressure(wilting_point)
