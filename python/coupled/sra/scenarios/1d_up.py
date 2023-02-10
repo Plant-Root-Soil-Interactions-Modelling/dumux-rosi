@@ -4,6 +4,8 @@ Jan's new scenarios with the upscaled sink (without SRA)
 1d soil, 2 cm thick layers, dynamic conductivities (see root_conductivities.py)
 """
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
+from google.protobuf.internal.descriptor_pool_test import AddDescriptorTest
+from lxml.html.builder import DD
 sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
 
 from scenario_setup import *
@@ -21,10 +23,15 @@ Initialize
 """
 
 name = "small_up0"  # name to export resutls
-sstr = "_wet"
+sstr = "_dry"
 
 r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario1D(sstr, doussan = True)
 min_b, max_b, cell_number = get_domain1D()
+
+nodes = r.get_nodes()
+
+print("first segment", r.rs.segments[0], r.rs.nodes[0])
+print("mapping of first segment", mapping[0], mapping[1])
 
 # """ for fixed root system """
 # types = r.rs.subTypes
@@ -39,39 +46,39 @@ ns = len(r.rs.segments)
 
 Id = sparse.identity(ns).tocsc()  # identity matrix
 
-print()
 kx_ = np.divide(r.getKx(sim_time), r.rs.segLength())  # / dl
 Kx = sparse.diags(kx_).tocsc()
-print("kx0", kx_[0], kx_[1])
-print("Kx", Kx.shape)
+# print("Kx", Kx.shape, Kx[0, 0], Kx[1, 1])
 
 kr_ = np.array(r.getEffKr(sim_time))  # times surface (2 a pi length)
 Kr = sparse.diags(kr_).tocsc()
-print("kr0", kr_[0], kr_[1], kr_[-1])
-print("Kr", Kr.shape)
-print()
+# print("Kr", Kr.shape, Kr[0, 0], Kr[1, 1])
 
 IM = r.get_incidence_matrix().tocsc()
 IMt = IM.transpose().tocsc()
 
 L = IMt @ Kx @ IM  # Laplacian, Hess Eqn (10)
 L = L[1:, 1:]  # == L_{N-1}
-print("L", L.shape)
+# print("L", L.shape)
 
 print("inv start")
 
 A_dirichlet = (L + Kr).tocsc()
-Ainv_dirichlet = sparse.linalg.inv(A_dirichlet)
+Ainv_dirichlet = sparse.linalg.inv(A_dirichlet).todense()  # dense
 
 A_neumann = A_dirichlet
 A_neumann[0, 0] -= kx_[0]
-Ainv_neumann = sparse.linalg.inv(A_neumann)
+Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
 
 C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
-c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0].todense() * (-kx_[0])  # # Hess (25)
+c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx_[0])  # # Hess (25)
+print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
+print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
 
 C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
-c_neumann = (Kr @ Ainv_neumann)[:, 0].todense()  # Hess (33)
+c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
+print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
+print("c_neumann", type(c_neumann), c_neumann.shape)
 
 print("inv stop")
 
@@ -94,46 +101,52 @@ sx = s.getSolutionHead()
 x_, y_, w_, cf = [], [], [], []
 psi_x_, psi_s_, sink_, psi_s2_ = [], [], [], []
 
-print(np.min(mapping), np.max(mapping))
-dd
-
 for i in range(0, NT):
 
     t = i * dt  # current simulation time
 
     """ 1. xylem model """
-    t_act = -trans * sinusoidal(t)  # potential transpiration ...
+    t_pot = -trans * sinusoidal(t)  # potential transpiration ...
+    print("t_pot", t_pot)
 
-    # per segment
     hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+    print("hs", hs.shape, np.min(hs), np.max(hs), np.argmin(hs))
+    for j in range(0, len(nodes) - 1):  # from matric to total
+        hs[j, 0] += nodes[j + 1][2]
 
-    # hx = (Ainv_neumann @ Kr).dot(hs) + Ainv_neumann[:, 0] * t_act  #   # Hess Eqn (29)
-    hx = (Ainv_dirichlet @ Kr).dot(hs) + Ainv_dirichlet[:, 0] * kx_[0] * wilting_point  #   # Hess Eqn (29)
-    print("hx", hx[0], hx[-1], hx.shape)
-    q = Kr.dot(hs - hx)
-    print("sum_q", np.sum(q), q[0], q[1])
-    print()
+    print("sx", sx.shape, np.min(sx), np.max(sx), np.argmin(sx))
 
-    # print("hs", hs.shape)
-    # print("c_neumann", c_neumann.shape)
-    # print("C_comp_neumann", C_comp_neumann.shape)
-    # print("C_comp_neumann.dot(hs)", C_comp_neumann.dot(hs).shape)
-    q_neumann = C_comp_neumann.dot(hs) + c_neumann * t_act
+    # hx = (Ainv_neumann @ Kr).dot(hs) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
+    # hx = (Ainv_dirichlet @ Kr).dot(hs) + Ainv_dirichlet[:, 0] * kx_[0] * wilting_point  #   # Hess Eqn (29)
+    # print("hx", hx.shape, hx[0], hx[-1])
+    # q = Kr.dot(hs - hx)
+    # print("sum_q", np.sum(q), q[0], q[1])
+    hx = [0]
 
-     # print("c_dirichlet", c_dirichlet.shape)
-    q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * wilting_point)
+    q_neumann = C_comp_neumann.dot(hs) + c_neumann * t_pot
+    # print("q_neumann", q_neumann.shape)
+
+    q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * -8000)
+    # print("q_dirichlet", q_dirichlet.shape)
 
     # print("q", q.shape)
     print("hs", np.min(hs), np.max(hs), hs[0], hs[1])
     # print("hx", np.min(hx), np.max(hx), hx[0], hx[1], hx.shape)
-    print("t_act", t_act)
     print("sum(q_neumann)", np.sum(q_neumann), q_neumann[0], q_neumann[1])
     print("sum(q_dirichlet)", np.sum(q_dirichlet), q_dirichlet[0], q_dirichlet[1])
 
-    if np.sum(q_dirichlet) > t_act:
-        fluxes = r.sumSegFluxes(q_dirichlet)
+    print("mapping of first segment", mapping[0], sx[mapping[0]], "soil", hs[0], "root", hx[0])
+    print("soil min", np.min(hs), "at", np.argmin(hs))
+
+    # fluxes = r.sumSegFluxes(q_dirichlet)
+    if np.sum(q_dirichlet) > t_pot:
+        print("dirichlet")
+        fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
     else:
-        fluxes = r.sumSegFluxes(q_neumann)
+        print("neumann")
+        fluxes = r.sumSegFluxes(q_neumann[:, 0])
+        # print(fluxes)
+
     # per cell
     # hs = sx to
 

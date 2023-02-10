@@ -5,10 +5,10 @@ transpiration plot (one column, number of rows as number of filenames)
 import numpy as np
 import matplotlib.pyplot as plt
 
-add_str = "_wet"
+add_str = "_dry"
 
-fnames = ["results/transpiration_" + "small_sra" + add_str,
-          "results/transpiration_" + "small_sra" + add_str,
+fnames = ["results/transpiration_" + "small_soil" + add_str,
+          "results/transpiration_" + "small_up0" + add_str,
           "results/transpiration_" + "small_agg" + add_str]
 titles = ["Cylindric", "Steady Rate Approach", "Parallel"]
 trans = 0.5 * 15 * 75  # potential transpiration cm3/day
@@ -34,7 +34,7 @@ potential_trans = lambda t: trans * sinusoidal(t)
 
 # load data
 n = len(fnames)
-data = [np.load(n_)  for n_ in fnames]
+data = [np.load(n_ + ".npy")  for n_ in fnames]
 
 fig, ax = plt.subplots(n, 1, figsize = (14, 12))
 
