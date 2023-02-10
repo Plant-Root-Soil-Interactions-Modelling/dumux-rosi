@@ -79,8 +79,8 @@ def set_scenario1D(sstr, doussan = False):
     types = r.rs.subTypes  # simplify root types
     types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
     r.rs.subTypes = list(types)
-    # r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-    #                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)  # cutting
+    r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
     agg.init_conductivities_const(r)
 
     """ coupling (map indices) """

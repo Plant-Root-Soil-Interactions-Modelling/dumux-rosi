@@ -31,6 +31,13 @@ nodes = r.get_nodes()
 print("first segment", r.rs.segments[0], r.rs.nodes[0])
 print("mapping of first segment", mapping[0], mapping[1])
 
+s_ = r.rs.segments[23]
+print("23 segment", s_, r.rs.nodes[s_.x], r.rs.nodes[s_.y])
+print("mapping of 23", mapping[23])
+print("pick -1", s.pick([0., 0., -1]))
+print("pick -2", s.pick([0., 0., -2]))
+print("pick -3", s.pick([0., 0., -2.09]))
+
 # """ for fixed root system """
 # types = r.rs.subTypes
 # inner_ = r.rs.radii
@@ -114,30 +121,34 @@ for i in range(0, NT):
 
     print("sx", sx.shape, np.min(sx), np.max(sx), np.argmin(sx))
 
-    # hx = (Ainv_neumann @ Kr).dot(hs) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
+    hx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
+
+    hx0 = hx[0, 0] + t_pot / kx_[0]  # /kx*l
+    print("hx0", hx0, hx[0, 0])
     # hx = (Ainv_dirichlet @ Kr).dot(hs) + Ainv_dirichlet[:, 0] * kx_[0] * wilting_point  #   # Hess Eqn (29)
     # print("hx", hx.shape, hx[0], hx[-1])
     # q = Kr.dot(hs - hx)
     # print("sum_q", np.sum(q), q[0], q[1])
-    hx = [0]
+    # hx = [0]
 
     q_neumann = C_comp_neumann.dot(hs) + c_neumann * t_pot
     # print("q_neumann", q_neumann.shape)
 
-    q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * -8000)
+    q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * wilting_point)
     # print("q_dirichlet", q_dirichlet.shape)
-
+    print()
     # print("q", q.shape)
-    print("hs", np.min(hs), np.max(hs), hs[0], hs[1])
+    print("soil min", np.min(hs), "at", np.argmin(hs))
+    print()
     # print("hx", np.min(hx), np.max(hx), hx[0], hx[1], hx.shape)
     print("sum(q_neumann)", np.sum(q_neumann), q_neumann[0], q_neumann[1])
     print("sum(q_dirichlet)", np.sum(q_dirichlet), q_dirichlet[0], q_dirichlet[1])
-
+    print()
     print("mapping of first segment", mapping[0], sx[mapping[0]], "soil", hs[0], "root", hx[0])
-    print("soil min", np.min(hs), "at", np.argmin(hs))
+    print("mapping of 23", mapping[23], sx[mapping[23]], "soil", hs[23], "root", hx[23])
 
     # fluxes = r.sumSegFluxes(q_dirichlet)
-    if np.sum(q_dirichlet) > t_pot:
+    if hx0 < wilting_point:
         print("dirichlet")
         fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
     else:
