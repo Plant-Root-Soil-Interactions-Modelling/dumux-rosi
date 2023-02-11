@@ -22,7 +22,8 @@ from richards import RichardsWrapper  # Python part
 import plantbox as pb
 import aggregated_rs as agg
 from root_conductivities import *
-
+import vtk_plot as vp
+from rhizo_models import plot_transpiration
 
 def sinusoidal(t):
     return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
@@ -51,7 +52,7 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7  # [day] for task b
+sim_time = 2  # [day] for task b
 age_dependent = False  # conductivities
 dt = 360. / (24 * 3600)  # [days] Time step must be very small
 skip = 1
@@ -67,7 +68,7 @@ s.setBotBC("noFlux")
 s.setVGParameters([soil])
 s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-# s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on, will change the shape of actual transpiration...
+s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on, will change the shape of actual transpiration...
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
@@ -143,19 +144,41 @@ rx = [0]
 for i in range(0, N):
 
     t_pot = -trans * sinusoidal(t)  # potential transpiration ...
-
+    print(t_pot)
+    
     hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
 
-    q_neumann = C_comp_neumann.dot(hs) + c_neumann * t_pot
-    q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * -15000)
+    print("hs", hs.shape, np.min(hs), np.max(hs), np.argmin(hs))
+    print("sx", sx.shape, np.min(sx), np.max(sx), np.argmin(sx))
 
+
+    # q_neumann = C_comp_neumann.dot(hs) + c_neumann * t_pot
+    # q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * -15000)
+    
+    print()
+    hx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
+    hx0 = hx[0, 0] + t_pot / kx_[0]  # /kx*l
+    print("hx0", hx0, hx[0, 0], hx[1, 0], hx[2, 0])
+    hxd = Ainv_dirichlet.dot(Kr.dot(hs)) + Ainv_dirichlet[:, 0] * kx_[0] * wilting_point
+    print("hxd", hxd[0, 0], hxd[1, 0], hxd[2, 0])    
+    print()
+    
+    print()
+    q_neumann = -Kr.dot(hs - hx)
+    print("q_neumann", q_neumann.shape, np.min(q_neumann), np.max(q_neumann), np.argmin(q_neumann), np.sum(q_neumann))    
+    q_dirichlet= -Kr.dot(hs - hxd) 
+    print("q_dirichlet", q_dirichlet.shape, np.min(q_dirichlet), np.max(q_dirichlet), np.argmin(q_dirichlet), np.sum(q_dirichlet))
+    # print("sum_q", np.sum(q), q[0], q[1])
+    # hx = [0]
+    print()
+    #if hx0 < wilting_point:
     if np.sum(q_dirichlet) > t_pot:
-        print("dirichlet")
+        print("dirichlet", np.sum(q_dirichlet),t_pot)
         fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
     else:
-        print("neumann")
+        print("neumann", np.sum(q_neumann), t_pot)
         fluxes = r.sumSegFluxes(q_neumann[:, 0])
 
     s.setSource(fluxes.copy())  # richards.py
@@ -183,14 +206,14 @@ for i in range(0, N):
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
 
-        """ Additional sink plot """
-        if i % 60 == 0:  # every 6h
-            ana = pb.SegmentAnalyser(r.rs)
-            fluxes = r.segFluxes(rs_age + t, rx, old_sx, False, cells = True)  # cm3/day WRONG sx, should be old sx
-            ana.addData("fluxes", fluxes)  # cut off for vizualisation
-            flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, False)
-            sink1d.append(np.array(flux1d))
-            print("\nSink integral = ", np.sum(np.array(flux1d)), "\n")
+        # """ Additional sink plot """
+        # if i % 60 == 0:  # every 6h
+        #     ana = pb.SegmentAnalyser(r.rs)
+        #     fluxes = r.segFluxes(rs_age + t, rx, old_sx, False, cells = True)  # cm3/day WRONG sx, should be old sx
+        #     ana.addData("fluxes", fluxes)  # cut off for vizualisation
+        #     flux1d = ana.distribution("fluxes", max_b[2], min_b[2], 15, False)
+        #     sink1d.append(np.array(flux1d))
+        #     print("\nSink integral = ", np.sum(np.array(flux1d)), "\n")
 
     t += dt
 
@@ -198,11 +221,12 @@ s.writeDumuxVTK(name)
 
 """ Plot """
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
-plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
+plot_transpiration(x_, y_, y_, lambda t: trans * sinusoidal(t))
 np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
-sink1d = np.array(sink1d)
-np.save("sink1d", sink1d)
-print(sink1d.shape)
-print(sink1d[-1])
+
+# vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, False, min_b, max_b, cell_number, name)  # VTK vizualisation
+# sink1d = np.array(sink1d)
+# np.save("sink1d", sink1d)
+# print(sink1d.shape)
+# print(sink1d[-1])
 
