@@ -25,6 +25,7 @@ from root_conductivities import *
 import vtk_plot as vp
 from rhizo_models import plot_transpiration
 
+
 def sinusoidal(t):
     return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
 
@@ -52,7 +53,7 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 2  # [day] for task b
+sim_time = 7.1  # [day] for task b
 age_dependent = False  # conductivities
 dt = 360. / (24 * 3600)  # [days] Time step must be very small
 skip = 1
@@ -77,6 +78,9 @@ s.setCriticalPressure(wilting_point)
 r = XylemFluxPython(fname)
 r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
+
+rs_age = np.max(r.get_ages())
+print("rs_age", rs_age)
 init_conductivities(r, age_dependent)
 
 """ Coupling (map indices) """
@@ -93,11 +97,11 @@ mapping = np.array([seg2cell[j] for j in range(0, ns)])
 """ experimental stuff """
 Id = sparse.identity(ns).tocsc()  # identity matrix
 
-kx_ = np.divide(r.getKx(sim_time), r.rs.segLength())  # / dl
+kx_ = np.divide(r.getKx(rs_age), r.rs.segLength())  # / dl
 Kx = sparse.diags(kx_).tocsc()
 # print("Kx", Kx.shape, Kx[0, 0], Kx[1, 1])
 
-kr_ = np.array(r.getEffKr(sim_time))  # times surface (2 a pi length)
+kr_ = np.array(r.getEffKr(rs_age))  # times surface (2 a pi length)
 Kr = sparse.diags(kr_).tocsc()
 # print("Kr", Kr.shape, Kr[0, 0], Kr[1, 1])
 
@@ -144,8 +148,8 @@ rx = [0]
 for i in range(0, N):
 
     t_pot = -trans * sinusoidal(t)  # potential transpiration ...
-    print(t_pot)
-    
+    print("t_pot", t_pot)
+
     hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
@@ -153,29 +157,29 @@ for i in range(0, N):
     print("hs", hs.shape, np.min(hs), np.max(hs), np.argmin(hs))
     print("sx", sx.shape, np.min(sx), np.max(sx), np.argmin(sx))
 
+    q_neumann0 = C_comp_neumann.dot(hs) + c_neumann * t_pot
+    q_dirichlet0 = -(C_comp_dirichlet.dot(hs) + c_dirichlet * -15000)
 
-    # q_neumann = C_comp_neumann.dot(hs) + c_neumann * t_pot
-    # q_dirichlet = -(C_comp_dirichlet.dot(hs) + c_dirichlet * -15000)
-    
     print()
     hx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
     hx0 = hx[0, 0] + t_pot / kx_[0]  # /kx*l
     print("hx0", hx0, hx[0, 0], hx[1, 0], hx[2, 0])
     hxd = Ainv_dirichlet.dot(Kr.dot(hs)) + Ainv_dirichlet[:, 0] * kx_[0] * wilting_point
-    print("hxd", hxd[0, 0], hxd[1, 0], hxd[2, 0])    
+    print("hxd", hxd[0, 0], hxd[1, 0], hxd[2, 0])
     print()
-    
+
     print()
     q_neumann = -Kr.dot(hs - hx)
-    print("q_neumann", q_neumann.shape, np.min(q_neumann), np.max(q_neumann), np.argmin(q_neumann), np.sum(q_neumann))    
-    q_dirichlet= -Kr.dot(hs - hxd) 
-    print("q_dirichlet", q_dirichlet.shape, np.min(q_dirichlet), np.max(q_dirichlet), np.argmin(q_dirichlet), np.sum(q_dirichlet))
+    print("q_neumann", q_neumann.shape, np.min(q_neumann), np.max(q_neumann), np.argmin(q_neumann), np.sum(q_neumann), np.sum(q_neumann0))
+    q_dirichlet = -Kr.dot(hs - hxd)
+    print("q_dirichlet", q_dirichlet.shape, np.min(q_dirichlet), np.max(q_dirichlet), np.argmin(q_dirichlet), np.sum(q_dirichlet), np.sum(q_dirichlet0))
     # print("sum_q", np.sum(q), q[0], q[1])
     # hx = [0]
     print()
-    #if hx0 < wilting_point:
+
+    # if hx0 < wilting_point:
     if np.sum(q_dirichlet) > t_pot:
-        print("dirichlet", np.sum(q_dirichlet),t_pot)
+        print("dirichlet", np.sum(q_dirichlet), t_pot)
         fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
     else:
         print("neumann", np.sum(q_neumann), t_pot)
