@@ -1,6 +1,6 @@
 """ 
 Benchmark C1.2 for a static root system in soil (1D or 3D) 
-with the classic sink using Doussan approach in HESS paper notation
+with the classic sink using Doussan approach in HESS (experimental) paper notation with no matrix inversion 
 """
 import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
 sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
@@ -16,7 +16,7 @@ from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D")
-name = "results/c12"
+name = "results/c12_"
 
 # r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D", age_dependent = True)
 # dt = 36 / (24 * 3600)  # unstable
@@ -29,31 +29,19 @@ nodes = r.get_nodes()
 ns = len(r.rs.segments)
 
 """ Doussan """
-A, Kr, Kx = r.doussan_system_matrix(rs_age)
 Id = sparse.identity(ns).tocsc()  # identity matrix
+A, Kr, Kx = r.doussan_system_matrix(rs_age)
 kx_ = np.divide(r.getKx(rs_age), r.rs.segLength())  # / dl
+A_n = A.copy()
+A_n[0, 0] -= kx_[0]
+Kr_inv = sparse.linalg.inv(Kr)
 
-print("invert matrix start")
-
-A_dirichlet = A.tocsc()
-Ainv_dirichlet = sparse.linalg.inv(A_dirichlet)  # dense
-# Ainv_dirichlet = scipy.linalg.inv(A_dirichlet) # this does not work for dense A, no idea why
-A_neumann = A_dirichlet
-A_neumann[0, 0] -= kx_[0]
-Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
-# Ainv_neumann = scipy.linalg.inv(A_neumann)
-
-C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
-c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx_[0])  # # Hess (25)
-# print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
-# print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
-
-C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
-c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
-# print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
-# print("c_neumann", type(c_neumann), c_neumann.shape)
-
-print("invert matrix stop")
+""" see HESS (experimental) """
+A_q = A @ Kr_inv
+A_nq = A_n @ Kr_inv
+B = A - Kr
+Bn = A_n - Kr
+# print("A_q", A_q.shape, "A_nq", A_nq.shape, "B", B.shape)
 
 """ Numerical solution """
 start_time = timeit.default_timer()
@@ -75,37 +63,20 @@ for i in range(0, N):
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
 
-    # print("hs", hs.shape, np.min(hs), np.max(hs), np.argmin(hs))
-    # print("sx", sx.shape, np.min(sx), np.max(sx), np.argmin(sx))
+    b = B.dot(hs)
+    b[0, 0] -= kx_[0] * wilting_point
+    q_dirichlet = -sparse.linalg.spsolve(A_q, b)
+    print("q_dirichlet", q_dirichlet.shape, np.sum(q_dirichlet))
 
-    q_dirichlet0 = -(C_comp_dirichlet.dot(hs) + c_dirichlet * wilting_point)
-
-    # print()
-    # hx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
-    # hx0 = hx[0, 0] + t_pot / kx_[0]  # /kx*l
-    # print("hx0", hx0, hx[0, 0], hx[1, 0], hx[2, 0])
-    # hxd = Ainv_dirichlet.dot(Kr.dot(hs)) + Ainv_dirichlet[:, 0] * kx_[0] * wilting_point
-    # print("hxd", hxd[0, 0], hxd[1, 0], hxd[2, 0])
-    # print()
-    #
-    # print()
-    # q_neumann = -Kr.dot(hs - hx)
-    # print("q_neumann", q_neumann.shape, np.min(q_neumann), np.max(q_neumann), np.argmin(q_neumann), np.sum(q_neumann))
-    # print("q_neumann0", q_neumann.shape, np.min(q_neumann0), np.max(q_neumann0), np.argmin(q_neumann0), np.sum(q_neumann0))
-    # q_dirichlet = -Kr.dot(hs - hxd)
-    # print("q_dirichlet", q_dirichlet.shape, np.min(q_dirichlet), np.max(q_dirichlet), np.argmin(q_dirichlet), np.sum(q_dirichlet))
-    # print("q_dirichlet", q_dirichlet0.shape, np.min(q_dirichlet0), np.max(q_dirichlet0), np.argmin(q_dirichlet0), np.sum(q_dirichlet0))
-    # # print("sum_q", np.sum(q), q[0], q[1])
-    # # hx = [0]
-    # print()
-
-    if np.sum(q_dirichlet0) > t_pot:
-        print("dirichlet", np.sum(q_dirichlet0), t_pot)
-        fluxes = r.sumSegFluxes(q_dirichlet0[:, 0])
+    if np.sum(q_dirichlet) > t_pot:
+        print("dirichlet", np.sum(q_dirichlet), t_pot)
+        fluxes = r.sumSegFluxes(q_dirichlet)
     else:
-        q_neumann0 = -(C_comp_neumann.dot(hs) - c_neumann * t_pot)
-        print("neumann", np.sum(q_neumann0), t_pot)
-        fluxes = r.sumSegFluxes(q_neumann0[:, 0])
+        b = Bn.dot(hs)
+        b[0, 0] -= t_pot
+        q_neumann = -sparse.linalg.spsolve(A_nq, b)
+        print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
+        fluxes = r.sumSegFluxes(q_neumann)
 
     water = s.getWaterVolume()
     s.setSource(fluxes.copy())  # richards.py
