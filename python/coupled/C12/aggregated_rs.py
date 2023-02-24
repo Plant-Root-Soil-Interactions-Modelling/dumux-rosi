@@ -2,14 +2,14 @@
 sets up the aggregated root system described by Krs, and (per Layer) SUF, mean radii, summed length  
 """
 
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../");
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import plantbox as pb  # CPlantBox
-from xylem_flux import *  # root system Python hybrid solver
 from rhizo_models import *
-import vtk_plot as vp
-import van_genuchten as vg
+from functional.xylem_flux import *  # root system Python hybrid solver
+import functional.van_genuchten as vg
+import visualisation.vtk_plot as vp
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     max_b = [7.5, 37.5, 0.]
     cell_number = [1, 1, 55]
 
-    fname = "../../../../grids/RootSystem_verysimple2.rsml"
+    fname = "../../../grids/RootSystem_verysimple2.rsml"
     r = XylemFluxPython(fname)
     rs_age = 78  # for calculating age dependent conductivities
 

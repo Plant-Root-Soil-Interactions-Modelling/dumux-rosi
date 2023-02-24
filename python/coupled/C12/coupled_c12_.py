@@ -2,8 +2,8 @@
 Benchmark C1.2 for a static root system in soil (1D or 3D) 
 with the classic sink using Doussan approach in HESS (experimental) paper notation with no matrix inversion 
 """
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import timeit
 import numpy as np

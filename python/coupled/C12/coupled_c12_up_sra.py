@@ -2,8 +2,8 @@
 Benchmark C1.2 for a static root system in soil (1D or 3D)
 with upscaled C_comp matrix with the steady rate approach and fixed-point-iteration in HESS paper notation
 """
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import timeit
 import numpy as np
@@ -21,8 +21,8 @@ from scenario_setup import *
 # name = "results/c12b_up_sra"
 # dt = 120 / (24 * 3600)  # does not work well, maybe uspacling of kr should be based on that of Kr
 
-# r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("1D")
-# name = "results/c12_up_sra_1d"
+r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("1D")
+name = "results/c12_up_sra_1d"
 
 max_error = 10.
 max_iter = 1000

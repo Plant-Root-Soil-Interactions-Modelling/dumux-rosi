@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src");
-sys.path.append("../../build-cmake/cpp/python_binding/")
+# import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src");
+# sys.path.append("../../build-cmake/cpp/python_binding/")
 
 import plantbox as pb
 import functional.xylem_flux as xylem_flux
@@ -7,9 +7,9 @@ import functional.xylem_flux as xylem_flux
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from fv_grid import *
-import fv_richards as rich  # local pure Python cylindrical models
-import van_genuchten as vg
+from fv.fv_grid import *
+import fv.fv_richards as rich  # local pure Python cylindrical models
+import functional.van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt

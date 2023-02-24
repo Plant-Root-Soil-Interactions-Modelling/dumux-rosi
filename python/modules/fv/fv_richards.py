@@ -4,9 +4,9 @@ import scipy.sparse.linalg as LA
 import scipy.linalg as la
 import timeit
 
-from fv_grid import *
-from fv_solver import *
-import van_genuchten as vg
+from fv.fv_grid import *
+from fv.fv_solver import *
+import functional.van_genuchten as vg
 
 
 class FVRichards(FVSolver):
@@ -30,8 +30,8 @@ class FVRichards(FVSolver):
         n = self.n
         self.k = np.zeros(grid.neighbours.shape)  # contains precomputed  hydraulic conductivities [cm/day]
         self.alpha = np.zeros((n * grid.number_of_neighbours,))
-        i_ = np.array(range(0, n), dtype=np.int64)
-        cols = np.ones((1, self.grid.number_of_neighbours), dtype=np.int64)
+        i_ = np.array(range(0, n), dtype = np.int64)
+        cols = np.ones((1, self.grid.number_of_neighbours), dtype = np.int64)
         self.alpha_i = np.outer(i_, cols)
         self.alpha_j = self.grid.neighbours.copy()
         for (i, j) in self.grid.boundary_faces:
@@ -64,9 +64,9 @@ class FVRichards(FVSolver):
         # t2 = timeit.default_timer()
         self.create_alpha_beta(dt)
         # t3 = timeit.default_timer()
-        self.prepare_linear_system()        
+        self.prepare_linear_system()
         # t4 = timeit.default_timer()
-        
+
         h_pm1 = self.x0.copy()
         for i in range(0, self.max_iter):
 
@@ -79,15 +79,15 @@ class FVRichards(FVSolver):
 
             try:
                 h = self.solve_linear_system(beta, f)
-#                 t6 = timeit.default_timer()                
-#                 if i == 0: 
-#                     tdt = timeit.default_timer() - t0                         
-#                     tdt1 = t1 - t0                         
-#                     tdt2 = t2 - t1                         
-#                     tdt3 = t3 - t2                         
-#                     tdt4 = t4 - t3                         
-#                     tdt5 = t5 - t4                         
-#                     tdt6 = t6 - t5                         
+#                 t6 = timeit.default_timer()
+#                 if i == 0:
+#                     tdt = timeit.default_timer() - t0
+#                     tdt1 = t1 - t0
+#                     tdt2 = t2 - t1
+#                     tdt3 = t3 - t2
+#                     tdt4 = t4 - t3
+#                     tdt5 = t5 - t4
+#                     tdt6 = t6 - t5
 #                     print("Step {:g} s : {:g}, {:g}, {:g}, {:g}, {:g}, {:g}".format(tdt, tdt1 / tdt, tdt2 / tdt, tdt3 / tdt, tdt4 / tdt, tdt5 / tdt, tdt6 / tdt))
             except:
                print("Linear solver did raise something")
@@ -110,10 +110,10 @@ class FVRichards(FVSolver):
         B = sparse.coo_matrix((beta, (np.array(range(0, self.n)), np.array(range(0, self.n)))))
         # plt.spy(A + B)
         # plt.show()
-        return LA.spsolve(self.A + B, f, use_umfpack=True)
+        return LA.spsolve(self.A + B, f, use_umfpack = True)
 
     def create_k(self):
-        """ sets up hydraulic conductivities from last time step solution self.x0, for each neighbour"""        
+        """ sets up hydraulic conductivities from last time step solution self.x0, for each neighbour"""
         cols = np.ones((1, self.grid.number_of_neighbours))
         a = vg.hydraulic_conductivity(self.x0, self.soil)
         a_ = np.outer(a, cols)
@@ -130,7 +130,7 @@ class FVRichards(FVSolver):
         for (i, j) in self.grid.boundary_faces:
             v[i, j] = 0.
         self.alpha = -v
-        self.beta_const = np.sum(v, axis=1)
+        self.beta_const = np.sum(v, axis = 1)
 
     def bc_flux(self, q):
         """ flux boundary condition [cm3 / cm2 / day] """
@@ -205,7 +205,7 @@ class FVRichards(FVSolver):
 
         q[:, 0] *= -1.
 
-        return np.mean(q, axis=1)
+        return np.mean(q, axis = 1)
 
 
 class FVRichards1D(FVRichards):
@@ -224,7 +224,7 @@ class FVRichards1D(FVRichards):
         self.innerFlux = 0.  # cm3/cm2/day
         # for get_inner_head
         self.dx0 = self.grid.center(0) - self.grid.nodes[0]
-        self.dx1 = self.grid.center(1) - self.grid.center(0) 
+        self.dx1 = self.grid.center(1) - self.grid.center(0)
 
     def prepare_linear_system(self):
         """ the part of the linear system that can be constructed outside the fix-point iteration """
@@ -236,7 +236,7 @@ class FVRichards1D(FVRichards):
     def solve_linear_system(self, beta, f):
         """ banded solver to solve tridiagonal matrix """
         self.ab[1,:] = beta  # diagonal is changed each iteration
-        return la.solve_banded ((1, 1), self.ab, f, overwrite_b=True)
+        return la.solve_banded ((1, 1), self.ab, f, overwrite_b = True)
 
     def solver_initialize(self):
         """ call back function """
@@ -270,11 +270,11 @@ class FVRichards1D(FVRichards):
             elif type == "flux_in_out_mid":
                 x = self.x0[i]
                 bc = self.bc_flux_in_out(i, *v[0:2], self.grid.dx[i, j])
-                self.x0[i] += (dt / 2) * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]                
+                self.x0[i] += (dt / 2) * bc * self.grid.area_per_volume[i, j]  # [cm3 / cm3]
                 bc = self.bc_flux_in_out(i, *v[0:2], self.grid.dx[i, j])
-                self.x0[i] = x 
-            elif type == "flux_in_out": 
-                bc = self.bc_flux_in_out(i, *v[0:2], self.grid.dx[i, j])                        
+                self.x0[i] = x
+            elif type == "flux_in_out":
+                bc = self.bc_flux_in_out(i, *v[0:2], self.grid.dx[i, j])
             elif type == "flux_in":
                 bc = self.bc_flux_in(i, *v[0:2], self.grid.dx[i, j])
             elif type == "flux_out":
@@ -305,8 +305,8 @@ class FVRichards1D(FVRichards):
         """
         h = self.get_inner_head()  # value at self.grid.nodes[0]
         k = vg.hydraulic_conductivity(h, self.soil)  # [cm / day]
-        dx = self.grid.nodes[0]  # = radius [cm]       
-        kr = min(kr, k / dx)  
+        dx = self.grid.nodes[0]  # = radius [cm]
+        kr = min(kr, k / dx)
         f = 2 * a * np.pi * kr
         tau = np.sqrt(f / kz)  # sqrt(c) [cm-1]
         d = np.exp(-tau * l) - np.exp(tau * l)  #  det

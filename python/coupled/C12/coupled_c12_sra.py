@@ -2,8 +2,8 @@
 Benchmark C1.2 for a static root system in soil (1D or 3D)
 with the steady rate approach and fixed-point-iteration in HESS paper notation
 """
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import timeit
 import numpy as np
@@ -13,12 +13,6 @@ from scipy import sparse
 # import vtk_plot as vp
 from rhizo_models import plot_transpiration
 from scenario_setup import *
-import aggregated_rs as agg
-
-
-def double_(rsx):
-    rsx2 = np.array([ 0. if i % 2 == 0 else rsx[int(i / 2)] for i in range(0, ns)])
-    return rsx2
 
 # r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D", age_dependent = False)
 # name = "results/c12_sra"
@@ -26,29 +20,23 @@ def double_(rsx):
 # r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D", age_dependent = True)
 # name = "results/c12b_sra"
 
-
 r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("1D")
-min_b, max_b, cell_number = get_domain1D()
-name = "results/c12_agg_1d"
-
-""" 
-Initialize aggregated hydraulic model 
-"""
-r = agg.create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
-nodes = r.rs.nodes
-picker = lambda x, y, z: s.pick([0., 0., z])  # reset mapper, since it is 1D
-r.rs.setSoilGrid(picker)  # maps segment
+name = "results/c12_sra_1d"
 
 max_error = 10.
 max_iter = 1000
 
-""" for fixed mapping """
-types = r.rs.subTypes
-outer_r = r.rs.segOuterRadii()
-inner_r = r.rs.radii
-rho_ = np.divide(outer_r, np.array(inner_r))
-ns = len(outer_r)
-mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])  # redo mapping
+ns = len(r.rs.segments)
+nodes = r.get_nodes()
+inner_ = r.rs.radii
+outer_ = r.rs.segOuterRadii()
+rho_ = np.divide(outer_, np.array(inner_))
+rho_ = np.expand_dims(rho_, axis = 1)
+kr_ = r.getKr(rs_age)
+inner_kr_ = np.multiply(inner_, kr_)  # multiply for table look up
+inner_kr_ = np.expand_dims(inner_kr_, axis = 1)
+inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
+inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
 
 """ Doussan """
 Id = sparse.identity(ns).tocsc()  # identity matrix

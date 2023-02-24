@@ -1,7 +1,7 @@
 import numpy as np
 
-from fv_grid import *
-import van_genuchten as vg
+from fv.fv_grid import *
+import functional.van_genuchten as vg
 
 
 class FVSolver:
@@ -9,7 +9,7 @@ class FVSolver:
     Base class for FVRichards, FVAdvectionDiffusion    
     """
 
-    def __init__(self, grid :FVGrid):
+    def __init__(self, grid:FVGrid):
         """ Initializes the solver 
         @param grid         a grid with base class FVGrid
         """
@@ -20,7 +20,7 @@ class FVSolver:
         self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing a list of values
         self.sources = np.zeros((self.n,))  # [cm3 / cm3]
 
-    def solve(self, output_times :list, max_dt = 0.5, verbose = True):
+    def solve(self, output_times:list, max_dt = 0.5, verbose = True):
         """ solves richards equation for several output times 
         @param output_times       final simulation times [day]
         @param max_dt             maximal time step [day]

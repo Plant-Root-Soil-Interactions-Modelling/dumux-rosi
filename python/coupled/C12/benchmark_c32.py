@@ -3,10 +3,8 @@ Jan's new scenarios with the upscaled sink (without SRA)
 
 1d soil, 2 cm thick layers, dynamic conductivities (see root_conductivities.py)
 """
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-from google.protobuf.internal.descriptor_pool_test import AddDescriptorTest
-from lxml.html.builder import DD
-sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 from scenario_setup import *
 

@@ -1,15 +1,15 @@
 """ 
-Basic set up for Benchmark C1.2 for a static root system
+Basic set up for Benchmark C12 for a static root system
 """
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
+import plantbox as pb
+from functional.root_conductivities import init_conductivities
 
-import van_genuchten as vg
-from xylem_flux import XylemFluxPython  # Python hybrid solver
-from HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
+import functional.van_genuchten as vg
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
+
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import plantbox as pb
-from root_conductivities import init_conductivities
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -65,7 +65,7 @@ def set_scenario(dimension, age_dependent = False):
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     """ root hydraulic model"""
-    fname = "../../../../grids/RootSystem8.rsml"
+    fname = "../../../grids/RootSystem8.rsml"
     trans = 6.4  # cm3 /day (sinusoidal)
     r = HydraulicsDoussan(fname)
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
