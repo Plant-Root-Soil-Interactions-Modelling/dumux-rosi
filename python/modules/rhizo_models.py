@@ -1,8 +1,8 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
+import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src");
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 import plantbox as pb
-import xylem_flux  # to use its rsml reader
+import functional.xylem_flux as xylem_flux
 
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
@@ -509,8 +509,10 @@ def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
     ax2 = ax1.twinx()
     dt = np.diff(t)
     so = np.array(soil_uptake)
-    ax2.plot(t[1:], np.cumsum(-np.multiply(so[:-1], dt)), 'c--')  # cumulative transpiration (neumann)
+    cum_transpiration = np.cumsum(-np.multiply(so[:-1], dt))
+    ax2.plot(t[1:], cum_transpiration, 'c--')  # cumulative transpiration (neumann)
     ax2.set_ylabel("Cumulative soil uptake $[cm^3]$")
+    print("Cumulative soil uptake", cum_transpiration[-1], "[cm^3]")
     fig.legend()
     plt.show()
 
