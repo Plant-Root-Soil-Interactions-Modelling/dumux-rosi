@@ -1,9 +1,9 @@
-Examples that are using the dumux-rosi Python binding. They are organized in three sub folders regarding their simulation domain (soil, roots, or coupled):
+Examples that are using the dumux-rosi Python binding. They are organized their simulation domain (soil, roots, or coupled):
 
 soil/ 			bulk soil only (e.g. water and or solute transport)
-roots/ 		root system only (e.g. water or hormone movement within the xylem)
-coupled/		root soil interaction models (coupled by a classical sink)
-rhizo/ 		1d cylindrical models which describe the rhizosphere (water and solute transport)
+roots/ 			root system only (e.g. water or hormone movement within the xylem)
+coupled/		root soil interaction models (coupled by a classical sink, or steady rate approach)
+rhizo/ 			1d cylindrical models which describe the rhizosphere (water and solute transport)
 coupled_rhizo/		root soil interaction models, which use microscopic rhizosphere models (coupling between soil, roots & rhizo) 
 
 Additional folders for common resources:
