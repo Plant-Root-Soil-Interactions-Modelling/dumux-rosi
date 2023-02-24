@@ -48,7 +48,7 @@ fname = "../../grids/RootSystem8.rsml"
 # rs.simulate(8, True)
 # rs.write(fname + ".rsml"); fname = fname + ".rsml"
 
-name = "classical360"
+name = "c12"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]

@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-add_str = "_wet"
+add_str = "_dry"
 
-fnames = ["results/sink_" + "small_cyl" + add_str,
+fnames = ["results/sink_" + "small_soil" + add_str,
           "results/sink_" + "small_sra" + add_str,
           "results/sink_" + "small_agg" + add_str]
 titles = ["Cylindric", "Steady Rate Approach", "Parallel"]

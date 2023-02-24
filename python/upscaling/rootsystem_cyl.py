@@ -11,13 +11,14 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 import scenario_setup as scenario
 from rhizo_models import RhizoMappedSegments
 import cyl
+import sra
 
 """ parameters   """
 min_b = [-6, -1.5, -150.]  # domain 12cm x 3cm x 150cm
 max_b = [6, 1.5, 0.]
 cell_number = [12, 3, 150]  # 1 cm3
 
-theta_r = 0.025 # sandy loam
+theta_r = 0.025  # sandy loam
 theta_s = 0.403
 alpha = 0.0383  # (cm-1) soil
 n = 1.3774
@@ -47,7 +48,8 @@ if rank == 0:
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
+# psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = cyl.simulate_const(s, rs, trans, sim_time, dt)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, rs, trans, sim_time, dt)
 
 water = s.getWaterVolume()
 

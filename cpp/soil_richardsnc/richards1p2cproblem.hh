@@ -67,7 +67,8 @@ public:
 		freeDrainage = 5,
 		outflow = 6,
 		linear = 7,
-		michaelisMenten = 8
+		michaelisMenten = 8,
+		managed = 9
 	};
 
 	enum GridParameterIndex {
@@ -100,16 +101,27 @@ public:
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
-		// Precipitation & Evaporation
+
+		// Precipitation & Evaporation, and solute input
 		if (bcTopType_==atmospheric) {
 			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
 			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
 			precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
+        if (bcSTopType_[0]==managed) {
+            soluteInput_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
+            soluteInput_.setVariableScale(1./(24.*60.*60.)); // s -> day
+            soluteInput_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
+//            for (int i=0; i<27; i++) {
+//                std::cout << soluteInput_.f(i*0.333*24.*60.*60.) << "\n";
+//            }
+        }
 		// IC
 		initialSoilP_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
-		initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); //
-		// initialSoilC_.setFunctionScale(1.e3/rho_ /* = 1*/); // [g cm-3] -> [kg / kg]
+		initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); // kg/m2
+//		for (int i=0; i<100; i++) {
+//		    std::cout << initialSoilC_.f(-i*0.02) << "\n";
+//		}
 
 		// Uptake params
 		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/(10./24./3600.))/24./3600.*1e1; //  [g cm-2 day-1] -> [kg m-2 s-1]
@@ -123,7 +135,7 @@ public:
 
 		// Output
 		std::string filestr = this->name() + ".csv"; // output file
-		myfile_.open(filestr.c_str());
+		// myfile_.open(filestr.c_str());
 		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
@@ -135,8 +147,8 @@ public:
 	 * \brief Eventually, closes output file
 	 */
 	~Richards1P2CProblem() {
-		std::cout << "closing file \n";
-		myfile_.close();
+		// std::cout << "closing file \n";
+		// myfile_.close();
 	}
 
 	/*!
@@ -205,10 +217,56 @@ public:
 	 * when?
 	 */
 	BoundaryTypes boundaryTypesAtPos(const GlobalPosition &globalPos) const {
-		BoundaryTypes bcTypes;
+		BoundaryTypes bcTypes; ///pressureIdx, bcTopType_, bcSTopType_, ...
 		bcTypes.setAllNeumann();
+        if (onUpperBoundary_(globalPos)) { // top or outer bc
+            if (bcTopType_ == constantPressure) {
+                bcTypes.setDirichlet(pressureIdx,0);
+            }
+            if (bcSTopType_[0] == constantConcentration) {
+                bcTypes.setDirichlet(soluteIdx,1);
+            }
+        }
+        if (onLowerBoundary_(globalPos)) { // top or outer bc
+            if (bcBotType_ == constantPressure) {
+                bcTypes.setDirichlet(pressureIdx,0);
+            }
+            if (bcSBotType_[0] == constantConcentration) {
+                bcTypes.setDirichlet(soluteIdx,1);
+            }
+        }
 		return bcTypes;
 	}
+
+    /*!
+     * \copydoc FVProblem::dirichletAtPos
+     *
+     * dirchlet(...) is called by the local assembler, e.g. BoxLocalAssembler::evalDirichletBoundaries
+     */
+    PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const {
+        PrimaryVariables values;
+        if (onUpperBoundary_(globalPos)) { // top bc
+            switch (bcTopType_) {
+            case constantPressure: values[pressureIdx] = toPa_(bcTopValues_[0]); break;
+            default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Dirichlet: unknown boundary type");
+            }
+            switch (bcSTopType_[0]) {
+            case constantConcentration: values[soluteIdx] = bcSTopValue_[0]*rho_; break;
+            default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Dirichlet: unknown boundary type");
+            }
+        } else if (onLowerBoundary_(globalPos)) { // bot bc
+            switch (bcBotType_) {
+            case constantPressure: values[pressureIdx] = toPa_(bcBotValues_[0]); break;
+            default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Dirichlet: unknown boundary type");
+            }
+            switch (bcSBotType_[0]) {
+            case constantConcentration: values[soluteIdx] = bcSBotValue_[0]*rho_; break;
+            default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Dirichlet: unknown boundary type");
+            }
+        }
+        // values.setState(Indices::bothPhases); /// <--?????
+        return values;
+    }
 
 	/*!
 	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
@@ -242,6 +300,11 @@ public:
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
+                case constantPressure: {
+                    f = rho_ * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos[0]; // maximal inflow
+                    std::cout << "!";
+                    break;
+                }
 				case constantFlux: { // with switch for maximum in- or outflow
 					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
@@ -256,7 +319,7 @@ public:
 				case constantFluxCyl: { // with switch for maximum in- or outflow
 					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
@@ -275,10 +338,16 @@ public:
 					}
 					break;
 				}
-				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water): unknown error");
+				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
+                case constantPressure: {
+                    f = rho_ * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos[0]; // maximal inflow
+//                    Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+//                    f = std::min(f, omax);
+                    break;
+                }
 				case constantFlux: { // with switch for maximum in- or outflow
 					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
@@ -306,7 +375,7 @@ public:
 					f = krw * kc * rho_; // * 1 [m]
 					break;
 				}
-				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water): unknown error");
+				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
 				}
 			}
 		}
@@ -320,7 +389,7 @@ public:
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
-				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
+                static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
 				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
@@ -330,6 +399,10 @@ public:
 			case constantFlux: {
 				flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 				break;
+			}
+			case constantFluxCyl: {
+                flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+                break;
 			}
 			case outflow: {
 				// std::cout << "f " << f << ", "  << volVars.massFraction(0, soluteIdx) << "=" << f*volVars.massFraction(0, soluteIdx) << "\n";
@@ -344,15 +417,20 @@ public:
 				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
 				break;
 			}
+            case managed: {
+                Scalar input = soluteInput_.f(time_);
+                flux[transportEqIdx] = input;
+                break;
+            }
 			default:
-				DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute): unknown error");
+				DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute) unknown: "+std::to_string(bcSTopType_[0]));
 			}
 		} else if (onLowerBoundary_(pos)) { // bot bc Solute
 			switch (bcSBotType_[0]) {
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
-				static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
+                static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
 				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
@@ -363,6 +441,10 @@ public:
 				flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 				break;
 			}
+            case constantFluxCyl: {
+                flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+                break;
+            }
 			case outflow: {
 				// std::cout << "f " << f*1.e6 << ", "  << volVars.massFraction(0, soluteIdx) << "=" << f*volVars.massFraction(0, soluteIdx) << "\n";
 				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
@@ -389,7 +471,9 @@ public:
 	 * \copydoc FVProblem::source
 	 *
 	 * called by FVLocalResidual:computeSource(...)
-	 */
+	 *
+     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f
+     */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 
@@ -543,7 +627,7 @@ public:
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
 	 */
 	void writeBoundaryFluxes() {
-		myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
+		// myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
 	}
 
 	/**
@@ -622,6 +706,7 @@ private:
 	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_;
+	InputFileFunction soluteInput_;
 	Scalar criticalPressure_; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;

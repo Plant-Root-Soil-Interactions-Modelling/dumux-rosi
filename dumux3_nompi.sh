@@ -32,7 +32,7 @@ done
 
 # copy richards_cyl to DUMUX/
 cp dumux-rosi/build-cmake/cpp/python_binding/rosi_richards_cyl*.so ./
-
+cp dumux-rosi/build-cmake/cpp/python_binding/rosi_richardsnc_cyl*.so ./
 
 # delete all builds
 cd dumux
@@ -57,3 +57,4 @@ done
 
 # copy from DUMUX/ the non-mpi richards_cyl (overwriting the MPI version)
 cp rosi_richards_cyl*.so dumux-rosi/build-cmake/cpp/python_binding/
+cp rosi_richardsnc_cyl*.so dumux-rosi/build-cmake/cpp/python_binding/

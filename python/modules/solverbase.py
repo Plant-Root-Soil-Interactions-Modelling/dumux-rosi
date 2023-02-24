@@ -19,15 +19,15 @@ class SolverWrapper():
         """ @param base is the C++ base class that is wrapped. """
         self.base = base
 
-    def initialize(self, args_=[""], verbose=True):
+    def initialize(self, args_ = [""], verbose = True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose)
 
-    def createGridFromInput(self, modelParamGroup=""):
+    def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
         self.base.createGrid(modelParamGroup)
 
-    def createGrid(self, boundsMin, boundsMax, numberOfCells, periodic=False):
+    def createGrid(self, boundsMin, boundsMax, numberOfCells, periodic = False):
         """ Creates a rectangular grid with a given resolution             
             @param boundsMin        domain corner [cm]
             @param boundsMax        domain corner [cm]        
@@ -74,11 +74,15 @@ class SolverWrapper():
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
 
-    def setInitialCondition(self, ic):
+    def setInitialCondition(self, ic, eqIdx = 0):
+        """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
+        self.base.setInitialCondition(ic, eqIdx)
+
+    def setInitialConditionHead(self, ic):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, maxDt=-1.):
+    def solve(self, dt:float, maxDt = -1.):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
@@ -92,54 +96,91 @@ class SolverWrapper():
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getPoints(), root=0)), 1) * 100.  # m -> cm
+        return self._map(self._flat0(comm.gather(self.base.getPoints(), root = 0)), 1) * 100.  # m -> cm
+
+    def getPoints_(self):
+        """nompi version of """
+        self.checkInitialized()
+        return np.array(self.base.getPoints()) * 100.  # m -> cm
 
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getCellCenters(), root=0)), 2) * 100.  # m -> cm
+        return self._map(self._flat0(comm.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
+
+    def getCellCenters_(self):
+        """nompi version of """
+        self.checkInitialized()
+        return np.array(self.base.getCellCenters()) * 100.  # m -> cm
 
     def getDofCoordinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getDofCoordinates(), root=0)), 0) * 100.  # m -> cm
+        return self._map(self._flat0(comm.gather(self.base.getDofCoordinates(), root = 0)), 0) * 100.  # m -> cm
+
+    def getDofCoordinates_(self):
+        """nompi version of """
+        self.checkInitialized()
+        return np.array(self.base.getDofCoordinates()) * 100.  # m -> cm
 
     def getCells(self):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
-        return self._map(self._flat0(comm.gather(self.base.getCells(), root=0)), 2, np.int64)
+        return self._map(self._flat0(comm.gather(self.base.getCells(), root = 0)), 2, np.int64)
+
+    def getCells_(self):
+        """nompi version of """
+        return np.array(self.base.getCells(), dtype = np.int64)
 
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root=0)), 2) * 1.e6  # m3 -> cm3
+        return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m3 -> cm3
+
+    def getCellVolumes_(self):
+        """nompi version of  """
+        return np.array(self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumesCyl(), root=0)), 2) * 1.e6  # m3 -> cm3
+        return self._map(self._flat0(comm.gather(self.base.getCellVolumesCyl(), root = 0)), 2) * 1.e6  # m3 -> cm3
+
+    def getCellVolumesCyl_(self):
+        """nompi version of  """
+        return np.array(self.base.getCellVolumesCyl()) * 1.e6  # m3 -> cm3
 
     # def quad, int or something (over all domain)
 
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
         self.checkInitialized()
-        return self._flat0(comm.gather(self.base.getDofIndices(), root=0))
+        return self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
 
-    def getSolution(self, eqIdx=0):
+    def getDofIndices_(self):
+        """nompi version of  """
+        self.checkInitialized()
+        return np.array(self.base.getDofIndices(), dtype = np.int64)
+
+    def getSolution(self, eqIdx = 0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root=0)), 0)
+        return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root = 0)), 0)
 
-    def getSolutionAt(self, gIdx, eqIdx=0):
+    def getSolution_(self, eqIdx = 0):
+        """nompi version of  """
+        self.checkInitialized()
+        return np.array(self.base.getSolution(eqIdx))
+
+    def getSolutionAt(self, gIdx, eqIdx = 0):
         """Returns the current solution at a cell index, model dependent units [Pa, ...]"""
         return self.base.getSolutionAt(gIdx, eqIdx)
 
-    def getNeumann(self, gIdx, eqIdx=0):
+    def getNeumann(self, gIdx, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
-    def getAllNeumann(self, eqIdx=0):
+    def getAllNeumann(self, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
-        dics = comm.gather(self.base.getAllNeumann(eqIdx), root=0)
+        dics = comm.gather(self.base.getAllNeumann(eqIdx), root = 0)
         flat_dic = {}
         for d in dics:
             flat_dic.update(d)
@@ -147,10 +188,25 @@ class SolverWrapper():
             flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
         return flat_dic
 
-    def getNetFlux(self, eqIdx=0):
+    def getAllNeumann_(self, eqIdx = 0):
+        """nompi version of (TODO is that working?)"""
+        dics = self.base.getAllNeumann(eqIdx)
+        flat_dic = {}
+        for d in dics:
+            flat_dic.update(d)
+        for key, value in flat_dic:
+            flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        return flat_dic
+
+    def getNetFlux(self, eqIdx = 0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root=0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+        return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root = 0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+
+    def getNetFlux_(self, eqIdx = 0):
+        """nompi version of """
+        self.checkInitialized()
+        return np.array(self.base.getNetFlux(eqIdx)) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def pickCell(self, pos):
         """ Picks a cell and returns its global element cell index """
@@ -193,7 +249,7 @@ class SolverWrapper():
         """ sets internal time step, i.e. Dumux time step [days]"""
         self.base.ddt = value * 24.*3600.  # days -> s
 
-    def interpolate(self, xi, eq=0):
+    def interpolate(self, xi, eq = 0):
         """ interpolates the solution at position ix [cm],
         model dependent units
         todo: test"""
@@ -203,24 +259,24 @@ class SolverWrapper():
         if rank == 0:
             yi = np.zeros((xi.shape[0]))
             for i in range(0, xi.shape[0]):
-                yi[i] = griddata(points, solution[:, eq], xi / 100., method='linear', rescale=True)  # cm -> m
+                yi[i] = griddata(points, solution[:, eq], xi / 100., method = 'linear', rescale = True)  # cm -> m
             return yi
         else:
             return []
 
-    def interpolate_(self, xi, points, solution, eq=0):
+    def interpolate_(self, xi, points, solution, eq = 0):
         """ interpolates the solution at position ix [cm] (same es interpolate_ but passes points and solution),
         model dependent units """
         self.checkInitialized()
         if rank == 0:
             yi = np.zeros((xi.shape[0]))
             for i in range(0, xi.shape[0]):
-                yi[i] = griddata(points, solution[:, eq], xi / 100., method='linear')  # cm -> m
+                yi[i] = griddata(points, solution[:, eq], xi / 100., method = 'linear')  # cm -> m
             return yi
         else:
             return []
 
-    def interpolateNN(self, xi, eq=0):
+    def interpolateNN(self, xi, eq = 0):
         """ solution at the points xi (todo currently works only for CCTpfa)"""
         self.checkInitialized()
         solution = self.getSolution()
@@ -234,7 +290,7 @@ class SolverWrapper():
                 y[i] = solution[idx, eq]
         return y
 
-    def writeVTK(self, file:str, small:bool=False):
+    def writeVTK(self, file:str, small:bool = False):
         """writes a vtk file (todo additional fields) 
         @param file 
         @param small Determines if data are compressed and stroed binary  TODO
@@ -252,16 +308,16 @@ class SolverWrapper():
             writer.SetCompressorTypeToZLib()
             writer.Write()
 
-    def _map(self, x, type, dtype=np.float64):
+    def _map(self, x, type, dtype = np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
         @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
         if type == 0:  # auto (dof)
-            indices = self._flat0(comm.gather(self.base.getDofIndices(), root=0))
+            indices = self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
         elif type == 1:  # points
-            indices = self._flat0(comm.gather(self.base.getPointIndices(), root=0))
+            indices = self._flat0(comm.gather(self.base.getPointIndices(), root = 0))
         elif type == 2:  # cells
-            indices = self._flat0(comm.gather(self.base.getCellIndices(), root=0))
+            indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
             raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
         if indices:  # only for rank 0 not empty
@@ -271,9 +327,9 @@ class SolverWrapper():
                 m = len(x[0])
             else:
                 m = 1
-            p = np.zeros((ndof, m), dtype=dtype)
+            p = np.zeros((ndof, m), dtype = dtype)
             for i in range(0, len(indices)):  #
-                p[indices[i],:] = np.array(x[i], dtype=dtype)
+                p[indices[i],:] = np.array(x[i], dtype = dtype)
             return p
         else:
             return 0
