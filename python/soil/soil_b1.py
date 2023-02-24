@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 from analytic_b1 import *  # plots the analytical solutions to ax1, ax2, ax3
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)

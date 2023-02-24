@@ -1,14 +1,13 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_writer as rsml
-import vtk_tools as vt
-import vtk_plot as vp
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+import rsml.rsml_writer as rsml
+import visualisation.vtk_tools as vt
+import visualisation.vtk_plot as vp
 
-from math import *
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 """ 
 Converts a DuMux output vtp to a RSML

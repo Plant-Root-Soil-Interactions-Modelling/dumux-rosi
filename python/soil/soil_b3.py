@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
@@ -24,7 +24,7 @@ def solve(soil, simtimes):
     s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [100., 100.]])  #  [cm/day] atmospheric is with surface run-off
     s.setBotBC("freeDrainage")
     N = 199
-    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, N])  # [cm] N 
+    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, N])  # [cm] N
     s.setHomogeneousIC(-400.)  # cm pressure head
     s.setVGParameters([soil])
     s.initializeProblem()

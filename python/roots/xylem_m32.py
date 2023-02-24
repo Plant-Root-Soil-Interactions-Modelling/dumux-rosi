@@ -1,13 +1,12 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
-import vtk_plot as vp
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+import visualisation.vtk_plot as vp
+import rsml.rsml_reader as rsml
 
-from math import *
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 """ 
 Benchmark M3.2 Root system: steady state small root system solved with the Python/cpp Hybrid solver

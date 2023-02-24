@@ -1,13 +1,16 @@
-#
-# produces the analytical solution Figure 2abc
-# from Vanderborght et al 2005
-#
-# D. Leitner, 2018
-#
+"""
+produces the analytical solution Figure 2abc
+from Vanderborght et al. (2005)
+
+D. Leitner, 2018
+"""
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
+
+import functional.van_genuchten as vg
+
 import numpy as np
 from scipy import optimize
 from scipy import integrate
-import van_genuchten as vg
 import matplotlib.pyplot as plt
 
 sand = vg.Parameters([0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24])

@@ -1,13 +1,13 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
-import vtk_plot as vp
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+import rsml.rsml_reader as rsml
+import visualisation.vtk_tools as vt
+import visualisation.vtk_plot as vp
 
-from math import *
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 """ 
 opens and vtk plots the rsml
@@ -19,7 +19,7 @@ file_name = "../../grids/RootSys_verysimple.rsml"
 r = XylemFluxPython(file_name)
 r.test()
 
-polylines, props, funcs = rsml.read_rsml(file_name)
+polylines, props, funcs, metadata = rsml.read_rsml(file_name)
 print(len(polylines), "roots")
 # print(props["parent-poly"])
 # print(props["parent-node"])

@@ -1,13 +1,15 @@
-#
-# produces the analytical solution Figure 4abc
-# from Vanderborght et al 2005
-#
-# D. Leitner, 2018
-#
+"""
+produces the analytical solution Figure 4abc
+from Vanderborght et al. (2005)
+
+D. Leitner, 2018
+"""
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
+
+import functional.van_genuchten as vg
+
 import numpy as np
-from scipy import optimize
 from scipy import integrate
-import van_genuchten as vg
 import matplotlib.pyplot as plt
 
 sand = vg.Parameters([0.045, 0.43, 0.15, 3, 1000])
@@ -32,7 +34,7 @@ for i, soil in enumerate([sand, loam, clay]):  # make three subplots
     K = lambda psi: vg.hydraulic_conductivity(psi, soil)
     Dw = lambda psi: K(psi) / (vg.specific_moisture_storage(psi, soil))
 
-    F = lambda theta:  Dw(psi(theta)) / ((K_sur - K_i) * (theta - theta_i) - (K(psi(theta)) - K_i) * (theta_sur - theta_i))
+    F = lambda theta: Dw(psi(theta)) / ((K_sur - K_i) * (theta - theta_i) - (K(psi(theta)) - K_i) * (theta_sur - theta_i))
 
     theta_a = (theta_sur + theta_i) / 2
 

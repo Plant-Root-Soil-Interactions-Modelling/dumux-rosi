@@ -1,12 +1,16 @@
-#
-# Analytical solution (Figure 3, Vanderborght et al 2005)
-#
-# D. Leitner, 2018
-#
+"""
+produces the analytical solution Figure 3
+from Vanderborght et al. (2005)
+
+D. Leitner, 2018
+"""
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
+
+import functional.van_genuchten as vg
+
 import numpy as np
-import matplotlib.pyplot as plt
-import van_genuchten as vg
 from scipy import integrate
+import matplotlib.pyplot as plt
 
 loam = vg.Parameters([0.08, 0.43, 0.04, 1.6, 50])
 

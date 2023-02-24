@@ -1,12 +1,16 @@
-#
-# Analytical solution (Figure 5abcd, Vanderborght et al 2005)
-#
-# D. Leitner, 2018
-#
+"""
+produces the analytical solution Figure 4abc
+from Vanderborght et al. (2005)
+
+D. Leitner, 2018
+"""
+import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
+
+from functional.van_genuchten import *
+
 import numpy as np
-import matplotlib.pyplot as plt
-from van_genuchten import *
 from scipy import integrate
+import matplotlib.pyplot as plt
 from math import *
 
 sand = Parameters([0.045, 0.43, 0.15, 3, 1.1574e-04 * 100 * 3600 * 24])
@@ -38,7 +42,7 @@ for i, soil in enumerate([sand, loam, loam, clay]):
     alpha, err = integrate.quad(fun_dw, 0, 1)
     alpha /= int_dw  # 42
 
-    mu = (3 * beta * (1 + sqrt(1 - (14 / 9) * (1 - alpha / pow(1 - beta, 2))))) / (2 * (1 - beta) * (alpha / pow(1 - beta, 2) - 1))  # eq 41
+    mu = (3 * beta * (1 + np.sqrt(1 - (14 / 9) * (1 - alpha / pow(1 - beta, 2))))) / (2 * (1 - beta) * (alpha / pow(1 - beta, 2) - 1))  # eq 41
 
     sw = lambda theta_sur, theta_i: (theta_i - theta_sur) * sqrt((4 / mu) * int_dw)  # eq 39
 
