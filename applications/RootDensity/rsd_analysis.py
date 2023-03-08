@@ -15,17 +15,17 @@ import matplotlib.pyplot as plt
 simtime = 87.5  # between 75-100 days
 
 """ setup """
-soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
-xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-cell_number = [76, 4, 100]
-# cell_number = [38, 2, 50]
-# cell_number = [19, 1, 25]
+# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
+# xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
+# cell_number = [76, 4, 100]
+# # cell_number = [38, 2, 50]
+# # cell_number = [19, 1, 25]
 
-# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
-# xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-# cell_number = [76, 16, 200]
-# # cell_number = [38, 8, 100]
-# # cell_number = [19, 4, 50]
+soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
+xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
+cell_number = [76, 16, 200]
+# cell_number = [38, 8, 100]
+# cell_number = [19, 4, 50]
 
 width = max_b - min_b
 
@@ -54,7 +54,8 @@ for j in range(0, sn):
 celldata = grid.GetCellData()
 celldata.AddArray(cell_sd)
 
-outer_radii = peri.get_outer_radii_voronoi()
+# outer_radii = peri.get_outer_radii_voronoi()
+outer_radii = peri.get_outer_radii("length")
 print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
 
 ana = pb.SegmentAnalyser(r.mappedSegments())
@@ -66,9 +67,9 @@ ana.addData("outer_r", outer_radii)
 # vp.plot_mesh(grid, "surface_density")
 # vp.plot_mesh_cuts(grid, "surface_density")
 # vp.plot_roots(ana, "outer_r")
-vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
+# vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
 
-# plt.hist(outer_radii, bins = 100, rwidth = 0.9)
-# plt.show()
+plt.hist(outer_radii, bins = 100, rwidth = 0.9, align = 'mid')
+plt.show()
 
 print("fin")
