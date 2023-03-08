@@ -26,72 +26,71 @@ colors = prop_cycle.by_key()['color']
 
 """ parameters """
 
-type_str = "surface"
+
+def get_outer_radii_horizons(rootsystem, type_str):
+
+    """ setup """
+    if rootsystem == "soybean":
+        soil_, table_name, min_b, max_b, _, area, Kc = scenario.soybean(0)  # 0 = envirotype
+        xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
+        cell_number = [38, 2, 100]  # (2cm)^3
+        simtime = 87.5
+    elif rootsystem == "maize":
+        soil_, table_name, min_b, max_b, _, area, Kc = scenario.maize(0)  # 0 = envirotype
+        xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
+        simtime = 95
+        cell_number = [38, 8, 100]  # (2cm)^3
+
+    """ simulate """
+    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
+    r_ = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
+    r = r_.rs
+    r.initialize(False)
+    r.simulate(simtime, False)
+
+    """ analysis """
+    peri = PerirhizalPython(r)
+    outer_radii = peri.get_outer_radii(type_str)
+    outer_radii = np.minimum(outer_radii, 2.)
+    print()
+    print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
+    print()
+    ana = pb.SegmentAnalyser(r.mappedSegments())
+    ana.addData("outer_r", outer_radii)
+    organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
+    topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, -organic]))
+    subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, min_b[2]]), pb.Vector3d([1e6, 1e6, -topsoil]))
+    ana0 = pb.SegmentAnalyser(ana)
+    ana0.crop(organic_layer)
+    ana0.pack()
+    ana1 = pb.SegmentAnalyser(ana)
+    ana1.crop(topsoil_layer)
+    ana1.pack()
+    ana2 = pb.SegmentAnalyser(ana)
+    ana2.crop(subsoil_layer)
+    ana2.pack()
+    outer0 = ana0.data["outer_r"]
+    outer1 = ana1.data["outer_r"]
+    outer2 = ana2.data["outer_r"]
+    print(len(outer_radii), len(outer0) + len(outer1) + len(outer2))
+    return outer0, outer1, outer2
+
 
 # see https://www.soils4teachers.org/soil-horizons/
 organic = 6  # 2 * 2.54
 topsoil = 26  # 10 * 2.54
 subsoil = 76  # 30 * 2.54
 
-soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
-simtime = 87.5  # between 75-100 days
-xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-cell_number = [76, 4, 100]
-# cell_number = [38, 2, 50]
-# cell_number = [19, 1, 25]
+fig, axes = plt.subplots(3, 1, figsize = (10, 18))
+types = ["length", "surface", "volume"]
+for i in range(0, 3):
+    outer0, outer1, outer2 = get_outer_radii_horizons("maize", types[i])
+    axes[i].hist([outer0, outer1, outer2], bins = 40, rwidth = 0.9, label = ["organic", "topsoil", "subsoil"], stacked = True)
+    axes[i].legend()
+    axes[i].set_xlabel("Perirhizal outer radius [cm] - " + types[i])
+    axes[i].set_title(types[i])
 
-# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
-# xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-# simtime = 95.5  # between 75-100 days
-# # cell_number = [76, 16, 200]
-# cell_number = [38, 8, 100]  # (2cm)^3
-# # cell_number = [19, 4, 50]
-
-width = max_b - min_b
-
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
-r_ = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
-r = r_.rs
-r.initialize(True)
-r.simulate(simtime, True)
-
-""" analysis """
-peri = PerirhizalPython(r)
-outer_radii = peri.get_outer_radii(type_str)
-outer_radii = np.minimum(outer_radii, 2.)
-print()
-print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
-print()
-ana = pb.SegmentAnalyser(r.mappedSegments())
-ana.addData("outer_r", outer_radii)
-
-organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
-topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, -organic]))
-subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, min_b[2]]), pb.Vector3d([1e6, 1e6, -topsoil]))
-ana0 = pb.SegmentAnalyser(ana)
-ana0.crop(organic_layer)
-ana0.pack()
-ana1 = pb.SegmentAnalyser(ana)
-ana1.crop(topsoil_layer)
-ana1.pack()
-ana2 = pb.SegmentAnalyser(ana)
-ana2.crop(subsoil_layer)
-ana2.pack()
-
-outer0 = ana0.data["outer_r"]
-outer1 = ana1.data["outer_r"]
-outer2 = ana2.data["outer_r"]
-
-print(len(outer_radii), len(outer0) + len(outer1) + len(outer2))
-
-fig, axes = plt.subplots(3, 1, figsize = (18, 10))
-axes = [axes]
-
-# axes[0].hist(outer_radii, bins = 40, rwidth = 0.9)
-axes[0].hist([outer0, outer1, outer2], bins = 40, rwidth = 0.9, label = ["organic", "topsoil", "subsoil"], stacked = True)
-axes[0].legend()
-axes[0].set_xlabel("Perirhizal outer radius [cm]")
-axes[0].set_xlabel("Segment count [1]")
+plt.tight_layout()
 plt.show()
 
 print("fin")
