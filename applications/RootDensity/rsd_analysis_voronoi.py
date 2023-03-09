@@ -12,19 +12,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 """ parameters """
-# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
-# xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-# simtime = 87.5  # between 75-100 days
+soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
+xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
+simtime = 87.5  # between 75-100 days
 # cell_number = [76, 4, 200]
-# cell_number = [38, 2, 100]
+cell_number = [38, 2, 100]
 # cell_number = [19, 1, 50]
 
-soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
-xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-simtime = 95  # between 75-100 days
-# cell_number = [76, 16, 200]
-cell_number = [38, 8, 100]
-# cell_number = [19, 4, 50]
+# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
+# xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
+# simtime = 95  # between 75-100 days
+# # cell_number = [76, 16, 200]
+# cell_number = [38, 8, 100]
+# # cell_number = [19, 4, 50]
 
 width = max_b - min_b
 
@@ -34,7 +34,7 @@ r_ = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  
 r = r_.rs  # throw away (TODO ahve to change setup anyway...)
 
 r.initialize(False)
-r.simulate(simtime, True)
+r.simulate(simtime, False)
 
 sn = np.prod(cell_number)
 peri = PerirhizalPython(r)
@@ -51,10 +51,16 @@ for j in range(0, sn):
 celldata = grid.GetCellData()
 celldata.AddArray(cell_sd)
 
-# outer_radii = peri.get_outer_radii_voronoi()
-outer_radii = peri.get_outer_radii("surface")
+outer_radii = peri.get_outer_radii_voronoi()
+# outer_radii = peri.get_outer_radii("surface")
 
-print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
+print()
+print("number of outer", outer_radii.shape)
+print("open regions", np.sum(outer_radii == -1), np.sum(outer_radii == -1) / outer_radii.shape[0])
+print("cell has point outside domain", np.sum(outer_radii == 0), np.sum(outer_radii == 0) / outer_radii.shape[0])
+print()
+
+# print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
 
 ana = pb.SegmentAnalyser(r.mappedSegments())
 outer_radii = -np.minimum(outer_radii, 1.)  # limit for visualisation

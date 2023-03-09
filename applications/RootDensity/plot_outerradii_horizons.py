@@ -1,4 +1,6 @@
-"""small example"""
+""" 
+    plots histograms of the outer radius of the perirhizal zone for three soil horizons
+"""
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
 sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
 
@@ -24,8 +26,6 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-""" parameters """
-
 
 def get_outer_radii_horizons(rootsystem, type_str):
 
@@ -40,6 +40,9 @@ def get_outer_radii_horizons(rootsystem, type_str):
         xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
         simtime = 95
         cell_number = [38, 8, 100]  # (2cm)^3
+    else:
+        print("get_outer_radii_horizons() unknown rootsystem name", rootsystem)
+        raise
 
     """ simulate """
     s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
@@ -76,15 +79,22 @@ def get_outer_radii_horizons(rootsystem, type_str):
     return outer0, outer1, outer2
 
 
+""" parameters """
 # see https://www.soils4teachers.org/soil-horizons/
 organic = 6  # 2 * 2.54
 topsoil = 26  # 10 * 2.54
 subsoil = 76  # 30 * 2.54
 
-fig, axes = plt.subplots(3, 1, figsize = (10, 18))
-types = ["length", "surface", "volume"]
-for i in range(0, 3):
-    outer0, outer1, outer2 = get_outer_radii_horizons("maize", types[i])
+rootsystem = "maize"  # maize, sobyean
+
+# fig, axes = plt.subplots(3, 1, figsize = (10, 18))
+fig, axes = plt.subplots(1, 1, figsize = (9, 5))
+axes = [axes]
+
+# types = ["length", "surface", "volume"]
+types = ["surface"]
+for i in range(0, len(types)):
+    outer0, outer1, outer2 = get_outer_radii_horizons(rootsystem, types[i])
     axes[i].hist([outer0, outer1, outer2], bins = 40, rwidth = 0.9, label = ["organic", "topsoil", "subsoil"], stacked = True)
     axes[i].legend()
     axes[i].set_xlabel("Perirhizal outer radius [cm] - " + types[i])

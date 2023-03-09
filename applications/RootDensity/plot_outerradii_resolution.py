@@ -1,4 +1,6 @@
-"""small example"""
+""" 
+    plots histograms of the outer radius of the perirhizal zone for various discretisations
+"""
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
 sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
 
@@ -36,22 +38,24 @@ def get_outer_radii(rootsystem, type_str, cell_number):
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.maize(0)  # 0 = envirotype
         xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
         simtime = 95
+    else:
+        print("get_outer_radii() unknown rootsystem name", rootsystem)
+        raise
 
     s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
     r_ = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 
     """ simulation and post processing """
-    r = r_.rs  # rename
+    r = r_.rs
     r.initialize(False)
     r.simulate(simtime, False)
     peri = PerirhizalPython(r)
     outer_radii = peri.get_outer_radii(type_str)
-    # sd = peri.get_density("surface")
 
     return outer_radii
 
 
-fig, axes = plt.subplots(3, 2, figsize = (10, 18))
+fig, axes = plt.subplots(3, 2, figsize = (20, 18))
 
 # """ maize """
 # cell_numbers = []
