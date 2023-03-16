@@ -11,3 +11,4 @@ print(vor)
 
 print("points", points.shape)
 print("pioint_region", vor.point_region.shape, np.min(vor.point_region), np.max(vor.point_region))
+print(vor.point_region)

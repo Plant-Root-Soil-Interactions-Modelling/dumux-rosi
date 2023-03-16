@@ -146,7 +146,6 @@ def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, 
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-    init_conductivities_const(r)
     return r
 
 
@@ -207,6 +206,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         seed = 1
 
         rs = pb.MappedRootSystem()
+        # rs = pb.MappedPlant() # TODO
         rs.setSeed(seed)
         rs.readParameters(fname)
         if not stochastic:
@@ -278,6 +278,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         # for p in rrp:
         #     print(p.dx, p.dxMin)
 
+        # rs.setGeometry(pb.SDF_PlantBox(max_b[0] - min_b[0], max_b[1] - min_b[1], np.abs(min_b[2])))
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
         rs.simulate(1., True)

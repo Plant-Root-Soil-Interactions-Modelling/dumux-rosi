@@ -39,6 +39,7 @@ def get_outer_radii_horizons(rootsystem, type_str):
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.maize(0)  # 0 = envirotype
         xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
         simtime = 95
+        simtime = 21
         cell_number = [38, 8, 100]  # (2cm)^3
     else:
         print("get_outer_radii_horizons() unknown rootsystem name", rootsystem)
@@ -97,8 +98,8 @@ for i in range(0, len(types)):
     outer0, outer1, outer2 = get_outer_radii_horizons(rootsystem, types[i])
     axes[i].hist([outer0, outer1, outer2], bins = 40, rwidth = 0.9, label = ["organic", "topsoil", "subsoil"], stacked = True)
     axes[i].legend()
-    axes[i].set_xlabel("Perirhizal outer radius [cm] - " + types[i])
-    axes[i].set_title(types[i])
+    axes[i].set_xlabel("Perirhizal outer radius [cm] - proportional to " + types[i])
+    axes[i].set_title(rootsystem)
 
 plt.tight_layout()
 plt.show()
