@@ -1,5 +1,7 @@
 """ 
-    plots histograms of the outer radius of the perirhizal zone for three soil horizons
+    plots histograms of the outer radius of the perirhizal zone for three soil horizons using Voronoi diagrams
+    
+    copy & paste of plot_outerradii_horizons.py, with other caption and L57 changed
 """
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
 sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
@@ -27,7 +29,7 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 
-def get_outer_radii_horizons(rootsystem, type_str):
+def get_outer_radii_horizons(rootsystem):
 
     """ setup """
     if rootsystem == "Soybean":
@@ -53,7 +55,7 @@ def get_outer_radii_horizons(rootsystem, type_str):
 
     """ analysis """
     peri = PerirhizalPython(r)
-    outer_radii = peri.get_outer_radii(type_str)
+    outer_radii = peri.get_outer_radii_voronoi()
     print()
     print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
     print()
@@ -82,25 +84,20 @@ def get_outer_radii_horizons(rootsystem, type_str):
 # see https://www.soils4teachers.org/soil-horizons/
 organic = 6  # 2 * 2.54
 topsoil = 26  # 10 * 2.54
-subsoil = 76  # 30 * 2.54 ############################################################ CHECK !!!!!
+subsoil = 76  # 30 * 2.54
 
 rootsystem = "Maize"  # Maize, Soybean
 
 # fig, axes = plt.subplots(3, 1, figsize = (10, 18))
 fig, axes = plt.subplots(1, 1, figsize = (9, 8))
-axes = [axes]
-
-# types = ["length", "surface", "volume"]
-types = ["length"]
-for i in range(0, len(types)):
-    outer0, outer1, outer2 = get_outer_radii_horizons(rootsystem, types[i])
-    outer0 = PerirhizalPython.to_range_(None, outer0, 0., 2.)
-    outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
-    outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
-    axes[i].hist([outer0, outer1, outer2], bins = 40, rwidth = 0.9, label = ["organic", "topsoil", "subsoil"], stacked = True)
-    axes[i].legend()
-    axes[i].set_xlabel("Perirhizal outer radius [cm] - proportional to " + types[i])
-    axes[i].set_title(rootsystem)
+outer0, outer1, outer2 = get_outer_radii_horizons(rootsystem)
+outer0 = PerirhizalPython.to_range_(None, outer0, 0., 2.)
+outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
+outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
+axes.hist([outer0, outer1, outer2], bins = 40, rwidth = 0.9, label = ["organic", "topsoil", "subsoil"], stacked = True)
+axes.legend()
+axes.set_xlabel("Perirhizal outer radius [cm] using Voronoi diagrams ")
+axes.set_title(rootsystem)
 
 plt.tight_layout()
 plt.show()

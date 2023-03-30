@@ -1,9 +1,8 @@
 import numpy as np
+from scipy.spatial import ConvexHull, Voronoi
 
 points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
                    [2, 0], [2, 1], [2, 2]])
-
-from scipy.spatial import Voronoi, voronoi_plot_2d
 
 vor = Voronoi(points)
 

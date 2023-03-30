@@ -501,7 +501,7 @@ def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
     @param potential_trans    function in t stating the potential transpiration [cm3/day]
     """
     fig, ax1 = plt.subplots()
-    ax1.plot(t, potential_trans(t), 'k', label = "potential transpiration")  # potential transpiration
+    ax1.plot(t, [potential_trans(t_) for t_ in t], 'k', label = "potential transpiration")  # potential transpiration
     ax1.plot(t, -np.array(soil_uptake), 'g', label = "soil uptake")  # actual transpiration  according to soil model
     ax1.plot(t, -np.array(root_uptake), 'r:', label = "root system uptake")  # actual transpiration according root model
     ax1.set_xlabel("Time [d]")
