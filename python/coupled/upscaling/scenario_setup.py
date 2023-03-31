@@ -17,12 +17,16 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 def soil_vg_(name:str):
-    """ Van Genuchten parameter for soil, called by maize() and soybean() """
+    """ 
+    Van Genuchten parameter for soil from Hydrus1D, 
+    called by maize() and soybean() 
+    """
     soil = {}
-    soil["loam"] = [0.0639, 0.3698, 0.0096, 1.4646, 4.47]
-    soil["clay"] = [0.0619, 0.3417, 0.0132, 1.3258, 2.03]
-    soil["sand"] = [0.0760, 0.3863, 0.0091, 1.4430, 2.99]
-    table_name = "table_{:s}".format(name)
+    soil["jan_comp"] = [0.025, 0.403, 0.0383, 1.3774, 60.]
+    soil["hydrus_loam"] = [0.078, 0.43, 0.036, 1.56, 24.96]
+    soil["hydrus_clay"] = [0.068, 0.38, 0.008, 1.09, 4.8]
+    soil["hydrus_sand"] = [0.045, 0.43, 0.145, 2.68, 712.8]
+    table_name = "table_{:s}".format(name)  # name for 4D look up table ########################
     return soil[name], table_name
 
 
@@ -107,13 +111,14 @@ def set_scenario(plant, dim, soil, outer_method):
     """
     assert plant == "maize" or plant == "soybean", "plant should be 'maize', or 'soybean' "
     assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
-    assert soil in ["loam", "clay", "sand"], "soil should be 'loam', 'clay', or 'sand' "
+    # assert soil in ["loam", "clay", "sand"], "soil should be 'loam', 'clay', or 'sand' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
     wilting_point = -15000  # cm
     initial = -400  # [cm] constant total potential
     random_seed = 1  # random seed
     trans = 0.5  # cm / day
+    slope = "100"  # cm
 
     if plant == "maize":
         soil_, table_name, min_b, max_b, cell_number, Kc = maize(soil, dim)
@@ -143,7 +148,7 @@ def set_scenario(plant, dim, soil, outer_method):
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableChop", "True")
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-    # s.setParameter("Soil.SourceSlope", slope)
+    s.setParameter("Soil.SourceSlope", slope)
     s.initializeProblem()
     s.setCriticalPressure(wilting_point)
     s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -222,16 +227,11 @@ def open_sra_lookup(filename):
     return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)
 
 
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s):
+def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs):
     """  saves numpy arrays as npy files """
-    np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
-    np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
-    np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
-    np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
-    np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
-    # , vol_, surf_, krs_, depth_
-    # np.save('results/vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
-    # np.save('results/surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
-    # np.save('results/krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
-    # np.save('results/depth_' + file_name, np.array(depth_))  # root system depth [cm]
+    np.save('results/hx_' + file_name, np.array(hx))  # xylem pressure head per segment [cm]
+    np.save('results/hsr_' + file_name, np.array(hsr))  # pressure head at interface per segment [cm]
+    np.save('results/sink_' + file_name, -np.array(sink))  # sink per soil cell [cm3/day]
+    np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans), -np.array(trans2))))  # time [day], transpiration [cm3/day]
+    np.save('results/hs_' + file_name, np.array(hs))  # soil water matric potential per soil cell [cm]
 
