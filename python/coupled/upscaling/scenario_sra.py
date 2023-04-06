@@ -20,9 +20,9 @@ from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 
-def simulate_sra(plant, dim, soil, outer_method, name):
+def simulate_sra(plant, dim, initial, soil, outer_method, name):
 
-    r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, soil, outer_method)
+    r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
 
     print("\nInitial root sytstem age", rs_age)
     # print("rs_age", rs_age)
@@ -30,8 +30,8 @@ def simulate_sra(plant, dim, soil, outer_method, name):
     # print("rs_age", np.max(rs_age))
 
     sim_time = 14.
-    dt = 3600 / (24 * 3600)  # days
-    skip = 1
+    dt = 360 / (24 * 3600)  # days
+    skip = 10
 
     max_error = 10
     max_iter = 1000
@@ -201,9 +201,10 @@ if __name__ == "__main__":
     # TODO parse from args?
     plant = "soybean"  # soybean, maize
     dim = "3D"  # 1D, 3D
-    soil = "jan_comp"  #  loam, clay sand
-    outer_method = "surface"  # voronoi, length, surface, volume
+    soil = "hydrus_clay"  #  hydrus_loam, hydrus_clay, hydrus_sand
+    outer_method = "voronoi"  # voronoi, length, surface, volume
+    initial = -400  # cm total potential
 
     name = "sra_" + plant + "_" + dim + "_" + soil + "_" + dim + "_" + outer_method
     print(name, "\n")
-    simulate_sra(plant, dim, soil, outer_method, name)
+    simulate_sra(plant, dim, initial, soil, outer_method, name)

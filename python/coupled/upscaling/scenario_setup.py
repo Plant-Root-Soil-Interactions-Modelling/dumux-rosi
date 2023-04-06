@@ -105,9 +105,16 @@ def lupine_conductivities(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def set_scenario(plant, dim, soil, outer_method):
+def set_scenario(plant, dim, initial, soil, outer_method):
     """ 
     Sets up a Scenario     
+    
+    plant            plant name: 'maize' or 'soybean'
+    dim              soil model dimensionality: '1D' or '3D'
+    initial          initial soil total potential [cm] 
+    soil             name of the soil 4D look up table, see soil_vg_() for the names and corresponding VG parameters
+    outer_method     method to determine outer perirhizal radii ('voronoi', 'length', 'surface', or 'volume')
+    
     """
     assert plant == "maize" or plant == "soybean", "plant should be 'maize', or 'soybean' "
     assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
@@ -115,10 +122,9 @@ def set_scenario(plant, dim, soil, outer_method):
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
     wilting_point = -15000  # cm
-    initial = -400  # [cm] constant total potential
     random_seed = 1  # random seed
     trans = 0.5  # cm / day
-    slope = "100"  # cm
+    slope = "1000"  # cm
 
     if plant == "maize":
         soil_, table_name, min_b, max_b, cell_number, Kc = maize(soil, dim)
