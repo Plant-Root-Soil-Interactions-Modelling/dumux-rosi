@@ -1,7 +1,7 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../build-cmake/cpp/python_binding/"); sys.path.append("../../modules/fv/");
+import sys; sys.path.append("../../../CPlantBox/src");
 
-import van_genuchten as vg
+import functional.van_genuchten as vg
+
 import numpy as np
 from scipy.optimize import fsolve
 
@@ -32,7 +32,11 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
     return rsx
 
 
-filename = "table_loam"
+hydrus_loam = [0.078, 0.43, 0.036, 1.56, 24.96]
+hydrus_clay = [0.068, 0.38, 0.008, 1.09, 4.8]
+hydrus_sand = [0.045, 0.43, 0.145, 2.68, 712.8]
+
+filename = "table_hydrus_sand"
 
 # # for single root comparison
 # alpha = 0.0383  # (cm-1) soil
@@ -41,7 +45,8 @@ filename = "table_loam"
 # soil = [0.025, 0.403, alpha, n, Ks]
 
 # soil = [0.08, 0.43, 0.018, 1.8, 28.46]  # standard loam
-soil = [0.08, 0.43, 0.04, 1.6, 50]  # c12 loam
+# soil = [0.08, 0.43, 0.04, 1.6, 50]  # c12 loam
+soil = hydrus_sand
 
 sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp, -1.e5, 1000)  # creates the matrix flux potential look up table
