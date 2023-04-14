@@ -14,15 +14,15 @@ from scipy import sparse
 from rhizo_models import plot_transpiration
 from scenario_setup import *
 
-# r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D")
-# name = "results/c12_up_sra"
+r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D")
+name = "results/c12_up_sra"
 
 # r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D", age_dependent = True)
 # name = "results/c12b_up_sra"
 # dt = 120 / (24 * 3600)  # does not work well, maybe uspacling of kr should be based on that of Kr
 
-r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("1D")
-name = "results/c12_up_sra_1d"
+# r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("1D")
+# name = "results/c12_up_sra_1d"
 
 max_error = 10.
 max_iter = 1000

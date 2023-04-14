@@ -16,7 +16,7 @@ from scipy.optimize import fsolve
 from scipy import sparse
 from scipy.linalg import norm
 import scipy.sparse.linalg as LA
-import vtk_plot as vp
+import visualisation.vtk_plot as vp
 
 """ 
 Benchmark M3.2 Root system: steady state small root system solved with the Python/cpp Hybrid solver

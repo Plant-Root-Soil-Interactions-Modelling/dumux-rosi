@@ -62,21 +62,25 @@ for i in range(0, N):
     hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
+    print("hs", hs.shape, np.min(hs), np.max(hs))
 
     b = B.dot(hs)
     b[0, 0] -= kx_[0] * wilting_point
     q_dirichlet = -sparse.linalg.spsolve(A_q, b)
     print("q_dirichlet", q_dirichlet.shape, np.sum(q_dirichlet))
 
-    if np.sum(q_dirichlet) > t_pot:
-        print("dirichlet", np.sum(q_dirichlet), t_pot)
-        fluxes = r.sumSegFluxes(q_dirichlet)
-    else:
-        b = Bn.dot(hs)
-        b[0, 0] -= t_pot
-        q_neumann = -sparse.linalg.spsolve(A_nq, b)
-        print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
-        fluxes = r.sumSegFluxes(q_neumann)
+    # if np.sum(q_dirichlet) > t_pot:
+    #     print("dirichlet", np.sum(q_dirichlet), t_pot)
+    #     fluxes = r.sumSegFluxes(q_dirichlet)
+    # else:
+    b = Bn.dot(hs)
+    b[0, 0] -= t_pot
+    q_neumann = -sparse.linalg.spsolve(A_nq, b)
+    print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
+    fluxes = r.sumSegFluxes(q_neumann)
+    rx = hs - Kr_inv.dot(q_neumann)
+    # print(hs.shape, Kr_inv.shape, q.shape, rx.shape)
+    print("rx", np.nanmin(rx), np.nanmax(rx), np.min(rx), np.max(rx))
 
     water = s.getWaterVolume()
     s.setSource(fluxes.copy())  # richards.py
