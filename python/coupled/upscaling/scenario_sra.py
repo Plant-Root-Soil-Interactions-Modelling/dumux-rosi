@@ -190,7 +190,7 @@ def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_looku
     write_files(name, hx_, hsr_, sink_, x_, y_, c_, hs_)
 
     """ Plot """
-    print ("Coupled benchmark solved in ", timeit.default_timer() - shydrus_claytart_time, " s")
+    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
     plot_transpiration(x_, y_, c_, lambda t: trans * sinusoidal2(t, dt))
 
 
