@@ -4,7 +4,7 @@ New reference scenario for upscaling (DL 29.3.2023)
 static root system in soil (1D or 3D) outer radii with Voronoi method, or via densities 
 
 full hydraulic model with perirhizal nonlinear resistances 
-(steady rate approach and fixed-point-iteration in new manuscript notation)
+(steady rate approach and fixed-point-iteration with Meunier implementation)
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -20,7 +20,7 @@ from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 
-def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name):
+def simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name):
 
     print("\nInitial root sytstem age", rs_age)
     # print("rs_age", rs_age)
@@ -52,33 +52,6 @@ def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_looku
     rho_ = np.maximum(rho_, np.ones(rho_.shape) * 1.)
     rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200.)
 
-    """ Initialize root hydraulic model """
-    Id = sparse.identity(ns).tocsc()  # identity matrix
-    kx_ = np.divide(r.getKx(rs_age), seg_length)  # / dl (Eqn 5)
-    Kx = sparse.diags(kx_).tocsc()
-    # print("Kx", Kx.shape, Kx[0, 0], Kx[1, 1])
-    # kr_ = np.array(r.getEffKr(rs_age))  # times surface (2 a pi length), (Eqn 7)
-    kr_ = 2 * np.pi * np.multiply(np.multiply(kr_, inner_), seg_length)  # Eqn 7
-    Kr = sparse.diags(kr_).tocsc()
-    # print("Kr", Kr.shape, Kr[0, 0], Kr[1, 1])
-
-    C = r.get_incidence_matrix().tocsc()
-    Ct = C.transpose().tocsc()
-    L = Ct @ Kx @ C  # Laplacian (Eqn 4)
-    L = L[1:, 1:]  # == L_{N-1} as in (Eqn 10 or 14)
-    # print("L", L.shape)
-
-    Ad = (L + Kr).tocsc()  # (Eqn 10)
-    An = Ad.copy()
-    An[0, 0] -= kx_[0]  # (Eqn 14)
-    Kr_inv = sparse.diags(np.divide(np.ones(kr_.shape), kr_)).tocsc()
-    # print("Kr_inv", np.min(Kr_inv), np.max(Kr_inv))
-
-    Adq = Ad @ Kr_inv  # (Eqn 27)
-    Anq = An @ Kr_inv  # (Eqn 30)
-    Ad_Kr = Ad - Kr  # part of b (Eqn 27)
-    An_Kr = An - Kr  # part of b (Eqn 30)
-
     """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, c_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
@@ -88,18 +61,6 @@ def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_looku
 
     N = round(sim_time / dt)
     t = 0.
-
-    # solve neumann no flux
-    hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
-    for j in range(0, ns):  # from matric to total potential
-        hs[j, 0] += nodes[j + 1][2]
-    # print("hs", hs.shape, np.min(hs), np.max(hs))
-    b = An_Kr.dot(hs)
-    q = -sparse.linalg.spsolve(Anq, b)
-    q = np.expand_dims(q, axis = 1)  # column vector
-    # print("q", q.shape, np.sum(q)) ################################### wrong with maize ###########################################
-    hx = hs - Kr_inv.dot(-q)
-    print("hx", np.min(hx), np.max(hx))
 
     for i in range(0, N):
 
@@ -207,4 +168,4 @@ if __name__ == "__main__":
     print(name, "\n")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
-    simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name)
+    simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name)
