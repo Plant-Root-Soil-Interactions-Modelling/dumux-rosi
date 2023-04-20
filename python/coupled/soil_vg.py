@@ -1,8 +1,8 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/") 
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
+import functional.van_genuchten as vg
 import numpy as np
-import van_genuchten as vg
 import matplotlib.pyplot as plt
 
 sand = [0.045, 0.43, 0.15, 3, 1000]

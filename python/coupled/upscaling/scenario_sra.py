@@ -20,15 +20,14 @@ from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 
-def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name):
+def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name):
 
     print("\nInitial root sytstem age", rs_age)
     # print("rs_age", rs_age)
     # rs_age = r.get_ages(rs_age)
     # print("rs_age", np.max(rs_age))
 
-    sim_time = 14.
-    dt = 3600 / (24 * 3600)  # days
+    dt = 360 / (24 * 3600)  # days
     skip = 1
 
     max_error = 10
@@ -121,6 +120,7 @@ def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_looku
             for j in range(0, ns):  # from total to matric
                 hx[j, 0] -= nodes[j + 1][2]
             hx = np.maximum(hx, np.ones(hx.shape) * (-15000))
+            hx = np.minimum(hx, np.ones(rho_.shape) * 0.)
             hsr = soil_root_interface_table(hx, hs, inner_kr_, rho_, sra_table_lookup)
             for j in range(0, ns):  # from matric to total
                 hsr[j, 0] += nodes[j + 1][2]
@@ -197,14 +197,17 @@ def simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_looku
 if __name__ == "__main__":
 
     # TODO parse from args?
-    plant = "soybean"  # soybean, maize
+    plant = "maize"  # soybean, maize
     dim = "1D"  # 1D, 3D
     soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand
-    outer_method = "voronoi"  # voronoi, length, surface, volume
-    initial = -400  # cm total potential
+    outer_method = "surface"  # voronoi, length, surface, volume
+    initial = -200  # cm total potential
 
+    sim_time = 2.
     name = "sra_" + plant + "_" + dim + "_" + soil + "_" + dim + "_" + outer_method
     print(name, "\n")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
-    simulate_sra(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name)
+    print("trans", trans)
+
+    simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name)

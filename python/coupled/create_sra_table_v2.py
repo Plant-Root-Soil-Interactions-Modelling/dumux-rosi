@@ -32,6 +32,9 @@ def soil_root_interface(rx, sx, inner_kr, rho, sp):
     return rsx
 
 
+# sand = [0.045, 0.43, 0.15, 3, 1000]
+# loam = [0.08, 0.43, 0.04, 1.6, 50]
+# clay = [0.1, 0.4, 0.01, 1.1, 10]
 hydrus_loam = [0.078, 0.43, 0.036, 1.56, 24.96]
 hydrus_clay = [0.068, 0.38, 0.008, 1.09, 4.8]
 hydrus_sand = [0.045, 0.43, 0.145, 2.68, 712.8]

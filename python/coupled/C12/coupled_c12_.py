@@ -1,19 +1,21 @@
 """ 
 Benchmark C1.2 for a static root system in soil (1D or 3D) 
-with the classic sink using Doussan approach in HESS (experimental) paper notation with no matrix inversion 
+
+with the classic sink using Doussan approach in HESS paper notation 
+
+!without matrix inversion! 
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
+
+from rhizo_models import plot_transpiration
+from scenario_setup import *
 
 import timeit
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 from scipy import sparse
-
-# import vtk_plot as vp
-from rhizo_models import plot_transpiration
-from scenario_setup import *
 
 r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D")
 name = "results/c12_"
@@ -29,23 +31,23 @@ nodes = r.get_nodes()
 ns = len(r.rs.segments)
 
 """ Doussan """
+A_d, Kr, kx0 = r.doussan_system_matrix(rs_age)
 Id = sparse.identity(ns).tocsc()  # identity matrix
-A, Kr, Kx = r.doussan_system_matrix(rs_age)
-kx_ = np.divide(r.getKx(rs_age), r.rs.segLength())  # / dl
-A_n = A.copy()
-A_n[0, 0] -= kx_[0]
-Kr_inv = sparse.linalg.inv(Kr)
 
 """ see HESS (experimental) """
-A_q = A @ Kr_inv
+A_n = A_d.copy()
+A_n[0, 0] -= kx0
+Kr_inv = sparse.linalg.inv(Kr)  # Kr is a diagonal matrix, thus Kr_inv sparse
+
+A_dq = A_d @ Kr_inv
 A_nq = A_n @ Kr_inv
-B = A - Kr
+Bd = A_d - Kr
 Bn = A_n - Kr
-# print("A_q", A_q.shape, "A_nq", A_nq.shape, "B", B.shape)
+# print("A_dq", type(A_dq), A_dq.shape, "A_nq", type(A_nq), A_nq.shape, "Bd", type(Bd), Bd.shape)
 
 """ Numerical solution """
 start_time = timeit.default_timer()
-x_, y_, w_, cf = [], [], [], []
+x_, y_, z_ = [], [], []
 sink1d = []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 
@@ -62,49 +64,41 @@ for i in range(0, N):
     hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
-    print("hs", hs.shape, np.min(hs), np.max(hs))
+    # print("hs", hs.shape, np.min(hs), np.max(hs))
 
-    b = B.dot(hs)
-    b[0, 0] -= kx_[0] * wilting_point
-    q_dirichlet = -sparse.linalg.spsolve(A_q, b)
-    print("q_dirichlet", q_dirichlet.shape, np.sum(q_dirichlet))
+    b = Bd.dot(hs)
+    b[0, 0] -= kx0 * wilting_point
+    q_dirichlet0 = -sparse.linalg.spsolve(A_dq, b)
+    # print("q_dirichlet", q_dirichlet0.shape, np.sum(q_dirichlet0))
 
-    # if np.sum(q_dirichlet) > t_pot:
-    #     print("dirichlet", np.sum(q_dirichlet), t_pot)
-    #     fluxes = r.sumSegFluxes(q_dirichlet)
-    # else:
-    b = Bn.dot(hs)
-    b[0, 0] -= t_pot
-    q_neumann = -sparse.linalg.spsolve(A_nq, b)
-    print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
-    fluxes = r.sumSegFluxes(q_neumann)
-    rx = hs - Kr_inv.dot(q_neumann)
-    # print(hs.shape, Kr_inv.shape, q.shape, rx.shape)
-    print("rx", np.nanmin(rx), np.nanmax(rx), np.min(rx), np.max(rx))
+    if np.sum(q_dirichlet0) > t_pot:
+        print("dirichlet", np.sum(q_dirichlet0), t_pot)
+        fluxes = r.sumSegFluxes(q_dirichlet0)
+    else:
+        b = Bn.dot(hs)
+        b[0, 0] -= t_pot
+        q_neumann = -sparse.linalg.spsolve(A_nq, b)
+        print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
+        fluxes = r.sumSegFluxes(q_neumann)
 
     water = s.getWaterVolume()
     s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
-    soil_water = (s.getWaterVolume() - water) / dt
-
     old_sx = sx.copy()
     sx = s.getSolutionHead()  # richards.py
-    water = s.getWaterVolume()
+    soil_water = (s.getWaterVolume() - water) / dt
 
     if  i % skip == 0:
-        min_sx = np.min(sx)
-        min_rx = np.min(rx)
-        max_sx = np.max(sx)
-        max_rx = np.max(rx)
+        rx = hs - Kr_inv.dot(q_neumann[:, np.newaxis])
         x_.append(t)
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
         y_.append(soil_water)  # cm3/day (soil uptake)
-        cf.append(sum_flux)  # cm3/day (root system uptake)
+        z_.append(sum_flux)  # cm3/day (root system uptake)
         n = round(float(i) / float(N) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
-              .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
+              .format(np.min(sx), np.max(sx), np.min(rx), np.max(rx), s.simTime, 0.))
 
         # """ Additional sink plot """
         # if i % 60 == 0:  # every 6h
@@ -121,7 +115,7 @@ s.writeDumuxVTK(name)
 
 """ Plot """
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
+plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal(t))
 np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
 
 # vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, False, min_b, max_b, cell_number, name)  # VTK vizualisation

@@ -2,6 +2,8 @@
 Benchmark C1.2 for a static root system in soil (1D or 3D)
 
 with rhizosphere model using steady rate approach and fixed-point-iteration in HESS paper notation
+
+!without matrix inversion! 
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -40,27 +42,17 @@ inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ###########
 inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
 
 """ Doussan """
-A_dirichlet, Kr, kx0 = r.doussan_system_matrix(rs_age)
+A_d, Kr, kx0 = r.doussan_system_matrix(rs_age)
 Id = sparse.identity(ns).tocsc()  # identity matrix
 
-print("invert matrix start")
-Ainv_dirichlet = sparse.linalg.inv(A_dirichlet).todense()  # dense
+A_n = A_d.copy()
+A_n[0, 0] -= kx0
+Kr_inv = sparse.linalg.inv(Kr)  # Kr is a diagonal matrix, thus Kr_inv sparse
 
-A_neumann = A_dirichlet.copy()
-A_neumann[0, 0] -= kx0
-Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
-
-C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
-c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25)
-# print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
-# print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
-
-C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
-c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
-# print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
-# print("c_neumann", type(c_neumann), c_neumann.shape)
-
-print("invert matrix stop")
+A_dq = A_d @ Kr_inv
+A_nq = A_n @ Kr_inv
+Bd = A_d - Kr
+Bn = A_n - Kr
 
 """ Numerical solution """
 start_time = timeit.default_timer()
@@ -72,14 +64,22 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 N = round(sim_time / dt)
 t = 0.
 
-t_pot = -trans * sinusoidal(0)
+t_pot = -trans * sinusoidal(0.)
 hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
 for j in range(0, len(nodes) - 1):  # from matric to total
     hs[j, 0] += nodes[j + 1][2]
-rx = Ainv_dirichlet.dot(Kr.dot(hs)) + Ainv_dirichlet[:, 0] * kx0 * wilting_point
-q_dirichlet = -Kr.dot(hs - rx)
-if np.sum(q_dirichlet) < t_pot:
-    rx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
+
+# code can be reduced, always neumann for t_pot = 0, i.e. L79,81, & 82
+b = Bd.dot(hs)
+b[0, 0] -= kx0 * wilting_point
+q_dirichlet = -sparse.linalg.spsolve(A_dq, b)
+if np.sum(q_dirichlet) > t_pot:
+    rx = hs - Kr_inv.dot(q_dirichlet[:, np.newaxis])
+else:
+    b = Bn.dot(hs)
+    b[0, 0] -= t_pot
+    q_neumann = -sparse.linalg.spsolve(A_nq, b)
+    rx = hs - Kr_inv.dot(q_neumann[:, np.newaxis])
 
 for i in range(0, N):
 
@@ -100,7 +100,9 @@ for i in range(0, N):
 
         for j in range(0, len(nodes) - 1):  # from total to matric
             rx[j, 0] -= nodes[j + 1][2]
-        # print(rx.shape, type(rx), hs.shape, type(hs), inner_kr_.shape, type(inner_kr_), rho_.shape, type(rho_))
+
+        # print("rx", rx.shape, type(rx), "hs", hs.shape, type(hs), "inner_kr", inner_kr_.shape, type(inner_kr_), "rho_", rho_.shape, type(rho_))
+        # print(c, np.min(rx))
         rsx = soil_root_interface_table(rx, hs, inner_kr_, rho_, sra_table_lookup)
 
         for j in range(0, len(nodes) - 1):  # from matric to total
@@ -111,10 +113,16 @@ for i in range(0, N):
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
 
-        rx = Ainv_dirichlet.dot(Kr.dot(rsx)) + Ainv_dirichlet[:, 0] * kx0 * wilting_point
-        q_dirichlet = -Kr.dot(rsx - rx)
-        if np.sum(q_dirichlet) <= t_pot:
-            rx = Ainv_neumann.dot(Kr.dot(rsx)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
+        b = Bd.dot(rsx)
+        b[0, 0] -= kx0 * wilting_point
+        q_dirichlet = -sparse.linalg.spsolve(A_dq, b)
+        if np.sum(q_dirichlet) > t_pot:
+            rx = rsx - Kr_inv.dot(q_dirichlet[:, np.newaxis])
+        else:
+            b = Bn.dot(rsx)
+            b[0, 0] -= t_pot
+            q_neumann = -sparse.linalg.spsolve(A_nq, b)
+            rx = rsx - Kr_inv.dot(q_neumann[:, np.newaxis])
 
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem
@@ -123,11 +131,10 @@ for i in range(0, N):
 
     if np.sum(q_dirichlet) > t_pot:
         print("dirichlet", c, err, np.sum(q_dirichlet), t_pot)
-        fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
+        fluxes = r.sumSegFluxes(q_dirichlet)
     else:
-        q_neumann = -Kr.dot(rsx - rx)
         print("neumann", c, err, np.sum(q_neumann), t_pot)
-        fluxes = r.sumSegFluxes(q_neumann[:, 0])
+        fluxes = r.sumSegFluxes(q_neumann)
 
     water = s.getWaterVolume()
     s.setSource(fluxes.copy())  # richards.py

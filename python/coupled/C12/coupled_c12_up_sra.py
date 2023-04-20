@@ -1,6 +1,8 @@
 """ 
 Benchmark C1.2 for a static root system in soil (1D or 3D)
 with upscaled C_comp matrix with the steady rate approach and fixed-point-iteration in HESS paper notation
+
+similar speed for 3d, great speedup for 1d
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -37,35 +39,18 @@ kr_ = r.getKr(rs_age)
 inner_kr_ = np.multiply(inner_, kr_)  # multiply for table look up
 inner_kr_ = np.expand_dims(inner_kr_, axis = 1)
 
-""" experimental stuff """
+""" Doussan """
+A_dirichlet, Kr, kx0 = r.doussan_system_matrix(rs_age)
 Id = sparse.identity(ns).tocsc()  # identity matrix
 
-kx_ = np.divide(r.getKx(rs_age), r.rs.segLength())  # / dl
-Kx = sparse.diags(kx_).tocsc()
-# print("Kx", Kx.shape, Kx[0, 0], Kx[1, 1])
-
-kr_ = np.array(r.getEffKr(rs_age))  # times surface (2 a pi length)
-Kr = sparse.diags(kr_).tocsc()
-# print("Kr", Kr.shape, Kr[0, 0], Kr[1, 1])
-
-IM = r.get_incidence_matrix().tocsc()
-IMt = IM.transpose().tocsc()
-
-L = IMt @ Kx @ IM  # Laplacian, Hess Eqn (10)
-L = L[1:, 1:]  # == L_{N-1}
-# print("L", L.shape)
-
-print("inv start")
-
-A_dirichlet = (L + Kr).tocsc()
 Ainv_dirichlet = sparse.linalg.inv(A_dirichlet).todense()  # dense
 
-A_neumann = A_dirichlet
-A_neumann[0, 0] -= kx_[0]
+A_neumann = A_dirichlet.copy()
+A_neumann[0, 0] -= kx0
 Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
 
 C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
-c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx_[0])  # # Hess (25)
+c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25)
 # print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
 # print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
 
@@ -125,7 +110,7 @@ t_pot = -trans * sinusoidal(t)
 hs_ = np.zeros((nmax, 1))  # sx -> hs_ # soil cell indices to soil matrix indices
 for j in soil2matrix.keys():
         hs_[soil2matrix[j]] += sx[j] + centers[j, 2]
-hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx_[0] * wilting_point)
+hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
 q_dirichlet_up = -Kr_up.dot(hs_ - hxd)
 if np.sum(q_dirichlet_up) > t_pot:
     rx = hxd
@@ -163,7 +148,7 @@ for i in range(0, N):
         """ xylem matric potential """
         wall_xylem = timeit.default_timer()
 
-        hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx_[0] * wilting_point)
+        hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
         q_dirichlet_up = -Kr_up.dot(rsx - hxd)
         if np.sum(q_dirichlet_up) > t_pot:
             rx = hxd

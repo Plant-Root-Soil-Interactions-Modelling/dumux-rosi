@@ -40,7 +40,7 @@ def maize(soil:str, dim:str):
     else:
         cell_number = [76, 16, 100]
     Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
-    return soil_, table_name, min_b, max_b, cell_number, area, Kc_maize
+    return soil_, table_name, min_b, max_b, cell_number, Kc_maize
 
 
 def soybean(soil:str, dim:str):
@@ -113,17 +113,16 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     dim              soil model dimensionality: '1D' or '3D'
     initial          initial soil total potential [cm] 
     soil             name of the soil 4D look up table, see soil_vg_() for the names and corresponding VG parameters
-    outer_method     method to determine outer perirhizal radii ('voronoi', 'length', 'surface', or 'volume')
-    
+    outer_method     method to determine outer perirhizal radii ('voronoi', 'length', 'surface', or 'volume')    
     """
     assert plant == "maize" or plant == "soybean", "plant should be 'maize', or 'soybean' "
     assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
-    # assert soil in ["loam", "clay", "sand"], "soil should be 'loam', 'clay', or 'sand' "
+    assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand"], "soil should be 'hydrus_loam', 'hydrus_clay', or 'hydrus_sand' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
     wilting_point = -15000  # cm
     random_seed = 1  # random seed
-    trans = 0.5  # cm / day
+    trans_ = 0.5  # cm / day
     slope = "1000"  # cm
 
     if plant == "maize":
@@ -135,7 +134,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         param_name = "Glycine_max_Moraes2020_opt2_modified.xml"
         rs_age = 28.  # initial age in days
 
-    trans = (max_b[0] - min_b[0]) * (max_b[1] - min_b[1]) * 0.5  # cm3 / day
+    trans = (max_b[0] - min_b[0]) * (max_b[1] - min_b[1]) * trans_  # cm3 / day
     initial -= min_b[2] / 2
 
     """ initialize macroscopic soil model """
@@ -213,6 +212,7 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
     try:
         rsx = f((rx, sx, inner_kr_ , rho_))
     except Exception as err:
+        print("An exception occured in soil_root_interface_table() with values:")
         print("rx", rx.shape, np.min(rx), np.max(rx))  # 0, -16000
         print("sx", sx.shape, np.min(sx), np.max(sx))  # 0, -16000
         print("inner_kr_", inner_kr_.shape, np.min(inner_kr_), np.max(inner_kr_))  # 1.e-7 - 1.e-4

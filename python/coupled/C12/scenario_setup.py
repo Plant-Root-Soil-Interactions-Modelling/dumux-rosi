@@ -33,7 +33,7 @@ def set_scenario(dimension, age_dependent = False):
 
     if dimension == "1D":
         min_b, max_b, cell_number = get_domain1D()
-        slope = "250"
+        slope = "100"  # big leads to strange behaviour
     elif dimension == "3D":
         min_b, max_b, cell_number = get_domain3D()
         slope = "500"
