@@ -3,10 +3,10 @@
 """ coupling with DuMux as solver for the soil part """
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
 sys.path.append("../../build-cmake/cpp/python_binding/")
-from xylem_flux import XylemFluxPython  # Python hybrid solver
-from root_conductivities import *  # hard coded conductivities
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.root_conductivities import *  # hard coded conductivities
 import plantbox as pb
-import vtk_plot as vp
+import visualisation.vtk_plot as vp
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
