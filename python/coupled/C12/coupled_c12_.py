@@ -74,12 +74,14 @@ for i in range(0, N):
     if np.sum(q_dirichlet0) > t_pot:
         print("dirichlet", np.sum(q_dirichlet0), t_pot)
         fluxes = r.sumSegFluxes(q_dirichlet0)
+        rx = hs - Kr_inv.dot(q_dirichlet0[:, np.newaxis])
     else:
         b = Bn.dot(hs)
         b[0, 0] -= t_pot
         q_neumann = -sparse.linalg.spsolve(A_nq, b)
         print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
         fluxes = r.sumSegFluxes(q_neumann)
+        rx = hs - Kr_inv.dot(q_neumann[:, np.newaxis])
 
     water = s.getWaterVolume()
     s.setSource(fluxes.copy())  # richards.py
@@ -89,7 +91,6 @@ for i in range(0, N):
     soil_water = (s.getWaterVolume() - water) / dt
 
     if  i % skip == 0:
-        rx = hs - Kr_inv.dot(q_neumann[:, np.newaxis])
         x_.append(t)
         sum_flux = 0.
         for f in fluxes.values():

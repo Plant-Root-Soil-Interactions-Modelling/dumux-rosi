@@ -74,12 +74,12 @@ b = Bd.dot(hs)
 b[0, 0] -= kx0 * wilting_point
 q_dirichlet = -sparse.linalg.spsolve(A_dq, b)
 if np.sum(q_dirichlet) > t_pot:
-    rx = hs - Kr_inv.dot(q_dirichlet[:, np.newaxis])
+    rx = hs - Kr_inv.dot(-q_dirichlet[:, np.newaxis])
 else:
     b = Bn.dot(hs)
     b[0, 0] -= t_pot
     q_neumann = -sparse.linalg.spsolve(A_nq, b)
-    rx = hs - Kr_inv.dot(q_neumann[:, np.newaxis])
+    rx = hs - Kr_inv.dot(-q_neumann[:, np.newaxis])
 
 for i in range(0, N):
 
@@ -117,12 +117,12 @@ for i in range(0, N):
         b[0, 0] -= kx0 * wilting_point
         q_dirichlet = -sparse.linalg.spsolve(A_dq, b)
         if np.sum(q_dirichlet) > t_pot:
-            rx = rsx - Kr_inv.dot(q_dirichlet[:, np.newaxis])
+            rx = rsx - Kr_inv.dot(-q_dirichlet[:, np.newaxis])
         else:
             b = Bn.dot(rsx)
             b[0, 0] -= t_pot
             q_neumann = -sparse.linalg.spsolve(A_nq, b)
-            rx = rsx - Kr_inv.dot(q_neumann[:, np.newaxis])
+            rx = rsx - Kr_inv.dot(-q_neumann[:, np.newaxis])
 
         err = np.linalg.norm(rx - rx_old)
         wall_xylem = timeit.default_timer() - wall_xylem

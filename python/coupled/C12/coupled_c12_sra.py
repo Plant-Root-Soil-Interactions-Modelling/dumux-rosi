@@ -126,7 +126,7 @@ for i in range(0, N):
         fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
     else:
         q_neumann = -Kr.dot(rsx - rx)
-        print("neumann", c, err, np.sum(q_neumann), t_pot)
+        print("neumann", c, err, np.sum(q_neumann), t_pot, np.sum(q_dirichlet))
         fluxes = r.sumSegFluxes(q_neumann[:, 0])
 
     water = s.getWaterVolume()
