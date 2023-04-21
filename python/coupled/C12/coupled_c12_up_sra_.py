@@ -27,7 +27,7 @@ name = "results/c12_up_sra"
 # name = "results/c12_up_sra_1d"
 
 max_error = 10.
-max_iter = 1000
+max_iter = 100
 
 ns = len(r.rs.segments)
 nodes = r.get_nodes()
@@ -46,11 +46,6 @@ Id = sparse.identity(ns).tocsc()  # identity matrix
 A_n = A_d.copy()
 A_n[0, 0] -= kx0
 Kr_inv = sparse.linalg.inv(Kr)  # Kr is a diagonal matrix, thus Kr_inv sparse
-
-A_dq = A_d @ Kr_inv
-A_nq = A_n @ Kr_inv
-Bd = A_d - Kr
-Bn = A_n - Kr
 
 B, soil2matrix, matrix2soil = r.get_soil_matrix()
 nmax = len(matrix2soil)
@@ -72,7 +67,6 @@ AinvKr_neumann_up = (((B @ Ainv_neumann) @ Kr) @ Bt)
 Ainv_neumann_up = B @ Ainv_neumann
 C_comp_neumann_up = B @ C_comp_neumann @ Bt
 c_neumann_up = B @ c_neumann
-
 AinvKr_dirichlet_up = (((B @ Ainv_dirichlet) @ Kr) @ Bt)
 Ainv_dirichlet_up = B @ Ainv_dirichlet
 C_comp_dirichlet_up = B @ C_comp_dirichlet @ Bt
@@ -80,6 +74,10 @@ c_dirichlet_up = B @ c_dirichlet
 # print(C_comp_neumann_up.shape, type(C_comp_neumann_up))
 """ --- """
 
+A_dq = A_d @ Kr_inv
+A_nq = A_n @ Kr_inv
+Bd = A_d - Kr
+Bn = A_n - Kr
 A_dq_up = (B @ A_dq) @ Bt
 A_nq_up = (B @ A_nq) @ Bt
 Bd_up = (B @ Bd) @ Bt
@@ -167,34 +165,33 @@ for i in range(0, N):
         b = Bd_up.dot(rsx)
         b[0, 0] -= kx0 * wilting_point
         q_dirichlet = -sparse.linalg.spsolve(A_dq_up, b)
-        q_dirichlet = (B @ Bt).dot(q_dirichlet)
-        rx = rsx - Kr_up_inv.dot(-q_dirichlet[:, np.newaxis])
-
-        hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
-        q_dirichlet_up = -Kr_up.dot(rsx - hxd)
-
-        # rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
-
-        print("Dirichlet")
-        print("rx", np.min(rx), np.max(rx), np.min(hxd), np.max(hxd))
-        print("fluxes", np.sum(q_dirichlet), np.sum(q_dirichlet_up), np.sum(q_neumann), t_pot)
-        xx
-        # if np.sum(q_dirichlet) > t_pot:
-        #     rx = rsx - Kr_up_inv.dot(-q_dirichlet[:, np.newaxis])
-        #     print("Dirichlet rx", np.min(rx), np.max(rx), np.sum(q_dirichlet), np.sum(q_neumann), t_pot)
-        # else:
-        #     b = Bn_up.dot(rsx)
-        #     b[0, 0] -= t_pot
-        #     q_neumann = -sparse.linalg.spsolve(A_nq_up, b)
-        #     q_neumann = (B @ Bt).dot(q_neumann)
+        # q_dirichlet = (B @ Bt).dot(q_dirichlet)
+        # q_dirichlet = BBt_inv.dot(q_dirichlet)
+        # rx = rsx - Kr_up_inv.dot(-q_dirichlet[:, np.newaxis])
         #
-        #     rx = rsx - Kr_up_inv.dot(-q_neumann[:, np.newaxis])
+        # hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
+        # q_dirichlet_up = -Kr_up.dot(rsx - hxd)
         #
-        #     print("Neumann")
-        #     print("rx", np.min(rx), np.max(rx))
-        #     print("rsx", np.min(rsx), np.max(rsx))
-        #     print("hs_", np.min(hs_), np.max(hs_))
-        #     print("fluxes", np.sum(q_dirichlet), np.sum(q_neumann), t_pot)
+        # # rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
+        # print("Dirichlet")
+        # print("rx", np.min(rx), np.max(rx), np.min(hxd), np.max(hxd))
+        # print("fluxes", np.sum(q_dirichlet), np.sum(q_dirichlet_up), np.sum(q_neumann), t_pot)
+        # xx
+        if np.sum(q_dirichlet) > t_pot:
+            rx = rsx - Kr_up_inv.dot(-q_dirichlet[:, np.newaxis])
+            print("Dirichlet rx", np.min(rx), np.max(rx), np.sum(q_dirichlet), np.sum(q_neumann), t_pot)
+        else:
+            b = Bn_up.dot(rsx)
+            b[0, 0] -= t_pot
+            q_neumann = -sparse.linalg.spsolve(A_nq_up, b)
+            q_neumann = (B @ Bt).dot(q_neumann)
+            rx = rsx - Kr_up_inv.dot(-q_neumann[:, np.newaxis])
+
+            print("Neumann")
+            print("rx", np.min(rx), np.max(rx))
+            print("rsx", np.min(rsx), np.max(rsx))
+            print("hs_", np.min(hs_), np.max(hs_))
+            print("fluxes", np.sum(q_dirichlet), np.sum(q_neumann), t_pot)
 
             # print(rx.shape)
             # print(rsx.shape)
@@ -226,10 +223,6 @@ for i in range(0, N):
     sx = s.getSolutionHead()  # richards.py
 
     if  i % skip == 0:
-        min_sx = np.min(sx)
-        min_rx = np.min(rx)
-        max_sx = np.max(sx)
-        max_rx = np.max(rx)
         x_.append(t)
         sum_flux = 0.
         for f in fluxes.values():
@@ -240,7 +233,7 @@ for i in range(0, N):
         cpx.append(rx[0])  # cm
         n = round(float(i) / float(N) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
-              .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0, 0]))
+              .format(np.min(sx), np.max(sx), np.min(rx), np.max(rx), s.simTime, rx[0, 0]))
 
         # """ Additional sink plot """
         # if i % 60 == 0:  # every 6h
