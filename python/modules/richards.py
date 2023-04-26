@@ -82,6 +82,8 @@ class RichardsWrapper(SolverWrapper):
         @param p     list of concentrations at the z-positions (if given), or per soil layer, [g/cm3].      
         @param z     list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
         """
+        if isinstance(c, float):
+            c = [float(c)]
         self.setParameter(self.param_group + "IC.C", self.dumux_str(c))
         if z:
             assert(len(c) == len(z))  # sample points

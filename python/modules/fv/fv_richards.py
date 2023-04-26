@@ -6,7 +6,7 @@ import timeit
 
 from fv.fv_grid import *
 from fv.fv_solver import *
-import functional.van_genuchten as vg
+import van_genuchten as vg
 
 
 class FVRichards(FVSolver):
