@@ -2,14 +2,14 @@
 # sys.path.append("../../build-cmake/cpp/python_binding/")
 
 import plantbox as pb
-import functional.xylem_flux as xylem_flux
-
+import xylem_flux as xylem_flux
+import sys
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from fv.fv_grid import *
 import fv.fv_richards as rich  # local pure Python cylindrical models
-import functional.van_genuchten as vg
+import van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -53,6 +53,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         # additional variables
         self.cyls = []
         self.wilting_point = wilting_point
+        print('wilting point = ', wilting_point)
         self.NC = NC
         self.logbase = logbase
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
@@ -112,13 +113,14 @@ class RhizoMappedSegments(pb.MappedSegments):
             cyl.setHomogeneousIC(x)  # cm pressure head
             cyl.setICZ_solute(c)  # [kg/m2]
             cyl.setInnerBC("pressure", 0.)  # [cm/day]
-            cyl.setInnerBC_solute("constantConcentration", c[0])  # [kg/m2]
+            cyl.setInnerBC_solute("constantConcentration", c)  # [kg/m2]
             cyl.setOuterBC("fluxCyl", 0.)
             cyl.setOuterBC_solute("fluxCyl", 0.)
 
-            cyl.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
-            cyl.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
-            # # cyl.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
+            cyl.setParameter("Component.MolarMass", "1.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (carbon 12 g/mol)
+            cyl.setParameter("Component.LiquidDiffusionCoefficient", "5e-10")  # m2 s-1 # nitrate = 1700 um^2/sec
+            cyl.setParameter("Component.BufferPower", "5")  # buffer power = \rho * Kd [1]
+            cyl.setParameter("Component.Decay", "1.e-5")  # buffer power = \rho * Kd [1]
 
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
@@ -198,6 +200,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         rsx = np.zeros((len(self.cyls),))
         for i, cyl in enumerate(self.cyls):  # run cylindrical models
             rsx[i] = cyl.getInnerSolutes(shift)  # [cm]
+            #print('rsx', rsx[i])
         return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
 
     def get_soil_k(self, rx):
@@ -238,9 +241,9 @@ class RhizoMappedSegments(pb.MappedSegments):
         """ solute concentration at the root surface interface [g / cm3]"""
         rsx = np.zeros((len(self.cyls),))
         if self.mode.startswith("dumux"):
-#             for i, cyl in enumerate(self.cyls):  # run cylindrical models
-#                 rsx[i] = cyl.getInnerHead()  # [cm]
-            pass  # currently zero flux !!!!!!
+            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                 rsx[i] = cyl.getInnerHead()  # [cm]
+            #pass  # currently zero flux !!!!!!
         else:
             print("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
@@ -295,6 +298,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                 l = self.seg_length[j]
                 cyl.setInnerMatricPotential(rx[i])
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                
                 try:
                     cyl.solve(dt)
                 except:
@@ -312,6 +316,11 @@ class RhizoMappedSegments(pb.MappedSegments):
                 l = self.seg_length[j]
                 cyl.setInnerMatricPotential(rx[i])
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                if not isinstance(argv[2],float): 
+                    cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
+                else:
+                    cyl.setInnerBC_solute("constantFluxCyl", argv[2])
+                cyl.setOuterBC_solute("constantFluxCyl", argv[3])
                 try:
                     cyl.solve(dt)
                 except:
@@ -320,6 +329,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                     # print("node ", self.nodes[self.segments[j].y])
                     self.plot_cylinder(j)
                     self.plot_cylinders()
+                    self.plot_cylinders_solute()
                     raise Exception(str)
         elif self.mode == "dumux_exact":
             rx = argv[0]
@@ -489,7 +499,47 @@ class RhizoMappedSegments(pb.MappedSegments):
         plt.show()
         return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 
+    def plot_cylinders_solute(self):
+        """ plots a specific cylinder (DUMUX only, TODO) """
+        inner, outer = [], []
+        zz = -self.minBound.z
+        for i, cyl in enumerate(self.cyls):
+            x_ = cyl.getDofCoordinates()
+            y_ = cyl.getSolution_(1)
+            #y_ = cyl.getWaterContent() works
+            inner.append(y_[0])
+            outer.append(y_[-1])
+            j = self.segments[i].y
+            z = self.nodes[j].z
+            col_i = int(-z / zz * 255.)
+            c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
+            plt.plot(x_-x_[0], y_, alpha = 0.1, c = c_)
+        plt.xlabel("distance [cm], deeper roots are yellow")
+        plt.ylabel('solute concentration (g/cm3)')
+        # plt.xlim([0.05, 0.6])
+        # plt.ylim([-8500, 0. ])
+        plt.show()
+        return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 
+    def collect_cylinder_solute_data(self):
+        """ collects solute data from cylinders  """
+        
+        l_all = self.segLength()
+        a_all = self.radii
+        dist = []
+        conc = []
+        l = []
+        a = []
+        for i, cyl in enumerate(self.cyls):
+            x = cyl.getDofCoordinates()
+            x_ = x-x[0]
+            dist.append(x_)
+            conc.append(cyl.getSolution_(1))
+            l.append(l_all[i]*np.ones((len(cyl.getDofCoordinates()))))
+            #print('shape dist', np.shape(dist))
+
+        return  dist, conc, l
+    
 def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
     """ plots potential and actual transpiration over time 
     
