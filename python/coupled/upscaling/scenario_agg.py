@@ -33,7 +33,7 @@ def simulate_agg(plant, dim, soil, outer_method, name):
     skip = 10
 
     max_error = 10
-    max_iter = 1000
+    max_iter = 100
 
     ns = len(r.rs.segments)
     nodes = r.get_nodes()

@@ -4,7 +4,9 @@ New reference scenario for upscaling (DL 29.3.2023)
 static root system in soil (1D or 3D) outer radii with Voronoi method, or via densities 
 
 full hydraulic model with perirhizal nonlinear resistances 
-(steady rate approach and fixed-point-iteration with Meunier implementation)
+(steady rate approach and fixed-point-iteration in new manuscript notation)
+
+! no matrix inversion, not working :-( !
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -20,15 +22,14 @@ from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 
-def simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name):
+def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name):
 
     print("\nInitial root sytstem age", rs_age)
     # print("rs_age", rs_age)
     # rs_age = r.get_ages(rs_age)
     # print("rs_age", np.max(rs_age))
 
-    sim_time = 14.
-    dt = 3600 / (24 * 3600)  # days
+    dt = 360 / (24 * 3600)  # days
     skip = 1
 
     max_error = 10
@@ -36,36 +37,63 @@ def simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_l
 
     ns = len(r.rs.segments)
     nodes = r.get_nodes()
-    seg_length = r.rs.segLength()
-    assert len(nodes) - 1 == ns, "number of nodes should be equal one less than number of segments"
+    # seg_length = r.rs.segLength()
+    assert len(nodes) - 1 == ns, "Number of nodes should be equal one less than number of segments"
 
     """ Fetch rhizosphere model params """
     kr_ = np.array(r.getKr(rs_age))
-    kr_min = np.ones(kr_.shape) * 1.e-6
-    kr_[kr_ == 0] = kr_min[kr_ == 0]
-    # print(kr_)
     inner_ = r.rs.radii
     inner_kr_ = np.multiply(inner_, kr_)  # multiply for table look up
     inner_kr_ = np.expand_dims(inner_kr_, axis = 1)
     # inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)
-    inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)
-    rho_ = np.maximum(rho_, np.ones(rho_.shape) * 1.)
-    rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200.)
+    # inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)
+    # rho_ = np.maximum(rho_, np.ones(rho_.shape) * 1.)
+    # rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200.)
+
+    """ Initialize root hydraulic model """
+    A_d, Kr, kx0 = r.doussan_system_matrix(rs_age)
+    Id = sparse.identity(ns).tocsc()  # identity matrix
+
+    A_n = A_d.copy()
+    A_n[0, 0] -= kx0
+
+    Kr_inv = sparse.diags(np.divide(np.ones(ns,), Kr.diagonal()))
+    # Kr_inv = sparse.linalg.inv(Kr)  # Kr is a diagonal matrix, thus Kr_inv sparse
+
+    A_dq = A_d @ Kr_inv
+    A_nq = A_n @ Kr_inv
+    Bd = A_d - Kr
+    Bn = A_n - Kr
 
     """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, c_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
     sx = s.getSolutionHead()  # inital condition, solverbase.py
-    # print("sx", sx.shape, np.min(sx), np.max(sx))
-    # print(sx[s.pick([0., 0., 0.])], sx[s.pick([0., 0., -100.])])
 
     N = round(sim_time / dt)
     t = 0.
 
+    t_pot = -trans * sinusoidal2(0., dt)
+    hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+    for j in range(0, len(nodes) - 1):  # from matric to total
+        hs[j, 0] += nodes[j + 1][2]
+
+    # code can be reduced, always neumann for t_pot = 0, i.e. L79,81, & 82
+    b = Bd.dot(hs)
+    b[0, 0] -= kx0 * wilting_point
+    q_dirichlet = -sparse.linalg.spsolve(A_dq, b)
+    if np.sum(q_dirichlet) > t_pot:
+        rx = hs - Kr_inv.dot(-q_dirichlet[:, np.newaxis])
+    else:
+        b = Bn.dot(hs)
+        b[0, 0] -= t_pot
+        q_neumann = -sparse.linalg.spsolve(A_nq, b)
+        rx = hs - Kr_inv.dot(-q_neumann[:, np.newaxis])
+
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ...
-        # print("t_pot", t_pot)
+        print("t_pot", t_pot)
 
         hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
         for j in range(0, ns):  # from matric to total potential
@@ -73,16 +101,18 @@ def simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_l
 
         err = 1.e6
         c = 0
-        rx_old = hx  # in total potential
+        rx_old = rx  # in total potential
         while err > max_error and c < max_iter:  # max_iter = 1000 , err>100 works fine
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
 
             for j in range(0, ns):  # from total to matric
-                hx[j, 0] -= nodes[j + 1][2]
-            hx = np.maximum(hx, np.ones(hx.shape) * (-15000))
-            hsr = soil_root_interface_table(hx, hs, inner_kr_, rho_, sra_table_lookup)
+                rx[j, 0] -= nodes[j + 1][2]
+
+            # hx = np.maximum(hx, np.ones(hx.shape) * (-15000))
+            # hx = np.minimum(hx, np.ones(rho_.shape) * 0.)
+            hsr = soil_root_interface_table(rx, hs, inner_kr_, rho_, sra_table_lookup)
             for j in range(0, ns):  # from matric to total
                 hsr[j, 0] += nodes[j + 1][2]
 
@@ -91,25 +121,20 @@ def simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_l
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
 
-            # solve dirichlet uptake (Eqn 27)
-            bd = Ad_Kr.dot(hsr)
-            bd[0, 0] -= kx_[0] * wilting_point
-            q = -sparse.linalg.spsolve(Adq, bd)
-            # print("q_d", np.sum(q))
-            if np.sum(q) < t_pot:  # solve neumann uptake (Eqn 30)
-                b = An_Kr.dot(hsr)
+            b = Bd.dot(rsx)
+            b[0, 0] -= kx0 * wilting_point
+            q_dirichlet = -sparse.linalg.spsolve(A_dq, b)
+            if np.sum(q_dirichlet) > t_pot:
+                rx = rsx - Kr_inv.dot(-q_dirichlet[:, np.newaxis])
+            else:
+                b = Bn.dot(rsx)
                 b[0, 0] -= t_pot
-                q = -sparse.linalg.spsolve(Anq, b)
-                # print("q_n", np.sum(q))
+                q_neumann = -sparse.linalg.spsolve(A_nq, b)
+                rx = rsx - Kr_inv.dot(-q_neumann[:, np.newaxis])
 
-            q = np.expand_dims(q, axis = 1)  # column vector
-            hx = hsr - Kr_inv.dot(-q)
-            # print("hx", np.min(hx), np.max(hx))
-
-            err = np.linalg.norm(hx - rx_old)
-            # print("err", err)
+            err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
-            rx_old = hx.copy()
+            rx_old = rx.copy()
             c += 1
 
         soil_fluxes = r.sumSegFluxes(q[:, 0])
@@ -151,7 +176,7 @@ def simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_l
     write_files(name, hx_, hsr_, sink_, x_, y_, c_, hs_)
 
     """ Plot """
-    print ("Coupled benchmark solved in ", timeit.default_timer() - shydrus_claytart_time, " s")
+    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
     plot_transpiration(x_, y_, c_, lambda t: trans * sinusoidal2(t, dt))
 
 
@@ -161,11 +186,14 @@ if __name__ == "__main__":
     plant = "soybean"  # soybean, maize
     dim = "1D"  # 1D, 3D
     soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand
-    outer_method = "voronoi"  # voronoi, length, surface, volume
-    initial = -400  # cm total potential
+    outer_method = "surface"  # voronoi, length, surface, volume
+    initial = -200  # cm total potential
 
-    name = "sraOld" + plant + "_" + dim + "_" + soil + "_" + dim + "_" + outer_method
+    sim_time = 2.
+    name = "sra_" + plant + "_" + dim + "_" + soil + "_" + dim + "_" + outer_method
     print(name, "\n")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
-    simulate_sra_old(r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name)
+    print("trans", trans)
+
+    simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, name)

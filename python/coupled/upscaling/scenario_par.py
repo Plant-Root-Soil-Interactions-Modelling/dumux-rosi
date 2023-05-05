@@ -40,7 +40,7 @@ picker = lambda x, y, z: s.pick([0., 0., z])  # reset mapper, since it is 1D
 r.rs.setSoilGrid(picker)  # maps segment
 
 max_error = 10.
-max_iter = 1000
+max_iter = 100
 
 """ for fixed mapping """
 types = r.rs.subTypes

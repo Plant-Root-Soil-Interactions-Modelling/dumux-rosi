@@ -20,40 +20,39 @@ def soil_vg_(name:str):
     """ 
     Van Genuchten parameter for soil from Hydrus1D, 
     called by maize() and soybean() 
+    
+    4D look up tables are created with teh script create_sra_table_v2
     """
     soil = {}
     soil["jan_comp"] = [0.025, 0.403, 0.0383, 1.3774, 60.]
     soil["hydrus_loam"] = [0.078, 0.43, 0.036, 1.56, 24.96]
     soil["hydrus_clay"] = [0.068, 0.38, 0.008, 1.09, 4.8]
     soil["hydrus_sand"] = [0.045, 0.43, 0.145, 2.68, 712.8]
+    soil["hydrus_sandyloam"] = [0.065, 0.41, 0.075, 1.89, 106.1]
     table_name = "table_{:s}".format(name)  # name for 4D look up table ########################
     return soil[name], table_name
 
 
-def maize(soil:str, dim:str):
+def maize_(dim:str):
     """ parameters for maize simulation """
-    soil_, table_name = soil_vg_(soil)
-    min_b = [-38., -8., -100.]  # data from INARI
-    max_b = [38., 8., 0.]
+    min_b = np.array([-38., -8., -100.])
+    max_b = np.array([38., 8., 0.])
     if dim == "1D":
-        cell_number = [1, 1, 100]
+        cell_number = np.array([1, 1, 100])
     else:
-        cell_number = [76, 16, 100]
-    Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
-    return soil_, table_name, min_b, max_b, cell_number, Kc_maize
+        cell_number = np.array([76, 16, 100])
+    return min_b, max_b, cell_number
 
 
-def soybean(soil:str, dim:str):
+def soybean_(dim:str):
     """ parameters for soybean simulation """
-    soil_, table_name = soil_vg_(soil)
-    min_b = [-38, -1.5, -100.]  # data from INARI
-    max_b = [38, 1.5, 0.]
+    min_b = np.array([-38, -1.5, -100.])
+    max_b = np.array([38, 1.5, 0.])
     if dim == "1D":
-        cell_number = [1, 1, 100]
+        cell_number = np.array([1, 1, 100])
     else:
-        cell_number = [76, 3, 100]
-    Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al 1998
-    return soil_, table_name, min_b, max_b, cell_number, Kc_soybean
+        cell_number = np.array([76, 3, 100])
+    return min_b, max_b, cell_number
 
 
 def maize_conductivities(r, skr = 1., skx = 1.):
@@ -68,8 +67,8 @@ def maize_conductivities(r, skr = 1., skx = 1.):
     kx0 = np.array([[0., 0.000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
     kx1 = np.array([[0., 0.000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
 
-    kr01 = np.minimum(skr * kr0[:, 1], 1.)
-    kr11 = np.minimum(skr * kr1[:, 1], 1.)
+    kr01 = np.minimum(skr * kr0[:, 1], 1.)  # kr0[:, 1] are values
+    kr11 = np.minimum(skr * kr1[:, 1], 1.)  # kr1[:, 1] are values
     r.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
@@ -117,22 +116,22 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     """
     assert plant == "maize" or plant == "soybean", "plant should be 'maize', or 'soybean' "
     assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
-    assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand"], "soil should be 'hydrus_loam', 'hydrus_clay', or 'hydrus_sand' "
+    assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand", "hydrus_sandyloam"], "soil should be 'hydrus_loam', 'hydrus_clay', 'hydrus_sand' or 'hydrus_sandyloam' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
     wilting_point = -15000  # cm
     random_seed = 1  # random seed
-    trans_ = 0.5  # cm / day
     slope = "1000"  # cm
+    trans_ = 0.5  # cm / day
+    rs_age = 21.  # initial age in days
 
+    soil_, table_name = soil_vg_(soil)
     if plant == "maize":
-        soil_, table_name, min_b, max_b, cell_number, Kc = maize(soil, dim)
+        min_b, max_b, cell_number = maize_(dim)
         param_name = "Zeamays_synMRI_modified.xml"
-        rs_age = 28.  # initial age in days
     elif plant == "soybean":
-        soil_, table_name, min_b, max_b, cell_number, Kc = soybean(soil, dim)
+        min_b, max_b, cell_number = soybean_(dim)
         param_name = "Glycine_max_Moraes2020_opt2_modified.xml"
-        rs_age = 28.  # initial age in days
 
     trans = (max_b[0] - min_b[0]) * (max_b[1] - min_b[1]) * trans_  # cm3 / day
     initial -= min_b[2] / 2
@@ -163,21 +162,25 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     rs.setSeed(random_seed)
     rs.readParameters("data/" + param_name)
     rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-    rs.initializeDB(4, 5)
+    # rs.initializeDB(4, 5)
+    rs.initialize()
     rs.simulate(rs_age, True)
-    r = XylemFluxPython(rs)
+
+    r = HydraulicsDoussan(rs)
+
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)  # cutting
     if plant == "maize":
-        maize_conductivities(r)
+        maize_conductivities(r, 1., 1.)
     elif plant == "soybean":
-        lupine_conductivities(r)
+        lupine_conductivities(r, 1., 1.)
 
     """ coupling roots to macroscopic soil """
     if dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
     elif dim == "3D":
         picker = lambda x, y, z: s.pick([x, y, z])
+
     r.rs.setSoilGrid(picker)  # maps segment
     seg2cell = r.rs.seg2cell
     ns = len(r.rs.segments)
@@ -192,6 +195,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         outer_ = outer_[1:]  # nodes to segs
     else:
         outer_ = PerirhizalPython(rs).get_outer_radii(outer_method)
+
     inner_ = rs.radii
     rho = np.divide(outer_, np.array(inner_))
     rho = np.expand_dims(rho, axis = 1)
