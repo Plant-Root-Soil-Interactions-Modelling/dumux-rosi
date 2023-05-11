@@ -179,7 +179,6 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         params = rs.getRootRandomParameter()
         for p in params:
             p.a = 2. * p.a  # at least ..... TODO parameterisation
-            print(p.a)
 
     # seed = rs.getRootSystemParameter()  # SeedRandomParameter
     # seed.firstSB = 1.e6  #################################################################################

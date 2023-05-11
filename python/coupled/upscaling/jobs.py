@@ -71,7 +71,7 @@ def make_list():
 
 if __name__ == "__main__":
 
-    sim_time = 0.1  # days
+    sim_time = 7.5  # days
 
     if rank == 0:
         jobs = make_list()

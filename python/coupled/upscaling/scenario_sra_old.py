@@ -4,7 +4,9 @@ New reference scenario for upscaling (DL 29.3.2023)
 static root system in soil (1D or 3D) outer radii with Voronoi method, or via densities 
 
 full hydraulic model with perirhizal nonlinear resistances 
-(steady rate approach and fixed-point-iteration in new manuscript notation)
+
+solved by 
+Meunier matrix (sovled with spsolve, but LU factorisation also possible, in Sensitivity branch)
 """
 import sys; sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
