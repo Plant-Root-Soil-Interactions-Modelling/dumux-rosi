@@ -7,8 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from functional.xylem_flux import sinusoidal2
 
-method = ["sra"] * 3
-plant = ["soybean"] * 3
+method = ["sra", "sra", "sra"]
+plant = ["maize"] * 3
 dim = ["1D"] * 3
 soil = ["hydrus_loam"] * 3
 outer_method = ["surface"] * 3
@@ -37,7 +37,7 @@ for p in plant:
     if p == "soybean":
             trans.append(0.5 * 3 * 75)  # potential transpiration cm3/day
     elif p == "maize":
-            trans.append(0.5 * 15 * 75)  # potential transpiration cm3/day
+            trans.append(0.5 * 16 * 75)  # potential transpiration cm3/day
     else:
         raise
 

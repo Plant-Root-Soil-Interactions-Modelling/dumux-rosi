@@ -104,6 +104,16 @@ def lupine_conductivities(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
+def const_conductivities(r):
+    """ const conductivities """
+    kr00 = 0.  # artificial shoot
+    kx00 = 1.e3  # artificial shoot
+    kr_const_ = 1.73e-4  # [1/day]
+    kx_const_ = 4.32e-2  # [cm3/day]
+    r.setKr([kr00, kr_const_, kr_const_, kr_const_, kr_const_, kr_const_, kr_const_])
+    r.setKx([kx00, kx_const_, kx_const_, kx_const_, kx_const_, kx_const_, kx_const_])
+
+
 def set_scenario(plant, dim, initial, soil, outer_method):
     """ 
     Sets up a Scenario     
@@ -121,9 +131,10 @@ def set_scenario(plant, dim, initial, soil, outer_method):
 
     wilting_point = -15000  # cm
     random_seed = 1  # random seed
-    slope = "1000"  # cm
+    slope = "1000"  # cm'>
+
     trans_ = 0.5  # cm / day
-    rs_age = 21.  # initial age in days
+    rs_age = 2.*28.  # 21.  # initial age in days
 
     soil_, table_name = soil_vg_(soil)
     if plant == "maize":
@@ -160,7 +171,17 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     """ root hydraulic model"""
     rs = pb.MappedRootSystem()
     rs.setSeed(random_seed)
-    rs.readParameters("data/" + param_name)
+    rs.readParameters("data/" + param_name)  #
+
+    if plant == "maize":
+        params = rs.getRootRandomParameter()
+        for p in params:
+            p.a = 2. * p.a  # at least ..... TODO parameterisation
+            print(p.a)
+
+    # seed = rs.getRootSystemParameter()  # SeedRandomParameter
+    # seed.firstSB = 1.e6  #################################################################################
+
     rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
     # rs.initializeDB(4, 5)
     rs.initialize()
@@ -171,8 +192,10 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)  # cutting
     if plant == "maize":
+        # const_conductivities(r)
         maize_conductivities(r, 1., 1.)
     elif plant == "soybean":
+        # const_conductivities(r)
         lupine_conductivities(r, 1., 1.)
 
     """ coupling roots to macroscopic soil """

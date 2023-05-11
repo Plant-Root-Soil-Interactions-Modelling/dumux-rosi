@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 """ parameters """
 
 dim = "1D"  # 1D, 3D
-plant = "soybean"  # soybean, maize
+plant = "maize"  # soybean, maize
 # min_b, max_b, cell_number = scenario.soybean_(dim)
 min_b, max_b, cell_number = scenario.maize_(dim)
 soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand
@@ -27,15 +27,26 @@ r = r_.rs  # throw away (TODO ahve to change setup anyway...)
 segs = r.segments
 nodes = r.nodes
 
-print(type(r_.rs))
-print("segs")
-for i in range(0, 10):
-    print(segs[i])
-print("trans", trans)
-print("nodes")
-for i in range(0, 10):
-    print(nodes[i])
-r_.test()
+params = r.getRootRandomParameter()
+for p in params:
+    print("radius", p.a)
+
+# A_dirichlet, Kr, kx0 = r_.doussan_system_matrix(rs_age)
+# print(type(r_.rs))
+# print("segs")
+# for i in range(0, 10):
+#     print(segs[i])
+# # print("trans", trans)
+# print("nodes")
+# for i in range(0, 10):
+#     print(nodes[i])
+# print()
+# print("kx0", kx0)
+# print()
+# print(A_dirichlet[0:8, 0:8])
+# print()
+# print(A_dirichlet[:, 0])
+# r_.test()
 
 sn = np.prod(cell_number)
 peri = PerirhizalPython(r)
@@ -71,7 +82,7 @@ print("age", rs_age, "nodes", len(nodes))
 # vp.plot_roots(ana, "age")
 # vp.plot_roots(ana, "kr")
 # vp.plot_roots(ana, "kx")
-# vp.plot_roots(ana, "cell_id")
+vp.plot_roots(ana, "cell_id")
 
 # width = max_b - min_b
 # vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
