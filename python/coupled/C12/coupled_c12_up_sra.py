@@ -110,6 +110,7 @@ t_pot = -trans * sinusoidal(t)
 hs_ = np.zeros((nmax, 1))  # sx -> hs_ # soil cell indices to soil matrix indices
 for j in soil2matrix.keys():
         hs_[soil2matrix[j]] += sx[j] + centers[j, 2]
+
 hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
 q_dirichlet_up = -Kr_up.dot(hs_ - hxd)
 if np.sum(q_dirichlet_up) > t_pot:

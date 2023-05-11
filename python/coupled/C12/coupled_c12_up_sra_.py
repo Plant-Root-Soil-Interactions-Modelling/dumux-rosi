@@ -3,6 +3,8 @@ Benchmark C1.2 for a static root system in soil (1D or 3D)
 with upscaled C_comp matrix with the steady rate approach and fixed-point-iteration in HESS paper notation
 
 similar speed for 3d, great speedup for 1d
+
+!without matrix inversion! 
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -106,30 +108,59 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 centers = s.getCellCenters()
 
 t_pot = -trans * sinusoidal(t)
+
 hs_ = np.zeros((nmax, 1))  # sx -> hs_ # soil cell indices to soil matrix indices
 for j in soil2matrix.keys():
         hs_[soil2matrix[j]] += sx[j] + centers[j, 2]
 
-# hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
-# q_dirichlet_up = -Kr_up.dot(hs_ - hxd)
+hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+for j in range(0, len(nodes) - 1):  # from matric to total
+    hs[j, 0] += nodes[j + 1][2]
+
+hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
+q_dirichlet_up = -Kr_up.dot(hs_ - hxd)
 # if np.sum(q_dirichlet_up) > t_pot:
-#     rx = hxd
+rx3 = hxd
 # else:
-#     rx = BBt_inv.dot(AinvKr_neumann_up.dot(hs_) + Ainv_neumann_up[:, 0] * t_pot)
+#     rx2 = BBt_inv.dot(AinvKr_neumann_up.dot(hs_) + Ainv_neumann_up[:, 0] * t_pot)
 
 # code can be reduced, always neumann for t_pot = 0, i.e. L79,81, & 82
 
 # print("hs_", hs_.shape)
-b = Bd_up.dot(hs_)
+# print(BBt_inv[0, 0])
+
+hs2 = hs_.copy()
+hs2[0, 0] -= kx0 * wilting_point
+b = Bd_up.dot(hs2)  # hs_
+# b[0, 0] -= 0.1 * kx0 * wilting_point
+q_dirichlet = BBt_inv.dot(-sparse.linalg.spsolve(A_dq_up, b))  # -3.049 * np.ones(q_dirichlet_up.shape)  #
+
+b = Bd.dot(hs)
 b[0, 0] -= kx0 * wilting_point
-q_dirichlet = -sparse.linalg.spsolve(A_dq_up, b)
-if np.sum(q_dirichlet) > t_pot:
-    rx = hs_ - Kr_up_inv.dot(-q_dirichlet[:, np.newaxis])
-else:
-    b = Bn_up.dot(hs_)
-    b[0, 0] -= t_pot
-    q_neumann = -sparse.linalg.spsolve(A_nq_up, b)
-    rx = hs_ - Kr_up_inv.dot(-q_neumann[:, np.newaxis])
+q_dirichlet2 = -sparse.linalg.spsolve(A_dq, b)  # not upsacled
+
+# if np.sum(q_dirichlet) > t_pot:
+rx = hs_ - Kr_up_inv.dot(-q_dirichlet)  # [:, np.newaxis]
+rx2 = hs - Kr_inv.dot(-q_dirichlet2[:, np.newaxis])
+# else:
+#     b = Bn_up.dot(hs_)
+#     b[0, 0] -= t_pot
+#     q_neumann = -sparse.linalg.spsolve(A_nq_up, b)
+#     rx = hs_ - Kr_up_inv.dot(-q_neumann[:, np.newaxis])
+
+print("q_dirichlet(rx)    ", np.min(q_dirichlet), np.max(q_dirichlet))  # not inverted, (not exactyl the same to rx3)
+print("q_dirichlet2(rx2)  ", np.min(q_dirichlet2), np.max(q_dirichlet2))  # upscaled
+print("q_dirichlet_up(rx3)", np.min(q_dirichlet_up), np.max(q_dirichlet_up))
+
+print()
+print("rx", np.min(rx), np.max(rx))
+print("rx2", np.min(rx2), np.max(rx2))  # not inverted, (not exactyl the same to rx3)
+print("rx3", np.min(rx3), np.max(rx3))  # upscaled
+
+print()
+print("hs_(rx)", np.min(hs_), np.max(hs_))  # not inverted, (not exactyl the same to rx3)
+print("hs(rx2)", np.min(hs), np.max(hs))  # upscaled
+dd
 
 for i in range(0, N):
 

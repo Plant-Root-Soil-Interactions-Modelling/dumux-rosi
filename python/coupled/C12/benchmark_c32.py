@@ -32,14 +32,14 @@ p0 = -500  # dircichlet bc at top
 sim_time = 14  # [day] for task b
 
 """ root problem """
-r0 = XylemFluxPython("../../../../grids/RootSystem.rsml")
+r0 = XylemFluxPython("../../../grids/RootSystem.rsml")
 r0.setKr([kr])
 r0.setKx([kz])
 
 soil_index = lambda x, y, z: 0
 r0.rs.setSoilGrid(soil_index)
 
-r = HydraulicsDoussan("../../../../grids/RootSystem.rsml")
+r = HydraulicsDoussan("../../../grids/RootSystem.rsml")
 r.setKr([kr])
 r.setKx([kz])
 r.rs.setSoilGrid(soil_index)

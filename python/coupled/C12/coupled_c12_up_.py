@@ -1,53 +1,51 @@
 """ 
-Benchmark C1.2 for a static root system in soil (1D or 3D) 
-with the classic sink using Doussan approach in HESS paper notation, solves for q 
+Benchmark C1.2 for a static root system in soil (1D or 3D)
+with upscaled C_comp matrix (for calculating the fluxes) 
+using Doussan approach in HESS paper notation
 
-same results as version with Meunier approach (coupled/coupled_c12.py)
+!!!! all upscaled without matrix inversion are not working correctly !!!!
+
+similar speed for 3d, great speedup for 1d
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
-from rhizo_models import plot_transpiration
-from scenario_setup import *
-
 import timeit
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
 from scipy import sparse
 
+from rhizo_models import plot_transpiration
+from scenario_setup import *
+
 r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D")
-name = "results/c12"
+name = "results/c12_up"
 
 # r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("3D", age_dependent = True)
-# dt = 36 / (24 * 3600)  # unstable
-# name = "results/c12b"
+# dt = 36 / (24 * 3600)  # unstable otherwise
+# name = "results/c12b_up"
 
 # r, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_time, dt, skip = set_scenario("1D")
-# name = "results/c12_1d"
+# name = "results/c12_up1d"
 
 nodes = r.get_nodes()
 ns = len(r.rs.segments)
 
 """ Doussan """
-A_dirichlet, Kr, kx0 = r.doussan_system_matrix(rs_age)
+A_d, Kr, kx0 = r.doussan_system_matrix(rs_age)
 Id = sparse.identity(ns).tocsc()  # identity matrix
+Kr_inv = sparse.linalg.inv(Kr)  # Kr is a diagonal matrix, thus Kr_inv sparse
 
 print("invert matrix start")
-
-# A_dirichlet = A.tocsc()
-Ainv_dirichlet = sparse.linalg.inv(A_dirichlet)  # dense
-# Ainv_dirichlet = scipy.linalg.inv(A_dirichlet) # this does not work for dense A, no idea why
-A_neumann = A_dirichlet.copy()
-A_neumann[0, 0] -= kx0
-Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
-# Ainv_neumann = scipy.linalg.inv(A_neumann)
+Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
+A_n = A_d.copy()
+A_n[0, 0] -= kx0
+Ainv_neumann = sparse.linalg.inv(A_n).todense()  # dense
 
 C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
 c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25)
 # print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
 # print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
-
 C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
 c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
 # print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
@@ -55,28 +53,98 @@ c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
 
 print("invert matrix stop")
 
-""" Numerical solution """
+print("upscaling start")
+
+B, soil2matrix, matrix2soil = r.get_soil_matrix()
+nmax = len(matrix2soil)  # dimension of the upsaled problem
+
+Bt = B.transpose()
+# print(Bt.shape, C_comp_neumann.shape, B.shape)
+# print(np.sum(Bt @ B), (Bt @ B).shape)
+BBt_inv = sparse.linalg.inv(B @ Bt)  # sparse
+
+C_comp_neumann_up = B @ C_comp_neumann @ Bt
+c_neumann_up = B @ c_neumann
+C_comp_dirichlet_up = B @ C_comp_dirichlet @ Bt
+c_dirichlet_up = B @ c_dirichlet
+# print(C_comp_neumann_up.shape, type(C_comp_neumann_up))
+
+A_dq = A_d @ Kr_inv
+A_nq = A_n @ Kr_inv
+Bd = A_d - Kr
+Bn = A_n - Kr
+A_dq_up = (B @ A_dq) @ Bt
+A_nq_up = (B @ A_nq) @ Bt
+Bd_up = (B @ Bd) @ Bt
+Bn_up = (B @ Bn) @ Bt
+
+print("upscaling end")
+
+""" Numerical solution"""
 start_time = timeit.default_timer()
+rs_age = np.max(r.get_ages())
 x_, y_, z_ = [], [], []
 sink1d = []
-sx = s.getSolutionHead()  # inital condition, solverbase.py
 
 N = round(sim_time / dt)
 t = 0.
 
 rx = [0]
 
+sx = s.getSolutionHead()  # inital condition, solverbase.py
+centers = s.getCellCenters()
+
 for i in range(0, N):
 
     t_pot = -trans * sinusoidal(t)  # potential transpiration ...
     print("t_pot", t_pot)
 
-    hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
-    for j in range(0, len(nodes) - 1):  # from matric to total
-        hs[j, 0] += nodes[j + 1][2]
-    # print("hs", hs.shape, np.min(hs), np.max(hs))
+    # hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+    # for j in range(0, len(nodes) - 1):  # from matric to total
+    #     hs[j, 0] += nodes[j + 1][2]
+    #
+    # q_dirichlet0 = -(C_comp_dirichlet.dot(hs) + c_dirichlet * wilting_point)
+    #
+    # if np.sum(q_dirichlet0) > t_pot:
+    #     print("dirichlet", np.sum(q_dirichlet0), t_pot)
+    #     fluxes = r.sumSegFluxes(q_dirichlet0[:, 0])
+    # else:
+    #     q_neumann0 = -(C_comp_neumann.dot(hs) - c_neumann * t_pot)
+    #     print("neumann", np.sum(q_neumann0), t_pot)
+    #     fluxes = r.sumSegFluxes(q_neumann0[:, 0])
 
-    q_dirichlet0 = -(C_comp_dirichlet.dot(hs) + c_dirichlet * wilting_point)
+    hs_ = np.zeros((nmax, 1))
+    for j in soil2matrix.keys():
+            hs_[soil2matrix[j]] += sx[j] + centers[j, 2]
+
+    # hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+    # for j in range(0, len(nodes) - 1):  # from matric to total
+    #     hs[j, 0] += nodes[j + 1][2]
+    # hs_ = BBt_inv.dot(B.dot(hs))  # can be proven using pseudo inverse
+
+    q_dirichlet0_up_ = -(C_comp_dirichlet_up.dot(hs_) + c_dirichlet_up * wilting_point)
+
+    b = Bd_up.dot(hs_)
+    b[0, 0] -= kx0 * wilting_point
+    q_dirichlet0_up = -sparse.linalg.spsolve(A_dq_up, b)
+    q_dirichlet0_up = q_dirichlet0_up[:, np.newaxis]
+
+    print(np.min(q_dirichlet0_up_), np.min(q_dirichlet0_up))
+
+    if np.sum(q_dirichlet0_up) > t_pot:
+        print("q_dirichlet0_up", np.sum(q_dirichlet0_up), t_pot)
+        fluxes = {}
+        for j in range(0, nmax):
+            fluxes[matrix2soil[j]] = q_dirichlet0_up[j, 0]
+    else:
+        # print("C_comp_neumann_up", C_comp_neumann_up.shape)
+        # print("c_neumann_up", c_neumann_up.shape)
+        # print("hs_", hs_.shape)
+        q_neumann0_up = -(C_comp_neumann_up.dot(hs_) - c_neumann_up * t_pot)
+        print("q_neumann0_up", q_neumann0_up.shape, np.sum(q_neumann0_up), t_pot)
+        fluxes = {}
+        for j in range(0, nmax):
+            fluxes[matrix2soil[j]] = q_neumann0_up[j, 0]
 
     # print()
     # hx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, 0] * t_pot  #   # Hess Eqn (29)
@@ -97,14 +165,6 @@ for i in range(0, N):
     # # hx = [0]
     # print()
 
-    if np.sum(q_dirichlet0) > t_pot:
-        print("dirichlet", np.sum(q_dirichlet0), t_pot)
-        fluxes = r.sumSegFluxes(q_dirichlet0[:, 0])
-    else:
-        q_neumann0 = -(C_comp_neumann.dot(hs) - c_neumann * t_pot)
-        print("neumann", np.sum(q_neumann0), t_pot)
-        fluxes = r.sumSegFluxes(q_neumann0[:, 0])
-
     water = s.getWaterVolume()
     s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
@@ -112,22 +172,18 @@ for i in range(0, N):
 
     old_sx = sx.copy()
     sx = s.getSolutionHead()  # richards.py
-    water = s.getWaterVolume()
 
     if  i % skip == 0:
-        min_sx = np.min(sx)
-        min_rx = np.min(rx)
-        max_sx = np.max(sx)
-        max_rx = np.max(rx)
         x_.append(t)
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        y_.append(soil_water)  # cm3/day (soil uptake)
-        z_.append(sum_flux)  # cm3/day (root system uptake)
+        # print("sum_flux", sum_flux.shape, sum_flux)
+        y_.append(soil_water)  # cm3/day
+        z_.append(sum_flux)  # cm3/day
         n = round(float(i) / float(N) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
-              .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
+              .format(np.min(sx), np.max(sx), np.min(rx), np.max(rx), s.simTime, rx[0]))
 
         # """ Additional sink plot """
         # if i % 60 == 0:  # every 6h

@@ -1,7 +1,7 @@
 """ 
 Benchmark C1.2 for a static root system in soil (1D or 3D) 
 
-with the classic sink using Doussan approach in HESS paper notation 
+with the classic sink using Doussan approach in HESS paper notation, solves for q  
 
 !without matrix inversion! 
 """
@@ -79,7 +79,7 @@ for i in range(0, N):
         b = Bn.dot(hs)
         b[0, 0] -= t_pot
         q_neumann = -sparse.linalg.spsolve(A_nq, b)
-        print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot)
+        print("neumann", q_neumann.shape, np.sum(q_neumann), t_pot, "minmax", np.min(q_neumann), np.max(q_neumann))
         fluxes = r.sumSegFluxes(q_neumann)
         rx = hs - Kr_inv.dot(q_neumann[:, np.newaxis])
 

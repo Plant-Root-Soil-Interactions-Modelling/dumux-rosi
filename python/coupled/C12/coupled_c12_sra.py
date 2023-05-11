@@ -101,6 +101,7 @@ for i in range(0, N):
         for j in range(0, len(nodes) - 1):  # from total to matric
             rx[j, 0] -= nodes[j + 1][2]
         # print(rx.shape, type(rx), hs.shape, type(hs), inner_kr_.shape, type(inner_kr_), rho_.shape, type(rho_))
+
         rsx = soil_root_interface_table(rx, hs, inner_kr_, rho_, sra_table_lookup)
 
         for j in range(0, len(nodes) - 1):  # from matric to total
