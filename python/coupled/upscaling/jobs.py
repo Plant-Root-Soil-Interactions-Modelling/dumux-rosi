@@ -12,7 +12,7 @@ import scenario_sra as sra
 import scenario_sra_old as sra_old
 
 
-def run_jobs(jobs):
+def run_jobs(jobs, sim_time):
     """ distribute jobs to MPI ranks """
 
     jobs = np.array(jobs)
@@ -35,9 +35,9 @@ def run_jobs(jobs):
         method, plant, dim, soil, outer_method = jobs[i]
 
         if method == "sra":
-            sra.run_sra(*jobs[i])
+            sra.run_sra(sim_time, *jobs[i])
         elif method == "sraOld":
-            sra_old.run_sraOld(*jobs[i])
+            sra_old.run_sraOld(sim_time, *jobs[i])
         else:
             raise("Unknown method" + method)
 
@@ -51,31 +51,33 @@ def run_jobs(jobs):
 def make_list():
     jobs = []
 
-    # jobs.append(['sra', 'maize', "3D", "hydrus_loam", "surface"])
-    # jobs.append(['sra', 'soybean', "3D", "hydrus_loam", "surface"])
-    # jobs.append(['sra', 'maize', "3D", "hydrus_clay", "surface"])
-    # jobs.append(['sra', 'soybean', "3D", "hydrus_clay", "surface"])
-    # jobs.append(['sra', 'maize', "3D", "hydrus_sandyloam", "surface"])
-    # jobs.append(['sra', 'soybean', "3D", "hydrus_sandyloam", "surface"])
+    method = ['sra', 'sraOld']
+    plant = ['maize', 'soybean']
+    dim = ['1D']  # 1D, 3D
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    outer_radius = ['voronoi', 'surface']
 
-    jobs.append(['sra', 'maize', "1D", "hydrus_loam", "voronoi"])
-    jobs.append(['sra', 'soybean', "1D", "hydrus_loam", "voronoi"])
-    jobs.append(['sra', 'maize', "1D", "hydrus_clay", "voronoi"])
-    jobs.append(['sra', 'soybean', "1D", "hydrus_clay", "voronoi"])
-    jobs.append(['sra', 'maize', "1D", "hydrus_sandyloam", "voronoi"])
-    jobs.append(['sra', 'soybean', "1D", "hydrus_sandyloam", "voronoi"])
-    jobs.append(['sraOld', 'maize', "1D", "hydrus_loam", "voronoi"])
-    jobs.append(['sraOld', 'soybean', "1D", "hydrus_loam", "voronoi"])
-    jobs.append(['sraOld', 'maize', "1D", "hydrus_clay", "voronoi"])
-    jobs.append(['sraOld', 'soybean', "1D", "hydrus_clay", "voronoi"])
-    jobs.append(['sraOld', 'maize', "1D", "hydrus_sandyloam", "voronoi"])
-    jobs.append(['sraOld', 'soybean', "1D", "hydrus_sandyloam", "voronoi"])
+    print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
+    print()
 
+    for m in method:
+        for p in plant:
+            for d in dim:
+                for s in soil:
+                    for o in outer_radius:
+                        jobs.append([m, p, d, s, o])
     return jobs
 
 
 if __name__ == "__main__":
 
-    jobs = make_list()
-    run_jobs(jobs)
+    sim_time = 0.1  # days
+
+    if rank == 0:
+        jobs = make_list()
+    else:
+        jobs = None
+
+    jobs = comm.bcast(jobs, root = 0)
+    run_jobs(jobs, sim_time)
 

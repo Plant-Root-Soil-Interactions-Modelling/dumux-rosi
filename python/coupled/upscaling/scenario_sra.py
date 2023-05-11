@@ -90,13 +90,14 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
+    sx = s.getSolutionHead_()  # inital condition, solverbase.py
 
     N = round(sim_time / dt)
     t = 0.
 
     t_pot = -trans * sinusoidal2(0., dt)
-    hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+
+    hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
     # rx = Ainv_dirichlet.dot(Kr.dot(hs)) + Ainv_dirichlet[:, collar_index] * kx0 * wilting_point
@@ -119,7 +120,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         if  i % skip == 0:
             print("t_pot", t_pot)
 
-        hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+        hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
         for j in range(0, ns):  # from matric to total potential
             hs[j, 0] += nodes[j + 1][2]
 
@@ -202,7 +203,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         s.solve(dt)
         sum_soil_flux = (s.getWaterVolume() - water) / dt
         old_sx = sx.copy()
-        sx = s.getSolutionHead()  # richards.py
+        sx = s.getSolutionHead_()  # richards.py
 
         soil_interpolation = timeit.default_timer() - soil_interpolation
 
@@ -245,17 +246,16 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     return hx_, hsr_, sink_, x_, y_, z_, hs_, dt
 
 
-def run_sra(method, plant, dim, soil, outer_method):
-
-    name = "sra_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+def run_sra(sim_time, method, plant, dim, soil, outer_method):
 
     # hidden parameters...
-    initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-    sim_time = 0.1
+    initial = -200  # cm
 
+    name = "sra_" + plant + "_" + dim + "_" + soil + "_" + outer_method
     print(name, "\n")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
+
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     s.writeDumuxVTK("results/" + name)

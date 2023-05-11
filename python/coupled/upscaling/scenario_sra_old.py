@@ -57,7 +57,7 @@ def simulate_sraOld(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sr
     """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
+    sx = s.getSolutionHead_()  # inital condition, solverbase.py
 
     N = round(sim_time / dt)
     t = 0.
@@ -84,7 +84,7 @@ def simulate_sraOld(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sr
             # rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
             # rx = np.minimum(rx, np.ones(rho_.shape) * 0.)
 
-            hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+            hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
             # print(hs.shape, rx[1:].shape, ns)
             rsx = soil_root_interface_table(rx[1:], hs, inner_kr_, rho_, sra_table_lookup)
             # print("rsx", rsx.shape, np.min(rsx), np.max(rsx))
@@ -112,7 +112,7 @@ def simulate_sraOld(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sr
         s.solve(dt)
         sum_soil_flux = (s.getWaterVolume() - water) / dt
         old_sx = sx.copy()
-        sx = s.getSolutionHead()  # richards.py
+        sx = s.getSolutionHead_()  # richards.py
 
         x_.append(t)
         y_.append(sum_soil_flux)  # cm3/day (soil uptake)
@@ -146,13 +146,13 @@ def simulate_sraOld(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sr
     return hx_, hsr_, sink_, x_, y_, z_, hs_, dt
 
 
-def run_sraOld(method, plant, dim, soil, outer_method):
+def run_sraOld(sim_time, method, plant, dim, soil, outer_method):
 
-    name = "sra_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+    name = "sraOld_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+    print(name)
 
     # hidden parameters...
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-    sim_time = 0.1
 
     print(name, "\n")
 
@@ -174,10 +174,10 @@ if __name__ == "__main__":
     args = parser.parse_args(['maize', "1D", "hydrus_loam", "surface"])
     # args = parser.parse_args()
 
-    name = "sraOld_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
+    name = "old_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-    sim_time = 0.1
+    sim_time = 7.5
 
     print(name, "\n")
 

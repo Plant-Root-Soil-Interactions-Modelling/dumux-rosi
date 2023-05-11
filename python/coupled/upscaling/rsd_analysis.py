@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 """ parameters """
 
 dim = "1D"  # 1D, 3D
-plant = "maize"  # soybean, maize
+plant = "soybean"  # soybean, maize
 # min_b, max_b, cell_number = scenario.soybean_(dim)
 min_b, max_b, cell_number = scenario.maize_(dim)
 soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand

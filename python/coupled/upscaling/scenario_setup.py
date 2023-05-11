@@ -129,12 +129,14 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand", "hydrus_sandyloam"], "soil should be 'hydrus_loam', 'hydrus_clay', 'hydrus_sand' or 'hydrus_sandyloam' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
-    wilting_point = -15000  # cm
-    random_seed = 1  # random seed
-    slope = "1000"  # cm'>
-
+    # Hidden parameters
     trans_ = 0.5  # cm / day
     rs_age = 2.*28.  # 21.  # initial age in days
+    wilting_point = -15000  # cm
+
+    # Numeric parameters
+    random_seed = 1  # random seed
+    slope = "1000"  # cm
 
     soil_, table_name = soil_vg_(soil)
     if plant == "maize":
