@@ -3,7 +3,7 @@ Functions to simplify setup of the scenarios for the INARI project
 """
 
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/");
-sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../../../CPlantBox/");
+sys.path.append("../../../CPlantBox/src"); sys.path.append("../../../CPlantBox");
 
 import numpy as np
 import timeit
@@ -16,9 +16,9 @@ from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic so
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 import plantbox as pb  # CPlantBox
-import van_genuchten as vg
+import functional.van_genuchten as vg
+from functional.xylem_flux import *
 import evapotranspiration as evap
-from xylem_flux import *
 from datetime import *
 
 SMALL_SIZE = 16

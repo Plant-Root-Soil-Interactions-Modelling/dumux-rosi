@@ -86,7 +86,7 @@ organic = 6  # 2 * 2.54
 topsoil = 26  # 10 * 2.54
 subsoil = 76  # 30 * 2.54
 
-rootsystem = "Soybean"  # Maize, Soybean
+rootsystem = "Maize"  # Maize, Soybean
 
 # fig, axes = plt.subplots(3, 1, figsize = (10, 18))
 fig, axes = plt.subplots(1, 1, figsize = (9, 8))

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from datetime import *
-from xylem_flux import sinusoidal2
+from functional.xylem_flux import sinusoidal2
 from lxml.html.builder import DD
 
 SMALL_SIZE = 16

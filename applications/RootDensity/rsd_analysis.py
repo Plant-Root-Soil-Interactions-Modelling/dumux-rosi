@@ -1,4 +1,4 @@
-"""small example"""
+""" 3d surface densities"""
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
 sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
 
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
 xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-simtime = 95  # between 75-100 days
+simtime = 28  # between 75-100 days
 # cell_number = [76, 16, 200]
 cell_number = [38, 8, 100]
 # cell_number = [19, 4, 50]

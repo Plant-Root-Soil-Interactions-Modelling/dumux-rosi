@@ -6,9 +6,9 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import fsolve
 import timeit
 
-import vtk_plot as vtk
+import visualisation.vtk_plot as vtk
 import plantbox as pb
-import van_genuchten as vg
+import functional.van_genuchten as vg
 import evapotranspiration as evap
 
 
@@ -155,7 +155,7 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
         err = 1.e6  # cm
         c = 0
 
-        r.init_solve_static(rs_age + t, rsx, False, wilting_point, soil_k = [])  # LU factorisation for speed up
+        # r.init_solve_static(rs_age + t, rsx, False, wilting_point, soil_k = [])  # LU factorisation for speed up
         rx = r.solve(rs_age + t, trans_f(t, dt), 0., rsx, False, wilting_point, soil_k = [])
         rx_old = rx.copy()
 
@@ -167,7 +167,7 @@ def simulate_dynamic(s, r, sra_table_lookup, sim_time, dt, trans_f, rs_age = 1.,
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
-            rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
+            rx_ = rx[1:]  # - seg_centers_z  # from total matric potential to matric potential
             rx_ = np.maximum(rx_, np.ones(rx_.shape) * -15000.)  ############################################ (too keep within table)
             rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)
             rsx = rsx + seg_centers_z  # from matric potential to total matric potential

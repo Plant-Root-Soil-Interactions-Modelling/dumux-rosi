@@ -1,16 +1,16 @@
 """ 
     Maize (water and nitrate, SRA)
 """
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/")  # DUMUX solver
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 import plantbox as pb
-import vtk_plot as vp
+import visualisation.vtk_plot as vp
 
 import scenario_setup as scenario
 import evapotranspiration as evap
 import sra
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)
@@ -48,7 +48,7 @@ r.test()  # sanity checks
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
-    s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)
+    s, r, sra_table_lookup, sim_time, dt, trans_maize, rs_age = 1., type_ = 1)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, trans, sim_time, dt)
 
 water = s.getWaterVolume()

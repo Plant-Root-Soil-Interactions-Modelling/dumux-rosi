@@ -490,7 +490,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 
 
-def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
+def plot_transpiration(t, soil_uptake, root_uptake, potential_trans, title = ""):
     """ plots potential and actual transpiration over time 
     
     depending on discretisation soil_uptake and root_uptake might differ  
@@ -514,6 +514,8 @@ def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
     ax2.set_ylabel("Cumulative soil uptake $[cm^3]$")
     print("Cumulative soil uptake", cum_transpiration[-1], "[cm^3]")
     fig.legend()
+    plt.title(title)
+    plt.savefig("results/" + title + ".png")
     plt.show()
 
 
