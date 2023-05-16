@@ -12,4 +12,4 @@
 #SBATCH --mail-user=d.leitner@fz-juelich.de
 cd ..
 module load openmpi/4.1.4
-mpirun -n 128 python3 jobs.py
+mpirun -n 48 python3 jobs.py

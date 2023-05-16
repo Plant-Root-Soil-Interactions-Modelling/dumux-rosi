@@ -53,7 +53,7 @@ def make_list():
 
     method = ['sra', 'sraOld']
     plant = ['maize', 'soybean']
-    dim = ['1D']  # 1D, 3D
+    dim = ['1D', '3D']  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
     outer_radius = ['voronoi', 'surface']
 
