@@ -4,11 +4,28 @@ Sink plot (noon and midnight), of a 1d soil
 import matplotlib.pyplot as plt
 import numpy as np
 
-method = ["sra", "sra", "sra"]
-plant = ["maize"] * 3
-dim = ["1D"] * 3
-soil = ["hydrus_loam"] * 3
-outer_method = ["surface"] * 3
+SMALL_SIZE = 16
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 16
+plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
+plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
+plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
+plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
+
+method = ["sra"] * 2
+plant = ["soybean"] * 2
+dim = ["3D"] * 2
+soil = ["hydrus_loam"] * 2
+outer_method = ["surface"] * 2
+
+# method = ["sra", "sraOld", "sra"]
+# plant = ["maize"] * 3
+# dim = ["1D"] * 3
+# soil = ["hydrus_clay", "hydrus_loam", "hydrus_sandyloam"]
+# outer_method = ["surface"] * 3
 
 fnames = []
 for i in range(0, len(plant)):
@@ -23,16 +40,16 @@ dx = 1  # cm resolution
 ylim = 99.5
 
 # check with scenario_setup
-days = 3.5
+days = 7.5
 trans = []
 for p in plant:
     if p == "soybean":
-            cell_volume = 3 * 75  # cm3
+            cell_volume = 3 * 76  # cm3
     elif p == "maize":
-            cell_volume = 16 * 75  # cm2
+            cell_volume = 16 * 76  # cm2
     else:
         raise
-plot_times = [1., 2., 2.9 ]  # , 30, 40
+plot_times = [0., 2., 4., 6]  # , 30, 40
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
