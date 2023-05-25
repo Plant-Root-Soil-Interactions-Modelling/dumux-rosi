@@ -8,7 +8,7 @@
 #SBATCH --partition=cpu256
 #SBATCH --time=48:00:00
 #SBATCH --mem=10G
-#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=d.leitner@fz-juelich.de
 cd ..
 python3 scenario_sra.py
