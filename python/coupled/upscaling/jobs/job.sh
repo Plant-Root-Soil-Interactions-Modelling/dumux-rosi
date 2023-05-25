@@ -7,7 +7,7 @@
 #SBATCH --exclude=node02
 #SBATCH --partition=cpu256
 #SBATCH --time=48:00:00
-#SBATCH --mem=10G
+#SBATCH --mem=0
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=d.leitner@fz-juelich.de
 cd ..
