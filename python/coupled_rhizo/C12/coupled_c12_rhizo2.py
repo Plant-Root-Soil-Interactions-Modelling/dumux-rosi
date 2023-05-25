@@ -39,7 +39,6 @@ r, rs, rs_age, trans, wilting_point, soil_, s, sra_table_lookup, mapping, sim_ti
 name = "c12_rhizo_1cm"  # scenario name, to save results
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
-sim_time = 1
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 soil = vg.Parameters(soil_)
 
@@ -187,7 +186,7 @@ for i in range(0, NT):
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    # vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, True, min_b, max_b, cell_number, name)  # VTK vizualisation
+    vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
 
 #     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]
 #     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
@@ -200,17 +199,18 @@ if rank == 0:
 #     vp.plot_roots(ana, "rsx")  # VTK vizualisation
 #     vp.plot_roots(ana, "fluxes")  # VTK vizualisation
 
-    # crit_min_i, crit_max_i, crit_min_o, crit_max_o = rs.plot_cylinders()
-    # # print(crit_min_i)
-    # rs.plot_cylinder(crit_min_i)
-    # print(rs.radii[crit_min_i])
+    crit_min_i, crit_max_i, crit_min_o, crit_max_o = rs.plot_cylinders()
+    # print(crit_min_i)
+    rs.plot_cylinder(crit_min_i)
+    print(rs.radii[crit_min_i])
 
-    plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t), "test")  # in rhizo_models.py
+    plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
     # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
 
     np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
 
-    # sink1d = np.array(sink1d)
-    # np.save("sink1d_rhizo", sink1d)
-    # np.save("sink1d2_rhizo", sink1d2)
-    # print(sink1d.shape)
+    sink1d = np.array(sink1d)
+    np.save("sink1d_rhizo", sink1d)
+    np.save("sink1d2_rhizo", sink1d2)
+
+    print(sink1d.shape)
