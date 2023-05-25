@@ -8,7 +8,7 @@
 #SBATCH --partition=cpu256
 #SBATCH --time=48:00:00
 #SBATCH --mem=0
-#SBATCH --mail-type=BEGIN,END, FAIL
+#SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=d.leitner@fz-juelich.de
 cd ..
 module load openmpi/4.1.4
