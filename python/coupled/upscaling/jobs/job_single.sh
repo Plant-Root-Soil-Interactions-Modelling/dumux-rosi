@@ -7,9 +7,8 @@
 #SBATCH --exclude=node02
 #SBATCH --partition=cpu256
 #SBATCH --time=48:00:00
-#SBATCH --mem=0
-#SBATCH --mail-type=BEGIN,END
+#SBATCH --mem=10G
+#SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=d.leitner@fz-juelich.de
 cd ..
-module load openmpi/4.1.4
 python3 scenario_sra.py
