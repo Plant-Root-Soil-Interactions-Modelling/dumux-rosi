@@ -515,7 +515,8 @@ def plot_transpiration(t, soil_uptake, root_uptake, potential_trans, title = "")
     print("Cumulative soil uptake", cum_transpiration[-1], "[cm^3]")
     fig.legend()
     plt.title(title)
-    plt.savefig("results/" + title + ".png")
+    if title:
+        plt.savefig(title + ".png")
     plt.show()
 
 
