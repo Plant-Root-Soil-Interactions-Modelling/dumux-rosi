@@ -1,5 +1,5 @@
 """
-Sink plot (noon and midnight), of a 1d soil 
+Sink plot (noon and midnight), of a 3d soil 
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,8 +20,8 @@ plant = ["soybean"] * 2
 soil = ["hydrus_loam"] * 2
 outer_method = ["surface"] * 2
 
-# DO NOT CHANGE TO 3D, use script plot_sink3d
-dim = ["1D"] * 2
+#
+dim = ["3D"] * 2
 
 # method = ["sra", "sraOld", "sra"]
 # plant = ["maize"] * 3
@@ -47,8 +47,10 @@ trans = []
 for p in plant:
     if p == "soybean":
             cell_volume = 3 * 76  # cm3
+            cell_number = np.array([76, 3, 100])
     elif p == "maize":
             cell_volume = 16 * 76  # cm2
+            cell_number = np.array([76, 16, 100])
     else:
         raise
 plot_times = [0., 2., 4., 6]  # , 30, 40
@@ -70,9 +72,17 @@ ls = ["-", "--", "-.", ":"]
 for i in range(0, n):
 
     sink_ = data[i]
+    print("sink_", sink_.shape)  # cell_number = np.array([76, 3, 100])
+    sink_ = sink_.reshape((sink_.shape[0], 100, 3, 76))
+    print("sink_", sink_.shape)
+    sink_ = np.sum(sink_, 2)
+    print("sink_", sink_.shape)
+    sink_ = np.sum(sink_, 2)
+    print("sink_", sink_.shape)
+
     soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
-    peak_id = np.round(sink_.shape[0] / days * np.array([0.5 + j for j in plot_times]))
+    peak_id = np.round(sink_.shape[0] / days * np.array([0.5 + i for i in plot_times]))
     peak_id = peak_id.astype(int)
 
     for ind, j in enumerate(peak_id):
@@ -86,9 +96,13 @@ for i in range(0, n):
 for i in range(0, n):
 
     sink_ = data[i]
+    sink_ = sink_.reshape((sink_.shape[0], 100, 3, 76))
+    sink_ = np.sum(sink_, 2)
+    sink_ = np.sum(sink_, 2)
+
     soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
-    redistribution_id = np.round(sink_.shape[0] / days * np.array([j for j in plot_times]))
+    redistribution_id = np.round(sink_.shape[0] / days * np.array([i for i in plot_times]))
     redistribution_id = redistribution_id.astype(int)
 
     for ind, j in enumerate(redistribution_id):

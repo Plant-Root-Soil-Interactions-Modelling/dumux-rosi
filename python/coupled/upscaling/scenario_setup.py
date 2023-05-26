@@ -35,23 +35,23 @@ def soil_vg_(name:str):
 
 def maize_(dim:str):
     """ parameters for maize simulation """
-    min_b = np.array([-38., -8., -100.])
+    min_b = np.array([-38., -8., -150.])
     max_b = np.array([38., 8., 0.])
     if dim == "1D":
-        cell_number = np.array([1, 1, 100])
+        cell_number = np.array([1, 1, 150])
     else:
-        cell_number = np.array([76, 16, 100])
+        cell_number = np.array([76, 16, 150])
     return min_b, max_b, cell_number
 
 
 def soybean_(dim:str):
     """ parameters for soybean simulation """
-    min_b = np.array([-38, -1.5, -100.])
+    min_b = np.array([-38, -1.5, -150.])
     max_b = np.array([38, 1.5, 0.])
     if dim == "1D":
-        cell_number = np.array([1, 1, 100])
+        cell_number = np.array([1, 1, 150])
     else:
-        cell_number = np.array([76, 3, 100])
+        cell_number = np.array([76, 3, 150])
     return min_b, max_b, cell_number
 
 
@@ -131,7 +131,6 @@ def set_scenario(plant, dim, initial, soil, outer_method):
 
     # Hidden parameters
     trans_ = 0.5  # cm / day
-    rs_age = 2.*28.  # 21.  # initial age in days
     wilting_point = -15000  # cm
 
     # Numeric parameters
@@ -142,9 +141,11 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     if plant == "maize":
         min_b, max_b, cell_number = maize_(dim)
         param_name = "Zeamays_synMRI_modified.xml"
+        rs_age = 8 * 7  # 56 days
     elif plant == "soybean":
         min_b, max_b, cell_number = soybean_(dim)
         param_name = "Glycine_max_Moraes2020_opt2_modified.xml"
+        rs_age = 6 * 7  # 42 days
 
     trans = (max_b[0] - min_b[0]) * (max_b[1] - min_b[1]) * trans_  # cm3 / day
     initial -= min_b[2] / 2

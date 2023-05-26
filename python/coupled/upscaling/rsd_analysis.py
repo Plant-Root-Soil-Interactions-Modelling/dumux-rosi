@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 """ parameters """
 
 dim = "1D"  # 1D, 3D
-plant = "soybean"  # soybean, maize
+plant = "maize"  # soybean, maize
 # min_b, max_b, cell_number = scenario.soybean_(dim)
 min_b, max_b, cell_number = scenario.maize_(dim)
 soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand
@@ -27,9 +27,12 @@ r = r_.rs  # throw away (TODO ahve to change setup anyway...)
 segs = r.segments
 nodes = r.nodes
 
+print("\nplant")
+print("rs_age", rs_age)
 params = r.getRootRandomParameter()
 for p in params:
     print("radius", p.a)
+print()
 
 # A_dirichlet, Kr, kx0 = r_.doussan_system_matrix(rs_age)
 # print(type(r_.rs))
@@ -77,12 +80,14 @@ ana.addCellIds(r)
 
 # vp.plot_mesh(grid, "surface_density")
 # vp.plot_mesh_cuts(grid, "surface_density")
+print()
 print("age", rs_age, "nodes", len(nodes))
+print()
 
 # vp.plot_roots(ana, "age")
 # vp.plot_roots(ana, "kr")
 # vp.plot_roots(ana, "kx")
-vp.plot_roots(ana, "cell_id")
+vp.plot_roots(ana, "age")
 
 # width = max_b - min_b
 # vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])

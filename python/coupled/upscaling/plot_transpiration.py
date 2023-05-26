@@ -86,6 +86,19 @@ def plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, ls, labe
 
 if __name__ == "__main__":
 
+    """ Maize sra vs sraOld """
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    method = ["sra"] * 3
+    plant = ["soybean"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["surface"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, "", "(sra)")
+    plt.tight_layout()
+    plt.show()
+    print()
+
     # """ Maize sra vs sraOld """
     # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     # method = ["sra"] * 3
@@ -116,17 +129,20 @@ if __name__ == "__main__":
     # plt.show()
     # print()
 
-    """ Soybean 3D vs 1D """
-    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    method = ["sra"] * 3
-    plant = ["maize"] * 3
-    dim = ["3D"] * 3
-    soil = ["hydrus_loam"] * 3  # , "hydrus_clay", "hydrus_sandyloam"]
-    outer_method = ["surface"] * 3
-    plot_potential(ax, method, plant, dim, soil, outer_method)
-    plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, "", "(3D)")
-    dim = ["1D"] * 3
-    plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, ":", "(1D)")
+    # """ Soybean 3D vs 1D """
+    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    # method = ["sra"] * 3
+    # plant = ["maize"] * 3
+    # dim = ["3D"] * 3
+    # soil = ["hydrus_loam"] * 3  # , "hydrus_clay", "hydrus_sandyloam"]
+    # outer_method = ["voronoi"] * 3
+    # plot_potential(ax, method, plant, dim, soil, outer_method)
+    # plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, "", "(3D, vor)")
+    # dim = ["1D"] * 3
+    # plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, ":", "(1D, vor)")
+    # outer_method = ["surface"] * 3
+    # plot_transpiration_rows(ax, method, plant, dim, soil, outer_method, "--", "(1D, surf)")
+
     plt.tight_layout()
     plt.show()
     print()
