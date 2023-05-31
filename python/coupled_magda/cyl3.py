@@ -79,6 +79,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
     
     cell_volumes = s.getCellVolumes_()  # cm3
     net_flux = np.zeros(cell_volumes.shape)
+    net_sol_flux = np.zeros(cell_volumes.shape)
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
@@ -102,11 +103,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         comm.barrier()
 
         if rank == 0:
-            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)  # soil_k = soil_k
-            # print("*", end = "")
+            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
             # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
-            # print("*", end = "")
             seg_sol_fluxes = np.array(r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
         else:
             rx = None
@@ -116,7 +115,6 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         rx = comm.bcast(rx, root = 0)
         seg_fluxes = comm.bcast(seg_fluxes, root = 0)
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
-        # print("*", end = "")
 
         if rank == 0:
             collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
@@ -129,14 +127,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
                     print("error: potential transpiration differs root collar flux in Neumann case" , err2)
 
         comm.barrier()
-
-        # if rank == 0:
-        #     print("]", end = "")
         wall_xylem = timeit.default_timer() - wall_xylem
 
         """ 2. local soil models """
-        # if rank == 0:
-        #     print("[l", end = "")
         wall_local = timeit.default_timer()
         if rank == 0:
             for key, value in cell2seg.items():  # check cell2seg
@@ -151,22 +144,15 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
                     ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
                     ana.addCellIds(rs.rs.rs.mappedSegments())
                     vp.plot_roots(ana, "cell_id")
-                # for v in value:
-                #     if not (v >= 0 and v < ns):
-                #         print("segments", ns)
-                #         print("value", v)
-                #         print("age", rs_age, "rank", rank, "dt", dt)
-                #         print("Mapping error in cell", key)
-                #         print("mapped to segments", value)
-                #         ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
-                #         ana.addCellIds(rs.rs.rs.mappedSegments())
-                #         vp.plot_roots(ana, "cell_id")
 
-            #print('net_flux', net_flux) 
-            proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type)  # if this fails, a segment is not mapped, i.e. out of soil domain
+            proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type) 
+            proposed_outer_sol_fluxes = r.splitSoilFluxes(net_sol_flux / dt, split_type)
+            # if this fails, a segment is not mapped, i.e. out of soil domain
         else:
             proposed_outer_fluxes = None
+            proposed_outer_sol_fluxes = None
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
+        proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
         seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs])
         
         ages = XylemFluxPython.get_ages(r,rs_age+1)
@@ -174,29 +160,24 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         for p in range(0,len(ages)):
             kex[p] = XylemFluxPython.exu_fun(r, kexu, ages[p])
         
-        rs.solve(dt, seg_rx, proposed_outer_fluxes,kex,0)
+        rs.solve(dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes) #or 0?
         # water: left dirchlet, right neumann; solute: left and right Neumann<----
 
-        # TODO mass_net_fluxes
-
         wall_local = timeit.default_timer() - wall_local
-        # if rank == 0:
-        #     print("]", end = "")
-
+        
         """ 3a. macroscopic soil model """
-        # if rank == 0:
-        #     print("[m", end = "")
         wall_macro = timeit.default_timer()
 
         water_content = np.array(s.getWaterContent_())  # theta per cell [1]
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-        # TODO for nitrate
+        solute_conc = np.array(s.getSolution_(1))
+        soil_solute = np.multiply(solute_conc, soil_water)
 
         soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
         soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
-        evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # 1.e-5
-        s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in moduels/richards.py
-        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
+        soil_sol_fluxes = evap.decay(soil_sol_fluxes, dt, s.decay)  #[g/day]
+        s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
+        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in modules/richards.py
         s.solve(dt)  # in modules/solverbase.py
 
         wall_macro = timeit.default_timer() - wall_macro
@@ -204,49 +185,29 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         #     print("]", end = "")
 
         """ 3b. calculate net fluxes """
-        # if rank == 0:
-        #     print("[n", end = "")
         wall_netfluxes = timeit.default_timer()
         water_content = np.array(s.getWaterContent_())
         new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
         net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
+        #print('net_flux', net_flux) 
         for k, root_flux in soil_fluxes.items():
             net_flux[k] -= root_flux * dt
-            # net_flux[k] = 0.  # same as SRA approach (currently using a no-flux at boundary)
-        # TODO mass net flux
+
+        """ 3c. calculate mass net fluxes """
+        solute_conc = np.array(s.getSolution_(1))
+        new_soil_solute = np.multiply(solute_conc, soil_water)
+
+        net_sol_flux = new_soil_solute - soil_solute  # change in water per cell [cm3]
+        #print('net_sol_flux', net_sol_flux) 
+        for k, root_sol_flux in soil_sol_fluxes.items():
+            net_sol_flux[k] += root_sol_flux * dt
+        
         soil_water = new_soil_water
+        soil_solute = new_soil_solute
 
         wall_netfluxes = timeit.default_timer() - wall_netfluxes
-        # if rank == 0:
-        #     print("]", end = "")
-        # if rank == 0:
-        #     if rs_age + t > 1.5:
-        #         print(ns)
-        #         print(len(rs.cyls))
-        #         min_b = [-19, -2.5, -200.]  # for soybean
-        #         max_b = [19, 2.5, 0.]
-        #         cell_number = [1, 1, 200]
-        #         # vtk.plot_roots_and_soil(rs, "fluxes", seg_fluxes.copy(), s, True, min_b, max_b, cell_number, "nice_plot")
-        #         # vtk.plot_roots(pd, p_name:str, win_title:str = "", render:bool = True):
-        #         ind0 = s.pick([0, 0, -3.5])
-        #         # ind1 = s.pick([0, 0, -15.])
-        #         # ind2 = s.pick([0, 0, -25.])
-        #         print("cell0", ind0)
-        #         # print("cell1", ind1)
-        #         # print("cell2", ind2)
-        #         cell2seg = r.rs.cell2seg
-        #         segs0 = cell2seg[ind0]
-        #         # # segs1 = cell2seg[ind1]
-        #         # # segs2 = cell2seg[ind2]
-        #         print(segs0)
-        #         for i in segs0:
-        #             rs.plot_cylinder(i)
-        #         dd
 
         """ remember results ... """
-        # if rank == 0:
-        #     print("[r", end = "")
-
         sx = s.getSolutionHead_()
         cc = s.getSolution_(1)  # [kg/m3]
         if rank == 0:
@@ -272,7 +233,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
 
             
         if i % skip == 0 and rank == 0:
-            print("{:g}/{:g} iterations".format(i, N), "time", rs_age + t, "wallt times",
+            print("{:g}/{:g} iterations".format(i, N), "time", rs_age + t, "wall times",
                   wall_xylem / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_local / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),

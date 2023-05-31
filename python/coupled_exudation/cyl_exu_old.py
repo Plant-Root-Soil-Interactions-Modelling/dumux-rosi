@@ -1,0 +1,365 @@
+"""
+functions for the cylindrical coupling approach
+"""
+import numpy as np
+import timeit
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
+import sys
+from xylem_flux import *
+import vtk_plot as vtk
+import plantbox as pb
+import evapotranspiration as evap
+import timeit
+from scipy.interpolate import RegularGridInterpolator
+from scipy.optimize import fsolve
+import visualisation.vtk_plot as vp
+from pyevtk.hl import gridToVTK
+
+
+def open_sri_lookup(filename):
+    """ opens the look-up table from a file, to quickly find soil root interface potential """
+    sri_table = np.load(filename + ".npy")
+    x = np.load(filename + "_.npy", allow_pickle = True)
+    rx_ = x[0]
+    sx_ = x[1]
+    inner_ = x[2]
+    outer_ = x[3]
+    return RegularGridInterpolator((rx_, sx_, inner_, outer_), sri_table)  # method = "nearest" fill_value = None , bounds_error=False
+
+
+def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
+    """
+    finds potential at the soil root interface
+        
+    rx             xylem matric potential [cm]
+    sx             bulk soil matric potential [cm]
+    inner_kr       root radius times hydraulic conductivity [cm/day] 
+    rho            geometry factor [1]
+    f              function to look up the potentials
+    """
+    try:
+        rsx = f((rx, sx, inner_kr_ , rho_))
+    except:
+        print("rx", np.min(rx), np.max(rx))  # 0, -16000
+        print("sx", np.min(sx), np.max(sx))  # 0, -16000
+        print("inner_kr", np.min(inner_kr_), np.max(inner_kr_))  # 1.e-7 - 1.e-4
+        print("rho", np.min(rho_), np.max(rho_))  # 1. - 200.
+    return rsx
+
+def soil_root_interface(rx, sx, inner_kr, rho, sp):
+    """
+    finds potential at the soil root interface
+    
+    rx             xylem matric potential [cm]
+    sx             bulk soil matric potential [cm]
+    inner_kr       root radius times hydraulic conductivity [cm/day] 
+    rho            geometry factor [1]
+    sp             soil van Genuchten parameters (type vg.Parameters)
+    """
+    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
+    # rho = outer_r / inner_r  # Eqn [5]
+    rho2 = rho * rho  # rho squared
+    # b = 2 * (rho2 - 1) / (1 + 2 * rho2 * (np.log(rho) - 0.5))  # Eqn [4]
+    b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
+    fun = lambda x: (inner_kr * rx + b * sx * k_soilfun(sx, x)) / (b * k_soilfun(sx, x) + inner_kr) - x
+    rsx = fsolve(fun, rx)
+    return rsx
+
+def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age, min_b, max_b, type):
+    """     
+    simulates the coupled scenario       
+        root architecture is not gowing  
+        conductivities are not changing over time
+        
+    s
+    rs
+    trans
+    sim_time    
+    dt
+    trans_f
+    rs_age
+    """
+
+    """ tabularized values for finding the zeros """
+    if isinstance(sri_table_lookup, RegularGridInterpolator):
+        root_interface = soil_root_interface_table  # function defined above
+    else:
+        raise
+        root_interface = soil_root_interface  # function defined above
+        
+    
+    
+    wilting_point = -15000  # cm
+    skip = 10  # 3 * 6  # for output and results, skip iteration
+    split_type = 1  # type 0 == volume, type 1 == surface, type 2 == length
+
+    """ 
+    Initialize local soil models (around each root segment) 
+    """
+    start_time = timeit.default_timer()
+    sx = s.getSolutionHead_()  # initial condition of soil [cm]
+    cc = s.getSolution_(1)  # kg/m3
+    nodes = rs.rs.rs.nodes
+    segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
+    
+    seg2cell = rs.rs.rs.seg2cell
+    cell2seg = rs.rs.rs.cell2seg
+    mapping = rs.rs.rs.getSegmentMapper()
+    hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
+    cell_centers = s.getCellCenters_()
+    cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
+    seg_centers_z = rs.getSegmentZ() 
+    
+    ns = len(segs)
+
+    for i in range(0, len(segs)):
+        if segs[i].x == 0:
+            collar_ind = i  # segment index of root collar
+            break
+
+    dcyl = int(np.floor(ns / max_rank))
+    if rank + 1 == max_rank:
+        rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)), cc)
+        print ("\nInitialized final rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
+    else:
+        rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, (rank + 1) * dcyl)), cc)
+        print ("\nInitialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
+
+    r = rs.rs  # rename (XylemFluxPython)
+    outer_r = r.rs.segOuterRadii()
+    inner_r = r.rs.radii
+    types = r.rs.subTypes
+    rho_ = np.divide(outer_r, np.array(inner_r))
+    rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  
+
+    rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
+    
+    if type == 1:
+        rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
+    else:
+        rsc = rs.get_inner_solutes(1)  # kg/m3
+
+    if rank == 0:
+        print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx), np.min(rsc), np.max(rsc))
+        rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
+    else:
+        rx = None
+
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ = [], [], [], [], [], [], [], [] 
+    vol_ = [[], [], [], [], [], []]
+    surf_ = [[], [], [], [], [], []]
+    krs_ = []
+    depth_ = []
+    # for post processing
+
+    
+    cell_volumes = s.getCellVolumes_()  # cm3
+    net_flux = np.zeros(cell_volumes.shape)
+    net_sol_flux = np.zeros(cell_volumes.shape)
+
+    N = int(np.ceil(sim_time / dt))  # number of iterations
+
+    """ simulation loop """
+    for i in range(0, N):
+
+        t = i * dt  # current simulation time
+        kr_ = r.getKr(rs_age + t)
+        inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; const
+        inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  
+        inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  
+        hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
+        hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)
+        hsb_ = np.minimum(hsb_, np.zeros(hsb_.shape))  
+
+        """ 1. xylem model """
+
+        wall_xylem = timeit.default_timer()
+
+        #rsx_test = rs.get_inner_heads(1)  # matric potential at the root soil interface, 2nd node  [cm] (in rhizo_models.py) not really correct
+
+        #instead....
+        rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
+        rx_ = np.maximum(rx_, np.ones(rx_.shape) * -15000.) 
+        rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sri_table_lookup)
+        rsx = rsx + seg_centers_z  # from matric potential to total matric potential
+
+        #print('how is that different?', rsx_test, rsx)
+        
+
+        if type == 1:
+            rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
+            # print(np.min(rsc), np.max(rsc))
+        else:
+            rsc = rs.get_inner_solutes(1)  # kg/m3
+            #print('rsc',rsc)
+        comm.barrier()
+
+        if rank == 0:
+            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)
+            seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
+            # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
+            seg_sol_fluxes = np.array(r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
+        else:
+            rx = None
+            seg_fluxes = None
+            seg_sol_fluxes = None
+
+        rx = comm.bcast(rx, root = 0)
+        seg_fluxes = comm.bcast(seg_fluxes, root = 0)
+        seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
+
+        if rank == 0:
+            collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
+            err = np.linalg.norm(np.sum(seg_fluxes) - collar_flux)
+            if err > 1.e-6:
+                print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(seg_fluxes))
+            err2 = np.linalg.norm(trans_f(rs_age + t, dt) - collar_flux)
+            if r.last == "neumann":
+                if err2 > 1.e-6:
+                    print("error: potential transpiration differs root collar flux in Neumann case" , err2)
+
+        comm.barrier()
+        wall_xylem = timeit.default_timer() - wall_xylem
+
+        """ 2. local soil models """
+        wall_local = timeit.default_timer()
+        if rank == 0:
+            for key, value in cell2seg.items():  # check cell2seg
+                if key < 0: #part of the root system is above ground and out of the soild omain 
+                    nodes = rs.rs.rs.nodes
+                    print("key is negative", key)
+                    print("segments", cell2seg[key])
+                    print("coresponding nodes")
+                    for s in cell2seg[key]:
+                        print(segs[s])
+                        print(nodes[segs[s].x], nodes[segs[s].y])
+                    ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
+                    ana.addCellIds(rs.rs.rs.mappedSegments())
+                    vp.plot_roots(ana, "cell_id")
+
+
+            proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type) 
+            proposed_outer_sol_fluxes = r.splitSoilFluxes(net_sol_flux / dt, split_type)
+            # if this fails, a segment is not mapped, i.e. out of soil domain
+        else:
+            proposed_outer_fluxes = None
+            proposed_outer_sol_fluxes = None
+        proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
+        proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
+        # seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs]) wrong potential
+
+        #instead...
+        rx_ = rx[1:] - seg_centers_z  # from tot matric potential to matric potential
+        rx_ = np.maximum(rx_, np.ones(rx_.shape) * -15000.)  
+        rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sri_table_lookup)
+        seg_rx = rsx + seg_centers_z  # from matric potential to tot matric potential
+        
+        ages = XylemFluxPython.get_ages(r,rs_age+1)
+        kex = np.zeros((len(ages)))
+        for p in range(0,len(ages)):
+            kex[p] = XylemFluxPython.exu_fun(r, kexu, ages[p])
+        
+        rs.solve(dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes) #or 0?
+        # water: left dirchlet, right neumann; solute: left and right Neumann<----
+
+        wall_local = timeit.default_timer() - wall_local
+        
+        """ 3a. macroscopic soil model """
+        wall_macro = timeit.default_timer()
+
+        water_content = np.array(s.getWaterContent_())  # theta per cell [1]
+        soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
+        solute_conc = np.array(s.getSolution_(1))
+        soil_solute = np.multiply(solute_conc, soil_water)
+
+        soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
+        soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
+        soil_sol_fluxes = evap.decay(soil_sol_fluxes, dt, s.decay)  #[g/day]
+        s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
+        s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in modules/richards.py
+        s.solve(dt)  # in modules/solverbase.py
+
+        wall_macro = timeit.default_timer() - wall_macro
+        # if rank == 0:
+        #     print("]", end = "")
+
+        """ 3b. calculate net fluxes """
+        wall_netfluxes = timeit.default_timer()
+        water_content = np.array(s.getWaterContent_())
+        new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
+        net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
+        #print('net_flux', net_flux) 
+        for k, root_flux in soil_fluxes.items():
+            net_flux[k] -= root_flux * dt
+
+        """ 3c. calculate mass net fluxes """
+        solute_conc = np.array(s.getSolution_(1))
+        new_soil_solute = np.multiply(solute_conc, soil_water)
+
+        net_sol_flux = new_soil_solute - soil_solute  # change in water per cell [cm3]
+        #print('net_sol_flux', net_sol_flux) 
+        for k, root_sol_flux in soil_sol_fluxes.items():
+            net_sol_flux[k] += root_sol_flux * dt
+        
+        soil_water = new_soil_water
+        soil_solute = new_soil_solute
+
+        wall_netfluxes = timeit.default_timer() - wall_netfluxes
+
+        """ remember results ... """
+        sx = s.getSolutionHead_()
+        cc = s.getSolution_(1)  # [kg/m3]
+        if rank == 0:
+            sink = np.zeros(sx.shape)
+            for k, v in soil_fluxes.items():
+                sink[k] += v
+            sink_.append(sink)  # cm3/day (per soil cell)
+            x_.append(rs_age + t)  # day
+            y_.append(np.sum(sink))  # cm3/day
+            c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
+            psi_s2_.append(sx)  # cm (per soil cell)
+            soil_c_.append(cc)  # [kg/m3]
+
+            ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
+            for j in range(0, 6):  # root types
+                anac = pb.SegmentAnalyser(ana)
+                anac.filter("subType", j)
+                vol_[j].append(anac.getSummed("volume"))
+                surf_[j].append(anac.getSummed("surface"))
+            krs, _ = r.get_krs(rs_age + t, [collar_ind])
+            krs_.append(krs)  # KRS
+            depth_.append(ana.getMinBounds().z)
+
+            
+        if i % skip == 0 and rank == 0:
+            print("{:g}/{:g} iterations".format(i, N), "time", rs_age + t, "wall times",
+                  wall_xylem / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
+                  wall_local / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
+                  wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
+                  wall_netfluxes / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
+                  "segments:", rs.getNumberOfMappedSegments(), "root collar:", rx[0], "\n")
+            print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc), "trans", trans_f(rs_age + t, dt))
+            psi_x_.append(rx.copy())  # cm (per root node)
+            psi_s_.append(rsx.copy())  # cm (per root segment)
+
+        # if rank == 0:
+        #     print("]")
+
+
+        #print('current time is',1+ i/240)
+        if i % (20 * 12) == 0:  # every 6h
+            # map concentration cylinders to 1mm grid in all directions 
+            xx_ = np.linspace(min_b[0], max_b[0], int(1*(max_b[0]-min_b[0]))) 
+            yy_ = np.linspace(min_b[1], max_b[1], int(1*(max_b[1]-min_b[1])))
+            zz_ = np.linspace(min_b[2],max_b[2], int(1*(max_b[2]-min_b[2])))
+            XX, YY, ZZ = np.meshgrid(xx_, yy_, zz_, indexing='ij')
+            C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu')
+            #gridToVTK("results/vts/./exudate_day"+("{:02d}".format(i)), XX, YY, ZZ, pointData = {"exudate":C})
+            #gridToVTK("results/vts/./exudate_day"+str(i/240)+(XX, YY, ZZ, pointData = {"exudate":C})
+            gridToVTK("results/vts/./exudate_day"+("{:03d}".format(int(rs_age))), XX, YY, ZZ, pointData = {"exudate":C})
+
+    if rank == 0:
+        print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
+

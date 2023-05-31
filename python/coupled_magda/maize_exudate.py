@@ -24,18 +24,21 @@ import evapotranspiration as evap
 import cyl3
 
 """
- Cylindric rhizosphere models, nitrate from finite volumes
+ Cylindric rhizosphere models, C exudate from finite volumes
 """
 
-""" parameters   """
-soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP()
+"""scenario"""
+year = 2019
+soil_type = "loam"
+genotype = "WT"
 
-sim_time = 10 #95  #  [day]
+""" parameters   """
+soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
+sim_time = 10 #155  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
-start_date = '2021-05-10 00:00:00'  # INARI csv data
-x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_maize2, Kc)
-trans_maize = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_maize2, Kc)
+x_, y_, lai = evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
+trans_maize = evap.get_transpiration(year, sim_time, area, lai, Kc)
 
 """ rhizosphere model parameters """
 wilting_point = -15000  # cm
@@ -46,13 +49,15 @@ mode = "dumux_dirichlet_nc"  # mode = "dumux_dirichlet_nc"
 
 """ initialize """
 start_time = timeit.default_timer()
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_, wet = False)  
+s, soil = scenario.create_soil_model(soil_type, year, soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_)  
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
 xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 scenario.init_maize_conductivities(r)
 kexu = scenario.exudation_rates()
+
+#vp.write_soil("test_vtu", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
 
 if rank == 0:
     r.test()  # sanity checks
@@ -87,9 +92,11 @@ for i in range(0, int(sim_time)):
         soil_c_.extend(soil_c)  # [kg/m3]
         c_.extend(c)  # [cm3/day]
         vp.write_soil("results/vtu_vtp/Soil_day"+str(i), s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
+        print('vtu written')
 
         ana = pb.SegmentAnalyser(r.rs)
         ana.write("results/vtu_vtp/RootSys_day"+str(i)+".vtp")
+        print('vtp written')
         dist_, conc_, l_ = rs.collect_cylinder_solute_data()
         dist.append(dist_)
         conc.append(conc_)
