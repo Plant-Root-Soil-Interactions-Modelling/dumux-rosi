@@ -13,12 +13,15 @@ import van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.linalg import norm
+from scipy.interpolate import griddata as gd
+from mpl_toolkits.mplot3d import Axes3D
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 
 class RhizoMappedSegments(pb.MappedSegments):
     """
-        Adds 1-dimensional rhizosphere models to each root segment of a MappedSegments (or later MappedPlant)    
+        Adds 1-dimensional rhizospere models to each root segment of a MappedSegments (or later MappedPlant)    
         
         modes:        
         "dumux"              inner boundary is FluxCyl,                    <- currently best
@@ -521,6 +524,54 @@ class RhizoMappedSegments(pb.MappedSegments):
         plt.show()
         return  np.argmin(inner), np.argmax(inner), np.argmin(outer), np.argmax(inner)
 
+
+    def map_cylinders_solute(self, XX,YY,ZZ,name = ""):
+        """ maps cylinders to soil grid """
+
+        shape = np.shape(XX)
+        conc = np.zeros((shape))
+        for i, cyl in enumerate(self.cyls):
+            R_ = cyl.getDofCoordinates()
+            vv_ = cyl.getSolution_(1)
+            
+            p0 = np.array(self.nodes[self.segments[i].x])
+            p1 = np.array(self.nodes[self.segments[i].y])
+            
+            v = p1 - p0
+            mag = norm(v)
+            v = v / mag
+            not_v = np.array([1, 0, 0])
+            if (v == not_v).all():
+                not_v = np.array([0, 1, 0])
+            n1 = np.cross(v, not_v)
+            n1 /= norm(n1)
+            n2 = np.cross(v, n1)
+            t = np.linspace(0, mag, 20)
+            theta = np.linspace(0, 2 * np.pi, 20)
+            t, theta = np.meshgrid(t, theta)
+            
+            x = []
+            y = []
+            z = []
+            vv = []
+            
+            for j in range(0,len(R_)):
+                R = R_[j]
+                X, Y, Z = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
+                x.extend(X.flatten())
+                y.extend(Y.flatten())
+                z.extend(Z.flatten())
+                vv.extend(np.ones((len(X.flatten())))*vv_[j])
+
+            # interpolate "data.v" on new grid "inter_mesh"
+            V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
+            V[np.isnan(V)] = 0
+            V = np.array(V.reshape(shape))
+            conc = conc+V
+            print('cyl '+str(i)+' of ' + str(len(self.cyls))+ ' is finished!')
+
+        return conc
+                  
     def collect_cylinder_solute_data(self):
         """ collects solute data from cylinders  """
         
