@@ -36,11 +36,11 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     # rs_age = r.get_ages(rs_age)
     # print("rs_age", np.max(rs_age))
 
-    dt = 360 / (24 * 3600)  # days
-    skip = 10
+    dt = 120 / (24 * 3600)  # days
+    skip = 30
 
     max_error = 10
-    max_iter = 10
+    max_iter = 100
 
     ns = len(r.rs.segments)
     nodes = r.get_nodes()
@@ -138,6 +138,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
             rx = np.minimum(rx, np.ones(rho_.shape) * 0.)
+            hs = np.maximum(hs, np.ones(hs.shape) * (-15999))
 
             # print("*")
             # print(rx.shape, hs.shape, ns)

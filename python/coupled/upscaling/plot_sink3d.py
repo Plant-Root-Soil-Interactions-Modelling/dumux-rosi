@@ -73,7 +73,7 @@ for i in range(0, n):
 
     sink_ = data[i]
     print("sink_", sink_.shape)  # cell_number = np.array([76, 3, 100])
-    sink_ = sink_.reshape((sink_.shape[0], 100, 3, 76))
+    sink_ = sink_.reshape((sink_.shape[0], 150, 3, 76))
     print("sink_", sink_.shape)
     sink_ = np.sum(sink_, 2)
     print("sink_", sink_.shape)
@@ -96,7 +96,7 @@ for i in range(0, n):
 for i in range(0, n):
 
     sink_ = data[i]
-    sink_ = sink_.reshape((sink_.shape[0], 100, 3, 76))
+    sink_ = sink_.reshape((sink_.shape[0], 150, 3, 76))
     sink_ = np.sum(sink_, 2)
     sink_ = np.sum(sink_, 2)
 

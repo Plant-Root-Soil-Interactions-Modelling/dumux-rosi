@@ -41,6 +41,7 @@ def maize_(dim:str):
         cell_number = np.array([1, 1, 150])
     else:
         cell_number = np.array([76, 16, 150])
+        # cell_number = np.array([38, 8, 75])
     return min_b, max_b, cell_number
 
 
@@ -52,6 +53,7 @@ def soybean_(dim:str):
         cell_number = np.array([1, 1, 150])
     else:
         cell_number = np.array([76, 3, 150])
+        # cell_number = np.array([38, 3, 75])
     return min_b, max_b, cell_number
 
 
