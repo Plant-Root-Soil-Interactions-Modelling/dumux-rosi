@@ -571,6 +571,63 @@ class RhizoMappedSegments(pb.MappedSegments):
             print('cyl '+str(i)+' of ' + str(len(self.cyls))+ ' is finished!')
 
         return conc
+        
+    def calc_model(number,XX,YY,ZZ,q):
+        q.put([(calculate_cyls(number,XX,YY,ZZ,))])
+        
+    def calculate_cyls(i,XX,YY,ZZ): 
+        cyl = self.cyls[i]
+        R_ = cyl.getDofCoordinates()
+        vv_ = cyl.getSolution_(1)
+        
+        p0 = np.array(self.nodes[self.segments[i].x])
+        p1 = np.array(self.nodes[self.segments[i].y])
+        
+        v = p1 - p0
+        mag = norm(v)
+        v = v / mag
+        not_v = np.array([1, 0, 0])
+        if (v == not_v).all():
+            not_v = np.array([0, 1, 0])
+        n1 = np.cross(v, not_v)
+        n1 /= norm(n1)
+        n2 = np.cross(v, n1)
+        t = np.linspace(0, mag, 20)
+        theta = np.linspace(0, 2 * np.pi, 20)
+        t, theta = np.meshgrid(t, theta)
+        
+        x = []
+        y = []
+        z = []
+        vv = []
+        
+        for j in range(0,len(R_)):
+            R = R_[j]
+            X, Y, Z = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
+            x.extend(X.flatten())
+            y.extend(Y.flatten())
+            z.extend(Z.flatten())
+            vv.extend(np.ones((len(X.flatten())))*vv_[j])
+
+        # interpolate "data.v" on new grid "inter_mesh"
+        V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
+        V[np.isnan(V)] = 0
+        V = np.array(V.reshape(shape))
+        return V
+
+    def map_cylinders_solute_parallel(self, XX,YY,ZZ,name = ""):
+        """ maps cylinders to soil grid """
+        
+        shape = np.shape(XX)
+        conc = np.zeros((shape))
+        for i in range(0,len(self.cyls)):
+        
+            p = multiprocessing.Process(target=calc_model, args=(i,XX,YY,ZZ,q,))
+            p.start()
+            
+        for i in range(0,len(self.cyls)):
+            conc = np.add(conc,np.array(q.get()))
+        return conc
                   
     def collect_cylinder_solute_data(self):
         """ collects solute data from cylinders  """
