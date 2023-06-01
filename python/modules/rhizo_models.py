@@ -17,6 +17,10 @@ from scipy.linalg import norm
 from scipy.interpolate import griddata as gd
 from mpl_toolkits.mplot3d import Axes3D
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+import multiprocessing
+from multiprocessing import Process, active_children
+import psutil
+from threading import Thread 
 
 
 class RhizoMappedSegments(pb.MappedSegments):
