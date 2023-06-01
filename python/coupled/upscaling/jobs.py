@@ -51,7 +51,7 @@ def run_jobs(jobs, sim_time):
 def make_list():
     jobs = []
 
-    method = ['sra']
+    method = ['sraOld']
     plant = ['soybean', 'maize']
     dim = ['1D', '3D']  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
