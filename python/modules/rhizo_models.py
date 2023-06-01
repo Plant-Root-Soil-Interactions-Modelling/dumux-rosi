@@ -624,6 +624,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         
         shape = np.shape(XX)
         conc = np.zeros((shape))
+        q = multiprocessing.Queue()
         for i in range(0,len(self.cyls)):
         
             p = multiprocessing.Process(target=self.calc_model, args=(i,XX,YY,ZZ,q,))
