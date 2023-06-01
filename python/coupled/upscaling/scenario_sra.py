@@ -121,8 +121,6 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             print("t_pot", t_pot)
 
         hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
-        for j in range(0, ns):  # from matric to total potential
-            hs[j, 0] += nodes[j + 1][2]
 
         wall_iteration = timeit.default_timer()
         err = 1.e6
@@ -274,7 +272,7 @@ if __name__ == "__main__":
     args = parser.parse_args(['maize', "1D", "hydrus_clay", "surface"])
     # args = parser.parse_args()
 
-    name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
+    name = "_sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
     sim_time = 0.5

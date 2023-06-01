@@ -1,8 +1,13 @@
 """
 Sink plot (noon and midnight), of a 3d soil 
 """
+import sys; sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
+sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+import scenario_setup as setup
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -18,10 +23,10 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 method = ["sra"] * 2
 plant = ["soybean"] * 2
 soil = ["hydrus_loam"] * 2
-outer_method = ["surface"] * 2
+outer_method = ["surface", "surface"]
 
 #
-dim = ["3D"] * 2
+dim = ["3D"] * 3
 
 # method = ["sra", "sraOld", "sra"]
 # plant = ["maize"] * 3
@@ -37,23 +42,25 @@ for i in range(0, len(plant)):
 cmap = plt.get_cmap('Set1')
 col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
 
-l = 100  # cm soil depth
-dx = 1  # cm resolution
-ylim = 99.5
-
 # check with scenario_setup
+l = 150  # cm soil depth
+dx = 1  # cm resolution
+ylim = 110
 days = 7.5
+
 trans = []
 for p in plant:
     if p == "soybean":
-            cell_volume = 3 * 76  # cm3
-            cell_number = np.array([76, 3, 100])
+        min_b, max_b, cell_number = setup.soybean_("3D")
+        cell_volume = 1  # cm3
     elif p == "maize":
-            cell_volume = 16 * 76  # cm2
-            cell_number = np.array([76, 16, 100])
+        min_b, max_b, cell_number = setup.maize_("3D")
+        cell_volume = 1  # cm3
     else:
         raise
-plot_times = [0., 2., 4., 6]  # , 30, 40
+plot_times = [0., 2., 4., 6]
+
+print(cell_number)
 
 """ load data """
 n = len(fnames)
@@ -72,8 +79,8 @@ ls = ["-", "--", "-.", ":"]
 for i in range(0, n):
 
     sink_ = data[i]
-    print("sink_", sink_.shape)  # cell_number = np.array([76, 3, 100])
-    sink_ = sink_.reshape((sink_.shape[0], 150, 3, 76))
+    print("sink_", sink_.shape)
+    sink_ = sink_.reshape((sink_.shape[0], cell_number[-1], cell_number[-2], cell_number[-3]))
     print("sink_", sink_.shape)
     sink_ = np.sum(sink_, 2)
     print("sink_", sink_.shape)
@@ -96,7 +103,7 @@ for i in range(0, n):
 for i in range(0, n):
 
     sink_ = data[i]
-    sink_ = sink_.reshape((sink_.shape[0], 150, 3, 76))
+    sink_ = sink_.reshape((sink_.shape[0], cell_number[-1], cell_number[-2], cell_number[-3]))
     sink_ = np.sum(sink_, 2)
     sink_ = np.sum(sink_, 2)
 
@@ -104,6 +111,7 @@ for i in range(0, n):
 
     redistribution_id = np.round(sink_.shape[0] / days * np.array([i for i in plot_times]))
     redistribution_id = redistribution_id.astype(int)
+    print("redistribution_id", redistribution_id)
 
     for ind, j in enumerate(redistribution_id):
         lstr = "{:g}d ({:s})".format(plot_times[ind], method[i])

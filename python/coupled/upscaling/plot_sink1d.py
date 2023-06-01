@@ -15,19 +15,23 @@ plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
 plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
-method = ["sra"] * 2
-plant = ["soybean"] * 2
+# method = ["sra"] * 2
+# plant = ["soybean"] * 2
+# soil = ["hydrus_sandyloam"] * 2
+# outer_method = ["voronoi", "surface"]
+# dim = ["1D"] * 2  # DO NOT CHANGE TO 3D, use script plot_sink3d
+
+method = ["sra", "sraOld"]
+plant = ["maize"] * 2
+dim = ["1D"] * 2  # DO NOT CHANGE TO 3D, use script plot_sink3d
 soil = ["hydrus_loam"] * 2
 outer_method = ["surface"] * 2
 
-# DO NOT CHANGE TO 3D, use script plot_sink3d
-dim = ["1D"] * 2
-
-# method = ["sra", "sraOld", "sra"]
-# plant = ["maize"] * 3
-# dim = ["1D"] * 3
-# soil = ["hydrus_clay", "hydrus_loam", "hydrus_sandyloam"]
-# outer_method = ["surface"] * 3
+# method = ["_sra"]
+# plant = ["maize"]
+# dim = ["1D"]  # DO NOT CHANGE TO 3D, use script plot_sink3d
+# soil = ["hydrus_loam"]
+# outer_method = ["surface"]
 
 fnames = []
 for i in range(0, len(plant)):
@@ -37,9 +41,9 @@ for i in range(0, len(plant)):
 cmap = plt.get_cmap('Set1')
 col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
 
-l = 100  # cm soil depth
+l = 150  # cm soil depth
 dx = 1  # cm resolution
-ylim = 99.5
+ylim = 120
 
 # check with scenario_setup
 days = 7.5
