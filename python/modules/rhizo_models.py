@@ -577,7 +577,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         return conc
         
     def calc_model(number,XX,YY,ZZ,q):
-        q.put([(calculate_cyls(number,XX,YY,ZZ,))])
+        q.put([(self.calculate_cyls(number,XX,YY,ZZ,))])
         
     def calculate_cyls(i,XX,YY,ZZ): 
         cyl = self.cyls[i]
@@ -626,7 +626,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         conc = np.zeros((shape))
         for i in range(0,len(self.cyls)):
         
-            p = multiprocessing.Process(target=calc_model, args=(i,XX,YY,ZZ,q,))
+            p = multiprocessing.Process(target=self.calc_model, args=(i,XX,YY,ZZ,q,))
             p.start()
             
         for i in range(0,len(self.cyls)):
