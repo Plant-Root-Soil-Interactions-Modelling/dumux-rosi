@@ -37,7 +37,7 @@ genotype = "WT"
 
 """ parameters   """
 soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
-sim_time = 3 #154   #  [day]
+sim_time = 2 #154   #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
 x_, y_, lai = evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
@@ -117,6 +117,21 @@ if rank == 0:
     
     #rs.plot_cylinders()
     #rs.plot_cylinders_solute()
+    psi_x_ = np.array(psi_x_, dtype=object)
+    psi_s_ = np.array(psi_s_, dtype=object)
+    sink_ = np.array(sink_, dtype=object)
+    x_ = np.array(x_, dtype=object)
+    y_ = np.array(y_, dtype=object)
+    psi_s2_ = np.array(psi_s2_, dtype=object)
+    vol_ = np.array(vol_, dtype=object)
+    surf_ = np.array(surf_, dtype=object)
+    krs_ = np.array(krs_, dtype=object)
+    dist = np.array(dist, dtype=object)
+    conc = np.array(conc, dtype=object)
+    l = np.array(l, dtype=object)
+    soil_c_ = np.array(soil_c_, dtype=object)
+    c_ = np.array(c_, dtype=object)
+    
 
     scenario.write_files(fname, psi_x_, psi_s_, sink_, x_, y_, psi_s2_,  vol_, surf_, krs_, depth_,  dist, conc, l, soil_c_, c_)
     print ("Overall simulation wall time", timeit.default_timer() - start_time, " s")

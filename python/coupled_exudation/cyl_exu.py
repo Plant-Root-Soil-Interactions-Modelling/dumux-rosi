@@ -334,8 +334,9 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
         #     print("]")
 
 
-        #print('current time is',1+ i/240)
-        if i % (20 * 12) == 0:  # every 6h
+        print('current time is',i/240)
+        print('current root age', rs_age+i/240) 
+        if (rs_age % 2 == 0) and (i/240 == 0.5):  # every 2.5 days i % (20 * 12) == 0
             # map concentration cylinders to 1mm grid in all directions 
             xx_ = np.linspace(min_b[0], max_b[0], int(1*(max_b[0]-min_b[0]))) 
             yy_ = np.linspace(min_b[1], max_b[1], int(1*(max_b[1]-min_b[1])))
@@ -344,7 +345,7 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu')
             #gridToVTK("results/vts/./exudate_day"+("{:02d}".format(i)), XX, YY, ZZ, pointData = {"exudate":C})
             #gridToVTK("results/vts/./exudate_day"+str(i/240)+(XX, YY, ZZ, pointData = {"exudate":C})
-            gridToVTK("results/vts/./exudate_day"+("{:03d}".format(int(rs_age))), XX, YY, ZZ, pointData = {"exudate":C})
+            gridToVTK("results/vts/./exudate_day"+('{:.2f}'.format(float(rs_age+i/240))), XX, YY, ZZ, pointData = {"exudate":C})
 
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
