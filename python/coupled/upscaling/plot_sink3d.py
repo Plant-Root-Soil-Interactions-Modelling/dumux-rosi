@@ -20,19 +20,11 @@ plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
 plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
-method = ["sra"] * 2
-plant = ["soybean"] * 2
-soil = ["hydrus_loam"] * 2
-outer_method = ["surface", "surface"]
 
-#
-dim = ["3D"] * 3
 
-# method = ["sra", "sraOld", "sra"]
-# plant = ["maize"] * 3
-# dim = ["1D"] * 3
-# soil = ["hydrus_clay", "hydrus_loam", "hydrus_sandyloam"]
-# outer_method = ["surface"] * 3
+def plot_sink3d(ax, method, plant, outer_method, dim):
+
+
 
 fnames = []
 for i in range(0, len(plant)):
@@ -122,4 +114,26 @@ for i in range(0, n):
 
 plt.tight_layout()
 plt.show()
+
+
+if __name__ == "__main__":
+
+    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+
+    method = ["sra"] * 2
+    plant = ["soybean"] * 2
+    soil = ["hydrus_loam"] * 2
+    outer_method = ["surface", "surface"]
+    dim = ["3D"] * 3
+
+    plot_sink3d(ax, method, plant, outer_method, dim)
+    plt.savefig('sink3d_maize_sandyloam.png')
+
+    plt.show()
+    
+    # method = ["sra", "sraOld", "sra"]
+    # plant = ["maize"] * 3
+    # dim = ["1D"] * 3
+    # soil = ["hydrus_clay", "hydrus_loam", "hydrus_sandyloam"]
+    # outer_method = ["surface"] * 3
 

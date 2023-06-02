@@ -89,6 +89,8 @@ print()
 # vp.plot_roots(ana, "kx")
 vp.plot_roots(ana, "age")
 
+ana.write("results/" + plant + ".vtp")
+
 # width = max_b - min_b
 # vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
 
