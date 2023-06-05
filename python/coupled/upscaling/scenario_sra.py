@@ -264,12 +264,12 @@ def run_sra(sim_time, method, plant, dim, soil, outer_method):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
-    parser.add_argument('plant', type = str, help = 'soybean or maize')
+    parser.add_argument('plant', type = str, help = 'soybean or maize or springbarley')
     parser.add_argument('dim', type = str, help = '1D or 3D')
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['maize', "1D", "hydrus_clay", "surface"])
+    args = parser.parse_args(['springbarley', "1D", "hydrus_clay", "surface"])
     # args = parser.parse_args()
 
     name = "_sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method

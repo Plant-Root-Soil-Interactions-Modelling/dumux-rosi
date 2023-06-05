@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 """ parameters """
 
 dim = "1D"  # 1D, 3D
-plant = "maize"  # soybean, maize
+plant = "springbarley"  # soybean, maize, springbarley
 # min_b, max_b, cell_number = scenario.soybean_(dim)
-min_b, max_b, cell_number = scenario.maize_(dim)
+min_b, max_b, cell_number = scenario.springbarley_(dim)
 soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand
 outer_method = "surface"  # voronoi, length, surface, volume
 initial = -300  # cm total potential
@@ -29,9 +29,14 @@ nodes = r.nodes
 
 print("\nplant")
 print("rs_age", rs_age)
+print()
 params = r.getRootRandomParameter()
 for p in params:
+    print("SubType", p.subType)
     print("radius", p.a)
+    print("growth rate", p.r)
+    print()
+
 print()
 
 # A_dirichlet, Kr, kx0 = r_.doussan_system_matrix(rs_age)
@@ -87,7 +92,7 @@ print()
 # vp.plot_roots(ana, "age")
 # vp.plot_roots(ana, "kr")
 # vp.plot_roots(ana, "kx")
-vp.plot_roots(ana, "age")
+vp.plot_roots(ana, "subType")
 
 ana.write("results/" + plant + ".vtp")
 

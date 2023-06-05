@@ -18,7 +18,7 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 def plot_sink1d(ax, method, plant, outer_method):
 
-    dim = ["1D"]  # DO NOT CHANGE TO 3D, use script plot_sink3d
+    dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
     # check with scenario_setup
     l = 150  # cm soil depth
@@ -37,9 +37,9 @@ def plot_sink1d(ax, method, plant, outer_method):
     trans = []
     for p in plant:
         if p == "soybean":
-                cell_volume = 3 * 76  # cm3
+                cell_volume = 3 * 76 * dx  # cm3
         elif p == "maize":
-                cell_volume = 16 * 76  # cm2
+                cell_volume = 16 * 76 * dx  # cm3
         else:
             raise
     plot_times = [0., 2., 4., 6]  # , 30, 40
