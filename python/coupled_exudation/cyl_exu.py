@@ -242,10 +242,12 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
         proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
 
-        ages = XylemFluxPython.get_ages(r,rs_age+1)
+        #ages = XylemFluxPython.get_ages(r,rs_age+1)
+        ages =  np.asarray(rs_age - np.array([rs.rs.rs.nodeCTs[int(seg.y)] for seg in segs]), int)
+        types = np.asarray(rs.rs.rs.subTypes, int)
         kex = np.zeros((len(ages)))
         for p in range(0,len(ages)):
-            kex[p] = XylemFluxPython.exu_fun(r, kexu, ages[p])
+            kex[p] = XylemFluxPython.exu_fun(r, kexu[types[p]], ages[p])
         
         rs.solve(dt, rsx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes) #or 0?
         # water: left dirchlet, right neumann; solute: left and right Neumann<----
@@ -345,7 +347,8 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu')
             #gridToVTK("results/vts/./exudate_day"+("{:02d}".format(i)), XX, YY, ZZ, pointData = {"exudate":C})
             #gridToVTK("results/vts/./exudate_day"+str(i/240)+(XX, YY, ZZ, pointData = {"exudate":C})
-            gridToVTK("results/vts/./exudate_day"+('{:.2f}'.format(float(rs_age+i/240))), XX, YY, ZZ, pointData = {"exudate":C})
+            gridToVTK("results/vts/./exudate_day"+('{:03d}'.format(int(rs_age))), XX, YY, ZZ, pointData = {"exudate":C})
+            np.save("results/concentration/day"+("{:03d}".format(int(rs_age))), C)
 
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
