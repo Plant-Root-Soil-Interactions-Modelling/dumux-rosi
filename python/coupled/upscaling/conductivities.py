@@ -48,7 +48,7 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     r.setKxTables([kx00[:, 1], kx_sem, kx_sem, kx_sem, kx_sem, kx_sem],
                   [kx00[:, 0], age_kx_sem[0], age_kx_sem[1], age_kx_sem[2], age_kx_sem[0], age_kx_sem[0]])
 
-    r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
+    # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
 
 
 def _dist2age(dist, lgr):
@@ -77,7 +77,7 @@ def maize_conductivities(r, skr = 1., skx = 1.):
     r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
-    r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
+    # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
 
 
 def lupine_conductivities(r, skr = 1., skx = 1.):
@@ -97,8 +97,8 @@ def lupine_conductivities(r, skr = 1., skx = 1.):
                     [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03],
                     [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
 
-    # kr01 = np.minimum(skr * kr0[:, 1], 1.)
-    # kr11 = np.minimum(skr * kr1[:, 1], 1.)
+    kr01 = np.minimum(skr * kr0[:, 1], 1.)
+    kr11 = np.minimum(skr * kr1[:, 1], 1.)
     r.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
@@ -106,7 +106,7 @@ def lupine_conductivities(r, skr = 1., skx = 1.):
     r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
-    r.plot_conductivities(monocot = False, plot_now = True, axes_ind = [1, 4], lateral_ind = [2, 3])
+    # r.plot_conductivities(monocot = False, plot_now = True, axes_ind = [1, 4], lateral_ind = [2, 3])
 
 
 def const_conductivities(r):
