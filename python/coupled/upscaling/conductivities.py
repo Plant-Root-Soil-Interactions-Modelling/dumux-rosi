@@ -11,22 +11,24 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
                    7.43130539900036, 7.96783617723113, 8.85893584240891, 9.93346483347755, 12.9730721928149, 14.9377837024319,
                    14.9463162678248, 22.9782247735318, 29.9461545761478, 35.4844362127705, 44.9536083032342, 45.4888550761837,
                    74.968515757407, 85.1521450722157])  # mm
+    dist_kx_sem = dist_kx_sem / 10.  # mm -> cm
 
-    kx_sem = np.array([2.77122506635745E-11, 3.7398202493309E-11, 1.38415061517059E-10, 1.79567359509706E-10, 1.96306339548237E-10,
+    kx_sem = np.array([2.77122506635745E-11, 2.77122506635745E-11, 3.7398202493309E-11, 1.38415061517059E-10, 1.79567359509706E-10, 1.96306339548237E-10,
               8.89390331220058E-11, 1.96385540541133E-10, 2.28209789046996E-10, 1.38507900546885E-10, 2.55936584710635E-10, 1.20544773836736E-09,
               6.50362310436064E-10, 2.91544497103574E-10, 1.7099886994521E-09, 2.91948868267954E-09, 1.74056180004427E-09, 3.02847418108279E-09,
-              7.83723083349083E-10, 3.27282554680027E-09, 3.36494131181473E-09])  # m3/(Mpa s)
-    kx_sem = kx_sem * (24 * 3600 / 0.01012)  # cm2 / day
-    print("kx_sem", kx_sem)
+              7.83723083349083E-10, 3.27282554680027E-09, 3.36494131181473E-09])  # m3/(Mpa s);
+    kx_sem = kx_sem * (24 * 3600 / 0.01012)  # cm2 / day; 1 pa = 0.0102 cm pressure head
+    # print("kx_sem", kx_sem)
 
     dist_kr_sem = np.array([3.83499003558418, 5.78832892699593, 8.82224997723071, 14.8044305825092, 22.9202611065502,
                             29.8988298100679, 35.2452443718087, 44.893443484342, 45.6080841380127, 74.9213744206531, 84.926343572044])  # mm
+    dist_kr_sem = dist_kr_sem / 10.  # mm -> cm
 
-    kr_sem = np.array([2.86530346707473E-11, 1.98908062845181E-11, 1.83385640585257E-11, 1.71497794027052E-11, 1.32740876949445E-11,
+    kr_sem = np.array([0., 0., 2.86530346707473E-11, 1.98908062845181E-11, 1.83385640585257E-11, 1.71497794027052E-11, 1.32740876949445E-11,
                        1.62939310267509E-11, 1.2716769213763E-11, 1.283388149226E-11, 1.28339781725778E-11, 1.63668761621923E-11, 1.6369077753957E-11])  # m3/(Mpa s)
 
-    kr_sem = kr_sem * (24 * 3600 / 0.01012)  # cm2 / day
-    print("kr_sem", kr_sem)
+    kr_sem = kr_sem * (24 * 3600 / 0.01012)  # cm2 / day; 1 pa = 0.0102 cm pressure head
+    # print("kr_sem", kr_sem)
 
     growth_rates = [2.722, 0.3, 0.1]  # growth rates cm/day
     radii = [0.0325, 0.03, 0.02]
@@ -38,8 +40,8 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     age_kr_sem = []
     kr_sem_ = []
     for i, lgr in enumerate(growth_rates):
-        age_kx_sem.append(_dist2age(dist_kx_sem, lgr))
-        age_kr_sem.append(_dist2age(dist_kr_sem, lgr))
+        age_kx_sem.append(_dist2age(dist_kx_sem, lgr, ages = [0.]))  # added ages [0.]
+        age_kr_sem.append(_dist2age(dist_kr_sem, lgr, ages = [1.e-4, -0.1]))  # added ages [1.e-4, -0.1]
         kr_sem_.append(kr_sem / (2 * radii[i] * np.pi))
 
     r.setKrTables([kr00[:, 1], kr_sem, kr_sem, kr_sem, kr_sem, kr_sem],
@@ -51,9 +53,10 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
 
 
-def _dist2age(dist, lgr):
+def _dist2age(dist, lgr, ages = []):
     """ converts tip distances to age assuming linear growth"""
-    return dist / lgr
+    ages.extend(dist / lgr)
+    return np.array(ages)
 
 
 def maize_conductivities(r, skr = 1., skx = 1.):
