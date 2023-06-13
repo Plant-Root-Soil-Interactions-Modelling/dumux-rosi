@@ -57,7 +57,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
     ax[1].set_xlabel("sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
-    ls = ["-", "--", "-.", ":"]
+    ls = [ "--", "-.", ":"]
 
     """ noon """
     for i in range(0, n):
@@ -69,7 +69,8 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         peak_id = peak_id.astype(int)
 
         for ind, j in enumerate(peak_id):
-            lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+            lstr = "{:g}d ({:s})".format(plot_times[ind], "1d")  # method[i]
+            # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
             ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[0].set_ylim([-ylim, 0.])
@@ -85,7 +86,8 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         redistribution_id = redistribution_id.astype(int)
 
         for ind, j in enumerate(redistribution_id):
-            lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+            # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+            lstr = "{:g}d ({:s})".format(plot_times[ind], "1d")  # method[i]
             ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[1].set_ylim([-ylim, 0.])

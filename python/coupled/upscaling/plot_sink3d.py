@@ -9,6 +9,8 @@ import numpy as np
 
 import scenario_setup as setup
 
+from plot_sink1d import *
+
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
 BIGGER_SIZE = 16
@@ -43,13 +45,13 @@ def plot_sink3d(ax, method, plant, soil, outer_method):
     for p in plant:
         if p == "soybean":
             min_b, max_b, cell_number = setup.soybean_("3D")
-            cell_volume = 1  # cm3
+            layer_volume = 3 * 76 * dx  # cm3
         elif p == "maize":
             min_b, max_b, cell_number = setup.maize_("3D")
-            cell_volume = 1  # cm3
+            layer_volume = 16 * 76 * dx  # cm3
         elif p == "springbarley":
             min_b, max_b, cell_number = setup.springbarley_("3D")
-            cell_volume = 1  # cm3
+            layer_volume = 3 * 13 * dx  # cm3
         else:
             raise
     plot_times = [0., 2., 4., 6]
@@ -61,7 +63,6 @@ def plot_sink3d(ax, method, plant, soil, outer_method):
     data = [np.load(n_ + ".npy")  for n_ in fnames]
 
     """ sink plot """
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     ax[0].set_title(soil)
     ax[0].set_ylabel("depth [cm]")
     ax[0].set_xlabel("sink term at noon [1/day]")
@@ -88,8 +89,8 @@ def plot_sink3d(ax, method, plant, soil, outer_method):
         peak_id = peak_id.astype(int)
 
         for ind, j in enumerate(peak_id):
-            lstr = "{:g}d ({:s})".format(plot_times[ind], method[i])
-            ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            lstr = "{:g}d ({:s})".format(plot_times[ind], "3d")  # method[i]
+            ax[0].plot(sink_[j,:] / layer_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[0].set_ylim([-ylim, 0.])
         ax[0].legend()
@@ -109,8 +110,8 @@ def plot_sink3d(ax, method, plant, soil, outer_method):
         print("redistribution_id", redistribution_id)
 
         for ind, j in enumerate(redistribution_id):
-            lstr = "{:g}d ({:s})".format(plot_times[ind], method[i])
-            ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            lstr = "{:g}d ({:s})".format(plot_times[ind], "3d")  # method[i]
+            ax[1].plot(sink_[j,:] / layer_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[1].set_ylim([-ylim, 0.])
         ax[1].legend()
@@ -118,7 +119,7 @@ def plot_sink3d(ax, method, plant, soil, outer_method):
 
 if __name__ == "__main__":
 
-    """ soybean """
+    """ springbarley """
     for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
         fig, ax = plt.subplots(1, 2, figsize = (18, 10))
         method = ["sra"]
@@ -126,8 +127,9 @@ if __name__ == "__main__":
         soil = [s]
         outer_method = ["surface"]
         plot_sink3d(ax, method, plant, soil, outer_method)
+        # plot_sink1d(ax, method, plant, soil, outer_method)
         plt.tight_layout()
-        plt.savefig('sink3d_soybean_' + s[7:] + '.png')
+        plt.savefig('sink3d_springbarley_' + s[7:] + '.png')
 
     # """ soybean """
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
@@ -139,7 +141,7 @@ if __name__ == "__main__":
     #     plot_sink3d(ax, method, plant, soil, outer_method)
     #     plt.tight_layout()
     #     plt.savefig('sink3d_soybean_' + s[7:] + '.png')
-    # outer_method
+
     # """ maize """
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
     #     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
@@ -147,7 +149,8 @@ if __name__ == "__main__":
     #     plant = ["maize"]
     #     soil = [s]
     #     outer_method = ["surface"]
-    #     plot_sink3d(ax, method, plant, soil,  outer_method)
+    #     plot_sink3d(ax, method, plant, soil, outer_method)
+    #     # plot_sink1d(ax, method, plant, soil, outer_method)
     #     plt.tight_layout()
     #     plt.savefig('sink3d_maize_' + s[7:] + '.png')
 
