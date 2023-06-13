@@ -33,11 +33,15 @@ def get_outer_radii(rootsystem, type_str, cell_number):
     if rootsystem == "soybean":
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.soybean(0)  # 0 = envirotype
         xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-        simtime = 87.5
+        simtime = 42  # 87.5
     elif rootsystem == "maize":
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.maize(0)  # 0 = envirotype
         xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-        simtime = 95
+        simtime = 56  # 95
+    elif rootsystem == "springbarley":
+        soil_, table_name, min_b, max_b, _, area, Kc = scenario.springbarley(0)  # 0 = envirotype
+        xml_name = "data/spring_barley_CF12.xml"  # root growth model parameter file
+        simtime = 49  # 95
     else:
         print("get_outer_radii() unknown rootsystem name", rootsystem)
         raise
@@ -57,14 +61,14 @@ def get_outer_radii(rootsystem, type_str, cell_number):
 
 fig, axes = plt.subplots(3, 2, figsize = (20, 18))
 
-# """ maize """
+# # """ maize """
 # cell_numbers = []
-# cell_numbers.append([76, 16, 200])
-# cell_numbers.append([38, 8, 100])
-# cell_numbers.append([19, 4, 50])
-# cell_numbers.append([1, 1, 200])
-# cell_numbers.append([1, 1, 100])
-# cell_numbers.append([1, 1, 50])
+# cell_numbers.append([76, 16, 150])
+# cell_numbers.append([38, 8, 75])
+# cell_numbers.append([19, 4, 38])
+# cell_numbers.append([1, 1, 150])
+# cell_numbers.append([1, 1, 75])
+# cell_numbers.append([1, 1, 38])
 #
 # stats = [["min", "max", "median", "mean", "std"]]
 # for i, cell_number in enumerate(cell_numbers):
@@ -73,7 +77,7 @@ fig, axes = plt.subplots(3, 2, figsize = (20, 18))
 #     ax = axes[i % 3, i // 3]
 #     ax.hist(outer_r, bins = 40, rwidth = 0.9)
 #     # ax.set_xlim(0, 4)
-#     ax.set_ylim(0, 15000)
+#     ax.set_ylim(0, 7000)
 #     ax.set_title("resolution " + str(cell_number))
 #     stats.append([np.min(outer_r), np.max(outer_r), np.median(outer_r), np.mean(outer_r), np.std(outer_r)])
 #
@@ -86,23 +90,54 @@ fig, axes = plt.subplots(3, 2, figsize = (20, 18))
 # plt.tight_layout()
 # plt.show()
 
-""" soybean """
+# """ soybean """
+# cell_numbers = []
+# # cell_numbers.append([142, 6, 300])
+# cell_numbers.append([76, 3, 150])
+# cell_numbers.append([38, 2, 75])
+# cell_numbers.append([19, 1, 38])
+# cell_numbers.append([1, 1, 150])
+# cell_numbers.append([1, 1, 75])
+# cell_numbers.append([1, 1, 38])
+#
+# stats = [["min", "max", "median", "mean", "std"]]
+# for i, cell_number in enumerate(cell_numbers):
+#     outer_r = get_outer_radii("soybean", "surface", cell_number)
+#     outer_r = np.minimum(outer_r, 2)
+#     ax = axes[i % 3, i // 3]
+#     ax.hist(outer_r, bins = 40, rwidth = 0.9)
+#     # ax.set_xlim(0, 4)
+#     ax.set_ylim(0, 2000)
+#     ax.set_title("resolution " + str(cell_number))
+#     stats.append([np.min(outer_r), np.max(outer_r), np.median(outer_r), np.mean(outer_r), np.std(outer_r)])
+#
+# print(stats[0])
+# for i, cell_number in enumerate(cell_numbers):
+#     print("Summary", cell_number, ":"0)
+#     print(stats[i + 1])
+#
+# plt.title("Soybean")
+# plt.tight_layout()
+# plt.show()
+
+""" spring barley """
 cell_numbers = []
-cell_numbers.append([76, 4, 200])
-cell_numbers.append([38, 2, 100])
-cell_numbers.append([19, 1, 50])
-cell_numbers.append([1, 1, 200])
-cell_numbers.append([1, 1, 100])
-cell_numbers.append([1, 1, 50])
+# cell_numbers.append([142, 6, 300])
+cell_numbers.append([13, 3, 150])
+cell_numbers.append([7, 2, 75])
+cell_numbers.append([3, 1, 38])
+cell_numbers.append([1, 1, 150])
+cell_numbers.append([1, 1, 75])
+cell_numbers.append([1, 1, 38])
 
 stats = [["min", "max", "median", "mean", "std"]]
 for i, cell_number in enumerate(cell_numbers):
-    outer_r = get_outer_radii("soybean", "surface", cell_number)
+    outer_r = get_outer_radii("springbarley", "surface", cell_number)
     outer_r = np.minimum(outer_r, 2)
     ax = axes[i % 3, i // 3]
     ax.hist(outer_r, bins = 40, rwidth = 0.9)
     # ax.set_xlim(0, 4)
-    ax.set_ylim(0, 3000)
+    ax.set_ylim(0, 1500)
     ax.set_title("resolution " + str(cell_number))
     stats.append([np.min(outer_r), np.max(outer_r), np.median(outer_r), np.mean(outer_r), np.std(outer_r)])
 

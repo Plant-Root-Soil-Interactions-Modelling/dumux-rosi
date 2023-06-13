@@ -33,6 +33,18 @@ def vg_enviro_type(i:int):
     return soil[i], table_name
 
 
+def springbarley(i:int):
+    """ parameters for maize simulation """
+    soil, table_name = vg_enviro_type(i)
+    min_b = np.array([-6.5, -1.5, -150.])
+    max_b = np.array([6.5, 1.5, 0.])
+    cell_number = np.array([1, 1, 150])
+    width = max_b - min_b
+    area = width[0] * width[1]  # cm2
+    Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al 1998
+    return soil, table_name, min_b, max_b, cell_number, area, Kc_maize
+
+
 def maize(i:int):
     """ parameters for maize simulation """
     soil, table_name = vg_enviro_type(i)
@@ -209,86 +221,100 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         # rs = pb.MappedPlant() # TODO
         rs.setSeed(seed)
         rs.readParameters(fname)
-        if not stochastic:
-            set_all_sd(rs, 0.)
 
-        if mods is not None:  # apply modifications
-            rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
-            srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
-            if "lmax" in mods:  # all types
-                for i in range(0, len(rrp)):
-                    rrp[i].lmax *= mods["lmax"]
-                mods.pop("lmax")
-            if "lmax145" in mods:
-                rrp[1].lmax *= mods["lmax145"]
-                rrp[4].lmax *= mods["lmax145"]
-                if len(rrp) > 5:
-                    rrp[5].lmax *= mods["lmax145"]
-                mods.pop("lmax145")
-            if "lmax2" in mods:
-                rrp[2].lmax *= mods["lmax2"]
-                mods.pop("lmax2")
-            if "lmax3" in mods:
-                rrp[3].lmax *= mods["lmax3"]
-                mods.pop("lmax3")
-            if "lmax4" in mods:
-                rrp[4].lmax *= mods["lmax4"]
-                mods.pop("lmax4")
-            if "theta45" in mods:
-                if len(rrp) > 5:
-                    print("shootbore (theta45)")
-                    rrp[5].theta = mods["theta45"]
-                else:
-                    print("seminal (theta45)")
-                    rrp[4].theta = mods["theta45"]
-                mods.pop("theta45")
-            if "r145" in mods:
-                rrp[1].r *= mods["r145"]
-                rrp[4].r *= mods["r145"]
-                if len(rrp) > 5:
-                    rrp[5].r *= mods["r145"]
-                mods.pop("r145")
-            if "r2" in mods:
-                rrp[2].r *= mods["r2"]
-                mods.pop("r2")
-            if "r3" in mods:
-                rrp[3].r *= mods["r3"]
-                mods.pop("r3")
-            if "r" in mods:  # all types
-                for i in range(0, len(rrp)):
-                    rrp[i].r *= mods["r"]
-                mods.pop("r")
-            if "a" in mods:  # all types
-                for i in range(0, len(rrp)):
-                    rrp[i].a *= mods["a"]
-                mods.pop("a")
-            if "src" in mods:
-                srp[0].maxB = mods["src"]
-                mods.pop("src")
-            if "delaySB" in mods:
-                srp[0].delaySB = mods["delaySB"]
-                mods.pop("delaySB")
-            if mods:  # something unused in mods
-                print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
-                for k, v in mods.items():
-                    print("key:", k)
-                print()
+    if fname == "data/Zeamays_synMRI_modified.xml":
+        print("\nMaize\n")
+        params = rs.getRootRandomParameter()
+        for p in params:
+            p.a = 2. * p.a  # at least ..... TODO parameterisation
 
-        # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
-        # for p in rrp:
-        #     print(p.dx, p.dxMin)
+    if fname == "data/spring_barley_CF12.xml":
+        print("\nSpring barley\n")
+        params = rs.getRootRandomParameter()
+        params[2].lmax *= 2
+        params[1].theta = 1.31  # why is the tap root not always 0?
 
-        # rs.setGeometry(pb.SDF_PlantBox(max_b[0] - min_b[0], max_b[1] - min_b[1], np.abs(min_b[2])))
-        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-        rs.initializeDB(4, 5)
-        rs.simulate(1., True)
-        r = XylemFluxPython(rs)
+    if not stochastic:
+        set_all_sd(rs, 0.)
 
-        # print("HERE***********************************")
-        # print([s.x for s in r.rs.segments])
-        # print([s.y for s in r.rs.segments])
-        # # for i in range(0, len(r.rs.segments)): # ????????
-        # #     print(r.rs.seg2cell[i])
+    if mods is not None:  # apply modifications
+        rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
+        srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
+        if "lmax" in mods:  # all types
+            for i in range(0, len(rrp)):
+                rrp[i].lmax *= mods["lmax"]
+            mods.pop("lmax")
+        if "lmax145" in mods:
+            rrp[1].lmax *= mods["lmax145"]
+            rrp[4].lmax *= mods["lmax145"]
+            if len(rrp) > 5:
+                rrp[5].lmax *= mods["lmax145"]
+            mods.pop("lmax145")
+        if "lmax2" in mods:
+            rrp[2].lmax *= mods["lmax2"]
+            mods.pop("lmax2")
+        if "lmax3" in mods:
+            rrp[3].lmax *= mods["lmax3"]
+            mods.pop("lmax3")
+        if "lmax4" in mods:
+            rrp[4].lmax *= mods["lmax4"]
+            mods.pop("lmax4")
+        if "theta45" in mods:
+            if len(rrp) > 5:
+                print("shootbore (theta45)")
+                rrp[5].theta = mods["theta45"]
+            else:
+                print("seminal (theta45)")
+                rrp[4].theta = mods["theta45"]
+            mods.pop("theta45")
+        if "r145" in mods:
+            rrp[1].r *= mods["r145"]
+            rrp[4].r *= mods["r145"]
+            if len(rrp) > 5:
+                rrp[5].r *= mods["r145"]
+            mods.pop("r145")
+        if "r2" in mods:
+            rrp[2].r *= mods["r2"]
+            mods.pop("r2")
+        if "r3" in mods:
+            rrp[3].r *= mods["r3"]
+            mods.pop("r3")
+        if "r" in mods:  # all types
+            for i in range(0, len(rrp)):
+                rrp[i].r *= mods["r"]
+            mods.pop("r")
+        if "a" in mods:  # all types
+            for i in range(0, len(rrp)):
+                rrp[i].a *= mods["a"]
+            mods.pop("a")
+        if "src" in mods:
+            srp[0].maxB = mods["src"]
+            mods.pop("src")
+        if "delaySB" in mods:
+            srp[0].delaySB = mods["delaySB"]
+            mods.pop("delaySB")
+        if mods:  # something unused in mods
+            print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
+            for k, v in mods.items():
+                print("key:", k)
+            print()
+
+    # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
+    # for p in rrp:
+    #     print(p.dx, p.dxMin)
+
+    # rs.setGeometry(pb.SDF_PlantBox(max_b[0] - min_b[0], max_b[1] - min_b[1], np.abs(min_b[2])))
+    rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
+    # rs.initializeDB(4, 5)
+    rs.initialize()
+    rs.simulate(1., True)
+    r = XylemFluxPython(rs)
+
+    # print("HERE***********************************")
+    # print([s.x for s in r.rs.segments])
+    # print([s.y for s in r.rs.segments])
+    # # for i in range(0, len(r.rs.segments)): # ????????
+    # #     print(r.rs.seg2cell[i])
 
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
