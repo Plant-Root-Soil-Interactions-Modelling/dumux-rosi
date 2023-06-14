@@ -6,7 +6,7 @@ import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import sys
 from xylem_flux import *
-import vtk_plot as vtk
+import visualisation.vtk_plot as vp
 import plantbox as pb
 import evapotranspiration as evap
 import timeit
@@ -122,6 +122,8 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
             if err > 1.e-6:
                 print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(seg_fluxes))
             err2 = np.linalg.norm(trans_f(rs_age + t, dt) - collar_flux)
+            print(seg_fluxes)
+            print("errors",np.sum(seg_fluxes),collar_flux,err,err2)
             if r.last == "neumann":
                 if err2 > 1.e-6:
                     print("error: potential transpiration differs root collar flux in Neumann case" , err2)
@@ -133,17 +135,17 @@ def simulate_const(s, rs, sim_time, dt, trans_f, rs_age, type):
         wall_local = timeit.default_timer()
         if rank == 0:
             for key, value in cell2seg.items():  # check cell2seg
-                if key < 0:
+                if key <-6:#< 0:
                     nodes = rs.rs.rs.nodes
                     print("key is negative", key)
                     print("segments", cell2seg[key])
                     print("coresponding nodes")
-                    for s in cell2seg[key]:
-                        print(segs[s])
-                        print(nodes[segs[s].x], nodes[segs[s].y])
+                    for ss in cell2seg[key]:
+                        print(segs[ss])
+                        print(nodes[segs[ss].x], nodes[segs[ss].y])
                     ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
                     ana.addCellIds(rs.rs.rs.mappedSegments())
-                    vp.plot_roots(ana, "cell_id")
+                    #vp.plot_roots(ana, "cell_id")
 
             proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type) 
             #proposed_outer_sol_fluxes = r.splitSoilFluxes(net_sol_flux / dt, split_type)

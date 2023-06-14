@@ -1,0 +1,42 @@
+<rsml>
+    <metadata>
+        <version>1</version>
+        <unit>cm</unit>
+        <resolution>1</resolution>
+        <last-modified>14-6-2023</last-modified>
+        <software>OrganicBox</software>
+    </metadata>
+    <scene>
+        <plant>
+            <root ID="1">
+                <geometry>
+                    <polyline>
+                        <point x="0" y="0" z="-3"/>
+                        <point x="-0.026853912" y="-0.0089346068" z="-3.3789446"/>
+                        <point x="-0.036217704" y="-0.0088807903" z="-3.4347894"/>
+                    </polyline>
+                </geometry>
+                <properties>
+                    <organType value="2"/>
+                    <subType value="1"/>
+                    <length value="0.43662447"/>
+                    <age value="0.1"/>
+                    <parent-node value="-1"/>
+                    <diameter value="0.18000001"/>
+                </properties>
+                <functions>
+                    <function domain="polyline" name="node_creation_time">
+                        <sample value="0"/>
+                        <sample value="0.086943945181116269"/>
+                        <sample value="0.099999999999999659"/>
+                    </function>
+                    <function domain="polyline" name="node_index">
+                        <sample value="1"/>
+                        <sample value="2"/>
+                        <sample value="3"/>
+                    </function>
+                </functions>
+            </root>
+        </plant>
+    </scene>
+</rsml>

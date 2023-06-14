@@ -15,7 +15,7 @@ import visualisation.vtk_plot as vp
 def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
     """     
     simulates the coupled scenario       
-        root architecture is not gowing  
+        root architecture is not growing  
         conductivities are not changing over time
         
     s
@@ -35,26 +35,27 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
     """
     start_time = timeit.default_timer()
     sx = s.getSolutionHead_()  # initial condition of soil [cm]
-    cc = s.getSolution_(1)  # kg/m3
+    cc = s.getSolution_(1)  # solute concentration [kg/m3].
 
     segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
     seg2cell = rs.rs.rs.seg2cell
     cell2seg = rs.rs.rs.cell2seg
     ns = len(segs)
 
-    for i in range(0, len(segs)):
+    for i in range(0, len(segs)):#sure about that, even in case of artificial shoot?
         if segs[i].x == 0:
             collar_ind = i  # segment index of root collar
             break
 
     dcyl = int(np.floor(ns / max_rank))
+    
     if rank + 1 == max_rank:
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)), cc)
         print ("\nInitialized final rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
     else:
         rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, (rank + 1) * dcyl)), cc)
         print ("\nInitialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
-
+    
     r = rs.rs  # rename (XylemFluxPython)
 
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
@@ -62,13 +63,15 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
     else:
         rsc = rs.get_inner_solutes(1)  # kg/m3
-
+    print("rsc",rsc)
+    print("rsx",rsx)
     if rank == 0:
-        print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx), np.min(rsc), np.max(rsc))
+        print("\nINITIAL root-soil interface matric potentials", np.nanmin(rsx), np.nanmax(rsx), np.nanmin(rsc), np.nanmax(rsc))
         rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
     else:
         rx = None
-
+    print("rx",rx)
+    
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ = [], [], [], [], [], [], [], [] 
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
@@ -106,12 +109,12 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
             rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
             # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
+            #print("rs_age+1, kexu",rs_age+1, kexu)
             seg_sol_fluxes = np.array(r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
         else:
             rx = None
             seg_fluxes = None
             seg_sol_fluxes = None
-
         rx = comm.bcast(rx, root = 0)
         seg_fluxes = comm.bcast(seg_fluxes, root = 0)
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
@@ -121,10 +124,15 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
             err = np.linalg.norm(np.sum(seg_fluxes) - collar_flux)
             if err > 1.e-6:
                 print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(seg_fluxes))
+                raise Exception
             err2 = np.linalg.norm(trans_f(rs_age + t, dt) - collar_flux)
+            print(seg_fluxes)
+            print("errors",np.sum(seg_fluxes),collar_flux,err,err2)
             if r.last == "neumann":
                 if err2 > 1.e-6:
                     print("error: potential transpiration differs root collar flux in Neumann case" , err2)
+                    raise Exception
+        #raise Exception
 
         comm.barrier()
         wall_xylem = timeit.default_timer() - wall_xylem
@@ -133,20 +141,23 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         wall_local = timeit.default_timer()
         if rank == 0:
             for key, value in cell2seg.items():  # check cell2seg
-                if key < 0:
+                if False:#key < 0: shoot is outside
                     nodes = rs.rs.rs.nodes
                     print("key is negative", key)
                     print("segments", cell2seg[key])
                     print("coresponding nodes")
-                    for s in cell2seg[key]:
-                        print(segs[s])
-                        print(nodes[segs[s].x], nodes[segs[s].y])
+                    for ss in cell2seg[key]:
+                        print(segs[ss])
+                        print(nodes[segs[ss].x], nodes[segs[ss].y])
                     ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
                     ana.addCellIds(rs.rs.rs.mappedSegments())
-                    vp.plot_roots(ana, "cell_id")
-
+                    if False:
+                        vp.plot_roots(ana, "cell_id")
+                        
             proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type) 
             proposed_outer_sol_fluxes = r.splitSoilFluxes(net_sol_flux / dt, split_type)
+            #print("proposed_outer_fluxes",sum(proposed_outer_fluxes),sum(net_flux / dt))
+            #print("proposed_outer_sol_fluxes",sum(proposed_outer_sol_fluxes),sum(net_sol_flux / dt))
             # if this fails, a segment is not mapped, i.e. out of soil domain
         else:
             proposed_outer_fluxes = None
@@ -156,10 +167,14 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs])
         
         ages = XylemFluxPython.get_ages(r,rs_age+1)
+        subTypes = r.rs.subTypes
+        
+        
         kex = np.zeros((len(ages)))
         for p in range(0,len(ages)):
-            kex[p] = XylemFluxPython.exu_fun(r, kexu, ages[p])
-        
+            if subTypes[p] > 0: # no exudation from the shoot
+                kex[p] = XylemFluxPython.exu_fun(r, kexu, ages[p])
+                
         rs.solve(dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes) #or 0?
         # water: left dirchlet, right neumann; solute: left and right Neumann<----
 

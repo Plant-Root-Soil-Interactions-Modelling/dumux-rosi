@@ -1,7 +1,7 @@
 import numpy as np
 
 from fv.fv_grid import *
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 
 class FVSolver:

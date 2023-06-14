@@ -22,10 +22,10 @@ import multiprocessing
 from multiprocessing import Process, active_children
 import psutil
 from threading import Thread 
-from air_models import AirSegment
+from air_modelsPlant import AirSegment
     
 
-class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
+class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     """
         Adds 1-dimensional rhizospere models to each root segment of a MappedSegments (or later MappedPlant)    
         
@@ -41,30 +41,13 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
     def __init__(self, wilting_point, NC, logbase, mode):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         super().__init__()
-        # if isinstance(x, str):
-            # ms = xylem_flux.XylemFluxPython.read_rsml(x)
-        # elif isinstance(x, xylem_flux.XylemFluxPython):
-            # ms = x.rs
-            # self.set_xylem_flux(x)
-        # elif isinstance(x, pb.MappedSegments):  # should also be true for MappedRootSystem (since MappedSegments is base class)
-            # ms = x
-        # super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes)
-
-        # TODO replace by a copy constructor or copy() at some point
-        
-        # cst
-        #self.soil_index = ms.soil_index #from setSoilGrid
-        #self.minBound = ms.minBound
-        #self.maxBound = ms.maxBound
-        #self.resolution = ms.resolution
         self.wilting_point = wilting_point
         self.NC = NC #dof +1
         self.logbase = logbase
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
+        print(self.mode)
 
         # changes with growing plant (to update)
-        #self.seg2cell = ms.seg2cell
-        #self.cell2seg = ms.cell2seg
         self.cyls = []
         self.outer_radii = None
         self.seg_length = np.array([]) 
@@ -75,7 +58,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         self.last_dt = 0.
     
     
-    def initializeRhizo(self, soil, x, eidx = None, cc = None, psi_air = -954378):
+    def initializeRhizo(self, soil, x, eidx = None, cc = None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -87,9 +70,9 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         self.cyls = []
         self.dx2 = []
         self.eidx = np.array([], dtype=np.int64)
-        self.update(x, eidx, cc, psi_air)
+        self.update(x, eidx, cc)
         
-    def update(self, x, newEidx = None, cc = None, psi_air = -954378, doStop = False):
+    def update(self, x, newEidx = None, cc = None,  doStop = False):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -105,10 +88,10 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         if doStop:
             raise Exception
         for i in newEidx:#only initialize the new eidx
-            self.initialize_(i,x,cc, psi_air)
+            self.initialize_(i,x,cc)
             
     
-    def initialize_(self,i,x,cc,psi_air ):
+    def initialize_(self,i,x,cc ):
         if self.seg2cell[i] > 0:
             if self.mode == "dumux":
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, False))
@@ -126,12 +109,8 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             else:
                 raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
         else:
-            a_in = self.radii[i]
-            if isinstance(psi_air, float) or isinstance(psi_air, int):
-                psi_air_ = psi_air
-            else:
-                psi_air_ = psi_air[i]
-            self.cyls.append(AirSegment(psi_air_, a_in)) 
+            a_in = self.radii[i]#get Perimeter instead? not used for now anyway
+            self.cyls.append(AirSegment(a_in)) #psi_air computed by the photosynthesis module.
             print("seg",i,"is out of the soil domain and has no rhizosphere")        
     
 
@@ -194,7 +173,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             cyl.setCriticalPressure(self.wilting_point)  # cm pressure head
             return cyl
         else:
-            print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
+            raise Exception("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
             return []
 
     def initialize_python_(self, i, x):
@@ -209,26 +188,26 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             cyl.x0 = np.ones((self.NC - 1,)) * x
             return cyl
         else:
-            print("RhizoMappedSegments.initialize_python_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
+            raise Exception("RhizoMappedSegments.initialize_python_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
             return []
 
-    def set_xylem_flux(self, rs):
+    def set_phloem_flux(self, rs):
         """ we need XylemFlux for the kr and kx call back functions (for python)"""
         self.rs = rs
 
-    def get_inner_heads(self, shift = 0):
+    def get_inner_heads(self, shift = 0, weather:dict={}):#        
         """ matric potential at the root surface interface [cm]"""
+        print(self.mode, weather)
         rsx = np.zeros((len(self.cyls),))
-        if self.mode.startswith("dumux"):
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
-                # print("inner head", cyl.getInnerHead())
-                # print("innerIdx", cyl.base.innerIdx)
+        for i, cyl in enumerate(self.cyls):  # run cylindrical models
+            if isinstance(cyl, AirSegment):
+                rsx[i] = cyl.get_inner_head(val = self.rs.getPsiAir(weather["ea"]/weather["es"], weather["TairC"]))  # [cm]
+            elif self.mode.startswith("dumux"):
                 rsx[i] = cyl.getInnerHead(shift)  # [cm] (in richards.py, then richards_cyl.hh)
-        elif self.mode.startswith("python"):
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+            elif self.mode.startswith("python"):
                 rsx[i] = cyl.get_inner_head()  # [cm]
-        else:
-            print("RhizoMappedSegments.get_inner_heads: Warning, mode {:s} unknown".format(self.mode))
+            else:
+                raise Exception("RhizoMappedSegments.get_inner_heads: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather( rsx, root = 0))) # gathers and maps correctly
 
     def get_inner_solutes(self, shift = 0):
@@ -251,7 +230,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                 except:
                     print(rsx, rx[nidx])
         else:
-            print("RhizoMappedSegments.get_soil_k: Warning, mode {:s} not implemented or unknown".format(self.mode))
+            raise Exception("RhizoMappedSegments.get_soil_k: Warning, mode {:s} not implemented or unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(soil_k, root = 0)))
 
     def get_dx2(self):
@@ -260,17 +239,19 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
 
     def get_inner_fluxes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
-        fluxes = np.zeros((len(self.cyls),))
-        if self.mode.startswith("dumux"):
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+        fluxes = np.zeros((len(self.cyls),))#
+        for i, cyl in enumerate(self.cyls):  # run cylindrical models
+            if isinstance(cyl, AirSegment):   
+                j = self.eidx[i]  # for one process j == i
+                fluxes[i] = float(cyl.getInnerFlux()) 
+            elif self.mode.startswith("dumux"):            
                 j = self.eidx[i]  # for one process j == i
                 fluxes[i] = -float(cyl.getInnerFlux()) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
-        elif self.mode.startswith("python"):
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+            elif self.mode.startswith("python"):
                 j = self.eidx[i]  # for one process j == i
                 fluxes[i] = cyl.get_inner_flux() * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.last_dt  # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
-        else:
-            print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
+            else:
+                raise Exception("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
 
     def get_inner_concentrations(self):  # TODO
@@ -281,7 +262,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                  rsx[i] = cyl.getInnerHead()  # [cm] ?!
             #pass  # currently zero flux !!!!!!
         else:
-            print("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
+            raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
 
     def get_inner_mass_fluxes(self):  # TODO check
@@ -292,7 +273,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                 j = self.eidx[i]  # for one process j == i
                 fluxes[i] = -float(cyl.getInnerFlux(1)) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
         else:
-            print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
+            raise Exception("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
 
     def get_water_volumes(self):
@@ -303,31 +284,35 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                 j = self.eidx[i]  # for one process j == i
                 volumes[i] = cyl.getWaterVolume()
         else:
-            print("RhizoMappedSegments.get_water_volumes: Warning, mode {:s} unknown".format(self.mode))
+            raise Exception("RhizoMappedSegments.get_water_volumes: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(volumes, root = 0)))  # gathers and maps correctly
 
     def solve(self, dt, *argv):#dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes
         """ set bc for cyl and solves it """
         self.last_dt = dt
-        print(self.mode)
+        
         if self.mode == "dumux":
             proposed_inner_fluxes = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 l = self.seg_length[j]
-                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
-                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                try:
-                    cyl.solve(dt)
-                except:
-                    str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    print("node ", self.nodes[self.segments[j].y])
-                    self.plot_cylinder(j)
-                    self.plot_cylinders()
-                    raise Exception(str)
+                if isinstance(cyl, AirSegment):  
+                    cyl.setInnerFluxCyl(proposed_inner_fluxes[j])
+                else:                
+                    cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                    cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                    try:
+                        cyl.solve(dt)
+                    except:
+                        str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
+                        str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                        print("node ", self.nodes[self.segments[j].y])
+                        self.plot_cylinder(j)
+                        self.plot_cylinders()
+                        raise Exception(str)
         elif self.mode == "dumux_dirichlet":
+            raise Exception#TODO
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
@@ -346,6 +331,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                     self.plot_cylinders()
                     raise Exception(str)
         elif self.mode == "dumux_dirichlet_nc":
+            raise Exception#TODO
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
@@ -369,6 +355,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                     self.plot_cylinders_solute()
                     raise Exception(str)
         elif self.mode == "dumux_exact":
+            raise Exception#TODO
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             rsx = argv[2]
@@ -395,6 +382,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                     str = str.format(proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
                     raise Exception(str)
         elif self.mode == "python":
+            raise Exception#TODO
             proposed_inner_fluxes = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
@@ -410,6 +398,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                 cyl.solve([dt], dt, False)
                 # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
         elif self.mode == "python_exact":
+            raise Exception#TODO
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
@@ -683,27 +672,25 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
 
         return  dist, conc, l
     
-def plot_transpiration(t, soil_uptake, root_uptake, potential_trans):
+def plot_transpiration(t, soil_uptake, realised_trans):
     """ plots potential and actual transpiration over time 
     
     depending on discretisation soil_uptake and root_uptake might differ  
     
     @param t                  times [day]
     @param soil_uptake        actual transpiration [cm3/day] of soil 
-    @param root_uptake        actual transpiration [cm3/day] according to root model 
-    @param potential_trans    function in t stating the potential transpiration [cm3/day]
+    @param realised_trans    [cm3/day]
     """
     fig, ax1 = plt.subplots()
-    ax1.plot(t, potential_trans(t), 'k', label = "potential transpiration")  # potential transpiration
-    ax1.plot(t, -np.array(soil_uptake), 'g', label = "soil uptake")  # actual transpiration  according to soil model
-    ax1.plot(t, -np.array(root_uptake), 'r:', label = "root system uptake")  # actual transpiration according root model
+    ax1.plot(t, realised_trans, 'k', label = "realised transpiration")  # realised transpiration
+    ax1.plot(t, np.array(soil_uptake), 'g', label = "soil uptake")  # actual transpiration  according to soil model
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
     ax2 = ax1.twinx()
     dt = np.diff(t)
     so = np.array(soil_uptake)
-    cum_transpiration = np.cumsum(-np.multiply(so[:-1], dt))
-    ax2.plot(t[1:], cum_transpiration, 'c--')  # cumulative transpiration (neumann)
+    cum_transpiration = np.cumsum(np.multiply(so[:-1], dt))
+    ax2.plot(t[1:], cum_transpiration, 'c--', label = "Cumulative soil uptake")  # cumulative transpiration (neumann)
     ax2.set_ylabel("Cumulative soil uptake $[cm^3]$")
     print("Cumulative soil uptake", cum_transpiration[-1], "[cm^3]")
     fig.legend()

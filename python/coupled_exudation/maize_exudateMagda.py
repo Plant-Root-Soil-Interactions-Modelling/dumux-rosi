@@ -53,7 +53,7 @@ start_time = timeit.default_timer()
 s, soil = scenario.create_soil_model(soil_type, year, soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_)
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-xml_name = "data_magda/Zeamays_synMRI_modified.xml"  # root growth model parameter file
+xml_name = "data_magda/Zeamays_synMRI_modified.xml" # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 scenario.init_maize_conductivities(r)
 kexu = scenario.exudation_rates()
@@ -70,12 +70,8 @@ for i in range(0, int(sim_time)):
     print("Day", i)
 
     r.rs.simulate(1.)  # simulate for 1 day
-    if rank == 0:
-        r.test()  # sanity checks
-        print(r.rs.organTypes)
-        print(r.rs.subTypes)
     rs_age = i + 1
-    print("RhizoMappedSegments(r, wilting_point, nc, logbase, mode)",r, wilting_point, nc, logbase, mode)
+
     rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
     if mode == "dumux_dirichlet":
         cyl_type = 1
@@ -85,7 +81,7 @@ for i in range(0, int(sim_time)):
         raise("unknown type")
 
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_, krs_, depth_,soil_c, c = cyl3.simulate_const(s, rs, 1., dt, trans_maize, kexu, rs_age, type = cyl_type)
-    raise Exception
+
     if rank == 0:  # collect results
         psi_x_.extend(psi_x)
         psi_s_.extend(psi_s)

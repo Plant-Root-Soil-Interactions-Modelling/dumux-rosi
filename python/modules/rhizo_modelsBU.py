@@ -4,7 +4,6 @@
 import plantbox as pb
 import functional.xylem_flux as xylem_flux
 import sys
-from functional.xylem_flux import XylemFluxPython
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
@@ -25,7 +24,7 @@ from threading import Thread
 from air_models import AirSegment
     
 
-class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
+class RhizoMappedSegments(pb.MappedSegments):
     """
         Adds 1-dimensional rhizospere models to each root segment of a MappedSegments (or later MappedPlant)    
         
@@ -38,33 +37,33 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
 
     # TODO copy mapped segments constructors (!)...
 
-    def __init__(self, wilting_point, NC, logbase, mode):
+    def __init__(self, x, wilting_point, NC, logbase, mode):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
-        super().__init__()
-        # if isinstance(x, str):
-            # ms = xylem_flux.XylemFluxPython.read_rsml(x)
-        # elif isinstance(x, xylem_flux.XylemFluxPython):
-            # ms = x.rs
-            # self.set_xylem_flux(x)
-        # elif isinstance(x, pb.MappedSegments):  # should also be true for MappedRootSystem (since MappedSegments is base class)
-            # ms = x
-        # super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes)
+        
+        if isinstance(x, str):                             
+            ms = xylem_flux.XylemFluxPython.read_rsml(x)
+        elif isinstance(x, xylem_flux.XylemFluxPython):
+            ms = x.rs
+            self.set_xylem_flux(x)
+        elif isinstance(x, pb.MappedSegments):  # should also be true for MappedRootSystem (since MappedSegments is base class)
+            ms = x
+        super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes)
 
         # TODO replace by a copy constructor or copy() at some point
         
         # cst
-        #self.soil_index = ms.soil_index #from setSoilGrid
-        #self.minBound = ms.minBound
-        #self.maxBound = ms.maxBound
-        #self.resolution = ms.resolution
+        self.soil_index = ms.soil_index #from setSoilGrid
+        self.minBound = ms.minBound
+        self.maxBound = ms.maxBound
+        self.resolution = ms.resolution
         self.wilting_point = wilting_point
         self.NC = NC #dof +1
         self.logbase = logbase
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
 
         # changes with growing plant (to update)
-        #self.seg2cell = ms.seg2cell
-        #self.cell2seg = ms.cell2seg
+        self.seg2cell = ms.seg2cell
+        self.cell2seg = ms.cell2seg
         self.cyls = []
         self.outer_radii = None
         self.seg_length = np.array([]) 
@@ -75,7 +74,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         self.last_dt = 0.
     
     
-    def initializeRhizo(self, soil, x, eidx = None, cc = None, psi_air = -954378):
+    def initialize(self, soil, x, eidx = None, cc = None, psi_air = -954378):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -89,26 +88,25 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         self.eidx = np.array([], dtype=np.int64)
         self.update(x, eidx, cc, psi_air)
         
-    def update(self, x, newEidx = None, cc = None, psi_air = -954378, doStop = False):
+    def update(self, x, newEidx = None, cc = None, psi_air = -954378):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
         @þaram newEidx  in case of mpi the cylinder indices per process
         """
-        if len(x.shape)!=1:
-            raise Exception
+        #print("update(",x, newEidx ,self.eidx, cc , psi_air,")")
         if newEidx is None:
             newEidx = np.array(range(len(self.eidx), len(self.radii)), np.int64)  # segment indices for process
         self.eidx = np.concatenate((self.eidx,np.array(newEidx, dtype = np.int64)), dtype = np.int64)
         self.outer_radii = np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
         self.seg_length = self.segLength()#node might have shifte: new length for pre-existing segments
-        if doStop:
-            raise Exception
+        print("newEidx",newEidx,self.eidx)
         for i in newEidx:#only initialize the new eidx
             self.initialize_(i,x,cc, psi_air)
             
     
     def initialize_(self,i,x,cc,psi_air ):
+        #print("start rhizo",i, self.seg2cell[i],self.mode)
         if self.seg2cell[i] > 0:
             if self.mode == "dumux":
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, False))
@@ -481,7 +479,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             assert len(indices) == len(x), "RhizoMappedSegments._map: indices and values have different length"
             p = np.zeros((len(x),), dtype = np.float64)
             for i in range(0, len(indices)):  #
-                p[indices[i]] = x[i]            
+                p[indices[i]] = x[i]
             return p
         else:
             return 0

@@ -28,7 +28,7 @@ from richards import RichardsWrapper  # Python part, macroscopic soil model
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
 import evapotranspiration as evap
-from functional.xylem_flux import *
+from xylem_flux import *
 from datetime import *
 
 SMALL_SIZE = 16
@@ -90,8 +90,6 @@ def exudation_rates():
     #[age, value]
     kex = np.array([[0., 2.], [1e-2, 0.]])
     #kex = np.array([[0., 2.], [0., 0.]])
-    #defined per organ types
-    #kex = np.array([[1e-2], [0.]])
     return kex
 
 def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
@@ -237,7 +235,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         rs.readParameters(fname)
         if not stochastic:
             set_all_sd(rs, 0.)
-            
+
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
         rs.simulate(1., True)

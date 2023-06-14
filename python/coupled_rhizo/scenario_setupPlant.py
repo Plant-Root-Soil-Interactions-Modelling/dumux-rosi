@@ -28,7 +28,7 @@ from richards import RichardsWrapper  # Python part, macroscopic soil model
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
 import evapotranspiration as evap
-from functional.xylem_flux import *
+from xylem_flux import *
 from datetime import *
 
 SMALL_SIZE = 16
@@ -37,14 +37,102 @@ BIGGER_SIZE = 164
 plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
 plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
 plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
-plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
+# plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
 plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
 plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
+def theta2H(vg,theta):#(-) to cm
+    thetar =vg[0]# 0.059
+    thetas = vg[1]#0.445
+    alpha = vg[2]#0.00644
+    n = vg[3]#1.503
+    nrev = 1/(1-1/n)
+    H =-(((( (thetas - thetar)/(theta - thetar))**nrev) - 1)**(1/n))/alpha
+    return(H)#cm
 
+def getCoefhours(t):
+    return (np.sin(np.pi*t*2)+1)/2 #( (t%1) < 0.5)#
+    
+def qair2rh(qair, press,TK):
+    #pressPa = press *100
+    #eaPa = qair* pressPa/(0.622+0.378*qair)
+    #ea = eaPa/100
+    T0 = 273.16
+    RH = 26.3 * press * qair  /(exp((17.67*(TK - T0))/(TK- 29.65)))
+    return RH
+    
+def weather(simDuration, hp:float=1):
+        vgSoil = [0.059, 0.45, 0.00644, 1.503, 1]
+        loam = [0.08, 0.43, 0.04, 1.6, 50]
+        Qnigh = 0; Qday = 960e-6 #458*2.1
+        condition = "wet"
+        if condition == "wet":
+            Tnigh = 15.8; Tday = 22
+            #Tnigh = 13; Tday = 20.7
+            #specificHumidity = 0.0097
+            RHday = 0.6; RHnigh = 0.88
+            Pair = 1010.00 #hPa
+            thetaInit = 0.4#
+            cs = 350e-6
+        elif condition == "dry":
+            Tnigh = 20.7; Tday = 30.27
+            #Tnigh = 15.34; Tday = 23.31
+            #specificHumidity = 0.0097# 0.0111
+            RHday = 0.44; RHnigh = 0.78
+            Pair = 1070.00 #hPa
+            thetaInit = 28/100   
+            #thetaInit = 10.47/100
+            cs = 350e-6
+        coefhours = sinusoidal(simDuration)
+        RH_ = RHnigh + (RHday - RHnigh) * coefhours
+        TairC_ = Tnigh + (Tday - Tnigh) * coefhours
+        Q_ = Qnigh + (Qday - Qnigh) * coefhours
+         #co2 paartial pressure at leaf surface (mol mol-1)
+        #390, 1231
+        #RH = 0.5 # relative humidity
+        es =  6.112 * np.exp((17.67 * TairC_)/(TairC_ + 243.5))
+        ea = es*RH_#qair2ea(specificHumidity,  Pair)
+        assert ea < es
+        #RH = ea/es
+        assert ((RH_ > 0) and(RH_ < 1))
+        bl_thickness = 1/1000 #1mm * m_per_mm
+        diffusivity= 2.5e-5#m2/sfor 25*C
+        rbl =bl_thickness/diffusivity #s/m 13
+        #cs = 350e-6
+        Kcanopymean = 1e-1 # m2/s
+        meanCanopyL = (2/3) * hp /2
+        rcanopy = meanCanopyL/Kcanopymean
+        windSpeed = 2 #m/s
+        zmzh = 2 #m
+        karman = 0.41 #[-]
+        
+        rair = 1
+        if hp > 0:
+            rair = np.log((zmzh - (2/3)*hp)/(0.123*hp)) * np.log((zmzh - (2/3)*hp)/(0.1*hp)) / (karman*karman*windSpeed)
+            #print()
+            #raise Exception
+            
+
+        pmean = theta2H(vgSoil, thetaInit)
+
+        weatherVar = {'TairC' : TairC_,'TairK' : TairC_ + 273.15,'Pair':Pair,"es":es,
+                        'Qlight': Q_,'rbl':rbl,'rcanopy':rcanopy,'rair':rair,"ea":ea,
+                        'cs':cs, 'RH':RH_, 'p_mean':pmean, 'vg':loam}
+        print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
+        return weatherVar
+
+
+def resistance2conductance(resistance,weatherX,r):
+    resistance = resistance* (1/100) #[s/m] * [m/cm] = [s/cm]
+    resistance = resistance * r.R_ph * weatherX["TairK"] / r.Patm # [s/cm] * [K] * [hPa cm3 K−1 mmol−1] * [hPa] = [s] * [cm2 mmol−1]
+    resistance = resistance * (1000) * (1/10000)# [s cm2 mmol−1] * [mmol/mol] * [m2/cm2] = [s m2 mol−1]
+    return 1/resistance
+    
+
+                
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
         
@@ -90,8 +178,6 @@ def exudation_rates():
     #[age, value]
     kex = np.array([[0., 2.], [1e-2, 0.]])
     #kex = np.array([[0., 2.], [0., 0.]])
-    #defined per organ types
-    #kex = np.array([[1e-2], [0.]])
     return kex
 
 def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
@@ -237,7 +323,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         rs.readParameters(fname)
         if not stochastic:
             set_all_sd(rs, 0.)
-            
+
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
         rs.simulate(1., True)

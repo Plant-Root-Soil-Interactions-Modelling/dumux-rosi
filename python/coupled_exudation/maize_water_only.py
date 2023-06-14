@@ -28,13 +28,13 @@ import water_only
 """
 
 """scenario"""
-year = 2019
+year = 2013
 soil_type = "loam"
 genotype = "WT"
 
 """ parameters   """
 soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
-sim_time = 154 #155  #  [day]
+sim_time = 50 #155  #  [day]
 dt = 360 / (24 * 3600)  # time step [day] 20
 
 x_, y_, lai = evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
@@ -52,7 +52,7 @@ start_time = timeit.default_timer()
 s, soil = scenario.create_soil_model(soil_type, year, soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_)  
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
+xml_name = "data_magda/Zeamays_synMRI_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 scenario.init_maize_conductivities(r)
 

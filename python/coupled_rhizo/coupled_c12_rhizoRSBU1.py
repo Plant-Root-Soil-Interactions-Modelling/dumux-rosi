@@ -5,7 +5,7 @@ import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.xylem_flux import *  # root system Python hybrid solver
-from rhizo_models import *  # Helper class for cylindrical rhizosphere models
+from rhizo_modelsBU1 import *  # Helper class for cylindrical rhizosphere models
 
 import visualisation.vtk_plot as vp
 import functional.van_genuchten as vg
@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
 from scenario_setup import *
-
 """ 
 Benchmark M1.2 static root system in soil
 
@@ -37,13 +36,23 @@ max_b = [4., 4., 0.]  # cm
 cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
 static = True
-fname = "../../grids/RootSystem8.rsml"
-
-# min_b = [-6.25, -1.5, -180.]  # cm
-# max_b = [6.25, 1.5, 1]  # cm
-# cell_number = [13, 3, 180]
-# periodic = True
-# fname = "spring_barley_CF12_107d.rsml"
+static_rs = False
+if static_rs:
+    fname = "../../grids/RootSystem8.rsml"
+else:
+    fname = "Lupinus_albus_Leitner_2014_nods"
+    if rank == 0:
+        path = "../../../CPlantBox/modelparameter/structural/rootsystem/"
+        
+        rs = pb.MappedRootSystem()
+        rs.setSeed(0)
+        rs.readParameters(path + fname + ".xml")
+        rs.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))  # to not let roots grow out of soil
+        rs.initialize()
+        rs.simulate(0.1, True)
+        rs.write(fname + ".rsml");
+    else:
+        fname = fname + ".rsml"
 
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
 
@@ -67,9 +76,10 @@ mode = "dumux"  # or "dumux_exact"
 NC = 10  # dof+1
 logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
+cyl_indxs = []
 
 """ simulation time """
-sim_time = 0.25  # 0.65  # 0.25  # [day]
+sim_time = 0.01  # 0.65  # 0.25  # [day]
 dt = 30 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
@@ -94,35 +104,62 @@ print()
 """ 
 Initialize xylem model 
 """
-rs = RhizoMappedSegments(fname, wilting_point, NC, logbase, mode)
-rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+print("len(rs.segments)Before_setRectangularGrid",len(rs.segments))
+print(np.array([np.array(ns) for ns in rs.nodes]))
+print(np.array([np.array(ns) for ns in rs.segments]))
+picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+
+rs.setSoilGrid(picker,pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
+                        pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)
+print(np.array([np.array(ns) for ns in rs.nodes]))
+print(np.array([np.array(ns) for ns in rs.segments]))
+print("len(rs.segments)After_setRectangularGrid",len(rs.segments))
+print(np.array([min_b[0], min_b[1], min_b[2]]), 
+                        np.array([max_b[0], max_b[1], max_b[2]]),
+                       np.array([cell_number[0], cell_number[1], cell_number[2]]))
+#raise Exception
+if rank == 0:
+    rs = RhizoMappedSegments(rs, wilting_point, NC, logbase, mode)
+else:
+    rs = RhizoMappedSegments(fname, wilting_point, NC, logbase, mode)
+    
 r = XylemFluxPython(rs)  # wrap the xylem model around the MappedSegments
 init_conductivities_growth(r, age_dependent, 0.05)  # age_dependent is a boolean, root conductivies are given in the file src/python_modules/root_conductivities.py
 
-picker = lambda x, y, z: s.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-rs.set_xylem_flux(r)
+#print("rs.setSoilGrid(picker) ",rank)
+print("len(rs.segments)Before",len(rs.segments))
+#rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 
+
+print("len(rs.segments)After",len(rs.segments))
+print("rs.setSoilGrid(picker) ",rank)
+rs.set_xylem_flux(r)
 # For debugging
 # r.plot_conductivities()
-r.test()  # sanity checks (todo need improvements...)
-
+r.test()
 """ 
 Initialize local soil models (around each root segment) 
 """
 start_time = timeit.default_timer()
-x = s.getSolutionHead()[:, 0]  # initial condition of soil [cm]
+if rank == 0:
+    x = s.getSolutionHead()[:, 0]  # initial condition of soil [cm]
+# y the "[:, 0]" ???
 x = comm.bcast(x, root = 0)  # Soil part runs parallel
 ns = len(rs.segments)
 dcyl = int(np.floor(ns / max_rank))
-if rank + 1 == max_rank:
-    rs.initialize(soil_, x, np.array(range(rank * dcyl, ns)))
-    print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
+
+repartition = np.array([dcyl for i in range(max_rank)])
+repartition[max_rank -1] = ns - rank * dcyl
+assert np.sum(repartition) == ns
+if rank == 0:
+    rs.initialize(soil_, x, np.array([i for i in range(repartition[rank])]))
+    print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, 0,repartition[rank], timeit.default_timer() - start_time))
 else:
-    rs.initialize(soil_, x, np.array(range(rank * dcyl, (rank + 1) * dcyl)))
-    print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
-# print("press any key"); input()
+    rs.initialize(soil_, x, np.array([i for i in range(repartition[rank-1],repartition[rank])]))
+    print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, repartition[rank-1],repartition[rank], timeit.default_timer() - start_time))
+
+#print("press any key"); input()
 
 """ 
 Simulation 
@@ -148,6 +185,30 @@ net_flux = np.zeros(cell_volumes.shape)
 
 for i in range(0, NT):
 
+    """ 0. plant growth """
+    # simulate
+    nsOld = ns
+    dcylOld = dcyl
+    repartitionOld = repartition
+    
+    ns = len(rs.segments)
+    dcyl = int(np.floor(ns / max_rank))
+    repartition = np.array([dcyl for i in range(max_rank)])
+    repartition[max_rank -1] = ns - rank * dcyl
+    toAdd = repartition - repartitionOld
+    if toAdd[rank] > 0:
+        print(rank, toAdd, toAdd[rank])
+        rs.update(soil_, x, range(toAdd[rank-1],toAdd[rank]) + nsOld )
+        print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, toAdd[rank-1] + nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
+        
+    
+    #print("press any key"); input()
+    """ flow """
+    
+    if rank == 0:
+        x = s.getSolutionHead() # initial condition of soil [cm]
+    x = comm.bcast(x, root = 0)  # Soil part runs parallel
+    
     wall_iteration = timeit.default_timer()
 
     t = i * dt  # current simulation time
@@ -155,6 +216,7 @@ for i in range(0, NT):
     """ 1. xylem model """
     wall_root_model = timeit.default_timer()
     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]
+    print("inner_head",rsx)
     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
     if rank == 0:
         rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)  # [cm]   False means that rsx is given per root segment not per soil cell
@@ -162,21 +224,32 @@ for i in range(0, NT):
     else:
         proposed_inner_fluxes = None
         rx = None
-
+    print("xylem",rx,proposed_inner_fluxes)
     if rank == 0:
         #r.collar_flux(rs_age + t, rx, rsx, soil_k, False))
-        collar_flux_ = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
+        collar_seg_id = np.where(np.array([ns.x for ns in rs.segments]) == 0)[0][0]
+        #collar_flux_ = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = soil_k, cells = False)  # validity checks
+        collar_flux_= r.axial_flux(collar_seg_id, rs_age + t, rx.copy(), rsx.copy(), k_soil = soil_k, cells = False)
+        #collar_flux_3= r.axial_fluxes(rs_age + t, rx.copy(), rsx.copy(), k_soil = soil_k, cells = False)
         err = np.linalg.norm(np.abs(np.sum(proposed_inner_fluxes) )- np.abs(collar_flux_))
         
         if err > 1.e-6:
-            print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux_, np.sum(seg_fluxes))
+            #print(np.abs(rsx1-rsx2))
+            print(np.array([np.array(ns) for ns in rs.nodes]))
+            print(np.array([np.array(ns) for ns in rs.segments]))
+            #print(collar_flux_3,collar_seg_id)
+            print("error: summed root surface fluxes and root collar flux differ" , err,  collar_flux_, np.sum(proposed_inner_fluxes))
+            
+            raise Exception
         err2 = np.linalg.norm(np.abs(-trans * sinusoidal(t)) -np.abs( collar_flux_))
         #print(seg_fluxes)
         print("errors: proposed_inner_fluxes",np.sum(proposed_inner_fluxes),"collar",collar_flux_,"transpiration",-trans * sinusoidal(t),err,err2)
         if r.last == "neumann":
             if err2 > 1.e-6:
                 print("error: potential transpiration differs root collar flux in Neumann case" , err2)
-
+                raise Exception
+    #print("success: summed root surface fluxes and root collar flux agree" , err, collar_flux_, np.sum(proposed_inner_fluxes))
+    #raise Exception()
     wall_root_model = timeit.default_timer() - wall_root_model
 
     """ 2. local soil models """
@@ -260,31 +333,31 @@ for i in range(0, NT):
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    # vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
 
-#     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]
-#     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
-#     rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)
-#     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)
-#     ana = pb.SegmentAnalyser(r.rs)
-#     ana.addData("rsx", rsx)
-#     ana.addData("rx", rx)
-#     ana.addData("fluxes", fluxes)
-#     vp.plot_roots(ana, "rsx")  # VTK vizualisation
-#     vp.plot_roots(ana, "fluxes")  # VTK vizualisation
+# #     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]
+# #     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.radii)  # only valid for homogenous soil
+# #     rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)
+# #     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)
+# #     ana = pb.SegmentAnalyser(r.rs)
+# #     ana.addData("rsx", rsx)
+# #     ana.addData("rx", rx)
+# #     ana.addData("fluxes", fluxes)
+# #     vp.plot_roots(ana, "rsx")  # VTK vizualisation
+# #     vp.plot_roots(ana, "fluxes")  # VTK vizualisation
 
-    crit_min_i, crit_max_i, crit_min_o, crit_max_o = rs.plot_cylinders()
-    # print(crit_min_i)
-    rs.plot_cylinder(crit_min_i)
-    print(rs.radii[crit_min_i])
+    # crit_min_i, crit_max_i, crit_min_o, crit_max_o = rs.plot_cylinders()
+    # # print(crit_min_i)
+    # rs.plot_cylinder(crit_min_i)
+    # print(rs.radii[crit_min_i])
 
-    plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
-    # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
+    # plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
+    # # plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
 
-    np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
+    # np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
 
-    sink1d = np.array(sink1d)
-    np.save("sink1d_rhizo", sink1d)
-    np.save("sink1d2_rhizo", sink1d2)
+    # sink1d = np.array(sink1d)
+    # np.save("sink1d_rhizo", sink1d)
+    # np.save("sink1d2_rhizo", sink1d2)
 
-    print(sink1d.shape)
+    # print(sink1d.shape)
