@@ -40,12 +40,13 @@ def get_outer_radii_horizons(rootsystem, type_str):
         xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
         simtime = 56  # 95
         cell_number = [38, 8, 75]  # (2cm)^3
+        # cell_number = [76, 16, 150]  # (2cm)^3
     elif rootsystem == "Spring Barley":
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.springbarley(0)  # 0 = envirotype
         xml_name = "data/spring_barley_CF12.xml"  # root growth model parameter file
         simtime = 49  # 95
-        # cell_number = [7, 2, 75]  # (2cm)^3
-        cell_number = [13, 3, 150]  # (2cm)^3
+        cell_number = [7, 2, 75]  # (2cm)^3
+        # cell_number = [13, 3, 150]  # (2cm)^3
     else:
         print("get_outer_radii_horizons() unknown rootsystem name", rootsystem)
         raise
@@ -90,7 +91,7 @@ def get_outer_radii_horizons(rootsystem, type_str):
 topsoil = 30  # 10 * 2.54
 subsoil = 150  # 30 * 2.54 ############################################################ CHECK !!!!!
 
-rootsystem = "Spring Barley"  # Maize, Soybean, "Spring Barley"
+rootsystem = "Maize"  # Maize, Soybean, "Spring Barley"
 
 # fig, axes = plt.subplots(3, 1, figsize = (10, 18))
 fig, axes = plt.subplots(1, 1, figsize = (9, 8))
