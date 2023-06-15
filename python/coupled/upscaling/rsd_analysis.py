@@ -19,7 +19,7 @@ plant = "springbarley"  # soybean, maize, springbarley
 min_b, max_b, cell_number = scenario.springbarley_(dim)
 soil = "hydrus_loam"  #  hydrus_loam, hydrus_clay, hydrus_sand
 outer_method = "surface"  # voronoi, length, surface, volume
-initial = -300  # cm total potential
+initial = -200  # cm total potential
 
 r_, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = scenario.set_scenario(plant, dim, initial, soil, outer_method)
 r = r_.rs  # throw away (TODO ahve to change setup anyway...)

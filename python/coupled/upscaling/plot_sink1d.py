@@ -69,9 +69,10 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         peak_id = peak_id.astype(int)
 
         for ind, j in enumerate(peak_id):
-            lstr = "{:g}d ({:s})".format(plot_times[ind], "1d")  # method[i]
-            # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-            ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            if True:  # ind == 0 or ind == 3:
+                lstr = "{:g}d ({:s})".format(plot_times[ind], "1D")  # method[i]
+                # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+                ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[0].set_ylim([-ylim, 0.])
         ax[0].legend()
@@ -82,13 +83,14 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         sink_ = data[i]
         soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
-        redistribution_id = np.round(sink_.shape[0] / days * np.array([j for j in plot_times]))
+        redistribution_id = np.round(sink_.shape[0] / days * np.array([1 + j for j in plot_times]))  #############
         redistribution_id = redistribution_id.astype(int)
 
         for ind, j in enumerate(redistribution_id):
-            # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-            lstr = "{:g}d ({:s})".format(plot_times[ind], "1d")  # method[i]
-            ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            if True:  # ind == 0 or ind == 3:
+                # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+                lstr = "{:g}d ({:s})".format(plot_times[ind], "1D")  # method[i], int(ind == 0) +
+                ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[1].set_ylim([-ylim, 0.])
         ax[1].legend()
@@ -96,31 +98,33 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
 
 if __name__ == "__main__":
 
-    """ springbarley """
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
-    plant = ["springbarley"]
-    soil = ["hydrus_loam"]
-    outer_method = ["surface"]  # , "voronoi"]
+    print("1d vs 3d comparison plots were done with plot_sink3d.py")
 
-    plot_sink1d(ax, method, plant, soil, outer_method)
-    plt.savefig('sink1d_springbarley_loam.png')
-
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
-    plant = ["springbarley"]
-    soil = ["hydrus_clay"]
-    outer_method = ["surface"]  # , "voronoi"]
-    plot_sink1d(ax, method, plant, soil, outer_method)
-    plt.savefig('sink1d_springbarley_clay.png')
-
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
-    plant = ["springbarley"]
-    soil = ["hydrus_sandyloam"]
-    outer_method = ["surface"]  # , "voronoi"]
-    plot_sink1d(ax, method, plant, soil, outer_method)
-    plt.savefig('sink1d_springbarley_sandyloam.png')
+    # """ springbarley """
+    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    # method = ["sra"]
+    # plant = ["springbarley"]
+    # soil = ["hydrus_loam"]
+    # outer_method = ["surface"]  # , "voronoi"]
+    #
+    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plt.savefig('sink1d_springbarley_loam.png')
+    #
+    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    # method = ["sra"]
+    # plant = ["springbarley"]
+    # soil = ["hydrus_clay"]
+    # outer_method = ["surface"]  # , "voronoi"]
+    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plt.savefig('sink1d_springbarley_clay.png')
+    #
+    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    # method = ["sra"]
+    # plant = ["springbarley"]
+    # soil = ["hydrus_sandyloam"]
+    # outer_method = ["surface"]  # , "voronoi"]
+    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plt.savefig('sink1d_springbarley_sandyloam.png')
 
     # """ maize """
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
@@ -173,5 +177,5 @@ if __name__ == "__main__":
     # plot_sink1d(ax, method, plant,  soil,outer_method)
     # plt.savefig('sink1d_soybean_sandyloam.png')
     #
-    plt.show()
+    # plt.show()
 

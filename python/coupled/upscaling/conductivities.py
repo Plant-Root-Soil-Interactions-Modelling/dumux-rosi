@@ -50,7 +50,7 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     r.setKxTables([kx00[:, 1], kx_sem, kx_sem, kx_sem, kx_sem, kx_sem],
                   [kx00[:, 0], age_kx_sem[0], age_kx_sem[1], age_kx_sem[2], age_kx_sem[0], age_kx_sem[0]])
 
-    # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
+    r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
 
 
 def _dist2age(dist, lgr, ages = []):
