@@ -86,6 +86,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def solve(self,*arg):
         pass
     def getDofCoordinates(self):
+        raise Exception
         return np.array([0])
     def getPoints(self):
         return self.grid.nodes

@@ -84,6 +84,7 @@ public:
      * SolverBase will optionally set most of them dynamically.
      */
     virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true) {
+		std::cout<<"initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true)"<<std::endl;
         std::vector<char*> cargs;
         cargs.reserve(args_.size());
         for(size_t i = 0; i < args_.size(); i++) {
@@ -111,6 +112,7 @@ public:
 
         setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
+		//@see <dumux/common/parameters.hh> 
     }
 
     /**

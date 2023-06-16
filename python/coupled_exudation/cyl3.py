@@ -11,8 +11,28 @@ import plantbox as pb
 import evapotranspiration as evap
 import timeit
 import visualisation.vtk_plot as vp
+from scenario_setup import weather
 
-def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
+
+def exudate_fluxes(exud ):
+    """ input [mol/d, returns [g/day]
+    
+    """
+    #if not isinstance(kex,int):
+    #    ages1 = self.get_ages(rs_age)
+
+    #types = np.asarray(self.rs.subTypes, int)
+    #a = self.rs.radii
+    #l = self.rs.segLength()
+    #sf = np.zeros(len(l),)
+    #sf = np.array([2 * np.pi * a[i] * l[i] * 1.e-4 * kex for i in range(len(l))])
+    #notRoots = np.where(organtypes != 2)[0]
+    #sf[notRoots] = 0
+    
+    #take out seed node to have it per segments
+    return np.array(exud)[1:] * 342.3# g/mol  # kg/day -> g/day
+
+def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud):
     """     
     simulates the coupled scenario       
         root architecture is not growing  
@@ -29,50 +49,60 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
     wilting_point = -15000  # cm
     skip = 10  # 3 * 6  # for output and results, skip iteration
     split_type = 1  # type 0 == volume, type 1 == surface, type 2 == length
-
+    weatherX = weather(sim_time+rs_age) 
     """ 
     Initialize local soil models (around each root segment) 
     """
     start_time = timeit.default_timer()
     sx = s.getSolutionHead_()  # initial condition of soil [cm]
     cc = s.getSolution_(1)  # solute concentration [kg/m3].
+    
+    
+    cell2segVals = np.concatenate((list(rs.cell2seg.values()))).flatten()
+    if len(cell2segVals) != len(set(cell2segVals)):
+        print(rs.seg2cell)
+        print(rs.cell2seg)
+        print(cell2segVals)
+        print(len(cell2segVals), len(set(cell2segVals)))
+        raise Exception
+    
+    
+    repartitionOld = repartition
+    nsOld = sum(repartitionOld)
+    ns = len(rs.segments)
+    dcyl = int(np.floor(ns / max_rank))
+    repartition = np.array([dcyl for i in range(max_rank)])
+    repartition[max_rank -1] = ns - rank * dcyl
+    toAdd = repartition - repartitionOld
+    
+    if toAdd[rank] > 0:
+        if len(sx.shape)!=1:
+            raise Exception
+        if rank == 0:
+            rs.update( sx, np.array([i for i in range(toAdd[rank])]) + nsOld, cc )
+            print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
+        else:
+            rs.update( sx,  np.array([i for i in range(toAdd[rank-1],toAdd[rank])]) + nsOld, cc )
+            print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, toAdd[rank-1] + nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
+        
+        
+    
 
-    segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
-    seg2cell = rs.rs.rs.seg2cell
-    cell2seg = rs.rs.rs.cell2seg
+    segs = rs.segments  
+    Nt = len(rs.nodes)
+    print(len(segs), Nt)
+    assert len(segs) == (Nt -1)
+    seg2cell = rs.seg2cell
+    cell2seg = rs.cell2seg
+    
     ns = len(segs)
-
+    r = rs.rs  # rename (XylemFluxPython)
     for i in range(0, len(segs)):#sure about that, even in case of artificial shoot?
         if segs[i].x == 0:
             collar_ind = i  # segment index of root collar
             break
 
-    dcyl = int(np.floor(ns / max_rank))
-    
-    if rank + 1 == max_rank:
-        rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, ns)), cc)
-        print ("\nInitialized final rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, ns, timeit.default_timer() - start_time))
-    else:
-        rs.initialize(s.soils[0], sx, np.array(range(rank * dcyl, (rank + 1) * dcyl)), cc)
-        print ("\nInitialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s\n".format(rank + 1, max_rank, rank * dcyl, (rank + 1) * dcyl, timeit.default_timer() - start_time))
-    
-    r = rs.rs  # rename (XylemFluxPython)
-
-    rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    if type == 1:
-        rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
-    else:
-        rsc = rs.get_inner_solutes(1)  # kg/m3
-    print("rsc",rsc)
-    print("rsx",rsx)
-    if rank == 0:
-        print("\nINITIAL root-soil interface matric potentials", np.nanmin(rsx), np.nanmax(rsx), np.nanmin(rsc), np.nanmax(rsc))
-        rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
-    else:
-        rx = None
-    print("rx",rx)
-    
-    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ = [], [], [], [], [], [], [], [] 
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ , c_All= [], [], [], [], [], [], [], [] ,[]
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
     krs_ = []
@@ -84,33 +114,55 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
     net_flux = np.zeros(cell_volumes.shape)
     net_sol_flux = np.zeros(cell_volumes.shape)
 
-    N = int(np.ceil(sim_time / dt))  # number of iterations
+    N = 1#int(np.ceil(sim_time / dt))  # number of iterations
 
     """ simualtion loop """
     for i in range(0, N):
 
         t = i * dt  # current simulation time
+        
+        weatherX = weather(t)
 
         """ 1. xylem model """
         # if rank == 0:
         #     print("[x", end = "")
         wall_xylem = timeit.default_timer()
 
-        rsx = rs.get_inner_heads(1)  # matric potential at the root soil interface, 2nd node  [cm] (in rhizo_models.py)
+    
+        ###
+        rsx = rs.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
         if type == 1:
             rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
-            # print(np.min(rsc), np.max(rsc))
         else:
             rsc = rs.get_inner_solutes(1)  # kg/m3
-            #print('rsc',rsc)
         comm.barrier()
-
+        
+        subtypes = np.asarray(rs.subTypes, int)
+        organTypes = np.asarray(rs.organTypes, int)
+        a = np.array(rs.radii)
+        l = np.array(rs.segLength())
+        
         if rank == 0:
-            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, cells = False, wilting_point = wilting_point)
-            seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
-            # print("\n\nShould agree if not in stress \n", trans_f(t, dt), np.sum(seg_fluxes))
-            #print("rs_age+1, kexu",rs_age+1, kexu)
-            seg_sol_fluxes = np.array(r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
+            print("\nINITIAL root-soil interface matric potentials", np.nanmin(rsx), np.nanmax(rsx), np.nanmin(rsc), np.nanmax(rsc))
+            
+            
+            r.minLoop = 1000
+            r.maxLoop = 5000
+            r.Qlight = weatherX["Qlight"]
+            r.solve_photosynthesis(sim_time_ = sim_time+rs_age, 
+                        sxx_=rsx, #will not use the output of the air bc. so it s just a stand-in for now
+                        cells_ = False,
+                        ea_ = weatherX["ea"],#not used
+                        es_=weatherX["es"],#not used
+                        verbose_ = False, doLog_ = False,
+                        TairC_= weatherX["TairC"],#not used
+                        outputDir_= "./results/rhizoplantExud")
+            rx = np.array(r.psiXyl)
+            seg_fluxes = np.array(r.outputFlux)# [cm3/day]
+            errLeuning = sum(seg_fluxes)
+            
+            seg_sol_fluxes = exudate_fluxes(Q_Exud)#g/day for segments
+            #r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
         else:
             rx = None
             seg_fluxes = None
@@ -118,41 +170,28 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         rx = comm.bcast(rx, root = 0)
         seg_fluxes = comm.bcast(seg_fluxes, root = 0)
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
+        #print("rx",rx)
+        leavesSegs = np.where(np.array(rs.organTypes )==4)
+        
+        """ some checks """
+        
+        assert np.abs(np.sum(seg_fluxes)) < 1e-10 #no change in water storage
+        fluxes_leaves = seg_fluxes[leavesSegs]
+        assert (np.abs(sum(fluxes_leaves))- np.abs(sum(np.array(r.Ev)))) < 1e-10
+        if (min(r.Ev) < 0) or (min(r.Jw) < 0) or (min(fluxes_leaves)<0):
+            print("leaf looses water", min(r.Ev),min(r.Jw), min(fluxes_leaves))
+            raise Exception
+            
+        #does not use rsx for the leaves, but the pg (guard cells wat. pot.) values
+        #[cm3/day]
+        proposed_inner_fluxes = r.segFluxes(t, rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = [])  # [cm3/day]
+        assert (np.array(proposed_inner_fluxes) == seg_fluxes).all()
+        ###
 
-        if rank == 0:
-            collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
-            err = np.linalg.norm(np.sum(seg_fluxes) - collar_flux)
-            if err > 1.e-6:
-                print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(seg_fluxes))
-                raise Exception
-            err2 = np.linalg.norm(trans_f(rs_age + t, dt) - collar_flux)
-            print(seg_fluxes)
-            print("errors",np.sum(seg_fluxes),collar_flux,err,err2)
-            if r.last == "neumann":
-                if err2 > 1.e-6:
-                    print("error: potential transpiration differs root collar flux in Neumann case" , err2)
-                    raise Exception
-        #raise Exception
-
-        comm.barrier()
-        wall_xylem = timeit.default_timer() - wall_xylem
 
         """ 2. local soil models """
         wall_local = timeit.default_timer()
         if rank == 0:
-            for key, value in cell2seg.items():  # check cell2seg
-                if False:#key < 0: shoot is outside
-                    nodes = rs.rs.rs.nodes
-                    print("key is negative", key)
-                    print("segments", cell2seg[key])
-                    print("coresponding nodes")
-                    for ss in cell2seg[key]:
-                        print(segs[ss])
-                        print(nodes[segs[ss].x], nodes[segs[ss].y])
-                    ana = pb.SegmentAnalyser(rs.rs.rs.mappedSegments())
-                    ana.addCellIds(rs.rs.rs.mappedSegments())
-                    if False:
-                        vp.plot_roots(ana, "cell_id")
                         
             proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt, split_type) 
             proposed_outer_sol_fluxes = r.splitSoilFluxes(net_sol_flux / dt, split_type)
@@ -166,14 +205,11 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
         proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
         seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs])
         
-        ages = XylemFluxPython.get_ages(r,rs_age+1)
-        subTypes = r.rs.subTypes
+        #ages = XylemFluxPython.get_ages(r,rs_age+1)
+        subTypes = rs.subTypes
         
         
-        kex = np.zeros((len(ages)))
-        for p in range(0,len(ages)):
-            if subTypes[p] > 0: # no exudation from the shoot
-                kex[p] = XylemFluxPython.exu_fun(r, kexu, ages[p])
+        kex = np.where(np.array(rs.organTypes)==2, 1e-2,0)
                 
         rs.solve(dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes) #or 0?
         # water: left dirchlet, right neumann; solute: left and right Neumann<----
@@ -190,7 +226,9 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
 
         soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
         soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
+        print("seg_sol_fluxes1",seg_sol_fluxes,soil_sol_fluxes)
         soil_sol_fluxes = evap.decay(soil_sol_fluxes, dt, s.decay)  #[g/day]
+        print("seg_sol_fluxes2",soil_sol_fluxes)
         s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
         s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in modules/richards.py
         s.solve(dt)  # in modules/solverbase.py
@@ -210,7 +248,10 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
 
         """ 3c. calculate mass net fluxes """
         solute_conc = np.array(s.getSolution_(1))
+        print("solute_conc",solute_conc)
         new_soil_solute = np.multiply(solute_conc, soil_water)
+        print("new_soil_solute",new_soil_solute)
+        #raise Exception
 
         net_sol_flux = new_soil_solute - soil_solute  # change in water per cell [cm3]
         #print('net_sol_flux', net_sol_flux) 
@@ -233,8 +274,14 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
             x_.append(rs_age + t)  # day
             y_.append(np.sum(sink))  # cm3/day
             c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
+            c_All.append(seg_sol_fluxes)  # [cm3/day]
             psi_s2_.append(sx)  # cm (per soil cell)
-            soil_c_.append(cc)  # [kg/m3]
+            
+            cutoff = 1e-15 #is get value too small, makes paraview crash
+            cc_p = np.array(cc)
+            cc_p[abs(cc_p) < cutoff] = 0
+            
+            soil_c_.append(cc_p)  # [kg/m3]
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
             for j in range(0, 6):  # root types
@@ -242,8 +289,8 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
                 anac.filter("subType", j)
                 vol_[j].append(anac.getSummed("volume"))
                 surf_[j].append(anac.getSummed("surface"))
-            krs, _ = r.get_krs(rs_age + t, [collar_ind])
-            krs_.append(krs)  # KRS
+            #krs, _ = r.get_krs(rs_age + t, [collar_ind])
+            #krs_.append(krs)  # KRS
             depth_.append(ana.getMinBounds().z)
 
             
@@ -254,7 +301,7 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
                   wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   wall_netfluxes / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
                   "segments:", rs.getNumberOfMappedSegments(), "root collar:", rx[0], "\n")
-            print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc), "trans", trans_f(rs_age + t, dt))
+            print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc), "trans",sum(np.array(r.Ev)))
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segment)
 
@@ -264,5 +311,5 @@ def simulate_const(s, rs, sim_time, dt, trans_f, kexu, rs_age, type):
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, repartition, c_All #krs_,
 

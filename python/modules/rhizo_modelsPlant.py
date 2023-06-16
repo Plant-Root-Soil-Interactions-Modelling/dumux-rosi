@@ -45,7 +45,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.NC = NC #dof +1
         self.logbase = logbase
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
-        print(self.mode)
+        #print(self.mode)
 
         # changes with growing plant (to update)
         self.cyls = []
@@ -72,7 +72,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.eidx = np.array([], dtype=np.int64)
         self.update(x, eidx, cc)
         
-    def update(self, x, newEidx = None, cc = None,  doStop = False):
+    def update(self, x, newEidx = None, cc = None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -85,8 +85,6 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.eidx = np.concatenate((self.eidx,np.array(newEidx, dtype = np.int64)), dtype = np.int64)
         self.outer_radii = np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
         self.seg_length = self.segLength()#node might have shifte: new length for pre-existing segments
-        if doStop:
-            raise Exception
         for i in newEidx:#only initialize the new eidx
             self.initialize_(i,x,cc)
             
@@ -111,7 +109,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         else:
             a_in = self.radii[i]#get Perimeter instead? not used for now anyway
             self.cyls.append(AirSegment(a_in)) #psi_air computed by the photosynthesis module.
-            print("seg",i,"is out of the soil domain and has no rhizosphere")        
+            #print("seg",i,"is out of the soil domain and has no rhizosphere")        
     
 
     def initialize_dumux_nc_(self, i, x, c):
@@ -119,7 +117,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         a_out = self.outer_radii[i]
         if a_in < a_out:
             cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
-            cyl.initialize()
+            cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
@@ -134,8 +132,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
             cyl.setParameter("Component.MolarMass", "1.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (carbon 12 g/mol)
             cyl.setParameter("Component.LiquidDiffusionCoefficient", "5e-10")  # m2 s-1 # nitrate = 1700 um^2/sec
-            cyl.setParameter("Component.BufferPower", "5")  # buffer power = \rho * Kd [1] what it this for?
-            cyl.setParameter("Component.Decay", "1.e-5")  # buffer power = \rho * Kd [1]
+            cyl.setParameter("Component.BufferPower", "0")  #5 buffer power = \rho * Kd [1] what it this for?
+            cyl.setParameter("Component.Decay", "0")  # 1.e-5buffer power = \rho * Kd [1]
 
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
@@ -197,7 +195,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
     def get_inner_heads(self, shift = 0, weather:dict={}):#        
         """ matric potential at the root surface interface [cm]"""
-        print(self.mode, weather)
+        #print(self.mode, weather)
         rsx = np.zeros((len(self.cyls),))
         for i, cyl in enumerate(self.cyls):  # run cylindrical models
             if isinstance(cyl, AirSegment):
@@ -330,30 +328,34 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.plot_cylinder(j)
                     self.plot_cylinders()
                     raise Exception(str)
-        elif self.mode == "dumux_dirichlet_nc":
-            raise Exception#TODO
+        elif self.mode == "dumux_dirichlet_nc":            
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
+            proposed_inner_fluxes = argv[2]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                    
                 j = self.eidx[i]  # for one process j == i
-                l = self.seg_length[j]
-                cyl.setInnerMatricPotential(rx[i])
-                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                if not isinstance(argv[2],float): 
-                    cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
+                if isinstance(cyl, AirSegment):  
+                    cyl.setInnerFluxCyl(proposed_inner_fluxes[j])
                 else:
-                    cyl.setInnerBC_solute("constantFluxCyl", argv[2])
-                cyl.setOuterBC_solute("constantFluxCyl", argv[3])
-                try:
-                    cyl.solve(dt)
-                except:
-                    # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    # print("node ", self.nodes[self.segments[j].y])
-                    self.plot_cylinder(j)
-                    self.plot_cylinders()
-                    self.plot_cylinders_solute()
-                    raise Exception(str)
+                    l = self.seg_length[j]
+                    cyl.setInnerMatricPotential(rx[i])
+                    cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                    if not isinstance(argv[2],float): 
+                        cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
+                    else:
+                        cyl.setInnerBC_solute("constantFluxCyl", argv[2])
+                    cyl.setOuterBC_solute("constantFluxCyl", argv[3])
+                    try:
+                        cyl.solve(dt)
+                    except:
+                        # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
+                        # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                        # print("node ", self.nodes[self.segments[j].y])
+                        self.plot_cylinder(j)
+                        self.plot_cylinders()
+                        self.plot_cylinders_solute()
+                        raise Exception(str)
         elif self.mode == "dumux_exact":
             raise Exception#TODO
             rx = argv[0]
@@ -509,15 +511,16 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         inner, outer = [], []
         zz = -self.minBound.z
         for i, cyl in enumerate(self.cyls):
-            x_ = cyl.getDofCoordinates()
-            y_ = cyl.getSolutionHead()
-            inner.append(y_[0])
-            outer.append(y_[-1])
-            j = self.segments[i].y
-            z = self.nodes[j].z
-            col_i = int(-z / zz * 255.)
-            c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
-            plt.plot(x_, y_, alpha = 0.1, c = c_)
+            if not isinstance(cyl, AirSegment):  
+                x_ = cyl.getDofCoordinates()
+                y_ = cyl.getSolutionHead()
+                inner.append(y_[0])
+                outer.append(y_[-1])
+                j = self.segments[i].y
+                z = self.nodes[j].z
+                col_i = int(-z / zz * 255.)
+                c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
+                plt.plot(x_, y_, alpha = 0.1, c = c_)
         plt.xlabel("distance [cm], deeper roots are yellow")
         plt.ylabel("matric potential [cm]")
         # plt.xlim([0.05, 0.6])
@@ -530,16 +533,17 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         inner, outer = [], []
         zz = -self.minBound.z
         for i, cyl in enumerate(self.cyls):
-            x_ = cyl.getDofCoordinates()
-            y_ = cyl.getSolution_(1)
-            #y_ = cyl.getWaterContent() works
-            inner.append(y_[0])
-            outer.append(y_[-1])
-            j = self.segments[i].y
-            z = self.nodes[j].z
-            col_i = int(-z / zz * 255.)
-            c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
-            plt.plot(x_-x_[0], y_, alpha = 0.1, c = c_)
+            if not isinstance(cyl, AirSegment):  
+                x_ = cyl.getDofCoordinates()
+                y_ = cyl.getSolution_(1)
+                #y_ = cyl.getWaterContent() works
+                inner.append(y_[0])
+                outer.append(y_[-1])
+                j = self.segments[i].y
+                z = self.nodes[j].z
+                col_i = int(-z / zz * 255.)
+                c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
+                plt.plot(x_-x_[0], y_, alpha = 0.1, c = c_)
         plt.xlabel("distance [cm], deeper roots are yellow")
         plt.ylabel('solute concentration (g/cm3)')
         # plt.xlim([0.05, 0.6])
@@ -554,44 +558,45 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         shape = np.shape(XX)
         conc = np.zeros((shape))
         for i, cyl in enumerate(self.cyls):
-            R_ = cyl.getDofCoordinates()
-            vv_ = cyl.getSolution_(1)
-            
-            p0 = np.array(self.nodes[self.segments[i].x])
-            p1 = np.array(self.nodes[self.segments[i].y])
-            
-            v = p1 - p0
-            mag = norm(v)
-            v = v / mag
-            not_v = np.array([1, 0, 0])
-            if (v == not_v).all():
-                not_v = np.array([0, 1, 0])
-            n1 = np.cross(v, not_v)
-            n1 /= norm(n1)
-            n2 = np.cross(v, n1)
-            t = np.linspace(0, mag, 20)
-            theta = np.linspace(0, 2 * np.pi, 20)
-            t, theta = np.meshgrid(t, theta)
-            
-            x = []
-            y = []
-            z = []
-            vv = []
-            
-            for j in range(0,len(R_)):
-                R = R_[j]
-                X, Y, Z = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
-                x.extend(X.flatten())
-                y.extend(Y.flatten())
-                z.extend(Z.flatten())
-                vv.extend(np.ones((len(X.flatten())))*vv_[j])
+            if not isinstance(cyl, AirSegment):  
+                R_ = cyl.getDofCoordinates()
+                vv_ = cyl.getSolution_(1)
+                
+                p0 = np.array(self.nodes[self.segments[i].x])
+                p1 = np.array(self.nodes[self.segments[i].y])
+                
+                v = p1 - p0
+                mag = norm(v)
+                v = v / mag
+                not_v = np.array([1, 0, 0])
+                if (v == not_v).all():
+                    not_v = np.array([0, 1, 0])
+                n1 = np.cross(v, not_v)
+                n1 /= norm(n1)
+                n2 = np.cross(v, n1)
+                t = np.linspace(0, mag, 20)
+                theta = np.linspace(0, 2 * np.pi, 20)
+                t, theta = np.meshgrid(t, theta)
+                
+                x = []
+                y = []
+                z = []
+                vv = []
+                
+                for j in range(0,len(R_)):
+                    R = R_[j]
+                    X, Y, Z = [p0[i] + v[i] * t + R * np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
+                    x.extend(X.flatten())
+                    y.extend(Y.flatten())
+                    z.extend(Z.flatten())
+                    vv.extend(np.ones((len(X.flatten())))*vv_[j])
 
-            # interpolate "data.v" on new grid "inter_mesh"
-            V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
-            V[np.isnan(V)] = 0
-            V = np.array(V.reshape(shape))
-            conc = conc+V
-            print('cyl '+str(i)+' of ' + str(len(self.cyls))+ ' is finished!')
+                # interpolate "data.v" on new grid "inter_mesh"
+                V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
+                V[np.isnan(V)] = 0
+                V = np.array(V.reshape(shape))
+                conc = conc+V
+                print('cyl '+str(i)+' of ' + str(len(self.cyls))+ ' is finished!')
 
         return conc
         
@@ -645,9 +650,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         conc = np.zeros((shape))
         q = multiprocessing.Queue()
         for i in range(0,len(self.cyls)):
-        
-            p = multiprocessing.Process(target=self.calc_model, args=(i,XX,YY,ZZ,q,))
-            p.start()
+            if not isinstance(cyl, AirSegment):              
+                p = multiprocessing.Process(target=self.calc_model, args=(i,XX,YY,ZZ,q,))
+                p.start()
             
         for i in range(0,len(self.cyls)):
             conc = np.add(conc,np.array(q.get()))
@@ -663,12 +668,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         l = []
         a = []
         for i, cyl in enumerate(self.cyls):
-            x = cyl.getDofCoordinates()
-            x_ = x-x[0]
-            dist.append(x_)
-            conc.append(cyl.getSolution_(1))
-            l.append(l_all[i]*np.ones((len(cyl.getDofCoordinates()))))
-            #print('shape dist', np.shape(dist))
+            if not isinstance(cyl, AirSegment):  
+                x = cyl.getDofCoordinates()
+                x_ = x-x[0]
+                dist.append(x_)
+                conc.append(cyl.getSolution_(1))
+                l.append(l_all[i]*np.ones((len(cyl.getDofCoordinates()))))
+                #print('shape dist', np.shape(dist))
 
         return  dist, conc, l
     
