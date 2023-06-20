@@ -34,6 +34,7 @@ fname = 'maize_exudate_2019'
 year = 2019
 soil_type = "loam"
 genotype = "WT"
+comp = "phenolics"
 
 """ parameters   """
 soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
@@ -59,7 +60,6 @@ water0 = s.getWaterVolume()  # total initial water volume in domain
 xml_name = "data_magda/Zea_mays_5_Leitner_optimized.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
 scenario.init_maize_conductivities(r)
-kexu = scenario.exudation_rates()
 
 #vp.write_soil("test_vtu", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
 
@@ -83,7 +83,7 @@ for i in range(0, int(sim_time)):
     else:
         raise("unknown type")
 
-    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_, krs_, depth_,soil_c, c = cyl_exu.simulate_const(s, rs, sri_table_lookup, 1., dt, trans_maize, kexu, rs_age, min_b, max_b, type = cyl_type)
+    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_, krs_, depth_,soil_c, c = cyl_exu.simulate_const(s, rs, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
 
     if rank == 0:  # collect results
         psi_x_.extend(psi_x)
