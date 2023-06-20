@@ -20,6 +20,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
+from scipy import interpolate
 
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
@@ -86,10 +87,21 @@ def maize_SPP(soil_= "loam"):
             
     return soil, min_b, max_b, cell_number, area, Kc
 
-def exudation_rates():
-    #[age, value]
-    kex = np.array([[0., 2.], [1e-2, 0.]])
-    #kex = np.array([[0., 2.], [0., 0.]])
+def exudation_rates(t, comp):
+    
+    times = [0, 42, 63, 98, 154]
+    if comp == "phenolics":
+        exu_prop = [0.00012, 0.00012, 0.00003, 0.000019, 0.000015]  #[kg/(m2 day)]
+    elif comp == "sugars":
+        exu_prop = [0.0006, 0.0006, 0.00015, 0.00017, 0.00016]  #[kg/(m2 day)]
+    elif comp == "aminoacids":
+        exu_prop = [0.0001, 0.0001, 0.000025, 0.0000168, 0.0000135]  #[kg/(m2 day)]
+    else:
+        print('No exudate properties found')
+
+    f = interpolate.interp1d(times, exu_prop)  
+    kex = np.array([[0., 5.], [f(t), 0.]])
+        
     return kex
 
 def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
@@ -233,8 +245,8 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         if not stochastic:
             set_all_sd(rs, 0.)
 
-        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-        rs.initializeDB(4, 5)
+        rs.setGeometry(pb.SDF_PlantBox(np.abs(min_b[2]), max_b[0]*2, max_b[1]*2))
+        rs.initializeDB(5, 4)
         rs.simulate(1., True)
         r = XylemFluxPython(rs)
 
