@@ -14,6 +14,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import fsolve
 import visualisation.vtk_plot as vp
 from pyevtk.hl import gridToVTK
+import scenario_setup as scenario
 
 
 def open_sri_lookup(filename):
@@ -46,7 +47,7 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
         print("rho", np.min(rho_), np.max(rho_))  # 1. - 200.
     return rsx
 
-def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age, min_b, max_b, type):
+def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age, min_b, max_b, type):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -61,6 +62,7 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
     rs_age
     """
 
+    
     """ tabularized values for finding the zeros """
     if isinstance(sri_table_lookup, RegularGridInterpolator):
         root_interface = soil_root_interface_table  # function defined above
@@ -193,9 +195,13 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             #print('rsc',rsc)
         comm.barrier()
 
+        #get current exudation rate (g/day/root apex) for comp
+        kexu = scenario.exudation_rates(rs_age+t, comp)
+        sol_result = r.exudate_fluxes(rs_age+t, kexu)
+        
         if rank == 0:
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
-            seg_sol_fluxes = np.array(r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
+            seg_sol_fluxes = np.array(sol_result[0])  # [g/day]
         else:
             seg_fluxes = None
             seg_sol_fluxes = None
@@ -241,15 +247,8 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             proposed_outer_sol_fluxes = None
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
         proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
-
-        #ages = XylemFluxPython.get_ages(r,rs_age+1)
-        ages =  np.asarray(rs_age - np.array([rs.rs.rs.nodeCTs[int(seg.y)] for seg in segs]), int)
-        types = np.asarray(rs.rs.rs.subTypes, int)
-        kex = np.zeros((len(ages)))
-        for p in range(0,len(ages)):
-            kex[p] = XylemFluxPython.exu_fun(r, kexu[types[p]], ages[p])
         
-        rs.solve(dt, rsx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes) #or 0?
+        rs.solve(dt, rsx, proposed_outer_fluxes,sol_result[1],proposed_outer_sol_fluxes) #or 0?
         # water: left dirchlet, right neumann; solute: left and right Neumann<----
 
         wall_local = timeit.default_timer() - wall_local
@@ -332,12 +331,9 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segment)
 
-        # if rank == 0:
-        #     print("]")
 
-
-        print('current time is',i/240)
-        print('current root age', rs_age+i/240) 
+        #print('current time is',i/240)
+        #print('current root age', rs_age+i/240) 
         if (rs_age % 2 == 0) and (i/240 == 0.5):  # every 2.5 days i % (20 * 12) == 0
             # map concentration cylinders to 1mm grid in all directions 
             xx_ = np.linspace(min_b[0], max_b[0], int(1*(max_b[0]-min_b[0]))) 
@@ -345,8 +341,6 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             zz_ = np.linspace(min_b[2],max_b[2], int(1*(max_b[2]-min_b[2])))
             XX, YY, ZZ = np.meshgrid(xx_, yy_, zz_, indexing='ij')
             C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu')
-            #gridToVTK("results/vts/./exudate_day"+("{:02d}".format(i)), XX, YY, ZZ, pointData = {"exudate":C})
-            #gridToVTK("results/vts/./exudate_day"+str(i/240)+(XX, YY, ZZ, pointData = {"exudate":C})
             gridToVTK("results/vts/./exudate_day"+('{:03d}'.format(int(rs_age))), XX, YY, ZZ, pointData = {"exudate":C})
             np.save("results/concentration/day"+("{:03d}".format(int(rs_age))), C)
 
