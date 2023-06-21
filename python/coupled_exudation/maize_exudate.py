@@ -48,13 +48,13 @@ wilting_point = -15000  # cm
 nc = 10  # dof+1
 logbase = 0.5  # according to Mai et al. (2019)
 
-mode = "dumux_dirichlet_nc"  # mode = "dumux_dirichlet_nc"
+mode = "dumux_dirichlet_nc"  # mode = "dumux_dirichlet_2c"
 
 """ initialize """
 start_time = timeit.default_timer()
-initsim = 15
+initsim = 10
 s, soil = scenario.create_soil_model(soil_type, year, soil_, min_b, max_b, 
-                                        cell_number, type = 2, times = x_, net_inf = y_)
+                                        cell_number, type = mode, times = x_, net_inf = y_)
 water0 = s.getWaterVolume()  # total initial water volume in domain
 path = "../../../CPlantBox/modelparameter/structural/plant/"
 xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter file
@@ -126,14 +126,14 @@ for i in range(0, int(sim_time)):
     
     rs_age = i + 1
     
-    if mode == "dumux_dirichlet":
-        cyl_type = 1
-    elif mode == "dumux_dirichlet_nc":
-        cyl_type = 2
-    else:
-        raise("unknown type")
+    # if mode == "dumux_dirichlet":
+        # cyl_type = 1
+    # elif mode == "dumux_dirichlet_nc":
+        # cyl_type = 2
+    # else:
+        # raise("unknown type")
     #krs_,
-    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All = cyl3.simulate_const(s, rs, 1., dt,  kexu, rs_age, repartition, type = cyl_type, Q_Exud=QExud)
+    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All = cyl3.simulate_const(s, rs, 1., dt,  kexu, rs_age, repartition, type = mode, Q_Exud=QExud)
     
     if rank == 0:  # collect results
         psi_x_.extend(psi_x)

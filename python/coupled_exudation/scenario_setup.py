@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 
+from rosi_richards2c import Richards2CSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
@@ -143,13 +144,16 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
 
-    if type == 1:
+    if type == "dumux":
         s = RichardsWrapper(RichardsSP())  # water only
-    elif type == 2:
-        s = RichardsWrapper(RichardsNCSP())  # water and one solute
+    elif type == "dumux_dirichlet_2c":
+        s = RichardsWrapper(Richards2CSP())  # water and one solute
+    elif type == "dumux_dirichlet_nc":
+        s = RichardsWrapper(RichardsNCSP())  # water and N solute        
     else:
-        print("choose type, 1 = Richards, 2 = RichardsNCSP")
+        raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
 
+    #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.initialize(verbose = False)
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
 
@@ -160,14 +164,16 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         s.setTopBC("noFlux")
     s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
 
-    if type == 2:  # solute BC
+    if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc"):  # solute BC
         s.setTopBC_solute("outflow", 0.)
         s.setBotBC_solute("outflow", 0.)
 
-# Paramters
+    # Paramters
+    #dumux-rosi\python\modules\richards.py
     s.setVGParameters([soil_])
+    #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-    if type == 2:
+    if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc"):
         s.setParameter("Component.MolarMass", "1.2e-2")  # carbon 12 g/mol
         s.setParameter("Component.LiquidDiffusionCoefficient", "0")  # 5e-10 m2 s-1 # Darrah et al. 1991
         s.setParameter("Component.BufferPower", "0")  # 5 buffer power = \rho * Kd [1]
@@ -190,7 +196,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         h = np.ones((20*45*75))*-100 #TODO
     s.setInitialConditionHead(h)  # cm
 
-    if type == 2:
+    if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc"):
         c = np.zeros((cell_number[0]*cell_number[1]*cell_number[2])) #TODO
         s.setInitialCondition(c, 1)  # kg/m3
 

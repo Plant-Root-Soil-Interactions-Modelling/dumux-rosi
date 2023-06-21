@@ -20,33 +20,35 @@
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
-#include <RootSystem.h>
+//#include <RootSystem.h>
 
 namespace Dumux {
 namespace Properties {
 
 namespace TTag { // Create new type tags
-struct Richards2CTT { using InheritsFrom = std::tuple<RichardsNC>; };
-struct Richards2CBox { using InheritsFrom = std::tuple<Richards2CTT, BoxModel>; };
-struct Richards2CCC { using InheritsFrom = std::tuple<Richards2CTT, CCTpfaModel>; };
+struct RichardsNCTT { using InheritsFrom = std::tuple<RichardsNC>; };
+struct Richards2CBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
+struct Richards2CCC { using InheritsFrom = std::tuple<RichardsNCTT, CCTpfaModel>; };
+struct RichardsNCBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
+struct RichardsNCCC { using InheritsFrom = std::tuple<RichardsNCTT, CCTpfaModel>; };
 }
 
 // Set grid type
 #ifndef GRIDTYPE
 template<class TypeTag>
-struct Grid<TypeTag, TTag::Richards2CTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
+struct Grid<TypeTag, TTag::RichardsNCTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
 #else
 template<class TypeTag>
-struct Grid<TypeTag, TTag::Richards2CTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
+struct Grid<TypeTag, TTag::RichardsNCTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
 #endif
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::Richards2CTT> { using type = Richards1P2CProblem<TypeTag>; };
+struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1P2CProblem<TypeTag>; };
 
 // Set the spatial parameters
 template<class TypeTag>
-struct SpatialParams<TypeTag, TTag::Richards2CTT> {
+struct SpatialParams<TypeTag, TTag::RichardsNCTT> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
@@ -61,7 +63,7 @@ struct SpatialParams<TypeTag, TTag::Richards2CTT> {
  * TODO I only understand false...
  */
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::Richards2CTT> { static constexpr bool value = false; };
+struct UseMoles<TypeTag, TTag::RichardsNCTT> { static constexpr bool value = false; };
 
 } // end namespace properties
 } // end namespace DUMUX

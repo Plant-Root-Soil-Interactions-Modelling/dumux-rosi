@@ -49,9 +49,10 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "richards1pncproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties_cyl_nc.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
+
 
 /**
  * here we go
@@ -143,7 +144,6 @@ int main(int argc, char** argv) try
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
-	std::cout<<"test x size: "<<x.size()<<", x[0].size(): "<<x[0].size()<<std::endl;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
@@ -234,7 +234,6 @@ int main(int argc, char** argv) try
             // pass current time to the problem
             problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
             problem->postTimeStep(x, *gridVariables);
-			DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
             problem->writeBoundaryFluxes();
 
         } while (!timeLoop->finished());
@@ -243,14 +242,12 @@ int main(int argc, char** argv) try
 
     } else { // static
         // set previous solution for storage evaluations
-		std::cout<<"static simulation"<<std::endl;
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
         problem->postTimeStep(x, *gridVariables);
         problem->writeBoundaryFluxes();
-		
     }
 
     ////////////////////////////////////////////////////////////
@@ -261,17 +258,6 @@ int main(int argc, char** argv) try
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
-		std::ofstream myfile_;
-		std::string filestr = problem->name() + "_1p2c_end.csv"; // output file
-		myfile_.open(filestr.c_str());
-		for(int i = 0; i < x.size(); i++)
-		{
-			for(int j = 0; j < x[i].size(); j++)
-			{
-				myfile_ << x[i][j] << ", ";
-			} myfile_ << "\n";
-		}
-		myfile_.close();
         DumuxMessage::print(/*firstCall=*/false);
     }
 

@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDSNC_PROPERTIES_CYL_HH
-#define RICHARDSNC_PROPERTIES_CYL_HH
+#ifndef RICHARDS3C_PROPERTIES_HH
+#define RICHARDS3C_PROPERTIES_HH
 
 #include <dune/grid/yaspgrid.hh>
 #include <dune/grid/spgrid.hh>
@@ -15,7 +15,7 @@
 #include <dumux/discretization/cctpfa.hh>
 #include <dumux/discretization/box.hh>
 
-#include <dumux/porousmediumflow/richardsncCylindrical1d/model.hh>
+#include <dumux/porousmediumflow/richards3c/model.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
@@ -26,7 +26,7 @@ namespace Dumux {
 namespace Properties {
 
 namespace TTag { // Create new type tags
-struct RichardsNCTT { using InheritsFrom = std::tuple<RichardsNC>; };
+struct RichardsNCTT { using InheritsFrom = std::tuple<Richards3C>; };
 struct Richards2CBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
 struct Richards2CCC { using InheritsFrom = std::tuple<RichardsNCTT, CCTpfaModel>; };
 struct RichardsNCBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
@@ -44,7 +44,7 @@ struct Grid<TypeTag, TTag::RichardsNCTT> { using type = GRIDTYPE; };  // Use GRI
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1P2CProblem<TypeTag>; }; 
+struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1P3CProblem<TypeTag>; };
 
 // Set the spatial parameters
 template<class TypeTag>
@@ -60,10 +60,12 @@ struct SpatialParams<TypeTag, TTag::RichardsNCTT> {
 
 /*
  * Define whether mole (true) or mass (false) fractions are used
- * TODO I only understand false...
+ * TODO I only understand false... <== why?
+ * for false and num elements > 2 , we need to create new functions for the file 
+ * dumux/material/fluidstates/compositional.hh>
  */
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RichardsNCTT> { static constexpr bool value = false; };
+struct UseMoles<TypeTag, TTag::RichardsNCTT> { static constexpr bool value = true; };
 
 } // end namespace properties
 } // end namespace DUMUX

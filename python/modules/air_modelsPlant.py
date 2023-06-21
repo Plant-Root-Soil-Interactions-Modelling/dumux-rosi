@@ -5,7 +5,7 @@ import plantbox as pb
 import functional.xylem_flux as xylem_flux
 import sys
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
-from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
+from rosi_richards2c_cyl import Richards2CCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from fv.fv_grid import *
 import fv.fv_richards as rich  # local pure Python cylindrical models

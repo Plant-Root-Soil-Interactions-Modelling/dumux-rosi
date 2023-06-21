@@ -131,7 +131,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud):
     
         ###
         rsx = rs.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-        if type == 1:
+        if type == "dumux_dirichlet":
             rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
         else:
             rsc = rs.get_inner_solutes(1)  # kg/m3
@@ -143,6 +143,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud):
         l = np.array(rs.segLength())
         
         if rank == 0:
+            print("need to add fixed point iteration for water and carbon fluxes between plant-rhizosphere")
             print("\nINITIAL root-soil interface matric potentials", np.nanmin(rsx), np.nanmax(rsx), np.nanmin(rsc), np.nanmax(rsc))
             
             

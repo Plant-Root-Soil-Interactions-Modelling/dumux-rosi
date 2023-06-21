@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDS1P3C_PROBLEM_HH
-#define RICHARDS1P3C_PROBLEM_HH
+#ifndef RICHARDS1PNC_PROBLEM_HH
+#define RICHARDS1PNC_PROBLEM_HH
 #include <algorithm>
 #include <dumux/porousmediumflow/problem.hh> // base class
 
@@ -16,7 +16,7 @@ namespace Dumux {
  * where most parameters can be set dynamically
  */
 template <class TypeTag>
-class Richards1P3CProblem : public PorousMediumFlowProblem<TypeTag>
+class Richards1PNCProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
@@ -90,20 +90,12 @@ public:
 	/*!
 	 * \brief Constructor: constructed in the main file
 	 */
-	Richards1P3CProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
+	Richards1PNCProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
 	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
-					   
-					   
-
-	   
-												 
-												 
-																   
-																   
 
 		
 		// Components
@@ -115,25 +107,14 @@ public:
 			{
 				
 				// BC			
-				std::cout<<"getParam<int>"<<std::endl;
 				bcTopType_ = getParam<int>("Soil.BC.Top.Type", outflow); 
-				std::cout<<"getParam<int> "<<bcTopType_<<std::endl;
 				bcBotType_ = getParam<int>("Soil.BC.Bot.Type", outflow);
-				std::cout<<"bcTopValues_.at(i) = getParam<Scalar>(Soil.BC.Top.Value, 0.); "<<bcBotType_<<std::endl;
-				
-				const auto& myParams = Parameters::paramTree();
-				myParams.report();
-				std::cout<<"Soil.BC.Top.Value "<<myParams.hasKey("Soil.BC.Top.Value")<<std::endl;
-				std::string myVal =myParams.get("Soil.BC.Top.Value", "0.");
-				std::cout<<"myVal "<<myVal<<std::endl;
-				double myVal2 =std::stod(myVal);
-				std::cout<<"myVal2 "<<myVal2<<" "<<i<<" "<<bcTopValues_.size()<<std::endl;
-				bcTopValues_.at(i) =  myVal2;//std::stod(;)myParams.get("Soil.BC.Top.Value", "0."));//getParam<double>("Soil.BC.Top.Value", 0.);
+				std::cout<<"bcTopValues_.at(i) = getParam<Scalar>(Soil.BC.Top.Value, 0.);"<<std::endl;
+				bcTopValues_.at(i) = getParam<Scalar>("Soil.BC.Top.Value", 0.);
 				std::cout<<"bcBotValues_.at(i) = getParam<Scalar>(Soil.BC.Bot.Value, 0.);"<<std::endl;
-				bcBotValues_.at(i) =  std::stod(myParams.get("Soil.BC.Bot.Value", "0."));//getParam<double>("Soil.BC.Bot.Value", 0.);
+				bcBotValues_.at(i) = getParam<Scalar>("Soil.BC.Bot.Value", 0.);
 				
 				//IC
-				std::cout<<"initialSoil_"<<std::endl;
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
 				// Precipitation & Evaporation, and solute input
 				if (bcTopType_==atmospheric) {
@@ -151,14 +132,14 @@ public:
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "C"+std::to_string(i), "C"+std::to_string(i)+"Z", 
 													0., this->spatialParams().layerIFF()); // kg/m2
 				if (bcSTopType_.at(i - soluteIdx)==managed) {
-					componentInput_.at(i) = InputFileFunction(std::to_string(i)+".Component.Managed", "Input", "Time", 0.); // cm/day (day)
+					componentInput_.at(i) = InputFileFunction("Managed.Component"+std::to_string(i), "Input", "Time", 0.); // cm/day (day)
 					
 				}
 				
 				// Buffer power
-				b_.at(i - soluteIdx) = getParam<Scalar>(std::to_string(i)+".Component.BufferPower", 0.);
-				freundlichN_.at(i - soluteIdx) = getParam<Scalar>(std::to_string(i)+".Component.FreundlichN", 0.);
-				freundlichK_.at(i - soluteIdx) = getParam<Scalar>(std::to_string(i)+".Component.FreundlichK", 0.);
+				b_.at(i - soluteIdx) = getParam<Scalar>("Component"+std::to_string(i)+".BufferPower", 0.);
+				freundlichN_.at(i - soluteIdx) = getParam<Scalar>("Component"+std::to_string(i)+".FreundlichN", 0.);
+				freundlichK_.at(i - soluteIdx) = getParam<Scalar>("Component"+std::to_string(i)+".FreundlichK", 0.);
 				
 				// Uptake params (not used)
 				vMax_.at(i - soluteIdx)  =  getParam<Scalar>("RootSystem.Uptake.Vmax", 0.)/24./3600.*1e1; //  [g cm-2 day-1] -> [kg m-2 s-1]
@@ -175,11 +156,13 @@ public:
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 
-												  
+		
+
+
 		// Output
 		std::string filestr = this->name() + "_1pnc.csv"; // output file
 		myfile_.open(filestr.c_str());
-		std::cout << "Richards1P3CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+		std::cout << "Richards1PNCProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0) 
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
 				<< criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_[0] << ", Freundlich " << freundlichK_[0] << ", " <<
@@ -191,7 +174,7 @@ public:
 	/**
 	 * \brief Eventually, closes output file
 	 */
-	~Richards1P3CProblem() {
+	~Richards1PNCProblem() {
 		std::cout << "closing file \n";
 		myfile_.close();
 	}
@@ -277,9 +260,6 @@ public:
         if (onUpperBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcTopType_ == constantPressure) {
                 bcTypes.setDirichlet(pressureIdx);
-			 
-														  
-												  
             }
 			for(int i = soluteIdx; i<numComponents_;i++)//solutes
 			{
@@ -292,9 +272,6 @@ public:
         } else if (onLowerBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcBotType_ == constantPressure) {
                 bcTypes.setDirichlet(pressureIdx);//,conti0EqIdx
-			 
-														  
-												  
             }
 			for(int i = soluteIdx; i<numComponents_;i++)//solutes
 			{
@@ -554,8 +531,6 @@ public:
 			} else {
 				flux[i] = 0.;
 			}
-		  
-							 
 		}
 
 		return flux;
@@ -571,17 +546,12 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 		NumEqVector source;
-  
-															  
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
 				source[i] = source_[i]->at(eIdx)/scv.volume();
-   
-				
 			}else{source[i] = 0.;}
-												 
 		}		
 		return source;
 	}
@@ -767,13 +737,8 @@ public:
 	// BC, direct access for Python binding (setTopBC, setBotBC, in richards.hh)
 	int bcTopType_;
 	int bcBotType_;
-	std::vector<double> bcTopValues_ = std::vector<double>(1);
-	std::vector<double> bcBotValues_ = std::vector<double>(1);
-
-																  
-													
-														   
-														  
+	std::vector<double> bcTopValues_ = std::vector<double>(0);
+	std::vector<double> bcBotValues_ = std::vector<double>(0);
 
 	std::vector<int> bcSTopType_ = std::vector<int>(numSolutes); // one solute
 	std::vector<int> bcSBotType_ = std::vector<int>(numSolutes);
@@ -804,7 +769,6 @@ private:
 
 	// Initial
 	std::vector<InputFileFunction> initialSoil_ = std::vector<InputFileFunction>(numComponents_);
-								 
 
 	bool gravityOn_;
 

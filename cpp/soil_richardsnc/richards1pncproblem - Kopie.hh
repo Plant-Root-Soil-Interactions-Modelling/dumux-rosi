@@ -1,13 +1,12 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDS1P3C_PROBLEM_HH
-#define RICHARDS1P3C_PROBLEM_HH
-#include <algorithm>
+#ifndef RICHARDS1PNC_PROBLEM_HH
+#define RICHARDS1PNC_PROBLEM_HH
+
 #include <dumux/porousmediumflow/problem.hh> // base class
 
 #include "../soil_richards/richardsparams.hh"
 
-#include <dune/common/exceptions.hh>
 namespace Dumux {
 
 /*!
@@ -16,7 +15,7 @@ namespace Dumux {
  * where most parameters can be set dynamically
  */
 template <class TypeTag>
-class Richards1P3CProblem : public PorousMediumFlowProblem<TypeTag>
+class Richards1PNCProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
@@ -59,14 +58,6 @@ public:
 		//transportMucilEqIdx = conti0EqIdx + mucilIdx,//is this correct?
 
 		dimWorld = GridView::dimensionworld,
-		
-		//!!!!!!!!!!!!
-		numComponents_ = 3 ,//Edit this to have N components instead of 3
-		//!!!!!!!!!!!!
-		
-		numSolutes = numComponents_ -  soluteIdx,
-
-
 		isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
 	};
 
@@ -90,20 +81,13 @@ public:
 	/*!
 	 * \brief Constructor: constructed in the main file
 	 */
-	Richards1P3CProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
+	Richards1PNCProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
 	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
-		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
-					   
-					   
-
-	   
-												 
-												 
-																   
-																   
+		//source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
+		recize4componentNum(getParam<int>("Component.numComponents", 2));//if less than 1 migh throw error?
 
 		
 		// Components
@@ -115,25 +99,12 @@ public:
 			{
 				
 				// BC			
-				std::cout<<"getParam<int>"<<std::endl;
 				bcTopType_ = getParam<int>("Soil.BC.Top.Type", outflow); 
-				std::cout<<"getParam<int> "<<bcTopType_<<std::endl;
 				bcBotType_ = getParam<int>("Soil.BC.Bot.Type", outflow);
-				std::cout<<"bcTopValues_.at(i) = getParam<Scalar>(Soil.BC.Top.Value, 0.); "<<bcBotType_<<std::endl;
-				
-				const auto& myParams = Parameters::paramTree();
-				myParams.report();
-				std::cout<<"Soil.BC.Top.Value "<<myParams.hasKey("Soil.BC.Top.Value")<<std::endl;
-				std::string myVal =myParams.get("Soil.BC.Top.Value", "0.");
-				std::cout<<"myVal "<<myVal<<std::endl;
-				double myVal2 =std::stod(myVal);
-				std::cout<<"myVal2 "<<myVal2<<" "<<i<<" "<<bcTopValues_.size()<<std::endl;
-				bcTopValues_.at(i) =  myVal2;//std::stod(;)myParams.get("Soil.BC.Top.Value", "0."));//getParam<double>("Soil.BC.Top.Value", 0.);
-				std::cout<<"bcBotValues_.at(i) = getParam<Scalar>(Soil.BC.Bot.Value, 0.);"<<std::endl;
-				bcBotValues_.at(i) =  std::stod(myParams.get("Soil.BC.Bot.Value", "0."));//getParam<double>("Soil.BC.Bot.Value", 0.);
+				bcTopValues_.at(i) = getParam<Scalar>("Soil.BC.Top.Value", 0.);
+				bcBotValues_.at(i) = getParam<Scalar>("Soil.BC.Bot.Value", 0.);
 				
 				//IC
-				std::cout<<"initialSoil_"<<std::endl;
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
 				// Precipitation & Evaporation, and solute input
 				if (bcTopType_==atmospheric) {
@@ -150,15 +121,15 @@ public:
 				//IC
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "C"+std::to_string(i), "C"+std::to_string(i)+"Z", 
 													0., this->spatialParams().layerIFF()); // kg/m2
-				if (bcSTopType_.at(i - soluteIdx)==managed) {
-					componentInput_.at(i) = InputFileFunction(std::to_string(i)+".Component.Managed", "Input", "Time", 0.); // cm/day (day)
+				if (bcSTopType_.at(i)==managed) {
+					componentInput_.at(i) = InputFileFunction("Managed.Component"+std::to_string(i), "Input", "Time", 0.); // cm/day (day)
 					
 				}
 				
 				// Buffer power
-				b_.at(i - soluteIdx) = getParam<Scalar>(std::to_string(i)+".Component.BufferPower", 0.);
-				freundlichN_.at(i - soluteIdx) = getParam<Scalar>(std::to_string(i)+".Component.FreundlichN", 0.);
-				freundlichK_.at(i - soluteIdx) = getParam<Scalar>(std::to_string(i)+".Component.FreundlichK", 0.);
+				b_.at(i - soluteIdx) = getParam<Scalar>("Component"+std::to_string(i)+".BufferPower", 0.);
+				freundlichN_.at(i - soluteIdx) = getParam<Scalar>("Component"+std::to_string(i)+".FreundlichN", 0.);
+				freundlichK_.at(i - soluteIdx) = getParam<Scalar>("Component"+std::to_string(i)+".FreundlichK", 0.);
 				
 				// Uptake params (not used)
 				vMax_.at(i - soluteIdx)  =  getParam<Scalar>("RootSystem.Uptake.Vmax", 0.)/24./3600.*1e1; //  [g cm-2 day-1] -> [kg m-2 s-1]
@@ -175,23 +146,23 @@ public:
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 
-												  
+		
+
+
 		// Output
 		std::string filestr = this->name() + "_1pnc.csv"; // output file
 		myfile_.open(filestr.c_str());
-		std::cout << "Richards1P3CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+		std::cout << "Richards1PNCProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0) 
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
 				<< criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_[0] << ", Freundlich " << freundlichK_[0] << ", " <<
-				freundlichN_[0] << "\n" 
-				<< std::flush;
-		
+				freundlichN_[0] << "\n" << std::flush;
 	}
 
 	/**
 	 * \brief Eventually, closes output file
 	 */
-	~Richards1P3CProblem() {
+	~Richards1PNCProblem() {
 		std::cout << "closing file \n";
 		myfile_.close();
 	}
@@ -225,24 +196,17 @@ public:
 	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
 	 */
 	Scalar bufferPower(const SubControlVolume& scv, const VolumeVariables& volVars, int compIdx = 0) const {
-		int compIdx_ = std::max(std::min(compIdx - soluteIdx,static_cast<int>( b_.size())),0);
-		//std::cout<<"bufferPower "<<compIdx<<" "<< compIdx_<<std::endl;//1 or 0
-		
-		if (b_.at(compIdx_)>0.) {
-			//std::cout<<"b_.at(compIdx_); "<<b_.at(compIdx_)<<std::endl;
-			return b_.at(compIdx_);
+		if (b_.at(compIdx - soluteIdx)>0.) {
+			return b_.at(compIdx - soluteIdx);
 		} else {
-			if (freundlichK_.at(compIdx_)==0.) {
-				//std::cout<<"(freundlichK_.at(compIdx_)==0.)"<<std::endl;
+			if (freundlichK_.at(compIdx - soluteIdx)==0.) {
 				return 0.;
 			}
 			if (volVars.massFraction(h2OIdx, compIdx) <= 0) {
-				//std::cout<<"volVars.massFraction(h2OIdx, compIdx) "<<volVars.massFraction(h2OIdx, compIdx)<<std::endl;
 				return 0.;
 			} else {
                 Scalar c = volVars.massFraction(h2OIdx, compIdx)*volVars.density(h2OIdx); // mass concentration
-				//std::cout<<"bulk_etc "<<(bulkDensity_*freundlichK_.at(compIdx_)*std::pow(c*1e3, freundlichN_.at(compIdx_))*1e-6/c)<<std::endl;
-                return bulkDensity_*freundlichK_.at(compIdx_)*std::pow(c*1e3, freundlichN_.at(compIdx_))*1e-6/c; //kg/m3 = 1e3 mg/l ; mg/kg = 1e-6 kg/kg
+                return bulkDensity_*freundlichK_.at(compIdx - soluteIdx)*std::pow(c*1e3, freundlichN_.at(compIdx - soluteIdx))*1e-6/c; //kg/m3 = 1e3 mg/l ; mg/kg = 1e-6 kg/kg
 			}
 		}
 	}
@@ -277,9 +241,6 @@ public:
         if (onUpperBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcTopType_ == constantPressure) {
                 bcTypes.setDirichlet(pressureIdx);
-			 
-														  
-												  
             }
 			for(int i = soluteIdx; i<numComponents_;i++)//solutes
 			{
@@ -292,9 +253,6 @@ public:
         } else if (onLowerBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcBotType_ == constantPressure) {
                 bcTypes.setDirichlet(pressureIdx);//,conti0EqIdx
-			 
-														  
-												  
             }
 			for(int i = soluteIdx; i<numComponents_;i++)//solutes
 			{
@@ -360,7 +318,7 @@ public:
 			const FVElementGeometry& fvGeometry,
 			const ElementVolumeVariables& elemVolVars,
 			const SubControlVolumeFace& scvf) const {
-		
+
 		NumEqVector flux;
 		GlobalPosition pos = scvf.center();
 		auto& volVars = elemVolVars[scvf.insideScvIdx()];
@@ -376,9 +334,7 @@ public:
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;//water pressure?
 			Scalar h = -toHead_(p); // todo why minus -pc?
-			std::cout<<"NumEqVector neumann() "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]<<std::endl;
 			GlobalPosition ePos = element.geometry().center();
-			std::cout<<"ePos "<<dimWorld<<" "<<ePos[0]<<" "<<ePos[1]<<" "<<ePos[2]<<std::endl;
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
 			Scalar krw = MaterialLaw::krw(params, s);//	The relative permeability for the wetting phase
 
@@ -554,8 +510,6 @@ public:
 			} else {
 				flux[i] = 0.;
 			}
-		  
-							 
 		}
 
 		return flux;
@@ -571,17 +525,12 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 		NumEqVector source;
-  
-															  
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
 				source[i] = source_[i]->at(eIdx)/scv.volume();
-   
-				
 			}else{source[i] = 0.;}
-												 
 		}		
 		return source;
 	}
@@ -711,11 +660,9 @@ public:
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				auto p = scvf.center();
 				if (onUpperBoundary_(p)) { // top
-				std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
 					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 					uc++;
 				} else if (onLowerBoundary_(p)) { // bottom
-				std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
 					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 					lc++;
 				}
@@ -770,11 +717,6 @@ public:
 	std::vector<double> bcTopValues_ = std::vector<double>(1);
 	std::vector<double> bcBotValues_ = std::vector<double>(1);
 
-																  
-													
-														   
-														  
-
 	std::vector<int> bcSTopType_ = std::vector<int>(numSolutes); // one solute
 	std::vector<int> bcSBotType_ = std::vector<int>(numSolutes);
 	std::vector<double> bcSTopValue_ = std::vector<double>(numSolutes);
@@ -803,17 +745,36 @@ private:
 	}
 
 	// Initial
-	std::vector<InputFileFunction> initialSoil_ = std::vector<InputFileFunction>(numComponents_);
-								 
+	std::vector<InputFileFunction> initialSoil_ ;//= std::vector<InputFileFunction>(numComponents_);
 
 	bool gravityOn_;
+	
+	void recize4componentNum(int cNum)
+	{
+		std::cout<<"recize4componentNum(int "<<soluteNum<<")"<<std::endl;
+		//!!!!!!!!!!!!
+		numComponents_ = cNum; 
+		//!!!!!!!!!!!!
+		numSolutes = numSolutes - soluteIdx;//num components = numsolute + num phase
+		source_.resize(numComponents_);
+		componentInput_.resize(numSolutes);
+		vMax_.resize(numSolutes);
+		km_.resize(numSolutes);
+		sigma_.resize(numSolutes);
+		b_.resize(numSolutes);
+		freundlichK_.resize(numSolutes);
+		freundlichN_.resize(numSolutes);
+	}
+	
+	int numComponents_;
+	int numSolutes;
 
 	// Source
 	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;
 
 	//InputFileFunction precipitation_;
-	std::vector<InputFileFunction> componentInput_ = std::vector<InputFileFunction>(numComponents_);
+	std::vector<InputFileFunction> componentInput_;// = std::vector<InputFileFunction>(numComponents_);
 	Scalar criticalPressure_; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;
@@ -830,13 +791,13 @@ private:
 	static constexpr Scalar pRef_ = 1.e5; // Pa
 
 	// Uptake params
-	std::vector<Scalar> vMax_ = std::vector<Scalar>(numSolutes); // Michaelis Menten Parameter [kg m-2 s-1]
-	std::vector<Scalar> km_ = std::vector<Scalar>(numSolutes);  // Michaelis Menten Parameter  [kg m-3]
-	std::vector<Scalar> sigma_ = std::vector<Scalar>(numSolutes);// 1 for passive transport, 0 for active transport
+	std::vector<Scalar> vMax_;// = std::vector<Scalar>(numSolutes); // Michaelis Menten Parameter [kg m-2 s-1]
+	std::vector<Scalar> km_ ;//= std::vector<Scalar>(numSolutes);  // Michaelis Menten Parameter  [kg m-3]
+	std::vector<Scalar> sigma_;// = std::vector<Scalar>(numSolutes);// 1 for passive transport, 0 for active transport
 
-	std::vector<Scalar> b_ = std::vector<Scalar>(numSolutes); // buffer power
-	std::vector<Scalar> freundlichK_ = std::vector<Scalar>(numSolutes); // Freundlich parameters
-	std::vector<Scalar> freundlichN_ = std::vector<Scalar>(numSolutes);
+	std::vector<Scalar> b_ ;//= std::vector<Scalar>(numSolutes); // buffer power
+	std::vector<Scalar> freundlichK_;// = std::vector<Scalar>(numSolutes); // Freundlich parameters
+	std::vector<Scalar> freundlichN_;//= std::vector<Scalar>(numSolutes);
 	Scalar bulkDensity_ = 1.4; // TODO check with Mai, buffer power (1+b) or b
 
 };

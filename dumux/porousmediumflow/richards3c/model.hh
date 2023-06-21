@@ -18,7 +18,7 @@
  *****************************************************************************/
 /*!
  * \file
- * \ingroup RichardsNCModel
+ * \ingroup Richards3CModel
  * \brief Base class for all models which use the Richards,
  *        n-component fully implicit model.
  *
@@ -64,22 +64,19 @@
  * Richards model!
  */
 
-#ifndef DUMUX_RICHARDSNC_MODEL_HH
-#define DUMUX_RICHARDSNC_MODEL_HH
+#ifndef DUMUX_RICHARDS3C_MODEL_HH
+#define DUMUX_RICHARDS3C_MODEL_HH
 
 #include <dumux/common/properties.hh>
 
 #include <dumux/porousmediumflow/compositional/localresidual.hh>
 
 #include <dumux/material/spatialparams/fv1p.hh>
-
-//#include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
-#include <dumux/material/fluidmatrixinteractions/diffusivityconstanttortuosity.hh>
-
+#include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
 #include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/constant.hh>
-#include <dumux/material/fluidsystems/liquidphase2c.hh>
+#include <dumux/material/fluidsystems/liquidphase3c.hh>
 #include <dumux/material/fluidstates/compositionalnc.hh>
 
 #include <dumux/porousmediumflow/properties.hh>
@@ -89,22 +86,22 @@
 
 #include <dumux/porousmediumflow/richards/model.hh>
 
-#include "volumevariables.hh"
-#include "indices.hh"
-#include "iofields.hh"
+#include <dumux/porousmediumflow/richardsnc/volumevariables.hh>
+#include <dumux/porousmediumflow/richardsnc/indices.hh>
+#include <dumux/porousmediumflow/richardsnc/iofields.hh>
 //#include "../../material/fluidstates/compositionalnc.hh"
 
 namespace Dumux {
 
 /*!
- * \ingroup RichardsNCModel
+ * \ingroup Richards3CModel
  * \brief Specifies a number properties of the Richards n-components model.
  *
  * \tparam nComp the number of components to be considered.
  * \tparam useMol whether to use mass or mole balances
  */
 template<int nComp, bool useMol, int repCompEqIdx = nComp>
-struct RichardsNCModelTraits
+struct Richards3CModelTraits
 {
     using Indices = RichardsNCIndices;
 
@@ -129,8 +126,8 @@ namespace Properties {
 //! The type tags for the implicit isothermal one-phase two-component problems
 // Create new type tags
 namespace TTag {
-struct RichardsNC { using InheritsFrom = std::tuple<PorousMediumFlow>; };
-struct RichardsNCNI { using InheritsFrom = std::tuple<RichardsNC>; };
+struct Richards3C { using InheritsFrom = std::tuple<PorousMediumFlow>; };
+struct Richards3CNI { using InheritsFrom = std::tuple<Richards3C>; };
 } // end namespace TTag
 //////////////////////////////////////////////////////////////////
 // Property tags
@@ -141,32 +138,32 @@ struct RichardsNCNI { using InheritsFrom = std::tuple<RichardsNC>; };
 
 //! Set the model traits class
 template<class TypeTag>
-struct BaseModelTraits<TypeTag, TTag::RichardsNC>
+struct BaseModelTraits<TypeTag, TTag::Richards3C>
 {
 private:
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 public:
-    using type = RichardsNCModelTraits<FluidSystem::numComponents, getPropValue<TypeTag, Properties::UseMoles>(), getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()>;
+    using type = Richards3CModelTraits<FluidSystem::numComponents, getPropValue<TypeTag, Properties::UseMoles>(), getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()>;
 };
 template<class TypeTag>
-struct ModelTraits<TypeTag, TTag::RichardsNC> { using type = GetPropType<TypeTag, Properties::BaseModelTraits>; };
+struct ModelTraits<TypeTag, TTag::Richards3C> { using type = GetPropType<TypeTag, Properties::BaseModelTraits>; };
 
 //! Define that per default mole fractions are used in the balance equations
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RichardsNC> { static constexpr bool value = true; };
+struct UseMoles<TypeTag, TTag::Richards3C> { static constexpr bool value = true; };
 
 //! Use the dedicated local residual
 template<class TypeTag>
-struct LocalResidual<TypeTag, TTag::RichardsNC> { using type = CompositionalLocalResidual<TypeTag>; };
+struct LocalResidual<TypeTag, TTag::Richards3C> { using type = CompositionalLocalResidual<TypeTag>; };
 
 //! We set the replaceCompIdx to 0, i.e. the first equation is substituted with
 //! the total mass balance, i.e. the phase balance
 template<class TypeTag>
-struct ReplaceCompEqIdx<TypeTag, TTag::RichardsNC> { static constexpr int value = 0; };
+struct ReplaceCompEqIdx<TypeTag, TTag::Richards3C> { static constexpr int value = 0; };
 
 //! Set the volume variables property
 template<class TypeTag>
-struct VolumeVariables<TypeTag, TTag::RichardsNC>
+struct VolumeVariables<TypeTag, TTag::Richards3C>
 {
 private:
     using PV = GetPropType<TypeTag, Properties::PrimaryVariables>;
@@ -190,7 +187,7 @@ public:
 //! The default richardsnc model computes no diffusion in the air phase
 //! Turning this on leads to the extended Richards equation (see e.g. Vanderborght et al. 2017)
 template<class TypeTag>
-struct EnableWaterDiffusionInAir<TypeTag, TTag::RichardsNC> { static constexpr bool value = false; };
+struct EnableWaterDiffusionInAir<TypeTag, TTag::Richards3C> { static constexpr bool value = false; };
 
 /*!
  *\brief The fluid system used by the model.
@@ -198,10 +195,12 @@ struct EnableWaterDiffusionInAir<TypeTag, TTag::RichardsNC> { static constexpr b
  * By default this uses the liquid phase fluid system with simple H2O.
  */
 template<class TypeTag>
-struct FluidSystem<TypeTag, TTag::RichardsNC>
+struct FluidSystem<TypeTag, TTag::Richards3C>
 {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = FluidSystems::LiquidPhaseTwoC<Scalar, Components::SimpleH2O<Scalar>, Components::Constant<1, Scalar>>;
+    using type = FluidSystems::LiquidPhaseThreeC<Scalar, Components::SimpleH2O<Scalar>, 
+														 Components::Constant<1, Scalar>,
+													     Components::Constant<2, Scalar>>;
 };
 
 /*!
@@ -211,7 +210,7 @@ struct FluidSystem<TypeTag, TTag::RichardsNC>
  *        This can be done in the problem.
  */
 template<class TypeTag>
-struct FluidState<TypeTag, TTag::RichardsNC>
+struct FluidState<TypeTag, TTag::Richards3C>
 {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
@@ -220,19 +219,15 @@ struct FluidState<TypeTag, TTag::RichardsNC>
 
 //! Set the vtk output fields specific to this model
 template<class TypeTag>
-struct IOFields<TypeTag, TTag::RichardsNC> { using type = RichardsNCIOFields; };
+struct IOFields<TypeTag, TTag::Richards3C> { using type = RichardsNCIOFields; };
 
 //! The model after Millington (1961) is used for the effective diffusivity
-//template<class TypeTag>
-//struct EffectiveDiffusivityModel<TypeTag, TTag::RichardsNC> { using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
-//
-//
 template<class TypeTag>
-struct EffectiveDiffusivityModel<TypeTag, TTag::RichardsNC> { using type = DiffusivityConstantTortuosity<GetPropType<TypeTag, Properties::Scalar>>; };
+struct EffectiveDiffusivityModel<TypeTag, TTag::Richards3C> { using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
 
 //! average is used as default model to compute the effective thermal heat conductivity
 template<class TypeTag>
-struct ThermalConductivityModel<TypeTag, TTag::RichardsNCNI> { using type = ThermalConductivityAverage<GetPropType<TypeTag, Properties::Scalar>>; };
+struct ThermalConductivityModel<TypeTag, TTag::Richards3CNI> { using type = ThermalConductivityAverage<GetPropType<TypeTag, Properties::Scalar>>; };
 
 //////////////////////////////////////////////////////////////////
 // Property values for non-isothermal Richards n-components model
@@ -240,7 +235,7 @@ struct ThermalConductivityModel<TypeTag, TTag::RichardsNCNI> { using type = Ther
 
 //! set non-isothermal model traits
 template<class TypeTag>
-struct ModelTraits<TypeTag, TTag::RichardsNCNI>
+struct ModelTraits<TypeTag, TTag::Richards3CNI>
 {
 private:
     using IsothermalTraits = GetPropType<TypeTag, Properties::BaseModelTraits>;

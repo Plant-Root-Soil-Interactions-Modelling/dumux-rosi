@@ -6,6 +6,7 @@ import functional.xylem_flux as xylem_flux
 import sys
 from functional.xylem_flux import XylemFluxPython
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
+from rosi_richards2c_cyl import Richards2CCylFoam  # C++ part (Dumux binding)
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from fv.fv_grid import *
@@ -97,6 +98,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True, False))
             elif self.mode == "dumux_dirichlet":
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
+            elif self.mode == "dumux_dirichlet_2c":
+                self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
             elif self.mode == "dumux_dirichlet_nc":
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
             elif self.mode == "dumux_nc":
@@ -105,6 +108,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 x0 = x[self.seg2cell[i]]
                 self.cyls.append(self.initialize_python_(i, x0))
             else:
+                print("let s see", self.mode,"dumux_dirichlet_2c",self.mode == "dumux_dirichlet_2c" )
                 raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
         else:
             a_in = self.radii[i]#get Perimeter instead? not used for now anyway
@@ -116,7 +120,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
-            cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
+            if self.mode == "dumux_dirichlet_2c":
+                cyl = RichardsNoMPIWrapper(Richards2CCylFoam())  # only works for RichardsCylFoam compiled without MPI
+            if self.mode == "dumux_dirichlet_nc":
+                cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
             cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
@@ -253,6 +260,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
 
     def get_inner_concentrations(self):  # TODO
+        raise Exception("do not use get_inner_concentrations yet")
         """ solute concentration at the root surface interface [g / cm3]"""
         rsx = np.zeros((len(self.cyls),))
         if self.mode.startswith("dumux"):
@@ -328,7 +336,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.plot_cylinder(j)
                     self.plot_cylinders()
                     raise Exception(str)
-        elif self.mode == "dumux_dirichlet_nc":            
+        elif ((self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_2c")):            
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             proposed_inner_fluxes = argv[2]

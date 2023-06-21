@@ -44,7 +44,7 @@ struct Grid<TypeTag, TTag::RichardsNCTT> { using type = GRIDTYPE; };  // Use GRI
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1P2CProblem<TypeTag>; }; 
+struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1PNCProblem<TypeTag>; }; 
 
 // Set the spatial parameters
 template<class TypeTag>

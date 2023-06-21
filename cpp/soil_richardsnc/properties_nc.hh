@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDSNC_PROPERTIES_CYL_HH
-#define RICHARDSNC_PROPERTIES_CYL_HH
+#ifndef RICHARDSNC_PROPERTIES_HH
+#define RICHARDSNC_PROPERTIES_HH
 
 #include <dune/grid/yaspgrid.hh>
 #include <dune/grid/spgrid.hh>
@@ -15,7 +15,7 @@
 #include <dumux/discretization/cctpfa.hh>
 #include <dumux/discretization/box.hh>
 
-#include <dumux/porousmediumflow/richardsncCylindrical1d/model.hh>
+#include <dumux/porousmediumflow/richardsnc/model.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
@@ -44,7 +44,7 @@ struct Grid<TypeTag, TTag::RichardsNCTT> { using type = GRIDTYPE; };  // Use GRI
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1P2CProblem<TypeTag>; }; 
+struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1PNCProblem<TypeTag>; };
 
 // Set the spatial parameters
 template<class TypeTag>

@@ -1,0 +1,8 @@
+add_input_file_links(FILES test3c_params.input)
+dune_symlink_to_source_files(FILES "grids" "python" "input")
+#dune_symlink_to_source_files(FILES "grids" "python" "input")
+
+add_executable(richards3c3d test3c_main.cc)
+target_compile_definitions(richards3c3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
+
+set(CMAKE_BUILD_TYPE RelWithDebInfo)

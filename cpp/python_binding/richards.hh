@@ -53,7 +53,7 @@ public:
             int gIdx = this->cellIdx->index(e); // global index
             auto eIdx = this->gridGeometry->elementMapper().index(e);
             if (sourceMap.count(gIdx)>0) {
-                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
+                std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
                 ls->at(eIdx) = sourceMap.at(gIdx);
             }
         }

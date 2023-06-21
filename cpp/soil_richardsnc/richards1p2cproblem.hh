@@ -7,6 +7,7 @@
 
 #include "../soil_richards/richardsparams.hh"
 
+#include <dune/common/exceptions.hh>
 namespace Dumux {
 
 /*!
@@ -134,8 +135,8 @@ public:
 		freundlichK_ = getParam<Scalar>("Component.FreundlichK", 0.);
 
 		// Output
-		std::string filestr = this->name() + ".csv"; // output file
-		// myfile_.open(filestr.c_str());
+		std::string filestr = this->name() + "_1p2c.csv"; // output file
+		myfile_.open(filestr.c_str());
 		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
@@ -147,8 +148,8 @@ public:
 	 * \brief Eventually, closes output file
 	 */
 	~Richards1P2CProblem() {
-		// std::cout << "closing file \n";
-		// myfile_.close();
+		std::cout << "closing file \n";
+		myfile_.close();
 	}
 
 	/*!
@@ -294,7 +295,9 @@ public:
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;
 			Scalar h = -toHead_(p); // todo why minus -pc?
+			std::cout<<"NumEqVector neumann() "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]<<std::endl;
 			GlobalPosition ePos = element.geometry().center();
+			std::cout<<"ePos "<<dimWorld<<" "<<ePos[0]<<" "<<ePos[1]<<" "<<ePos[2]<<std::endl;
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
 			Scalar krw = MaterialLaw::krw(params, s);
 
@@ -476,7 +479,9 @@ public:
      */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
-
+		//std::cout<<"source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,"<<std::endl;
+		
+		//DUNE_THROW(Dune::NotImplemented, "source(const Element)");
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		double h = 0.;
 		if (source_[h2OIdx] != nullptr) {
@@ -519,6 +524,7 @@ public:
 	 * the absolute rate mass generated or annihilate in kg/s. Positive values mean
 	 * that mass is created, negative ones mean that it vanishes.
 	 */
+	 /// not used in the normal solve
 	template<class ElementVolumeVariables>
 	void pointSource(PointSource& source,
 			const Element &element,
@@ -527,7 +533,8 @@ public:
 			const SubControlVolume &scv) const {
 
 		PrimaryVariables sourceValue(0.);
-
+		std::cout<<"template<class ElementVolumeVariables>"<<std::endl;
+		DUNE_THROW(Dune::InvalidStateException, "template<class ElementVolumeVariables>");
 		if (couplingManager_!=nullptr) { // compute source at every integration point
 
 			const Scalar soilP = couplingManager_->bulkPriVars(source.id())[pressureIdx];
@@ -611,9 +618,11 @@ public:
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				auto p = scvf.center();
 				if (onUpperBoundary_(p)) { // top
+				std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
 					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 					uc++;
 				} else if (onLowerBoundary_(p)) { // bottom
+				std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
 					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 					lc++;
 				}
@@ -627,7 +636,7 @@ public:
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
 	 */
 	void writeBoundaryFluxes() {
-		// myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
+		myfile_ << time_ << ", " << bc_flux_upper << ", " << bc_flux_lower << "\n";
 	}
 
 	/**
