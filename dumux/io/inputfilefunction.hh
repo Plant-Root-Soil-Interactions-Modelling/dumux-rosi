@@ -209,7 +209,13 @@ public:
             return fs*yy_[0];
         }
         case table: {
-            return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
+			std::pair<std::vector<double>, std::vector<double>> tableTemp = table_[0];
+			std::vector<double> ttfirst =tableTemp.first;
+			std::vector<double> ttsec =tableTemp.second;
+			double tempmax = *max_element(ttsec.begin(), ttsec.end());
+            double temp = fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
+			//std::cout<<" f(double x, size_t eIdx)  "<<nameY_<<" "<<x<<" "<<temp<<" "<<tempmax<<std::endl;
+			return temp;
         }
         case data: {
             return fs*data_.at(eIdx);

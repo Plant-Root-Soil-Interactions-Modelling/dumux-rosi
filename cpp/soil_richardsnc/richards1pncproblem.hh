@@ -109,9 +109,9 @@ public:
 				// BC			
 				bcTopType_ = getParam<int>("Soil.BC.Top.Type", outflow); 
 				bcBotType_ = getParam<int>("Soil.BC.Bot.Type", outflow);
-				std::cout<<"bcTopValues_.at(i) = getParam<Scalar>(Soil.BC.Top.Value, 0.);"<<std::endl;
+				//std::cout<<"bcTopValues_.at(i) = getParam<Scalar>(Soil.BC.Top.Value, 0.);"<<std::endl;
 				bcTopValues_.at(i) = getParam<Scalar>("Soil.BC.Top.Value", 0.);
-				std::cout<<"bcBotValues_.at(i) = getParam<Scalar>(Soil.BC.Bot.Value, 0.);"<<std::endl;
+				//std::cout<<"bcBotValues_.at(i) = getParam<Scalar>(Soil.BC.Bot.Value, 0.);"<<std::endl;
 				bcBotValues_.at(i) = getParam<Scalar>("Soil.BC.Bot.Value", 0.);
 				
 				//IC
@@ -353,9 +353,9 @@ public:
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;//water pressure?
 			Scalar h = -toHead_(p); // todo why minus -pc?
-			std::cout<<"NumEqVector neumann() "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]<<std::endl;
+			//std::cout<<"NumEqVector neumann() "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]<<std::endl;
 			GlobalPosition ePos = element.geometry().center();
-			std::cout<<"ePos "<<dimWorld<<" "<<ePos[0]<<" "<<ePos[1]<<" "<<ePos[2]<<std::endl;
+			//std::cout<<"ePos "<<dimWorld<<" "<<ePos[0]<<" "<<ePos[1]<<" "<<ePos[2]<<std::endl;
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
 			Scalar krw = MaterialLaw::krw(params, s);//	The relative permeability for the wetting phase
 
@@ -595,7 +595,7 @@ public:
 			const SubControlVolume &scv) const {
 
 		PrimaryVariables sourceValue(0.);
-		std::cout<<"template<class ElementVolumeVariables>"<<std::endl;
+		//std::cout<<"template<class ElementVolumeVariables>"<<std::endl;
 		DUNE_THROW(Dune::InvalidStateException, "template<class ElementVolumeVariables>");
 
 		if (couplingManager_!=nullptr) { // compute source at every integration point
@@ -681,11 +681,11 @@ public:
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				auto p = scvf.center();
 				if (onUpperBoundary_(p)) { // top
-				std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
+				//std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
 					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 					uc++;
 				} else if (onLowerBoundary_(p)) { // bottom
-				std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
+				//std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
 					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 					lc++;
 				}

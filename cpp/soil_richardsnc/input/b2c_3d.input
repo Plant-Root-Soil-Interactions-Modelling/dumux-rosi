@@ -27,10 +27,8 @@ Value = 0 # [cm] fully saturated
 [Soil.IC]
 Z = -0.53 0.
 P = 0 -53
-C1 = 0 0 0 0 0
-C1Z = -.53 -.25 -.2 -.15 0 
-C2 = 0 0 0 0 .2
-C2Z = -.53 -.25 -.2 -.15 0 
+C = 0 0 0 0 .2
+CZ = -.53 -.25 -.2 -.15 0 
 
 [Soil.VanGenuchten] 
 # Loam: 
@@ -40,12 +38,8 @@ Alpha = 0.04  # [1/cm]
 N = 1.6 
 Ks = 50 # [cm/d]  hydrus verdoppelt
 
-[1.Component]
+[Component]
 LiquidDiffusionCoefficient =  2.3e-9
 Name = "D2O"
 MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
 
-[2.Component]
-LiquidDiffusionCoefficient =  2.3e-9
-Name = "2D2O"
-MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O*2

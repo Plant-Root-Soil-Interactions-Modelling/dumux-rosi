@@ -144,7 +144,7 @@ int main(int argc, char** argv) //try
 	myfile_.open(filestr.c_str());
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
-	std::cout<<"fvGridGeometry->numDofs() "<<fvGridGeometry->numDofs()<<std::endl;
+	//std::cout<<"fvGridGeometry->numDofs() "<<fvGridGeometry->numDofs()<<std::endl;
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
 

@@ -89,7 +89,7 @@
 #include <dumux/porousmediumflow/richardsnc/volumevariables.hh>
 #include <dumux/porousmediumflow/richardsnc/indices.hh>
 #include <dumux/porousmediumflow/richardsnc/iofields.hh>
-//#include "../../material/fluidstates/compositionalnc.hh"
+
 
 namespace Dumux {
 

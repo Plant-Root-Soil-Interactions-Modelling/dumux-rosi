@@ -4,6 +4,9 @@ dune_symlink_to_source_files(FILES "grids" "python" "input")
 add_executable(richards3c3d richards1p3c.cc)
 target_compile_definitions(richards3c3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
+add_executable(richards3c3dInit richards1p3cInit.cc)
+target_compile_definitions(richards3c3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
+
 add_executable(richardsnc3d richards1pnc.cc)
 target_compile_definitions(richardsnc3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 

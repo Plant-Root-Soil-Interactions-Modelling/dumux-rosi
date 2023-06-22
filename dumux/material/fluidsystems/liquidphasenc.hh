@@ -21,8 +21,8 @@
  * \ingroup Fluidsystems
  * \brief @copybrief Dumux::FluidSystems::LiquidPhaseThreeC
  */
-#ifndef DUMUX_LIQUID_THREEC_PHASE_HH
-#define DUMUX_LIQUID_THREEC_PHASE_HH
+#ifndef DUMUX_LIQUID_NC_PHASE_HH
+#define DUMUX_LIQUID_NC_PHASE_HH
 
 #include <cassert>
 #include <limits>
@@ -40,11 +40,11 @@ namespace FluidSystems {
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class SecondComponent, class ThirdComponent>
+template <class Scalar, class MainComponent, class subComponent>
 class LiquidPhaseThreeC
-: public Base<Scalar, LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent> >
+: public Base<Scalar, LiquidPhaseThreeC<Scalar, MainComponent, subComponents> >
 {
-    using ThisType = LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent>;
+    using ThisType = LiquidPhaseThreeC<Scalar, MainComponent, subComponents>;
     using Base = Dumux::FluidSystems::Base<Scalar, ThisType>;
     //file only for h2o + one componant. better re-write own liquidDiffCoeff() function
 	//using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;//??
@@ -96,28 +96,12 @@ public:
     static std::string componentName(int compIdx)
     { 
 		std::string componentName_;
-		switch(compIdx)
+		if(compIdx == comp0Idx)
 		{
-			case comp0Idx:
-			{
-				componentName_ = MainComponent::name();
-				break;
-			}
-			case comp1Idx:
-			{
-				componentName_ = SecondComponent::name();
-				break;
-			}
-			case comp2Idx:
-			{
-				componentName_ = ThirdComponent::name();
-				break;
-			}
-			default:
-			{
-				DUNE_THROW(Dune::InvalidStateException, "liquidphase3c::componentName: compIdx "<<compIdx<<" not recognised");
-			}				
-		}		
+			componentName_ = MainComponent::name();
+		}else{
+			componentName_ = subComponents[compIdx - 1]::name();
+		}	
 		return componentName_; 
 	}
 
@@ -125,7 +109,7 @@ public:
      * \brief A human readable name for the fluid system.
      */
     static std::string name()
-    { return "LiquidPhaseThreeC"; }
+    { return "LiquidPhaseNC"; }
 
     /*!
      * \brief Returns whether the fluid is gaseous
@@ -168,28 +152,12 @@ public:
     static Scalar molarMass(int compIdx)
     {  
 		Scalar molarMass_;
-		switch(compIdx)
+		if(compIdx == comp0Idx)
 		{
-			case comp0Idx:
-			{
-				molarMass_ = MainComponent::molarMass();
-				break;
-			}
-			case comp1Idx:
-			{
-				molarMass_ = SecondComponent::molarMass();
-				break;
-			}
-			case comp2Idx:
-			{
-				molarMass_ = ThirdComponent::molarMass();
-				break;
-			}
-			default:
-			{
-				DUNE_THROW(Dune::InvalidStateException, "liquidphase3c::molarMass: compIdx "<<compIdx<<" not recognised");
-			}
-		}		
+			molarMass_ = MainComponent::molarMass();
+		}else{
+			molarMass_ = subComponents[compIdx - 1]::molarMass();
+		}			
 		return molarMass_; 
 	}
 

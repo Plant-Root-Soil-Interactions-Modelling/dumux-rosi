@@ -143,7 +143,7 @@ int main(int argc, char** argv) try
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
-	std::cout<<"test x size: "<<x.size()<<", x[0].size(): "<<x[0].size()<<std::endl;
+	//std::cout<<"test x size: "<<x.size()<<", x[0].size(): "<<x[0].size()<<std::endl;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
@@ -234,7 +234,7 @@ int main(int argc, char** argv) try
             // pass current time to the problem
             problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
             problem->postTimeStep(x, *gridVariables);
-			DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
+			//DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
             problem->writeBoundaryFluxes();
 
         } while (!timeLoop->finished());
