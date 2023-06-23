@@ -56,7 +56,7 @@
 /**
  * here we go
  */
-int main(int argc, char** argv) try
+int main(int argc, char** argv) //try
 {
     using namespace Dumux;
 
@@ -143,7 +143,7 @@ int main(int argc, char** argv) try
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
-	std::cout<<"test x size: "<<x.size()<<", x[0].size(): "<<x[0].size()<<std::endl;
+	std::cout<<"shape of solution matrix "<<x.size()<<" "<<x[0].size()<<std::endl;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
@@ -176,7 +176,7 @@ int main(int argc, char** argv) try
                 timeLoop->setCheckPoint(p);
             }
         } catch(std::exception& e) {
-            std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout<< "richards1p2c.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
@@ -224,9 +224,9 @@ int main(int argc, char** argv) try
             // advance to the time loop to the next step
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
-            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-                vtkWriter.write(timeLoop->time());
-            }
+            //if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+            //    vtkWriter.write(timeLoop->time());
+            //}
             // report statistics of this time step
             timeLoop->reportTimeStep();
             // set new dt as suggested by the newton solver
@@ -234,7 +234,7 @@ int main(int argc, char** argv) try
             // pass current time to the problem
             problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
             problem->postTimeStep(x, *gridVariables);
-			DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
+			//DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
             problem->writeBoundaryFluxes();
 
         } while (!timeLoop->finished());
@@ -261,6 +261,7 @@ int main(int argc, char** argv) try
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
+		
 		std::ofstream myfile_;
 		std::string filestr = problem->name() + "_1p2c_end.csv"; // output file
 		myfile_.open(filestr.c_str());
@@ -272,33 +273,10 @@ int main(int argc, char** argv) try
 			} myfile_ << "\n";
 		}
 		myfile_.close();
+		
         DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
 }
 
-catch (Dumux::ParameterException &e)
-{
-    std::cerr << std::endl << e << " ---> Abort!" << std::endl;
-    return 1;
-}
-catch (Dune::DGFException & e)
-{
-    std::cerr << "DGF exception thrown (" << e <<
-                 "). Most likely, the DGF file name is wrong "
-                 "or the DGF file is corrupted, "
-                 "e.g. missing hash at end of file or wrong number (dimensions) of entries."
-                 << " ---> Abort!" << std::endl;
-    return 2;
-}
-catch (Dune::Exception &e)
-{
-    std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
-    return 3;
-}
-catch (std::exception &e)
-{
-    std::cerr << "Unknown exception thrown: " <<  e.what() << " ---> Abort!" << std::endl;
-    return 4;
-}

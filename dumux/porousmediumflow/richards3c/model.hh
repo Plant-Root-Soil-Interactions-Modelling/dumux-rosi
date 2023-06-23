@@ -72,7 +72,9 @@
 #include <dumux/porousmediumflow/compositional/localresidual.hh>
 
 #include <dumux/material/spatialparams/fv1p.hh>
-#include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
+
+//#include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
+#include <dumux/material/fluidmatrixinteractions/diffusivityconstanttortuosity.hh>
 #include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/constant.hh>
@@ -86,11 +88,12 @@
 
 #include <dumux/porousmediumflow/richards/model.hh>
 
-#include <dumux/porousmediumflow/richardsnc/volumevariables.hh>
+//#include <dumux/porousmediumflow/richardsnc/volumevariables.hh>
 #include <dumux/porousmediumflow/richardsnc/indices.hh>
 #include <dumux/porousmediumflow/richardsnc/iofields.hh>
 //#include "../../material/fluidstates/compositionalnc.hh"
 
+#include "volumevariables.hh"
 namespace Dumux {
 
 /*!
@@ -223,7 +226,7 @@ struct IOFields<TypeTag, TTag::Richards3C> { using type = RichardsNCIOFields; };
 
 //! The model after Millington (1961) is used for the effective diffusivity
 template<class TypeTag>
-struct EffectiveDiffusivityModel<TypeTag, TTag::Richards3C> { using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
+struct EffectiveDiffusivityModel<TypeTag, TTag::Richards3C> { using type = DiffusivityConstantTortuosity<GetPropType<TypeTag, Properties::Scalar>>; };
 
 //! average is used as default model to compute the effective thermal heat conductivity
 template<class TypeTag>
