@@ -63,7 +63,7 @@ struct SpatialParams<TypeTag, TTag::RichardsNCTT> {
  * TODO I only understand false...
  */
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RichardsNCTT> { static constexpr bool value = true; };
+struct UseMoles<TypeTag, TTag::RichardsNCTT> { static constexpr bool value = false; };
 
 } // end namespace properties
 } // end namespace DUMUX

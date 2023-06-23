@@ -379,13 +379,15 @@ public:
 	
     /*!
      * @param phaseIdx: liquid phase
-     * @param values: molar fraction I think?
+     * @param values: molar fraction I think?, except for the 1st element (pressure)
 	 *	
      */
     template <class PrimaryVariables>
-	void setMassFractionNC(int phaseIdx, const PrimaryVariables& values)
+	void setMassFractionNC(int phaseIdx, const PrimaryVariables& values_)
     {
-		Scalar currentAverageMolarMass = 0;//1st computation
+		auto compJIdx0value =  1. - std::reduce(values_.begin() +1, values_.end());
+		Dune::FieldVector<double, 3> values(values_);values[0] = compJIdx0value; //recompute real mass fraction for water
+		Scalar currentAverageMolarMass = 0.;//1st computation
 		for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
 		{
 			currentAverageMolarMass += FluidSystem::molarMass(compJIdx) * values[compJIdx];

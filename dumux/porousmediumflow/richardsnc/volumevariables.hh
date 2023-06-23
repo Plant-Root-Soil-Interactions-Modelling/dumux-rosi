@@ -171,17 +171,10 @@ public:
         }
         else
         {
-			if(ParentType::numFluidComponents() < 2)
-			{	
-				std::cout<<"volumeVariables, completeFluidState, ParentType::numFluidComponents() < 2 "
-				<<ParentType::numFluidComponents()<<std::endl;
 				for (int compIdx = 1; compIdx < ParentType::numFluidComponents(); ++compIdx)
 				{
 					fluidState.setMassFraction(0, compIdx, priVars[compIdx]);
 				}
-			}else{
-				fluidState.setMassFractionNC(0, priVars);
-			}
         }
 
         // density and viscosity
