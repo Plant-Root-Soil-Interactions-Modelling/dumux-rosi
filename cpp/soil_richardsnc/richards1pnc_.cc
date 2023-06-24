@@ -49,8 +49,8 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "richards1pncproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties_nc.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -61,7 +61,7 @@ int main(int argc, char** argv) //try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::Richards2CBox; // Richards2CCC, Richards2CBox, (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RichardsNCBox; // Richards2CCC, Richards2CBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -139,11 +139,14 @@ int main(int argc, char** argv) //try
     auto problem = std::make_shared<Problem>(fvGridGeometry);
 
     // the solution vector
+	std::ofstream myfile_;
+	std::string filestr = problem->name() + "_1pnc_end.csv"; // output file
+	myfile_.open(filestr.c_str());
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+	std::cout<<"fvGridGeometry->numDofs() "<<fvGridGeometry->numDofs()<<std::endl;
     problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
-	std::cout<<"shape of solution matrix "<<x.size()<<" "<<x[0].size()<<std::endl;
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
@@ -176,7 +179,7 @@ int main(int argc, char** argv) //try
                 timeLoop->setCheckPoint(p);
             }
         } catch(std::exception& e) {
-            std::cout<< "richards1p2c.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout<< "richards1pnc.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
@@ -224,9 +227,9 @@ int main(int argc, char** argv) //try
             // advance to the time loop to the next step
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
-            //if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-            //    vtkWriter.write(timeLoop->time());
-            //}
+            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+                vtkWriter.write(timeLoop->time());
+            }
             // report statistics of this time step
             timeLoop->reportTimeStep();
             // set new dt as suggested by the newton solver
@@ -234,7 +237,7 @@ int main(int argc, char** argv) //try
             // pass current time to the problem
             problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
             problem->postTimeStep(x, *gridVariables);
-			//DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
+			DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
             problem->writeBoundaryFluxes();
 
         } while (!timeLoop->finished());
@@ -243,14 +246,12 @@ int main(int argc, char** argv) //try
 
     } else { // static
         // set previous solution for storage evaluations
-		std::cout<<"static simulation"<<std::endl;
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
         problem->postTimeStep(x, *gridVariables);
         problem->writeBoundaryFluxes();
-		
     }
 
     ////////////////////////////////////////////////////////////
@@ -261,9 +262,8 @@ int main(int argc, char** argv) //try
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
-		
 		std::ofstream myfile_;
-		std::string filestr = problem->name() + "_1p2c_end.csv"; // output file
+		std::string filestr = problem->name() + "_1pnc_end.csv"; // output file
 		myfile_.open(filestr.c_str());
 		for(int i = 0; i < x.size(); i++)
 		{
@@ -273,10 +273,33 @@ int main(int argc, char** argv) //try
 			} myfile_ << "\n";
 		}
 		myfile_.close();
-		
         DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
 }
 
+// catch (Dumux::ParameterException &e)
+// {
+    // std::cerr << std::endl << e << " ---> Abort!" << std::endl;
+    // return 1;
+// }
+// catch (Dune::DGFException & e)
+// {
+    // std::cerr << "DGF exception thrown (" << e <<
+                 // "). Most likely, the DGF file name is wrong "
+                 // "or the DGF file is corrupted, "
+                 // "e.g. missing hash at end of file or wrong number (dimensions) of entries."
+                 // << " ---> Abort!" << std::endl;
+    // return 2;
+// }
+// catch (Dune::Exception &e)
+// {
+    // std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
+    // return 3;
+// }
+// catch (std::exception &e)
+// {
+    // std::cerr << "Unknown exception thrown: " <<  e.what() << " ---> Abort!" << std::endl;
+    // return 4;
+// }

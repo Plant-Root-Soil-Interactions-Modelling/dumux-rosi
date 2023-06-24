@@ -51,7 +51,7 @@ public:
 		pressureIdx = 0, // index of primary variables
 		h2OIdx = pressureIdx, // fluid index
 		soluteIdx = 1, // 1st solute index
-		//mucilIdx = 2, // mucil index
+		mucilIdx = 2, // mucil index
 		
 		//don t think EqIndx != pvdIdx when we have just 1 phase
 		conti0EqIdx = pressureIdx, // indices of the equations
@@ -96,16 +96,6 @@ public:
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
-					   
-					   
-
-	   
-												 
-												 
-																   
-																   
-
-		
 		// Components
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
@@ -115,22 +105,13 @@ public:
 			{
 				
 				// BC			
-				std::cout<<"getParam<int>"<<std::endl;
 				bcTopType_ = getParam<int>("Soil.BC.Top.Type", outflow); 
-				std::cout<<"getParam<int> "<<bcTopType_<<std::endl;
 				bcBotType_ = getParam<int>("Soil.BC.Bot.Type", outflow);
-				std::cout<<"bcTopValues_.at(i) = getParam<Scalar>(Soil.BC.Top.Value, 0.); "<<bcBotType_<<std::endl;
 				
 				const auto& myParams = Parameters::paramTree();
 				myParams.report();
-				std::cout<<"Soil.BC.Top.Value "<<myParams.hasKey("Soil.BC.Top.Value")<<std::endl;
-				std::string myVal =myParams.get("Soil.BC.Top.Value", "0.");
-				std::cout<<"myVal "<<myVal<<std::endl;
-				double myVal2 =std::stod(myVal);
-				std::cout<<"myVal2 "<<myVal2<<" "<<i<<" "<<bcTopValues_.size()<<std::endl;
-				bcTopValues_.at(i) =  myVal2;//std::stod(;)myParams.get("Soil.BC.Top.Value", "0."));//getParam<double>("Soil.BC.Top.Value", 0.);
-				std::cout<<"bcBotValues_.at(i) = getParam<Scalar>(Soil.BC.Bot.Value, 0.);"<<std::endl;
-				bcBotValues_.at(i) =  std::stod(myParams.get("Soil.BC.Bot.Value", "0."));//getParam<double>("Soil.BC.Bot.Value", 0.);
+				bcTopValues_.at(i) =  getParam<double>("Soil.BC.Top.Value", 0.);
+				bcBotValues_.at(i) =  getParam<double>("Soil.BC.Bot.Value", 0.);
 				
 				//IC
 				std::cout<<"initialSoil_"<<std::endl;
@@ -174,10 +155,15 @@ public:
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
+		
+		
+		 v_maxL = getParam<Scalar>("Soil.v_maxL", 0.1); //Maximum reaction rate of enzymes targeting large polymers [d-1]
+		 K_L = getParam<Scalar>("Soil.K_L", 10e-6 ); //Half-saturation coefficients of enzymes targeting large polymers [g cm-3 soil]
+		 C_Oa = getParam<Scalar>("Soil.C_oa", 2.338e-06 ); //concentration of active oligotrophic biomass [g (C)cm-3(soil-1)]
 
 												  
 		// Output
-		std::string filestr = this->name() + "_1pnc.csv"; // output file
+		std::string filestr = this->name() + "_1p3cProblem.csv"; // output file
 		myfile_.open(filestr.c_str());
 		std::cout << "Richards1P3CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0) 
@@ -376,9 +362,9 @@ public:
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;//water pressure?
 			Scalar h = -toHead_(p); // todo why minus -pc?
-			std::cout<<"NumEqVector neumann() "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]<<std::endl;
+			//std::cout<<"NumEqVector neumann() "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]<<std::endl;
 			GlobalPosition ePos = element.geometry().center();
-			std::cout<<"ePos "<<dimWorld<<" "<<ePos[0]<<" "<<ePos[1]<<" "<<ePos[2]<<std::endl;
+			//std::cout<<"ePos "<<dimWorld<<" "<<ePos[0]<<" "<<ePos[1]<<" "<<ePos[2]<<std::endl;
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
 			Scalar krw = MaterialLaw::krw(params, s);//	The relative permeability for the wetting phase
 
@@ -478,7 +464,7 @@ public:
 					GlobalPosition ePos = element.geometry().center();
 					Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 					//!!! att component param set
-					static const Scalar d = getParam<Scalar>("Component"+std::to_string(i)+".LiquidDiffusionCoefficient"); // m2 / s
+					static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
 					flux[i] = de * (volVars.massFraction(0, i)*rho_-bcSTopValue_.at(i_s)*rho_) / dz + f * volVars.massFraction(0, i);
@@ -519,7 +505,7 @@ public:
 				case constantConcentration: {
 					GlobalPosition ePos = element.geometry().center();
 					Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
-					static const Scalar d = getParam<Scalar>("Component"+std::to_string(i)+".LiquidDiffusionCoefficient"); // m2 / s
+					static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
 					flux[i] =de * (volVars.massFraction(0, i)*rho_-bcSBotValue_.at(i_s)*rho_) / dz + f * volVars.massFraction(0, i);
@@ -578,18 +564,22 @@ public:
 		{			
 			if (source_[i] != nullptr) {
 				source[i] = source_[i]->at(eIdx)/scv.volume();
-   
-				
-			}else{source[i] = 0.;}
-												 
+			}else{source[i] = 0.;}												 
 		}		
+        const auto& volVars = elemVolVars[scv];
+		bioChemicalReaction(source, volVars);
+		
 		return source;
 	}
 	
 	
-	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars)
+	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars) const
 	{
-		
+		//depolymerisation large polymer to small polymers
+		Scalar C_L = volVars.moleFraction(h2OIdx, mucilIdx);//g/g I think
+		Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ;
+		q[soluteIdx] += F_depoly;
+		q[mucilIdx] -= F_depoly;
 		
 	}
 
@@ -635,38 +625,6 @@ public:
 		std::cout<<"template<class ElementVolumeVariables>"<<std::endl;
 		DUNE_THROW(Dune::InvalidStateException, "template<class ElementVolumeVariables>");
 
-		if (couplingManager_!=nullptr) { // compute source at every integration point
-
-			const Scalar soilP = couplingManager_->bulkPriVars(source.id())[pressureIdx];
-			const Scalar tipP = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
-			const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
-			const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-			const Scalar kr = spatialParams.kr(lowDimElementIdx);
-			const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
-			// relative soil permeability
-			const auto krel = 1.0;
-			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-			sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(tipP - soilP)*rho_;
-			sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
-
-			Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
-			Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
-			Scalar passiveUptake;
-			if (sourceValue[h2OIdx]>0) {
-				passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * tipC;
-			} else {
-				passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * soilC;
-			}
-			// Active uptake based on Michaelis Menten
-			Scalar activeUptake = -2 * M_PI * rootRadius * vMax_[soluteIdx]  * soilC * rho_/(km_[soluteIdx]  + soilC * rho_); // todo times root element length
-
-			// choose active or passive
-			sourceValue[soluteIdx] = (sigma_[soluteIdx] *activeUptake + (1.-sigma_[soluteIdx] )*passiveUptake) *source.quadratureWeight()*source.integrationElement();
-
-			source = sourceValue;
-		}
-
-		source = sourceValue; // return value as reference
 	}
 
 	/*!
@@ -718,11 +676,11 @@ public:
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				auto p = scvf.center();
 				if (onUpperBoundary_(p)) { // top
-				std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
+				//std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
 					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 					uc++;
 				} else if (onLowerBoundary_(p)) { // bottom
-				std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
+				//std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
 					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 					lc++;
 				}
@@ -776,11 +734,6 @@ public:
 	int bcBotType_;
 	std::vector<double> bcTopValues_ = std::vector<double>(1);
 	std::vector<double> bcBotValues_ = std::vector<double>(1);
-
-																  
-													
-														   
-														  
 
 	std::vector<int> bcSTopType_ = std::vector<int>(numSolutes); // one solute
 	std::vector<int> bcSBotType_ = std::vector<int>(numSolutes);
@@ -844,7 +797,16 @@ private:
 	std::vector<Scalar> b_ = std::vector<Scalar>(numSolutes); // buffer power
 	std::vector<Scalar> freundlichK_ = std::vector<Scalar>(numSolutes); // Freundlich parameters
 	std::vector<Scalar> freundlichN_ = std::vector<Scalar>(numSolutes);
-	Scalar bulkDensity_ = 1.4; // TODO check with Mai, buffer power (1+b) or b
+	Scalar bulkDensity_ = 1.4;//g/cm3 // TODO check with Mai, buffer power (1+b) or b
+	
+	Scalar v_maxL = 0.1; //Maximum reaction rate of enzymes targeting large polymers [d-1]
+	Scalar K_L = 10e-6 ; //Half-saturation coefficients of enzymes targeting large polymers [g cm-3 soil]
+	Scalar C_Oa = 2.338e-06 ; //concentration of active oligotrophic biomass [g (C)cm-3(soil-1)]
+	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) => 1.67*10-7 *bulkDensity_ g/cm3
+	
+	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
+	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  
+	//must be g/cm^3 (you already mentioned that this was not clear).
 
 };
 

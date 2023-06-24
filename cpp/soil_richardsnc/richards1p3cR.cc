@@ -42,6 +42,7 @@
  * Some small adaption to <dumux/nonlinear/newtonsolver.hh>, which is the only nonlinear solver available.
  * The adaption is disabled per default (parameter EnableChop = false)
  */
+#include <dumux/common/parameters.hh>
 #include <dumux/common/timeloop.hh>
 #include <dumux/assembly/fvassembler.hh> // assembles residual and Jacobian of the nonlinear system
 
@@ -49,8 +50,8 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "richards1p3cproblemReaction.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties_3c.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -61,7 +62,7 @@ int main(int argc, char** argv) //try
     using namespace Dumux;
 
     // define the type tag for this problem
-    using TypeTag = Properties::TTag::Richards2CBox; // Richards2CCC, Richards2CBox, (TypeTag is defined in the problem class richardsproblem.hh)
+    using TypeTag = Properties::TTag::RichardsNCBox; // Richards2CCC, Richards2CBox, (TypeTag is defined in the problem class richardsproblem.hh)
 
     // initialize MPI, finalize is done automatically on exit
     const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -73,6 +74,13 @@ int main(int argc, char** argv) //try
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
+	const auto& myParams = Parameters::paramTree();
+	//myParams.report();
+	//const auto& paramKeys = myParams.getValueKeys();
+	// for (int i = 1; i < paramKeys.size(); ++i)
+    // {
+		// std::cout<<paramKeys[i]<<" "<<myParams[paramKeys[i]]<<std::endl;
+	// }
     /*
      * Parses the parameters from the .input file into a static data member of the static class Parameters,
      * the parameter tree can then be accessed with Parameters::paramTree() .
@@ -136,12 +144,12 @@ int main(int argc, char** argv) //try
 
     // the problem (initial and boundary conditions)
     using Problem = GetPropType<TypeTag, Properties::Problem>;
-    auto problem = std::make_shared<Problem>(fvGridGeometry);
+	auto problem = std::make_shared<Problem>(fvGridGeometry);
 
     // the solution vector
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
     SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
-    problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
+	problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
     auto xOld = x;
 	std::cout<<"shape of solution matrix "<<x.size()<<" "<<x[0].size()<<std::endl;
 
@@ -170,13 +178,14 @@ int main(int argc, char** argv) //try
         timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(maxDt);
         try { // CheckPoints defined
+		
             std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
             // insert check points
             for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
                 timeLoop->setCheckPoint(p);
             }
         } catch(std::exception& e) {
-            std::cout<< "richards1p2c.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+            std::cout<< "richards1p3c.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
         }
     } else { // static
     }
@@ -187,7 +196,7 @@ int main(int argc, char** argv) //try
     using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
     vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
     IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
-    vtkWriter.write(0.0);
+    vtkWriter.write(0.0);//somehow throws error
     /**
      * home grown vkt output, rather uninteresting
      */
@@ -202,36 +211,47 @@ int main(int argc, char** argv) //try
     }
 
     // the linear solver
+	//std::cout<<"the linear solver"<<std::endl;
     using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available, files located in located in dumux/linear/*
     auto linearSolver = std::make_shared<LinearSolver>(fvGridGeometry->gridView(), fvGridGeometry->dofMapper());
 
     // the non-linear solver
+	//std::cout<<"the NON-linear solver"<<std::endl;
     using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
     NonLinearSolver nonLinearSolver = NonLinearSolver(assembler, linearSolver);
 
     // std::cin.ignore();  // wait for key (debugging)
+	//std::cout<<"tEnd>0? "<<tEnd<<std::endl;
     if (tEnd>0)  { // dynamic
         timeLoop->start();
 
         do {
             // set previous solution for storage evaluations
+			//std::cout<<"set previous solution for storage evaluations "<<xOld.size()<<" "<<xOld[0].size()<<std::endl;
             assembler->setPreviousSolution(xOld);
             // solve the non-linear system with time step control
+			//std::cout<<"solve the non-linear system with time step control"<<std::endl;
             nonLinearSolver.solve(x, *timeLoop);
             // make the new solution the old solution
+			//std::cout<<"make the new solution the old solution"<<std::endl;
             xOld = x;
+			//std::cout<<"advance time step"<<std::endl;
             gridVariables->advanceTimeStep();
             // advance to the time loop to the next step
+			//std::cout<<"advance to the time loop to the next step"<<std::endl;
             timeLoop->advanceTimeStep();
             // write vtk output (only at check points)
             //if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
             //    vtkWriter.write(timeLoop->time());
             //}
             // report statistics of this time step
+			std::cout<<"report statistics of this time step"<<std::endl;
             timeLoop->reportTimeStep();
             // set new dt as suggested by the newton solver
+			std::cout<<"set new dt as suggested by the newton solve"<<std::endl;
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
+			std::cout<<"pass current time to the problem"<<std::endl;
             problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
             problem->postTimeStep(x, *gridVariables);
 			//DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
@@ -243,14 +263,12 @@ int main(int argc, char** argv) //try
 
     } else { // static
         // set previous solution for storage evaluations
-		std::cout<<"static simulation"<<std::endl;
         assembler->setPreviousSolution(xOld);
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
         problem->postTimeStep(x, *gridVariables);
         problem->writeBoundaryFluxes();
-		
     }
 
     ////////////////////////////////////////////////////////////
@@ -261,9 +279,8 @@ int main(int argc, char** argv) //try
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
-		
 		std::ofstream myfile_;
-		std::string filestr = problem->name() + "_1p2c_end.csv"; // output file
+		std::string filestr = problem->name() + "_1p3cR_end.csv"; // output file
 		myfile_.open(filestr.c_str());
 		for(int i = 0; i < x.size(); i++)
 		{
@@ -273,10 +290,8 @@ int main(int argc, char** argv) //try
 			} myfile_ << "\n";
 		}
 		myfile_.close();
-		
         DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
 }
-

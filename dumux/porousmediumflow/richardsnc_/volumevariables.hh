@@ -107,16 +107,15 @@ public:
         typename FluidSystem::ParameterCache paramCache;
         paramCache.updatePhase(fluidState_, 0);
 
-		//only needs to set it up once. no need to update.
         const int compIIdx = 0;
         for (unsigned int compJIdx = 0; compJIdx < ParentType::numFluidComponents(); ++compJIdx)
-		{
             if(compIIdx != compJIdx)
-			{
-				Scalar D = getParamFromGroup<Scalar>(std::to_string(compJIdx), "Component.LiquidDiffusionCoefficient", 1.0);
-                setDiffusionCoefficient_(compJIdx, D);				
-			}
-		}
+                setDiffusionCoefficient_(compJIdx,
+                                         FluidSystem::binaryDiffusionCoefficient(fluidState_,
+                                                                                 paramCache,
+                                                                                 0,
+                                                                                 compIIdx,
+                                                                                 compJIdx));
     }
 
     /*!
@@ -182,16 +181,16 @@ public:
 				}
 			}else{
 				fluidState.setMassFractionNC(0, priVars);
-				// std::cout<<"setMassFraction"<<std::endl<<"in ";
-				// for(int i = 0; i < priVars.size();i++)
-				// {
-					// std::cout<<priVars[i]<<" ";
-				// }std::cout<<std::endl<<"out ";
-				// for(int i = 0; i < priVars.size();i++)
-				// {
-					// std::cout<<fluidState.moleFraction_[0][i]<<" ";
-				// }std::cout<<std::endl;
-				// std::cout<<"averageMolarMass_ "<<fluidState.averageMolarMass_[0]<<" "<<fluidState.sumMoleFractions_[0]<<std::endl;
+				std::cout<<"setMassFraction"<<std::endl<<"in ";
+				for(int i = 0; i < priVars.size();i++)
+				{
+					std::cout<<priVars[i]<<" ";
+				}std::cout<<std::endl<<"out ";
+				for(int i = 0; i < priVars.size();i++)
+				{
+					std::cout<<fluidState.moleFraction_[0][i]<<" ";
+				}std::cout<<std::endl;
+				std::cout<<"averageMolarMass_ "<<fluidState.averageMolarMass_[0]<<" "<<fluidState.sumMoleFractions_[0]<<std::endl;
 			}
         }
 

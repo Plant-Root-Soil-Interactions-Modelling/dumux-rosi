@@ -377,9 +377,9 @@ public:
 			{
 				avgMolarMass = M1*value + X2*M2;
 			}
-			std::cout<<"averageMolarMass_Temp "<<avgMolarMass
-			<<" waterX "<<X2<<" comp1 "<<value<<" comp2 "<<0.<<std::endl;
-			std::cout<<"for AvgMM "<<M1<<" "<<M2<<std::endl;
+			// std::cout<<"averageMolarMass_Temp "<<avgMolarMass
+			// <<" waterX "<<X2<<" comp1 "<<value<<" comp2 "<<0.<<std::endl;
+			// std::cout<<"for AvgMM "<<M1<<" "<<M2<<std::endl;
 
 			moleFraction_[phaseIdx][compIdx] = value * avgMolarMass / M1;
 			moleFraction_[phaseIdx][1-compIdx] = 1.0-moleFraction_[phaseIdx][compIdx];
@@ -420,9 +420,9 @@ public:
 				currentAverageMolarMass += FluidSystem::molarMass(compJIdx) * values[compJIdx];
 			}		
 		
-			std::cout<<"averageMolarMass_Temp "<<currentAverageMolarMass
-			<<" waterX "<<values[0]<<" comp1 "<<values[1]<<" comp2 "<<values[2] <<std::endl;
-				std::cout<<"for AvgMM "<<FluidSystem::molarMass(0)<<" "<<FluidSystem::molarMass(1)<<std::endl;
+			// std::cout<<"averageMolarMass_Temp "<<currentAverageMolarMass
+			// <<" waterX "<<values[0]<<" comp1 "<<values[1]<<" comp2 "<<values[2] <<std::endl;
+				// std::cout<<"for AvgMM "<<FluidSystem::molarMass(0)<<" "<<FluidSystem::molarMass(1)<<std::endl;
 			Scalar sumSecondaryFractions = 0.0;
 			for (int compJIdx = 1; compJIdx < numComponents; ++compJIdx)
 			{

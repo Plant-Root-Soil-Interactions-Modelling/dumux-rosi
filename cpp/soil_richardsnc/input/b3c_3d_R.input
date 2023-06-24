@@ -1,0 +1,50 @@
+[Problem]
+Name = benchmark3d_2
+
+[TimeLoop]
+DtInitial =  1 # [s]
+TEnd = 3600 # day
+MaxTimeStepSize = 3600 # day [s] 
+
+[Soil.Grid]
+UpperRight = 0.05 0.05 0
+LowerLeft = -0.05 -0.05 -0.53
+# Cells = 1 1 4
+ Cells = 9 9 52
+
+[Soil.BC.Top]
+Type = 2 # constant flux
+Value = -0.5 # [cm day-1]
+# SType = 2 # SType = 0 is default (outflow), with no flux, solute accumulates 
+
+[Soil.BC.Bot]
+Type = 5 # free drainage, should be = 1 constant pressure head, not implemented yet
+Value = 0 # [cm] fully saturated
+# SType = 2 # SType = 0 is default (outflow), with no flux, solute accumulates 
+
+
+[Soil.IC]
+Z = -0.53 0.
+P = 0 -53
+C1 = 0 0 0 0 0
+C1Z = -.53 -.25 -.2 -.15 0 
+C2 = 0 0 0 0 0.6
+C2Z = -.53 -.25 -.2 -.15 0 
+
+[Soil.VanGenuchten] 
+# Loam: 
+Qr = 0.08 
+Qs = 0.43 
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d]  hydrus verdoppelt
+
+[1.Component]
+LiquidDiffusionCoefficient = 2.3e-3
+Name = "smallPolymers"
+MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
+
+[2.Component]
+LiquidDiffusionCoefficient = 1e-100
+Name = "mucilage"
+MolarMass = 100e-3 # in kg/mol

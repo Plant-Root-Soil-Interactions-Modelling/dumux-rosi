@@ -11,7 +11,7 @@ namespace py = pybind11;
 
 #include "richards.hh" // includes solverbase
 
-#include "../soil_richardsnc/richards1pncproblem.hh" // the problem class
+#include "../soil_richardsnc/richards1p2cproblem.hh" // the problem class
 
 #include <dumux/linear/amgbackend.hh>
 #include <dumux/assembly/fvassembler.hh>
@@ -43,7 +43,7 @@ struct RichardsNCSPBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>
 
 
 template<class TypeTag> // Set Problem
-struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1PNCProblem<TypeTag>; };
+struct Problem<TypeTag, TTag::RichardsNCTT> { using type = Richards1P2CProblem<TypeTag>; };
 
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RichardsNCTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
@@ -65,7 +65,7 @@ struct UseMoles<TypeTag, TTag::RichardsNCTT> { static constexpr bool value = fal
 using RNCSPTT = Dumux::Properties::TTag::RichardsNCSPCC; // CC!
 using RichardsNCSPAssembler = Dumux::FVAssembler<RNCSPTT, Dumux::DiffMethod::numeric>;
 using RichardsNCSPLinearSolver = Dumux::AMGBackend<RNCSPTT>;
-using RichardsNCSPProblem = Dumux::Richards1PNCProblem<RNCSPTT>;
+using RichardsNCSPProblem = Dumux::Richards1P2CProblem<RNCSPTT>;
 
 PYBIND11_MODULE(rosi_richardsnc, m) {
     init_solverbase<RichardsNCSPProblem, RichardsNCSPAssembler, RichardsNCSPLinearSolver>(m, "BaseRichardsNCSP");

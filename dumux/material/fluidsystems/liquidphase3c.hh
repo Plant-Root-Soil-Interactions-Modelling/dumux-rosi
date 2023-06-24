@@ -360,8 +360,7 @@ public:
                                        int phaseIdx,
                                        int compIdx)
     {
-		static const Scalar D = getParamFromGroup<Scalar>(std::to_string(compIdx), "Component.LiquidDiffusionCoefficient", 1.0);
-        return D;
+        DUNE_THROW(Dune::InvalidStateException, "Not applicable: Diffusion coefficients");
     }
 
     using Base::binaryDiffusionCoefficient;
@@ -378,7 +377,7 @@ public:
     template <class FluidState>
     static Scalar binaryDiffusionCoefficient(const FluidState &fluidState, int phaseIdx, int compIIdx, int compJIdx)
     {
-        return diffusionCoefficient(fluidState, phaseIdx, compJIdx);
+        return diffusionCoefficient(phaseIdx, compJIdx);
     }//diffCoeff_[phaseIdx][compIdx]; == diffCoeff_[compIIdx][compJIdx]
 	
 
@@ -417,6 +416,7 @@ public:
         return heatCapacity(fluidState.temperature(phaseIdx),
                             fluidState.pressure(phaseIdx));
     }
+	
 };
 
 } // namespace FluidSystems
