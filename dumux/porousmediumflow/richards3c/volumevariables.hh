@@ -181,6 +181,16 @@ public:
 				}
 			}else{
 				fluidState.setMassFractionNC(0, priVars);
+				std::cout<<"setMassFraction"<<std::endl<<"in ";
+				for(int i = 0; i < priVars.size();i++)
+				{
+					std::cout<<priVars[i]<<" ";
+				}std::cout<<std::endl<<"out ";
+				for(int i = 0; i < priVars.size();i++)
+				{
+					std::cout<<fluidState.moleFraction_[0][i]<<" ";
+				}std::cout<<std::endl;
+				std::cout<<"averageMolarMass_ "<<fluidState.averageMolarMass_[0]<<" "<<fluidState.sumMoleFractions_[0]<<std::endl;
 			}
         }
 

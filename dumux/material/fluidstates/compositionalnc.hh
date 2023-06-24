@@ -118,10 +118,16 @@ public:
     {
         // calculate the mass fractions:
         // for "mass" models this is just a back calculation
-        return sumMoleFractions_[phaseIdx]
+        Scalar mssFr = sumMoleFractions_[phaseIdx]
                * moleFraction(phaseIdx, compIdx)
                * FluidSystem::molarMass(compIdx)
                / averageMolarMass_[phaseIdx];
+		
+		//std::cout<<"getmassFraction "<<compIdx<<" "<<sumMoleFractions_[phaseIdx]
+		// <<" "<<moleFraction(phaseIdx, compIdx)<<" "<<FluidSystem::molarMass(compIdx)
+		// <<" "<<averageMolarMass_[phaseIdx]<<std::endl;
+		
+		return mssFr;
     }
 
     /*!
@@ -351,29 +357,41 @@ public:
      *        and update the average molar mass \f$\mathrm{[kg/mol]}\f$ according
      *        to the current composition of the phase
      */
-    void setMassFraction(int phaseIdx, int compIdx, Scalar value)
+    void setMassFraction(int phaseIdx, int compIdx, Scalar value, int numComponents_ = numComponents )
     {
-		std::cout<<"in old setMassFraction"<<std::endl;
-        if (numComponents != 2)
+		bool doOld = false;
+		//std::cout<<"in old setMassFraction"<<std::endl;
+        if (numComponents_ != 2)
             DUNE_THROW(Dune::NotImplemented, "This currently only works for 2 components.");
         else
         {
-            // calculate average molar mass of the gas phase
-            Scalar M1 = FluidSystem::molarMass(compIdx);
-            Scalar M2 = FluidSystem::molarMass(1-compIdx);
-            Scalar X2 = 1.0-value;
-            Scalar avgMolarMass = M1*M2/(M2 + X2*(M1 - M2));
+			// calculate average molar mass of the gas phase
+			Scalar M1 = FluidSystem::molarMass(compIdx);
+			Scalar M2 = FluidSystem::molarMass(1-compIdx);
+			Scalar X2 = 1.0-value;
+			Scalar avgMolarMass;
+			if(doOld)
+			{
+				avgMolarMass = M1*M2/(M2 + X2*(M1 - M2));
+			}else
+			{
+				avgMolarMass = M1*value + X2*M2;
+			}
+			std::cout<<"averageMolarMass_Temp "<<avgMolarMass
+			<<" waterX "<<X2<<" comp1 "<<value<<" comp2 "<<0.<<std::endl;
+			std::cout<<"for AvgMM "<<M1<<" "<<M2<<std::endl;
 
-            moleFraction_[phaseIdx][compIdx] = value * avgMolarMass / M1;
-            moleFraction_[phaseIdx][1-compIdx] = 1.0-moleFraction_[phaseIdx][compIdx];
+			moleFraction_[phaseIdx][compIdx] = value * avgMolarMass / M1;
+			moleFraction_[phaseIdx][1-compIdx] = 1.0-moleFraction_[phaseIdx][compIdx];
 
-            // re-calculate the mean molar mass
-            sumMoleFractions_[phaseIdx] = 0.0;
-            averageMolarMass_[phaseIdx] = 0.0;
-            for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx) {
-                sumMoleFractions_[phaseIdx] += moleFraction_[phaseIdx][compJIdx];
-                averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compJIdx]*FluidSystem::molarMass(compJIdx);
-            }
+			// re-calculate the mean molar mass
+			sumMoleFractions_[phaseIdx] = 0.0;
+			averageMolarMass_[phaseIdx] = 0.0;
+			for (int compJIdx = 0; compJIdx < numComponents_; ++compJIdx) {
+				sumMoleFractions_[phaseIdx] += moleFraction_[phaseIdx][compJIdx];
+				averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compJIdx]*FluidSystem::molarMass(compJIdx);
+			}
+			
         }
     }
 	
@@ -385,29 +403,54 @@ public:
     template <class PrimaryVariables>
 	void setMassFractionNC(int phaseIdx, const PrimaryVariables& values_)
     {
-		auto compJIdx0value =  1. - std::reduce(values_.begin() +1, values_.end());
-		Dune::FieldVector<double, 3> values(values_);values[0] = compJIdx0value; //recompute real mass fraction for water
-		Scalar currentAverageMolarMass = 0.;//1st computation
-		for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
+		bool doOld = false;
+		if(doOld)
 		{
-			currentAverageMolarMass += FluidSystem::molarMass(compJIdx) * values[compJIdx];
-		}		
-		for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
+			Scalar value = values_[1];
+			setMassFraction(0, 1,  value, 2);
+			moleFraction_[0][2] = 0.;
+			
+		}else
 		{
-			Scalar M1 = FluidSystem::molarMass(compJIdx);
-			// [mj / mtot] * Mtot/Mj = nj/ntot
-			moleFraction_[phaseIdx][compJIdx] = values[compJIdx] * currentAverageMolarMass / M1;
-		}	
+			auto compJIdx0value =  1. - std::reduce(values_.begin() +1, values_.end());
+			Dune::FieldVector<double, 3> values(values_);values[0] = compJIdx0value; //recompute real mass fraction for water
+			Scalar currentAverageMolarMass = 0.;//1st computation
+			for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
+			{
+				currentAverageMolarMass += FluidSystem::molarMass(compJIdx) * values[compJIdx];
+			}		
 		
-		// re-calculate the mean molar mass
-		sumMoleFractions_[phaseIdx] = 0.0;
-		averageMolarMass_[phaseIdx] = 0.0;
-		for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx) {
-			sumMoleFractions_[phaseIdx] += moleFraction_[phaseIdx][compJIdx];
-			averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compJIdx]*FluidSystem::molarMass(compJIdx);
+			std::cout<<"averageMolarMass_Temp "<<currentAverageMolarMass
+			<<" waterX "<<values[0]<<" comp1 "<<values[1]<<" comp2 "<<values[2] <<std::endl;
+				std::cout<<"for AvgMM "<<FluidSystem::molarMass(0)<<" "<<FluidSystem::molarMass(1)<<std::endl;
+			Scalar sumSecondaryFractions = 0.0;
+			for (int compJIdx = 1; compJIdx < numComponents; ++compJIdx)
+			{
+				Scalar M1 = FluidSystem::molarMass(compJIdx);
+				// [mj / mtot] * Mtot/Mj = nj/ntot
+				moleFraction_[phaseIdx][compJIdx] = values[compJIdx] * currentAverageMolarMass / M1;
+				sumSecondaryFractions +=  values[compJIdx] * currentAverageMolarMass / M1;
+			}	
+			moleFraction_[phaseIdx][0] = 1.0 - sumSecondaryFractions;
+			
+			// re-calculate the mean molar mass
+			sumMoleFractions_[phaseIdx] = 0.0;
+			averageMolarMass_[phaseIdx] = 0.0;
+			for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx) {
+				sumMoleFractions_[phaseIdx] += moleFraction_[phaseIdx][compJIdx];
+				averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compJIdx]*FluidSystem::molarMass(compJIdx);
+			}
+			
+			// if(averageMolarMass_[phaseIdx] != 1.)
+			// {
+				// std::cout<<"averageMolarMass_[phaseIdx] != 1. "<<std::endl;
+				// for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
+				// {std::cout<<moleFraction_[0][compJIdx]<<" ";}std::cout<<std::endl;
+			// DUNE_THROW(Dune::InvalidStateException, "(averageMolarMass_[phaseIdx] != 1.)");
+			// //myErrorStop
+				
+			// }
 		}
-		
-		
     }
 	
 	
@@ -469,7 +512,7 @@ public:
     void setWettingPhase(int phaseIdx)
     { wPhaseIdx_ = phaseIdx; }
 
-protected:
+//protected:
     //! zero-initialize all data members with braces syntax
     std::array<std::array<Scalar, numComponents>, numPhases> moleFraction_ = {};
     std::array<std::array<Scalar, numComponents>, numPhases> fugacityCoefficient_ = {};

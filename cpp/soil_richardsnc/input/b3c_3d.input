@@ -26,9 +26,9 @@ Value = 0 # [cm] fully saturated
 [Soil.IC]
 Z = -0.53 0.
 P = 0 -53
-C1 = 0 0 0 0 0
+C1 = 0 0 0 0 .2
 C1Z = -.53 -.25 -.2 -.15 0 
-C2 = 0 0 0 0 .2
+C2 = 0 0 0 0 0
 C2Z = -.53 -.25 -.2 -.15 0 
 
 [Soil.VanGenuchten] 
