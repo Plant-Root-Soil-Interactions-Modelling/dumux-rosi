@@ -64,6 +64,7 @@ public:
      */
     InputFileFunction(std::string groupName, std::string nameY, std::string nameX, int dataIdx, int typeIdx,
         InputFileFunction* typeF = nullptr) {
+			//std::cout<<"InputFileFunction_A";
 
         nameY = groupName +"." + nameY; // full names
         nameX = groupName +"." + nameX; // full names
@@ -71,15 +72,22 @@ public:
         typeIdx_ = typeIdx;
         nameY_ = nameY;
         sinusoidal_ = (hasParam(groupName +".Sinusoidal")) ? Dumux::getParam<bool>(groupName +".Sinusoidal") : false;
+		//std::cout<<" nameY, nameX "<<nameY<<" "<<nameX<<" dataIdx_ "<<dataIdx_<<" typeIdx_ "<<typeIdx_<<std::endl;
         if (Dumux::hasParam(nameY)) {
             yy_ = Dumux::getParam<std::vector<double>>(nameY);
             if (yy_.size() == 1) {
                 type_ = constant;
             } else {
                 if (Dumux::hasParam(nameX)) {
+					
                     type_ = table;
                     xx_ = Dumux::getParam<std::vector<double>>(nameX);
                     table_.push_back( { xx_, yy_ });
+					// for(int ii = 0 ; ii < xx_.size(); ii++)
+					// {std::cout<<" "<<yy_[ii];}std::cout<<std::endl;
+					// for(int ii = 0 ; ii < xx_.size(); ii++)
+					// {std::cout<<" "<<xx_[ii];}std::cout<<std::endl;
+				
                 } else {
                     if (typeF != nullptr) {
                         type_ = perTypeIFF;
@@ -209,6 +217,12 @@ public:
             return fs*yy_[0];
         }
         case table: {
+			// if(nameY_ != "Soil.IC.P")
+			// {
+				// std::cout<<"inputfile.f "<<x<<"\n";
+				// for(int ii = 0 ; ii <table_[0].first.size();ii++){std::cout<<table_[0].first[ii]<<" ";}std::cout<<std::endl;
+				// for(int ii = 0 ; ii <table_[0].second.size();ii++){std::cout<<table_[0].second[ii]<<" ";}std::cout<<std::endl;
+			// }
             return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
         }
         case data: {
@@ -328,7 +342,11 @@ public:
         }
         switch (type_) {
         case(constant): std::cout << "InputFileFunction: "<< nameY_ << ": Constant"<< s << "\n"; break;
-        case(table): std::cout << "InputFileFunction: "<< nameY_ << ": Table" << s << "\n";  break;
+        case(table): 
+		{
+			std::cout << "InputFileFunction: "<< nameY_ << ": Table" << s << "\n";  break;
+			
+		}
         case(data): std::cout << "InputFileFunction: "<< nameY_ << ": Data from Grid at index "<< dataIdx_ << s << "\n"; break;
         case(perType): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from Grid at index "<< typeIdx_ << s << "\n"; break;
         case(perTypeIFF): std::cout << "InputFileFunction: "<< nameY_ << ": Constant per Type from InputFileFunction" << s << "\n"; break;
