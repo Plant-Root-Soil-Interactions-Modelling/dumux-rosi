@@ -148,7 +148,7 @@ public:
 			}
 			
 			
-			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); // s -> day
+			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
 			componentInput_.at(i).setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 			
 		}
@@ -157,9 +157,9 @@ public:
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 		
 		
-		 v_maxL = getParam<Scalar>("Soil.v_maxL", 0.1); //Maximum reaction rate of enzymes targeting large polymers [d-1]
-		 K_L = getParam<Scalar>("Soil.K_L", 10e-6 ); //Half-saturation coefficients of enzymes targeting large polymers [g cm-3 soil]
-		 C_Oa = getParam<Scalar>("Soil.C_oa", 2.338e-06 ); //concentration of active oligotrophic biomass [g (C)cm-3(soil-1)]
+		 v_maxL = getParam<Scalar>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
+		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ); //[mg cm-3 soil] => [kg m-3 soil]
+		 C_Oa = getParam<Scalar>("Soil.C_oa", C_Oa_); //[mg (C)cm-3(soil-1)] => [kg (C) m-3(soil-1)]
 
 												  
 		// Output
@@ -362,19 +362,21 @@ public:
 
 			Scalar s = volVars.saturation(h2OIdx);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
+			// = conductivity AT SATURATION. decrease with wat. content, via krw value 
+			//(see material/fluidmatrix interaction /vangenuchten.hh)
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;//water pressure?
 			Scalar h = -toHead_(p); // todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
 			
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
-			Scalar krw = MaterialLaw::krw(params, s);//	The relative permeability for the wetting phase
+			Scalar krw = MaterialLaw::krw(params, s);//	The relative permeability for the wetting phase [between 0 and 1]
 			
-			std::cout<<"NumEqVector neumann(), dimworld: "<<dimWorld<<", pos: ";
-			for(int ii = 0; ii < dimWorld; ii++){std::cout<<pos[ii]<<" ";}std::cout<<" ePos ";
-			for(int ii = 0; ii < dimWorld; ii++){std::cout<<ePos[ii]<<" ";}
-			std::cout<<"dz "<<dz<<", bcTopType_ "<<bcTopType_<<" "<<bcSTopType_.at(0)<<" "<<bcSTopType_.at(1);
-			std::cout<<" kc "<<kc<<" krw "<<krw<<std::endl;
+			//std::cout<<"NumEqVector neumann(), dimworld: "<<dimWorld<<", pos: ";
+			//for(int ii = 0; ii < dimWorld; ii++){std::cout<<pos[ii]<<" ";}std::cout<<" ePos ";
+			//for(int ii = 0; ii < dimWorld; ii++){std::cout<<ePos[ii]<<" ";}
+			//std::cout<<"dz "<<dz<<", bcTopType_ "<<bcTopType_<<" "<<bcSTopType_.at(0)<<" "<<bcSTopType_.at(1);
+			//std::cout<<" kc "<<kc<<" krw "<<krw<<std::endl;
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
@@ -480,11 +482,11 @@ public:
 
 				}
 				case constantFlux: {
-					flux[i] = -bcSTopValue_.at(i_s)*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*10; // g/cm2/day -> kg/(m²*s)
 					break;
 				}
 				case constantFluxCyl: {
-					flux[i] = -bcSTopValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
 					break;
 				}
 				case outflow: {
@@ -516,18 +518,19 @@ public:
 					static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
+					//diffusion + advection (according to wat flux computed above)
 					flux[i] =de * (volVars.massFraction(0, i)*rho_-bcSBotValue_.at(i_s)*rho_) / dz + f * volVars.massFraction(0, i);
 					//[kg_solute/(m²*s)] = [m2 / s] * ([kg_solute/kg_tot] * [kg_tot / m^3_tot] - kg_solute/ m^3_tot)/m + [kg_tot/(m²*s)] * [kg_solute/kg_tot]
 					// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, i) << ", " << bcSBotValue_ << ", " << flux[i]*1.e9  << "\n";
 					break;
 				}
 				case constantFlux: {
-					flux[i] = -bcSBotValue_.at(i_s)*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*10; // g/cm2/day -> kg/(m²*s)
 					//[kg_solute/(m²*s)] = [cm_solute/day] * (kg_tot / m^3_tot)* s/day * m/cm ??
 					break;
 				}
 				case constantFluxCyl: {
-					flux[i] = -bcSBotValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
 					break;
 				}
 				case outflow: {//?? free outflow??
@@ -584,7 +587,7 @@ public:
 	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars) const
 	{
 		//depolymerisation large polymer to small polymers
-		Scalar C_L = volVars.moleFraction(h2OIdx, mucilIdx);//g/g I think
+		Scalar C_L = volVars.moleFraction(h2OIdx, mucilIdx);//kg/kg I think
 		Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ;
 		q[soluteIdx] += F_depoly;
 		q[mucilIdx] -= F_depoly;
@@ -816,10 +819,13 @@ private:
 	std::vector<Scalar> freundlichN_ = std::vector<Scalar>(numSolutes);
 	Scalar bulkDensity_ = 1.4;//g/cm3 // TODO check with Mai, buffer power (1+b) or b
 	
-	Scalar v_maxL = 0.1; //Maximum reaction rate of enzymes targeting large polymers [d-1]
-	Scalar K_L = 10e-6 ; //Half-saturation coefficients of enzymes targeting large polymers [g cm-3 soil]
-	Scalar C_Oa = 2.338e-06 ; //concentration of active oligotrophic biomass [g (C)cm-3(soil-1)]
-	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) => 1.67*10-7 *bulkDensity_ g/cm3
+	Scalar v_maxL_ = 0.01; //Maximum reaction rate of enzymes targeting large polymers [d-1]
+	Scalar K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mg cm-3 soil]
+	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mg (C)cm-3(soil-1)]
+	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) * *bulkDensity_ g/cm3
+	Scalar v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
+	Scalar K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil]
+	Scalar C_Oa  ; //concentration of active oligotrophic biomass [kg (C)m-3(soil-1)]
 	
 	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
 	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  

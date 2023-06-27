@@ -7,27 +7,38 @@ TEnd = 3600
 DtInitial =  1 # [s]
 MaxTimeStepSize = 3600 # 10 days [s]
 [Soil.Grid]
-UpperRight = 0.0002
-LowerLeft = 0.006
+UpperRight = 0.0001
+LowerLeft = 0.01
 Cells = 100
 
 [Soil.BC.Top]
-Type = 2 # constant flux
+Type = 3 # constant flux
 Value = -0.5 # [cm day-1]
+C1Type = 3 # constant flux
+C1Value = 0.05 # [g/m2 day-1]
+C2Type = 3 # constant flux
+C2Value = 0.01 # [g/m2 day-1]
 
 [Soil.BC.Bot]
-Type = 5 # free drainage, should be = 1 constant pressure head, not implemented yet
-Value = 0 # [cm] fully saturated
+Type = 3 # constant flux
+Value = 0 # [g day-1]
+C1Type = 3 # constant flux
+C1Value = 0 # [g/cm2/day]
+C2Type = 3 # constant flux
+C2Value = 0 # [g/cm2/day]
 
 [Soil]
 CriticalPressure = -15000
+v_maxL = 0.01 #[d-1]
+K_L = 0.001 #[mg cm-3 soil]
+C_oa = 0.0002338 #[mg (C)cm-3(soil-1)]
 
 [Soil.IC]
 P = -100 # cm pressure head (initial guess)
 C1 = 0 0 0 0
-C1Z = 0.0002 0.0003 0.0004 0.0005 0.006 
-C2 = 0.6 0.6 0 0 0
-C2Z = 0.0002 0.0003 0.0004 0.0005 0.006 
+C1Z = 0.0001 0.0003 0.0004 0.0005 0.01 
+C2 = 0 0 0 0 0
+C2Z = 0.0001 0.0003 0.0004 0.0005 0.01
 
 
 [Soil.VanGenuchten] 
@@ -43,11 +54,11 @@ AddProcessRank = "false"
 AddVelocity = "false"
 
 [1.Component]
-LiquidDiffusionCoefficient = 2.3e-3
+LiquidDiffusionCoefficient = 6.713e-10 #m2 / s
 Name = "smallPolymers"
-MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
+MolarMass = 12e-3 
 
 [2.Component]
-LiquidDiffusionCoefficient = 0
+LiquidDiffusionCoefficient = 4.000e-12 #m2 / s
 Name = "mucilage"
-MolarMass = 100e-3 # in kg/mol
+MolarMass = 12e-3 # in kg/mol, not sure about that one though

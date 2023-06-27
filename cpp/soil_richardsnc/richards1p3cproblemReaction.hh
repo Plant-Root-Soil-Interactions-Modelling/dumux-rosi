@@ -700,6 +700,16 @@ public:
 	/**
 	 * debug info TODO make meaningful for 2c
 	 */
+	 
+    /*!
+     * extrusionFactor ==>
+     *
+     * This means the factor by which a lower-dimensional (1D or 2D)
+     * entity needs to be expanded to get a full dimensional cell. The
+     * default is 1.0 which means that 1D problems are actually
+     * thought as pipes with a cross section of 1 m^2 and 2D problems
+     * are assumed to extend 1 m to the back.
+     */
 	void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
 		NumEqVector source(0.0);
 		for (const auto& element : elements(this->fvGridGeometry().gridView())) {
@@ -709,6 +719,7 @@ public:
 			elemVolVars.bindElement(element, fvGeometry, sol);
 			for (auto&& scv : scvs(fvGeometry)) {
 				auto pointSources = this->scvPointSources(element, fvGeometry, elemVolVars, scv);
+				
 				pointSources *= scv.volume()*elemVolVars[scv].extrusionFactor();
 				source += pointSources;
 			}

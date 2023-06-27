@@ -117,6 +117,7 @@ public:
 //            }
         }
 		// IC
+		//conversions hard coded??
 		initialSoilP_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
 		initialSoilC_ = InputFileFunction("Soil.IC", "C", "CZ", 0., this->spatialParams().layerIFF()); // kg/m2
 //		for (int i=0; i<100; i++) {

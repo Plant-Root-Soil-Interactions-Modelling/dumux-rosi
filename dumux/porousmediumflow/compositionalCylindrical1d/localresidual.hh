@@ -152,6 +152,7 @@ public:
         // get upwind weights into local scope
         NumEqVector flux(0.0);
 
+		//default: use mass fraction => density == pure water density [kg/m^3]
         const auto massOrMoleDensity = [](const auto& volVars, const int phaseIdx)
         { return useMoles ? volVars.molarDensity(phaseIdx) : volVars.density(phaseIdx); };
 
@@ -161,24 +162,36 @@ public:
         // advective fluxes
         for (int phaseIdx = 0; phaseIdx < numPhases; ++phaseIdx)
         {
+			// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())
+			//see @dumux/flux/box/fickslaw.h (flux())
             auto diffusiveFluxes = fluxVars.molecularDiffusionFlux(phaseIdx);
-			diffusiveFluxes *= scvf.center()[0];
+			diffusiveFluxes *= scvf.center()[0];//factor according to the position along the 1d model
             for (int compIdx = 0; compIdx < numComponents; ++compIdx)
             {
                 // get equation index
                 const auto eqIdx = conti0EqIdx + compIdx;
 
-                // the physical quantities for which we perform upwinding
+                // the physical quantities for which we perform upwinding * relative_permability / viscosity
+				// relative_permability for the wetting phase of the medium implied by van Genuchten's parameterization.
+				// [kg_h2o/m^3_h2o] * kg_a/kg_h2o * [-] / [Pa*s] = [kg_a/m^3_h2o] / [Pa*s]
+				
                 const auto upwindTerm = [&massOrMoleDensity, &massOrMoleFraction, phaseIdx, compIdx] (const auto& volVars)
                 { return massOrMoleDensity(volVars, phaseIdx)*massOrMoleFraction(volVars, phaseIdx, compIdx)*volVars.mobility(phaseIdx); };
 
                 if (eqIdx != replaceCompEqIdx)
+				{
+					// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())
+					//see @dumux/flux/box/darcyslaw.h (flux())
+					// gives upwindTerm() * Ks [m/s] * dp [Pa] ==> kg_a / s
                     flux[eqIdx] += (fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0]); //
+				}
 
                 // diffusive fluxes (only for the component balances)
                 if(eqIdx != replaceCompEqIdx)
+				{
                     flux[eqIdx] += useMoles ? diffusiveFluxes[compIdx]
                                             : diffusiveFluxes[compIdx]*FluidSystem::molarMass(compIdx);
+				}
             }
 
             // in case one balance is substituted by the total mole balance
