@@ -2,14 +2,23 @@
 transpiration plot (one column, number of rows as number of filenames)
 """
 import sys;
-sys.path.append("../../../CPlantBox/");
-sys.path.append("../../../CPlantBox/src/")
+sys.path.append("../../../../CPlantBox/");
+sys.path.append("../../../../CPlantBox/src/")
+sys.path.append("../")
+sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../modules/");
+sys.path.append("/../data");
+sys.path.append("../../../../CPlantBox/src/functional/");
+sys.path.append("../../../../CPlantBox/src/rsml/");
+sys.path.append("../../../../CPlantBox/src/visualisation/")
+sys.path.append("../../../../CPlantBox/src/structural/")
+sys.path.append("../../../../CPlantBox/src/external/")
 import numpy as np
 import matplotlib.pyplot as plt
 from functional.xylem_flux import sinusoidal2
 import scenario_setup as scenario
 import evapotranspiration as evap
-
+import os
 
 """scenario"""
 year = 2019
@@ -18,17 +27,19 @@ genotype = "WT"
 name = "maize_exudate_2019"
 
 
-
+os.chdir("../")
+print(os.getcwd())
 soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
 sim_time = 50 #154   #  [day]
 x_, y_, lai = evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
 potential_trans = evap.get_transpiration(year, sim_time, area, lai, Kc)
+os.chdir("plotting/")
 
 rs_age = 1
 
 fnames = np.array(["transpiration_" + name ])
 fnames2 = np.array(["carbon_" + name])
-path = "results/"
+path = "../results/"
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -46,9 +57,9 @@ dt_ = 360 / (24 * 3600)
 
 # load data
 n = len(fnames)
-data = [np.load(path + n_ + ".npy")  for n_ in fnames]
+data = [np.load(path + n_ + ".npy", allow_pickle=True)  for n_ in fnames]
 try:
-    data2 = [np.load(path + n_ + ".npy")  for n_ in fnames2]
+    data2 = [np.load(path + n_ + ".npy", allow_pickle=True)  for n_ in fnames2]
 except:
     data2 = None
 

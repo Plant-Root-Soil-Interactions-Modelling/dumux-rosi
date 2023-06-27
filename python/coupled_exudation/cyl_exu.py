@@ -82,14 +82,14 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
     """
     start_time = timeit.default_timer()
     sx = s.getSolutionHead_()  # initial condition of soil [cm]
-    cc = s.getSolution_(1)  # kg/m3
+    cc = s.getSolution_(1)  # initial solute concentration [g/cm3]
     nodes = rs.rs.rs.nodes
     segs = rs.rs.rs.segments  # this is not nice (rs RhizoMappedSegments, rs.rs XylemFluxPython, rs.rs.rs MappedRootSystem(MappedSegments)
     
     seg2cell = rs.rs.rs.seg2cell
     cell2seg = rs.rs.rs.cell2seg
     mapping = rs.rs.rs.getSegmentMapper()
-    hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
+    hsb = np.array([sx[j] for j in mapping])  #soil bulk matric potential per segment
     cell_centers = s.getCellCenters_()
     cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
     seg_centers_z = rs.getSegmentZ() 
@@ -116,20 +116,7 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
     rho_ = np.divide(outer_r, np.array(inner_r))
     rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  
 
-    #rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    
-    #if type == 1:
-    #    rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
-    #else:
-    #    rsc = rs.get_inner_solutes(1)  # kg/m3
-
-    #if rank == 0:
-    #    print("\nINITIAL root-soil interface matric potentials", np.min(rsx), np.max(rsx), np.min(rsc), np.max(rsc))
-    #    rx = r.solve(rs_age, trans_f(rs_age + 0., dt), 0., rsx, cells = False, wilting_point = wilting_point, soil_k = [])
-    #else:
-    #    rx = None
-
-    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ = [], [], [], [], [], [], [], [] 
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_, mass_soil_c = [], [], [], [], [], [], [], [], []
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
     krs_ = []
@@ -148,7 +135,7 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
 
         t = i * dt  # current simulation time
         
-        sx = s.getSolutionHead_()  # richards.py
+        sx = s.getSolutionHead_()  # [cm] richards.py
         hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
         rsx = hsb.copy()  # initial values for fix point iteration
         
@@ -187,21 +174,13 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
             c += 1
             print('number of iterations', c, err) 
 
-        if type == 1:
-            rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
-            # print(np.min(rsc), np.max(rsc))
-        else:
-            rsc = rs.get_inner_solutes(1)  # kg/m3
-            #print('rsc',rsc)
-        comm.barrier()
-
         #get current exudation rate (g/day/root apex) for comp
-        kexu = scenario.exudation_rates(rs_age+t, comp)
-        sol_result = r.exudate_fluxes(rs_age+t, kexu)
+        kexu = scenario.exudation_rates(rs_age+t, comp) #[kg/(m2 day)]
+        sol_result = r.exudate_fluxes(rs_age+t, kexu) #[g/day/seg], [g/cm2/day/seg]
         
         if rank == 0:
             seg_fluxes = np.array(r.segFluxes(rs_age + t, rx, rsx, False, False, []))
-            seg_sol_fluxes = np.array(sol_result[0])  # [g/day]
+            seg_sol_fluxes = np.array(sol_result[0])  # [g/day/seg]
         else:
             seg_fluxes = None
             seg_sol_fluxes = None
@@ -258,8 +237,8 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
 
         water_content = np.array(s.getWaterContent_())  # theta per cell [1]
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-        solute_conc = np.array(s.getSolution_(1))
-        soil_solute = np.multiply(solute_conc, soil_water)
+        solute_conc = np.array(s.getSolution_(1)) #g/cm3
+        soil_solute = np.multiply(solute_conc, soil_water) # [g] 
 
         soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
         soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
@@ -275,29 +254,27 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
         """ 3b. calculate net fluxes """
         wall_netfluxes = timeit.default_timer()
         water_content = np.array(s.getWaterContent_())
-        new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
+        new_soil_water = np.multiply(water_content, cell_volumes)  # [cm3], calculate net flux
         net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
-        #print('net_flux', net_flux) 
         for k, root_flux in soil_fluxes.items():
             net_flux[k] -= root_flux * dt
 
         """ 3c. calculate mass net fluxes """
-        solute_conc = np.array(s.getSolution_(1))
-        new_soil_solute = np.multiply(solute_conc, soil_water)
+        solute_conc = np.array(s.getSolution_(1)) #g/cm3 
+        new_soil_solute = np.multiply(solute_conc, new_soil_water) #[g] 
 
-        net_sol_flux = new_soil_solute - soil_solute  # change in water per cell [cm3]
-        #print('net_sol_flux', net_sol_flux) 
+        net_sol_flux = new_soil_solute - soil_solute  # change in solute per cell [g]
         for k, root_sol_flux in soil_sol_fluxes.items():
             net_sol_flux[k] += root_sol_flux * dt
         
-        soil_water = new_soil_water
-        soil_solute = new_soil_solute
+        soil_water = new_soil_water #[cm3]
+        soil_solute = new_soil_solute #[g]
 
         wall_netfluxes = timeit.default_timer() - wall_netfluxes
 
         """ remember results ... """
-        sx = s.getSolutionHead_()
-        cc = s.getSolution_(1)  # [kg/m3]
+        sx = s.getSolutionHead_() #[cm]
+        cc = s.getSolution_(1)  # [g/cm3]
         if rank == 0:
             sink = np.zeros(sx.shape)
             for k, v in soil_fluxes.items():
@@ -305,9 +282,10 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
             sink_.append(sink)  # cm3/day (per soil cell)
             x_.append(rs_age + t)  # day
             y_.append(np.sum(sink))  # cm3/day
-            c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
+            c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
             psi_s2_.append(sx)  # cm (per soil cell)
-            soil_c_.append(cc)  # [kg/m3]
+            soil_c_.append(cc)  # g/cm3
+            mass_soil_c.append(np.sum(new_soil_solute)) #[g]
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
             for j in range(0, 6):  # root types
@@ -336,16 +314,16 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
         #print('current root age', rs_age+i/240) 
         if (rs_age % 2 == 0) and (i/240 == 0.5):  # every 2.5 days i % (20 * 12) == 0
             # map concentration cylinders to 1mm grid in all directions 
-            xx_ = np.linspace(min_b[0], max_b[0], int(1*(max_b[0]-min_b[0]))) 
-            yy_ = np.linspace(min_b[1], max_b[1], int(1*(max_b[1]-min_b[1])))
-            zz_ = np.linspace(min_b[2],max_b[2], int(1*(max_b[2]-min_b[2])))
+            xx_ = np.linspace(min_b[0], max_b[0], int(10*(max_b[0]-min_b[0]))) 
+            yy_ = np.linspace(min_b[1], max_b[1], int(10*(max_b[1]-min_b[1])))
+            zz_ = np.linspace(min_b[2],max_b[2], int(10*(max_b[2]-min_b[2])))
             XX, YY, ZZ = np.meshgrid(xx_, yy_, zz_, indexing='ij')
-            C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu')
-            gridToVTK("results/vts/./exudate_day"+('{:03d}'.format(int(rs_age))), XX, YY, ZZ, pointData = {"exudate":C})
-            np.save("results/concentration/day"+("{:03d}".format(int(rs_age))), C)
+            C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu') #[g/cm3]
+            gridToVTK("results/vts/./exudate_day"+('{:03d}'.format(int(rs_age))), XX, YY, ZZ, pointData = {"Exudate concentration (g/cm3)":C}) 
+            np.save("results/concentration/day"+("{:03d}".format(int(rs_age))), C) 
 
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_, mass_soil_c
 

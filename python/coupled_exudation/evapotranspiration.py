@@ -9,6 +9,7 @@ sys.path.append("../../../../CPlantBox/src/")
 sys.path.append("../../../CPlantBox/src/functional/");
 from xylem_flux import sinusoidal2
 from scipy import interpolate
+import os
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -72,7 +73,7 @@ def get_transpiration(year, sim_time, area, f, Kc):
     #ax2.legend(lines + lines2, labels + labels2, loc='best')
     #plt.show()
 
-    label=r'$\sin (x)$'
+    #label=r'$\sin (x)$'
     return trans
 
 def net_infiltration(year, soil_type, genotype, sim_time, Kc):
@@ -81,6 +82,7 @@ def net_infiltration(year, soil_type, genotype, sim_time, Kc):
     sim_time += 1
 
     """ 0. load infiltration (precipitation + irrigation) """
+    print(os.getcwd()) 
     df = pd.read_csv("data_magda/Inf.csv")  # precipitation data
     yd1  = df["Inf_"+str(year)].loc[0: sim_time].values*0.1 #nmm/d - cm/d
     t_ = np.linspace(0, sim_time, yd1.shape[0] * 24)  # relative time in hours
