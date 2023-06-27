@@ -282,10 +282,10 @@ int main(int argc, char** argv) //try
 		std::ofstream myfile_;
 		std::string filestr = problem->name() + "_1p3cR_cyl_end.csv"; // output file
 		myfile_.open(filestr.c_str());
-		auto allnames = std::vector<std::string>{"P", "Cs", "Cl", "r"}
+		//auto allnames = std::vector<std::string>{"P", "Cs", "Cl", "r"}
 		for(int i = 0; i < x.size(); i++)
 		{
-			myfile_<<allnames[i]<<",\n";
+			//myfile_<<allnames[i]<<",\n";
 			for(int j = 0; j < x[i].size(); j++)
 			{
 				myfile_ << x[i][j] << ", ";

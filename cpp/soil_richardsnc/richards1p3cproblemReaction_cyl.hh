@@ -280,9 +280,6 @@ public:
         } else if (onLowerBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcBotType_ == constantPressure) {
                 bcTypes.setDirichlet(pressureIdx);//,conti0EqIdx
-			 
-														  
-												  
             }
 			for(int i = soluteIdx; i<numComponents_;i++)//solutes
 			{
@@ -568,29 +565,30 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 		NumEqVector source;
+		GlobalPosition pos = scv.center();
   
 															  
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
-				source[i] = source_[i]->at(eIdx)/scv.volume();
+				source[i] = source_[i]->at(eIdx)/scv.volume() * pos[0];
 			}else{source[i] = 0.;}												 
 		}		
         const auto& volVars = elemVolVars[scv];
-		bioChemicalReaction(source, volVars);
+		bioChemicalReaction(source, volVars, pos[0]);
 		
 		return source;
 	}
 	
 	
-	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars) const
+	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
 		//depolymerisation large polymer to small polymers
 		Scalar C_L = volVars.moleFraction(h2OIdx, mucilIdx);//kg/kg I think
 		Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ;
-		q[soluteIdx] += F_depoly;
-		q[mucilIdx] -= F_depoly;
+		q[soluteIdx] += F_depoly * pos0;
+		q[mucilIdx] -= F_depoly * pos0;
 		
 	}
 
