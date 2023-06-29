@@ -281,7 +281,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             set_all_sd(rs, 0.)
 
         rs.setGeometry(pb.SDF_PlantBox(np.abs(min_b[2]), max_b[0]*2, max_b[1]*2))
-        rs.initializeDB(5, 4)
+        rs.initializeLB(5, 4)
         rs.simulate(1., True)
         r = XylemFluxPython(rs)
 
