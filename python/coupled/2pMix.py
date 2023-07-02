@@ -23,4 +23,4 @@ else:
     os.makedirs(results_dir)
 
 
-launchUQR(directoryN,7, "dry","mix")
+launchUQR(directoryN,14, "wet","mix")

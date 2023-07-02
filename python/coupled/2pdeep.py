@@ -10,7 +10,6 @@ start_time_ = time.time()
 from uqrMaster_2p import launchUQR
 
     
-    
 directoryN = "/"+os.path.basename(__file__)[:-3]+"/"
 
 main_dir=os.environ['PWD']#dir of the file
@@ -23,4 +22,5 @@ else:
     os.makedirs(results_dir)
 
 
-launchUQR(directoryN,7, "dry","deep")
+launchUQR(directoryN,14, "wet","deep")
+

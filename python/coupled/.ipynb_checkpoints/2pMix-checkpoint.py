@@ -7,7 +7,7 @@ import time
 import psutil
 start_time_ = time.time()
 
-from uqrMaster import launchUQR
+from uqrMaster_2p import launchUQR
 
     
     
@@ -23,4 +23,4 @@ else:
     os.makedirs(results_dir)
 
 
-launchUQR(directoryN,7, "dry","mix")
+launchUQR(directoryN,14, "wet","mix")

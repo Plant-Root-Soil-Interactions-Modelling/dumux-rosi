@@ -1,0 +1,29 @@
+shape leaf 106 0 0 0
+an calc 0 0 0 8.0067e-05 6.63054e-05 0.000274357 0.241538  2.6398e-05 0.21 0
+forgco2 0 8e-06 0 1.5 0 0 2.6398e-05
+forJW, Jw 0 drout_in 4402.9 21.8233 16.1493 1010 18 1000
+forpg 0 0 -0 0 0 2 -4401.01 -4404.79 0 numleaf: 0
+diff Ev and lat fluw: 0
+fw.at(i) 0 fwtemp 0 fwold:0 very old 0 doWhat0 10 0
+shape leaf 107 0 0 0
+an calc 0 0 0 8.0067e-05 6.63054e-05 0.000274357 0.241538  2.6398e-05 0.21 0
+forgco2 0 8e-06 0 1.5 0 0 2.6398e-05
+forJW, Jw 0 drout_in 4406.67 21.8233 16.1493 1010 18 1000
+forpg 0 0 -0 0 0 2 -4404.79 -4408.56 0 numleaf: 1
+diff Ev and lat fluw: 0
+fw.at(i) 0 fwtemp 0 fwold:0 very old 0 doWhat0 10 0
+shape leaf 108 0 0 0
+an calc 0 0 0 8.0067e-05 6.63054e-05 0.000274357 0.241538  2.6398e-05 0.21 0
+forgco2 0 8e-06 0 1.5 0 0 2.6398e-05
+forJW, Jw 0 drout_in 4410.43 21.8233 16.1493 1010 18 1000
+forpg 0 0 -0 0 0 2 -4408.56 -4412.31 0 numleaf: 2
+diff Ev and lat fluw: 0
+fw.at(i) 0 fwtemp 0 fwold:0 very old 0 doWhat0 10 0
+shape leaf 109 0 0 0
+an calc 0 0 0 8.0067e-05 6.63054e-05 0.000274357 0.241538  2.6398e-05 0.21 0
+forgco2 0 8e-06 0 1.5 0 0 2.6398e-05
+forJW, Jw 0 drout_in 4414.18 21.8233 16.1493 1010 18 1000
+forpg 0 0 -0 0 0 2 -4412.31 -4416.05 0 numleaf: 3
+diff Ev and lat fluw: 0
+fw.at(i) 0 fwtemp 0 fwold:0 very old 0 doWhat0 10 0
+DoSun2012 fwtemp:0.760215, fwold:0.979584, fwVold:1, fwnew:2.7821

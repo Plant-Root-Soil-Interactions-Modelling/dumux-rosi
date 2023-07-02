@@ -1,7 +1,8 @@
 """ water movement within the root (static soil) """
 #directoryN = "/7to14dry/"
 import sys; 
-CPBdir = "../../../CPlantBox"
+#CPBdir = "../../../CPlantBox"
+CPBdir = "../../../../cpb3101/CPlantBox"
 sys.path.append(CPBdir+"/src");
 sys.path.append(CPBdir);
 sys.path.append("../../..");sys.path.append(".."); 
@@ -105,7 +106,7 @@ def setKrKx_xylem(r, TairC, RH): #inC
     kr_r1 = 7.9e-5  * hPa2cm 
     kr_r2 = 7.9e-5  * hPa2cm  
     kr_r3 = 6.8e-5  * hPa2cm 
-    l_kr = 0.8 #cm
+    l_kr = 1 #cm
     r.setKr([[kr_r0,kr_r1,kr_r2,kr_r0],[kr_s,kr_s ],[kr_l]], kr_length_=l_kr) 
     r.setKx([[kz_r0,kz_r1,kz_r2,kz_r0],[kz_s,kz_s ],[kz_l]])
     
@@ -192,6 +193,9 @@ def setKrKx_phloem(r): #inC
 def addParams(r,weatherInit):
     
     r.g0 = 8e-3
+    #print("r.gm",r.gm)
+    #r.gm = 0.5
+    #print("r.gm",r.gm)
     r.VcmaxrefChl1 =1.28#/2
     r.VcmaxrefChl2 = 8.33#/2
     r.a1 = 0.6/0.4#0.7/0.3#0.6/0.4 #ci/(cs - ci) for ci = 0.6*cs
@@ -218,6 +222,8 @@ def addParams(r,weatherInit):
     r.Gr_Y = 0.8
     r.CSTimin = 0.4
     r.surfMeso=0.0025
+    
+    r.psi_osmo_proto = -10000*1.0197 #schopfer2006
 
     r.cs = weatherInit["cs"]
 
@@ -237,7 +243,7 @@ def addParams(r,weatherInit):
     return r
     
 """ Parameters """
-def launchUQR(directoryN,simInit, condition,forPlants):
+def launchUQR(directoryN,simInit, simEnd,condition,forPlants):
     def write_file_array(name, data):
         name2 = 'results'+ directoryN+ name+ '_15pm.txt'
         with open(name2, 'a') as log:
@@ -272,12 +278,13 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         cs = 350e-6 #co2 paartial pressure at leaf surface (mol mol-1)
         #RH = 0.5 # relative humidity
         es =  6.112 * np.exp((17.67 * TairC_)/(TairC_ + 243.5))
-        RH = qair2rh(specificHumidity, es, Pair)
+        RH = 0.5#qair2rh(specificHumidity, es, Pair)
+        ea = es*RH
 
         pmean = theta2H(vgSoil, thetaInit)
 
         weatherVar = {'TairC' : TairC_,
-                        'Qlight': Q_,
+                        'Qlight': Q_,"es":es,"ea":ea,
                         'cs':cs, 'RH':RH, 'p_mean':pmean, 'vg':vgSoil}
         print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
         return weatherVar
@@ -285,27 +292,101 @@ def launchUQR(directoryN,simInit, condition,forPlants):
     weatherInit = weather(0)
     #simInit = 7
     simDuration = simInit # [day] init simtime
-    simMax =simInit+7
-    depth = 60
-    dt = 1/24 #1h
+    simMax =simEnd#simInit+20
+    depth = 35
+    dt = 1/24/60 #1h
     verbose = True
 
     # plant system 
     pl = pb.MappedPlant(seednum = 2) #pb.MappedRootSystem() #pb.MappedPlant()
     pl2 = pb.MappedPlant(seednum = 2) #pb.MappedRootSystem() #pb.MappedPlant()
     path = CPBdir+"/modelparameter/plant/"
-    name = "Triticum_aestivum_adapted_2021"#"wheat_uqr15" #"manyleaves"## "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
+    name = "Triticum_aestivum_test_2021"#"Triticum_aestivum_adapted_2021"#"wheat_uqr15" #"manyleaves"## "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010
 
     pl.readParameters(path + name + ".xml")
     pl2.readParameters(path + name + ".xml")
     
     if forPlants == "mix":
         for p in pl.getOrganRandomParameter(pb.root):
+            p.theta =  0#p.theta * 4
+            p.tropismT = 1
+            p.tropismS = p.tropismS*10
+            p.tropismN = p.tropismN*10
+        for p in pl2.getOrganRandomParameter(pb.root):
+            if p.subType ==1:
+                p.theta =  1.5#p.theta * 4
+                p.tropismT = 2
+                p.tropismS = p.tropismS*10
+                p.tropismN = p.tropismN*10
+            else:
+                p.theta =  0
+    if forPlants == "deep":
+        for p in pl.getOrganRandomParameter(pb.root):
+            p.theta =  0#p.theta * 4
+            p.tropismT = 1
+            p.tropismS = p.tropismS*10
+            p.tropismN = p.tropismN*10
+        for p in pl2.getOrganRandomParameter(pb.root):
+            p.theta =  0#p.theta * 4
+            p.tropismT = 1
+            p.tropismS = p.tropismS*10
+            p.tropismN = p.tropismN*10
+    if forPlants == "shallow":
+        for p in pl.getOrganRandomParameter(pb.root):
+            if p.subType ==1:
+                p.theta =  1.5#p.theta * 4
+                p.tropismT = 2
+                p.tropismS = p.tropismS*10
+                p.tropismN = p.tropismN*10
+            else:
+                p.theta =  0
+        for p in pl2.getOrganRandomParameter(pb.root):
+            if p.subType ==1:
+                p.theta =  1.5#p.theta * 4
+                p.tropismT = 2
+                p.tropismS = p.tropismS*10
+                p.tropismN = p.tropismN*10
+            else:
+                p.theta =  0
+                
+                
+    if forPlants == "mixOld":
+        for p in pl.getOrganRandomParameter(pb.root):
             p.theta =  p.theta * 2
             p.tropismS = p.tropismS/10
-    if forPlants == "deep":
+    if forPlants == "mixold2":
+        for p in pl.getOrganRandomParameter(pb.root):
+            p.theta =  p.theta * 2
+            p.tropismT = 1
+            p.tropismS = p.tropismS*100
+            p.tropismN = p.tropismN*100
+        for p in pl2.getOrganRandomParameter(pb.root):
+            p.tropismT = 0
+            p.tropismS = p.tropismS*100
+            p.tropismN = p.tropismN*100
+    if forPlants == "deepold2":
+        for p in pl.getOrganRandomParameter(pb.root):
+            p.theta =  p.theta * 2
+            p.tropismT = 1
+            p.tropismS = p.tropismS*100
+            p.tropismN = p.tropismN*100
+        for p in pl2.getOrganRandomParameter(pb.root):
+            p.theta =  p.theta * 2
+            p.tropismT = 1
+            p.tropismS = p.tropismS*100
+            p.tropismN = p.tropismN*100
+    if forPlants == "shallowold2":
+        for p in pl.getOrganRandomParameter(pb.root):
+            p.tropismT = 0
+            p.tropismS = p.tropismS*100
+            p.tropismN = p.tropismN*100
+        for p in pl2.getOrganRandomParameter(pb.root):
+            p.tropismT = 0
+            p.tropismS = p.tropismS*100
+            p.tropismN = p.tropismN*100
+    if forPlants == "deepOld":
         pass
-    if forPlants == "shallow":
+    if forPlants == "shallowOld":
         for p in pl.getOrganRandomParameter(pb.root):
             p.theta =  p.theta * 2
             p.tropismS = p.tropismS/10
@@ -334,10 +415,10 @@ def launchUQR(directoryN,simInit, condition,forPlants):
     pl2.simulate(simDuration, False)#, "outputpm15.txt")
     
     """ Coupling to soil """
-    min_b = [-6./2, -12./2, -61.]#distance between wheat plants
+    min_b = [-6./2, -12./2, -35.]#distance between wheat plants
     max_b = [6./2, 12./2, 0.]
-    cell_number = [12, 24, 61]#1cm3? 
-    layers = depth; soilvolume = (depth / layers) * 3 * 12
+    cell_number = [12, 24, 35]#1cm3? 
+    layers = depth; soilvolume = (depth / layers) * 6 * 12
     k_soil = []
     initial = weatherInit["p_mean"]#mean matric potential [cm] pressure head
 
@@ -370,6 +451,8 @@ def launchUQR(directoryN,simInit, condition,forPlants):
     
     r = addParams(r,weatherInit)
     r2 = addParams(r2,weatherInit)
+    
+    dtSoilpot = 0
 
 
     """ for post processing """
@@ -409,6 +492,7 @@ def launchUQR(directoryN,simInit, condition,forPlants):
 
 
     Ntbu = 1
+    Nt2bu = 1
     Q_in  = 0
     Q_out = 0
 
@@ -495,6 +579,7 @@ def launchUQR(directoryN,simInit, condition,forPlants):
     deltasucorgbu = np.array([])
     AnSum = 0
     Nt = len(r.plant.nodes) 
+    Nt2 = len(r2.plant.nodes) 
     Q_Rmbu      = np.array([0.])
 
     Q_Grbu      = np.array([0.])
@@ -535,10 +620,13 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         r = setKrKx_xylem(r, weatherX["TairC"], weatherX["RH"])
         r2 = setKrKx_xylem(r2, weatherX["TairC"], weatherX["RH"])
 
-        r.solve_photosynthesis(sim_time_ = simDuration, sxx_=sx, cells_ = True,RH_ = weatherX["RH"],
+        r.solve_photosynthesis(sim_time_ = simDuration, sxx_=sx, cells_ = True,ea_ = weatherX["ea"],es_=weatherX["es"],
             verbose_ = False, doLog_ = False,TairC_= weatherX["TairC"] )
-        r2.solve_photosynthesis(sim_time_ = simDuration, sxx_=sx, cells_ = True,RH_ = weatherX["RH"],
+        r2.solve_photosynthesis(sim_time_ = simDuration, sxx_=sx, cells_ = True,ea_ = weatherX["ea"],es_=weatherX["es"],
             verbose_ = False, doLog_ = False,TairC_= weatherX["TairC"] )
+        
+        
+        
 
         #trans = np.array(r.outputFlux)
         """ dumux """    
@@ -580,6 +668,9 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         if r.withInitVal and (len(Q_ST_init) ==0) :
             Q_ST_init = np.array(r.Q_init[0:Nt])
             Q_meso_init = np.array(r.Q_init[Nt:(Nt*2)])
+        #if r2.withInitVal and (len(Q_ST_init) ==0) :
+        #   Q_ST_init = np.array(r2.Q_init[0:Nt2])
+        #  Q_meso_init = np.array(r2.Q_init[Nt2:(Nt2*2)])
 
         #print("start pm_done")
         # sys.stdout = save_stdout
@@ -589,6 +680,7 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         Q_Rm    = np.array(r.Q_out[(Nt*2):(Nt*3)])
         Q_Exud  = np.array(r.Q_out[(Nt*3):(Nt*4)])
         Q_Gr    = np.array(r.Q_out[(Nt*4):(Nt*5)])
+        Q_Gr_2    = np.array(r2.Q_out[(Nt2*4):(Nt2*5)])
         Q_Gr4       = Q_Gr[np.where(ot_4phloem==4)[0]]#Q_Gr4     - Q_Gr4bu
         Q_Gr3       = Q_Gr[np.where(ot_4phloem==3)[0]]#Q_Gr3     - Q_Gr3bu
         Q_Gr2       = Q_Gr[np.where(ot_4phloem==2)[0]]#Q_Gr2     - Q_Gr2bu
@@ -835,7 +927,10 @@ def launchUQR(directoryN,simInit, condition,forPlants):
 
         #write_file_array("length_blade", length_blade)
         write_file_array("ots", ots)
-        write_file_array("soilWatPot", sx)
+        dtSoilpot += dt
+        if dtSoilpot == 1/24:
+            write_file_array("soilWatPot", sx)
+            dtSoilpot = 0
         write_file_array("fluxes", fluxes)#cm3 day-1
         write_file_array("volST", volST)
         write_file_array("volOrg",  volOrg) #with epsilon
@@ -863,12 +958,21 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         write_file_array("Q_meso", Q_meso)
         write_file_array("Q_Rm", Q_Rm)
         write_file_array("Q_Exud", Q_Exud)
+        
+        
+        write_file_array("Q_Gr_2", Q_Gr_2)
+        write_file_array("psiXyl2", r2.psiXyl)
+        write_file_array("trans2", r2.Ev)
+        write_file_array("transrate2",r2.Jw)
+        
         write_file_array("Q_Gr", Q_Gr)
         write_file_array("psiXyl", r.psiXyl)
         write_file_array("trans", r.Ev)
         write_file_array("transrate",r.Jw)
         leavesSegs = np.where(ots[1:] ==4)
         fluxes_leaves = fluxes[leavesSegs]
+        write_file_float("transTot", sum(np.array(r.Ev)*dt))
+        write_file_float("transTot2", sum(np.array(r2.Ev)*dt))
         if (min(r.Ev) < 0) or (min(r.Jw) < 0) or (min(fluxes_leaves)<0):
             print("leaf looses water", min(r.Ev),min(r.Jw), min(fluxes_leaves))
             raise Exception
@@ -905,6 +1009,7 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         write_file_array("subTypes ", subTypes)
 
         Ntbu = Nt
+        Nt2bu = Nt2
         #Ntbu2 = Nt2
         orgs_all = r.plant.getOrgans(-1, True)
         NOrgbu = len(orgs_all)
@@ -912,10 +1017,6 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         volOrgbu = np.array([org.orgVolume(-1,False) for org in orgs_all])
         lenOrgbu = np.array([org.getLength(False) for org in orgs_all])
         Orgidsbu = np.array([org.getId() for org in orgs_all]) 
-
-        verbose_simulate = False
-        r.plant.simulate(dt, verbose_simulate)
-        r2.plant.simulate(dt,  verbose_simulate)
 
         volOrg2_type =  np.array([sum([org.orgVolume(-1,False) for org in r2.plant.getOrgans(2, True)]),
                                 sum([org.orgVolume(-1,False) for org in r2.plant.getOrgans(3, True)]), 
@@ -956,6 +1057,7 @@ def launchUQR(directoryN,simInit, condition,forPlants):
         orgs_all = r.plant.getOrgans(-1, True)
 
         Nt = len(r.plant.nodes)
+        Nt2 = len(r2.plant.nodes)
         NOrg = len(orgs_all)#r.plant.getNumberOfOrgans()#att! not same number
         sucOrgini_unit = np.concatenate((sucOrgini_unit, np.full(NOrg - NOrgbu, 0.)))
 

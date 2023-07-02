@@ -7,9 +7,8 @@ import time
 import psutil
 start_time_ = time.time()
 
-from uqrMaster import launchUQR
+from uqrMaster_2p import launchUQR
 
-    
     
 directoryN = "/"+os.path.basename(__file__)[:-3]+"/"
 
@@ -23,4 +22,5 @@ else:
     os.makedirs(results_dir)
 
 
-launchUQR(directoryN,7, "dry","mix")
+launchUQR(directoryN,14, "wet","deep")
+

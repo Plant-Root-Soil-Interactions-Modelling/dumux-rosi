@@ -11,7 +11,11 @@ from uqrMaster import launchUQR
 
     
     
-directoryN = "/"+os.path.basename(__file__)[:-3]+"/"
+simDuration = sys.argv[1]
+condition = sys.argv[2]
+directoryN = "/"+os.path.basename(__file__)[:-3]+"/"+simDuration+condition+"/"
+
+simDuration = float(simDuration)
 
 main_dir=os.environ['PWD']#dir of the file
 results_dir = main_dir +"/results"+directoryN

@@ -1,0 +1,90 @@
+S1:[-7.30876160e-04 -7.42187506e-04  8.37095648e-04 -1.17029563e-03
+  3.58514196e-02 -9.38843441e-02 -3.07958413e-02 -6.12878601e-01
+ -8.98830874e-03  1.98508924e-02  1.86714621e-02  3.83994943e-03
+  3.58514196e-02  7.65147668e-06 -2.87906517e-03 -1.07364062e-02]
+S1_conf:[nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ST:[1.46664098e-04 2.39943057e-04 2.06470691e-04 1.77989551e-03
+ 3.72529393e-01 6.27841658e+00 9.50353641e-01 1.46538467e+02
+ 3.70958188e-02 1.78040321e-01 1.55822085e-01 2.87320374e-03
+ 3.72529393e-01 2.36097432e-08 2.02657643e-03 4.56710781e-02]
+ST_conf:[nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+S2:[[            nan  7.30016883e-03  7.30016883e-03  7.30016883e-03
+   7.30016883e-03  7.30016883e-03  7.30016883e-03  7.30016883e-03
+   7.30016883e-03  7.30016883e-03  7.30016883e-03  7.30016883e-03
+   7.30016883e-03  7.30016883e-03  7.30016883e-03  7.30016883e-03]
+ [            nan             nan -5.35617843e-04 -5.35617843e-04
+  -5.35617843e-04 -5.35617843e-04 -5.35617843e-04 -5.35617843e-04
+  -5.35617843e-04 -5.35617843e-04 -5.35617843e-04 -5.35617843e-04
+  -5.35617843e-04 -5.35617843e-04 -5.35617843e-04 -5.35617843e-04]
+ [            nan             nan             nan -2.43227281e-03
+  -2.43227281e-03 -2.43227281e-03 -2.43227281e-03 -2.43227281e-03
+  -2.43227281e-03 -2.43227281e-03 -2.43227281e-03 -2.43227281e-03
+  -2.43227281e-03 -2.43227281e-03 -2.43227281e-03 -2.43227281e-03]
+ [            nan             nan             nan             nan
+  -6.09373778e-02 -6.09373778e-02 -6.09373778e-02 -6.09373778e-02
+  -6.09373778e-02 -6.09373778e-02 -6.09373778e-02 -6.09373778e-02
+  -6.09373778e-02 -6.09373778e-02 -6.09373778e-02 -6.09373778e-02]
+ [            nan             nan             nan             nan
+              nan  1.68095732e+01  6.22220309e+00 -2.32664775e-01
+  -2.29238791e-01 -2.30162196e-01  2.00508766e-01 -2.30132646e-01
+  -2.32664775e-01 -2.29357021e-01 -2.30694061e-01 -2.29887689e-01]
+ [            nan             nan             nan             nan
+              nan             nan  1.36732182e-01  1.36732182e-01
+   1.36732182e-01  1.36732182e-01  1.36732182e-01  1.36732182e-01
+   1.36732182e-01  1.36732182e-01  1.36732182e-01  1.36732182e-01]
+ [            nan             nan             nan             nan
+              nan             nan             nan  4.86951680e-02
+   4.86951680e-02  4.86951680e-02  4.86951680e-02  4.86951680e-02
+   4.86951680e-02  4.86951680e-02  4.86951680e-02  4.86951680e-02]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+   5.62579030e-01  5.62579030e-01  5.62579030e-01  5.62579030e-01
+   5.62579030e-01  5.62579030e-01  5.62579030e-01  5.62579030e-01]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan  7.70109816e-03  7.70109816e-03  7.70109816e-03
+   7.70109816e-03  7.70109816e-03  7.70109816e-03  7.70109816e-03]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan -4.64299480e-02 -4.64299480e-02
+  -4.64299480e-02 -4.64299480e-02 -4.64299480e-02 -4.64299480e-02]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan  8.63432696e-03
+   8.63432696e-03  8.63432696e-03  8.63432696e-03  8.63432696e-03]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan             nan
+  -8.93184950e-03 -8.93184950e-03 -8.93184950e-03 -8.93184950e-03]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan -8.20254305e-01 -8.20254305e-01 -8.20254305e-01]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan -8.83512673e-06 -8.83512673e-06]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan  3.80900129e-03]
+ [            nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan             nan
+              nan             nan             nan             nan]]
+S2_conf:[[nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]
+ [nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan]]

@@ -1,0 +1,168 @@
+extainr TairK 295.15 10 10.125 1 verbose 1
+set out put vec 10 10.125 10.125 1
+initializePM_1 
+PhloemFlux::waterLimitedGrowth_start
+start new org 1 0 10 2 1 1e+09 12 12.95 1.66667 0.125 0.125
+new dt 0.125
+rmax: 9.45 1
+Linit_realized 12 13.7259 0.194656 0.183653 0.0110036 13 0.950028
+nodeIds_.size() 2
+-1 12 
+		root or short organ 12 0
+do Fpdi 61 12 -8031.57 -10197 2039.4 0.9
+4Fpsi 2165.43 -101970.0154498
+		k 1  id:12 idh:-1 Flen:1 Fpsi:0.0154498 Rtip:1 Lseg:0 0.000170004
+		1 ot:2 Li:12.95 Le:13.7259 rorg 0.775904 0.0110036 0.775904
+		12 0.950028
+Flen_tot 1 1
+Flen_tot 0
+vol_tot 0.000170004 0.0110036 -0.0108336
+start new org 2 0 8.71875 2 4 1e+09 11 11.5687 1.45312 0.125 0.125
+new dt 0.125
+rmax: 9.45 1
+Linit_realized 11 12.386 0.175654 0.164064 0.0115899 12 0.568744
+nodeIds_.size() 2
+-1 23 
+		root or short organ 23 0
+do Fpdi 61 23 -8034.65 -10197 2039.4 0.9
+4Fpsi 2162.35 -101970.015072
+		k 1  id:23 idh:-1 Flen:1 Fpsi:0.015072 Rtip:1 Lseg:0 0.000174683
+		2 ot:2 Li:11.5687 Le:12.386 rorg 0.817245 0.0115899 0.817245
+		11 0.568744
+Flen_tot 1 1
+Flen_tot 0
+vol_tot 0.000174683 0.0115899 -0.0114152
+start new org 3 0 5.8125 2 4 1e+09 8 8.15662 0.96875 0.125 0.125
+new dt 0.125
+rmax: 9.45 1
+Linit_realized 8 9.07599 0.128713 0.115674 0.0130381 9 0.156625
+nodeIds_.size() 2
+-1 31 
+		root or short organ 31 0
+do Fpdi 61 31 -8044.71 -10197 2039.4 0.9
+4Fpsi 2152.29 -101970.0138388
+		k 1  id:31 idh:-1 Flen:1 Fpsi:0.0138388 Rtip:1 Lseg:0 0.000180432
+		3 ot:2 Li:8.15662 Le:9.07599 rorg 0.919365 0.0130381 0.919365
+		8 0.156625
+Flen_tot 1 1
+Flen_tot 0
+vol_tot 0.000180432 0.0130381 -0.0128577
+start new org 4 0 2.90625 2 4 1e+09 4 4.31814 0.484375 0.125 0.125
+new dt 0.125
+rmax: 9.45 1
+Linit_realized 4 5.35238 0.0759056 0.0612383 0.0146673 5 0.318136
+nodeIds_.size() 2
+-1 35 
+		root or short organ 35 0
+do Fpdi 61 35 -8058.07 -10197 2039.4 0.9
+4Fpsi 2138.93 -101970.012201
+		k 1  id:35 idh:-1 Flen:1 Fpsi:0.012201 Rtip:1 Lseg:0 0.000178956
+		4 ot:2 Li:4.31814 Le:5.35238 rorg 1.03425 0.0146673 1.03425
+		4 0.318136
+Flen_tot 1 1
+Flen_tot 0
+vol_tot 0.000178956 0.0146673 -0.0144884
+start new org 12 0 10 3 1 1e+09 2.51638 2.51638 0.675 0.125 0.125
+new dt 0.125
+stem: 3.375 35.25
+stemeffect of growth pause: 0
+rmax: 3.90625 1
+let's search for phytoID
+at 0 phytomer lengths max9 current 1.31638 at kids 2.31638 1
+(maxPhytoLen - currentPhytoLen > 1e-10) 0
+retained phytoID 0 1
+stem parameters 0 1
+phytomer lengths max
+9 9 9 
+phytomer lengths real
+0 0 0 
+pnis
+1 3 4 
+4growth areaSTEM 1 5 6
+lengthtot 2.51638 lengthAtlim 1
+ lengthAfterlim 2 Length_th 2.51638
+nodeIds_.size() 5
+36 49 57 58 59 seg lengths 5
+ (0-0);  (1-1);  (2-1);  (2.31638-0.316378);  (2.41638-0.1); 
+4growth area 1 5 6
+2.51638 1 1.51638
+Linit_realized 2.51638 2.51638 0.177872 0.177872 0 6 0
+nodeIds_.size() 5
+36 49 57 58 59 
+		long stem or leaf 49 36 1
+do Fpdi 61 49 -8072.55 -10197 2039.4 0.9
+4Fpsi 2124.45 -101970.0104253
+		k 1  id:49 idh:36 Flen:0.659466 Fpsi:0.0104253 Rtip:0 Lseg:1 0
+		12 ot:3 Li:2.51638 Le:2.51638 rorg 0 0 0
+		2.51638 0
+		long stem or leaf 57 49 0.316378
+do Fpdi 61 57 -8072.88 -10197 2039.4 0.9
+4Fpsi 2124.12 -101970.010385
+		k 2  id:57 idh:49 Flen:0.20864 Fpsi:0.010385 Rtip:0 Lseg:0.316378 0
+		12 ot:3 Li:2.51638 Le:2.51638 rorg 0 0 0
+		2.51638 0
+		long stem or leaf 58 57 0.1
+do Fpdi 61 58 -8072.98 -10197 2039.4 0.9
+4Fpsi 2124.02 -101970.0103728
+		k 3  id:58 idh:57 Flen:0.0659466 Fpsi:0.0103728 Rtip:0 Lseg:0.1 0
+		12 ot:3 Li:2.51638 Le:2.51638 rorg 0 0 0
+		2.51638 0
+		long stem or leaf 59 58 0.1
+do Fpdi 61 59 -8073.08 -10197 2039.4 0.9
+4Fpsi 2123.92 -101970.0103605
+		k 4  id:59 idh:58 Flen:0.0659466 Fpsi:0.0103605 Rtip:0 Lseg:0.1 0
+		12 ot:3 Li:2.51638 Le:2.51638 rorg 0 0 0
+		2.51638 0
+Flen_tot 1 0
+Flen_tot 2.22045e-16
+vol_tot 0 0 0
+start new org 88 1 8.69658 4 1 1e+09 23.6386 23.6386 2.31909 0.125 0.125
+new dt 0.125
+rmax: 19.2188 1
+4growth areaLEAF 0 1 13
+2 0 0
+leafGrowthZone 2
+nodeIds_.size() 2
+36 37 
+4growth area 0 1 13
+2 0 2
+Linit_realized 23.6386 24.1876 0.38699 0.375049 0.0119407 13 0
+nodeIds_.size() 2
+36 37 
+		long stem or leaf 37 36 2
+do Fpdi 61 37 -8074.35 -10197 2039.4 0.9
+4Fpsi 2122.65 -101970.0102048
+		k 1  id:37 idh:36 Flen:1 Fpsi:0.0102048 Rtip:0 Lseg:2 0.000121852
+		88 ot:4 Li:23.6386 Le:24.1876 rorg 0.548925 0.0119407 0.548925
+		23.6386 0
+Flen_tot 1 1
+Flen_tot 0
+vol_tot 0.000121852 0.0119407 -0.0118189
+start new org 89 3 3.38408 4 1 1e+09 13.2831 13.2831 0.902422 0.125 0.125
+new dt 0.125
+rmax: 19.2188 1
+4growth areaLEAF 0 1 8
+2 0 0
+leafGrowthZone 2
+nodeIds_.size() 2
+57 50 
+4growth area 0 1 8
+2 0 2
+Linit_realized 13.2831 14.6042 0.178523 0.149785 0.0287383 8 0
+nodeIds_.size() 2
+57 50 
+		long stem or leaf 50 57 2
+do Fpdi 61 50 -8075.14 -10197 2039.4 0.9
+4Fpsi 2121.86 -101970.010109
+		k 1  id:50 idh:57 Flen:1 Fpsi:0.010109 Rtip:0 Lseg:2 0.000290514
+		89 ot:4 Li:13.2831 Le:14.6042 rorg 1.32112 0.0287383 1.32112
+		13.2831 0
+Flen_tot 1 1
+Flen_tot 0
+vol_tot 0.000290514 0.0287383 -0.0284478
+start new org 13 0 1.1875 3 4 1e+09 0.912533 0.912533 0.2375 0.125 0.125
+new dt 0.125
+stem: 3.375 35.25
+stemeffect of growth pause: 0.125
+rmax: 3.90625 1
+let's search for phytoID
