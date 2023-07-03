@@ -179,10 +179,11 @@ def set_scenario(plant, dim, initial, soil, outer_method):
 
     """ outer radii """
     if outer_method == "voronoi":
-        outer_ = PerirhizalPython(rs).get_outer_radii_voronoi()
-        print("Voroni open or outside regions", np.count_nonzero(np.isnan(outer_)), "/", len(outer_), "are replaced by mean value")
-        outer_mean = np.nanmean(outer_) * np.ones(outer_.shape)
-        outer_[np.isnan(outer_)] = outer_mean[np.isnan(outer_)]
+        outer_ = PerirhizalPython(rs).get_outer_radii_bounded_voronoi()
+        if np.sum([np.isnan(outer_)]) > 0:
+            print("NANs in get_outer_radii_bounded_voronoi are replaced by mean", np.sum([np.isnan(outer_)]))
+            outer_mean = np.nanmean(outer_) * np.ones(outer_.shape)
+            outer_[np.isnan(outer_)] = outer_mean[np.isnan(outer_)]
         outer_ = outer_[1:]  # nodes to segs
     else:
         outer_ = PerirhizalPython(rs).get_outer_radii(outer_method)

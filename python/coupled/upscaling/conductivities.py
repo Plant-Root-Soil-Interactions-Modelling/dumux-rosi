@@ -20,6 +20,9 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     kx_sem = kx_sem * (24 * 3600 / 0.01012)  # cm2 / day; 1 pa = 0.0102 cm pressure head
     # print("kx_sem", kx_sem)
 
+    dist_kx_sem = np.sort(dist_kx_sem)
+    kx_sem = np.sort(kx_sem)
+
     dist_kr_sem = np.array([3.83499003558418, 5.78832892699593, 8.82224997723071, 14.8044305825092, 22.9202611065502,
                             29.8988298100679, 35.2452443718087, 44.893443484342, 45.6080841380127, 74.9213744206531, 84.926343572044])  # mm
     dist_kr_sem = dist_kr_sem / 10.  # mm -> cm
@@ -29,6 +32,9 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
 
     kr_sem = kr_sem * (24 * 3600 / 0.01012)  # cm2 / day; 1 pa = 0.0102 cm pressure head
     # print("kr_sem", kr_sem)
+
+    dist_kr_sem = np.sort(dist_kr_sem)
+    kr_sem = np.sort(kr_sem)
 
     growth_rates = [2.722, 0.3, 0.1]  # growth rates cm/day
     radii = [0.0325, 0.03, 0.02]
@@ -50,7 +56,8 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     r.setKxTables([kx00[:, 1], kx_sem, kx_sem, kx_sem, kx_sem, kx_sem],
                   [kx00[:, 0], age_kx_sem[0], age_kx_sem[1], age_kx_sem[2], age_kx_sem[0], age_kx_sem[0]])
 
-    r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
+    # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
+    # dd
 
 
 def _dist2age(dist, lgr, ages = []):
