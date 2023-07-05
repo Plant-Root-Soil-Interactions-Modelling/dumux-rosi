@@ -21,7 +21,7 @@ import cyl_exu
  Cylindric rhizosphere models, C exudate from finite volumes
 """
 
-fname = 'maize_exudate_2019'
+fname = 'L_WT_phenolics'
 
 """scenario"""
 year = 2019
@@ -41,7 +41,7 @@ trans_maize = evap.get_transpiration(year, sim_time, area, lai, Kc)
 wilting_point = -15000  # cm
 nc = 10  # dof+1
 logbase = 0.5  # according to Mai et al. (2019)
-mode = "dumux_dirichlet_nc"  # mode = "dumux_dirichlet_nc"
+mode = "dumux_dirichlet_nc"  
 
 """ initialize """
 start_time = timeit.default_timer()
@@ -75,7 +75,7 @@ for i in range(0, int(sim_time)):
     else:
         raise("unknown type")
 
-    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_, krs_, depth_,soil_c, c, mass_soil_c = cyl_exu.simulate_const(s, rs, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
+    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_, krs_, depth_,soil_c, c, mass_soil_c = cyl_exu.simulate_const(fname, s, rs, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
 
     if rank == 0:  # collect results
         psi_x_.extend(psi_x) #[cm]
