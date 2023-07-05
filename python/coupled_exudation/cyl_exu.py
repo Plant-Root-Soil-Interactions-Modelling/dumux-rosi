@@ -15,6 +15,7 @@ from scipy.optimize import fsolve
 import visualisation.vtk_plot as vp
 from pyevtk.hl import gridToVTK
 import scenario_setup as scenario
+import os 
 
 
 def open_sri_lookup(filename):
@@ -47,7 +48,7 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
         print("rho", np.min(rho_), np.max(rho_))  # 1. - 200.
     return rsx
 
-def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age, min_b, max_b, type):
+def simulate_const(fname, s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age, min_b, max_b, type):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -319,8 +320,13 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, rs_age,
             zz_ = np.linspace(min_b[2],max_b[2], int(10*(max_b[2]-min_b[2])))
             XX, YY, ZZ = np.meshgrid(xx_, yy_, zz_, indexing='ij')
             C  = rs.map_cylinders_solute(XX,YY,ZZ,'cyl_exu') #[g/cm3]
-            gridToVTK("results/vts/./exudate_day"+('{:03d}'.format(int(rs_age))), XX, YY, ZZ, pointData = {"Exudate concentration (g/cm3)":C}) 
-            np.save("results/concentration/day"+("{:03d}".format(int(rs_age))), C) 
+
+            if not os.path.exists('results/vts_'+fname):
+                os.makedirs('results/vts_'+fname)
+                os.makedirs('results/concentration_'+fname)
+            
+            gridToVTK("results/vts_"+fname+"/./exudate_day"+('{:03d}'.format(int(rs_age))), XX, YY, ZZ, pointData = {"Exudate concentration (g/cm3)":C}) 
+            np.save("results/concentration_"+fname+"/day"+("{:03d}".format(int(rs_age))), C) 
 
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
