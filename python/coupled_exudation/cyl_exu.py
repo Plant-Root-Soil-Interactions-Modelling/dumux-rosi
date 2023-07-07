@@ -313,7 +313,7 @@ def simulate_const(fname, s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, 
 
         #print('current time is',i/240)
         #print('current root age', rs_age+i/240) 
-        if (rs_age % 2 == 0) and (i/240 == 0.5):  # every 2.5 days i % (20 * 12) == 0
+        if (rs_age % 10 == 0) and (i/240 == 0.5):  # every 2.5 days i % (20 * 12) == 0
             # map concentration cylinders to 1mm grid in all directions 
             xx_ = np.linspace(min_b[0], max_b[0], int(10*(max_b[0]-min_b[0]))) 
             yy_ = np.linspace(min_b[1], max_b[1], int(10*(max_b[1]-min_b[1])))
