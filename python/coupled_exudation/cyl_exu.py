@@ -277,13 +277,13 @@ def simulate_const(fname, s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, 
         sx = s.getSolutionHead_() #[cm]
         cc = s.getSolution_(1)  # [g/cm3]
         if rank == 0:
+            sink = np.zeros(sx.shape)
+            for k, v in soil_fluxes.items():
+                sink[k] += v
             x_.append(rs_age + t)  # day
             y_.append(np.sum(sink))  # cm3/day
             c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
             mass_soil_c.append(np.sum(new_soil_solute)) #[g]
-            sink = np.zeros(sx.shape)
-            for k, v in soil_fluxes.items():
-                sink[k] += v
 
             if (rs_age % 10 == 0) and (i/240 == 0.5):
                 sink_.append(sink)  # cm3/day (per soil cell)
