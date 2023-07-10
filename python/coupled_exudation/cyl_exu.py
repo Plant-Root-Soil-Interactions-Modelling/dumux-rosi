@@ -277,16 +277,18 @@ def simulate_const(fname, s, rs, sri_table_lookup, sim_time, dt, trans_f, comp, 
         sx = s.getSolutionHead_() #[cm]
         cc = s.getSolution_(1)  # [g/cm3]
         if rank == 0:
-            sink = np.zeros(sx.shape)
-            for k, v in soil_fluxes.items():
-                sink[k] += v
-            sink_.append(sink)  # cm3/day (per soil cell)
             x_.append(rs_age + t)  # day
             y_.append(np.sum(sink))  # cm3/day
             c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
-            psi_s2_.append(sx)  # cm (per soil cell)
-            soil_c_.append(cc)  # g/cm3
             mass_soil_c.append(np.sum(new_soil_solute)) #[g]
+
+            if (rs_age % 10 == 0) and (i/240 == 0.5):
+                sink = np.zeros(sx.shape)
+                for k, v in soil_fluxes.items():
+                    sink[k] += v
+                sink_.append(sink)  # cm3/day (per soil cell)
+                psi_s2_.append(sx)  # cm (per soil cell)
+                soil_c_.append(cc)  # g/cm3
 
             ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
             for j in range(0, 6):  # root types
