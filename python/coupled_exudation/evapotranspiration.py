@@ -39,7 +39,10 @@ def get_transpiration(year, sim_time, area, f, Kc):
     k = 0.45
     t_ = np.linspace(0, len(etc) - 1, len(etc))
     tpot = np.multiply(etc*10, [(1. - np.exp(-k * f(t_[i]))) for i in range(0, len(etc))])
+    #print(np.max(tpot))
+    #sys.exit()
     evap = (etc*10 - tpot)
+    #print(np.max(tpot), np.max(evap), np.min(tpot), np.min(evap))
     trans = lambda t, dt:-tpot[int((t + dt / 2))] * area * sinusoidal2(t, dt)
 
 
@@ -106,6 +109,8 @@ def net_infiltration(year, soil_type, genotype, sim_time, Kc):
         
     df3 = pd.read_csv("data_magda/LAI_"+str(year)+".csv")  # LAI
     LAI =  df3[st+"_"+genotype].loc[0:sim_time].values
+    #print('LAI', np.max(LAI),np.min(LAI))
+    #sys.exit()
     f = interpolate.interp1d(np.linspace(0,sim_time, sim_time+1), LAI)
 
     """ 4. ETc -> Tpot, Evap """
@@ -120,8 +125,7 @@ def net_infiltration(year, soil_type, genotype, sim_time, Kc):
     for i in range(0, t_.shape[0] - 1):
         x_.extend([t_[i], t_[i + 1]])  # hour -> day
         y_.extend([net_inf[i], net_inf[i]])
-
-
+        
     #fig, ax = plt.subplots(3, figsize = (18, 10))
     #ax[0].bar(t_, precip * 10, width = 1. / 24., label = "precipiation")
     #ax[0].legend()
@@ -150,7 +154,7 @@ def decay(soil_sol_fluxes, dt, decay = 0.):
 
     for k in soil_sol_fluxes.keys():
         #print('before', soil_sol_fluxes[k], dt, decay) 
-        soil_sol_fluxes[k] = (1-decay*dt)*soil_sol_fluxes[k]
+        soil_sol_fluxes[k] = np.max(0, (1-decay*dt)*soil_sol_fluxes[k])
         #print('after', soil_sol_fluxes[k]) 
 
     return soil_sol_fluxes
