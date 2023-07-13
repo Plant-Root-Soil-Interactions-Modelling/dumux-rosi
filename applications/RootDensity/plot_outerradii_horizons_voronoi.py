@@ -36,17 +36,22 @@ def get_outer_radii_horizons(rootsystem):
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.soybean(0)  # 0 = envirotype
         xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
         cell_number = [38, 2, 150]  # (2cm)^3
+        cell_number = [1, 1, 150]  # (2cm)^3
+#        cell_number = [1, 1, 1]  # (2cm)^3
         simtime = 42  # 87.5
     elif rootsystem == "Maize":
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.maize(0)  # 0 = envirotype
         xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
         simtime = 56  #
-        cell_number = [38, 8, 159]  # (2cm)^3
+        # cell_number = [38, 8, 159]  # (2cm)^3
+        # cell_number = [1, 1, 159]  # (2cm)^3
+        cell_number = [1, 1, 1]  # (2cm)^3
     elif rootsystem == "Spring Barley":
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.springbarley(0)  # 0 = envirotype
         xml_name = "data/spring_barley_CF12.xml"  # root growth model parameter file
         simtime = 49  # 95
-        cell_number = [7, 2, 75]  # (2cm)^3
+        # cell_number = [7, 2, 75]  # (2cm)^3
+        cell_number = [1, 1, 1]  # (2cm)^3
     else:
         print("get_outer_radii_horizons() unknown rootsystem name", rootsystem)
         raise
@@ -60,10 +65,23 @@ def get_outer_radii_horizons(rootsystem):
 
     """ analysis """
     peri = PerirhizalPython(r)
-    outer_radii = peri.get_outer_radii_voronoi()
+    # outer_radii = peri.get_outer_radii_voronoi()
+    outer_radii = peri.get_outer_radii_bounded_voronoi()  ##############################################################################################
+
     print()
-    print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
+    print("r.nodes", len(r.nodes))
+    print("outer_radii", len(outer_radii))
+    print(np.argwhere(np.isnan(outer_radii)))
     print()
+
+    print()
+    print("outer_radii", np.nanmin(outer_radii), np.nanmax(outer_radii), "median", np.nanmedian(outer_radii), "mean", np.nanmean(outer_radii), np.nanstd(outer_radii))
+    print()
+
+    print("outer_radii", outer_radii.shape)
+    # for r in outer_radii:
+    #     print(r)
+
     ana = pb.SegmentAnalyser(r.mappedSegments())
     ana.addData("outer_r", outer_radii)
     # organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
@@ -81,6 +99,8 @@ def get_outer_radii_horizons(rootsystem):
     # outer0 = ana0.data["outer_r"]
     outer1 = ana1.data["outer_r"]
     outer2 = ana2.data["outer_r"]
+    print("outer1", np.nanmin(outer1), np.nanmax(outer1), "median", np.nanmedian(outer1), "mean_top", np.nanmean(outer1), np.nanstd(outer1))
+    print("outer2", np.nanmin(outer2), np.nanmax(outer2), "median", np.nanmedian(outer2), "mean_sub", np.nanmean(outer2), np.nanstd(outer2))  #
     print(len(outer_radii), len(outer1) + len(outer2))  # len(outer0) +
     return outer1, outer2  # outer0,
 
@@ -100,11 +120,13 @@ outer1, outer2 = get_outer_radii_horizons(rootsystem)  # outer0,
 outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
 outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
 axes.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+# axes.set_ylim([0., 4000.])
 axes.legend()
 axes.set_xlabel("Perirhizal outer radius [cm] using Voronoi diagrams ")
 axes.set_title(rootsystem)
-
 plt.tight_layout()
+plt.savefig('voronoi_' + rootsystem + '.png')
+
 plt.show()
 
 print("fin")

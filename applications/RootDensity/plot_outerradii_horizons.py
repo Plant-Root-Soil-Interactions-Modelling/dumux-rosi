@@ -45,8 +45,8 @@ def get_outer_radii_horizons(rootsystem, type_str):
         soil_, table_name, min_b, max_b, _, area, Kc = scenario.springbarley(0)  # 0 = envirotype
         xml_name = "data/spring_barley_CF12.xml"  # root growth model parameter file
         simtime = 49  # 95
-        cell_number = [7, 2, 75]  # (2cm)^3
-        # cell_number = [13, 3, 150]  # (2cm)^3
+        # cell_number = [6, 2, 75]  # (2cm)^3
+        cell_number = [13, 3, 150]  # (2cm)^3
     else:
         print("get_outer_radii_horizons() unknown rootsystem name", rootsystem)
         raise
@@ -81,6 +81,8 @@ def get_outer_radii_horizons(rootsystem, type_str):
     # outer0 = ana0.data["outer_r"]
     outer1 = ana1.data["outer_r"]
     outer2 = ana2.data["outer_r"]
+    print("mean_top", np.nanmean(outer1), np.nanstd(outer1))  # "outer1", np.nanmin(outer1), np.nanmax(outer1), "median", np.nanmedian(outer1),
+    print("mean_sub", np.nanmean(outer2), np.nanstd(outer2))  # "outer2", np.nanmin(outer2), np.nanmax(outer2), "median", np.nanmedian(outer2),
     print("all", len(outer_radii), "layer sum", len(outer1) + len(outer2))
     return outer1, outer2  # outer0
 
@@ -91,7 +93,7 @@ def get_outer_radii_horizons(rootsystem, type_str):
 topsoil = 30  # 10 * 2.54
 subsoil = 150  # 30 * 2.54 ############################################################ CHECK !!!!!
 
-rootsystem = "Maize"  # Maize, Soybean, "Spring Barley"
+rootsystem = "Spring Barley"  # Maize, Soybean, "Spring Barley"
 
 # fig, axes = plt.subplots(3, 1, figsize = (10, 18))
 fig, axes = plt.subplots(1, 1, figsize = (9, 8))
@@ -110,6 +112,7 @@ for i in range(0, len(types)):
     axes[i].set_title(rootsystem)
 
 plt.tight_layout()
+plt.savefig('horizons_' + rootsystem + '.png')
 plt.show()
 
 print("fin")

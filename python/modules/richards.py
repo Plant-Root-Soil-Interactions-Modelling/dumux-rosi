@@ -368,6 +368,11 @@ class RichardsWrapper(SolverWrapper):
         """ Van Genuchten regularisation parameters"""
         self.base.setRegularisation(pcEps, krEps)
 
+    def addVanGenuchtenDomain(self, min_, max_, layerIndex):
+        """ add Van Genuchten domain """
+        self.checkInitialized()
+        self.base.addVanGenuchtenDomain(min_[0] / 100., min_[1] / 100., min_[2] / 100., max_[0] / 100., max_[1] / 100., max_[2] / 100., layerIndex)
+
     def writeDumuxVTK(self, file_name):
         """Uses the Dumux VTK writer to write the current model output"""
         self.checkInitialized()

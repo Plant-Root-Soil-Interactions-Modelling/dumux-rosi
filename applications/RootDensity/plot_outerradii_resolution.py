@@ -54,100 +54,115 @@ def get_outer_radii(rootsystem, type_str, cell_number):
     r.initialize(False)
     r.simulate(simtime, False)
     peri = PerirhizalPython(r)
-    outer_radii = peri.get_outer_radii(type_str)
+    if type_str == "voronoi":
+        outer_radii = peri.get_outer_radii_bounded_voronoi()
+    else:
+        outer_radii = peri.get_outer_radii(type_str)
 
-    return outer_radii
+    seg2cell = np.array(r.getSegmentMapper())  # r.seg2cell as list
+
+    ana = pb.SegmentAnalyser(r.mappedSegments())
+    ana.addData("outer_r", outer_radii)
+    # organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
+    topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, max_b[2]]))
+    subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, min_b[2]]), pb.Vector3d([1e6, 1e6, -topsoil]))
+    # ana0 = pb.SegmentAnalyser(ana)
+    # ana0.crop(organic_layer)
+    # ana0.pack()
+    ana1 = pb.SegmentAnalyser(ana)
+    ana1.crop(topsoil_layer)
+    ana1.pack()
+    ana2 = pb.SegmentAnalyser(ana)
+    ana2.crop(subsoil_layer)
+    ana2.pack()
+    # outer0 = ana0.data["outer_r"]
+    outer1 = ana1.data["outer_r"]
+    outer2 = ana2.data["outer_r"]
+    print("outer1", np.nanmin(outer1), np.nanmax(outer1), "median", np.nanmedian(outer1), "mean_top", np.nanmean(outer1), np.nanstd(outer1))
+    print("outer2", np.nanmin(outer2), np.nanmax(outer2), "median", np.nanmedian(outer2), "mean_sub", np.nanmean(outer2), np.nanstd(outer2))  #
+    print(len(outer_radii), len(outer1) + len(outer2))  # len(outer0) +
+
+    return outer1, outer2, seg2cell
 
 
-fig, axes = plt.subplots(3, 2, figsize = (20, 18))
+topsoil = 30  # 10 * 2.54
+subsoil = 150  # 30 * 2.54
 
-# # """ maize """
-# cell_numbers = []
-# cell_numbers.append([76, 16, 150])
-# cell_numbers.append([38, 8, 75])
-# cell_numbers.append([19, 4, 38])
-# cell_numbers.append([1, 1, 150])
-# cell_numbers.append([1, 1, 75])
-# cell_numbers.append([1, 1, 38])
-#
-# stats = [["min", "max", "median", "mean", "std"]]
-# for i, cell_number in enumerate(cell_numbers):
-#     outer_r = get_outer_radii("maize", "surface", cell_number)
-#     outer_r = np.minimum(outer_r, 2)
-#     ax = axes[i % 3, i // 3]
-#     ax.hist(outer_r, bins = 40, rwidth = 0.9)
-#     # ax.set_xlim(0, 4)
-#     ax.set_ylim(0, 7000)
-#     ax.set_title("resolution " + str(cell_number))
-#     stats.append([np.min(outer_r), np.max(outer_r), np.median(outer_r), np.mean(outer_r), np.std(outer_r)])
-#
-# print(stats[0])
-# for i, cell_number in enumerate(cell_numbers):
-#     print("Summary", cell_number, ":")
-#     print(stats[i + 1])
-#
-# plt.title("Maize")
-# plt.tight_layout()
-# plt.show()
-
-# """ soybean """
-# cell_numbers = []
-# # cell_numbers.append([142, 6, 300])
-# cell_numbers.append([76, 3, 150])
-# cell_numbers.append([38, 2, 75])
-# cell_numbers.append([19, 1, 38])
-# cell_numbers.append([1, 1, 150])
-# cell_numbers.append([1, 1, 75])
-# cell_numbers.append([1, 1, 38])
-#
-# stats = [["min", "max", "median", "mean", "std"]]
-# for i, cell_number in enumerate(cell_numbers):
-#     outer_r = get_outer_radii("soybean", "surface", cell_number)
-#     outer_r = np.minimum(outer_r, 2)
-#     ax = axes[i % 3, i // 3]
-#     ax.hist(outer_r, bins = 40, rwidth = 0.9)
-#     # ax.set_xlim(0, 4)
-#     ax.set_ylim(0, 2000)
-#     ax.set_title("resolution " + str(cell_number))
-#     stats.append([np.min(outer_r), np.max(outer_r), np.median(outer_r), np.mean(outer_r), np.std(outer_r)])
-#
-# print(stats[0])
-# for i, cell_number in enumerate(cell_numbers):
-#     print("Summary", cell_number, ":"0)
-#     print(stats[i + 1])
-#
-# plt.title("Soybean")
-# plt.tight_layout()
-# plt.show()
-
-""" spring barley """
+""" maize """
 cell_numbers = []
-# cell_numbers.append([142, 6, 300])
-cell_numbers.append([13, 3, 150])
-cell_numbers.append([7, 2, 75])
-cell_numbers.append([3, 1, 38])
+cell_numbers.append([76, 16, 150])
+cell_numbers.append([38, 8, 75])
+cell_numbers.append([19, 4, 38])
 cell_numbers.append([1, 1, 150])
 cell_numbers.append([1, 1, 75])
 cell_numbers.append([1, 1, 38])
 
-stats = [["min", "max", "median", "mean", "std"]]
-for i, cell_number in enumerate(cell_numbers):
-    outer_r = get_outer_radii("springbarley", "surface", cell_number)
-    outer_r = np.minimum(outer_r, 2)
-    ax = axes[i % 3, i // 3]
-    ax.hist(outer_r, bins = 40, rwidth = 0.9)
-    # ax.set_xlim(0, 4)
-    ax.set_ylim(0, 1500)
-    ax.set_title("resolution " + str(cell_number))
-    stats.append([np.min(outer_r), np.max(outer_r), np.median(outer_r), np.mean(outer_r), np.std(outer_r)])
+for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
+    fig, axes = plt.subplots(3, 2, figsize = (20, 18))
+    stats = [["min", "max", "median", "mean", "std"]]
+    for i, cell_number in enumerate(cell_numbers):
+        outer1, outer2, seg2cell = get_outer_radii("maize", split_type, cell_number)
 
-print(stats[0])
-for i, cell_number in enumerate(cell_numbers):
-    print("Summary", cell_number, ":")
-    print(stats[i + 1])
+        # print("outer_r.shape", outer_r.shape)
+        # print("seg2cell.shape", seg2cell.shape)
+        # print("cell_ids", np.min(seg2cell), np.max(seg2cell))
+        # layer0 = outer_r[seg2cell == 140]
+        # print("layer0", len(layer0))
+        # print(layer0)
 
-plt.title("Soybean")
-plt.tight_layout()
-plt.show()
+        outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
+        outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
+        ax = axes[i % 3, i // 3]
+        # ax.hist(outer_r, bins = 40, rwidth = 0.9)
+        ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+        # ax.set_xlim(0, 4)
+        ax.set_ylim(0, 5000)
+        ax.set_title("Resolution {:g}x{:g}x{:g}".format(cell_number[0], cell_number[1], cell_number[2]))
+        stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
+                      np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+
+    print(stats[0])
+    for i, cell_number in enumerate(cell_numbers):
+        print("Summary", cell_number, ":")
+        print(stats[i + 1])
+
+    plt.tight_layout()
+    plt.savefig('res_maize_' + split_type + '.png')
+    plt.show()
+
+""" spring barley """
+# cell_numbers = []
+# cell_numbers.append([13, 3, 150])
+# cell_numbers.append([7, 2, 75])
+# cell_numbers.append([3, 1, 38])
+# cell_numbers.append([1, 1, 150])
+# cell_numbers.append([1, 1, 75])
+# cell_numbers.append([1, 1, 38])
+#
+# for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
+#     fig, axes = plt.subplots(3, 2, figsize = (20, 18))
+#     stats = [["min", "max", "median", "mean", "std"]]
+#     for i, cell_number in enumerate(cell_numbers):
+#         outer1, outer2, seg2cell = get_outer_radii("springbarley", split_type, cell_number)
+#         # outer_r = np.minimum(outer_r, 2)
+#         outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
+#         outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
+#         ax = axes[i % 3, i // 3]
+#         # ax.hist(outer_r, bins = 40, rwidth = 0.9)
+#         ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+#         # ax.set_xlim(0, 2)
+#         ax.set_ylim(0, 750)
+#         ax.set_title("Resolution {:g}x{:g}x{:g}".format(cell_number[0], cell_number[1], cell_number[2]))
+#         stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
+#                       np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+#
+#     print(stats[0])
+#     for i, cell_number in enumerate(cell_numbers):
+#         print("Summary", cell_number, ":")
+#         print(stats[i + 1])
+#
+#     plt.tight_layout()
+#     plt.savefig('res_springbarley_' + split_type + '.png')
+#     plt.show()
 
 print("fin")

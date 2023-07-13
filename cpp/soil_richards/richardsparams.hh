@@ -70,6 +70,7 @@ public:
         kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity [cm/day]
         std::transform(kc_.begin (), kc_.end (), kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from [cm/day] to [m/s]
         homogeneous_ = qr.size()==1; // more than one set of VG parameters?
+        three_ = false;
 
         phi_.resize(qr.size());
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
@@ -170,23 +171,44 @@ public:
     	}
     }
 
+    void addVanGenuchtenDomain(double minx, double miny, double minz, double maxx, double maxy, double maxz, int layerIndex) {
+        homogeneous_ = false;
+        three_ = true;
+        std::vector<double> minmax{ minx, miny, minz, maxx, maxy, maxz };
+        boxes.push_back(minmax);
+        layerIndices.push_back(layerIndex);
+    }
+
 private:
 
     //! returns the index of the soil layer
     size_t index_(const Element& element) const {
         if (homogeneous_) {
             return 0;
-        } else {
+        } else if (three_){ // use 3d min max boxes
+            auto mid = element.geometry().center();
+            int c = 0;
+            for (auto& v : boxes) {
+                if ((mid[0]>v[0]) and (mid[1]>v[1]) and(mid[2]>v[2]) and (mid[0]<v[3])and (mid[1]<v[4]) and (mid[2]<v[5])) {
+                    return layerIndices[c];
+                }
+                c++;
+            }
+            return 0;
+        } else { // use input file function
             auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar z = element.geometry().center()[dimWorld - 1];
             //std::cout << z << "\n";
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
-        }
+        } // add 3D things
     }
 
     std::vector<Scalar> phi_; // porosity
+    std::vector<std::vector<double>> boxes;
+    std::vector<int> layerIndices;
 
     bool homogeneous_; // soil is homogeneous
+    bool three_; // 3d
     InputFileFunction layer_;
     int layerIdx_; // index of layer data within the grid
 
