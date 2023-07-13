@@ -100,33 +100,33 @@ if __name__ == "__main__":
 
     print("1d vs 3d comparison plots were done with plot_sink3d.py")
 
-    # """ springbarley """
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["springbarley"]
-    # soil = ["hydrus_loam"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    #
-    # plot_sink1d(ax, method, plant, soil, outer_method)
-    # plt.savefig('sink1d_springbarley_loam.png')
-    #
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["springbarley"]
-    # soil = ["hydrus_clay"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    # plot_sink1d(ax, method, plant, soil, outer_method)
-    # plt.savefig('sink1d_springbarley_clay.png')
-    #
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["springbarley"]
-    # soil = ["hydrus_sandyloam"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    # plot_sink1d(ax, method, plant, soil, outer_method)
-    # plt.savefig('sink1d_springbarley_sandyloam.png')
+    """ springbarley """
+    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    method = ["sra"]
+    plant = ["springbarley"]
+    soil = ["hydrus_loam"]
+    outer_method = ["surface"]  # , "voronoi"]
 
-    # """ maize """
+    plot_sink1d(ax, method, plant, soil, outer_method)
+    plt.savefig('sink1d_springbarley_loam.png')
+
+    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    method = ["sra"]
+    plant = ["springbarley"]
+    soil = ["hydrus_clay"]
+    outer_method = ["surface"]  # , "voronoi"]
+    plot_sink1d(ax, method, plant, soil, outer_method)
+    plt.savefig('sink1d_springbarley_clay.png')
+
+    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    method = ["sra"]
+    plant = ["springbarley"]
+    soil = ["hydrus_sandyloam"]
+    outer_method = ["surface"]  # , "voronoi"]
+    plot_sink1d(ax, method, plant, soil, outer_method)
+    plt.savefig('sink1d_springbarley_sandyloam.png')
+
+    """ maize """
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     # method = ["sra"]
     # plant = ["maize"]
@@ -152,7 +152,8 @@ if __name__ == "__main__":
     # plot_sink1d(ax, method, plant,  soil,outer_method)
     # plt.savefig('sink1d_maize_sandyloam.png')
     #
-    # """ soybean """
+
+    """ soybean """
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     # method = ["sra"]
     # plant = ["soybean"]
@@ -177,5 +178,5 @@ if __name__ == "__main__":
     # plot_sink1d(ax, method, plant,  soil,outer_method)
     # plt.savefig('sink1d_soybean_sandyloam.png')
     #
-    # plt.show()
+    plt.show()
 

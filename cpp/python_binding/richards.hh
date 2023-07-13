@@ -265,6 +265,14 @@ public:
     	this->problem->setRegularisation(pcEps, krEps);
     }
 
+    /**
+     * forward to problem
+     */
+    virtual void addVanGenuchtenDomain(double minx, double miny, double minz, double maxx, double maxy, double maxz, int layerIndex)  {
+        this->checkInitialized();
+        this->problem->addVanGenuchtenDomain(minx, miny, minz, maxx, maxy, maxz, layerIndex);
+    }
+
 
     /**
      * Changes boundary condition in initialized problem (e.g. within the simulation loop)
@@ -353,11 +361,11 @@ void init_richards(py::module &m, std::string name) {
    .def("getVelocity1D", &Richards_::getVelocity1D)
    .def("writeDumuxVTK",&Richards_::writeDumuxVTK)
    .def("setRegularisation",&Richards_::setRegularisation)
+   .def("addVanGenuchtenDomain",&Richards_::addVanGenuchtenDomain)
    .def("setTopBC",&Richards_::setTopBC)
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)
    .def("setSBotBC",&Richards_::setSBotBC);
-
 }
 
 

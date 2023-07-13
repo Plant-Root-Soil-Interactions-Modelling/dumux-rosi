@@ -661,6 +661,14 @@ public:
     	this->spatialParams().setRegularisation(pcEps,krEps);
     }
 
+    /**
+     * Forwards to spatialParams
+     */
+    void addVanGenuchtenDomain(double minx, double miny, double minz, double maxx, double maxy, double maxz, int layerIndex) {
+        this->spatialParams().addVanGenuchtenDomain(minx, miny, minz, maxx, maxy, maxz, layerIndex);
+    }
+
+
 	// BC, direct access for Python binding (setTopBC, setBotBC, in richards.hh)
 	int bcTopType_;
 	int bcBotType_;
