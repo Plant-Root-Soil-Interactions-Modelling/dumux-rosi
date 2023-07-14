@@ -10,6 +10,7 @@ import os
 
 import scenario_sra as sra
 import scenario_sra_old as sra_old
+import scenario_agg as agg
 
 
 def run_jobs(jobs, sim_time):
@@ -38,6 +39,8 @@ def run_jobs(jobs, sim_time):
             sra.run_sra(sim_time, *jobs[i])
         elif method == "sraOld":
             sra_old.run_sraOld(sim_time, *jobs[i])
+        elif method == "agg":
+            agg.run_agg(sim_time, *jobs[i])
         else:
             raise("Unknown method" + method)
 
@@ -51,8 +54,8 @@ def run_jobs(jobs, sim_time):
 def make_list():
     jobs = []
 
-    method = ['sra']
-    plant = ['maize']  # 'springbarley', 'soybean', 'maize'
+    method = ['agg']  # 'sra', sraOld, agg
+    plant = ['springbarley']  # 'springbarley', 'soybean', 'maize'
     dim = ['1D', '3D']  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
     outer_radius = ['voronoi']

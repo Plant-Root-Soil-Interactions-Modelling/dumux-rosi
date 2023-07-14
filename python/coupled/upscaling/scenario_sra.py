@@ -31,7 +31,7 @@ from scenario_setup import *
 
 def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):
 
-    print("\nInitial root sytstem age", rs_age)
+    print("\nInitial root sytstem age (sra)", rs_age)
     # print("rs_age", rs_age)
     # rs_age = r.get_ages(rs_age)
     # print("rs_age", np.max(rs_age))
@@ -183,7 +183,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         wall_iteration = timeit.default_timer() - wall_iteration
 
-        soil_interpolation = timeit.default_timer()
+        wall_soil = timeit.default_timer()
 
         if np.sum(q_dirichlet) > t_pot:
             if  i % skip == 0:
@@ -204,7 +204,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         old_sx = sx.copy()
         sx = s.getSolutionHead_()  # richards.py
 
-        soil_interpolation = timeit.default_timer() - soil_interpolation
+        wall_soil = timeit.default_timer() - wall_soil
 
         x_.append(t)
         y_.append(sum_soil_flux)  # cm3/day (soil uptake)
@@ -226,7 +226,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
                   .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime, rx[collar_index, 0]))
 
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
-            print("iteration, soil", wall_iteration / (wall_iteration + soil_interpolation), soil_interpolation / (wall_iteration + soil_interpolation))
+            print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
             print()
 
             """ remember results """

@@ -102,27 +102,28 @@ if __name__ == "__main__":
 
     """ springbarley """
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
+    method = ["agg"]
     plant = ["springbarley"]
     soil = ["hydrus_loam"]
-    outer_method = ["surface"]  # , "voronoi"]
-
+    outer_method = ["voronoi"]  # , "voronoi"]
     plot_sink1d(ax, method, plant, soil, outer_method)
     plt.savefig('sink1d_springbarley_loam.png')
+    plt.show()
 
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
+    method = ["agg"]
     plant = ["springbarley"]
     soil = ["hydrus_clay"]
-    outer_method = ["surface"]  # , "voronoi"]
+    outer_method = ["voronoi"]  # , "voronoi"]
     plot_sink1d(ax, method, plant, soil, outer_method)
     plt.savefig('sink1d_springbarley_clay.png')
+    plt.show()
 
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
+    method = ["agg"]
     plant = ["springbarley"]
     soil = ["hydrus_sandyloam"]
-    outer_method = ["surface"]  # , "voronoi"]
+    outer_method = ["voronoi"]  # , "voronoi"]
     plot_sink1d(ax, method, plant, soil, outer_method)
     plt.savefig('sink1d_springbarley_sandyloam.png')
 
