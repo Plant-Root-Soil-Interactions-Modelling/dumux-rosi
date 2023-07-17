@@ -1,0 +1,90 @@
+[Problem]
+Name = cylinder_1d_3cR
+EnableGravity = "false"
+
+[TimeLoop]
+TEnd = 3600
+DtInitial =  1 # [s]
+MaxTimeStepSize = 3600 # 10 days [s]
+
+[Soil.Grid]
+UpperRight = 0.0002
+LowerLeft = 0.006
+Cells = 500
+
+[Soil.BC.Top]
+Type = 3 # constant flux
+Value = -0.5 # [cm day-1]
+C1Type = 3 # constant flux
+C1Value = 0.01 # [g/m2 day-1]
+C2Type = 3 # constant flux
+C2Value = 0.0 # [g/m2 day-1]
+
+[Soil.BC.Bot]
+Type = 3 # constant flux
+Value = 0 # [g day-1]
+C1Type = 3 # constant flux
+C1Value = 0 # [g/cm2/day]
+C2Type = 3 # constant flux
+C2Value = 0 # [g/cm2/day]
+
+[Soil]
+v_maxL = 0.0 #[d-1]
+K_L = 10e-6 #[mg cm-3 soil]
+C_oa = 2.338e-06 #[mg (C)cm-3(soil-1)]
+CriticalPressure = -15000
+
+[Soil.IC]
+P = -100# cm pressure head (initial guess)
+C1 = 0 0 0 0
+C1Z = 0.0001 0.0003 0.0004 0.0005 0.01 
+C2 =  0 0 0 0 0
+C2Z = 0.0001 0.0003 0.0004 0.0005 0.01
+
+
+[Soil.VanGenuchten] 
+# Loam 
+Qr = 0.045 	
+Qs = 0.43
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d] 	
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "false"
+
+[1.Component]
+LiquidDiffusionCoefficient = 6.713e-10 #m2 / s
+Name = "smallPolymers"
+MolarMass = 12e-3 
+
+[2.Component]
+LiquidDiffusionCoefficient = 6.713e-10 #m2 / s
+Name = "smallPolymers"
+MolarMass = 12e-3 
+
+# Global parameters:
+[ Assembly ]
+NumericDifferenceMethod = "1"
+[ Flux ]
+UpwindWeight = "1.0"
+[ LinearSolver ]
+MaxIterations = "250"
+PreconditionerIterations = "1"
+PreconditionerRelaxation = "1.0"
+ResidualReduction = "1e-13"
+Verbosity = "0"
+[ Newton ]
+EnableAbsoluteResidualCriterion = "false"
+EnableChop = "false"
+EnableResidualCriterion = "false"
+EnableShiftCriterion = "true"
+MaxAbsoluteResidual = "1e-5"
+MaxRelativeShift = "1e-8"
+MaxSteps = "18"
+ResidualReduction = "1e-5"
+SatisfyResidualAndShiftCriterion = "false"
+TargetSteps = "10"
+UseLineSearch = "false"
+EnablePartialReassembly = "false"

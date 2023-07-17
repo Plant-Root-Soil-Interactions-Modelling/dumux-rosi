@@ -22,8 +22,8 @@
  * \brief Adds I/O fields specific to the Richards model.
  */
 
-#ifndef DUMUX_RICHARDSNC_IO_FIELDS_HH
-#define DUMUX_RICHARDSNC_IO_FIELDS_HH
+#ifndef DUMUX_RICHARDSNCS_IO_FIELDS_HH
+#define DUMUX_RICHARDSNCS_IO_FIELDS_HH
 
 #include <dumux/common/parameters.hh>
 #include <dumux/io/name.hh>

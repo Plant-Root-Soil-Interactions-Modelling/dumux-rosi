@@ -40,18 +40,18 @@ namespace FluidSystems {
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class OtherComponents>
+template <class Scalar, class MainComponent, class OtherComponent>
 class LiquidPhaseNC
-: public Base<Scalar, LiquidPhaseNC<Scalar, MainComponent, OtherComponents> >
+: public Base<Scalar, LiquidPhaseNC<Scalar, MainComponent, std::vector<OtherComponent>> >
 {
-    using ThisType = LiquidPhaseNC<Scalar, MainComponent, OtherComponents>;
+    using ThisType = LiquidPhaseNC<Scalar, MainComponent, std::vector<OtherComponent>>;
     using Base = Dumux::FluidSystems::Base<Scalar, ThisType>;
 
 public:
     using ParameterCache = NullParameterCache;
 
     static constexpr int numPhases = 1; //!< Number of phases in the fluid system
-    static constexpr int numComponents = OtherComponents.size() +1 ; //!< Number of components in the fluid system
+    static constexpr int numComponents = std::vector<OtherComponents>.size() +1; //!< Number of components in the fluid system
 
     static constexpr int liquidPhaseIdx = 0; //!< index of the liquid phase
     static constexpr int phase0Idx = liquidPhaseIdx; //!< index of the only phase
@@ -99,7 +99,7 @@ public:
 			componentName_ = MainComponent::name();
 		}else if(compIdx <  numComponents)
 		{
-			componentName_ = OtherComponents.at(compIdx -1)::name();
+			componentName_ =std::vector<OtherComponent>.at(compIdx -1)::name();
 		}else{
 			DUNE_THROW(Dune::InvalidStateException, "liquidphasenc::componentName: compIdx "<<compIdx<<" not recognised");
 		}			
@@ -158,7 +158,7 @@ public:
 			componentName_ = MainComponent::molarMass();
 		}else if(compIdx <  numComponents)
 		{
-			componentName_ = OtherComponents.at(compIdx -1)::molarMass();
+			componentName_ =std::vector<OtherComponent>.at(compIdx -1)::molarMass();
 		}else{
 			DUNE_THROW(Dune::InvalidStateException, "liquidphasenc::molarMass: compIdx "<<compIdx<<" not recognised");
 		}			

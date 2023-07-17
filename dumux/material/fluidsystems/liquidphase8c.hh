@@ -19,10 +19,10 @@
 /*!
  * \file
  * \ingroup Fluidsystems
- * \brief @copybrief Dumux::FluidSystems::LiquidPhaseNC
+ * \brief @copybrief Dumux::FluidSystems::LiquidPhaseThreeC
  */
-#ifndef DUMUX_LIQUID_NC_PHASE_HH
-#define DUMUX_LIQUID_NC_PHASE_HH
+#ifndef DUMUX_LIQUID_THREEC_PHASE_HH
+#define DUMUX_LIQUID_THREEC_PHASE_HH
 
 #include <cassert>
 #include <limits>
@@ -40,18 +40,20 @@ namespace FluidSystems {
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class OtherComponents>
-class LiquidPhaseNC
-: public Base<Scalar, LiquidPhaseNC<Scalar, MainComponent, OtherComponents> >
+template <class Scalar, class MainComponent, class SecondComponent, class ThirdComponent>
+class LiquidPhaseThreeC
+: public Base<Scalar, LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent> >
 {
-    using ThisType = LiquidPhaseNC<Scalar, MainComponent, OtherComponents>;
+    using ThisType = LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent>;
     using Base = Dumux::FluidSystems::Base<Scalar, ThisType>;
+    //file only for h2o + one componant. better re-write own liquidDiffCoeff() function
+	//using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;//??
 
 public:
     using ParameterCache = NullParameterCache;
 
     static constexpr int numPhases = 1; //!< Number of phases in the fluid system
-    static constexpr int numComponents = OtherComponents.size() +1 ; //!< Number of components in the fluid system
+    static constexpr int numComponents = 3; //!< Number of components in the fluid system
 
     static constexpr int liquidPhaseIdx = 0; //!< index of the liquid phase
     static constexpr int phase0Idx = liquidPhaseIdx; //!< index of the only phase
@@ -94,15 +96,28 @@ public:
     static std::string componentName(int compIdx)
     { 
 		std::string componentName_;
-		if(comp0Idx == compIdx)
+		switch(compIdx)
 		{
-			componentName_ = MainComponent::name();
-		}else if(compIdx <  numComponents)
-		{
-			componentName_ = OtherComponents.at(compIdx -1)::name();
-		}else{
-			DUNE_THROW(Dune::InvalidStateException, "liquidphasenc::componentName: compIdx "<<compIdx<<" not recognised");
-		}			
+			case comp0Idx:
+			{
+				componentName_ = MainComponent::name();
+				break;
+			}
+			case comp1Idx:
+			{
+				componentName_ = SecondComponent::name();
+				break;
+			}
+			case comp2Idx:
+			{
+				componentName_ = ThirdComponent::name();
+				break;
+			}
+			default:
+			{
+				DUNE_THROW(Dune::InvalidStateException, "liquidphase3c::componentName: compIdx "<<compIdx<<" not recognised");
+			}				
+		}		
 		return componentName_; 
 	}
 
@@ -110,7 +125,7 @@ public:
      * \brief A human readable name for the fluid system.
      */
     static std::string name()
-    { return "LiquidPhaseNC"; }
+    { return "LiquidPhaseThreeC"; }
 
     /*!
      * \brief Returns whether the fluid is gaseous
@@ -153,15 +168,28 @@ public:
     static Scalar molarMass(int compIdx)
     {  
 		Scalar molarMass_;
-		if(comp0Idx == compIdx)
+		switch(compIdx)
 		{
-			componentName_ = MainComponent::molarMass();
-		}else if(compIdx <  numComponents)
-		{
-			componentName_ = OtherComponents.at(compIdx -1)::molarMass();
-		}else{
-			DUNE_THROW(Dune::InvalidStateException, "liquidphasenc::molarMass: compIdx "<<compIdx<<" not recognised");
-		}			
+			case comp0Idx:
+			{
+				molarMass_ = MainComponent::molarMass();
+				break;
+			}
+			case comp1Idx:
+			{
+				molarMass_ = SecondComponent::molarMass();
+				break;
+			}
+			case comp2Idx:
+			{
+				molarMass_ = ThirdComponent::molarMass();
+				break;
+			}
+			default:
+			{
+				DUNE_THROW(Dune::InvalidStateException, "liquidphase3c::molarMass: compIdx "<<compIdx<<" not recognised");
+			}
+		}		
 		return molarMass_; 
 	}
 
@@ -217,15 +245,11 @@ public:
         // This assumes each gas molecule displaces exactly one
         // molecule in the liquid.
         const Scalar pureComponentMolarDensity = MainComponent::liquidMolarDensity(T, p);
-		
-		Scalar density_ = MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx);
-		for(int CompIdx = 1; CompIdx < numComponents ; CompIdx++)
-		{
-			density_ = std::vector<OtherComponent>.at(compIdx -1)::molarMass()*fluidState.moleFraction(phase0Idx, CompIdx )
-		}
-		density_ *= pureComponentMolarDensity;
 
-        return density_;
+        return pureComponentMolarDensity
+               * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
+                  + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx)
+                  + ThirdComponent::molarMass()*fluidState.moleFraction(phase0Idx, thirdCompIdx));
     }
 
     using Base::molarDensity;
@@ -336,8 +360,7 @@ public:
                                        int phaseIdx,
                                        int compIdx)
     {
-		static const Scalar D = getParamFromGroup<Scalar>(std::to_string(compIdx), "Component.LiquidDiffusionCoefficient", 1.0);
-        return D;
+        DUNE_THROW(Dune::InvalidStateException, "Not applicable: Diffusion coefficients");
     }
 
     using Base::binaryDiffusionCoefficient;
@@ -354,7 +377,7 @@ public:
     template <class FluidState>
     static Scalar binaryDiffusionCoefficient(const FluidState &fluidState, int phaseIdx, int compIIdx, int compJIdx)
     {
-        return diffusionCoefficient(fluidState, phaseIdx, compJIdx);
+        return diffusionCoefficient(phaseIdx, compJIdx);
     }//diffCoeff_[phaseIdx][compIdx]; == diffCoeff_[compIIdx][compJIdx]
 	
 
@@ -393,6 +416,7 @@ public:
         return heatCapacity(fluidState.temperature(phaseIdx),
                             fluidState.pressure(phaseIdx));
     }
+	
 };
 
 } // namespace FluidSystems

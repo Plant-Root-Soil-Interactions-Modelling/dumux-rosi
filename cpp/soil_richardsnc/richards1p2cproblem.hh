@@ -125,8 +125,8 @@ public:
 //		}
 
 		// Uptake params
-		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/(10./24./3600.))/24./3600.*1e1; //  [g cm-2 day-1] -> [kg m-2 s-1]
-		km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1000. )*1e3;  // [g cm-3] -> [kg m-3]
+		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 0/(10./24./3600.))/24./3600.*1e1; //  [g cm-2 day-1] -> [kg m-2 s-1]
+		km_ = getParam<Scalar>("RootSystem.Uptake.Km", 0 /1000. )*1e3;  // [g cm-3] -> [kg m-3]
 		sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for passive transport, 0 for active transport
 
 		// Buffer power
@@ -387,6 +387,9 @@ public:
 		/*
 		 * SOLUTE
 		 */
+		 
+		int pos0 = 1;
+		if(dimWorld == 1){pos0 =pos[0]; }
 		if (onUpperBoundary_(pos)) { // top bc Solute
 			switch (bcSTopType_[0]) {
 			case constantConcentration: {
@@ -395,12 +398,12 @@ public:
                 static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
-				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] =( de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx)) * pos0;
 				break;
 
 			}
 			case constantFlux: {
-				flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+				flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100  * pos0; // cm/day -> kg/(m²*s)
 				break;
 			}
 			case constantFluxCyl: {
@@ -409,20 +412,20 @@ public:
 			}
 			case outflow: {
 				// std::cout << "f " << f << ", "  << volVars.massFraction(0, soluteIdx) << "=" << f*volVars.massFraction(0, soluteIdx) << "\n";
-				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx)  * pos0;
 				break;
 			}
 			case linear: {
-				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx)  * pos0;
 				break;
 			}
 			case michaelisMenten: {
-				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
+				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)  * pos0;
 				break;
 			}
             case managed: {
                 Scalar input = soluteInput_.f(time_);
-                flux[transportEqIdx] = input;
+                flux[transportEqIdx] = input  * pos0;
                 break;
             }
 			default:
@@ -436,12 +439,12 @@ public:
                 static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
-				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] =(de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx)) * pos0;
 				// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
 				break;
 			}
 			case constantFlux: {
-				flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+				flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100 * pos0; // cm/day -> kg/(m²*s)
 				break;
 			}
             case constantFluxCyl: {
@@ -450,15 +453,15 @@ public:
             }
 			case outflow: {
 				// std::cout << "f " << f*1.e6 << ", "  << volVars.massFraction(0, soluteIdx) << "=" << f*volVars.massFraction(0, soluteIdx) << "\n";
-				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx) * pos0;
 				break;
 			}
 			case linear: {
-				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx) * pos0;
 				break;
 			}
 			case michaelisMenten: {
-				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
+				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_) * pos0;
 				break;
 			}
 			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");

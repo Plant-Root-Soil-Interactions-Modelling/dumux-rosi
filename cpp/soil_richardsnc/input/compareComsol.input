@@ -29,7 +29,7 @@ C2Value = 0 # [g/cm2/day]
 
 [Soil]
 CriticalPressure = -15000
-v_maxL = 0.0 #[d-1]
+v_maxL = 0.01 #[d-1]
 K_L = 0.001 #[mg cm-3 soil]
 C_oa = 0.0002338 #[mg (C)cm-3(soil-1)]
 

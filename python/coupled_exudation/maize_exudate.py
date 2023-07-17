@@ -126,13 +126,7 @@ for i in range(0, int(sim_time)):
     
     rs_age = i + 1
     
-    # if mode == "dumux_dirichlet":
-        # cyl_type = 1
-    # elif mode == "dumux_dirichlet_nc":
-        # cyl_type = 2
-    # else:
-        # raise("unknown type")
-    #krs_,
+    
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All = cyl3.simulate_const(s, rs, 1., dt,  kexu, rs_age, repartition, type = mode, Q_Exud=QExud)
     
     if rank == 0:  # collect results

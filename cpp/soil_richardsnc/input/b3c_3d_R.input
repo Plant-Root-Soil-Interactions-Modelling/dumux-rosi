@@ -45,6 +45,6 @@ Name = "smallPolymers"
 MolarMass = 20e-3 # in kg/mol, molar mass heavy water D2O
 
 [2.Component]
-LiquidDiffusionCoefficient = 1e-100
+LiquidDiffusionCoefficient = 1e-10
 Name = "mucilage"
-MolarMass = 100e-3 # in kg/mol
+MolarMass = 40e-3 # in kg/mol

@@ -345,6 +345,16 @@ class RichardsWrapper(SolverWrapper):
         """Returns the current solution at a cell index"""
         return self.base.getSolutionHeadAt(gIdx, eqIdx)
 
+    def getKrw(self):
+        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
+        self.checkInitialized()
+        return self._map(self._flat0(comm.gather(self.base.getKrw(), root = 0)), 0)
+        
+    def getSaturation(self):
+        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
+        self.checkInitialized()
+        return self._map(self._flat0(comm.gather(self.base.getSaturation(), root = 0)), 0)
+        
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()

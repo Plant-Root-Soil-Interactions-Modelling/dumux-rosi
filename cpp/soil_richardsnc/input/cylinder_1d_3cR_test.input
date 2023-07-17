@@ -14,30 +14,30 @@ Cells = 100
 [Soil.BC.Top]
 Type = 3 # constant flux
 Value = -0.5 # [cm day-1]
-C1Type = 3 # constant flux
+C1Type = 6 # constant flux
 C1Value = 0.05 # [g/m2 day-1]
-C2Type = 3 # constant flux
+C2Type = 6 # constant flux
 C2Value = 0.01 # [g/m2 day-1]
 
 [Soil.BC.Bot]
 Type = 3 # constant flux
 Value = 0 # [g day-1]
-C1Type = 3 # constant flux
+C1Type = 6 # constant flux
 C1Value = 0 # [g/cm2/day]
-C2Type = 3 # constant flux
+C2Type = 6 # constant flux
 C2Value = 0 # [g/cm2/day]
 
 [Soil]
 CriticalPressure = -15000
-v_maxL = 0.0 #[d-1]
+v_maxL = 0.01 #[d-1]
 K_L = 0.001 #[mg cm-3 soil]
 C_oa = 0.0002338 #[mg (C)cm-3(soil-1)]
 
 [Soil.IC]
 P = -100 # cm pressure head (initial guess)
-C1 = 0 0 0 0
+C1 = 0 0.5 0 0
 C1Z = 0.0001 0.0003 0.0004 0.0005 0.01 
-C2 = 0 0 0 0 0
+C2 = 0 0 0 0 0.6
 C2Z = 0.0001 0.0003 0.0004 0.0005 0.01
 
 

@@ -64,8 +64,8 @@
  * Richards model!
  */
 
-#ifndef DUMUX_RICHARDSNC_MODEL_HH
-#define DUMUX_RICHARDSNC_MODEL_HH
+#ifndef DUMUX_RICHARDSNCS_MODEL_HH
+#define DUMUX_RICHARDSNCS_MODEL_HH
 
 #include <dumux/common/properties.hh>
 
@@ -103,15 +103,15 @@ namespace Dumux {
  * \tparam nComp the number of components to be considered.
  * \tparam useMol whether to use mass or mole balances
  */
-template<bool useMol>
+template<bool useMol,  int nComp>
 struct RichardsNCModelTraits
 {
     using Indices = RichardsNCIndices;
 
-    int numEq() { return FSY::numComponents; }
+    int numEq() { return nComp; }
     static constexpr int numFluidPhases() { return 1; }
-    int numFluidComponents() { return FSY::numComponents; }
-    static constexpr int replaceCompEqIdx() { return FSY::numComponents; }
+    int numFluidComponents() { return nComp; }
+    static constexpr int replaceCompEqIdx() { return nComp; }
 
     static constexpr bool enableAdvection() { return true; }
     static constexpr bool enableMolecularDiffusion() { return true; }
@@ -140,13 +140,13 @@ struct RichardsNCNI { using InheritsFrom = std::tuple<RichardsNC>; };
 //////////////////////////////////////////////////////////////////
 
 //! Set the model traits class
-template<class TypeTag>
+template<class TypeTag, int nComp>
 struct BaseModelTraits<TypeTag, TTag::RichardsNC>
 {
 private:
-    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem, nComp>;
 public:
-    using type = RichardsNCModelTraits<getPropValue<TypeTag, Properties::UseMoles>(), getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()>;
+    using type = RichardsNCModelTraits<getPropValue<TypeTag, Properties::UseMoles>(),nComp>;
 };
 template<class TypeTag>
 struct ModelTraits<TypeTag, TTag::RichardsNC> { using type = GetPropType<TypeTag, Properties::BaseModelTraits>; };
@@ -165,20 +165,20 @@ template<class TypeTag>
 struct ReplaceCompEqIdx<TypeTag, TTag::RichardsNC> { static constexpr int value = 0; };
 
 //! Set the volume variables property
-template<class TypeTag>
+template<class TypeTag,  int nComp>
 struct VolumeVariables<TypeTag, TTag::RichardsNC>
 {
 private:
     using PV = GetPropType<TypeTag, Properties::PrimaryVariables>;
-    using FSY = GetPropType<TypeTag, Properties::FluidSystem>;
+    using FSY = GetPropType<TypeTag, Properties::FluidSystem, nComp>;
     using SSY = GetPropType<TypeTag, Properties::SolidSystem>;
     using SST = GetPropType<TypeTag, Properties::SolidState>;
-    using FST = GetPropType<TypeTag, Properties::FluidState>;
+    using FST = GetPropType<TypeTag, Properties::FluidState, nComp>;
     using MT = GetPropType<TypeTag, Properties::ModelTraits>;
     using PT = typename GetPropType<TypeTag, Properties::SpatialParams>::PermeabilityType;
 
-    //static_assert(FSY::numComponents == MT::numFluidComponents(), "Number of components mismatch between model and fluid system");
-    //static_assert(FST::numComponents == MT::numFluidComponents(), "Number of components mismatch between model and fluid state");
+    static_assert(FSY::numComponents == MT::numFluidComponents(), "Number of components mismatch between model and fluid system");
+    static_assert(FST::numComponents == MT::numFluidComponents(), "Number of components mismatch between model and fluid state");
     static_assert(FSY::numPhases == MT::numFluidPhases(), "Number of phases mismatch between model and fluid system");
     static_assert(FST::numPhases == MT::numFluidPhases(), "Number of phases mismatch between model and fluid state");
 
@@ -197,11 +197,11 @@ struct EnableWaterDiffusionInAir<TypeTag, TTag::RichardsNC> { static constexpr b
  *
  * By default this uses the liquid phase fluid system with simple H2O.
  */
-template<class TypeTag>
+template<class TypeTag,  int nComp>
 struct FluidSystem<TypeTag, TTag::RichardsNC>
 {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = FluidSystems::LiquidPhaseNC<Scalar, Components::SimpleH2O<Scalar>, std::vector<Components::Constant<1, Scalar>> >;
+    using type = FluidSystems::LiquidPhaseNC<Scalar, Components::SimpleH2O<Scalar>, std::vector<Components::Constant<1, Scalar>>(nComp-1) >;
 };
 
 /*!
@@ -210,11 +210,11 @@ struct FluidSystem<TypeTag, TTag::RichardsNC>
  *        appropriately for the model ((non-)isothermal, equilibrium, ...).
  *        This can be done in the problem.
  */
-template<class TypeTag>
+template<class TypeTag,  int nComp>
 struct FluidState<TypeTag, TTag::RichardsNC>
 {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem, nComp>;
     using type = CompositionalFluidState<Scalar, FluidSystem>;
 };
 

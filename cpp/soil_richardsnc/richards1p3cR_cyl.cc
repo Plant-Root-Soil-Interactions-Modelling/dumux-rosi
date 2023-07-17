@@ -51,7 +51,7 @@
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
 #include "richards1p3cproblemReaction_cyl.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties_3c.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "properties_cyl_3c.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**

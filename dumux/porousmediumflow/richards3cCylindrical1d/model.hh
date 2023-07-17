@@ -79,8 +79,8 @@
 #include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/constant.hh>
-#include <dumux/material/fluidsystems/liquidphase2c.hh>
-#include <dumux/material/fluidstates/compositional.hh>
+#include <dumux/material/fluidsystems/liquidphase3c.hh>
+#include <dumux/material/fluidstates/compositionalnc.hh>
 
 #include <dumux/porousmediumflow/properties.hh>
 #include <dumux/porousmediumflow/nonisothermal/model.hh>
@@ -90,8 +90,8 @@
 #include <dumux/porousmediumflow/richardsCylindrical1d/model.hh>
 
 #include <dumux/porousmediumflow/richards3c/volumevariables.hh>
-#include <dumux/porousmediumflow/richardsCylindrical1d/indices.hh>
-#include <dumux/porousmediumflow/richardsCylindrical1d/iofields.hh>
+#include <dumux/porousmediumflow/richardsnc/indices.hh>
+#include <dumux/porousmediumflow/richardsnc/iofields.hh>
 
 namespace Dumux {
 
@@ -152,7 +152,7 @@ struct ModelTraits<TypeTag, TTag::Richards3C> { using type = GetPropType<TypeTag
 
 //! Define that per default mole fractions are used in the balance equations
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::Richards3C> { static constexpr bool value = true; };
+struct UseMoles<TypeTag, TTag::Richards3C> { static constexpr bool value = false; };
 
 //! Use the dedicated local residual
 template<class TypeTag>
@@ -228,7 +228,7 @@ template<class TypeTag>
 struct EffectiveDiffusivityModel<TypeTag, TTag::Richards3C> { using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
 
 //template<class TypeTag>
-//struct EffectiveDiffusivityModel<TypeTag, TTag::RichardsNC> { using type = DiffusivityConstantTortuosity<GetPropType<TypeTag, Properties::Scalar>>; };
+//struct EffectiveDiffusivityModel<TypeTag, TTag::Richards3C> { using type = DiffusivityConstantTortuosity<GetPropType<TypeTag, Properties::Scalar>>; };
 
 
 //! average is used as default model to compute the effective thermal heat conductivity

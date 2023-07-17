@@ -153,7 +153,37 @@ public:
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
+     *//**
+     * Returns the current solution for a single mpi process.
+     * Gathering and mapping is done in Python
      */
+    virtual std::vector<double> getKrw() {
+    	int n =  this->checkInitialized();
+        std::vector<double> Krw;
+        Krw.reserve(n);
+		const auto& params = this->problem->spatialParams();
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+			
+            const auto& param = params.materialLawParams(element);
+			
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+				double sat = elemVolVars[scv].saturation();//absolute saturation
+				double Krw_ = MaterialLaw::krw(param, sat);
+                t += Krw_;
+				
+            }
+            Krw.push_back(t/c); // mean value
+        }
+        return Krw;
+    }
+	
     virtual std::vector<double> getWaterContent() {
     	int n =  this->checkInitialized();
         std::vector<double> theta;
@@ -180,22 +210,36 @@ public:
      * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getSaturation() {
+		//std::cout<<"checkinit ";
     	int n =  this->checkInitialized();
         std::vector<double> s;
         s.reserve(n);
+		//std::cout<<"std::vector<double> getSaturation() ";
+        const auto& params = this->problem->spatialParams();
         for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
             double t = 0;
+			//std::cout<<"element ";
             auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
-            fvGeometry.bindElement(element);
+            //std::cout<<"bindElement ";
+			fvGeometry.bindElement(element);
+			//std::cout<<"elemVolVars ";
             auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
-            elemVolVars.bindElement(element, fvGeometry, this->x);
+            //std::cout<<"binelement ";
+			elemVolVars.bindElement(element, fvGeometry, this->x);
             int c = 0;
+            const auto& param = params.materialLawParams(element);
+			//std::cout<<"through fvGeom swr:"<<param.swr()<<" snr:"<<param.snr()<<" ";
             for (const auto& scv : scvs(fvGeometry)) {
                 c++;
-                t += elemVolVars[scv].saturation();
+                double abs_sw = elemVolVars[scv].saturation();
+				//absolute to effective saturation
+				double eff_sw = (abs_sw - param.swr())/(1. - param.swr() - param.snr());
+				t += eff_sw;
+				//std::cout<<"abs_sw "<<abs_sw<<" eff_sw "<<eff_sw<<" ";
             }
             s.push_back(t/c); // mean value
         }
+		//std::cout<<std::endl;
         return s;
     }
 
@@ -317,9 +361,9 @@ protected:
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
 
-	static constexpr double g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr double g_ = 9.80665; // cm / s^2 (for type conversions)
 	static constexpr double rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr double pRef_ = 1.e5; // Pa
+	static constexpr double pRef_ = 101300; // Pa
 
 	//! cm pressure head -> Pascal
 	static double toPa(double ph) {

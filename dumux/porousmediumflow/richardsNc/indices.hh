@@ -23,8 +23,8 @@
  *        the richardsnc model.
  */
 
-#ifndef DUMUX_RICHARDSNC_INDICES_HH
-#define DUMUX_RICHARDSNC_INDICES_HH
+#ifndef DUMUX_RICHARDSNCS_INDICES_HH
+#define DUMUX_RICHARDSNCS_INDICES_HH
 
 namespace Dumux {
 

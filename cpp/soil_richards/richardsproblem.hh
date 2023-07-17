@@ -244,6 +244,7 @@ public:
 //						 std::cout << "in:" << f <<", " << imax <<"\n";
 						f = std::max(f, imax);
 					} else { // outflow
+						//[kg/m³] * [m/s] * [-] = [kg/(m²*s)]
 						Scalar omax = rho_ *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f*1.e6 << ", " << omax*1.e6 << " krw " << krw*1.e6 << "\n";
 						f = std::min(f, omax);
@@ -607,9 +608,9 @@ private:
 	Scalar bc_flux_lower = 0.;
 
 	static constexpr Scalar eps_ = 1.e-7;
-	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr Scalar g_ = 9.80665; //  cm / s^2 (for type conversions)
 	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr Scalar pRef_ = 1.e5; // Pa
+	static constexpr Scalar pRef_ = 101300; // Pa
 
 };
 

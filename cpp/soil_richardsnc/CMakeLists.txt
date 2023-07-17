@@ -25,7 +25,7 @@ target_compile_definitions(richards2c3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 add_executable(richards2c1d EXCLUDE_FROM_ALL richards1p2c.cc)
 target_compile_definitions(richards2c1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
-add_executable(richards2c1d_cyl EXCLUDE_FROM_ALL richards1p2c_cyl.cc)
+add_executable(richards2c1d_cyl richards1p2c_cyl.cc)
 target_compile_definitions(richards2c1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
 add_executable(richardsnc_alu EXCLUDE_FROM_ALL richards1p2c.cc)

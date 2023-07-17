@@ -251,7 +251,9 @@ public:
      * \param phaseIdx The index of the fluid phase
      */
     Scalar saturation(const int phaseIdx = 0) const
-    { return phaseIdx == 0 ? fluidState_.saturation(0) : 1.0-fluidState_.saturation(0); }
+    { 
+		assert(phaseIdx == 0);
+		return phaseIdx == 0 ? fluidState_.saturation(0) : 1.0-fluidState_.saturation(0); }
 
     /*!
      * \brief Returns the average mass density \f$\mathrm{[kg/m^3]}\f$ of a given

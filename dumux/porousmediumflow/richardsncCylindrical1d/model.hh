@@ -80,7 +80,8 @@
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/fluidsystems/liquidphase2c.hh>
-#include <dumux/material/fluidstates/compositional.hh>
+//#include <dumux/material/fluidstates/compositional.hh>
+#include <dumux/material/fluidstates/compositionalnc.hh>
 
 #include <dumux/porousmediumflow/properties.hh>
 #include <dumux/porousmediumflow/nonisothermal/model.hh>

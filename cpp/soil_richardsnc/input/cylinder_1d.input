@@ -9,23 +9,25 @@ MaxTimeStepSize = 864000 # 10 days [s]
 CheckTimes = 864000 1728000
 
 [Soil.Grid]
-UpperRight = 0.0002
-LowerLeft = 0.006
+UpperRight = 0.0001
+LowerLeft = 0.01
 Cells = 100
 
 [Soil.BC.Top]
-Type = 3 # constant flux (cylindrical)
-Value =  0 # [cm/d]
+Type = 3 # constant flux
+Value = -0.5 # [cm day-1]
 
 [Soil.BC.Bot]
-Type = 3 # constant flux (cylindrical)
-Value =  -0.1   #[cm/d]
+Type = 3 # constant flux
+Value = 0 # [g day-1]
 
 [Soil]
 CriticalPressure = -15000 #[cm]
 
 [Soil.IC]
 P = -100 #[cm]
+C = 0 0 0 0 0.6
+CZ = 0.0001 0.0003 0.0004 0.0005 0.01
 # C = 1e-8 #[mol/m³]
 
 [Soil.VanGenuchten] 
@@ -45,13 +47,4 @@ LiquidDiffusionCoefficient = 1.e-9 #[m²/s]
 Name = "PO4"
 MolarMass = 95e-3 # in kg/mol, molar mass phosphate PO4
 
-[RootSystem.Uptake]
-Vmax = 3.26e-10 #[mol/m²/s]
-Km = 5.8e-9 #[mol/m³]
-ActiveTransport = 1 
-
-[Adsorption]
-KF = 100 #[mol/g]
-NF = 1
-rhob = 1400 #[kg/m³]
 

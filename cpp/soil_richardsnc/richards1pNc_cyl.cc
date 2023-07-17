@@ -49,15 +49,15 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1p2cproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties_cyl.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "richards1pncproblem.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties_cyl_nc.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 
 /**
  * here we go
  */
-int main(int argc, char** argv) 
+int main(int argc, char** argv) try
 {
     using namespace Dumux;
 
@@ -258,21 +258,33 @@ int main(int argc, char** argv)
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
-		std::ofstream myfile_;
-		std::string filestr = problem->name() + "_1p2c_cyl_end.csv"; // output file
-		myfile_.open(filestr.c_str());
-		//auto allnames = std::vector<std::string>{"P", "Cs", "Cl", "r"}
-		for(int i = 0; i < x.size(); i++)
-		{
-			//myfile_<<allnames[i]<<",\n";
-			for(int j = 0; j < x[i].size(); j++)
-			{
-				myfile_ << x[i][j] << ", ";
-			} myfile_ << "\n";
-		}
-		myfile_.close();
         DumuxMessage::print(/*firstCall=*/false);
     }
 
     return 0;
+}
+
+catch (Dumux::ParameterException &e)
+{
+    std::cerr << std::endl << e << " ---> Abort!" << std::endl;
+    return 1;
+}
+catch (Dune::DGFException & e)
+{
+    std::cerr << "DGF exception thrown (" << e <<
+                 "). Most likely, the DGF file name is wrong "
+                 "or the DGF file is corrupted, "
+                 "e.g. missing hash at end of file or wrong number (dimensions) of entries."
+                 << " ---> Abort!" << std::endl;
+    return 2;
+}
+catch (Dune::Exception &e)
+{
+    std::cerr << "Dune reported error: " << e << " ---> Abort!" << std::endl;
+    return 3;
+}
+catch (std::exception &e)
+{
+    std::cerr << "Unknown exception thrown: " <<  e.what() << " ---> Abort!" << std::endl;
+    return 4;
 }

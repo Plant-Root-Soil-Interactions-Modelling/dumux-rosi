@@ -105,8 +105,8 @@ public:
                     storage[eqIdx] += (volVars.porosity()*volVars.saturation(phaseIdx)+b)
                                       * massOrMoleDensity(volVars, phaseIdx)
                                       * massOrMoleFraction(volVars, phaseIdx, compIdx)*scv.center()[0];
-					std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
-					<<" numComponents "<<numComponents<<" numPhases "<<numPhases <<" storage "<<storage[eqIdx]<<std::endl;
+					//std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
+					//<<" numComponents "<<numComponents<<" numPhases "<<numPhases <<" storage "<<storage[eqIdx]<<std::endl;
                 }
             }
 
@@ -116,7 +116,7 @@ public:
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
                                              *(volVars.porosity()*volVars.saturation(phaseIdx)+b)*scv.center()[0];
-				std::cout<<"computeStorage, storage[replaceCompEqIdx] "<<compIdx<<" "<<replaceCompEqIdx<<" "<<storage[replaceCompEqIdx]<<std::endl;
+				//std::cout<<"computeStorage, storage[replaceCompEqIdx] "<<compIdx<<" "<<replaceCompEqIdx<<" "<<storage[replaceCompEqIdx]<<std::endl;
             }
 
             //! The energy storage in the fluid phase with index phaseIdx
