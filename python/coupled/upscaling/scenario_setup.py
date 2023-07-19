@@ -144,6 +144,9 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         params[2].lmax *= 2
         params[1].theta = 1.31  # why is the tap root not always 0?
 
+    seed_param = rs.getRootSystemParameter()
+    seed_param.seedPos = pb.Vector3d(0., 0., -0.1)  #################################################################################
+
     # seed = rs.getRootSystemParameter()  # SeedRandomParameter
     # seed.firstSB = 1.e6  #################################################################################
 
