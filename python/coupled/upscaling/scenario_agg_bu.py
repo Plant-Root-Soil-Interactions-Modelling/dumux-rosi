@@ -119,11 +119,10 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
     q_dirichlet_up = -Kr_up.dot(hs_ - hxd)
-    rx = hxd
-    # if np.sum(q_dirichlet_up) > t_pot:
-    #     rx = hxd
-    # else:
-    #     rx = BBt_inv.dot(AinvKr_neumann_up.dot(hs_) + Ainv_neumann_up[:, 0] * t_pot)
+    if np.sum(q_dirichlet_up) > t_pot:
+        rx = hxd
+    else:
+        rx = BBt_inv.dot(AinvKr_neumann_up.dot(hs_) + Ainv_neumann_up[:, 0] * t_pot)
 
     for i in range(0, N):
 
@@ -161,11 +160,10 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
             q_dirichlet_up = -Kr_up.dot(rsx - hxd)
-            rx = hxd
-            # if np.sum(q_dirichlet_up) > t_pot:
-            #     
-            # else:
-            #     rx = BBt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
+            if np.sum(q_dirichlet_up) > t_pot:
+                rx = hxd
+            else:
+                rx = BBt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
 
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem

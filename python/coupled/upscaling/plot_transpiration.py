@@ -67,7 +67,7 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
 
     for i in range(0, n):
         t = data[i][0]
-        y = data[i][1]
+        y = data[i][2]
         ax[i].plot(t, y, 'g' + ls, label = " actual transpiration " + label)  # actual transpiration  according to soil model
         ax[i].set_title(soil_[i])
         # ax[i].set_title(titles[i])
