@@ -54,7 +54,6 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     print("inv start")
     Ainv_dirichlet = sparse.linalg.inv(A_dirichlet).todense()  # dense
-
     A_neumann = A_dirichlet.copy()
     A_neumann[0, 0] -= kx0
     Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
@@ -128,7 +127,6 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ..
-        # print("t_pot", t_pot)
 
         hs_ = np.zeros((nmax, 1))  # sx -> hs_ # soil cell indices to soil matrix indices
         for j in soil2matrix.keys():
@@ -174,22 +172,27 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         wall_soil = timeit.default_timer()
 
-        if np.sum(q_dirichlet_up) > t_pot:
-            print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
-            fluxes = {}
-            for j in range(0, nmax):
-                fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
-            sum_root_flux = np.sum(q_dirichlet_up)
-        else:
-            # print("C_comp_neumann_up", C_comp_neumann_up.shape)
-            # print("c_neumann_up", c_neumann_up.shape)
-            # print("hs_", hs_.shape)
-            q_neumann_up = -Kr_up.dot(rsx - rx)
-            print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
-            fluxes = {}
-            for j in range(0, nmax):
-                fluxes[matrix2soil[j]] = q_neumann_up[j, 0]
-            sum_root_flux = np.sum(q_neumann_up)
+        fluxes = {}
+        for j in range(0, nmax):
+            fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
+        sum_root_flux = np.sum(q_dirichlet_up)
+
+        # if np.sum(q_dirichlet_up) > t_pot:
+        #     print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
+        #     fluxes = {}
+        #     for j in range(0, nmax):
+        #         fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
+        #     sum_root_flux = np.sum(q_dirichlet_up)
+        # else:
+        #     # print("C_comp_neumann_up", C_comp_neumann_up.shape)
+        #     # print("c_neumann_up", c_neumann_up.shape)
+        #     # print("hs_", hs_.shape)
+        #     q_neumann_up = -Kr_up.dot(rsx - rx)
+        #     print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
+        #     fluxes = {}
+        #     for j in range(0, nmax):
+        #         fluxes[matrix2soil[j]] = q_neumann_up[j, 0]
+        #     sum_root_flux = np.sum(q_neumann_up)
 
         water = s.getWaterVolume()
         s.setSource(fluxes.copy())  # richards.py

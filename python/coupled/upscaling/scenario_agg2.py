@@ -31,7 +31,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     skip = 10
 
     max_error = 10
-    max_iter = 2  # 100
+    max_iter = 100  # 100
 
     ns = len(r.rs.segments)
     nodes = r.get_nodes()
@@ -76,6 +76,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     Kr_up = M @ Kr @ Mt  # sparse
     Kr_up_inv = sparse.linalg.inv(Kr_up).todense()
+    
     inner_kr_up = MMt_inv.dot(M.dot(inner_kr_))
     inner_kr_up = np.maximum(inner_kr_up, np.ones(inner_kr_up.shape) * 1.e-7)  ############################################ (too keep within table)
     inner_kr_up = np.minimum(inner_kr_up, np.ones(inner_kr_up.shape) * 1.e-4)  ############################################ (too keep within table)
@@ -103,10 +104,13 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     q_dirichlet_up = Ad_up.dot(hs_) - cd_up * wilting_point
     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
-    print("rx dirichlet", np.min(rx), np.max(rx))
+    print("1) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
+    
     hxd = MMt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
     rx = hxd
-    print("hxd dirichlet", np.min(rx), np.max(rx))
+    q_dirichlet_up = np.sum(-Kr_up.dot(hs_ - hxd)) 
+    print("2) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
+    
     # print("q_dirichlet_up", np.sum(q_dirichlet_up), "t_pot", t_pot)
     # if np.sum(q_dirichlet_up) > t_pot:
     #     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
@@ -119,16 +123,14 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     #         rx[soil2matrix[j]] -= centers[j, 2]
     #     print("rx neumann", np.min(rx), np.max(rx))    
 
+    
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ..
 
         hs_ = np.zeros((nmax, 1))  # sx -> hs_ # soil cell indices to soil matrix indices
         for j in soil2matrix.keys():
-                hs_[soil2matrix[j]] += sx[j]  # + centers[j, 2]
-
-        print("hs_", np.min(hs_),np.max(hs_))
-        # input()
+                hs_[soil2matrix[j]] += sx[j] + centers[j, 2]
 
         wall_iteration = timeit.default_timer()
         err = 1.e6
@@ -145,13 +147,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             for j in soil2matrix.keys():  # from total to matric
                     rx[soil2matrix[j]] -= centers[j, 2]
 
-            print("rx", np.min(rx),np.max(rx))
-            
-            # rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
-            # rx = np.minimum(rx, np.ones(rx.shape) * 0.)
-
             rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)  # in matric potential
-            print("rsx", np.min(rsx),np.max(rsx))
 
             for j in soil2matrix.keys():  # from matric to total
                     rsx[soil2matrix[j]] += centers[j, 2]
@@ -161,11 +157,12 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
 
-            q_dirichlet_up = Ad_up.dot(rsx) - cd_up * wilting_point
-            rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
+            # q_dirichlet_up = Ad_up.dot(rsx) - cd_up * wilting_point
+            # rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
             hxd = MMt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
             rx = hxd            
             print("q_dirichlet_up", np.sum(q_dirichlet_up), "t_pot", t_pot, "rsx", np.min(rsx), np.max(rsx), "sx", np.min(sx), np.max(sx), "hs_", np.min(hs_), np.max(hs_))
+            q_dirichlet_up =  -Kr_up.dot(hs_ - hxd)
             # if np.sum(q_dirichlet_up) > t_pot:
             #     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
             #     # print("rx dirichlet", np.min(rx), np.max(rx))
