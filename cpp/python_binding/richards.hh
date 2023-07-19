@@ -141,6 +141,7 @@ public:
      */
     virtual std::vector<double> getSolutionHead(int eqIdx = 0) {
         std::vector<double> sol = this->getSolution(eqIdx);
+		std::cout<<"get solution head "<<sol.at(0)<<" "<<pRef_<<" "<<rho_ <<" "<< g_<<std::endl;
         std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::plus<double>(), -pRef_));
         std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / rho_ / g_));
         return sol;
@@ -182,6 +183,30 @@ public:
             Krw.push_back(t/c); // mean value
         }
         return Krw;
+    }
+	
+    virtual std::vector<double> getAvgDensity() {
+    	int n =  this->checkInitialized();
+        std::vector<double> avgD;
+        avgD.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+			
+			
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+				double avgD_ = elemVolVars[scv].density();//absolute saturation
+                t += avgD_;
+				
+            }
+            avgD.push_back(t/c); // mean value
+        }
+        return avgD;
     }
 	
     virtual std::vector<double> getWaterContent() {
@@ -400,7 +425,8 @@ void init_richards(py::module &m, std::string name) {
    .def("setTopBC",&Richards_::setTopBC)
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)
-   .def("setSBotBC",&Richards_::setSBotBC);
+   .def("setSBotBC",&Richards_::setSBotBC)
+   .def("getAvgDensity",&Richards_::getAvgDensity);
 
 }
 

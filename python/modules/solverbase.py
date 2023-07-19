@@ -165,6 +165,11 @@ class SolverWrapper():
         self.checkInitialized()
         return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root = 0)), 0)
 
+    def getAvgDensity(self):
+        """nompi version of  """
+        self.checkInitialized()
+        return np.array(self.base.getAvgDensity())
+        
     def getSolution_(self, eqIdx = 0):
         """nompi version of  """
         self.checkInitialized()

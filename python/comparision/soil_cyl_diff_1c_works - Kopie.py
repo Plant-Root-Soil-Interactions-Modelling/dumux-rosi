@@ -54,24 +54,26 @@ s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
-MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
+MolarMass = 1.8e-2 #[kg/mol]
+MolarMass2 = MolarMass #[kg/mol]
+MolarMass_g = MolarMass * 1000 #[g/mol]
+MolarMass_g2 = MolarMass2 * 1000 #[g/mol]
 exud = 1. # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-Dl = 1.e-9
 
 if useC3:
     s.setParameter( "Soil.BC.Bot.C1Type", str(3))
     s.setParameter( "Soil.BC.Top.C1Type", str(3))
     s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
     s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
-    s.setParameter("1.Component.MolarMass", str(MolarMass))  # in kg/mol
-    s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+    s.setParameter("1.Component.MolarMass", str(MolarMass)) 
+    s.setParameter("1.Component.LiquidDiffusionCoefficient", "1.e-8") #m^2/s
 
-    # s.setParameter( "Soil.BC.Bot.C2Type", str(3))
-    # s.setParameter( "Soil.BC.Top.C2Type", str(6))
-    # s.setParameter( "Soil.BC.Bot.C2Value", str(exud)) 
-    # s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+    s.setParameter( "Soil.BC.Top.C2Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C2Value", str(exud/3 )) 
+    s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
     s.setParameter("2.Component.MolarMass", str(MolarMass)) 
-    # s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+    s.setParameter("2.Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
 else:
     s.setParameter( "Soil.BC.Bot.SType", str(3))
     s.setParameter( "Soil.BC.Top.SType", str(6))
@@ -118,7 +120,7 @@ if rank == 0:
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 1./24, 2./24.]  # days
+times = [0., 5./24, 10./24.]  # days
 s.ddt = 1.e-5
 
 col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
@@ -131,8 +133,27 @@ write_file_array("theta",np.array(s.getWaterContent()).flatten())
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
 write_file_array("krs",np.array(s.getKrw()).flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
-write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
-write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
+
+
+rho_avg = np.array(s.getAvgDensity()).flatten()/1000 #g/cm3
+write_file_array("density", rho_avg) 
+
+solute_mC = s.getSolution_(1).flatten() # [g/g solution]
+# [g/g solution] * [g solution / cm3 solution] * [mol/g] = [mol/cm3 solution]
+solute_mol = solute_mC * rho_avg / MolarMass_g 
+write_file_array("solute_massFr", solute_mC)  # [g/g solution]
+write_file_array("solute_massKonz", solute_mC * rho_avg) # [g solution / cm3 solution] 
+write_file_array("solute_molKonz", solute_mol) # [g solution / cm3 solution] 
+
+
+solute_mC = s.getSolution_(2).flatten() # [g/g solution]
+# [g/g solution] * [g solution / cm3 solution] * [mol/g] = [mol/cm3 solution]
+solute_mol = solute_mC * rho_avg / MolarMass_g2 
+write_file_array("solute2_massFr", solute_mC)  # [g/g solution]
+write_file_array("solute2_massKonz", solute_mC * rho_avg) # [g solution / cm3 solution] 
+write_file_array("solute2_molKonz", solute_mol) # [g solution / cm3 solution] 
+
+
 
 for i, dt in enumerate(np.diff(times)):
 
@@ -140,13 +161,31 @@ for i, dt in enumerate(np.diff(times)):
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
     s.solve(dt)
-
+    rho_avg = np.array(s.getAvgDensity()).flatten()/1000 #g/cm3
+    write_file_array("density", rho_avg) 
+    
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x.flatten())
     write_file_array("coord",points.flatten())
     write_file_array("theta",np.array(s.getWaterContent()).flatten())
     write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
     write_file_array("krs",np.array(s.getKrw()).flatten())
-    write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
-    write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
+    #write_file_array("solute_conc", np.array(s.getSolution_(1)).flatten()) 
+    #write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
+    write_file_array("density", np.array(s.getAvgDensity()).flatten()) #kg/m3
+    
+    solute_mC = s.getSolution_(1).flatten() # [g/g solution]
+    # [g/g solution] * [g solution / cm3 solution] * [mol/g] = [mol/cm3 solution]
+    solute_mol = solute_mC * rho_avg / MolarMass_g 
+    write_file_array("solute_massFr", solute_mC)  # [g/g solution]
+    write_file_array("solute_massKonz", solute_mC * rho_avg) # [g solution / cm3 solution] 
+    write_file_array("solute_molKonz", solute_mol) # [g solution / cm3 solution] 
+
+
+    solute_mC = s.getSolution_(2).flatten() # [g/g solution]
+    # [g/g solution] * [g solution / cm3 solution] * [mol/g] = [mol/cm3 solution]
+    solute_mol = solute_mC * rho_avg / MolarMass_g2 
+    write_file_array("solute2_massFr", solute_mC)  # [g/g solution]
+    write_file_array("solute2_massKonz", solute_mC * rho_avg) # [g solution / cm3 solution] 
+    write_file_array("solute2_molKonz", solute_mol) # [g solution / cm3 solution] 
 

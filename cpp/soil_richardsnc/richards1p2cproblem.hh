@@ -207,6 +207,7 @@ public:
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoilP_.f(z,eIdx));
+		std::cout<<"PrimaryVariables initial(1p2cProblem) "<<z<<" "<<v[pressureIdx]<<std::endl;							   
 		v[soluteIdx] = initialSoilC_.f(z,eIdx);
 		return v;
 	}
@@ -689,12 +690,16 @@ private:
 
 	//! cm pressure head -> Pascal
 	Scalar toPa_(Scalar ph) const {
-		return pRef_ + ph / 100. * rho_ * g_;
+		Scalar ph2 = pRef_ + ph / 100. * rho_ * g_;
+		std::cout<<"toPa_ "<<ph<<" "<<ph2<<" "<<rho_<<" "<<g_<<std::endl;
+		return ph2;
 	}
 
 	//! Pascal -> cm pressure head
 	Scalar toHead_(Scalar p) const {
-		return (p - pRef_) * 100. / rho_ / g_;
+		Scalar p2 = (p - pRef_) * 100. / rho_ / g_;
+		std::cout<<"toHead_ "<<p<<" "<<p2<<" "<<rho_<<" "<<g_<<std::endl;
+		return p2;
 	}
 
 	//! true if on the point lies on the upper boundary

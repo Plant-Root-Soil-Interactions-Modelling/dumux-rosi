@@ -245,11 +245,22 @@ public:
         // This assumes each gas molecule displaces exactly one
         // molecule in the liquid.
         const Scalar pureComponentMolarDensity = MainComponent::liquidMolarDensity(T, p);
-
+		//return pureComponentMolarDensity *fluidState.moleFraction(phase0Idx, mainCompIdx);
+		// assume pure water
+		//Scalar pureDensity = density(T, p);
+		// Scalar pureDensity2 = pureComponentMolarDensity * MainComponent::molarMass();
+		// Scalar mixedDensity = pureComponentMolarDensity
+               // * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
+                  // + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx)
+                  // + ThirdComponent::molarMass()*fluidState.moleFraction(phase0Idx, thirdCompIdx));
+		//std::cout<<"density "<<pureDensity<<" "<<pureDensity2<<" "<<mixedDensity<<"; ";
+        // return pureDensity2;
         return pureComponentMolarDensity
                * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
                   + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx)
                   + ThirdComponent::molarMass()*fluidState.moleFraction(phase0Idx, thirdCompIdx));
+				  
+				  
     }
 
     using Base::molarDensity;

@@ -350,6 +350,7 @@ class RichardsWrapper(SolverWrapper):
         self.checkInitialized()
         return self._map(self._flat0(comm.gather(self.base.getKrw(), root = 0)), 0)
         
+        
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()

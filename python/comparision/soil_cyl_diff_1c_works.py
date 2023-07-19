@@ -50,35 +50,44 @@ s.createGrid([0.02], [0.6], [500])  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", 0)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
-MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1. # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-Dl = 1.e-9
+MolarMass_kg = 5e-2 #[kg/mol]
+MolarMass_g = MolarMass_kg * 1000 #[kg/mol]
+exud_mol = 0.1 # [mol/cm2/d] 
+exud_g = exud_mol * MolarMass_g #[g/cm2/d]
 
 if useC3:
     s.setParameter( "Soil.BC.Bot.C1Type", str(3))
     s.setParameter( "Soil.BC.Top.C1Type", str(3))
-    s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
+    s.setParameter( "Soil.BC.Bot.C1Value", str(exud_g )) #g/cm^2/d
     s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
-    s.setParameter("1.Component.MolarMass", str(MolarMass))  # in kg/mol
-    s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+    s.setParameter("1.Component.MolarMass", str(MolarMass_kg)) 
+    s.setParameter("1.Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
 
-    # s.setParameter( "Soil.BC.Bot.C2Type", str(3))
-    # s.setParameter( "Soil.BC.Top.C2Type", str(6))
-    # s.setParameter( "Soil.BC.Bot.C2Value", str(exud)) 
-    # s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
-    s.setParameter("2.Component.MolarMass", str(MolarMass)) 
-    # s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+    s.setParameter( "Soil.BC.Top.C2Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C2Value", str(0 )) 
+    s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+    s.setParameter("2.Component.MolarMass", str(MolarMass_kg)) 
+    s.setParameter("2.Component.LiquidDiffusionCoefficient", "1.e-7") #m^2/s
+    
+    #s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
+    
+    #s.setParameter("Soil.IC.C1", "0.2 0.3 0.4 0.5 6") 
+    #s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
+    #s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
 else:
     s.setParameter( "Soil.BC.Bot.SType", str(3))
-    s.setParameter( "Soil.BC.Top.SType", str(6))
-    s.setParameter( "Soil.BC.Bot.CValue", str(exud )) 
+    s.setParameter( "Soil.BC.Top.SType", str(3))
+    s.setParameter( "Soil.BC.Bot.CValue", str(exud_g )) 
     s.setParameter( "Soil.BC.Top.CValue", str(0 )) 
-    s.setParameter("Component.MolarMass", str(MolarMass)) 
+    s.setParameter("Component.MolarMass", str(MolarMass_kg)) 
     s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
+    s.setParameter("Soil.IC.CZ", "0.0002 0.0003 0.0004 0.0005 0.006") 
+    s.setParameter("Soil.IC.C", "0.02 0.03 0.04 0.05 0.6") 
     
     
  
@@ -86,27 +95,24 @@ else:
 
 
 ci = 1
-#s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
-#s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
-#s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
+
 s.setParameter("Component.BufferPower", "0")  
            
 
 s.setVGParameters([loam])
 s.setParameter("Problem.EnableGravity", "false")
-s.setParameter("Flux.UpwindWeight", "0.5")
+s.setParameter("Flux.UpwindWeight", "1")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
-s.setParameter("Newton.EnableChop", "true")
+s.setParameter("Newton.EnableChop", "false")
 s.setParameter("Newton.EnableResidualCriterion", "true")
 s.setParameter("Newton.EnableShiftCriterion", "true")
-s.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
-s.setParameter("Newton.MaxRelativeShift", "1e-10")
+s.setParameter("Newton.MaxAbsoluteResidual", "1e-8")
+s.setParameter("Newton.MaxRelativeShift", "1e-8")
 s.setParameter("Newton.MaxSteps", "30")
-s.setParameter("Newton.ResidualReduction", "1e-10")
+s.setParameter("Newton.ResidualReduction", "1e-12")
 s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
 s.setParameter("Newton.TargetSteps", "10")
-s.setParameter("Newton.UseLineSearch", "false")
+s.setParameter("Newton.UseLineSearch", "true")
 s.setParameter("Newton.EnablePartialReassembly", "true")
 s.setParameter("Grid.Overlap", "0")  #no effec5
 s.initializeProblem()
@@ -116,12 +122,10 @@ s.setCriticalPressure(-15000)  # cm pressure head
 if rank == 0:
     print(s)  # TODO make super nice
 
-fig, (ax1, ax2) = plt.subplots(1, 2)
 
 times = [0., 1./24, 2./24.]  # days
 s.ddt = 1.e-5
 
-col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
 points = s.getDofCoordinates()
 
 x = np.array(s.getSolutionHead())
@@ -131,9 +135,11 @@ write_file_array("theta",np.array(s.getWaterContent()).flatten())
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
 write_file_array("krs",np.array(s.getKrw()).flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
-write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
-write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
-
+solute_mC = s.getSolution_(1).flatten() # [g/cm3 solution]
+solute_mol = solute_mC / MolarMass_g # [g/cm3] * [mol/g] = [mol/cm3]
+write_file_array("solute_conc_mol", solute_mol ) #[mol/cm3 solution]
+write_file_array("solute_conc_g", solute_mC ) #[g/cm3 solution] == [g/g water]
+#raise Exception
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
@@ -147,6 +153,11 @@ for i, dt in enumerate(np.diff(times)):
     write_file_array("theta",np.array(s.getWaterContent()).flatten())
     write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
     write_file_array("krs",np.array(s.getKrw()).flatten())
-    write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
-    write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
+    
+    solute_mC = s.getSolution_(1).flatten() # [g/g solution]
+    avgRho = rhowat
+    solute_mol = solute_mC / MolarMass_g # [g/g solution] * [mol/g] = [mol/g solution]
+    print(solute_mC[0], solute_mol[0], MolarMass_g)
+    write_file_array("solute_conc_mol", solute_mol ) #[mol/g solution]
+    write_file_array("solute_conc_g", solute_mC ) #[mol/g solution]
 

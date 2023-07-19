@@ -46,7 +46,6 @@ public:
 	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
-	
 
 	enum {
 		pressureIdx = 0, // index of primary variables
@@ -81,8 +80,7 @@ public:
 		outflow = 6,
 		linear = 7,
 		michaelisMenten = 8,
-		managed = 9,
-		outflowCyl = 10
+		managed = 9
 	};
 
 	enum GridParameterIndex {
@@ -95,7 +93,7 @@ public:
 	Richards1P3CProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
 	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
-		gravityOn_ = false;//Dumux::getParam<bool>("Problem.EnableGravity", true);
+		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		// Components
@@ -246,12 +244,12 @@ public:
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
-		//std::cout<<"PrimaryVariables initial(1p3cproblem) "<<z<<" "<<v[pressureIdx];
+		//std::cout<<"PrimaryVariables initial(const Entity& entity) "<<z<<" "<<v[pressureIdx];
 		for(int i = soluteIdx; i<numComponents_;i++)//solutes
 		{
 			v[i] = initialSoil_.at(i).f(z,eIdx);
-			//std::cout<<" result : "<<v[i];
-		}//std::cout<<std::endl;
+			//std::cout<<" result : "<<v[i]<<std::endl;
+		}
 		return v;
 	}
 
@@ -379,12 +377,10 @@ public:
 			//std::cout<<"dz "<<dz<<", bcTopType_ "<<bcTopType_<<" "<<bcSTopType_.at(0)<<" "<<bcSTopType_.at(1);
 			//std::cout<<" kc "<<kc<<" krw "<<krw<<std::endl;
 
-			//useMoles
-			//Scalar rho__ = rho_ * !useMoles + useMoles * volVars.molarDensity(h2OIdx);
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
                 case constantPressure: {
-                    f = rho_ * kc * ((h - bcTopValues_[pressureIdx]) / dz - gravityOn_)*pos[0] ; // maximal inflow
+                    f = rho_ * kc * ((h - bcTopValues_[pressureIdx]) / dz - gravityOn_)*pos[0]; // maximal inflow
                     //std::cout << "!";
                     break;
                 }
@@ -472,7 +468,6 @@ public:
 		{
 			int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable
 			if (onUpperBoundary_(pos)) { // top bc Solute
-				//std::cout<<"neumann solute, upper BC "<<bcSTopType_.at(i_s)<<" ";
 				switch (bcSTopType_.at(i_s)) {
 				case constantConcentration: {
 					GlobalPosition ePos = element.geometry().center();
@@ -491,17 +486,11 @@ public:
 					break;
 				}
 				case constantFluxCyl: {
-					//flux[i] = -bcSTopValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
-					//std::cout<<"constantfluxCyl "<<flux[i];
+					flux[i] = -bcSTopValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					//flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
 					break;
 				}
 				case outflow: {
-					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * volVars.massFraction(0, i);//*pos0;
-					break;
-				}
-				case outflowCyl: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
 					flux[i] = f * volVars.massFraction(0, i)*pos0;
 					break;
@@ -543,17 +532,12 @@ public:
 					break;
 				}
 				case constantFluxCyl: {
-					//flux[i] = -bcSBotValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					//flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
 					break;
 				}
 				case outflow: {//?? free outflow??
 					// std::cout << "f " << f*1.e6 << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * volVars.massFraction(0, i);
-					break;
-				}
-				case outflowCyl: {
-					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
 					flux[i] = f * volVars.massFraction(0, i)*pos0;
 					break;
 				}
@@ -607,12 +591,10 @@ public:
 	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
 		//depolymerisation large polymer to small polymers
-		Scalar C_L = volVars.density(h2OIdx) * volVars.moleFraction(h2OIdx, mucilIdx);//kg/kg I think to kg/m3
+		Scalar C_L = rho_ * volVars.moleFraction(h2OIdx, mucilIdx);//kg/kg I think to kg/m3
 		Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ;
-		
-		//Att: using here absolute saturation
-		q[soluteIdx] += F_depoly * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();
-		q[mucilIdx] -= F_depoly * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();
+		q[soluteIdx] += F_depoly * pos0;
+		q[mucilIdx] -= F_depoly * pos0;
 		
 	}
 
@@ -778,16 +760,12 @@ private:
 
 	//! cm pressure head -> Pascal
 	Scalar toPa_(Scalar ph) const {
-		Scalar ph2 = pRef_ + ph / 100. * rho_ * g_;
-		//std::cout<<"toPa_ "<<ph<<" "<<ph2<<" "<<rho_<<" "<<g_<<std::endl;
-		return ph2;
+		return pRef_ + ph / 100. * rho_ * g_;
 	}
 
 	//! Pascal -> cm pressure head
 	Scalar toHead_(Scalar p) const {
-		Scalar p2 = (p - pRef_) * 100. / rho_ / g_;
-		//std::cout<<"toHead_ "<<p<<" "<<p2<<" "<<rho_<<" "<<g_<<std::endl;
-		return p2;
+		return (p - pRef_) * 100. / rho_ / g_;
 	}
 
 	//! true if on the point lies on the left boundary
@@ -831,10 +809,6 @@ private:
 	NumEqVector bc_flux_lower = NumEqVector(0.);
 
 	static constexpr Scalar eps_ = 1.e-7;
-	
-	// static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
-	// static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	// static constexpr Scalar pRef_ = 1.e5; // Pa
 	static constexpr Scalar g_ = 9.80665; // cm / s^2 (for type conversions)
 	//of pure water and of solution (as low solute content)
 	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)

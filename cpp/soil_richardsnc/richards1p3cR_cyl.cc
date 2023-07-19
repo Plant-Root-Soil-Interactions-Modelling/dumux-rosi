@@ -222,6 +222,26 @@ int main(int argc, char** argv) //try
 
     // std::cin.ignore();  // wait for key (debugging)
 	//std::cout<<"tEnd>0? "<<tEnd<<std::endl;
+    // print dumux end message
+    if (mpiHelper.rank() == 0)
+    {
+        Parameters::print();
+		std::ofstream myfile_;
+		std::string filestr = problem->name() + "_1p3cR_cyl_T0.csv"; // output file
+		myfile_.open(filestr.c_str());
+		//auto allnames = std::vector<std::string>{"P", "Cs", "Cl", "r"}
+		for(int i = 0; i < x.size(); i++)
+		{
+			//myfile_<<allnames[i]<<",\n";
+			for(int j = 0; j < x[i].size(); j++)
+			{
+				myfile_ << x[i][j] << ", ";
+			} myfile_ << "\n";
+		}
+		myfile_.close();
+        DumuxMessage::print(/*firstCall=*/false);
+    }
+	
     if (tEnd>0)  { // dynamic
         timeLoop->start();
 

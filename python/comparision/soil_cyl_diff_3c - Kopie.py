@@ -54,24 +54,24 @@ s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
-MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1. # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-Dl = 1.e-9
+MolarMassL = 1.8e-2 #[kg/mol]
+MolarMassS = 12e-3 #[kg/mol]
+exud = 0.1 # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 
 if useC3:
     s.setParameter( "Soil.BC.Bot.C1Type", str(3))
-    s.setParameter( "Soil.BC.Top.C1Type", str(3))
+    s.setParameter( "Soil.BC.Top.C1Type", str(6))
     s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
     s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
-    s.setParameter("1.Component.MolarMass", str(MolarMass))  # in kg/mol
-    s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+    s.setParameter("1.Component.MolarMass", str(MolarMassS)) 
+    s.setParameter("1.Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
 
-    # s.setParameter( "Soil.BC.Bot.C2Type", str(3))
-    # s.setParameter( "Soil.BC.Top.C2Type", str(6))
-    # s.setParameter( "Soil.BC.Bot.C2Value", str(exud)) 
-    # s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
-    s.setParameter("2.Component.MolarMass", str(MolarMass)) 
-    # s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+    s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+    s.setParameter( "Soil.BC.Top.C2Type", str(6))
+    s.setParameter( "Soil.BC.Bot.C2Value", str(0 )) 
+    s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+    s.setParameter("2.Component.MolarMass", str(MolarMassL)) 
+    s.setParameter("2.Component.LiquidDiffusionCoefficient", " 6.713e-10") #m^2/s
 else:
     s.setParameter( "Soil.BC.Bot.SType", str(3))
     s.setParameter( "Soil.BC.Top.SType", str(6))
@@ -118,7 +118,7 @@ if rank == 0:
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 1./24, 2./24.]  # days
+times = [0., 5./24, 10./24.]  # days
 s.ddt = 1.e-5
 
 col = ["r*", "b*", "g*", "c*", "m*", "y*", ]

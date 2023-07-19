@@ -194,7 +194,7 @@ private:
     std::vector<Scalar> kc_; // hydraulic conductivity [m/s]
     std::vector<MaterialLawParams> materialParams_;
 
-    static constexpr Scalar g_ = 9.80665; // cm / s^2
+    static constexpr Scalar g_ = 9.81; // cm / s^2
 
 };
 

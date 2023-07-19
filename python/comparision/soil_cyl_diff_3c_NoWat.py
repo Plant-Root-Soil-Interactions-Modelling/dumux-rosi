@@ -1,7 +1,7 @@
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
-from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
+from rosi_richards3c_cyl import Richards3CCylFoam  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
 import matplotlib.pyplot as plt
@@ -31,53 +31,79 @@ else:
             pass
 
 
-s = RichardsWrapper(RichardsNCCylFoam())
+s = RichardsWrapper(Richards3CCylFoam())
 s.initialize()
 
 #alpha, theta_s, theta_r, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-s.createGrid([0.02], [0.6], [500])  # [cm]
+s.createGrid([0.02], [0.6], [300])  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", 1)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", 0)  #  [cm/day]
 
-s.setICZ_solute(0.)  # [kg/m2] 
-s.setParameter( "Soil.BC.Bot.SType", str(3))
-MolarMass = 1.8e-2
-exud = 1e-3 #0.01* MolarMass # [mol/cm2/d] * [kg/mol] =  [kg/m2/s]
-s.setParameter( "Soil.BC.Bot.CValue", str(exud )) # 
+#s.setICZ_solute(0.)  # [kg/m2] 
+s.setParameter( "Soil.BC.Bot.C1Type", str(3))
+s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+s.setParameter( "Soil.BC.Top.C1Type", str(3))
+s.setParameter( "Soil.BC.Top.C2Type", str(3))
+MolarMass = 1.8e-2 #[kg/mol]
+exud = 1. # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
+s.setParameter( "Soil.BC.Bot.C2Value", str(0 )) 
+s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
+s.setParameter( "Soil.BC.Top.C2Value", str(0 ))  
 
-s.setParameter("Component.MolarMass", str(MolarMass)) 
-s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
+s.setParameter("1.Component.MolarMass", str(MolarMass)) 
+s.setParameter("1.Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
+s.setParameter("2.Component.MolarMass", str(MolarMass)) 
+s.setParameter("2.Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
 
-s.setParameter("Soil.IC.C", "0.0")  # g / cm3  # TODO specialised setter?
-s.setParameter("Component.BufferPower", "0")  # buffer power = \rho * Kd [1]
-# s.setParameter("RootSystem.Uptake.Vmax", s.dumux_str(3.26e-6 * 24 * 3600 * 1.e4))  # g /cm^2 / s - > g / m^2 / d
-# s.setParameter("RootSystem.Uptake.Km", s.dumux_str(5.8e-3 * 1.e4))  # g / cm3 todo setter
+ci = 1
+#s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
+#s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
+s.setParameter("Component.BufferPower", "0")  
+           
 
 s.setVGParameters([loam])
 s.initializeProblem()
 s.setCriticalPressure(-15000)  # cm pressure head
+
+
+s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+s.setParameter("Newton.EnableChop", "false")
+s.setParameter("Newton.EnableResidualCriterion", "true")
+s.setParameter("Newton.EnableShiftCriterion", "true")
+s.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
+s.setParameter("Newton.MaxRelativeShift", "1e-10")
+s.setParameter("Newton.MaxSteps", "30")
+s.setParameter("Newton.ResidualReduction", "1e-5")
+s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+s.setParameter("Newton.TargetSteps", "10")
+s.setParameter("Newton.UseLineSearch", "false")
+s.setParameter("Newton.EnablePartialReassembly", "false")
+s.setParameter("Grid.Overlap", "0")  #no effec5
 
 if rank == 0:
     print(s)  # TODO make super nice
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 10., 20.]  # days
+times = [0., 5./24, 10./24.]  # days
 s.ddt = 1.e-5
 
-
+col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
+points = s.getDofCoordinates()
 
 x = np.array(s.getSolutionHead())
 write_file_array("pressureHead",x.flatten())
-#write_file_array("coord",points.flatten())
+write_file_array("coord",points.flatten())
 write_file_array("theta",np.array(s.getWaterContent()).flatten())
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
 write_file_array("krs",np.array(s.getKrw()).flatten())
-
+# [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
 write_file_array("solute_conc", np.array(s.getSolution_(1)).flatten()) 
 
 for i, dt in enumerate(np.diff(times)):
@@ -89,8 +115,9 @@ for i, dt in enumerate(np.diff(times)):
 
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x.flatten())
-    #write_file_array("coord",points.flatten())
+    write_file_array("coord",points.flatten())
     write_file_array("theta",np.array(s.getWaterContent()).flatten())
     write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
     write_file_array("krs",np.array(s.getKrw()).flatten())
     write_file_array("solute_conc", np.array(s.getSolution_(1)).flatten()) 
+

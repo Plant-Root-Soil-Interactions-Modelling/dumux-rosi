@@ -46,7 +46,7 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 # s.createGrid1d(np.array(list2) + 0.02)
 
 
-s.createGrid([0.02], [0.6], [700]) 
+s.createGrid([0.02], [0.6], [500]) 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("fluxCyl", 0.)  #  [cm/day]
 s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
@@ -54,6 +54,18 @@ s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
 s.setVGParameters([loam])
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+
+s.setParameter("Newton.EnableChop", "false")
+s.setParameter("Newton.EnableResidualCriterion", "true")
+s.setParameter("Newton.EnableShiftCriterion", "true")
+s.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
+s.setParameter("Newton.MaxRelativeShift", "1e-10")
+s.setParameter("Newton.MaxSteps", "30")
+s.setParameter("Newton.ResidualReduction", "1e-5")
+s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+s.setParameter("Newton.TargetSteps", "10")
+s.setParameter("Newton.UseLineSearch", "false")
+s.setParameter("Newton.EnablePartialReassembly", "false")
 s.initializeProblem()
 
 s.setCriticalPressure(-15000)  # cm pressure head
@@ -69,7 +81,8 @@ write_file_array("coord",points.flatten())
 write_file_array("theta",np.array(s.getWaterContent()).flatten())
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
 write_file_array("krs",np.array(s.getKrw()).flatten())
-#raise Exception
+print(x.flatten())
+raise Exception
 for i, dt in enumerate(times):
 
     print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
