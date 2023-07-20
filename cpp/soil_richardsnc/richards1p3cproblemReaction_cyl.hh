@@ -594,11 +594,11 @@ public:
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
-				source[i] = source_[i]->at(eIdx)/scv.volume();// * pos[0];
+				source[i] = source_[i]->at(eIdx)/scv.volume() * pos[0];
 			}else{source[i] = 0.;}												 
 		}		
         const auto& volVars = elemVolVars[scv];
-		//bioChemicalReaction(source, volVars,1.);// pos[0]);
+		bioChemicalReaction(source, volVars, pos[0]);
 		
 		return source;
 	}
@@ -607,12 +607,19 @@ public:
 	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
 		//depolymerisation large polymer to small polymers
-		Scalar C_L = volVars.density(h2OIdx) * volVars.moleFraction(h2OIdx, mucilIdx);//kg/kg I think to kg/m3
-		Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ;
-		
-		//Att: using here absolute saturation
-		q[soluteIdx] += F_depoly * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();
-		q[mucilIdx] -= F_depoly * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();
+		if(volVars.moleFraction(h2OIdx, mucilIdx) >0)
+		{
+			Scalar C_L = volVars.molarDensity(h2OIdx) * volVars.moleFraction(h2OIdx, mucilIdx);//mol/mol I think to mol/m3
+			Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ; //mol/(m^3*s)
+			
+			//Att: using here absolute saturation
+			q[soluteIdx] += std::max(F_depoly,0.) * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
+			q[mucilIdx] -= std::max(F_depoly, 0.)* pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
+			if(volVars.moleFraction(h2OIdx, mucilIdx) < 0)
+			{
+				std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<F_depoly<<" "<<q[mucilIdx]<<std::endl;
+			}
+		}
 		
 	}
 
@@ -850,7 +857,7 @@ private:
 	std::vector<Scalar> freundlichN_ = std::vector<Scalar>(numSolutes);
 	Scalar bulkDensity_ = 1.4;//g/cm3 // TODO check with Mai, buffer power (1+b) or b
 	
-	Scalar v_maxL_ = 0.01; //Maximum reaction rate of enzymes targeting large polymers [d-1]
+	Scalar v_maxL_ = 0.0; //Maximum reaction rate of enzymes targeting large polymers [d-1]
 	Scalar K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mg cm-3 soil]
 	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mg (C)cm-3(soil-1)]
 	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) * *bulkDensity_ g/cm3

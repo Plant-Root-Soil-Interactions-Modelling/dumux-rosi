@@ -72,8 +72,10 @@ public:
                               IOName::waterContent());
 
         for (int compIdx = 0; compIdx < VolumeVariables::numFluidComponents(); ++compIdx)
-            out.addVolumeVariable([compIdx](const auto& v){ return v.massFraction(VolumeVariables::liquidPhaseIdx, compIdx); },
-                                  IOName::massFraction<FS>(VolumeVariables::liquidPhaseIdx, compIdx));
+            out.addVolumeVariable(
+						[compIdx](const auto& v){ return v.moleFraction(VolumeVariables::liquidPhaseIdx, compIdx);},
+												IOName::moleFraction<FS>(VolumeVariables::liquidPhaseIdx, compIdx)
+								  );
     }
 
     template <class OutputModule>

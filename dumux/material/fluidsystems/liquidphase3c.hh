@@ -34,17 +34,27 @@
 
 namespace Dumux {
 namespace FluidSystems {
+/*!
+ * \ingroup Fluidsystems
+ * \brief Policy for the H2O-N2 fluid system
+ */
+template<bool fastButSimplifiedRelations = true>
+struct liquidp3cDefaultPolicy
+{
+    static constexpr  bool useH2ODensityAsLiquidMixtureDensity() { return fastButSimplifiedRelations; }
+};
+
 
 /*!
  * \ingroup Fluidsystems
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class SecondComponent, class ThirdComponent>
+template <class Scalar, class MainComponent, class SecondComponent, class ThirdComponent, class Policy = liquidp3cDefaultPolicy<>>
 class LiquidPhaseThreeC
 : public Base<Scalar, LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent> >
 {
-    using ThisType = LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent>;
+    using ThisType = LiquidPhaseThreeC<Scalar, MainComponent, SecondComponent, ThirdComponent,Policy>;
     using Base = Dumux::FluidSystems::Base<Scalar, ThisType>;
     //file only for h2o + one componant. better re-write own liquidDiffCoeff() function
 	//using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;//??
@@ -175,21 +185,22 @@ public:
 				molarMass_ = MainComponent::molarMass();
 				break;
 			}
-			case comp1Idx:
-			{
-				molarMass_ = SecondComponent::molarMass();
-				break;
-			}
-			case comp2Idx:
-			{
-				molarMass_ = ThirdComponent::molarMass();
-				break;
-			}
+			// case comp1Idx:
+			// {
+				// molarMass_ = SecondComponent::molarMass();
+				// break;
+			// }
+			// case comp2Idx:
+			// {
+				// molarMass_ = ThirdComponent::molarMass();
+				// break;
+			// }
 			default:
 			{
 				DUNE_THROW(Dune::InvalidStateException, "liquidphase3c::molarMass: compIdx "<<compIdx<<" not recognised");
 			}
 		}		
+		//DUNE_THROW(Dune::InvalidStateException, "liquidphase3c::molarMass: do not use molar mass");
 		return molarMass_; 
 	}
 
@@ -255,10 +266,19 @@ public:
                   // + ThirdComponent::molarMass()*fluidState.moleFraction(phase0Idx, thirdCompIdx));
 		//std::cout<<"density "<<pureDensity<<" "<<pureDensity2<<" "<<mixedDensity<<"; ";
         // return pureDensity2;
+		
+            if (Policy::useH2ODensityAsLiquidMixtureDensity())
+			{
+                // assume pure water
+                return MainComponent::liquidDensity(T, p);
+			}
+            else
+            {
         return pureComponentMolarDensity
                * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
                   + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx)
                   + ThirdComponent::molarMass()*fluidState.moleFraction(phase0Idx, thirdCompIdx));
+			}
 				  
 				  
     }

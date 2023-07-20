@@ -119,11 +119,11 @@ public:
             }
 
             //! The energy storage in the fluid phase with index phaseIdx
-            EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, phaseIdx);
+            //EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, phaseIdx);
         }
 
         //! The energy storage in the solid matrix
-        EnergyLocalResidual::solidPhaseStorage(storage, scv, volVars);
+        //EnergyLocalResidual::solidPhaseStorage(storage, scv, volVars);
 
         return storage;
     }
@@ -194,11 +194,11 @@ public:
             }
 
             //! Add advective phase energy fluxes. For isothermal model the contribution is zero.
-            EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, phaseIdx);
+            //EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, phaseIdx);
         }
 
         //! Add diffusive energy fluxes. For isothermal model the contribution is zero.
-        EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
+        //EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
 
         return flux;
     }

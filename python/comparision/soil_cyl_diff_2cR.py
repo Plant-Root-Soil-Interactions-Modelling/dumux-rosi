@@ -50,17 +50,18 @@ s.createGrid([0.02], [0.6], [500])  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", 0)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
-MolarMass = 1.8e-2 #[kg/mol] <== if we want to have the water moal mass == to that of pure water.
+MolarMass = 1.2e-2 #[kg/mol] 
 MolarMass2 = MolarMass #[kg/mol]
 MolarMass_g = MolarMass * 1000 #[g/mol]
 MolarMass_g2 = MolarMass2 * 1000 #[g/mol]
-exud = 1. # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+exud = 1. # [mol/cm2/d] 
 
 if useC3:
+    s.setParameter( "Soil.v_maxL", str(0))
     s.setParameter( "Soil.BC.Bot.C1Type", str(3))
     s.setParameter( "Soil.BC.Top.C1Type", str(3))
     s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
@@ -74,6 +75,14 @@ if useC3:
     s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
     s.setParameter("2.Component.MolarMass", str(MolarMass)) 
     s.setParameter("2.Component.LiquidDiffusionCoefficient", "1.e-9") #m^2/s
+    
+    # s.setParameter("Soil.IC.C1", "1")
+    # s.setParameter("Soil.IC.C2", "1")
+    # s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
+    # s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
+    # s.setParameter("Soil.IC.C2Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
+    # s.setParameter("Soil.IC.C2", "0.02 0.03 0.04 0.05 0.6") 
+    # s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
 else:
     s.setParameter( "Soil.BC.Bot.SType", str(3))
     s.setParameter( "Soil.BC.Top.SType", str(6))
@@ -88,9 +97,9 @@ else:
 
 
 ci = 1
-#s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
-#s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
-#s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
+# s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
+# s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
+# s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
 s.setParameter("Component.BufferPower", "0")  
            
 
@@ -129,20 +138,20 @@ points = s.getDofCoordinates()
 x = np.array(s.getSolutionHead())
 write_file_array("pressureHead",x.flatten())
 write_file_array("coord",points.flatten())
-write_file_array("theta",np.array(s.getWaterContent()).flatten())
-write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
-write_file_array("krs",np.array(s.getKrw()).flatten())
+#write_file_array("theta",np.array(s.getWaterContent()).flatten())
+#write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
+#write_file_array("krs",np.array(s.getKrw()).flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
 
 
-rho_avg = np.array(s.getAvgDensity()).flatten()/1000 #g/cm3
-write_file_array("density", rho_avg) 
+rho_avg = 1#np.array(s.getAvgDensity()).flatten()/1000 #g/cm3
+#write_file_array("density", rho_avg) 
 
-solute_mC = s.getSolution_(1).flatten() # [g/g solution]
+solute_mol = s.getSolution_(1).flatten() # [mol/mol solution] == [mol/cm3 solution]
 # [g/g solution] * [g solution / cm3 solution] * [mol/g] = [mol/cm3 solution]
-solute_mol = solute_mC * rho_avg / MolarMass_g 
-write_file_array("solute_massFr", solute_mC)  # [g/g solution]
-write_file_array("solute_massKonz", solute_mC * rho_avg) # [g solution / cm3 solution] 
+# solute_mol = solute_mC * rho_avg / MolarMass_g 
+# write_file_array("solute_massFr", solute_mC)  # [g/g solution]
+# write_file_array("solute_massKonz", solute_mC * rho_avg) # [g solution / cm3 solution] 
 write_file_array("solute_molKonz", solute_mol) # [g solution / cm3 solution] 
 
 
@@ -161,15 +170,15 @@ for i, dt in enumerate(np.diff(times)):
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
     s.solve(dt)
-    rho_avg = np.array(s.getAvgDensity()).flatten()/1000 #g/cm3
-    write_file_array("density", rho_avg) 
+    rho_avg = 1#np.array(s.getAvgDensity()).flatten()/1000 #g/cm3
+    #write_file_array("density", rho_avg) 
     
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x.flatten())
     write_file_array("coord",points.flatten())
-    write_file_array("theta",np.array(s.getWaterContent()).flatten())
-    write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
-    write_file_array("krs",np.array(s.getKrw()).flatten())
+    #write_file_array("theta",np.array(s.getWaterContent()).flatten())
+    #write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
+    #write_file_array("krs",np.array(s.getKrw()).flatten())
     #write_file_array("solute_conc", np.array(s.getSolution_(1)).flatten()) 
     #write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
     write_file_array("density", np.array(s.getAvgDensity()).flatten()) #kg/m3

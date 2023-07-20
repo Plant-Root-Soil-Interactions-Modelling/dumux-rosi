@@ -348,7 +348,7 @@ public:
         for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
         {
             sumMoleFractions_[phaseIdx] += moleFraction_[phaseIdx][compJIdx];
-            averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compJIdx]*FluidSystem::molarMass(compJIdx);
+            averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compJIdx]*FluidSystem::molarMass(0);//compJIdx);
         }
     }
 

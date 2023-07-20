@@ -49,7 +49,7 @@ template<class TypeTag> // Set grid type
 struct Grid<TypeTag, TTag::RichardsNCCylFoamTT> { using type = Dune::FoamGrid<1,1>; }; //  Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 1>
 
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RichardsTT> { static constexpr bool value = false; };
+struct UseMoles<TypeTag, TTag::RichardsTT> { static constexpr bool value = true; };
 
 } }
 
