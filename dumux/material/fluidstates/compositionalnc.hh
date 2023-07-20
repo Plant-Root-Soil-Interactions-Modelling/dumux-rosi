@@ -118,6 +118,7 @@ public:
     {
         // calculate the mass fractions:
         // for "mass" models this is just a back calculation
+            //DUNE_THROW(Dune::NotImplemented, "do not use massFraction");
         Scalar mssFr = sumMoleFractions_[phaseIdx]
                * moleFraction(phaseIdx, compIdx)
                * FluidSystem::molarMass(compIdx)
@@ -139,7 +140,10 @@ public:
      * \f[\mathrm{ \overline M_\alpha = \sum_\kappa M^\kappa x_\alpha^\kappa}\f]
      */
     Scalar averageMolarMass(int phaseIdx) const
-    { return averageMolarMass_[phaseIdx]; }
+    { 
+            //DUNE_THROW(Dune::NotImplemented, "do not use averageMolarMass");
+		return averageMolarMass_[phaseIdx]; 
+	}
 
     /*!
      * \brief The molar concentration \f$c^\kappa_\alpha\f$ of component \f$\kappa\f$ in fluid phase \f$\alpha\f$ in \f$\mathrm{[mol/m^3]}\f$

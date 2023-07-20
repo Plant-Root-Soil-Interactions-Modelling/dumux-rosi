@@ -161,10 +161,10 @@ public:
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 		
-		
+		double m3_2_cm3 = 1e6;
 		 v_maxL = getParam<Scalar>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
-		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ); //[mg cm-3 soil] => [kg m-3 soil] or in mol 
-		 C_Oa = getParam<Scalar>("Soil.C_oa", C_Oa_); //[mg (C)cm-3(soil-1)] => [kg (C) m-3(soil-1)] or in mol 
+		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
+		 C_Oa = getParam<Scalar>("Soil.C_oa", C_Oa_)* m3_2_cm3; //[mol (C)cm-3(soil-1)] * [cm3/m3] => [mol (C) m-3(soil-1)]  
 
 												  
 		// Output
@@ -383,10 +383,11 @@ public:
 			//std::cout<<"dz "<<dz<<", bcTopType_ "<<bcTopType_<<" "<<bcSTopType_.at(0)<<" "<<bcSTopType_.at(1);
 			//std::cout<<" kc "<<kc<<" krw "<<krw<<std::endl;
 
-			//useMole fraction or mass fraction? rho_
-			Scalar rhoW = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
-			Scalar cm2m = 1/100 ;
-			Scalar unitConversion = cm2m; //something else needed? 
+			//useMole fraction or mass fraction? 
+			//[kg/m3] or [mol/m3]
+			Scalar rhoW = useMoles ? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
+			double cm2m = 1./100. ; //[m/cm]
+			double unitConversion = cm2m; //something else needed? 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
                 case constantPressure: {
@@ -407,8 +408,12 @@ public:
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
 					//useMoles:  [cm/d] * [mol/m^3] * [d/s] * [m/cm] = [m/s] *  [mol/m^3] = [mol /(m^2 * s)]
+					//useMass:  [cm/d] * [kg/m^3] * [d/s] * [m/cm] = [m/s] *  [kg/m^3] = [kg /(m^2 * s)]
 					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
 					if (f < 0) { // inflow
+					//[mol/m^3] * [m/s] * [cm/cm] = mol/(m2 * s)
+					
+					//kg/m3 * m2 
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
@@ -451,6 +456,9 @@ public:
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
 					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
+					
+					//std::cout<<" water flow "<<f<<" "<<bcBotValues_[pressureIdx]<<" rhoW "<<rhoW<<" useMoles "<<useMoles<<" molarDensity "<<volVars.molarDensity(h2OIdx)
+					//<<" density "<<volVars.density(h2OIdx)<<" unit conversion "<<unitConversion<<" "<<pos[0]<<std::endl;
 					if (f < 0) { // inflow
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
@@ -468,21 +476,23 @@ public:
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
 				}
 			}
+			
 		}
+		
 		flux[h2OIdx] = f;
 
 		/*
 		 * SOLUTES
 		 */
 		
-		Scalar rhoW = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
-		Scalar g2kg = 1/1000 ;
-		Scalar m2_2_cm2 = 10000;
-		Scalar unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
+		Scalar rhoW = useMoles ? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
+		double g2kg = 1./1000. ;
+		double m2_2_cm2 = 10000;
+		double unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
 		for(int i = soluteIdx;i<numComponents_;i++)
 		{
 			int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable
-			Scalar massOrMolFraction = useMoles? volVars.molFraction(0, i) : volVars.massFraction(0, i);
+			Scalar massOrMolFraction = useMoles? volVars.moleFraction(0, i) : volVars.massFraction(0, i);
 			if (onUpperBoundary_(pos)) { // top bc Solute
 				//std::cout<<"neumann solute, upper BC "<<bcSTopType_.at(i_s)<<" ";
 				switch (bcSTopType_.at(i_s)) {
@@ -507,6 +517,8 @@ public:
 					break;
 				}
 				case constantFluxCyl: {
+					//usemole:
+					//[mol/(cm2 * s)]  = [mol/(cm2 * d)] * [cm2/m2] * d/s
 					//flux[i] = -bcSTopValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
 					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
 					//std::cout<<"constantfluxCyl "<<flux[i];
@@ -514,7 +526,7 @@ public:
 				}
 				case outflow: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * volVars.massFraction(0, i);//*pos0;
+					flux[i] = f * massOrMolFraction;//*pos0;
 					break;
 				}
 				case outflowCyl: {
@@ -527,7 +539,7 @@ public:
 					break;
 				}
 				case michaelisMenten: {
-					flux[i] = (vMax_.at(i_s)  * (std::max(massOrMolFraction,0.)*rhoW)/(km_.at(i_s)  + std::max(massOrMolFraction*rhoW))*pos0;
+					flux[i] = (vMax_.at(i_s)  * (std::max(massOrMolFraction,0.)*rhoW)/(km_.at(i_s)  + std::max(massOrMolFraction,0.)*rhoW))*pos0;
 					break;
 				}
 				case managed: {
@@ -547,7 +559,7 @@ public:
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
 					//diffusion + advection (according to wat flux computed above)
-					flux[i] =(de * (volVars.massFraction(0, i)*rhoW-bcSBotValue_.at(i_s)*rhoW) / dz + f * volVars.massFraction(0, i))*pos0;
+					flux[i] =(de * (massOrMolFraction*rhoW-bcSBotValue_.at(i_s)*rhoW) / dz + f * massOrMolFraction)*pos0;
 					//[kg_solute/(m²*s)] = [m2 / s] * ([kg_solute/kg_tot] * [kg_tot / m^3_tot] - kg_solute/ m^3_tot)/m + [kg_tot/(m²*s)] * [kg_solute/kg_tot]
 					// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, i) << ", " << bcSBotValue_ << ", " << flux[i]*1.e9  << "\n";
 					break;
@@ -623,21 +635,17 @@ public:
 	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
 		//depolymerisation large polymer to small polymers
-		Scalar massOrMolFraction = useMoles? volVars.molFraction(h2OIdx, mucilIdx) : volVars.massFraction(h2OIdx, mucilIdx);
+		Scalar massOrMolFraction = useMoles? volVars.moleFraction(h2OIdx, mucilIdx) : volVars.massFraction(h2OIdx, mucilIdx);
 		Scalar massOrMolDensity = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx);
-		
+		//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
 		Scalar C_L = massOrMolDensity * std::max(massOrMolFraction, 0.);//X/X I think to X/m3
 		Scalar F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_Oa ; //X/(m^3*s)
 		
-		//Att: using here absolute saturation
+		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		q[soluteIdx] += std::max(F_depoly,0.) * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
 		q[mucilIdx] -= std::max(F_depoly, 0.)* pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
-		if(volVars.moleFraction(h2OIdx, mucilIdx) < 0)
-		{
-			std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<F_depoly<<" "<<q[mucilIdx]<<std::endl;
-		}
-		
-		
+		//std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<F_depoly<<" Sa "<<volVars.saturation(h2OIdx)<<" phi "<<volVars.porosity()
+		//<<" K_L "<<K_L<<" C_Oa "<<C_Oa<<" C_L "<<C_L<<std::endl;
 	}
 
 	/*!
@@ -875,8 +883,8 @@ private:
 	Scalar bulkDensity_ = 1.4;//g/cm3 // TODO check with Mai, buffer power (1+b) or b
 	
 	Scalar v_maxL_ = 0.0; //Maximum reaction rate of enzymes targeting large polymers [d-1]
-	Scalar K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mg cm-3 soil]
-	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mg (C)cm-3(soil-1)]
+	Scalar K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mol cm-3 soil]
+	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mol (C)cm-3(soil-1)]
 	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) * *bulkDensity_ g/cm3
 	Scalar v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	Scalar K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
