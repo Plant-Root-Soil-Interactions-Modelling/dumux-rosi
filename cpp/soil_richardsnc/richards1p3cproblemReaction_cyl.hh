@@ -132,7 +132,7 @@ public:
 				
 				//IC
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "C"+std::to_string(i), "C"+std::to_string(i)+"Z", 
-													0., this->spatialParams().layerIFF()); // kg/m2
+													0., this->spatialParams().layerIFF()); // kg/m2 or mol/m2
 				if (bcSTopType_.at(i - soluteIdx)==managed) {
 					componentInput_.at(i) = InputFileFunction(std::to_string(i)+".Component.Managed", "Input", "Time", 0.); // cm/day (day)
 					
@@ -151,7 +151,10 @@ public:
 			
 			
 			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
-			componentInput_.at(i).setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
+			Scalar g2kg = 1/1000 ;
+			Scalar m2_2_cm2 = 10000;
+			Scalar unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
+			componentInput_.at(i).setFunctionScale(unitConversion/(24.*60.*60.)); // g/(cm2 day) or mol/(cm2 day)  -> kg/(m²*s) or mol/(m²*s) 
 			
 		}
 
@@ -160,8 +163,8 @@ public:
 		
 		
 		 v_maxL = getParam<Scalar>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
-		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ); //[mg cm-3 soil] => [kg m-3 soil]
-		 C_Oa = getParam<Scalar>("Soil.C_oa", C_Oa_); //[mg (C)cm-3(soil-1)] => [kg (C) m-3(soil-1)]
+		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ); //[mg cm-3 soil] => [kg m-3 soil] or in mol 
+		 C_Oa = getParam<Scalar>("Soil.C_oa", C_Oa_); //[mg (C)cm-3(soil-1)] => [kg (C) m-3(soil-1)] or in mol 
 
 												  
 		// Output
@@ -301,6 +304,7 @@ public:
      * dirchlet(...) is called by the local assembler, e.g. BoxLocalAssembler::evalDirichletBoundaries
      */
     PrimaryVariables dirichletAtPos(const GlobalPosition &globalPos) const {
+		DUNE_THROW(Dune::InvalidStateException, "Do not use Dirichlet BC please");
         PrimaryVariables values;
         if (onUpperBoundary_(globalPos)) 
 		{ // top bc
@@ -338,10 +342,10 @@ public:
     }
 
 	/*!
-	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
+	 * \copydoc FVProblem::neumann // [kg/(m²*s)] or [mol/(m²*s)]
 	 *
 	 * called by BoxLocalResidual::evalFlux,
-	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$// effective diffusion coefficient !!!!!!!!!!!!
+	 * negative = influx, mass flux in \f$ [ (kg or mol) / (m^2 \cdot s)] \f$// effective diffusion coefficient !!!!!!!!!!!!
 	 */
 	NumEqVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
@@ -379,33 +383,36 @@ public:
 			//std::cout<<"dz "<<dz<<", bcTopType_ "<<bcTopType_<<" "<<bcSTopType_.at(0)<<" "<<bcSTopType_.at(1);
 			//std::cout<<" kc "<<kc<<" krw "<<krw<<std::endl;
 
-			//useMoles
-			//Scalar rho__ = rho_ * !useMoles + useMoles * volVars.molarDensity(h2OIdx);
+			//useMole fraction or mass fraction? rho_
+			Scalar rhoW = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
+			Scalar cm2m = 1/100 ;
+			Scalar unitConversion = cm2m; //something else needed? 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
                 case constantPressure: {
-                    f = rho_ * kc * ((h - bcTopValues_[pressureIdx]) / dz - gravityOn_)*pos[0] ; // maximal inflow
+                    f = rhoW * kc * ((h - bcTopValues_[pressureIdx]) / dz - gravityOn_)*pos[0] *unitConversion; // maximal inflow
                     //std::cout << "!";
                     break;
                 }
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcTopValues_[pressureIdx]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or 
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax)*pos0;
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcTopValues_[pressureIdx]*rho_/(24.*60.*60.)/100 * pos[0];
+					//useMoles:  [cm/d] * [mol/m^3] * [d/s] * [m/cm] = [m/s] *  [mol/m^3] = [mol /(m^2 * s)]
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						f = std::min(f, omax);
 					}
 					break;
@@ -413,10 +420,10 @@ public:
 				case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
 					Scalar prec = -componentInput_[h2OIdx].f(time_);//-precipitation_.f(time_);
 					if (prec < 0) { // precipitation
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax)*pos0;
 					} else { // evaporation
-						Scalar emax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
+						Scalar emax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
 						f = std::min(prec, emax)*pos0;
 					}
 					break;
@@ -426,36 +433,36 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
                 case constantPressure: {
-                    f = rho_ * kc * ((h - bcBotValues_[pressureIdx]) / dz - gravityOn_)* pos[0]; // maximal inflow
-//                    Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
-//                    f = std::min(f, omax);
+                    f = rhoW * kc * ((h - bcBotValues_[pressureIdx]) / dz - gravityOn_)* pos[0]; // maximal inflow
+//                    Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+//                    f = std::min(f, omax); rho_
                     break;
                 }
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[pressureIdx]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or mol/(m2*s)
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax)*pos0;
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[pressureIdx]*rho_/(24.*60.*60.)/100 * pos[0];
+					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
 						f = std::min(f, omax);
 					}
 					break;
 				}
-				case freeDrainage: {
-					f = krw * kc * rho_*pos0; // * 1 [m]
+				case freeDrainage: { // holds when useMoles?
+					f = krw * kc * rhoW *pos0; // * 1 [m]
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
@@ -468,9 +475,14 @@ public:
 		 * SOLUTES
 		 */
 		
+		Scalar rhoW = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
+		Scalar g2kg = 1/1000 ;
+		Scalar m2_2_cm2 = 10000;
+		Scalar unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
 		for(int i = soluteIdx;i<numComponents_;i++)
 		{
 			int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable
+			Scalar massOrMolFraction = useMoles? volVars.molFraction(0, i) : volVars.massFraction(0, i);
 			if (onUpperBoundary_(pos)) { // top bc Solute
 				//std::cout<<"neumann solute, upper BC "<<bcSTopType_.at(i_s)<<" ";
 				switch (bcSTopType_.at(i_s)) {
@@ -481,18 +493,22 @@ public:
 					static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
-					flux[i] = (de * (volVars.massFraction(0, i)*rho_-bcSTopValue_.at(i_s)*rho_) / dz + f * volVars.massFraction(0, i))*pos0;
+					flux[i] = (de * (massOrMolFraction*rhoW-bcSTopValue_.at(i_s)*rhoW) / dz + f * massOrMolFraction)*pos0;
 					break;
 
 				}
 				case constantFlux: {
-					flux[i] = -bcSTopValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
-					//flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*10; // g/cm2/day -> kg/(m²*s)
+					//flux[i] = -bcSTopValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
+					//usemoles:
+					// mol/(cm2 * d)  * [d/s]  * cm2/m2 =  mol/(m2 * s)
+					// use mass:
+					// g/(cm2/d) *[d/s] * [kg/g] * cm2/m2 = kg/(m2 * s)
+					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)* unitConversion; // g/cm2/day || mol/cm2/day  -> kg/(m²*s) || mol/(m²*s)
 					break;
 				}
 				case constantFluxCyl: {
-					//flux[i] = -bcSTopValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
+					//flux[i] = -bcSTopValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
 					//std::cout<<"constantfluxCyl "<<flux[i];
 					break;
 				}
@@ -503,15 +519,15 @@ public:
 				}
 				case outflowCyl: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * volVars.massFraction(0, i)*pos0;
+					flux[i] = f * massOrMolFraction *pos0;
 					break;
 				}
 				case linear: {
-					flux[i] = vMax_.at(i_s)  * volVars.massFraction(0, i)*pos0;
+					flux[i] = vMax_.at(i_s)  * massOrMolFraction*pos0;
 					break;
 				}
 				case michaelisMenten: {
-					flux[i] = (vMax_.at(i_s)  * (std::max(volVars.massFraction(0, i),0.)*rho_)/(km_.at(i_s)  + std::max(volVars.massFraction(0, i),0.)*rho_))*pos0;
+					flux[i] = (vMax_.at(i_s)  * (std::max(massOrMolFraction,0.)*rhoW)/(km_.at(i_s)  + std::max(massOrMolFraction*rhoW))*pos0;
 					break;
 				}
 				case managed: {
@@ -531,38 +547,38 @@ public:
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
 					//diffusion + advection (according to wat flux computed above)
-					flux[i] =(de * (volVars.massFraction(0, i)*rho_-bcSBotValue_.at(i_s)*rho_) / dz + f * volVars.massFraction(0, i))*pos0;
+					flux[i] =(de * (volVars.massFraction(0, i)*rhoW-bcSBotValue_.at(i_s)*rhoW) / dz + f * volVars.massFraction(0, i))*pos0;
 					//[kg_solute/(m²*s)] = [m2 / s] * ([kg_solute/kg_tot] * [kg_tot / m^3_tot] - kg_solute/ m^3_tot)/m + [kg_tot/(m²*s)] * [kg_solute/kg_tot]
 					// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, i) << ", " << bcSBotValue_ << ", " << flux[i]*1.e9  << "\n";
 					break;
 				}
 				case constantFlux: {
-					flux[i] = -bcSBotValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
-					//flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*10; // g/cm2/day -> kg/(m²*s)
+					//flux[i] = -bcSBotValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion; // g/cm2/day -> kg/(m²*s)
 					//[kg_solute/(m²*s)] = [cm_solute/day] * (kg_tot / m^3_tot)* s/day * m/cm ??
 					break;
 				}
 				case constantFluxCyl: {
-					//flux[i] = -bcSBotValue_.at(i_s)*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*10*pos[0]; // g/cm2/day -> kg/(m²*s)
+					//flux[i] = -bcSBotValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day -> kg/(m²*s)
 					break;
 				}
 				case outflow: {//?? free outflow??
 					// std::cout << "f " << f*1.e6 << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * volVars.massFraction(0, i);
+					flux[i] = f * massOrMolFraction;
 					break;
 				}
 				case outflowCyl: {
-					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * volVars.massFraction(0, i)*pos0;
+					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n"; rho_
+					flux[i] = f * massOrMolFraction*pos0;
 					break;
 				}
 				case linear: {
-					flux[i] = vMax_.at(i_s) * volVars.massFraction(0, i)*pos0;
+					flux[i] = vMax_.at(i_s) * massOrMolFraction*pos0;
 					break;
 				}
 				case michaelisMenten: {
-					flux[i] = (vMax_.at(i_s) * (std::max(volVars.massFraction(0, i),0.)*rho_)/(km_.at(i_s) + std::max(volVars.massFraction(0, i),0.)*rho_))*pos0;
+					flux[i] = (vMax_.at(i_s) * (std::max(massOrMolFraction,0.)*rhoW)/(km_.at(i_s) + std::max(massOrMolFraction,0.)*rhoW))*pos0;
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
@@ -607,19 +623,20 @@ public:
 	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
 		//depolymerisation large polymer to small polymers
-		if(volVars.moleFraction(h2OIdx, mucilIdx) >0)
+		Scalar massOrMolFraction = useMoles? volVars.molFraction(h2OIdx, mucilIdx) : volVars.massFraction(h2OIdx, mucilIdx);
+		Scalar massOrMolDensity = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx);
+		
+		Scalar C_L = massOrMolDensity * std::max(massOrMolFraction, 0.);//X/X I think to X/m3
+		Scalar F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_Oa ; //X/(m^3*s)
+		
+		//Att: using here absolute saturation
+		q[soluteIdx] += std::max(F_depoly,0.) * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
+		q[mucilIdx] -= std::max(F_depoly, 0.)* pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
+		if(volVars.moleFraction(h2OIdx, mucilIdx) < 0)
 		{
-			Scalar C_L = volVars.molarDensity(h2OIdx) * volVars.moleFraction(h2OIdx, mucilIdx);//mol/mol I think to mol/m3
-			Scalar F_depoly = v_maxL * (C_L /(K_L+C_L)) * C_Oa ; //mol/(m^3*s)
-			
-			//Att: using here absolute saturation
-			q[soluteIdx] += std::max(F_depoly,0.) * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
-			q[mucilIdx] -= std::max(F_depoly, 0.)* pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
-			if(volVars.moleFraction(h2OIdx, mucilIdx) < 0)
-			{
-				std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<F_depoly<<" "<<q[mucilIdx]<<std::endl;
-			}
+			std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<F_depoly<<" "<<q[mucilIdx]<<std::endl;
 		}
+		
 		
 	}
 
@@ -862,8 +879,8 @@ private:
 	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mg (C)cm-3(soil-1)]
 	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) * *bulkDensity_ g/cm3
 	Scalar v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
-	Scalar K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil]
-	Scalar C_Oa  ; //concentration of active oligotrophic biomass [kg (C)m-3(soil-1)]
+	Scalar K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
+	Scalar C_Oa  ; //concentration of active oligotrophic biomass [kg (C)m-3(soil-1)] or [mol (C)m-3(soil-1)]
 	
 	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
 	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  
