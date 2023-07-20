@@ -267,7 +267,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "surface"])
+    args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "surface"])
     # args = parser.parse_args()
 
     name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method

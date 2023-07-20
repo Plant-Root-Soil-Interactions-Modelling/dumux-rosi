@@ -57,16 +57,6 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     A_neumann = A_dirichlet.copy()
     A_neumann[0, 0] -= kx0
     Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
-
-    C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24) ->[25]
-    c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25) -> [26]
-    # print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
-    # print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
-
-    C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
-    c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
-    # print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
-    # print("c_neumann", type(c_neumann), c_neumann.shape)
     print("inv stop")
 
     print("up start")
@@ -74,20 +64,23 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     nmax = len(matrix2soil)
 
     Bt = B.transpose()
-    # print(Bt.shape, C_comp_neumann.shape, B.shape)
-    # print(np.sum(Bt @ B), (Bt @ B).shape)
     BBt_inv = sparse.linalg.inv(B @ Bt)  # sparse
 
-    AinvKr_neumann_up = B @ ((Ainv_neumann) @ Kr) @ Bt
-    Ainv_neumann_up = B @ Ainv_neumann
-    C_comp_neumann_up = B @ C_comp_neumann @ Bt
-    c_neumann_up = B @ c_neumann
+    C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24) ->[25]
+    c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25) -> [26]
+    C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
+    c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
 
     AinvKr_dirichlet_up = (((B @ Ainv_dirichlet) @ Kr) @ Bt)
     Ainv_dirichlet_up = B @ Ainv_dirichlet
     C_comp_dirichlet_up = B @ C_comp_dirichlet @ Bt
     c_dirichlet_up = B @ c_dirichlet
     # print(C_comp_neumann_up.shape, type(C_comp_neumann_up))
+
+    AinvKr_neumann_up = B @ ((Ainv_neumann) @ Kr) @ Bt
+    Ainv_neumann_up = B @ Ainv_neumann
+    C_comp_neumann_up = B @ C_comp_neumann @ Bt
+    c_neumann_up = B @ c_neumann
 
     Kr_up = B @ Kr @ Bt  # sparse
     # Kr_up_inv = sparse.linalg.inv(Kr_up)
@@ -147,7 +140,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             for j in soil2matrix.keys():  # from total to matric
                     rx[soil2matrix[j]] -= centers[j, 2]
 
-            rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)
+            rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)  # in matric potential
 
             for j in soil2matrix.keys():  # from matric to total
                     rsx[soil2matrix[j]] += centers[j, 2]
@@ -161,7 +154,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             q_dirichlet_up = -Kr_up.dot(rsx - hxd)
             rx = hxd
             # if np.sum(q_dirichlet_up) > t_pot:
-            #     
+            #
             # else:
             #     rx = BBt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
 

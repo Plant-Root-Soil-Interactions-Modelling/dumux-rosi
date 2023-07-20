@@ -31,7 +31,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     skip = 10
 
     max_error = 10
-    max_iter = 100  # 100
+    max_iter = 100
 
     ns = len(r.rs.segments)
     nodes = r.get_nodes()
@@ -69,14 +69,16 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     An_up = M @ Kr @ (Id - An_inv @ Kr) @ Mt  # [34]
     cn_up = M @ (Kr @ An_inv)[:, 0]
     Ad_up = M @ Kr @ (Id - Ad_inv @ Kr) @ Mt  # [34]
-    cd_up = M @ (Kr @ Ad_inv)[:, 0] * (-kx0)
+    cd_up = M @ (Kr @ Ad_inv)[:, 0] * (kx0)
 
     AinvKr_dirichlet_up = (((M @ Ad_inv) @ Kr) @ Mt)
     Ainv_dirichlet_up = M @ Ad_inv
+    AinvKr_neumann_up = M @ ((An_inv) @ Kr) @ Mt
+    Ainv_neumann_up = M @ An_inv
 
     Kr_up = M @ Kr @ Mt  # sparse
     Kr_up_inv = sparse.linalg.inv(Kr_up).todense()
-    
+
     inner_kr_up = MMt_inv.dot(M.dot(inner_kr_))
     inner_kr_up = np.maximum(inner_kr_up, np.ones(inner_kr_up.shape) * 1.e-7)  ############################################ (too keep within table)
     inner_kr_up = np.minimum(inner_kr_up, np.ones(inner_kr_up.shape) * 1.e-4)  ############################################ (too keep within table)
@@ -94,7 +96,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     rx = [0]
 
     centers = s.getCellCenters()
-    print("centers", np.min(centers[:,2]), np.max(centers[:,2]))
+    print("centers", np.min(centers[:, 2]), np.max(centers[:, 2]))
 
     t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ...
     # t_pot = -100
@@ -102,28 +104,24 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     for j in soil2matrix.keys():
             hs_[soil2matrix[j]] += sx[j] + centers[j, 2]  # from matric to total
 
-    q_dirichlet_up = Ad_up.dot(hs_) - cd_up * wilting_point
+    q_dirichlet_up = -(Ad_up.dot(hs_) - cd_up * wilting_point)  # there was some SIGN MISTAKE
     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
     print("1) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
-    
-    hxd = MMt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
-    rx = hxd
-    q_dirichlet_up = np.sum(-Kr_up.dot(hs_ - hxd)) 
-    print("2) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
-    
-    # print("q_dirichlet_up", np.sum(q_dirichlet_up), "t_pot", t_pot)
-    # if np.sum(q_dirichlet_up) > t_pot:
-    #     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
-    #     print("rx dirichlet", np.min(rx), np.max(rx))
-    # else:
-    #     q_neumann_up = An_up.dot(hs_) + cn_up * t_pot
-    #     rx = hs_ - Kr_up_inv.dot(-q_neumann_up)
-    #     print("q_neumann_up", np.sum(q_neumann_up), "t_pot", t_pot)
-    #     for j in soil2matrix.keys():  # from total to matric
-    #         rx[soil2matrix[j]] -= centers[j, 2]
-    #     print("rx neumann", np.min(rx), np.max(rx))    
 
-    
+    rx = MMt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
+    q_dirichlet_up = -Kr_up.dot(hs_ - rx)
+    print("2) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
+
+    print("q_dirichlet_up", np.sum(q_dirichlet_up), "t_pot", t_pot)
+    if np.sum(q_dirichlet_up) > t_pot:
+        rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
+        print("rx dirichlet", np.min(rx), np.max(rx))
+    else:
+        q_neumann_up = An_up.dot(hs_) + cn_up * t_pot
+        rx = hs_ - Kr_up_inv.dot(-q_neumann_up)
+        print("q_neumann_up", np.sum(q_neumann_up), "t_pot", t_pot)
+        print("rx neumann", np.min(rx), np.max(rx))
+
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ..
@@ -147,6 +145,9 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             for j in soil2matrix.keys():  # from total to matric
                     rx[soil2matrix[j]] -= centers[j, 2]
 
+            rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
+            rx = np.minimum(rx, np.ones(rx.shape) * 0.)
+
             rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)  # in matric potential
 
             for j in soil2matrix.keys():  # from matric to total
@@ -157,22 +158,23 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
 
-            # q_dirichlet_up = Ad_up.dot(rsx) - cd_up * wilting_point
+            q_dirichlet_up = -(Ad_up.dot(rsx) - cd_up * wilting_point)  # there was some SIGN MISTAKE
+            q_neumann_up = An_up.dot(rsx) + cn_up * t_pot
             # rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
-            hxd = MMt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
-            rx = hxd            
-            print("q_dirichlet_up", np.sum(q_dirichlet_up), "t_pot", t_pot, "rsx", np.min(rsx), np.max(rsx), "sx", np.min(sx), np.max(sx), "hs_", np.min(hs_), np.max(hs_))
-            q_dirichlet_up =  -Kr_up.dot(hs_ - hxd)
-            # if np.sum(q_dirichlet_up) > t_pot:
-            #     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
-            #     # print("rx dirichlet", np.min(rx), np.max(rx))
-            #     print("rx dirichlet", np.min(rx), np.max(rx))
-            # else:
-            #     q_neumann_up = An_up.dot(hs_) + cn_up * t_pot
-            #     rx = hs_ - Kr_up_inv.dot(-q_neumann_up)
-            #     # print("rx neumann", np.min(rx), np.max(rx))
-            #     print("q_neumann_up", np.sum(q_neumann_up), "t_pot", t_pot)
-            #     print("rx neumann", np.min(rx), np.max(rx))
+            # rx = MMt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
+            # q_dirichlet_up2 = -Kr_up.dot(rsx - rx)
+            # print("q_dirichlet_up", np.sum(q_dirichlet_up), np.sum(q_dirichlet_up2), "t_pot", t_pot, "rsx", np.min(rsx), np.max(rsx), "sx", np.min(sx), np.max(sx), "hs_", np.min(hs_), np.max(hs_))
+            if np.sum(q_dirichlet_up) > t_pot:
+                rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
+                # print("rx dirichlet", np.min(rx), np.max(rx))
+                # print("rx dirichlet", np.min(rx), np.max(rx))
+            else:
+                rx = rsx - Kr_up_inv.dot(-q_neumann_up)
+                # rx = MMt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
+                # rx = rsx - Kr_up_inv.dot(-q_neumann_up)
+                # print("rx neumann", np.min(rx), np.max(rx))
+                # print("q_neumann_up", np.sum(q_neumann_up), "t_pot", t_pot)
+                # print("rx neumann", np.min(rx), np.max(rx))
 
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
@@ -181,27 +183,21 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         wall_soil = timeit.default_timer()
 
-        fluxes = {}
-        for j in range(0, nmax):
-            fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
-        sum_root_flux = np.sum(q_dirichlet_up)
-
-        # if np.sum(q_dirichlet_up) > t_pot:
-        #     print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
-        #     fluxes = {}
-        #     for j in range(0, nmax):
-        #         fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
-        #     sum_root_flux = np.sum(q_dirichlet_up)
-        # else:
-        #     # print("C_comp_neumann_up", C_comp_neumann_up.shape)
-        #     # print("c_neumann_up", c_neumann_up.shape)
-        #     # print("hs_", hs_.shape)
-        #     # q_neumann_up = -Kr_up.dot(rsx - rx)
-        #     print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
-        #     fluxes = {}
-        #     for j in range(0, nmax):
-        #         fluxes[matrix2soil[j]] = q_neumann_up[j, 0]
-        #     sum_root_flux = np.sum(q_neumann_up)
+        if np.sum(q_dirichlet_up) > t_pot:
+            print("dirichlet", np.sum(q_dirichlet_up), t_pot, np.sum(q_neumann_up))
+            # print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
+            fluxes = {}
+            for j in range(0, nmax):
+                fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
+            sum_root_flux = np.sum(q_dirichlet_up)
+        else:
+            print("neumann", np.sum(q_dirichlet_up), t_pot, np.sum(q_neumann_up))
+            # q_neumann_up = -Kr_up.dot(rsx - rx)
+#             print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
+            fluxes = {}
+            for j in range(0, nmax):
+                fluxes[matrix2soil[j]] = q_neumann_up[j, 0]
+            sum_root_flux = np.sum(q_neumann_up)
 
         water = s.getWaterVolume()
         s.setSource(fluxes.copy())  # richards.py
