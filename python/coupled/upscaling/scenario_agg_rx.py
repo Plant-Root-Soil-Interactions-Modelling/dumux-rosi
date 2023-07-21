@@ -54,20 +54,9 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     print("inv start")
     Ainv_dirichlet = sparse.linalg.inv(A_dirichlet).todense()  # dense
-
     A_neumann = A_dirichlet.copy()
     A_neumann[0, 0] -= kx0
     Ainv_neumann = sparse.linalg.inv(A_neumann).todense()  # dense
-
-    C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24) ->[25]
-    c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25) -> [26]
-    # print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
-    # print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
-
-    C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
-    c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
-    # print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
-    # print("c_neumann", type(c_neumann), c_neumann.shape)
     print("inv stop")
 
     print("up start")
@@ -75,20 +64,23 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     nmax = len(matrix2soil)
 
     Bt = B.transpose()
-    # print(Bt.shape, C_comp_neumann.shape, B.shape)
-    # print(np.sum(Bt @ B), (Bt @ B).shape)
     BBt_inv = sparse.linalg.inv(B @ Bt)  # sparse
 
-    AinvKr_neumann_up = B @ ((Ainv_neumann) @ Kr) @ Bt
-    Ainv_neumann_up = B @ Ainv_neumann
-    C_comp_neumann_up = B @ C_comp_neumann @ Bt
-    c_neumann_up = B @ c_neumann
+    C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24) ->[25]
+    c_dirichlet = (Kr @ Ainv_dirichlet)[:, 0] * (-kx0)  # # Hess (25) -> [26]
+    C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
+    c_neumann = (Kr @ Ainv_neumann)[:, 0]  # Hess (33)
 
     AinvKr_dirichlet_up = (((B @ Ainv_dirichlet) @ Kr) @ Bt)
     Ainv_dirichlet_up = B @ Ainv_dirichlet
     C_comp_dirichlet_up = B @ C_comp_dirichlet @ Bt
     c_dirichlet_up = B @ c_dirichlet
     # print(C_comp_neumann_up.shape, type(C_comp_neumann_up))
+
+    AinvKr_neumann_up = B @ ((Ainv_neumann) @ Kr) @ Bt
+    Ainv_neumann_up = B @ Ainv_neumann
+    C_comp_neumann_up = B @ C_comp_neumann @ Bt
+    c_neumann_up = B @ c_neumann
 
     Kr_up = B @ Kr @ Bt  # sparse
     # Kr_up_inv = sparse.linalg.inv(Kr_up)
@@ -119,15 +111,15 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
     q_dirichlet_up = -Kr_up.dot(hs_ - hxd)
-    if np.sum(q_dirichlet_up) > t_pot:
-        rx = hxd
-    else:
-        rx = BBt_inv.dot(AinvKr_neumann_up.dot(hs_) + Ainv_neumann_up[:, 0] * t_pot)
+    rx = hxd
+    # if np.sum(q_dirichlet_up) > t_pot:
+    #     rx = hxd
+    # else:
+    #     rx = BBt_inv.dot(AinvKr_neumann_up.dot(hs_) + Ainv_neumann_up[:, 0] * t_pot)
 
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ..
-        # print("t_pot", t_pot)
 
         hs_ = np.zeros((nmax, 1))  # sx -> hs_ # soil cell indices to soil matrix indices
         for j in soil2matrix.keys():
@@ -148,7 +140,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             for j in soil2matrix.keys():  # from total to matric
                     rx[soil2matrix[j]] -= centers[j, 2]
 
-            rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)
+            rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)  # in matric potential
 
             for j in soil2matrix.keys():  # from matric to total
                     rsx[soil2matrix[j]] += centers[j, 2]
@@ -160,10 +152,11 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             hxd = BBt_inv.dot(AinvKr_dirichlet_up.dot(rsx) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
             q_dirichlet_up = -Kr_up.dot(rsx - hxd)
-            if np.sum(q_dirichlet_up) > t_pot:
-                rx = hxd
-            else:
-                rx = BBt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
+            rx = hxd
+            # if np.sum(q_dirichlet_up) > t_pot:
+            #
+            # else:
+            #     rx = BBt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
 
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
@@ -172,22 +165,27 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         wall_soil = timeit.default_timer()
 
-        if np.sum(q_dirichlet_up) > t_pot:
-            print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
-            fluxes = {}
-            for j in range(0, nmax):
-                fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
-            sum_root_flux = np.sum(q_dirichlet_up)
-        else:
-            # print("C_comp_neumann_up", C_comp_neumann_up.shape)
-            # print("c_neumann_up", c_neumann_up.shape)
-            # print("hs_", hs_.shape)
-            q_neumann_up = -Kr_up.dot(rsx - rx)
-            print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
-            fluxes = {}
-            for j in range(0, nmax):
-                fluxes[matrix2soil[j]] = q_neumann_up[j, 0]
-            sum_root_flux = np.sum(q_neumann_up)
+        fluxes = {}
+        for j in range(0, nmax):
+            fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
+        sum_root_flux = np.sum(q_dirichlet_up)
+
+        # if np.sum(q_dirichlet_up) > t_pot:
+        #     print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
+        #     fluxes = {}
+        #     for j in range(0, nmax):
+        #         fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
+        #     sum_root_flux = np.sum(q_dirichlet_up)
+        # else:
+        #     # print("C_comp_neumann_up", C_comp_neumann_up.shape)
+        #     # print("c_neumann_up", c_neumann_up.shape)
+        #     # print("hs_", hs_.shape)
+        #     q_neumann_up = -Kr_up.dot(rsx - rx)
+        #     print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
+        #     fluxes = {}
+        #     for j in range(0, nmax):
+        #         fluxes[matrix2soil[j]] = q_neumann_up[j, 0]
+        #     sum_root_flux = np.sum(q_neumann_up)
 
         water = s.getWaterVolume()
         s.setSource(fluxes.copy())  # richards.py
@@ -267,7 +265,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "surface"])
+    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "surface"])
     # args = parser.parse_args()
 
     name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
