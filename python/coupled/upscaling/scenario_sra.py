@@ -240,9 +240,10 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         t += dt
 
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+    wall_time = timeit.default_timer() - start_time
+    print ("Coupled benchmark solved in ", wall_time, " s")
 
-    return hx_, hsr_, sink_, x_, y_, z_, hs_, dt
+    return hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time
 
 
 def run_sra(sim_time, method, plant, dim, soil, outer_method):
@@ -255,10 +256,10 @@ def run_sra(sim_time, method, plant, dim, soil, outer_method):
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
-    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_)
+    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
 
 if __name__ == "__main__":
@@ -285,11 +286,11 @@ if __name__ == "__main__":
     r.rs.write(name + ".vtp")
     print()
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     """ write """
     s.writeDumuxVTK("results/" + name)
-    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_)
+    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
     # """ plot results """
     # plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt), name)

@@ -231,11 +231,11 @@ def open_sra_lookup(filename):
     return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)
 
 
-def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs):
+def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs, wall_time = 0.):
     """  saves numpy arrays as npy files """
     np.save('results/hx_' + file_name, np.array(hx))  # xylem pressure head per segment [cm]
     np.save('results/hsr_' + file_name, np.array(hsr))  # pressure head at interface per segment [cm]
     np.save('results/sink_' + file_name, -np.array(sink))  # sink per soil cell [cm3/day]
     np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans), -np.array(trans2))))  # time [day], transpiration [cm3/day]
     np.save('results/hs_' + file_name, np.array(hs))  # soil water matric potential per soil cell [cm]
-
+    np.save('results/time_' + file_name+'{:g}'.format(wall_time), np.array(wall_time))

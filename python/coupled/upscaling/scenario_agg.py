@@ -274,10 +274,11 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             # hsr_.append(rsx_)  # [cm] total potential per segment
 
         t += dt
+    
+    wall_time = timeit.default_timer() - start_time
+    print ("Coupled benchmark solved in ", wall_time, " s")
 
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-
-    return hx_, hsr_, sink_, x_, y_, z_, sx_, dt
+    return hx_, hsr_, sink_, x_, y_, z_, sx_, dt, wall_time
 
 
 def run_agg(sim_time, method, plant, dim, soil, outer_method):
@@ -290,10 +291,10 @@ def run_agg(sim_time, method, plant, dim, soil, outer_method):
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
-    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_)
+    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
 
 if __name__ == "__main__":
@@ -304,7 +305,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "surface"])
+    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "voronoi"])
     # args = parser.parse_args()
 
     name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
@@ -320,12 +321,12 @@ if __name__ == "__main__":
     r.rs.write(name + ".vtp")
     print()
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
 
     """ write """
     s.writeDumuxVTK("results/" + name)
-    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_)
+    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
 #
