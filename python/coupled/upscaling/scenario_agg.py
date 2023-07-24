@@ -51,6 +51,10 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     """ Doussan """
     Ad, Kr, kx0 = r.doussan_system_matrix(rs_age)
     Id = sparse.identity(ns).tocsc()  # identity matrix
+    #
+    # kr = np.array(r.getEffKr(rs_age))
+    # print("kr", np.min(kr), np.max(kr))
+    # ddd
 
     print("inv start")
     Ad_inv = sparse.linalg.inv(Ad).todense()  # dense
@@ -168,7 +172,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
                 rx = rsx - Kr_up_inv.dot(-q_dirichlet_up)
                 # print("rx dirichlet", np.min(rx), np.max(rx))
                 # print("rx dirichlet", np.min(rx), np.max(rx))
-            else:               
+            else:
                 # rx = MMt_inv.dot(AinvKr_neumann_up.dot(rsx) + Ainv_neumann_up[:, 0] * t_pot)
                 # q_neumann_up2 = -Kr_up.dot(rsx - rx)
                 rx = rsx - Kr_up_inv.dot(-q_neumann_up)
@@ -185,8 +189,8 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         wall_soil = timeit.default_timer()
 
         if np.sum(q_dirichlet_up) > t_pot:
-            
-            #print("dirichlet", np.sum(q_dirichlet_up), t_pot, np.sum(q_neumann_up))
+
+            # print("dirichlet", np.sum(q_dirichlet_up), t_pot, np.sum(q_neumann_up))
             # if s.simTime>3.4:
             #     print(np.min(q_neumann_up), np.max(q_neumann_up), np.min(q_neumann_up2), np.max(q_neumann_up2))
             #     plt.plot(q_dirichlet_up, label = "dirichlet")
@@ -194,10 +198,9 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             #     plt.plot(q_neumann_up2, label = "rsx")
             #     # plt.plot(rx, label = "rsx")
             #     # rx2 = rsx - Kr_up_inv.dot(-q_neumann_up)
-            #     # plt.plot(rx2, ':', label = "q")                
+            #     # plt.plot(rx2, ':', label = "q")
             #     plt.legend()
-            #     plt.show()            
-            
+            #     plt.show()
 
             # print("q_dirichlet_up", c, err, np.sum(q_dirichlet_up), t_pot)
             fluxes = {}
@@ -205,8 +208,8 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
                 fluxes[matrix2soil[j]] = q_dirichlet_up[j, 0]
             sum_root_flux = np.sum(q_dirichlet_up)
         else:
-            #print("neumann", np.sum(q_dirichlet_up), t_pot, np.sum(q_neumann_up)) # , np.sum(q_neumann_up2)
-            
+            # print("neumann", np.sum(q_dirichlet_up), t_pot, np.sum(q_neumann_up)) # , np.sum(q_neumann_up2)
+
             # if s.simTime>3.4:
                 # print(np.min(q_neumann_up), np.max(q_neumann_up), np.min(q_neumann_up2), np.max(q_neumann_up2))
                 # plt.plot(q_dirichlet_up, label = "dirichlet")
@@ -214,11 +217,10 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
                 # plt.plot(q_neumann_up2, label = "rsx")
                 # # plt.plot(rx, label = "rsx")
                 # # rx2 = rsx - Kr_up_inv.dot(-q_neumann_up)
-                # # plt.plot(rx2, ':', label = "q")                
+                # # plt.plot(rx2, ':', label = "q")
                 # plt.legend()
                 # plt.show()
-                
-            
+
             # q_neumann_up = -Kr_up.dot(rsx - rx)
 #             print("q_neumann0_up", c, err, q_neumann_up.shape, np.sum(q_neumann_up), t_pot)
             fluxes = {}
@@ -232,7 +234,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         sum_soil_flux = (s.getWaterVolume() - water) / dt
 
         old_sx = sx.copy()
-        sx = s.getSolutionHead()  # richards.py
+        sx = s.getSolutionHead_()  # richards.py
 
         wall_iteration = timeit.default_timer() - wall_iteration
 
@@ -304,7 +306,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "surface"])
+    args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "surface"])
     # args = parser.parse_args()
 
     name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
