@@ -54,8 +54,8 @@ def run_jobs(jobs, sim_time):
 def make_list():
     jobs = []
 
-    method = ['agg', 'sra']  # 'sra', sraOld, agg
-    plant = ['springbarley', 'maize']  # 'springbarley', 'soybean', 'maize'
+    method = ['agg']  # 'sra', sraOld, agg
+    plant = ['maize']  # 'springbarley', 'soybean', 'maize'
     dim = ["1D", "3D"]  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
     outer_radius = ['surface']

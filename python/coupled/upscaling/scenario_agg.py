@@ -95,7 +95,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     """ Numerical solution (a) """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, sx_, hx_, hsr_ = [], [], [], [], [], [], []
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
+    sx = s.getSolutionHead_()  # inital condition, solverbase.py
 
     N = round(sim_time / dt)
     t = 0.
@@ -309,7 +309,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "length"])
+    # args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "length"])
+    args = parser.parse_args()
 
     name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
 

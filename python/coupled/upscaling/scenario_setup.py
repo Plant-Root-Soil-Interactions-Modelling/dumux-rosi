@@ -77,7 +77,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     soil             name of the soil 4D look up table, see soil_vg_() for the names and corresponding VG parameters
     outer_method     method to determine outer perirhizal radii ('voronoi', 'length', 'surface', or 'volume')    
     """
-    assert plant == "maize" or plant == "soybean" or plant == "springbarley", "plant should be 'maize', or 'soybean' "
+    assert plant == "maize" or plant == "soybean" or plant == "springbarley", "plant should be 'maize', or 'soybean' or 'springbarley' "
     assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
     assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand", "hydrus_sandyloam"], "soil should be 'hydrus_loam', 'hydrus_clay', 'hydrus_sand' or 'hydrus_sandyloam' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
