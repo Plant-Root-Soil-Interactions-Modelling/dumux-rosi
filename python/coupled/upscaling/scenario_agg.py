@@ -312,24 +312,18 @@ if __name__ == "__main__":
     # args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "length"])
     args = parser.parse_args()
 
-    name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
+    name = "agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
+    print(name, "\n")
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
     sim_time = 7.5
 
-    print(name, "\n")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
 
-    print()
-    r.rs.write(name + ".vtp")
-    print()
-
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
-    plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-
-    """ write """
+    # """ write """
     s.writeDumuxVTK("results/" + name)
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 

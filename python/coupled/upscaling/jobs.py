@@ -13,6 +13,48 @@ import scenario_sra_old as sra_old
 import scenario_agg as agg
 
 
+def start_jobs(jobs):
+    """ send as individual jobs """
+
+    jobs = np.array(jobs)
+
+    for job in jobs:
+
+        method, plant, dim, soil, outer_method = job
+
+        if method == "sra":
+            py_name = "scenario_sra.py"
+        elif method == "sraOld":
+            py_name = "scenario_sra_old.py"
+        elif method == "agg":
+            py_name = "scenario_agg.py"
+        else:
+            raise("Unknown method" + method)
+
+        job_name = method +"_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+        print(job_name)
+        job_file = os.path.join("jobs", job_name + ".sh")
+        
+        with open(job_file, 'w') as fh:
+
+            fh.writelines("#!/bin/bash\n")
+            fh.writelines("#SBATCH --job-name={:s}\n".format(job_name))
+            fh.writelines("#SBATCH --ntasks=1\n")
+            fh.writelines("#SBATCH --nodes=1\n")
+            fh.writelines("#SBATCH --time=5:00:00\n")
+            fh.writelines("#SBATCH --mem=100G\n")
+            fh.writelines("#SBATCH --partition=cpu256\n")
+            # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
+            # fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
+            # fh.writelines("module load openmpi/4.1.4\n")
+            fh.writelines("python3 {:s} {:s} {:s} {:s} {:s}".format(py_name, plant, dim, soil, outer_method))
+
+        # os.system("sbatch {:s}".format(job_file))
+        
+        # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+        #                   format(job_name, enviro_type, sim_time, *job[1:]))
+
+
 def run_jobs(jobs, sim_time):
     """ distribute jobs to MPI ranks """
 
@@ -54,7 +96,7 @@ def run_jobs(jobs, sim_time):
 def make_list():
     jobs = []
 
-    method = ['agg']  # 'sra', sraOld, agg
+    method = ['agg', 'sra']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
     dim = ["1D", "3D"]  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
@@ -82,5 +124,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    run_jobs(jobs, sim_time)
+    start_jobs(jobs) # sim_time is hardcoded in the __main__ parts
+    # run_jobs(jobs, sim_time)
 

@@ -270,21 +270,16 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "1D", "hydrus_clay", "voronoi"])
-    # args = parser.parse_args()
+    # args = parser.parse_args(['springbarley', "1D", "hydrus_clay", "voronoi"])
+    args = parser.parse_args()
 
-    name = "_sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
-
-    initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-    sim_time = 0.5
-
+    name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print(name, "\n")
 
-    r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
+    initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
+    sim_time = 7.5   
 
-    print()
-    r.rs.write(name + ".vtp")
-    print()
+    r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
 
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
