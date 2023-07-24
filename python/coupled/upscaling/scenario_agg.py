@@ -56,29 +56,31 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     # print("kr", np.min(kr), np.max(kr))
     # ddd
 
-    print("inv start")
-    Ad_inv = sparse.linalg.inv(Ad).todense()  # dense
-    An = Ad.copy()
-    An[0, 0] -= kx0
-    An_inv = sparse.linalg.inv(An).todense()  # dense
-    print("inv stop")
-
-    print("up start")
+    """ upscaling """
     M, soil2matrix, matrix2soil = r.get_soil_matrix()
     nmax = len(matrix2soil)
-
     Mt = M.transpose()
     MMt_inv = sparse.linalg.inv(M @ Mt)  # sparse
 
-    An_up = M @ Kr @ (Id - An_inv @ Kr) @ Mt  # [34]
-    cn_up = M @ (Kr @ An_inv)[:, 0]
+    print("inv start")
+    Ad_inv = sparse.linalg.inv(Ad).todense()  # dense
     Ad_up = M @ Kr @ (Id - Ad_inv @ Kr) @ Mt  # [34]
     cd_up = M @ (Kr @ Ad_inv)[:, 0] * (kx0)
+    del Ad_inv  # free the beast
 
-    AinvKr_dirichlet_up = (((M @ Ad_inv) @ Kr) @ Mt)
-    Ainv_dirichlet_up = M @ Ad_inv
-    AinvKr_neumann_up = M @ ((An_inv) @ Kr) @ Mt
-    Ainv_neumann_up = M @ An_inv
+    An = Ad.copy()
+    An[0, 0] -= kx0
+    An_inv = sparse.linalg.inv(An).todense()  # dense
+    An_up = M @ Kr @ (Id - An_inv @ Kr) @ Mt  # [34]
+    cn_up = M @ (Kr @ An_inv)[:, 0]
+    del An_inv  # free the beast
+
+    print("inv stop")
+
+    # AinvKr_dirichlet_up = (((M @ Ad_inv) @ Kr) @ Mt)
+    # Ainv_dirichlet_up = M @ Ad_inv
+    # AinvKr_neumann_up = M @ ((An_inv) @ Kr) @ Mt
+    # Ainv_neumann_up = M @ An_inv
 
     Kr_up = M @ Kr @ Mt  # sparse
     Kr_up_inv = sparse.linalg.inv(Kr_up).todense()
@@ -112,9 +114,9 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     rx = hs_ - Kr_up_inv.dot(-q_dirichlet_up)
     print("1) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
 
-    rx = MMt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
-    q_dirichlet_up = -Kr_up.dot(hs_ - rx)
-    print("2) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
+    # rx = MMt_inv.dot(AinvKr_dirichlet_up.dot(hs_) + Ainv_dirichlet_up[:, 0] * kx0 * wilting_point)
+    # q_dirichlet_up = -Kr_up.dot(hs_ - rx)
+    # print("2) rx dirichlet", np.min(rx), np.max(rx), "q_dirichlet_up", np.sum(q_dirichlet_up))
 
     print("q_dirichlet_up", np.sum(q_dirichlet_up), "t_pot", t_pot)
     if np.sum(q_dirichlet_up) > t_pot:
@@ -277,9 +279,10 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         t += dt
 
-    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+    wall_time = timeit.default_timer() - start_time
+    print ("Coupled benchmark solved in ", wall_time, " s")
 
-    return hx_, hsr_, sink_, x_, y_, z_, sx_, dt
+    return hx_, hsr_, sink_, x_, y_, z_, sx_, dt, wall_time
 
 
 def run_agg(sim_time, method, plant, dim, soil, outer_method):
@@ -292,10 +295,10 @@ def run_agg(sim_time, method, plant, dim, soil, outer_method):
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
-    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_)
+    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
 
 if __name__ == "__main__":
@@ -306,8 +309,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "surface"])
-    # args = parser.parse_args()
+    args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "length"])
 
     name = "_agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
 
@@ -322,12 +324,12 @@ if __name__ == "__main__":
     r.rs.write(name + ".vtp")
     print()
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
 
     """ write """
     s.writeDumuxVTK("results/" + name)
-    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_)
+    write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
 #
