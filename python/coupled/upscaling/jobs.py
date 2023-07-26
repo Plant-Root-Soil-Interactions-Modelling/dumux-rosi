@@ -31,10 +31,10 @@ def start_jobs(jobs):
         else:
             raise("Unknown method" + method)
 
-        job_name = method +"_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+        job_name = method + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method
         print(job_name)
         job_file = os.path.join("jobs", job_name + ".sh")
-        
+
         with open(job_file, 'w') as fh:
 
             fh.writelines("#!/bin/bash\n")
@@ -49,8 +49,8 @@ def start_jobs(jobs):
             # fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 {:s} {:s} {:s} {:s} {:s}".format(py_name, plant, dim, soil, outer_method))
 
-        # os.system("sbatch {:s}".format(job_file))
-        
+        os.system("sbatch {:s}".format(job_file))
+
         # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
         #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
@@ -124,6 +124,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs) # sim_time is hardcoded in the __main__ parts
+    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
     # run_jobs(jobs, sim_time)
 
