@@ -25,7 +25,7 @@ import vtk
 from functional.xylem_flux import sinusoidal2
 import visualisation.vtk_plot as vp
 
-from rhizo_models import plot_transpiration
+# from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 
