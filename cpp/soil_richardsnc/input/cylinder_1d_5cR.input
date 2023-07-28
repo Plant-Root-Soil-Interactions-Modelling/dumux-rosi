@@ -1,5 +1,5 @@
 [Problem]
-Name = cylinder_1d_3cR
+Name = cylinder_1d_5cR
 EnableGravity = "false"
 
 [TimeLoop]
@@ -16,9 +16,19 @@ Cells = 300
 Type = 3 # constant flux
 Value = -0.5 # [cm day-1]
 C1Type = 3 # constant flux
-C1Value =0.01 # [g/cm2 day-1] =0.00018# [kg/cm2 day-1] = 0.01 [mol/cm2 day-1]
+C1Value =0 # [g/cm2 day-1] =0.00018# [kg/cm2 day-1] = 0.01 [mol/cm2 day-1]
 C2Type = 3 # constant flux
-C2Value = 0.01 # [g/cm2 day-1]
+C2Value = 0.0 # [g/cm2 day-1]
+C3Type = 3 # constant flux
+C3Value = 0 # [g/cm2/day]
+C4Type = 3 # constant flux
+C4Value = 0 # [g/cm2/day]
+C5Type = 3 # constant flux
+C5Value = 0 # [g/cm2/day]
+C6Type = 3 # constant flux
+C6Value = 0 # [g/cm2/day]
+# C7Type = 3 # constant flux
+# C7Value = 0 # [g/cm2/day]
 
 [Soil.BC.Bot]
 Type = 3 # constant flux
@@ -27,19 +37,37 @@ C1Type = 3 # constant flux
 C1Value = 0 # [g/cm2/day]
 C2Type = 3 # constant flux
 C2Value = 0 # [g/cm2/day]
+C3Type = 3 # constant flux
+C3Value = 0 # [g/cm2/day]
+C4Type = 3 # constant flux
+C4Value = 0 # [g/cm2/day]
+C5Type = 3 # constant flux
+C5Value = 0 # [g/cm2/day]
+C6Type = 3 # constant flux
+C6Value = 0 # [g/cm2/day]
+# C7Type = 3 # constant flux
+# C7Value = 0 # [g/cm2/day]
 
 [Soil]
 v_maxL = 0.01 #[d-1]
 K_L = 10e-6 #[mg cm-3 soil]
-C_oa = 2.338e-06 #[mg (C)cm-3(soil-1)]
+# C_oa = 2.338e-06 #[mg (C)cm-3(soil-1)]
 CriticalPressure = -15000
+MolarMass = 60.08e-3
+solidDensity = 2700
 
 [Soil.IC]
-P = -100# cm pressure head (initial guess)
-C1 = 0# 0.02 0.03 0.04 0.05 0.6  # kg/kg_water?
-# C1Z = 0.0002 0.0003 0.0004 0.0005 0.006 
-C2 =  0 #0 0 0 0
-#C2Z = 0.0001 0.0003 0.0004 0.0005 0.01
+P = -100 # cm pressure head (initial guess)
+C2 =0# 0.02 0.03 0.04 0.05 0.6  # kg/kg_water?
+# C2Z = 0.0002 0.0003 0.0004 0.0005 0.006 
+C1 =  0 #0 0 0 0
+# C1Z = 0.0001 0.0003 0.0004 0.0005 0.01
+C3 = 0.003
+C4 = 0.004
+C5 = 0.02 0.03 0.04 0.05 0.6  # kg/kg_bulk (?) soil?
+C5Z = 0.0002 0.0003 0.0004 0.0005 0.006 
+C6 = 0.006
+# C7 = 0.007
 
 
 [Soil.VanGenuchten] 

@@ -41,12 +41,12 @@ namespace Dumux {
  *        finite volume in the Richards, n-component model.
  */
 template <class Traits>
-class RichardsNCVolumeVariables
+class Richards5CVolumeVariables
 : public PorousMediumFlowVolumeVariables<Traits>
-, public EnergyVolumeVariables<Traits, RichardsNCVolumeVariables<Traits> >
+, public EnergyVolumeVariables<Traits, Richards5CVolumeVariables<Traits> >
 {
     using ParentType = PorousMediumFlowVolumeVariables<Traits>;
-    using EnergyVolVars = EnergyVolumeVariables<Traits, RichardsNCVolumeVariables<Traits> >;
+    using EnergyVolVars = EnergyVolumeVariables<Traits, Richards5CVolumeVariables<Traits> >;
     using Scalar = typename Traits::PrimaryVariables::value_type;
     using PermeabilityType = typename Traits::PermeabilityType;
 
@@ -97,8 +97,8 @@ public:
         minPc_ = MaterialLaw::endPointPc(materialParams);
         pn_ = problem.nonWettingReferencePressure();
         //porosity
-        updateSolidVolumeFractions(elemSol, problem, element, scv, solidState_, ParentType::numFluidComponents());
-        EnergyVolVars::updateSolidEnergyParams(elemSol, problem, element, scv, solidState_);
+        update3CSolidstate(elemSol, problem, element, scv, solidState_, ParentType::numFluidComponents(), useMoles);
+        //EnergyVolVars::updateSolidEnergyParams(elemSol, problem, element, scv, solidState_);
         permeability_ = problem.spatialParams().permeability(element, scv, elemSol);
 
         // Second instance of a parameter cache.
@@ -107,15 +107,16 @@ public:
         typename FluidSystem::ParameterCache paramCache;
         paramCache.updatePhase(fluidState_, 0);
 
+		//only needs to set it up once. no need to update.
         const int compIIdx = 0;
         for (unsigned int compJIdx = 0; compJIdx < ParentType::numFluidComponents(); ++compJIdx)
+		{
             if(compIIdx != compJIdx)
-                setDiffusionCoefficient_(compJIdx,
-                                         FluidSystem::binaryDiffusionCoefficient(fluidState_,
-                                                                                 paramCache,
-                                                                                 0,
-                                                                                 compIIdx,
-                                                                                 compJIdx));
+			{
+				Scalar D = getParamFromGroup<Scalar>(std::to_string(compJIdx), "Component.LiquidDiffusionCoefficient", 1.0);
+                setDiffusionCoefficient_(compJIdx, D);				
+			}
+		}
     }
 
     /*!
@@ -171,8 +172,17 @@ public:
         }
         else
         {
-            for (int compIdx = 1; compIdx < ParentType::numFluidComponents(); ++compIdx)
-                fluidState.setMassFraction(0, compIdx, priVars[compIdx]);
+			if(ParentType::numFluidComponents() < 2)
+			{	
+				std::cout<<"volumeVariables, completeFluidState, ParentType::numFluidComponents() < 2 "
+				<<ParentType::numFluidComponents()<<std::endl;
+				for (int compIdx = 1; compIdx < ParentType::numFluidComponents(); ++compIdx)
+				{
+					fluidState.setMassFraction(0, compIdx, priVars[compIdx]);
+				}
+			}else{
+				fluidState.setMassFractionNC(0, priVars);
+			}
         }
 
         // density and viscosity
@@ -231,7 +241,9 @@ public:
      * \param phaseIdx The index of the fluid phase
      */
     Scalar saturation(const int phaseIdx = 0) const
-    { return phaseIdx == 0 ? fluidState_.saturation(0) : 1.0-fluidState_.saturation(0); }
+    { 
+		assert(phaseIdx == 0);
+		return phaseIdx == 0 ? fluidState_.saturation(0) : 1.0-fluidState_.saturation(0); }
 
     /*!
      * \brief Returns the average mass density \f$\mathrm{[kg/m^3]}\f$ of a given
@@ -386,6 +398,54 @@ public:
      */
     Scalar diffusionCoefficient(const int phaseIdx, const int compIdx) const
     { return diffCoefficient_[compIdx-1]; }
+	
+	
+    /*!
+     * \brief Returns the volume fraction of the precipitate (solid phase)
+     *        for the given phaseIdx.
+     *
+     * \param sCompIdx The index of the solid component
+     */
+    Scalar solidMoleFraction(int sCompIdx) const
+    { return this->solidState_.moleFraction(sCompIdx); }
+	
+    /*!
+     * \brief Returns the volume fraction of the precipitate (solid phase)
+     *        for the given phaseIdx.
+     *
+     * \param sCompIdx The index of the solid component
+     */
+    Scalar solidMassFraction(int sCompIdx) const
+    { return this->solidState_.massFraction(sCompIdx); }
+	
+    /*!
+     * \brief Returns the volume fraction of the precipitate (solid phase)
+     *        for the given phaseIdx.
+     *
+     * \param sCompIdx The index of the solid component
+     */
+    Scalar solidVolumeFraction(int sCompIdx) const
+    { return this->solidState_.volumeFraction(sCompIdx); }
+
+    /*!
+     * \brief Returns the density of the phase for all fluid and solid phases.
+     *
+     * \param sCompIdx The index of the solid component
+     */
+    Scalar solidComponentDensity(int sCompIdx) const
+    {
+        return SolidSystem::density(this->solidState_, sCompIdx);
+    }
+
+    /*!
+     * \brief Returns the density of the phase for all fluid and solid phases.
+     *
+     * \param sCompIdx The index of the solid component
+     */
+    Scalar solidComponentMolarDensity(int sCompIdx) const
+    {
+        return SolidSystem::molarDensity(this->solidState_, sCompIdx);
+    }
 
 protected:
     FluidState fluidState_; //!< the fluid state

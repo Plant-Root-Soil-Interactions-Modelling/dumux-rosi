@@ -4,7 +4,7 @@ sys.path.append("../../../CPlantBox/src/python_modules")
 
 useC3 = True
 if useC3:
-    from rosi_richards3c_cyl import Richards3CCylFoam  # C++ part (Dumux binding)
+    from rosi_richards5c_cyl import Richards5CCylFoam  # C++ part (Dumux binding)
 else:
     from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 
@@ -37,7 +37,7 @@ else:
             pass
 
 if useC3:
-    s = RichardsWrapper(Richards3CCylFoam())
+    s = RichardsWrapper(Richards5CCylFoam())
 else:
     s = RichardsWrapper(RichardsNCCylFoam())
     
@@ -58,20 +58,24 @@ MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
 exud = 1. # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 Dl = 1.e-9
 
-if useC3:
-    s.setParameter( "Soil.BC.Bot.C1Type", str(3))
-    s.setParameter( "Soil.BC.Top.C1Type", str(3))
-    s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
-    s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
-    s.setParameter("1.Component.MolarMass", str(MolarMass))  # in kg/mol
-    s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
-    # s.setParameter( "Soil.BC.Bot.C2Type", str(3))
-    # s.setParameter( "Soil.BC.Top.C2Type", str(6))
-    # s.setParameter( "Soil.BC.Bot.C2Value", str(exud)) 
-    # s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
-    s.setParameter("2.Component.MolarMass", str(MolarMass)) 
-    # s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+if useC3:
+    s.setParameter( "Soil.MolarMass", str(60.08e-3))
+    s.setParameter( "Soil.solidDensity", str(2700))
+    
+    s.setParameter( "Soil.BC.Bop.C1Type", str(3))
+    s.setParameter( "Soil.BC.Top.C1Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C1Value", str(exud)) 
+    s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
+    #s.setParameter("1.Component.MolarMass", str(MolarMass))  # in kg/mol
+    s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Dl*10)) #m^2/s
+
+    s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+    s.setParameter( "Soil.BC.Top.C2Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C2Value", str(0)) 
+    s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+    #s.setParameter("2.Component.MolarMass", str(MolarMass)) 
+    s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 else:
     s.setParameter( "Soil.BC.Bot.SType", str(3))
     s.setParameter( "Soil.BC.Top.SType", str(6))
@@ -83,11 +87,12 @@ else:
     
  
 
-
+s.setParameter("Soil.v_maxL", str(0.01))
+s.setParameter("Soil.K_L", str(1e-6))
 
 ci = 1
-#s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
-#s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
+#s.setParameter("Soil.IC.C3Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
+#s.setParameter("Soil.IC.C3", "0.02 0.03 0.04 0.05 0.6") 
 #s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
 s.setParameter("Component.BufferPower", "0")  
            
@@ -131,8 +136,10 @@ write_file_array("theta",np.array(s.getWaterContent()).flatten())
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
 write_file_array("krs",np.array(s.getKrw()).flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
-write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
-write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
+numComp = 6
+for i in range(numComp):
+    write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()) 
+#write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
 
 for i, dt in enumerate(np.diff(times)):
 
@@ -148,6 +155,8 @@ for i, dt in enumerate(np.diff(times)):
     write_file_array("theta",np.array(s.getWaterContent()).flatten())
     write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
     write_file_array("krs",np.array(s.getKrw()).flatten())
-    write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
-    write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
+    for i in range(numComp):
+        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()) 
+    #write_file_array("solute_conc1", np.array(s.getSolution_(1)).flatten()) 
+    #write_file_array("solute_conc2", np.array(s.getSolution_(2)).flatten()) 
 

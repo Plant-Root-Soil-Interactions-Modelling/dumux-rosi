@@ -1,0 +1,4 @@
+install(FILES
+compositional3Csolidstate.hh
+update3Csolidstate.hh
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/material/solidstates)

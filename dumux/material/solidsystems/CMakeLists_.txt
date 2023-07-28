@@ -1,0 +1,3 @@
+install(FILES
+solidphase3c.hh
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/material/solidsystems)

@@ -417,7 +417,8 @@ public:
 		}else
 		{
 			auto compJIdx0value =  1. - std::reduce(values_.begin() +1, values_.end());
-			Dune::FieldVector<double, 3> values(values_);values[0] = compJIdx0value; //recompute real mass fraction for water
+			auto values(values_);//Dune::FieldVector<double, 3>
+			values[0] = compJIdx0value; //recompute real mass fraction for water
 			Scalar currentAverageMolarMass = 0.;//1st computation
 			for (int compJIdx = 0; compJIdx < numComponents; ++compJIdx)
 			{
