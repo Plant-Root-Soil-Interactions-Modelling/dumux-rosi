@@ -41,7 +41,7 @@ def start_jobs(jobs):
             fh.writelines("#SBATCH --job-name={:s}\n".format(job_name))
             fh.writelines("#SBATCH --ntasks=1\n")
             fh.writelines("#SBATCH --nodes=1\n")
-            fh.writelines("#SBATCH --time=5:00:00\n")
+            fh.writelines("#SBATCH --time=10:00:00\n")
             fh.writelines("#SBATCH --mem=100G\n")
             fh.writelines("#SBATCH --partition=cpu256\n")
             # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
@@ -98,9 +98,9 @@ def make_list():
 
     method = ['agg']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D", "3D"]  # 1D, 3D
-    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'] #'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
-    outer_radius = ['voronoi','surface']
+    dim = ["3D"]  # 1D, 3D
+    soil = ['hydrus_loam'] #'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
+    outer_radius = ['voronoi', 'surface']
 
     print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
     print()

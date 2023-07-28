@@ -274,6 +274,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
+    print()
     print(name, "\n")
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))

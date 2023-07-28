@@ -155,6 +155,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
             rx = np.minimum(rx, np.ones(rx.shape) * 0.)
+            hs = np.maximum(hs, np.ones(hs.shape) * (-15999))
 
             rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)  # in matric potential
 
@@ -315,6 +316,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     name = "agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
+    print()
     print(name, "\n")
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
