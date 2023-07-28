@@ -17,7 +17,7 @@ sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/pyth
 import argparse
 import timeit
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy import sparse
 import scipy.sparse.linalg as LA
 import vtk
