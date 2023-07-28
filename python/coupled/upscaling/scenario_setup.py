@@ -145,7 +145,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         params[1].theta = 1.31  # why is the tap root not always 0?
 
     seed_param = rs.getRootSystemParameter()
-    seed_param.seedPos = pb.Vector3d(0., 0., -0.1)  #################################################################################
+    # seed_param.seedPos = pb.Vector3d(0., 0., -3.)  #################################################################################
 
     # seed = rs.getRootSystemParameter()  # SeedRandomParameter
     # seed.firstSB = 1.e6  #################################################################################
@@ -175,21 +175,27 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     elif dim == "3D":
         picker = lambda x, y, z: s.pick([x, y, z])
 
-    r.rs.setSoilGrid(picker)  # maps segment
+    r.rs.setSoilGrid(picker)  # maps segment ############################## rs?
+    print("alive1")
     seg2cell = r.rs.seg2cell
+    print("alive2")
     ns = len(r.rs.segments)
     mapping = np.array([seg2cell[j] for j in range(0, ns)])
+    print("alive3")
 
     """ outer radii """
     if outer_method == "voronoi":
+        print("voronoi", outer_method)
         outer_ = PerirhizalPython(rs).get_outer_radii_bounded_voronoi()
         if np.sum([np.isnan(outer_)]) > 0:
             print("set_scenario(): NaNs in get_outer_radii_bounded_voronoi are replaced by mean", np.sum([np.isnan(outer_)]))
             outer_mean = np.nanmean(outer_) * np.ones(outer_.shape)
             outer_[np.isnan(outer_)] = outer_mean[np.isnan(outer_)]
     else:
+        print("other:", outer_method)
         outer_ = PerirhizalPython(rs).get_outer_radii(outer_method)
 
+    print("done")
     inner_ = rs.radii
     rho = np.divide(outer_, np.array(inner_))
     rho = np.expand_dims(rho, axis = 1)

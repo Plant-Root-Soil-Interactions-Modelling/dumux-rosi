@@ -87,8 +87,20 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
 
 if __name__ == "__main__":
 
-    """ Soil types 3d"""
+    fig, ax = plt.subplots(1, 1, figsize = (12, 14))
+    ax = [ax]
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["agg"] 
+    plant = ["maize"] 
+    dim = ["1D"] 
+    soil = ["hydrus_loam"]
+    outer_method = ["length"] 
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(sra, vor)")
+    plt.show()
+    dd
 
+    """ Soil types 3d"""
     # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
     # method = ["sra"] * 3
@@ -131,15 +143,15 @@ if __name__ == "__main__":
     """ Soil types 1d"""
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    method = ["agg"] * 3
+    method = ["sra"] * 3
     plant = ["springbarley"] * 3
     dim = ["1D"] * 3
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    outer_method = ["voronoi"] * 3
+    outer_method = ["surface"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
-    plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(vor)")
-    # outer_method = ["voronoi"] * 3
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(vor)")
+    plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(sra, vor)")
+    method = ["agg"] * 3
+    plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(sra, agg)")
     plt.savefig('transpiration1d_maize.png')
 
     # fig, ax = plt.subplots(3, 1, figsize = (12, 14))

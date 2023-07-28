@@ -51,10 +51,12 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     """ Doussan """
     Ad, Kr, kx0 = r.doussan_system_matrix(rs_age)
     Id = sparse.identity(ns).tocsc()  # identity matrix
-    #
-    # kr = np.array(r.getEffKr(rs_age))
-    # print("kr", np.min(kr), np.max(kr))
-    # ddd
+    collar_index = r.collar_index()
+
+    print("collar_index (segment index)", r.collar_index())
+    print("kx0:", kx0)
+    print()
+
 
     """ upscaling """
     M, soil2matrix, matrix2soil = r.get_soil_matrix()
@@ -65,14 +67,14 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     print("inv start")
     Ad_inv = sparse.linalg.inv(Ad).todense()  # dense
     Ad_up = M @ Kr @ (Id - Ad_inv @ Kr) @ Mt  # [34]
-    cd_up = M @ (Kr @ Ad_inv)[:, 0] * (kx0)
+    cd_up = M @ (Kr @ Ad_inv)[:, collar_index] * (kx0)
     del Ad_inv  # free the beast
 
     An = Ad.copy()
-    An[0, 0] -= kx0
+    An[collar_index, collar_index] -= kx0
     An_inv = sparse.linalg.inv(An).todense()  # dense
     An_up = M @ Kr @ (Id - An_inv @ Kr) @ Mt  # [34]
-    cn_up = M @ (Kr @ An_inv)[:, 0]
+    cn_up = M @ (Kr @ An_inv)[:, collar_index]
     del An_inv  # free the beast
 
     print("inv stop")
@@ -309,7 +311,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['springbarley', "3D", "hydrus_loam", "length"])
+    # args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
     args = parser.parse_args()
 
     name = "agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
