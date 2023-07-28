@@ -126,10 +126,13 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     s.setParameter("Soil.SourceSlope", slope)
     
     print("initializeProblem()")
+    sys.stdout.flush()
+
     s.initializeProblem()
     s.setCriticalPressure(wilting_point)
     s.ddt = 1.e-5  # [day] initial Dumux time step
     print("initializeProblem() done")
+    sys.stdout.flush()
 
     """ root hydraulic model"""
     rs = pb.MappedRootSystem()
@@ -157,9 +160,10 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     # rs.initializeDB(4, 5)
     rs.initialize()
     print("simulating root system")
+    sys.stdout.flush()
     rs.simulate(rs_age, True)
-
     print("initializing hydraulic model")
+    sys.stdout.flush()
 
     r = HydraulicsDoussan(rs)
 
@@ -185,15 +189,19 @@ def set_scenario(plant, dim, initial, soil, outer_method):
 
     r.rs.setSoilGrid(picker)  # maps segment ############################## rs?
     print("alive1")
+    sys.stdout.flush()
     seg2cell = r.rs.seg2cell
     print("alive2")
+    sys.stdout.flush()
     ns = len(r.rs.segments)
     mapping = np.array([seg2cell[j] for j in range(0, ns)])
     print("alive3")
+    sys.stdout.flush()
 
     """ outer radii """
     if outer_method == "voronoi":
         print("voronoi", outer_method)
+        sys.stdout.flush()
         outer_ = PerirhizalPython(rs).get_outer_radii_bounded_voronoi()
         if np.sum([np.isnan(outer_)]) > 0:
             print("set_scenario(): NaNs in get_outer_radii_bounded_voronoi are replaced by mean", np.sum([np.isnan(outer_)]))
@@ -201,9 +209,12 @@ def set_scenario(plant, dim, initial, soil, outer_method):
             outer_[np.isnan(outer_)] = outer_mean[np.isnan(outer_)]
     else:
         print("other:", outer_method)
+        sys.stdout.flush()
         outer_ = PerirhizalPython(rs).get_outer_radii(outer_method)
 
     print("done")
+    sys.stdout.flush()
+    
     inner_ = rs.radii
     rho = np.divide(outer_, np.array(inner_))
     rho = np.expand_dims(rho, axis = 1)

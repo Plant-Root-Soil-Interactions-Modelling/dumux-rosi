@@ -65,6 +65,8 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     MMt_inv = sparse.linalg.inv(M @ Mt)  # sparse
 
     print("inv start")
+    sys.stdout.flush()
+
     Ad_inv = sparse.linalg.inv(Ad).todense()  # dense
     Ad_up = M @ Kr @ (Id - Ad_inv @ Kr) @ Mt  # [34]
     cd_up = M @ (Kr @ Ad_inv)[:, collar_index] * (kx0)
@@ -78,6 +80,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     del An_inv  # free the beast
 
     print("inv stop")
+    sys.stdout.flush()
 
     # AinvKr_dirichlet_up = (((M @ Ad_inv) @ Kr) @ Mt)
     # Ainv_dirichlet_up = M @ Ad_inv
@@ -324,10 +327,12 @@ if __name__ == "__main__":
     sim_time = 7.5
 
     print("setting scenario")
+    sys.stdout.flush()
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
 
     print("set_scenario done.")
+    sys.stdout.flush()
 
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
@@ -335,4 +340,5 @@ if __name__ == "__main__":
     s.writeDumuxVTK("results/" + name)
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
+    sys.stdout.flush()
 #
