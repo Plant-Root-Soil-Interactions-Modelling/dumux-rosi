@@ -13,6 +13,7 @@ from richards import RichardsWrapper  # Python part
 
 from conductivities import *
 
+import sys
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
