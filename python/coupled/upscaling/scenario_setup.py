@@ -124,9 +124,12 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     s.setParameter("Newton.EnableChop", "True")
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Soil.SourceSlope", slope)
+    
+    print("initializeProblem()")
     s.initializeProblem()
     s.setCriticalPressure(wilting_point)
     s.ddt = 1.e-5  # [day] initial Dumux time step
+    print("initializeProblem() done")
 
     """ root hydraulic model"""
     rs = pb.MappedRootSystem()
@@ -144,7 +147,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         params[2].lmax *= 2
         params[1].theta = 1.31  # why is the tap root not always 0?
 
-    seed_param = rs.getRootSystemParameter()
+    #  = rs.getRootSystemParameter()
     # seed_param.seedPos = pb.Vector3d(0., 0., -3.)  #################################################################################
 
     # seed = rs.getRootSystemParameter()  # SeedRandomParameter
@@ -153,7 +156,10 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
     # rs.initializeDB(4, 5)
     rs.initialize()
+    print("simulating root system")
     rs.simulate(rs_age, True)
+
+    print("initializing hydraulic model")
 
     r = HydraulicsDoussan(rs)
 
@@ -168,6 +174,8 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     elif plant == "springbarley":
         # const_conductivities(r)
         springbarley_conductivities(r)
+
+    print("Hydraulic model done()")
 
     """ coupling roots to macroscopic soil """
     if dim == "1D":

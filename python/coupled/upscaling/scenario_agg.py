@@ -322,8 +322,11 @@ if __name__ == "__main__":
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
     sim_time = 7.5
 
+    print("setting scenario")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
+
+    print("set_scenario done.")
 
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
