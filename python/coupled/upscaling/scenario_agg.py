@@ -155,7 +155,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
             rx = np.minimum(rx, np.ones(rx.shape) * 0.)
-            hs = np.maximum(hs, np.ones(hs.shape) * (-15999))
+            hs_ = np.maximum(hs_, np.ones(hs_.shape) * (-15999))
 
             rsx = soil_root_interface_table(rx, hs_, inner_kr_up, rho_up, sra_table_lookup)  # in matric potential
 
