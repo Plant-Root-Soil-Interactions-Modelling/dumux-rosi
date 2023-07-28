@@ -46,7 +46,7 @@ def start_jobs(jobs):
             fh.writelines("#SBATCH --partition=cpu256\n")
             # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
             # fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
-            # fh.writelines("module load openmpi/4.1.4\n")
+            fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 {:s} {:s} {:s} {:s} {:s}".format(py_name, plant, dim, soil, outer_method))
 
         os.system("sbatch {:s}".format(job_file))
