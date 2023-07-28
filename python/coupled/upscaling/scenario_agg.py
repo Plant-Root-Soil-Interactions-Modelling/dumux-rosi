@@ -11,12 +11,12 @@ sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBo
 import argparse
 import timeit
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from scipy import sparse
 
 from functional.xylem_flux import sinusoidal2
 import visualisation.vtk_plot as vp
-# from rhizo_models import plot_transpiration
+from rhizo_models import plot_transpiration
 from scenario_setup import *
 
 
@@ -318,6 +318,7 @@ if __name__ == "__main__":
     name = "agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()
     print(name, "\n")
+    sys.stdout.flush()
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
     sim_time = 7.5

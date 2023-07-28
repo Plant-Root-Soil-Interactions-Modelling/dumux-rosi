@@ -12,9 +12,6 @@ import scenario_sra as sra
 import scenario_sra_old as sra_old
 import scenario_agg as agg
 
-import matplotlib
-matplotlib.use('Agg')
-
 def start_jobs(jobs):
     """ send as individual jobs """
 
