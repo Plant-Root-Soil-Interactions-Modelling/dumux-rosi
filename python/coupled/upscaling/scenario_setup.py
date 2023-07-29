@@ -189,14 +189,11 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         picker = lambda x, y, z: s.pick([x, y, z])
 
     r.rs.setSoilGrid(picker)  # maps segment ############################## rs?
-    print("alive1")
     sys.stdout.flush()
     seg2cell = r.rs.seg2cell
-    print("alive2")
     sys.stdout.flush()
     ns = len(r.rs.segments)
     mapping = np.array([seg2cell[j] for j in range(0, ns)])
-    print("alive3")
     sys.stdout.flush()
 
     """ outer radii """

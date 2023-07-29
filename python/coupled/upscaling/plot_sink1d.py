@@ -57,7 +57,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
     ax[1].set_xlabel("sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
-    ls = [ "--", "-.", ":"]
+    ls = [ "-", ":", "-."]
 
     """ noon """
     for i in range(0, n):
@@ -83,7 +83,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         sink_ = data[i]
         soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
-        redistribution_id = np.round(sink_.shape[0] / days * np.array([1 + j for j in plot_times]))  #############
+        redistribution_id = np.round(sink_.shape[0] / days * np.array([j for j in plot_times]))  #############
         redistribution_id = redistribution_id.astype(int)
 
         for ind, j in enumerate(redistribution_id):
@@ -102,30 +102,30 @@ if __name__ == "__main__":
 
     """ springbarley """
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["agg"]
-    plant = ["springbarley"]
-    soil = ["hydrus_loam"]
-    outer_method = ["voronoi"]  # , "voronoi"]
+    method = ["sra", "agg"]
+    plant = ["springbarley"]*2
+    soil = ["hydrus_loam"]*2
+    outer_method = ["voronoi"]*2  # , "voronoi"]
     plot_sink1d(ax, method, plant, soil, outer_method)
     plt.savefig('sink1d_springbarley_loam.png')
     plt.show()
 
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["agg"]
-    plant = ["springbarley"]
-    soil = ["hydrus_clay"]
-    outer_method = ["voronoi"]  # , "voronoi"]
-    plot_sink1d(ax, method, plant, soil, outer_method)
-    plt.savefig('sink1d_springbarley_clay.png')
-    plt.show()
-
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["agg"]
-    plant = ["springbarley"]
-    soil = ["hydrus_sandyloam"]
-    outer_method = ["voronoi"]  # , "voronoi"]
-    plot_sink1d(ax, method, plant, soil, outer_method)
-    plt.savefig('sink1d_springbarley_sandyloam.png')
+    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    # method = ["agg"]
+    # plant = ["springbarley"]
+    # soil = ["hydrus_clay"]
+    # outer_method = ["voronoi"]  # , "voronoi"]
+    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plt.savefig('sink1d_springbarley_clay.png')
+    # plt.show()
+    #
+    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    # method = ["agg"]
+    # plant = ["springbarley"]
+    # soil = ["hydrus_sandyloam"]
+    # outer_method = ["voronoi"]  # , "voronoi"]
+    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plt.savefig('sink1d_springbarley_sandyloam.png')
 
     """ maize """
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
@@ -154,30 +154,6 @@ if __name__ == "__main__":
     # plt.savefig('sink1d_maize_sandyloam.png')
     #
 
-    """ soybean """
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["soybean"]
-    # soil = ["hydrus_loam"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    # plot_sink1d(ax, method, plant, soil, outer_method)
-    # plt.savefig('sink1d_soybean_loam.png')
-    #
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["soybean"]
-    # soil = ["hydrus_clay"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    # plot_sink1d(ax, method, plant, soil, outer_method)
-    # plt.savefig('sink1d_soybean_clay.png')
-    #
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["soybean"]
-    # soil = ["hydrus_sandyloam"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    # plot_sink1d(ax, method, plant,  soil,outer_method)
-    # plt.savefig('sink1d_soybean_sandyloam.png')
-    #
+
     plt.show()
 

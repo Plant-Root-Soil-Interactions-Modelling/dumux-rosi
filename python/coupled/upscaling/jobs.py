@@ -97,8 +97,8 @@ def make_list():
 
     method = ['agg']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["3D"]  # 1D, 3D
-    soil = ['hydrus_loam'] #'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
+    dim = ["1D", "3D"]  # 1D, 3D
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'] #'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
     outer_radius = ['voronoi', 'surface']
 
     print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
