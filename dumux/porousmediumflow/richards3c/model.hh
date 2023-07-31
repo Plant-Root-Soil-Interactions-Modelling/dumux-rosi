@@ -146,7 +146,8 @@ struct BaseModelTraits<TypeTag, TTag::Richards3C>
 private:
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 public:
-    using type = Richards3CModelTraits<FluidSystem::numComponents, getPropValue<TypeTag, Properties::UseMoles>(), getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()>;
+    using type = Richards3CModelTraits<FluidSystem::numComponents, getPropValue<TypeTag, Properties::UseMoles>(), 
+		getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()>;
 };
 template<class TypeTag>
 struct ModelTraits<TypeTag, TTag::Richards3C> { using type = GetPropType<TypeTag, Properties::BaseModelTraits>; };

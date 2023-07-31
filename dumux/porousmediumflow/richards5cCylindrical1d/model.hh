@@ -154,8 +154,9 @@ private:
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
     using SolidSystem = GetPropType<TypeTag, Properties::SolidSystem>;
 public:
-//,getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()
-    using type = Richards5CModelTraits<FluidSystem::numComponents, getPropValue<TypeTag, Properties::UseMoles>(),SolidSystem::numComponents>;
+//
+    using type = Richards5CModelTraits<FluidSystem::numComponents, getPropValue<TypeTag, Properties::UseMoles>(),
+	SolidSystem::numComponents,getPropValue<TypeTag, Properties::ReplaceCompEqIdx>()>;
 };
 template<class TypeTag>
 struct ModelTraits<TypeTag, TTag::Richards5C> { using type = GetPropType<TypeTag, Properties::BaseModelTraits>; };

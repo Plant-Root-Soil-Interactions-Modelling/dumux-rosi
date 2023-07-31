@@ -114,10 +114,10 @@ public:
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		// Components
-		std::cout<<"all components "<<typeid(FluidSystem).name()<<" "<<numComponents_<<" "<<numFluidComps<<" "<<numSolidComps<<" "<<numInertSolidComps<<std::endl;
+		//std::cout<<"all components "<<typeid(FluidSystem).name()<<" "<<numComponents_<<" "<<numFluidComps<<" "<<numSolidComps<<" "<<numInertSolidComps<<std::endl;
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
-			std::cout<<"PorousMediumFlowProblem ID"<<i<<" ";
+			//std::cout<<"PorousMediumFlowProblem ID"<<i<<" ";
 			
 			source_[i] = nullptr;
 			if(i ==h2OIdx)
@@ -131,7 +131,7 @@ public:
 				//myParams.report();
 				bcTopValues_.at(i) =  getParam<double>("Soil.BC.Top.Value", 0.);
 				bcBotValues_.at(i) =  getParam<double>("Soil.BC.Bot.Value", 0.);
-				std::cout<<"start h2o "<<bcTopValues_.at(i)<<" "<<bcBotValues_.at(i)<<" ";
+				//std::cout<<"start h2o "<<bcTopValues_.at(i)<<" "<<bcBotValues_.at(i)<<" ";
 				
 				//IC
 				//std::cout<<"initialSoil_"<<std::endl;
@@ -147,8 +147,8 @@ public:
 				bcSBotType_.at(i - soluteIdx) = getParam<int>("Soil.BC.Bot.C"+std::to_string(i)+"Type", outflow);
 				bcSTopValue_.at(i - soluteIdx) = getParam<Scalar>("Soil.BC.Top.C"+std::to_string(i)+"Value", 0.);
 				bcSBotValue_.at(i - soluteIdx) = getParam<Scalar>("Soil.BC.Bot.C"+std::to_string(i)+"Value", 0.);
-				std::cout<<"solute start "<<bcSTopType_.at(i - soluteIdx)<<" "<<bcSBotType_.at(i - soluteIdx)
-				<<" "<< bcSTopValue_.at(i - soluteIdx)<<" "<<bcSBotValue_.at(i - soluteIdx)<<" ";
+				//std::cout<<"solute start "<<bcSTopType_.at(i - soluteIdx)<<" "<<bcSBotType_.at(i - soluteIdx)
+				//<<" "<< bcSTopValue_.at(i - soluteIdx)<<" "<<bcSBotValue_.at(i - soluteIdx)<<" ";
 				
 				//IC
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "C"+std::to_string(i), "C"+std::to_string(i)+"Z", 
@@ -175,7 +175,7 @@ public:
 			Scalar m2_2_cm2 = 10000;
 			Scalar unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
 			componentInput_.at(i).setFunctionScale(unitConversion/(24.*60.*60.)); // g/(cm2 day) or mol/(cm2 day)  -> kg/(m²*s) or mol/(m²*s) 
-			std::cout<<std::endl;
+			//std::cout<<std::endl;
 		}
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
@@ -270,12 +270,12 @@ public:
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
-		std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
+		//std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
 		for(int i = soluteIdx; i<numComponents_;i++)//solutes
 		{
 			v[i] = initialSoil_.at(i).f(z,eIdx);
-			std::cout<<" result : "<<v[i];
-		}std::cout<<std::endl;
+			//std::cout<<" result : "<<v[i];
+		}//std::cout<<std::endl;
 		return v;
 	}
 

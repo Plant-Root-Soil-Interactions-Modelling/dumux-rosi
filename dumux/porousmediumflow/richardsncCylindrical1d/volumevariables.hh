@@ -15,28 +15,28 @@
  *                                                                           *
  *   You should have received a copy of the GNU General Public License       *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+*****************************************************************************/
 /*!
  * \file
- * \ingroup Richards5CModel
+ * \ingroup RichardsNCModel
  * \brief  Contains the quantities which are constant within a
  *        finite volume in the Richards, n-component model.
  */
 
-#ifndef DUMUX_RICHARDS5C_VOLUME_VARIABLES_HH
-#define DUMUX_RICHARDS5C_VOLUME_VARIABLES_HH
+#ifndef DUMUX_RICHARDSNC_VOLUME_VARIABLES_HH
+#define DUMUX_RICHARDSNC_VOLUME_VARIABLES_HH
 
 #include <algorithm>
 #include <array>
 
 #include <dumux/porousmediumflow/volumevariables.hh>
 #include <dumux/porousmediumflow/nonisothermal/volumevariables.hh>
-#include <dumux/material/solidstates/update3Csolidstate.hh>
+#include <dumux/material/solidstates/updatesolidvolumefractions.hh>
 
 namespace Dumux {
 
 /*!
- * \ingroup Richards5CModel
+ * \ingroup RichardsNCModel
  * \brief  Contains the quantities which are constant within a
  *        finite volume in the Richards, n-component model.
  */

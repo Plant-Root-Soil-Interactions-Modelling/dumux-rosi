@@ -111,14 +111,18 @@ public:
                     storage[eqIdx] += (volVars.porosity()*volVars.saturation(phaseIdx)+b) //m3 liquide / m3 space
                                       * massOrMoleDensity(volVars, phaseIdx) // mol liquid / m3 liquid
                                       * massOrMoleFraction(volVars, phaseIdx, compIdx)*scv.center()[0]; // mol solute / mol liquid 
-					//std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
-					//<<" numFluidComponents "<<numFluidComponents<<" numFluidPhases "<<numFluidPhases <<" storage "<<storage[eqIdx]<<std::endl;
+					// std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
+					// <<" numFluidComponents "<<numFluidComponents<<" numFluidPhases "<<numFluidPhases <<" storage "<<storage[eqIdx]
+					// <<" poro "<<volVars.porosity()<<" saturation "<<volVars.saturation(phaseIdx)<<std::endl;
                 }
             }
 
-            // in case one balance is substituted by the total mole balance
-            if (useTotalMoleOrMassBalance) {
-            DUNE_THROW(Dune::NotImplemented, "localresidual::computeStorage: using useTotalMoleOrMassBalance");
+            // // in case one balance is substituted by the total mole balance
+			// std::cout<<"replaceCompEqIdx "<<replaceCompEqIdx <<" "<< useTotalMoleOrMassBalance 
+			 // <<" "<< numFluidComponents<<std::endl;
+
+            if (useTotalMoleOrMassBalance) {//just for water phase
+            //DUNE_THROW(Dune::NotImplemented, "localresidual::computeStorage: using useTotalMoleOrMassBalance");
             	auto compIdx = replaceCompEqIdx- conti0EqIdx;
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
@@ -137,6 +141,12 @@ public:
 			// std::cout<<
 		// }
 
+		// std::cout<<"computeStorage "<<scv.center()<<" ";
+		// for(int i = 0; i< storage.size(); i++)
+		// {
+			// std::cout<<storage[i]<<" ";
+			
+		// }std::cout<<std::endl;
         return storage;
     }
 	
@@ -216,7 +226,13 @@ public:
 			// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())
 			//see @dumux/flux/box/fickslaw.h (flux())
             auto diffusiveFluxes = fluxVars.molecularDiffusionFlux(phaseIdx);
+			
+			// std::cout<<"diffusiveFluxes"<<std::endl;
+			// for(int i = 0; i < diffusiveFluxes.size();i++)
+			// {std::cout<<diffusiveFluxes[i]<<" ";}std::cout<<std::endl;
+			
 			diffusiveFluxes *= scvf.center()[0];//factor according to the position along the 1d model
+			
             for (int compIdx = 0; compIdx < numFluidComponents; ++compIdx)
             {
                 // get equation index
@@ -232,6 +248,7 @@ public:
 					auto fr = massOrMoleFraction(volVars, phaseIdx, compIdx);
 					auto m = volVars.mobility(phaseIdx);
 					//double canMove = volVars.canMove(compIdx);
+					//std::cout<<"upwindterm "<<d<<" "<<fr<<" "<<m<<std::endl;
 					return d * fr * m ;//* canMove; 
 				};
 
@@ -240,7 +257,9 @@ public:
 					// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())
 					//see @dumux/flux/box/darcyslaw.h (flux())
 					// gives upwindTerm() * Ks [m/s] * dp [Pa] ==> kg_a / s
-                    flux[eqIdx] += (fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0]); //
+					auto advF = fluxVars.advectiveFlux(phaseIdx, upwindTerm);
+					//std::cout<<"advF "<<advF<<std::endl;
+                    flux[eqIdx] += (advF*scvf.center()[0]); //
 				}
 
                 // diffusive fluxes (only for the component balances)
@@ -251,10 +270,12 @@ public:
 				}
             }
 
-            // in case one balance is substituted by the total mole balance
-            if (useTotalMoleOrMassBalance)
+            // // in case one balance is substituted by the total mole balance
+            // std::cout<<"replaceCompEqIdx "<<replaceCompEqIdx <<" "<< useTotalMoleOrMassBalance 
+			 // <<" "<< numFluidComponents<<std::endl;
+            if (useTotalMoleOrMassBalance)//water phase
             {
-            DUNE_THROW(Dune::NotImplemented, "localresidual::computeFlux: using useTotalMoleOrMassBalance");
+            //DUNE_THROW(Dune::NotImplemented, "localresidual::computeFlux: using useTotalMoleOrMassBalance");
                 // the physical quantities for which we perform upwinding
                 const auto upwindTerm = [&massOrMoleDensity, phaseIdx] (const auto& volVars)
                 { return massOrMoleDensity(volVars, phaseIdx)*volVars.mobility(phaseIdx); };
@@ -272,6 +293,13 @@ public:
 
         //! Add diffusive energy fluxes. For isothermal model the contribution is zero.
         EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
+		
+		// std::cout<<"computeFlux "<<scvf.center()<<" ";
+		// for(int i = 0; i< flux.size(); i++)
+		// {
+			// std::cout<<flux[i]<<" ";
+			
+		// }std::cout<<std::endl;
 
         return flux;
     }

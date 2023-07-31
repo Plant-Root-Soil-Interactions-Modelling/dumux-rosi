@@ -10,7 +10,7 @@ MaxTimeStepSize = 3600 # [s]
 [Soil.Grid]
 UpperRight = 0.0002
 LowerLeft = 0.006
-Cells = 300
+Cells = 4
 
 [Soil.BC.Top]
 Type = 3 # constant flux
@@ -29,7 +29,7 @@ C2Type = 3 # constant flux
 C2Value = 0 # [g/cm2/day]
 
 [Soil]
-v_maxL = 0.01 #[d-1]
+v_maxL = 0.0#1 #[d-1]
 K_L = 10e-6 #[mg cm-3 soil]
 C_oa = 2.338e-06 #[mg (C)cm-3(soil-1)]
 CriticalPressure = -15000
