@@ -90,11 +90,11 @@ if __name__ == "__main__":
     # fig, ax = plt.subplots(1, 1, figsize = (12, 14))
     # ax = [ax]
     # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["agg"] 
-    # plant = ["maize"] 
-    # dim = ["1D"] 
+    # method = ["agg"]
+    # plant = ["maize"]
+    # dim = ["1D"]
     # soil = ["hydrus_loam"]
-    # outer_method = ["length"] 
+    # outer_method = ["length"]
     # plot_potential(ax, method, plant, dim, soil, outer_method)
     # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(sra, vor)")
     # plt.show()
@@ -144,8 +144,8 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
     method = ["sra"] * 3
-    plant = ["springbarley"] * 3
-    dim = ["3D"] * 3
+    plant = ["maize"] * 3
+    dim = ["1D"] * 3
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     outer_method = ["surface"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)

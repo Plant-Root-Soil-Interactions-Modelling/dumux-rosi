@@ -12,6 +12,7 @@ import scenario_sra as sra
 import scenario_sra_old as sra_old
 import scenario_agg as agg
 
+
 def start_jobs(jobs):
     """ send as individual jobs """
 
@@ -45,7 +46,7 @@ def start_jobs(jobs):
             fh.writelines("#SBATCH --partition=cpu256\n")
             # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
             # fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
-            fh.writelines("module load openmpi/4.1.4\n")
+            # fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 {:s} {:s} {:s} {:s} {:s}".format(py_name, plant, dim, soil, outer_method))
 
         os.system("sbatch {:s}".format(job_file))
@@ -97,8 +98,8 @@ def make_list():
 
     method = ['agg']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D", "3D"]  # 1D, 3D
-    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'] #'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
+    dim = ["1D"]  # 1D, 3D
+    soil = ['hydrus_sandyloam']  # 'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
     outer_radius = ['voronoi', 'surface']
 
     print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
