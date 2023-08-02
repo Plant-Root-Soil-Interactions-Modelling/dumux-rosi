@@ -179,6 +179,19 @@ public:
         layerIndices.push_back(layerIndex);
     }
 
+    void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks) {
+        Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
+        Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
+        int i = vgIndex; // rename
+        phi_.at(i) =  qs; // Richards equation is independent of phi [1]
+        materialParams_.at(i).setSwr(qr/phi_[i]); // Qr
+        materialParams_.at(i).setSnr(1.-qs/phi_[i]); // Qs
+        Scalar a = alpha * 100.; // from [1/cm] to [1/m]
+        materialParams_.at(i).setVgAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
+        materialParams_.at(i).setVgn(n); // N
+        k_.push_back(ks*mu/(rho*g_)); // Convert to intrinsic permeability
+    }
+
 private:
 
     //! returns the index of the soil layer

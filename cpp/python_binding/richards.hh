@@ -273,6 +273,13 @@ public:
         this->problem->addVanGenuchtenDomain(minx, miny, minz, maxx, maxy, maxz, layerIndex);
     }
 
+    /**
+     * forward to problem
+     */
+    void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks) {
+        this->checkInitialized();
+        this->problem->changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks);
+    }
 
     /**
      * Changes boundary condition in initialized problem (e.g. within the simulation loop)
@@ -362,6 +369,7 @@ void init_richards(py::module &m, std::string name) {
    .def("writeDumuxVTK",&Richards_::writeDumuxVTK)
    .def("setRegularisation",&Richards_::setRegularisation)
    .def("addVanGenuchtenDomain",&Richards_::addVanGenuchtenDomain)
+   .def("changeVanGenuchtenSet",&Richards_::changeVanGenuchtenSet)
    .def("setTopBC",&Richards_::setTopBC)
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)

@@ -373,6 +373,11 @@ class RichardsWrapper(SolverWrapper):
         self.checkInitialized()
         self.base.addVanGenuchtenDomain(min_[0] / 100., min_[1] / 100., min_[2] / 100., max_[0] / 100., max_[1] / 100., max_[2] / 100., layerIndex)
 
+    def changeVanGenuchtenSet(self, vgIndex, qr, qs, alpha, n, ks):
+        """ add Van Genuchten domain """
+        self.checkInitialized()
+        self.base.changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks)
+
     def writeDumuxVTK(self, file_name):
         """Uses the Dumux VTK writer to write the current model output"""
         self.checkInitialized()

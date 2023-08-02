@@ -559,6 +559,13 @@ public:
         this->spatialParams().addVanGenuchtenDomain(minx, miny, minz, maxx, maxy, maxz, layerIndex);
     }
 
+    /**
+     * Forwards to spatialParams
+     */
+    void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks){
+        this->spatialParams().changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks);
+    }
+
 	// BC, direct access for Python binding (setBcTop, setBcBot)
 	int bcTopType_;
 	int bcBotType_;
