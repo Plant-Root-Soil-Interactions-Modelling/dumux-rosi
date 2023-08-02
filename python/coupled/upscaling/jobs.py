@@ -98,7 +98,7 @@ def make_list():
 
     method = ['agg']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D, 3D"]  # 1D, 3D
+    dim = ["1D", "3D"]  # 1D, 3D
     soil = ['hydrus_sandyloam']  # 'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
     outer_radius = ['voronoi', 'surface']
 
