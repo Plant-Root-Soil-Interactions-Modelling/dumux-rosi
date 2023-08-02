@@ -97,10 +97,10 @@ def make_list():
     jobs = []
 
     method = ['agg']  # 'sra', sraOld, agg
-    plant = ['maize']  # 'springbarley', 'soybean', 'maize'
+    plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
     dim = ["1D", "3D"]  # 1D, 3D
-    soil = ['hydrus_sandyloam', 'hydrus_loam']  # , 'hydrus_clay'
-    outer_radius = ['voronoi', 'surface']
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # , 'hydrus_clay'
+    outer_radius = ['voronoi']
 
     print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
     print()
