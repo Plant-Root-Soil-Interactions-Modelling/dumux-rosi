@@ -57,7 +57,6 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     print("kx0:", kx0)
     print()
 
-
     """ upscaling """
     M, soil2matrix, matrix2soil = r.get_soil_matrix()
     nmax = len(matrix2soil)
@@ -324,7 +323,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-    sim_time = 7.5
+    sim_time = 14.5
 
     print("setting scenario")
     sys.stdout.flush()

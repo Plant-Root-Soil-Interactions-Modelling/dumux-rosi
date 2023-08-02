@@ -98,7 +98,7 @@ def make_list():
 
     method = ['agg']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D"]  # 1D, 3D
+    dim = ["1D, 3D"]  # 1D, 3D
     soil = ['hydrus_sandyloam']  # 'hydrus_sandyloam', 'hydrus_loam', 'hydrus_clay'
     outer_radius = ['voronoi', 'surface']
 
@@ -116,7 +116,7 @@ def make_list():
 
 if __name__ == "__main__":
 
-    sim_time = 7.5  # days
+    sim_time = 14.5  # days
 
     if rank == 0:
         jobs = make_list()
@@ -124,6 +124,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    # run_jobs(jobs, sim_time)
+    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    run_jobs(jobs, sim_time)
 
