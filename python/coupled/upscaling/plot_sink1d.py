@@ -57,7 +57,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
     ax[1].set_xlabel("sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
-    ls = [ "-", ":", "-."]
+    ls = [ "-", ":", "-.", "-", ":", "-."]
 
     """ noon """
     for i in range(0, n):
