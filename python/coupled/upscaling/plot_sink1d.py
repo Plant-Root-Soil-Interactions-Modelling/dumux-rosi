@@ -16,7 +16,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_sink1d(ax, method, plant, soil, outer_method):
+def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = []):
 
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
@@ -69,8 +69,8 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         peak_id = peak_id.astype(int)
 
         for ind, j in enumerate(peak_id):
-            if True:  # ind == 0 or ind == 3:
-                lstr = "{:g}d ({:s})".format(plot_times[ind], "1D")  # method[i]
+            if (not ind_) or (ind in ind_):
+                lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i]
                 # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
                 ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
@@ -83,13 +83,13 @@ def plot_sink1d(ax, method, plant, soil, outer_method):
         sink_ = data[i]
         soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
-        redistribution_id = np.round(sink_.shape[0] / days * np.array([j for j in plot_times]))  #############
+        redistribution_id = np.round(sink_.shape[0] / days * np.array([j for j in plot_times]))
         redistribution_id = redistribution_id.astype(int)
 
         for ind, j in enumerate(redistribution_id):
-            if True:  # ind == 0 or ind == 3:
+            if (not ind_) or (ind in ind_):
                 # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-                lstr = "{:g}d ({:s})".format(plot_times[ind], "1D")  # method[i], int(ind == 0) +
+                lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i], int(ind == 0) +
                 ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[1].set_ylim([-ylim, 0.])
@@ -103,9 +103,9 @@ if __name__ == "__main__":
     """ springbarley """
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     method = ["sra", "agg"]
-    plant = ["springbarley"]*2
-    soil = ["hydrus_loam"]*2
-    outer_method = ["voronoi"]*2  # , "voronoi"]
+    plant = ["springbarley"] * 2
+    soil = ["hydrus_loam"] * 2
+    outer_method = ["voronoi"] * 2  # , "voronoi"]
     plot_sink1d(ax, method, plant, soil, outer_method)
     plt.savefig('sink1d_springbarley_loam.png')
     plt.show()
@@ -153,7 +153,6 @@ if __name__ == "__main__":
     # plot_sink1d(ax, method, plant,  soil,outer_method)
     # plt.savefig('sink1d_maize_sandyloam.png')
     #
-
 
     plt.show()
 

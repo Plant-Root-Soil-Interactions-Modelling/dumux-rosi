@@ -52,7 +52,7 @@ def suf_per_layer(plant, soil):
 
 for plant in ["springbarley", "maize"]:
 
-    fig, ax = plt.subplots(1, 1, figsize = (8, 12))
+    fig, ax = plt.subplots(1, 1, figsize = (8, 8))
     ax = [ax]
 
     for soil in ["hydrus_loam"]:  # , "hydrus_clay", "hydrus_sandyloam"]:
@@ -60,9 +60,9 @@ for plant in ["springbarley", "maize"]:
         suf, z_, krs = suf_per_layer(plant, soil)
 
         ax[0].plot(suf, z_, "-*", label = plant)
-        ax[0].set_ylabel("Depth (cm)")
-        ax[0].set_xlabel("Root system surface uptake fraction (SUF) per 1 cm layer (1)")
-        ax[0].legend()
+        ax[0].set_ylabel("depth [cm]")
+        ax[0].set_xlabel("root system surface uptake fraction (SUF) per 1 cm layer [1]")
+        # ax[0].legend()
 
         print()
         print(plant, soil, "SUF total", np.min(suf), np.max(suf), np.mean(suf), np.sum(suf), suf.shape)
