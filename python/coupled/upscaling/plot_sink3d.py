@@ -69,7 +69,7 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
     ax[1].set_xlabel("sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
-    ls = ["-", "--", "-.", ":"]
+    ls = [':', "-", "--", "-.", ":"]  #
 
     """ noon """
     for i in range(0, n):
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         method = ["sra"]
         plant = ["springbarley"]
         soil = [s]
-        outer_method = ["voronoi"]
+        outer_method = ["surface"]
         plot_sink1d(ax, method, plant, soil, outer_method, ["1D"], [0, 1, 3])
         plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 1, 3])
         ax[0].set_xlim([0., 0.115])
@@ -190,7 +190,7 @@ if __name__ == "__main__":
         outer_method = ["voronoi"]
         plot_sink1d(ax, method, plant, soil, outer_method, ["1D"], [0, 1, 3])
         plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 1, 3])
-        ax[0].set_xlim([0., 0.038])
+        ax[0].set_xlim([0., 0.055])
         ax[1].set_xlim([-0.0025, 0.0023])
         plt.tight_layout()
         plt.savefig('sink3dvs1d_maize_' + s[7:] + '.png')

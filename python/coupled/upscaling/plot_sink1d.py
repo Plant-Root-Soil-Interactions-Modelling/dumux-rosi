@@ -98,7 +98,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
 
 if __name__ == "__main__":
 
-    print("1d vs 3d comparison plots were done with plot_sink3d.py")
+    # print("1d vs 3d comparison plots were done with plot_sink3d.py")
 
     """ springbarley """
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
