@@ -89,13 +89,18 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     Kr_up = M @ Kr @ Mt  # sparse
     Kr_up_inv = sparse.linalg.inv(Kr_up).todense()
 
+    print(Kr_up.shape, Kr_up_inv.shape)
+    print("finished Kr_up, Kr_up_inv")
+    sys.stdout.flush()
+
     inner_kr_up = MMt_inv.dot(M.dot(inner_kr_))
     inner_kr_up = np.maximum(inner_kr_up, np.ones(inner_kr_up.shape) * 1.e-7)  ############################################ (too keep within table)
     inner_kr_up = np.minimum(inner_kr_up, np.ones(inner_kr_up.shape) * 1.e-4)  ############################################ (too keep within table)
     rho_up = MMt_inv.dot(M.dot(rho_))
 
     print("up end")
-
+    sys.stdout.flush()
+    
     """ Numerical solution (a) """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, sx_, hx_, hsr_ = [], [], [], [], [], [], []
@@ -272,6 +277,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
             print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
             print()
+            sys.stdout.flush()
 
             """ remember results """
             sink = np.zeros(sx.shape)
@@ -286,6 +292,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     wall_time = timeit.default_timer() - start_time
     print ("Coupled benchmark solved in ", wall_time, " s")
+    sys.stdout.flush()
 
     return hx_, hsr_, sink_, x_, y_, z_, sx_, dt, wall_time
 

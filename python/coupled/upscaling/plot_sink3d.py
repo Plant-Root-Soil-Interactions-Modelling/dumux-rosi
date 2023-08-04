@@ -31,7 +31,7 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
     l = 150  # cm soil depth
     dx = 1  # cm resolution
     ylim = 110
-    days = 7.5
+    days = 14.5
 
     fnames = []
     for i in range(0, len(plant)):

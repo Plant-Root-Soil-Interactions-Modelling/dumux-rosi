@@ -71,11 +71,14 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     A_n[collar_index, collar_index] -= kx0
 
     print("invert matrix start", ns)
+    sys.stdout.flush()
+    
     A_n_splu = LA.splu(A_n)
     A_d_splu = LA.splu(A_d)
     # Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
     # Ainv_neumann = sparse.linalg.inv(A_n).todense()  # dense
     print("done inverting", "\n")
+    sys.stdout.flush()
 
     # C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
     # c_dirichlet = (Kr @ Ainv_dirichlet)[:, collar_index + 1] * (-kx0)  # # Hess (25)
@@ -228,6 +231,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
             print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
             print()
+            sys.stdout.flush()
 
             """ remember results """
             sink = np.zeros(sx.shape)
@@ -242,6 +246,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     wall_time = timeit.default_timer() - start_time
     print ("Coupled benchmark solved in ", wall_time, " s")
+    sys.stdout.flush()
 
     return hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time
 
