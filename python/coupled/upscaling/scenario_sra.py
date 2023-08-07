@@ -32,6 +32,7 @@ from scenario_setup import *
 def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):
 
     print("\nInitial root sytstem age (sra)", rs_age)
+    sys.stdout.flush()
     # print("rs_age", rs_age)
     # rs_age = r.get_ages(rs_age)
     # print("rs_age", np.max(rs_age))
@@ -71,11 +72,13 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     A_n[collar_index, collar_index] -= kx0
 
     print("invert matrix start", ns)
+    sys.stdout.flush()
     A_n_splu = LA.splu(A_n)
     A_d_splu = LA.splu(A_d)
     # Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
     # Ainv_neumann = sparse.linalg.inv(A_n).todense()  # dense
     print("done inverting", "\n")
+    sys.stdout.flush()
 
     # C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
     # c_dirichlet = (Kr @ Ainv_dirichlet)[:, collar_index + 1] * (-kx0)  # # Hess (25)
@@ -242,6 +245,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     wall_time = timeit.default_timer() - start_time
     print ("Coupled benchmark solved in ", wall_time, " s")
+    sys.stdout.flush()
 
     return hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time
 

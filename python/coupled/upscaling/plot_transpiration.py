@@ -66,6 +66,7 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
     data = [np.load(n_ + ".npy")  for n_ in fnames]
 
     cup_ = []
+    cup2_ = []
     for i in range(0, n):
         t = data[i][0]
         y = data[i][2]
@@ -82,136 +83,108 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
         ax2[i].legend(loc = 'lower right')
         print(i, "cumulative uptake " + label, cup[-1], "cm3")
         cup_.append(cup[-1])
+        cup2_.append(cup[cup.shape[0] // 2])
         # ax[i].set_xlim([0, 7])  # data ranges until 7.5
 
     ax[n - 1].set_xlabel("Time [d]")
 
-    return np.array(cup_)
+    return np.array(cup_), np.array(cup2_)
 
 
 if __name__ == "__main__":
 
-    """ Reference 3d (plot)"""
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["springbarley"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(ref)")
-    # plt.savefig('transpiration3d_springbarley.png')
-    # # ##
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["maize"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(ref)")
-    # plt.savefig('transpiration3d_maize.png')
+    print("Reference 3d (plot)")
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["springbarley"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(ref)")
+    plt.savefig('transpiration_3d_springbarley.png')
+    # ##
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["maize"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(ref)")
+    plt.savefig('transpiration_3d_maize.png')
 
-    """ Aggregaed 3d vs Reference 3d (plot) """
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["springbarley"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
-    # method = ["agg"] * 3
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
-    # plt.savefig('agg3d_springbarley.png')
-    # # ###
-    # print()
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["maize"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
-    # method = ["agg"] * 3
-    # plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
-    # plt.savefig('agg3d_maize.png')
+    print("\nAggregated 3d vs. Reference 3d (plot)")
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["springbarley"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
+    method = ["agg"] * 3
+    cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
+    plt.savefig('transpiration_agg3d_springbarley.png')
+    print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+    # ###
+    print()
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["maize"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
+    method = ["agg"] * 3
+    cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
+    plt.savefig('transpiration_agg3d_maize.png')
+    print("\nMaize: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
 
-    """ Reference 3d vs 1d """
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["springbarley"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # cup_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
-    # dim = ["1D"] * 3
-    # cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(1D)")
-    # plt.savefig('transpiration3dvs1d_springbarley.png')
-    # print("percental error in cumulative uptake comapared to reference solution")
-    # print(100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
-    # # ##
-    # print()
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["maize"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # cup_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
-    # dim = ["1D"] * 3
-    # cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(1D)")
-    # plt.savefig('transpiration3dvs1d_maize.png')
-    # print("percental error in cumulative uptake comapared to reference solution")
-    # print(100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+    print("\nReference 3d vs. 1d")
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["springbarley"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
+    dim = ["1D"] * 3
+    cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(1D)")
+    plt.savefig('transpiration_1d_springbarley.png')
+    print("Springbarley: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+    # ##
+    print()
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["maize"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
+    dim = ["1D"] * 3
+    cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(1D)")
+    plt.savefig('transpiration_1d_maize.png')
+    print("Maize: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
 
-    # """ Aggregated 1d vs Reference 3d """
-    # print("springbarley")
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["springbarley"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # cup_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
-    # dim = ["1D"] * 3
-    # method = ["agg"] * 3
-    # cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
-    # plt.savefig('transpiration3dagg1d_springbarley.png')
-    # print("percental error in cumulative uptake comapared to reference solution")
-    # print(100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
-    # # ###
-    # print()
-    # print("maize")
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["maize"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # cup_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
-    # dim = ["1D"] * 3
-    # method = ["agg"] * 3
-    # cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
-    # plt.savefig('transpiration3dagg1d_maize.png')
-    # print("percental error in cumulative uptake comapared to reference solution")
-    # print(100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
-
-    """ Aggregated 1d vs Reference 3d """
-    print("springbarley")
+    """ Aggregated 1d vs. Reference 3d """
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
     method = ["sra"] * 3
@@ -223,13 +196,13 @@ if __name__ == "__main__":
     cup_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
     dim = ["1D"] * 3
     method = ["agg"] * 3
-    cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
-    plt.savefig('transpiration3dagg1d_springbarley.png')
-    print("percental error in cumulative uptake comapared to reference solution")
-    print(100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+    cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg 1D)")
+    plt.savefig('transpiration_agg1d_springbarley.png')
+    print("Springbarley: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
     # ###
     print()
-    print("maize")
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
     method = ["sra"] * 3
@@ -241,10 +214,45 @@ if __name__ == "__main__":
     cup_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
     dim = ["1D"] * 3
     method = ["agg"] * 3
-    cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg)")
-    plt.savefig('transpiration3dagg1d_maize.png')
-    print("percental error in cumulative uptake comapared to reference solution")
-    print(100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+    cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg 1D)")
+    plt.savefig('transpiration_agg1d_maize.png')
+    print("Maize: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+
+    print("\nAggregated 1d vs. Reference 1d")
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["springbarley"] * 3
+    dim = ["1D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref 1D)")
+    method = ["agg"] * 3
+    cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg 1D)")
+    plt.savefig('transpiration_1dagg1d_springbarley.png')
+    print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
+    # ###
+    print()
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["maize"] * 3
+    dim = ["1D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref 1D)")
+    method = ["agg"] * 3
+    cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg 1D)")
+    plt.savefig('transpiration_1dagg1d_maize.png')
+    print("\nMaize: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
 #
     plt.tight_layout()
     plt.show()
