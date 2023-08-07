@@ -16,7 +16,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = []):
+def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6]):
 
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
@@ -24,7 +24,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
     l = 150  # cm soil depth
     dx = 1  # cm resolution
     ylim = 120
-    days = 7.5
+    days = 14.5
 
     fnames = []
     for i in range(0, len(plant)):
@@ -44,7 +44,6 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
                 cell_volume = 3 * 13 * dx  # cm3
         else:
             raise
-    plot_times = [0., 2., 4., 6]  # , 30, 40
 
     """ load data """
     n = len(fnames)
@@ -69,10 +68,9 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
         peak_id = peak_id.astype(int)
 
         for ind, j in enumerate(peak_id):
-            if (not ind_) or (ind in ind_):
-                lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i]
-                # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-                ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i]
+            # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+            ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[0].set_ylim([-ylim, 0.])
         ax[0].legend()
@@ -87,10 +85,9 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", ind_ = [])
         redistribution_id = redistribution_id.astype(int)
 
         for ind, j in enumerate(redistribution_id):
-            if (not ind_) or (ind in ind_):
-                # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-                lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i], int(ind == 0) +
-                ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
+            lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i], int(ind == 0) +
+            ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
 
         ax[1].set_ylim([-ylim, 0.])
         ax[1].legend()

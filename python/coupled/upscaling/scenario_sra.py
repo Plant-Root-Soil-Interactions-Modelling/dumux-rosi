@@ -37,8 +37,8 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     # rs_age = r.get_ages(rs_age)
     # print("rs_age", np.max(rs_age))
 
-    dt = 120 / (24 * 3600)  # days
-    skip = 30
+    dt = 360 / (24 * 3600)  # days
+    skip = 10
 
     max_error = 10
     max_iter = 100
