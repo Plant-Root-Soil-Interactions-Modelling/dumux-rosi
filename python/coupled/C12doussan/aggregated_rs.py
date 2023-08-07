@@ -10,6 +10,7 @@ from rhizo_models import *
 from functional.xylem_flux import *  # root system Python hybrid solver
 import functional.van_genuchten as vg
 import visualisation.vtk_plot as vp
+from functional.HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -121,10 +122,10 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
         kr_surf.append(2 * radii[i] * np.pi * lengths[i] * r.kr_f(age, t))  # [cm2 / day]
     ana.addData("kr_surf", kr_surf)
     kr_surf_ = ana.distribution("kr_surf", max_b[2], min_b[2], cell_number[2], False)
-
     surf_ = np.array(ana.distribution("surface", max_b[2], min_b[2], cell_number[2], False))
     l_ = np.array(ana.distribution("length", max_b[2], min_b[2], cell_number[2], False))
     a_ = np.divide(surf_, 2 * np.pi * l_)
+    np.nan_to_num(a_, False, 0.)
     return krs, np.array(suf_), np.array(kr_surf_), surf_, l_, a_
 
 
@@ -162,14 +163,15 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
             segs.append(pb.Vector2i(0, 2 * c + 1))  # artificial shoot segment
             radii.append(0.)
             segs.append(pb.Vector2i(2 * c + 1, 2 * c + 2))  # normal segment
+            print(a_[i])
             radii.append(a_[i])
             c += 1
-    # print("number of segments", len(segs))
 
     rs = pb.MappedSegments(nodes, segs, radii)
+
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-    r2 = XylemFluxPython(rs)  # wrap the xylem
+    r2 = HydraulicsDoussan(rs)  # wrap the xylem
     r.test()  # sanity checks
     # z_ = np.linspace(0, -150, 150)
     # plt.plot(suf_[0:100], z_[0:100])
