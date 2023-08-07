@@ -73,6 +73,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     print("invert matrix start", ns)
     sys.stdout.flush()
+
     A_n_splu = LA.splu(A_n)
     A_d_splu = LA.splu(A_d)
     # Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
@@ -231,6 +232,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
             print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
             print()
+            sys.stdout.flush()
 
             """ remember results """
             sink = np.zeros(sx.shape)

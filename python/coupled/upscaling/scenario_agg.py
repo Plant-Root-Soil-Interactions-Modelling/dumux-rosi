@@ -89,7 +89,8 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     Kr_up = M @ Kr @ Mt  # sparse
     Kr_up_inv = sparse.linalg.inv(Kr_up).todense()
 
-    print("finished Kr_up", "Kr_up_inv")
+    print(Kr_up.shape, Kr_up_inv.shape)
+    print("finished Kr_up, Kr_up_inv")
     sys.stdout.flush()
 
     inner_kr_up = MMt_inv.dot(M.dot(inner_kr_))
@@ -291,6 +292,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     wall_time = timeit.default_timer() - start_time
     print ("Coupled benchmark solved in ", wall_time, " s")
+    sys.stdout.flush()
 
     return hx_, hsr_, sink_, x_, y_, z_, sx_, dt, wall_time
 

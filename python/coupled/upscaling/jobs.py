@@ -41,8 +41,8 @@ def start_jobs(jobs):
             fh.writelines("#SBATCH --job-name={:s}\n".format(job_name))
             fh.writelines("#SBATCH --ntasks=1\n")
             fh.writelines("#SBATCH --nodes=1\n")
-            fh.writelines("#SBATCH --time=10:00:00\n")
-            fh.writelines("#SBATCH --mem=150G\n")
+            fh.writelines("#SBATCH --time=48:00:00\n")
+            fh.writelines("#SBATCH --mem=200G\n")
             fh.writelines("#SBATCH --partition=cpu256\n")
             # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
             # fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
@@ -97,11 +97,11 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ['sra', 'agg']  # 'sra', sraOld, agg
+    method = ['sra']  # 'sra', sraOld, agg
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
     dim = ["3D"]  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    outer_radius = ['surface', 'voronoi', 'length', 'volume']  #
+    outer_radius = ['surface', 'length', 'volume', 'voronoi']  #
 
     # method = ['agg']  # 'sra', sraOld, agg
     # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
