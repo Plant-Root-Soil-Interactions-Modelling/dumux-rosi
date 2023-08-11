@@ -1,7 +1,7 @@
 [Problem]
 Name = cylinder_1d_5cR
 EnableGravity = "false"
-verbose = "1"
+verbose = "3"
 toFile = "false"
 extenction = "txt"
 
@@ -17,11 +17,11 @@ Cells = 500
 
 [Soil.BC.Bot]
 Type = 3 # constant flux
-Value = -1 # [cm day-1]
+Value = 0 # [cm day-1]
 C1Type = 3 # constant flux
-C1Value =1 # [mol/cm2/day-1] =0.00018# [kg/cm2 day-1] = 0.01 [mol/cm2 day-1]
+C1Value = 0 # [mol/cm2/day-1] =0.00018# [kg/cm2 day-1] = 0.01 [mol/cm2 day-1]
 C2Type = 3 # constant flux
-C2Value = 0.3333333 # [mol/cm2/day-1]
+C2Value = 0 # [mol/cm2/day-1]
 C3Type = 3 # constant flux
 C3Value = 0 # [g/cm2/day]
 C4Type = 3 # constant flux
@@ -53,10 +53,12 @@ C6Value = 0 # [g/cm2/day]
 
 [Soil]
 m_maxOBis = 0.0
-v_maxL =  5e3#1 #[d-1]
+k_SOBis = 0.0
+v_maxL =  0#1 #[d-1]
 k_DO = 0.0#1 #[d-1]
 k_RO = 0.0#1 #[d-1]
-k_SO = 0.0#1 #[mol/mol/d]
+k_SO = 3.5e-05 #m^3/mol/d]
+k_growthBis = 0
 K_L = 10e-2 #[mg cm-3 soil]
 CriticalPressure = -15000
 MolarMass = 60.08e-3 #kg/mol
@@ -64,9 +66,9 @@ solidDensity = 2700 #kg/m^3
 
 [Soil.IC]
 P = -100 # cm pressure head (initial guess)
-C2 =0# 0.02 0.03 0.04 0.05 0.6  # kg/kg_water?
+C2 = 1.8 # 0.02 0.03 0.04 0.05 0.6  # kg/kg_water?
 # C2Z = 0.0002 0.0003 0.0004 0.0005 0.006 
-C1 =  0 #0 0 0 0
+C1 =  9 #0 0 0 0
 # C1Z = 0.0001 0.0003 0.0004 0.0005 0.01
 C3 = 0.009127163 #mol C / mol soil, 0.0002338 [mol/cm^3] 233.8 [mol/m3]
 C4 = 0.00

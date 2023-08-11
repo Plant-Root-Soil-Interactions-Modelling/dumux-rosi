@@ -145,8 +145,6 @@ int main(int argc, char** argv) //try
     // the problem (initial and boundary conditions)
     using Problem = GetPropType<TypeTag, Properties::Problem>;
 	auto problem = std::make_shared<Problem>(fvGridGeometry);
-	//problem->computePointSourceMap(); // enable point sources
-
 
     // the solution vector
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
@@ -310,7 +308,7 @@ int main(int argc, char** argv) //try
             // pass current time to the problem
 			std::cout<<"pass current time to the problem"<<std::endl;
             problem->setTime( timeLoop->time() , timeLoop->timeStepSize()  );
-            //problem->postTimeStep(x, *gridVariables);
+            problem->postTimeStep(x, *gridVariables);
 			//DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
             problem->writeBoundaryFluxes();
 
@@ -324,7 +322,7 @@ int main(int argc, char** argv) //try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
-        //problem->postTimeStep(x, *gridVariables);
+        problem->postTimeStep(x, *gridVariables);
         problem->writeBoundaryFluxes();
     }
 

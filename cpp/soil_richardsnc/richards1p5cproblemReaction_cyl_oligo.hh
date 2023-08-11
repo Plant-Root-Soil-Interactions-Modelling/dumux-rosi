@@ -3,7 +3,6 @@
 #ifndef RICHARDS1P5C_PROBLEM_HH
 #define RICHARDS1P5C_PROBLEM_HH
 #include <algorithm>
-#include <vector>
 #include <dumux/porousmediumflow/problem.hh> // base class
 
 #include "../soil_richards/richardsparams.hh"
@@ -20,29 +19,7 @@ template <class TypeTag>
 class Richards1P5CProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
-	
-	double decayTestShare = 0.;
-	
-	double getDecay(){return decayTestShare;}
-	void setDecay(double input ) const 
-	{
-		const_cast<double&>(decayTestShare) = input;
-	}
-	
-	double decayTestShareCs = 0.;
-	
-	double getDecayCs(){return decayTestShareCs;}
-	void setDecayCs(double input ) const 
-	{
-		const_cast<double&>(decayTestShareCs) = input;
-	}
-	
-	double getTheta(){return theta;}
-	void setTheta(double input ) const 
-	{
-		const_cast<double&>(theta) = input;
-	}
-	
+
 	// exports, used by the binding
 	using Grid = GetPropType<TypeTag, Properties::Grid>;
 	using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
@@ -136,26 +113,6 @@ public:
 		gravityOn_ = false;//Dumux::getParam<bool>("Problem.EnableGravity", true);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
-		
-		 verbose =  getParam<int>("Problem.verbose", 0);
-		 toFile =  getParam<bool>("Problem.toFile", false);
-		
-			
-		
-		if(verbose>0)
-		{
-			const auto& myParams = Parameters::paramTree();
-			myParams.report();
-		}
-		// if(toFile)
-		// {
-			// const auto& myParams = Parameters::paramTree();
-			// const auto& paramKeys = myParams.getValueKeys();
-			// for (int i = 1; i < paramKeys.size(); ++i)
-			// {
-				// myfile_ <<paramKeys[i]<<" "<<myParams[paramKeys[i]]<<std::endl;
-			// }
-		// }
 		// Components
 		//std::cout<<"all components "<<typeid(FluidSystem).name()<<" "<<numComponents_<<" "<<numFluidComps<<" "<<numSolidComps<<" "<<numInertSolidComps<<std::endl;
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
@@ -225,48 +182,28 @@ public:
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 		
 		double m3_2_cm3 = 1e6;
-		 v_maxL = getParam<double>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
-		 K_L = getParam<double>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
+		 v_maxL = getParam<Scalar>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
+		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
 		 
-		 m_max = std::vector<double>{getParam<double>("Soil.m_maxO", m_max_[0])/(24.*60.*60.),
-									getParam<double>("Soil.m_maxC", m_max_[1])/(24.*60.*60.)};	//Maximum reaction rate 
-		 //for troubleshooting , can have m_maxBis != m_max
-		 m_maxBis = std::vector<double>{getParam<double>("Soil.m_maxOBis", m_max[0]*(24.*60.*60.))/(24.*60.*60.),
-							getParam<double>("Soil.m_maxCBis", m_max[1]*(24.*60.*60.))/(24.*60.*60.)};	//Maximum reaction rate 
-		 micro_max = std::vector<double>{getParam<double>("Soil.micro_maxO", micro_max_[0])/(24.*60.*60.),
-										getParam<double>("Soil.micro_maxC", micro_max_[1])/(24.*60.*60.)}; //Maximum reaction rate 
-		 k_S = std::vector<double>{getParam<double>("Soil.k_SO", k_S_[0])/(24.*60.*60.),
-									getParam<double>("Soil.k_SC", k_S_[1])/(24.*60.*60.)}; //[mol soil / mol C soil / s] 
-		 k_SBis = std::vector<double>{getParam<double>("Soil.k_SOBis", k_S[0]*(24.*60.*60.))/(24.*60.*60.),
-							getParam<double>("Soil.k_SCBis", k_S[1]*(24.*60.*60.))/(24.*60.*60.)};	//[mol soil / mol C soil / s] 
-		 k_D = std::vector<double>{getParam<double>("Soil.k_DO",k_D_[0])/(24.*60.*60.),
-									getParam<double>("Soil.k_DC",k_D_[1])/(24.*60.*60.)}; // [s-1] 
-		 k_R = std::vector<double>{getParam<double>("Soil.k_RO",k_R_[0])/(24.*60.*60.),
-									getParam<double>("Soil.k_RC",k_R_[1])/(24.*60.*60.)}; // [s-1] 
+		 m_maxO = getParam<Scalar>("Soil.m_maxO", m_maxO_)/(24.*60.*60.); //Maximum reaction rate 
+		 micro_maxO = getParam<Scalar>("Soil.micro_maxO", micro_maxO_)/(24.*60.*60.); //Maximum reaction rate 
+		 k_O_S = getParam<Scalar>("Soil.k_O_S", k_O_S_)/(24.*60.*60.); //[mol soil / mol C soil / s] 
+		 k_D_O = getParam<Scalar>("Soil.k_D_O",k_D_O_)/(24.*60.*60.); // [s-1] 
+		 k_R_O = getParam<Scalar>("Soil.k_R_O",k_R_O_)/(24.*60.*60.); // [s-1] 
 		 
 		 
-		 beta = std::vector<double>{getParam<double>("Soil.betaO", beta_[0]),
-									getParam<double>("Soil.betaC", beta_[1])}; //
-		 k_growth =std::vector<double>{getParam<double>("Soil.k_growthO", k_growth_[0]),
-									getParam<double>("Soil.k_growthC", k_growth_[1])}; //
-		 k_growthBis = getParam<double>("Soil.k_growthBis", k_growthBis); //
+		 beta_O = getParam<Scalar>("Soil.beta_O", beta_O_); //
+		 k_phi = getParam<Scalar>("Soil.k_phi", k_phi_); // 
+		 k_decay = getParam<Scalar>("Soil.k_decay", k_decay_); //
+		 k_decay2 = getParam<Scalar>("Soil.k_decay2", k_decay2_); // 
+		 k_growth_O = getParam<Scalar>("Soil.k_growth_O", k_growth_O_); //
 
-		 C_S_W_thres = std::vector<double>{getParam<double>("Soil.C_S_W_thresO", C_S_W_thres_[0]) * m3_2_cm3,
-										getParam<double>("Soil.C_S_W_thresC", C_S_W_thres_[1]) * m3_2_cm3}; //mol C/m3 soil water
+		 C_S_W_thresO = getParam<Scalar>("Soil.C_S_W_thresO", C_S_W_thresO_) * m3_2_cm3; //mol C/m3 soil water
 		 	 
 
-		 k_phi = getParam<double>("Soil.k_phi", k_phi_); //
-		 k_decay = getParam<double>("Soil.k_decay", k_decay_); // 
-		 k_decay2 = getParam<double>("Soil.k_decay2", k_decay2_);//
-		 k_decay3 = getParam<double>("Soil.k_decay3", k_decay3);//
-		 extra = getParam<double>("Soil.extra", extra);//  
-		 extra2 = getParam<double>("Soil.extra2", extra2);// 
-		m_maxBisO = getParam<double>("Soil.m_maxBisO2", 0. );
-		m_maxBis_Cs = getParam<double>("Soil.m_maxBis_Cs", 0.  );
-		 
-
+												  
 		// Output
-		std::string filestr = this->name() + "_1p5cProblem.txt"; // output file
+		std::string filestr = this->name() + "_1p5cProblem.csv"; // output file
 		myfile_.open(filestr.c_str());
 		std::cout << "Richards1P5CProblemR_cyl constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0) 
@@ -274,6 +211,7 @@ public:
 				<< criticalPressure_ //<< "\n" << "Sorption:" << "buffer power "<< b_[0] << ", Freundlich " << freundlichK_[0] << ", " <<
 				//freundlichN_[0] << "\n" 
 				<< std::flush;
+		
 	}
 
 	/**
@@ -347,35 +285,12 @@ public:
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
-		if(verbose>0)
-		{
-			 std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
-		}
-		// if(toFile)
-		// {
-			 // myfile_<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
-		// }
+		//std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
 		for(int i = soluteIdx; i<numComponents_;i++)//solutes
 		{
 			v[i] = initialSoil_.at(i).f(z,eIdx);
-			if(verbose>0)
-			{
-				 std::cout<<" result : "<<v[i];
-			}
-			// if(toFile)
-			// {
-				 // myfile_<<" result : "<<v[i];
-			// }
-		}
-		if(verbose>0)
-		{
-			 std::cout<<std::endl;
-		}
-		// if(toFile)
-		// {
-			 // myfile_<<std::endl;
-		// }
-		
+			//std::cout<<" result : "<<v[i];
+		}//std::cout<<std::endl;
 		return v;
 	}
 
@@ -758,7 +673,6 @@ public:
      */
 	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
-		 //DUNE_THROW(Dune::InvalidStateException, "Biochemical stop");
 		//[mol solution / m3 solution]
 		//55 mol/kg water * 997 kg/m3
 		 const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
@@ -774,99 +688,66 @@ public:
 					(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
 			return mOMF;
 		};
-		 // (mol Soil / m3 soil) * (m3 space/m3 space - m3 pores/m3 space)  = (mol Soil / m3 soil) * (m3 soil/m3 space) = mol soil / m3 space
-		double bulkSoilDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false) * (1 - volVars.porosity());
-		// if(verbose>0)
-		// {
-			// std::cout<<"bulk soil "<<bulkSoilDensity <<" "<< massOrMoleDensity(volVars, soilIdx -  numFluidComps , false) <<" "<<(1 - volVars.porosity())<<std::endl;
-		// }
-		double C_LfrW_temp = massOrMoleFraction(volVars,0, mucilIdx, true);
-		double C_LfrW =  std::max(C_LfrW_temp, 0.);					//mol C/mol soil water 
+		 // (mol Soil / vol soil) * (vol tot/vol tot - porosity)  = (mol Soil / vol soil) * (vol soil/vol tot) = mol soil / vol tot
+		Scalar bulkSoilDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false) * (1 - volVars.porosity());
+		
+		
+		Scalar C_LfrW =  std::max(massOrMoleFraction(volVars,0, mucilIdx, true), 0.);					//mol C/mol soil water 
 		//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
-		double C_L_W = massOrMoleDensity(volVars, h2OIdx, true) * C_LfrW;								//mol C/m3 soil water
-		//double C_L = C_L_W * volVars.saturation(h2OIdx) * volVars.porosity();							//mol C/m3 bulk soil
-		//double C_LfrSoil =  C_L_W* volVars.saturation(h2OIdx) * volVars.porosity()/bulkSoilDensity;		//mol C/mol solid soil 
+		Scalar C_L_W = massOrMoleDensity(volVars, h2OIdx, true) * C_LfrW;								//mol C/m3 soil water
+		Scalar C_L = C_L_W * volVars.saturation(h2OIdx) * volVars.porosity();							//mol C/m3 bulk soil
+		Scalar C_LfrSoil =  C_L_W* volVars.saturation(h2OIdx) * volVars.porosity()/bulkSoilDensity;		//mol C/mol solid soil 
 		
-		double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
-		double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
-		//double C_S = C_S_W * volVars.saturation(h2OIdx) * volVars.porosity();							//mol C/m3 bulk soil
-		//[mol /mol soil] = [mol / m3 solution] * [m3 solution/m3 pores] * [m3 pores/m3 space] / [mol soil / m3 space]
-		//double C_SfrSoil = C_S_W* volVars.saturation(h2OIdx) * volVars.porosity()/bulkSoilDensity;		//mol C/mol solid soil
+		Scalar C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
+		Scalar C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
+		Scalar C_S = C_S_W * volVars.saturation(h2OIdx) * volVars.porosity();							//mol C/m3 bulk soil
+		Scalar C_SfrSoil = C_S_W* volVars.saturation(h2OIdx) * volVars.porosity()/bulkSoilDensity;		//mol C/mol solid soil
 		
-		std::vector<double> C_afrSoil(2), C_a(2), C_dfrSoil(2), C_d(2);
-		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
-		{
-			int CxAIdx = (i == 0) ? CoAIdx : CcAIdx;
-			int CxDIdx = (i == 0) ? CoDIdx : CcDIdx;
-			C_afrSoil[i] =  std::max(massOrMoleFraction(volVars,0, CxAIdx - numFluidComps, false), 0.);//mol C/mol solid soil
-			C_a[i]  = bulkSoilDensity * C_afrSoil[i] ;														//mol C/m3 bulk soil
-			C_dfrSoil[i]  =  std::max(massOrMoleFraction(volVars,0, CxDIdx - numFluidComps, false), 0.);//mol C/mol solid soil
-			C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil													//mol C/m3 bulk soil
-		}
-		double C_Oafr = std::max(massOrMoleFraction(volVars,0, CoAIdx - numFluidComps, false), 0.) ; // mol C / mol solid	
+		Scalar C_OafrSoil =  std::max(massOrMoleFraction(volVars,0, CoAIdx - numFluidComps, false), 0.);//mol C/mol solid soil
+		Scalar C_Oa = bulkSoilDensity * C_OafrSoil;														//mol C/m3 bulk soil
+		Scalar C_OdfrSoil =  std::max(massOrMoleFraction(volVars,0, CoDIdx - numFluidComps, false), 0.);//mol C/mol solid soil
+		Scalar C_Od = bulkSoilDensity * C_OdfrSoil;														//mol C/m3 bulk soil
+		
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 bulk soil]/([mol C/m3 bulk soil]*[mol C/m3 bulk soil])) * [mol C/m3 bulk solid]
-		// double F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_a[0]  ; //mol C/(m^3 bulk soil *s)
-		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-		double F_depoly = v_maxL * (C_L_W/(K_L+ C_L_W)) * C_a[0];// * volVars.saturation(h2OIdx) * volVars.porosity() ; //mol C/(m^3 bulk soil *s)
+		Scalar F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_Oa ; //mol C/(m^3 bulk soil *s)
 		
-		double F_uptake_S = 0.;
-		double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
-		double F_growth_S = 0.;	
+		//	Uptake
+		// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+		// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+		Scalar F_uptake_S_A_O = (m_maxO * C_SfrSoil * k_O_S)/(m_maxO + C_SfrSoil * k_O_S) * C_Oa ;			//mol C/(m^3 bulk soil *s)
+		Scalar F_uptake_S_D_O = (m_maxO * C_SfrSoil * k_O_S)/(m_maxO + C_SfrSoil * k_O_S) * beta_O * C_Od ; //mol C/(m^3 bulk soil *s)
+		Scalar F_uptake_S_O = F_uptake_S_A_O + F_uptake_S_D_O;	//mol C/(m^3 bulk soil *s)
 		
-		std::vector<double> F_uptake_S_A(2), F_uptake_S_D(2), F_decay_A(2), F_decay_D(2) ;
-		std::vector<double> F_growth(2), F_deact(2), F_react(2), phi(2);
+		//	Decay
+		// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
+		Scalar F_decay_A_O = m_maxO * C_Oa - F_uptake_S_A_O;			//mol C/(m^3 bulk soil *s)
+		Scalar F_decay_D_O = m_maxO * beta_O * C_Od - F_uptake_S_D_O;	//mol C/(m^3 bulk soil *s)
+		Scalar F_decay_O = F_decay_A_O + F_decay_D_O;	//mol C/(m^3 bulk soil *s)
 		
-		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
-		{		
-			//				Uptake			
-			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
-			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
-			F_uptake_S_A[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
-			F_uptake_S_D[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s)
-			
-			//				Decay
-			// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
-			F_decay_A[i] = m_maxBis[i]  * C_a[i]  - F_uptake_S_A[i] ;			//mol C/(m^3 bulk soil *s)
-			F_decay_D[i] = m_maxBis[i]  * beta[i]  * C_d[i]  - F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
-			
-			//				Other
-			
-			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
-			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
-			F_growth[i] = (micro_max[i] * C_S_W * k_S[i])/(micro_max[i] + C_S_W * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
-			if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
-			{
-				std::cout<<"F_growth["<<i<<"] " << std::scientific<<std::setprecision(20)
-				<<micro_max[i] <<" "<< C_S_W <<" "<< k_S[i] <<" "<< C_a[i]<<" "<<F_growth[i]<<std::endl;
-				std::cout<<"F_decay_A["<<i<<"] " << std::scientific<<std::setprecision(20)
-				<<m_maxBis[i] <<" "<< C_a[i]  <<" "<< F_uptake_S_A[i]  <<" "
-				<< F_decay_A[i] <<std::endl;
-			}
-			phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_W)/(k_phi * C_S_W_thres[i])));								// - 
-			// [-] * [1/s] * [mol C/m3 bulk soil]
-			F_deact[i]  = (1 - phi[i] ) * k_D[i]  * C_a[i] ;			//mol C/(m^3 bulk soil *s)
-			F_react[i]  = phi[i]  * k_R[i]  * C_d[i] ;				//mol C/(m^3 bulk soil *s)
-			
-			F_uptake_S += F_uptake_S_A[i] + F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
-			F_decay += F_decay_A[i] + F_decay_D[i];	
-			F_growth_S += (1/k_growth[i])*F_growth[i];
-		}
+		//	Other
+		// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+		// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+		Scalar F_growth_O = (micro_maxO * C_SfrSoil * k_O_S)/(micro_maxO + C_SfrSoil * k_O_S) * C_Oa ;		//mol C/(m^3 bulk soil *s)
+		Scalar phi_O = 1/(1 + std::exp((C_S_W_thresO - C_S_W)/(k_phi * C_S_W)));								// - 
+		// [-] * [1/s] * [mol C/m3 bulk soil]
+		Scalar F_deact_O = (1 - phi_O) * k_D_O * C_Oa;			//mol C/(m^3 bulk soil *s)
+		Scalar F_react_O = phi_O * k_R_O * C_Od;				//mol C/(m^3 bulk soil *s)
 		
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 space/s] 
-		
-		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S)* pos0 ;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
-		q[mucilIdx]  += (-F_depoly +  k_decay2 * F_decay) * pos0;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
-		
-		q[CoAIdx] += (  - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
-		q[CoDIdx] += ( - extra2 + F_deact[0] - F_react[0] - (1/k_decay)*F_decay_D[0]) * pos0;
-		
-		q[CcAIdx] += (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0;
-		q[CcDIdx] += (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0;
-		
+		q[soluteIdx] += (F_depoly + (1 - k_decay2)*F_decay_O - F_uptake_S_O - (1/k_growth_O)*F_growth_O)* pos0;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
+		q[mucilIdx]  += (-F_depoly + k_decay2 * F_decay_O) * pos0;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
+		q[CoAIdx] += (F_growth_O - F_deact_O + F_react_O - (1/k_decay)*F_decay_A_O) * pos0;
+		q[CoDIdx] += (F_deact_O - F_react_O - (1/k_decay)*F_decay_D_O) * pos0;
+		// std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<massOrMoleFraction(volVars,0, mucilIdx, true)<<" "<<
+		// massOrMoleFraction(volVars,0, CoAIdx - numFluidComps, false)<<" "<<massOrMoleDensity(volVars, h2OIdx, true) 
+		// <<" bulkSoilDensity "<<bulkSoilDensity
+		// <<" indexes "<<soilIdx -  numFluidComps<<" "<<CoAIdx -  numFluidComps<<" "<<mucilIdx<<" "<<soluteIdx
+		// <<" Fdepoly "<<F_depoly<<" Sa "<<volVars.saturation(h2OIdx)<<" phi "<<volVars.porosity()
+		// <<" K_L "<<K_L<<" C_Oa "<<C_Oa<<" C_L "<<C_L<<std::endl;
 	}
 
 	/*!
@@ -1025,7 +906,6 @@ public:
 	std::vector<int> bcSBotType_ = std::vector<int>(numSolutes);
 	std::vector<double> bcSTopValue_ = std::vector<double>(numSolutes);
 	std::vector<double> bcSBotValue_= std::vector<double>(numSolutes);
-	
 
 private:
 
@@ -1079,8 +959,6 @@ private:
 	Scalar dt_ = 0.;
 
 	std::ofstream myfile_;
-	int verbose;
-	bool toFile;
 	//not used for anything except post-simulation analysis I think
 	NumEqVector bc_flux_upper = NumEqVector(0.);
 	NumEqVector bc_flux_lower = NumEqVector(0.);
@@ -1106,43 +984,35 @@ private:
 	Scalar bulkDensity_ = 1.4;//g/cm3 // TODO check with Mai, buffer power (1+b) or b
 	
 	// default value in CPB units
-	double  v_maxL_ = 5e5; //Maximum reaction rate of enzymes targeting large polymers [d-1]
-	double  K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mol cm-3 soil]
-	std::vector<double>  m_max_{0.01,0.001}; //[d-1] Maximum maintenance rate coefficient for the corresponding microbial groups
-	std::vector<double>  micro_max_{1,10}; //[d-1] Maximum growth rate coefficient for the corresponding microbial group
-	std::vector<double>  beta_{0.1,0.3}; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
-	std::vector<double>  k_S_{ 50000, 30000}; // [mol soil / mol C soil / d] Specific substrate affinity to small polymers for the corresponding microbial group
-	std::vector<double>  C_S_W_thres_{ 0.001/(12*1000), 0.01/(12*1000)}; //[mol C/cm3 soil water] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
-	double  k_phi_= 0.1; //[-] Sharpness parameter for the switch function from active to dormancy
-	std::vector<double>  k_D_{ 1, 5}; //[d-1] Deactivation rate coefficient for the corresponding microbial group
-	std::vector<double>  k_R_{ 1, 5}; //[d-1] Reactivation rate coefficient for the corresponding microbial group
-	double  k_decay_= 0.75; //[-] Maintenance yield
-	double  k_decay2_= 0.5;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
-	std::vector<double>  k_growth_{ 0.8, 0.6};//[-] Growth yield on small polymers for the corresponding microbial groups
+	Scalar v_maxL_ = 5e5; //Maximum reaction rate of enzymes targeting large polymers [d-1]
+	Scalar K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mol cm-3 soil]
+	Scalar m_maxO_= 0.01; //[d-1] Maximum maintenance rate coefficient for the corresponding microbial groups
+	Scalar micro_maxO_= 1; //[d-1] Maximum growth rate coefficient for the corresponding microbial group
+	Scalar beta_O_= 0.1; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
+	Scalar k_O_S_= 50000; // [mol soil / mol C soil / d] Specific substrate affinity to small polymers for the corresponding microbial group
+	Scalar C_S_W_thresO_= 0.001/(12*1000); //[mol C/cm3 soil water] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
+	Scalar k_phi_= 0.1; //[-] Sharpness parameter for the switch function from active to dormancy
+	Scalar k_D_O_= 1; //[d-1] Deactivation rate coefficient for the corresponding microbial group
+	Scalar k_R_O_= 1; //[d-1] Reactivation rate coefficient for the corresponding microbial group
+	Scalar k_decay_= 0.75; //[-] Maintenance yield
+	Scalar k_decay2_= 0.5;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
+	Scalar k_growth_O_= 0.8;//[-] Growth yield on small polymers for the corresponding microbial groups
 	
 	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) * *bulkDensity_ g/cm3
-	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
-	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
-	std::vector<double>  m_max ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
-	std::vector<double>  m_maxBis ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
-	std::vector<double>  micro_max ; //[s-1] Maximum growth rate coefficient for the corresponding microbial group
-	std::vector<double>  beta ; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
-	std::vector<double>  k_S ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
-	std::vector<double>  k_SBis ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
-	std::vector<double>  C_S_W_thres ; //[mol C/m3 soil water] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
-	double  k_phi ; //[-] Sharpness parameter for the switch function from active to dormancy
-	std::vector<double>  k_D ; //[s-1] Deactivation rate coefficient for the corresponding microbial groups
-	std::vector<double>  k_R ; //[s-1] Reactivation rate coefficient for the corresponding microbial group
-	double  k_decay ; //[-] Maintenance yield
-	double  k_decay2;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
-	double  k_decay3 = 1;// for troubleshooting
-	std::vector<double>  k_growth;//[-] Growth yield on small polymers for the corresponding microbial groups
-	double k_growthBis = 1; // dummy variable for troubleshooting
-	double extra = 0;
-	double extra2 = 0;
-	double m_maxBisO;
-	double m_maxBis_Cs;
-	double theta;
+	Scalar v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
+	Scalar K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
+	Scalar m_maxO ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
+	Scalar micro_maxO ; //[s-1] Maximum growth rate coefficient for the corresponding microbial group
+	Scalar beta_O ; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
+	Scalar k_O_S ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
+	Scalar C_S_W_thresO ; //[mol C/m3 soil water] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
+	Scalar k_phi ; //[-] Sharpness parameter for the switch function from active to dormancy
+	Scalar k_D_O ; //[s-1] Deactivation rate coefficient for the corresponding microbial groups
+	Scalar k_R_O ; //[s-1] Reactivation rate coefficient for the corresponding microbial group
+	Scalar k_decay ; //[-] Maintenance yield
+	Scalar k_decay2;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
+	Scalar k_growth_O;//[-] Growth yield on small polymers for the corresponding microbial groups
+	
 	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
 	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  
 	//must be g/cm^3 (you already mentioned that this was not clear).

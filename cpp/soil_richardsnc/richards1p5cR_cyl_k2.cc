@@ -50,8 +50,8 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1p5cproblemReaction_cyl.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties_cyl_5c.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "richards1p5cproblemReaction_cyl_k2.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties_cyl_5c_k2.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -145,7 +145,7 @@ int main(int argc, char** argv) //try
     // the problem (initial and boundary conditions)
     using Problem = GetPropType<TypeTag, Properties::Problem>;
 	auto problem = std::make_shared<Problem>(fvGridGeometry);
-	//problem->computePointSourceMap(); // enable point sources
+	problem->computePointSourceMap(); // enable point sources
 
 
     // the solution vector
@@ -324,7 +324,7 @@ int main(int argc, char** argv) //try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
-        //problem->postTimeStep(x, *gridVariables);
+        problem->postTimeStep(x, *gridVariables);
         problem->writeBoundaryFluxes();
     }
 

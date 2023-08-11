@@ -108,9 +108,11 @@ public:
             	auto eqIdx = conti0EqIdx + compIdx;
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 if (eqIdx != replaceCompEqIdx) {
+					// mol solute / m3 space
                     storage[eqIdx] += (volVars.porosity()*volVars.saturation(phaseIdx)+b) //m3 liquide / m3 space
                                       * massOrMoleDensity(volVars, phaseIdx) // mol liquid / m3 liquid
-                                      * massOrMoleFraction(volVars, phaseIdx, compIdx)*scv.center()[0]; // mol solute / mol liquid 
+                                      * massOrMoleFraction(volVars, phaseIdx, compIdx) // mol solute / mol liquid 
+									  *scv.center()[0]; 
 					// std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
 					// <<" numFluidComponents "<<numFluidComponents<<" numFluidPhases "<<numFluidPhases <<" storage "<<storage[eqIdx]
 					// <<" poro "<<volVars.porosity()<<" saturation "<<volVars.saturation(phaseIdx)<<std::endl;
@@ -126,7 +128,8 @@ public:
             	auto compIdx = replaceCompEqIdx- conti0EqIdx;
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
-                                             *(volVars.porosity()*volVars.saturation(phaseIdx)+b)*scv.center()[0];
+                                             * (volVars.porosity()*volVars.saturation(phaseIdx)+b)
+											 * scv.center()[0];
 				//std::cout<<"computeStorage, storage[replaceCompEqIdx] "<<compIdx<<" "<<replaceCompEqIdx<<" "<<storage[replaceCompEqIdx]<<std::endl;
             }
 
@@ -182,9 +185,11 @@ public:
 			for (int sCompIdx = 0; sCompIdx < numSolidComps - numInertSolidComps; ++sCompIdx)
 			{
 				auto eqIdx = Indices::conti0EqIdx + numFluidComponents + sCompIdx ;
+				// mol comp / m3 space
 				storage[eqIdx] += (1 - volVars.porosity())// m3 solide / m3 space
 								* massOrMoleDensity	//mol solid / m3 solide
-								* massOrMoleFraction(volVars, sCompIdx) * scv.center()[0];
+								* massOrMoleFraction(volVars, sCompIdx) // mol comp / mol solid
+								* scv.center()[0];
 			}
 		}
         return storage;

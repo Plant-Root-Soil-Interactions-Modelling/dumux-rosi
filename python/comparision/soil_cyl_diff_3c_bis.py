@@ -16,7 +16,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 def write_file_array(name, data):
-    name2 = './results/'+ name+ '.txt'
+    name2 = './results3c/'+ name+ '.txt'
     with open(name2, 'a') as log:
         log.write(','.join([num for num in map(str, data)])  +'\n')
 """ 
@@ -25,7 +25,7 @@ Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 everything scripted, no input file needed, also works parallel with mpiexec
 """
 
-results_dir="./results/"
+results_dir="./results3c/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:
@@ -55,23 +55,21 @@ s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
 #s.setICZ_solute(0.)  # [kg/m2] 
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1 # [g/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 Dl = 1.e-8
 
 if useC3:
     s.setParameter( "Soil.BC.Bot.C1Type", str(3))
     s.setParameter( "Soil.BC.Top.C1Type", str(3))
-    s.setParameter( "Soil.BC.Bot.C1Value", str(exud )) 
+    s.setParameter( "Soil.BC.Bot.C1Value", str(exud)) 
     s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
-    # s.setParameter("1.Component.MolarMass", str(MolarMass))  # in kg/mol
     s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
     s.setParameter( "Soil.BC.Bot.C2Type", str(3))
     s.setParameter( "Soil.BC.Top.C2Type", str(3))
-    s.setParameter( "Soil.BC.Bot.C2Value", str(exud/3)) 
+    s.setParameter( "Soil.BC.Bot.C2Value", str(exud/3.)) 
     s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
-    # s.setParameter("2.Component.MolarMass", str(MolarMass)) 
-    s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl/10)) #m^2/s
+    s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl/2.)) #m^2/s
 else:
     s.setParameter( "Soil.BC.Bot.SType", str(3))
     s.setParameter( "Soil.BC.Top.SType", str(6))
@@ -89,9 +87,10 @@ ci = 1
 #s.setParameter("Soil.IC.C1Z", "0.0002 0.0003 0.0004 0.0005 0.006") 
 #s.setParameter("Soil.IC.C1", "0.02 0.03 0.04 0.05 0.6") 
 #s.setParameter("Soil.IC.C1", "0.6 0.05 0.04 0.03 0.02") 
-s.setParameter("Component.BufferPower", "0")  
-s.setParameter("Soil.v_maxL", str(5e5))
+s.setParameter("Component.BufferPower", "0")
+s.setParameter("Soil.v_maxL", str(5e3))
 s.setParameter("Soil.K_L", str(10e-2))
+s.setParameter("Soil.C_Oa", str(0.0002338)) #mol /cm3 soil
            
 
 s.setVGParameters([loam])
@@ -120,15 +119,15 @@ if rank == 0:
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 5./24, 10./24.]  # days
+times = [0., 5./24., 10./24.]  # days
 s.ddt = 1.e-5
 
 col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
 points = s.getDofCoordinates()
 
 
-molarMassWat = 18 # [g/mol]
-densityWat = 1 #[g/cm3]
+molarMassWat = 18. # [g/mol]
+densityWat = 1. #[g/cm3]
 # [mol/cm3] = [g/cm3] /  [g/mol] 
 molarDensityWat =  densityWat / molarMassWat # [mol/cm3]
 

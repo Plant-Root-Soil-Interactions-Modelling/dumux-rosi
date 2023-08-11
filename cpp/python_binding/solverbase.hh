@@ -665,7 +665,7 @@ public:
         auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
 
         // the upwind term to be used for the volume flux evaluation
-        auto upwindTerm = [eqIdx](const auto& volVars) { return volVars.mobility(eqIdx); };
+        // auto upwindTerm = [eqIdx](const auto& volVars) { return volVars.mobility(eqIdx); };
 
         for (const auto& e : Dune::elements(gridGeometry->gridView())) { // soil elements
 

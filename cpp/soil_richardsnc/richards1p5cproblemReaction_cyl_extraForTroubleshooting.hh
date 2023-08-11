@@ -820,7 +820,13 @@ public:
 		
 		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
 		{		
-			//				Uptake			
+			//				Uptake
+			// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+			//F_uptake_S_A[i] = (m_max[i] * C_SfrSoil * k_SBis[i])/(m_max[i] + C_SfrSoil * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+			//F_uptake_S_D[i] = (m_max[i] * C_SfrSoil * k_SBis[i])/(m_max[i] + C_SfrSoil * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s
+			
+			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
 			F_uptake_S_A[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
@@ -832,6 +838,9 @@ public:
 			F_decay_D[i] = m_maxBis[i]  * beta[i]  * C_d[i]  - F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
 			
 			//				Other
+			// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+			// F_growth[i] = (micro_max[i] * C_SfrSoil * k_S[i])/(micro_max[i] + C_SfrSoil * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
 			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
@@ -854,19 +863,62 @@ public:
 			F_growth_S += (1/k_growth[i])*F_growth[i];
 		}
 		
+		//Scalar F_uptake_S_O = F_uptake_S_A_O + F_uptake_S_D_O;	//mol C/(m^3 bulk soil *s)
+		//Scalar F_decay_O = F_decay_A_O + F_decay_D_O;	//mol C/(m^3 bulk soil *s)
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 space/s] 
+		double decayTest_Cs = m_maxBis_Cs  * C_S_W * volVars.saturation(h2OIdx) * volVars.porosity();
+		setDecayCs(decayTest_Cs);
+		setTheta(volVars.saturation(h2OIdx) * volVars.porosity());
+		q[soluteIdx] += ( - decayTest_Cs + F_depoly + k_decay3 *(1 - k_decay2)*F_decay - F_uptake_S - k_growthBis * F_growth_S)* pos0 ;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
+		q[mucilIdx]  += (-F_depoly + k_decay3 * k_decay2 * F_decay) * pos0;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
 		
-		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S)* pos0 ;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
-		q[mucilIdx]  += (-F_depoly +  k_decay2 * F_decay) * pos0;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
-		
-		q[CoAIdx] += (  - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
+		double decayTest = m_maxBisO  * C_Oafr * bulkSoilDensity; //* C_S_W;//
+		setDecay(decayTest);
+		q[CoAIdx] += ( -decayTest - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
 		q[CoDIdx] += ( - extra2 + F_deact[0] - F_react[0] - (1/k_decay)*F_decay_D[0]) * pos0;
 		
 		q[CcAIdx] += (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0;
 		q[CcDIdx] += (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0;
-		
+		if(verbose==2)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+		{
+			std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+			 std::cout<<"bioChemicalReaction " << std::scientific<<q[soluteIdx]<<" "<<q[mucilIdx] 
+			 <<" "<<F_depoly<<" "<<F_decay<<" "<<F_uptake_S
+			 <<" "<<F_growth_S<<" "<< std::scientific<<" B:"<<C_afrSoil[0]
+			 <<" "<<C_a[0]<<" "<<C_a[1]<<" "<<C_d[0]<<" "<<C_d[1]<<std::endl;
+			 std::cout << std::scientific<<F_depoly<<std::endl;
+			 std::cout << std::scientific<<q[mucilIdx]<<std::endl;
+			 
+			 std::cout<<(massOrMoleFraction(volVars,0, mucilIdx, true)<0.)<<" "<<(q[mucilIdx]<0.)<<std::endl;
+		}
+		if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+		{
+			std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+			std::cout<<"C_S "<< std::scientific<<C_SfrW<<" "<<C_S_W<<std::endl;
+			
+			std::cout<<"decayTest "<<C_Oafr<<" "<<m_maxBisO<<" "<<decayTest<<std::endl;
+			
+			 std::cout<<"bioChemicalReaction " << std::scientific<<q[soluteIdx]
+			 <<" "<<q[mucilIdx] <<" "<<q[CoAIdx]<<" "<<extra
+			 <<" "<<F_depoly<< std::scientific<<" B:"<<C_afrSoil[0]
+			 <<" "<<C_a[0]<<" "<<std::setprecision (20)<<F_growth[0]<<" "<<bulkSoilDensity<<std::endl;
+			 for(int i = 0; i < q.size(); i++)
+			 {
+				 std::cout <<std::scientific<<q[i]<<", ";
+			 } std::cout<<std::endl;
+		}
+		// if(toFile)
+		// {
+			 // myfile_<<"bioChemicalReaction "<<q[soluteIdx]<<" "<<q[mucilIdx] <<" "<<F_depoly<<" "<<F_decay<<" "<<F_uptake_S<<" "<<F_growth_S
+			 // <<" "<<C_SfrSoil<<" "<<C_L<<std::endl;
+		// }
+		// massOrMoleFraction(volVars,0, CoAIdx - numFluidComps, false)<<" "<<massOrMoleDensity(volVars, h2OIdx, true) 
+		// <<" bulkSoilDensity "<<bulkSoilDensity
+		// <<" indexes "<<soilIdx -  numFluidComps<<" "<<CoAIdx -  numFluidComps<<" "<<mucilIdx<<" "<<soluteIdx
+		// <<" Fdepoly "<<F_depoly<<" Sa "<<volVars.saturation(h2OIdx)<<" phi "<<volVars.porosity()
+		// <<" K_L "<<K_L<<" C_Oa "<<C_Oa<<" C_L "<<C_L<<std::endl;
 	}
 
 	/*!

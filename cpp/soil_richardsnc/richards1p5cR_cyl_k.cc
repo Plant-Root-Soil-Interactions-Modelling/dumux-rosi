@@ -50,8 +50,8 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // functions to resume a simulation
 
-#include "richards1p5cproblemReaction_cyl.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
-#include "properties_cyl_5c.hh" // the property system related stuff (to pass types, used instead of polymorphism)
+#include "richards1p5cproblemReaction_cyl_k.hh" // the problem class. Defines some TypeTag types and includes its spatialparams.hh class
+#include "properties_cyl_5c_k.hh" // the property system related stuff (to pass types, used instead of polymorphism)
 #include "properties_nocoupling.hh" // dummy types for replacing the coupling types
 
 /**
@@ -145,7 +145,7 @@ int main(int argc, char** argv) //try
     // the problem (initial and boundary conditions)
     using Problem = GetPropType<TypeTag, Properties::Problem>;
 	auto problem = std::make_shared<Problem>(fvGridGeometry);
-	//problem->computePointSourceMap(); // enable point sources
+	problem->computePointSourceMap(); // enable point sources
 
 
     // the solution vector
@@ -223,7 +223,8 @@ int main(int argc, char** argv) //try
 	//std::cout<<"the NON-linear solver"<<std::endl;
     using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
     NonLinearSolver nonLinearSolver = NonLinearSolver(assembler, linearSolver);
-
+	int verbose = problem->verbose;
+	nonLinearSolver.setVerbose(verbose >=0);
     // std::cin.ignore();  // wait for key (debugging)
 	//std::cout<<"tEnd>0? "<<tEnd<<std::endl;
     // print dumux end message
@@ -257,7 +258,6 @@ int main(int argc, char** argv) //try
 		myfile_.close();
         DumuxMessage::print(/*firstCall=*/false);
     }
-	
 	double bulkSoilDensity = (2700. / 60.08e-3) * (1 - 0.43) ;
 	
 			std::cout<<"\n\nwe get: "<< timeLoop->time()<<" "
@@ -293,22 +293,25 @@ int main(int argc, char** argv) //try
             //    vtkWriter.write(timeLoop->time());
             //}
             // report statistics of this time step
-			std::cout<<"\n\nwe get: "<< timeLoop->time()<<" "
-			<<timeLoop->timeStepSize()   
-			<<"\n\t"<<x[0][3]*bulkSoilDensity
-			<<" "<< problem->getDecay() <<" "
-			<<x[0][3]*bulkSoilDensity + problem->getDecay() * timeLoop->timeStepSize() 
-			<<"\n\t"<<x[0][1]*problem->getTheta()* (1e6/18.) //mol /mol* g/m3 / g/mol
-			<<" "<< problem->getDecayCs() <<" "
-			<<x[0][1]*problem->getTheta() * (1e6/18.)+ problem->getDecayCs() * timeLoop->timeStepSize() 
-			<<std::endl<<std::endl;
-			std::cout<<"report statistics of this time step"<<std::endl;
-            timeLoop->reportTimeStep();
-            // set new dt as suggested by the newton solver
-			std::cout<<"set new dt as suggested by the newton solve"<<std::endl;
+			if(verbose >= 0)
+			{
+				std::cout<<"\n\nwe get: "<< timeLoop->time()<<" "
+				<<timeLoop->timeStepSize()   
+				<<"\n\t"<<x[0][3]*bulkSoilDensity
+				<<" "<< problem->getDecay() <<" "
+				<<x[0][3]*bulkSoilDensity + problem->getDecay() * timeLoop->timeStepSize() 
+				<<"\n\t"<<x[0][1]*problem->getTheta()* (1e6/18.) //mol /mol* g/m3 / g/mol
+				<<" "<< problem->getDecayCs() <<" "
+				<<x[0][1]*problem->getTheta() * (1e6/18.)+ problem->getDecayCs() * timeLoop->timeStepSize() 
+				<<std::endl<<std::endl;
+				std::cout<<"report statistics of this time step"<<std::endl;
+				timeLoop->reportTimeStep();
+				// set new dt as suggested by the newton solver
+				std::cout<<"set new dt as suggested by the newton solve"<<std::endl;
+			}
             timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
             // pass current time to the problem
-			std::cout<<"pass current time to the problem"<<std::endl;
+			//std::cout<<"pass current time to the problem"<<std::endl;
             problem->setTime( timeLoop->time() , timeLoop->timeStepSize()  );
             //problem->postTimeStep(x, *gridVariables);
 			//DUNE_THROW(Dune::InvalidStateException, "problem->postTimeStep(x, *gridVariables);");
@@ -324,7 +327,7 @@ int main(int argc, char** argv) //try
         // solve the non-linear system
         nonLinearSolver.solve(x);
         vtkWriter.write(1);
-        //problem->postTimeStep(x, *gridVariables);
+        problem->postTimeStep(x, *gridVariables);
         problem->writeBoundaryFluxes();
     }
 
@@ -335,6 +338,19 @@ int main(int argc, char** argv) //try
     // print dumux end message
     if (mpiHelper.rank() == 0)
     {
+			if(verbose >= -1)
+			{
+				std::cout<<"\n\nwe get: "<< timeLoop->time()<<" "
+				<<timeLoop->timeStepSize()   
+				<<"\n\t"<<x[0][3]*bulkSoilDensity
+				<<" "<< problem->getDecay() <<" "
+				<<x[0][3]*bulkSoilDensity + problem->getDecay() * timeLoop->timeStepSize() 
+				<<"\n\t"<<x[0][1]*problem->getTheta()* (1e6/18.) //mol /mol* g/m3 / g/mol
+				<<" "<< problem->getDecayCs() <<" "
+				<<x[0][1]*problem->getTheta() * (1e6/18.)+ problem->getDecayCs() * timeLoop->timeStepSize() 
+				<<std::endl<<std::endl;
+			}
+			
 		//[kg soil / m3 soil] / [kg soil / mol soil] * [m3space /m3 space - m3 pores / m3 space] * [m3/cm3]
 		// == [mol soil/ m3 soil] * [m3 soil/m3 space] * [m3/cm3] = mol soil /cm3 space
 		double bulkSoilDensity = (2700. / 60.08e-3) * (1 - 0.43) /1e6; 

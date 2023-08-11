@@ -166,6 +166,7 @@ public:
 		 K_L = getParam<Scalar>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
 		 C_Oa = getParam<Scalar>("Soil.C_oa", C_Oa_)* m3_2_cm3; //[mol (C)cm-3(soil-1)] * [cm3/m3] => [mol (C) m-3(soil-1)]  
 
+		 verbose =  getParam<int>("Problem.verbose", 0);
 												  
 		// Output
 		std::string filestr = this->name() + "_1p3cProblem.csv"; // output file
@@ -610,7 +611,7 @@ public:
 	 *
 	 * called by FVLocalResidual:computeSource(...)
 	 *
-     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f
+     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 space\cdot s)] \f
      */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
@@ -638,14 +639,28 @@ public:
 		Scalar massOrMolFraction = useMoles? volVars.moleFraction(h2OIdx, mucilIdx) : volVars.massFraction(h2OIdx, mucilIdx);
 		Scalar massOrMolDensity = useMoles? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx);
 		//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
-		Scalar C_L = massOrMolDensity * std::max(massOrMolFraction, 0.);//X/X I think to X/m3
-		Scalar F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_Oa ; //X/(m^3*s)
+		
+		
+		double C_LfrW_temp = massOrMolFraction;
+		double C_LfrW =  std::max(C_LfrW_temp, 0.);					//mol C/mol soil water 
+		//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
+		double C_L_W = massOrMolDensity * C_LfrW;								//mol C/m3 soil water
+		//Scalar C_L = massOrMolDensity * std::max(massOrMolFraction, 0.);//X/X I think to X/m3 water
+		Scalar F_depoly = v_maxL * (C_L_W/(K_L+ C_L_W)) * C_Oa ; //X/(m^3*s)
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		q[soluteIdx] += std::max(F_depoly,0.) * pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
 		q[mucilIdx] -= std::max(F_depoly, 0.)* pos0 * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
 		//std::cout<<"bioChemicalReaction "<<volVars.moleFraction(h2OIdx, mucilIdx)<<" "<<F_depoly<<" Sa "<<volVars.saturation(h2OIdx)<<" phi "<<volVars.porosity()
 		//<<" K_L "<<K_L<<" C_Oa "<<C_Oa<<" C_L "<<C_L<<std::endl;
+		if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+		{
+			std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+			//std::cout<<"C_S "<< std::scientific<<C_SfrW<<" "<<C_S_W<<" "<<C_SfrSoil<<std::endl;
+			 std::cout<<"bioChemicalReaction " << std::scientific<<q[soluteIdx]<<" "<<q[mucilIdx] 
+			 <<" "<<F_depoly<< std::scientific<<" B:"//<<C_afrSoil[0]
+			 <<" "<<C_Oa<<std::endl;
+		}
 	}
 
 	/*!
@@ -806,7 +821,11 @@ public:
 	std::vector<double> bcSBotValue_= std::vector<double>(numSolutes);
 
     static constexpr bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
+	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mol (C)cm-3(soil-1)]
+	Scalar C_Oa  ; //concentration of active oligotrophic biomass [kg (C)m-3(soil-1)] or [mol (C)m-3(soil-1)]
+	
 private:
+	int verbose;
 
 	//! cm pressure head -> Pascal
 	Scalar toPa_(Scalar ph) const {
@@ -884,11 +903,9 @@ private:
 	
 	Scalar v_maxL_ = 0.0; //Maximum reaction rate of enzymes targeting large polymers [d-1]
 	Scalar K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mol cm-3 soil]
-	Scalar C_Oa_ = 0.0002338 ; //concentration of active oligotrophic biomass [mol (C)cm-3(soil-1)]
 	//pagel (2020): the average total initial microbial biomass was 1.67 × 10−4 mg g−1 (C soil−1) * *bulkDensity_ g/cm3
 	Scalar v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	Scalar K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
-	Scalar C_Oa  ; //concentration of active oligotrophic biomass [kg (C)m-3(soil-1)] or [mol (C)m-3(soil-1)]
 	
 	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
 	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  

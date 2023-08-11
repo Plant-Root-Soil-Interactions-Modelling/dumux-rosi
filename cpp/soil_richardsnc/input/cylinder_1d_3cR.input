@@ -1,25 +1,28 @@
 [Problem]
 Name = cylinder_1d_3cR
 EnableGravity = "false"
+extenction = "txt"
+verbose = "1"
 
 [TimeLoop]
-TEnd = 3600
+TEnd = 36000 #10h
 DtInitial =  1 # [s]
-MaxTimeStepSize = 3600 # 10 days [s]
-[Soil.Grid]
-UpperRight = 0.0001
-LowerLeft = 0.01
-Cells = 100
+MaxTimeStepSize = 36000 # [s]
 
-[Soil.BC.Top]
-Type = 3 # constant flux
-Value = -0.5 # [cm day-1]
-C1Type = 3 # constant flux
-C1Value = 0.05 # [g/m2 day-1]
-C2Type = 3 # constant flux
-C2Value = 0.01 # [g/m2 day-1]
+[Soil.Grid]
+UpperRight = 0.0002
+LowerLeft = 0.006
+Cells = 500
 
 [Soil.BC.Bot]
+Type = 3 # constant flux
+Value = -1 # [cm day-1]
+C1Type = 3 # constant flux
+C1Value = 1 # [g/m2 day-1]
+C2Type = 3 # constant flux
+C2Value = 0.3333333 # [g/m2 day-1]
+
+[Soil.BC.Top]
 Type = 3 # constant flux
 Value = 0 # [g day-1]
 C1Type = 3 # constant flux
@@ -29,8 +32,8 @@ C2Value = 0 # [g/cm2/day]
 
 [Soil]
 CriticalPressure = -15000
-v_maxL = 0.0 #[d-1]
-K_L = 0.001 #[mg cm-3 soil]
+v_maxL = 5e3 #[d-1]
+K_L = 10e-2 #[mg cm-3 soil]
 C_oa = 0.0002338 #[mg (C)cm-3(soil-1)]
 
 [Soil.IC]
@@ -54,11 +57,37 @@ AddProcessRank = "false"
 AddVelocity = "false"
 
 [1.Component]
-LiquidDiffusionCoefficient = 6.713e-10 #m2 / s
+LiquidDiffusionCoefficient = 1.e-8 #m2 / s
 Name = "smallPolymers"
-MolarMass = 12e-3 
+# MolarMass = 12e-3 
 
 [2.Component]
-LiquidDiffusionCoefficient = 4.000e-12 #m2 / s
+LiquidDiffusionCoefficient = 0.5e-8 #m2 / s
 Name = "mucilage"
-MolarMass = 12e-3 # in kg/mol, not sure about that one though
+# MolarMass = 12e-3 # in kg/mol, not sure about that one though
+
+
+# Global parameters:
+[ Assembly ]
+NumericDifferenceMethod = "1"
+[ Flux ]
+UpwindWeight = "0.5"
+[ LinearSolver ]
+MaxIterations = "250"
+PreconditionerIterations = "1"
+PreconditionerRelaxation = "1.0"
+ResidualReduction = "1e-13"
+Verbosity = "0"
+[ Newton ]
+EnableAbsoluteResidualCriterion = "true"
+EnableChop = "false"
+EnableResidualCriterion = "true"
+EnableShiftCriterion = "true"
+MaxAbsoluteResidual = "1e-10"
+MaxRelativeShift = "1e-10"
+MaxSteps = "30"
+ResidualReduction = "1e-5"
+SatisfyResidualAndShiftCriterion = "true"
+TargetSteps = "10"
+UseLineSearch = "false"
+EnablePartialReassembly = "false"

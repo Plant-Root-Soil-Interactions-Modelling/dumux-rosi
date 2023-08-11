@@ -74,7 +74,7 @@ int main(int argc, char** argv) //try
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
-	const auto& myParams = Parameters::paramTree();
+	//const auto& myParams = Parameters::paramTree();
 	//myParams.report();
 	//const auto& paramKeys = myParams.getValueKeys();
 	// for (int i = 1; i < paramKeys.size(); ++i)
@@ -171,6 +171,8 @@ int main(int argc, char** argv) //try
     // get some time loop parameters  & instantiate time loop
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
+	std::string extenction = getParam<std::string>("Problem.extenction", "csv");
+	
     std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop; // defined in common/timeloop.hh, everything clear, easy to use.
     if (tEnd > 0) { // dynamic problem
         const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
@@ -223,21 +225,28 @@ int main(int argc, char** argv) //try
     // std::cin.ignore();  // wait for key (debugging)
 	//std::cout<<"tEnd>0? "<<tEnd<<std::endl;
     // print dumux end message
+	double pRefPa = 101300; 
+	double rho__ = 1.e3;
+	double g__ = 9.80665;
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
 		std::ofstream myfile_;
-		std::string filestr = problem->name() + "_1p3cR_cyl_T0.csv"; // output file
+		std::string filestr = problem->name() + "_1p3cR_cyl_T0." + extenction; // output file
 		myfile_.open(filestr.c_str());
-		//auto allnames = std::vector<std::string>{"P", "Cs", "Cl", "r"}
-		for(int i = 0; i < x.size(); i++)
+		for (const auto& vertex : Dune::vertices(fvGridGeometry->gridView()))
 		{
-			//myfile_<<allnames[i]<<",\n";
-			for(int j = 0; j < x[i].size(); j++)
-			{
-				myfile_ << x[i][j] << ", ";
-			} myfile_ << "\n";
+			const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
+			auto rVal = vertex.geometry().center()[0];
+			myfile_ <<rVal<<", ";
+			
+			myfile_ <<x[dofIdxGlobal][0]<<", "<<(( x[dofIdxGlobal][0] - pRefPa)*100/rho__/g__) << ", ";
+				for(int j = 1; j < x[dofIdxGlobal].size(); j++)
+				{
+					myfile_ << x[dofIdxGlobal][j]/18.<<", ";
+				} myfile_ << "\n";
 		}
+
 		myfile_.close();
         DumuxMessage::print(/*firstCall=*/false);
     }
@@ -300,17 +309,21 @@ int main(int argc, char** argv) //try
     {
         Parameters::print();
 		std::ofstream myfile_;
-		std::string filestr = problem->name() + "_1p3cR_cyl_end.csv"; // output file
+		std::string filestr = problem->name() + "_1p3cR_cyl_end." + extenction; // output file
 		myfile_.open(filestr.c_str());
-		//auto allnames = std::vector<std::string>{"P", "Cs", "Cl", "r"}
-		for(int i = 0; i < x.size(); i++)
+		
+		for (const auto& vertex : Dune::vertices(fvGridGeometry->gridView()))
 		{
-			//myfile_<<allnames[i]<<",\n";
-			for(int j = 0; j < x[i].size(); j++)
-			{
-				myfile_ << x[i][j] << ", ";
-			} myfile_ << "\n";
-		}
+			const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
+			auto rVal = vertex.geometry().center()[0];
+			myfile_ <<rVal<<", ";
+			
+			myfile_ <<x[dofIdxGlobal][0]<<", "<<(( x[dofIdxGlobal][0] - pRefPa)*100/rho__/g__) << ", ";
+				for(int j = 1; j < x[dofIdxGlobal].size(); j++)
+				{
+					myfile_ << x[dofIdxGlobal][j]/18.<<", ";
+				} myfile_ << "\n";
+		} myfile_ <<"microbial C pool: "<< problem->C_Oa<<"\n"; //[mol C / m3 space]
 		myfile_.close();
         DumuxMessage::print(/*firstCall=*/false);
     }

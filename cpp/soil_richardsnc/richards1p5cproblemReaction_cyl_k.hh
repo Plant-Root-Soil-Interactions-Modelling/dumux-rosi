@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDS1P5C_PROBLEM_HH
-#define RICHARDS1P5C_PROBLEM_HH
+#ifndef RICHARDS1P5C_PROBLEM_K_HH
+#define RICHARDS1P5C_PROBLEM_K_HH
 #include <algorithm>
 #include <vector>
 #include <dumux/porousmediumflow/problem.hh> // base class
@@ -70,6 +70,7 @@ public:
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 	using SolidSystem = GetPropType<TypeTag, Properties::SolidSystem>;
 	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
+	using Problem = GetPropType<TypeTag, Properties::Problem>;
 	
 	
     static constexpr bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
@@ -746,8 +747,8 @@ public:
 				source[i] = source_[i]->at(eIdx)/scv.volume() * pos[0];
 			}else{source[i] = 0.;}												 
 		}		
-        const auto& volVars = elemVolVars[scv];
-		bioChemicalReaction(source, volVars, pos[0]);
+        //const auto& volVars = elemVolVars[scv];
+		//bioChemicalReaction(source, volVars, pos[0]);
 		
 		return source;
 	}
@@ -756,12 +757,21 @@ public:
 	 *
      * E.g. for the mol balance that would be a mass rate in \f$ [ mol / (m^3 \cdot s)] \f
      */
-	void bioChemicalReaction(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
+	//template<class Problem, class Element>
+	PrimaryVariables bioChemicalReaction(//const Problem &problem,
+                    //const Element &element,
+                    //const FVElementGeometry &fvGeometry,
+                    const ElementVolumeVariables &elemVolVars,
+                    const SubControlVolume &scv) const //(NumEqVector &q, const VolumeVariables &volVars, double pos0 ) const
 	{
 		 //DUNE_THROW(Dune::InvalidStateException, "Biochemical stop");
 		//[mol solution / m3 solution]
 		//55 mol/kg water * 997 kg/m3
-		 const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
+		const auto& volVars = elemVolVars[scv];
+		double volume = scv.volume(); //to have m3 of scv. 
+		double pos0 = scv.center()[0];
+		
+		const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
         {
 			double mOMD = isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
 					(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
@@ -820,7 +830,13 @@ public:
 		
 		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
 		{		
-			//				Uptake			
+			//				Uptake
+			// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+			//F_uptake_S_A[i] = (m_max[i] * C_SfrSoil * k_SBis[i])/(m_max[i] + C_SfrSoil * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+			//F_uptake_S_D[i] = (m_max[i] * C_SfrSoil * k_SBis[i])/(m_max[i] + C_SfrSoil * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s
+			
+			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
 			F_uptake_S_A[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
@@ -832,6 +848,9 @@ public:
 			F_decay_D[i] = m_maxBis[i]  * beta[i]  * C_d[i]  - F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
 			
 			//				Other
+			// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+			// F_growth[i] = (micro_max[i] * C_SfrSoil * k_S[i])/(micro_max[i] + C_SfrSoil * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
 			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
@@ -854,19 +873,47 @@ public:
 			F_growth_S += (1/k_growth[i])*F_growth[i];
 		}
 		
+		//Scalar F_uptake_S_O = F_uptake_S_A_O + F_uptake_S_D_O;	//mol C/(m^3 bulk soil *s)
+		//Scalar F_decay_O = F_decay_A_O + F_decay_D_O;	//mol C/(m^3 bulk soil *s)
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 space/s] 
+		double decayTest_Cs = m_maxBis_Cs  * C_S_W * volVars.saturation(h2OIdx) * volVars.porosity();
+		setDecayCs(decayTest_Cs);
+		setTheta(volVars.saturation(h2OIdx) * volVars.porosity());
+		double water = 0.;
+		double soluteIdx = ( - decayTest_Cs + F_depoly + k_decay3 *(1 - k_decay2)*F_decay - F_uptake_S - k_growthBis * F_growth_S)* pos0 *volume ;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
+		double mucilIdx  = (-F_depoly + k_decay3 * k_decay2 * F_decay) * pos0 *volume;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
 		
-		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S)* pos0 ;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
-		q[mucilIdx]  += (-F_depoly +  k_decay2 * F_decay) * pos0;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
+		double decayTest = m_maxBisO  * C_Oafr * bulkSoilDensity; //* C_S_W;//
+		setDecay(decayTest);
+		double CoAIdx = ( -decayTest - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0*volume;
+		double CoDIdx = ( - extra2 + F_deact[0] - F_react[0] - (1/k_decay)*F_decay_D[0]) * pos0*volume;
 		
-		q[CoAIdx] += (  - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
-		q[CoDIdx] += ( - extra2 + F_deact[0] - F_react[0] - (1/k_decay)*F_decay_D[0]) * pos0;
+		double CcAIdx = (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0*volume;
+		double CcDIdx = (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0*volume;
+		if(verbose==2)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+		{
+			std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+			 std::cout<<"bioChemicalReaction " <<F_depoly<<" "<<F_decay<<" "<<F_uptake_S
+			 <<" "<<F_growth_S<<" "<< std::scientific<<" B:"<<C_afrSoil[0]
+			 <<" "<<C_a[0]<<" "<<C_a[1]<<" "<<C_d[0]<<" "<<C_d[1]<<std::endl;
+			 std::cout << std::scientific<<F_depoly<<std::endl;
+		}
+		if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+		{
+			std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+			std::cout<<"C_S "<< std::scientific<<C_SfrW<<" "<<C_S_W<<std::endl;
+			
+			std::cout<<"decayTest "<<C_Oafr<<" "<<m_maxBisO<<" "<<decayTest<<std::endl;
+			
+			 std::cout<<"bioChemicalReaction " << std::scientific//<<q[soluteIdx]
+			 //<<" "<<q[mucilIdx] <<" "<<q[CoAIdx]<<" "<<extra
+			 <<" "<<F_depoly<< std::scientific<<" B:"<<C_afrSoil[0]
+			 <<" "<<C_a[0]<<" "<<std::setprecision (20)<<F_growth[0]<<" "<<bulkSoilDensity<<std::endl;
+		}
 		
-		q[CcAIdx] += (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0;
-		q[CcDIdx] += (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0;
-		
+		return PrimaryVariables({water,soluteIdx,mucilIdx, CoAIdx, CoDIdx,CcAIdx,CcDIdx });//mol/s
 	}
 
 	/*!
@@ -880,12 +927,176 @@ public:
 	 * has to return the absolute mass rate in kg/s. Positive values mean
 	 * that mass is created, negative ones mean that it vanishes.
 	 */
-	template<class PointSource>
-	void addPointSources(std::vector<PointSource>& pointSources) const {
-		if (couplingManager_!=nullptr) {
-			pointSources = couplingManager_->bulkPointSources();
+	
+	//template<class Problem, class Element>
+void addPointSources(std::vector<PointSource>& pointSources) const
+    {
+        // // loop over all vertices of the 1D domain, to get one source per subcontrol volume.
+
+		for (const auto& vertex : Dune::vertices( this->fvGridGeometry().gridView() ) )		
+		{
+			 auto globalPos = vertex.geometry().center();//1D space
+
+
+			// //! Add point source in all of the domain
+			pointSources.emplace_back(globalPos, //center,
+				 [this](const Problem &problem,
+						const Element &element,
+						const FVElementGeometry &fvGeometry,
+						const ElementVolumeVariables &elemVolVars,
+						const SubControlVolume &scv)
+						{
+							const auto& volVars = elemVolVars[scv];
+						double volume = scv.volume(); //to have m3 of scv. 
+						double pos0 = scv.center()[0];
+						
+						const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
+						{
+							double mOMD = isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
+									(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
+							return mOMD;
+						};
+
+						const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
+						{
+							double mOMF = isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
+									(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
+							return mOMF;
+						};
+						 // (mol Soil / m3 soil) * (m3 space/m3 space - m3 pores/m3 space)  = (mol Soil / m3 soil) * (m3 soil/m3 space) = mol soil / m3 space
+						double bulkSoilDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false) * (1 - volVars.porosity());
+						// if(verbose>0)
+						// {
+							// std::cout<<"bulk soil "<<bulkSoilDensity <<" "<< massOrMoleDensity(volVars, soilIdx -  numFluidComps , false) <<" "<<(1 - volVars.porosity())<<std::endl;
+						// }
+						double C_LfrW_temp = massOrMoleFraction(volVars,0, mucilIdx, true);
+						double C_LfrW =  std::max(C_LfrW_temp, 0.);					//mol C/mol soil water 
+						//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
+						double C_L_W = massOrMoleDensity(volVars, h2OIdx, true) * C_LfrW;								//mol C/m3 soil water
+						//double C_L = C_L_W * volVars.saturation(h2OIdx) * volVars.porosity();							//mol C/m3 bulk soil
+						//double C_LfrSoil =  C_L_W* volVars.saturation(h2OIdx) * volVars.porosity()/bulkSoilDensity;		//mol C/mol solid soil 
+						
+						double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
+						double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
+						//double C_S = C_S_W * volVars.saturation(h2OIdx) * volVars.porosity();							//mol C/m3 bulk soil
+						//[mol /mol soil] = [mol / m3 solution] * [m3 solution/m3 pores] * [m3 pores/m3 space] / [mol soil / m3 space]
+						//double C_SfrSoil = C_S_W* volVars.saturation(h2OIdx) * volVars.porosity()/bulkSoilDensity;		//mol C/mol solid soil
+						
+						std::vector<double> C_afrSoil(2), C_a(2), C_dfrSoil(2), C_d(2);
+						for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
+						{
+							int CxAIdx = (i == 0) ? CoAIdx : CcAIdx;
+							int CxDIdx = (i == 0) ? CoDIdx : CcDIdx;
+							C_afrSoil[i] =  std::max(massOrMoleFraction(volVars,0, CxAIdx - numFluidComps, false), 0.);//mol C/mol solid soil
+							C_a[i]  = bulkSoilDensity * C_afrSoil[i] ;														//mol C/m3 bulk soil
+							C_dfrSoil[i]  =  std::max(massOrMoleFraction(volVars,0, CxDIdx - numFluidComps, false), 0.);//mol C/mol solid soil
+							C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil													//mol C/m3 bulk soil
+						}
+						double C_Oafr = std::max(massOrMoleFraction(volVars,0, CoAIdx - numFluidComps, false), 0.) ; // mol C / mol solid	
+						
+						//	depolymerisation large polymer to small polymers
+						//	[s-1] * ([mol C/m3 bulk soil]/([mol C/m3 bulk soil]*[mol C/m3 bulk soil])) * [mol C/m3 bulk solid]
+						// double F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_a[0]  ; //mol C/(m^3 bulk soil *s)
+						//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
+						double F_depoly = v_maxL * (C_L_W/(K_L+ C_L_W)) * C_a[0];// * volVars.saturation(h2OIdx) * volVars.porosity() ; //mol C/(m^3 bulk soil *s)
+						
+						double F_uptake_S = 0.;
+						double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
+						double F_growth_S = 0.;	
+						
+						std::vector<double> F_uptake_S_A(2), F_uptake_S_D(2), F_decay_A(2), F_decay_D(2) ;
+						std::vector<double> F_growth(2), F_deact(2), F_react(2), phi(2);
+						
+						for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
+						{		
+							//				Uptake
+							// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+							// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+							//F_uptake_S_A[i] = (m_max[i] * C_SfrSoil * k_SBis[i])/(m_max[i] + C_SfrSoil * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+							//F_uptake_S_D[i] = (m_max[i] * C_SfrSoil * k_SBis[i])/(m_max[i] + C_SfrSoil * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s
+							
+							
+							// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
+							// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+							F_uptake_S_A[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+							F_uptake_S_D[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s)
+							
+							//				Decay
+							// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
+							F_decay_A[i] = m_maxBis[i]  * C_a[i]  - F_uptake_S_A[i] ;			//mol C/(m^3 bulk soil *s)
+							F_decay_D[i] = m_maxBis[i]  * beta[i]  * C_d[i]  - F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
+							
+							//				Other
+							// ([s-1] * [mol C solute / mol soil] * [mol soil / mol C soil / s])/([s-1] + [mol C solute / mol soil] * [mol soil / mol C soil / s]) * [mol C_oX / m3 space] 
+							// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+							// F_growth[i] = (micro_max[i] * C_SfrSoil * k_S[i])/(micro_max[i] + C_SfrSoil * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
+							
+							// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
+							// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
+							F_growth[i] = (micro_max[i] * C_S_W * k_S[i])/(micro_max[i] + C_S_W * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
+							if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+							{
+								std::cout<<"F_growth["<<i<<"] " << std::scientific<<std::setprecision(20)
+								<<micro_max[i] <<" "<< C_S_W <<" "<< k_S[i] <<" "<< C_a[i]<<" "<<F_growth[i]<<std::endl;
+								std::cout<<"F_decay_A["<<i<<"] " << std::scientific<<std::setprecision(20)
+								<<m_maxBis[i] <<" "<< C_a[i]  <<" "<< F_uptake_S_A[i]  <<" "
+								<< F_decay_A[i] <<std::endl;
+							}
+							phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_W)/(k_phi * C_S_W_thres[i])));								// - 
+							// [-] * [1/s] * [mol C/m3 bulk soil]
+							F_deact[i]  = (1 - phi[i] ) * k_D[i]  * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+							F_react[i]  = phi[i]  * k_R[i]  * C_d[i] ;				//mol C/(m^3 bulk soil *s)
+							
+							F_uptake_S += F_uptake_S_A[i] + F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
+							F_decay += F_decay_A[i] + F_decay_D[i];	
+							F_growth_S += (1/k_growth[i])*F_growth[i];
+						}
+						
+						//Scalar F_uptake_S_O = F_uptake_S_A_O + F_uptake_S_D_O;	//mol C/(m^3 bulk soil *s)
+						//Scalar F_decay_O = F_decay_A_O + F_decay_D_O;	//mol C/(m^3 bulk soil *s)
+						
+						//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
+						//[mol solute / m3 space/s] 
+						double decayTest_Cs = m_maxBis_Cs  * C_S_W * volVars.saturation(h2OIdx) * volVars.porosity();
+						setDecayCs(decayTest_Cs);
+						setTheta(volVars.saturation(h2OIdx) * volVars.porosity());
+						double water = 0.;
+						double soluteIdx = ( - decayTest_Cs + F_depoly + k_decay3 *(1 - k_decay2)*F_decay - F_uptake_S - k_growthBis * F_growth_S)* pos0 *volume ;//* volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(soluteIdx)
+						double mucilIdx  = (-F_depoly + k_decay3 * k_decay2 * F_decay) * pos0 *volume;// * volVars.saturation(h2OIdx) * volVars.porosity();// /FluidSystem::molarMass(mucilIdx) 
+						
+						double decayTest = m_maxBisO  * C_Oafr * bulkSoilDensity; //* C_S_W;//
+						setDecay(decayTest);
+						double CoAIdx = ( -decayTest - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0*volume;
+						double CoDIdx = ( - extra2 + F_deact[0] - F_react[0] - (1/k_decay)*F_decay_D[0]) * pos0*volume;
+						
+						double CcAIdx = (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0*volume;
+						double CcDIdx = (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0*volume;
+						if(verbose==2)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+						{
+							std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+							 std::cout<<"bioChemicalReaction " <<F_depoly<<" "<<F_decay<<" "<<F_uptake_S
+							 <<" "<<F_growth_S<<" "<< std::scientific<<" B:"<<C_afrSoil[0]
+							 <<" "<<C_a[0]<<" "<<C_a[1]<<" "<<C_d[0]<<" "<<C_d[1]<<std::endl;
+							 std::cout << std::scientific<<F_depoly<<std::endl;
+						}
+						if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
+						{
+							std::cout<<"C_L "<< std::scientific<<C_LfrW_temp<<" "<<C_LfrW<<" "<<C_L_W<<" "<<(C_LfrW_temp < 0.)<<std::endl;
+							std::cout<<"C_S "<< std::scientific<<C_SfrW<<" "<<C_S_W<<std::endl;
+							
+							std::cout<<"decayTest "<<C_Oafr<<" "<<m_maxBisO<<" "<<decayTest<<std::endl;
+							
+							 std::cout<<"bioChemicalReaction " << std::scientific//<<q[soluteIdx]
+							 //<<" "<<q[mucilIdx] <<" "<<q[CoAIdx]<<" "<<extra
+							 <<" "<<F_depoly<< std::scientific<<" B:"<<C_afrSoil[0]
+							 <<" "<<C_a[0]<<" "<<std::setprecision (20)<<F_growth[0]<<" "<<bulkSoilDensity<<std::endl;
+						}
+						
+						return PrimaryVariables({water,soluteIdx,mucilIdx, CoAIdx, CoDIdx,CcAIdx,CcDIdx });//mol/s
+						}
+					);
 		}
-	}
+    }
 
 	/*!
 	 * \brief Evaluate the point sources (added by addPointSources) TODO
@@ -907,9 +1118,9 @@ public:
 			const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 
-		PrimaryVariables sourceValue(0.);
-		std::cout<<"template<class ElementVolumeVariables>"<<std::endl;
-		DUNE_THROW(Dune::InvalidStateException, "template<class ElementVolumeVariables>");
+		//PrimaryVariables sourceValue(0.);
+		//std::cout<<"template<class ElementVolumeVariables>"<<std::endl;
+		//DUNE_THROW(Dune::InvalidStateException, "pointSource nor implemented");
 
 	}
 
@@ -949,32 +1160,7 @@ public:
 	/**
 	 * Sets boundary fluxes according to the last solution TODO
 	 */
-	void postTimeStep(const SolutionVector& sol, const GridVariables& gridVars) {
-		bc_flux_upper = 0.;
-		bc_flux_lower = 0.;
-		int uc = 0;
-		int lc = 0;
-		for (const auto& e :elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
-			fvGeometry.bindElement(e);
-			auto elemVolVars = localView(gridVars.curGridVolVars());
-			elemVolVars.bindElement(e, fvGeometry, sol);
-			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
-				auto p = scvf.center();
-				if (onUpperBoundary_(p)) { // top
-				//std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
-					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
-					uc++;
-				} else if (onLowerBoundary_(p)) { // bottom
-				//std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
-					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
-					lc++;
-				}
-			}
-		}
-		bc_flux_upper /= uc;
-		bc_flux_lower /= lc;
-	}
+	void postTimeStep(const SolutionVector& sol, const GridVariables& gridVars) {	}
 
 	/*!
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
@@ -987,6 +1173,7 @@ public:
 	 * debug info TODO make meaningful for 2c
 	 */
 	void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
+		DUNE_THROW(Dune::InvalidStateException, "pointSource nor implemented");
 		NumEqVector source(0.0);
 		for (const auto& element : elements(this->fvGridGeometry().gridView())) {
 			auto fvGeometry = localView(this->fvGridGeometry());
@@ -1026,6 +1213,7 @@ public:
 	std::vector<double> bcSTopValue_ = std::vector<double>(numSolutes);
 	std::vector<double> bcSBotValue_= std::vector<double>(numSolutes);
 	
+	int verbose;
 
 private:
 
@@ -1079,7 +1267,6 @@ private:
 	Scalar dt_ = 0.;
 
 	std::ofstream myfile_;
-	int verbose;
 	bool toFile;
 	//not used for anything except post-simulation analysis I think
 	NumEqVector bc_flux_upper = NumEqVector(0.);

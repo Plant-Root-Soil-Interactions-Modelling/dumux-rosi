@@ -14,11 +14,13 @@ namespace Properties {
  * ugly, but I found no other option...
  */
 // The point source type (not used)
+#ifndef RICHARDS5C_PROPERTIES_CYL_K_HH
 template<class TypeTag>
 struct PointSource<TypeTag, TTag::RichardsNCTT> {
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
     using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
 };
+#endif
 /// Dummy types
 class DummyPointSourceData {
 public:
