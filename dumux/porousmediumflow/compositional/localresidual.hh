@@ -112,10 +112,8 @@ public:
 
             // in case one balance is substituted by the total mole balance
             if (useTotalMoleOrMassBalance) {
-            	auto compIdx = replaceCompEqIdx- conti0EqIdx;
-            	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
-                                             *  (volVars.porosity()*volVars.saturation(phaseIdx)+b);
+                                             *  (volVars.porosity()*volVars.saturation(phaseIdx));
             }
 
             //! The energy storage in the fluid phase with index phaseIdx
