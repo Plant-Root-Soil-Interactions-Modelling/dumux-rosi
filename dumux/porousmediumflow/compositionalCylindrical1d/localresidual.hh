@@ -101,19 +101,17 @@ public:
             {
             	auto eqIdx = conti0EqIdx + compIdx;
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
-                if (eqIdx != replaceCompEqIdx) {
+                if (eqIdx != replaceCompEqIdx) {// all component except water
                     storage[eqIdx] += (volVars.porosity()*volVars.saturation(phaseIdx)+b)
                                       * massOrMoleDensity(volVars, phaseIdx)
                                       * massOrMoleFraction(volVars, phaseIdx, compIdx)*scv.center()[0];
                 }
             }
 
-            // in case one balance is substituted by the total mole balance
+            // for water
             if (useTotalMoleOrMassBalance) {
-            	auto compIdx = replaceCompEqIdx- conti0EqIdx;
-            	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
-                                             *(volVars.porosity()*volVars.saturation(phaseIdx)+b)*scv.center()[0];
+                                             *(volVars.porosity()*volVars.saturation(phaseIdx))*scv.center()[0];
             }
 
             //! The energy storage in the fluid phase with index phaseIdx
