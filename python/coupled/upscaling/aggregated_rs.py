@@ -7,7 +7,8 @@ sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBo
 
 import plantbox as pb  # CPlantBox
 from rhizo_models import *
-from functional.xylem_flux import *  # root system Python hybrid solver
+from functional.HydraulicsDoussan import HydraulicsDoussan  # root system Python hybrid solver
+
 import functional.van_genuchten as vg
 import visualisation.vtk_plot as vp
 
@@ -100,12 +101,11 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
         l_ [cm]               length (summed up per layer)
         a_ [cm]               mean layer radius 
     """
-    ana = pb.SegmentAnalyser(r.rs)
+    ana = pb.SegmentAnalyser(r.rs.mappedSegments())
     krs, _ = r.get_krs(rs_age)
-
     suf = r.get_suf(rs_age)  # SUF per layer
-    print("suf", np.sum(suf))
     ana.addData("suf", suf)
+    print("krs", krs, "sum suf", np.sum(suf))
     suf_ = ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)
     print("suf_", np.sum(suf_))
 
@@ -130,6 +130,8 @@ def get_aggregated_params(r, rs_age, min_b, max_b, cell_number):
 
 def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     """  one segment per layer connected by artificial segments"""
+    print(type(r))
+
     krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
 
     print("krs")
@@ -169,7 +171,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
     rs = pb.MappedSegments(nodes, segs, radii)
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-    r2 = XylemFluxPython(rs)  # wrap the xylem
+    r2 = HydraulicsDoussan(rs)  # wrap the xylem
     r.test()  # sanity checks
     # z_ = np.linspace(0, -150, 150)
     # plt.plot(suf_[0:100], z_[0:100])
@@ -198,6 +200,7 @@ def create_aggregated_rs(r, rs_age, min_b, max_b, cell_number):
                 kx_up.append((ll[i] * suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment ll[i] *
                 # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q
             else:  # no segments in layer
+                print("suf_krs[i]", suf_krs[i], "kr_surf_", kr_surf_[i], "suf_krs", suf_krs[i], "l_", l_[i], "surf_", surf_[i])
                 raise ValueError('create_aggregated_rs() no segment in layer')
             kx_up.append(1.e1)  # regular segment
 

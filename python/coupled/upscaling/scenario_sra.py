@@ -215,6 +215,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         z_.append(sum_root_flux)  # cm3/day (root system uptake)
 
         if  i % skip == 0:
+
             n = round(float(i) / float(N) * 100.)
 
             rx_ = np.zeros((ns, 1))
