@@ -3,7 +3,8 @@ Single root scenario: Soil depletion due to sinusoidal transpiration over 21 day
 
 using an aggregated root system, and steady rate approach and fix point iteration (agg)
 """
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 import scenario_setup as scenario
 import sra
@@ -33,7 +34,7 @@ Initialize xylem model
 s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, p_top = -330, p_bot = -180)
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, "results/wheat.rsml")  # created by rootsystem.py
 r_agg = agg.create_aggregated_rs(r, 0., min_b, max_b, cell_number)
-sra_table_lookup = sra.open_sra_lookup("../coupled/sra/table_jan_comp")  # make sure the soil parameters correspond to the look up table
+sra_table_lookup = sra.open_sra_lookup("../coupled/table_jan_comp")  # make sure the soil parameters correspond to the look up table
 # sra_table_lookup = soil  # without using the lookup table.
 picker = lambda x, y, z: s.pick([0., 0., z])
 r_agg.rs.setSoilGrid(picker)

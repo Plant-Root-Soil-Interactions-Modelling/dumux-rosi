@@ -1,15 +1,15 @@
 """ functions to simplify setup of the scenarios """
 
-import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../modules/");
-sys.path.append("../../../CPlantBox/src/python_modules"); sys.path.append("../../../CPlantBox/");
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 import numpy as np
 import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 import plantbox as pb  # CPlantBox
-import van_genuchten as vg
-from xylem_flux import sinusoidal2
+import functional.van_genuchten as vg
+from functional.xylem_flux import sinusoidal2
 from ups import XylemFluxUps  # == XylemFluxPython with upscaling stuff added
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
