@@ -260,7 +260,7 @@ if __name__ == "__main__":
     method = ["sra"] * 3
     plant = ["maize"] * 3
     dim = ["1D"] * 3
-    soil = ["hydrus_loam", "hydrus_loam", "hydrus_loam"]
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     outer_method = ["length"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
     plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")

@@ -11,6 +11,7 @@ import os
 import scenario_sra as sra
 import scenario_sra_old as sra_old
 import scenario_agg as agg
+import scenario_par2 as par
 
 
 def start_jobs(jobs):
@@ -83,6 +84,8 @@ def run_jobs(jobs, sim_time):
             sra_old.run_sraOld(sim_time, *jobs[i])
         elif method == "agg":
             agg.run_agg(sim_time, *jobs[i])
+        elif method == "par":
+            par.run_par(sim_time, *jobs[i])
         else:
             raise("Unknown method" + method)
 
@@ -97,11 +100,11 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ['sra']  # 'sra', sraOld, agg
+    method = ['par']  # 'sra', sraOld, agg, par
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["3D"]  # 1D, 3D
+    dim = ["1D"]  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    outer_radius = ['surface', 'length', 'volume', 'voronoi']  #
+    outer_radius = ['length']  # 'surface', 'length', 'volume', 'voronoi'
 
     # method = ['agg']  # 'sra', sraOld, agg
     # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
@@ -131,6 +134,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    # run_jobs(jobs, sim_time)
+    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    run_jobs(jobs, sim_time)
 

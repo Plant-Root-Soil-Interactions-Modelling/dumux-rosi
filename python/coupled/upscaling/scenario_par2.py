@@ -14,6 +14,7 @@ import timeit
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
+import scipy.sparse.linalg as LA
 
 from functional.xylem_flux import sinusoidal2
 import visualisation.vtk_plot as vp
@@ -66,6 +67,23 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
     Id = sparse.identity(ns).tocsc()  # identity matrix
     collar_index = r.collar_index()
 
+    print("collar_index (segment index)", r.collar_index())
+    print("kx0:", kx0)
+    print()
+
+    A_n = A_d.copy()
+    A_n[collar_index, collar_index] -= kx0
+
+    print("invert matrix start", ns)
+    sys.stdout.flush()
+
+    A_n_splu = LA.splu(A_n)
+    A_d_splu = LA.splu(A_d)
+    # Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
+    # Ainv_neumann = sparse.linalg.inv(A_n).todense()  # dense
+    print("done inverting", "\n")
+    sys.stdout.flush()
+
     """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
@@ -111,7 +129,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
             """ interpolation """
             wall_interpolation = timeit.default_timer()
             rx_ = rx[1::2] - seg_centers_z  # from total matric potential to matric potential
-            hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
+            hsb_ = hsb - cell_centers_z  # from total potential to matric potential
             rsx = soil_root_interface_table(rx_, hsb_, inner_kr_[1::2], rho_[1::2], sra_table_lookup)  # [1::2] every second entry, starting from 1
             rsx = rsx + seg_centers_z  # from matric potential to total matric potential
             wall_interpolation = timeit.default_timer() - wall_interpolation
@@ -189,7 +207,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
     return hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time
 
 
-def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):  # def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
+def simulate_par(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):  # def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
 
     dt = 360 / (24 * 3600)  # days
 
@@ -198,27 +216,27 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     return hx_, hsr_, sink_, x_, y_, z_, sx_, dt, wall_time
 
 
-def run_agg(sim_time, method, plant, dim, soil, outer_method):
+def run_par(sim_time, method, plant, dim, soil, outer_method):
 
     # hidden parameters...
     initial = -200  # cm
 
-    name = "agg_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+    name = "par_" + plant + "_" + dim + "_" + soil + "_" + outer_method
     print(name, "\n")
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(plant, dim, initial, soil, outer_method)
 
-    if args.plant == "maize":
-        min_b, max_b, cell_number = maize_(args.dim)
-    elif args.plant == "springbarley":
-        min_b, max_b, cell_number = springbarley_(args.dim)
-    elif args.plant == "soybean":
-        min_b, max_b, cell_number = soybean_(args.dim)
+    if plant == "maize":
+        min_b, max_b, cell_number = maize_(dim)
+    elif plant == "springbarley":
+        min_b, max_b, cell_number = springbarley_(dim)
+    elif plant == "soybean":
+        min_b, max_b, cell_number = soybean_(dim)
     r_agg = agg.create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
     picker = lambda x, y, z: s.pick([0., 0., z])
     r_agg.rs.setSoilGrid(picker)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r_agg, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_agg, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
@@ -232,8 +250,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
-   #  args = parser.parse_args()
+    # args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
+    args = parser.parse_args()
 
     name = "par_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()
@@ -261,7 +279,7 @@ if __name__ == "__main__":
     print("set_scenario done.")
     sys.stdout.flush()
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_agg(sim_time, r_agg, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_agg, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     # """ write """
     s.writeDumuxVTK("results/" + name)
