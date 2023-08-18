@@ -6,7 +6,6 @@ parallel root system hydraulic model with perirhizal nonlinear resistances
 in new manuscript notation)
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
-from reportlab.lib.textsplit import rx
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import argparse
