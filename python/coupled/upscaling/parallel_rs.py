@@ -1,0 +1,185 @@
+""" 
+sets up the aggregated root system described by Krs, and (per Layer) SUF, mean radii, summed length  
+"""
+
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
+
+import plantbox as pb  # CPlantBox
+from rhizo_models import *
+from functional.HydraulicsDoussan import HydraulicsDoussan  # root system Python hybrid solver
+from functional.Perirhizal import PerirhizalPython
+
+import functional.van_genuchten as vg
+import visualisation.vtk_plot as vp
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def get_aggregated_params(r, rs_age):
+    """ returns krs, and per layer: suf_, kr_surf_, surf_, l_, a_    
+        krs [cm2/day]         root system conductivity 
+        suf_ [1]              standard uptake fraction
+        kr_surf_ [cm2/day]    kr times surface (summed up per layer)
+        surf_ [cm2]           surface (summed up per layer)
+        l_ [cm]               length (summed up per layer)
+        a_ [cm]               mean layer radius 
+    """
+
+    per = PerirhizalPython(r.rs.mappedSegments())
+    krs, _ = r.get_krs(rs_age)
+#   print("krs", krs)
+    suf = r.get_suf(rs_age)  # SUF per layer
+    suf_ = per.aggregate(suf)  # ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)
+#     print("suf_", suf_.shape, np.sum(suf_))
+
+    kr_surf = []  # kr times surface summed up per layer
+    segs = r.rs.segments
+    nodeCTs = r.rs.nodeCTs
+    subTypes = r.rs.subTypes
+    lengths = np.array(r.rs.segLength())
+    radii = np.array(r.rs.radii)
+    for i, s in enumerate(segs):
+        age = rs_age - nodeCTs[s.y]
+        kr_surf.append(2 * radii[i] * np.pi * lengths[i] * r.kr_f(age, subTypes[i]))  # [cm2 / day]
+    kr_surf_ = per.aggregate(kr_surf)
+    surf = np.multiply(2 * np.pi * radii, lengths)
+    surf_ = per.aggregate(surf)
+    l_ = per.aggregate(lengths)
+    a_ = np.divide(surf_, 2 * np.pi * l_)
+    # print("krs")
+    # print(krs)
+    # print("\nSUF", suf_.shape)
+    # print(suf_)
+    # print(list(suf_[0:100]))
+    # print("\nkr*surf", kr_surf_.shape)
+    # print(kr_surf_)
+    # print("\nsurface", surf_.shape)
+    # print(surf_)
+    # print("\nlength", l_.shape)
+    # print(l_)
+    # print("\nradius", a_.shape)
+    # print(a_)
+    # print("\n\n")
+    # dd
+    return krs, suf_, kr_surf_, surf_, l_, a_
+
+
+def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number):
+    """  one segment per layer connected by artificial segments"""
+    print(type(r))
+
+    krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age)
+
+    n = cell_centers.shape[0]
+    nodes = [pb.Vector3d(0, 0, 0), pb.Vector3d(0, 0, -0.1), pb.Vector3d(0, 0, -0.2)]  # maximal ns+1 nodes
+    segs, radii = [], [0.1, 0.1]  # maximal ns segments
+    segs.append(pb.Vector2i(0, 1))
+    segs.append(pb.Vector2i(1, 2))
+
+    c = 0
+    for i in range(0, n):
+        if kr_surf_[i] > 0:  # l_[i] > 0:
+            x, y, z = cell_centers[i, 0], cell_centers[i, 1], cell_centers[i, 2]
+            nodes.append(pb.Vector3d(x, y, z))  # node 2*i+3
+            nodes.append(pb.Vector3d(x + l_[i], y, z))  # node 2*i+4
+            segs.append(pb.Vector2i(2, 2 * c + 3))  # artificial shoot segment
+            radii.append(0.)
+            segs.append(pb.Vector2i(2 * c + 3, 2 * c + 4))  # normal segment
+            radii.append(a_[i])
+            c += 1
+
+    rs = pb.MappedSegments(nodes, segs, radii)
+    rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+    r2 = HydraulicsDoussan(rs)  # wrap the xylem
+    # r2.test()  # sanity checks
+
+    print("cell_centers", cell_centers.shape, n)
+    ll = np.abs(cell_centers[:, 2])  ###################################################
+    suf_krs = suf_ * krs
+    print("krs", krs)
+    print("ll", ll.shape, ll)
+    # print("suf_krs", suf_krs)
+    # print("kr_surf_", kr_surf_)
+
+    kr_up, kx_up = [0., 0.], [1.e1, 1.e1]
+    for i in range(0, n):
+        if kr_surf_[i] > 0:  # l_[i] > 0:
+
+            kr_up.append(0.)  # artificial segment
+            if surf_[i] > 0:
+                kr_up.append(kr_surf_[i] / surf_[i])  # mean layer kr [1/day]
+            else:  # no segments in layer
+                kr_up.append(0.)  # regular segment
+
+            if kr_surf_[i] - suf_krs[i] > 0:
+                # kx_up.append(ll[i] * kx_up_[i])
+                kx_up.append((ll[i] * suf_krs[i] * kr_surf_[i]) / (kr_surf_[i] - suf_krs[i]))  # artificial segment ll[i] *
+                # Kxupscale=Krs*SFF*Krupscale/(Krupscale-Krs*SUF));  mit Kxupscale*(Hx-Hcollar)=Q
+            else:  # no segments in layer
+                print("warning", kr_surf_[i] - suf_krs[i], "<0")
+                print("i", i, "kr_surf_", kr_surf_[i], "suf_krs", suf_krs[i], "l_", l_[i], "surf_", surf_[i])
+                print("krs", krs, "suf", suf_[i])
+                kx_up.append(1.e1)
+                # raise ValueError('create_parallel_rs() no segment in layer')
+            kx_up.append(1.e1)  # regular segment
+
+    r2.setKrValues(kr_up)
+    r2.setKxValues(kx_up)
+    kr_ = np.array(kr_up)
+    kx_ = np.array(kx_up)
+
+    print("krs", krs)
+    print("suf", np.min(suf_), np.max(suf_), np.sum(suf_))
+    print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
+    print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
+    print("kx_up", kx_.shape, "kr_up", kr_.shape, "segs", len(segs))
+    print("kx_up")
+    print(list(kx_[0::2]))
+    print(kr_surf_[0])
+    print(suf_krs[0])
+    # vp.plot_roots(pb.SegmentAnalyser(r2.rs), "radius")
+
+    return r2
+
+
+if __name__ == "__main__":
+
+    """ root system """
+    min_b = [-7.5, -37.5, -110.]
+    max_b = [7.5, 37.5, 0.]
+    cell_number = [1, 1, 55]
+
+    fname = "../../../grids/RootSystem_verysimple2.rsml"
+    r = XylemFluxPython(fname)
+    rs_age = 78  # for calculating age dependent conductivities
+
+    types = r.rs.subTypes  # simplify root types
+    types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
+    r.rs.subTypes = list(types)
+
+    init_conductivities(r)
+    # init_conductivities_const(r)
+    # r.test()  # sanity checks
+
+    # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
+    # z_ = np.linspace(0, -110, 55)
+    # plt.plot(suf_, z_)
+    # plt.show()
+    create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
+
+    # """ single root """
+    # min_b = [-7.5, -37.5, -50.]
+    # max_b = [7.5, 37.5, 0.]
+    # cell_number = [1, 1, 100]
+    # r = create_singleroot()
+    # init_conductivities_const(r)
+    #
+    # krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, 0., min_b, max_b, cell_number)
+    # z_ = np.linspace(0, min_b[2], cell_number[2])
+    # plt.plot(suf_, z_)
+    # plt.show()
+    #
+    # r = create_aggregated_rs(r, 0., min_b, max_b, cell_number)

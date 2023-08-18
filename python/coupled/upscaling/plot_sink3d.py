@@ -218,4 +218,18 @@ if __name__ == "__main__":
     #     plt.tight_layout()
     #     plt.savefig('sink_agg1d_maize_' + s[7:] + '.png')
 
+    for s in ["hydrus_loam"]:
+        fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+        method = ["par"]
+        plant = ["maize"]
+        soil = [s]
+        outer_method = ["length"]
+        plot_sink3d(ax, method, plant, soil, outer_method, ["par"], [0, 6, 13])
+        method = ["sra"]
+        plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 6, 13], ls = ["--"])
+        ax[0].set_xlim([0., 0.038])
+        ax[1].set_xlim([-0.0025, 0.0025])
+        plt.tight_layout()
+        plt.savefig('sink_par_maize_' + s[7:] + '.png')
+
     plt.show()

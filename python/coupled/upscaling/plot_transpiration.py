@@ -122,7 +122,7 @@ if __name__ == "__main__":
 #     method = ["sra"] * 3
 #     plant = ["springbarley"] * 3
 #     dim = ["3D"] * 3
-#     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+#     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]Wer kümmert sich bei einem neuen Scrum-Team um die Ressourcen?
 #     outer_method = ["voronoi"] * 3
 #     plot_potential(ax, method, plant, dim, soil, outer_method)
 #     cup_ref, cup2_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 #     print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
 #     print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
 #     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
-#     # #
+#     # #Wer kümmert sich bei einem neuen Scrum-Team um die Ressourcen?
 #     print()
 #     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
 #     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 #     method = ["agg"] * 3
 #     cup_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(agg 1D)")
 #     plt.savefig('transpiration_agg1d_springbarley.png')
-#     print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
+#     print("\nSpringbarley: percental error in cumulative uptake comapared to reference soluWer kümmert sich bei einem neuen Scrum-Team um die Ressourcen?tion")
 #     print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
 #     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
 #     # ##
@@ -258,9 +258,9 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
     method = ["sra"] * 3
-    plant = ["maize"] * 3
+    plant = ["springbarley"] * 3
     dim = ["1D"] * 3
-    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]  # "hydrus_loam", "hydrus_clay", "hydrus_sandyloam"
     outer_method = ["length"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
     plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ref)")
