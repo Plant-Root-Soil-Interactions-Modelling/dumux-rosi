@@ -29,6 +29,8 @@ def start_jobs(jobs):
             py_name = "scenario_sra_old.py"
         elif method == "agg":
             py_name = "scenario_agg.py"
+        elif method == "par":
+            py_name = "scenario_par2.py"
         else:
             raise("Unknown method" + method)
 
