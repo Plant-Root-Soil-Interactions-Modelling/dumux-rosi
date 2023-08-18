@@ -274,7 +274,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
 
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
-    sim_time = .5
+    sim_time = 14.5
 
     print("setting scenario")
     sys.stdout.flush()
