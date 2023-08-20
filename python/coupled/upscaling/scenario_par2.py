@@ -282,7 +282,7 @@ if __name__ == "__main__":
         min_b, max_b, cell_number = springbarley_(args.dim)
     elif args.plant == "soybean":
         min_b, max_b, cell_number = soybean_(args.dim)
-    r_par, outer_r = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number, outer_method)
+    r_par, outer_r = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number, args.outer_method)
     if args.dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
     else:
