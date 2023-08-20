@@ -28,7 +28,7 @@ def double_(rsx, rsx2):
     return np.array(rsx2.flat)  # 0, rsx[0], 0, rsx[1], ...
 
 
-def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, rs_age, outer_method):
+def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, rs_age, outer_r):
     """     
     simulates the coupled scenario       
         root architecture is not gowing  
@@ -55,11 +55,6 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
     segs = r.rs.segments
     ns = len(r.rs.segments)
     mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
-
-    if outer_method == "voronoi":
-        outer_r = PerirhizalPython(r.rs).get_outer_radii_bounded_voronoi()
-    else:
-        outer_r = PerirhizalPython(r.rs).get_outer_radii(outer_method)
 
     inner_r = r.rs.radii
     types = r.rs.subTypes
@@ -244,14 +239,14 @@ def run_par(sim_time, method, plant, dim, soil, outer_method):
         min_b, max_b, cell_number = springbarley_(dim)
     elif plant == "soybean":
         min_b, max_b, cell_number = soybean_(dim)
-    r_par = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number)
+    r_par, outer_r = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number, outer_method)
     if dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
     else:
         picker = lambda x, y, z: s.pick([x, y, z])
     r_par.rs.setSoilGrid(picker)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_r)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
@@ -287,7 +282,7 @@ if __name__ == "__main__":
         min_b, max_b, cell_number = springbarley_(args.dim)
     elif args.plant == "soybean":
         min_b, max_b, cell_number = soybean_(args.dim)
-    r_par = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number)
+    r_par, outer_r = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number, outer_method)
     if args.dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
     else:
@@ -297,8 +292,7 @@ if __name__ == "__main__":
     print("set_scenario done.")
     sys.stdout.flush()
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, args.outer_method)
-
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_r)
     # """ write """
     s.writeDumuxVTK("results/" + name)
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)

@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def get_aggregated_params(r, rs_age):
+def get_aggregated_params(r, rs_age, outer_method):
     """ returns krs, and per layer: suf_, kr_surf_, surf_, l_, a_    
         krs [cm2/day]         root system conductivity 
         suf_ [1]              standard uptake fraction
@@ -48,6 +48,11 @@ def get_aggregated_params(r, rs_age):
     surf_ = per.aggregate(surf)
     l_ = per.aggregate(lengths)
     a_ = np.divide(surf_, 2 * np.pi * l_)
+    if outer_method == "voronoi":
+        outer_r = per.get_outer_radii_bounded_voronoi()
+    else:
+        outer_r = per.get_outer_radii(outer_method)
+    outer_r_ = per.average(outer_r)
     # print("krs")
     # print(krs)
     # print("\nSUF", suf_.shape)
@@ -63,18 +68,23 @@ def get_aggregated_params(r, rs_age):
     # print(a_)
     # print("\n\n")
     # dd
-    return krs, suf_, kr_surf_, surf_, l_, a_
+    
+    
+    
+    return krs, suf_, kr_surf_, surf_, l_, a_, outer_r_
 
 
-def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number):
+def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer_method):
     """  one segment per layer connected by artificial segments"""
     print(type(r))
 
-    krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age)
+    krs, suf_, kr_surf_, surf_, l_, a_, outer_r_ = get_aggregated_params(r, rs_age, outer_method)
 
     n = cell_centers.shape[0]
     nodes = [pb.Vector3d(0, 0, 0), pb.Vector3d(0, 0, -0.1), pb.Vector3d(0, 0, -0.2)]  # maximal ns+1 nodes
-    segs, radii = [], [0.1, 0.1]  # maximal ns segments
+    segs = []  # maximal ns segments
+    radii =  [0.1, 0.1]
+    outer_r = [1. , 1.]
     segs.append(pb.Vector2i(0, 1))
     segs.append(pb.Vector2i(1, 2))
 
@@ -86,8 +96,10 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number):
             nodes.append(pb.Vector3d(x + l_[i], y, z))  # node 2*i+4
             segs.append(pb.Vector2i(2, 2 * c + 3))  # artificial shoot segment
             radii.append(0.)
+            outer_r.append(1.)
             segs.append(pb.Vector2i(2 * c + 3, 2 * c + 4))  # normal segment
             radii.append(a_[i])
+            outer_r.append(outer_r_[i])
             c += 1
 
     rs = pb.MappedSegments(nodes, segs, radii)
@@ -142,7 +154,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number):
     print(suf_krs[0])
     # vp.plot_roots(pb.SegmentAnalyser(r2.rs), "radius")
 
-    return r2
+    return r2, outer_r
 
 
 if __name__ == "__main__":
@@ -153,22 +165,19 @@ if __name__ == "__main__":
     cell_number = [1, 1, 55]
 
     fname = "../../../grids/RootSystem_verysimple2.rsml"
-    r = XylemFluxPython(fname)
+    r = HydraulicsDoussan(fname)
     rs_age = 78  # for calculating age dependent conductivities
 
     types = r.rs.subTypes  # simplify root types
     types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
     r.rs.subTypes = list(types)
 
-    init_conductivities(r)
-    # init_conductivities_const(r)
-    # r.test()  # sanity checks
 
     # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
     # z_ = np.linspace(0, -110, 55)
     # plt.plot(suf_, z_)
     # plt.show()
-    create_aggregated_rs(r, rs_age, min_b, max_b, cell_number)
+    create_parallel_rs(r, rs_age, min_b, max_b, cell_number)
 
     # """ single root """
     # min_b = [-7.5, -37.5, -50.]

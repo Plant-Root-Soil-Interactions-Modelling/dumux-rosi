@@ -11,7 +11,7 @@ import os
 import scenario_sra as sra
 import scenario_sra_old as sra_old
 import scenario_agg as agg
-import scenario_par2 as par
+import scenario_par2 as par # currently running meunier
 
 
 def start_jobs(jobs):
@@ -103,10 +103,10 @@ def make_list():
 
     # all springbarley
     method = ['par']  # 'sra', sraOld, agg, par
-    plant = ['springbarley', 'maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D", "3D"]  # 1D, 3D
-    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    outer_radius = ['length', 'surface', 'volume', 'voronoi']
+    plant = ['springbarley']  # 'springbarley', 'soybean', 'maize'
+    dim = ["1D"]  # "1D", "3D"
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'] # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
+    outer_radius = ['length', 'surface', 'volume', 'voronoi'] #  'length', 'surface', 'volume', 'voronoi'
 
     # method = ['agg']  # 'sra', sraOld, agg
     # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
@@ -128,7 +128,7 @@ def make_list():
 
 if __name__ == "__main__":
 
-    sim_time = 14.5  # days
+    sim_time = 3 # 14.5  # days
 
     if rank == 0:
         jobs = make_list()
@@ -136,6 +136,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    # run_jobs(jobs, sim_time)
+    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    run_jobs(jobs, sim_time)
 
