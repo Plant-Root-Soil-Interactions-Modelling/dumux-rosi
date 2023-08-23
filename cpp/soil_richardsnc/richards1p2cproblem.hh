@@ -130,8 +130,11 @@ public:
 		sigma_ = getParam<Scalar>("RootSystem.Uptake.ActiveTransport", 0.); // 1 for passive transport, 0 for active transport
 
 		// Buffer power
-		b_ = getParam<Scalar>("Component.BufferPower", 0.);
-		freundlichN_ = getParam<Scalar>("Component.FreundlichN", 0.);
+		b_.at(0) = getParam<Scalar>(std::to_string(0)+".Component.BufferPower", 0.);
+		b_.at(1) = getParam<Scalar>(std::to_string(1)+".Component.BufferPower", 0.);
+		
+		//b_ = getParam<Scalar>("Component.BufferPower", 0.);
+		//freundlichN_ = getParam<Scalar>("Component.FreundlichN", 0.);
 		freundlichK_ = getParam<Scalar>("Component.FreundlichK", 0.);
 
 		// Output
@@ -140,7 +143,7 @@ public:
 		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				<<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
 				<< ", gravitation " << gravityOn_ <<", Critical pressure "
-				<< criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_ << ", Freundlich " << freundlichK_ << ", " <<
+				<< criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_.at(0)<<" "<<b_.at(1) << ", Freundlich " << freundlichK_ << ", " <<
 				freundlichN_ << "\n" << std::flush;
 	}
 
@@ -181,8 +184,8 @@ public:
 	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
 	 */
 	Scalar bufferPower(const SubControlVolume& scv, const VolumeVariables& volVars, int compIdx = 0) const {
-		if (b_>0.) {
-			return b_;
+		if (b_.at(compIdx)>0.) {
+			return b_.at(compIdx);
 		} else {
 			if (freundlichK_==0.) {
 				return 0.;
@@ -207,7 +210,7 @@ public:
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoilP_.f(z,eIdx));
-		std::cout<<"PrimaryVariables initial(1p2cProblem) "<<z<<" "<<v[pressureIdx]<<std::endl;							   
+		//std::cout<<"PrimaryVariables initial(1p2cProblem) "<<z<<" "<<v[pressureIdx]<<std::endl;							   
 		v[soluteIdx] = initialSoilC_.f(z,eIdx);
 		return v;
 	}
@@ -622,11 +625,11 @@ public:
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				auto p = scvf.center();
 				if (onUpperBoundary_(p)) { // top
-				std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
+				//std::cout<<"postTimeStep upper: "<<onUpperBoundary_(p)<<" "<<uc<<std::endl;
 					bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 					uc++;
 				} else if (onLowerBoundary_(p)) { // bottom
-				std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
+				//std::cout<<"postTimeStep lower: "<<onLowerBoundary_(p)<<" "<<lc<<std::endl;
 					bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 					lc++;
 				}
@@ -691,14 +694,14 @@ private:
 	//! cm pressure head -> Pascal
 	Scalar toPa_(Scalar ph) const {
 		Scalar ph2 = pRef_ + ph / 100. * rho_ * g_;
-		std::cout<<"toPa_ "<<ph<<" "<<ph2<<" "<<rho_<<" "<<g_<<std::endl;
+		//std::cout<<"toPa_ "<<ph<<" "<<ph2<<" "<<rho_<<" "<<g_<<std::endl;
 		return ph2;
 	}
 
 	//! Pascal -> cm pressure head
 	Scalar toHead_(Scalar p) const {
 		Scalar p2 = (p - pRef_) * 100. / rho_ / g_;
-		std::cout<<"toHead_ "<<p<<" "<<p2<<" "<<rho_<<" "<<g_<<std::endl;
+		//std::cout<<"toHead_ "<<p<<" "<<p2<<" "<<rho_<<" "<<g_<<std::endl;
 		return p2;
 	}
 
@@ -742,7 +745,7 @@ private:
 	Scalar km_;  // Michaelis Menten Parameter  [kg m-3]
 	Scalar sigma_;// 1 for passive transport, 0 for active transport
 
-	Scalar b_; // buffer power
+	std::vector<double> b_{0.,0.}; // buffer power
 	Scalar freundlichK_; // Freundlich parameters
 	Scalar freundlichN_;
 	Scalar bulkDensity_ = 1.4; // TODO check with Mai, buffer power (1+b) or b

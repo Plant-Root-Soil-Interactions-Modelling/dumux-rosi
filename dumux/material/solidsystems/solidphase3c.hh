@@ -21,8 +21,8 @@
  * \ingroup SolidSystems
  * \brief A solid phase consisting of multiple inert solid components.
  */
-#ifndef DUMUX_SOLIDSYSTEMS_COMPOSITIONAL_SOLID_PHASE_HH
-#define DUMUX_SOLIDSYSTEMS_COMPOSITIONAL_SOLID_PHASE_HH
+#ifndef DUMUX_SOLIDSYSTEMS_COMPOSITIONAL_SOLID_PHASE3C_HH
+#define DUMUX_SOLIDSYSTEMS_COMPOSITIONAL_SOLID_PHASE3C_HH
 
 #include <string>
 #include <dune/common/exceptions.hh>

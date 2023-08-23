@@ -157,9 +157,9 @@ public:
                               problem.nonWettingReferencePressure() - fluidState.pressure(0));
         const Scalar sw = MaterialLaw::sw(materialParams, pc);
         fluidState.setSaturation(0, sw);
-		std::cout<<"volumevariables::completeFluidState "<<fluidState.pressure(0)<<" "
-		<<MaterialLaw::endPointPc(materialParams)<<" "<<problem.nonWettingReferencePressure()<<" "
-		<<pc<<" "<<sw<<std::endl;
+		//std::cout<<"volumevariables::completeFluidState "<<fluidState.pressure(0)<<" "
+		//<<MaterialLaw::endPointPc(materialParams)<<" "<<problem.nonWettingReferencePressure()<<" "
+		//<<pc<<" "<<sw<<std::endl;
 
         // set the mole/mass fractions
         if(useMoles)

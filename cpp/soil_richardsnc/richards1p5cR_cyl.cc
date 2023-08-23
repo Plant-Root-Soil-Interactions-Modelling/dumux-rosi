@@ -293,8 +293,8 @@ int main(int argc, char** argv) //try
             //    vtkWriter.write(timeLoop->time());
             //}
             // report statistics of this time step
-			std::cout<<"\n\nwe get: "<< timeLoop->time()<<" "
-			<<timeLoop->timeStepSize()   
+			std::cout<<"\n\nwe get: "<< timeLoop->time() <<" "
+			<<" "<<timeLoop->timeStepSize()   
 			<<"\n\t"<<x[0][3]*bulkSoilDensity
 			<<" "<< problem->getDecay() <<" "
 			<<x[0][3]*bulkSoilDensity + problem->getDecay() * timeLoop->timeStepSize() 

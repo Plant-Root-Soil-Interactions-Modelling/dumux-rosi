@@ -120,12 +120,12 @@ s.setParameter("Soil.k_phi", str(0.1 ))
 s.setParameter("Soil.k_RC", str(0.1 ))
 s.setParameter("Soil.k_RO", str(0.1 ))
 
-k_SC = 1/1e6
-k_SO = 10/1e6
-s.setParameter("Soil.k_SC", str(k_SC )) #m^3/mol/d
-s.setParameter("Soil.k_SCBis", str(k_SC )) #m^3/mol/d
-s.setParameter("Soil.k_SO", str(k_SO )) #m^3/mol/d
-s.setParameter("Soil.k_SOBis", str(k_SO )) #m^3/mol/d
+k_SC = 1
+k_SO = 10
+s.setParameter("Soil.k_SC", str(k_SC )) #cm^3/mol/d
+s.setParameter("Soil.k_SCBis", str(k_SC )) #cm^3/mol/d
+s.setParameter("Soil.k_SO", str(k_SO )) #cm^3/mol/d
+s.setParameter("Soil.k_SOBis", str(k_SO )) #cm^3/mol/d
 
 m_maxC = 0.1 
 m_maxO = 0.02 
@@ -140,6 +140,12 @@ s.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
 
 s.setParameter("Soil.extra", str(0.25*0)) #mol/m^3/s
 s.setParameter("Soil.extra2", str(0.05*0)) #mol/m^3/s
+
+
+s.setParameter("Soil.k_sorp", str(0.2)) # mol / cm3
+s.setParameter("Soil.f_sorp", str(0.5)) #[-]
+s.setParameter("Soil.CSSmax", str(0.05*0)) #[mol/cm3 scv]
+s.setParameter("Soil.alpha", str(0.1)) #
 
 
 

@@ -116,6 +116,8 @@ public:
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
                                              *  (volVars.porosity()*volVars.saturation(phaseIdx)+b);
+				//std::cout<<"computeStorage "<<compIdx<<" "<<phaseIdx<<" "<<b<<" "<<storage[replaceCompEqIdx] 
+				//<<" "<<massOrMoleDensity(volVars, phaseIdx)*  (volVars.porosity()*volVars.saturation(phaseIdx))<<std::endl;
             }
 
             //! The energy storage in the fluid phase with index phaseIdx

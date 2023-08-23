@@ -2,7 +2,7 @@
 Name = benchmark_phosphate
 
 [TimeLoop]
-TEnd = 1209600 # 14 days, 0 is steady state
+TEnd = 86400 # 14 days, 0 is steady state
 DtInitial =  3600 # [s]
 MaxTimeStepSize = 86400 # 1 days [s] 
 

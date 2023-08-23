@@ -4,8 +4,9 @@
 
 add_subdirectory("compositional") # overwrite to introduce buffer power
 add_subdirectory("compositionalCylindrical1d") # overwrite to introduce buffer power
-add_subdirectory("richards3cCylindrical1d") # overwrite to introduce buffer power
-add_subdirectory("richards5cCylindrical1d") # overwrite to introduce buffer power
+add_subdirectory("richards3cCylindrical1d")
+add_subdirectory("richards5cCylindrical1d") 
+add_subdirectory("richards10cCylindrical1d") 
 
 add_subdirectory("richardsCylindrical1d") 
 

@@ -17,4 +17,4 @@ add_executable(coupled_schroeder EXCLUDE_FROM_ALL coupled_schroeder.cc ../../dum
 target_compile_definitions(coupled_schroeder PUBLIC DGF)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

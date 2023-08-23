@@ -17,4 +17,4 @@ add_executable(richards_ug EXCLUDE_FROM_ALL richards.cc)
 target_compile_definitions(richards_ug PUBLIC GRIDTYPE=Dune::UGGrid<3>)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

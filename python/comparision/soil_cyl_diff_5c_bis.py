@@ -16,7 +16,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 def write_file_array(name, data):
-    name2 = './results/'+ name+ '.txt'
+    name2 = './results5c/'+ name+ '.txt'
     with open(name2, 'a') as log:
         log.write(','.join([num for num in map(str, data)])  +'\n')
 """ 
@@ -25,7 +25,7 @@ Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 everything scripted, no input file needed, also works parallel with mpiexec
 """
 
-results_dir="./results/"
+results_dir="./results5c/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:

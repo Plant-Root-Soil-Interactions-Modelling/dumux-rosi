@@ -27,8 +27,8 @@ namespace Properties {
 
 namespace TTag { // Create new type tags
 struct RichardsNCTT { using InheritsFrom = std::tuple<Richards5C>; };
-struct Richards2CBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
-struct Richards2CCC { using InheritsFrom = std::tuple<RichardsNCTT, CCTpfaModel>; };
+struct Richards5CBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
+struct Richards5CCC { using InheritsFrom = std::tuple<RichardsNCTT, CCTpfaModel>; };
 struct RichardsNCBox { using InheritsFrom = std::tuple<RichardsNCTT, BoxModel>; };
 struct RichardsNCCC { using InheritsFrom = std::tuple<RichardsNCTT, CCTpfaModel>; };
 }
