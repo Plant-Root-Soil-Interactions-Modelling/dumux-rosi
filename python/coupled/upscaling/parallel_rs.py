@@ -3,7 +3,6 @@ sets up the aggregated root system described by Krs, and (per Layer) SUF, mean r
 """
 
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
-from scipy.signal._lti_conversion import ss2tf
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import plantbox as pb  # CPlantBox
@@ -37,7 +36,7 @@ def get_aggregated_params(r, rs_age, outer_method):
 
     r.test()
     aa
-    
+
     kr_surf = []  # kr times surface summed up per layer
     segs = r.rs.segments
     nodeCTs = r.rs.nodeCTs
@@ -72,9 +71,7 @@ def get_aggregated_params(r, rs_age, outer_method):
     # print(a_)
     # print("\n\n")
     # dd
-    
-    
-    
+
     return krs, suf_, kr_surf_, surf_, l_, a_, outer_r_
 
 
@@ -87,7 +84,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     n = cell_centers.shape[0]
     nodes = [pb.Vector3d(0, 0, 0), pb.Vector3d(0, 0, -0.1), pb.Vector3d(0, 0, -0.2)]  # maximal ns+1 nodes
     segs = []  # maximal ns segments
-    radii =  [0.1, 0.1]
+    radii = [0.1, 0.1]
     outer_r = [1. , 1.]
     segs.append(pb.Vector2i(0, 1))
     segs.append(pb.Vector2i(1, 2))
@@ -160,7 +157,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     print(kr_surf_[0])
     print(suf_krs[0])
     # vp.plot_roots(pb.SegmentAnalyser(r2.rs), "radius")
-    
+
     return r2, outer_r
 
 
@@ -178,7 +175,6 @@ if __name__ == "__main__":
     types = r.rs.subTypes  # simplify root types
     types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
     r.rs.subTypes = list(types)
-
 
     # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
     # z_ = np.linspace(0, -110, 55)
