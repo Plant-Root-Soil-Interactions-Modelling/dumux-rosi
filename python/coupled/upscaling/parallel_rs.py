@@ -3,6 +3,7 @@ sets up the aggregated root system described by Krs, and (per Layer) SUF, mean r
 """
 
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+from scipy.signal._lti_conversion import ss2tf
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import plantbox as pb  # CPlantBox
@@ -34,6 +35,9 @@ def get_aggregated_params(r, rs_age, outer_method):
     suf_ = per.aggregate(suf)  # ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)
 #     print("suf_", suf_.shape, np.sum(suf_))
 
+    r.test()
+    aa
+    
     kr_surf = []  # kr times surface summed up per layer
     segs = r.rs.segments
     nodeCTs = r.rs.nodeCTs
@@ -144,6 +148,9 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     kx_ = np.array(kx_up)
 
     print("krs", krs)
+    krs_new, _ = r2.get_krs(rs_age)
+    print("new krs", krs_new)
+    dd
     print("suf", np.min(suf_), np.max(suf_), np.sum(suf_))
     print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
@@ -153,7 +160,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     print(kr_surf_[0])
     print(suf_krs[0])
     # vp.plot_roots(pb.SegmentAnalyser(r2.rs), "radius")
-
+    
     return r2, outer_r
 
 

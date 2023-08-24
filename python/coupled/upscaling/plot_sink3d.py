@@ -73,13 +73,13 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     for i in range(0, n):
 
         sink_ = data[i]
-        print("sink_", sink_.shape)
+        #print("sink_", sink_.shape)
         sink_ = sink_.reshape((sink_.shape[0], cell_number[-1], cell_number[-2], cell_number[-3]))
-        print("sink_", sink_.shape)
+        #print("sink_", sink_.shape)
         sink_ = np.sum(sink_, 2)
-        print("sink_", sink_.shape)
+        #print("sink_", sink_.shape)
         sink_ = np.sum(sink_, 2)
-        print("sink_", sink_.shape)
+        #print("sink_", sink_.shape)
 
         soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
 
@@ -105,7 +105,7 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
 
         redistribution_id = np.round(sink_.shape[0] / days * np.array([i for i in plot_times]))
         redistribution_id = redistribution_id.astype(int)
-        print("redistribution_id", redistribution_id)
+        # print("redistribution_id", redistribution_id)
 
         for ind, j in enumerate(redistribution_id):
             lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i],int(ind == 0) +
@@ -117,13 +117,16 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
 
 if __name__ == "__main__":
 
+    """ 
+    References 3d, 1d 
+    """
     # """ Reference 3d (plot) """
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
     #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
     #     method = ["sra"]
     #     plant = ["springbarley"]
     #     soil = [s]
-    #     outer_method = ["surface"]
+    #     outer_method = ["voronoi"]
     #     plot_sink3d(ax, method, plant, soil, outer_method, ["ref"])
     #     ax[0].set_xlim([0., 0.12])
     #     ax[1].set_xlim([-0.012, 0.0075])
@@ -140,30 +143,6 @@ if __name__ == "__main__":
     #     ax[1].set_xlim([-0.0025, 0.0025])
     #     plt.tight_layout()
     #     plt.savefig('sink_3d_maize_' + s[7:] + '.png')
-    #
-    # """  Aggregaed 3d vs Reference 3d (plot) """
-    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
-    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-    #     method = ["agg", "sra"]
-    #     plant = ["springbarley"] * 2
-    #     soil = [s] * 2
-    #     outer_method = ["voronoi"] * 2
-    #     plot_sink3d(ax, method, plant, soil, outer_method, ["agg", "ref"], [0, 2, 6, 13])
-    #     ax[0].set_xlim([0., 0.12])
-    #     ax[1].set_xlim([-0.012, 0.0075])
-    #     plt.tight_layout()
-    #     plt.savefig('sink_agg3d_springbarley_' + s[7:] + '.png')
-    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
-    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-    #     method = ["agg", "sra"]
-    #     plant = ["maize"] * 2
-    #     soil = [s] * 2
-    #     outer_method = ["voronoi"] * 2
-    #     plot_sink3d(ax, method, plant, soil, outer_method, ["agg", "ref"], [0, 2, 6, 13])
-    #     ax[0].set_xlim([0., 0.038])
-    #     ax[1].set_xlim([-0.0025, 0.0025])
-    #     plt.tight_layout()
-    #     plt.savefig('sink_agg3d_maize_' + s[7:] + '.png')
     #
     # """ Reference 1d vs 3d (plot) """
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
@@ -190,7 +169,34 @@ if __name__ == "__main__":
     #     ax[1].set_xlim([-0.006, 0.006])
     #     plt.tight_layout()
     #     plt.savefig('sink_1d_maize_' + s[7:] + '.png')
-    # #
+    #
+    # """
+    # Aggregated model
+    # """
+    # """  Aggregaed 3d vs Reference 3d (plot) """
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["agg", "sra"]
+    #     plant = ["springbarley"] * 2
+    #     soil = [s] * 2
+    #     outer_method = ["voronoi"] * 2
+    #     plot_sink3d(ax, method, plant, soil, outer_method, ["agg", "ref"], [0, 2, 6, 13])
+    #     ax[0].set_xlim([0., 0.12])
+    #     ax[1].set_xlim([-0.012, 0.0075])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_agg3d_springbarley_' + s[7:] + '.png')
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["agg", "sra"]
+    #     plant = ["maize"] * 2
+    #     soil = [s] * 2
+    #     outer_method = ["voronoi"] * 2
+    #     plot_sink3d(ax, method, plant, soil, outer_method, ["agg", "ref"], [0, 2, 6, 13])
+    #     ax[0].set_xlim([0., 0.038])
+    #     ax[1].set_xlim([-0.0025, 0.0025])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_agg3d_maize_' + s[7:] + '.png')
+    #
     # """ Aggregatd 1d vs 3d (plot) """
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
     #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
@@ -207,29 +213,125 @@ if __name__ == "__main__":
     #     plt.savefig('sink_agg1d_springbarley_' + s[7:] + '.png')
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
     #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-    #     method = ["sra"]
+    #     method = ["agg"]
     #     plant = ["maize"]
     #     soil = [s]
     #     outer_method = ["voronoi"]
-    #     plot_sink1d(ax, method, plant, soil, outer_method, ["1D"], [0, 2, 6, 13])
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["agg 1D"], [0, 2, 6, 13])
+    #     method = ["sra"]
     #     plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 2, 6, 13], ls = ["--"])
     #     ax[0].set_xlim([0., 0.058])
     #     ax[1].set_xlim([-0.006, 0.006])
     #     plt.tight_layout()
     #     plt.savefig('sink_agg1d_maize_' + s[7:] + '.png')
-
-    for s in ["hydrus_loam"]:
+    #
+    """ Aggregatd 1d vs 1d (plot) """
+    for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
         fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-        method = ["par"]
+        method = ["agg"]
+        plant = ["springbarley"]
+        soil = [s]
+        outer_method = ["voronoi"]
+        plot_sink1d(ax, method, plant, soil, outer_method, ["agg 1D"], [0, 2, 6, 13])
+        method = ["sra"]
+        plot_sink1d(ax, method, plant, soil, outer_method, ["ref 1D"], [0, 2, 6, 13], ls = ["--"])
+        ax[0].set_xlim([0., 0.12])
+        ax[1].set_xlim([-0.012, 0.0075])
+        plt.tight_layout()
+        plt.savefig('sink_agg1d1d_springbarley_' + s[7:] + '.png')
+    for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+        fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+        method = ["agg"]
         plant = ["maize"]
         soil = [s]
-        outer_method = ["length"]
-        plot_sink3d(ax, method, plant, soil, outer_method, ["par"], [0, 6, 13])
+        outer_method = ["voronoi"]
+        plot_sink1d(ax, method, plant, soil, outer_method, ["agg 1D"], [0, 2, 6, 13])
         method = ["sra"]
-        plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 6, 13], ls = ["--"])
-        ax[0].set_xlim([0., 0.038])
-        ax[1].set_xlim([-0.0025, 0.0025])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["ref 1D"], [0, 2, 6, 13], ls = ["--"])
+        ax[0].set_xlim([0., 0.058])
+        ax[1].set_xlim([-0.006, 0.006])
         plt.tight_layout()
-        plt.savefig('sink_par_maize_' + s[7:] + '.png')
+        plt.savefig('sink_agg1d1d_maize_' + s[7:] + '.png')
+
+    """
+    Parallel root system
+    """
+    """  Parallel 3d vs Reference 3d (plot) """
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["par", "sra"]
+    #     plant = ["springbarley"] * 2
+    #     soil = [s] * 2
+    #     outer_method = ["length"] * 2
+    #     plot_sink3d(ax, method, plant, soil, outer_method, ["par", "ref"], [0, 2, 6, 13])
+    #     ax[0].set_xlim([0., 0.12])
+    #     ax[1].set_xlim([-0.012, 0.0075])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_par3d_springbarley_' + s[7:] + '.png')
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["par", "sra"]
+    #     plant = ["maize"] * 2
+    #     soil = [s] * 2
+    #     outer_method = ["surface"] * 2
+    #     plot_sink3d(ax, method, plant, soil, outer_method, ["par", "ref"], [0, 2, 6, 13])
+    #     ax[0].set_xlim([0., 0.038])
+    #     ax[1].set_xlim([-0.0025, 0.0025])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_par3d_maize_' + s[7:] + '.png')
+    """ Parallel 1d vs 3d (plot) """
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["par"]
+    #     plant = ["springbarley"]
+    #     soil = [s]
+    #     outer_method = ["voronoi"]
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["par 1D"], [0, 2, 6, 13])
+    #     method = ["sra"]
+    #     plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 2, 6, 13], ls = ["--"])
+    #     ax[0].set_xlim([0., 0.12])
+    #     ax[1].set_xlim([-0.012, 0.0075])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_par1d_springbarley_' + s[7:] + '.png')
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["par"]
+    #     plant = ["maize"]
+    #     soil = [s]
+    #     outer_method = ["voronoi"]
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["par 1D"], [0, 2, 6, 13])
+    #     method = ["sra"]
+    #     plot_sink3d(ax, method, plant, soil, outer_method, ["ref"], [0, 2, 6, 13], ls = ["--"])
+    #     ax[0].set_xlim([0., 0.058])
+    #     ax[1].set_xlim([-0.006, 0.006])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_par1d_maize_' + s[7:] + '.png')
+    # """ Parallel 1d vs 1d (plot) """
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["par"]
+    #     plant = ["springbarley"]
+    #     soil = [s]
+    #     outer_method = ["voronoi"]
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["par 1D"], [0, 2, 6, 13])
+    #     method = ["sra"]
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["ref 1D"], [0, 2, 6, 13], ls = ["--"])
+    #     ax[0].set_xlim([0., 0.12])
+    #     ax[1].set_xlim([-0.012, 0.0075])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_par1d1d_springbarley_' + s[7:] + '.png')
+    # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+    #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    #     method = ["par"]
+    #     plant = ["maize"]
+    #     soil = [s]
+    #     outer_method = ["voronoi"]
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["par 1D"], [0, 2, 6, 13])
+    #     method = ["sra"]
+    #     plot_sink1d(ax, method, plant, soil, outer_method, ["ref 1D"], [0, 2, 6, 13], ls = ["--"])
+    #     ax[0].set_xlim([0., 0.058])
+    #     ax[1].set_xlim([-0.006, 0.006])
+    #     plt.tight_layout()
+    #     plt.savefig('sink_par1d1d_maize_' + s[7:] + '.png')
 
     plt.show()
