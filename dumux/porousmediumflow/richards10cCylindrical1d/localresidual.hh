@@ -276,8 +276,9 @@ public:
 					//flux[eqIdx] /= b;
 				}
 
-                if (eqIdx != replaceCompEqIdx)
+                if ((eqIdx != replaceCompEqIdx)&&(compIdx != problem.mucilIdx))
 				{
+					
 					// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())
 					//see @dumux/flux/box/darcyslaw.h (flux())
 					// gives upwindTerm() * Ks [m/s] * dp [Pa] ==> kg_a / s

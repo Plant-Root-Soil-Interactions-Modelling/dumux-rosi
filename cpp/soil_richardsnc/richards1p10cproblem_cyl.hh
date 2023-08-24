@@ -962,7 +962,7 @@ public:
 		q[CSS2Idx] +=  Reac_CSS2 * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
 		
-						
+		//for post-processing		
 			setSorp(Reac_CSS2, scv.dofIndex());
 			setTheta(theta, scv.dofIndex());
 			setCSS1(CSS1*f_sorp, scv.dofIndex());

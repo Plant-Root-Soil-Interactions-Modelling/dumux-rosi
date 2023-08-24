@@ -65,7 +65,7 @@ bulkDensity_m3 = solidMolDensity*(1.-0.43)
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
 exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 Ds = 1e-8 # m^2/s
-Dl = 0.5e-8
+Dl = 1e-9
 
 numComp = 8
 numFluidComp = 2
@@ -83,7 +83,7 @@ s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
 
 s.setParameter( "Soil.BC.Bot.C2Type", str(3))
 s.setParameter( "Soil.BC.Top.C2Type", str(3))
-s.setParameter( "Soil.BC.Bot.C2Value", str(exud/3.)) 
+s.setParameter( "Soil.BC.Bot.C2Value", str(exud)) 
 s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
 s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
@@ -172,7 +172,7 @@ s.setVGParameters([loam])
 
 s.setParameter("Problem.EnableGravity", "false")
 s.setParameter("Problem.verbose", "1")
-s.setParameter("Flux.UpwindWeight", "1")
+s.setParameter("Flux.UpwindWeight", "0.5")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
 s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
 s.setParameter("Newton.EnableChop", "true")
