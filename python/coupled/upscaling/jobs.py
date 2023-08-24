@@ -11,7 +11,7 @@ import os
 import scenario_sra as sra
 import scenario_sra_old as sra_old
 import scenario_agg as agg
-import scenario_par2 as par
+import scenario_par2 as par  # currently running meunier
 
 
 def start_jobs(jobs):

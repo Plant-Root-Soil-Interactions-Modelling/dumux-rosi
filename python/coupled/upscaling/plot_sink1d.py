@@ -16,7 +16,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6]):
+def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6],ls = [ "-", ":", "-.", "-", ":", "-."]):
 
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
@@ -56,8 +56,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     ax[1].set_xlabel("sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
-    ls = [ "-", ":", "-.", "-", ":", "-."]
-
+    
     """ noon """
     for i in range(0, n):
 
