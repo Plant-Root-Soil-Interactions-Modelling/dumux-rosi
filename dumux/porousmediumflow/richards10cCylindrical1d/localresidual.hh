@@ -23,8 +23,8 @@
  *        using compositional fully implicit model.
  */
 
-#ifndef DUMUX_COMPOSITIONAL_CYL_LOCAL_RESIDUAL_HH
-#define DUMUX_COMPOSITIONAL_CYL_LOCAL_RESIDUAL_HH
+#ifndef DUMUX_COMPOSITIONAL_10CCYL_LOCAL_RESIDUAL_HH
+#define DUMUX_COMPOSITIONAL_10CCYL_LOCAL_RESIDUAL_HH
 
 #include <vector>
 #include <dumux/common/properties.hh>

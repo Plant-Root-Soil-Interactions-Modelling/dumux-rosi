@@ -100,7 +100,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
             elif self.mode == "dumux_dirichlet_2c":
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
-            elif self.mode == "dumux_dirichlet_nc":
+            elif (self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_10c")  :
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
             elif self.mode == "dumux_nc":
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
@@ -124,6 +124,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 cyl = RichardsNoMPIWrapper(Richards2CCylFoam())  # only works for RichardsCylFoam compiled without MPI
             if self.mode == "dumux_dirichlet_nc":
                 cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
+            if self.mode == "dumux_dirichlet_10c":
+                cyl = RichardsNoMPIWrapper(Richards10CCylFoam())  # only works for RichardsCylFoam compiled without MPI
             cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
@@ -336,7 +338,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.plot_cylinder(j)
                     self.plot_cylinders()
                     raise Exception(str)
-        elif ((self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_2c")):            
+        elif ((self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_2c") or (self.mode == "dumux_dirichlet_10c")):            
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             proposed_inner_fluxes = argv[2]

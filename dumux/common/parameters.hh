@@ -98,7 +98,7 @@ public:
                      std::string parameterFileName = "",
                      const Usage& usage = [](const char *, const std::string &){})
     {
-		std::cout<<"D: static void init(int argc, char **argv, const DefaultParams& defaultParams = [] (Dune::ParameterTree&) {},"<<std::endl;
+		//std::cout<<"D: static void init(int argc, char **argv, const DefaultParams& defaultParams = [] (Dune::ParameterTree&) {},"<<std::endl;
         const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
 
         // check whether the user wanted to see the help message
@@ -142,8 +142,11 @@ public:
             if (parameterFileName == "")
             {
                 if (mpiHelper.size() > 1)
-                    std::cout << "Rank " << mpiHelper.rank() << ": ";
-                std::cout << "No parameter file found. Continuing without parameter file.\n";
+				{
+                    // std::cout << "Rank " << mpiHelper.rank() << ": ";
+					
+				}
+                // std::cout << "No parameter file found. Continuing without parameter file.\n";
 
                 return;
             }

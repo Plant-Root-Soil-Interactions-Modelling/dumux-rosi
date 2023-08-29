@@ -148,7 +148,7 @@ public:
 	 * \brief Eventually, closes output file
 	 */
 	~Richards1PNCProblem() {
-		std::cout << "closing file \n";
+		//std::cout << "closing file \n";
 		myfile_.close();
 	}
 

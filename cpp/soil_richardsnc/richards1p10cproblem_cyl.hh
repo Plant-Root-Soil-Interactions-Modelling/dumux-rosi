@@ -203,17 +203,18 @@ public:
 	 */
 	Richards1P10CProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
 	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
-
-		gravityOn_ = false;//Dumux::getParam<bool>("Problem.EnableGravity", true);
+		
+		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", (dimWorld > 1));
+		temperatureK = Dumux::getParam<double>("Problem.temperatureK", 273.15+10);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		
-		 verbose =  getParam<int>("Problem.verbose", 0);
+		 verbose =  getParam<int>("Problem.verbose", -1);
 		 toFile =  getParam<bool>("Problem.toFile", false);
 		
 			
 		
-		if(verbose>0)
+		if(verbose>=0)
 		{
 			const auto& myParams = Parameters::paramTree();
 			myParams.report();
@@ -333,7 +334,10 @@ public:
 		m_maxBisO = getParam<double>("Soil.m_maxBisO2", 0. );
 		m_maxBis_Cs = getParam<double>("Soil.m_maxBis_Cs", 0.  );
 		
-		int nVerices = getParam<int>("Soil.Grid.Cells") +1;
+		auto nVerices_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
+		auto myMultiply = [] (int previousResult, int item) {return previousResult * (item + 1);};
+		int nVerices = std::reduce(nVerices_.begin(), nVerices_.end(), 1, myMultiply ); //std::multiplies<int>()
+		
 		testSorp.resize(nVerices);
 		testCSS1.resize(nVerices);
 		theta_.resize(nVerices);
@@ -343,19 +347,19 @@ public:
 		// Output
 		std::string filestr = this->name() + "_1p5cProblem.txt"; // output file
 		myfile_.open(filestr.c_str());
-		std::cout << "Richards1P10CProblemR_cyl constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValues_.at(0) 
-				<< ", gravitation " << gravityOn_ <<", Critical pressure "
-				<< criticalPressure_ //<< "\n" << "Sorption:" << "buffer power "<< b_[0] << ", Freundlich " << freundlichK_[0] << ", " <<
-				//freundlichN_[0] << "\n" 
-				<< std::flush;
+		// std::cout << "Richards1P10CProblemR_cyl constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+				// <<  bcBotType_ << ", " << bcBotValues_.at(0) 
+				// << ", gravitation " << gravityOn_ <<", Critical pressure "
+				// << criticalPressure_ //<< "\n" << "Sorption:" << "buffer power "<< b_[0] << ", Freundlich " << freundlichK_[0] << ", " <<
+				// //freundlichN_[0] << "\n" 
+				// << std::flush;
 	}
 
 	/**
 	 * \brief Eventually, closes output file
 	 */
 	~Richards1P10CProblem() {
-		std::cout << "closing file \n";
+		//std::cout << "closing file \n";
 		myfile_.close();
 	}
 
@@ -370,7 +374,7 @@ public:
 	 * overwrites PorousMediumFlowProblem::temperature (compiles without, throws exception of base class)
 	 */
 	Scalar temperature() const {
-		return 273.15 + 10; // -> 10°C
+		return temperatureK; //273.15 + 10; // -> 10°C
 	}
 
 	/*!
@@ -449,7 +453,7 @@ public:
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
-		if(verbose>0)
+		if(verbose>1)
 		{
 			 std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
 		}
@@ -460,7 +464,7 @@ public:
 		for(int i = soluteIdx; i<numComponents_;i++)//solutes
 		{
 			v[i] = initialSoil_.at(i).f(z,eIdx);
-			if(verbose>0)
+			if(verbose>1)
 			{
 				 std::cout<<" result : "<<v[i];
 			}
@@ -469,7 +473,7 @@ public:
 				 // myfile_<<" result : "<<v[i];
 			// }
 		}
-		if(verbose>0)
+		if(verbose>1)
 		{
 			 std::cout<<std::endl;
 		}
@@ -823,17 +827,22 @@ public:
 			const SubControlVolume &scv) const {
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
+		double pos0 = 1;
+		if (dimWorld == 1)//1daxissymmetric model
+		{
+			pos0 = pos[0];
+		}
   
 															  
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
-				source[i] = source_[i]->at(eIdx)/scv.volume() * pos[0];
+				source[i] = source_[i]->at(eIdx)/scv.volume() * pos0;
 			}else{source[i] = 0.;}												 
 		}		
         const auto& volVars = elemVolVars[scv];
-		bioChemicalReaction(source, volVars, pos[0], scv);
+		bioChemicalReaction(source, volVars, pos0, scv);
 		
 		return source;
 	}
@@ -1182,9 +1191,9 @@ private:
 	int verbose;
 	bool toFile;
 	
-
-	static constexpr Scalar eps_ = 1.e-7;
 	
+	static constexpr Scalar eps_ = 1.e-7;
+	double temperatureK;
 	// static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
 	// static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
 	// static constexpr Scalar pRef_ = 1.e5; // Pa

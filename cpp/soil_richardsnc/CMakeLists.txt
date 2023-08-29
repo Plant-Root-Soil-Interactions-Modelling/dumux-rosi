@@ -19,6 +19,10 @@ target_compile_definitions(richards5c1dR_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>
 add_executable(richards10c1d_cyl richards1p10c_cyl.cc)
 target_compile_definitions(richards10c1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
+add_executable(richards10c richards1p10c.cc)
+target_compile_definitions(richards10c PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
+
+
 add_executable(richards5c1dR_cyl_k richards1p5cR_cyl_k.cc)
 target_compile_definitions(richards5c1dR_cyl_k PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 

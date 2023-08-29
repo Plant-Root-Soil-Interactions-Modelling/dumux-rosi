@@ -23,8 +23,8 @@
  *        finite volume in the Richards, n-component model.
  */
 
-#ifndef DUMUX_RICHARDSNC_VOLUME_VARIABLES_HH
-#define DUMUX_RICHARDSNC_VOLUME_VARIABLES_HH
+#ifndef DUMUX_RICHARDS3C_VOLUME_VARIABLES_HH
+#define DUMUX_RICHARDS3C_VOLUME_VARIABLES_HH
 
 #include <algorithm>
 #include <array>

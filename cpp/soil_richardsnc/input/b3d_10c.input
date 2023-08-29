@@ -1,0 +1,150 @@
+[Problem]
+Name = cylinder_1d_10
+EnableGravity = "false"
+verbose = "1"
+toFile = "false"
+extenction = "txt"
+
+[TimeLoop]
+TEnd = 60#10h
+DtInitial =  1 # [s]
+# MinTimeStepSize = 3600 # [s]
+MaxTimeStepSize = 60 # [s]
+
+[Soil.Grid]
+UpperRight = 0.1 0.1 0.53
+LowerLeft = 0. 0. 0.#-0.05 -0.05 -0.53
+# Cells = 1 1 4
+Cells = 9 9 52
+
+
+[Soil.BC.Bot]
+Type = 3 # constant flux
+Value = -0.26 # [cm day-1]
+C1Type = 3 # constant flux
+C1Value = 1 # [mol/cm2/day-1] 
+C2Type = 3 # constant flux
+C2Value = 0.3333333333333333 # [mol/cm2/day-1]
+C3Type = 3 # constant flux
+C3Value = 0 # [g/cm2/day]
+C4Type = 3 # constant flux
+C4Value = 0 # [g/cm2/day]
+C5Type = 3 # constant flux
+C5Value = 0 # [g/cm2/day]
+C6Type = 3 # constant flux
+C6Value = 0 # [g/cm2/day]
+C7Type = 3 # constant flux
+C7Value = 0 # [g/cm2/day]
+C8Type = 3 # constant flux
+C8Value = 0 # [g/cm2/day]
+
+[Soil.BC.Top]
+Type = 3 # constant flux
+Value = 0 # [g day-1]
+C1Type = 3 # constant flux
+C1Value = 0 # [g/cm2/day]
+C2Type = 3 # constant flux
+C2Value = 0 # [g/cm2/day]
+C3Type = 3 # constant flux
+C3Value = 0 # [g/cm2/day]
+C4Type = 3 # constant flux
+C4Value = 0 # [g/cm2/day]
+C5Type = 3 # constant flux
+C5Value = 0 # [g/cm2/day]
+C6Type = 3 # constant flux
+C6Value = 0 # [g/cm2/day]
+C7Type = 3 # constant flux
+C7Value = 0 # [g/cm2/day]
+C8Type = 3 # constant flux
+C8Value = 0 # [g/cm2/day]
+
+[Soil]
+betaC = 0.001
+betaO = 0.1
+C_S_W_thresC = 0.1
+C_S_W_thresO = 0.05
+k_decay = 0.2
+k_decay2 = 0.6
+k_DC = 1
+k_DO = 1
+k_growthC = 0.2
+k_growthO = 0.2
+K_L = 8.3
+k_phi = 0.1
+k_RC = 0.1
+k_RO = 0.1
+k_SC = 1
+k_SO = 10
+m_maxC = 0.1
+m_maxO = 0.02
+micro_maxC = 2
+micro_maxO = 0.01
+v_maxL =  1.5 #[d-1]
+k_sorp = 20 #[mol/cm3]
+f_sorp = 0.9 #[-]
+CSSmax = 1 #[mol/cm3 scv]
+alpha = 0.1 #[1/d]
+CriticalPressure = -15000
+MolarMass = 60.08e-3 #kg/mol
+solidDensity = 2700 #kg/m^3
+
+[Soil.IC]
+P = -100 # cm pressure head (initial guess)
+C1 = "  1.8   5.4   7.2   9.  162. "
+C1Z = "0.0001 0.0003 0.0004 0.0005 0.009"
+C2 = 180.
+C3 = 0.42942170240415856
+C4 = 1.9519168291098115
+C5 = 0.42942170240415856
+C6 = 1.9519168291098115
+C7 = 0.0011711500974658868
+C8 = 0
+
+
+
+[Soil.VanGenuchten] 
+# Loam 
+Qr = 0.045 	
+Qs = 0.43
+Alpha = 0.04  # [1/cm] 
+N = 1.6 
+Ks = 50 # [cm/d] 	
+
+[Vtk]
+AddProcessRank = "false"
+AddVelocity = "false"
+
+[1.Component]
+LiquidDiffusionCoefficient = 1.e-8 #m2 / s
+Name = "smallPolymers"
+#MolarMass = 1.8e-2 #kg/mol!
+
+[2.Component]
+LiquidDiffusionCoefficient = 0.5e-8  #6.713e-10 #m2 / s
+Name = "smallPolymers"
+#MolarMass = 12e-3 
+
+# Global parameters:
+[ Assembly ]
+NumericDifferenceMethod = "1"
+[ Flux ]
+UpwindWeight = "0.5"
+[ LinearSolver ]
+MaxIterations = "250"
+PreconditionerIterations = "1"
+PreconditionerRelaxation = "1.0"
+ResidualReduction = "1e-13"
+Verbosity = "0"
+[ Newton ]
+EnableAbsoluteResidualCriterion = "true"
+EnableChop = "false"
+EnableResidualCriterion = "true"
+EnableShiftCriterion = "true"
+MaxAbsoluteResidual = "1e-10"
+MaxRelativeShift = "1e-10"
+MaxSteps = "30"
+ResidualReduction = "1e-5"
+SatisfyResidualAndShiftCriterion = "true"
+TargetSteps = "10"
+UseLineSearch = "false"
+EnablePartialReassembly = "false"

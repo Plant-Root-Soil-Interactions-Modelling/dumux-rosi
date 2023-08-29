@@ -53,7 +53,7 @@ public:
             int gIdx = this->cellIdx->index(e); // global index
             auto eIdx = this->gridGeometry->elementMapper().index(e);
             if (sourceMap.count(gIdx)>0) {
-                std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
+                //std::cout << "rank: "<< this->rank << " setSource: global index " << gIdx << " local index " << eIdx << "\n" << std::flush;
                 ls->at(eIdx) = sourceMap.at(gIdx);
             }
         }
@@ -141,7 +141,7 @@ public:
      */
     virtual std::vector<double> getSolutionHead(int eqIdx = 0) {
         std::vector<double> sol = this->getSolution(eqIdx);
-		std::cout<<"get solution head "<<sol.at(0)<<" "<<pRef_<<" "<<rho_ <<" "<< g_<<std::endl;
+		//std::cout<<"get solution head "<<sol.at(0)<<" "<<pRef_<<" "<<rho_ <<" "<< g_<<std::endl;
         std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::plus<double>(), -pRef_));
         std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / rho_ / g_));
         return sol;
