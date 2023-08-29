@@ -82,7 +82,7 @@ if len(error) > 0:
 import pip
 
 # check some prerequistes
-modules = ['numpy', 'scipy', 'matplotlib', 'mpi4py'] 
+modules = ['numpy', 'scipy', 'matplotlib', 'mpi4py', 'ipython'] 
 show_message("(1/3) (b) Checking python prerequistes: " + " ".join(modules) + "...")
 
 for module in modules :
