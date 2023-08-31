@@ -324,10 +324,10 @@ class RhizoMappedSegments(pb.MappedSegments):
                 cyl.setInnerMatricPotential(rx[i])
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
                 if not isinstance(argv[2],float): 
-                    cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
+                    cyl.setSoluteBotBC(3, argv[2][i]) #setInnerBC_solute("constantFluxCyl", argv[2][i])
                 else:
-                    cyl.setInnerBC_solute("constantFluxCyl", argv[2])
-                cyl.setOuterBC_solute("constantFluxCyl", argv[3])
+                    cyl.setSoluteBotBC(3, argv[2]) #cyl.setInnerBC_solute("constantFluxCyl", argv[2])
+                cyl.setSoluteTopBC(3,argv[3]) #setOuterBC_solute("constantFluxCyl", argv[3])
                 try:
                     cyl.solve(dt)
                 except:
