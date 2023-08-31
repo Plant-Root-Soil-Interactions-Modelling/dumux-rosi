@@ -304,6 +304,10 @@ class RichardsWrapper(SolverWrapper):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
         self.base.setSTopBC(type_top, value_top)
 
+    def setSoluteBotBC(self, type_bot, value_bot):
+        """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        self.base.setSBotBC(type_bot, value_bot)
+        
     def getInnerHead(self, shift = 0):
         """Gets the pressure head at the inner boundary [cm] """
         return self.base.getInnerHead(shift)  # -> richards_cyl.hh
