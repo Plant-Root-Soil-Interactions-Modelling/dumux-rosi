@@ -22,7 +22,10 @@ class RichardsWrapper(SolverWrapper):
     @staticmethod
     def dumux_str(l):
         """ to pass lists to dumux parameter tree as string """
+        print(l, type(l).__name__)
         if type(l).__name__ == "float" or type(l).__name__ == "int":
+            return str(l)
+        elif type(l).__name__ == 'float64':
             return str(l)
         else:
             s = ""
@@ -303,6 +306,10 @@ class RichardsWrapper(SolverWrapper):
     def setSoluteTopBC(self, type_top, value_top):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
         self.base.setSTopBC(type_top, value_top)
+        
+    def setSoluteBotBC(self, type_bot, value_bot):
+        """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        self.base.setSBotBC(type_bot, value_bot)
 
     def getInnerHead(self, shift = 0):
         """Gets the pressure head at the inner boundary [cm] """

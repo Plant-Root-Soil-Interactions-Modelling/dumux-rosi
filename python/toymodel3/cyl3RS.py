@@ -51,7 +51,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
     #wilting_point = -15000  # cm
     skip = 10  # 3 * 6  # for output and results, skip iteration
     split_type = 1  # type 0 == volume, type 1 == surface, type 2 == length
-    weatherX = weather(sim_time+rs_age) 
+    weatherX = weather(rs_age) 
     """ 
     Initialize local soil models (around each root segment) 
     """
@@ -93,7 +93,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
             r.update( sx,  np.array([i for i in range(toAdd[rank-1],toAdd[rank])]) + nsOld, cc )
             print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, toAdd[rank-1] + nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
         
-        
+    raise Exception
     
 
     segs = rs.rs.segments
@@ -118,7 +118,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
     net_flux = np.zeros(cell_volumes.shape)
     net_sol_flux = np.zeros(cell_volumes.shape)
 
-    N = 1#int(np.ceil(sim_time / dt))  # number of iterations
+    N = int(np.ceil(sim_time / dt))  # number of iterations
 
     """ simualtion loop """
     for i in range(0, N):
@@ -154,11 +154,12 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
                                 wilting_point = wilting_point, soil_k = [])
             
             rx = np.array(rx)
-            seg_fluxes = np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))# [cm3/day]
-            np.array(rs.segFluxes(rs_age + dt, rx, rsx, False, False, []))
+            seg_fluxes = np.full(len(l), -0.26)# np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))# [cm3/day]
+            # np.array(rs.segFluxes(rs_age + dt, rx, rsx, False, False, []))
             
             seg_sol_fluxes = Q_Exud # exudate_fluxes(Q_Exud)#g/day for segments
             #r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
+            
         else:
             rx = None
             seg_fluxes = None
@@ -212,7 +213,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
         solute_conc = np.array(s.getSolution_(1))
         soil_solute = np.multiply(solute_conc, soil_water)
-
+        
         soil_fluxes = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
         soil_sol_fluxes = rs.sumSegFluxes(seg_sol_fluxes)  # [g/day]
         # print("seg_sol_fluxes1",seg_sol_fluxes,soil_fluxes)
@@ -220,6 +221,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         # print("seg_sol_fluxes2",soil_sol_fluxes)
         s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
         s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in modules/richards.py
+        solute_concOld = solute_conc
         s.solve(dt)  # in modules/solverbase.py
         
         wall_macro = timeit.default_timer() - wall_macro
@@ -238,9 +240,22 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
 
         """ 3c. calculate mass net fluxes """
         solute_conc = np.array(s.getSolution_(1))
+        print("sum(solute_concOld), sum(solute_conc)",sum(solute_concOld), sum(solute_conc))
+        # raise Exception
+        try:
+            assert min(solute_conc) >=0
+        except:
+            print("soil_sol_fluxes", soil_sol_fluxes, soil_fluxes)
+            print("min(solute_conc)",min(solute_conc), min(solute_concOld))
+            raise Exception
+            
         new_soil_solute = np.multiply(solute_conc, soil_water)
-        assert min(new_soil_solute) >0
-        assert min(soil_water) > 0
+        try:
+            assert min(new_soil_solute) >=0
+            assert min(soil_water) >= 0
+        except:
+            print("min(new_soil_solute), min(soil_water)",min(new_soil_solute), min(soil_water))
+            raise Exception
         net_sol_flux = new_soil_solute - soil_solute  # change in water per cell [cm3]
         #print('net_sol_flux', net_sol_flux) 
         for k, root_sol_flux in soil_sol_fluxes.items():

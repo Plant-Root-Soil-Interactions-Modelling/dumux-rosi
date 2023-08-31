@@ -844,6 +844,8 @@ public:
         const auto& volVars = elemVolVars[scv];
 		bioChemicalReaction(source, volVars, pos0, scv);
 		
+		
+		
 		return source;
 	}
 	
@@ -975,6 +977,21 @@ public:
 			setSorp(Reac_CSS2, scv.dofIndex());
 			setTheta(theta, scv.dofIndex());
 			setCSS1(CSS1*f_sorp, scv.dofIndex());
+		if((massOrMoleFraction(volVars,0, soluteIdx, true)<0.)&&(dimWorld > 1))
+		{
+				std::cout<<dimWorld<<" "<<massOrMoleFraction(volVars,0, soluteIdx, true)<<" "<<theta<<", source ";
+			for(int i = 0;i < numComponents_;i++)
+			{			
+				// if (q[i] != 0)
+				// {
+					std::cout<<", "<<i<<" "<<q[i];
+					// if((source_[i] != nullptr) &&(source_[i]->at(eIdx)!= 0))
+					// {
+						// std::cout<<", sourceStart "<<source_[i]->at(eIdx);
+					// }
+				//}											 
+			}std::cout<<std::endl;
+		}
 
 	}
 

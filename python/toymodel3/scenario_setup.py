@@ -158,14 +158,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
 
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-    s.initialize(verbose = False)
+    s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
     cell_number = str(cell_number)
     cell_number=cell_number.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)    
     
     # BC
-    if times is not None:
+    if False: # times is not None:
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
@@ -187,6 +187,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         s.setParameter( "Soil.BC.Top.C1Type", str(2))
         s.setParameter( "Soil.BC.Bot.C1Value", str(0)) 
         s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
+        s.setParameter( "Soil.IC.C1", str(0))
 
         s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
 
@@ -194,6 +195,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         s.setParameter( "Soil.BC.Top.C2Type", str(2))
         s.setParameter( "Soil.BC.Bot.C2Value", str(0)) 
         s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+        s.setParameter( "Soil.IC.C2", str(0))
         s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
         s.decay = 0. #1.e-5
@@ -203,7 +205,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
-        for i in range(1, numComp+1):
+        for i in range(numFluidComp + 1, numComp+1):
             s.setParameter( "Soil.IC.C"+str(i), str(0))
 
     s.setParameter("Soil.betaC", str(0.001 ))
@@ -251,17 +253,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-    s.setParameter("Problem.verbose", "0")
+    s.setParameter("Problem.verbose", "2")
     # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
         # s.setParameter("Component.MolarMass", "1.2e-2")  # carbon 12 g/mol
         # s.setParameter("Component.LiquidDiffusionCoefficient", "0")  # 5e-10 m2 s-1 # Darrah et al. 1991
         # s.setParameter("Component.BufferPower", "0")  # 5 buffer power = \rho * Kd [1]
         # #s.setParameter("Component.Decay", "1.e-5")  # decay [d^-1] (Awad et al. 2017) 
-    s.initializeProblem()
-    wilting_point = -15000
-    s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
-    s.ddt = 1.e-5  # [day] initial Dumux time step
-
+    
     # IC
     IgotTheFile = False
     if IgotTheFile:
@@ -272,8 +270,23 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         h = h.flatten()
     else:
         h = np.ones((20*45*75))*-100 #TODO
-    s.setInitialConditionHead(h)  # cm
+    #s.setInitialConditionHead(h)  # cm
+    s.setHomogeneousIC(-100.)  # cm pressure head
+    
+    s.initializeProblem()
+    wilting_point = -15000
+    s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
+    s.ddt = 1.e-5  # [day] initial Dumux time step
 
+    solute_conc = np.array(s.getSolution_(1))
+    # print( sum(solute_conc))
+    try:
+        assert min(solute_conc) >=0
+    except:
+        print("soil_sol_fluxes", solute_conc)
+        print("min(solute_conc)",min(solute_conc))
+        raise Exception
+        
     # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
         # c = np.zeros((cell_number[0]*cell_number[1]*cell_number[2])) #TODO
         # s.setInitialCondition(c, 1)  # kg/m3
@@ -518,7 +531,8 @@ def setKrKx_phloem(r): #inC
     
 def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
-                stochastic = False, mods = None, plantType = "plant"):
+                stochastic = False, mods = None, plantType = "plant",
+                recreateComsol_ = False):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     global picker  # make sure it is not garbage collected away...
@@ -534,7 +548,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
 
-        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model)
+        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, recreateComsol_)
         rs.setSeed(seed)
         rs.readParameters(path + fname)
         #if not stochastic:

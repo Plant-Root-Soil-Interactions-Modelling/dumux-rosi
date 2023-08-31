@@ -148,7 +148,6 @@ else:
     C_S = 0.1  #mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
 
-
 C_L = 10  #mol/cm3 wat
 s.setParameter("Soil.IC.C2", str(C_L/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol
 COa = 0.011 * 1e6  #mol C / m3 space

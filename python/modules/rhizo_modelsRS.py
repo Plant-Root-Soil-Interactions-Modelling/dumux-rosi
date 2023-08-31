@@ -25,7 +25,7 @@ from multiprocessing import Process, active_children
 import psutil
 from threading import Thread 
 from air_modelsPlant import AirSegment
-    
+from scipy.interpolate import PchipInterpolator,  CubicSpline
 
 class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
     """
@@ -40,7 +40,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
 
     # TODO copy mapped segments constructors (!)...
 
-    def __init__(self, wilting_point, NC, logbase, mode, soil):
+    def __init__(self, wilting_point, NC, logbase, mode, soil, recreateComsol_):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         super().__init__()
         self.wilting_point = wilting_point
@@ -56,6 +56,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         self.eidx = []
         self.dx2 = []
         self.soilModel = soil
+        self.recreateComsol = recreateComsol_
 
         # additional variables
         self.last_dt = 0.
@@ -103,12 +104,61 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         if newEidx is None:
             newEidx = np.array(range(len(self.eidx), len(self.radii)), np.int64)  # segment indices for process
         self.eidx = np.concatenate((self.eidx,np.array(newEidx, dtype = np.int64)), dtype = np.int64)
-        self.outer_radii = np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
+        
+        if self.recreateComsol:
+            self.outer_radii = np.full(len(self.radii), 0.6)#np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
+        else:
+            self.outer_radii = np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
+            
         self.seg_length = self.segLength()#node might have shifte: new length for pre-existing segments
+        for i, cyl in enumerate(self.cyls):
+            self.updateOld(i, cyl, x, cc)
         for i in newEidx:#only initialize the new eidx
             self.initialize_(i,x,cc)
-            
     
+    def updateOld(self, i,  cyl, x, cc = None):
+        """ update distribution of cylinder if it s volume has changed
+        """
+        oldPoints = np.array(cyl.getPoints()).flatten()
+        lb = self.logbase            
+        a_in = self.radii[i] 
+        a_out = self.outer_radii[i] * 2.
+        points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+        if (len(points) != len(oldPoints)) or (max(abs(points - oldPoints)) > 1e-2):#new vertex distribution
+            cellsOld = np.array(cyl.getCellCenters()).flatten()
+            oldHead = np.array(cyl.getSolutionHead()).flatten()
+            cAllOld = [np.array(cyl.getSolution_(i+1)) for i in range(self.numComp)]
+            # add a point far away which is the mean value of the voxel
+            
+            # # because I don t want to use the linear interpolation of dumux:
+            # # but nor necessary => outer_radii will only ever decrease
+            
+            # chip = PchipInterpolator(cellsOld, cssOld)#for interpolation
+            # spl =  CubicSpline(cellsOld, cssOld, bc_type='not-a-knot')
+            # def getValUpdate(newX):
+                # if (newX >= min(cellsOld)) and (newX <= max(cellsOld)): #interpolation
+                    # return chip(newX)
+                # else:#extrapolation
+                    # return spl(newX)
+            # print("new points",points)
+            # print("old points",oldPoints)
+            # print(cssOld)
+            # cssNew = np.array([getValUpdate(xx) for xx in points])
+            
+            print("cAllOld",cAllOld, cyl.getCellCenters())
+            
+            self.cyls[i] = self.initialize_dumux_nc_( i, 
+                                                 x = oldHead, 
+                                                 c1 = cAllOld[0], 
+                                                 c2 = cAllOld[1], 
+                                                 c3 = cAllOld[2], 
+                                                 c4 = cAllOld[3], 
+                                                 c5 = cAllOld[4], 
+                                                 c6 = cAllOld[5], 
+                                                 c7 = cAllOld[6], 
+                                                 c8 = cAllOld[7], 
+                                                 oldCells = cellsOld)
+        
     def initialize_(self,i,x,cc ):
         if self.seg2cell[i] > 0:
             if self.mode == "dumux":
@@ -135,7 +185,16 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             #print("seg",i,"is out of the soil domain and has no rhizosphere")        
     
 
-    def initialize_dumux_nc_(self, i, x, c):
+    def initialize_dumux_nc_(self, i, x, c1 = 0.1 / 18, 
+                                         c2 = 10/ 18, 
+                                         c3 =  0.011 * 1e6/ (2700/ 60.08e-3* (1. - 0.43)), 
+                                         c4 = 0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+                                         c5 = 0.011 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+                                         c6 =  0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+                                         c7 = 0./(2700/ 60.08e-3* (1. - 0.43)), 
+                                         c8 = 0./(2700/ 60.08e-3* (1. - 0.43)), 
+                                         oldCells = []):
+        cAll = [c1, c2 , c3 , c4 , c5 , c6 , c7 , c8 ]
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
@@ -150,26 +209,41 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
-            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
-            cyl.createGrid1d(points)
-            self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
-            cyl.setParameter( "Soil.Grid.Cells",str( len(points)-1)) # -1 to go from vertices to cell
-            cyl.setHomogeneousIC(x)  # cm pressure head
-            cyl.setICZ_solute(c)  # [kg/m2] 
+            
+            if self.recreateComsol:
+                nCells = self.NC
+                cyl.createGrid([0.02], [0.6], [nCells])
+            else:
+                points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+                cyl.createGrid1d(points)
+                if len(self.dx2) > i:
+                    self.dx2[i] = 0.5 * (points[1] - points[0]) #when updating
+                else:
+                    self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
+            # print(a_in,a_out,lb)
+            # print( a_in)
+            if i==1:
+                cyl.setParameter("Problem.verbose", "0")
+            else:
+                cyl.setParameter("Problem.verbose", "-1")
+                
+            cyl.setParameter( "Soil.Grid.Cells",str( self.NC)) # -1 to go from vertices to cell
+            if self.recreateComsol:
+                cyl.setHomogeneousIC(-100.)#x)  # cm pressure head
+            else:
+                cyl.setHomogeneousIC(x)  # cm pressure head
+                cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))
+            # cyl.setICZ_solute(c)  # [kg/m2] 
             
             #default: no flux
             cyl.setInnerBC("fluxCyl", 0.)  # [cm/day] #Y 0 pressure?
             #cyl.setInnerBC_solute("fluxCyl", 0.)  # [kg/m2], that s fair
             cyl.setOuterBC("fluxCyl", 0.)
             #cyl.setOuterBC_solute("fluxCyl", 0.)
-
-
-
             
             Ds = 1e-8 # m^2/s
             Dl = 1e-9
-
-
+            
             cyl.setParameter( "Soil.MolarMass", str(self.solidMolarMass))
             cyl.setParameter( "Soil.solidDensity", str(self.solidDensity))
             
@@ -229,35 +303,73 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
 
             # cyl.decay = 0. #1.e-5
             
-            for i in range(self.numFluidComp + 1, self.numComp+1):
-                cyl.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(3))
-                cyl.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(3))
-                cyl.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
-                cyl.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
-                            
-                        
-            C_S = 0.1  #mol/cm3 wat
-            cyl.setParameter("Soil.IC.C1", str(C_S/ self.molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol                 
-            C_L = 10  #mol/cm3 wat
-            cyl.setParameter("Soil.IC.C2", str(C_L/ self.molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol
-            COa = 0.011 * 1e6  #mol C / m3 space
-            cyl.setParameter("Soil.IC.C3",str(COa/ self.bulkDensity_m3)) #mol C / mol Soil 
-            #cyl.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
-            COd = 0.05 * 1e6 #mol C / m3 space
-            cyl.setParameter("Soil.IC.C4", str(COd/self.bulkDensity_m3 ))
-            CCa = 0.011 * 1e6#mol C / m3 space
-            cyl.setParameter("Soil.IC.C5", str(CCa/ self.bulkDensity_m3)) 
-            CCd = 0.05 * 1e6  #mol C / m3 space
-            cyl.setParameter("Soil.IC.C6", str(CCd/self.bulkDensity_m3 ))
-            CSS2_init = CSSmax*1e6 * (C_S/(C_S+ k_sorp)) * (1 - f_sorp) #mol C/ m3 scv
+            for j in range(self.numFluidComp + 1, self.numComp+1):
+                cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Type", str(3))
+                cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Type", str(3))
+                cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Value", str(0)) 
+                cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Value", str(0 )) 
+            print("cAll",cAll)                
+            for j in range( 1, self.numComp+1):       
+                # print("cAll[j-1]", cAll[j-1],cyl.dumux_str(cAll[j-1])  )
+                cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
+            # C_S =cyl.dumux_str(c1) #mol/cm3 wat
+            # cyl.setParameter("Soil.IC.C1", str(C_S) )  #mol/cm3 / mol/cm3 = mol/mol                 
+            # C_L = cyl.dumux_str(c2) #mol/cm3 wat
+            # cyl.setParameter("Soil.IC.C2", str(C_L) )  #mol/cm3 / mol/cm3 = mol/mol
+            # COa = cyl.dumux_str(c3 ) #mol C / m3 space
+            # cyl.setParameter("Soil.IC.C3",str(COa)) #mol C / mol Soil 
+            # #cyl.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
+            # COd =cyl.dumux_str(c4)#mol C / m3 space
+            # cyl.setParameter("Soil.IC.C4", str(COd))
+            # CCa = cyl.dumux_str(c5)#mol C / m3 space
+            # cyl.setParameter("Soil.IC.C5", str(CCa)) 
+            # CCd = cyl.dumux_str(c6)  #mol C / m3 space
+            # cyl.setParameter("Soil.IC.C6", str(CCd))
+            # CSS2_init =cyl.dumux_str( c7 )#CSSmax*1e6 * (C_S/(C_S+ k_sorp)) * (1 - f_sorp) #mol C/ m3 scv
 
-            cyl.setParameter("Soil.IC.C7", str(0))#CSS2_init/bulkDensity_m3))#[1:(len(str(CSS2_init/bulkDensity_m3))-1)] ) #mol C / mol scv
-            cyl.setParameter("Soil.IC.C8", str(0 ))
+            # cyl.setParameter("Soil.IC.C7", str(CSS2_init))#CSS2_init/bulkDensity_m3))#[1:(len(str(CSS2_init/bulkDensity_m3))-1)] ) #mol C / mol scv
+            # cyl.setParameter("Soil.IC.C8", str(cyl.dumux_str(c8) ))
+            
+            
+            if len(oldCells) > 0:#in case we update a cylinder, to allow dumux to do interpolation
+                oldCellsStr = cyl.dumux_str(oldCells/100)
+                cyl.setParameter("Soil.IC.Z",oldCellsStr)
+                if len(oldCells)!= len(x):
+                    print("oldCells, x",oldCells, x, len(oldCells), len(x))
+                    raise Exception
+                for j in range( 1, self.numComp+1):
+                    cyl.setParameter("Soil.IC.C"+str(j)+"Z",oldCellsStr)
+                    if len(oldCells)!= len( cAll[j-1]):
+                        print("oldCells,  cAll[j-1]",oldCells,  cAll[j-1], 
+                                len(oldCells), len(cAll[j-1]), j)
+                        raise Exception
             
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+                        
+            cyl.setParameter("Problem.EnableGravity", "false")
+            cyl.setParameter("Problem.verbose", "1")
+            cyl.setParameter("Flux.UpwindWeight", "0.5")
+            cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+            cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+            cyl.setParameter("Newton.EnableChop", "true")
+            cyl.setParameter("Newton.EnableResidualCriterion", "true")
+            cyl.setParameter("Newton.EnableShiftCriterion", "true")
+            cyl.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
+
+            cyl.setParameter("Newton.MaxRelativeShift", "1e-10")
+
+            cyl.setParameter("Newton.MaxSteps", "30")
+            cyl.setParameter("Newton.ResidualReduction", "1e-10")
+            cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+            cyl.setParameter("Newton.TargetSteps", "10")
+            cyl.setParameter("Newton.UseLineSearch", "false")
+            cyl.setParameter("Newton.EnablePartialReassembly", "true")
+            cyl.setParameter("Grid.Overlap", "0")  #no effec5
+
             cyl.initializeProblem()
             cyl.setCriticalPressure(self.wilting_point)  # cm pressure head
+            
             return cyl
         else:
             print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
@@ -265,6 +377,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
 
     def initialize_dumux_(self, i, x, exact, dirichlet = False):
         """ Dumux RichardsCylFoam solver"""
+        raise Exception
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
@@ -272,6 +385,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             cyl.initialize()
             lb = self.logbase
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+            print(points)
             cyl.createGrid1d(points)
             self.dx2.append(0.5 * (points[1] - points[0]))
             cyl.setHomogeneousIC(x)  # cm pressure head
@@ -450,7 +564,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                     
                     if not isinstance(argv[2],float): 
                         cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
-                        setBotBC_solute
+                        #setBotBC_solute
                         cyl.setParameter(self.param_group + "BC.Bot.CValue", str(value_bot))
                     else:
                         cyl.setInnerBC_solute("constantFluxCyl", argv[2])
@@ -476,10 +590,13 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                     cyl.setInnerFluxCyl(proposed_inner_fluxes[j])
                 else:
                     l = self.seg_length[j]
-                    cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
-                    cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                    
-                     
+                    if self.recreateComsol:
+                        cyl.setInnerFluxCyl(-0.26)#proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                        cyl.setOuterFluxCyl(0)#proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                    else:   
+                        cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                        cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day] 
+                         
                     if not isinstance(argv[2],float): 
                         # cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
                         botVal = argv[2][i]
@@ -490,10 +607,23 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                         topVal = argv[3]
                     
                     # cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
-                    cyl.setParameter( "Soil.BC.Bot.C1Value", str(botVal / (2 * np.pi * self.radii[j] * l)))  # [cm3/day] -> [cm /day]
-                    cyl.setParameter( "Soil.BC.Top.C1Value",str(topVal / (2 * np.pi * self.outer_radii[j] * l)))  # [cm3/day] -> [cm /day]
+                    #cyl.setParameter( "Soil.BC.Bot.C1Value",str(1))# str(botVal / (2 * np.pi * self.radii[j] * l)))  # [cm3/day] -> [cm /day]
+                    #cyl.setParameter( "Soil.BC.Top.C1Value",str(1))#str(topVal / (2 * np.pi * self.outer_radii[j] * l)))  # [cm3/day] -> [cm /day]
+                    typeBC = np.full(self.numComp,3)
+                    
+                    valueBC = np.full(self.numComp,0.)
+                    if not self.recreateComsol:
+                        valueBC[0] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [cm3/day] -> [cm /day]
+                        valueBC[1] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [cm3/day] -> [cm /day]
+                    cyl.setSoluteTopBC(typeBC, valueBC)
+                    if self.recreateComsol:
+                        valueBC[0] = 1.;valueBC[1] = 1.
+                    else :
+                        valueBC[0] = botVal / (2 * np.pi * self.radii[j] * l) # [cm3/day] -> [cm /day]
+                        valueBC[1] = botVal / (2 * np.pi * self.radii[j] * l) # [cm3/day] -> [cm /day]
+                    cyl.setSoluteBotBC(typeBC, valueBC)
                     try:
-                        cyl.solve(dt)
+                        cyl.solve(dt, maxDt = 2500/(24*3600))
                     except:
                         myStr = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
                         myStr = myStr.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
