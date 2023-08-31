@@ -119,6 +119,8 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("setRegularisation",&RichardsFoam::setRegularisation)
    .def("setTopBC",&RichardsFoam::setTopBC)
    .def("setBotBC",&RichardsFoam::setBotBC)
+   .def("setSTopBC",&RichardsFoam::setSTopBC)
+   .def("setSBotBC",&RichardsFoam::setSBotBC)
 
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
