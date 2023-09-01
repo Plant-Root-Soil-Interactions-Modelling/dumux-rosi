@@ -28,14 +28,18 @@ def get_aggregated_params(r, rs_age, outer_method):
     """
 
     per = PerirhizalPython(r.rs.mappedSegments())
+
     krs, _ = r.get_krs(rs_age)
-#   print("krs", krs)
+    print("krs", krs)
+
+    krs_old, _ = r.get_krs_old(rs_age)
+    print("krs_old", krs_old)
+
     suf = r.get_suf(rs_age)  # SUF per layer
     suf_ = per.aggregate(suf)  # ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)
 #     print("suf_", suf_.shape, np.sum(suf_))
 
     r.test()
-    aa
 
     kr_surf = []  # kr times surface summed up per layer
     segs = r.rs.segments
@@ -136,7 +140,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
                 print("i", i, "kr_surf_", kr_surf_[i], "suf_krs", suf_krs[i], "l_", l_[i], "surf_", surf_[i])
                 print("krs", krs, "suf", suf_[i])
                 kx_up.append(1.e1)
-                # raise ValueError('create_parallel_rs() no segment in layer')
+                raise ValueError('create_parallel_rs() could not calculate kx')
             kx_up.append(1.e1)  # regular segment
 
     r2.setKrValues(kr_up)
@@ -147,7 +151,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     print("krs", krs)
     krs_new, _ = r2.get_krs(rs_age)
     print("new krs", krs_new)
-    dd
+
     print("suf", np.min(suf_), np.max(suf_), np.sum(suf_))
     print("kr_up", np.min(kr_[1::2]), np.max(kr_[1::2]), np.mean(kr_[1::2]))
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
