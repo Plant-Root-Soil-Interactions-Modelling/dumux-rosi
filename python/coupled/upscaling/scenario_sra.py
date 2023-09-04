@@ -127,7 +127,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             wall_xylem = timeit.default_timer() - wall_xylem
 
-            q_dirichlet = r.radial_fluxes(rx, rsx)  # -Kr.dot(rsx - rx)  # both total potentials
+            q = r.radial_fluxes(rx, rsx)  # -Kr.dot(rsx - rx)  # both total potentials
 
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
@@ -138,17 +138,8 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         wall_soil = timeit.default_timer()
 
-        if np.sum(q_dirichlet) > t_pot:
-            if  i % skip == 0:
-                print("dirichlet(", c, err, "):", np.sum(q_dirichlet), t_pot)
-            fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
-            sum_root_flux = np.sum(q_dirichlet)
-        else:
-            q_neumann = -Kr.dot(rsx - rx)
-            if  i % skip == 0:
-                print("neumann (", c, err, "):", np.sum(q_neumann), t_pot, np.sum(q_dirichlet), "minmax", np.min(q_neumann), np.max(q_neumann))
-            fluxes = r.sumSegFluxes(q_neumann[:, 0])
-            sum_root_flux = np.sum(q_neumann)
+        fluxes = r.sumSegFluxes(q[:, 0])
+        sum_root_flux = np.sum(q)
 
         water = s.getWaterVolume()
         s.setSource(fluxes.copy())  # richards.py
@@ -225,7 +216,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
+    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "length"])
     # args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
