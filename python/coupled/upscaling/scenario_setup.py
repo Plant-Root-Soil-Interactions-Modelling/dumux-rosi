@@ -5,8 +5,10 @@ import plantbox as pb
 from functional.root_conductivities import init_conductivities
 import functional.van_genuchten as vg
 from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
-from functional.HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
 from functional.Perirhizal import PerirhizalPython
+
+from functional.PlantHydraulicParameters import PlantHydraulicParameters  # Doussan solver
+from functional.PlantHydraulicModel import PlantHydraulicModel  # Doussan solver
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
@@ -125,7 +127,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     s.setParameter("Newton.EnableChop", "True")
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Soil.SourceSlope", slope)
-    
+
     print("initializeProblem()")
     sys.stdout.flush()
 
@@ -166,19 +168,20 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     print("initializing hydraulic model")
     sys.stdout.flush()
 
-    r = HydraulicsDoussan(rs)
+    params = PlantHydraulicParameters()
+    r = PlantHydraulicModel("Doussan", rs, params)
 
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)  # cutting
     if plant == "maize":
         # const_conductivities(r)
-        maize_conductivities(r, 1., 1.)
+        maize_conductivities(params, 1., 1.)
     elif plant == "soybean":
         # const_conductivities(r)
-        lupine_conductivities(r, 1., 1.)
+        lupine_conductivities(params, 1., 1.)
     elif plant == "springbarley":
         # const_conductivities(r)
-        springbarley_conductivities(r)
+        springbarley_conductivities(params)
 
     print("Hydraulic model done()")
 
@@ -212,7 +215,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
 
     print("done")
     sys.stdout.flush()
-    
+
     inner_ = rs.radii
     rho = np.divide(outer_, np.array(inner_))
     rho = np.expand_dims(rho, axis = 1)

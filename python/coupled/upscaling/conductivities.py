@@ -33,6 +33,7 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
     kr_sem = kr_sem * (24 * 3600 / 0.01012)  # cm2 / day; 1 pa = 0.0102 cm pressure head
     # print("kr_sem", kr_sem)
 
+    ii = np.argsort(dist_kr_sem)
     dist_kr_sem = np.sort(dist_kr_sem)
     kr_sem = np.sort(kr_sem)
 
@@ -50,11 +51,11 @@ def springbarley_conductivities(r, skr = 1., skx = 1.):
         age_kr_sem.append(_dist2age(dist_kr_sem, lgr, ages = [1.e-4, -0.1]))  # added ages [1.e-4, -0.1]
         kr_sem_.append(kr_sem / (2 * radii[i] * np.pi))
 
-    r.setKrTables([kr00[:, 1], kr_sem, kr_sem, kr_sem, kr_sem, kr_sem],
-                  [kr00[:, 0], age_kr_sem[0], age_kr_sem[1], age_kr_sem[2], age_kr_sem[0], age_kr_sem[0]])
+    r.setKrTables([[kr00[:, 1], kr_sem, kr_sem, kr_sem, kr_sem, kr_sem]],
+                  [[kr00[:, 0], age_kr_sem[0], age_kr_sem[1], age_kr_sem[2], age_kr_sem[0], age_kr_sem[0]]])
 
-    r.setKxTables([kx00[:, 1], kx_sem, kx_sem, kx_sem, kx_sem, kx_sem],
-                  [kx00[:, 0], age_kx_sem[0], age_kx_sem[1], age_kx_sem[2], age_kx_sem[0], age_kx_sem[0]])
+    r.setKxTables([[kx00[:, 1], kx_sem, kx_sem, kx_sem, kx_sem, kx_sem]],
+                  [[kx00[:, 0], age_kx_sem[0], age_kx_sem[1], age_kx_sem[2], age_kx_sem[0], age_kx_sem[0]]])
 
     # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
     # dd
@@ -80,12 +81,12 @@ def maize_conductivities(r, skr = 1., skx = 1.):
 
     kr01 = np.minimum(skr * kr0[:, 1], 1.)  # kr0[:, 1] are values
     kr11 = np.minimum(skr * kr1[:, 1], 1.)  # kr1[:, 1] are values
-    r.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
-                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    r.setKrTables([[kr00[:, 1], kr01, kr11, kr11, kr01, kr01]],
+                  [[kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
     kx11 = np.minimum(skx * kx1[:, 1], 1.)
-    r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
-                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+    r.setKxTables([[kx00[:, 1], kx01, kx11, kx11, kx01, kx01]],
+                  [[kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]]])
 
     # r.plot_conductivities(monocot = True, plot_now = True, axes_ind = [1, 4, 5], lateral_ind = [2, 3])
 
@@ -113,8 +114,8 @@ def lupine_conductivities(r, skr = 1., skx = 1.):
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
     kx11 = np.minimum(skx * kx1[:, 1], 1.)
-    r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
-                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+    r.setKxTables([[kx00[:, 1], kx01, kx11, kx11, kx01, kx01]],
+                  [[kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]]])
 
     # r.plot_conductivities(monocot = False, plot_now = True, axes_ind = [1, 4], lateral_ind = [2, 3])
 
