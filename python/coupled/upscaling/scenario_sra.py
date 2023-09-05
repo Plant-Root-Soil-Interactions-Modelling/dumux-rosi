@@ -84,7 +84,8 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
         if  i % skip == 0:
             print("t_pot", t_pot)
 
-        hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
+        # hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
+        hs = np.expand_dims(r.get_hs(sx), axis = 1)
 
         wall_iteration = timeit.default_timer()
         err = 1.e6
@@ -121,7 +122,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             # b[collar_index, 0] += kx0 * wilting_point
             # rx = sparse.linalg.spsolve(A_d, b)
             # rx = np.expand_dims(rx, axis = 1)
-            rx = r.solve(hs, t_pot, wilting_point)
+            rx = r.solve(rsx, t_pot, wilting_point)
             # print("dirichlet rx", rx.shape, np.min(rx), np.max(rx))
             # print("dirichlet rx2", rx2.shape, np.min(rx2), np.max(rx2))
 
@@ -216,8 +217,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "length"])
-    # args = parser.parse_args()
+    # args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
+    args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()

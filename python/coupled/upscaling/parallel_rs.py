@@ -7,7 +7,8 @@ sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBo
 
 import plantbox as pb  # CPlantBox
 from rhizo_models import *
-from functional.HydraulicsDoussan import HydraulicsDoussan  # root system Python hybrid solver
+from functional.PlantHydraulicParameters import PlantHydraulicParameters  # Doussan solver
+from functional.PlantHydraulicModel import PlantHydraulicModel  # Doussan solver
 from functional.Perirhizal import PerirhizalPython
 
 import functional.van_genuchten as vg
@@ -32,14 +33,11 @@ def get_aggregated_params(r, rs_age, outer_method):
     krs, _ = r.get_krs(rs_age)
     print("krs", krs)
 
-    krs_old, _ = r.get_krs_old(rs_age)
-    print("krs_old", krs_old)
-
-    suf = r.get_suf(rs_age)  # SUF per layer
+    suf = r.get_suf()  # SUF per layer
     suf_ = per.aggregate(suf)  # ana.distribution("suf", max_b[2], min_b[2], cell_number[2], False)
 #     print("suf_", suf_.shape, np.sum(suf_))
 
-    r.test()
+    # r.test()
 
     kr_surf = []  # kr times surface summed up per layer
     segs = r.rs.segments
@@ -49,7 +47,7 @@ def get_aggregated_params(r, rs_age, outer_method):
     radii = np.array(r.rs.radii)
     for i, s in enumerate(segs):
         age = rs_age - nodeCTs[s.y]
-        kr_surf.append(2 * radii[i] * np.pi * lengths[i] * r.kr_f(age, subTypes[i]))  # [cm2 / day]
+        kr_surf.append(2 * radii[i] * np.pi * lengths[i] * r.params.kr_f(i, age, subTypes[i], 2))  # [cm2 / day] # kr_f(int segment_index, double age, int subType, int organType)
     kr_surf_ = per.aggregate(kr_surf)
     surf = np.multiply(2 * np.pi * radii, lengths)
     surf_ = per.aggregate(surf)
@@ -81,7 +79,8 @@ def get_aggregated_params(r, rs_age, outer_method):
 
 def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer_method):
     """  one segment per layer connected by artificial segments"""
-    print(type(r))
+
+    r.update(rs_age)  # prepare hydraulic model
 
     krs, suf_, kr_surf_, surf_, l_, a_, outer_r_ = get_aggregated_params(r, rs_age, outer_method)
 
@@ -110,7 +109,9 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     rs = pb.MappedSegments(nodes, segs, radii)
     rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-    r2 = HydraulicsDoussan(rs)  # wrap the xylem
+
+    params = PlantHydraulicParameters()
+    r2 = PlantHydraulicModel("Doussan", rs, params)
     # r2.test()  # sanity checks
 
     print("cell_centers", cell_centers.shape, n)
@@ -143,11 +144,12 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
                 raise ValueError('create_parallel_rs() could not calculate kx')
             kx_up.append(1.e1)  # regular segment
 
-    r2.setKrValues(kr_up)
-    r2.setKxValues(kx_up)
+    r2.params.setKrValues(kr_up)
+    r2.params.setKxValues(kx_up)
+    #
+    r2.update(rs_age)
     kr_ = np.array(kr_up)
     kx_ = np.array(kx_up)
-
     print("krs", krs)
     krs_new, _ = r2.get_krs(rs_age)
     print("new krs", krs_new)
@@ -157,9 +159,6 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     print("kx_up", np.min(kx_[0::2]), np.max(kx_[0::2]), np.mean(kx_[0::2]))
     print("kx_up", kx_.shape, "kr_up", kr_.shape, "segs", len(segs))
     print("kx_up")
-    print(list(kx_[0::2]))
-    print(kr_surf_[0])
-    print(suf_krs[0])
     # vp.plot_roots(pb.SegmentAnalyser(r2.rs), "radius")
 
     return r2, outer_r

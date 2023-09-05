@@ -39,7 +39,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     assert len(nodes) - 1 == ns, "number of nodes should be equal one less than number of segments"
 
     """ Fetch rhizosphere model params """
-    kr_ = np.array(r.getKr(rs_age))
+    kr_ = np.array(r.get_kr(rs_age))
     inner_ = r.rs.radii
     inner_kr_ = np.multiply(inner_, kr_)  # multiply for table look up
     inner_kr_ = np.expand_dims(inner_kr_, axis = 1)
@@ -49,7 +49,7 @@ def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200.)
 
     """ Doussan """
-    Ad, Kr, kx0 = r.doussan_system_matrix(rs_age)
+    Ad, Kr, kx0 = r.get_doussan_system(rs_age)
     Id = sparse.identity(ns).tocsc()  # identity matrix
     collar_index = r.collar_index()
 
@@ -321,8 +321,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['maize', "1D", "hydrus_clay", "voronoi"])
-    # args = parser.parse_args()
+    # args = parser.parse_args(['springbarley', "1D", "hydrus_clay", "voronoi"])
+    args = parser.parse_args()
 
     name = "agg_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()
