@@ -81,8 +81,6 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ...
-        if  i % skip == 0:
-            print("t_pot", t_pot)
 
         # hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
         hs = np.expand_dims(r.get_hs(sx), axis = 1)
@@ -168,6 +166,7 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             print("number of iterations", c)
             print("t_pot", t_pot, "q_root", sum_root_flux, "soil", sum_soil_flux)
+
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
                   .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime, rx[r.ci, 0]))
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
