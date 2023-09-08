@@ -141,8 +141,8 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
                 print("i", i, "kr_surf_", kr_surf_[i], "suf_krs", suf_krs[i], "l_", l_[i], "surf_", surf_[i])
                 print("krs", krs, "suf", suf_[i])
                 kx_up.append(1.e1)
-                raise ValueError('create_parallel_rs() could not calculate kx')
-            kx_up.append(1.e1)  # regular segment
+                raise ValueError('create_parallel_rs(): could not calculate kx')
+            kx_up.append(1.e2)  # regular segment
 
     r2.params.setKrValues(kr_up)
     r2.params.setKxValues(kx_up)

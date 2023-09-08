@@ -37,9 +37,11 @@ def suf_per_layer(plant, soil):
     r_, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = scenario.set_scenario(plant, dim, initial, soil, outer_method)
     r = r_.rs
 
+    r_.update(rs_age)
+
     ana = pb.SegmentAnalyser(r.mappedSegments())
     krs, _ = r_.get_krs(rs_age)  ########################################### <- check for maize
-    suf = r_.get_suf(rs_age)
+    suf = r_.get_suf()
     ana.addData("SUF", suf)
     n = int(np.ceil(-min_b[2]))
     z_ = np.linspace(-0.5, -n + 0.5, n)
