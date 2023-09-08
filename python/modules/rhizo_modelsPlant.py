@@ -8,10 +8,12 @@ from functional.xylem_flux import XylemFluxPython
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
 from rosi_richards2c_cyl import Richards2CCylFoam  # C++ part (Dumux binding)
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
+from rosi_richards10c_cyl import Richards10CCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from fv.fv_grid import *
 import fv.fv_richards as rich  # local pure Python cylindrical models
 import functional.van_genuchten as vg
+from scenario_setup import write_file_array
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ from multiprocessing import Process, active_children
 import psutil
 from threading import Thread 
 from air_modelsPlant import AirSegment
-    
+from scipy.interpolate import PchipInterpolator,  CubicSpline
 
 class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     """
@@ -39,7 +41,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
     # TODO copy mapped segments constructors (!)...
 
-    def __init__(self, wilting_point, NC, logbase, mode):
+    def __init__(self, wilting_point, NC, logbase, mode, soil, recreateComsol_, usemoles):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         super().__init__()
         self.wilting_point = wilting_point
@@ -54,12 +56,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.seg_length = np.array([]) 
         self.eidx = []
         self.dx2 = []
+        self.soilModel = soil
+        self.recreateComsol = recreateComsol_
+        self.useMoles = usemoles
 
-        # additional variables
-        self.last_dt = 0.
-    
-    
-    def initializeRhizo(self, soil, x, eidx = None, cc = None):
+        
+        
+    def initializeRhizo(self, soil, x, eidx = None):#, cc = None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -71,9 +74,34 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.cyls = []
         self.dx2 = []
         self.eidx = np.array([], dtype=np.int64)
-        self.update(x, eidx, cc)
         
-    def update(self, x, newEidx = None, cc = None):
+        
+
+        self.solidDensity = self.soilModel.solidDensity#2700 # [kg/m^3 solid]
+        self.solidMolarMass = self.soilModel.solidMolarMass#60.08e-3 # [kg/mol] 
+            
+        # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
+        self.solidMolDensity = self.solidDensity/self.solidMolarMass
+        # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
+        self.bulkDensity_m3 = self.solidMolDensity*(1.- self.vg_soil.theta_S) #porosity == theta_s
+        self.molarMassWat = 18. # [g/mol]
+        self.densityWat = 1. #[g/cm3]
+        # [mol/cm3] = [g/cm3] /  [g/mol] 
+        self.molarDensityWat =  self.densityWat /self.molarMassWat # [mol/cm3]    
+        self.numFluidComp = 2
+        self.numComp = 8
+        
+        # additional variables
+        self.last_dt = 0.
+        #self.ICcc = list(np.full(self.numComp, 0.))
+        # self.ICcc[0] = 0.1 #mol/m3 wat or mol/m3 scv
+        self.ICcc = [0.1, 10., 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.]
+        self.soilcc = [[] for i in range(self.numComp)]
+        
+        
+        # self.update(x, eidx, cc)
+        
+    def update(self, x, newEidx = None):#, cc = None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
@@ -84,12 +112,319 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if newEidx is None:
             newEidx = np.array(range(len(self.eidx), len(self.radii)), np.int64)  # segment indices for process
         self.eidx = np.concatenate((self.eidx,np.array(newEidx, dtype = np.int64)), dtype = np.int64)
-        self.outer_radii = np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
-        self.seg_length = self.segLength()#node might have shifte: new length for pre-existing segments
-        for i in newEidx:#only initialize the new eidx
-            self.initialize_(i,x,cc)
+        
+        sizeSoilCell = self.soilModel.getCellVolumes_()
+        
+        for iii in range(self.numComp):
+            self.soilcc[iii] = self.getCC(len(sizeSoilCell), idComp = iii+1)
+            # print("self.soilcc[",iii,"]", self.soilcc[iii])
+        if self.recreateComsol:
+            self.outer_radii = np.full(len(self.radii), 0.6)#np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
+        else:
+            self.outer_radii = np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
+            airSegs = self.cell2seg[-1]
+            self.outer_radii[airSegs] = np.array(self.radii)[airSegs]*1.1
             
+        self.seg_length = self.segLength()#node might have shifte: new length for pre-existing segments
+        
+        self.checkRadii()
+        
+        for i, cyl in enumerate(self.cyls):
+            self.updateOld(i, cyl)
+        
+        # CC_leftover = [[getCC(i, ncomp) for i in  self.cell2seg.key() ] for ncomp in range(1, numComp + 1)]
+        # self.ICcc[0] = self.soilModel.getSolution_(1)
+        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        XX_leftover = dict([(i, self.getXX_leftoverI(i, x)) for i in  cellIds])
+        # for  i in cellIds:
+            # for ncomp in range(1, self.numComp + 1):
+                # temp1 = self.getCC_leftoverI(i, ncomp)
+                # temp2 = self.molarDensityWat*1e6
+                # print(i, ncomp, temp1, temp2)
+                
+        # in mol/mol wat or mol/mol bulk soil
+        CC_leftover = dict([(i, [self.getCC_leftoverI(i, ncomp)/(self.phaseDensity(ncomp)) for ncomp in range(1, self.numComp + 1)]) for i in cellIds])#, cc
+        print("CC_leftover", CC_leftover)
+        # still need to do it for water
+        for i in newEidx:#only initialize the new eidx
+            self.initialize_(i,XX_leftover,CC_leftover)
+            
+        self.checkVolumeBalance()
+        self.checkMassOMoleBalance()#doSolute = False)
     
+    def phaseDensity(self, compId):
+        if compId <= self.numFluidComp:
+            return self.molarDensityWat*1e6
+        else:
+            return self.bulkDensity_m3
+    
+    def checkRadii(self):
+        """ vol soil == vol perirhizal (without the root volume)"""
+        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        for cellId in cellIds:
+            vol_total = sum(self.soilModel.getCellVolumes()[cellId] )# solute concentration [mol].
+            idSegs = self.cell2seg[cellId]#all segments in the cell
+            lengths_I = np.array(self.seg_length)[idSegs]
+            radii_in = np.array(self.radii)[idSegs]
+            radii_out = np.array(self.outer_radii)[idSegs]
+            vol_rootRhizo = radii_out * radii_out * np.pi * lengths_I
+            vol_root = radii_in * radii_in * np.pi * lengths_I 
+            try:
+                assert abs(((vol_total - sum(vol_rootRhizo - vol_root))/vol_total)*100) < 0.1
+            except:
+                print("checkRadii",cellId, vol_total, vol_rootRhizo, vol_total - sum(vol_rootRhizo), vol_root, sum(vol_root))
+                print(((vol_total - sum(vol_rootRhizo))/vol_total)*100)
+                raise Exception
+                
+    def checkVolumeBalance(self):
+        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        for cellId in cellIds:
+            vol_total = sum(self.soilModel.getCellVolumes()[cellId] )# solute concentration [mol].
+            idSegs = self.cell2seg[cellId]#all segments in the cell
+            idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+            assert len(idSegs) == len(idCyls)
+            vol_rhizo = sum(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idSegs])
+            
+            if (abs((vol_total - vol_rhizo)/vol_total*100) > 1):# or ((vol_total - vol_rhizo) < 0.):
+                print("checkVolumeBalance")
+                print(cellId, vol_total, vol_rhizo, (vol_total - vol_rhizo))
+                print(self.soilModel.getCellVolumes()[cellId])
+                print(np.array([cc.getCellSurfacesCyl() for cc in self.cyls ]))
+                print(np.array([sum(cc.getCellSurfacesCyl()) for cc in self.cyls ]))
+                # print(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length)
+                # print(sum(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length))
+                print(vol_total)
+                raise Exception
+            if cellId == 337:
+                print("checkVolumeBalance")
+                print(cellId, vol_total, vol_rhizo)
+                print(self.soilModel.getCellVolumes()[cellId])
+                print(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idSegs])
+                # print(np.array([cc.getCellSurfacesCyl() for cc in self.cyls ]))
+                # print(np.array([sum(cc.getCellSurfacesCyl()) for cc in self.cyls ]))
+                # print(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length)
+                # print(sum(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length))
+                print(vol_total)
+        
+    def checkMassOMoleBalance(self, doWater = True, doSolute = True):#would need to do it for each cell, not overall
+        print("checkMassOMoleBalance")
+        sizeSoilCell = self.soilModel.getCellVolumes_()
+        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        #test = self.getCC(len(sizeSoilCell),konz = False)
+        if doWater:
+            for cellId in cellIds:
+                idSegs = self.cell2seg[cellId]#all segments in the cell
+                idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+                wat_total = self.soilModel.getWaterVolumes()[cellId] # solute concentration [mol].
+                wat_rhizo = sum(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
+                # wat_total = sum(self.soilModel.getWaterVolumes()[cellIds] )# solute concentration [mol].
+                # wat_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[i])) for i, cc in enumerate(self.cyls) ]))
+                print(cellId, 0, wat_total, wat_rhizo)
+                if abs((wat_total - wat_rhizo)/wat_total*100) > 1:
+                    print(0, wat_total, wat_rhizo)
+                    print(self.soilModel.getWaterVolumes()[cellId])
+                    print(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
+                    raise Exception
+        if doSolute:        
+            for idComp in range(1, self.numComp +1):
+                for cellId in cellIds:
+                    isDissolved = (idComp <= self.numFluidComp)
+                    idSegs = self.cell2seg[cellId]#all segments in the cell
+                    idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+                    if isDissolved:
+                        V_total = (self.soilModel.getWaterVolumes()/1e6)[cellId]
+                    else:
+                        V_total = (self.soilModel.getCellVolumes() / 1e6)[cellId]
+                    mol_total = self.soilcc[idComp-1][cellId] * V_total
+                    
+                    # mol_total = self.soilModel.getContent(idComp, isDissolved)[cellId]# solute concentration [mol].
+                    mol_rhizo = sum(np.array([sum( self.cyls[i].getContentCyl( idComp, isDissolved, self.seg_length[i] ) ) for i in idCyls ]))
+                    # print("self.soilcc[",idComp-1,"]", self.soilcc[idComp-1])
+                    # print("idComp",idComp,cellId, mol_total, mol_rhizo)
+                    # print("checkMassOMoleBalance", cellId, len(idCyls),idCyls,
+                        # np.array([sum(self.cyls[i].getContentCyl(idComp, isDissolved, self.seg_length[i])) for i in idCyls ]))
+                    # print(self.cyls[idCyls[0]].getSolution_(1), 
+                        # self.cyls[idCyls[0]].getContentCyl( idComp, isDissolved, self.seg_length[idCyls[0]] ),
+                        # idComp, isDissolved, self.seg_length[idCyls[0]])
+                    # #print([sum(cc.getContentCyl(idComp, isDissolved, self.seg_length[i])) for i, cc in enumerate(self.cyls) ])
+                    mol_total_ = mol_total
+                    # print("getSol", self.soilModel.getSolution_(1)[cellId])
+                    # print("test", test[cellId])
+                    # print("other components", [max(self.soilModel.getSolution_(pp)) for pp in range(2, self.numComp+1)])
+                    if (mol_total == 0) :
+                        if ((mol_rhizo > 0)):
+                            print(idComp, mol_total, mol_rhizo)
+                            raise Exception
+                    else:
+                        print("self.soilcc[0]", self.soilcc[idComp-1][cellId], V_total)
+                        print(cellId, idComp, mol_total, mol_rhizo)
+                        if abs((mol_total - mol_rhizo)/mol_total*100) > 1:
+                            print(idComp, mol_total, mol_rhizo)
+                            raise Exception
+                
+            
+        
+    
+            
+        
+    def updateOld(self, i,  cyl):
+        """ update distribution of cylinder if it s volume has changed
+        """
+        oldPoints = np.array(cyl.getPoints()).flatten()
+        lb = self.logbase            
+        a_in = self.radii[i] 
+        a_out = self.outer_radii[i] 
+        print(a_in, a_out)
+        if self.seg2cell[i] > 0:
+            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+        else:
+            points = np.array([a_in,a_out ])
+        if (len(points) != len(oldPoints)) or (max(abs(points - oldPoints)) > 1e-2):#new vertex distribution
+            cellsOld = np.array(cyl.getCellCenters()).flatten()
+            oldHead = np.array(cyl.getSolutionHead()).flatten()
+            cAllOld = [np.array(cyl.getSolution_(i+1)) for i in range(self.numComp)]
+
+
+            # add a point far away which is the mean value of the voxel
+            
+            # # because I don t want to use the linear interpolation of dumux:
+            # # but nor necessary => outer_radii will only ever decrease
+            
+            # chip = PchipInterpolator(cellsOld, cssOld)#for interpolation
+            # spl =  CubicSpline(cellsOld, cssOld, bc_type='not-a-knot')
+            # def getValUpdate(newX):
+                # if (newX >= min(cellsOld)) and (newX <= max(cellsOld)): #interpolation
+                    # return chip(newX)
+                # else:#extrapolation
+                    # return spl(newX)
+            # print("new points",points)
+            # print("old points",oldPoints)
+            # print(cssOld)
+            # cssNew = np.array([getValUpdate(xx) for xx in points])
+            
+            self.cyls[i] = self.initialize_dumux_nc_( i, 
+                                                 x = oldHead, 
+                                                 cAll = cAllOld, 
+                                                 oldCells = cellsOld)
+    
+    def getXX_leftoverI(self, idCell, xx):
+        idSegs = self.cell2seg[idCell]#all segments in the cell
+        idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+        if len(idSegs) > len(idCyls):#we have new segments
+            if len(idCyls) > 0:
+                cyls_i = np.array(self.cyls)[idCyls]
+                wat_total = self.soilModel.getWaterVolumes()[idCell]/1e6# solute concentration [mol].
+                wat_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[idCyls[i]]))/1e6 for i, cc in enumerate(cyls_i) ]))
+                V_total = (self.soilModel.getCellVolumes() / 1e6)[idCell]
+                V_rhizo = sum([sum( cc.getCellSurfacesCyl()*self.seg_length[idCyls[i]] )/1e6 for i, cc in enumerate(cyls_i) ])
+                V_root = 0#sum((np.array(self.radii)*np.array(self.radii)*np.pi*self.seg_length)[idSegs])/1e6
+                watContent_res = (wat_total - wat_rhizo)/(V_total - V_rhizo - V_root)
+                try:
+                    assert (V_total - V_rhizo - V_root) > 0.
+                    assert (wat_total - wat_rhizo) >= 0.
+                    assert watContent_res >= self.vg_soil.theta_R
+                    p_head = vg.pressure_head(watContent_res, self.vg_soil)
+                except:
+                    print("getXX_leftoverI")
+                    print(idCell, self.soilModel.getWaterContent()[idCell])
+                    print(np.array([cc.getWaterContent() for i, cc in enumerate(cyls_i) ]).flatten())
+                    print(wat_total,wat_rhizo, V_total, V_rhizo , V_root, watContent_res, self.vg_soil.theta_R )
+                    self.checkMassOMoleBalance(doSolute = False)
+                    raise Exception
+                    
+                if idCell == 337:
+                    print("getXX_leftoverI")
+                    print(idCell, self.soilModel.getWaterContent()[idCell])
+                    print(np.array([cc.getWaterContent() for i, cc in enumerate(cyls_i) ]).flatten())
+                    print("wat_total",wat_total,wat_rhizo, wat_total - wat_rhizo)
+                    print(V_total, V_rhizo , V_root,V_total - V_rhizo - V_root )
+                    print(watContent_res, self.vg_soil.theta_R )
+                    print(p_head, idSegs, idCyls)
+                return p_head #cm
+            else:
+                return xx[idCell]
+        
+    
+    def getCC_leftoverI(self, idCell, idComp):#mol/m3 wat
+        isDissolved = (idComp <= self.numFluidComp)
+        idSegs = self.cell2seg[idCell]#all segments in the cell
+        idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+        if len(idSegs) > len(idCyls):#we have new segments
+            if len(idCyls) > 0:#we have old segments
+                cyls_i = np.array(self.cyls)[idCyls]
+                #mol_total = self.soilModel.getContent(idComp, isDissolved)[idCell]# solute concentration [mol].
+                mol_rhizo = sum(np.array([sum(cc.getContentCyl(idComp, isDissolved, self.seg_length[idCyls[i]])) for i, cc in enumerate(cyls_i) ]))
+                if isDissolved:
+                    V_total = (self.soilModel.getWaterVolumes()/1e6)[idCell]
+                    V_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[idCyls[i]] ))/1e6 for i, cc in enumerate(cyls_i) ]))
+                    V_root = 0.
+                else:
+                    V_total = (self.soilModel.getCellVolumes() / 1e6)[idCell]
+                    V_rhizo = sum(np.array([sum(cc.getCellSurfacesCyl()*self.seg_length[idCyls[i]] )/1e6 for i, cc in enumerate(cyls_i) ]))
+                    V_root = 0#sum((np.array(self.radii)*np.array(self.radii)*np.pi*self.seg_length)[idSegs])/1e6         
+                mol_total = self.soilcc[idComp-1][idCell] * V_total
+                res_CC =float( (mol_total - mol_rhizo)/(V_total - V_rhizo - V_root))#mol/m3
+                if res_CC < 0:
+                    print("res_CC < 0",mol_total , mol_rhizo,V_total ,V_rhizo , V_root) 
+                    print(idCyls, idSegs, idCell)
+                    raise Exception
+                print("getCC_leftover",idComp,res_CC, self.molarDensityWat, mol_total , mol_rhizo,V_total , V_rhizo ,( V_root))
+                return res_CC
+            else:
+                print("getCC_leftover_init",idComp, self.ICcc[idComp-1], self.molarDensityWat)
+                return self.ICcc[idComp-1]#ccc[idCell]
+        else:
+            return 0
+            
+        
+    def getCC(self,soilShape, idComp = 1, konz = True): #mol/m3 wat or mol/m3 scv
+        isDissolved = (idComp <= self.numFluidComp)
+        cc = np.full(soilShape,self.ICcc[idComp-1]) #mol/m3 wat or mol/m3 scv
+        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        for idCell in cellIds:
+            idSegs = self.cell2seg[idCell]#all segments in the cell
+            idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+            if len(idCyls) > 0:#we have old segments
+                cyls_i = np.array(self.cyls)[idCyls]
+                mol_rhizo = sum(np.array([sum(cc.getContentCyl(idComp, isDissolved, self.seg_length[idCyls[i]])) for i, cc in enumerate(cyls_i) ]))
+                if (idComp == 7) and (mol_rhizo == 0) and (sum(np.array([sum(cc.getContentCyl(1, True, self.seg_length[idCyls[i]])) for i, cc in enumerate(cyls_i) ])) != 0.):
+                    print(idComp, cyls_i[0].bulkDensity_m3)
+                    print(cyls_i[0].getSolution_(1))
+                    print(cyls_i[0].getSolution_(2))
+                    print(cyls_i[0].getSolution_(6))
+                    print(cyls_i[0].getSolution_(7))
+                    print(cyls_i[0].getSolution_(8))
+                    raise Exception
+                # if idCell == 337:
+                    # print("getCC", idCell, len(cyls_i),idCyls,
+                        # np.array([sum(cc.getContentCyl(idComp, isDissolved, self.seg_length[idCyls[i]])) for i, cc in enumerate(cyls_i) ])  )
+                    # print(cyls_i[0].getSolution_(1), idComp, isDissolved, self.seg_length[idCyls[0]])
+                if konz:
+                    if isDissolved:
+                        V_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[idCyls[i]] ))/1e6 for i, cc in enumerate(cyls_i) ]))
+                        V_root = 0.
+                    else:
+                        V_rhizo = sum(np.array([sum(cc.getCellSurfacesCyl()*self.seg_length[idCyls[i]] )/1e6 for i, cc in enumerate(cyls_i) ]))
+                        V_root = 0#sum((np.array(self.radii)*np.array(self.radii)*np.pi*self.seg_length)[idSegs])/1e6   
+                    V_tot =  V_rhizo + V_root
+                else:
+                    V_tot = 1
+                # if idCell == 337:
+                    # print("getCC", mol_rhizo, V_tot)
+                res_CC = ( mol_rhizo)/(V_tot)#mol/m3
+                if res_CC < 0:
+                    print("res_CC < 0",mol_total , mol_rhizo,V_total ,V_rhizo , V_root) 
+                    print(idCyls, idSegs, idCell)
+                    raise Exception
+                
+                cc[idCell] =  res_CC
+        return cc
+                
     def initialize_(self,i,x,cc ):
         if self.seg2cell[i] > 0:
             if self.mode == "dumux":
@@ -100,7 +435,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
             elif self.mode == "dumux_dirichlet_2c":
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
-            elif (self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_10c")  :
+            elif (self.mode == "dumux_dirichlet_nc") or(self.mode == "dumux_dirichlet_10c") or (self.mode == "dumux_10c") :
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
             elif self.mode == "dumux_nc":
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
@@ -112,11 +447,29 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
         else:
             a_in = self.radii[i]#get Perimeter instead? not used for now anyway
-            self.cyls.append(AirSegment(a_in)) #psi_air computed by the photosynthesis module.
+            a_out = self.outer_radii[i]
+            self.cyls.append(AirSegment(a_in, a_out)) #psi_air computed by the photosynthesis module.
             #print("seg",i,"is out of the soil domain and has no rhizosphere")        
     
 
-    def initialize_dumux_nc_(self, i, x, c):
+    def initialize_dumux_nc_(self, i, x,cAll = [0.1 / 18, 
+                                         10/ 18, 
+                                         0.011 * 1e6/ (2700/ 60.08e-3* (1. - 0.43)), 
+                                         0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+                                         0.011 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+                                         0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+                                         0./(2700/ 60.08e-3* (1. - 0.43)), 
+                                         0./(2700/ 60.08e-3* (1. - 0.43))], 
+                                         oldCells = []):
+        # c1 = 0.1 / 18, 
+        # c2 = 10/ 18, 
+        # c3 =  0.011 * 1e6/ (2700/ 60.08e-3* (1. - 0.43)), 
+        # c4 = 0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+        # c5 = 0.011 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+        # c6 =  0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)), 
+        # c7 = 0./(2700/ 60.08e-3* (1. - 0.43)), 
+        # c8 = 0./(2700/ 60.08e-3* (1. - 0.43)), 
+        # cAll = [c1, c2 , c3 , c4 , c5 , c6 , c7 , c8 ]
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
@@ -125,29 +478,186 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             if self.mode == "dumux_dirichlet_nc":
                 cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
             if self.mode == "dumux_dirichlet_10c":
-                cyl = RichardsNoMPIWrapper(Richards10CCylFoam())  # only works for RichardsCylFoam compiled without MPI
+                cyl = RichardsNoMPIWrapper(Richards10CCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
+            if self.mode == "dumux_10c":
+                cyl = RichardsNoMPIWrapper(Richards10CCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
             cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
-            points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
-            cyl.createGrid1d(points)
-            self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
-            cyl.setHomogeneousIC(x)  # cm pressure head
-            cyl.setICZ_solute(c)  # [kg/m2] 
-            cyl.setInnerBC("pressure", 0.)  # [cm/day] #Y 0 pressure?
-            cyl.setInnerBC_solute("constantConcentration", c)  # [kg/m2], that s fair
+            
+            if self.recreateComsol:
+                nCells = self.NC
+                cyl.createGrid([0.02], [0.6], [nCells])
+            else:
+                points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
+                cyl.createGrid1d(points)
+                if len(self.dx2) > i:
+                    self.dx2[i] = 0.5 * (points[1] - points[0]) #when updating
+                else:
+                    self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
+            # print(a_in,a_out,lb)
+            # print( a_in)
+            if False:#i==1:
+                cyl.setParameter("Problem.verbose", "0")
+            else:
+                cyl.setParameter("Problem.verbose", "-1")
+                
+            cyl.setParameter( "Soil.Grid.Cells",str( self.NC)) # -1 to go from vertices to cell
+            if self.recreateComsol:
+                cyl.setHomogeneousIC(-100.)#x)  # cm pressure head
+            else:
+                cyl.setHomogeneousIC(x)  # cm pressure head
+                # print("Soil.IC.P", cyl.dumux_str(x), oldCells)
+                cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))
+            # cyl.setICZ_solute(c)  # [kg/m2] 
+            
+            #default: no flux
+            cyl.setInnerBC("fluxCyl", 0.)  # [cm/day] #Y 0 pressure?
+            #cyl.setInnerBC_solute("fluxCyl", 0.)  # [kg/m2], that s fair
             cyl.setOuterBC("fluxCyl", 0.)
-            cyl.setOuterBC_solute("fluxCyl", 0.)
+            #cyl.setOuterBC_solute("fluxCyl", 0.)
+            
+            Ds = 1e-8 # m^2/s
+            Dl = 1e-9
+            
+            cyl.setParameter( "Soil.MolarMass", str(self.solidMolarMass))
+            cyl.setParameter( "Soil.solidDensity", str(self.solidDensity))
+            
+            cyl.setParameter("Soil.betaC", str(0.001 ))
+            cyl.setParameter("Soil.betaO", str(0.1 ))
+            cyl.setParameter("Soil.C_S_W_thresC", str(0.1 )) #mol/cm3
+            cyl.setParameter("Soil.C_S_W_thresO", str(0.05 )) #mol/cm3
+            cyl.setParameter("Soil.k_decay", str(0.2 ))
+            cyl.setParameter("Soil.k_decay2", str(0.6 ))
+            #cyl.setParameter("Soil.k_decay3", str(1 ))
+            cyl.setParameter("Soil.k_DC", str(1  )) # 1/d
+            cyl.setParameter("Soil.k_DO", str(1  )) # 1/d
+            #cyl.setParameter("Soil.k_growthBis", str(1 )) #bool
+            cyl.setParameter("Soil.k_growthC", str(0.2 ))
+            cyl.setParameter("Soil.k_growthO", str(0.2 ))
+            cyl.setParameter("Soil.K_L", str(8.3))#[mol/cm3]
+            cyl.setParameter("Soil.k_phi", str(0.1 ))
+            cyl.setParameter("Soil.k_RC", str(0.1 ))
+            cyl.setParameter("Soil.k_RO", str(0.1 ))
 
-            cyl.setParameter("Component.MolarMass", "1.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (carbon 12 g/mol)
-            cyl.setParameter("Component.LiquidDiffusionCoefficient", "5e-10")  # m2 s-1 # nitrate = 1700 um^2/sec
-            cyl.setParameter("Component.BufferPower", "0")  #5 buffer power = \rho * Kd [1] what it this for?
-            cyl.setParameter("Component.Decay", "0")  # 1.e-5buffer power = \rho * Kd [1]
+            k_SC = 1
+            k_SO = 10
+            cyl.setParameter("Soil.k_SC", str(k_SC )) #cm^3/mol/d
+            #cyl.setParameter("Soil.k_SCBis", str(k_SC )) #cm^3/mol/d
+            cyl.setParameter("Soil.k_SO", str(k_SO )) #cm^3/mol/d
+            #cyl.setParameter("Soil.k_SOBis", str(k_SO )) #cm^3/mol/d
 
+            m_maxC = 0.1 
+            m_maxO = 0.02 
+            cyl.setParameter("Soil.m_maxC", str(m_maxC  ))# 1/d
+            cyl.setParameter("Soil.m_maxO", str(m_maxO  ))# 1/d
+            cyl.setParameter("Soil.micro_maxC", str(2 ))# 1/d
+            cyl.setParameter("Soil.micro_maxO", str(0.01 ))# 1/d
+            cyl.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
+
+            k_sorp = 0.2*100
+            cyl.setParameter("Soil.k_sorp", str(k_sorp)) # mol / cm3
+            f_sorp = 0.9
+            cyl.setParameter("Soil.f_sorp", str(f_sorp)) #[-]
+            CSSmax = 1e-4*10000
+            cyl.setParameter("Soil.CSSmax", str(CSSmax)) #[mol/cm3 scv]
+            cyl.setParameter("Soil.alpha", str(0.1)) #[1/d]
+
+
+            cyl.setParameter( "Soil.BC.Bot.C1Type", str(3)) #put free flow later
+            cyl.setParameter( "Soil.BC.Top.C1Type", str(3))
+            cyl.setParameter( "Soil.BC.Bot.C1Value", str(0)) 
+            cyl.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
+
+            cyl.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
+
+            cyl.setParameter( "Soil.BC.Bot.C2Type", str(3))
+            cyl.setParameter( "Soil.BC.Top.C2Type", str(3))
+            cyl.setParameter( "Soil.BC.Bot.C2Value", str(0)) 
+            cyl.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+            cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+
+            # cyl.decay = 0. #1.e-5
+            
+            for j in range(self.numFluidComp + 1, self.numComp+1):
+                cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Type", str(3))
+                cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Type", str(3))
+                cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Value", str(0)) 
+                cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Value", str(0 )) 
+                
+            for j in range( 1, self.numComp+1):       
+                print("cAll[j-1]",j-1, cAll[j-1],cyl.dumux_str(cAll[j-1])  )
+                cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
+            # if isinstance(cAll[1], np.float64) or isinstance(cAll[1], float):
+                # if cAll[1] > 0:
+                    # raise Exception
+            # else:
+                # if max(abs(cAll[1])) > 0:
+                    # raise Exception
+            
+            # C_S =cyl.dumux_str(c1) #mol/cm3 wat
+            # cyl.setParameter("Soil.IC.C1", str(C_S) )  #mol/cm3 / mol/cm3 = mol/mol                 
+            # C_L = cyl.dumux_str(c2) #mol/cm3 wat
+            # cyl.setParameter("Soil.IC.C2", str(C_L) )  #mol/cm3 / mol/cm3 = mol/mol
+            # COa = cyl.dumux_str(c3 ) #mol C / m3 space
+            # cyl.setParameter("Soil.IC.C3",str(COa)) #mol C / mol Soil 
+            # #cyl.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
+            # COd =cyl.dumux_str(c4)#mol C / m3 space
+            # cyl.setParameter("Soil.IC.C4", str(COd))
+            # CCa = cyl.dumux_str(c5)#mol C / m3 space
+            # cyl.setParameter("Soil.IC.C5", str(CCa)) 
+            # CCd = cyl.dumux_str(c6)  #mol C / m3 space
+            # cyl.setParameter("Soil.IC.C6", str(CCd))
+            # CSS2_init =cyl.dumux_str( c7 )#CSSmax*1e6 * (C_S/(C_S+ k_sorp)) * (1 - f_sorp) #mol C/ m3 scv
+
+            # cyl.setParameter("Soil.IC.C7", str(CSS2_init))#CSS2_init/bulkDensity_m3))#[1:(len(str(CSS2_init/bulkDensity_m3))-1)] ) #mol C / mol scv
+            # cyl.setParameter("Soil.IC.C8", str(cyl.dumux_str(c8) ))
+            
+            
+            if len(oldCells) > 0:#in case we update a cylinder, to allow dumux to do interpolation
+                assert(len(cAll[j-1])==len(oldCells))
+                oldCellsStr = cyl.dumux_str(oldCells/100)
+                cyl.setParameter("Soil.IC.Z",oldCellsStr)
+                if len(oldCells)!= len(x):
+                    print("oldCells, x",oldCells, x, len(oldCells), len(x))
+                    raise Exception
+                for j in range( 1, self.numComp+1):
+                    cyl.setParameter("Soil.IC.C"+str(j)+"Z",oldCellsStr)
+                    if len(oldCells)!= len( cAll[j-1]):
+                        print("oldCells,  cAll[j-1]",oldCells,  cAll[j-1], 
+                                len(oldCells), len(cAll[j-1]), j)
+                        raise Exception
+            
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+                        
+            cyl.setParameter("Problem.EnableGravity", "false")
+            cyl.setParameter("Flux.UpwindWeight", "0.5")
+            cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+            cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
+            cyl.setParameter("Newton.EnableChop", "true")
+            cyl.setParameter("Newton.EnableResidualCriterion", "true")
+            cyl.setParameter("Newton.EnableShiftCriterion", "true")
+            cyl.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
+
+            cyl.setParameter("Newton.MaxRelativeShift", "1e-10")
+
+            cyl.setParameter("Newton.MaxSteps", "30")
+            cyl.setParameter("Newton.ResidualReduction", "1e-10")
+            cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+            cyl.setParameter("Newton.TargetSteps", "10")
+            cyl.setParameter("Newton.UseLineSearch", "false")
+            cyl.setParameter("Newton.EnablePartialReassembly", "true")
+            cyl.setParameter("Grid.Overlap", "0")  #no effec5
+
             cyl.initializeProblem()
             cyl.setCriticalPressure(self.wilting_point)  # cm pressure head
+            cyl.bulkDensity_m3 = self.bulkDensity_m3
+            cyl.solidDensity =self.solidDensity 
+            cyl.solidMolarMass =self.solidMolarMass
+            cyl.solidMolDensity =self.solidMolDensity
+            
+            
             return cyl
         else:
             print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
@@ -155,6 +665,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
     def initialize_dumux_(self, i, x, exact, dirichlet = False):
         """ Dumux RichardsCylFoam solver"""
+        raise Exception
         a_in = self.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
@@ -236,6 +747,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     soil_k[i] = ((vg.fast_mfp[self.vg_soil](rsx) - vg.fast_mfp[self.vg_soil](rx[nidx])) / (rsx - rx[nidx])) / self.dx2[i]
                 except:
                     print(rsx, rx[nidx])
+                    raise Exception
         else:
             raise Exception("RhizoMappedSegments.get_soil_k: Warning, mode {:s} not implemented or unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(soil_k, root = 0)))
@@ -313,32 +825,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     try:
                         cyl.solve(dt)
                     except:
-                        str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                        str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                        myStr = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
+                        myStr = myStr.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
                         print("node ", self.nodes[self.segments[j].y])
                         self.plot_cylinder(j)
                         self.plot_cylinders()
-                        raise Exception(str)
-        elif self.mode == "dumux_dirichlet":
-            raise Exception#TODO
-            rx = argv[0]
-            proposed_outer_fluxes = argv[1]
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
-                j = self.eidx[i]  # for one process j == i
-                l = self.seg_length[j]
-                cyl.setInnerMatricPotential(rx[i])
-                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                
-                try:
-                    cyl.solve(dt)
-                except:
-                    # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    # print("node ", self.nodes[self.segments[j].y])
-                    self.plot_cylinder(j)
-                    self.plot_cylinders()
-                    raise Exception(str)
-        elif ((self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_2c") or (self.mode == "dumux_dirichlet_10c")):            
+                        raise Exception(myStr)
+        elif ((self.mode == "dumux_dirichlet_nc") or (self.mode == "dumux_dirichlet_2c")
+                or (self.mode == "dumux_dirichlet_10c")):            
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
             proposed_inner_fluxes = argv[2]
@@ -347,12 +841,19 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 j = self.eidx[i]  # for one process j == i
                 if isinstance(cyl, AirSegment):  
                     cyl.setInnerFluxCyl(proposed_inner_fluxes[j])
+                    #cyl.setParameter( "Soil.BC.Bot.C1Value", str(exud)) 
                 else:
                     l = self.seg_length[j]
                     cyl.setInnerMatricPotential(rx[i])
-                    cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                    #inner = bot = plant
+                    #outer = top = soil
+                    
+                    cyl.setParameter( "Soil.BC.Top.C1Value", proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                    
                     if not isinstance(argv[2],float): 
                         cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
+                        #setBotBC_solute
+                        cyl.setParameter(self.param_group + "BC.Bot.CValue", str(value_bot))
                     else:
                         cyl.setInnerBC_solute("constantFluxCyl", argv[2])
                     cyl.setOuterBC_solute("constantFluxCyl", argv[3])
@@ -365,84 +866,110 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         self.plot_cylinder(j)
                         self.plot_cylinders()
                         self.plot_cylinders_solute()
-                        raise Exception(str)
-        elif self.mode == "dumux_exact":
-            raise Exception#TODO
-            rx = argv[0]
-            proposed_outer_fluxes = argv[1]
-            rsx = argv[2]
-            soil_k = argv[3]
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
-                j = self.eidx[i]  # for one process j == i
-                l = self.seg_length[j]
-                seg_ct = self.nodeCTs[self.segments[j].y]
-                age = 1.  # self.seg_ages[j] + t  # age  = (maxCT -nodeCT[j]) + t = (maxCT+t) - nodeCT[j] = rs_sim_time - nodeCT[j]
-                type_ = self.subTypes[j]
-                x0 = rx[self.segments[j].x]
-                x1 = rx[self.segments[j].y]
-                kr = self.rs.kr_f(age, type_)
-                if len(soil_k) > 0:
-                    kr = min(kr, soil_k[j])
-                kx = self.rs.kx_f(age, type_)
-                cyl.setRootSystemBC([x0, x1, kr, kx, l, rsx[j]])
-                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                # print("solve dumux_exact", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
-                try:
-                    cyl.solve(dt)
-                except:
-                    str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    str = str.format(proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    raise Exception(str)
-        elif self.mode == "python":
-            raise Exception#TODO
+                        raise Exception
+        elif ((self.mode == "dumux_nc") or (self.mode == "dumux_10c")):
+            #inner = bot = plant
+            #outer = top = soil
             proposed_inner_fluxes = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                print("cyl no ",i,"/",len(self.cyls))
                 j = self.eidx[i]  # for one process j == i
-                l = self.seg_length[j]
-                proposed_inner_fluxes = argv[0]
-                proposed_outer_fluxes = argv[1]
-                q_inner = proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l)
-                cyl.bc[(0, 0)] = ("flux_in_out", [q_inner , self.wilting_point])
-                q_outer = proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l)
-                ndof = self.NC - 1
-                cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , self.wilting_point])
-                cyl.solve([dt], dt, False)
-                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
-        elif self.mode == "python_exact":
-            raise Exception#TODO
-            rx = argv[0]
-            proposed_outer_fluxes = argv[1]
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
-                j = self.eidx[i]  # for one process j == i
-                l = self.seg_length[j]
-                seg_ct = self.nodeCTs[self.segments[j].y]
-                age = 1.  # self.seg_ages[j] + t  # age  = (maxCT -nodeCT[j]) + t = (maxCT+t) - nodeCT[j] = rs_sim_time - nodeCT[j]
-                type_ = self.subTypes[j]
-                x0 = rx[self.segments[j].x]
-                x1 = rx[self.segments[j].y]
-                #         rx_approx = 0.5 * (x0 + x1)
-                #         cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, self.kr_f(age, type_)])
-                cyl.bc[(0, 0)] = ("rootsystem_exact", [x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), self.radii[j], l])
-                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
-                q_outer = proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l)
-                ndof = self.NC - 1
-                cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , self.wilting_point])
-                cyl.solve([dt], dt, False)
-        elif self.mode == "dumux_nc":
-            proposed_inner_fluxes = argv[0]
-            proposed_outer_fluxes = argv[1]
-            for i, cyl in enumerate(self.cyls):  # run cylindrical models
-                j = self.eidx[i]  # for one process j == i
-                l = self.seg_length[j]
-                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
-                cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                try:
-                    cyl.solve(dt)
-                except:
-                    str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
-                    raise Exception(str)
+                if isinstance(cyl, AirSegment):  
+                    cyl.setInnerFluxCyl(proposed_inner_fluxes[j])
+                else:
+                    l = self.seg_length[j]
+                    if self.recreateComsol:
+                        raise Exception
+                        cyl.setInnerFluxCyl(-0.26)#proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                        cyl.setOuterFluxCyl(0)#proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                    else:   
+                        cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                        cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day] 
+                         
+                    if not isinstance(argv[2],float): 
+                        # cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
+                        botVal = argv[2][i]
+                        topVal = argv[3][i]
+                    else:
+                        # cyl.setInnerBC_solute("constantFluxCyl", argv[2])
+                        botVal = argv[2]
+                        topVal = argv[3]
+                        
+                    # cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                    #cyl.setParameter( "Soil.BC.Bot.C1Value",str(1))# str(botVal / (2 * np.pi * self.radii[j] * l)))  # [cm3/day] -> [cm /day]
+                    #cyl.setParameter( "Soil.BC.Top.C1Value",str(1))#str(topVal / (2 * np.pi * self.outer_radii[j] * l)))  # [cm3/day] -> [cm /day]
+                    typeBC = np.full(self.numComp,3)
+                    
+                    valueTopBC = np.full(self.numComp,0.)
+                    # if not self.recreateComsol:
+                        #print("solutes", topVal / (2 * np.pi * self.outer_radii[j] * l), 
+                        #    topVal / (2 * np.pi * self.outer_radii[j] * l))
+                    #    valueTopBC[0] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [mol/day] -> [mol/cm2 /day]
+                    #    valueTopBC[1] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [mol/day] -> [mol/cm2 /day]
+                    # print("topSBC",typeBC, valueTopBC) 
+                    cyl.setSoluteTopBC(typeBC, valueTopBC)
+                    valueBotBC = np.full(self.numComp,0.)
+                    if self.recreateComsol:
+                        valueBotBC[0] = 1.; valueBotBC[1] = 1.
+                    else :
+                        #print("solutes_bot",  botVal / (2 * np.pi * self.radii[j] * l), 
+                        #    botVal / (2 * np.pi * self.radii[j] * l) )
+                        valueBotBC[0] = botVal / (2 * np.pi * self.radii[j] * l) # [mol/day] -> [mol/cm2 /day]
+                        # valueBotBC[1] = botVal / (2 * np.pi * self.radii[j] * l) # [cm3/day] -> [cm /day]
+                    # print("botSBC",typeBC, valueBotBC) 
+                    cyl.setSoluteBotBC(typeBC, valueBotBC)
+                    print("inner flux", proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), valueBotBC)
+                    print("outer flux",proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l), valueTopBC)
+                    
+                    # write_file_array("pressureHead_no"+str(i),np.array(cyl.getSolutionHead()).flatten())
+                    # write_file_array("coord_no"+str(i), cyl.getDofCoordinates().flatten())
+                    # for jj in range(self.numFluidComp):
+                        # write_file_array("solute_conc"+str(jj+1)+"_no"+str(i), 
+                                        # np.array(cyl.getSolution_(jj+1)).flatten()* self.molarDensityWat ) 
+                    # for jj in range(self.numFluidComp, self.numComp):
+                        # write_file_array("solute_conc"+str(jj+1)+"_no"+str(i), 
+                                        # np.array(cyl.getSolution_(jj+1)).flatten()* self.bulkDensity_m3 /1e6 ) 
+                    
+                
+                    # print("summary", i, j, botVal, topVal, proposed_inner_fluxes[j],proposed_outer_fluxes[j],
+                    #         l, self.outer_radii[j] , self.radii[j])
+
+                    try:
+                        cyl.solve(dt, maxDt = 2500/(24*3600))
+                        cstot_css2 = np.array(cyl.getSolution_(7)).flatten()*self.bulkDensity_m3 
+                    except:
+                        for iii in range(self.numComp + 1):
+                            print("comp", iii,)
+                            print(cyl.getSolution_(iii))
+                        print("BC", valueTopBC, valueBotBC)
+                        print("head",np.array(cyl.getSolutionHead()).flatten())
+                        valueBotBC[0] = 0
+                        cyl.setSoluteBotBC(typeBC, valueBotBC)
+                        myStr = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
+                        myStr = myStr.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                        print(myStr)
+                        try:
+                            cyl.solve(dt, maxDt = 2500/(24*3600))
+                            for iii in range(self.numComp + 1):
+                                print("compbis", iii,)
+                                print(cyl.getSolution_(iii))
+                            print("BCbis", valueTopBC, valueBotBC)
+                            print("headbis",np.array(cyl.getSolutionHead()).flatten())
+                        except:
+                            raise Exception
+                        raise Exception(myStr)
+                    
+                    # write_file_array("pressureHead_no"+str(i),np.array(cyl.getSolutionHead()).flatten())
+                    # write_file_array("coord_no"+str(i), cyl.getDofCoordinates().flatten())
+                    # for jj in range(self.numFluidComp):
+                        # write_file_array("solute_conc"+str(jj+1)+"_no"+str(i), 
+                                        # np.array(cyl.getSolution_(jj+1)).flatten()* self.molarDensityWat ) 
+                    # for jj in range(self.numFluidComp, self.numComp):
+                        # write_file_array("solute_conc"+str(jj+1)+"_no"+str(i), 
+                                        # np.array(cyl.getSolution_(jj+1)).flatten()* self.bulkDensity_m3 /1e6 ) 
+                    
+            
         else:
             print(self.mode)
             raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))

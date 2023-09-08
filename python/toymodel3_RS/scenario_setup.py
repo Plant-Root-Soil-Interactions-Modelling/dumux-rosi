@@ -584,7 +584,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
         r = phloemParam(r, weatherInit)
         rs.set_phloem_flux(r)
         r.test()
-        return rs, r
+        return rs
     else:
         r = init_conductivities_const(r)
         return rs, r

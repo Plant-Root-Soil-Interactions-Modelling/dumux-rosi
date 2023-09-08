@@ -16,7 +16,7 @@ import scenario_setup as scenario
 from rhizo_modelsPlant import *  # Helper class for cylindrical rhizosphere models
 import evapotranspiration as evap
 #import cyl_exu
-import cyl3RS as cyl3
+import cyl3plant as cyl3
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import os
 from scenario_setup import write_file_array
@@ -73,11 +73,11 @@ s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp,
 # sri_table_lookup = cyl_exu.open_sri_lookup("data_magda/" + soil_type)
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-path = "./data_magda/"
-xml_name = "Zea_mays_5_Leitner_optimized.xml"  # root growth model parameter file
+path = "../../../CPlantBox/modelparameter/structural/plant/"
+xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter file
 rs, r = scenario.create_mapped_plant(wilting_point, nc, logbase, mode,initsim,
                                         min_b, max_b, cell_number, s, xml_name,
-                                        path, plantType = "RS", 
+                                        path, plantType = "plant", 
                                         recreateComsol_ = recreateComsol,
                                         usemoles = usemoles)  # pass parameter file for dynamic growth
 
@@ -122,12 +122,41 @@ rs_age = initsim
 net_sol_flux = np.array([])
 net_flux = np.array([])
 
+
 for i, dt in enumerate(np.diff(times)):
 
 
     rs_age += dt
     print("Day", rs_age)
     rs.simulate(dt)  # simulate for 1 day
+    
+    
+    if i ==0: #for the initial carbon flow rate
+        weatherX = scenario.weather(initsim) 
+        r.minLoop = 1000
+        r.maxLoop = 5000
+        r.Qlight = weatherX["Qlight"]
+        r.solve_photosynthesis(sim_time_ = initsim, 
+                    sxx_=x, 
+                    cells_ = True,#for 1st computation, use cell data
+                    ea_ = weatherX["ea"],#not used
+                    es_=weatherX["es"],#not used
+                    verbose_ = False, doLog_ = False,
+                    TairC_= weatherX["TairC"],#not used
+                    outputDir_= "./results/rhizoplantExud")
+        
+    weatherX = scenario.weather(rs_age) 
+    startphloem=rs_age
+    endphloem = rs_age + dt
+    stepphloem = 1
+    verbose_phloem = True
+    filename = "results/" +"inPM_"+str(i)+".txt"
+    print("startpm")
+    r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
+    Nt = len(rs.nodes)
+    QExud  = np.array(r.Q_out[(Nt*3):(Nt*4)])#mol/day for nodes
+    assert QExud[0] == 0#no exudation in seed node I guess
+    QExud = QExud[1:] #from nod to semgment
     dt_inner = dt
 
     # rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
@@ -141,7 +170,6 @@ for i, dt in enumerate(np.diff(times)):
         cyl_type = 4
     else:
         raise("unknown type")
-    QExud = np.where(np.array(r.rs.organTypes)==2, 1e-10,0.) #dummy, currently not used, mol for each seg
     
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All, net_sol_flux, net_flux = cyl3.simulate_const(s, 
                                             r,  dt, dt_inner, kexu, rs_age, repartition, 
@@ -178,44 +206,6 @@ for i, dt in enumerate(np.diff(times)):
             
             cyl = rs.cyls[1] # take a random cylinder (not 0 to not have air
             
-            # write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
-            # write_file_array("coord", cyl.getDofCoordinates().flatten())
-            # for i in range(rs.numFluidComp):
-                # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat ) 
-            # for i in range(rs.numFluidComp, rs.numComp):
-                # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
-
-                        
-
-# """ output """
-# if rank == 0:
-
-    # #ana = pb.SegmentAnalyser(r.rs)
-    # #ana.write("results/"+str(sim_time)+"_RootSys.vtp")
-    # #vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
-    
-    # #rs.plot_cylinders()
-    # #rs.plot_cylinders_solute()
-    # psi_x_ = np.array(psi_x_, dtype=object)
-    # psi_s_ = np.array(psi_s_, dtype=object)
-    # sink_ = np.array(sink_, dtype=object)
-    # x_ = np.array(x_, dtype=object)
-    # y_ = np.array(y_, dtype=object)
-    # psi_s2_ = np.array(psi_s2_, dtype=object)
-    # vol_ = np.array(vol_, dtype=object)
-    # surf_ = np.array(surf_, dtype=object)
-    # krs_ = np.array(krs_, dtype=object)
-    # dist = np.array(dist, dtype=object)
-    # conc = np.array(conc, dtype=object)
-    # l = np.array(l, dtype=object)
-    # soil_c_ = np.array(soil_c_, dtype=object)
-    # c_ = np.array(c_, dtype=object)
-    # mass_soil_c_ = np.array(mass_soil_c_, dtype=object)
-    
-
-    # scenario.write_files(fname, psi_x_, psi_s_, sink_, x_, y_, psi_s2_,  vol_, surf_, krs_, depth_,  dist, conc, l, soil_c_, c_, mass_soil_c_)
-    # print ("Overall simulation wall time", timeit.default_timer() - start_time, " s")
-    # print("fin")
 
 """ output """
 if rank == 0:

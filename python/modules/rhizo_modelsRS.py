@@ -93,8 +93,9 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         
         # additional variables
         self.last_dt = 0.
-        self.ICcc = list(np.full(self.numComp, 0.))
-        self.ICcc[0] = 0.1 #mol/m3 wat or mol/m3 scv
+        #self.ICcc = list(np.full(self.numComp, 0.))
+        # self.ICcc[0] = 0.1 #mol/m3 wat or mol/m3 scv
+        self.ICcc = [0.1, 10., 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.]
         self.soilcc = [[] for i in range(self.numComp)]
         
         
@@ -574,12 +575,12 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             for j in range( 1, self.numComp+1):       
                 print("cAll[j-1]",j-1, cAll[j-1],cyl.dumux_str(cAll[j-1])  )
                 cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
-            if isinstance(cAll[1], np.float64) or isinstance(cAll[1], float):
-                if cAll[1] > 0:
-                    raise Exception
-            else:
-                if max(abs(cAll[1])) > 0:
-                    raise Exception
+            # if isinstance(cAll[1], np.float64) or isinstance(cAll[1], float):
+                # if cAll[1] > 0:
+                    # raise Exception
+            # else:
+                # if max(abs(cAll[1])) > 0:
+                    # raise Exception
             
             # C_S =cyl.dumux_str(c1) #mol/cm3 wat
             # cyl.setParameter("Soil.IC.C1", str(C_S) )  #mol/cm3 / mol/cm3 = mol/mol                 

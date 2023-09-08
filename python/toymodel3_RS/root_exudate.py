@@ -121,7 +121,6 @@ rs_age = initsim
 
 net_sol_flux = np.array([])
 net_flux = np.array([])
-
 for i, dt in enumerate(np.diff(times)):
 
 

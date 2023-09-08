@@ -29,9 +29,12 @@ from threading import Thread
 # outer BC of bulk soil: value at point of  measurment (Xm aboveground)
 
 class AirSegment():#solve later the atmospheric flow also via dumux?
-    def __init__(self, a_in:float = 1.):
+    def __init__(self, a_in:float = 1., a_out:float = 1.1):
         
-        points = np.array([a_in,a_in+a_in*0.1]) #need at least 2 nodes == 1 cell
+        self.a_in = a_in #cm
+        
+        self.a_out = a_out
+        points = np.array([a_in,self.a_out ]) #need at least 2 nodes == 1 cell
         self.grid = FVGrid1Dcyl(points)
         
         #to use?
@@ -85,11 +88,17 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     #all
     def solve(self,*arg):
         pass
+        
+    #shape
     def getDofCoordinates(self):
         raise Exception
         return np.array([0])
     def getPoints(self):
         return self.grid.nodes
+    def getCellSurfacesCyl(self):
+        """nompi version of  """
+        return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2
+        
 
 
 
