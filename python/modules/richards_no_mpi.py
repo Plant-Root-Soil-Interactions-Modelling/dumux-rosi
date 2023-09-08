@@ -9,8 +9,9 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     rewrites all methods using MPI to single process ones
     """
 
-    def __init__(self, base):
-        super().__init__(base)
+    def __init__(self, base, usemoles):
+        super().__init__(base, usemoles)
+        self.useMoles = usemoles
 
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
@@ -59,10 +60,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkInitialized()
-        return self._map((self.base.getSolution(eqIdx), 0))
+        return self._map((self.base.getSolution(eqIdx)), 0)
 
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
+        assert not self.useMoles
         dics = self.base.getAllNeumann(eqIdx)
         flat_dic = {}
         for d in dics:
@@ -73,6 +75,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
     def getNetFlux(self, eqIdx=0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
+        assert not self.useMoles
         self.checkInitialized()
         return self._map((self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 

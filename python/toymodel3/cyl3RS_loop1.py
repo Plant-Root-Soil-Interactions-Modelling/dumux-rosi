@@ -36,8 +36,7 @@ def exudate_fluxes(exud ):
 
 def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
                     trans_maize,
-                    plantType = "RS", r = [], wilting_point =-15000, 
-                    net_sol_flux=[], net_flux = []):
+                    plantType = "RS", r = [], wilting_point =-15000, net_sol_flux=[]):
     """     
     simulates the coupled scenario       
         root architecture is not growing  
@@ -95,10 +94,8 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         else:
             r.update( sx,  np.array([i for i in range(toAdd[rank-1],toAdd[rank])]) + nsOld)#, cc )
             print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, toAdd[rank-1] + nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
-    # print("repartitionOld", repartitionOld, len(repartitionOld))
-    if sum ( repartitionOld)==0: 
-        print("first check")    
-        r.checkMassOMoleBalance()
+        
+    
 
     segs = rs.rs.segments
     Nt = len(rs.rs.nodes)
@@ -119,7 +116,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
 
     
     cell_volumes = s.getCellVolumes_()  # cm3
-    #net_flux = np.zeros(cell_volumes.shape)
+    net_flux = np.zeros(cell_volumes.shape)
     #net_sol_flux = np.zeros(cell_volumes.shape)
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
@@ -150,16 +147,15 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         l = np.array(rs.rs.segLength())
         
         if rank == 0:
-            # print("need to add fixed point iteration for water and carbon fluxes between plant-rhizosphere")
-            # print("\nINITIAL root-soil interface matric potentials", np.nanmin(rsx), np.nanmax(rsx), np.nanmin(rsc), np.nanmax(rsc))
+            print("need to add fixed point iteration for water and carbon fluxes between plant-rhizosphere")
+            print("\nINITIAL root-soil interface matric potentials", np.nanmin(rsx), np.nanmax(rsx), np.nanmin(rsc), np.nanmax(rsc))
             #print("transpiration tot:", trans_maize(rs_age + 0., dt)*10)
-            rx = rs.solve(rs_age, -2, 0., rsx, cells = False, 
+            rx = rs.solve(rs_age, -5, 0., rsx, cells = False, 
                                 wilting_point = wilting_point, soil_k = [])
             #trans_maize(rs_age + 0., dt)*10
             rx = np.array(rx)
-            #seg_fluxes =np.full(len( np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))),0.)# [cm3/day]
-            seg_fluxes = np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))# [cm3/day]
-            # print("rx, rsx", rx, rsx)
+            seg_fluxes =np.full(len( np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))),0.)# [cm3/day]
+            print("rx, rsx", rx, rsx)
             
             seg_sol_fluxes = Q_Exud # exudate_fluxes(Q_Exud)#g/day for segments
             #r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
@@ -173,8 +169,17 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
         #print("rx",rx)
         
+        """ some checks """
         
-        """ 2.0  global soil models """
+        #does not use rsx for the leaves, but the pg (guard cells wat. pot.) values
+        #[cm3/day]
+        # proposed_inner_fluxes = rs.segFluxes(t, rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = [])  # [cm3/day]
+        # assert (np.array(proposed_inner_fluxes) == seg_fluxes).all()
+        ###
+        #r.checkMassOMoleBalance()#I think that fails because the sucrose then flows out?
+        
+
+        """ 3a. macroscopic soil model """
         wall_macro = timeit.default_timer()
 
         water_content = np.array(s.getWaterContent_())  # theta per cell [1]
@@ -183,28 +188,29 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         # soil_solute = np.multiply(solute_conc, soil_water) #mol
         
         soil_fluxes = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
-        # soil_sol_fluxes = rs.sumSegFluxes(seg_sol_fluxes)  # [mol/day]
-        
+        soil_sol_fluxes = rs.sumSegFluxes(seg_sol_fluxes)  # [mol/day]
+        # print("seg_sol_fluxes1",seg_sol_fluxes,soil_fluxes)
+        soil_sol_fluxes = evap.decay(soil_sol_fluxes, dt, s.decay)  #[mol/day]
+        # print("seg_sol_fluxes2",soil_sol_fluxes)
         s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
-        
-        # if ((len(net_sol_flux) >0) and max(abs(net_sol_flux)) != 0.):
-            # test_values = list(net_sol_flux.copy())
-            # test_keys = np.array([i for i in range(len(test_values))])
-            # res = {}
-            # for key in test_keys:
-                # for value in test_values:
-                    # if value > 0.:
-                        # res[key] = value
-                    # test_values.remove(value)
-                    # break
-            # # print("source", res, net_sol_flux[337], dt)
-            # # print(new_soil_solute[337], soil_solute[337] )
-            # s.setSource(res.copy(), eq_idx = 1)  # soil_sol_fluxes.copy(), eq_idx = 1)  # [mol/day], in modules/richards.py
-            
-        # solute_concOld = solute_conc
+        print(net_sol_flux)
+        if ((len(net_sol_flux) >0) and max(abs(net_sol_flux)) != 0.):
+            test_values = list(net_sol_flux.copy())
+            test_keys = np.array([i for i in range(len(test_values))])
+            res = {}
+            for key in test_keys:
+                for value in test_values:
+                    if value > 0.:
+                        res[key] = value
+                    test_values.remove(value)
+                    break
+            print("source", res, net_sol_flux[337])
+            s.setSource(res.copy(), eq_idx = 1)  # soil_sol_fluxes.copy(), eq_idx = 1)  # [mol/day], in modules/richards.py
+        solute_concOld = solute_conc
         s.solve(dt)  # in modules/solverbase.py
-        assert (s.getSolution_(0) == r.soilModel.getSolution_(0)).all()
-        # print(" np.array(s.getCellVolumes()).flatten() ",  np.array(s.getCellVolumes()).flatten())
+        assert (s.getSolution_(1) == r.soilModel.getSolution_(1)).all()
+        r.checkMassOMoleBalance(doWater = False)#I think that fails because the sucrose then flows out?
+        
         wall_macro = timeit.default_timer() - wall_macro
         
         # if rank == 0:
@@ -213,7 +219,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         """ 3b. calculate net fluxes """
         wall_netfluxes = timeit.default_timer()
         water_content = np.array(s.getWaterContent_())
-        soil_solute_content = np.array(s.getSolution_(1))
         # print(water_content)
         new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
         net_flux = new_soil_water - soil_water  # change in water per cell [cm3]
@@ -221,22 +226,20 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         for k, root_flux in soil_fluxes.items():
             net_flux[k] -= root_flux * dt #all the water lost at the outer boundary
         cellIds = np.fromiter(cell2seg.keys(), dtype=int)
-        # print("waterflows",sum((new_soil_water - soil_water)[cellIds]),sum(soil_fluxes.values())*dt,sum(net_flux[cellIds]*dt),
-                # sum(seg_fluxes))
-        # print((new_soil_water - soil_water )[cellIds] ,np.array(list(soil_fluxes.values() )),( net_flux[cellIds]),dt)
-        # print((new_soil_water - soil_water )[cellIds] -( np.array(list(soil_fluxes.values()))*dt + net_flux[cellIds]*dt))
+        print("waterflows",sum((new_soil_water - soil_water)[cellIds]),sum(soil_fluxes.values())*dt,sum(net_flux[cellIds]*dt),
+                sum(seg_fluxes))
+        print((new_soil_water - soil_water )[cellIds] ,np.array(list(soil_fluxes.values() )),( net_flux[cellIds]),dt)
+        print((new_soil_water - soil_water )[cellIds] -( np.array(list(soil_fluxes.values()))*dt + net_flux[cellIds]*dt))
         assert ((new_soil_water - soil_water )[cellIds] == np.array(list(soil_fluxes.values()))*dt + net_flux[cellIds]*dt).all()
         
         """ 2. local soil models """
         wall_local = timeit.default_timer()
         if rank == 0:
-            if len(net_flux) > 0:            
-                proposed_outer_fluxes = rs.splitSoilFluxes(net_flux / dt, split_type) 
-            else:
-                proposed_outer_fluxes = np.full(len(r.cyls), 0.)
+                        
+            proposed_outer_fluxes = rs.splitSoilFluxes(net_flux / dt, split_type) 
             proposed_outer_sol_fluxes = np.full(len(proposed_outer_fluxes), 0.)#rs.splitSoilFluxes(net_sol_flux / dt, split_type)
-            # print("proposed_outer_fluxes",proposed_outer_fluxes,net_flux / dt)
-            # print("proposed_outer_sol_fluxes",proposed_outer_sol_fluxes)#,net_sol_flux / dt)
+            print("proposed_outer_fluxes",proposed_outer_fluxes,net_flux / dt)
+            print("proposed_outer_sol_fluxes",proposed_outer_sol_fluxes)#,net_sol_flux / dt)
             # if this fails, a segment is not mapped, i.e. out of soil domain
         else:
             proposed_outer_fluxes = None
@@ -245,7 +248,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
         seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs])
         
-        soil_solute = r.getCC(len(cell_volumes),konz = False)#np.multiply(solute_conc, soil_water)
+        soil_solute = r.getCC(len(water_content),konz = False)#np.multiply(solute_conc, soil_water)
         
         if "dirichlet" in type:        
             r.solve(dt, seg_rx, proposed_outer_fluxes, seg_sol_fluxes, proposed_outer_sol_fluxes) #
@@ -262,12 +265,11 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
             # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* r.bulkDensity_m3 /1e6 ) 
 
                     
-        # r.checkMassOMoleBalance(doSolute = False)#I think that fails because the sucrose then flows out?
+        r.checkMassOMoleBalance(doSolute = False)#I think that fails because the sucrose then flows out?
         wall_local = timeit.default_timer() - wall_local
         
-
         """ 3c. calculate mass net fluxes """
-        solute_conc = r.getCC(len(cell_volumes))# np.array(s.getSolution_(1))/1e6 #mol/cm3
+        solute_conc = r.getCC(len(water_content))# np.array(s.getSolution_(1))/1e6 #mol/cm3
         # raise Exception
         try:
             assert min(solute_conc) >=0
@@ -279,12 +281,13 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
         new_soil_solute = r.getCC(len(solute_conc),konz = False)#np.multiply(solute_conc, soil_water)
         try:
             assert min(new_soil_solute) >=0
+            assert min(soil_water) >= 0
         except:
-            print("min(new_soil_solute), min(soil_water)",min(new_soil_solute))
+            print("min(new_soil_solute), min(soil_water)",min(new_soil_solute), min(soil_water))
             raise Exception
-        # net_sol_flux = np.multiply((new_soil_solute - soil_solute)/dt ,np.array(s.getCellVolumes()).flatten()) / 1e6 # change in water per cell [cm3]
-        net_sol_flux = (new_soil_solute - soil_solute)/dt #* 1e6#/ (np.array(s.getCellVolumes()).flatten()/
-        # print('net_sol_flux', net_sol_flux, (new_soil_solute - soil_solute).shape, (np.array(s.getCellVolumes())).shape) 
+        net_sol_flux = (new_soil_solute - soil_solute)/dt  # change in water per cell [cm3]
+        
+        #print('net_sol_flux', net_sol_flux) 
         #for k, root_sol_flux in soil_sol_fluxes.items():
         #    net_sol_flux[k] -= root_sol_flux * dt
             # print(k, dt, root_sol_flux,(new_soil_solute - soil_solute)[k], soil_sol_fluxes[k], net_sol_flux[k])
@@ -306,68 +309,13 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
                     # -( np.array(list(soil_sol_fluxes.values()))*dt + net_sol_flux[cellIds]))
                     # /(( new_soil_solute - soil_solute)[cellIds])*100)<0.1).all())
         #assert (abs((new_soil_solute - soil_solute )[cellIds] - np.array(list(soil_sol_fluxes.values()))*dt + net_sol_flux[cellIds]) < 1e-30).all()
-        if False:
-            """ 3a. macroscopic soil model """
-            wall_macro = timeit.default_timer()
-
-            water_content = np.array(s.getWaterContent_())  # theta per cell [1]
-            soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-            solute_conc = np.array(s.getSolution_(1))/1e6 #mol/cm3
-            # soil_solute = np.multiply(solute_conc, soil_water) #mol
-            
-            soil_fluxes = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
-            # soil_sol_fluxes = rs.sumSegFluxes(seg_sol_fluxes)  # [mol/day]
-            
-            s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
-            
-            if ((len(net_sol_flux) >0) and max(abs(net_sol_flux)) != 0.):
-                test_values = list(net_sol_flux.copy())
-                test_keys = np.array([i for i in range(len(test_values))])
-                res = {}
-                for key in test_keys:
-                    for value in test_values:
-                        if value > 0.:
-                            res[key] = value
-                        test_values.remove(value)
-                        break
-                # print("source", res, net_sol_flux[337], dt)
-                # print(new_soil_solute[337], soil_solute[337] )
-                s.setSource(res.copy(), eq_idx = 1)  # soil_sol_fluxes.copy(), eq_idx = 1)  # [mol/day], in modules/richards.py
-                
-            solute_concOld = solute_conc
-            s.solve(dt)  # in modules/solverbase.py
-            assert (s.getSolution_(1) == r.soilModel.getSolution_(1)).all()
-            # print(" np.array(s.getCellVolumes()).flatten() ",  np.array(s.getCellVolumes()).flatten())
-            wall_macro = timeit.default_timer() - wall_macro
-            
-            # if rank == 0:
-            #     print("]", end = "")
-
+        
         """ 3d. backup """
         # soil_water = new_soil_water
         # soil_solute = new_soil_solute
 
         wall_netfluxes = timeit.default_timer() - wall_netfluxes
         
-        """ some checks """
-        
-        #does not use rsx for the leaves, but the pg (guard cells wat. pot.) values
-        #[cm3/day]
-        # proposed_inner_fluxes = rs.segFluxes(t, rx.copy(), rsx.copy(), approx = False, cells = False, soil_k = [])  # [cm3/day]
-        # assert (np.array(proposed_inner_fluxes) == seg_fluxes).all()
-        ###
-        print(cell2seg[337])
-        print("net_flux",net_flux[337], (new_soil_water - soil_water)[337])
-        print(np.array(proposed_outer_fluxes)[np.array(cell2seg[337])])
-        r.checkMassOMoleBalance(doSolute = False)#I think that fails because the sucrose then flows out?
-        
-        try:
-            assert min(water_content) >=0
-            assert min(soil_solute_content) >=0
-        except:
-            print("min(new_soil_solute), min(soil_water)",min(water_content),min(soil_solute_content))
-            raise Exception
-            
         """ remember results ... """
         sx = s.getSolutionHead_()
         cc = s.getSolution_(1)  # [kg/m3]
@@ -416,5 +364,5 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type, Q_Exud,
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, repartition, c_All, net_sol_flux, net_flux #krs_,
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, repartition, c_All, net_sol_flux #krs_,
 

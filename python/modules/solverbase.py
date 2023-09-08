@@ -15,9 +15,19 @@ class SolverWrapper():
         e.g. MPI communication, writeVTK, interpolate        
     """
 
-    def __init__(self, base):
+    def __init__(self, base, usemoles):
         """ @param base is the C++ base class that is wrapped. """
         self.base = base
+        self.useMoles = usemoles
+        self.solidDensity = 0
+        self.solidMolarMass=0
+        self.solidMolDensity=0
+        self.bulkDensity_m3 =0 #mol / m3 bulk soil
+        molarMassWat = 18. # [g/mol]
+        densityWat = 1e6 #[g/m3]
+        # [mol/m3] = [g/m3] /  [g/mol] 
+        self.molarDensityWat_m3 =  densityWat / molarMassWat # [mol wat/m3 wat] 
+        
 
     def initialize(self, args_ = [""], verbose = True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
@@ -131,9 +141,17 @@ class SolverWrapper():
         """nompi version of """
         return np.array(self.base.getCells(), dtype = np.int64)
 
+    def getCellSurfacesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2).flatten() * 1.e4  # m3 -> cm3
+
+    def getCellSurfacesCyl_(self):
+        """nompi version of  """
+        return np.array(self.base.getCellSurfacesCyl()) * 1.e4  # m2 -> cm2
+        
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m3 -> cm3
+        return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m2 -> cm2
 
     def getCellVolumes_(self):
         """nompi version of  """
@@ -181,10 +199,12 @@ class SolverWrapper():
 
     def getNeumann(self, gIdx, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
+        assert not self.useMoles
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
+        assert not self.useMoles
         dics = comm.gather(self.base.getAllNeumann(eqIdx), root = 0)
         flat_dic = {}
         for d in dics:
@@ -195,6 +215,7 @@ class SolverWrapper():
 
     def getAllNeumann_(self, eqIdx = 0):
         """nompi version of (TODO is that working?)"""
+        assert not self.useMoles
         dics = self.base.getAllNeumann(eqIdx)
         flat_dic = {}
         for d in dics:
@@ -205,11 +226,13 @@ class SolverWrapper():
 
     def getNetFlux(self, eqIdx = 0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
+        assert not self.useMoles
         self.checkInitialized()
         return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root = 0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def getNetFlux_(self, eqIdx = 0):
         """nompi version of """
+        assert not self.useMoles
         self.checkInitialized()
         return np.array(self.base.getNetFlux(eqIdx)) * 1000. *24 * 3600  # kg/s -> cm3/day
 

@@ -211,7 +211,7 @@ public:
 		
 		 verbose =  getParam<int>("Problem.verbose", -1);
 		 toFile =  getParam<bool>("Problem.toFile", false);
-		
+		doSoluteFlow =   getParam<bool>("Problem.doSoluteFlow", doSoluteFlow);
 			
 		
 		if(verbose>=0)
@@ -821,7 +821,7 @@ public:
 	 *
 	 * called by FVLocalResidual:computeSource(...)
 	 *
-     * E.g. for the mass balance that would be a mass rate in \f$ [ kg / (m^3 \cdot s)] \f
+     * E.g. for the mass balance that would be a mass rate in \f$ [ mol / (m^3 \cdot s)] \f
      */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
@@ -839,12 +839,26 @@ public:
 		{			
 			if (source_[i] != nullptr) {
 				source[i] = source_[i]->at(eIdx)/scv.volume() * pos0;
+				// if((eIdx == 337)&&(i == 1))
+				// {
+					// std::cout<< eIdx<<" "<<i<<" "<<
+					// source_[i]->at(eIdx) <<" "<< scv.volume()<<" "<<pos0<<std::endl;
+				// }
 			}else{source[i] = 0.;}												 
 		}		
         const auto& volVars = elemVolVars[scv];
 		bioChemicalReaction(source, volVars, pos0, scv);
 		
-		
+						// if((eIdx == 337))
+				// {
+					// std::cout<< eIdx<<" "<<source_[1]->at(eIdx)<<" "<< scv.volume()<<" "<<pos0<<", source: ";
+					// for(int kk = 0; kk < source.size(); kk++)
+					// {
+						// std::cout<<"element "<<kk<<" "<<source[kk]<<" ";
+					// }
+					// std::cout<<" diff "<< (source[1] - source_[1]->at(eIdx)/scv.volume());
+					// std::cout<<std::endl;
+				// }
 		
 		return source;
 	}
@@ -977,21 +991,21 @@ public:
 			setSorp(Reac_CSS2, scv.dofIndex());
 			setTheta(theta, scv.dofIndex());
 			setCSS1(CSS1*f_sorp, scv.dofIndex());
-		if((massOrMoleFraction(volVars,0, soluteIdx, true)<0.)&&(dimWorld > 1))
-		{
-				std::cout<<dimWorld<<" "<<massOrMoleFraction(volVars,0, soluteIdx, true)<<" "<<theta<<", source ";
-			for(int i = 0;i < numComponents_;i++)
-			{			
-				// if (q[i] != 0)
-				// {
-					std::cout<<", "<<i<<" "<<q[i];
-					// if((source_[i] != nullptr) &&(source_[i]->at(eIdx)!= 0))
-					// {
-						// std::cout<<", sourceStart "<<source_[i]->at(eIdx);
-					// }
-				//}											 
-			}std::cout<<std::endl;
-		}
+		// if((massOrMoleFraction(volVars,0, soluteIdx, true)<-1.e-20)&&(dimWorld > 1))
+		// {
+				// std::cout<<dimWorld<<" "<<massOrMoleFraction(volVars,0, soluteIdx, true)<<" "<<theta<<", source ";
+			// for(int i = 0;i < numComponents_;i++)
+			// {			
+				// // if (q[i] != 0)
+				// // {
+					// std::cout<<", "<<i<<" "<<q[i];
+					// // if((source_[i] != nullptr) &&(source_[i]->at(eIdx)!= 0))
+					// // {
+						// // std::cout<<", sourceStart "<<source_[i]->at(eIdx);
+					// // }
+				// //}											 
+			// }std::cout<<std::endl;
+		// }
 
 	}
 
@@ -1153,6 +1167,7 @@ public:
 	std::vector<double> bcSBotValue_= std::vector<double>(numSolutes);
 	
 	bool RFmethod2 = false;
+	bool doSoluteFlow = true;
 private:
 
 	//! cm pressure head -> Pascal

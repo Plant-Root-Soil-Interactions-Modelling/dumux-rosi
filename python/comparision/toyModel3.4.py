@@ -2,7 +2,7 @@ import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 
-from rosi_richards10c import Richards10CSP  # C++ part (Dumux binding)
+from rosi_richards10c_cyl import Richards10CCylFoam  # C++ part (Dumux binding)
 
 from richards import RichardsWrapper  # Python part
 
@@ -13,7 +13,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
 def write_file_array(name, data, space =","):
-    name2 = './results3D/'+ name+ '.txt'
+    name2 = './results/'+ name+ '.txt'
     with open(name2, 'a') as log:
         log.write(space.join([num for num in map(str, data)])  +'\n')
 """ 
@@ -22,7 +22,7 @@ Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 everything scripted, no input file needed, also works parallel with mpiexec
 """
 
-results_dir="./results3D/"
+results_dir="./results/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:
@@ -32,26 +32,21 @@ else:
             os.remove(results_dir+item)
         except:
             pass
-usemoles = True
-s = RichardsWrapper(Richards10CSP(), usemoles)
+
+s = RichardsWrapper(Richards10CCylFoam())
 
 s.initialize()
 
 # theta_r, theta_s, alpha, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-min_b = [-5., -5, -20.] 
-max_b = [5., 5, 0.]
-cell_number = [5, 5, 20]
-# s.createGrid([0.02], [0.6], [nCells])  # [cm]
-s.createGrid(min_b, max_b, cell_number, False)
-cell_number = np.array(cell_number)
-s.setParameter( "Soil.Grid.Cells", str(cell_number)[1:(len(str(cell_number))-1)])
+nCells = 500
+s.createGrid([0.02], [0.6], [nCells])  # [cm]
+s.setParameter( "Soil.Grid.Cells", str(nCells))
 
 s.setHomogeneousIC(-100.)  # cm pressure head
-s.setOuterBC("constantFlux", 0)  #  [cm/day]
-s.setInnerBC("constantFlux", -10)  #  [cm/day]
-s.setParameter("Problem.doSoluteFlow", "0")
+s.setOuterBC("constantFluxCyl", 0.1)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", -0.26)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
@@ -68,9 +63,9 @@ solidMolDensity = solidDensity/solidMolarMass
 bulkDensity_m3 = solidMolDensity*(1.-0.43)
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1.*0# [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-Ds = 1e-8*0 # m^2/s
-Dl = 1e-9*0
+exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+Ds = 1e-8 # m^2/s
+Dl = 1e-9
 
 numComp = 8
 numFluidComp = 2
@@ -79,23 +74,23 @@ numFluidComp = 2
 s.setParameter( "Soil.MolarMass", str(solidMolarMass))
 s.setParameter( "Soil.solidDensity", str(solidDensity))
 
-s.setParameter( "Soil.BC.Bot.C1Type", str(2))
-s.setParameter( "Soil.BC.Top.C1Type", str(2))
+s.setParameter( "Soil.BC.Bot.C1Type", str(3))
+s.setParameter( "Soil.BC.Top.C1Type", str(3))
 s.setParameter( "Soil.BC.Bot.C1Value", str(exud)) 
-s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
+s.setParameter( "Soil.BC.Top.C1Value", str(-exud/3*0 )) 
 
 s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
 
-s.setParameter( "Soil.BC.Bot.C2Type", str(2))
-s.setParameter( "Soil.BC.Top.C2Type", str(2))
+s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+s.setParameter( "Soil.BC.Top.C2Type", str(3))
 s.setParameter( "Soil.BC.Bot.C2Value", str(exud)) 
-s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
+s.setParameter( "Soil.BC.Top.C2Value", str(-exud/3*0)) 
 s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
 for i in range(numFluidComp + 1, numComp+1):
     print("Soil.BC.Bot.C"+str(i)+"Type")
-    s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
-    s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
+    s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(3))
+    s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(3))
     s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
     s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
         
@@ -137,9 +132,9 @@ k_sorp = 0.2*100
 s.setParameter("Soil.k_sorp", str(k_sorp)) # mol / cm3
 f_sorp = 0.9
 s.setParameter("Soil.f_sorp", str(f_sorp)) #[-]
-CSSmax = 1e-4*10000*0
+CSSmax = 1e-4*10000
 s.setParameter("Soil.CSSmax", str(CSSmax)) #[mol/cm3 scv]
-s.setParameter("Soil.alpha", str(0.1*0)) #[1/d]
+s.setParameter("Soil.alpha", str(0.1)) #[1/d]
 
 gradient = False
 if gradient:
@@ -150,20 +145,19 @@ if gradient:
     s.setParameter("Soil.IC.C1Z", "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
     s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S/molarDensityWat))-1)])   #mol/cm3 / mol/cm3 = mol/mol 
 else:
-    C_S = 6.0 #mol/cm3 wat
+    C_S = 0.1  #mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
 
-
-C_L = 10  *0#mol/cm3 wat
+C_L = 10  #mol/cm3 wat
 s.setParameter("Soil.IC.C2", str(C_L/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol
-COa = 0.011 * 1e6*0#mol C / m3 space
+COa = 0.011 * 1e6  #mol C / m3 space
 s.setParameter("Soil.IC.C3",str(COa/ bulkDensity_m3)) #mol C / mol Soil 
 #s.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
-COd = 0.05 * 1e6 *0#mol C / m3 space
+COd = 0.05 * 1e6 #mol C / m3 space
 s.setParameter("Soil.IC.C4", str(COd/bulkDensity_m3 ))
-CCa = 0.011 * 1e6*0#mol C / m3 space
+CCa = 0.011 * 1e6#mol C / m3 space
 s.setParameter("Soil.IC.C5", str(CCa/ bulkDensity_m3)) 
-CCd = 0.05 * 1e6*0  #mol C / m3 space
+CCd = 0.05 * 1e6  #mol C / m3 space
 s.setParameter("Soil.IC.C6", str(CCd/bulkDensity_m3 ))
 CSS2_init = CSSmax*1e6 * (C_S/(C_S+ k_sorp)) * (1 - f_sorp) #mol C/ m3 scv
 
@@ -205,7 +199,7 @@ fig, (ax1, ax2) = plt.subplots(1, 2)
 times = [0., 5./24., 10./24.]  # days
 s.ddt = 1.e-5
 
-points = s.getCellCenters()#.flatten()
+points = s.getDofCoordinates().flatten()
 
 x = np.array(s.getSolutionHead())
 write_file_array("pressureHead",x.flatten())
@@ -213,7 +207,7 @@ write_file_array("coord",points)
 theta = np.array(s.getWaterContent()).flatten()
 write_file_array("theta",theta)
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
-# write_file_array("krs",np.array(s.getKrw()).flatten())
+write_file_array("krs",np.array(s.getKrw()).flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
 
 for i in range(numFluidComp):
@@ -224,30 +218,30 @@ for i in range(numFluidComp, numComp):
 C_S_W = np.array(s.getSolution_(1)).flatten()*molarDensityWat*1e6
 cstot_cls = (np.array(s.getWaterContent()).flatten() 
             * C_S_W) 
-cstot_css1 =0# CSSmax*1e6 * (C_S_W/(C_S_W+k_sorp*1e6)) * f_sorp  
+cstot_css1 = CSSmax*1e6 * (C_S_W/(C_S_W+k_sorp*1e6)) * f_sorp  
 
 cstot_css2 = np.array(s.getSolution_(7)).flatten()*bulkDensity_m3 
 cstot = cstot_cls + cstot_css1 + cstot_css2 
-# write_file_array("css1",cstot_css1/1e6)
+write_file_array("css1",cstot_css1/1e6)
 write_file_array("css2",cstot_css2/1e6)
 write_file_array("cl",cstot_cls/1e6)
 write_file_array("cstot",cstot/1e6)
 
 
 write_file_array("totcs",np.array([np.round(cstot_cls.sum()),
-                # np.round(cstot_css1.sum()), 
+                np.round(cstot_css1.sum()), 
                 np.round(cstot_css2.sum()), 
                 np.round(cstot.sum())]), "\t")
 
-contents0 = np.array([(cstot_cls ).sum(),
-                #(cstot_css1 ).sum(), 
-                (cstot_css2 ).sum(), 
-                (cstot ).sum()])
+contents0 = np.array([(cstot_cls * points).sum(),
+                (cstot_css1 * points).sum(), 
+                (cstot_css2 * points).sum(), 
+                (cstot * points).sum()])
 write_file_array("contents", contents0/1e6)
 print(contents0)
 
-# RF = 1 + f_sorp*(1/theta)*CSSmax*1e6*((k_sorp*1e6)/((k_sorp*1e6+C_S_W)**2))
-# write_file_array("RF",RF)
+RF = 1 + f_sorp*(1/theta)*CSSmax*1e6*((k_sorp*1e6)/((k_sorp*1e6+C_S_W)**2))
+write_file_array("RF",RF)
 
 for i, dt in enumerate(np.diff(times)):
 
@@ -262,7 +256,7 @@ for i, dt in enumerate(np.diff(times)):
     write_file_array("coord",points)
     write_file_array("theta",np.array(s.getWaterContent()).flatten())
     write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
-    # write_file_array("krs",np.array(s.getKrw()).flatten())
+    write_file_array("krs",np.array(s.getKrw()).flatten())
     for i in range(numFluidComp):
         write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()*molarDensityWat) 
     for i in range(numFluidComp, numComp):
@@ -272,38 +266,34 @@ for i, dt in enumerate(np.diff(times)):
     C_S_W = np.array(s.getSolution_(1)).flatten()*molarDensityWat*1e6
     cstot_cls = (np.array(s.getWaterContent()).flatten() 
                 * C_S_W) #* points
-    # cstot_css1 = np.array(s.base.getCSS1_out()).flatten()
-    #cstot_css1 = cstot_css1[:(len(cstot_css1)-1)]
+    cstot_css1 = np.array(s.base.getCSS1_out()).flatten()
+    cstot_css1 = cstot_css1[:(len(cstot_css1)-1)]
     
-    # RF = np.array(s.base.getRF_out()).flatten()
-    # RF = RF[:(len(RF)-1)]
+    RF = np.array(s.base.getRF_out()).flatten()
+    RF = RF[:(len(RF)-1)]
     
     # cstot_css1Bis =  CSSmax*1e6 * (C_S_W/(C_S_W+k_sorp*1e6)) * f_sorp  #* points
     cstot_css2 = np.array(s.getSolution_(7)).flatten()*bulkDensity_m3#* points
-    cstot = cstot_cls +  cstot_css2 # +cstot_css1
+    cstot = cstot_cls + cstot_css1 + cstot_css2
 
     write_file_array("totcs",np.array([np.round(cstot_cls.sum()),
-                    # np.round(cstot_css1.sum()), 
+                    np.round(cstot_css1.sum()), 
                     np.round(cstot_css2.sum()), 
                     np.round(cstot.sum())]), "\t")
                     
-    # write_file_array("RF",RF)
-    # write_file_array("css1",cstot_css1/1e6)
+    write_file_array("RF",RF)
+    write_file_array("css1",cstot_css1/1e6)
     # write_file_array("cstot_css1Bis",cstot_css1Bis/1e6)
     write_file_array("css2",cstot_css2/1e6)
     write_file_array("cl",cstot_cls/1e6)
     write_file_array("cstot",cstot/1e6)
-    write_file_array("cls",cstot_cls/1e6)
         
-    contents = np.array([(cstot_cls ).sum(),
-                    # (cstot_css1 ).sum(), 
-                    (cstot_css2 ).sum(), 
-                    (cstot ).sum()])
+    contents = np.array([(cstot_cls * points).sum(),
+                    (cstot_css1 * points).sum(), 
+                    (cstot_css2 * points).sum(), 
+                    (cstot * points).sum()])
     print(contents)
-    lenCont = len(contents) -1 
-    #print(contents[lenCont]/contents0[lenCont]*100-100)
-    print(min(cstot_cls))
-    print(min( np.array(s.getSolution_(2)).flatten()))
+    print(min(cstot_cls))#contents[3]/contents0[3]*100-100)
     write_file_array("contents", contents/1e6)
 
 

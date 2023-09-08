@@ -67,7 +67,7 @@ def maize_SPP(soil_= "loam"):
         i = 1
     soil = vg_SPP(i)
     min_b = [-5., -5, -20.] 
-    max_b = [5., 5, 0.]
+    max_b = [5., 5, 0.] 
     cell_number = [5, 5, 20]
     area = 20 * 44  # cm2
     
@@ -134,7 +134,7 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
 
 def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type, times = None, 
-                        net_inf = None):
+                        net_inf = None, usemoles = True):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil type is fixed and homogeneous 
@@ -153,7 +153,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     elif type == "dumux_dirichlet_nc":
         s = RichardsWrapper(RichardsNCSP())  # water and N solute      
     elif ((type == "dumux_dirichlet_10c") or ("dumux_10c")):
-        s = RichardsWrapper(Richards10CSP())  # water and N solute          
+        s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
     else:
         raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
 
@@ -170,15 +170,19 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     else:
         s.setTopBC("noFlux")
     s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
-    solidDensity = 2700 # [kg/m^3 solid]
-    solidMolarMass = 60.08e-3 # [kg/mol] 
+    s.solidDensity = 2700 # [kg/m^3 solid]
+    s.solidMolarMass = 60.08e-3 # [kg/mol] 
+    # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
+    s.solidMolDensity = s.solidDensity/s.solidMolarMass
+    # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
+    s.bulkDensity_m3 = s.solidMolDensity*(1.- soil.theta_S)
 
-    s.setParameter( "Soil.MolarMass", str(solidMolarMass))
-    s.setParameter( "Soil.solidDensity", str(solidDensity))
+    s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
+    s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
     if (type == "dumux_10c") or (type == "dumux_dirichlet_nc")or (type == "dumux_dirichlet_10c"):  # solute BC
-        Ds = 1e-8 # m^2/s
-        Dl = 1e-9
+        Ds = 1e-8 *0# m^2/s
+        Dl = 1e-9*0
         numComp = 8
         numFluidComp = 2
         # s.setTopBC_solute("outflow", 0.)
@@ -253,7 +257,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-    s.setParameter("Problem.verbose", "2")
+    s.setParameter("Problem.verbose", "-1")
+    s.setParameter("Problem.doSoluteFlow", "0")
     # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
         # s.setParameter("Component.MolarMass", "1.2e-2")  # carbon 12 g/mol
         # s.setParameter("Component.LiquidDiffusionCoefficient", "0")  # 5e-10 m2 s-1 # Darrah et al. 1991
@@ -271,7 +276,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     else:
         h = np.ones((20*45*75))*-100 #TODO
     #s.setInitialConditionHead(h)  # cm
-    s.setHomogeneousIC(-100.)  # cm pressure head
+    s.setHomogeneousIC(-100., equilibrium = True)  # cm pressure head
     
     s.initializeProblem()
     wilting_point = -15000
@@ -532,7 +537,7 @@ def setKrKx_phloem(r): #inC
 def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
                 stochastic = False, mods = None, plantType = "plant",
-                recreateComsol_ = False):
+                recreateComsol_ = False, usemoles = True):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     global picker  # make sure it is not garbage collected away...
@@ -548,7 +553,8 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
 
-        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, recreateComsol_)
+        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
+                                    recreateComsol_, usemoles)
         rs.setSeed(seed)
         rs.readParameters(path + fname)
         #if not stochastic:

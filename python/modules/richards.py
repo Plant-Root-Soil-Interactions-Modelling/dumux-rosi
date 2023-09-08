@@ -10,10 +10,11 @@ class RichardsWrapper(SolverWrapper):
     Wraps passing parameters to Dumux for VanGenuchtenParameter, IC, BC, 
     """
 
-    def __init__(self, base):
-        super().__init__(base)
+    def __init__(self, base, usemoles):
+        super().__init__(base, usemoles)
         self.soils = []
         self.param_group = "Soil."
+        self.useMoles = usemoles
 
     def setParameterGroup(self, group:str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
@@ -22,7 +23,6 @@ class RichardsWrapper(SolverWrapper):
     @staticmethod
     def dumux_str(l):
         """ to pass lists to dumux parameter tree as string """
-        print(l, type(l).__name__)
         if type(l).__name__ == "float" or type(l).__name__ == "int":
             return str(l)
         elif type(l).__name__ == 'float64':
@@ -256,6 +256,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getInnerFlux(self, eq_idx = 0):
         """ [cm3 / cm2 / day] """
+        assert not self.useMoles
         return self.base.getInnerFlux(eq_idx) * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
 
     def setOuterFluxCyl(self, flux):
@@ -267,6 +268,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getOuterFlux(self, eq_idx = 0):
         """ [cm / day]"""
+        assert not self.useMoles
         return self.base.getOuterFlux(eq_idx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def setOuterPressure(self, value_top = 0.):
@@ -322,13 +324,28 @@ class RichardsWrapper(SolverWrapper):
     def setSource(self, source_map, eq_idx = 0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
+        # useMole fraction or mass fraction? 
+        if not self.useMoles:
+            unitConversion = 1/ 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
+        else:
+            if eq_idx == 0:
+                molarMassWat = 18. # [g/mol]
+                densityWat = 1. #[g/cm3]
+                # [mol/cm3] = [g/cm3] /  [g/mol] 
+                molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+                unitConversion = 1/ 24. / 3600.  * molarDensityWat; # [cm3/day] -> [mol/s] 
+            else:
+                unitConversion = 1/ 24. / 3600. ; # [mol/day] -> [mol/s] 
+                
         for key, value in source_map.items():
-            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
+            source_map[key] = value * unitConversion #
+        print("setSource", source_map, eq_idx)
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
+        assert not self.useMoles
         for key, value in source_map.items():
             source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
         self.base.applySource(dt * 24.*3600., source_map, self.to_pa(crit_p))
@@ -377,10 +394,60 @@ class RichardsWrapper(SolverWrapper):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
+        
+    def getWaterVolumesCyl(self, length):
+        """Returns total water volume of the domain [cm3]"""
+        self.checkInitialized()
+        vols = self.getCellSurfacesCyl() * length #cm3 scv
+        watCont = self.getWaterContent().flatten() # cm3 wat/cm3 scv
+        return np.multiply(vols , watCont  )  
+        
+    def getWaterVolumes(self):
+        """Returns total water volume of the domain [cm3]"""
+        self.checkInitialized()
+        vols = self.getCellVolumes().flatten() #cm3 scv 
+        watCont = self.getWaterContent().flatten()  # cm3 wat/cm3 scv
+        return np.multiply(vols , watCont  )
+        
+    def getContentCyl(self,idComp, isDissolved, length, ):
+        vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
+        C_ = self.getSolution(idComp).flatten() # mol/mol or g/g 
+        
+        if not isDissolved:
+            if self.useMoles:
+                C_ *= self.bulkDensity_m3 #mol/m3 scv
+            return np.multiply(vols , C_  ) 
+            
+        watCont = self.getWaterContent().flatten() # m3 wat/m3 scv
+        #print(vols, C_, self.molarDensityWat_m3)
+        if self.useMoles:
+            C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
+        #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
+        return np.multiply(np.multiply(vols , watCont) , C_ )
+        
+    def getContent(self,idComp, isDissolved):
+        vols = self.getCellVolumes().flatten() / 1e6 #m3 scv            
+        C_ = self.getSolution(idComp).flatten()  # mol/m3 wat
+        if not isDissolved:
+            if self.useMoles:
+                C_ *= self.bulkDensity_m3 #mol/m3 scv
+            return np.multiply(vols , C_  ) 
+        watCont = self.getWaterContent().flatten() # m3 wat/m3 scv
+        if self.useMoles:
+            C_ *= self.molarDensityWat_m3 # mol/m3 wat
+            
+        return np.multiply(np.multiply(vols , watCont) , C_ )
+          
 
+    def setSolution_(self, sol, eqIdx = 1):
+        """nompi version of  """
+        self.checkInitialized()
+        return np.array(self.base.setSolution(sol, eqIdx))
+        
     def getVeclocity1D(self):
         """Returns the Darcy velocities [cm/day] TODO not working! """
         self.checkInitialized()
+        assert not self.useMoles
         return np.array(self.base.getVelocity1D()) * 100.*24 * 3600  # m/s -> cm/day
 
     def setRegularisation(self, pcEps, krEps):

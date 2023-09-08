@@ -15,7 +15,7 @@ import numpy as np
 import scenario_setup as scenario
 from rhizo_modelsPlant import *  # Helper class for cylindrical rhizosphere models
 import evapotranspiration as evap
-import cyl_exu
+#import cyl_exu
 import cyl3RS as cyl3
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import os
@@ -43,10 +43,10 @@ year = 2013
 soil_type = "loam"
 genotype = "WT"
 comp = "phenolics"
-
+usemoles = True
 """ parameters   """
 soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
-sim_time = 20 #154   #  [day]
+sim_time = 1 #154   #  [day]
 # dt_inner = 360 / (24 * 3600)  # time step [day] 20
 
 x_, y_, lai = evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
@@ -68,7 +68,8 @@ mode = "dumux_10c"
 start_time = timeit.default_timer()
 initsim = 1
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
-            min_b, max_b, cell_number, type = mode, times = x_, net_inf = y_)
+            min_b, max_b, cell_number, type = mode, times = x_, net_inf = y_,
+            usemoles = usemoles)
 # sri_table_lookup = cyl_exu.open_sri_lookup("data_magda/" + soil_type)
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
@@ -77,43 +78,49 @@ xml_name = "Zea_mays_5_Leitner_optimized.xml"  # root growth model parameter fil
 rs, r = scenario.create_mapped_plant(wilting_point, nc, logbase, mode,initsim,
                                         min_b, max_b, cell_number, s, xml_name,
                                         path, plantType = "RS", 
-                                        recreateComsol_ = recreateComsol)  # pass parameter file for dynamic growth
+                                        recreateComsol_ = recreateComsol,
+                                        usemoles = usemoles)  # pass parameter file for dynamic growth
 
 
 
 if rank == 0:
     x = s.getSolutionHead_()  # initial condition of soil [cm]
-    cc = s.getSolution_(1)  # solute concentration [kg/m3].
+    #cc = s.getSolution_(1)  # solute concentration [kg/m3].
     #x = s.getSolutionHead()[:, 0]  # "[:, 0]"  == .flatten()
 x = comm.bcast(x, root = 0)  # Soil part should/will run in parallel
 kexu = scenario.exudation_rates()
 
 ns = len(r.get_segments())
-dcyl = int(np.floor(ns / max_rank))
+dcyl = 0#int(np.floor(ns / max_rank))
 repartition = np.array([dcyl for i in range(max_rank)])
-repartition[max_rank -1] = ns - rank * dcyl
-assert np.sum(repartition) == ns
+repartition[max_rank -1] = 0#ns - rank * dcyl
+#assert np.sum(repartition) == ns
+
 if rank == 0:
-    rs.initializeRhizo(soil_, x, np.array([i for i in range(repartition[rank])]), cc)
+    rs.initializeRhizo(soil_, x, np.array([i for i in range(repartition[rank])]))#, cc)
     print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, 0,repartition[rank], timeit.default_timer() - start_time))
 else:
-    rs.initializeRhizo(soil_, x, np.array([i for i in range(repartition[rank-1],repartition[rank])]), cc)
+    rs.initializeRhizo(soil_, x, np.array([i for i in range(repartition[rank-1],repartition[rank])]))#, cc)
     print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, repartition[rank-1],repartition[rank], timeit.default_timer() - start_time))
 
+if len(rs.cyls) > 1:
+    cyl = rs.cyls[1] # take a random cylinder
 
-cyl = rs.cyls[1] # take a random cylinder
-
-write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
-write_file_array("coord", cyl.getDofCoordinates().flatten())
-for i in range(rs.numFluidComp):
-    write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat ) 
-for i in range(rs.numFluidComp, rs.numComp):
-    write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
+    write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
+    write_file_array("coord", cyl.getDofCoordinates().flatten())
+    for i in range(rs.numFluidComp):
+        write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat ) 
+    for i in range(rs.numFluidComp, rs.numComp):
+        write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_, soil_c_, c_, mass_soil_c_, dist, conc, l, a = [], [], [], [], [], [], [], [], [], [], [], [], []
 
-times = [0., 5./24.]#, 10./24.]  #h to  days
+times = [0., 1., 2.]  #h to  days
 rs_age = initsim
+
+
+net_sol_flux = np.array([])
+net_flux = np.array([])
 for i, dt in enumerate(np.diff(times)):
 
 
@@ -133,12 +140,13 @@ for i, dt in enumerate(np.diff(times)):
         cyl_type = 4
     else:
         raise("unknown type")
-    QExud = np.where(np.array(r.rs.organTypes)==2, 1e-2,0) #dummy, currently not used
+    QExud = np.where(np.array(r.rs.organTypes)==2, 1e-10,0.) #dummy, currently not used, mol for each seg
     
-    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All = cyl3.simulate_const(s, 
+    psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All, net_sol_flux, net_flux = cyl3.simulate_const(s, 
                                             r,  dt, dt_inner, kexu, rs_age, repartition, 
                                             type = mode, Q_Exud=QExud, plantType = "RS", r= rs,
-                                            wilting_point = wilting_point, trans_maize = trans_maize)
+                                            wilting_point = wilting_point, trans_maize = trans_maize,
+                                            net_sol_flux = net_sol_flux, net_flux = net_flux)
     # raise Exception
     #(fname, s, r, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
 
@@ -169,12 +177,12 @@ for i, dt in enumerate(np.diff(times)):
             
             cyl = rs.cyls[1] # take a random cylinder (not 0 to not have air
             
-            write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
-            write_file_array("coord", cyl.getDofCoordinates().flatten())
-            for i in range(rs.numFluidComp):
-                write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat ) 
-            for i in range(rs.numFluidComp, rs.numComp):
-                write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
+            # write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
+            # write_file_array("coord", cyl.getDofCoordinates().flatten())
+            # for i in range(rs.numFluidComp):
+                # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat ) 
+            # for i in range(rs.numFluidComp, rs.numComp):
+                # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
 
                         
 
@@ -224,9 +232,19 @@ if rank == 0:
     if True:
         periodic = False
         # print(c_All)
-        print(psi_x[-1].shape,  psi_s[-1].shape, c_All[-1].shape,len(r.get_segments()) , QExud.shape)
-        vp.plot_roots_and_soil(rs.mappedSegments(), "pressure head (rx)", psi_x[-1], s, periodic, min_b, max_b, cell_number, soil_type+genotype+"_rx", sol_ind =-1) 
-        vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, soil_type+genotype+"_rx", sol_ind =1)  # VTK vizualisation
+        xx = np.array(s.getSolutionHead())
+        cc = rs.getCC(len(xx))
+        print(xx.shape,psi_x[-1].shape,  psi_s[-1].shape, c_All[-1].shape,len(r.get_segments()) , QExud.shape)
+        vp.plot_roots_and_soil(rs.mappedSegments(), "pressure head (rx)", psi_x[-1], s, periodic, min_b, max_b, cell_number, 
+                soil_type+genotype+"_rx", sol_ind =0) 
+        # not sure that works
+        vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
+                soil_type+genotype+"_rx", sol_ind =-1,extraArray = cc)  # VTK vizualisation
+        vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
+                soil_type+genotype+"_rx", sol_ind =1)  # VTK vizualisation
+        vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
+                soil_type+genotype+"_rx", sol_ind =-1,extraArray = rs.getCC(len(xx), idComp=7))  # VTK vizualisation
+        print([rs.getCC(len(xx), idComp=ioo) for ioo in range(1, rs.numComp + 1)])
         #vp.plot_roots_and_soil(rs.mappedSegments(), "pressure head", psi_s[-1], s, periodic, min_b, max_b, cell_number, soil_type+genotype+"_rsx")  # VTK vizualisation
         #vp.plot_roots_and_soil(rs.mappedSegments(), "pressure head (rx)", psi_x[-1], s, periodic, min_b, max_b, cell_number, soil_type+genotype+"_rx")  # VTK vizualisation
         #vp.plot_roots_and_soil(rs.mappedSegments(), "realized_inner_fluxes", realized_inner_fluxes, s, periodic, min_b, max_b, cell_number, name+"_flux")  # VTK vizualisation

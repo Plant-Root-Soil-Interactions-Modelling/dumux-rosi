@@ -27,6 +27,11 @@
 #include <limits>
 #include <array>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+
 /**
  * Derived class will pass ownership
  */
@@ -502,6 +507,22 @@ public:
     }
 
     /**
+     * The volume [m3] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    virtual std::vector<double> getCellSurfacesCyl() {
+        std::vector<double> vols;
+		auto points = getPoints();//get the vertices == faces of 1D domain
+        for (int i = 0; i < (points.size()-1); i++) {
+			double rIn = points.at(i).at(0);
+			double rOut = points.at(i + 1).at(0);
+            vols.push_back((rOut*rOut - rIn*rIn)* M_PI);
+        }
+        return vols;
+    }
+
+    /**
      * Returns the coordinate, where the DOF sit, in the same order like the solution values.
      *
      * DOF sit either at the vertices (points) for box method or
@@ -576,6 +597,17 @@ public:
             sol[c] = x[c][eqIdx];
         }
         return sol;
+    }
+	
+    /**
+     * Returns the current solution for a single mpi process.
+     * Gathering and mapping is done in Python
+     */
+    virtual void setSolution( std::vector<double> sol, int eqIdx = 0) {
+        int n = checkInitialized();
+        for (int c = 0; c<n; c++) {
+            x[c][eqIdx] = sol[c] ;
+        }
     }
 
     /**
@@ -831,11 +863,13 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getCells", &Solver::getCells)
             .def("getCellVolumes", &Solver::getCellVolumes)
             .def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
+            .def("getCellSurfacesCyl", &Solver::getCellSurfacesCyl)
             .def("getDofCoordinates", &Solver::getDofCoordinates)
             .def("getPointIndices", &Solver::getPointIndices)
             .def("getCellIndices", &Solver::getCellIndices)
             .def("getDofIndices", &Solver::getDofIndices)
             .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
+            .def("setSolution", &Solver::getSolution)
             .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
