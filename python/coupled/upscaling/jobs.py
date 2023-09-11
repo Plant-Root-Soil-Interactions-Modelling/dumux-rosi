@@ -11,7 +11,7 @@ import os
 import scenario_sra as sra
 import scenario_sra_old as sra_old
 import scenario_agg as agg
-import scenario_par2 as par  # currently running meunier
+import scenario_par as par
 
 
 def start_jobs(jobs):
@@ -30,7 +30,7 @@ def start_jobs(jobs):
         elif method == "agg":
             py_name = "scenario_agg.py"
         elif method == "par":
-            py_name = "scenario_par2.py"
+            py_name = "scenario_par.py"
         else:
             raise("Unknown method" + method)
 
@@ -102,8 +102,8 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ['sra', "agg", "par"]  # 'sra', sraOld, agg, par
-    plant = ['maize']  # 'springbarley', 'soybean', 'maize'
+    method = ["par"]  # 'sra', sraOld, agg, par
+    plant = ['springbarley', 'maize']  # 'springbarley', 'soybean', 'maize'
     dim = ["1D", "3D"]  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
     outer_radius = ['length', 'surface', 'volume', 'voronoi']
