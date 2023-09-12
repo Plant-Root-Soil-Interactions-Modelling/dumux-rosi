@@ -54,6 +54,8 @@ def maize_(dim:str):
     max_b = np.array([38., 8., 0.])
     if dim == "1D":
         cell_number = np.array([1, 1, 150])
+    elif dim == "2D":
+        cell_number = np.array([38, 3, 75])
     else:
         cell_number = np.array([76, 16, 150])
     return min_b, max_b, cell_number
@@ -81,7 +83,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     outer_method     method to determine outer perirhizal radii ('voronoi', 'length', 'surface', or 'volume')    
     """
     assert plant == "maize" or plant == "soybean" or plant == "springbarley", "plant should be 'maize', or 'soybean' or 'springbarley' "
-    assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
+    assert dim == "3D" or dim == "1D" or dim == "2D", "dim should be '1D' or '3D'"
     assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand", "hydrus_sandyloam"], "soil should be 'hydrus_loam', 'hydrus_clay', 'hydrus_sand' or 'hydrus_sandyloam' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
@@ -118,6 +120,8 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     s.initialize()
     if dim == "1D":
         s.createGrid(min_b, max_b, cell_number, periodic = False)
+    elif dim == "2D":
+        s.createGrid(min_b, max_b, cell_number, periodic = True)
     elif dim == "3D":
         s.createGrid(min_b, max_b, cell_number, periodic = True)
     s.setHomogeneousIC(initial, True)  # cm pressure head top, equilibrium (contant total potential)
@@ -188,6 +192,8 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     """ coupling roots to macroscopic soil """
     if dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
+    elif dim == "2D":
+        picker = lambda x, y, z: s.pick([x, y, z])
     elif dim == "3D":
         picker = lambda x, y, z: s.pick([x, y, z])
 
@@ -265,24 +271,24 @@ def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs, wall_time = 
     np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans), -np.array(trans2))))  # time [day], transpiration [cm3/day]
     np.save('results/hs_' + file_name, np.array(hs))  # soil water matric potential per soil cell [cm]
     np.save('results/time_' + file_name, np.array(wall_time))
-    
-    
+
+
 def print_timings(job_list):
     """ evalutate simulation wall times """
-    names, times = [], []  
+    names, times = [], []
     for job in job_list:
         method = job[0]
-        plant = job[1] 
-        dim =  job[2]
-        soil = job[3] 
+        plant = job[1]
+        dim = job[2]
+        soil = job[3]
         outer_method = job[4]
         name = "results/time_" + method + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method
-        names.append(name)     
-        time = np.load(name + ".npy")
-        print(name, time)
-        times.append(time)
-    return names, times 
-    
-    
-    
-    
+        names.append(name)
+        if dim == "1D":
+            time = np.load(name + ".npy")
+            print(name, time)
+            times.append(time)
+        else:
+            times.append(1.)
+    return names, times
+

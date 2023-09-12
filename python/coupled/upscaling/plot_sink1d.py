@@ -16,7 +16,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6],ls = [ "-", ":", "-.", "-", ":", "-."]):
+def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6], ls = [ "-", ":", "-.", "-", ":", "-."]):
 
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
@@ -56,7 +56,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     ax[1].set_xlabel("sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
-    
+
     """ noon """
     for i in range(0, n):
 
@@ -98,15 +98,15 @@ if __name__ == "__main__":
 
     # print("1d vs 3d comparison plots were done with plot_sink3d.py")
 
-    """ springbarley """
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra", "agg"]
-    plant = ["springbarley"] * 2
-    soil = ["hydrus_loam"] * 2
-    outer_method = ["voronoi"] * 2  # , "voronoi"]
-    plot_sink1d(ax, method, plant, soil, outer_method)
-    plt.savefig('sink1d_springbarley_loam.png')
-    plt.show()
+    # """ springbarley """
+    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    # method = ["sra", "agg"]
+    # plant = ["springbarley"] * 2
+    # soil = ["hydrus_loam"] * 2
+    # outer_method = ["voronoi"] * 2  # , "voronoi"]
+    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plt.savefig('sink1d_springbarley_loam.png')
+    # plt.show()
 
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     # method = ["agg"]
