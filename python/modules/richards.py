@@ -358,7 +358,7 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0)
+        return (self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0)).flatten()
 
     def getSolutionHead_(self, eqIdx = 0):
         """ no mpi version of getSolutionHead() """
@@ -383,7 +383,7 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2)
+        return (self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2)).flatten()
 
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
@@ -427,7 +427,7 @@ class RichardsWrapper(SolverWrapper):
         
     def getContent(self,idComp, isDissolved):
         vols = self.getCellVolumes().flatten() / 1e6 #m3 scv            
-        C_ = self.getSolution(idComp).flatten()  # mol/m3 wat
+        C_ = self.getSolution(idComp).flatten()  # mol/mol wat or mol/mol scv
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv

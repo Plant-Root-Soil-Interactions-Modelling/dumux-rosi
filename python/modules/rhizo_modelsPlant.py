@@ -59,6 +59,17 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.soilModel = soil
         self.recreateComsol = recreateComsol_
         self.useMoles = usemoles
+        
+        self.molarMassWat = 18. # [g/mol]
+        self.densityWat = 1. #[g/cm3]
+        # [mol/cm3] = [g/cm3] /  [g/mol] 
+        self.molarDensityWat =  self.densityWat /self.molarMassWat # [mol/cm3]    
+        self.numFluidComp = 2
+        self.numComp = 8
+        # self.soilXX_old = self.soilModel.getSolutionHead()
+        # self.soilTheta_old = self.soilModel.getWaterContent()
+        # self.soilCC_old = np.array([self.soilModel.getSolution(i+1) for i in range(self.numComp)])
+        self.setSoilData()
 
         
         
@@ -84,39 +95,43 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.solidMolDensity = self.solidDensity/self.solidMolarMass
         # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
         self.bulkDensity_m3 = self.solidMolDensity*(1.- self.vg_soil.theta_S) #porosity == theta_s
-        self.molarMassWat = 18. # [g/mol]
-        self.densityWat = 1. #[g/cm3]
-        # [mol/cm3] = [g/cm3] /  [g/mol] 
-        self.molarDensityWat =  self.densityWat /self.molarMassWat # [mol/cm3]    
-        self.numFluidComp = 2
-        self.numComp = 8
+
         
         # additional variables
         self.last_dt = 0.
         #self.ICcc = list(np.full(self.numComp, 0.))
         # self.ICcc[0] = 0.1 #mol/m3 wat or mol/m3 scv
-        self.ICcc = [0.1, 10., 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.]
+        
+        # still needed except for C_S and C_L
+        self.ICcc = [np.nan, np.nan, 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.]
         self.soilcc = [[] for i in range(self.numComp)]
+        self.soiltheta = []
         
         
         # self.update(x, eidx, cc)
         
-    def update(self, x, newEidx = None):#, cc = None):
+    def update(self, newEidx = None):
         """ calls the specific initializer according to @param mode (no parallelisation)  
         @param soil     van genuchten parameters as list        
         @param x        is the solution (or initial condition) of the soil model
         @þaram newEidx  in case of mpi the cylinder indices per process
         """
-        if len(x.shape)!=1:
-            raise Exception
+
         if newEidx is None:
             newEidx = np.array(range(len(self.eidx), len(self.radii)), np.int64)  # segment indices for process
         self.eidx = np.concatenate((self.eidx,np.array(newEidx, dtype = np.int64)), dtype = np.int64)
         
         sizeSoilCell = self.soilModel.getCellVolumes_()
         
-        for iii in range(self.numComp):
-            self.soilcc[iii] = self.getCC(len(sizeSoilCell), idComp = iii+1)
+        self.checkVolumeBalance(finishedUpdate = False)
+        
+        
+        for iii in range(self.numFluidComp):
+            self.soilcc[iii] = self.soilCC_old[iii] #mol/m3wat or mol/m3 scv
+            
+        for iii in range(self.numFluidComp, self.numComp):
+            self.soilcc[iii] = self.getCC(len(sizeSoilCell), idComp = iii+1)#mol/m3wat or mol/m3 scv
+
             # print("self.soilcc[",iii,"]", self.soilcc[iii])
         if self.recreateComsol:
             self.outer_radii = np.full(len(self.radii), 0.6)#np.array(self.segOuterRadii())  # in the future, segment radius might vary with time. TODO: how to handle that?
@@ -136,7 +151,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         # self.ICcc[0] = self.soilModel.getSolution_(1)
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-        XX_leftover = dict([(i, self.getXX_leftoverI(i, x)) for i in  cellIds])
+        XX_leftover = dict([(i, self.getXX_leftoverI(i)) for i in  cellIds])
         # for  i in cellIds:
             # for ncomp in range(1, self.numComp + 1):
                 # temp1 = self.getCC_leftoverI(i, ncomp)
@@ -145,13 +160,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 
         # in mol/mol wat or mol/mol bulk soil
         CC_leftover = dict([(i, [self.getCC_leftoverI(i, ncomp)/(self.phaseDensity(ncomp)) for ncomp in range(1, self.numComp + 1)]) for i in cellIds])#, cc
-        print("CC_leftover", CC_leftover)
+        # print("CC_leftover", CC_leftover)
         # still need to do it for water
         for i in newEidx:#only initialize the new eidx
             self.initialize_(i,XX_leftover,CC_leftover)
             
-        self.checkVolumeBalance()
-        self.checkMassOMoleBalance()#doSolute = False)
+        self.checkVolumeBalance(finishedUpdate = True)
+        # self.checkMassOMoleBalance()#doSolute = False)
     
     def phaseDensity(self, compId):
         if compId <= self.numFluidComp:
@@ -164,52 +179,62 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         for cellId in cellIds:
-            vol_total = sum(self.soilModel.getCellVolumes()[cellId] )# solute concentration [mol].
+            vol_total = self.soilModel.getCellVolumes_()[cellId] # solute concentration [mol].
             idSegs = self.cell2seg[cellId]#all segments in the cell
+            idSegs = np.array([x for x in idSegs if (np.array(self.organTypes)[x] == 2)])
             lengths_I = np.array(self.seg_length)[idSegs]
             radii_in = np.array(self.radii)[idSegs]
             radii_out = np.array(self.outer_radii)[idSegs]
             vol_rootRhizo = radii_out * radii_out * np.pi * lengths_I
             vol_root = radii_in * radii_in * np.pi * lengths_I 
+            if cellId == 333:
+                print("checkRadii",cellId, vol_total, sum(vol_rootRhizo), vol_total - sum(vol_rootRhizo),  sum(vol_root))
+                print(((vol_total - sum(vol_rootRhizo - vol_root))/vol_total)*100)
+                print(vol_rootRhizo, vol_root,radii_in, radii_out)
+                print("checkRadiiEnd")
             try:
-                assert abs(((vol_total - sum(vol_rootRhizo - vol_root))/vol_total)*100) < 0.1
+                assert abs(((vol_total - sum(vol_rootRhizo - vol_root))/vol_total)*100) < 0.05
             except:
                 print("checkRadii",cellId, vol_total, vol_rootRhizo, vol_total - sum(vol_rootRhizo), vol_root, sum(vol_root))
                 print(((vol_total - sum(vol_rootRhizo))/vol_total)*100)
                 raise Exception
                 
-    def checkVolumeBalance(self):
+    def checkVolumeBalance(self, finishedUpdate):
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         for cellId in cellIds:
-            vol_total = sum(self.soilModel.getCellVolumes()[cellId] )# solute concentration [mol].
+            vol_total = self.soilModel.getCellVolumes_()[cellId] # solute concentration [mol].
             idSegs = self.cell2seg[cellId]#all segments in the cell
-            idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
-            assert len(idSegs) == len(idCyls)
-            vol_rhizo = sum(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idSegs])
+            idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
             
-            if (abs((vol_total - vol_rhizo)/vol_total*100) > 1):# or ((vol_total - vol_rhizo) < 0.):
-                print("checkVolumeBalance")
-                print(cellId, vol_total, vol_rhizo, (vol_total - vol_rhizo))
-                print(self.soilModel.getCellVolumes()[cellId])
-                print(np.array([cc.getCellSurfacesCyl() for cc in self.cyls ]))
-                print(np.array([sum(cc.getCellSurfacesCyl()) for cc in self.cyls ]))
-                # print(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length)
-                # print(sum(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length))
-                print(vol_total)
-                raise Exception
-            if cellId == 337:
-                print("checkVolumeBalance")
-                print(cellId, vol_total, vol_rhizo)
-                print(self.soilModel.getCellVolumes()[cellId])
-                print(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idSegs])
-                # print(np.array([cc.getCellSurfacesCyl() for cc in self.cyls ]))
-                # print(np.array([sum(cc.getCellSurfacesCyl()) for cc in self.cyls ]))
-                # print(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length)
-                # print(sum(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length))
-                print(vol_total)
+            if finishedUpdate:
+                assert len(idSegs) == len(idCyls)
+            if(len(idCyls) >0):
+                vol_rhizo = sum(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idCyls])
+                
+                if (abs((vol_total - vol_rhizo)/vol_total*100) > 1):# or ((vol_total - vol_rhizo) < 0.):
+                    print("checkVolumeBalance")
+                    print(cellId, vol_total, vol_rhizo, (vol_total - vol_rhizo))
+                    print(self.soilModel.getCellVolumes_()[cellId])
+                    print(np.array([cc.getCellSurfacesCyl() for cc in np.array(self.cyls)[idCyls] ]))
+                    print(np.array([sum(cc.getCellSurfacesCyl()) for cc in np.array(self.cyls)[idCyls] ]))
+                    # print(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length)
+                    # print(sum(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length))
+                    print("vol cyls",np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idCyls])
+                    print("points", np.array([self.cyls[i].getPoints() for i in idCyls]))
+                    raise Exception
+                # if cellId == 337:
+                    # print("checkVolumeBalance")
+                    # print(cellId, vol_total, vol_rhizo)
+                    # print(self.soilModel.getCellVolumes_()[cellId])
+                    # print(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idSegs])
+                    # # print(np.array([cc.getCellSurfacesCyl() for cc in self.cyls ]))
+                    # # print(np.array([sum(cc.getCellSurfacesCyl()) for cc in self.cyls ]))
+                    # # print(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length)
+                    # # print(sum(np.array([np.pi*(cc.base.rOut*cc.base.rOut-cc.base.rIn*cc.base.rIn)*10000 for cc in self.cyls ])*self.seg_length))
+                    # print(vol_total)
         
-    def checkMassOMoleBalance(self, doWater = True, doSolute = True):#would need to do it for each cell, not overall
+    def checkMassOMoleBalance__(self, doWater = True, doSolute = True):#would need to do it for each cell, not overall
         print("checkMassOMoleBalance")
         sizeSoilCell = self.soilModel.getCellVolumes_()
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
@@ -218,13 +243,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if doWater:
             for cellId in cellIds:
                 idSegs = self.cell2seg[cellId]#all segments in the cell
-                idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+                idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
                 wat_total = self.soilModel.getWaterVolumes()[cellId] # solute concentration [mol].
                 wat_rhizo = sum(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
                 # wat_total = sum(self.soilModel.getWaterVolumes()[cellIds] )# solute concentration [mol].
                 # wat_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[i])) for i, cc in enumerate(self.cyls) ]))
-                print(cellId, 0, wat_total, wat_rhizo)
+                
                 if abs((wat_total - wat_rhizo)/wat_total*100) > 1:
+                    print(cellId, 0, wat_total, wat_rhizo)
                     print(0, wat_total, wat_rhizo)
                     print(self.soilModel.getWaterVolumes()[cellId])
                     print(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
@@ -234,11 +260,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 for cellId in cellIds:
                     isDissolved = (idComp <= self.numFluidComp)
                     idSegs = self.cell2seg[cellId]#all segments in the cell
-                    idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+                    idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
                     if isDissolved:
                         V_total = (self.soilModel.getWaterVolumes()/1e6)[cellId]
                     else:
-                        V_total = (self.soilModel.getCellVolumes() / 1e6)[cellId]
+                        V_total = (self.soilModel.getCellVolumes_() / 1e6)[cellId]
                     mol_total = self.soilcc[idComp-1][cellId] * V_total
                     
                     # mol_total = self.soilModel.getContent(idComp, isDissolved)[cellId]# solute concentration [mol].
@@ -260,13 +286,106 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             print(idComp, mol_total, mol_rhizo)
                             raise Exception
                     else:
-                        print("self.soilcc[0]", self.soilcc[idComp-1][cellId], V_total)
-                        print(cellId, idComp, mol_total, mol_rhizo)
                         if abs((mol_total - mol_rhizo)/mol_total*100) > 1:
+                            print("self.soilcc[0]", self.soilcc[idComp-1][cellId], V_total)
+                            print(cellId, idComp, mol_total, mol_rhizo)
                             print(idComp, mol_total, mol_rhizo)
                             raise Exception
                 
             
+    def checkMassOMoleBalance2(self, sourceWat, sourceSol,dt, doWater = True, doSolute = True, doSolid = True):#would need to do it for each cell, not overall
+        print("checkMassOMoleBalance2")
+        sizeSoilCell = self.soilModel.getCellVolumes_()
+        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+
+        if doSolid:
+            NC = self.numComp
+        elif doSolute:
+            NC = self.numFluidComp
+        else:
+            NC = 0
+       
+        if doWater:
+            for cellId in cellIds:
+                idSegs = self.cell2seg[cellId]#all segments in the cell
+                idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
+                wat_total = self.soilModel.getWaterVolumes()[cellId] + sourceWat[cellId] * dt# solute concentration [mol].
+                wat_rhizo = sum(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
+                # wat_total = sum(self.soilModel.getWaterVolumes()[cellIds] )# solute concentration [mol].
+                # wat_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[i])) for i, cc in enumerate(self.cyls) ]))
+                
+                if abs((wat_total - wat_rhizo)/wat_total*100) > 1:
+                    print(cellId, 0, wat_total, wat_rhizo, sourceWat[cellId], dt)
+                    print(0, wat_total, wat_rhizo)
+                    print(self.soilModel.getWaterVolumes()[cellId])
+                    print(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
+                    raise Exception    
+        for idComp in range(1, NC +1):
+            for cellId in cellIds:
+                isDissolved = (idComp <= self.numFluidComp)
+                idSegs = self.cell2seg[cellId]#all segments in the cell
+                idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
+                if isDissolved:
+                    V_total = (self.soilModel.getWaterVolumes()/1e6)[cellId]
+                else:
+                    V_total = (self.soilModel.getCellVolumes_() / 1e6)[cellId]
+                # mol_total = self.soilcc[idComp-1][cellId] * V_total + sourceSol[idComp-1][cellId] * dt
+                
+                mol_total = self.soilModel.getContent(idComp, isDissolved)[cellId] # solute concentration [mol].
+                mol_rhizo = sum(np.array([sum( self.cyls[i].getContentCyl( idComp, isDissolved, self.seg_length[i] ) ) for i in idCyls ]))
+                
+                if (mol_total  + sourceSol[idComp-1][cellId] * dt  == 0) :
+                    if ((mol_rhizo > 0)):
+                        print(idComp, mol_total, mol_rhizo)
+                        raise Exception
+                else:
+                    if abs((mol_total + sourceSol[idComp-1][cellId] * dt - mol_rhizo)/(mol_total + sourceSol[idComp-1][cellId] * dt)*100) > 1:
+                        print("self.soilcc[0]", sourceSol[idComp-1][cellId], dt, V_total)
+                        print(cellId, idComp, mol_total, mol_rhizo)
+                        print(idComp, mol_total, mol_rhizo)
+                        raise Exception
+            
+    
+    def setSoilData(self, sourceWat=[], sourceSol=[],dt=0):
+        """set soil values before bulk flow """
+        sizeSoilCell = self.soilModel.getCellVolumes_()/1e6 #m3
+        NC = self.numFluidComp
+        
+        
+        self.soilXX_old = self.soilModel.getSolutionHead()
+        self.soilTheta_old = self.soilModel.getWaterContent()
+        isDissolved = True
+        
+        #mol/m3 wat
+        self.soilCC_old = np.array([self.soilModel.getSolution_(i+1)*self.soilModel.molarDensityWat_m3 for i in range(self.numFluidComp)])
+        try:
+            assert len(self.soilCC_old[0].shape) == 1
+        except:
+            print(self.soilModel.getSolution_(1).shape)
+            print(self.soilModel.molarDensityWat_m3)
+            raise Exception
+            
+        if len(sourceWat) > 0:
+            cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+
+            for cellId in cellIds:
+                wat_total1 = self.soilModel.getWaterVolumes()[cellId] /1e6
+                wat_total2 = wat_total1 + sourceWat[cellId]/1e6 * dt #m3
+                
+                self.soilTheta_old[cellId] =  wat_total2 / sizeSoilCell[cellId]#m3/m3
+                self.soilXX_old[cellId] = vg.pressure_head(self.soilTheta_old[cellId], self.vg_soil)
+                
+                for i in range(self.numFluidComp):
+                    cc_content_ = self.soilCC_old[i][cellId] * wat_total1
+                    self.soilCC_old[i][cellId] = (cc_content_ + sourceSol[i][cellId] * dt)/wat_total2#mol/m3
+                    try:
+                        assert len(self.soilCC_old[i].shape) == 1
+                    except:
+                        print(self.soilCC_old[i].shape)
+                        print(cc_content_ , sourceSol[i][cellId] , dt,wat_total2)
+                        raise Exception
         
     
             
@@ -278,12 +397,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         lb = self.logbase            
         a_in = self.radii[i] 
         a_out = self.outer_radii[i] 
-        print(a_in, a_out)
+        # print(a_in, a_out)
         if self.seg2cell[i] > 0:
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb)
         else:
             points = np.array([a_in,a_out ])
-        if (len(points) != len(oldPoints)) or (max(abs(points - oldPoints)) > 1e-2):#new vertex distribution
+        if (len(points) != len(oldPoints)) or (max(abs(points - oldPoints)) > 0.):#new vertex distribution
             cellsOld = np.array(cyl.getCellCenters()).flatten()
             oldHead = np.array(cyl.getSolutionHead()).flatten()
             cAllOld = [np.array(cyl.getSolution_(i+1)) for i in range(self.numComp)]
@@ -311,15 +430,17 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                                  cAll = cAllOld, 
                                                  oldCells = cellsOld)
     
-    def getXX_leftoverI(self, idCell, xx):
+    def getXX_leftoverI(self, idCell):
         idSegs = self.cell2seg[idCell]#all segments in the cell
-        idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+        idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
+        sizeSoilCell = self.soilModel.getCellVolumes_() #cm3
         if len(idSegs) > len(idCyls):#we have new segments
             if len(idCyls) > 0:
                 cyls_i = np.array(self.cyls)[idCyls]
-                wat_total = self.soilModel.getWaterVolumes()[idCell]/1e6# solute concentration [mol].
+                #wat_total = self.soilModel.getWaterVolumes()[idCell]/1e6# solute concentration [mol].
+                wat_total = self.soilTheta_old[idCell] * sizeSoilCell[idCell]/1e6 #m3
                 wat_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[idCyls[i]]))/1e6 for i, cc in enumerate(cyls_i) ]))
-                V_total = (self.soilModel.getCellVolumes() / 1e6)[idCell]
+                V_total = (self.soilModel.getCellVolumes_() / 1e6)[idCell]
                 V_rhizo = sum([sum( cc.getCellSurfacesCyl()*self.seg_length[idCyls[i]] )/1e6 for i, cc in enumerate(cyls_i) ])
                 V_root = 0#sum((np.array(self.radii)*np.array(self.radii)*np.pi*self.seg_length)[idSegs])/1e6
                 watContent_res = (wat_total - wat_rhizo)/(V_total - V_rhizo - V_root)
@@ -333,37 +454,42 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     print(idCell, self.soilModel.getWaterContent()[idCell])
                     print(np.array([cc.getWaterContent() for i, cc in enumerate(cyls_i) ]).flatten())
                     print(wat_total,wat_rhizo, V_total, V_rhizo , V_root, watContent_res, self.vg_soil.theta_R )
-                    self.checkMassOMoleBalance(doSolute = False)
+                    # self.checkMassOMoleBalance(doSolute = False)
                     raise Exception
                     
-                if idCell == 337:
-                    print("getXX_leftoverI")
-                    print(idCell, self.soilModel.getWaterContent()[idCell])
-                    print(np.array([cc.getWaterContent() for i, cc in enumerate(cyls_i) ]).flatten())
-                    print("wat_total",wat_total,wat_rhizo, wat_total - wat_rhizo)
-                    print(V_total, V_rhizo , V_root,V_total - V_rhizo - V_root )
-                    print(watContent_res, self.vg_soil.theta_R )
-                    print(p_head, idSegs, idCyls)
+                # if idCell == 337:
+                    # print("getXX_leftoverI")
+                    # print(idCell, self.soilModel.getWaterContent()[idCell])
+                    # print(np.array([cc.getWaterContent() for i, cc in enumerate(cyls_i) ]).flatten())
+                    # print("wat_total",wat_total,wat_rhizo, wat_total - wat_rhizo)
+                    # print(V_total, V_rhizo , V_root,V_total - V_rhizo - V_root )
+                    # print(watContent_res, self.vg_soil.theta_R )
+                    # print(p_head, idSegs, idCyls)
                 return p_head #cm
             else:
-                return xx[idCell]
+                return self.soilXX_old[idCell]
         
     
     def getCC_leftoverI(self, idCell, idComp):#mol/m3 wat
         isDissolved = (idComp <= self.numFluidComp)
         idSegs = self.cell2seg[idCell]#all segments in the cell
-        idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+        idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
+        
+        
+        
         if len(idSegs) > len(idCyls):#we have new segments
             if len(idCyls) > 0:#we have old segments
                 cyls_i = np.array(self.cyls)[idCyls]
-                #mol_total = self.soilModel.getContent(idComp, isDissolved)[idCell]# solute concentration [mol].
+                
+                #do not use soilModel => instead use soilcc to have concentration at last time step
+                # mol_total = self.soilModel.getContent(idComp, isDissolved)[idCell]# solute concentration [mol].
                 mol_rhizo = sum(np.array([sum(cc.getContentCyl(idComp, isDissolved, self.seg_length[idCyls[i]])) for i, cc in enumerate(cyls_i) ]))
                 if isDissolved:
                     V_total = (self.soilModel.getWaterVolumes()/1e6)[idCell]
                     V_rhizo = sum(np.array([sum(cc.getWaterVolumesCyl(self.seg_length[idCyls[i]] ))/1e6 for i, cc in enumerate(cyls_i) ]))
                     V_root = 0.
                 else:
-                    V_total = (self.soilModel.getCellVolumes() / 1e6)[idCell]
+                    V_total = (self.soilModel.getCellVolumes_() / 1e6)[idCell]
                     V_rhizo = sum(np.array([sum(cc.getCellSurfacesCyl()*self.seg_length[idCyls[i]] )/1e6 for i, cc in enumerate(cyls_i) ]))
                     V_root = 0#sum((np.array(self.radii)*np.array(self.radii)*np.pi*self.seg_length)[idSegs])/1e6         
                 mol_total = self.soilcc[idComp-1][idCell] * V_total
@@ -372,23 +498,52 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     print("res_CC < 0",mol_total , mol_rhizo,V_total ,V_rhizo , V_root) 
                     print(idCyls, idSegs, idCell)
                     raise Exception
-                print("getCC_leftover",idComp,res_CC, self.molarDensityWat, mol_total , mol_rhizo,V_total , V_rhizo ,( V_root))
+                # print("getCC_leftover",idComp,res_CC, self.molarDensityWat, mol_total , mol_rhizo,V_total , V_rhizo ,( V_root))
                 return res_CC
             else:
-                print("getCC_leftover_init",idComp, self.ICcc[idComp-1], self.molarDensityWat)
-                return self.ICcc[idComp-1]#ccc[idCell]
+                # print("getCC_leftover_init",idComp, self.ICcc[idComp-1], self.molarDensityWat)
+                return self.soilcc[idComp-1][idCell] #
         else:
             return 0
             
         
-    def getCC(self,soilShape, idComp = 1, konz = True): #mol/m3 wat or mol/m3 scv
+    def getCC(self,soilShape, idComp = 1, konz = True): # if konz:  mol/m3 wat or mol/m3 scv
         isDissolved = (idComp <= self.numFluidComp)
-        cc = np.full(soilShape,self.ICcc[idComp-1]) #mol/m3 wat or mol/m3 scv
+        if isDissolved:
+            cc = self.soilCC_old[idComp-1] #np.full(soilShape,self.ICcc[idComp-1]) #mol/m3 wat or mol/m3 scv
+        else:
+            cc = np.full(soilShape,self.ICcc[idComp-1])
+        try:
+            assert len(cc.shape) == 1
+        except:
+            print(cc.shape)
+            print(soilShape)
+            print(self.ICcc[idComp-1])
+            print( self.soilCC_old[idComp-1] )
+            print( self.soilCC_old[idComp-1].shape )
+            print(idComp, isDissolved)
+            raise Exception
+            
+        theta = self.soilTheta_old 
+        if not konz:
+            print(cc.shape,self.soilModel.getCellVolumes_().shape)
+            cc *= (self.soilModel.getCellVolumes_() / 1e6) # \times m3 scv
+            if isDissolved:
+                cc *= theta # \times m3 water/m3 scv
+        
+        try:
+            assert len(cc.shape) == 1
+        except:
+            print(cc.shape)
+            print(theta.shape)
+            print(self.soilModel.getCellVolumes_().shape)
+            raise Exception   
+            
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         for idCell in cellIds:
             idSegs = self.cell2seg[idCell]#all segments in the cell
-            idCyls =  np.array([x for x in idSegs if x < len(self.cyls)])#all the segments which already have cylinder
+            idCyls =  np.array([x for x in idSegs if (x < len(self.cyls) and (not isinstance(self.cyls[x], AirSegment)))])#all the segments which already have cylinder
             if len(idCyls) > 0:#we have old segments
                 cyls_i = np.array(self.cyls)[idCyls]
                 mol_rhizo = sum(np.array([sum(cc.getContentCyl(idComp, isDissolved, self.seg_length[idCyls[i]])) for i, cc in enumerate(cyls_i) ]))
@@ -426,7 +581,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         return cc
                 
     def initialize_(self,i,x,cc ):
-        if self.seg2cell[i] > 0:
+        if ((self.seg2cell[i] > 0) and (self.organTypes[i] == 2)):
             if self.mode == "dumux":
                 self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, False))
             elif self.mode == "dumux_exact":
@@ -586,7 +741,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Value", str(0 )) 
                 
             for j in range( 1, self.numComp+1):       
-                print("cAll[j-1]",j-1, cAll[j-1],cyl.dumux_str(cAll[j-1])  )
+                #print("cAll[j-1]",j-1, cAll[j-1],cyl.dumux_str(cAll[j-1])  )
                 cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
             # if isinstance(cAll[1], np.float64) or isinstance(cAll[1], float):
                 # if cAll[1] > 0:
@@ -873,7 +1028,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             proposed_inner_fluxes = argv[0]
             proposed_outer_fluxes = argv[1]
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
-                print("cyl no ",i,"/",len(self.cyls))
+                print("cyl no ",i,"/",len(self.cyls),isinstance(cyl, AirSegment), self.organTypes[i] )
                 j = self.eidx[i]  # for one process j == i
                 if isinstance(cyl, AirSegment):  
                     cyl.setInnerFluxCyl(proposed_inner_fluxes[j])
@@ -891,10 +1046,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         # cyl.setInnerBC_solute("constantFluxCyl", argv[2][i])
                         botVal = argv[2][i]
                         topVal = argv[3][i]
+                        botVal_mucil = argv[4][i]
+                        topVal_mucil = argv[5][i]
                     else:
                         # cyl.setInnerBC_solute("constantFluxCyl", argv[2])
                         botVal = argv[2]
                         topVal = argv[3]
+                        botVal_mucil = argv[4]
+                        topVal_mucil = argv[5]
                         
                     # cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
                     #cyl.setParameter( "Soil.BC.Bot.C1Value",str(1))# str(botVal / (2 * np.pi * self.radii[j] * l)))  # [cm3/day] -> [cm /day]
@@ -905,10 +1064,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     # if not self.recreateComsol:
                         #print("solutes", topVal / (2 * np.pi * self.outer_radii[j] * l), 
                         #    topVal / (2 * np.pi * self.outer_radii[j] * l))
-                    #    valueTopBC[0] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [mol/day] -> [mol/cm2 /day]
-                    #    valueTopBC[1] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [mol/day] -> [mol/cm2 /day]
                     # print("topSBC",typeBC, valueTopBC) 
-                    cyl.setSoluteTopBC(typeBC, valueTopBC)
                     valueBotBC = np.full(self.numComp,0.)
                     if self.recreateComsol:
                         valueBotBC[0] = 1.; valueBotBC[1] = 1.
@@ -916,9 +1072,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         #print("solutes_bot",  botVal / (2 * np.pi * self.radii[j] * l), 
                         #    botVal / (2 * np.pi * self.radii[j] * l) )
                         valueBotBC[0] = botVal / (2 * np.pi * self.radii[j] * l) # [mol/day] -> [mol/cm2 /day]
-                        # valueBotBC[1] = botVal / (2 * np.pi * self.radii[j] * l) # [cm3/day] -> [cm /day]
+                        valueBotBC[1] = botVal_mucil / (2 * np.pi * self.radii[j] * l) # [mol/day] -> [mol/cm2 /day]
+                        
+                        valueTopBC[0] = topVal / (2 * np.pi * self.outer_radii[j] * l) # [mol/day] -> [mol/cm2 /day]
+                        valueTopBC[1] = topVal_mucil / (2 * np.pi * self.outer_radii[j] * l) # [mol/day] -> [mol/cm2 /day]
+                        
                     # print("botSBC",typeBC, valueBotBC) 
                     cyl.setSoluteBotBC(typeBC, valueBotBC)
+                    cyl.setSoluteTopBC(typeBC, valueTopBC)
                     print("inner flux", proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), valueBotBC)
                     print("outer flux",proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l), valueTopBC)
                     

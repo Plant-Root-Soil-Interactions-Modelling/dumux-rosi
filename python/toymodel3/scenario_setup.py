@@ -181,8 +181,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
     if (type == "dumux_10c") or (type == "dumux_dirichlet_nc")or (type == "dumux_dirichlet_10c"):  # solute BC
-        Ds = 1e-8 *0# m^2/s
-        Dl = 1e-9*0
+        Ds = 1e-8 # m^2/s
+        Dl = 1e-9
         numComp = 8
         numFluidComp = 2
         # s.setTopBC_solute("outflow", 0.)
@@ -258,7 +258,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Problem.verbose", "-1")
-    s.setParameter("Problem.doSoluteFlow", "0")
+    # s.setParameter("Problem.doSoluteFlow", "0")
     # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
         # s.setParameter("Component.MolarMass", "1.2e-2")  # carbon 12 g/mol
         # s.setParameter("Component.LiquidDiffusionCoefficient", "0")  # 5e-10 m2 s-1 # Darrah et al. 1991
@@ -363,7 +363,7 @@ def weather(simDuration, hp:float=1):
             thetaInit = 28/100   
             #thetaInit = 10.47/100
             cs = 350e-6
-        coefhours = sinusoidal(simDuration)
+        coefhours = sinusoidal(simDuration)/2
         RH_ = RHnigh + (RHday - RHnigh) * coefhours
         TairC_ = Tnigh + (Tday - Tnigh) * coefhours
         Q_ = Qnigh + (Qday - Qnigh) * coefhours
@@ -445,8 +445,9 @@ def phloemParam(r,weatherInit ):
     
     r.C_targ = r.CSTimin
     r.C_targMesophyll = r.CSTimin
-    r.k_S_ST = 5/25 #daudet2002
-    r.k_S_Mesophyll = 5/25 #daudet2002
+    r.k_S_ST = 5/25 *2 #daudet2002
+    r.k_S_Mesophyll = 5/25*0 #daudet2002
+    r.k_mucil = 1/20
    
 
 

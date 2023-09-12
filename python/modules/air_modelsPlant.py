@@ -87,7 +87,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     
     #all
     def solve(self,*arg):
-        pass
+        print("solve aire segment")
         
     #shape
     def getDofCoordinates(self):

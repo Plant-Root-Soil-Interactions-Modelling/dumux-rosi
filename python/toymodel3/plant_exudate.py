@@ -66,7 +66,7 @@ mode = "dumux_10c"
 
 """ initialize """
 start_time = timeit.default_timer()
-initsim = 1
+initsim = 9.5
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
             min_b, max_b, cell_number, type = mode, times = x_, net_inf = y_,
             usemoles = usemoles)
@@ -119,10 +119,12 @@ times = [0., 1., 2.]  #h to  days
 rs_age = initsim
 
 
-net_sol_flux = np.array([])
+net_sol_flux =  np.array([np.array([]),np.array([])])
 net_flux = np.array([])
 
 
+r.minLoop = 1000
+r.maxLoop = 5000
 for i, dt in enumerate(np.diff(times)):
 
 
@@ -131,32 +133,70 @@ for i, dt in enumerate(np.diff(times)):
     rs.simulate(dt)  # simulate for 1 day
     
     
-    if i ==0: #for the initial carbon flow rate
-        weatherX = scenario.weather(initsim) 
-        r.minLoop = 1000
-        r.maxLoop = 5000
-        r.Qlight = weatherX["Qlight"]
+    start_time = timeit.default_timer()
+    repartitionOld = repartition
+    nsOld = sum(repartitionOld)
+    ns = len(r.get_segments())
+    dcyl = int(np.floor(ns / max_rank))
+    repartition = np.array([dcyl for i in range(max_rank)])
+    repartition[max_rank -1] = ns - rank * dcyl
+    toAdd = repartition - repartitionOld
+    
+    if toAdd[rank] > 0: # that could be put in main file (after RS growth)
+
+        if rank == 0:
+            rs.update(np.array([i for i in range(toAdd[rank])]) + nsOld)
+            print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
+        else:
+            rs.update(np.array([i for i in range(toAdd[rank-1],toAdd[rank])]) + nsOld)
+            print ("Initialized rank {:g}/{:g} [{:g}-{:g}] in {:g} s".format(rank + 1, max_rank, toAdd[rank-1] + nsOld, toAdd[rank] + nsOld, timeit.default_timer() - start_time))
+            
+    
+    weatherX = scenario.weather(rs_age) 
+    r.Qlight = weatherX["Qlight"]
+    rsx = rs.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
+    try:
         r.solve_photosynthesis(sim_time_ = initsim, 
-                    sxx_=x, 
-                    cells_ = True,#for 1st computation, use cell data
+                    sxx_=rsx, 
+                    cells_ = False,#(i == 0),#for 1st computation, use cell data
                     ea_ = weatherX["ea"],#not used
                     es_=weatherX["es"],#not used
                     verbose_ = False, doLog_ = False,
                     TairC_= weatherX["TairC"],#not used
                     outputDir_= "./results/rhizoplantExud")
+    except:
+        r.solve_photosynthesis(sim_time_ = initsim, 
+                    sxx_=rsx, 
+                    cells_ = False,#(i == 0),#for 1st computation, use cell data
+                    ea_ = weatherX["ea"],#not used
+                    es_=weatherX["es"],#not used
+                    verbose_ = True, doLog_ = True,
+                    TairC_= weatherX["TairC"],#not used
+                    outputDir_= "./results/rhizoplantExud")
         
-    weatherX = scenario.weather(rs_age) 
+        
     startphloem=rs_age
     endphloem = rs_age + dt
     stepphloem = 1
     verbose_phloem = True
     filename = "results/" +"inPM_"+str(i)+".txt"
     print("startpm")
+    #if i == 1:
+    #    r.doTroubleshooting = True
     r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
     Nt = len(rs.nodes)
-    QExud  = np.array(r.Q_out[(Nt*3):(Nt*4)])#mol/day for nodes
+    QExud  = np.array(r.Q_out[(Nt*3):(Nt*4)])#mmol/day for nodes
+    Q_mucil  = np.array(r.Q_out[(Nt*9):(Nt*10)])#mmol/day for nodes
+    # print("QExud",QExud)
+    # print("QS",np.array(r.Q_out[0:Nt]))
+    # print("Q_S_ST", np.array(r.Q_out[(Nt*8):(Nt*9)]))
+    # print("Q_mucil",np.array(r.Q_out[(Nt*9):(Nt*10)]))
+    # print(np.array(r.rs.organTypes))
+    
     assert QExud[0] == 0#no exudation in seed node I guess
-    QExud = QExud[1:] #from nod to semgment
+    assert Q_mucil[0] == 0#no exudation in seed node I guess
+    QExud = QExud[1:] *1e-3#from nod to semgment, also fom mmol to mol
+    Q_mucil = Q_mucil[1:]*1e-3
     dt_inner = dt
 
     # rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
@@ -173,9 +213,10 @@ for i, dt in enumerate(np.diff(times)):
     
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All, net_sol_flux, net_flux = cyl3.simulate_const(s, 
                                             r,  dt, dt_inner, kexu, rs_age, repartition, 
-                                            type = mode, Q_Exud=QExud, plantType = "RS", r= rs,
+                                            type = mode, Q_plant=[QExud, Q_mucil], plantType = "RS", r= rs,
                                             wilting_point = wilting_point, trans_maize = trans_maize,
-                                            net_sol_flux = net_sol_flux, net_flux = net_flux)
+                                            outer_R_bc_sol = net_sol_flux, 
+                                            outer_R_bc_wat = net_flux)
     # raise Exception
     #(fname, s, r, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
 
