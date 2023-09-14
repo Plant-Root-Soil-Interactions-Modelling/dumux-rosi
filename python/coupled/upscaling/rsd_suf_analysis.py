@@ -1,4 +1,7 @@
-""" 3d surface densities"""
+""" 
+    plots SUF of both root systems (Krs on the console)
+
+"""
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
@@ -40,7 +43,7 @@ def suf_per_layer(plant, soil):
     r_.update(rs_age)
 
     ana = pb.SegmentAnalyser(r.mappedSegments())
-    krs, _ = r_.get_krs(rs_age)  ########################################### <- check for maize
+    krs, _ = r_.get_krs(rs_age)
     suf = r_.get_suf()
     ana.addData("SUF", suf)
     n = int(np.ceil(-min_b[2]))
@@ -52,24 +55,26 @@ def suf_per_layer(plant, soil):
     return np.array(suf_), z_, krs
 
 
-for plant in ["springbarley", "maize"]:
+if __name__ == "__main__":
 
-    fig, ax = plt.subplots(1, 1, figsize = (8, 8))
-    ax = [ax]
+    for plant in ["springbarley", "maize"]:
 
-    for soil in ["hydrus_loam"]:  # , "hydrus_clay", "hydrus_sandyloam"]:
+        fig, ax = plt.subplots(1, 1, figsize = (8, 8))
+        ax = [ax]
 
-        suf, z_, krs = suf_per_layer(plant, soil)
+        for soil in ["hydrus_sandyloam"]:  # , "hydrus_clay", "hydrus_sandyloam"]: # result is soil independent
 
-        ax[0].plot(suf, z_, "-*", label = plant)
-        ax[0].set_ylabel("depth [cm]")
-        ax[0].set_xlabel("root system surface uptake fraction (SUF) per 1 cm layer [1]")
-        # ax[0].legend()
+            suf, z_, krs = suf_per_layer(plant, soil)
 
-        print()
-        print(plant, soil, "SUF total", np.min(suf), np.max(suf), np.mean(suf), np.sum(suf), suf.shape)
-        print("krs", krs)
-        print()
+            ax[0].plot(suf, z_, "-*", label = plant)
+            ax[0].set_ylabel("depth [cm]")
+            ax[0].set_xlabel("root system surface uptake fraction (SUF) per 1 cm layer [1]")
+            # ax[0].legend()
 
-        plt.tight_layout()
-        plt.show()
+            print()
+            print(plant, soil, "SUF from", np.min(suf), "to", np.max(suf), "mean", np.mean(suf), "sum", np.sum(suf), suf.shape)
+            print("krs", krs)
+            print()
+
+            plt.tight_layout()
+            plt.show()

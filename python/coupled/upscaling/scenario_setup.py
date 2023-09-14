@@ -272,23 +272,3 @@ def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs, wall_time = 
     np.save('results/hs_' + file_name, np.array(hs))  # soil water matric potential per soil cell [cm]
     np.save('results/time_' + file_name, np.array(wall_time))
 
-
-def print_timings(job_list):
-    """ evalutate simulation wall times """
-    names, times = [], []
-    for job in job_list:
-        method = job[0]
-        plant = job[1]
-        dim = job[2]
-        soil = job[3]
-        outer_method = job[4]
-        name = "results/time_" + method + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method
-        names.append(name)
-        if dim == "1D":
-            time = np.load(name + ".npy")
-            print(name, time)
-            times.append(time)
-        else:
-            times.append(1.)
-    return names, times
-

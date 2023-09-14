@@ -1,5 +1,9 @@
 """ 
-sets up the aggregated root system described by Krs, and (per Layer) SUF, mean radii, summed length  
+    sets up the parallel root system described by 
+    Krs, and (per Layer) SUF, mean radii, summed length  
+    
+    get_aggregated_params() calculates aggregated parameters 
+    create_parallel_rs() creates the parallel root system with root conductivities
 """
 
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
@@ -28,7 +32,10 @@ def get_aggregated_params(r, rs_age, outer_method):
         a_ [cm]               mean layer radius 
     """
 
-    per = PerirhizalPython(r.rs.mappedSegments())
+    try:
+        per = PerirhizalPython(r.rs.mappedSegments())  # if it is a MappedRootSystem we need the MappedSegments
+    except:
+        per = PerirhizalPython(r.rs)  # otherwise it is a MappedSegments instance
 
     krs, _ = r.get_krs(rs_age)
     print("krs", krs)
@@ -166,24 +173,32 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
 
 if __name__ == "__main__":
 
-    """ root system """
+    """ root system TODO set soil for aggregated params ..."""
     min_b = [-7.5, -37.5, -110.]
     max_b = [7.5, 37.5, 0.]
     cell_number = [1, 1, 55]
 
     fname = "../../../grids/RootSystem_verysimple2.rsml"
-    r = HydraulicsDoussan(fname)
+    params = PlantHydraulicParameters()
+    r = PlantHydraulicModel("Doussan", fname, params)
     rs_age = 78  # for calculating age dependent conductivities
 
     types = r.rs.subTypes  # simplify root types
     types = (np.array(types) >= 12) * 1  # all roots type 0, only >=12 are laterals type 1
     r.rs.subTypes = list(types)
 
-    # krs, suf_, kr_surf_, surf_, l_, a_  = get_aggregated_params(r, rs_age, min_b, max_b, cell_number)
-    # z_ = np.linspace(0, -110, 55)
-    # plt.plot(suf_, z_)
-    # plt.show()
-    create_parallel_rs(r, rs_age, min_b, max_b, cell_number)
+    kr00 = 0.  # artificial shoot
+    kx00 = 1.e3  # artificial shoot
+    kr_const_ = 1.73e-4  # [1/day]
+    kx_const_ = 4.32e-2  # [cm3/day]
+    params.setKr([[kr00, kr_const_, kr_const_, kr_const_, kr_const_, kr_const_, kr_const_]], [], 0.)
+    params.setKx([[kx00, kx_const_, kx_const_, kx_const_, kx_const_, kx_const_, kx_const_]], [])
+
+    r.update(rs_age)
+    krs, suf_, kr_surf_, surf_, l_, a_, outer_r_ = get_aggregated_params(r, rs_age, "voronoi")
+    z_ = np.linspace(0, -110, 55)
+    plt.plot(suf_, z_)
+    plt.show()
 
     # """ single root """
     # min_b = [-7.5, -37.5, -50.]
@@ -196,5 +211,3 @@ if __name__ == "__main__":
     # z_ = np.linspace(0, min_b[2], cell_number[2])
     # plt.plot(suf_, z_)
     # plt.show()
-    #
-    # r = create_aggregated_rs(r, 0., min_b, max_b, cell_number)

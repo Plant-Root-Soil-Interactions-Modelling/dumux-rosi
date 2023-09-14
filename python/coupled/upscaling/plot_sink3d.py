@@ -1,5 +1,7 @@
 """
-Sink plot (noon and midnight), of a 3d soil 
+    Sink plot (noon and midnight), of a 3d soil
+    
+    modify __main__ to select simualtion result 
 """
 import sys; sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");

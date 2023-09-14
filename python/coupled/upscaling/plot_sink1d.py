@@ -94,7 +94,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
 
 if __name__ == "__main__":
 
-    """ use plot_sink3d.py """
+    """ use plot_sink3d.py, plot_sink1d() is called from there """
 
     # print("1d vs 3d comparison plots were done with plot_sink3d.py")
 

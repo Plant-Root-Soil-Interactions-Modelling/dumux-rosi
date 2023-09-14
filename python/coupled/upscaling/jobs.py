@@ -1,5 +1,11 @@
 """
-                 job managment
+    job managment
+    
+    just put your plan into make_list()
+    then run file __main__
+    
+    use start_jobs() for multiple slurm jobs (for cluster calling sbatch) 
+    or run_jobs() for MPI                            
 """
 import sys; sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");

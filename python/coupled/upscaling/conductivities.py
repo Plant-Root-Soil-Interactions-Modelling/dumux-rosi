@@ -1,3 +1,11 @@
+"""
+    tabularized root hydraulic conductivities (from literature) 
+    
+    spring barley 
+    maize 
+    lupine 
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
