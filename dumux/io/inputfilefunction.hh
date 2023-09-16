@@ -217,12 +217,28 @@ public:
             return fs*yy_[0];
         }
         case table: {
-			// if(nameY_ != "Soil.IC.P")
-			// {
-				// std::cout<<"inputfile.f "<<x<<"\n";
-				// for(int ii = 0 ; ii <table_[0].first.size();ii++){std::cout<<table_[0].first[ii]<<" ";}std::cout<<std::endl;
-				// for(int ii = 0 ; ii <table_[0].second.size();ii++){std::cout<<table_[0].second[ii]<<" ";}std::cout<<std::endl;
-			// }
+			if(nameY_ != "Soil.IC.P")
+			{
+				auto table = &table_[0];
+				auto ip = x;
+				const auto& range = table->first;
+				const auto& values = table->second;
+
+				// check bounds
+				if (ip > range.back()) return values.back();
+				if (ip < range[0]) return values[0];
+
+				// if we are within bounds find the index of the lower bound
+				const auto lookUpIndex = std::distance(range.begin(), std::lower_bound(range.begin(), range.end(), ip));
+				if (lookUpIndex == 0)
+					return values[0];
+
+				const auto ipLinear = (ip - range[lookUpIndex-1])/(range[lookUpIndex] - range[lookUpIndex-1]);
+				auto output = Dumux::interpolate<Dumux::InterpolationPolicy::Linear>(ipLinear, std::array<double, 2>{{values[lookUpIndex-1], values[lookUpIndex]}});
+				// std::cout<<"dumux:common:math:LinearTable:interpolate "<<ip<<" "<<lookUpIndex<<" "
+				// <<values[lookUpIndex-1]<<" "<<values[lookUpIndex]
+				// <<" "<<ipLinear<<" "<<output<<std::endl;
+			}
             return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
         }
         case data: {

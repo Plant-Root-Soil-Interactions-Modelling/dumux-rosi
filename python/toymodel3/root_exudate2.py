@@ -46,6 +46,9 @@ comp = "phenolics"
 usemoles = True
 """ parameters   """
 soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
+#min_b = [-5., -5, -5.] 
+#max_b = [5., 5, 0.] 
+#cell_number = [5, 5, 5]
 sim_time = 1 #154   #  [day]
 # dt_inner = 360 / (24 * 3600)  # time step [day] 20
 
@@ -115,7 +118,7 @@ if len(rs.cyls) > 1:
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_, soil_c_, c_, mass_soil_c_, dist, conc, l, a = [], [], [], [], [], [], [], [], [], [], [], [], []
 
-times = [0., 1., 2., 3.]  #h to  days
+times = [0., 1./24., 2./24., 3./24.]  #h to  days
 rs_age = initsim
 
 
@@ -125,7 +128,9 @@ net_flux = np.array([])
 
 r.minLoop = 1000
 r.maxLoop = 5000
-for i, dt in enumerate(np.diff(times)):
+dt = 1/24
+simMax = initsim + 1
+while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
 
 
     rs_age += dt
@@ -179,7 +184,7 @@ for i, dt in enumerate(np.diff(times)):
     endphloem = rs_age + dt
     stepphloem = 1
     verbose_phloem = True
-    filename = "results/" +"inPM_"+str(i)+".txt"
+    filename = "results/" +"inPM.txt"
     print("startpm")
     #if i == 1:
     #    r.doTroubleshooting = True
@@ -195,8 +200,13 @@ for i, dt in enumerate(np.diff(times)):
     
     assert QExud[0] == 0#no exudation in seed node I guess
     assert Q_mucil[0] == 0#no exudation in seed node I guess
-    QExud = QExud[1:] *1e-3#from nod to semgment, also fom mmol to mol
-    Q_mucil = Q_mucil[1:]*1e-3
+    QExud =np.array( QExud[1:] )#*1e-3 #from nod to semgment, also fom mmol to mol
+    Q_mucil = np.array(Q_mucil[1:])#*1e-3 
+    #r.outputFlux = np.array(r.outputFlux)/ 10
+    
+    
+    
+    
     dt_inner = dt
 
     # rs = RhizoMappedSegments(r, wilting_point, nc, logbase, mode)
@@ -219,6 +229,13 @@ for i, dt in enumerate(np.diff(times)):
                                             outer_R_bc_wat = net_flux)
     # raise Exception
     #(fname, s, r, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
+
+    for i in range(rs.numFluidComp):
+        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.molarDensityWat) 
+    for i in range(rs.numFluidComp, rs.numComp):
+        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
+        
+
 
     if rank == 0:  # collect results
         psi_x_.extend(psi_x) #[cm]

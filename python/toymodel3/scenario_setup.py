@@ -143,8 +143,6 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
-    soil = vg.Parameters(soil_)
-    vg.create_mfp_lookup(soil, -1.e5, 1000)
 
     if type == "dumux":
         s = RichardsWrapper(RichardsSP())  # water only
@@ -156,12 +154,15 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
     else:
         raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
-
+    s.soil = soil_
+    s.vg_soil = vg.Parameters(soil_)
+    vg.create_mfp_lookup(soil, -1.e5, 1000)
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
+    ICcc = [0.1,10., 0.011 * 1e6*0., 0.05 * 1e6*0., 0.011 * 1e6*0., 0.05 * 1e6*0., 0., 0.]
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
     cell_number = str(cell_number)
-    cell_number=cell_number.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
+    cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)    
     
     # BC
@@ -175,32 +176,30 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
     s.solidMolDensity = s.solidDensity/s.solidMolarMass
     # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
-    s.bulkDensity_m3 = s.solidMolDensity*(1.- soil.theta_S)
+    s.bulkDensity_m3 = s.solidMolDensity*(1.- s.vg_soil.theta_S)
 
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
     if (type == "dumux_10c") or (type == "dumux_dirichlet_nc")or (type == "dumux_dirichlet_10c"):  # solute BC
-        Ds = 1e-8 # m^2/s
-        Dl = 1e-9
-        numComp = 8
-        numFluidComp = 2
+        s.Ds = 1e-8 # m^2/s
+        s.Dl = 1e-9
+        s.numComp = 8
+        s.numFluidComp = 2
         # s.setTopBC_solute("outflow", 0.)
         # s.setBotBC_solute("outflow", 0.)
         s.setParameter( "Soil.BC.Bot.C1Type", str(2)) #put free flow later
         s.setParameter( "Soil.BC.Top.C1Type", str(2))
         s.setParameter( "Soil.BC.Bot.C1Value", str(0)) 
         s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
-        s.setParameter( "Soil.IC.C1", str(0))
 
-        s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
+        s.setParameter("1.Component.LiquidDiffusionCoefficient", str(s.Ds)) #m^2/s
 
         s.setParameter( "Soil.BC.Bot.C2Type", str(2))
         s.setParameter( "Soil.BC.Top.C2Type", str(2))
         s.setParameter( "Soil.BC.Bot.C2Value", str(0)) 
         s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
-        s.setParameter( "Soil.IC.C2", str(0))
-        s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
+        s.setParameter("2.Component.LiquidDiffusionCoefficient", str(s.Dl)) #m^2/s
 
         s.decay = 0. #1.e-5
         
@@ -209,48 +208,65 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
-        for i in range(numFluidComp + 1, numComp+1):
-            s.setParameter( "Soil.IC.C"+str(i), str(0))
-
-    s.setParameter("Soil.betaC", str(0.001 ))
-    s.setParameter("Soil.betaO", str(0.1 ))
-    s.setParameter("Soil.C_S_W_thresC", str(0.1 )) #mol/cm3
-    s.setParameter("Soil.C_S_W_thresO", str(0.05 )) #mol/cm3
-    s.setParameter("Soil.k_decay", str(0.2 ))
-    s.setParameter("Soil.k_decay2", str(0.6 ))
+        for i in range(numComp):
+            s.setParameter( "Soil.IC.C"+str(i+1), str( ICcc[i]))
+    s.betaC = 0.001 
+    s.betaO = 0.1 
+    s.C_S_W_thresC = 0.1 
+    s.C_S_W_thresO = 0.05 
+    s.k_decay = 0.2
+    s.k_decay2 = 0.6 
+    s.k_DC = 1. 
+    s.k_DO = 1. 
+    s.k_growthC = 0.2
+    s.k_growthO = 0.2 
+    s.K_L = 8.3
+    s.k_phi = 0.1 
+    s.k_RC = 0.1 
+    s.k_RO = 0.1 
+    s.setParameter("Soil.betaC", str(s.betaC))
+    s.setParameter("Soil.betaO", str(s.betaO ))
+    s.setParameter("Soil.C_S_W_thresC", str(s.C_S_W_thresC )) #mol/cm3
+    s.setParameter("Soil.C_S_W_thresO", str(s.C_S_W_thresO )) #mol/cm3
+    s.setParameter("Soil.k_decay", str(s.k_decay ))
+    s.setParameter("Soil.k_decay2", str(s.k_decay2))
     #s.setParameter("Soil.k_decay3", str(1 ))
-    s.setParameter("Soil.k_DC", str(1  )) # 1/d
-    s.setParameter("Soil.k_DO", str(1  )) # 1/d
+    s.setParameter("Soil.k_DC", str(s.k_DC )) # 1/d
+    s.setParameter("Soil.k_DO", str(s.k_DO )) # 1/d
     #s.setParameter("Soil.k_growthBis", str(1 )) #bool
-    s.setParameter("Soil.k_growthC", str(0.2 ))
-    s.setParameter("Soil.k_growthO", str(0.2 ))
-    s.setParameter("Soil.K_L", str(8.3))#[mol/cm3]
-    s.setParameter("Soil.k_phi", str(0.1 ))
-    s.setParameter("Soil.k_RC", str(0.1 ))
-    s.setParameter("Soil.k_RO", str(0.1 ))
+    s.setParameter("Soil.k_growthC", str(s.k_growthC ))
+    s.setParameter("Soil.k_growthO", str(s.k_growthO ))
+    s.setParameter("Soil.K_L", str(s.K_L))#[mol/cm3]
+    s.setParameter("Soil.k_phi", str(s.k_phi ))
+    s.setParameter("Soil.k_RC", str(s.k_RC))
+    s.setParameter("Soil.k_RO", str(s.k_RO))
 
-    k_SC = 1
-    k_SO = 10
-    s.setParameter("Soil.k_SC", str(k_SC )) #cm^3/mol/d
+    s.k_SC = 1
+    s.k_SO = 10
+    s.setParameter("Soil.k_SC", str(s.k_SC )) #cm^3/mol/d
     #s.setParameter("Soil.k_SCBis", str(k_SC )) #cm^3/mol/d
-    s.setParameter("Soil.k_SO", str(k_SO )) #cm^3/mol/d
+    s.setParameter("Soil.k_SO", str(s.k_SO )) #cm^3/mol/d
     #s.setParameter("Soil.k_SOBis", str(k_SO )) #cm^3/mol/d
 
-    m_maxC = 0.1 
-    m_maxO = 0.02 
-    s.setParameter("Soil.m_maxC", str(m_maxC  ))# 1/d
-    s.setParameter("Soil.m_maxO", str(m_maxO  ))# 1/d
-    s.setParameter("Soil.micro_maxC", str(2 ))# 1/d
-    s.setParameter("Soil.micro_maxO", str(0.01 ))# 1/d
-    s.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
+    s.m_maxC = 0.1 
+    s.m_maxO = 0.02 
+    s.setParameter("Soil.m_maxC", str(s.m_maxC  ))# 1/d
+    s.setParameter("Soil.m_maxO", str(s.m_maxO  ))# 1/d
+    s.micro_maxC = 2
+    s.micro_maxO = 0.01
+    s.setParameter("Soil.micro_maxC", str(s.micro_maxC ))# 1/d
+    s.setParameter("Soil.micro_maxO", str(s.micro_maxO ))# 1/d
+    s.v_maxL
+    s.setParameter("Soil.v_maxL", str(s.v_maxL))#[d-1]
 
-    k_sorp = 0.2*100
-    s.setParameter("Soil.k_sorp", str(k_sorp)) # mol / cm3
-    f_sorp = 0.9
-    s.setParameter("Soil.f_sorp", str(f_sorp)) #[-]
-    CSSmax = 1e-4*10000*0
-    s.setParameter("Soil.CSSmax", str(CSSmax)) #[mol/cm3 scv]
-    s.setParameter("Soil.alpha", str(0.1*0)) #[1/d]
+    s.k_sorp = 0.2*100
+    s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
+    s.f_sorp = 0.9
+    s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
+    s.CSSmax = 1e-4*10000*0
+    s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
+    s.alpha
+    s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
 
     # Paramters
     #dumux-rosi\python\modules\richards.py
@@ -279,8 +295,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setHomogeneousIC(-100., equilibrium = True)  # cm pressure head
     
     s.initializeProblem()
-    wilting_point = -15000
-    s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
+    s.wilting_point = -15000
+    s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     solute_conc = np.array(s.getSolution_(1))

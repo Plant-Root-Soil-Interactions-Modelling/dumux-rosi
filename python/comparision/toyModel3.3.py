@@ -32,21 +32,25 @@ else:
             os.remove(results_dir+item)
         except:
             pass
-
-s = RichardsWrapper(Richards10CCylFoam())
+usemoles = True
+s = RichardsWrapper(Richards10CCylFoam(), usemoles)
 
 s.initialize()
 
 # theta_r, theta_s, alpha, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
+r_in = 0.02
+l = 0.3
 nCells = 500
-s.createGrid([0.02], [0.6], [nCells])  # [cm]
+qflow = - 0.26
+Qflow = qflow * (2 * np.pi * r_in * l)
+s.createGrid([r_in], [0.6], [nCells])  # [cm]
 s.setParameter( "Soil.Grid.Cells", str(nCells))
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", -0.26)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", qflow)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
@@ -238,17 +242,23 @@ contents0 = np.array([(cstot_cls * points).sum(),
                 (cstot_css2 * points).sum(), 
                 (cstot * points).sum()])
 write_file_array("contents", contents0/1e6)
-print(contents0)
+# print(contents0)
 
 RF = 1 + f_sorp*(1/theta)*CSSmax*1e6*((k_sorp*1e6)/((k_sorp*1e6+C_S_W)**2))
 write_file_array("RF",RF)
 
+watVol = sum(s.getWaterVolumesCyl(l))
+print("water volume",watVol, "Qflow",Qflow)
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
-
+    watVolBU = watVol
     s.solve(dt, maxDt = 2500/(24*3600))
+    
+    watVol = sum(s.getWaterVolumesCyl(l))
+    print("water volume",watVol, "Qflow",Qflow, "dt",dt, "Qflow_dt", Qflow * dt)
+    print("diff",watVolBU + Qflow * dt)
 
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x.flatten())
@@ -292,8 +302,8 @@ for i, dt in enumerate(np.diff(times)):
                     (cstot_css1 * points).sum(), 
                     (cstot_css2 * points).sum(), 
                     (cstot * points).sum()])
-    print(contents)
-    print(min(cstot_cls))#contents[3]/contents0[3]*100-100)
+    # print(contents)
+    # print(min(cstot_cls))#contents[3]/contents0[3]*100-100)
     write_file_array("contents", contents/1e6)
 
 

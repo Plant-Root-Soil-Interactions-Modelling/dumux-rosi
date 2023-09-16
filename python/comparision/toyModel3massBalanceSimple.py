@@ -37,7 +37,7 @@ s = RichardsWrapper(Richards10CCylFoam(), usemoles)
 
 s.initialize()
 
-def getTotCContent( kjg, cyl, l):
+def getTotCContent( kjg, cyl, l, init=False):
     vols = cyl.getCellSurfacesCyl()  * l  #cm3 scv
     totC = 0
     for i in range(cyl.numComp):
@@ -46,7 +46,14 @@ def getTotCContent( kjg, cyl, l):
         print(i, sum(cyl.getContentCyl(i+1, isDissolved,l)))
     # mol/cm3
     C_S_W = np.array(cyl.getSolution_(1)).flatten()*cyl.molarDensityWat
-    css1 = cyl.CSSmax * (C_S_W/(C_S_W+cyl.k_sorp)) * cyl.f_sorp
+    if init:
+        css1 = cyl.CSSmax * (C_S_W/(C_S_W+cyl.k_sorp)) * cyl.f_sorp
+    else:
+        css1 = np.array(s.base.getCSS1_out()).flatten()/1e6 #mol C / cm3 scv
+        assert css1[-1] == 0.
+        css1 = css1[:(len(css1)-1)]
+        
+        
     totC += css1*vols
     print("css1", sum(css1*vols))
     assert len(np.array(totC).shape)==1
@@ -55,15 +62,16 @@ def getTotCContent( kjg, cyl, l):
 # theta_r, theta_s, alpha, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-nCells = 10
+nCells = 50
 r_in = 0.02
+r_out = 0.6
 l = 1 #length in cm
-s.createGrid([r_in], [6.], [nCells])  # [cm]
+s.createGrid([r_in], [r_out], [nCells])  # [cm]
 s.setParameter( "Soil.Grid.Cells", str(nCells))
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0.1*0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", -0.26*0)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", -1)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
@@ -81,9 +89,11 @@ bulkDensity_m3 = solidMolDensity*(1.-0.43)
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
 exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-exuds_in = exud*0
-exudl_in = exud * 0
-Qexud = (exuds_in+ exudl_in)* (2 * np.pi * r_in * l)
+exuds_in = exud
+exudl_in = exud 
+exuds_out = - exuds_in / 24
+exudl_out = - exudl_in / 3 
+Qexud = (exuds_in+ exudl_in)* (2 * np.pi * r_in * l) + (exuds_out+ exudl_out)* (2 * np.pi * r_out * l) 
 
 Ds = 1e-8 # m^2/s
 Dl = 1e-9
@@ -104,14 +114,14 @@ s.setParameter( "Soil.solidDensity", str(solidDensity))
 s.setParameter( "Soil.BC.Bot.C1Type", str(3))
 s.setParameter( "Soil.BC.Top.C1Type", str(3))
 s.setParameter( "Soil.BC.Bot.C1Value", str(exuds_in)) 
-s.setParameter( "Soil.BC.Top.C1Value", str(-exud/3*0)) 
+s.setParameter( "Soil.BC.Top.C1Value", str(exuds_out)) 
 
 s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
 
 s.setParameter( "Soil.BC.Bot.C2Type", str(3))
 s.setParameter( "Soil.BC.Top.C2Type", str(3))
 s.setParameter( "Soil.BC.Bot.C2Value", str(exudl_in)) 
-s.setParameter( "Soil.BC.Top.C2Value", str(-exud/3*0)) 
+s.setParameter( "Soil.BC.Top.C2Value", str(exudl_out)) 
 s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
 for i in range(numFluidComp + 1, numComp+1):
@@ -155,36 +165,43 @@ s.setParameter("Soil.micro_maxC", str(2 ))# 1/d
 s.setParameter("Soil.micro_maxO", str(0.01 ))# 1/d
 s.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
 
-s.k_sorp = 0.2*100
+s.k_sorp = 0.3
 s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
-s.f_sorp = 0.1
+s.f_sorp = 0.3
 s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-s.CSSmax = 1e-4*10000*1000
+s.CSSmax = 3*0#1e-4*1e5
 s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
 s.setParameter("Soil.alpha", str(0.1*0)) #[1/d]
 
-gradient = True
+gradient = False
 if gradient:
     #C_S = np.array([0.1, 0.3, 0.4, 0.5, 9])  #mol/cm3 wat
     #s.setParameter("Soil.IC.C1Z", "0.0001 0.0003 0.0004 0.0005 0.009" )  #mol/cm3 / mol/cm3 = mol/mol 
     #s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S))-1)])   #mol/cm3 / mol/cm3 = mol/mol
-    C_S = np.array([6, 0.2])  #mol/cm3 wat
-    s.setParameter("Soil.IC.C1Z", "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
-    s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S/molarDensityWat))-1)])   #mol/cm3 / mol/cm3 = mol/mol 
+    minV = r_in
+    maxV = r_out
+    rez = 2
+    C_S = np.array([ minV + (maxV - minV)* (kk/rez) for kk in range(rez + 1)])  # np.array([0.02,6])  #mol/cm3 wat
+    print(C_S)
+    assert min(C_S) == minV
+    assert max(C_S)  == maxV
+    ZC_S = C_S/100
+    s.setParameter("Soil.IC.C1Z",s.dumux_str(ZC_S))   # "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
+    s.setParameter("Soil.IC.C1", s.dumux_str(C_S/molarDensityWat))   #mol/cm3 / mol/cm3 = mol/mol 
 else:
-    C_S = 0.1  #mol/cm3 wat
+    C_S = 1  #mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
 
-C_L = 10*0  #mol/cm3 wat
+C_L = 10  #mol/cm3 wat
 s.setParameter("Soil.IC.C2", str(C_L/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol
-COa = 0.011 * 1e6*0#mol C / m3 space
+COa = 0.011 * 1e6#mol C / m3 space
 s.setParameter("Soil.IC.C3",str(COa/ bulkDensity_m3)) #mol C / mol Soil 
 #s.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
-COd = 0.05 * 1e6*0#mol C / m3 space
+COd = 0.05 * 1e6#mol C / m3 space
 s.setParameter("Soil.IC.C4", str(COd/bulkDensity_m3 ))
-CCa = 0.011 * 1e6*0#mol C / m3 space
+CCa = 0.011 * 1e6#mol C / m3 space
 s.setParameter("Soil.IC.C5", str(CCa/ bulkDensity_m3)) 
-CCd = 0.05 * 1e6*0  #mol C / m3 space
+CCd = 0.05 * 1e6  #mol C / m3 space
 s.setParameter("Soil.IC.C6", str(CCd/bulkDensity_m3 ))
 CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp) *0#mol C/ m3 scv
 
@@ -197,7 +214,7 @@ s.setVGParameters([loam])
 
 
 s.setParameter("Problem.EnableGravity", "false")
-s.setParameter("Problem.verbose", "1")
+s.setParameter("Problem.verbose", "10")
 s.setParameter("Flux.UpwindWeight", "0.5")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
 s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
@@ -223,7 +240,7 @@ s.setCriticalPressure(-15000)  # cm pressure head
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 5./24., 10./24.]  # days
+times = [0., 1., 2.]  # days
 s.ddt = 1.e-5
 
 points = s.getDofCoordinates().flatten()
@@ -236,7 +253,7 @@ write_file_array("theta",theta)
 write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
 write_file_array("krs",np.array(s.getKrw()).flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
-
+print("len output", np.array(s.getSolution_(1)).flatten().shape, points.shape)
 for i in range(numFluidComp):
     write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()*molarDensityWat ) 
 for i in range(numFluidComp, numComp):
@@ -269,20 +286,23 @@ write_file_array("contents", contents0/1e6)
 
 RF = 1 + s.f_sorp*(1/theta)*s.CSSmax*1e6*((s.k_sorp*1e6)/((s.k_sorp*1e6+C_S_W)**2))
 write_file_array("RF",RF)
-buTotCBefore = getTotCContent(0, s,l)
+buTotCBefore = getTotCContent(0, s,l, init=True)
 
 vols = s.getCellSurfacesCyl()  * l  #cm3 scv
+print(sum(buTotCBefore))
+#raise Exception
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-    s.solve(dt, maxDt = 250/(24*3600))
+    s.solve(dt, maxDt = 2500/(24*3600))
     
     buTotCAfter = getTotCContent(0, s,l)
     
     print("content",sum(buTotCBefore), sum(buTotCAfter), Qexud*dt)
     print(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter) )
+    print("% error",(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter))/sum(buTotCAfter)*100 )
     buTotCBefore = buTotCAfter
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x.flatten())

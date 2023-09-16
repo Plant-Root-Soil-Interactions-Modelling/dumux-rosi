@@ -910,8 +910,8 @@ public:
 			C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil							//mol C/m3 scv
 		}
 		//[mol C / m3 scv] = [mol scv/m3 scv] * [mol C/mol scv]
-		double CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) / (1 - f_sorp) ; // mol C / mol scv zone 2
-		double CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / mol scv zone 1	
+		double CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) / (1 - f_sorp) ; // mol C / m3 scv zone 2
+		double CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 bulk soil]/([mol C/m3 bulk soil]*[mol C/m3 bulk soil])) * [mol C/m3 bulk solid]

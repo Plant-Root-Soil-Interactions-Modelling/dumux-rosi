@@ -339,7 +339,7 @@ class RichardsWrapper(SolverWrapper):
                 
         for key, value in source_map.items():
             source_map[key] = value * unitConversion #
-        print("setSource", source_map, eq_idx)
+        #print("setSource", source_map, eq_idx)
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):
@@ -409,9 +409,11 @@ class RichardsWrapper(SolverWrapper):
         watCont = self.getWaterContent().flatten()  # cm3 wat/cm3 scv
         return np.multiply(vols , watCont  )
         
-    def getContentCyl(self,idComp, isDissolved, length, ):
+    def getContentCyl(self,idComp, isDissolved, length ):
         vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
         C_ = self.getSolution(idComp).flatten() # mol/mol or g/g 
+        
+        #print(idComp, isDissolved, vols, C_,self.bulkDensity_m3, self.molarDensityWat_m3)
         
         if not isDissolved:
             if self.useMoles:
@@ -419,7 +421,6 @@ class RichardsWrapper(SolverWrapper):
             return np.multiply(vols , C_  ) 
             
         watCont = self.getWaterContent().flatten() # m3 wat/m3 scv
-        #print(vols, C_, self.molarDensityWat_m3)
         if self.useMoles:
             C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
         #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    

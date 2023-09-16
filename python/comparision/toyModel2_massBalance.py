@@ -1,5 +1,4 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 
@@ -36,9 +35,9 @@ else:
             os.remove(results_dir+item)
         except:
             pass
-
+usemoles = True
 if useC3:
-    s = RichardsWrapper(Richards5CCylFoam())
+    s = RichardsWrapper(Richards5CCylFoam(),usemoles )
 else:
     s = RichardsWrapper(RichardsNCCylFoam())
     
@@ -46,12 +45,14 @@ s.initialize()
 
 # theta_r, theta_s, alpha, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
-
-s.createGrid([0.02], [0.6], [700])  # [cm]
-
+r_in = 0.02
+l = 1 #length in cm
+qflow = - 0.26
+Qflow = qflow * (2 * np.pi * r_in * l)
+s.createGrid([r_in], [0.6], [700])  # [cm]
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", -0.26)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", qflow)  #  [cm/day]
 
 
 molarMassWat = 18. # [g/mol]
@@ -60,7 +61,7 @@ densityWat = 1. #[g/cm3]
 molarDensityWat =  densityWat / molarMassWat # [mol/cm3]  
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+exud = 1. *0.# [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 Dl = 1.e-8
 
 numComp = 6
@@ -120,7 +121,7 @@ s.setParameter("Soil.C_S_W_thresO", str(0.001/(12*1000) )) #mol/cm3
 ci = 1
 s.setParameter("Soil.IC.C1", "0.000") 
 s.setParameter("Soil.IC.C2", "0.000") 
-COa = 0.0002338 * 1e6 #mol C / m3 space
+COa = 0.0002338 * 1e6 *0#mol C / m3 space
 s.setParameter("Soil.IC.C3", str(COa/((2700./60.08e-3)*(1.-0.43)))) #mol C / mol Soil 
 #s.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
 s.setParameter("Soil.IC.C4", str(COa/((2700./60.08e-3)*(1.-0.43)) / 2))
@@ -178,15 +179,18 @@ for i in range(numFluidComp, numComp):
     write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()*25615.8) 
                                                                       
 
-
-
+watVol = sum(s.getWaterVolumesCyl(l))
+print("water volume",watVol, "Qflow",Qflow)
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
     s.solve(dt)
-
+    
+    watVol = sum(s.getWaterVolumesCyl(l))
+    print("water volume",watVol, "Qflow",Qflow, "dt",dt)
+    
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x.flatten())
     #print(x.flatten())

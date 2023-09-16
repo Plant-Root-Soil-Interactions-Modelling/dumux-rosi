@@ -101,7 +101,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             p = np.zeros((ndof, m), dtype=dtype)
             for i in range(0, len(indices)):  #
                 p[indices[i],:] = np.array(x[i], dtype=dtype)
-            return p
+            return np.array(p).flatten()
         else:
             return 0
 

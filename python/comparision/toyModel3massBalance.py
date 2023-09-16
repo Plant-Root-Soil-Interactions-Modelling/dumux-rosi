@@ -58,7 +58,7 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 nCells = 10
 r_in = 0.02
 l = 1 #length in cm
-s.createGrid([r_in], [6.], [nCells])  # [cm]
+s.createGrid([r_in], [0.6], [nCells])  # [cm]
 s.setParameter( "Soil.Grid.Cells", str(nCells))
 
 s.setHomogeneousIC(-100.)  # cm pressure head
@@ -170,7 +170,7 @@ if gradient:
     #s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S))-1)])   #mol/cm3 / mol/cm3 = mol/mol
     C_S = np.array([6, 0.2])  #mol/cm3 wat
     s.setParameter("Soil.IC.C1Z", "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
-    s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S/molarDensityWat))-1)])   #mol/cm3 / mol/cm3 = mol/mol 
+    s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat )[1:(len(str(C_S/molarDensityWat))-1)])   #mol/cm3 / mol/cm3 = mol/mol 
 else:
     C_S = 0.1  #mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
