@@ -83,6 +83,13 @@ class SolverWrapper():
     def initializeProblem(self):
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
+        cell0 = self.getCellCenters()[0]
+        if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
+            self.dimWorld = 1
+        else:
+            self.dimWorld = len(self.getCellCenters()[0])        
+        assert ((self.dimWorld  == 1) or ( self.dimWorld  == 3))
+
 
     def setInitialCondition(self, ic, eqIdx = 0):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """

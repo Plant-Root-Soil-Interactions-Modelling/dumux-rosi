@@ -212,7 +212,7 @@ public:
 		 verbose =  getParam<int>("Problem.verbose", -1);
 		 toFile =  getParam<bool>("Problem.toFile", false);
 		doSoluteFlow =   getParam<bool>("Problem.doSoluteFlow", doSoluteFlow);
-			
+		reactionExclusive=   getParam<bool>("Problem.reactionExclusive");
 		
 		if(verbose>=0)
 		{
@@ -827,6 +827,7 @@ public:
 			const SubControlVolume &scv) const {
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
+		bool dobioChemicalReaction = true; //by default, do biochemical reactions
 		double pos0 = 1;
 		if (dimWorld == 1)//1daxissymmetric model
 		{
@@ -839,6 +840,11 @@ public:
 		{			
 			if (source_[i] != nullptr) {
 				source[i] = source_[i]->at(eIdx)/scv.volume() * pos0;
+				if(dobioChemicalReaction&&(i> h2OIdx)&&(source[i]> 0)&&reactionExclusive)
+				{//if we have a reaction in the cell via source and source-biochemreaction mutually exclusive, 
+					//biochem is disabled
+					dobioChemicalReaction = false;
+				}
 				// if((eIdx == 337)&&(i == 1))
 				// {
 					// std::cout<< eIdx<<" "<<i<<" "<<
@@ -846,8 +852,18 @@ public:
 				// }
 			}else{source[i] = 0.;}												 
 		}		
+		if(((dimWorld == 1)&&(reactionExclusive))||((dimWorld > 1)&&(!reactionExclusive)))
+		{
+			std::cout<<"(((dimWorld == 1)&&(reactionExclusive))||((dimWorld > 1)&&(!reactionExclusive))) "
+			<<dimWorld<<" "<<reactionExclusive<<std::endl;
+			DUNE_THROW(Dune::InvalidStateException, "(((dimWorld == 1)&&(reactionExclusive))||((dimWorld > 1)&&(!reactionExclusive))) ");
+			
+		}
         const auto& volVars = elemVolVars[scv];
-		bioChemicalReaction(source, volVars, pos0, scv);
+		if(dobioChemicalReaction)
+		{
+			bioChemicalReaction(source, volVars, pos0, scv);
+		}
 		
 						// if((eIdx == 337))
 				// {
@@ -1222,6 +1238,7 @@ private:
 	std::ofstream myfile_;
 	int verbose;
 	bool toFile;
+	bool reactionExclusive;
 	
 	
 	static constexpr Scalar eps_ = 1.e-7;

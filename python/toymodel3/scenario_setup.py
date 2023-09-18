@@ -158,12 +158,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.vg_soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-    ICcc = [0.1,10., 0.011 * 1e6*0., 0.05 * 1e6*0., 0.011 * 1e6*0., 0.05 * 1e6*0., 0., 0.]# in mol/m3 water or mol/m3 scv
+    s.ICcc = np.array([0.1,10., 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.])# in mol/m3 water or mol/m3 scv
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
     #cell_number = str(cell_number)
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)    
+    s.setParameter("Problem.reactionExclusive", "1")
     
     # BC
     if False: # times is not None:
@@ -209,7 +210,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
         for i in range(s.numComp):
-            molarC = ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
+            molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
             s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
     s.betaC = 0.001 
     s.betaO = 0.1 
@@ -309,9 +310,6 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         print("min(solute_conc)",min(solute_conc))
         raise Exception
         
-    # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
-        # c = np.zeros((cell_number[0]*cell_number[1]*cell_number[2])) #TODO
-        # s.setInitialCondition(c, 1)  # kg/m3
     return s, s.vg_soil
 
 def set_all_sd(rs, s):

@@ -202,11 +202,11 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     Q_Exudbu     =   np.concatenate((Q_Exud, np.full(Nt - Ntbu, 0.))) 
     Q_Mucilbu       =   np.concatenate((Q_Mucilbu, np.full(Nt - Ntbu, 0.))) 
     Q_Exud_i      = Q_Exud    - Q_Exudbu
-    Q_Mucil_i      = Q_Mucil    - Q_Mucilbu
+    Q_Mucil_i     = Q_Mucil   - Q_Mucilbu
     assert Q_Exud_i[0] == 0#no exudation in seed node I guess
     assert Q_Mucil_i[0] == 0#no exudation in seed node I guess
-    Q_Exud_i =np.array( Q_Exud_i[1:] )*1e-3 #from nod to semgment, also fom mmol to mol
-    Q_Mucil_i = np.array(Q_Mucil_i[1:])*1e-3 
+    Q_Exud_i =np.array( Q_Exud_i[1:] )#*1e-3 #from nod to semgment, also fom mmol to mol
+    Q_Mucil_i = np.array(Q_Mucil_i[1:])#*1e-3 
     #r.outputFlux = np.array(r.outputFlux)/ 10
     
     
@@ -288,7 +288,7 @@ if rank == 0:
         # print(c_All)
         xx = np.array(s.getSolutionHead())
         #cc = rs.getCC(len(xx))
-        print(xx.shape,psi_x[-1].shape,  psi_s[-1].shape, c_All[-1].shape,len(r.get_segments()) , QExud.shape)
+        #print(xx.shape,psi_x[-1].shape,  psi_s[-1].shape, c_All[-1].shape,len(r.get_segments()) , Q_Exud.shape)
         vp.plot_roots_and_soil(rs.mappedSegments(), "pressure head (rx)", psi_x[-1], s, periodic, min_b, max_b, cell_number, 
                 soil_type+genotype+"_rx", sol_ind =0) 
         # not sure that works
@@ -300,5 +300,6 @@ if rank == 0:
             print("idcomp", i)
             vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
                     soil_type+genotype+"_rx", sol_ind =-1,extraArray = rs.soilContent_old[i -1])  # VTK vizualisation
-        
+    # to plot: cumulative An, Exud, mucil and each element in the soil
+    # Also images of the 3D soil.
     print("fin")

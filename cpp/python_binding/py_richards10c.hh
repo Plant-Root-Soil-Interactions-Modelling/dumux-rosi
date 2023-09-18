@@ -9,7 +9,7 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
-#include "richards.hh" // includes solverbase
+#include "richards_10.hh" // includes solverbase
 
 #include "../soil_richardsnc/richards1p10cproblem_cyl.hh" // the problem class
 
@@ -69,7 +69,7 @@ using Richards10CSPProblem = Dumux::Richards1P10CProblem<R10CSPTT>;
 
 PYBIND11_MODULE(rosi_richards10c, m) {
     init_solverbase<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver>(m, "BaseRichards10CSP");
-    init_richards<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver>(m, "Richards10CSP");
+    init_richards_10<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver>(m, "Richards10CSP");
 }
 
 #endif
