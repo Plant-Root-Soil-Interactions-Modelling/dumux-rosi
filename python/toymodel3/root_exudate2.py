@@ -112,7 +112,7 @@ if len(rs.cyls) > 1:
     write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
     write_file_array("coord", cyl.getDofCoordinates().flatten())
     for i in range(rs.numFluidComp):
-        write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat ) 
+        write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.molarDensityWat_m3/1e6 ) 
     for i in range(rs.numFluidComp, rs.numComp):
         write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
 
@@ -126,6 +126,9 @@ net_sol_flux =  np.array([np.array([]),np.array([])])
 net_flux = np.array([])
 
 
+Q_Exudbu    = np.array([0.])
+Q_Mucilbu   = np.array([0.])
+Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
 dt = 1/24
@@ -190,18 +193,20 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     #    r.doTroubleshooting = True
     r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
     Nt = len(rs.nodes)
-    QExud  = np.array(r.Q_out[(Nt*3):(Nt*4)])#mmol/day for nodes
-    Q_mucil  = np.array(r.Q_out[(Nt*9):(Nt*10)])#mmol/day for nodes
-    # print("QExud",QExud)
-    # print("QS",np.array(r.Q_out[0:Nt]))
-    # print("Q_S_ST", np.array(r.Q_out[(Nt*8):(Nt*9)]))
-    # print("Q_mucil",np.array(r.Q_out[(Nt*9):(Nt*10)]))
-    # print(np.array(r.rs.organTypes))
     
-    assert QExud[0] == 0#no exudation in seed node I guess
-    assert Q_mucil[0] == 0#no exudation in seed node I guess
-    QExud =np.array( QExud[1:] )#*1e-3 #from nod to semgment, also fom mmol to mol
-    Q_mucil = np.array(Q_mucil[1:])#*1e-3 
+    # att: that will be the cumulative value
+    Q_Exud  = np.array(r.Q_out[(Nt*3):(Nt*4)])#mmol for nodes
+    Q_Mucil  = np.array(r.Q_out[(Nt*9):(Nt*10)])#mmol for nodes
+
+    Ntbu = Nt
+    Q_Exudbu     =   np.concatenate((Q_Exud, np.full(Nt - Ntbu, 0.))) 
+    Q_Mucilbu       =   np.concatenate((Q_Mucilbu, np.full(Nt - Ntbu, 0.))) 
+    Q_Exud_i      = Q_Exud    - Q_Exudbu
+    Q_Mucil_i      = Q_Mucil    - Q_Mucilbu
+    assert Q_Exud_i[0] == 0#no exudation in seed node I guess
+    assert Q_Mucil_i[0] == 0#no exudation in seed node I guess
+    Q_Exud_i =np.array( Q_Exud_i[1:] )*1e-3 #from nod to semgment, also fom mmol to mol
+    Q_Mucil_i = np.array(Q_Mucil_i[1:])*1e-3 
     #r.outputFlux = np.array(r.outputFlux)/ 10
     
     
@@ -223,7 +228,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c,repartition, c_All, net_sol_flux, net_flux = cyl3.simulate_const(s, 
                                             r,  dt, dt_inner, kexu, rs_age, repartition, 
-                                            type = mode, Q_plant=[QExud, Q_mucil], plantType = "RS", r= rs,
+                                            type = mode, Q_plant=[Q_Exud_i, Q_Mucil_i], plantType = "RS", r= rs,
                                             wilting_point = wilting_point, trans_maize = trans_maize,
                                             outer_R_bc_sol = net_sol_flux, 
                                             outer_R_bc_wat = net_flux)
@@ -231,7 +236,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     #(fname, s, r, sri_table_lookup, 1., dt, trans_maize, comp, rs_age, min_b, max_b, type = cyl_type)
 
     for i in range(rs.numFluidComp):
-        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.molarDensityWat) 
+        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.molarDensityWat_m3/1e6) 
     for i in range(rs.numFluidComp, rs.numComp):
         write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.bulkDensity_m3 /1e6 ) 
         
@@ -282,18 +287,18 @@ if rank == 0:
         periodic = False
         # print(c_All)
         xx = np.array(s.getSolutionHead())
-        cc = rs.getCC(len(xx))
+        #cc = rs.getCC(len(xx))
         print(xx.shape,psi_x[-1].shape,  psi_s[-1].shape, c_All[-1].shape,len(r.get_segments()) , QExud.shape)
         vp.plot_roots_and_soil(rs.mappedSegments(), "pressure head (rx)", psi_x[-1], s, periodic, min_b, max_b, cell_number, 
                 soil_type+genotype+"_rx", sol_ind =0) 
         # not sure that works
-        vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
-                soil_type+genotype+"_rx", sol_ind =-1,extraArray = cc)  # VTK vizualisation
+        #vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
+        #        soil_type+genotype+"_rx", sol_ind =-1,extraArray = cc)  # VTK vizualisation
         vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
                 soil_type+genotype+"_rx", sol_ind =1)  # VTK vizualisation
         for i in range(1, rs.numComp):
             print("idcomp", i)
             vp.plot_roots_and_soil(rs.mappedSegments(), "sucrose",c_All[-1], s, periodic, min_b, max_b, cell_number, 
-                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = rs.getCC(len(xx), idComp=i))  # VTK vizualisation
+                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = rs.soilContent_old[i -1])  # VTK vizualisation
         
     print("fin")

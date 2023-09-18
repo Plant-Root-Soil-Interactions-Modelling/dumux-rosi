@@ -156,12 +156,12 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
     s.soil = soil_
     s.vg_soil = vg.Parameters(soil_)
-    vg.create_mfp_lookup(soil, -1.e5, 1000)
+    vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-    ICcc = [0.1,10., 0.011 * 1e6*0., 0.05 * 1e6*0., 0.011 * 1e6*0., 0.05 * 1e6*0., 0., 0.]
+    ICcc = [0.1,10., 0.011 * 1e6*0., 0.05 * 1e6*0., 0.011 * 1e6*0., 0.05 * 1e6*0., 0., 0.]# in mol/m3 water or mol/m3 scv
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
-    cell_number = str(cell_number)
+    #cell_number = str(cell_number)
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)    
     
@@ -203,13 +203,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
 
         s.decay = 0. #1.e-5
         
-        for i in range(numFluidComp + 1, numComp+1):
+        for i in range(s.numFluidComp + 1, s.numComp+1):
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
-        for i in range(numComp):
-            s.setParameter( "Soil.IC.C"+str(i+1), str( ICcc[i]))
+        for i in range(s.numComp):
+            molarC = ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
+            s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
     s.betaC = 0.001 
     s.betaO = 0.1 
     s.C_S_W_thresC = 0.1 
@@ -256,16 +257,16 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.micro_maxO = 0.01
     s.setParameter("Soil.micro_maxC", str(s.micro_maxC ))# 1/d
     s.setParameter("Soil.micro_maxO", str(s.micro_maxO ))# 1/d
-    s.v_maxL
+    s.v_maxL = 1.5
     s.setParameter("Soil.v_maxL", str(s.v_maxL))#[d-1]
 
     s.k_sorp = 0.2*100
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
     s.f_sorp = 0.9
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-    s.CSSmax = 1e-4*10000*0
+    s.CSSmax = 1e-4*10000*0.
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.alpha
+    s.alpha = 0.
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
 
     # Paramters
@@ -311,7 +312,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
         # c = np.zeros((cell_number[0]*cell_number[1]*cell_number[2])) #TODO
         # s.setInitialCondition(c, 1)  # kg/m3
-    return s, soil
+    return s, s.vg_soil
 
 def set_all_sd(rs, s):
     """ # sets all standard deviation to a percantage, i.e. value*s """

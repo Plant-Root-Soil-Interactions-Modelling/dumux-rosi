@@ -63,10 +63,16 @@ def getTotCContent( kjg, cyl, l, init=False):
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
 nCells = 50
+logbase = 0.5
 r_in = 0.02
 r_out = 0.6
 l = 1 #length in cm
-s.createGrid([r_in], [r_out], [nCells])  # [cm]
+doLogarithmic = True
+if doLogarithmic:
+    points = np.logspace(np.log(a_in) / np.log(logbase), np.log(a_out) / np.log(logbase), nCells, base = logbase)
+    cyl.createGrid1d(points)
+else:
+    s.createGrid([r_in], [r_out], [nCells])  # [cm]
 s.setParameter( "Soil.Grid.Cells", str(nCells))
 
 s.setHomogeneousIC(-100.)  # cm pressure head
@@ -289,8 +295,17 @@ write_file_array("RF",RF)
 buTotCBefore = getTotCContent(0, s,l, init=True)
 
 vols = s.getCellSurfacesCyl()  * l  #cm3 scv
-print(sum(buTotCBefore))
-#raise Exception
+print("cyl shape",r_in, r_out, l)
+print(sum(vols),np.pi*(r_out**2 - r_in**2),sum(vols)-np.pi*(r_out**2 - r_in**2))
+volBis = s.getCellVolumesCyl().flatten()
+print(vols, len(vols), sum(vols))
+print(volBis, len(volBis), sum(volBis))
+print(vols*100 - volBis)
+#print(s.base.getPoints())
+#print(np.diff(np.array(s.base.getPoints()).flatten()))
+#print(s.base.getCellCenters())
+raise Exception
+
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:

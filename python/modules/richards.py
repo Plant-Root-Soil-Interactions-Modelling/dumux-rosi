@@ -395,11 +395,17 @@ class RichardsWrapper(SolverWrapper):
         self.checkInitialized()
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
         
-    def getWaterVolumesCyl(self, length):
+    def getWaterVolumesCyl(self, length, verbose = False):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
         vols = self.getCellSurfacesCyl() * length #cm3 scv
         watCont = self.getWaterContent().flatten() # cm3 wat/cm3 scv
+        if(verbose):
+            print("getWaterVolumesCyl")
+            print(length)
+            print(vols , watCont )
+            print(np.multiply(vols , watCont  ) )
+        
         return np.multiply(vols , watCont  )  
         
     def getWaterVolumes(self):
@@ -418,7 +424,7 @@ class RichardsWrapper(SolverWrapper):
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
-            return np.multiply(vols , C_  ) 
+            return np.multiply(vols , C_  ) # mol
             
         watCont = self.getWaterContent().flatten() # m3 wat/m3 scv
         if self.useMoles:
@@ -426,6 +432,12 @@ class RichardsWrapper(SolverWrapper):
         #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
         return np.multiply(np.multiply(vols , watCont) , C_ )
         
+    def phaseDensity(self, isDissolved):# mol / m3
+        if isDissolved: #mol wat / m3 wat
+            return self.molarDensityWat_m3
+        else:   # mol scv / m3 scv
+            return self.bulkDensity_m3
+            
     def getContent(self,idComp, isDissolved):
         vols = self.getCellVolumes().flatten() / 1e6 #m3 scv            
         C_ = self.getSolution(idComp).flatten()  # mol/mol wat or mol/mol scv

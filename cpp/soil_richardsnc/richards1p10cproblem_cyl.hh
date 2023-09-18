@@ -267,7 +267,7 @@ public:
 				
 				//IC
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "C"+std::to_string(i), "C"+std::to_string(i)+"Z", 
-													0., this->spatialParams().layerIFF()); // kg/m2 or mol/m2
+													0., this->spatialParams().layerIFF()); // kg/kg or mol/mol soil
 				if (bcSTopType_.at(i - soluteIdx)==managed) {
 					componentInput_.at(i) = InputFileFunction(std::to_string(i)+".Component.Managed", "Input", "Time", 0.); // cm/day (day)
 					
@@ -334,14 +334,14 @@ public:
 		m_maxBisO = getParam<double>("Soil.m_maxBisO2", 0. );
 		m_maxBis_Cs = getParam<double>("Soil.m_maxBis_Cs", 0.  );
 		
-		auto nVerices_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
+		auto nCells_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
 		auto myMultiply = [] (int previousResult, int item) {return previousResult * (item + 1);};
-		int nVerices = std::reduce(nVerices_.begin(), nVerices_.end(), 1, myMultiply ); //std::multiplies<int>()
+		int nVertices = std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply ); //std::multiplies<int>()
 		
-		testSorp.resize(nVerices);
-		testCSS1.resize(nVerices);
-		theta_.resize(nVerices);
-		RF.resize(nVerices);
+		testSorp.resize(nVertices);
+		testCSS1.resize(nVertices);
+		theta_.resize(nVertices);
+		RF.resize(nVertices);
 		 
 
 		// Output

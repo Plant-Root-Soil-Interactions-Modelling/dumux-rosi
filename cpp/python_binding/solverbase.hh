@@ -499,6 +499,7 @@ public:
      * This is done for a single process, gathering and mapping is done in Python.
      */
     virtual std::vector<double> getCellVolumesCyl() {
+		assert(false&&"Do NOT use getCellVolumesCyl, use getCellSurfacesCyl instead");//do I need to use dune-assert here?
         std::vector<double> vols;
         for (const auto& e : elements(gridGeometry->gridView())) {
             vols.push_back(e.geometry().volume()*2*e.geometry().center()[0]*3.1415);

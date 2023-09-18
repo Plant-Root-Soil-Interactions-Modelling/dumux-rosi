@@ -60,6 +60,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return np.array([0])
     def getSolutionHead(self):
         return np.array([0])
+    def getWaterVolumesCyl(self, length):
+        return np.array([0])
         
     #set
     def setInnerFluxCyl(self,val) :#flux computed by the plant (transpiration for leaf, 0 else)
@@ -78,6 +80,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def get_inner_concentration(self):
         return 0
     def getSolution_(self,val):
+        return np.array([0])
+    def getContentCyl(self,idComp, isDissolved, length):
         return np.array([0])
     #set
     def setOuterBC_solute(self,*arg):
