@@ -383,7 +383,6 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        assert self.dimWorld == 3
         return (self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2)).flatten()
 
     def getWaterContent_(self):

@@ -1275,7 +1275,7 @@ private:
 	std::vector<double>  m_max ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
 	std::vector<double>  micro_max ; //[s-1] Maximum growth rate coefficient for the corresponding microbial group
 	std::vector<double>  beta ; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
-	std::vector<double>  k_S ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
+	std::vector<double>  k_S ; // [m3 soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
 	std::vector<double>  C_S_W_thres ; //[mol C/m3 soil] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
 	double  k_phi ; //[-] Sharpness parameter for the switch function from active to dormancy
 	std::vector<double>  k_D ; //[s-1] Deactivation rate coefficient for the corresponding microbial groups

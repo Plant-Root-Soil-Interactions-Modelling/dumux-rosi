@@ -158,7 +158,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.vg_soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-    s.ICcc = np.array([0.1,10., 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.])# in mol/m3 water or mol/m3 scv
+    s.ICcc = np.array([0.1 *1e6,10. * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.])# in mol/m3 water or mol/m3 scv
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
     #cell_number = str(cell_number)
@@ -261,13 +261,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.v_maxL = 1.5
     s.setParameter("Soil.v_maxL", str(s.v_maxL))#[d-1]
 
-    s.k_sorp = 0.2*100
+    s.k_sorp = 0.4/1e6#0.2*100
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
-    s.f_sorp = 0.9
+    s.f_sorp = 0.5#0.9
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-    s.CSSmax = 1e-4*10000*0.
+    s.CSSmax =140/1e6# 1e-4*10000*0.
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.alpha = 0.
+    s.alpha =0.1# 0.
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
 
     # Paramters
@@ -607,6 +607,11 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
     
 
 
+def write_file_float(name, data):
+    name2 = './results/'+ name+ '.txt'
+    with open(name2, 'a') as log:
+        log.write(repr( data)  +'\n')
+        
 def write_file_array(name, data, space =","):
     name2 = './results/'+ name+ '.txt'
     with open(name2, 'a') as log:

@@ -75,7 +75,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     ns = len(segs)
     #r = rs.rs  # rename (XylemFluxPython)
 
-    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ , c_All= [], [], [], [], [], [], [], [] ,[]
+    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ , c_All, c_All1= [], [], [], [], [], [], [], [] ,[], []
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
     krs_ = []
@@ -155,6 +155,8 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
         seg_mucil_fluxes = comm.bcast(seg_mucil_fluxes, root = 0)
         #print("rx",rx)
+        assert min(seg_sol_fluxes) >= 0
+        assert min(seg_mucil_fluxes) >= 0
         
         """ 2. local soil models """
         wall_local = timeit.default_timer()
@@ -228,7 +230,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                                     "outer_R_bc_sol[1]", proposed_outer_mucil_fluxes[ssid] , 
                                     "innerBC_mucil",seg_mucil_fluxes[ssid])
                         
-                        print("the one with the issue")                        
+                        print("the one with the issue", sid, cid)                        
                         print("soil_solute[0]",sum(r.cyls[sid].getContentCyl(1, True, r.seg_length[sid])) ,
                                 " outer_R_bc_sol[0] ", proposed_outer_sol_fluxes[sid]  ,
                                    "innerBC_sol",seg_sol_fluxes[sid])
@@ -236,7 +238,9 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                                 "outer_R_bc_sol[1]", proposed_outer_mucil_fluxes[sid] , 
                                 "innerBC_mucil",seg_mucil_fluxes[sid])
                         print(sid, r.seg_length[sid])
-                        print(totCont,totouterBC*dt, totinnerBC*dt)
+                        print(totCont,totouterBC,dt, "totinnerBC",totinnerBC,dt, totCont+totouterBC*dt+ totinnerBC*dt)
+                        
+                        r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content, troubleShootId = cid)
                         raise Exception
                     
         
@@ -432,6 +436,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             y_.append(np.sum(sink))  # cm3/day
             c_.append(-np.sum(seg_sol_fluxes))  # [cm3/day]
             c_All.append(seg_sol_fluxes)  # [cm3/day]
+            c_All1.append(seg_mucil_fluxes)
             psi_s2_.append(sx)  # cm (per soil cell)
             
             cutoff = 1e-15 #is get value too small, makes paraview crash
@@ -466,5 +471,5 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, repartition, c_All, outer_R_bc_sol, outer_R_bc_wat 
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, repartition, c_All,c_All1, outer_R_bc_sol, outer_R_bc_wat 
 

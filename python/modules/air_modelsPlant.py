@@ -102,6 +102,9 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def getCellSurfacesCyl(self):
         """nompi version of  """
         return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2
+    def getCellSurfacesCyl_(self):
+        """nompi version of  """
+        return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2
         
 
 
