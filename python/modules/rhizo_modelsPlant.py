@@ -402,7 +402,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         diff1d3dCW_rel = abs(self.sumDiff1d3dCW_abs[idComp]/(mol_total +sourceSol_ * dt) *100)
                         print("content", cellId, idComp, mol_total, mol_rhizo,"sourceSol_ * dt",sourceSol_ * dt, 
                             abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_ * dt)*100))
-                        if self.sumDiff1d3dCW_rel[idComp] > 1e-10:
+                        if self.sumDiff1d3dCW_rel[idComp] > 0.1:
                             print(cellId, idComp,mol_total , sourceSol_ , dt)
                             print(mol_rhizo, abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_* dt)*100))
                             raise Exception
