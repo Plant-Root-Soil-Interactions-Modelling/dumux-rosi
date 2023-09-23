@@ -1,0 +1,146 @@
+
+C_fluxes 9.52083 5 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00120956 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 8 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00120945 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 12 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.001263 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 15 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00126302 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 19 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.0013197 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 22 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00131969 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 26 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00138001 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 29 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00137996 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 32 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00144285 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 34 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00144274 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 37 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.0015113 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 39 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00151135 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 42 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00158385 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 44 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00158411 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 46 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166058 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 47 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166056 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 49 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174346 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 50 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174359 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 63 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00133658 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 66 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00133668 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 70 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00139563 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 73 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00139544 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 76 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00145715 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 78 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00145711 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 81 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00152352 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 83 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.0015235 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 86 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00159421 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 88 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00159418 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 90 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.001668 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 91 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166823 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 93 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174838 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 94 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174839 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 104 0 0.4 0 qdot: -12968, Fu: 0 rm:0 maxrm: 0.00045927 gr:0 grmax: 0.0143817 exud:12980.5 js:12.5311 vol_ST:1.57686e-05
+
+C_fluxes 9.52083 106 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00180124 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 107 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00180125 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 117 0 0.4 0 qdot: -12968, Fu: 0 rm:0 maxrm: 0.00045927 gr:0 grmax: 0.0161826 exud:12980.5 js:12.5311 vol_ST:1.57686e-05
+JW_ST 14712.5 r_ST 704.242 ide 117 ids 116 117 cst: 0.599672 5.11547e-05 pst: 13426.8 -1285.69 vol: 1.57686e-05 1.57686e-05
+
+C_fluxes 9.52083 5 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00120956 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 8 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00120945 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 12 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.001263 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 15 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00126302 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 19 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.0013197 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 22 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00131969 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 26 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00138001 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 29 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00137996 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 32 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00144285 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 34 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00144274 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 37 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.0015113 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 39 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00151135 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 42 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00158385 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 44 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00158411 exud:5192.19 js:6.15898 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 46 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166058 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 47 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166056 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 49 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174345 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 50 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174359 exud:5192.19 js:6.15851 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 63 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00133658 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 66 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00133668 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 70 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00139563 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 73 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00139544 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 76 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00145715 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 78 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00145711 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 81 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00152352 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 83 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.0015235 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 86 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00159421 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 88 0 0.4 0 qdot: -5186.03, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00159418 exud:5192.19 js:6.15897 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 90 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166799 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 91 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00166823 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 93 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174838 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 94 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00174839 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 104 0 0.4 0 qdot: -12968, Fu: 0 rm:0 maxrm: 0.00045927 gr:0 grmax: 0.0143817 exud:12980.5 js:12.5311 vol_ST:1.57686e-05
+
+C_fluxes 9.52083 106 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00180124 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 107 0 0.4 0 qdot: -5186.04, Fu: 0 rm:0 maxrm: 7.34831e-05 gr:0 grmax: 0.00180125 exud:5192.19 js:6.1585 vol_ST:9.62113e-06
+
+C_fluxes 9.52083 117 0 0.4 0 qdot: -12968, Fu: 0 rm:0 maxrm: 0.00045927 gr:0 grmax: 0.0161826 exud:12980.5 js:12.5311 vol_ST:1.57686e-05
+JW_ST 14712.5 r_ST 704.242 ide 117 ids 116 117 cst: 0.599672 5.11547e-05 pst: 13426.8 -1285.7 vol: 1.57686e-05 1.57686e-05

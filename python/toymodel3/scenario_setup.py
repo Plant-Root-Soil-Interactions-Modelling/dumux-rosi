@@ -158,7 +158,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.vg_soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-    s.ICcc = np.array([0.1 *1e6,10. * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0.011 * 1e6, 0.05 * 1e6, 0., 0.])# in mol/m3 water or mol/m3 scv
+    unitConversion = 1e3
+    s.ICcc = np.array([0.1 *unitConversion,
+                        10. *unitConversion,
+                        0.011* unitConversion,
+                        0.05* unitConversion,
+                        0.011* unitConversion,
+                        0.05* unitConversion,
+                        0., 0.])# in mol/m3 water or mol/m3 scv
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
     #cell_number = str(cell_number)
@@ -183,8 +190,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
     if (type == "dumux_10c") or (type == "dumux_dirichlet_nc")or (type == "dumux_dirichlet_10c"):  # solute BC
-        s.Ds = 1e-8 # m^2/s
-        s.Dl = 1e-9
+        s.Ds = 1e-9 # m^2/s
+        s.Dl = 3e-12
         s.numComp = 8
         s.numFluidComp = 2
         # s.setTopBC_solute("outflow", 0.)
@@ -261,13 +268,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.v_maxL = 1.5
     s.setParameter("Soil.v_maxL", str(s.v_maxL))#[d-1]
 
-    s.k_sorp = 0.4/1e6#0.2*100
+    s.k_sorp = 0.4/1e6*0#0.2*100
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
     s.f_sorp = 0.5#0.9
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-    s.CSSmax =140/1e6# 1e-4*10000*0.
+    s.CSSmax =140/1e6*0# 1e-4*10000*0.
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.alpha =0.1# 0.
+    s.alpha =0.1*0# 0.
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
 
     # Paramters
@@ -480,7 +487,6 @@ def phloemParam(r,weatherInit ):
     SPAD= 41.0
     chl_ = (0.114 *(SPAD**2)+ 7.39 *SPAD+ 10.6)/10
     r.Chl = np.array( [chl_]) 
-    r.Csoil = 1e-4
     return r
 
 def setKrKx_phloem(r): #inC
@@ -606,29 +612,41 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
         return rs, r
     
 
+def div0(a, b, c):   # function to avoid division by 0    
+    if isinstance(a,(list, np.ndarray)):  
+        return np.divide(a, b, out=np.full(len(a), c), where=b!=0)
+    else:
+        return div0f(a, b, c)
+    
+def div0f(a, b, c):    # function to avoid division by 0     
+    if b != 0:
+        return a/b
+    else:
+        return a/c
 
-def write_file_float(name, data):
-    name2 = './results/'+ name+ '.txt'
+def write_file_float(name, data, directory_):
+    name2 = directory_+ name+ '.txt'
     with open(name2, 'a') as log:
         log.write(repr( data)  +'\n')
         
-def write_file_array(name, data, space =","):
-    name2 = './results/'+ name+ '.txt'
+def write_file_array(name, data, space =",", directory_ ="./results/" ):
+    name2 = directory_+ name+ '.txt'
     with open(name2, 'a') as log:
         log.write(space.join([num for num in map(str, data)])  +'\n')
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,  depth_,  dist, con, l, conc = None, c_ = None):#krs_,
+def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,  depth_,  
+                    dist, con, l, conc = None, c_ = None, directory ="./results/"):#krs_,
     """  saves numpy arrays ass npy files """
     
-    write_file_array('psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
-    write_file_array('psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
-    write_file_array('sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
-    write_file_array('transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
-    write_file_array('soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
+    write_file_array('psix_' + file_name, np.array(psi_x), directory_ =directory)  # xylem pressure head per segment [cm]
+    write_file_array('psiinterface_' + file_name, np.array(psi_i), directory_ =directory)  # pressure head at interface per segment [cm]
+    write_file_array('sink_' + file_name, -np.array(sink), directory_ =directory)  # sink per segment [cm3/day]
+    write_file_array('transpiration_' + file_name, np.vstack((times, -np.array(trans))), directory_ =directory)  # time [day], transpiration [cm3/day]
+    write_file_array('soil_' + file_name, np.array(psi_s), directory_ =directory)  # soil potential per cell [cm]
 
-    write_file_array('vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
-    write_file_array('surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
+    write_file_array('vol_' + file_name, np.array(vol_), directory_ =directory)  # volume per subType [cm3]
+    write_file_array('surf_' + file_name, np.array(surf_), directory_ =directory)  # surface per subType [cm2]
     #np.save('krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
-    write_file_array('depth_' + file_name, np.array(depth_))  # root system depth [cm]
+    write_file_array('depth_' + file_name, np.array(depth_), directory_ =directory)  # root system depth [cm]
 
     # if conc is not None:
         # write_file_array('soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]

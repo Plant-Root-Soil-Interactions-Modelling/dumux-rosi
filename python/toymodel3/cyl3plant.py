@@ -18,7 +18,6 @@ from scenario_setup import write_file_array
 
 
 def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
-                    trans_maize,
                     plantType = "RS", r = [], wilting_point =-15000, 
                     outer_R_bc_sol=[], #mol
                     outer_R_bc_wat = []):#m3
@@ -118,17 +117,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             # print("need to add fixed point iteration for water and carbon fluxes between plant-rhizosphere")
             isPlant = True
             if isPlant:            
-                # rs.minLoop = 1000
-                # rs.maxLoop = 5000
-                # rs.Qlight = weatherX["Qlight"]
-                # rs.solve_photosynthesis(sim_time_ = rs_age + t, 
-                            # sxx_=rsx, #will not use the output of the air bc. so it s just a stand-in for now
-                            # cells_ = False,
-                            # ea_ = weatherX["ea"],#not used
-                            # es_=weatherX["es"],#not used
-                            # verbose_ = False, doLog_ = False,
-                            # TairC_= weatherX["TairC"],#not used
-                            # outputDir_= "./results/rhizoplantExud")
                 rx = np.array(rs.psiXyl)
                 seg_fluxes = np.array(rs.outputFlux)# [cm3/day]
                 errLeuning = sum(seg_fluxes)            
@@ -244,6 +232,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                         raise Exception
                     
         
+        rhizoTotCBefore = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
         print("solve 1d soil")
         if "dirichlet" in type:        
             r.solve(dt, seg_rx, proposed_outer_fluxes, seg_sol_fluxes, proposed_outer_sol_fluxes, seg_mucil_fluxes, proposed_outer_mucil_fluxes) #
@@ -252,6 +241,10 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             r.solve(dt, seg_fluxes, proposed_outer_fluxes, seg_sol_fluxes,proposed_outer_sol_fluxes, 
                     seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
         print("done")
+        rhizoTotCAfter = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)])  
+        
+        r.rhizoMassError_abs = rhizoTotCAfter - ( rhizoTotCBefore + sum(Q_Exud) + sum(Q_mucil) + sum(proposed_outer_sol_fluxes) *dt+ sum(proposed_outer_mucil_fluxes)*dt)
+        r.rhizoMassError_rel = abs(r.rhizoMassError_abs/rhizoTotCAfter*100)
         # cyl = r.cyls[1]
         # write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
         # write_file_array("coord", cyl.getDofCoordinates().flatten())
@@ -347,38 +340,33 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         print("done")
         buTotCAfter = sum(s.getTotCContent())    
         
-        try:
-            # maybe 0.1% of error is too large
-            assert abs((buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))/buTotCAfter*100) < 0.1
-            # assert bellow can fail when Q_exud and Q_mucil low
-            #assert abs((buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil) ))) < 0.1*( sum(Q_Exud) + sum(Q_mucil))
-        except:
-            print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
-            print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
-            print(abs((buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil) ))))
-            raise Exception
-
+        s.bulkMassError_abs = buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil))
+        s.bulkMassError_rel = abs(s.bulkMassError_abs/buTotCAfter*100)
+        
+        print("errorCbalance soil 3d?",buTotCAfter , buTotCBefore , sum(Q_Exud) , sum(Q_mucil), s.bulkMassError_abs )
+        #raise Exception
         assert (s.getSolution_(0) == r.soilModel.getSolution_(0)).all()
         wall_macro = timeit.default_timer() - wall_macro
-        
+        assert min(s.getSolution_(8)) > 0. # idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
 
         """ 3b. calculate net fluxes """
         wall_netfluxes = timeit.default_timer()
         water_content = np.array(s.getWaterContent_())
         # print(water_content)
         new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
+        s.bulkMassErrorWater_abs = sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt)
+        s.bulkMassErrorWater_rel = abs(s.bulkMassErrorWater_abs /sum(new_soil_water) )*100
         try:
             # use soil_fluxes and not seg_fluxes. seg_fluxes includes air segments. sum(seg_fluxes) ~ 0.
             # maybe 0.1% of error is too large
-            assert abs(  (sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt) ) /sum(new_soil_water) )*100 < 0.1
+            assert s.bulkMassErrorWater_rel < 0.1
         except:
             print(new_soil_water , soil_water , seg_fluxes*dt)
             print(sum(new_soil_water) , sum(soil_water) , sum(soil_fluxes.values())*dt)
-            print(abs(sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt)) )
-            print( abs(  (sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt) ) /sum(new_soil_water) )*100  )
+            print(s.bulkMassErrorWater_abs)
+            print( s.bulkMassErrorWater_rel )
             print(new_soil_water)
             raise Exception
-        
         
         outer_R_bc_wat = new_soil_water - soil_water  # change in water per cell [cm3]
         
@@ -404,14 +392,73 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             print(soil_solute_content[0].shape)
             print(soil_source_sol[0].shape)
             raise Exception
-        for nc in range(r.numComp, r.numFluidComp):
+        for nc in range(r.numFluidComp, r.numComp):
             # all changes in cellIds for 3D soil is cause by biochemical reactions computed in 1D models.
             # thus, for elements which do not flow (range(r.numComp, r.numFluidComp)), there are no changes
             # except those prescribed by the 1d model.
-            assert (outer_R_bc_sol[nc][cellIds] == 0.).all()
+            try:
+                assert (abs(outer_R_bc_sol[nc][cellIds]) < 1e-16).all()
+            except:
+                print("outer_R_bc_sol[nc][cellIds] != 0.", nc+1, cellIds)
+                print(outer_R_bc_sol[nc][cellIds])
+                print(soil_solute_content_new[nc][cellIds] , soil_solute_content[nc][cellIds] , soil_source_sol[nc][cellIds]*dt)
+                raise Exception
             # outer_R_bc_sol[nc][cellIds] == flow in 3D model
             # outer_R_bc_sol[nc][not cellIds] == flow and reaction in 3D model
         
+        r.checkSoilBC(outer_R_bc_wat, outer_R_bc_sol)# check oldSoil + rhizoSource = newSoil - (bulkFlow + bulkReaction )
+        # then (bulkFlow + bulkReaction ) sent as 1ds outer BC at next time step.
+        
+        write_file_array("sumdiffSoilData_abs_A", r.sumdiffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
+        write_file_array("maxdiffSoilData_abs_A", r.maxdiffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
+        write_file_array("sumdiffSoilData_rel_A", r.sumdiffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
+        write_file_array("maxdiffSoilData_rel_A", r.maxdiffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
+        write_file_array("diffSoilData_abs_A", r.diffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
+        write_file_array("diffSoilData_rel_A", r.diffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
+        
+        
+        try:
+            assert s.bulkMassError_rel < 1e-10
+            assert (r.sumdiffSoilData_rel < 1e-10).all()
+        except:
+            print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
+            print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
+            print(s.bulkMassError_abs ,s.bulkMassError_rel)
+            print(r.rhizoMassError_abs, r.rhizoMassError_rel)
+            print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
+            print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
+            raise Exception
+            
+        
+        emptySoilVoxels = np.array([elCid for elCid in range(len(cell_volumes)) if ((elCid >= 0) and (elCid not in cellIds))])
+        assert len(emptySoilVoxels) + len(cellIds) == len(cell_volumes)
+        r.setEmptySoilVoxel(emptySoilVoxels)# now oldSoil = newSoil where we have no rhizo
+        
+        totWatAdded = outer_R_bc_wat[emptySoilVoxels] 
+        totSolAdded = outer_R_bc_sol[:,emptySoilVoxels] 
+        outer_R_bc_wat[emptySoilVoxels] = 0. #changes were put in old soil and will not be used as BC
+        outer_R_bc_sol[:,emptySoilVoxels] = 0. #changes were put in old soil and will not be used as BC
+        
+        r.checkSoilBC(outer_R_bc_wat, outer_R_bc_sol)# check oldSoil + rhizoSource = newSoil - (bulkFlow + bulkReaction )
+        try:
+            assert (r.sumdiffSoilData_rel < 1e-10).all()
+        except:
+            print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
+            print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
+            print(s.bulkMassError_abs ,s.bulkMassError_rel)
+            print(r.rhizoMassError_abs, r.rhizoMassError_rel)
+            print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
+            print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
+            raise Exception
+        
+        for nc in range(r.numFluidComp, r.numComp):
+            try:
+                assert (abs(outer_R_bc_sol[nc]) < 1e-16).all()
+            except:
+                print("outer_R_bc_sol[nc][cellIds] != 0.", nc+1, cellIds)
+                print(outer_R_bc_sol[nc])
+                print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
+                raise Exception
         """ 3d. backup """
         wall_netfluxes = timeit.default_timer() - wall_netfluxes
         

@@ -75,7 +75,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     
     #solute
     #get
-    def getInnerSolutes(self,shift=0):
+    def getInnerSolutes(self,shift=0, compId = 1, isDissolved = True):
         return 0
     def get_inner_concentration(self):
         return 0

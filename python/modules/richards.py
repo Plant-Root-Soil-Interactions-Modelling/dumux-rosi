@@ -317,9 +317,15 @@ class RichardsWrapper(SolverWrapper):
         """Gets the pressure head at the inner boundary [cm] """
         return self.base.getInnerHead(shift)  # -> richards_cyl.hh
 
-    def getInnerSolutes(self, shift = 0):
-        """Gets the concentration at the inner boundary [cm] """
-        return self.base.getInnerSolutes(shift)
+    def getInnerSolutes(self, shift = 0, compId = 1, isDissolved = True):
+        """Gets the concentration at the inner boundary [mol/cm3] """    
+        CC = np.array(self.getSolution_(compId)).flatten()[0] #mol/mol
+        if self.useMoles:
+            if isDissolved:
+                CC *= self.molarDensityWat_m3/1e6 #mol/cm3 scv
+            else:
+                CC *= self.bulkDensity_m3/1e6 #mol/cm3 scv
+        return CC
 
     def setSource(self, source_map, eq_idx = 0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
