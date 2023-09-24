@@ -95,9 +95,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         weatherX = weather(t)
 
         """ 1. xylem model """
-        # if rank == 0:
-        #     print("[x", end = "")
-        wall_xylem = timeit.default_timer()
 
     
         ###
@@ -147,7 +144,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         assert min(seg_mucil_fluxes) >= 0
         
         """ 2. local soil models """
-        wall_local = timeit.default_timer()
         if rank == 0:
             if len(outer_R_bc_wat) > 0:           
                 waterContent = np.array([sum( r.cyls[sid].getWaterVolumesCyl(r.seg_length[sid]) ) for sid in range(len(r.cyls))]) 
@@ -232,7 +228,10 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                         raise Exception
                     
         
+        rhizoWBefore = sum([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
         rhizoTotCBefore = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
+        
+        start_time_rhizo = timeit.default_timer()
         print("solve 1d soil")
         if "dirichlet" in type:        
             r.solve(dt, seg_rx, proposed_outer_fluxes, seg_sol_fluxes, proposed_outer_sol_fluxes, seg_mucil_fluxes, proposed_outer_mucil_fluxes) #
@@ -241,10 +240,18 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             r.solve(dt, seg_fluxes, proposed_outer_fluxes, seg_sol_fluxes,proposed_outer_sol_fluxes, 
                     seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
         print("done")
+        
+        
+        rs.time_rhizo_i = (timeit.default_timer() - start_time_rhizo)
+    
+        
+        rhizoWAfter = sum([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
         rhizoTotCAfter = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)])  
         
-        r.rhizoMassError_abs = rhizoTotCAfter - ( rhizoTotCBefore + sum(Q_Exud) + sum(Q_mucil) + sum(proposed_outer_sol_fluxes) *dt+ sum(proposed_outer_mucil_fluxes)*dt)
-        r.rhizoMassError_rel = abs(r.rhizoMassError_abs/rhizoTotCAfter*100)
+        r.rhizoMassCError_abs = abs(rhizoTotCAfter - ( rhizoTotCBefore + sum(Q_Exud) + sum(Q_mucil) + sum(proposed_outer_sol_fluxes) *dt+ sum(proposed_outer_mucil_fluxes)*dt))
+        r.rhizoMassCError_rel = abs(r.rhizoMassCError_abs/rhizoTotCAfter*100)
+        r.rhizoMassWError_abs = abs(rhizoWAfter - ( rhizoWBefore + sum(seg_fluxes) *dt+ sum(proposed_outer_fluxes)*dt))
+        r.rhizoMassWError_rel = abs(r.rhizoMassWError_abs/rhizoWAfter*100)
         # cyl = r.cyls[1]
         # write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
         # write_file_array("coord", cyl.getDofCoordinates().flatten())
@@ -254,7 +261,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* r.bulkDensity_m3 /1e6 ) 
 
                     
-        wall_local = timeit.default_timer() - wall_local
         
 
         """ 3c. calculate mass net fluxes """
@@ -293,8 +299,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         r.checkMassOMoleBalance2(soil_fluxes, soil_source_sol, dt,seg_fluxes =seg_fluxes, doSolid = True)
         r.setSoilData(soil_fluxes, soil_source_sol, dt)
         """ 2.0  global soil models """
-        wall_macro = timeit.default_timer()
-
+        
         water_content = np.array(s.getWaterContent_())  # theta per cell [1]
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
         
@@ -335,26 +340,30 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                 
         
         buTotCBefore =sum(s.getTotCContent())
+        
+        start_time_3ds = timeit.default_timer()
         print("solve 3d soil")
         s.solve(dt)  # in modules/solverbase.py
         print("done")
+        
+        rs.time_3ds_i = (timeit.default_timer() - start_time_3ds)
+    
+        
         buTotCAfter = sum(s.getTotCContent())    
         
-        s.bulkMassError_abs = buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil))
+        s.bulkMassError_abs = abs(buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))
         s.bulkMassError_rel = abs(s.bulkMassError_abs/buTotCAfter*100)
         
         print("errorCbalance soil 3d?",buTotCAfter , buTotCBefore , sum(Q_Exud) , sum(Q_mucil), s.bulkMassError_abs )
         #raise Exception
         assert (s.getSolution_(0) == r.soilModel.getSolution_(0)).all()
-        wall_macro = timeit.default_timer() - wall_macro
         assert min(s.getSolution_(8)) > 0. # idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
 
         """ 3b. calculate net fluxes """
-        wall_netfluxes = timeit.default_timer()
         water_content = np.array(s.getWaterContent_())
         # print(water_content)
         new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
-        s.bulkMassErrorWater_abs = sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt)
+        s.bulkMassErrorWater_abs = abs(sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt))
         s.bulkMassErrorWater_rel = abs(s.bulkMassErrorWater_abs /sum(new_soil_water) )*100
         try:
             # use soil_fluxes and not seg_fluxes. seg_fluxes includes air segments. sum(seg_fluxes) ~ 0.
@@ -460,7 +469,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                 print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
                 raise Exception
         """ 3d. backup """
-        wall_netfluxes = timeit.default_timer() - wall_netfluxes
         
         """ some checks """
         
@@ -504,12 +512,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
 
             
         if i % skip == 0 and rank == 0:
-            print("{:g}/{:g} iterations".format(i, N), "time", rs_age + t, "wall times",
-                  wall_xylem / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
-                  wall_local / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
-                  wall_macro / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
-                  wall_netfluxes / (wall_xylem + wall_local + wall_macro + wall_netfluxes),
-                  "segments:", rs.rs.getNumberOfMappedSegments(), "root collar:", rx[0], "\n")
             print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc))#, "trans",sum(np.array(r.Ev)))
             psi_x_.append(rx.copy())  # cm (per root node)
             psi_s_.append(rsx.copy())  # cm (per root segment)

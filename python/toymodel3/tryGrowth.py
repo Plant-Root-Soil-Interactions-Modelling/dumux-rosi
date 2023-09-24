@@ -21,7 +21,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
-results_dir="./resultsTryGrowth/"
+results_dir="./results/TryGrowth/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:
@@ -146,8 +146,15 @@ buTotCSoilInit = sum(s.getTotCContent())
 buWSoilInit = sum(np.multiply(np.array(s.getWaterContent_()), cell_volumes))
 
 start_time_global = timeit.default_timer()
+time_rhizo_cumul = 0
+time_3ds_cumul = 0
+time_plant_cumul = 0
 Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
 rs.results_dir = results_dir
+
+#testWeather = [scenario.weather(testT/100.)["Qlight"]  for testT in range(100)]
+
+
 while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
 
 
@@ -163,7 +170,6 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         assert seg2cell_old[segid] == seg2cell_new[segid]
 
     
-    start_time_step = timeit.default_timer()
     repartitionOld = repartition
     nsOld = sum(repartitionOld)
     ns = len(r.get_segments())
@@ -198,6 +204,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     r.Csoil_seg = rs.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
     assert min(r.Csoil_seg ) >= 0.
     
+    start_time_plant = timeit.default_timer()
     try:
         r.solve_photosynthesis(sim_time_ = rs_age, 
                     sxx_=rsx, 
@@ -217,7 +224,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                     TairC_= weatherX["TairC"],#not used
                     outputDir_= "./results/rhizoplantExud")
         
-    errLeuning_abs = sum(r.outputFlux)
+    errLeuning_abs = abs(sum(r.outputFlux))
     TranspirationCumul += sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
     startphloem=rs_age
     endphloem = rs_age + dt
@@ -229,6 +236,10 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     #r.doTroubleshooting = True
     
     r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
+    
+    time_plant_cumul += (timeit.default_timer() - start_time_plant)
+    
+    
     Nt = len(rs.nodes)
     if r.withInitVal and (len(Q_ST_init) ==0) :
         Q_ST_init = np.array(r.Q_init[0:Nt])/1e3
@@ -242,16 +253,23 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     Q_Rm    = np.array(r.Q_out[(Nt*2):(Nt*3)])/1e3
     Q_Exud  = np.array(r.Q_out[(Nt*3):(Nt*4)])/1e3 
     Q_Gr    = np.array(r.Q_out[(Nt*4):(Nt*5)])/1e3
+    Q_Rmmax       = np.array(r.Q_out[(Nt*5):(Nt*6)])/1e3
+    Q_Grmax       = np.array(r.Q_out[(Nt*6):(Nt*7)])/1e3
+    Q_S_meso   = np.array(r.Q_out[(Nt*7):(Nt*8)])/1e3
+    Q_S_ST   = np.array(r.Q_out[(Nt*8):(Nt*9)])/1e3
     Q_Mucil  = np.array(r.Q_out[(Nt*9):(Nt*10)])/1e3 #mol for nodes
 
     C_ST    = np.array(r.C_ST)/1e3
     Fl      = np.array(r.Fl)/1e3
     volST   = np.array(r.vol_ST)
     volMeso   = np.array(r.vol_Meso)
+    C_S_meso   = Q_S_meso/volMeso
+    C_S_ST   = Q_S_ST/volST
     C_meso  = Q_meso/volMeso
     Q_in   += sum(np.array(r.AgPhl)*dt)/1e3
+    # i m missing the starch
     Q_out   = Q_Rm + Q_Exud + Q_Gr + Q_Mucil
-    error_st_abs   = sum(Q_ST + Q_meso + Q_out )- Q_in - sum(Q_ST_init)  - sum(Q_meso_init)
+    error_st_abs   = abs(sum(Q_ST + Q_meso + Q_out + Q_S_meso + Q_S_ST)- Q_in - sum(Q_ST_init)  - sum(Q_meso_init))
     error_st_rel = abs(div0(error_st_abs,Q_in,1)*100)
     
     Ntbu = Nt
@@ -317,6 +335,8 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                                             outer_R_bc_wat = net_flux)
     
     
+    time_rhizo_cumul += r.time_rhizo_i
+    time_3ds_cumul += r.time_3ds_i
     
     for i in range(rs.numFluidComp):
         write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
@@ -325,10 +345,11 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     for i in range(rs.numComp):
         write_file_array("Soil_old_solute_conc"+str(i+1), rs.soilContent_old[i]/(rs.soilvolumes_old[i]*1e6) , directory_ =results_dir) 
     
+    write_file_array("Soil_solute_conc"+str(rs.numComp+2), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
     buTotCAfter = sum(s.getTotCContent())   
     buWAfter = sum(np.multiply(np.array(s.getWaterContent_()), cell_volumes))    
-    s.bulkMassErrorCumul_abs = (buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate))#so that only works if infalte
-    s.bulkMassErrorWaterCumul_abs = buWAfter - ( buWSoilInit - TranspirationCumul)
+    s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
+    s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
     s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
     s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
     
@@ -345,7 +366,8 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         # print(s.bulkMassErrorWaterCumul_rel, s.bulkMassErrorCumul_rel ,s.bulkMassErrorWaterCumul_abs, s.bulkMassErrorCumul_abs )
         # raise Exception
             
-    write_file_float("totalComputetime",timeit.default_timer() - start_time_global , directory_ =results_dir)#cumulative
+    write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
+                        time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)#cumulative
     # write_file_float("partsComputeTime",partsComputeTime)#not cumulative
     write_file_float("time", rs_age, directory_ =results_dir)
     write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
@@ -360,7 +382,8 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                                         s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
                                         s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
                                         s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir)#cumulative
-    write_file_array("errorMassRhizo", np.array([rs.rhizoMassError_abs, rs.rhizoMassError_rel]), directory_ =results_dir)# not cumulative
+    write_file_array("errorMassRhizo", np.array([rs.rhizoMassCError_abs, rs.rhizoMassCError_rel,
+                                                rs.rhizoMassWError_abs, rs.rhizoMassWError_rel]), directory_ =results_dir)# not cumulative
     write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir)
     write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir)# cumulative (?)
     
@@ -377,6 +400,13 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     write_file_array("C_ST", C_ST, directory_ =results_dir)#mmol/cm3
     write_file_array("C_meso", C_meso, directory_ =results_dir)
     write_file_array("Q_meso", Q_meso, directory_ =results_dir)
+    
+    
+    write_file_array("Q_S_ST", Q_S_ST, directory_ =results_dir)#mmol
+    write_file_array("C_S_ST", C_S_ST, directory_ =results_dir)#mmol/cm3
+    write_file_array("C_S_meso", C_S_meso, directory_ =results_dir)
+    write_file_array("Q_S_meso", Q_S_meso, directory_ =results_dir)
+    
     write_file_array("Q_Rm", Q_Rm, directory_ =results_dir)
     write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
     write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
@@ -418,16 +448,16 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         conc.append(conc_)
         l.append(l_)
         
-        if i%1==0: 
-            vp.write_soil("results/vtu_vtp/Soil_day"+str(i), s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
-            print('vtu written')
-            ana = pb.SegmentAnalyser(r.rs)
-            ana.write("results/vtu_vtp/RootSys_day"+str(i)+".vtp")
-            print('vtp written')
-            scenario.write_files("staticRoot_cyl3", psi_x[0], psi_s[0], sink[0], x[0], y[0], psi_s2[0],  
-                                vol_[0], surf_[0],  depth_,  dist_[0], conc_[0], l_[0], soil_c[0], c[0])
+        # if i%1==0: 
+            # vp.write_soil("results/vtu_vtp/Soil_day"+str(i), s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
+            # print('vtu written')
+            # ana = pb.SegmentAnalyser(r.rs)
+            # ana.write("results/vtu_vtp/RootSys_day"+str(i)+".vtp")
+            # print('vtp written')
+            # #scenario.write_files("staticRoot_cyl3", psi_x[0], psi_s[0], sink[0], x[0], y[0], psi_s2[0],  
+            # #                    vol_[0], surf_[0],  depth_,  dist_[0], conc_[0], l_[0], soil_c[0], c[0])
             
-            cyl = rs.cyls[1] # take a random cylinder (not 0 to not have air
+            # cyl = rs.cyls[1] # take a random cylinder (not 0 to not have air
             
 
 """ output """

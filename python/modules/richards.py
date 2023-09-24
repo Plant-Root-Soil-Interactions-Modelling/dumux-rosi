@@ -426,6 +426,7 @@ class RichardsWrapper(SolverWrapper):
     
     def getTotCContent(self):
         assert self.dimWorld == 3
+        vols = self.getCellVolumes().flatten() #cm3 scv   
         totC = 0
         for i in range(self.numComp):
             isDissolved = (i < 2)
@@ -440,7 +441,7 @@ class RichardsWrapper(SolverWrapper):
             css1 = np.array(self.base.getCSS1_out()).flatten()/1e6 #mol C / cm3 scv
             assert css1[-1] == 0.
             css1 = css1[:-1]
-        totC += css1
+        totC += css1*vols
         try:
             assert np.array(totC).shape == (self.getCellCenters().shape[0],)
         except:

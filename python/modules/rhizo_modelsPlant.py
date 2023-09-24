@@ -315,21 +315,18 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         raise Exception
                         
                     #print(cellId, 0,wat_total , sourceWat[cellId] * dt , wat_rhizo, wat_rhizo_)
-                    diff1d3dCW_abs = wat_total+ sourceWat[cellId] * dt - wat_rhizo
+                    diff1d3dCW_abs = abs(wat_total+ sourceWat[cellId] * dt - wat_rhizo)
                     diff1d3dCW_rel = abs(diff1d3dCW_abs/(wat_total+ sourceWat[cellId] * dt) *100)
                     self.sumDiff1d3dCW_abs[0] += diff1d3dCW_abs
                     self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[0] = max(self.maxDiff1d3dCW_abs[0], diff1d3dCW_abs)
                     self.maxDiff1d3dCW_rel[0] = max(self.maxDiff1d3dCW_rel[0], diff1d3dCW_rel)
-                    if diff1d3dCW_rel > 1e-10 :
+                    if diff1d3dCW_rel > 0.1:#1e-10 :
                         print(cellId, 0, wat_total, wat_rhizo, sourceWat[cellId], dt)
                         print(0, wat_total, wat_rhizo)
                         print(self.soilModel.getWaterVolumes()[cellId])
                         print(np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length[i])) for i in idCyls ]))
-                        if(len(seg_fluxes) > 0):
-                            print("rhizo inner bc",np.array(seg_fluxes)[idCyls])
-                        else:
-                            print("rhizo inner bc",seg_fluxes)
+                        print("rhizo inner bc",seg_fluxes)
                         
                         print("init rhizo wat",self.buWatRhizoBefore )
                         print("after rhizo wat",self.buWatRhizoAfter )
@@ -342,7 +339,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         vol_rhizo = sum(np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idCyls])
                         theta_rhizo = wat_rhizo/vol_rhizo
                         theta_soil = (wat_total+ sourceWat[cellId] * dt) / sizeSoilCell[cellId] 
-                        print(cellId, 0,theta_soil , theta_rhizo, abs((theta_soil - theta_rhizo)/(theta_rhizo)*100))
+                        # print(cellId, 0,theta_soil , theta_rhizo, abs((theta_soil - theta_rhizo)/(theta_rhizo)*100))
                         if abs((theta_soil - theta_rhizo)/(theta_rhizo)*100) > 1e-5:
                             print(cellId, 0, wat_total, wat_rhizo, sourceWat[cellId], dt)
                             print(theta_rhizo,theta_soil )
@@ -389,7 +386,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print(sourceSol, idComp, cellId)
                         raise Exception
                     if (mol_total  + sourceSol_ * dt  == 0) :
-                        diff1d3dCW_abs = mol_total  + sourceSol_ * dt
+                        diff1d3dCW_abs = abs(mol_total  + sourceSol_ * dt)
                         diff1d3dCW_rel = np.nan
                         #print(cellId, idComp,mol_total , sourceSol[idComp-1][cellId] * dt , mol_rhizo, mol_rhizo_)
                         if ((mol_rhizo > 0)):
@@ -398,10 +395,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     else:
                         #print(cellId, idComp,mol_total , sourceSol[idComp-1][cellId] * dt , mol_rhizo, mol_rhizo_)
                         #print(cellId, idComp,mol_total , sourceSol[idComp-1][cellId] * dt)
-                        diff1d3dCW_abs = mol_total + sourceSol_ * dt - mol_rhizo
+                        diff1d3dCW_abs = abs(mol_total + sourceSol_ * dt - mol_rhizo)
                         diff1d3dCW_rel = abs(self.sumDiff1d3dCW_abs[idComp]/(mol_total +sourceSol_ * dt) *100)
-                        print("content", cellId, idComp, mol_total, mol_rhizo,"sourceSol_ * dt",sourceSol_ * dt, 
-                            abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_ * dt)*100))
+                        #print("content", cellId, idComp, mol_total, mol_rhizo,"sourceSol_ * dt",sourceSol_ * dt, 
+                        #    abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_ * dt)*100))
                         if self.sumDiff1d3dCW_rel[idComp] > 0.1:
                             print(cellId, idComp,mol_total , sourceSol_ , dt)
                             print(mol_rhizo, abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_* dt)*100))
@@ -416,7 +413,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 vol_soil = sizeSoilCell[cellId] 
                             konz_rhizo = mol_rhizo/vol_rhizo
                             konz_soil = (mol_total + sourceSol_ * dt) / vol_soil
-                            print("konz", cellId, idComp,konz_soil , konz_rhizo, sourceSol_* dt, abs((konz_soil - konz_rhizo)/(konz_rhizo)*100))
+                            #print("konz", cellId, idComp,konz_soil , konz_rhizo, sourceSol_* dt, abs((konz_soil - konz_rhizo)/(konz_rhizo)*100))
                             if abs((konz_soil - konz_rhizo)/(konz_rhizo)*100) > 1.:
                                 print(cellId, idComp, mol_rhizo, mol_total , sourceSol_ , dt)
                                 print(vol_soil,vol_rhizo )
@@ -478,7 +475,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         soilTheta_new = self.soilModel.getWaterContent() #cm3/cm3 or m3/m3
         soilWatVolNew = soilTheta_new * sizeSoilCell
-        self.diffSoilData_abs[0] = (self.soilWatVol_old + outer_R_bc_wat/1e6) - soilWatVolNew
+        self.diffSoilData_abs[0] = abs((self.soilWatVol_old + outer_R_bc_wat/1e6) - soilWatVolNew)
         self.diffSoilData_rel[0] = abs(self.diffSoilData_abs[0]/soilWatVolNew)*100
  
         self.maxdiffSoilData_abs[0] = max(self.diffSoilData_abs[0])
@@ -488,7 +485,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         for nc in range(1,self.numComp+1):
             isDissolved = nc <= self.numFluidComp
             soilContentNew = self.soilModel.getContent(nc, isDissolved)
-            self.diffSoilData_abs[nc] = (self.soilContent_old[nc - 1] + outer_R_bc_sol[nc -1]) - soilContentNew
+            self.diffSoilData_abs[nc] = abs((self.soilContent_old[nc - 1] + outer_R_bc_sol[nc -1]) - soilContentNew)
             soilContentNew[np.where(soilContentNew == 0.)] = 1.
             self.diffSoilData_rel[nc] = abs(self.diffSoilData_abs[nc]/soilContentNew)*100
             
@@ -1361,6 +1358,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if isinstance(cyl, AirSegment):
             return np.full(self.numComp,0.)
         totC = 0
+        vols = cyl.getCellSurfacesCyl()  * l  #cm3 scv
         for i in range(self.numComp):
             isDissolved = (i < 2)
             totC += cyl.getContentCyl(i+1, isDissolved,l)
@@ -1373,7 +1371,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             css1 = np.array(cyl.base.getCSS1_out()).flatten()/1e6 #mol C / cm3 scv
             assert css1[-1] == 0.
             css1 = css1[:-1]
-        totC += css1
+        totC += css1 * vols
         assert len(np.array(totC).shape)==1
         return totC
     

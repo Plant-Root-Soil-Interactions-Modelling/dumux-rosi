@@ -272,9 +272,9 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
     s.f_sorp = 0.5#0.9
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-    s.CSSmax =140/1e6*0# 1e-4*10000*0.
+    s.CSSmax =3/1e6# 1e-4*10000*0.
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.alpha =0.1*0# 0.
+    s.alpha =0.1# 0.
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
 
     # Paramters
@@ -469,7 +469,7 @@ def phloemParam(r,weatherInit ):
     r.C_targMesophyll = r.CSTimin
     r.k_S_ST = 5/25 *2 #daudet2002
     r.k_S_Mesophyll = 5/25*0 #daudet2002
-    r.k_mucil = 1/20
+    r.k_mucil = 1
    
 
 
@@ -481,8 +481,8 @@ def phloemParam(r,weatherInit ):
     r.expression = 6
     r.update_viscosity = True
     r.solver = 1
-    r.atol = 1e-10
-    r.rtol = 1e-6
+    r.atol = 1e-12
+    r.rtol = 1e-8
     #r.doNewtonRaphson = False;r.doOldEq = False
     SPAD= 41.0
     chl_ = (0.114 *(SPAD**2)+ 7.39 *SPAD+ 10.6)/10
