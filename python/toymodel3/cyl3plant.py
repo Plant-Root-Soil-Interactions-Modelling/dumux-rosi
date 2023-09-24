@@ -227,8 +227,8 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                         r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content, troubleShootId = cid)
                         raise Exception
                     
-        
-        rhizoWBefore = sum([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
+        rhizoWBefore_ = np.array([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)])
+        rhizoWBefore = sum(rhizoWBefore_) 
         rhizoTotCBefore = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
         
         start_time_rhizo = timeit.default_timer()
@@ -245,13 +245,18 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         rs.time_rhizo_i = (timeit.default_timer() - start_time_rhizo)
     
         
-        rhizoWAfter = sum([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
+        rhizoWAfter_ = np.array([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)])
+        rhizoWAfter = sum(rhizoWAfter_) 
         rhizoTotCAfter = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)])  
         
         r.rhizoMassCError_abs = abs(rhizoTotCAfter - ( rhizoTotCBefore + sum(Q_Exud) + sum(Q_mucil) + sum(proposed_outer_sol_fluxes) *dt+ sum(proposed_outer_mucil_fluxes)*dt))
         r.rhizoMassCError_rel = abs(r.rhizoMassCError_abs/rhizoTotCAfter*100)
-        r.rhizoMassWError_abs = abs(rhizoWAfter - ( rhizoWBefore + sum(seg_fluxes) *dt+ sum(proposed_outer_fluxes)*dt))
-        r.rhizoMassWError_rel = abs(r.rhizoMassWError_abs/rhizoWAfter*100)
+        
+        
+        errorsEach = rhizoWAfter_ - ( rhizoWBefore_ + (seg_fluxes + proposed_outer_fluxes)*dt)
+        r.rhizoMassWError_abs = sum(abs(errorsEach[np.where(organTypes == 2)]))
+        r.rhizoMassWError_rel = abs(r.rhizoMassWError_abs/sum(rhizoWAfter_[np.where(organTypes == 2)])*100)
+
         # cyl = r.cyls[1]
         # write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
         # write_file_array("coord", cyl.getDofCoordinates().flatten())

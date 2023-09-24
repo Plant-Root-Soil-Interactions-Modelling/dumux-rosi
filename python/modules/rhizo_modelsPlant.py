@@ -1208,12 +1208,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     buTotCBefore = self.getTotCContent(i, cyl,l)
                     solsBefore = [  np.array(cyl.getSolution_(ooo + 1)).flatten() for ooo in range(self.numComp)]
                     css1_before = np.array(cyl.base.getCSS1_out()).flatten()/1e6 
-                    if(self.seg2cell[i] == 6):
-                        self.buWatRhizoBefore.append(buWBefore)
-                        self.buOuterBC.append(proposed_outer_fluxes[j] )
-                        self.buInnerBC.append(proposed_inner_fluxes[j] )
-                        self.buIdRhizo.append(i)
-                        self.buOrganTypes.append(self.organTypes[i])
+
                     try:
                         
                         cyl.solve(dt, maxDt = 2500/(24*3600))
@@ -1221,6 +1216,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         buWAfter = sum(buWAfter_ )
                         buCCAfter_ = cyl.getContentCyl(1, True, l)
                         buTotCAfter = self.getTotCContent(i, cyl,l)
+                        #print("errorW",i,buWAfter,buWBefore,
+                        #    QflowIn , QflowOut,dt,l,
+                        #    abs(buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)))
                         if(self.seg2cell[i] == 6):
                             self.buWatRhizoAfter.append(buWAfter)
                         try:
