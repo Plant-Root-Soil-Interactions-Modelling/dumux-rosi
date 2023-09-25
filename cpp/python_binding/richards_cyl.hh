@@ -62,7 +62,7 @@ public:
     /**
      * Gets the concentration at the inner boundary [mol/mol]
      */
-    double getInnerSolutes(int shift = 0, int compId) {
+    double getInnerSolutes(int shift = 0, int compId = 1) {
         return this->getSolutionAt(innerIdx+shift,compId);
     }
 

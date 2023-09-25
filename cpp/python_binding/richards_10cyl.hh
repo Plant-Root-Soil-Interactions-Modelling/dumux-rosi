@@ -55,7 +55,7 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
-   .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0)
+   .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 0)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)

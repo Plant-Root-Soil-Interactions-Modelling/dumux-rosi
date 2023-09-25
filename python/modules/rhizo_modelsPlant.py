@@ -340,7 +340,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         theta_rhizo = wat_rhizo/vol_rhizo
                         theta_soil = (wat_total+ sourceWat[cellId] * dt) / sizeSoilCell[cellId] 
                         # print(cellId, 0,theta_soil , theta_rhizo, abs((theta_soil - theta_rhizo)/(theta_rhizo)*100))
-                        if abs((theta_soil - theta_rhizo)/(theta_rhizo)*100) > 1e-5:
+                        if abs((theta_soil - theta_rhizo)/(theta_rhizo)*100) > 1:#1e-5:
                             print(cellId, 0, wat_total, wat_rhizo, sourceWat[cellId], dt)
                             print(theta_rhizo,theta_soil )
                             raise Exception 

@@ -338,6 +338,8 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     time_rhizo_cumul += r.time_rhizo_i
     time_3ds_cumul += r.time_3ds_i
     
+    write_file_array("cellVol", np.array(s.getCellVolumes_()).flatten(), directory_ =results_dir) # cm3 
+    write_file_array("theta", np.array(s.getWaterContent_()).flatten(), directory_ =results_dir) 
     for i in range(rs.numFluidComp):
         write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
     for i in range(rs.numFluidComp, rs.numComp):
@@ -345,7 +347,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     for i in range(rs.numComp):
         write_file_array("Soil_old_solute_conc"+str(i+1), rs.soilContent_old[i]/(rs.soilvolumes_old[i]*1e6) , directory_ =results_dir) 
     
-    write_file_array("Soil_solute_conc"+str(rs.numComp+2), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+    write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
     buTotCAfter = sum(s.getTotCContent())   
     buWAfter = sum(np.multiply(np.array(s.getWaterContent_()), cell_volumes))    
     s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
