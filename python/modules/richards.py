@@ -474,6 +474,16 @@ class RichardsWrapper(SolverWrapper):
         else:   # mol scv / m3 scv
             return self.bulkDensity_m3
             
+    def getConcentration(self,idComp, isDissolved):
+        C_ = self.getSolution(idComp).flatten()  # mol/mol wat or mol/mol scv
+        if not isDissolved:
+            if self.useMoles:
+                C_ *= self.bulkDensity_m3 #mol/m3 scv
+            return C_  /1e6  #mol/cm3 scv
+        if self.useMoles:
+            C_ *= self.molarDensityWat_m3 # mol/m3 wat            
+        return C_ /1e6 #mol/cm3 scv
+        
     def getContent(self,idComp, isDissolved):
         assert self.dimWorld == 3
         vols = self.getCellVolumes().flatten() / 1e6 #m3 scv            

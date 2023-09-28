@@ -21,7 +21,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
-results_dir="./results/TryGrowth/"
+results_dir="./results/TryGrowthInflate/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:
@@ -135,10 +135,9 @@ Nt = len(rs.nodes)
 Q_Exudbu    = np.zeros(Nt)
 Q_Mucilbu   = np.zeros(Nt)
 Q_in  = 0
-Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
-dt = 1/24
+dt = 1/24/2
 simMax = initsim + 3.
 
 TranspirationCumul = 0
@@ -169,11 +168,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     # make sure that, once a segment is created, it stays in the same soil voxel
     for segid in seg2cell_old.keys():
-        try:
-            assert seg2cell_old[segid] == seg2cell_new[segid]
-        except:
-            print(seg2cell_old[segid], seg2cell_new[segid])
-            raise Exception
+        assert seg2cell_old[segid] == seg2cell_new[segid]
 
     
     repartitionOld = repartition
@@ -229,9 +224,11 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                     verbose_ = True, doLog_ = True,
                     TairC_= weatherX["TairC"],#not used
                     outputDir_= "./results/rhizoplantExud")
-        
+    inflateWat = 1    
     errLeuning_abs = abs(sum(r.outputFlux))
-    TranspirationCumul += sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
+    TranspirationCumul += sum(np.array(r.Ev) * dt) * inflateWat#transpiration [cm3/day] * day
+    r.outputFlux = np.array(r.outputFlux) * inflateWat
+    
     startphloem=rs_age
     endphloem = rs_age + dt
     stepphloem = 1
@@ -253,7 +250,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     # att: that will be the cumulative value
     #  MMOL(/cm3) => mol(/cm3)
-    inflateVal = 1#1e3
+    inflateVal = 10#1e3
     Q_ST    = np.array(r.Q_out[0:Nt])/1e3
     Q_meso  = np.array(r.Q_out[Nt:(Nt*2)])/1e3
     Q_Rm    = np.array(r.Q_out[(Nt*2):(Nt*3)])/1e3
@@ -281,9 +278,13 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     Q_Exudbu     =   np.concatenate((Q_Exudbu, np.full(Nt - Ntbu, 0.))) 
     Q_Mucilbu       =   np.concatenate((Q_Mucilbu, np.full(Nt - Ntbu, 0.))) 
     
+    try:
+        assert Q_Mucilbu.shape == Q_Mucil.shape
+    except:
+        print(Q_Mucilbu, Q_Mucil, Nt, Ntbu)
+        raise Exception
     Q_Exud_i      = (Q_Exud    - Q_Exudbu)*inflateVal
-    Q_Mucil_i     = (Q_Mucil   - Q_Mucilbu)*inflateVal
-    
+    Q_Mucil_i     = (Q_Mucil   - Q_Mucilbu)*inflateVal*1000
     
     try:
         assert  error_st_rel< 1.
@@ -307,6 +308,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     Q_Exud_i = np.array( Q_Exud_i[1:] ) #from nod to semgment
     Q_Mucil_i = np.array(Q_Mucil_i[1:])
     
+    
     airSegsId = np.array(np.where(np.array([isinstance(cc, AirSegment) for cc in rs.cyls]))[0])
     try:
         assert (Q_Exud_i[airSegsId] == 0).all()
@@ -315,15 +317,18 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         assert (np.array(r.Q_Exudmax)[airSegsId+1] == 0).all()
     except:
         print("Q_Exud_i", Q_Exud_i[airSegsId] )
-        print("Q_Mucil_i", Q_Mucil_i,Q_Mucil,Q_Mucilbu,airSegsId)
+        print("Q_Mucil_i", len(Q_Mucil_i),len( Q_Mucil),len( Q_Mucilbu),airSegsId)
+        print("Q_Mucil_i", Q_Mucil_i, Q_Mucil, Q_Mucilbu)
         print("Q_Mucil_i", Q_Mucil_i[airSegsId], Q_Mucil[airSegsId+1], Q_Mucilbu[airSegsId+1])
         print("Csoil_seg", np.array(r.Csoil_seg)[airSegsId])
-        print("k_mucil_",r.k_mucil_)#,np.array(r.k_mucil_).size() ,Q_Exud.size())
+        print("k_mucil_",r.k_mucil_)
+        print("k_mucil_",np.array(r.k_mucil_)[airSegsId+1])
         print("Q_Exudmax",np.array(r.Q_Exudmax)[airSegsId+1])
-        print("airSegsId", airSegsId, np.where(airSegsId))
+        print("airSegsId", airSegsId)
         print(len(airSegsId), len(r.k_mucil_))
         raise Exception
         
+    
     # Q_Exud_i = Q_Mucil_i
     # Q_Exud_i[np.where(Q_Exud_i > 0.)] = 1.
     #r.outputFlux = np.array(r.outputFlux)/ 10

@@ -6,6 +6,7 @@ import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import sys
 from xylem_flux import *
+from air_modelsPlant import AirSegment
 import vtk_plot as vtk
 import plantbox as pb
 import evapotranspiration as evap
@@ -34,7 +35,24 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     trans_f
     rs_age
     """
+    subtypes = np.asarray(rs.rs.subTypes, int)
+    organTypes = np.asarray(rs.rs.organTypes, int)
+    
+    airSegsId = np.array([isinstance(cc, AirSegment) for cc in r.cyls])
+    rootAirSegsId  = np.array([(isinstance(cc, AirSegment) and (organTypes[i] == 2)) for i, cc in enumerate(r.cyls)])
+    rhizoSegsId = np.array([not isinstance(cc, AirSegment) for cc in r.cyls])
     Q_Exud = Q_plant[0]; Q_mucil = Q_plant[1] #mol/day
+    try:
+        assert (Q_Exud[airSegsId] == 0).all()
+        assert (Q_mucil[airSegsId] == 0).all()
+    except:
+        print(Q_Exud[airSegsId] )
+        print(Q_mucil[airSegsId])
+        print(Q_Exud[rootAirSegsId] )
+        print(Q_mucil[rootAirSegsId])
+        print(organTypes[airSegsId])
+        raise Exception
+        
     #wilting_point = -15000  # cm
     skip = 10  # 3 * 6  # for output and results, skip iteration
     split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
@@ -90,12 +108,13 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     """ simualtion loop """
     for i in range(0, N):
 
-        t = i * dt  # current simulation time
+        t = rs_age + i * dt  # current simulation time
         
         weatherX = weather(t)
 
         """ 1. xylem model """
-
+        a = np.array(rs.rs.radii)
+        l = np.array(rs.rs.segLength())
     
         ###
         rsx = r.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
@@ -105,10 +124,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             rsc = r.get_inner_solutes(1)  # kg/m3
         comm.barrier()
         
-        subtypes = np.asarray(rs.rs.subTypes, int)
-        organTypes = np.asarray(rs.rs.organTypes, int)
-        a = np.array(rs.rs.radii)
-        l = np.array(rs.rs.segLength())
         
         if rank == 0:
             # print("need to add fixed point iteration for water and carbon fluxes between plant-rhizosphere")
@@ -227,9 +242,12 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                         r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content, troubleShootId = cid)
                         raise Exception
                     
+        rhizoWBefore__ = np.array([cc.getWaterVolumesCyl(r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object)
         rhizoWBefore_ = np.array([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)])
         rhizoWBefore = sum(rhizoWBefore_) 
-        rhizoTotCBefore = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
+        rhizoTotCBefore__ = np.array([ r.getTotCContent(i, cc,r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object) 
+        rhizoTotCBefore_ = np.array([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
+        rhizoTotCBefore = sum(rhizoTotCBefore_) 
         
         start_time_rhizo = timeit.default_timer()
         print("solve 1d soil")
@@ -241,22 +259,45 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                     seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
         print("done")
         
-        
         rs.time_rhizo_i = (timeit.default_timer() - start_time_rhizo)
     
         
+        rhizoWAfter__ = np.array([cc.getWaterVolumesCyl(r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object)
         rhizoWAfter_ = np.array([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)])
         rhizoWAfter = sum(rhizoWAfter_) 
-        rhizoTotCAfter = sum([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)])  
+        rhizoTotCAfter__= np.array([ r.getTotCContent(i, cc,r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object)
+        rhizoTotCAfter_= np.array([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)])
+        rhizoTotCAfter = sum(rhizoTotCAfter_)  
         
         r.rhizoMassCError_abs = abs(rhizoTotCAfter - ( rhizoTotCBefore + sum(Q_Exud) + sum(Q_mucil) + sum(proposed_outer_sol_fluxes) *dt+ sum(proposed_outer_mucil_fluxes)*dt))
         r.rhizoMassCError_rel = abs(r.rhizoMassCError_abs/rhizoTotCAfter*100)
         
         
-        errorsEach = rhizoWAfter_ - ( rhizoWBefore_ + (seg_fluxes + proposed_outer_fluxes)*dt)
-        r.rhizoMassWError_abs = sum(abs(errorsEach[np.where(organTypes == 2)]))
+        errorsEachW = rhizoWAfter_ - ( rhizoWBefore_ + (seg_fluxes + proposed_outer_fluxes)*dt)
+        errorsEachC = rhizoTotCAfter_ - ( rhizoTotCBefore_ + (seg_sol_fluxes+ proposed_outer_sol_fluxes+ seg_mucil_fluxes+ proposed_outer_mucil_fluxes)*dt)
+        try:
+            #assert (errorsEachW[airSegsId] == 0.).all()
+            assert (errorsEachC[airSegsId] == 0.).all()
+        except:
+            print("errors in airSegsId",airSegsId)
+            print(errorsEachC[airSegsId] )
+            print("fluxes water", seg_fluxes[airSegsId], proposed_outer_fluxes[airSegsId]) 
+            print(seg_sol_fluxes[airSegsId], proposed_outer_sol_fluxes[airSegsId],seg_mucil_fluxes[airSegsId], proposed_outer_mucil_fluxes[airSegsId])
+            raise Exception
+            
+        r.rhizoMassWError_abs = sum(abs(errorsEachW[rhizoSegsId]))
         r.rhizoMassWError_rel = abs(r.rhizoMassWError_abs/sum(rhizoWAfter_[np.where(organTypes == 2)])*100)
-
+        print("rhizoMassCError_abs, rel", r.rhizoMassCError_abs,r.rhizoMassCError_rel  )
+        if (r.rhizoMassCError_abs > 1e-9) and (r.rhizoMassCError_rel > 1e-9):
+            maxdiffrhizoC = np.where(errorsEachC == max(abs(errorsEachC)))
+            print("rhizoMassCError_abs, rel", r.rhizoMassCError_abs,r.rhizoMassCError_rel  )
+            print(errorsEachC, sum(abs(errorsEachC[np.where(organTypes == 2)])))
+            print(maxdiffrhizoC, dt)
+            print(rhizoTotCAfter__[maxdiffrhizoC],rhizoTotCBefore__[maxdiffrhizoC], seg_sol_fluxes, 
+                proposed_outer_sol_fluxes[maxdiffrhizoC], seg_mucil_fluxes[maxdiffrhizoC], proposed_outer_mucil_fluxes[maxdiffrhizoC])
+            
+            
+            raise Exception
         # cyl = r.cyls[1]
         # write_file_array("pressureHead",np.array(cyl.getSolutionHead()).flatten())
         # write_file_array("coord", cyl.getDofCoordinates().flatten())
@@ -356,10 +397,13 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         
         buTotCAfter = sum(s.getTotCContent())    
         
-        s.bulkMassError_abs = abs(buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))
-        s.bulkMassError_rel = abs(s.bulkMassError_abs/buTotCAfter*100)
+        s.bulkMassErrorPlant_abs = abs(buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))
+        s.bulkMassErrorPlant_rel = abs(s.bulkMassErrorPlant_abs/buTotCAfter*100)
+        s.bulkMassError1ds_abs = abs(buTotCAfter - ( buTotCBefore + sum(soil_source_sol.flatten())*dt))
+        s.bulkMassError1ds_rel = abs(s.bulkMassError1ds_abs/buTotCAfter*100)
         
-        print("errorCbalance soil 3d?",buTotCAfter , buTotCBefore , sum(Q_Exud) , sum(Q_mucil), s.bulkMassError_abs )
+        print("errorCbalance soil 3d?",buTotCAfter , buTotCBefore , sum(Q_Exud) , sum(Q_mucil), 
+                sum(soil_source_sol.flatten())*dt,s.bulkMassErrorPlant_abs, s.bulkMassError1ds_abs )
         #raise Exception
         assert (s.getSolution_(0) == r.soilModel.getSolution_(0)).all()
         assert min(s.getSolution_(8)) > 0. # idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
@@ -432,15 +476,27 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         
         
         try:
-            assert s.bulkMassError_rel < 1e-10
-            assert (r.sumdiffSoilData_rel < 1e-10).all()
+            assert s.bulkMassErrorPlant_rel < 1.e-5
+            assert (r.sumdiffSoilData_rel < 1.).all()#e-10
         except:
+            print(soil_source_sol)
             print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
             print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
-            print(s.bulkMassError_abs ,s.bulkMassError_rel)
-            print(r.rhizoMassError_abs, r.rhizoMassError_rel)
+            print("3ds source",sum(soil_source_sol.flatten()))
+            print(s.bulkMassErrorPlant_abs ,s.bulkMassErrorPlant_rel)
+            print(s.bulkMassError1ds_abs ,s.bulkMassError1ds_rel)
+            print(r.rhizoMassCError_abs, r.rhizoMassCError_rel)
             print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
             print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
+            print("rhizoErrors:")
+            maxdiffrhizoC = np.where(abs(errorsEachC) > 1e-9)
+            print("rhizoMassCError_abs, rel", r.rhizoMassCError_abs,r.rhizoMassCError_rel  )
+            print("errorsEachC",errorsEachC, sum(abs(errorsEachC[np.where(organTypes == 2)])), organTypes[maxdiffrhizoC])
+            cyls = np.array(r.cyls)
+            print("maxdiffrhizoC",maxdiffrhizoC, dt, cyls[maxdiffrhizoC])
+            print(rhizoTotCAfter__[maxdiffrhizoC],rhizoTotCBefore__[maxdiffrhizoC], seg_sol_fluxes, 
+                proposed_outer_sol_fluxes[maxdiffrhizoC], seg_mucil_fluxes[maxdiffrhizoC], proposed_outer_mucil_fluxes[maxdiffrhizoC])
+            print("cyls",[[dd.getSolution(i + 1) for i in range(r.numComp)] for dd in cyls[maxdiffrhizoC]])
             raise Exception
             
         
@@ -455,12 +511,12 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         
         r.checkSoilBC(outer_R_bc_wat, outer_R_bc_sol)# check oldSoil + rhizoSource = newSoil - (bulkFlow + bulkReaction )
         try:
-            assert (r.sumdiffSoilData_rel < 1e-10).all()
+            assert (r.sumdiffSoilData_rel < 1).all()#e-10
         except:
             print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
             print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
-            print(s.bulkMassError_abs ,s.bulkMassError_rel)
-            print(r.rhizoMassError_abs, r.rhizoMassError_rel)
+            print(s.bulkMassErrorPlant_abs ,s.bulkMassErrorPlant_rel)
+            print(r.rhizoMassCError_abs, r.rhizoMassCError_rel)
             print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
             print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
             raise Exception

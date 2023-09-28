@@ -21,7 +21,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
-results_dir="./results/TryGrowth/"
+results_dir="./results/TryGrowth912/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:
@@ -71,7 +71,7 @@ mode = "dumux_10c"
 
 """ initialize """
 
-initsim = 11.5
+initsim = 9.5
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
             min_b, max_b, cell_number, type = mode, times = x_, net_inf = y_,
             usemoles = usemoles)
@@ -169,11 +169,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     # make sure that, once a segment is created, it stays in the same soil voxel
     for segid in seg2cell_old.keys():
-        try:
-            assert seg2cell_old[segid] == seg2cell_new[segid]
-        except:
-            print(seg2cell_old[segid], seg2cell_new[segid])
-            raise Exception
+        assert seg2cell_old[segid] == seg2cell_new[segid]
 
     
     repartitionOld = repartition

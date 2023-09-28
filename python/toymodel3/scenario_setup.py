@@ -364,6 +364,8 @@ def qair2rh(qair, press,TK):
     return RH
     
 def weather(simDuration, hp:float=1):
+        if simDuration == 0.:
+            raise Exception
         vgSoil = [0.059, 0.45, 0.00644, 1.503, 1]
         loam = [0.08, 0.43, 0.04, 1.6, 50]
         Qnigh = 0; Qday = 960e-6 #458*2.1
@@ -576,14 +578,14 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
 
         rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
-                                    recreateComsol_, usemoles)
+                                    recreateComsol_, usemoles, seedNum = seed)
         rs.setSeed(seed)
         rs.readParameters(path + fname)
         #if not stochastic:
         #    set_all_sd(rs, 0.)
             
         rs.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
-        rs.initialize()
+        rs.initialize()#stochastic = False)
         rs.simulate(initSim, False)
         if plantType == "plant":
             r = PhloemFluxPython(rs,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
@@ -593,13 +595,13 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
                             pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
-                            cut = False)
+                            cut = False, noChanges = True)
 
     picker = lambda x, y, z: soil_model.pick([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     # comm.barrier()
     # print("survived setSoilGrid", rank)
-
+    assert rs.getSeedVal() == seed
     # if rank == 0:
     if plantType == "plant":    
         r = init_conductivities(r)

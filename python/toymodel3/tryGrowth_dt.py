@@ -21,7 +21,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
-results_dir="./results/TryGrowth/"
+results_dir="./results/TryGrowth_dt/"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 else:
@@ -71,7 +71,7 @@ mode = "dumux_10c"
 
 """ initialize """
 
-initsim = 11.5
+initsim = 9.5
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
             min_b, max_b, cell_number, type = mode, times = x_, net_inf = y_,
             usemoles = usemoles)
@@ -139,7 +139,7 @@ Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
 dt = 1/24
-simMax = initsim + 3.
+simMax = initsim + 2
 
 TranspirationCumul = 0
 cell_volumes = s.getCellVolumes_()  # cm3
@@ -169,11 +169,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     # make sure that, once a segment is created, it stays in the same soil voxel
     for segid in seg2cell_old.keys():
-        try:
-            assert seg2cell_old[segid] == seg2cell_new[segid]
-        except:
-            print(seg2cell_old[segid], seg2cell_new[segid])
-            raise Exception
+        assert seg2cell_old[segid] == seg2cell_new[segid]
 
     
     repartitionOld = repartition
@@ -536,7 +532,8 @@ if rank == 0:
                 extraArray_ = rs.soilTheta_old
             print("idcomp", 0)
             vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rs.get_concentration(0, konz), s, periodic, min_b, max_b, cell_number, 
-                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_)  # VTK vizualisation, rs.soilTheta_old
+                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
+                     oneScalarBar = True)  # VTK vizualisation, rs.soilTheta_old
             for i in range(1, rs.numComp+1):
                 print("idcomp", i)
                 if not konz:
@@ -548,7 +545,7 @@ if rank == 0:
                     
                 vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_ ,rs.get_concentration(i , konz), s, periodic, min_b, max_b, cell_number, 
                         soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, 
-                        extraArrayName = extraArrayName_)  # VTK vizualisation
+                        extraArrayName = extraArrayName_, oneScalarBar = True)  # VTK vizualisation
         # to plot: cumulative An, Exud, mucil and each element in the soil
     # Also images of the 3D soil.
     print("fin")
