@@ -290,7 +290,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     print("vol cyls",np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idCyls])
                     print("points", np.array([self.cyls[i].getPoints() for i in idCyls]))
                     raise Exception
-                if (cellId == 486):# or ((vol_total - vol_rhizo) < 0.):
+                if False:#(cellId == 486):# or ((vol_total - vol_rhizo) < 0.):
                     print("checkVolumeBalance--486")
                     print(cellId, vol_total, vol_rhizo, (vol_total - vol_rhizo))
                     print(self.soilModel.getCellVolumes_()[cellId])
@@ -387,7 +387,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     vol_rhizo = np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in idCyls])*np.array(self.seg_length)[idCyls]
                     vol_total = self.soilModel.getCellVolumes_()[cellId] 
                     
-                    if cellId == 486:
+                    if False:#cellId == 486:
                         print("checkMassOMoleBalance2")
                         print(cellId, 0, wat_total, wat_rhizo, sourceWat[cellId], dt)
                         print(0, wat_total, wat_rhizo, useSoilData)
@@ -411,7 +411,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         else:
                             print("radii_out_old",np.array(self.outer_radii_old), "lengthold",np.array(self.seg_length_old))    
                             print("rhizoVol_old", self.rhizoVol_old)   
-                    print("length", np.array(self.seg_length)[idCyls], "rhizoVol",self.rhizoVol[idCyls], sum(self.rhizoVol[idCyls]))
+                    #print("length", np.array(self.seg_length)[idCyls], "rhizoVol",self.rhizoVol[idCyls], sum(self.rhizoVol[idCyls]))
                     if diff1d3dCW_rel > diff1d3dCW_rel_lim:#1e-10 :
                         print("checkMassOMoleBalance2error")
                         print(cellId, 0, wat_total, wat_rhizo, sourceWat[cellId], dt)
@@ -514,7 +514,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.sumDiff1d3dCW_rel[idComp] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[idComp] = max(self.maxDiff1d3dCW_abs[idComp], diff1d3dCW_abs)
                     self.maxDiff1d3dCW_rel[idComp] = max(self.maxDiff1d3dCW_rel[idComp], diff1d3dCW_rel)
-        print("checkmass, Diff1d3dW",self.sumDiff1d3dCW_abs[0], self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],'lim',diff1d3dCW_rel_lim )
+        #print("checkmass, Diff1d3dW",self.sumDiff1d3dCW_abs[0], self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],'lim',diff1d3dCW_rel_lim )
                 
     
         
@@ -830,7 +830,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print( len(idSegs), len(idCyls))# how many old and new cylinders?
                 raise Exception
               
-        if idCell  == 486:
+        if False:#idCell  == 486:
             print("get_watVol_leftoverI",idCell)
             print("V_total",V_total, V_rhizo)  
         return Vol_res
@@ -856,7 +856,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print(idCell, wat_total,wat_rhizo, wat_total - wat_rhizo)
                 print( len(idSegs), len(idCyls))# how many old and new cylinders?
                 raise Exception
-        if idCell  == 486:
+        if False:#idCell  == 486:
             print("get_watVol_leftoverI",idCell)
             print("wat_total",wat_total, wat_rhizo, idCyls, watVol_res)
                 
@@ -908,7 +908,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             else:
                 print("let s see", self.mode,"dumux_dirichlet_2c",self.mode == "dumux_dirichlet_2c" )
                 raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
-            if self.seg2cell[i]  == 486:
+            if False:#self.seg2cell[i]  == 486:
                 print("initialize_",i,x,cc, sum(self.cyls[-1].getWaterVolumesCyl(self.seg_length[i])))
         else:
             a_in = self.radii[i]#get Perimeter instead? not used for now anyway
@@ -966,7 +966,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 cyl.setHomogeneousIC(-100.)  # cm pressure head
             else:
                 # cyl.setHomogeneousIC(x)  # cm pressure head
-                print("Soil.IC.P", cyl.dumux_str(x), Cells)
+                #print("Soil.IC.P", cyl.dumux_str(x), Cells)
                 cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
             # cyl.setICZ_solute(c)  # [kg/m2] 
             
@@ -1219,8 +1219,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 return contentRhizo
             concentration = contentRhizo/V_rhizo
             concentration[isAirSegs] = np.nan
-            print("organTypes",self.organTypes)
-            print("concentration",concentration)
+            #print("organTypes",self.organTypes)
+            #print("concentration",concentration)
             return concentration # mol/cm3
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))

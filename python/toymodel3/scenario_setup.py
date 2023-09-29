@@ -158,14 +158,36 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.vg_soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
+    s.betaC = 0.001 
+    s.betaO = 0.1 
+    C_S = 0.1 # in mol/m3 water
+    s.C_S_W_thresC = C_S/1e6 # in mol/cm3 water
+    s.C_S_W_thresO = C_S/1e6
+    s.k_decay = 0.2
+    s.k_decay2 = 0.6 
+    s.k_DC = 1. 
+    s.k_DO = 1. 
+    s.k_growthC = 0.2
+    s.k_growthO = 0.2 
+    s.K_L = 8.3
+    s.k_phi = 0.1 
+    s.k_RC = 0.1 
+    s.k_RO = 0.1 
+    
+    s.k_sorp = 0.4/1e6*0#0.2*100
+    s.f_sorp = 0.5#0.9
+    s.CSSmax =C_S/10/1e6# 1e-4*10000*0.
+    s.alpha =0.1# 0.
+    
     unitConversion = 1e3
-    s.ICcc = np.array([0.1 *unitConversion,
+    CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
+    s.ICcc = np.array([C_S *unitConversion,
                         10. *unitConversion,
-                        0.011* unitConversion,
-                        0.05* unitConversion,
-                        0.011* unitConversion,
-                        0.05* unitConversion,
-                        0., 0.])# in mol/m3 water or mol/m3 scv
+                        0.0004* unitConversion,
+                        0.058* unitConversion,
+                        0.0004* unitConversion,
+                        0.058* unitConversion,
+                        CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
     #cell_number = str(cell_number)
@@ -219,20 +241,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         for i in range(s.numComp):
             molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
             s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
-    s.betaC = 0.001 
-    s.betaO = 0.1 
-    s.C_S_W_thresC = 0.1 
-    s.C_S_W_thresO = 0.05 
-    s.k_decay = 0.2
-    s.k_decay2 = 0.6 
-    s.k_DC = 1. 
-    s.k_DO = 1. 
-    s.k_growthC = 0.2
-    s.k_growthO = 0.2 
-    s.K_L = 8.3
-    s.k_phi = 0.1 
-    s.k_RC = 0.1 
-    s.k_RO = 0.1 
+    
     s.setParameter("Soil.betaC", str(s.betaC))
     s.setParameter("Soil.betaO", str(s.betaO ))
     s.setParameter("Soil.C_S_W_thresC", str(s.C_S_W_thresC )) #mol/cm3
@@ -268,13 +277,9 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.v_maxL = 1.5
     s.setParameter("Soil.v_maxL", str(s.v_maxL))#[d-1]
 
-    s.k_sorp = 0.4/1e6*0#0.2*100
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
-    s.f_sorp = 0.5#0.9
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-    s.CSSmax =3/1e6# 1e-4*10000*0.
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.alpha =0.1# 0.
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
 
     # Paramters

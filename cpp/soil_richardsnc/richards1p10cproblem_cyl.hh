@@ -909,11 +909,11 @@ public:
 		double C_LfrW =  std::max( massOrMoleFraction(volVars,0, mucilIdx, true) , 0.);					//mol C/mol soil water 
 		//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
 		double C_L_W = massOrMoleDensity(volVars, h2OIdx, true) * C_LfrW;								//mol C/m3 soil water
-		double C_L_S = C_L_W * theta;							//mol C/m3 scv
+		//double C_L_S = C_L_W * theta;							//mol C/m3 scv
 		
 		double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
 		double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
-		double C_S_S = C_S_W * theta;							//mol C/m3 scv
+		//double C_S_S = C_S_W * theta;							//mol C/m3 scv
 		
 		std::vector<double> C_afrSoil(2), C_a(2), C_dfrSoil(2), C_d(2);
 		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
@@ -933,7 +933,7 @@ public:
 		//	[s-1] * ([mol C/m3 bulk soil]/([mol C/m3 bulk soil]*[mol C/m3 bulk soil])) * [mol C/m3 bulk solid]
 		// double F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_a[0]  ; //mol C/(m^3 bulk soil *s)
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-		double F_depoly = v_maxL * (C_L_S/(K_L+ C_L_S)) * C_a[0];// mol C/(m^3 bulk soil *s)
+		double F_depoly = v_maxL * (C_L_W/(K_L+ C_L_W)) * C_a[0];// mol C/(m^3 bulk soil *s)
 		
 		double F_uptake_S = 0.;
 		double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
@@ -959,7 +959,7 @@ public:
 			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
-			F_growth[i] = (micro_max[i] * C_S_S * k_S[i])/(micro_max[i] + C_S_S * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
+			F_growth[i] = (micro_max[i] * C_S_W * k_S[i])/(micro_max[i] + C_S_W * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
 			if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
 			{
 				std::cout<<"F_growth["<<i<<"] " << std::scientific<<std::setprecision(20)
@@ -968,7 +968,7 @@ public:
 				<<m_maxBis[i] <<" "<< C_a[i]  <<" "<< F_uptake_S_A[i]  <<" "
 				<< F_decay_A[i] <<std::endl;
 			}
-			phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_S)/(k_phi * C_S_W_thres[i])));								// - 
+			phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_W)/(k_phi * C_S_W_thres[i])));								// - 
 			// [-] * [1/s] * [mol C/m3 bulk soil]
 			F_deact[i]  = (1 - phi[i] ) * k_D[i]  * C_a[i] ;			//mol C/(m^3 bulk soil *s)
 			F_react[i]  = phi[i]  * k_R[i]  * C_d[i] ;				//mol C/(m^3 bulk soil *s)
