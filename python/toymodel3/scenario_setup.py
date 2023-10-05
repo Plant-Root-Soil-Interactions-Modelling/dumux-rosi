@@ -69,7 +69,7 @@ def maize_SPP(soil_= "loam"):
     soil = vg_SPP(i)
     min_b = [-5., -5, -20.] 
     max_b = [5., 5, 0.] 
-    cell_number = [2,2,2]#[5, 5, 20]
+    cell_number = [5, 5, 20]
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -670,14 +670,17 @@ def div0f(a, b, c):    # function to avoid division by 0
         return a/c
 
 def write_file_float(name, data, directory_):
-    name2 = directory_+ name+ '.txt'
-    with open(name2, 'a') as log:
-        log.write(repr( data)  +'\n')
+    if rank == 0:
+        name2 = directory_+ name+ '.txt'
+        with open(name2, 'a') as log:
+            log.write(repr( data)  +'\n')
         
 def write_file_array(name, data, space =",", directory_ ="./results/" ):
-    name2 = directory_+ name+ '.txt'
-    with open(name2, 'a') as log:
-        log.write(space.join([num for num in map(str, data)])  +'\n')
+    if rank == 0:
+        name2 = directory_+ name+ '.txt'
+        with open(name2, 'a') as log:
+            log.write(space.join([num for num in map(str, data)])  +'\n')
+            
 def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,  depth_,  
                     dist, con, l, conc = None, c_ = None, directory ="./results/"):#krs_,
     """  saves numpy arrays ass npy files """

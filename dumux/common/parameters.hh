@@ -55,7 +55,6 @@ public:
     //! Initialize the parameter tree singletons
     static void init(int argc, char **argv, const Usage& usage)
     {
-		std::cout<<"A: static void init(int argc, char **argv, const Usage& usage)"<<std::endl;
         init(argc, argv, [] (Dune::ParameterTree&) {}, "", usage);
     }
 
@@ -64,7 +63,6 @@ public:
                     std::string parameterFileName,
                     const Usage& usage = [](const char *, const std::string &){})
     {
-		std::cout<<"B: static void init(int argc, char **argv, std::string parameterFileName,"<<std::endl;
         init(argc, argv, [] (Dune::ParameterTree&) {}, parameterFileName, usage);
     }
 
@@ -73,7 +71,6 @@ public:
                      const DefaultParams& defaultParams,
                      const Usage& usage = [](const char *, const std::string &){})
     {
-		std::cout<<"C: static void init(int argc, char **argv, const DefaultParams& defaultParams,"<<std::endl;
         init(argc, argv, defaultParams, "", usage);
     }
 
@@ -98,7 +95,7 @@ public:
                      std::string parameterFileName = "",
                      const Usage& usage = [](const char *, const std::string &){})
     {
-		std::cout<<"parameters::initA"<<std::endl;
+		
         const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
 
         // check whether the user wanted to see the help message
@@ -168,7 +165,6 @@ public:
         // read parameters from the file without overwriting the command line params
         // because the command line arguments have precedence
         // let Dune do the error checking if the file exists
-		std::cout<<"parameters::initB"<<std::endl;
         Dune::ParameterTreeParser::readINITree(parameterFileName,
                                                paramTree(),
                                                /*overwrite=*/false);
@@ -184,8 +180,7 @@ public:
     static void init(const DefaultParams&  params = [] (Dune::ParameterTree&) {},
                      const DefaultParams& defaultParams = [] (Dune::ParameterTree&) {})
     {
-		std::cout<<"E: static void init(const DefaultParams&  params = [] (Dune::ParameterTree&) {},"<<std::endl;
-        // apply the parameters
+		// apply the parameters
         params(paramTree());
         // apply the default parameters
         globalDefaultParameters(defaultParamTree());
@@ -209,9 +204,7 @@ public:
                      const DefaultParams& defaultParams = [] (Dune::ParameterTree&) {})
     {
         // apply the parameters
-		std::cout<<"F: static void init(const std::string& parameterFileName, const DefaultParams& params = [] (Dune::ParameterTree&) {},"<<std::endl;
-        std::cout<<"parameters::init "<<parameterFileName<<std::endl;
-        params(paramTree());
+		params(paramTree());
 
         // read parameters from the input file
         Dune::ParameterTreeParser::readINITree(parameterFileName, paramTree(), inputFileOverwritesParams);

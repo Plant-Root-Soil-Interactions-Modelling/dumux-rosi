@@ -81,7 +81,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
     N = int(np.ceil(sim_time / dt))  # number of iterations
     
     """ simualtion loop """
-    for i in range(0, N):
+    for i in range(N):
 
         t = rs_age + i * dt  # current simulation time
         
@@ -205,7 +205,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
         rhizoTotCBefore = sum(rhizoTotCBefore_) 
         
         start_time_rhizo = timeit.default_timer()
-        print("solve 1d soil")
+        print("solve 1d soil", rank)
         if "dirichlet" in demoType:        
             seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in rs.rs.segments])
             r.solve(dt, seg_rx, proposed_outer_fluxes, seg_sol_fluxes, proposed_outer_sol_fluxes, seg_mucil_fluxes, proposed_outer_mucil_fluxes) #
@@ -213,7 +213,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
             # solute fluxes are in mol/cm2 scv/d
             r.solve(dt, seg_fluxes, proposed_outer_fluxes, seg_sol_fluxes,proposed_outer_sol_fluxes, 
                     seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
-        print("done")
+        print("solve 1d soil", rank)
         
         rs.time_rhizo_i = (timeit.default_timer() - start_time_rhizo)
     
@@ -298,7 +298,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
             soil_fluxes = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
         else:
             soil_fluxes = None
-        soil_fluxes = comm.bcast(soil_fluxes.eidx, root=0)
+        
+        
+        soil_fluxes = comm.bcast(soil_fluxes, root=0)
         
         """ 3.d  some checks """
         r.checkMassOMoleBalance2(soil_fluxes, soil_source_sol, dt,seg_fluxes =seg_fluxes, doSolid = True)
@@ -365,7 +367,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
                 sum(soil_source_sol.flatten())*dt,s.bulkMassErrorPlant_abs, s.bulkMassError1ds_abs )
         #raise Exception
         assert (s.getSolution(0) == r.soilModel.getSolution(0)).all()
-        assert min(s.getSolution(8)) > 0. # idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
+        assert (s.getSolution(8) > 0. ).all()# idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
 
         """ 3b. calculate net fluxes """
         water_content =comm.bcast( np.array(s.getWaterContent()), root = 0) 
@@ -459,8 +461,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
             raise Exception
             
         
-        emptySoilVoxels = np.array([elCid for elCid in range(len(cell_volumes)) if ((elCid >= 0) and (elCid not in cellIds))])
-        assert len(emptySoilVoxels) + len(cellIds) == len(cell_volumes)
+        emptySoilVoxels = []
+        if rank == 0:
+            emptySoilVoxels = np.array([elCid for elCid in range(len(cell_volumes)) if ((elCid >= 0) and (elCid not in cellIds))])
+            assert len(emptySoilVoxels) + len(cellIds) == len(cell_volumes)
         r.setEmptySoilVoxel(emptySoilVoxels)# now oldSoil = newSoil where we have no rhizo
         
         totWatAdded = outer_R_bc_wat[emptySoilVoxels] 
@@ -469,25 +473,27 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
         outer_R_bc_sol[:,emptySoilVoxels] = 0. #changes were put in old soil and will not be used as BC
         
         r.checkSoilBC(outer_R_bc_wat, outer_R_bc_sol)# check oldSoil + rhizoSource = newSoil - (bulkFlow + bulkReaction )
-        try:
-            assert (r.sumdiffSoilData_rel < 1).all()#e-10
-        except:
-            print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
-            print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
-            print(s.bulkMassErrorPlant_abs ,s.bulkMassErrorPlant_rel)
-            print(r.rhizoMassCError_abs, r.rhizoMassCError_rel)
-            print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
-            print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
-            raise Exception
         
-        for nc in range(r.numFluidComp, r.numComp):
+        if rank == 0:
             try:
-                assert (abs(outer_R_bc_sol[nc]) < 1e-16).all()
+                assert (r.sumdiffSoilData_rel < 1).all()#e-10
             except:
-                print("outer_R_bc_sol[nc][cellIds] != 0.", nc+1, cellIds)
-                print(outer_R_bc_sol[nc])
-                print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
+                print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
+                print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
+                print(s.bulkMassErrorPlant_abs ,s.bulkMassErrorPlant_rel)
+                print(r.rhizoMassCError_abs, r.rhizoMassCError_rel)
+                print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
+                print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
                 raise Exception
+            
+            for nc in range(r.numFluidComp, r.numComp):
+                try:
+                    assert (abs(outer_R_bc_sol[nc]) < 1e-16).all()
+                except:
+                    print("outer_R_bc_sol[nc][cellIds] != 0.",rank, nc+1, cellIds)
+                    print(outer_R_bc_sol[nc])
+                    print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
+                    raise Exception
         """ 3d. backup """
         
         """ some checks """
@@ -532,13 +538,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
 
             
         if i % skip == 0 and rank == 0:
-            print("time", rs_age + t, "rsx", np.min(rsx), np.max(rsx), "ccx", np.min(cc), np.max(cc))#, "trans",sum(np.array(r.Ev)))
+            print("time", rs_age + t, "sx", np.min(sx), np.max(sx), "ccx", np.min(cc), np.max(cc))#, "trans",sum(np.array(r.Ev)))
             psi_x_.append(rx.copy())  # cm (per root node)
-            psi_s_.append(rsx.copy())  # cm (per root segment)
+            psi_s_.append(sx.copy())  # cm (per root segment)
 
 
-    if rank == 0:
-        print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+    #if rank == 0:
+    #    print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
     return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, c_All,c_All1, outer_R_bc_sol, outer_R_bc_wat 
 

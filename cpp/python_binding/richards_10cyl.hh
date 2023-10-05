@@ -26,6 +26,7 @@ public:
 
 };
 
+    
 /**
  * pybind11
  */
@@ -59,7 +60,6 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 0)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
-   .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)

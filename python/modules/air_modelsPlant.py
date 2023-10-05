@@ -46,7 +46,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         self.sources = np.zeros((self.n,))  # [cm3 / cm3]
         
     def solve(self, dt, maxDt = None):
-        comm.barrier()
+        print("dummy solve function for airSegments. does nothing (for now?)")
         
     #water
     #get

@@ -22,6 +22,7 @@ namespace py = pybind11;
 #include <dumux/porousmediumflow/richards10c/model.hh> // the model
 
 #include <dune/grid/spgrid.hh>
+#include <dune/common/parallel/mpihelper.hh>
 //#if HAVE_DUNE_ALUGRID
 //#include <dune/alugrid/grid.hh>
 //#endif
@@ -32,7 +33,10 @@ namespace py = pybind11;
 /**
  * create type tags
  */
-namespace Dumux { namespace Properties {
+
+namespace Dumux { 
+
+namespace Properties {
 
 namespace TTag { // Create new type tags
 

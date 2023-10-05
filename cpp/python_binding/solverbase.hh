@@ -32,6 +32,7 @@
 #endif
 
 
+
 /**
  * Derived class will pass ownership
  */
@@ -111,8 +112,8 @@ public:
 		// }else{
 			// DUNE_EXPORT typedef Dune::MPIHelper FakeMPIHelper; 
 		// }
-		typedef Dune::MPIHelper FakeMPIHelper; 
 
+			//auto& mpiHelper = Dune::FakeMPIHelper::instance(argc, argv);// Dune::MPIHelper::instance(argc, argv);
 			auto& mpiHelper = Dune::FakeMPIHelper::instance(argc, argv);// Dune::MPIHelper::instance(argc, argv);
 			maxRank = mpiHelper.size();
 			rank = mpiHelper.rank();
@@ -121,7 +122,7 @@ public:
 				std::cout << "\n" << toString() << "\n" << std::flush; // add my story
 				Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
 			}
-				std::cout<<"mpiHelper::isFake "<<Dune::FakeMPIHelper::isFake<<" "<<Dune::MPIHelper::isFake<<" size "
+				std::cout<<"mpiHelper::isFake "<<Dune::MPIHelper::isFake<<" " //Dune::FakeMPIHelper::isFake<<" "<<Dune::MPIHelper::isFake<<" size "
 				<<Dune::MPIHelper::getCollectiveCommunication().size()<<" doMPI "<<doMPI<<std::endl;
 			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
 		// }else{
@@ -391,24 +392,24 @@ public:
         auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
-        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);//
         nonLinearSolver->setVerbose(false);
-		std::cout<<"timeLoop->start();"<<std::endl;
+		//std::cout<<"timeLoop->start();"<<std::endl;
         timeLoop->start();
         auto xOld = x;
         do {
-			std::cout<<"nonLinearSolver->suggestTimeStepSize"<<std::endl;
+			//std::cout<<"nonLinearSolver->suggestTimeStepSize"<<std::endl;
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
             ddt = std::max(ddt, 1.); // limit minimal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
-	std::cout<<"assembler->setPreviousSolution"<<std::endl;
+	//std::cout<<"assembler->setPreviousSolution"<<std::endl;
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-std::cout<<"nonLinearSolver->solve"<<std::endl;
+//std::cout<<"nonLinearSolver->solve"<<std::endl;
             nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
 
             xOld = x; // make the new solution the old solution
-std::cout<<"gridVariables->advanceTimeStep"<<std::endl;
+//std::cout<<"gridVariables->advanceTimeStep"<<std::endl;
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -419,6 +420,62 @@ std::cout<<"gridVariables->advanceTimeStep"<<std::endl;
         simTime += dt;
     }
 
+    /**
+     * Simulates the problem for time span dt, with maximal time step maxDt.
+     *
+     * Assembler needs a TimeLoop, so i have to create it in each solve call.
+     * (could be improved, but overhead is likely to be small)
+     */
+    void solveNoMPI(double dt, double maxDt = -1) {
+		
+        checkInitialized();
+        using namespace Dumux;
+
+        if (ddt<1.e-6) { // happens at the first call
+            ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
+        }
+
+        std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
+            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt, false); // the main time loop is moved to Python
+        if (maxDt<0) { // per default value take from parameter tree
+            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // if none, default is outer time step
+        }
+        timeLoop->setMaxTimeStepSize(maxDt);
+
+        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
+        auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
+								 PartialReassembler<Assembler>,
+								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
+        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver, 
+								Dune::FakeMPIHelper::getCollectiveCommunication());//
+        nonLinearSolver->setVerbose(false);
+		//std::cout<<"1cyl, timeLoop->start();"<<std::endl;
+        timeLoop->start();
+        auto xOld = x;
+        do {
+			//std::cout<<"1cyl, nonLinearSolver->suggestTimeStepSize"<<std::endl;
+            ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
+            ddt = std::max(ddt, 1.); // limit minimal suggestion
+            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
+	//std::cout<<"1cyl, assembler->setPreviousSolution"<<std::endl;
+            assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
+//std::cout<<"1cyl, nonLinearSolver->solve"<<std::endl;
+            nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
+
+            xOld = x; // make the new solution the old solution
+//std::cout<<"1cyl, gridVariables->advanceTimeStep"<<std::endl;
+            gridVariables->advanceTimeStep();
+
+            timeLoop->advanceTimeStep(); // advance to the time loop to the next step
+            timeLoop->reportTimeStep(); // report statistics of this time step
+
+        } while (!timeLoop->finished());
+
+        simTime += dt;
+    }
+	
     /**
      * Finds the steady state of the problem.
      *
@@ -879,6 +936,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
             // simulation
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
+            .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1)
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)
             .def("getPoints", &Solver::getPoints) //
