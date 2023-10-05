@@ -10,6 +10,7 @@ add_subdirectory("richards10cCylindrical1d")
 
 add_subdirectory("richardsCylindrical1d") 
 
+add_subdirectory("richards") 
 add_subdirectory("richardsnc") # overwrite to change io field from moleFraction to massFraction
 add_subdirectory("richardsncCylindrical1d") 
 
