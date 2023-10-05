@@ -14,14 +14,14 @@ Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 
 everything scripted, no input file needed, also works parallel with mpiexec
 """
-
-s = RichardsWrapper(RichardsNCCylFoam())
+usemoles = False
+s = RichardsWrapper(RichardsNCCylFoam(), usemoles)
 s.initialize()
 
 #alpha, theta_s, theta_r, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-s.createGrid([0.02], [0.6], [500])  # [cm]
+s.createGrid([0.02], [0.6], [10])  # [cm]
 
 s.setHomogeneousIC(-100.)  # cm pressure head
 s.setOuterBC("noflux")  #  [cm/day]
@@ -61,26 +61,4 @@ for i, dt in enumerate(np.diff(times)):
 
     x = s.getSolutionHead()
     y = s.getSolution(1)  # solute concentration
-
-    ax1.plot(points[:], x, col[i % len(col)], label="dumux {} days".format(s.simTime))
-    ax2.plot(points[:], y, col[i % len(col)], label="dumux {} days".format(s.simTime))
-
-# os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")
-# data = np.loadtxt("cylinder_1d_Comsol_water.txt", skiprows=8)
-# z_comsol = data[:, 0]
-# ax1.plot(z_comsol + 0.02, data[:, 25], "k", label="comsol 10 days")
-# ax1.plot(z_comsol + 0.02, data[:, -1], "k:", label="comsol 20 days")
-# ax1.set_xlabel("distance from root axis (cm)")
-# ax1.set_ylabel("soil matric potential (cm)")
-# ax1.legend()
-
-data = np.loadtxt("comsol_c_diff.txt", skiprows=8)
-z_comsol = data[:, 0]
-ax2.plot(z_comsol + 0.02, data[:, 25], "k", label="comsol 10 days")
-ax2.plot(z_comsol + 0.02, data[:, -1], "k:", label="comsol 20 days")
-ax2.set_xlabel('distance from the root axis (cm)')
-ax2.set_ylabel('solute concentration (g/cm3)')
-
-ax2.legend()
-
-plt.show()
+    print(x)

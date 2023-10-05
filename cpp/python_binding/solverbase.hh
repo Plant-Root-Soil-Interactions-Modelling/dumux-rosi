@@ -88,7 +88,8 @@ public:
      * Normally you state an input file, that contains all parameters that are needed for the simulation.
      * SolverBase will optionally set most of them dynamically.
      */
-    virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true) {
+    virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true,
+							bool doMPI = true) {
 		std::vector<char*> cargs;
         cargs.reserve(args_.size());
         for(size_t i = 0; i < args_.size(); i++) {
@@ -103,19 +104,35 @@ public:
             setParameter("Grid.Overlap","1");
         }
         setParameter("Flux.UpwindWeight", "0.5"); // Timo's advice for flows that are not strongly convection dominated, Dumux default = 1
+		
+		// if(doMPI)
+		// {
+			// DUNE_EXPORT typedef Dune::MPIHelper MPIHelper;
+		// }else{
+			// DUNE_EXPORT typedef Dune::MPIHelper FakeMPIHelper; 
+		// }
+		typedef Dune::MPIHelper FakeMPIHelper; 
 
-        auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
-        maxRank = mpiHelper.size();
-        rank = mpiHelper.rank();
+			auto& mpiHelper = Dune::FakeMPIHelper::instance(argc, argv);// Dune::MPIHelper::instance(argc, argv);
+			maxRank = mpiHelper.size();
+			rank = mpiHelper.rank();
 
-        if ((rank == 0) && verbose) { // rank is the process number
-            std::cout << "\n" << toString() << "\n" << std::flush; // add my story
-            Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
-        }
-        mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
-
+			if ((rank == 0) && verbose) { // rank is the process number
+				std::cout << "\n" << toString() << "\n" << std::flush; // add my story
+				Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
+			}
+				std::cout<<"mpiHelper::isFake "<<Dune::FakeMPIHelper::isFake<<" "<<Dune::MPIHelper::isFake<<" size "
+				<<Dune::MPIHelper::getCollectiveCommunication().size()<<" doMPI "<<doMPI<<std::endl;
+			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+		// }else{
+			// if (verbose) { // even if we have MPI, run model sequentially.
+				// std::cout << "\n" << toString() << "\n" << std::flush; // add my story
+				// Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
+			// }
+		// }
         setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
+		
 		//@see <dumux/common/parameters.hh> 
     }
 
@@ -376,21 +393,22 @@ public:
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
         nonLinearSolver->setVerbose(false);
-
+		std::cout<<"timeLoop->start();"<<std::endl;
         timeLoop->start();
         auto xOld = x;
         do {
+			std::cout<<"nonLinearSolver->suggestTimeStepSize"<<std::endl;
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
             ddt = std::max(ddt, 1.); // limit minimal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
-
+	std::cout<<"assembler->setPreviousSolution"<<std::endl;
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-
+std::cout<<"nonLinearSolver->solve"<<std::endl;
             nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
 
             xOld = x; // make the new solution the old solution
-
+std::cout<<"gridVariables->advanceTimeStep"<<std::endl;
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -758,7 +776,10 @@ public:
         if (!entities.empty()) {
             auto element = bBoxTree.entitySet().entity(entities[0]);
             gIdx = cellIdx->index(element);
+		//std::cout<<"solverbase::pickCell, !entities.empty(), "<<gIdx<<" "<<entities.size()<<" "<<entities[0]<<std::endl<<std::flush;
         }
+		
+		//std::cout<<"solverbase::pickCell, gridGeometry, "<<gIdx<<" "<<gridGeometry->gridView().comm().max(gIdx)<<std::endl<<std::flush;
         gIdx = gridGeometry->gridView().comm().max(gIdx); // so clever
         return gIdx;
     }
@@ -844,7 +865,8 @@ void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
-            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), 
+													py::arg("verbose") = true,py::arg("doMPI") = true)
             .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid) // overloads, defaults , py::arg("modelParamGroup") = ""
             .def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid) // overloads, defaults , py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false
             .def("createGrid1d", &Solver::createGrid1d)

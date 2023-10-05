@@ -20,6 +20,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
 # from rosi_richards2c import Richards2CSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
@@ -68,7 +69,7 @@ def maize_SPP(soil_= "loam"):
     soil = vg_SPP(i)
     min_b = [-5., -5, -20.] 
     max_b = [5., 5, 0.] 
-    cell_number = [5, 5, 20]
+    cell_number = [2,2,2]#[5, 5, 20]
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -133,30 +134,33 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type, times = None, 
+def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
                         net_inf = None, usemoles = True):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
-        soil type is fixed and homogeneous 
+        soil demoType is fixed and homogeneous 
         domain is periodic (if 2d or 3d)
         initial potentials are linear from @param p_top to @param p_bot
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
 
-    if type == "dumux":
+    if demoType == "dumux":
         s = RichardsWrapper(RichardsSP())  # water only
-    # elif type == "dumux_dirichlet_2c":
+    # elif demoType == "dumux_dirichlet_2c":
     #    s = RichardsWrapper(Richards2CSP())  # water and one solute
-    elif type == "dumux_dirichlet_nc":
+    elif demoType == "dumux_dirichlet_nc":
         s = RichardsWrapper(RichardsNCSP())  # water and N solute      
-    elif ((type == "dumux_dirichlet_10c") or ("dumux_10c")):
+    elif ((demoType == "dumux_dirichlet_10c") or ("dumux_10c")):
         s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
     else:
-        raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
+        raise Exception("choose demoType: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
+             
     s.soil = soil_
     s.vg_soil = vg.Parameters(soil_)
-    vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
+    #vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
+
+ 
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.betaC = 0.001 
     s.betaO = 0.1 
@@ -182,15 +186,20 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     unitConversion = 1e3
     CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
     s.ICcc = np.array([C_S *unitConversion,
-                        10. *unitConversion,
-                        0.0004* unitConversion,
-                        0.058* unitConversion,
-                        0.0004* unitConversion,
-                        0.058* unitConversion,
+                        1. *unitConversion,
+                        C_S/10* unitConversion,
+                        C_S/10* unitConversion,
+                        C_S/10* unitConversion,
+                        C_S/10* unitConversion,
                         CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
+        
+    
     s.initialize()
+    
     s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
+
     #cell_number = str(cell_number)
+    cell_number_ = cell_number
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)    
     s.setParameter("Problem.reactionExclusive", "1")
@@ -211,7 +220,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
-    if (type == "dumux_10c") or (type == "dumux_dirichlet_nc")or (type == "dumux_dirichlet_10c"):  # solute BC
+    if (demoType == "dumux_10c") or (demoType == "dumux_dirichlet_nc")or (demoType == "dumux_dirichlet_10c"):  # solute BC
         s.Ds = 1e-9 # m^2/s
         s.Dl = 3e-12
         s.numComp = 8
@@ -289,7 +298,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Problem.verbose", "-1")
     # s.setParameter("Problem.doSoluteFlow", "0")
-    # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
+    # if (demoType == "dumux_dirichlet_2c") or (demoType == "dumux_dirichlet_nc") or (demoType == "dumux_dirichlet_10c"):
         # s.setParameter("Component.MolarMass", "1.2e-2")  # carbon 12 g/mol
         # s.setParameter("Component.LiquidDiffusionCoefficient", "0")  # 5e-10 m2 s-1 # Darrah et al. 1991
         # s.setParameter("Component.BufferPower", "0")  # 5 buffer power = \rho * Kd [1]
@@ -312,7 +321,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
-
+    
+    
     solute_conc = np.array(s.getSolution_(1))
     # print( sum(solute_conc))
     try:
@@ -321,7 +331,36 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
         print("soil_sol_fluxes", solute_conc)
         print("min(solute_conc)",min(solute_conc))
         raise Exception
-        
+    # min_b = np.array(min_b)
+    # max_b = np.array(max_b)
+    # cell_number_ = np.array(cell_number_)
+    
+    # for i in range(100):
+        # randsV = np.random.rand(len(min_b) )
+        # testVal = min_b + (max_b - min_b) * randsV
+        # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
+        # print(testVal,sout, poutpout)
+        # assert sout == poutpout
+    # testVal = np.array([ 0., 0., -5.])
+    # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
+    # print(testVal,sout, poutpout)#[ 2. -1. -7.]
+    # #assert sout == poutpout
+    # testVal = np.array([ 0., 0., -6.])
+    # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
+    # print(testVal,sout, poutpout)#[ 2. -1. -7.]
+    # #assert sout == poutpout
+    # testVal = np.array([ 0., 0., -7.])
+    # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
+    # print(testVal,sout, poutpout)#[ 2. -1. -7.]
+    #assert sout == poutpout
+    # for i in range(100):
+        # randsV = np.random.rand(len(min_b) )
+        # testVal = np.round( min_b + (max_b - min_b) * randsV)
+        # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
+        # print(testVal,sout, poutpout)#[ 2. -1. -7.]
+        # assert sout == poutpout
+    # raise Exception
+    
     return s, s.vg_soil
 
 def set_all_sd(rs, s):
@@ -569,22 +608,23 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
                 recreateComsol_ = False, usemoles = True):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
-    global picker  # make sure it is not garbage collected away...
-
+    #global picker  # make sure it is not garbage collected away...
+    
     if fname.endswith(".rsml"):
         r = XylemFluxPython(fname)
     elif fname.endswith(".xml"):
-        seed = 1
+        seed = None#1
         weatherInit = weather(initSim)
         
         if plantType == "plant":
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-
+        
         rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed)
-        rs.setSeed(seed)
+
+        #rs.setSeed(seed)
         rs.readParameters(path + fname)
         #if not stochastic:
         #    set_all_sd(rs, 0.)
@@ -596,17 +636,15 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             r = PhloemFluxPython(rs,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
             r = XylemFluxPython(rs)
-
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
                             pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
                             cut = False, noChanges = True)
-
-    picker = lambda x, y, z: soil_model.pick([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+    
+    picker = lambda x, y, z: soil_model.pick_([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-    # comm.barrier()
-    # print("survived setSoilGrid", rank)
-    assert rs.getSeedVal() == seed
+    #assert rs.getSeedVal() == seed
+    print('seedval at rank',rank,  rs.getSeedVal())
     # if rank == 0:
     if plantType == "plant":    
         r = init_conductivities(r)

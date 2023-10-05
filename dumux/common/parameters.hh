@@ -98,7 +98,7 @@ public:
                      std::string parameterFileName = "",
                      const Usage& usage = [](const char *, const std::string &){})
     {
-		//std::cout<<"D: static void init(int argc, char **argv, const DefaultParams& defaultParams = [] (Dune::ParameterTree&) {},"<<std::endl;
+		std::cout<<"parameters::initA"<<std::endl;
         const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
 
         // check whether the user wanted to see the help message
@@ -168,6 +168,7 @@ public:
         // read parameters from the file without overwriting the command line params
         // because the command line arguments have precedence
         // let Dune do the error checking if the file exists
+		std::cout<<"parameters::initB"<<std::endl;
         Dune::ParameterTreeParser::readINITree(parameterFileName,
                                                paramTree(),
                                                /*overwrite=*/false);

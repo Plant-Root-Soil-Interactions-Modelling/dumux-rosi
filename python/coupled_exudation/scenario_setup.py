@@ -49,6 +49,16 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 
+def write_file_float(name, data, directory_):
+    name2 = directory_+ name+ '.txt'
+    with open(name2, 'a') as log:
+        log.write(repr( data)  +'\n')
+        
+def write_file_array(name, data, space =",", directory_ ="./results/" ):
+    name2 = directory_+ name+ '.txt'
+    with open(name2, 'a') as log:
+        log.write(space.join([num for num in map(str, data)])  +'\n')
+
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
         

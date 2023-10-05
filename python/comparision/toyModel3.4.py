@@ -12,10 +12,15 @@ import pandas as pd
 import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
-def write_file_array(name, data, space =","):
-    name2 = './results/'+ name+ '.txt'
-    with open(name2, 'a') as log:
-        log.write(space.join([num for num in map(str, data)])  +'\n')
+def write_file_array(name, data, space =",", rank_ = rank):
+    name2 = './results/'+ str(rank_)+"_"+name+ '.txt'
+    if rank_ == 0:
+        with open(name2, 'a') as log:
+            log.write(space.join([num for num in map(str, data)])  +'\n')
+    else:
+        with open(name2, 'a') as log:
+            log.write(str(data))
+    
 """ 
 Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 
@@ -37,19 +42,27 @@ s = RichardsWrapper(Richards10CCylFoam(), usemoles)
 
 s.initialize()
 
-def getTotCContent( kjg, cyl, l):
+def getTotCContent( kjg, cyl, l, rank_ = rank):
     vols = cyl.getCellSurfacesCyl()  * l  #cm3 scv
     totC = 0
     for i in range(cyl.numComp):
         isDissolved = (i < 2)
         totC += cyl.getContentCyl(i+1, isDissolved,l)#mol
-        print(i, sum(cyl.getContentCyl(i+1, isDissolved,l)))
+        if rank_ == 0:
+            print(i,rank_, sum(cyl.getContentCyl(i+1, isDissolved,l)))
+        else:
+            print(i,rank_, cyl.getContentCyl(i+1, isDissolved,l))
+            
     # mol/cm3
     C_S_W = np.array(cyl.getSolution_(1)).flatten()*cyl.molarDensityWat
     css1 = cyl.CSSmax * (C_S_W/(C_S_W+cyl.k_sorp)) * cyl.f_sorp
     totC += css1*vols
-    print("css1", sum(css1*vols))
-    assert len(np.array(totC).shape)==1
+    if rank_ == 0:
+        print("css1", sum(css1*vols))
+        assert len(np.array(totC).shape)==1
+    else:
+        print("css1", css1*vols)
+    
     return totC
     
 # theta_r, theta_s, alpha, n, Ks
@@ -196,6 +209,7 @@ s.setVGParameters([loam])
 
 
 
+s.setParameter("Problem.reactionExclusive", "0")
 s.setParameter("Problem.EnableGravity", "false")
 s.setParameter("Problem.verbose", "1")
 s.setParameter("Flux.UpwindWeight", "0.5")
@@ -216,7 +230,13 @@ s.setParameter("Newton.UseLineSearch", "false")
 s.setParameter("Newton.EnablePartialReassembly", "true")
 s.setParameter("Grid.Overlap", "0")  #no effec5
 
+print("hello from rank", rank, np.array(s.getCellCenters()),np.array(s.getWaterContent()).flatten())
+comm.barrier()
+raise Exception
 s.initializeProblem()
+print("hello from rank", rank, np.array(s.getCellCenters()),np.array(s.getWaterContent()).flatten())
+comm.barrier()
+raise Exception
 s.setParameter("Flux.UpwindWeight", "1")
 s.setCriticalPressure(-15000)  # cm pressure head
 
@@ -226,15 +246,15 @@ fig, (ax1, ax2) = plt.subplots(1, 2)
 times = [0., 5./24., 10./24.]  # days
 s.ddt = 1.e-5
 
-points = s.getDofCoordinates().flatten()
+points = s.getDofCoordinates()#.flatten()
 
 x = np.array(s.getSolutionHead())
-write_file_array("pressureHead",x.flatten())
+write_file_array("pressureHead",x)#.flatten())
 write_file_array("coord",points)
-theta = np.array(s.getWaterContent()).flatten()
+theta = np.array(s.getWaterContent())#.flatten()
 write_file_array("theta",theta)
-write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
-write_file_array("krs",np.array(s.getKrw()).flatten())
+write_file_array("getSaturation",np.array(s.getSaturation()))#.flatten())
+write_file_array("krs",np.array(s.getKrw()))#.flatten())
 # [g/cm3] * [mol/kg] * [kg/g] = [mol/cm3]
 
 for i in range(numFluidComp):
@@ -272,6 +292,8 @@ write_file_array("RF",RF)
 buTotCBefore = getTotCContent(0, s,l)
 
 vols = s.getCellSurfacesCyl()  * l  #cm3 scv
+print(rank, "to loop")  
+  
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
@@ -285,30 +307,30 @@ for i, dt in enumerate(np.diff(times)):
     print(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter) )
     buTotCBefore = buTotCAfter
     x = np.array(s.getSolutionHead())
-    write_file_array("pressureHead",x.flatten())
+    write_file_array("pressureHead",x)#.flatten())
     #print(x.flatten())
     write_file_array("coord",points)
-    write_file_array("theta",np.array(s.getWaterContent()).flatten())
-    write_file_array("getSaturation",np.array(s.getSaturation()).flatten())
-    write_file_array("krs",np.array(s.getKrw()).flatten())
+    write_file_array("theta",np.array(s.getWaterContent()))#.flatten())
+    write_file_array("getSaturation",np.array(s.getSaturation()))#.flatten())
+    write_file_array("krs",np.array(s.getKrw()))#.flatten())
     for i in range(numFluidComp):
-        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()*molarDensityWat) 
+        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1))*molarDensityWat) #.flatten()
     for i in range(numFluidComp, numComp):
-        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1)).flatten()* bulkDensity_m3 /1e6 ) 
+        write_file_array("solute_conc"+str(i+1), np.array(s.getSolution_(i+1))* bulkDensity_m3 /1e6 ) #.flatten()
         
         
-    C_S_W = np.array(s.getSolution_(1)).flatten()*molarDensityWat*1e6
-    cstot_cls = (np.array(s.getWaterContent()).flatten() 
+    C_S_W = np.array(s.getSolution_(1))*molarDensityWat*1e6 #.flatten()
+    cstot_cls = (np.array(s.getWaterContent())#.flatten() 
                 * C_S_W) #* points
-    cstot_css1 = np.array(s.base.getCSS1_out()).flatten()
+    cstot_css1 = np.array(s.base.getCSS1_out())#.flatten()
     cstot_css1 = cstot_css1[:(len(cstot_css1)-1)]
     #print("cstot_css1",cstot_css1,cstot_css1* (vols/1e6), sum(cstot_css1* (vols/1e6)))
     
-    RF = np.array(s.base.getRF_out()).flatten()
+    RF = np.array(s.base.getRF_out())#.flatten()
     RF = RF[:(len(RF)-1)]
     
     # cstot_css1Bis =  CSSmax*1e6 * (C_S_W/(C_S_W+k_sorp*1e6)) * f_sorp  #* points
-    cstot_css2 = np.array(s.getSolution_(7)).flatten()*bulkDensity_m3#* points
+    cstot_css2 = np.array(s.getSolution_(7))*bulkDensity_m3#* points .flatten()
     cstot = cstot_cls + cstot_css1 + cstot_css2
 
     write_file_array("totcs",np.array([np.round(cstot_cls.sum()),
@@ -322,7 +344,7 @@ for i, dt in enumerate(np.diff(times)):
     write_file_array("css2",cstot_css2/1e6)
     write_file_array("cl",cstot_cls/1e6)
     write_file_array("cstot",cstot/1e6)
-        
+    print(rank, "l339")    
     contents = np.array([(cstot_cls * points).sum(),
                     (cstot_css1 * points).sum(), 
                     (cstot_css2 * points).sum(), 
@@ -331,5 +353,5 @@ for i, dt in enumerate(np.diff(times)):
     #print(min(cstot_cls))#contents[3]/contents0[3]*100-100)
     write_file_array("contents", contents/1e6)
 
-
+print("finished")
 

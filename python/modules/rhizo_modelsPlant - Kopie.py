@@ -726,7 +726,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             #oldHead = np.array(cyl.getSolutionHead()).flatten()
             #solutes (mol/cm2)
             cxOld = [np.array(cyl.getContentCyl(nC+1, (nC < self.numFluidComp), self.seg_length_old[i]))/surfaceOld for nC in range(self.numComp)]            
-            cxOld.insert(0, x_old/ surfaceOld) #cm3/cm3
+            cxOld.insert(0, x_old/ surfaceOld) #cm3/cm2
             m_totOld = [sum(cx*surfaceOld) for cx in cxOld] # cm3 or mol
             
             ##  new contents:        

@@ -31,7 +31,10 @@ class SolverWrapper():
 
     def initialize(self, args_ = [""], verbose = True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
+        print('solverbase:init')
         self.base.initialize(args_, verbose)
+        print('solverbase:init_end')
+        
 
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
@@ -72,6 +75,7 @@ class SolverWrapper():
         """  Returns a rectangular bounding box around the grid geometry [cm] """
         return np.array(self.base.getGridBounds()) * 100.  # m -> cm
 
+        
     def setParameter(self, key:str, value:str):
         """ Writes a parameter into the global Dumux parameter map """
         self.base.setParameter(key, value)
@@ -80,15 +84,19 @@ class SolverWrapper():
         """ Reads a parameter from the global Dumux parameter map, returns an empty string if value is not set """
         return self.base.getParameter(key)
 
-    def initializeProblem(self):
+    def initializeProblem(self, rank_ = 0):
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
-        cell0 = self.getCellCenters()[0]
-        if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
-            self.dimWorld = 1
+        cell = self.getCellCenters()
+        if len(cell) > 0: # cell float if rank >0
+            cell0 = cell[0]
+            if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
+                self.dimWorld = 1
+            else:
+                self.dimWorld = len(cell0)        
+            assert ((self.dimWorld  == 1) or ( self.dimWorld  == 3))
         else:
-            self.dimWorld = len(self.getCellCenters()[0])        
-        assert ((self.dimWorld  == 1) or ( self.dimWorld  == 3))
+            self.dimWorld = 0
 
 
     def setInitialCondition(self, ic, eqIdx = 0):
@@ -118,6 +126,7 @@ class SolverWrapper():
     def getPoints_(self):
         """nompi version of """
         self.checkInitialized()
+        assert max_rank == 1
         return np.array(self.base.getPoints()) * 100.  # m -> cm
 
     def getCellCenters(self):
@@ -128,6 +137,7 @@ class SolverWrapper():
     def getCellCenters_(self):
         """nompi version of """
         self.checkInitialized()
+        assert max_rank == 1
         return np.array(self.base.getCellCenters()) * 100.  # m -> cm
 
     def getDofCoordinates(self):
@@ -138,6 +148,7 @@ class SolverWrapper():
     def getDofCoordinates_(self):
         """nompi version of """
         self.checkInitialized()
+        assert max_rank == 1
         return np.array(self.base.getDofCoordinates()) * 100.  # m -> cm
 
     def getCells(self):
@@ -146,14 +157,16 @@ class SolverWrapper():
 
     def getCells_(self):
         """nompi version of """
+        assert max_rank == 1
         return np.array(self.base.getCells(), dtype = np.int64)
 
     def getCellSurfacesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2).flatten() * 1.e4  # m3 -> cm3
+        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2) * 1.e4  # m3 -> cm3
 
     def getCellSurfacesCyl_(self):
         """nompi version of  """
+        assert max_rank == 1
         return np.array(self.base.getCellSurfacesCyl()) * 1.e4  # m2 -> cm2
         
     def getCellVolumes(self):
@@ -250,6 +263,20 @@ class SolverWrapper():
     def pick(self, x):
         """ Picks a cell and returns its global element cell index """
         return self.base.pick(np.array(x) / 100.)  # cm -> m
+        
+        
+    def pick_(self,coordCell):
+        bounds = self.getGridBounds(); min_b = bounds[:3]; max_b = bounds[3:]
+        cell_number_ = self.numberOfCells
+        ratioDist = (coordCell - min_b)/(max_b - min_b)
+        if ((ratioDist > 1.) |(ratioDist < 0.) ).any():#not in the domain
+            return -1
+        id_rows = ratioDist*cell_number_
+        onCellOuterFace = np.where((id_rows == np.round(id_rows)) & (id_rows > 0) )[0]
+        id_rows[onCellOuterFace] -= 1
+        id_rows= np.floor(id_rows)
+        id_cell = id_rows[2]*(cell_number_[0]*cell_number_[1])+id_rows[1]*cell_number_[0]+id_rows[0]
+        return int(id_cell) 
 
     def __str__(self):
         """ Solver representation as string """
@@ -343,36 +370,44 @@ class SolverWrapper():
             writer.SetCompressorTypeToZLib()
             writer.Write()
 
-    def _map(self, x, type, dtype = np.float64):
+    def _map(self, x, type_, dtype = np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
-        @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
+        @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
-        if type == 0:  # auto (dof)
+        if type_ == 0:  # auto (dof)
             indices = self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
-        elif type == 1:  # points
+        elif type_ == 1:  # points
             indices = self._flat0(comm.gather(self.base.getPointIndices(), root = 0))
-        elif type == 2:  # cells
+        elif type_ == 2:  # cells
             indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
-            raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
-        if indices:  # only for rank 0 not empty
-            assert len(indices) == len(x), "_map: indices and values have different length"
+            raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
+        if len(indices) >0:  # only for rank 0 not empty
+            try:
+                assert len(indices) == len(x), "_map: indices and values have different length"
+            except:
+                print(len(indices) , len(x), indices)
+                raise Exception
             ndof = max(indices) + 1
-            if isinstance(x[0], list):
+            if isinstance(x[0], (list,type(np.array([])))) :
                 m = len(x[0])
+                p = np.zeros((ndof, m), dtype = dtype)
+                for i in range(0, len(indices)):  #
+                    p[indices[i],:] = np.array(x[i], dtype = dtype)
             else:
-                m = 1
-            p = np.zeros((ndof, m), dtype = dtype)
-            for i in range(0, len(indices)):  #
-                p[indices[i],:] = np.array(x[i], dtype = dtype)
-            return p
+                p = np.zeros(ndof, dtype = dtype)
+                for i in range(0, len(indices)):  #
+                    p[indices[i]] = np.array(x[i], dtype = dtype)
+            return p#.flatten()
         else:
-            return 0
+            #return array instead of float to be able to have same object type no matter what
+            return np.array([])
 
     def _flat0(self, xx):
         """flattens the gathered list in rank 0, empty list for other ranks """
+        #print("solverbase::_flat0", rank, xx)
         if rank == 0:
-            return [item for sublist in xx for item in sublist]
+            return np.array([item for sublist in xx for item in sublist])
         else:
             return []
 

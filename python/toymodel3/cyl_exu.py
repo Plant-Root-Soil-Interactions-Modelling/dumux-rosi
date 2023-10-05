@@ -171,7 +171,7 @@ def simulate_const(s, rs, sri_table_lookup, sim_time, dt, trans_f, kexu, rs_age,
             wall_interpolation = timeit.default_timer()
             rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
             rx_ = np.maximum(rx_, np.ones(rx_.shape) * -15000.)  ############################################ (too keep within table)
-            rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sri_table_lookup)
+            rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sri_table_lookup) #dirichlet
             rsx = rsx + seg_centers_z  # from matric potential to total matric potential
 
             """ xylem matric potential """

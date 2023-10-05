@@ -18,7 +18,7 @@ from decimal import *
 from scenario_setup import write_file_array
 
 
-def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
+def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
                     plantType = "RS", r = [], wilting_point =-15000, 
                     outer_R_bc_sol=[], #mol
                     outer_R_bc_wat = []):#m3
@@ -38,9 +38,9 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     subtypes = np.asarray(rs.rs.subTypes, int)
     organTypes = np.asarray(rs.rs.organTypes, int)
     
-    airSegsId = np.array([isinstance(cc, AirSegment) for cc in r.cyls])
-    rootAirSegsId  = np.array([(isinstance(cc, AirSegment) and (organTypes[i] == 2)) for i, cc in enumerate(r.cyls)])
-    rhizoSegsId = np.array([not isinstance(cc, AirSegment) for cc in r.cyls])
+    airSegsId = np.array(list(set(np.concatenate((r.cell2seg[-1],np.where(np.array(r.organTypes) != 2)[0])) )))#aboveground
+    #rootAirSegsId  = np.array([(isinstance(cc, AirSegment) and (organTypes[i] == 2)) for i, cc in enumerate(r.cyls)])
+    rhizoSegsId = np.array([i for i in range(len(organTypes)) if i not in airSegsId])
     Q_Exud = Q_plant[0]; Q_mucil = Q_plant[1] #mol/day
     try:
         assert (Q_Exud[airSegsId] == 0).all()
@@ -48,48 +48,22 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     except:
         print(Q_Exud[airSegsId] )
         print(Q_mucil[airSegsId])
-        print(Q_Exud[rootAirSegsId] )
-        print(Q_mucil[rootAirSegsId])
+        #print(Q_Exud[rootAirSegsId] )
+        #print(Q_mucil[rootAirSegsId])
         print(organTypes[airSegsId])
         raise Exception
         
     #wilting_point = -15000  # cm
     skip = 10  # 3 * 6  # for output and results, skip iteration
-    split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
-    weatherX = weather(rs_age) 
-    """ 
-    Initialize local soil models (around each root segment) 
-    """
-    start_time = timeit.default_timer()
-    sx = s.getSolutionHead_()  # initial condition of soil [cm]
-    cc = s.getSolution_(1)  # solute concentration [kg/m3].
-    
-    # for i in range(0, len(segs)):
-        # if segs[i].x == 0:
-            # collar_ind = i  # segment index of root collar
-            # break
-
-
-    
-    cell2segVals = np.concatenate((list(rs.rs.cell2seg.values()))).flatten()
-    if len(cell2segVals) != len(set(cell2segVals)):#make sure all values are unique
-        print(rs.rs.seg2cell)
-        print(rs.rs.cell2seg)
-        print(cell2segVals)
-        print(len(cell2segVals), len(set(cell2segVals)))
-        raise Exception
     
     
-    segs = rs.rs.segments
-    Nt = len(rs.rs.nodes)
-    # print(len(segs), Nt)
-    assert len(segs) == (Nt -1)
+        
+    assert len(rs.rs.segments) == (len(rs.rs.nodes) -1)
     seg2cell = rs.rs.seg2cell
     cell2seg = rs.rs.cell2seg
     cellIds = np.fromiter(cell2seg.keys(), dtype=int)
     cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
     
-    ns = len(segs)
     #r = rs.rs  # rename (XylemFluxPython)
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_, soil_c_, c_ , c_All, c_All1= [], [], [], [], [], [], [], [] ,[], []
@@ -100,11 +74,12 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     # for post processing
 
     
-    cell_volumes = s.getCellVolumes_()  # cm3
+    cell_volumes = comm.bcast(s.getCellVolumes() , root = 0) #cm3
     #net_flux = np.zeros(cell_volumes.shape)
     #net_sol_flux = np.zeros(cell_volumes.shape)
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
+    
     """ simualtion loop """
     for i in range(0, N):
 
@@ -113,80 +88,59 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         weatherX = weather(t)
 
         """ 1. xylem model """
-        a = np.array(rs.rs.radii)
-        l = np.array(rs.rs.segLength())
+        # a = np.array(rs.rs.radii)
+        # l = np.array(rs.rs.segLength())
     
         ###
-        rsx = r.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-        if type.startswith("dumux"):#that s not used
-            rsc = [cc[seg2cell[i]] for i in range(0, ns)]  # kg/m3
-        else:
-            rsc = r.get_inner_solutes(1)  # kg/m3
+        
         comm.barrier()
         
+
+            
+        rx = np.array(rs.psiXyl)
+        seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
+        seg_sol_fluxes = Q_Exud /dt# mol/day for segments
+        seg_mucil_fluxes = Q_mucil/dt
         
-        if rank == 0:
-            # print("need to add fixed point iteration for water and carbon fluxes between plant-rhizosphere")
-            isPlant = True
-            if isPlant:            
-                rx = np.array(rs.psiXyl)
-                seg_fluxes = np.array(rs.outputFlux)# [cm3/day]
-                errLeuning = sum(seg_fluxes)            
-            else:
-                rx = rs.solve(rs_age, -2, 0., rsx, cells = False, 
-                                    wilting_point = wilting_point, soil_k = [])
-                #trans_maize(rs_age + 0., dt)*10
-                rx = np.array(rx)
-                #seg_fluxes =np.full(len( np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))),0.)# [cm3/day]
-                seg_fluxes = np.array(rs.segFluxes(rs_age + t, rx, rsx, False, False, []))# [cm3/day]
-                # print("rx, rsx", rx, rsx)
-            
-            seg_sol_fluxes = Q_Exud /dt# mol/day for segments
-            seg_mucil_fluxes = Q_mucil/dt
-            #r.exudate_fluxes(rs_age+1, kexu))  # [g/day]
-            
-        else:
-            rx = None
-            seg_fluxes = None
-            seg_sol_fluxes = None
-            seg_mucil_fluxes = None
-        rx = comm.bcast(rx, root = 0)
-        seg_fluxes = comm.bcast(seg_fluxes, root = 0)
-        seg_sol_fluxes = comm.bcast(seg_sol_fluxes, root = 0)
-        seg_mucil_fluxes = comm.bcast(seg_mucil_fluxes, root = 0)
-        #print("rx",rx)
         assert min(seg_sol_fluxes) >= 0
         assert min(seg_mucil_fluxes) >= 0
         
         """ 2. local soil models """
+        waterContent = r.getWaterVolumesCyl(doSum = False, reOrder = True)#np.array([sum( r.cyls[sid].getWaterVolumesCyl(r.seg_length[sid]) ) for sid in range(len(r.cyls))]) 
+        comp1content = r.getContentCyl(idComp=1, doSum = False, reOrder = True)#np.array([sum( r.cyls[sid].getContentCyl(1, True, r.seg_length[sid]) ) for sid in range(len(r.cyls))])
+        comp2content = r.getContentCyl(idComp=2, doSum = False, reOrder = True)#np.array([sum( r.cyls[sid].getContentCyl(2, True, r.seg_length[sid]) ) for sid in range(len(r.cyls))])
+        
+        try:
+            assert waterContent.shape == (len(organTypes), )
+        except:
+            print(waterContent,waterContent.shape)
+            raise Exception
+        
         if rank == 0:
             if len(outer_R_bc_wat) > 0:           
-                waterContent = np.array([sum( r.cyls[sid].getWaterVolumesCyl(r.seg_length[sid]) ) for sid in range(len(r.cyls))]) 
                 proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt, waterContent) #cm3/day
             else:
-                proposed_outer_fluxes = np.full(len(r.cyls), 0.)
+                proposed_outer_fluxes = np.full(len(organTypes), 0.)
             
             if len(outer_R_bc_sol[0]) > 0:  
-                comp1content = np.array([sum( r.cyls[sid].getContentCyl(1, True, r.seg_length[sid]) ) for sid in range(len(r.cyls))])
-                comp2content = np.array([sum( r.cyls[sid].getContentCyl(2, True, r.seg_length[sid]) ) for sid in range(len(r.cyls))])
                 proposed_outer_sol_fluxes = r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content)#mol/day
                 proposed_outer_mucil_fluxes = r.splitSoilVals(outer_R_bc_sol[1] / dt, comp2content)
             else:
-                proposed_outer_sol_fluxes = np.full(len(r.cyls), 0.)
-                proposed_outer_mucil_fluxes = np.full(len(r.cyls), 0.)
+                proposed_outer_sol_fluxes = np.full(len(organTypes), 0.)
+                proposed_outer_mucil_fluxes = np.full(len(organTypes), 0.)
             # if this fails, a segment is not mapped, i.e. out of soil domain
         else:
             proposed_outer_fluxes = None
             proposed_outer_sol_fluxes = None
+            proposed_outer_mucil_fluxes = None
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
         proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
         proposed_outer_mucil_fluxes = comm.bcast(proposed_outer_mucil_fluxes, root = 0)
-        seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in segs])
+        
         
         #mol
         soil_solute = np.array([np.array(r.getC_rhizo(len(cell_volumes), idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
-        
-        if len(outer_R_bc_sol[0]) > 0:  #making sure that the mass balance is ok at the voxel level
+        if (rank == 0) and ( len(outer_R_bc_sol[0]) > 0):  #making sure that the mass balance is ok at the voxel level
             seg_sol_fluxes_voxel = rs.sumSegFluxes(seg_sol_fluxes*dt) 
             seg_mucil_fluxes_voxel = rs.sumSegFluxes(seg_mucil_fluxes*dt)
             for cid in cellIds: 
@@ -198,6 +152,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                     print("soil_solute[1]",soil_solute[1][cid] , "outer_R_bc_sol[1]", outer_R_bc_sol[1][cid] , "seg_mucil_fluxes_voxel",seg_mucil_fluxes_voxel[cid])
                     print(cid)
                     raise Exception
+        
         assert len(seg_fluxes) == len(organTypes)
         assert len(proposed_outer_fluxes) == len(organTypes)
         assert len(seg_sol_fluxes) == len(organTypes)
@@ -205,7 +160,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         assert len(seg_mucil_fluxes) == len(organTypes)
         assert len(proposed_outer_mucil_fluxes) == len(organTypes)
         
-        if len(outer_R_bc_sol[0]) > 0:  #making sure that the mass balance is ok at the rhizosphere level
+        if False:# see how to handle that in case of MPI. len(outer_R_bc_sol[0]) > 0:  #making sure that the mass balance is ok at the rhizosphere level
             for sid in seg2cell: 
                 if ((seg2cell[sid] >= 0) and (organTypes[sid] == 2)): # root segment in the soil
                     try:
@@ -242,16 +197,17 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                         r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content, troubleShootId = cid)
                         raise Exception
                     
-        rhizoWBefore__ = np.array([cc.getWaterVolumesCyl(r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object)
-        rhizoWBefore_ = np.array([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)])
+        #rhizoWBefore__ = comm.bcast(r._flat0(comm.gather(np.array([cc.getWaterVolumesCyl(r.seg_length_[i]) for i, cc in enumerate(r.cyls)], dtype=object), root = 0)),root = 0)
+        rhizoWBefore_ = r.getWaterVolumesCyl(doSum = False, reOrder = True)#np.array([ sum(cylW) for cylW in rhizoWBefore__])
         rhizoWBefore = sum(rhizoWBefore_) 
-        rhizoTotCBefore__ = np.array([ r.getTotCContent(i, cc,r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object) 
-        rhizoTotCBefore_ = np.array([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)]) 
+        #rhizoTotCBefore__ = comm.bcast(r._flat0(comm.gather(np.array([ r.getTotCContent(i, cc,r.seg_length_[i]) for i, cc in enumerate(r.cyls)], dtype=object), root = 0)),root = 0) 
+        rhizoTotCBefore_ = r.getTotCContentAll(doSum = False, reOrder = True)#np.array([ sum(cylC) for cylC in rhizoTotCBefore__]) 
         rhizoTotCBefore = sum(rhizoTotCBefore_) 
         
         start_time_rhizo = timeit.default_timer()
         print("solve 1d soil")
-        if "dirichlet" in type:        
+        if "dirichlet" in demoType:        
+            seg_rx = np.array([0.5 * (rx[seg.x] + rx[seg.y]) for seg in rs.rs.segments])
             r.solve(dt, seg_rx, proposed_outer_fluxes, seg_sol_fluxes, proposed_outer_sol_fluxes, seg_mucil_fluxes, proposed_outer_mucil_fluxes) #
         else:
             # solute fluxes are in mol/cm2 scv/d
@@ -262,11 +218,11 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         rs.time_rhizo_i = (timeit.default_timer() - start_time_rhizo)
     
         
-        rhizoWAfter__ = np.array([cc.getWaterVolumesCyl(r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object)
-        rhizoWAfter_ = np.array([ sum(cc.getWaterVolumesCyl(r.seg_length[i])) for i, cc in enumerate(r.cyls)])
+        #rhizoWAfter__ = comm.bcast(r._flat0(comm.gather(np.array([cc.getWaterVolumesCyl(r.seg_length_[i]) for i, cc in enumerate(r.cyls)], dtype=object), root = 0)),root = 0)
+        rhizoWAfter_ = r.getWaterVolumesCyl(doSum = False, reOrder = True)#np.array([ sum(cylW) for cylW in rhizoWAfter__])
         rhizoWAfter = sum(rhizoWAfter_) 
-        rhizoTotCAfter__= np.array([ r.getTotCContent(i, cc,r.seg_length[i]) for i, cc in enumerate(r.cyls)], dtype=object)
-        rhizoTotCAfter_= np.array([ sum(r.getTotCContent(i, cc,r.seg_length[i])) for i, cc in enumerate(r.cyls)])
+        #rhizoTotCAfter__= comm.bcast(r._flat0(comm.gather(np.array([ r.getTotCContent(i, cc,r.seg_length_[i]) for i, cc in enumerate(r.cyls)], dtype=object), root = 0)),root = 0) 
+        rhizoTotCAfter_= r.getTotCContentAll(doSum = False, reOrder = True)#np.array([ sum(cylC) for cylC in rhizoTotCAfter__]) 
         rhizoTotCAfter = sum(rhizoTotCAfter_)  
         
         r.rhizoMassCError_abs = abs(rhizoTotCAfter - ( rhizoTotCBefore + sum(Q_Exud) + sum(Q_mucil) + sum(proposed_outer_sol_fluxes) *dt+ sum(proposed_outer_mucil_fluxes)*dt))
@@ -307,7 +263,6 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             # write_file_array("solute_conc"+str(i+1), np.array(cyl.getSolution_(i+1)).flatten()* r.bulkDensity_m3 /1e6 ) 
 
                     
-        
 
         """ 3c. calculate mass net fluxes """
         
@@ -338,21 +293,25 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             print(outer_R_bc_sol[0].shape)
             print(soil_solute[0])
             raise Exception
-            
-        soil_fluxes = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
+        
+        if rank == 0:        
+            soil_fluxes = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
+        else:
+            soil_fluxes = None
+        soil_fluxes = comm.bcast(soil_fluxes.eidx, root=0)
         
         """ 3.d  some checks """
         r.checkMassOMoleBalance2(soil_fluxes, soil_source_sol, dt,seg_fluxes =seg_fluxes, doSolid = True)
         r.setSoilData(soil_fluxes, soil_source_sol, dt)
         """ 2.0  global soil models """
         
-        water_content = np.array(s.getWaterContent_())  # theta per cell [1]
+        water_content =comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
         soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
         
-        soil_solute_content = np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)])
+        soil_solute_content = comm.bcast(np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]),root = 0)
         #mol
         
-        
+        #if rank == 0:#or? no I think should be for all theads as we have "if (sourceMap.count(gIdx)>0)"
         s.setSource(soil_fluxes.copy(), eq_idx = 0)  # [cm3/day], in modules/richards.py
         
         for idComp in range(s.numComp):#mol/day
@@ -385,7 +344,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
                 s.setSource(res.copy(), eq_idx = idComp+1)  # [mol/day], in modules/richards.py
                 
         
-        buTotCBefore =sum(s.getTotCContent())
+        buTotCBefore = comm.bcast(sum(s.getTotCContent()), root = 0) 
         
         start_time_3ds = timeit.default_timer()
         print("solve 3d soil")
@@ -395,7 +354,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         rs.time_3ds_i = (timeit.default_timer() - start_time_3ds)
     
         
-        buTotCAfter = sum(s.getTotCContent())    
+        buTotCAfter =comm.bcast( sum(s.getTotCContent()) , root = 0)    
         
         s.bulkMassErrorPlant_abs = abs(buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))
         s.bulkMassErrorPlant_rel = abs(s.bulkMassErrorPlant_abs/buTotCAfter*100)
@@ -405,11 +364,11 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         print("errorCbalance soil 3d?",buTotCAfter , buTotCBefore , sum(Q_Exud) , sum(Q_mucil), 
                 sum(soil_source_sol.flatten())*dt,s.bulkMassErrorPlant_abs, s.bulkMassError1ds_abs )
         #raise Exception
-        assert (s.getSolution_(0) == r.soilModel.getSolution_(0)).all()
-        assert min(s.getSolution_(8)) > 0. # idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
+        assert (s.getSolution(0) == r.soilModel.getSolution(0)).all()
+        assert min(s.getSolution(8)) > 0. # idComp 8 is the respiration. if a voxel has [C_8] == 0, is means there were no biochemical reactions.
 
         """ 3b. calculate net fluxes """
-        water_content = np.array(s.getWaterContent_())
+        water_content =comm.bcast( np.array(s.getWaterContent()), root = 0) 
         # print(water_content)
         new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
         s.bulkMassErrorWater_abs = abs(sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes.values())*dt))
@@ -437,7 +396,7 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             print(new_soil_water[cellIds] - (soil_water[cellIds] + np.array(list(soil_fluxes.values()))* dt + outer_R_bc_wat[cellIds]))
             raise Exception
         
-        soil_solute_content_new = np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)])# mol
+        soil_solute_content_new = comm.bcast(np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]), root = 0) # mol
         outer_R_bc_sol = np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
         try:
             assert outer_R_bc_sol.shape == (r.numComp, len(cell_volumes))
@@ -466,14 +425,14 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
         
         r.checkSoilBC(outer_R_bc_wat, outer_R_bc_sol)# check oldSoil + rhizoSource = newSoil - (bulkFlow + bulkReaction )
         # then (bulkFlow + bulkReaction ) sent as 1ds outer BC at next time step.
-        
-        write_file_array("sumdiffSoilData_abs_A", r.sumdiffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
-        write_file_array("maxdiffSoilData_abs_A", r.maxdiffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
-        write_file_array("sumdiffSoilData_rel_A", r.sumdiffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
-        write_file_array("maxdiffSoilData_rel_A", r.maxdiffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
-        write_file_array("diffSoilData_abs_A", r.diffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
-        write_file_array("diffSoilData_rel_A", r.diffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
-        
+        if rank == 0:
+            write_file_array("sumdiffSoilData_abs_A", r.sumdiffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
+            write_file_array("maxdiffSoilData_abs_A", r.maxdiffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
+            write_file_array("sumdiffSoilData_rel_A", r.sumdiffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
+            write_file_array("maxdiffSoilData_rel_A", r.maxdiffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
+            write_file_array("diffSoilData_abs_A", r.diffSoilData_abs, directory_ =r.results_dir)# cumulative (?)
+            write_file_array("diffSoilData_rel_A", r.diffSoilData_rel, directory_ =r.results_dir)# cumulative (?)
+            
         
         try:
             assert s.bulkMassErrorPlant_rel < 1.e-5
@@ -541,8 +500,8 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
             raise Exception
             
         """ remember results ... """
-        sx = s.getSolutionHead_()
-        cc = s.getSolution_(1)  # [kg/m3]
+        sx = s.getSolutionHead()
+        cc = s.getSolution(1)  # [kg/m3]
         if rank == 0:
             sink = np.zeros(sx.shape)
             for k, v in soil_fluxes.items():
@@ -581,5 +540,5 @@ def simulate_const(s, rs, sim_time, dt, kexu, rs_age,repartition, type,Q_plant,
     if rank == 0:
         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, repartition, c_All,c_All1, outer_R_bc_sol, outer_R_bc_wat 
+    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_,  depth_, soil_c_, c_, c_All,c_All1, outer_R_bc_sol, outer_R_bc_wat 
 

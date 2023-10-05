@@ -34,7 +34,8 @@ void init_richards_10cyl(py::module &m, std::string name) {
     using RichardsFoam = Richards10Cyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
    .def(py::init<>())
-   .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+   .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0), 
+													py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
 
    .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)

@@ -1,3 +1,8 @@
+
+[TimeLoop]
+TEnd = 360 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 60 # 10 days [s] 
 [ 1 ]
 [ 1.Component ]
 LiquidDiffusionCoefficient = "1e-08"

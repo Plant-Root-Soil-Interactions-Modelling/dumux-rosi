@@ -28,8 +28,9 @@ public:
     /**
      * Calls parent, additionally turns file output off
      */
-    void initialize(std::vector<std::string> args_, bool verbose = true) override {
-        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose);
+    void initialize(std::vector<std::string> args_, bool verbose = true,
+							bool doMPI = true) override {
+        SolverBase<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose, doMPI);
         this->setParameter("Soil.Output.File", "false");
     }
 
@@ -409,7 +410,8 @@ void init_richards(py::module &m, std::string name) {
     using Richards_ = Richards<Problem, Assembler, LinearSolver>;
 	py::class_<Richards_, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
-   .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+   .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0), 
+													py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("setSource", &Richards_::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("applySource", &Richards_::applySource)
    .def("setCriticalPressure", &Richards_::setCriticalPressure)

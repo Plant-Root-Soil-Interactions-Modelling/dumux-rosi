@@ -21,6 +21,7 @@ import multiprocessing
 from multiprocessing import Process, active_children
 import psutil
 from threading import Thread 
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
 #TODO: adapt to represent better air domain (air flux, co2, h2o, T gradient...
 # soil-air analogy:
@@ -43,6 +44,9 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         self.sim_time = 0.
         self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing a list of values
         self.sources = np.zeros((self.n,))  # [cm3 / cm3]
+        
+    def solve(self, dt, maxDt = None):
+        comm.barrier()
         
     #water
     #get
@@ -90,8 +94,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         pass
     
     #all
-    def solve(self,*arg):
-        print("solve aire segment")
+    #def solve(self,*arg):
+    #    print("solve aire segment")
         
     #shape
     def getDofCoordinates(self):

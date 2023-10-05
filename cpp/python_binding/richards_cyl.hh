@@ -19,8 +19,9 @@ public:
     /**
      * Calls parent, additionally turns gravity off
      */
-    void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true) override {
-    	Richards<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose);
+    void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true,
+							bool doMPI = true) override {
+    	Richards<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose, doMPI);
         this->setParameter("Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem
         this->setParameter("Soil.Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem
     }
@@ -105,7 +106,8 @@ void init_richards_cyl(py::module &m, std::string name) {
     using RichardsFoam = RichardsCyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
    .def(py::init<>())
-   .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+   .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0), 
+													py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
 
    .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)

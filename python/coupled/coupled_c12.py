@@ -1,22 +1,24 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import vtk_plot as vp
-import van_genuchten as vg
-from root_conductivities import *
+import visualisation.vtk_plot as vp
+import functional.van_genuchten as vg
+from functional.root_conductivities import *
 from rhizo_models import plot_transpiration
 
 from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
+import time
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-
+import os
+import signal
 
 def sinusoidal(t):
     return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
@@ -66,7 +68,9 @@ skip = 1
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
-s = RichardsWrapper(RichardsSP())
+
+usemoles = True
+s = RichardsWrapper(RichardsSP(), usemoles)
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
@@ -76,7 +80,16 @@ s.setVGParameters([soil])
 s.setParameter("Newton.EnableChop", "True")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
 s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on, will change the shape of actual transpiration...
-s.initializeProblem()
+
+s.initializeProblem(rank)
+
+print("hello from rank", rank, np.array(s.getCellCenters()))#,np.array(s.getWaterContent()).flatten())
+start_time = timeit.default_timer()
+time.sleep(5)
+os.system("pstree -p")
+os.kill(1, signal.SIGTERM)
+#comm.barrier()
+raise Exception
 s.setCriticalPressure(wilting_point)
 
 """ Initialize xylem model (a) or (b)"""
