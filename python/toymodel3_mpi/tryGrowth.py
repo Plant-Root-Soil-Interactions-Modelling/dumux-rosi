@@ -52,9 +52,8 @@ soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
 sim_time = 1 #154   #  [day]
 # dt_inner = 360 / (24 * 3600)  # time step [day] 20
 
-x_, y_, lai =[],[],[] #evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
-trans_maize = []#evap.get_transpiration(year, sim_time, area, lai, Kc)
-
+x_, y_, lai = evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
+trans_maize = evap.get_transpiration(year, sim_time, area, lai, Kc)
 
 
 """ rhizosphere model parameters """
@@ -72,7 +71,7 @@ mode = "dumux_10c"
 
 """ initialize """
 
-initsim = 5.5
+initsim = 11.5
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
             min_b, max_b, cell_number, type = mode, times = x_, net_inf = y_,
             usemoles = usemoles)
@@ -140,7 +139,7 @@ Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
 dt = 1/24
-simMax = initsim + 1.
+simMax = initsim + 3.
 
 TranspirationCumul = 0
 cell_volumes = s.getCellVolumes_()  # cm3
@@ -170,7 +169,11 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     # make sure that, once a segment is created, it stays in the same soil voxel
     for segid in seg2cell_old.keys():
-        assert seg2cell_old[segid] == seg2cell_new[segid]
+        try:
+            assert seg2cell_old[segid] == seg2cell_new[segid]
+        except:
+            print(seg2cell_old[segid], seg2cell_new[segid])
+            raise Exception
 
     
     repartitionOld = repartition
@@ -237,12 +240,9 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     print("startpm")
     #if i == 1:
     #r.doTroubleshooting = True
-    try:
-        r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
-    except:
-        r.doTroubleshooting = True
-        r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
-        raise Exception
+    
+    r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
+    
     time_plant_cumul += (timeit.default_timer() - start_time_plant)
     
     

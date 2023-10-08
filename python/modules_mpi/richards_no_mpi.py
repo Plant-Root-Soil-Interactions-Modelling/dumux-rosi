@@ -13,6 +13,20 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         super().__init__(base, usemoles)
         self.useMoles = usemoles
 
+    def initialize(self, args_ = [""], verbose = True, doMPI = False):
+        """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
+        print('solverbase_no_mpi:init')
+        self.base.initialize(args_, verbose, doMPI)
+        print('solverbase_no_mpi:init_end')
+        
+    def solve(self, dt:float, maxDt = -1.):
+        """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
+        @param dt      time span [days] 
+        @param mxDt    maximal time step [days] 
+        """
+        print("solveNoMPI")
+        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
@@ -56,6 +70,19 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return  (self.base.getDofIndices())
 
+    def getCellSurfacesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map((self.base.getCellSurfacesCyl()), 2) * 1.e4  # m3 -> cm3
+
+    def getCellVolumesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map((self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
+
+    def getCellCenters(self):
+        """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
+        self.checkInitialized()
+        return self._map((self.base.getCellCenters()), 2) * 100.  # m -> cm
+
     def getSolution(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
@@ -79,29 +106,42 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
-    def _map(self, x, type, dtype=np.float64):
+    def _map(self, x, idType, dtype=np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
-        @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
+        @param idType 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
-        if type == 0:  # auto (dof)
+        if idType == 0:  # auto (dof)
             indices = (self.base.getDofIndices())
-        elif type == 1:  # points
+        elif idType == 1:  # points
             indices = (self.base.getPointIndices())
-        elif type == 2:  # cells
+        elif idType == 2:  # cells
             indices = (self.base.getCellIndices())
         else:
-            raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
-        if indices:  # only for rank 0 not empty
-            assert len(indices) == len(x), "_map: indices and values have different length"
+            raise Exception('PySolverBase._map: idType must be 0, 1, or 2.')
+        if len(indices) >0:  # only for rank 0 not empty
+            try:
+                assert len(indices) == len(x), "_map: indices and values have different length"
+            except:
+                print(len(indices) , len(x), indices)
+                raise Exception
             ndof = max(indices) + 1
-            if isinstance(x[0], list):
-                m = len(x[0])
-            else:
-                m = 1
-            p = np.zeros((ndof, m), dtype=dtype)
-            for i in range(0, len(indices)):  #
-                p[indices[i],:] = np.array(x[i], dtype=dtype)
-            return np.array(p).flatten()
+            try:
+                if isinstance(x[0], (list,type(np.array([])))) :
+                    m = len(x[0])
+                    p = np.zeros((ndof, m), dtype = dtype)
+                    for i in range(0, len(indices)):  #
+                        p[indices[i],:] = np.array(x[i], dtype = dtype)
+                    if m == 1:
+                        p = p.flatten()
+                else:
+                    p = np.zeros(ndof, dtype = dtype)
+                    for i in range(0, len(indices)):  #
+                        p[indices[i]] = np.array(x[i], dtype = dtype)
+            except:
+                print('indices',indices, 'x',x)
+                print('x[0]',x[0])
+                raise Exception
+            return p
         else:
-            return 0
+            return np.array([])
 

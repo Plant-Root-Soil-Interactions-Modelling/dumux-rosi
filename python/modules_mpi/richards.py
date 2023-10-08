@@ -1,8 +1,9 @@
 from solverbase import SolverWrapper
 
 import numpy as np
-from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
-
+from mpi4py import MPI; 
+comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
+max_rank = comm.Get_size()
 
 class RichardsWrapper(SolverWrapper):
     """ 
@@ -364,11 +365,12 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return (self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0)).flatten()
+        return (self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0))#.flatten()
 
     def getSolutionHead_(self, eqIdx = 0):
         """ no mpi version of getSolutionHead() """
         self.checkInitialized()
+        assert max_rank == 1
         return np.array(self.base.getSolutionHead(eqIdx))
 
     def getSolutionHeadAt(self, gIdx, eqIdx = 0):
@@ -389,26 +391,26 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        return (self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2)).flatten()
+        return (self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2))#.flatten()
 
     def getWaterContent_(self):
-        """no mpi version of getWater
-        assert self.dimWorld == 3Content() """
+        """no mpi version of getWaterContent() """
         self.checkInitialized()
+        assert max_rank == 1
         return np.array(self.base.getWaterContent())
 
     def getWaterVolume(self):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
-        assert self.dimWorld == 3
+        assert self.dimWorld != 1
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
         
     def getWaterVolumesCyl(self, length, verbose = False):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
-        assert self.dimWorld == 1
+        assert self.dimWorld != 3
         vols = self.getCellSurfacesCyl() * length #cm3 scv
-        watCont = self.getWaterContent().flatten() # cm3 wat/cm3 scv
+        watCont = self.getWaterContent()#.flatten() # cm3 wat/cm3 scv
         if(verbose):
             print("getWaterVolumesCyl")
             print(length)
@@ -420,27 +422,23 @@ class RichardsWrapper(SolverWrapper):
     def getWaterVolumes(self):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
-        vols = self.getCellVolumes().flatten() #cm3 scv 
-        watCont = self.getWaterContent().flatten()  # cm3 wat/cm3 scv
+        vols = self.getCellVolumes()#.flatten() #cm3 scv 
+        watCont = self.getWaterContent()#.flatten()  # cm3 wat/cm3 scv
         return np.multiply(vols , watCont  )
     
     def getTotCContent(self):
-        assert self.dimWorld == 3
-        vols = self.getCellVolumes().flatten() #cm3 scv   
+        assert self.dimWorld != 1
+        vols = self.getCellVolumes()#.flatten() #cm3 scv   
         totC = 0
         for i in range(self.numComp):
             isDissolved = (i < 2)
             totC += self.getContent(i+1, isDissolved)
-        C_S_W = np.array(self.getSolution_(1)).flatten()*self.molarDensityWat_m3
+        C_S_W = self.molarDensityWat_m3*np.array(self.getSolution(1))#.flatten()
         
         init = (self.simTime == 0.)
-        if True:#init:
-            css1 = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp)) * self.f_sorp
-        else:
-            # ATT! give extra value (on vertices and not on cell center?). Better leave aside fore now.
-            css1 = np.array(self.base.getCSS1_out()).flatten()/1e6 #mol C / cm3 scv
-            assert css1[-1] == 0.
-            css1 = css1[:-1]
+        
+        css1 = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp)) * self.f_sorp
+
         totC += css1*vols
         try:
             assert np.array(totC).shape == (self.getCellCenters().shape[0],)
@@ -451,9 +449,9 @@ class RichardsWrapper(SolverWrapper):
         
     
     def getContentCyl(self,idComp, isDissolved, length ):
-        assert self.dimWorld == 1
+        assert self.dimWorld != 3
         vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
-        C_ = self.getSolution(idComp).flatten() # mol/mol or g/g 
+        C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
         
         #print(idComp, isDissolved, vols, C_,self.bulkDensity_m3, self.molarDensityWat_m3)
         
@@ -462,7 +460,7 @@ class RichardsWrapper(SolverWrapper):
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
             return np.multiply(vols , C_  ) # mol
             
-        watCont = self.getWaterContent().flatten() # m3 wat/m3 scv
+        watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
         if self.useMoles:
             C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
         #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
@@ -475,7 +473,7 @@ class RichardsWrapper(SolverWrapper):
             return self.bulkDensity_m3
             
     def getConcentration(self,idComp, isDissolved):
-        C_ = self.getSolution(idComp).flatten()  # mol/mol wat or mol/mol scv
+        C_ = self.getSolution(idComp)#.flatten()  # mol/mol wat or mol/mol scv
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
@@ -485,14 +483,14 @@ class RichardsWrapper(SolverWrapper):
         return C_ /1e6 #mol/cm3 scv
         
     def getContent(self,idComp, isDissolved):
-        assert self.dimWorld == 3
-        vols = self.getCellVolumes().flatten() / 1e6 #m3 scv            
-        C_ = self.getSolution(idComp).flatten()  # mol/mol wat or mol/mol scv
+        assert self.dimWorld != 1
+        vols = (1/  1e6)*self.getCellVolumes()#.flatten() #m3 scv            
+        C_ = self.getSolution(idComp)#.flatten()  # mol/mol wat or mol/mol scv
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
             return np.multiply(vols , C_  ) 
-        watCont = self.getWaterContent().flatten() # m3 wat/m3 scv
+        watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
         if self.useMoles:
             C_ *= self.molarDensityWat_m3 # mol/m3 wat
             
@@ -502,6 +500,7 @@ class RichardsWrapper(SolverWrapper):
     def setSolution_(self, sol, eqIdx = 1):
         """nompi version of  """
         self.checkInitialized()
+        assert max_rank == 1
         return np.array(self.base.setSolution(sol, eqIdx))
         
     def getVeclocity1D(self):

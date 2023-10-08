@@ -4,7 +4,7 @@
 import matplotlib; matplotlib.use('agg')
 import sys;
 sys.path.append("/data/");
-sys.path.append("../modules/");
+sys.path.append("../modules_mpi/");
 sys.path.append("../../../CPlantBox/");
 sys.path.append("../../../CPlantBox/src")
 import plantbox as pb  # CPlantBox
@@ -110,7 +110,7 @@ Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
 dt = 1/24
-simMax = initsim + dt
+simMax = initsim + 1
 
 TranspirationCumul = 0
 cell_volumes = s.getCellVolumes()  # cm3
@@ -182,7 +182,9 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     weatherX = scenario.weather(rs_age) 
     r.Qlight = weatherX["Qlight"]
     # send soil concentration to plant:
+    print('get get_inner_heads')
     rsx = rs.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
+    print('get get_inner_solutes')
     r.Csoil_seg = rs.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
     
     start_time_plant = timeit.default_timer()
@@ -322,6 +324,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     else:
         Q_Exud_i = None
         Q_Mucil_i = None
+    print('share plant data')
     Q_Exud_i = comm.bcast(Q_Exud_i, root = 0) 
     Q_Mucil_i = comm.bcast(Q_Mucil_i, root = 0) 
     r.psiXyl = comm.bcast(r.psiXyl, root = 0) 
@@ -343,6 +346,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     Q_Exud_inflate += sum(Q_Exud_i); Q_Mucil_inflate += sum(Q_Mucil_i)
     
+    print('to the inner loop')
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c, c_All,c_All1, net_sol_flux, net_flux = cyl3.simulate_const(s, 
                                             r,  dt, dt_inner, rs_age, 
                                             demoType = mode, Q_plant=[Q_Exud_i, Q_Mucil_i], plantType = "RS", r= rs,
