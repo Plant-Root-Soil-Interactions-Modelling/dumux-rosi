@@ -22,17 +22,19 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
-results_dir="./results/parallel/"
-if not os.path.exists(results_dir):
-    os.makedirs(results_dir)
-else:
-    test = os.listdir(results_dir)
-    for item in test:
-        try:
-            os.remove(results_dir+item)
-        except:
-            pass
+results_dir="./results/parallel"+str(max_rank)+"/"
 
+if rank == 0:
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    else:
+        test = os.listdir(results_dir)
+        for item in test:
+            try:
+                os.remove(results_dir+item)
+            except:
+                pass
+comm.barrier()
 """
  Cylindric rhizosphere models, C exudate from finite volumes
 """
@@ -124,18 +126,19 @@ time_plant_cumul = 0
 Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
 rs.results_dir = results_dir
 #testWeather = [scenario.weather(testT/100.)["Qlight"]  for testT in range(100)]
-
+static_plant = False
+s.buTotCAfter = 0
+s.buTotCBefore = 0
 print('start loop', rank)
+
 while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
-
-
+    
     rs_age += dt
     print("Day", rs_age)
     seg2cell_old = rs.seg2cell
     Ntbu = Nt
     
-    print('simulating again' ,rank)
-    if rank == 0:
+    if (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)):
         rs.simulate(dt)#(rank == 0))  # because of dumux.pick(), blocks if I do not let all threads do the simulate.
         seg2cell_new = rs.seg2cell
         
@@ -150,46 +153,44 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
             print(cell2segVals)
             print(len(cell2segVals), len(set(cell2segVals)))
             raise Exception
+    # if (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)):
+        # cellIds = np.fromiter(rs.cell2seg.keys(), dtype=int)
+        # cellIds =  np.array([x for x in cellIds if x >= 0])
+        # airSegs = np.array(list(set(np.concatenate((rs.cell2seg[-1],np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
+        # periSegs = np.array([i for i in range(len(rs.organTypes)) if not(i in airSegs) ])
+        # outer_radii_all = np.array(rs.segOuterRadii(type = 0))
+        # outer_radii = outer_radii_all[periSegs]
+        # lengths = np.array(rs.segLength())[periSegs]
+        # radii = np.array(rs.radii)[periSegs]
+        # totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
+        # totVolS = sum( CellVolumes[cellIds])
+        # assert abs((totVolR-totVolS)/totVolS*100) < 1e-12
+        # print('totV rhizo and soil', totVolR,totVolS)
+        # for cid in cellIds:
+            # periSegs = np.array([i for i in rs.cell2seg[cid] if (np.array(rs.organTypes)[i] == 2) ])
+            # outer_radii = outer_radii_all[periSegs]
+            # lengths = np.array(rs.segLength())[periSegs]
+            # radii = np.array(rs.radii)[periSegs]
+            # totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
+            # totVolS =CellVolumes[cid]
+            # print('cid rhizo and soil', cid,totVolR,totVolS, periSegs, lengths, outer_radii, radii)
     
-    CellVolumes = s.getCellVolumes()
-    if rank == 0:
-        cellIds = np.fromiter(rs.cell2seg.keys(), dtype=int)
-        cellIds =  np.array([x for x in cellIds if x >= 0])
-        airSegs = np.array(list(set(np.concatenate((rs.cell2seg[-1],np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
-        periSegs = np.array([i for i in range(len(rs.organTypes)) if not(i in airSegs) ])
-        outer_radii_all = np.array(rs.segOuterRadii(type = 0))
-        outer_radii = outer_radii_all[periSegs]
-        lengths = np.array(rs.segLength())[periSegs]
-        radii = np.array(rs.radii)[periSegs]
-        totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
-        totVolS = sum( CellVolumes[cellIds])
-        assert abs((totVolR-totVolS)/totVolS*100) < 1e-12
-        print('totV rhizo and soil', totVolR,totVolS)
-        for cid in cellIds:
-            periSegs = np.array([i for i in rs.cell2seg[cid] if (np.array(rs.organTypes)[i] == 2) ])
-            outer_radii = outer_radii_all[periSegs]
-            lengths = np.array(rs.segLength())[periSegs]
-            radii = np.array(rs.radii)[periSegs]
-            totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
-            totVolS =CellVolumes[cid]
-            print('cid rhizo and soil', cid,totVolR,totVolS, periSegs, lengths, outer_radii, radii)
-        
-    comm.barrier()
     rs.update()
-
+    
+    
+    
     comm.barrier()
     
     weatherX = scenario.weather(rs_age) 
     r.Qlight = weatherX["Qlight"]
     # send soil concentration to plant:
-    print('get get_inner_heads')
     rsx = rs.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
-    print('get get_inner_solutes')
     r.Csoil_seg = rs.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
     
     start_time_plant = timeit.default_timer()
     comm.barrier()
-    if rank == 0:
+    
+    if (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)):
         assert min(r.Csoil_seg ) >= 0.
         try:
             r.solve_photosynthesis(sim_time_ = rs_age, 
@@ -227,7 +228,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     time_plant_cumul += (timeit.default_timer() - start_time_plant)
     
     
-    if rank == 0:
+    if (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)):
         Nt = len(rs.nodes)
         if r.withInitVal and (len(Q_ST_init) ==0) :
             Q_ST_init = np.array(r.Q_init[0:Nt])/1e3
@@ -291,19 +292,19 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                      (np.array(r.Csoil_seg ) == np.array(r.Csoil_node)[1:]).all())
             raise Exception
                 
-        Q_Exud_i = np.array( Q_Exud_i[1:] ) #from nod to semgment
-        Q_Mucil_i = np.array(Q_Mucil_i[1:])
+        Q_Exud_i_seg = np.array( Q_Exud_i[1:] ) #from nod to semgment
+        Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])
         
         airSegsId = np.array(np.where(np.array([isinstance(cc, AirSegment) for cc in rs.cyls]))[0])
         try:
-            assert (Q_Exud_i[airSegsId] == 0).all()
-            assert (Q_Mucil_i[airSegsId] == 0).all()
+            assert (Q_Exud_i_seg[airSegsId] == 0).all()
+            assert (Q_Mucil_i_seg[airSegsId] == 0).all()
             assert (np.array(r.k_mucil_)[airSegsId+1] == 0).all()
             assert (np.array(r.Q_Exudmax)[airSegsId+1] == 0).all()
         except:
-            print("Q_Exud_i", Q_Exud_i[airSegsId] )
-            print("Q_Mucil_i", Q_Mucil_i,Q_Mucil,Q_Mucilbu,airSegsId)
-            print("Q_Mucil_i", Q_Mucil_i[airSegsId], Q_Mucil[airSegsId+1], Q_Mucilbu[airSegsId+1])
+            print("Q_Exud_i_seg", Q_Exud_i_seg[airSegsId] )
+            print("Q_Mucil_i", Q_Mucil_i_seg,Q_Mucil,Q_Mucilbu,airSegsId)
+            print("Q_Mucil_i", Q_Mucil_i_seg[airSegsId], Q_Mucil[airSegsId+1], Q_Mucilbu[airSegsId+1])
             print("Csoil_seg", np.array(r.Csoil_seg)[airSegsId])
             print("k_mucil_",r.k_mucil_)#,np.array(r.k_mucil_).size() ,Q_Exud.size())
             print("Q_Exudmax",np.array(r.Q_Exudmax)[airSegsId+1])
@@ -315,18 +316,18 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         # Q_Exud_i[np.where(Q_Exud_i > 0.)] = 1.
         #r.outputFlux = np.array(r.outputFlux)/ 10
         try:
-            assert min(Q_Exud_i) >= 0.
+            assert min(Q_Exud_i_seg) >= 0.
         except:
-            print(C_ST, r.Csoil_node, Q_Exud_i,Q_Exud)
+            print(C_ST, r.Csoil_node, Q_Exud_i_seg,Q_Exud)
             raise Exception
         
-        print("sum exud", sum(Q_Exud_i), sum(Q_Mucil_i))
-    else:
-        Q_Exud_i = None
-        Q_Mucil_i = None
-    print('share plant data')
-    Q_Exud_i = comm.bcast(Q_Exud_i, root = 0) 
-    Q_Mucil_i = comm.bcast(Q_Mucil_i, root = 0) 
+        print("sum exud", sum(Q_Exud_i_seg), sum(Q_Mucil_i_seg))
+    elif rank > 0:
+        Q_Exud_i_seg = None
+        Q_Mucil_i_seg = None
+        
+    Q_Exud_i_seg = comm.bcast(Q_Exud_i_seg, root = 0) 
+    Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) *0
     r.psiXyl = comm.bcast(r.psiXyl, root = 0) 
     r.outputFlux = comm.bcast(r.outputFlux, root = 0) 
     
@@ -344,30 +345,32 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     else:
         raise("unknown demoType")
     
-    Q_Exud_inflate += sum(Q_Exud_i); Q_Mucil_inflate += sum(Q_Mucil_i)
+    Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
     
     print('to the inner loop')
     psi_x, psi_s, sink, x, y, psi_s2, vol_, surf_,  depth_,soil_c, c, c_All,c_All1, net_sol_flux, net_flux = cyl3.simulate_const(s, 
                                             r,  dt, dt_inner, rs_age, 
-                                            demoType = mode, Q_plant=[Q_Exud_i, Q_Mucil_i], plantType = "RS", r= rs,
+                                            demoType = mode, Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg], plantType = "RS", r= rs,
                                             wilting_point = wilting_point,
                                             outer_R_bc_sol = net_sol_flux, 
-                                            outer_R_bc_wat = net_flux)
+                                            outer_R_bc_wat = net_flux,
+                                            results_dir = results_dir)
     
     
     time_rhizo_cumul += r.time_rhizo_i
     time_3ds_cumul += r.time_3ds_i
     
-    write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
-    write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
-    for i in range(rs.numFluidComp):
-        write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
-    for i in range(rs.numFluidComp, rs.numComp):
-        write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
-    for i in range(rs.numComp):
-        write_file_array("Soil_old_solute_conc"+str(i+1), rs.soilContent_old[i]/(rs.soilvolumes_old[i]*1e6) , directory_ =results_dir) 
-    
-    write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+    if False:
+        write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
+        write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
+        for i in range(rs.numFluidComp):
+            write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
+        for i in range(rs.numFluidComp, rs.numComp):
+            write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+        for i in range(rs.numComp):
+            write_file_array("Soil_old_solute_conc"+str(i+1), rs.soilContent_old[i]/(rs.soilvolumes_old[i]*1e6) , directory_ =results_dir) 
+        
+        write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
     buTotCAfter = sum(s.getTotCContent())   
     buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
     
@@ -389,61 +392,62 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         # print( "sum(Q_Exud) , sum(Q_Mucil)", sum(Q_Exud) , sum(Q_Mucil))
         # print(s.bulkMassErrorWaterCumul_rel, s.bulkMassErrorCumul_rel ,s.bulkMassErrorWaterCumul_abs, s.bulkMassErrorCumul_abs )
         # raise Exception
-            
-    write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
-                        time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)#cumulative
-    # write_file_float("partsComputeTime",partsComputeTime)#not cumulative
-    write_file_float("time", rs_age, directory_ =results_dir)
-    write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
-    write_file_float("Q_Exud_i", sum(Q_Exud_i), directory_ =results_dir)
-    write_file_float("Q_Mucil_i", sum(Q_Mucil_i), directory_ =results_dir)
-    write_file_float("Q_Exud_tot", Q_Exud_inflate, directory_ =results_dir)
-    write_file_float("Q_Mucil_tot", Q_Mucil_inflate, directory_ =results_dir)
     
-    if rank == 0:
-        #absolute and relative (%) error
-        write_file_array("errorsPlant", np.array([error_st_abs,error_st_rel,#cumulative
-                                            errLeuning_abs]), directory_ =results_dir) #not cumulative
-        write_file_array("errorsBulkSoil", np.array([s.bulkMassErrorPlant_abs, s.bulkMassErrorPlant_rel, #not cumulative 
-                                            s.bulkMassError1ds_abs, s.bulkMassError1ds_rel, 
-                                            s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
-                                            s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
-                                            s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir)#cumulative
-        write_file_array("errorMassRhizo", np.array([rs.rhizoMassCError_abs, rs.rhizoMassCError_rel,
-                                                    rs.rhizoMassWError_abs, rs.rhizoMassWError_rel]), directory_ =results_dir)# not cumulative
-        write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir)
-        write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir)# cumulative (?)
+    if True:        
+        write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
+                            time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)#cumulative
+        # write_file_float("partsComputeTime",partsComputeTime)#not cumulative
+        write_file_float("time", rs_age, directory_ =results_dir)
+        write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
+        write_file_float("Q_Exud_i", sum(Q_Exud_i_seg), directory_ =results_dir)
+        write_file_float("Q_Mucil_i", sum(Q_Mucil_i_seg), directory_ =results_dir)
+        write_file_float("Q_Exud_tot", Q_Exud_inflate, directory_ =results_dir)
+        write_file_float("Q_Mucil_tot", Q_Mucil_inflate, directory_ =results_dir)
         
-        write_file_array("sumdiffSoilData_abs", rs.sumdiffSoilData_abs, directory_ =results_dir)# cumulative (?)
-        write_file_array("maxdiffSoilData_abs", rs.maxdiffSoilData_abs, directory_ =results_dir)# cumulative (?)
-        write_file_array("sumdiffSoilData_rel", rs.sumdiffSoilData_rel, directory_ =results_dir)# cumulative (?)
-        write_file_array("maxdiffSoilData_rel", rs.maxdiffSoilData_rel, directory_ =results_dir)# cumulative (?)
-        write_file_array("diffSoilData_abs", rs.diffSoilData_abs, directory_ =results_dir)# cumulative (?)
-        write_file_array("diffSoilData_rel", rs.diffSoilData_rel, directory_ =results_dir)# cumulative (?)
-        
-        write_file_array("trans", r.Ev, directory_ =results_dir)
-        write_file_array("transrate",r.Jw, directory_ =results_dir)
-        write_file_array("Q_ST", Q_ST, directory_ =results_dir)#mmol
-        write_file_array("C_ST", C_ST, directory_ =results_dir)#mmol/cm3
-        write_file_array("C_meso", C_meso, directory_ =results_dir)
-        write_file_array("Q_meso", Q_meso, directory_ =results_dir)
-        
-        
-        write_file_array("Q_S_ST", Q_S_ST, directory_ =results_dir)#mmol
-        write_file_array("C_S_ST", C_S_ST, directory_ =results_dir)#mmol/cm3
-        write_file_array("C_S_meso", C_S_meso, directory_ =results_dir)
-        write_file_array("Q_S_meso", Q_S_meso, directory_ =results_dir)
-        
-        write_file_array("Q_Rm", Q_Rm, directory_ =results_dir)
-        write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
-        write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
-        write_file_array("psiXyl", r.psiXyl, directory_ =results_dir)
-        write_file_array("Fpsi", r.Fpsi, directory_ =results_dir)
-        write_file_array("fw", r.fw, directory_ =results_dir)
-        write_file_array("gco2", r.gco2, directory_ =results_dir)
-        write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
-        write_file_float("Q_Ag", Q_in, directory_ =results_dir)
-        write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
+        if rank == 0:
+            #absolute and relative (%) error
+            write_file_array("errorsPlant", np.array([error_st_abs,error_st_rel,#cumulative
+                                                errLeuning_abs]), directory_ =results_dir) #not cumulative
+            write_file_array("errorsBulkSoil", np.array([s.bulkMassErrorPlant_abs, s.bulkMassErrorPlant_rel, #not cumulative 
+                                                s.bulkMassError1ds_abs, s.bulkMassError1ds_rel, 
+                                                s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
+                                                s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
+                                                s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir)#cumulative
+            write_file_array("errorMassRhizo", np.array([rs.rhizoMassCError_abs, rs.rhizoMassCError_rel,
+                                                        rs.rhizoMassWError_abs, rs.rhizoMassWError_rel]), directory_ =results_dir)# not cumulative
+            write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir)
+            write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir)# cumulative (?)
+            
+            write_file_array("sumdiffSoilData_abs", rs.sumdiffSoilData_abs, directory_ =results_dir)# cumulative (?)
+            write_file_array("maxdiffSoilData_abs", rs.maxdiffSoilData_abs, directory_ =results_dir)# cumulative (?)
+            write_file_array("sumdiffSoilData_rel", rs.sumdiffSoilData_rel, directory_ =results_dir)# cumulative (?)
+            write_file_array("maxdiffSoilData_rel", rs.maxdiffSoilData_rel, directory_ =results_dir)# cumulative (?)
+            write_file_array("diffSoilData_abs", rs.diffSoilData_abs, directory_ =results_dir)# cumulative (?)
+            write_file_array("diffSoilData_rel", rs.diffSoilData_rel, directory_ =results_dir)# cumulative (?)
+            
+            write_file_array("trans", r.Ev, directory_ =results_dir)
+            write_file_array("transrate",r.Jw, directory_ =results_dir)
+            write_file_array("Q_ST", Q_ST, directory_ =results_dir)#mmol
+            write_file_array("C_ST", C_ST, directory_ =results_dir)#mmol/cm3
+            write_file_array("C_meso", C_meso, directory_ =results_dir)
+            write_file_array("Q_meso", Q_meso, directory_ =results_dir)
+            
+            
+            write_file_array("Q_S_ST", Q_S_ST, directory_ =results_dir)#mmol
+            write_file_array("C_S_ST", C_S_ST, directory_ =results_dir)#mmol/cm3
+            write_file_array("C_S_meso", C_S_meso, directory_ =results_dir)
+            write_file_array("Q_S_meso", Q_S_meso, directory_ =results_dir)
+            
+            write_file_array("Q_Rm", Q_Rm, directory_ =results_dir)
+            write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
+            write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
+            write_file_array("psiXyl", r.psiXyl, directory_ =results_dir)
+            write_file_array("Fpsi", r.Fpsi, directory_ =results_dir)
+            write_file_array("fw", r.fw, directory_ =results_dir)
+            write_file_array("gco2", r.gco2, directory_ =results_dir)
+            write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
+            write_file_float("Q_Ag", Q_in, directory_ =results_dir)
+            write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
         try:
             assert abs(s.bulkMassErrorPlant_rel)  < 1e-5
         except:
@@ -453,7 +457,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                                             s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]))
             print("\n\n\n")
             raise Exception
-        if True :
+        if rank == 0 :
             print("\n\n\n\t\tat ", int(np.floor(rs_age)),"d", int((rs_age%1)*24),"h",  round(r.Qlight *1e6),"mumol m-2 s-1")
             print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(error_st_abs, error_st_rel))
             print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(errLeuning_abs))
@@ -462,9 +466,9 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
             print('Q_X (mmol Suc): \n\tST   {:.2e}\tmeso {:5.2e}\tin   {:5.2e}'.format(sum(Q_ST), sum(Q_meso), Q_in))
             print('\tRm   {:.2e}\tGr   {:.2e}\tExud {:5.2e}'.format(sum(Q_Rm), sum(Q_Gr), sum(Q_Exud)))
             
-        if min(C_ST) < 0.0:
-            print("min(C_ST) < 0.0", min(C_ST),np.mean(C_ST),max(C_ST))
-            raise Exception
+            if min(C_ST) < 0.0:
+                print("min(C_ST) < 0.0", min(C_ST),np.mean(C_ST),max(C_ST))
+                raise Exception
             
             
         psi_x_.extend(psi_x) #[cm]
@@ -485,6 +489,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         
 
 """ output """
+print('finished loop, get images')
 sizeSoilCell = rs.soilModel.getCellVolumes()
 rs.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
                                  sourceSol = np.full((rs.numComp, len(sizeSoilCell)),0.), # mol/day

@@ -114,7 +114,7 @@ public:
 		// }
 
 			//auto& mpiHelper = Dune::FakeMPIHelper::instance(argc, argv);// Dune::MPIHelper::instance(argc, argv);
-			auto& mpiHelper = Dune::FakeMPIHelper::instance(argc, argv);// Dune::MPIHelper::instance(argc, argv);
+			auto& mpiHelper = Dune::MPIHelper::instance(argc, argv);
 			maxRank = mpiHelper.size();
 			rank = mpiHelper.rank();
 
@@ -124,7 +124,10 @@ public:
 			}
 				std::cout<<"mpiHelper::isFake "<<Dune::MPIHelper::isFake<<" " //Dune::FakeMPIHelper::isFake<<" "<<Dune::MPIHelper::isFake<<" size "
 				<<Dune::MPIHelper::getCollectiveCommunication().size()<<" doMPI "<<doMPI<<std::endl;
+			if(doMPI)
+			{
 			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+			}
 		// }else{
 			// if (verbose) { // even if we have MPI, run model sequentially.
 				// std::cout << "\n" << toString() << "\n" << std::flush; // add my story

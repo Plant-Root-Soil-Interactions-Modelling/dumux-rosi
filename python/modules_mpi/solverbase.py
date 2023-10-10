@@ -203,7 +203,7 @@ class SolverWrapper():
         self.checkInitialized()
         return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root = 0)), 0)
 
-    def getAvgDensity(self):
+    def getAvgDensity_(self):
         """nompi version of  """
         self.checkInitialized()
         return np.array(self.base.getAvgDensity())

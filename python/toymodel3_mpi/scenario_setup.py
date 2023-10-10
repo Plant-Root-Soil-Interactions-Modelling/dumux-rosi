@@ -51,6 +51,18 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 
+def write_file_float(name, data, directory_):
+    if rank == 0:
+        name2 = directory_+ name+ '.txt'
+        with open(name2, 'a') as log:
+            log.write(repr( data)  +'\n')
+        
+def write_file_array(name, data, space =",", directory_ ="./results/" ):
+    if rank == 0:
+        name2 = directory_+ name+ '.txt'
+        with open(name2, 'a') as log:
+            log.write(space.join([num for num in map(str, data)])  +'\n')
+
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
         
@@ -69,7 +81,7 @@ def maize_SPP(soil_= "loam"):
     soil = vg_SPP(i)
     min_b = [-5., -5, -20.] 
     max_b = [5., 5, 0.] 
-    cell_number = [2, 2, 10]#[5, 5, 20]
+    cell_number = [4,4,5]#[4, 4, 4]#
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -185,6 +197,11 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     unitConversion = 1e3
     CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
+    # s.ICcc = np.array([C_S *unitConversion,
+                        # 0,
+                        # 0,0,0,0,
+                        # CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
+        
     s.ICcc = np.array([C_S *unitConversion,
                         1. *unitConversion,
                         C_S/10* unitConversion,
@@ -323,14 +340,37 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.ddt = 1.e-5  # [day] initial Dumux time step
     
     
-    solute_conc = np.array(s.getSolution_(1))
+    solute_conc = np.array(s.getSolution(1))
     # print( sum(solute_conc))
-    try:
-        assert min(solute_conc) >=0
-    except:
-        print("soil_sol_fluxes", solute_conc)
-        print("min(solute_conc)",min(solute_conc))
-        raise Exception
+    if rank == 0:
+        try:
+            assert min(solute_conc) >=0
+        except:
+            print("soil_sol_fluxes", solute_conc)
+            print("min(solute_conc)",min(solute_conc))
+            raise Exception
+        
+    numCellThread = len(s.base.getWaterContent())
+    numCell =  comm.bcast(len( s.getWaterContent()), root = 0)
+    
+    numCellThread_tot = sum(comm.bcast( comm.gather(numCellThread, root= 0), root = 0))
+    #print('cellthread',comm.bcast( comm.gather(numCellThread, root= 0), root = 0),numCell)
+    #print( numCellThread_tot,numCell)
+    if numCellThread_tot >= numCell*2:
+        print('too many threads for  the number of cells: ,',numCellThread_tot,' >= 2*',numCell,' Will cause computing errors')
+
+    #print('getWaterContent', rank, s.getWaterContent())
+    #write_file_array('getWaterContent',data= s.getWaterContent(), space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
+    #raise Exception
+    #print('getDofIndices',rank, s.getDofIndices())
+    #print('getDofCoordinates',rank, s.getDofCoordinates())
+    #print('getCellCenters',rank, s.getCellCenters())
+    #print('getPoints',rank, s.getPoints())
+    #print('getCellIndices',rank,s.base.getCellIndices(),s._flat0(comm.gather(s.base.getCellIndices(), root = 0)))
+    #print('getPointIndices',rank,s._flat0(comm.gather(s.base.getPointIndices(), root = 0)))
+    #print('getDofIndices',rank,s.base.getDofIndices(),s._flat0(comm.gather(s.base.getDofIndices(), root = 0)))
+    
+    
     # min_b = np.array(min_b)
     # max_b = np.array(max_b)
     # cell_number_ = np.array(cell_number_)
@@ -670,17 +710,6 @@ def div0f(a, b, c):    # function to avoid division by 0
     else:
         return a/c
 
-def write_file_float(name, data, directory_):
-    if rank == 0:
-        name2 = directory_+ name+ '.txt'
-        with open(name2, 'a') as log:
-            log.write(repr( data)  +'\n')
-        
-def write_file_array(name, data, space =",", directory_ ="./results/" ):
-    if rank == 0:
-        name2 = directory_+ name+ '.txt'
-        with open(name2, 'a') as log:
-            log.write(space.join([num for num in map(str, data)])  +'\n')
             
 def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,  depth_,  
                     dist, con, l, conc = None, c_ = None, directory ="./results/"):#krs_,

@@ -396,7 +396,7 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
         self.checkInitialized()
-        assert max_rank == 1
+        #assert max_rank == 1
         return np.array(self.base.getWaterContent())
 
     def getWaterVolume(self):
