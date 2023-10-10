@@ -143,8 +143,16 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             ns = len(self.seg_length)
             dcyl = int(np.floor(ns /  max_rank))
             repartition = np.array([dcyl for i in range( max_rank)])
-            repartition[ max_rank -1] += ns - max_rank * dcyl #residual
+            residual = ns - max_rank * dcyl 
+            repartition[:residual] += 1 # perfect repartition 
+            repartitionDiff =  repartition - self.repartitionOld
+            
+            #repartition[ max_rank -1] += ns - max_rank * dcyl #residual
             self.toAdd = repartition - self.repartitionOld
+            print('parsing plant data_0', rank, self.toAdd,repartition , self.repartitionOld,'repartitionDiff',repartitionDiff, ns, self.nsOld, sum(self.toAdd), len(self.radii))
+            if (min(repartitionDiff) <0.) :
+                print('min(repartitionDiff)',min(repartitionDiff))
+                raise Exception
             self.repartitionOld = repartition
             self.organTypes =np.array( self.organTypes)
             assert sum(repartition) == ns
@@ -162,6 +170,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.organTypesArray =np.array( comm.bcast(self.organTypes, root = 0)   )
         self.organTypesArray =np.array( self.organTypesArray)
         self.rhizoVol = (self.outer_radii**2 - np.array(self.radii)**2)*np.pi*self.seg_length
+        print('parsing plant data', rank, self.toAdd , len(self.seg_length), self.nsOld, sum(self.toAdd), len(self.radii))
         
         
     def update(self):
@@ -279,7 +288,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         volLeftOver,     #m3
                         cellIds):   
         theta_leftOver = np.array([watVol_leftover[idvol]/vol if vol > 0 else np.nan for idvol, vol in enumerate(volLeftOver) ])
-        print('get_XX_leftover_AA', rank, watVol_leftover, volLeftOver)
+        #print('get_XX_leftover_AA', rank, watVol_leftover, volLeftOver)
         lowTheta = np.where(theta_leftOver <self.vg_soil.theta_R )
         if len(volLeftOver[lowTheta]) > 0:
             assert max(volLeftOver[lowTheta]) < 1e-13 # low theta, no new segments in the soil voxel
@@ -287,11 +296,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if len(volLeftOver[highTheta]) > 0:
             assert max(volLeftOver[highTheta]) < 1e-13 # low theta, no new segments in the soil voxel
         correctTheta = np.where(((theta_leftOver <= self.vg_soil.theta_S) & (theta_leftOver >= self.vg_soil.theta_R)))
-        print('get_XX_leftover_A', rank, theta_leftOver, correctTheta)
+        #print('get_XX_leftover_A', rank, theta_leftOver, correctTheta)
         XX_leftover = np.full(theta_leftOver.shape, np.nan)
         if len(theta_leftOver[correctTheta]) > 0:
             try:
-                print('get_XX_leftover_B', rank,np.array([tlo for tlo in theta_leftOver[correctTheta]]))
+                #print('get_XX_leftover_B', rank,np.array([tlo for tlo in theta_leftOver[correctTheta]]))
                 XX_leftover[correctTheta] = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver[correctTheta]])
             except:
                 print(theta_leftOver[lowTheta],volLeftOver[lowTheta])
