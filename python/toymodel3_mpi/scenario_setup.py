@@ -79,9 +79,9 @@ def maize_SPP(soil_= "loam"):
     else:
         i = 1
     soil = vg_SPP(i)
-    min_b = [-5., -5, -20.] 
-    max_b = [5., 5, 0.] 
-    cell_number = [4,4,5]#[4, 4, 4]#
+    min_b = [-5., -5., -20.] 
+    max_b = [5., 5., 0.] 
+    cell_number = [5,5,20]#[4, 4, 4]#
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -313,6 +313,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+    s.setParameter("Newton.MaxRelativeShift", "1e-15")
     s.setParameter("Problem.verbose", "-1")
     # s.setParameter("Problem.doSoluteFlow", "0")
     # if (demoType == "dumux_dirichlet_2c") or (demoType == "dumux_dirichlet_nc") or (demoType == "dumux_dirichlet_10c"):
@@ -360,8 +361,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         print('too many threads for  the number of cells: ,',numCellThread_tot,' >= 2*',numCell,' Will cause computing errors')
 
     #print('getWaterContent', rank, s.getWaterContent())
-    #write_file_array('getWaterContent',data= s.getWaterContent(), space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
-    #raise Exception
+    write_file_array('getWaterContent',data= s.getWaterContent(), space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
+ 
     #print('getDofIndices',rank, s.getDofIndices())
     #print('getDofCoordinates',rank, s.getDofCoordinates())
     #print('getCellCenters',rank, s.getCellCenters())

@@ -74,7 +74,7 @@ mode = "dumux_10c"
 
 """ initialize """
 
-initsim = 5.5
+initsim = 9.5
           
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
             min_b, max_b, cell_number, demoType = mode, times = x_, net_inf = y_,
@@ -112,7 +112,7 @@ Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
 dt = 1/24
-simMax = initsim + 1
+simMax = initsim + 3
 
 TranspirationCumul = 0
 cell_volumes = s.getCellVolumes()  # cm3
@@ -131,6 +131,8 @@ s.buTotCAfter = 0
 s.buTotCBefore = 0
 print('start loop', rank)
 
+secId = None
+Q_Exud_i = None
 while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     
     rs_age += dt
@@ -174,10 +176,56 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
             # totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
             # totVolS =CellVolumes[cid]
             # print('cid rhizo and soil', cid,totVolR,totVolS, periSegs, lengths, outer_radii, radii)
-    
+    #eidXOld = rs.eidx
     rs.update()
     
-    
+    #if rank == 0:    
+    for lId, cyl in enumerate(rs.cyls):
+        if not isinstance(cyl, AirSegment):
+            gId = rs.eidx[lId]
+            write_file_float("segIdxCyl"+str(gId),gId, directory_ =results_dir)
+            write_file_array("pressureHeadcyl"+str(gId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
+            write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
+            write_file_array("solute_conc_cyl"+str(gId)+"_"+str(1), np.array(cyl.getSolution(1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
+            
+            
+        # if not (Q_Exud_i is None):#len(rs.cyls) > 1:
+            # cyl = rs.cyls[1] # take a random cylinder
+
+            # write_file_float("segIdxCyl"+str(1),eidXOld[1], directory_ =results_dir)
+            # write_file_array("pressureHeadcyl"+str(1),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
+            # write_file_array("coordcyl"+str(1), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
+            # for i in range(rs.numFluidComp):
+                # write_file_array("solute_conc_cyl"+str(1)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
+            # for i in range(rs.numFluidComp, rs.numComp):
+                # write_file_array("solute_conc_cyl"+str(1)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+            
+            
+            # if secId is None:
+                # secId = np.where(Q_Exud_i[eidXOld] == max(Q_Exud_i[eidXOld]))[0][0]
+                # seg_fluxes = np.array(r.outputFlux)[eidXOld]# [cm3/day] 
+                # thirdId = np.where(seg_fluxes == min(seg_fluxes))[0][0]
+            
+            # print('secId', secId,Q_Exud_i[eidXOld],max(Q_Exud_i[eidXOld]), thirdId)
+            # cyl = rs.cyls[secId] # take a random cylinder
+            # write_file_float("segIdxCyl"+str(secId),eidXOld[secId], directory_ =results_dir)
+            # write_file_array("pressureHeadcyl"+str(secId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
+            # write_file_array("coordcyl"+str(secId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
+            # for i in range(rs.numFluidComp):
+                # write_file_array("solute_conc_cyl"+str(secId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
+            # for i in range(rs.numFluidComp, rs.numComp):
+                # write_file_array("solute_conc_cyl"+str(secId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+                
+                
+            # cyl = rs.cyls[thirdId] # take a random cylinder
+            # write_file_float("segIdxCyl"+str(thirdId),eidXOld[thirdId], directory_ =results_dir)
+            # write_file_array("pressureHeadcyl"+str(thirdId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
+            # write_file_array("coordcyl"+str(thirdId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
+            # for i in range(rs.numFluidComp):
+                # write_file_array("solute_conc_cyl"+str(thirdId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
+            # for i in range(rs.numFluidComp, rs.numComp):
+                # write_file_array("solute_conc_cyl"+str(thirdId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+                
     
     comm.barrier()
     
@@ -295,7 +343,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         Q_Exud_i_seg = np.array( Q_Exud_i[1:] ) #from nod to semgment
         Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])
         
-        airSegsId = np.array(np.where(np.array([isinstance(cc, AirSegment) for cc in rs.cyls]))[0])
+        airSegsId = np.array(list(set(np.concatenate((rs.cell2seg[-1],np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
         try:
             assert (Q_Exud_i_seg[airSegsId] == 0).all()
             assert (Q_Mucil_i_seg[airSegsId] == 0).all()
@@ -327,7 +375,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         Q_Mucil_i_seg = None
         
     Q_Exud_i_seg = comm.bcast(Q_Exud_i_seg, root = 0) 
-    Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) *0
+    Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
     r.psiXyl = comm.bcast(r.psiXyl, root = 0) 
     r.outputFlux = comm.bcast(r.outputFlux, root = 0) 
     
@@ -360,7 +408,7 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     time_rhizo_cumul += r.time_rhizo_i
     time_3ds_cumul += r.time_3ds_i
     
-    if False:
+    if True:
         write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
         write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
         for i in range(rs.numFluidComp):
@@ -471,22 +519,6 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
                 raise Exception
             
             
-        psi_x_.extend(psi_x) #[cm]
-        psi_s_.extend(psi_s) #[cm]
-        sink_.extend(sink)
-        x = np.array(x)
-        x_.extend(x)
-        y_.extend(y)
-        psi_s2_.extend(psi_s2) #[cm]
-        soil_c_.extend(soil_c)  # [g/cm3]
-        c_.extend(c)  # [g/day]
-        # mass_soil_c_.extend(mass_soil_c) #[g]
-    
-        dist_, conc_, l_ = rs.collect_cylinder_solute_data()
-        dist.append(dist_)
-        conc.append(conc_)
-        l.append(l_)
-        
 
 """ output """
 print('finished loop, get images')
@@ -499,35 +531,35 @@ rs.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day
                                  useSoilData = True)
 vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
 
+if False:
 
-
-xx = np.array(s.getSolutionHead())
-for konz in np.array([True]):#, False]):
-    if not konz:
-        extraArrayName_ = "theta (cm3)"
-        extraArray_ = rs.soilWatVol_old*1e6
-    else:
-        extraArrayName_ = "theta (cm3/cm3)"
-        extraArray_ = rs.soilTheta_old
-    print("idcomp", 0, rank)
-    rp = rs.get_concentration(0, konz)
-    
-    vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
-            soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_)  # VTK vizualisation, rs.soilTheta_old
-    print("idcomp_done", 0, rank)
-    for i in range(1, rs.numComp+1):
-        print("idcomp", i, rank)
+    xx = np.array(s.getSolutionHead())
+    for konz in np.array([True]):#, False]):
         if not konz:
-            extraArrayName_ = "C"+str(i)+" mol"
-            extraArray_ = rs.soilContent_old[i -1]
+            extraArrayName_ = "theta (cm3)"
+            extraArray_ = rs.soilWatVol_old*1e6
         else:
-            extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
-            extraArray_ = rs.soilContent_old[i -1]/(rs.soilvolumes_old[i-1]*1e6)
-            
-        vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_ ,rs.get_concentration(i , konz), s, periodic, min_b, max_b, cell_number, 
-                soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, 
-                extraArrayName = extraArrayName_)  # VTK vizualisation
-        print("idcomp_done", i, rank)
+            extraArrayName_ = "theta (cm3/cm3)"
+            extraArray_ = rs.soilTheta_old
+        print("idcomp", 0, rank)
+        rp = rs.get_concentration(0, konz)
+        
+        vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
+                soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_)  # VTK vizualisation, rs.soilTheta_old
+        print("idcomp_done", 0, rank)
+        for i in range(1, rs.numComp+1):
+            print("idcomp", i, rank)
+            if not konz:
+                extraArrayName_ = "C"+str(i)+" mol"
+                extraArray_ = rs.soilContent_old[i -1]
+            else:
+                extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
+                extraArray_ = rs.soilContent_old[i -1]/(rs.soilvolumes_old[i-1]*1e6)
+                
+            vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_ ,rs.get_concentration(i , konz), s, periodic, min_b, max_b, cell_number, 
+                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, 
+                    extraArrayName = extraArrayName_)  # VTK vizualisation
+            print("idcomp_done", i, rank)
 # to plot: cumulative An, Exud, mucil and each element in the soil
 # Also images of the 3D soil.
 print("fin", rank)

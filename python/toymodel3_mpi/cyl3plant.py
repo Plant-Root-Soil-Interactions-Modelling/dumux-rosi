@@ -326,8 +326,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
         soil_fluxes = comm.bcast(soil_fluxes, root=0)
         
         """ 3.d  some checks """
+        print('check real soil before s.solve')
         r.checkMassOMoleBalance2(soil_fluxes, soil_source_sol, dt,seg_fluxes =seg_fluxes, doSolid = True)
         r.setSoilData(soil_fluxes, soil_source_sol, dt)
+        print('check old soil before s.solve')
+        r.checkMassOMoleBalance2( sourceWat = np.full(len(cell_volumes),0.), # cm3/day 
+                                     sourceSol = np.full((r.numComp, len(cell_volumes)),0.), # mol/day
+                                     dt = 0.,        # day    
+                                     seg_fluxes = 0.,# [cm3/day]
+                                     doWater = True, doSolute = True, doSolid = True,
+                                     useSoilData = True)
         """ 2.0  global soil models """
         
         water_content =comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
@@ -418,9 +426,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, demoType,Q_plant,
         
         print("errorWbalance soil 3d?",rank, sum(new_soil_water) ,',', sum(soil_water) ,',',   sum(soil_fluxes.values())*dt,
                     ', bulkMassErrorWater_abs', s.bulkMassErrorWater_abs,', bulkMassErrorWater_rel',  s.bulkMassErrorWater_rel , t)
-        #raise Exception
-        write_file_array("Soil_solute_conc"+str(0+1), np.array(s.getSolution(0+1)).flatten()* s.molarDensityWat_m3/1e6, directory_ =results_dir) 
-
+        
         try:
             # use soil_fluxes and not seg_fluxes. seg_fluxes includes air segments. sum(seg_fluxes) ~ 0.
             # maybe 0.1% of error is too large
