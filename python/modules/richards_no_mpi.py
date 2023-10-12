@@ -12,6 +12,17 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     def __init__(self, base):
         super().__init__(base)
 
+    def initialize(self, args_ = [""], verbose = True, doMPI = False):
+        """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
+        self.base.initialize(args_, verbose, doMPI)
+        
+    def solve(self, dt:float, maxDt = -1.):
+        """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
+        @param dt      time span [days] 
+        @param mxDt    maximal time step [days] 
+        """
+        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+        
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
