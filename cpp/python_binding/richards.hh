@@ -45,7 +45,7 @@ public:
      * @param eqIdx				the equation index (default = 0)
      */
     virtual void setSource(const std::map<int, double>& sourceMap, int eqIdx = 0) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
         int n = this->gridGeometry->gridView().size(0);
         std::shared_ptr<std::vector<double>> ls = std::make_shared<std::vector<double>>(n);
         std::fill(ls->begin(), ls->end(), 0.);
@@ -105,7 +105,7 @@ public:
      * @param critical 		the critical pressure or wilting point [Pa]
      */
     void setCriticalPressure(double critical) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
     	this->problem->criticalPressure(critical); // problem is defined in solverbase.hh
     }
 
@@ -155,7 +155,7 @@ public:
      * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getWaterContent() {
-    	int n =  this->checkInitialized();
+    	int n =  this->checkGridInitialized();
         std::vector<double> theta;
         theta.reserve(n);
         for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
@@ -180,7 +180,7 @@ public:
      * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getSaturation() {
-    	int n =  this->checkInitialized();
+    	int n =  this->checkGridInitialized();
         std::vector<double> s;
         s.reserve(n);
         for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
@@ -204,7 +204,7 @@ public:
      */
     virtual double getWaterVolume()
     {
-        this->checkInitialized();
+        this->checkGridInitialized();
         double cVol = 0.;
         for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
             auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
@@ -224,7 +224,7 @@ public:
 	 * For a single mpi process. Gathering is done in Python
 	 */
 	virtual std::vector<double> getVelocity1D() {
-		int n = this->checkInitialized();
+		int n = this->checkGridInitialized();
 		std::vector<double> v;
 		v.resize(n);
 		for (const auto& e : Dune::elements(this->gridGeometry->gridView())) { // soil elements
@@ -261,7 +261,7 @@ public:
      * krEps 	relative permeabiltiy regularisation
      */
     virtual void setRegularisation(double pcEps, double krEps) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
     	this->problem->setRegularisation(pcEps, krEps);
     }
 
@@ -269,7 +269,7 @@ public:
      * forward to problem
      */
     virtual void addVanGenuchtenDomain(double minx, double miny, double minz, double maxx, double maxy, double maxz, int layerIndex)  {
-        this->checkInitialized();
+        this->checkGridInitialized();
         this->problem->addVanGenuchtenDomain(minx, miny, minz, maxx, maxy, maxz, layerIndex);
     }
 
@@ -277,7 +277,7 @@ public:
      * forward to problem
      */
     void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks) {
-        this->checkInitialized();
+        this->checkGridInitialized();
         this->problem->changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks);
     }
 
@@ -287,7 +287,7 @@ public:
      * Neumann types: value [cm/day] = [cm3/cm2/day]
      */
     void setTopBC(int type, double value) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
     	this->problem->bcTopType_ = type;
     	this->problem->bcTopValues_[0] = value;
     }
@@ -298,7 +298,7 @@ public:
      * Neumann types: value [cm/day] = [cm3/cm2/day]
      */
     void setBotBC(int type, double value) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
     	this->problem->bcBotType_ = type;
     	this->problem->bcBotValues_[0] = value;
     }
@@ -309,7 +309,7 @@ public:
      * Neumann types: value [cm/day] = [cm3/cm2/day]
      */
     void setSTopBC(std::vector<int> types, std::vector<double> values) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
     	this->problem->bcSTopType_ = types;
     	this->problem->bcSTopValue_ = values;
     }
@@ -320,7 +320,7 @@ public:
      * Neumann types: value [cm/day] = [cm3/cm2/day]
      */
     void setSBotBC(std::vector<int> types, std::vector<double> values) {
-    	this->checkInitialized();
+    	this->checkGridInitialized();
     	this->problem->bcSBotType_ = types;
     	this->problem->bcSBotValue_ = values;
     }

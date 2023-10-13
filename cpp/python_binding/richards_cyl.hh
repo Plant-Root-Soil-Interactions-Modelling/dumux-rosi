@@ -119,7 +119,9 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK)
    .def("setRegularisation",&RichardsFoam::setRegularisation)
    .def("setTopBC",&RichardsFoam::setTopBC)
-   .def("setBotBC",&RichardsFoam::setBotBC)
+   .def("setBotBC",&RichardsFoam::setBotBC)   
+   .def("setSTopBC",&RichardsFoam::setSTopBC)
+   .def("setSBotBC",&RichardsFoam::setSBotBC)
 
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)

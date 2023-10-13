@@ -26,27 +26,27 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getSolutionHead(eqIdx)), 0)
 
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getWaterContent()), 2)
     
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getPoints()), 1) * 100.  # m -> cm
 
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getCellCenters()), 2) * 100.  # m -> cm
 
     def getDofCoordinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getDofCoordinates()), 0) * 100.  # m -> cm
 
     def getCells(self):
@@ -63,13 +63,13 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return  (self.base.getDofIndices())
 
     def getSolution(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getSolution(eqIdx), 0))
 
     def getAllNeumann(self, eqIdx=0):
@@ -84,7 +84,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
     def getNetFlux(self, eqIdx=0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map((self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def _map(self, x, type, dtype=np.float64):
