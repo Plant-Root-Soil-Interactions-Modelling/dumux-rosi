@@ -17,12 +17,15 @@ from scenario_setup import write_file_array
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.linalg import norm
+from scipy.interpolate import griddata as gd
+from mpl_toolkits.mplot3d import Axes3D
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
+import multiprocessing
+from multiprocessing import Process, active_children
 import psutil
+from threading import Thread 
 from air_modelsPlant import AirSegment
-from scipy import sparse
-import scipy.sparse.linalg as LA
-
 from scipy.interpolate import PchipInterpolator,  CubicSpline
 
 from scenario_setup import write_file_array, write_file_float
@@ -802,76 +805,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         raise Exception
         comm.Barrier()
     
-    def updateConcentration(self,totContent, gradient, cellCenters, volumes,isWater):
-        """ give the new theta or solute mole fraction to get specific total content and gradient
-            volumes: either bulk soil or water volumes
-        """
-        matrix_size = self.NC -1
-        sub_diag_values = -1.
-        main_diag_values = 1.
-        matrix = np.diag(np.full(matrix_size-1,sub_diag_values), k=1) + np.diag(np.full(matrix_size,main_diag_values), k=0) 
-        matrix[-1,] = volumes
-        aB = - gradient * (cellCenters[1:] - cellCenters[:-1])
-        aB = np.append(aB,totContent)
-        SPmatrix = sparse.csc_matrix(sparse.coo_matrix(matrix))
-        val_new = LA.spsolve(SPmatrix, aB, use_umfpack = True) #either that or mol fraction
-        try:
-            assert min(val_new) >= 0. # need to also check that theta >= theta_r and <= theta_s
-            assert abs(sum(val_new *volumes ) - totContent) < 1e-13 #check tot content ok
-            assert (abs(((val_new[1:] - val_new[:-1] )/ (cellCenters[1:] - cellCenters[:-1])) - gradient) < 1e-13).all() #check gradient ok
-        except:
-            print(rank, 'updateConcentration error', val_new,totContent, gradient, cellCenters, volumes )
-            raise Exception
             
-        if isWater and ((min(val_new) <  self.vg_soil.theta_R) or (max(val_new) >  self.vg_soil.theta_S)):
-            print(rank, 'updateConcentration: issue with theta concentraiton, adapt gradient', val_new )
-            tempTheta = val_new
-            if (max(val_new) >  self.vg_soil.theta_S):
-                idtemp = np.where(val_new >  self.vg_soil.theta_S)
-                extraWater = sum((val_new[idtemp] - self.vg_soil.theta_S) * volumes[idtemp])
-                val_new[idtemp] = self.vg_soil.theta_S
-                while  extraWater > 0:
-                    print(rank, 'updateConcentration: take out extra water', extraWater )
-                    canAdd = (self.vg_soil.theta_S - val_new)* volumes 
-                    assert sum(canAdd) >= extraWater 
-                    idtemp = np.where(canAdd > 0 )
-                    val_new[idtemp] = (val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp))/volumes[idtemp]
-                    extraWater -=  extraWater/len(idtemp)
-                print(rank, 'updateConcentration: finished taking out extra water', extraWater , val_new)
-                
-            if (min(val_new) <  self.vg_soil.theta_R):
-                idtemp = np.where(val_new <  self.vg_soil.theta_R)
-                missingWater = sum((self.vg_soil.theta_R - val_new[idtemp]) * volumes[idtemp])
-                val_new[idtemp] = self.vg_soil.theta_R
-                while  missingWater > 0:
-                    print(rank, 'updateConcentration: add missing water', missingWater )
-                    canTake = (val_new - self.vg_soil.theta_R )* volumes 
-                    assert sum(canTake) >= missingWater 
-                    idtemp = np.where(canTake > 0 )
-                    val_new[idtemp] = (val_new[idtemp]*volumes[idtemp] - missingWater/len(idtemp))/volumes[idtemp]
-                    missingWater -=  missingWater/len(idtemp)
-                print(rank, 'updateConcentration: finished adding missing water', missingWater , val_new)
-                
-        return val_new
-    
-    def interAndExtraPolation_(self,pt,pointsOld_, chip, spl):
-        if (pt >= min(pointsOld_)) and (pt <= max(pointsOld_)): #interpolation
-            return chip(pt)
-        else:#extrapolation
-            return spl(pt)
         
-    def interAndExtraPolation(self,pointsNew,pointsOld, valOld):
-        chip = PchipInterpolator(pointsOld, valOld)#for interpolation
-        spl =  CubicSpline(pointsOld, valOld, bc_type='not-a-knot') #extrapolation  
-        return np.array([self.interAndExtraPolation_(pt, pointsOld, chip, spl) for pt in pointsNew])
-
-            
     def updateOld(self, lId,  cyl):
         """ update distribution of cylinder if it s volume has changed
         """
         gId = self.eidx[lId]
         cellId = self.seg2cell[gId]
-        verbose = False
+        verbose = False#(cellId == 437)
         segsId =  np.array(self.cell2seg[cellId])
         segsId = np.array([ids for ids in segsId if self.organTypes[ids]==2 ])# only root organs
         if verbose:
@@ -886,7 +827,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         lb = self.logbase            
         a_in = self.radii[gId] # cm
         a_out = self.outer_radii[gId]  # cm
-        
+        # print(a_in, a_out)
         if ((self.seg2cell[gId] > 0) and (self.organTypes[gId] == 2)):
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb) # cm
         else:
@@ -897,9 +838,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             ## old shape:
             centersOld = np.array(cyl.getCellCenters()).flatten();assert len(centersOld)==9      # cm 
             volOld = self.getVolumes(oldPoints, self.seg_length_old[gId] )# cm3
+            surfaceOld =   np.pi * (oldPoints[1:] ** 2 - oldPoints[:-1]**2) # cm2
             ## new shape: 
             volNew = self.getVolumes(points, self.seg_length[gId] ) # cm^3
             centersNew = (points[1:] + points[:-1])/2  # cm
+            surfaceNew = np.pi * (points[1:] ** 2 - points[:-1]**2) # cm2      
             ## change ratio
             if hasNewSegs:# currently, only new segments can gain content from old segmetns.
                 changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
@@ -919,58 +862,141 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print('\t',gId,"points",oldPoints, points)
                 print('\t',gId,'lengths', self.seg_length_old[gId],self.seg_length[gId])
                 print('\t',gId,'radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
-            ##  water:
+            ##  old concentration:
             theta_old = cyl.getWaterContent() # cm3/cm3
-            gradientOld = (theta_old[1:] - theta_old[:-1])/(centersOld[1:] - centersOld[:-1])           
-            gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
-            
-            wOld = sum(theta_old*volOld)
-            changeRatioW = max(min(changeRatio, sum(self.vg_soil.theta_S*volNew)/wOld),sum(self.vg_soil.theta_R*volNew)/wOld)
+            cOld =np.array( [np.array(cyl.getConcentration(nC+1, (nC < self.numFluidComp))) for nC in range(self.numComp)])   #mol/cm3 scv    
+            #m_totOld = [sum(c) for c in cOld] # cm3 or mol
+            ## new contents:
+            theta_new = np.array([theta_old[cellnum]* changeRatio * volOld[cellnum] /volNew[cellnum] for cellnum in range(len(volNew))])
+            checkRatio4Water = True                                                                                                     
+            if min(theta_new) < self.vg_soil.theta_R:
+                print("updateOld: min(theta_new) < self.vg_soil.theta_R. min theta set to  theta_R")
+                theta_new_ = theta_new
+                theta_new[np.where(theta_new < self.vg_soil.theta_R)] = self.vg_soil.theta_R
+                checkRatio4Water = False                      
+                try:
+                    assert sum(theta_new*volNew) <= sum(theta_old*volOld)
+                except:
+                    print("to much water in voxel after setting min theta to theta_R")
+                    print(gId,lId, cellId, volOld,theta_old, theta_new, theta_new_ , volNew) # see what to do in this circumstances
+                    raise Exception
             try:
-                assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
+                assert min(theta_new) >= self.vg_soil.theta_R
+                assert max(theta_new) <= self.vg_soil.theta_S
+                xNew = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])
+                
             except:
-                print('volNew', volNew,'volOld',volOld)
-                print("points",oldPoints, points)
-                print('lengths', self.seg_length_old[gId],self.seg_length[gId])
-                print('radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
-                print('theta', theta_old)
+                print("x_old",theta_old* volOld,volOld )
+                print("xnew", xNew,self.getVolumes(points, self.seg_length[gId] ) )
+                print("points",oldPoints, points,centersNew)
+                print("theta",theta_new, theta_old)
+                print(self.vg_soil.theta_R, self.vg_soil.theta_S)
                 raise Exception
-            theta_new = self.updateConcentration(totContent = wOld*changeRatioW, gradient =gradientNew, cellCenters = centersNew, volumes = volNew,isWater = True)
-            newHead = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])# cm
-
             if verbose:            
                 print('\t',gId,"x_old",theta_old* volOld,volOld )
-                print('\t',gId,"xnew", theta_new* volNew,volNew )
-                print('\t',gId,"newHead", newHead )
+                print('\t',gId,"xnew", xNew,self.getVolumes(points, self.seg_length[gId] ) )
                 print('\t',gId,"points",oldPoints, points,centersNew)
-                print('\t',gId,"gradient",gradientOld, gradientNew)
                 print('\t',gId,"theta",theta_new, theta_old)
-                print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S)   
-                print('\t',gId,"changeRatio",changeRatio, changeRatioW)    
-            
+                print('\t',gId,self.vg_soil.theta_R, self.vg_soil.theta_S)
+            if checkRatio4Water:
+                try:
+                    assert abs(sum(theta_new*volNew)/sum(theta_old*volOld) - changeRatio) < 1e-13 
+                except:
+                    print("volOld", volOld, sum(volOld), "volnew", volNew, sum(volNew), "ratio", volOld/volNew,"totratio",  changeRatio)
+                    print("old content", theta_old*volOld, sum(theta_old*volOld) )
+                    print("new content", theta_new*volNew,sum(theta_new*volNew))
+                    print("ratio content",  sum(theta_new*volNew)/sum(theta_old*volOld),np.array(theta_new*volNew)/np.array(theta_old*volOld) )
+                    print("theta new", theta_new)
+                    print("theta old",theta_old)
+                    print(abs(sum(theta_new*volNew)/sum(theta_old*volOld) - changeRatio))
+                    print('points',points)
+                    print('oldPoints',oldPoints)
+                    raise Exception    
+            if verbose:    
+                print('\t',gId,"volOld", volOld, sum(volOld), "volnew", volNew, sum(volNew), "ratio", volOld/volNew,"totratio",  changeRatio)
+                print('\t',gId,"old content", theta_old*volOld, sum(theta_old*volOld) )
+                print('\t',gId,"new content", theta_new*volNew,sum(theta_new*volNew))
+                print('\t',gId,"ratio content",  sum(theta_new*volNew)/sum(theta_old*volOld),np.array(theta_new*volNew)/np.array(theta_old*volOld) )
+                print('\t',gId,"theta new", theta_new)
+                print('\t',gId,"theta old",theta_old)
+                print('\t',gId,abs(sum(theta_new*volNew)/sum(theta_old*volOld) - changeRatio))
+                print('\t',gId,'points',points)
+                print('\t',gId,'oldPoints',oldPoints)
                 
-            ## new contents:  
-            molFrOld =np.array( [np.array(cyl.getSolution(nC+1)) for nC in range(self.numComp)])   #mol/mol 
-            volWatNew = theta_new *volNew
-            molFrNew = []
-            for nComp in range(1, self.numComp +1):
-                isDissolved = (nComp <= self.numFluidComp)
-                if isDissolved: # mol phase = [cm3 phase] * [m3/cm3] * [mol phase /m3 phase]
-                    molarPhase = volWatNew/1e6 * self.phaseDensity(nComp )
-                else:
-                    molarPhase = volNew/1e6 * self.phaseDensity(nComp )
-                gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])/(centersOld[1:] - centersOld[:-1])   
-                gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
-                cOld = sum(molFrOld[nComp -1] *   molarPhase  )    
-                molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, gradient =gradientNew, cellCenters = centersNew, volumes = molarPhase,isWater = False))   
-
+            cwNew = np.array([ np.array([cOld[nc][cellnum]* changeRatio * (theta_old[cellnum]* volOld[cellnum]) /(theta_new[cellnum]*volNew[cellnum]) 
+                    for cellnum in range(len(volNew))]) for nc in range(self.numFluidComp)])
+            csNew = np.array([ np.array([cOld[nc][cellnum]* changeRatio * volOld[cellnum] /volNew[cellnum] 
+                    for cellnum in range(len(volNew))]) for nc in range(self.numFluidComp, self.numComp)])
+            cNew = np.concatenate((cwNew, csNew))
+            for ii in range(self.numFluidComp):
+                ccnew = cNew[ii]
+                ccold = cOld[ii]
+                try:
+                    assert abs(sum(ccnew*theta_new*volNew)/sum(ccold*theta_old*volOld) - changeRatio) < 1e-13
+                except:
+                    print("volOld", volOld, sum(volOld), "volnew", volNew, sum(volNew), "ratio", volOld/volNew,"totratio",  changeRatio)
+                    print("old content",ccold*theta_old*volOld, sum(ccold*theta_old*volOld) )
+                    print("new content",  ccnew*theta_new*volNew,sum(ccnew*theta_new*volNew))
+                    print("ratio content",  sum(ccnew*theta_new*volNew)/sum(ccold*theta_old*volOld),np.array(ccnew*theta_new*volNew)/np.array(ccold*theta_old*volOld) )
+                    print("ccnew", ccnew)
+                    print("ccold",ccold)
+                    print(abs(sum(ccnew*theta_new*volNew)/sum(ccold*theta_old*volOld) - changeRatio))
+                    raise Exception
+            for ii in range(self.numFluidComp, self.numComp):
+                ccnew = cNew[ii]
+                ccold = cOld[ii]
+                try:
+                    assert abs(sum(ccnew*volNew)/sum(ccold*volOld) - changeRatio) < 1e-13
+                except:
+                    print("volOld", volOld, sum(volOld), "volnew", volNew, sum(volNew), "ratio", volOld/volNew,"totratio",  changeRatio)
+                    print("old content",ccold*volOld, sum(ccold*volOld) )
+                    print("new content",  ccnew*volNew,sum(ccnew*volNew))
+                    print("ratio content",  sum(ccnew*volNew)/sum(ccold*volOld),np.array(ccnew*volNew)/np.array(ccold*volOld) )
+                    print("ccnew", ccnew)
+                    print("ccold",ccold)
+                    print(abs(sum(ccnew*volNew)/sum(ccold*volOld) - changeRatio))
+                    raise Exception
+                    
+            m_totOld = np.concatenate((np.array([sum(cx * theta_old*volOld) for cx in cOld[:2]]),np.array([sum(cx * volOld) for cx in cOld[2:]])))
+            m_totNew = np.concatenate((np.array([sum(cx * theta_new*volNew) for cx in cwNew]),np.array([sum(cx * volNew) for cx in csNew])))
+            molFrNew = np.concatenate((np.array([cx / (self.molarDensityWat_m3/1e6) for cx in cwNew]),np.array([cx / (self.bulkDensity_m3/1e6)  for cx in csNew]) ))
+            
+            
             self.cyls[lId] = self.initialize_dumux_nc_( gId, 
-                                                        x = newHead,# cm
+                                                        x = xNew,# cm
                                                         cAll = molFrNew, # mol/mol water or mol/mol scv
                                                         Cells = centersNew) # cm
+            x_new = self.cyls[lId].getWaterVolumesCyl( self.seg_length[gId]) # cm3
+            cxNew_ = [np.array(self.cyls[lId].getContentCyl(nC+1, (nC < self.numFluidComp), self.seg_length[gId])) for nC in range(self.numComp)]    
+            #cxNew_.insert(0, x_new)        
+            m_totNew_ = [sum(cx) for cx in cxNew_]
             
+            # check
             
+            # try:
+                # # assert (abs(m_totNew_ - m_totOld) < 1e-13 ).all() #3rd assert better, if we ever want to allow changeRatio > 1.
+                # # assert (sum(x_new) <= sum(theta_old*volOld) ).all() #3rd assert better
+                # assert ((abs(m_totNew_/m_totOld - changeRatio) < 1e-13).all() and (abs(sum(x_new)/sum(theta_old*volOld) - changeRatio) < 1e-13))
+            # except:                
+                # print("len(points) != len(oldPoints)",len(points) != len(oldPoints),len(points), len(oldPoints))
+                # print("max(abs(points - oldPoints)) > 0.",max(abs(points - oldPoints)) > 0.,max(abs(points - oldPoints)) ,abs(points - oldPoints))
+                # print("check results", abs(m_totNew_/m_totOld - changeRatio), abs(sum(x_new)/sum(theta_old*volOld) - changeRatio))
+                # print("updateOld",self.seg2cell[gId] ,gId,lId, self.organTypes[gId])
+                # print("m_totOld",m_totOld,"prescibed",m_totNew, "actual", m_totNew_, 'diff',  np.array(m_totNew_) - np.array(m_totOld),  np.array(m_totNew_) - np.array(m_totNew))
+                # print('ratios, prescribed',sum(theta_new*volNew)/ sum(theta_old*volOld), 'actual', sum(x_new)/sum(theta_old*volOld))
+                # print("x_old", theta_old*volOld,sum(theta_old*volOld),"x_new" ,theta_new*volNew, sum(theta_new*volNew) ,"actual",x_new, sum(x_new))
+                # print("points, old",oldPoints, 'new', points,'actual',np.array(self.cyls[lId].getPoints()).flatten())#,centersNew)
+                # print("volumes", self.getVolumes(oldPoints, self.seg_length_old[gId] ) ,sum(self.getVolumes(oldPoints, self.seg_length_old[gId] ) ), 
+                        # self.getVolumes(points, self.seg_length[gId] ),sum(self.getVolumes(points, self.seg_length[gId] ))  )
+                # print('lengths', self.seg_length_old[gId],self.seg_length[gId])
+                # print('radii', self.outer_radii[gId],self.outer_radii_old[gId])
+                # print('moleFr, prescibed:', molFrNew,'actual',[self.cyls[lId].getSolution(nc+1) for nc in range(self.numComp)])
+                # print('newHead', xNew)
+                # print('actalHead', self.cyls[lId].getSolutionHead())
+                # raise Exception
+                
             
+                                                 
     def getVolumes(self,vertices, length):
         return   np.pi * (vertices[1:] ** 2 - vertices[:-1]**2) * length
     

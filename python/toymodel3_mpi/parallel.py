@@ -155,78 +155,20 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
             print(cell2segVals)
             print(len(cell2segVals), len(set(cell2segVals)))
             raise Exception
-    # if (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)):
-        # cellIds = np.fromiter(rs.cell2seg.keys(), dtype=int)
-        # cellIds =  np.array([x for x in cellIds if x >= 0])
-        # airSegs = np.array(list(set(np.concatenate((rs.cell2seg[-1],np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
-        # periSegs = np.array([i for i in range(len(rs.organTypes)) if not(i in airSegs) ])
-        # outer_radii_all = np.array(rs.segOuterRadii(type = 0))
-        # outer_radii = outer_radii_all[periSegs]
-        # lengths = np.array(rs.segLength())[periSegs]
-        # radii = np.array(rs.radii)[periSegs]
-        # totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
-        # totVolS = sum( CellVolumes[cellIds])
-        # assert abs((totVolR-totVolS)/totVolS*100) < 1e-12
-        # print('totV rhizo and soil', totVolR,totVolS)
-        # for cid in cellIds:
-            # periSegs = np.array([i for i in rs.cell2seg[cid] if (np.array(rs.organTypes)[i] == 2) ])
-            # outer_radii = outer_radii_all[periSegs]
-            # lengths = np.array(rs.segLength())[periSegs]
-            # radii = np.array(rs.radii)[periSegs]
-            # totVolR = sum(np.pi*lengths*(outer_radii**2 - radii**2))
-            # totVolS =CellVolumes[cid]
-            # print('cid rhizo and soil', cid,totVolR,totVolS, periSegs, lengths, outer_radii, radii)
-    #eidXOld = rs.eidx
+
+
     rs.update()
     
-    #if rank == 0:    
-    for lId, cyl in enumerate(rs.cyls):
-        if not isinstance(cyl, AirSegment):
-            gId = rs.eidx[lId]
-            write_file_float("segIdxCyl"+str(gId),gId, directory_ =results_dir)
-            write_file_array("pressureHeadcyl"+str(gId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
-            write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
-            write_file_array("solute_conc_cyl"+str(gId)+"_"+str(1), np.array(cyl.getSolution(1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
-            
-            
-        # if not (Q_Exud_i is None):#len(rs.cyls) > 1:
-            # cyl = rs.cyls[1] # take a random cylinder
-
-            # write_file_float("segIdxCyl"+str(1),eidXOld[1], directory_ =results_dir)
-            # write_file_array("pressureHeadcyl"+str(1),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
-            # write_file_array("coordcyl"+str(1), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
-            # for i in range(rs.numFluidComp):
-                # write_file_array("solute_conc_cyl"+str(1)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
-            # for i in range(rs.numFluidComp, rs.numComp):
-                # write_file_array("solute_conc_cyl"+str(1)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
-            
-            
-            # if secId is None:
-                # secId = np.where(Q_Exud_i[eidXOld] == max(Q_Exud_i[eidXOld]))[0][0]
-                # seg_fluxes = np.array(r.outputFlux)[eidXOld]# [cm3/day] 
-                # thirdId = np.where(seg_fluxes == min(seg_fluxes))[0][0]
-            
-            # print('secId', secId,Q_Exud_i[eidXOld],max(Q_Exud_i[eidXOld]), thirdId)
-            # cyl = rs.cyls[secId] # take a random cylinder
-            # write_file_float("segIdxCyl"+str(secId),eidXOld[secId], directory_ =results_dir)
-            # write_file_array("pressureHeadcyl"+str(secId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
-            # write_file_array("coordcyl"+str(secId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
-            # for i in range(rs.numFluidComp):
-                # write_file_array("solute_conc_cyl"+str(secId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
-            # for i in range(rs.numFluidComp, rs.numComp):
-                # write_file_array("solute_conc_cyl"+str(secId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+    if False:   
+        for lId, cyl in enumerate(rs.cyls):
+            if not isinstance(cyl, AirSegment):
+                gId = rs.eidx[lId]
+                write_file_float("segIdxCyl"+str(gId),gId, directory_ =results_dir)
+                write_file_array("pressureHeadcyl"+str(gId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
+                write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
+                write_file_array("solute_conc_cyl"+str(gId)+"_"+str(1), np.array(cyl.getSolution(1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
                 
-                
-            # cyl = rs.cyls[thirdId] # take a random cylinder
-            # write_file_float("segIdxCyl"+str(thirdId),eidXOld[thirdId], directory_ =results_dir)
-            # write_file_array("pressureHeadcyl"+str(thirdId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir)
-            # write_file_array("coordcyl"+str(thirdId), cyl.getDofCoordinates().flatten(), directory_ =results_dir)
-            # for i in range(rs.numFluidComp):
-                # write_file_array("solute_conc_cyl"+str(thirdId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir) 
-            # for i in range(rs.numFluidComp, rs.numComp):
-                # write_file_array("solute_conc_cyl"+str(thirdId)+"_"+str(i+1), np.array(cyl.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
-                
-    
+            
     comm.barrier()
     
     weatherX = scenario.weather(rs_age) 
