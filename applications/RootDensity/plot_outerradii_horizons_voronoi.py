@@ -122,17 +122,20 @@ rootsystem = "Spring Barley"  # Maize, Soybean, Spring Barley
 # fig, axes = plt.subplots(3, 1, figsize = (10, 18))
 fig, axes = plt.subplots(1, 1, figsize = (9, 8))
 outer1, outer2, length1, length2 = get_outer_radii_horizons(rootsystem)
-# outer0 = PerirhizalPython.to_range_(None, outer0, 0., 2.)
-# outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
-# outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
+
+outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
 
 axes.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+#  axes.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+
 # axes.set_ylim([0., 4000.])
 axes.legend()
-axes.set_xlabel("Perirhizal outer radius [cm] using Voronoi diagrams ")
+axes.set_xlabel("Perirhizal outer radius [cm] using Voronoi diagrams, 40 bins")
+axes.set_ylabel("Root length [cm] ")
 axes.set_title(rootsystem)
 plt.tight_layout()
-plt.savefig('voronoi_' + rootsystem + '.png')
+plt.savefig('hist_vor_' + rootsystem + '.png')
 
 plt.show()
 

@@ -52,9 +52,9 @@ def make_list():
 
 if __name__ == "__main__":
 
-    job_list = make_list()
-    names, timings = print_timings(job_list)
-    print()
+    # job_list = make_list()
+    # names, timings = print_timings(job_list)
+    # print()
 
     # c = 0
     # for l in range(0, 3):  # methods
@@ -66,11 +66,38 @@ if __name__ == "__main__":
     #         print()
     #     c += 12
 
-    for i, p in enumerate(['springbarley', 'maize']):
-        for j, d in enumerate(["1D", "3D"]):  # dimesnions
-            for k in range(0, 3):  # soils
-                    base_index = 6 * i + 3 * j + k
-                    if j == 0:
-                        print(names[base_index], ": ", 1 / (timings[base_index] / timings[base_index + 3]))
-        print()
+    # for i, p in enumerate(['springbarley', 'maize']):
+    #     for j, d in enumerate(["1D", "3D"]):  # dimesnions
+    #         for k in range(0, 3):  # soils
+    #                 base_index = 6 * i + 3 * j + k
+    #                 if j == 0:
+    #                     print(names[base_index], ": ", 1 / (timings[base_index] / timings[base_index + 3]))
+    #     print()
+
+    # """ 2D speed ups """
+    # soils = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    # for i in range(0, 3):
+    #     n, t2d = print_timings([['sra', 'maize', '2D', soils[i], 'voronoi']])
+    #     n, t3d = print_timings([['sra', 'maize', '3D', soils[i], 'voronoi']])
+    #     print("speed up", t3d[0] / t2d[0])
+
+    """ total speed ups """
+    soils = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    for i in range(0, 3):
+        n, t1d = print_timings([['agg', 'maize', '1D', soils[i], 'voronoi']])
+        n, t3d = print_timings([['sra', 'maize', '3D', soils[i], 'voronoi']])
+        print("speed up", t3d[0] / t1d[0])
+        n, t1d = print_timings([['agg', 'maize', '1D', soils[i], 'voronoi']])
+        n, t3d = print_timings([['sra', 'maize', '3D', soils[i], 'voronoi']])
+        print("speed up", t3d[0] / t1d[0])
+
+    """ total speed ups """
+    soils = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    for i in range(0, 3):
+        n, t1d = print_timings([['agg', 'springbarley', '1D', soils[i], 'voronoi']])
+        n, t3d = print_timings([['sra', 'springbarley', '3D', soils[i], 'voronoi']])
+        print("speed up", t3d[0] / t1d[0])
+        n, t1d = print_timings([['agg', 'springbarley', '1D', soils[i], 'voronoi']])
+        n, t3d = print_timings([['sra', 'springbarley', '3D', soils[i], 'voronoi']])
+        print("speed up", t3d[0] / t1d[0])
 
