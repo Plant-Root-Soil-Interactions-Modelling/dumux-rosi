@@ -862,7 +862,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         """
         gId = self.eidx[lId]
         cellId = self.seg2cell[gId]
-        verbose = (cellId == 437)
+        verbose = (cellId == 437) or (cellId == 257)
         segsId =  np.array(self.cell2seg[cellId])
         segsId = np.array([ids for ids in segsId if self.organTypes[ids]==2 ])# only root organs
         if verbose:
@@ -946,20 +946,40 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             molFrNew = []
             for nComp in range(1, self.numComp +1):
                 isDissolved = (nComp <= self.numFluidComp)
-                if isDissolved: # mol phase = [cm3 phase] * [m3/cm3] * [mol phase /m3 phase]
-                    molarPhase = volWatNew/1e6 * self.phaseDensity(nComp )
+                if isDissolved: # mol phase = [cm3 phase] * [m3/cm3] * [mol phase /m3 phase] 
+                    molarPhaseOld = theta_old*volOld/1e6 * self.phaseDensity(nComp ) 
+                    molarPhaseNew = volWatNew/1e6 * self.phaseDensity(nComp ) # 
                 else:
-                    molarPhase = volNew/1e6 * self.phaseDensity(nComp )
+                    molarPhaseOld = volOld/1e6 * self.phaseDensity(nComp )
+                    molarPhaseNew = volNew/1e6 * self.phaseDensity(nComp ) 
                 gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])/(centersOld[1:] - centersOld[:-1])   
                 gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
-                cOld = sum(molFrOld[nComp -1] *   molarPhase  )    
-                molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, gradient =gradientNew, cellCenters = centersNew, volumes = molarPhase,isWater = False))  
+                cOld = sum(molFrOld[nComp -1] *   molarPhaseOld  )    
+                try:
+                    assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))< 1e-13
+                except:
+                    print('contentoldA',cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] ), 
+                            sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
+                    print('contentoldB',molFrOld[nComp -1] *   molarPhaseOld, cOld,'diff', cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
+                    print('watcontA',cyl.getWaterContent(), cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100)
+                    print('watcontB',theta_old,volOld/1e6, self.phaseDensity(nComp ) , cyl.phaseDensity(nComp ))
+                    print('molFrOld',molFrOld[nComp -1])
+                    print('molarPhaseOld', molarPhaseOld,np.multiply(cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100 , 
+                                            cyl.getWaterContent()) *cyl.molarDensityWat_m3)
+                    raise Exception
+                    
+                molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, gradient =gradientNew, 
+                                cellCenters = centersNew, volumes = molarPhaseNew,isWater = False))  
                 if verbose:            
-                    print('\t',gId,'nComp', nComp, "cOld",cOld,molFrOld[nComp -1],molarPhase )
-                    print('\t',gId,"molFrNew", molFrNew[nComp -1], "cNew", molFrNew[nComp -1]* molarPhase, sum(molFrNew[nComp -1]* molarPhase) )
-                    print('\t',gId,"gradient", gradientOld, gradientNew,'ratio', sum(molFrNew[nComp -1]* molarPhase)/sum(molFrOld[nComp -1] *   molarPhase), 
-                                sum(molFrNew[nComp -1]* molarPhase)/sum(molFrOld[nComp -1] *   molarPhase) -changeRatio )
-                assert abs(sum(molFrNew[nComp -1]* molarPhase)/sum(molFrOld[nComp -1] *   molarPhase) -changeRatio) < 1e-13
+                    print('\t',gId,'nComp', nComp, "cOld",cOld,molFrOld[nComp -1],molarPhaseOld )
+                    print('\t',gId,"molFrNew", molFrNew[nComp -1], 
+                                "cNew", molFrNew[nComp -1]* molarPhaseNew, 
+                                sum(molFrNew[nComp -1]* molarPhaseNew) )
+                    print('\t',gId,"gradient", gradientOld, gradientNew,'ratio', 
+                    sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld)) 
+                    print('\t',gId,"error",nComp,  abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio),
+                            abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
+                assert abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13
             self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                         x = newHead,# cm
                                                         cAll = molFrNew, # mol/mol water or mol/mol scv
