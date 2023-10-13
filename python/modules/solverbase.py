@@ -95,32 +95,32 @@ class SolverWrapper():
 
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map(self._flat0(comm.gather(self.base.getPoints(), root = 0)), 1) * 100.  # m -> cm
 
     def getPoints_(self):
         """nompi version of """
-        self.checkInitialized()
+        self.checkGridInitialized()
         return np.array(self.base.getPoints()) * 100.  # m -> cm
 
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map(self._flat0(comm.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
 
     def getCellCenters_(self):
         """nompi version of """
-        self.checkInitialized()
+        self.checkGridInitialized()
         return np.array(self.base.getCellCenters()) * 100.  # m -> cm
 
     def getDofCoordinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map(self._flat0(comm.gather(self.base.getDofCoordinates(), root = 0)), 0) * 100.  # m -> cm
 
     def getDofCoordinates_(self):
         """nompi version of """
-        self.checkInitialized()
+        self.checkGridInitialized()
         return np.array(self.base.getDofCoordinates()) * 100.  # m -> cm
 
     def getCells(self):
@@ -151,23 +151,23 @@ class SolverWrapper():
 
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
 
     def getDofIndices_(self):
         """nompi version of  """
-        self.checkInitialized()
+        self.checkGridInitialized()
         return np.array(self.base.getDofIndices(), dtype = np.int64)
 
     def getSolution(self, eqIdx = 0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root = 0)), 0)
 
     def getSolution_(self, eqIdx = 0):
         """nompi version of  """
-        self.checkInitialized()
+        self.checkGridInitialized()
         return np.array(self.base.getSolution(eqIdx))
 
     def getSolutionAt(self, gIdx, eqIdx = 0):
@@ -200,12 +200,12 @@ class SolverWrapper():
 
     def getNetFlux(self, eqIdx = 0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root = 0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def getNetFlux_(self, eqIdx = 0):
         """nompi version of """
-        self.checkInitialized()
+        self.checkGridInitialized()
         return np.array(self.base.getNetFlux(eqIdx)) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def pickCell(self, pos):
@@ -220,10 +220,19 @@ class SolverWrapper():
         """ Solver representation as string """
         return str(self.base)
 
-    def checkInitialized(self):
-        """ Checks if the problem was initialized, i.e. initializeProblem() was called """
-        return self.base.checkInitialized()
+    def checkGridInitialized(self):
+        """ Checks if the grid was created, i.e. createGrid() or createGrid1d() was called """
+        return self.base.checkGridInitialized()
 
+    def checkProblemInitialized(self, throwError = True):
+        """ Checks if the problem was created, i.e. initializeProblem() was called """
+        if self.base.checkProblemInitialized():
+            return True
+        elif throwError:
+            raise Exception('problem was not created, call initializeProblem()')
+        else:
+            return False
+        
     @property
     def simTime(self):
         """ Current simulation time (read only) [days]"""
@@ -253,7 +262,7 @@ class SolverWrapper():
         """ interpolates the solution at position ix [cm],
         model dependent units
         todo: test"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         points = self.getDofCoordinates()
         solution = self.getSolution()
         if rank == 0:
@@ -267,7 +276,7 @@ class SolverWrapper():
     def interpolate_(self, xi, points, solution, eq = 0):
         """ interpolates the solution at position ix [cm] (same es interpolate_ but passes points and solution),
         model dependent units """
-        self.checkInitialized()
+        self.checkGridInitialized()
         if rank == 0:
             yi = np.zeros((xi.shape[0]))
             for i in range(0, xi.shape[0]):
@@ -278,7 +287,7 @@ class SolverWrapper():
 
     def interpolateNN(self, xi, eq = 0):
         """ solution at the points xi (todo currently works only for CCTpfa)"""
-        self.checkInitialized()
+        self.checkGridInitialized()
         solution = self.getSolution()
         if rank == 0:
             y = np.zeros((xi.shape[0]))
@@ -308,28 +317,34 @@ class SolverWrapper():
             writer.SetCompressorTypeToZLib()
             writer.Write()
 
-    def _map(self, x, type, dtype = np.float64):
+    def _map(self, x, type_, dtype = np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
-        @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
+        @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
-        if type == 0:  # auto (dof)
+        if type_ == 0:  # auto (dof)
             indices = self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
-        elif type == 1:  # points
+        elif type_ == 1:  # points
             indices = self._flat0(comm.gather(self.base.getPointIndices(), root = 0))
-        elif type == 2:  # cells
+        elif type_ == 2:  # cells
             indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
-            raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
-        if indices:  # only for rank 0 not empty
-            assert len(indices) == len(x), "_map: indices and values have different length"
+            raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
+        if len(indices) >0:  # only for rank 0 not empty
+            try:
+                assert len(indices) == len(x), "_map: indices and values have different length"
+            except:
+                print(len(indices) , len(x), indices)
+                raise Exception
             ndof = max(indices) + 1
-            if isinstance(x[0], list):
+            if isinstance(x[0], (list,type(np.array([])))) :
                 m = len(x[0])
-            else:
-                m = 1
-            p = np.zeros((ndof, m), dtype = dtype)
-            for i in range(0, len(indices)):  #
-                p[indices[i],:] = np.array(x[i], dtype = dtype)
+                p = np.zeros((ndof, m), dtype = dtype)
+                for i in range(0, len(indices)):  #
+                    p[indices[i],:] = np.array(x[i], dtype = dtype)
+            else:#option to get array of shape (N,) instead of (N,1)
+                p = np.zeros(ndof, dtype = dtype)
+                for i in range(0, len(indices)):  #
+                    p[indices[i]] = np.array(x[i], dtype = dtype)
             return p
         else:
             return 0
@@ -337,9 +352,9 @@ class SolverWrapper():
     def _flat0(self, xx):
         """flattens the gathered list in rank 0, empty list for other ranks """
         if rank == 0:
-            return [item for sublist in xx for item in sublist]
+            return np.array([item for sublist in xx for item in sublist])
         else:
-            return []
+            return np.array([])
 
     @staticmethod
     def _vtkPoints(p):

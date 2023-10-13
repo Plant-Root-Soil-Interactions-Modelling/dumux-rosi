@@ -64,7 +64,7 @@ public:
     double ddt = -1; // internal time step, minus indicates that its uninitialized
     int maxRank = -1; // max mpi rank
     int rank = -1; // mpi rank
-
+	bool problemInitialized = false;
     bool periodic = false; // periodic domain
     std::array<int, dim> numberOfCells;
 
@@ -83,7 +83,7 @@ public:
      * Normally you state an input file, that contains all parameters that are needed for the simulation.
      * SolverBase will optionally set most of them dynamically.
      */
-    virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true) {
+    virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true, bool doMPI = true) {
         std::vector<char*> cargs;
         cargs.reserve(args_.size());
         for(size_t i = 0; i < args_.size(); i++) {
@@ -107,8 +107,10 @@ public:
             std::cout << "\n" << toString() << "\n" << std::flush; // add my story
             Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
         }
-        mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
-
+		if(doMPI)
+		{
+			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+		}
         setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
     }
@@ -325,6 +327,7 @@ public:
             int gIdx = pointIdx->index(v);
             globalPointIdx[vIdx] = gIdx;
         }
+		problemInitialized = true;
     }
 
     /**
@@ -351,7 +354,7 @@ public:
      * (could be improved, but overhead is likely to be small)
      */
     virtual void solve(double dt, double maxDt = -1) {
-        checkInitialized();
+        checkGridInitialized();
         using namespace Dumux;
 
         if (ddt<1.e-6) { // happens at the first call
@@ -396,12 +399,63 @@ public:
     }
 
     /**
+	 * Simulates the problem for time span dt, with maximal time step maxDt.
+     *
+     * Assembler needs a TimeLoop, so i have to create it in each solve call.
+     * (could be improved, but overhead is likely to be small)
+     */
+    void solveNoMPI(double dt, double maxDt = -1) {
+		
+        checkGridInitialized();
+        using namespace Dumux;
+
+        if (ddt<1.e-6) { // happens at the first call
+            ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
+        }
+
+        std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
+            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt, false); // the main time loop is moved to Python
+        if (maxDt<0) { // per default value take from parameter tree
+            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // if none, default is outer time step
+        }
+        timeLoop->setMaxTimeStepSize(maxDt);
+
+        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
+        auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
+								 PartialReassembler<Assembler>,
+								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
+        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver, 
+								Dune::FakeMPIHelper::getCollectiveCommunication());//
+        nonLinearSolver->setVerbose(false);
+        timeLoop->start();
+        auto xOld = x;
+        do {
+            ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
+            ddt = std::max(ddt, 1.); // limit minimal suggestion
+            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
+            assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
+            nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
+
+            xOld = x; // make the new solution the old solution
+            gridVariables->advanceTimeStep();
+
+            timeLoop->advanceTimeStep(); // advance to the time loop to the next step
+            timeLoop->reportTimeStep(); // report statistics of this time step
+
+        } while (!timeLoop->finished());
+
+        simTime += dt;
+    }
+	
+    /**
      * Finds the steady state of the problem.
      *
      * Optionally, solve for a time span first, to get a good initial guess.
      */
     virtual void solveSteadyState() {
-        checkInitialized();
+        checkGridInitialized();
         using namespace Dumux;
 
         auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables); // steady state
@@ -421,7 +475,7 @@ public:
      * Gathering and mapping is done in Python.
      */
     virtual std::vector<VectorType> getPoints() {
-        checkInitialized();
+        checkGridInitialized();
         std::vector<VectorType> points;
         points.reserve(gridGeometry->gridView().size(dim));
         for (const auto& v : vertices(gridGeometry->gridView())) {
@@ -440,7 +494,7 @@ public:
      * Gathering and mapping is done in Python.
      */
     virtual std::vector<VectorType> getCellCenters() {
-        checkInitialized();
+        checkGridInitialized();
         std::vector<VectorType> cells;
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
@@ -460,7 +514,7 @@ public:
      * This is done for a single process, gathering and mapping is done in Python.
      */
     virtual std::vector<std::vector<int>> getCells() {
-        checkInitialized();
+        checkGridInitialized();
         std::vector<std::vector<int>> cells;
         cells.reserve(gridGeometry->gridView().size(0));
         for (const auto& e : elements(gridGeometry->gridView())) {
@@ -568,7 +622,7 @@ public:
      * Gathering and mapping is done in Python
      */
     virtual std::vector<double> getSolution(int eqIdx = 0) {
-        int n = checkInitialized();
+        int n = checkGridInitialized();
         std::vector<double> sol;
         sol.resize(n);
         for (int c = 0; c<n; c++) {
@@ -655,7 +709,7 @@ public:
      * For a single mpi process. Gathering is done in Python
      */
     virtual std::vector<double> getNetFlux(int eqIdx = 0) {
-        int n = checkInitialized();
+        int n = checkGridInitialized();
         std::vector<double> fluxes;
         fluxes.resize(n);
 
@@ -663,8 +717,8 @@ public:
         auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
         auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
 
-        // the upwind term to be used for the volume flux evaluation
-        auto upwindTerm = [eqIdx](const auto& volVars) { return volVars.mobility(eqIdx); };
+        // the upwind term to be used for the volume flux evaluation, currently not needed
+        // auto upwindTerm = [eqIdx](const auto& volVars) { return volVars.mobility(eqIdx); };
 
         for (const auto& e : Dune::elements(gridGeometry->gridView())) { // soil elements
 
@@ -696,7 +750,7 @@ public:
      * and broadcasts to the others
      */
     virtual int pickCell(VectorType pos) {
-        checkInitialized();
+        checkGridInitialized();
         if (periodic) {
             auto b = getGridBounds();
             for (int i = 0; i < 2; i++) { // for x and y, not z
@@ -762,12 +816,12 @@ public:
     }
 
     /**
-     * Checks if the problem was initialized, and returns number of local dof
-     * i.e. initializeProblem() was called
+     * Checks if the grid was initialized, and returns number of local dof
+     * i.e. createGrid() or createGrid1d() was called
      */
-    virtual int checkInitialized() {
+    virtual int checkGridInitialized() {
         if (!gridGeometry) {
-            throw std::invalid_argument("SolverBase::checkInitialized: Problem not initialized, call initializeProblem first");
+            throw std::invalid_argument("SolverBase::checkGridInitialized: Grid not initialized, call createGrid() or createGrid1d() first");
         }
         if (this->isBox) {
             return this->gridGeometry->gridView().size(dim);
@@ -776,6 +830,13 @@ public:
         }
     }
 
+    /**
+     * Checks if the problem was initialized
+     */
+    virtual bool checkProblemInitialized() {
+        return problemInitialized;
+    }
+	
 protected:
 
     using Grid = typename Problem::Grid;
@@ -810,7 +871,8 @@ void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
-            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), py::arg("verbose") = true)
+            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0),  
+													py::arg("verbose") = true,py::arg("doMPI") = true)
             .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid) // overloads, defaults , py::arg("modelParamGroup") = ""
             .def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid) // overloads, defaults , py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false
             .def("createGrid1d", &Solver::createGrid1d)
@@ -823,6 +885,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
             // simulation
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
+			.def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1)
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)
             .def("getPoints", &Solver::getPoints) //
@@ -850,7 +913,8 @@ void init_solverbase(py::module &m, std::string name) {
             .def_readonly("periodic", &Solver::periodic) // read only
             // useful
             .def("__str__",&Solver::toString)
-            .def("checkInitialized", &Solver::checkInitialized);
+            .def("checkGridInitialized", &Solver::checkGridInitialized)
+            .def("checkProblemInitialized", &Solver::checkProblemInitialized);
 }
 
 #endif
