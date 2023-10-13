@@ -1,15 +1,17 @@
-import sys; sys.path.append("../modules/");  sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
+import sys; sys.path.append("../modules/");  
+sys.path.append("../../../CPlantBox/");
+sys.path.append("../../../CPlantBox/src")
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 import plantbox as pb  # CPlantBox
 from rosi_richardsnc import RichardsNCSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
-from xylem_flux import *  # root system Python hybrid solver
+from functional.xylem_flux import *  # root system Python hybrid solver
 from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
-import vtk_plot as vp
-import van_genuchten as vg
-from root_conductivities import *
+import visualisation.vtk_plot as vp
+import functional.van_genuchten as vg
+from functional.root_conductivities import *
 
 import numpy as np
 import timeit

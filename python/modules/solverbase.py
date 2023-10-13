@@ -308,28 +308,34 @@ class SolverWrapper():
             writer.SetCompressorTypeToZLib()
             writer.Write()
 
-    def _map(self, x, type, dtype = np.float64):
+    def _map(self, x, type_, dtype = np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
-        @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
+        @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
-        if type == 0:  # auto (dof)
+        if type_ == 0:  # auto (dof)
             indices = self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
-        elif type == 1:  # points
+        elif type_ == 1:  # points
             indices = self._flat0(comm.gather(self.base.getPointIndices(), root = 0))
-        elif type == 2:  # cells
+        elif type_ == 2:  # cells
             indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
-            raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
-        if indices:  # only for rank 0 not empty
-            assert len(indices) == len(x), "_map: indices and values have different length"
+            raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
+        if len(indices) >0:  # only for rank 0 not empty
+            try:
+                assert len(indices) == len(x), "_map: indices and values have different length"
+            except:
+                print(len(indices) , len(x), indices)
+                raise Exception
             ndof = max(indices) + 1
-            if isinstance(x[0], list):
+            if isinstance(x[0], (list,type(np.array([])))) :
                 m = len(x[0])
-            else:
-                m = 1
-            p = np.zeros((ndof, m), dtype = dtype)
-            for i in range(0, len(indices)):  #
-                p[indices[i],:] = np.array(x[i], dtype = dtype)
+                p = np.zeros((ndof, m), dtype = dtype)
+                for i in range(0, len(indices)):  #
+                    p[indices[i],:] = np.array(x[i], dtype = dtype)
+            else:#option to get array of shape (N,) instead of (N,1)
+                p = np.zeros(ndof, dtype = dtype)
+                for i in range(0, len(indices)):  #
+                    p[indices[i]] = np.array(x[i], dtype = dtype)
             return p
         else:
             return 0
@@ -337,9 +343,9 @@ class SolverWrapper():
     def _flat0(self, xx):
         """flattens the gathered list in rank 0, empty list for other ranks """
         if rank == 0:
-            return [item for sublist in xx for item in sublist]
+            return np.array([item for sublist in xx for item in sublist])
         else:
-            return []
+            return np.array([])
 
     @staticmethod
     def _vtkPoints(p):
