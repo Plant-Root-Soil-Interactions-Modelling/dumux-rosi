@@ -165,31 +165,34 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('richards.setTopBC(): Atmospheric boundary conditions where set, but no climatic data were given')
 
-    def setTopBC_solute(self, type_top, value_top:float = 0., managed:list = []):   
-        assert isinstance(type_top, (str, int))
-        if isinstance(type_top, str):
-            if type_top == "constantConcentration":
-                t = 1
-            elif type_top == "constantFlux":
-                t = 2
-            elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
-                t = 3
-            elif type_top == "outflow":
-                t = 6
-            elif type_top == "linear":
-                t = 7
-            elif type_top == "michaelisMenten":
-                t = 8
-            elif type_top == "managed":
-                t = 9
-            else:
-                raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
-            type_top = t
+    def setTopBC_solute(self, type_top:list, value_top:list = [], managed:list = []):   
+        assert isinstance(type_top[0], (str, int))
+        for id_tt, tt in enumerate(type_top):
+            if isinstance(tt, str):
+                if tt == "constantConcentration":
+                    t = 1
+                elif tt == "constantFlux":
+                    t = 2
+                elif tt == "constantFluxCyl" or type_top == "fluxCyl":
+                    t = 3
+                elif tt == "outflow":
+                    t = 6
+                elif tt == "linear":
+                    t = 7
+                elif tt == "michaelisMenten":
+                    t = 8
+                elif tt == "managed":
+                    t = 9
+                else:
+                    raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
+                type_top[id_tt] = t
+        if len(value_top) == 0:
+            value_top = [0. for i in type_top]
         if self.checkProblemInitialized(throwError = False):
             self.base.setSTopBC(type_top, value_top) 
         else:    
-            self.setParameter(self.param_group + "BC.Top.SType", str(type_top))
-            self.setParameter(self.param_group + "BC.Top.CValue", str(value_top))
+            self.setParameter(self.param_group + "BC.Top.SType", self.dumux_str(type_top))
+            self.setParameter(self.param_group + "BC.Top.CValue", self.dumux_str(value_top))
 
             if type_top == 9:  # managed (nitrogen input)
                 if managed:
@@ -200,7 +203,7 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('Managed boundary conditions where set, but no managment data were given')
 
-    def setBotBC(self, type_bot:str, value_bot = 0.):
+    def setBotBC(self, type_bot, value_bot = 0.):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_bot:
@@ -233,31 +236,35 @@ class RichardsWrapper(SolverWrapper):
             self.setParameter(self.param_group + "BC.Bot.Type", str(type_bot))
             self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
-    def setBotBC_solute(self, type_bot:str, value_bot:float = 0.):
+    def setBotBC_solute(self, type_bot:list, value_bot:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem                    
         """      
-        assert isinstance(type_bot, (str, int))
-        if isinstance(type_bot, str):
-            if type_bot == "constantConcentration":
-                b = 1
-            elif type_bot == "constantFlux":
-                b = 2
-            elif type_bot == "constantFluxCyl" or type_bot == "fluxCyl":
-                b = 3
-            elif type_bot == "outflow":
-                b = 6
-            elif type_bot == "linear":
-                b = 7
-            elif type_bot == "michaelisMenten":
-                b = 8
-            else:
-                raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
-            type_bot = b
+        assert isinstance(type_bot[0], (str, int))
+        for id_tb, tb in enumerate(type_bot):
+            if isinstance(tb, str):
+                if tb == "constantConcentration":
+                    b = 1
+                elif tb == "constantFlux":
+                    b = 2
+                elif tb == "constantFluxCyl" or type_bot == "fluxCyl":
+                    b = 3
+                elif tb == "outflow":
+                    b = 6
+                elif tb == "linear":
+                    b = 7
+                elif tb == "michaelisMenten":
+                    b = 8
+                else:
+                    raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
+                type_bot[id_tb] = b
+        if len(value_bot) == 0:
+            value_bot = [0. for i in type_bot]
+            
         if self.checkProblemInitialized(throwError = False):
             self.base.setSBotBC(type_bot, value_bot) 
         else:      
-            self.setParameter(self.param_group + "BC.Bot.SType", str(type_bot))
-            self.setParameter(self.param_group + "BC.Bot.CValue", str(value_bot))
+            self.setParameter(self.param_group + "BC.Bot.SType", self.dumux_str(type_bot))
+            self.setParameter(self.param_group + "BC.Bot.CValue", self.dumux_str(value_bot))
         
 
     def setInnerFluxCyl(self, flux):
