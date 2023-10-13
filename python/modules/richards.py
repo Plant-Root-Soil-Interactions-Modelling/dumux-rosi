@@ -1,5 +1,4 @@
 from solverbase import SolverWrapper
-
 import numpy as np
 from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
 
@@ -119,7 +118,7 @@ class RichardsWrapper(SolverWrapper):
         p = [bot, top]
         self.setICZ(p, z)
 
-    def setTopBC(self, type_top:str, value_top:float = 0., climate:list = []):
+    def setTopBC(self, type_top, value_top:float = 0., climate:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_top:
@@ -134,27 +133,30 @@ class RichardsWrapper(SolverWrapper):
         @param climate:  Two lists are expected, first a list of times [day], second a list of evapotranspirations [cm/day], 
                          between the values linear interpolation is applied.                                                                          
         """
-        if type_top == "constantPressure" or type_top == "pressure":
-            t = 1
-        elif type_top == "constantFlux" or type_top == "flux":
-            t = 2
-        elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
-            t = 3
-        elif type_top == "atmospheric":
-            t = 4
-        elif type_top == "noflux" or type_top == "noFlux" or type_top == "no-flux":
-            t = 2
-            assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
-        else:
-            raise Exception('richards.setTopBC(): Top type should be "constantPressure", "constantFlux", constantCyl", "noFlux", or "atmospheric" unknown top type {}'.format(type_top))
-
+        assert isinstance(type_top, (str, int))
+        if isinstance(type_top, str):
+            if type_top == "constantPressure" or type_top == "pressure":
+                t = 1
+            elif type_top == "constantFlux" or type_top == "flux":
+                t = 2
+            elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
+                t = 3
+            elif type_top == "atmospheric":
+                t = 4
+            elif type_top == "noflux" or type_top == "noFlux" or type_top == "no-flux":
+                t = 2
+                assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
+            else:
+                raise Exception('richards.setTopBC(): Top type should be "constantPressure", "constantFlux", constantCyl", "noFlux", or "atmospheric" unknown top type {}'.format(type_top))
+            type_top = t
+            
         if self.checkProblemInitialized(throwError = False):
-            self.base.setTopBC(t, value_top) 
+            self.base.setTopBC(type_top, value_top) 
         else:  
-            self.setParameter(self.param_group + "BC.Top.Type", str(t))
+            self.setParameter(self.param_group + "BC.Top.Type", str(type_top))
             self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
 
-            if t == 4:  # atmospheric
+            if type_top == 4:  # atmospheric
                 if climate:
                     assert(len(climate[0]) == len(climate[1]))  # sample points
                     self.setParameter("Climate.Time", self.dumux_str(climate[0]))
@@ -163,31 +165,33 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('richards.setTopBC(): Atmospheric boundary conditions where set, but no climatic data were given')
 
-    def setTopBC_solute(self, type_top:str, value_top:float = 0., managed:list = []):   
-        if type_top == "constantConcentration":
-            t = 1
-        elif type_top == "constantFlux":
-            t = 2
-        elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
-            t = 3
-        elif type_top == "outflow":
-            t = 6
-        elif type_top == "linear":
-            t = 7
-        elif type_top == "michaelisMenten":
-            t = 8
-        elif type_top == "managed":
-            t = 9
-        else:
-            raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
-
+    def setTopBC_solute(self, type_top, value_top:float = 0., managed:list = []):   
+        assert isinstance(type_top, (str, int))
+        if isinstance(type_top, str):
+            if type_top == "constantConcentration":
+                t = 1
+            elif type_top == "constantFlux":
+                t = 2
+            elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
+                t = 3
+            elif type_top == "outflow":
+                t = 6
+            elif type_top == "linear":
+                t = 7
+            elif type_top == "michaelisMenten":
+                t = 8
+            elif type_top == "managed":
+                t = 9
+            else:
+                raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
+            type_top = t
         if self.checkProblemInitialized(throwError = False):
-            self.base.setSTopBC(t, value_top) 
+            self.base.setSTopBC(type_top, value_top) 
         else:    
-            self.setParameter(self.param_group + "BC.Top.SType", str(t))
+            self.setParameter(self.param_group + "BC.Top.SType", str(type_top))
             self.setParameter(self.param_group + "BC.Top.CValue", str(value_top))
 
-            if t == 9:  # managed (nitrogen input)
+            if type_top == 9:  # managed (nitrogen input)
                 if managed:
                     assert(len(managed[0]) == len(managed[1]))  # sample points
                     self.setParameter("Managed.Time", self.dumux_str(managed[0]))
@@ -205,70 +209,72 @@ class RichardsWrapper(SolverWrapper):
         type_bot ==  "constantFluxCyl", value_bot is the constant flux [cm/day] for cylindrical coordinates        
         type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                       
         """   
-        if type_bot == "constantPressure" or type_bot == "pressure":
-            b = 1
-        elif type_bot == "constantFlux" or type_bot == "flux":
-            b = 2
-        elif type_bot == "constantFluxCyl" or type_bot == "fluxCyl":
-            b = 3
-        elif type_bot == "freeDrainage" or type_bot == "fleeFlow" or type_bot == "free":
-            b = 5
-        elif type_bot == "rootSystem" or type_bot == "rootSystemExact":
-            b = 6
-        elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
-            b = 2
-            assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
-        else:
-            raise Exception('richards.setBotBC(): Bottom type should be "constantPressure", "constantFlux", "constantFluxCyl", "noFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
-
+        assert isinstance(type_bot, (str, int))
+        if isinstance(type_bot, str):
+            if type_bot == "constantPressure" or type_bot == "pressure":
+                b = 1
+            elif type_bot == "constantFlux" or type_bot == "flux":
+                b = 2
+            elif type_bot == "constantFluxCyl" or type_bot == "fluxCyl":
+                b = 3
+            elif type_bot == "freeDrainage" or type_bot == "fleeFlow" or type_bot == "free":
+                b = 5
+            elif type_bot == "rootSystem" or type_bot == "rootSystemExact":
+                b = 6
+            elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
+                b = 2
+                assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
+            else:
+                raise Exception('richards.setBotBC(): Bottom type should be "constantPressure", "constantFlux", "constantFluxCyl", "noFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
+            type_bot = b
         if self.checkProblemInitialized(throwError = False):
-            self.base.setBotBC(t, value_top)
+            self.base.setBotBC(type_bot, value_bot)
         else:    
-            self.setParameter(self.param_group + "BC.Bot.Type", str(b))
+            self.setParameter(self.param_group + "BC.Bot.Type", str(type_bot))
             self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
     def setBotBC_solute(self, type_bot:str, value_bot:float = 0.):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem                    
         """      
-        if type_bot == "constantConcentration":
-            b = 1
-        elif type_bot == "constantFlux":
-            b = 2
-        elif type_bot == "constantFluxCyl" or type_bot == "fluxCyl":
-            b = 3
-        elif type_bot == "outflow":
-            b = 6
-        elif type_bot == "linear":
-            b = 7
-        elif type_bot == "michaelisMenten":
-            b = 8
-        else:
-            raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
-
+        assert isinstance(type_bot, (str, int))
+        if isinstance(type_bot, str):
+            if type_bot == "constantConcentration":
+                b = 1
+            elif type_bot == "constantFlux":
+                b = 2
+            elif type_bot == "constantFluxCyl" or type_bot == "fluxCyl":
+                b = 3
+            elif type_bot == "outflow":
+                b = 6
+            elif type_bot == "linear":
+                b = 7
+            elif type_bot == "michaelisMenten":
+                b = 8
+            else:
+                raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
+            type_bot = b
         if self.checkProblemInitialized(throwError = False):
-            self.base.setSBotBC(type_top, value_top) 
+            self.base.setSBotBC(type_bot, value_bot) 
         else:      
-            self.setParameter(self.param_group + "BC.Bot.SType", str(b))
+            self.setParameter(self.param_group + "BC.Bot.SType", str(type_bot))
             self.setParameter(self.param_group + "BC.Bot.CValue", str(value_bot))
         
 
     def setInnerFluxCyl(self, flux):
         """ 
-        Sets the flux directly in the problem (problem must be initialized), 
-        calls base.setBotBC, @see setBotBC in richards.hh
+        Sets the flux directly in the problem (problem must be initialized),  
         
         @param flux      [cm/day] negative means outflow          
         """
-        self.base.setBotBC(3, flux)
+        self.setBotBC(3, flux)
 
     def setInnerMatricPotential(self, x):
         """ 
-        Sets the dirichlet BC directly in the problem (problem must be initialized), 
-        calls base.setBotBC, @see setBotBC in richards.hh
+        Sets the dirichlet BC directly in the problem (problem must be initialized),  
         
         @param flux      [cm] xylem matric potentail          
         """
-        self.base.setBotBC(1, x)
+        self.setBotBC(1, x)
 
     def getInnerFlux(self, eq_idx = 0):
         """ [cm3 / cm2 / day] """
@@ -276,18 +282,18 @@ class RichardsWrapper(SolverWrapper):
 
     def setOuterFluxCyl(self, flux):
         """ 
-        sets the flux directly in the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh
+        sets the flux 
         @param flux      [cm/day] negative means outflow    
         """
-        self.base.setTopBC(3, flux)
+        self.setTopBC(3, flux)
 
     def getOuterFlux(self, eq_idx = 0):
         """ [cm / day]"""
         return self.base.getOuterFlux(eq_idx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def setOuterPressure(self, value_top = 0.):
-        """ sets the flux directly in the problem (problem must be initialized), calls base.setToptBC, @see setToptBC in richards.hh"""
-        self.base.setTopBC(1, value_top)
+        """ sets the flux """
+        self.setTopBC(1, value_top)
 
     def setInnerBC(self, type_bot:str, value_bot = 0.):
         """ more appropriate name for cylindrical coordinates, calls setBotBC, @see setBotBC """
