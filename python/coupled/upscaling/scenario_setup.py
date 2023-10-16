@@ -5,14 +5,17 @@ import plantbox as pb
 from functional.root_conductivities import init_conductivities
 import functional.van_genuchten as vg
 from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
-from functional.HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
 from functional.Perirhizal import PerirhizalPython
+
+from functional.PlantHydraulicParameters import PlantHydraulicParameters  # Doussan solver
+from functional.PlantHydraulicModel import PlantHydraulicModel  # Doussan solver
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
 from conductivities import *
 
+import sys
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
@@ -51,6 +54,8 @@ def maize_(dim:str):
     max_b = np.array([38., 8., 0.])
     if dim == "1D":
         cell_number = np.array([1, 1, 150])
+    elif dim == "2D":
+        cell_number = np.array([38, 3, 75])
     else:
         cell_number = np.array([76, 16, 150])
     return min_b, max_b, cell_number
@@ -77,8 +82,8 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     soil             name of the soil 4D look up table, see soil_vg_() for the names and corresponding VG parameters
     outer_method     method to determine outer perirhizal radii ('voronoi', 'length', 'surface', or 'volume')    
     """
-    assert plant == "maize" or plant == "soybean" or plant == "springbarley", "plant should be 'maize', or 'soybean' "
-    assert dim == "3D" or dim == "1D", "dim should be '1D' or '3D'"
+    assert plant == "maize" or plant == "soybean" or plant == "springbarley", "plant should be 'maize', or 'soybean' or 'springbarley' "
+    assert dim == "3D" or dim == "1D" or dim == "2D", "dim should be '1D' or '3D'"
     assert soil in ["hydrus_loam", "hydrus_clay", "hydrus_sand", "hydrus_sandyloam"], "soil should be 'hydrus_loam', 'hydrus_clay', 'hydrus_sand' or 'hydrus_sandyloam' "
     assert outer_method in ["voronoi", "length", "surface", "volume"], "outer_method should be 'voronoi', 'length', 'surface', or 'volume'"
 
@@ -115,6 +120,8 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     s.initialize()
     if dim == "1D":
         s.createGrid(min_b, max_b, cell_number, periodic = False)
+    elif dim == "2D":
+        s.createGrid(min_b, max_b, cell_number, periodic = True)
     elif dim == "3D":
         s.createGrid(min_b, max_b, cell_number, periodic = True)
     s.setHomogeneousIC(initial, True)  # cm pressure head top, equilibrium (contant total potential)
@@ -124,9 +131,15 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     s.setParameter("Newton.EnableChop", "True")
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Soil.SourceSlope", slope)
+
+    print("initializeProblem()")
+    sys.stdout.flush()
+
     s.initializeProblem()
     s.setCriticalPressure(wilting_point)
     s.ddt = 1.e-5  # [day] initial Dumux time step
+    print("initializeProblem() done")
+    sys.stdout.flush()
 
     """ root hydraulic model"""
     rs = pb.MappedRootSystem()
@@ -144,49 +157,70 @@ def set_scenario(plant, dim, initial, soil, outer_method):
         params[2].lmax *= 2
         params[1].theta = 1.31  # why is the tap root not always 0?
 
+    #  = rs.getRootSystemParameter()
+    # seed_param.seedPos = pb.Vector3d(0., 0., -3.)  #################################################################################
+
     # seed = rs.getRootSystemParameter()  # SeedRandomParameter
     # seed.firstSB = 1.e6  #################################################################################
 
     rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
     # rs.initializeDB(4, 5)
     rs.initialize()
+    print("simulating root system")
+    sys.stdout.flush()
     rs.simulate(rs_age, True)
+    print("initializing hydraulic model")
+    sys.stdout.flush()
 
-    r = HydraulicsDoussan(rs)
+    params = PlantHydraulicParameters()
+    r = PlantHydraulicModel("Doussan", rs, params)
 
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)  # cutting
     if plant == "maize":
         # const_conductivities(r)
-        maize_conductivities(r, 1., 1.)
+        maize_conductivities(params, 1., 1.)
     elif plant == "soybean":
         # const_conductivities(r)
-        lupine_conductivities(r, 1., 1.)
+        lupine_conductivities(params, 1., 1.)
     elif plant == "springbarley":
         # const_conductivities(r)
-        springbarley_conductivities(r)
+        springbarley_conductivities(params)
+
+    print("Hydraulic model done()")
 
     """ coupling roots to macroscopic soil """
     if dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
+    elif dim == "2D":
+        picker = lambda x, y, z: s.pick([x, y, z])
     elif dim == "3D":
         picker = lambda x, y, z: s.pick([x, y, z])
 
-    r.rs.setSoilGrid(picker)  # maps segment
+    r.rs.setSoilGrid(picker)  # maps segment ############################## rs?
+    sys.stdout.flush()
     seg2cell = r.rs.seg2cell
+    sys.stdout.flush()
     ns = len(r.rs.segments)
     mapping = np.array([seg2cell[j] for j in range(0, ns)])
+    sys.stdout.flush()
 
     """ outer radii """
     if outer_method == "voronoi":
+        print("voronoi", outer_method)
+        sys.stdout.flush()
         outer_ = PerirhizalPython(rs).get_outer_radii_bounded_voronoi()
         if np.sum([np.isnan(outer_)]) > 0:
-            print("NANs in get_outer_radii_bounded_voronoi are replaced by mean", np.sum([np.isnan(outer_)]))
+            print("set_scenario(): NaNs in get_outer_radii_bounded_voronoi are replaced by mean", np.sum([np.isnan(outer_)]))
             outer_mean = np.nanmean(outer_) * np.ones(outer_.shape)
             outer_[np.isnan(outer_)] = outer_mean[np.isnan(outer_)]
-        outer_ = outer_[1:]  # nodes to segs
     else:
+        print("other:", outer_method)
+        sys.stdout.flush()
         outer_ = PerirhizalPython(rs).get_outer_radii(outer_method)
+
+    print("done")
+    sys.stdout.flush()
 
     inner_ = rs.radii
     rho = np.divide(outer_, np.array(inner_))
@@ -229,11 +263,12 @@ def open_sra_lookup(filename):
     return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)
 
 
-def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs):
+def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs, wall_time = 0.):
     """  saves numpy arrays as npy files """
     np.save('results/hx_' + file_name, np.array(hx))  # xylem pressure head per segment [cm]
     np.save('results/hsr_' + file_name, np.array(hsr))  # pressure head at interface per segment [cm]
     np.save('results/sink_' + file_name, -np.array(sink))  # sink per soil cell [cm3/day]
     np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans), -np.array(trans2))))  # time [day], transpiration [cm3/day]
     np.save('results/hs_' + file_name, np.array(hs))  # soil water matric potential per soil cell [cm]
+    np.save('results/time_' + file_name, np.array(wall_time))
 

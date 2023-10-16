@@ -51,19 +51,20 @@ for j in range(0, sn):
 celldata = grid.GetCellData()
 celldata.AddArray(cell_sd)
 
-# outer_radii = peri.get_outer_radii_voronoi()
-outer_radii = peri.get_outer_radii("surface")
+outer_radii = peri.get_outer_radii_voronoi()
+# outer_radii = peri.get_outer_radii("surface")
 
 print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
 
 ana = pb.SegmentAnalyser(r.mappedSegments())
-outer_radii = -np.minimum(outer_radii, 1.)  # limit for visualisation
+outer_radii = np.minimum(outer_radii, 1.)  # limit for visualisation
 ana.addData("outer_r", outer_radii)
+ana.addData("radius", outer_radii)
 
 # vp.plot_mesh(grid, "surface_density")
 # vp.plot_mesh_cuts(grid, "surface_density")
-# vp.plot_roots(ana, "outer_r")
-vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
+vp.plot_roots(ana, "outer_r")
+# vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
 
 # plt.hist(outer_radii, bins = 100, rwidth = 0.9, align = 'mid')
 # plt.show()

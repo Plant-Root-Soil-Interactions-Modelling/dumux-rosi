@@ -1,4 +1,6 @@
-""" 3d surface densities"""
+""" 
+    3d surface densities
+"""
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
@@ -13,7 +15,7 @@ import matplotlib.pyplot as plt
 
 """ parameters """
 
-dim = "1D"  # 1D, 3D
+dim = "3D"  # 1D, 3D
 plant = "springbarley"  # soybean, maize, springbarley
 # min_b, max_b, cell_number = scenario.soybean_(dim)
 min_b, max_b, cell_number = scenario.springbarley_(dim)
@@ -39,23 +41,6 @@ for p in params:
 
 print()
 
-# A_dirichlet, Kr, kx0 = r_.doussan_system_matrix(rs_age)
-# print(type(r_.rs))
-# print("segs")
-# for i in range(0, 10):
-#     print(segs[i])
-# # print("trans", trans)
-# print("nodes")
-# for i in range(0, 10):
-#     print(nodes[i])
-# print()
-# print("kx0", kx0)
-# print()
-# print(A_dirichlet[0:8, 0:8])
-# print()
-# print(A_dirichlet[:, 0])
-# r_.test()
-
 sn = np.prod(cell_number)
 peri = PerirhizalPython(r)
 
@@ -71,7 +56,7 @@ for j in range(0, sn):
 celldata = grid.GetCellData()
 celldata.AddArray(cell_sd)
 
-# outer_radii = peri.get_outer_radii_vo git push --set-upstream origin new-features-from-sensitivityronoi()
+# outer_radii = peri.get_outer_radii_voronoi()
 outer_radii = peri.get_outer_radii("surface")
 
 print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
@@ -79,12 +64,12 @@ print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.medi
 ana = pb.SegmentAnalyser(r.mappedSegments())
 # outer_radii = -np.minimum(outer_radii, 1.)  # limit for visualisation
 ana.addData("outer_r", outer_radii)
-ana.addConductivities(r_, rs_age, 0.1, 0.014)
+ana.addHydraulicConductivities(r_.params, rs_age, 0.1, 0.014)
 ana.addAge(rs_age)
 ana.addCellIds(r)
 
 # vp.plot_mesh(grid, "surface_density")
-# vp.plot_mesh_cuts(grid, "surface_density")
+vp.plot_mesh_cuts(grid, "surface_density")
 print()
 print("age", rs_age, "nodes", len(nodes))
 print()

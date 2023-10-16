@@ -25,7 +25,7 @@ import parallel_rs as par
 def double_(rsx, rsx2):
     """ inserts dummy values for the artificial segments """
     rsx2[:, 1] = rsx  # rsx2.shape = (ns, 2)
-    return np.expand_dims(np.array(rsx2.flat), axis = 1)  # 0, rsx[0], 0, rsx[1], ...
+    return np.array(rsx2.flat)  # 0, rsx[0], 0, rsx[1], ...
 
 
 def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, rs_age, outer_method):
@@ -66,32 +66,49 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
     rho_ = np.divide(outer_r, np.array(inner_r))
     rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
-    """ initialize hydraulic model """
-    r.update(rs_age)
+    """ Doussan """
+    A_d, Kr, kx0 = r.get_doussan_system(rs_age)
+    Id = sparse.identity(ns).tocsc()  # identity matrix
+    collar_index = r.collar_index()
+
+    print("collar_index (segment index)", r.collar_index())
+    print("kx0:", kx0)
+    print()
+
+    A_n = A_d.copy()
+    A_n[collar_index, collar_index] -= kx0
+
+    print("invert matrix start", ns)
+    sys.stdout.flush()
+
+    A_n_splu = LA.splu(A_n)
+    A_d_splu = LA.splu(A_d)
+    # Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
+    # Ainv_neumann = sparse.linalg.inv(A_n).todense()  # dense
+    print("done inverting", "\n")
+    sys.stdout.flush()
 
     """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
 
+    sx = s.getSolutionHead()  # inital condition, solverbase.py
     cell_centers = s.getCellCenters()
     cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
     seg_centers_z = np.array([0.5 * (nodes[segs[2 * j + 1].x].z + nodes[segs[2 * j + 1].y].z)  for j in range(0, int(ns / 2))])
-
     hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
+    # print(list([mapping[2 * j + 1] for j in range(0, int(ns / 2))]))
 
     kr_ = np.zeros((ns,))
     rsx = hsb.copy()  # initial values for fix point iteration
-    rsx = rsx + seg_centers_z  # from matric potential to total matric potential
     rsx2 = np.zeros((rsx.shape[0], 2))
 
     # r.init_solve_static(rs_age, double_(rsx, rsx2), False, wilting_point, soil_k = [])  # speed up & and forever static...
-    print("rsx0", rsx.shape)
-    rx = r.solve(double_(rsx, rsx2), 0., wilting_point)
-    print("rx0", rx.shape)
+
+    rx = r.solve(rs_age, -trans * sinusoidal2(0., dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
     rx_old = rx.copy()
 
-    kr_ = np.array([r.params.kr_f(j, rs_age, types[j], 2) for j in range(0, len(outer_r))])  # TODO replace by getter?
+    kr_ = np.array([r.kr_f(rs_age, types[j], 2, j) for j in range(0, len(outer_r))])
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
     inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)
     inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)
@@ -117,7 +134,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
-            rx_ = rx[1::2, 0] - seg_centers_z  # from total matric potential to matric potential
+            rx_ = rx[1::2] - seg_centers_z  # from total matric potential to matric potential
             hsb_ = hsb - cell_centers_z  # from total potential to matric potential
 
             rx_ = np.maximum(rx_, np.ones(rx_.shape) * (-15999))
@@ -131,7 +148,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
-            rx = r.solve(double_(rsx, rsx2), t_pot, wilting_point)  # xylem_flux.py, cells = False
+            rx = r.solve(rs_age, -trans * sinusoidal2(t, dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
 
@@ -142,10 +159,11 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
 
         wall_soil = timeit.default_timer()
 
-        fluxes = r.radial_fluxes(rx, double_(rsx, rsx2))
-        # err2 = np.linalg.norm(t_pot - np.sum(fluxes))
-        # if err2 > 1.e-6:
-        #     print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, t_pot, np.sum(fluxes))
+        fluxes = r.segFluxes(rs_age, rx, double_(rsx, rsx2), approx = False, cells = False)
+        err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - np.sum(fluxes))
+        if r.last == "neumann":
+            if err2 > 1.e-6:
+                print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, -trans * sinusoidal2(t, dt), np.sum(fluxes))
 
         soil_fluxes = r.sumSegFluxes(fluxes)
         water = s.getWaterVolume()
@@ -179,9 +197,8 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
 
             print("number of iterations", c)
             print("t_pot", t_pot, "q_root", sum_root_flux, "soil", sum_soil_flux)
-
-            print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days \n"
-                  .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime))  # , 0
+            print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
+                  .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime, rx[collar_index]))  # , 0
 
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
             print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
@@ -248,8 +265,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "length"])
-    args = parser.parse_args()
+    args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
+    # args = parser.parse_args()
 
     name = "par_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()

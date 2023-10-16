@@ -6,8 +6,8 @@ from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt  # for debugging, e.g. to check suf
 
 import plantbox as pb  # CPlantBox
-from xylem_flux import *  # root system Python hybrid solver
-import vtk_plot as vp  # for debugging
+from functional.xylem_flux import *  # root system Python hybrid solver
+import visualisation.vtk_plot as vp  # for debugging
 
 import sra
 
@@ -215,12 +215,12 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
     rsx = hsb.copy()  # initial values for fix point iteration
     rsx2 = np.zeros((rsx.shape[0], 2))
 
-    r.init_solve_static(rs_age, double_(rsx, rsx2), False, wilting_point, soil_k = [])  # speed up & and forever static...
+    # r.init_solve_static(rs_age, double_(rsx, rsx2), False, wilting_point, soil_k = [])  # speed up & and forever static...
 
     rx = r.solve(rs_age, -trans * sinusoidal2(0., dt), 0., double_(rsx, rsx2), False, wilting_point, soil_k = [])
     rx_old = rx.copy()
 
-    kr_ = np.array([r.kr_f(rs_age, types[j], 2, 2, j) for j in range(0, len(outer_r))])
+    kr_ = np.array([r.kr_f(rs_age, types[j], 2, j) for j in range(0, len(outer_r))])
     inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
@@ -260,7 +260,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
         fluxes = r.segFluxes(rs_age, rx, double_(rsx, rsx2), approx = False, cells = False)
         err2 = np.linalg.norm(-trans * sinusoidal2(t, dt) - np.sum(fluxes))
         if r.last == "neumann":
-            if err2 > 1.e-8:
+            if err2 > 1.e-6:
                 print("error: potential transpiration differs summed radial fluxes in Neumann case" , err2, -trans * sinusoidal2(t, dt), np.sum(fluxes))
 
         soil_fluxes = r.sumSegFluxes(fluxes)

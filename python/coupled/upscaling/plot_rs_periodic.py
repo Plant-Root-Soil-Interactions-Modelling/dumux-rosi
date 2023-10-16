@@ -1,4 +1,8 @@
-""" 3d surface densities"""
+""" 
+    plots a single root system repeatedly in x and y direction (to visualize periodic conditions) 
+    
+    writes out root architecture and soil domain vtp for post processing in paraview
+"""
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
@@ -98,80 +102,3 @@ if __name__ == "__main__":
 
     print("happy paraviewing...")
 
-#
-# print("\nplant")
-# print("rs_age", rs_age)
-# print()
-# params = r.getRootRandomParameter()
-# for p in params:
-#     print("SubType", p.subType)
-#     print("radius", p.a)
-#     print("growth rate", p.r)
-#     print()
-#
-# print()
-#
-# # A_dirichlet, Kr, kx0 = r_.doussan_system_matrix(rs_age)
-# # print(type(r_.rs))
-# # print("segs")
-# # for i in range(0, 10):
-# #     print(segs[i])
-# # # print("trans", trans)
-# # print("nodes")
-# # for i in range(0, 10):1
-# #     print(nodes[i])
-# # print()
-# # print("kx0", kx0)
-# # print()
-# # print(A_dirichlet[0:8, 0:8])
-# # print()
-# # print(A_dirichlet[:, 0])
-# # r_.test()
-#
-# sn = np.prod(cell_number)
-# peri = PerirhizalPython(r)
-#
-# """ add 3d soil surface density """
-# sd = peri.get_density("surface")
-# sd = -np.minimum(sd, 1.1)  # limit for visualisation
-# grid = vp.uniform_grid(min_b, max_b, cell_number)
-# cell_sd = vtk.vtkDoubleArray()
-# cell_sd.SetName("surface_density")
-# cell_sd.SetNumberOfValues(sn)
-# for j in range(0, sn):
-#     cell_sd.SetValue(j, sd[j])
-# celldata = grid.GetCellData()
-# celldata.AddArray(cell_sd)
-#
-# # outer_radii = peri.get_outer_radii_vo git push --set-upstream origin new-features-from-sensitivityronoi()
-# outer_radii = peri.get_outer_radii("surface")
-#
-# print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
-#
-# ana = pb.SegmentAnalyser(r.mappedSegments())
-# # outer_radii = -np.minimum(outer_radii, 1.)  # limit for visualisation
-# ana.addData("outer_r", outer_radii)
-# ana.addConductivities(r_, rs_age, 0.1, 0.014)
-# ana.addAge(rs_age)
-# ana.addCellIds(r)
-#
-# # vp.plot_mesh(grid, "surface_density")
-# # vp.plot_mesh_cuts(grid, "surface_density")
-# print()
-# print("age", rs_age, "nodes", len(nodes))
-# print()
-#
-# # vp.plot_roots(ana, "age")
-# # vp.plot_roots(ana, "kr")
-# # vp.plot_roots(ana, "kx")
-# vp.plot_roots(ana, "subType")
-#
-# ana.write("results/" + plant + ".vtp")
-#
-# # width = max_b - min_b
-# # vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
-#
-# # plt.hist(outer_radii, bins = 40, rwidth = 0.9, align = 'mid')
-# # plt.show()
-#
-# print("fin")

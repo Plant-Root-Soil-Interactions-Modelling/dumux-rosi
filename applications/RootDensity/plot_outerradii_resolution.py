@@ -63,6 +63,7 @@ def get_outer_radii(rootsystem, type_str, cell_number):
 
     ana = pb.SegmentAnalyser(r.mappedSegments())
     ana.addData("outer_r", outer_radii)
+    ana.addData("length", ana.getParameter("length"))
     # organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
     topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, max_b[2]]))
     subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, min_b[2]]), pb.Vector3d([1e6, 1e6, -topsoil]))
@@ -78,15 +79,25 @@ def get_outer_radii(rootsystem, type_str, cell_number):
     # outer0 = ana0.data["outer_r"]
     outer1 = ana1.data["outer_r"]
     outer2 = ana2.data["outer_r"]
+    length1 = ana1.data["length"]
+    length2 = ana2.data["length"]
     print("outer1", np.nanmin(outer1), np.nanmax(outer1), "median", np.nanmedian(outer1), "mean_top", np.nanmean(outer1), np.nanstd(outer1))
     print("outer2", np.nanmin(outer2), np.nanmax(outer2), "median", np.nanmedian(outer2), "mean_sub", np.nanmean(outer2), np.nanstd(outer2))  #
     print(len(outer_radii), len(outer1) + len(outer2))  # len(outer0) +
 
-    return outer1, outer2, seg2cell
+    return outer1, outer2, seg2cell, length1, length2
 
 
 topsoil = 30  # 10 * 2.54
 subsoil = 150  # 30 * 2.54
+
+titles = []
+titles.append("3D - (1cm)$^3$")
+titles.append("3D - (2cm)$^3$")
+titles.append("3D - (4cm)$^3$")
+titles.append("1D - Layer thickness 1 cm ")
+titles.append("1D - Layer thickness 2 cm")
+titles.append("1D - Layer thickness 4 cm")
 
 """ maize """
 cell_numbers = []
@@ -101,7 +112,7 @@ for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
     fig, axes = plt.subplots(3, 2, figsize = (20, 18))
     stats = [["min", "max", "median", "mean", "std"]]
     for i, cell_number in enumerate(cell_numbers):
-        outer1, outer2, seg2cell = get_outer_radii("maize", split_type, cell_number)
+        outer1, outer2, seg2cell, length1, length2 = get_outer_radii("maize", split_type, cell_number)
 
         # print("outer_r.shape", outer_r.shape)
         # print("seg2cell.shape", seg2cell.shape)
@@ -110,16 +121,21 @@ for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
         # print("layer0", len(layer0))
         # print(layer0)
 
-        outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
-        outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
+        outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+        outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
         ax = axes[i % 3, i // 3]
         # ax.hist(outer_r, bins = 40, rwidth = 0.9)
-        ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+        ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
         # ax.set_xlim(0, 4)
-        ax.set_ylim(0, 5000)
-        ax.set_title("Resolution {:g}x{:g}x{:g}".format(cell_number[0], cell_number[1], cell_number[2]))
+        ax.set_ylim(0, 2300)
+        ax.set_title(titles[i])
         stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
                       np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+
+        if i < 3:
+            ax.set_ylabel("Root length [cm] ")
+        if i == 2 or i == 5:
+            ax.set_xlabel("Perirhizal outer radius [cm], 40 bins")
 
     print(stats[0])
     for i, cell_number in enumerate(cell_numbers):
@@ -130,7 +146,7 @@ for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
     plt.savefig('res_maize_' + split_type + '.png')
     plt.show()
 
-""" spring barley """
+# """ spring barley """
 # cell_numbers = []
 # cell_numbers.append([13, 3, 150])
 # cell_numbers.append([7, 2, 75])
@@ -143,18 +159,24 @@ for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
 #     fig, axes = plt.subplots(3, 2, figsize = (20, 18))
 #     stats = [["min", "max", "median", "mean", "std"]]
 #     for i, cell_number in enumerate(cell_numbers):
-#         outer1, outer2, seg2cell = get_outer_radii("springbarley", split_type, cell_number)
+#         outer1, outer2, seg2cell, length1, length2 = get_outer_radii("springbarley", split_type, cell_number)
 #         # outer_r = np.minimum(outer_r, 2)
-#         outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
-#         outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
+#         outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+#         outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
 #         ax = axes[i % 3, i // 3]
 #         # ax.hist(outer_r, bins = 40, rwidth = 0.9)
-#         ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+#         # ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
+#         ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
 #         # ax.set_xlim(0, 2)
-#         ax.set_ylim(0, 750)
-#         ax.set_title("Resolution {:g}x{:g}x{:g}".format(cell_number[0], cell_number[1], cell_number[2]))
+#         ax.set_ylim(0, 170)
+#         ax.set_title(titles[i])
 #         stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
 #                       np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+#
+#         if i < 3:
+#             ax.set_ylabel("Root length [cm] ")
+#         if i == 2 or i == 5:
+#             ax.set_xlabel("Perirhizal outer radius [cm], 40 bins")
 #
 #     print(stats[0])
 #     for i, cell_number in enumerate(cell_numbers):

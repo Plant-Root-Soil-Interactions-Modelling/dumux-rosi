@@ -84,6 +84,8 @@ def get_outer_radii_horizons(rootsystem):
 
     ana = pb.SegmentAnalyser(r.mappedSegments())
     ana.addData("outer_r", outer_radii)
+    ana.addData("length", ana.getParameter("length"))  # to make sure that we handle it exactly the same way
+
     # organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
     topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, max_b[2]]))
     subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, min_b[2]]), pb.Vector3d([1e6, 1e6, -topsoil]))
@@ -99,10 +101,14 @@ def get_outer_radii_horizons(rootsystem):
     # outer0 = ana0.data["outer_r"]
     outer1 = ana1.data["outer_r"]
     outer2 = ana2.data["outer_r"]
+    length1 = ana1.data["length"]
+    length2 = ana2.data["length"]
+
     print("outer1", np.nanmin(outer1), np.nanmax(outer1), "median", np.nanmedian(outer1), "mean_top", np.nanmean(outer1), np.nanstd(outer1))
     print("outer2", np.nanmin(outer2), np.nanmax(outer2), "median", np.nanmedian(outer2), "mean_sub", np.nanmean(outer2), np.nanstd(outer2))  #
-    print(len(outer_radii), len(outer1) + len(outer2))  # len(outer0) +
-    return outer1, outer2  # outer0,
+    print(len(outer_radii), len(outer1) + len(outer2))
+
+    return outer1, outer2, length1, length2
 
 
 """ parameters """
@@ -111,21 +117,25 @@ def get_outer_radii_horizons(rootsystem):
 topsoil = 30  # 10 * 2.54
 subsoil = 150  # 30 * 2.54
 
-rootsystem = "Maize"  # Maize, Soybean, Spring Barley
+rootsystem = "Spring Barley"  # Maize, Soybean, Spring Barley
 
 # fig, axes = plt.subplots(3, 1, figsize = (10, 18))
 fig, axes = plt.subplots(1, 1, figsize = (9, 8))
-outer1, outer2 = get_outer_radii_horizons(rootsystem)  # outer0,
-# outer0 = PerirhizalPython.to_range_(None, outer0, 0., 2.)
-outer1 = PerirhizalPython.to_range_(None, outer1, 0., 2.)
-outer2 = PerirhizalPython.to_range_(None, outer2, 0., 2.)
-axes.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+outer1, outer2, length1, length2 = get_outer_radii_horizons(rootsystem)
+
+outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
+
+axes.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+#  axes.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)  # outer0,
+
 # axes.set_ylim([0., 4000.])
 axes.legend()
-axes.set_xlabel("Perirhizal outer radius [cm] using Voronoi diagrams ")
+axes.set_xlabel("Perirhizal outer radius [cm] using Voronoi diagrams, 40 bins")
+axes.set_ylabel("Root length [cm] ")
 axes.set_title(rootsystem)
 plt.tight_layout()
-plt.savefig('voronoi_' + rootsystem + '.png')
+plt.savefig('hist_vor_' + rootsystem + '.png')
 
 plt.show()
 

@@ -6,9 +6,9 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import fsolve
 import timeit
 
-from xylem_flux import sinusoidal2
+from functional.xylem_flux import sinusoidal2
 
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 
 def open_sra_lookup(filename):

@@ -48,8 +48,8 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     # seg_length = r.rs.segLength()
     assert len(nodes) - 1 == ns, "Number of nodes should be equal one less than number of segments"
 
-    """fetch rhizosphere model params """
-    kr_ = np.array(r.get_kr(rs_age))
+    """ Fetch rhizosphere model params """
+    kr_ = np.array(r.getKr(rs_age))
     kr_ = np.maximum(kr_, np.ones(kr_.shape) * 1.e-4)
     inner_ = r.rs.radii
     inner_kr_ = np.multiply(inner_, kr_)  # multiply for table look up
@@ -59,10 +59,39 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
     rho_ = np.maximum(rho_, np.ones(rho_.shape) * 1.)
     rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200.)
 
-    """ initialize hydraulic model """
-    r.update(rs_age)
+    """ Doussan """
+    A_d, Kr, kx0 = r.doussan_system_matrix(rs_age)
+    Id = sparse.identity(ns).tocsc()  # identity matrix
+    collar_index = r.collar_index()
 
-    """ numerical solution """
+    print("collar_index (segment index)", r.collar_index())
+    print("kx0:", kx0)
+    print()
+
+    A_n = A_d.copy()
+    A_n[collar_index, collar_index] -= kx0
+
+    print("invert matrix start", ns)
+    sys.stdout.flush()
+
+    A_n_splu = LA.splu(A_n)
+    A_d_splu = LA.splu(A_d)
+    # Ainv_dirichlet = sparse.linalg.inv(A_d).todense()  # dense
+    # Ainv_neumann = sparse.linalg.inv(A_n).todense()  # dense
+    print("done inverting", "\n")
+    sys.stdout.flush()
+
+    # C_comp_dirichlet = Kr @ (Id - Ainv_dirichlet @ Kr)  # Neumann, Hess, Eqn (24)
+    # c_dirichlet = (Kr @ Ainv_dirichlet)[:, collar_index + 1] * (-kx0)  # # Hess (25)
+    # print("C_comp_dirichlet", type(C_comp_dirichlet), C_comp_dirichlet.shape)
+    # print("c_dirichlet", type(c_dirichlet), c_dirichlet.shape)
+
+    # C_comp_neumann = Kr @ (Id - Ainv_neumann @ Kr)  # Neumann, Hess, Eqn (32)
+    # c_neumann = (Kr @ Ainv_neumann)[:, collar_index]  # Hess (33)
+    # print("C_comp_neumann", type(C_comp_neumann), C_comp_neumann.shape)
+    # print("c_neumann", type(c_neumann), c_neumann.shape)
+
+    """ Numerical solution """
     start_time = timeit.default_timer()
     x_, y_, z_, sink_, hs_, hx_, hsr_ = [], [], [], [], [], [], []
     sx = s.getSolutionHead_()  # inital condition, solverbase.py
@@ -72,18 +101,30 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
     t_pot = -trans * sinusoidal2(0., dt)
 
-    hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))  # TODO use getter
+    hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
+    # rx = Ainv_dirichlet.dot(Kr.dot(hs)) + Ainv_dirichlet[:, collar_index] * kx0 * wilting_point
+    b = Kr.dot(hs)
+    b[collar_index, 0] += kx0 * wilting_point
+    rx = sparse.linalg.spsolve(A_d, b)
+    rx = np.expand_dims(rx, axis = 1)
 
-    rx = r.solve(hs, 0., wilting_point)
+    q_dirichlet = -Kr.dot(hs - rx)
+    if np.sum(q_dirichlet) < t_pot:
+        # rx = Ainv_neumann.dot(Kr.dot(hs)) + Ainv_neumann[:, collar_index] * t_pot  #   # Hess Eqn (29)
+        b = Kr.dot(hs)
+        b[collar_index, 0] += t_pot
+        rx = sparse.linalg.spsolve(A_n, b)
+        rx = np.expand_dims(rx, axis = 1)
 
     for i in range(0, N):
 
         t_pot = -trans * sinusoidal2(t, dt)  # potential transpiration ...
+        if  i % skip == 0:
+            print("t_pot", t_pot)
 
-        # hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
-        hs = np.expand_dims(r.get_hs(sx), axis = 1)
+        hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
 
         wall_iteration = timeit.default_timer()
         err = 1.e6
@@ -115,18 +156,29 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             # print("types...", type(rsx), type(Kr), type(Ainv_dirichlet))
             # print("shapes...", rsx.shape, Kr.shape, Ainv_dirichlet.shape)
+
             # rx = Ainv_dirichlet.dot(Kr.dot(rsx)) + Ainv_dirichlet[:, collar_index] * kx0 * wilting_point
-            # b = Kr.dot(rsx)
-            # b[collar_index, 0] += kx0 * wilting_point
+            b = Kr.dot(rsx)
+            b[collar_index, 0] += kx0 * wilting_point
             # rx = sparse.linalg.spsolve(A_d, b)
             # rx = np.expand_dims(rx, axis = 1)
-            rx = r.solve(rsx, t_pot, wilting_point)
+            rx = A_d_splu.solve(b)
             # print("dirichlet rx", rx.shape, np.min(rx), np.max(rx))
             # print("dirichlet rx2", rx2.shape, np.min(rx2), np.max(rx2))
 
             wall_xylem = timeit.default_timer() - wall_xylem
 
-            q = r.radial_fluxes(rx, rsx)  # -Kr.dot(rsx - rx)  # both total potentials
+            q_dirichlet = -Kr.dot(rsx - rx)  # both total potentials
+
+            if np.sum(q_dirichlet) <= t_pot:
+                # rx = Ainv_neumann.dot(Kr.dot(rsx)) + Ainv_neumann[:, collar_index] * t_pot  #   # Hess Eqn (29)
+                b = Kr.dot(rsx)
+                b[collar_index, 0] += t_pot
+                # rx = sparse.linalg.spsolve(A_n, b)
+                # rx = np.expand_dims(rx, axis = 1)
+                rx = A_n_splu.solve(b)
+
+                # print("neumann rx", np.min(rx), np.max(rx))
 
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
@@ -137,8 +189,17 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
         wall_soil = timeit.default_timer()
 
-        fluxes = r.sumSegFluxes(q[:, 0])
-        sum_root_flux = np.sum(q)
+        if np.sum(q_dirichlet) > t_pot:
+            if  i % skip == 0:
+                print("dirichlet(", c, err, "):", np.sum(q_dirichlet), t_pot)
+            fluxes = r.sumSegFluxes(q_dirichlet[:, 0])
+            sum_root_flux = np.sum(q_dirichlet)
+        else:
+            q_neumann = -Kr.dot(rsx - rx)
+            if  i % skip == 0:
+                print("neumann (", c, err, "):", np.sum(q_neumann), t_pot, np.sum(q_dirichlet), "minmax", np.min(q_neumann), np.max(q_neumann))
+            fluxes = r.sumSegFluxes(q_neumann[:, 0])
+            sum_root_flux = np.sum(q_neumann)
 
         water = s.getWaterVolume()
         s.setSource(fluxes.copy())  # richards.py
@@ -166,9 +227,9 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             print("number of iterations", c)
             print("t_pot", t_pot, "q_root", sum_root_flux, "soil", sum_soil_flux)
-
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
-                  .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime, rx[r.ci, 0]))
+                  .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime, rx[collar_index, 0]))
+
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
             print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
             print()
@@ -216,7 +277,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['maize', "2D", "hydrus_loam", "length"])
+    # args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
     args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method

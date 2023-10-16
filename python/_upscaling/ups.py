@@ -9,8 +9,8 @@ from scipy.optimize import fsolve
 import timeit
 import matplotlib.pyplot as plt
 
-from xylem_flux import *
-import van_genuchten as vg
+from functional.xylem_flux import *
+import functional.van_genuchten as vg
 
 from sra import soil_root_interface
 from sra import soil_root_interface_table
