@@ -233,8 +233,8 @@ public:
 				if (lookUpIndex == 0)
 					return values[0];
 
-				const auto ipLinear = (ip - range[lookUpIndex-1])/(range[lookUpIndex] - range[lookUpIndex-1]);
-				auto output = Dumux::interpolate<Dumux::InterpolationPolicy::Linear>(ipLinear, std::array<double, 2>{{values[lookUpIndex-1], values[lookUpIndex]}});
+				//const auto ipLinear = (ip - range[lookUpIndex-1])/(range[lookUpIndex] - range[lookUpIndex-1]);
+				//auto output = Dumux::interpolate<Dumux::InterpolationPolicy::Linear>(ipLinear, std::array<double, 2>{{values[lookUpIndex-1], values[lookUpIndex]}});
 				// std::cout<<"dumux:common:math:LinearTable:interpolate "<<ip<<" "<<lookUpIndex<<" "
 				// <<values[lookUpIndex-1]<<" "<<values[lookUpIndex]
 				// <<" "<<ipLinear<<" "<<output<<std::endl;

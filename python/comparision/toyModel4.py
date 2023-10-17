@@ -1,4 +1,6 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules_fpit/"); 
+sys.path.append("../../../CPlantBox/");  
+sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 
@@ -42,15 +44,16 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 
 min_b = [-5., -5, -20.] 
 max_b = [5., 5, 0.]
-cell_number = [5, 5, 20]
+cell_number = [2,2,2]
 # s.createGrid([0.02], [0.6], [nCells])  # [cm]
 s.createGrid(min_b, max_b, cell_number, False)
 cell_number = np.array(cell_number)
 s.setParameter( "Soil.Grid.Cells", str(cell_number)[1:(len(str(cell_number))-1)])
 
-s.setHomogeneousIC(-100.)  # cm pressure head
+s.setHomogeneousIC(-100., equilibrium = True)  # cm pressure head
+    
 s.setOuterBC("constantFlux", 0)  #  [cm/day]
-s.setInnerBC("constantFlux", -10)  #  [cm/day]
+s.setInnerBC("constantFlux",0* -10)  #  [cm/day]
 s.setParameter("Problem.doSoluteFlow", "0")
 
 #s.setICZ_solute(0.)  # [kg/m2] 
@@ -69,8 +72,8 @@ bulkDensity_m3 = solidMolDensity*(1.-0.43)
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
 exud = 1.*0# [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-Ds = 1e-8*0 # m^2/s
-Dl = 1e-9*0
+Ds = 1e-8 # m^2/s
+Dl = 1e-9
 
 numComp = 8
 numFluidComp = 2
@@ -103,8 +106,8 @@ for i in range(numFluidComp + 1, numComp+1):
     
 s.setParameter("Soil.betaC", str(0.001 ))
 s.setParameter("Soil.betaO", str(0.1 ))
-s.setParameter("Soil.C_S_W_thresC", str(0.1 )) #mol/cm3
-s.setParameter("Soil.C_S_W_thresO", str(0.05 )) #mol/cm3
+s.setParameter("Soil.C_S_W_thresC", str(0.1 /1e6)) #mol/cm3
+s.setParameter("Soil.C_S_W_thresO", str(0.1 /1e6 )) #mol/cm3
 s.setParameter("Soil.k_decay", str(0.2 ))
 s.setParameter("Soil.k_decay2", str(0.6 ))
 #s.setParameter("Soil.k_decay3", str(1 ))
@@ -150,7 +153,7 @@ if gradient:
     s.setParameter("Soil.IC.C1Z", "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
     s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S/molarDensityWat))-1)])   #mol/cm3 / mol/cm3 = mol/mol 
 else:
-    C_S = 6.0 #mol/cm3 wat
+    C_S = 6.0 *0#mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
 
 
@@ -175,7 +178,8 @@ s.setVGParameters([loam])
 
 
 
-s.setParameter("Problem.EnableGravity", "false")
+s.setParameter("Problem.reactionExclusive", "1")
+s.setParameter("Problem.EnableGravity", "true")
 s.setParameter("Problem.verbose", "1")
 s.setParameter("Flux.UpwindWeight", "0.5")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
@@ -202,7 +206,7 @@ s.setCriticalPressure(-15000)  # cm pressure head
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 5./24., 10./24.]  # days
+times = [0., 0.4]#5./24., 10./24.]  # days
 s.ddt = 1.e-5
 
 points = s.getCellCenters()#.flatten()

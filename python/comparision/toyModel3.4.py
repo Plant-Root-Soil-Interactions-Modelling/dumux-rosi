@@ -1,4 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules_fpit/"); sys.path.append("../../../CPlantBox/");  
+sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 
@@ -71,12 +72,12 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 nCells = 10
 r_in = 0.02
 l = 1 #length in cm
-s.createGrid([r_in], [6.], [nCells])  # [cm]
+s.createGrid([r_in], [0.6], [nCells])  # [cm]
 s.setParameter( "Soil.Grid.Cells", str(nCells))
 
-s.setHomogeneousIC(-100.)  # cm pressure head
+s.setHomogeneousIC(-109.5)  # cm pressure head
 s.setOuterBC("constantFluxCyl", 0.1*0)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", -0.26*0)  #  [cm/day]
+s.setInnerBC("constantFluxCyl", -0.26)  #  [cm/day]
 
 #s.setICZ_solute(0.)  # [kg/m2] 
 
@@ -176,7 +177,7 @@ s.CSSmax = 1e-4*10000*1000
 s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
 s.setParameter("Soil.alpha", str(0.1*0)) #[1/d]
 
-gradient = True
+gradient = False
 if gradient:
     #C_S = np.array([0.1, 0.3, 0.4, 0.5, 9])  #mol/cm3 wat
     #s.setParameter("Soil.IC.C1Z", "0.0001 0.0003 0.0004 0.0005 0.009" )  #mol/cm3 / mol/cm3 = mol/mol 
@@ -185,7 +186,7 @@ if gradient:
     s.setParameter("Soil.IC.C1Z", "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
     s.setParameter("Soil.IC.C1", str(C_S/molarDensityWat)[1:(len(str(C_S/molarDensityWat))-1)])   #mol/cm3 / mol/cm3 = mol/mol 
 else:
-    C_S = 0.1  #mol/cm3 wat
+    C_S = 0.1 *0 #mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
 
 C_L = 10*0  #mol/cm3 wat
@@ -230,13 +231,8 @@ s.setParameter("Newton.UseLineSearch", "false")
 s.setParameter("Newton.EnablePartialReassembly", "true")
 s.setParameter("Grid.Overlap", "0")  #no effec5
 
-print("hello from rank", rank, np.array(s.getCellCenters()),np.array(s.getWaterContent()).flatten())
-comm.barrier()
-raise Exception
 s.initializeProblem()
-print("hello from rank", rank, np.array(s.getCellCenters()),np.array(s.getWaterContent()).flatten())
-comm.barrier()
-raise Exception
+
 s.setParameter("Flux.UpwindWeight", "1")
 s.setCriticalPressure(-15000)  # cm pressure head
 
@@ -289,9 +285,15 @@ write_file_array("contents", contents0/1e6)
 
 RF = 1 + s.f_sorp*(1/theta)*s.CSSmax*1e6*((s.k_sorp*1e6)/((s.k_sorp*1e6+C_S_W)**2))
 write_file_array("RF",RF)
-buTotCBefore = getTotCContent(0, s,l)
+
+doC = False
+if doC:
+    buTotCBefore = getTotCContent(0, s,l)
 
 vols = s.getCellSurfacesCyl()  * l  #cm3 scv
+theta = np.array(s.getWaterContent())
+write_file_array("theta",theta)#.flatten())
+print('tot wat vol', sum(theta*vols))
 print(rank, "to loop")  
   
 for i, dt in enumerate(np.diff(times)):
@@ -301,16 +303,18 @@ for i, dt in enumerate(np.diff(times)):
 
     s.solve(dt, maxDt = 250/(24*3600))
     
-    buTotCAfter = getTotCContent(0, s,l)
-    
-    print("content",sum(buTotCBefore), sum(buTotCAfter), Qexud*dt)
-    print(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter) )
-    buTotCBefore = buTotCAfter
+    if doC:
+        buTotCAfter = getTotCContent(0, s,l)    
+        print("content",sum(buTotCBefore), sum(buTotCAfter), Qexud*dt)
+        print(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter) )
+        buTotCBefore = buTotCAfter
     x = np.array(s.getSolutionHead())
     write_file_array("pressureHead",x)#.flatten())
     #print(x.flatten())
     write_file_array("coord",points)
-    write_file_array("theta",np.array(s.getWaterContent()))#.flatten())
+    theta = np.array(s.getWaterContent())
+    write_file_array("theta",theta)#.flatten())
+    print('tot wat vol', sum(theta*vols))
     write_file_array("getSaturation",np.array(s.getSaturation()))#.flatten())
     write_file_array("krs",np.array(s.getKrw()))#.flatten())
     for i in range(numFluidComp):
@@ -344,7 +348,6 @@ for i, dt in enumerate(np.diff(times)):
     write_file_array("css2",cstot_css2/1e6)
     write_file_array("cl",cstot_cls/1e6)
     write_file_array("cstot",cstot/1e6)
-    print(rank, "l339")    
     contents = np.array([(cstot_cls * points).sum(),
                     (cstot_css1 * points).sum(), 
                     (cstot_css2 * points).sum(), 
@@ -352,6 +355,8 @@ for i, dt in enumerate(np.diff(times)):
     #print(contents)
     #print(min(cstot_cls))#contents[3]/contents0[3]*100-100)
     write_file_array("contents", contents/1e6)
+    
+    s.reset()
 
 print("finished")
 

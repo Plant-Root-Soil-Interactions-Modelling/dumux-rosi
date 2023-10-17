@@ -1,19 +1,19 @@
 # create a link to the grid file and the input file in the build directory
 dune_symlink_to_source_files(FILES "grids" "python" "input")
 
-add_executable(richards3c3d richards1p3c.cc)
+add_executable(richards3c3d EXCLUDE_FROM_ALL richards1p3c.cc)
 target_compile_definitions(richards3c3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
-add_executable(richards3c3dR richards1p3cR.cc)
+add_executable(richards3c3dR EXCLUDE_FROM_ALL richards1p3cR.cc)
 target_compile_definitions(richards3c3dR PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
-add_executable(richardsnc3d richards1pnc.cc)
+add_executable(richardsnc3d EXCLUDE_FROM_ALL richards1pnc.cc)
 target_compile_definitions(richardsnc3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
-add_executable(richards3c1dR_cyl richards1p3cR_cyl.cc)
+add_executable(richards3c1dR_cyl EXCLUDE_FROM_ALL richards1p3cR_cyl.cc)
 target_compile_definitions(richards3c1dR_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
-add_executable(richards5c1dR_cyl richards1p5cR_cyl.cc)
+add_executable(richards5c1dR_cyl EXCLUDE_FROM_ALL richards1p5cR_cyl.cc)
 target_compile_definitions(richards5c1dR_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
 add_executable(richards10c1d_cyl richards1p10c_cyl.cc)
@@ -22,8 +22,10 @@ target_compile_definitions(richards10c1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>
 add_executable(richards10c richards1p10c.cc)
 target_compile_definitions(richards10c PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
+add_executable(testCell EXCLUDE_FROM_ALL testCell.cc)
+target_compile_definitions(testCell PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
-add_executable(richards5c1dR_cyl_k richards1p5cR_cyl_k.cc)
+add_executable(richards5c1dR_cyl_k EXCLUDE_FROM_ALL richards1p5cR_cyl_k.cc)
 target_compile_definitions(richards5c1dR_cyl_k PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
 add_executable(richardsnc1d EXCLUDE_FROM_ALL richards1pnc.cc)

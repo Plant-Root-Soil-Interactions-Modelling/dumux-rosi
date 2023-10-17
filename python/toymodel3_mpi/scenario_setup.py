@@ -79,9 +79,9 @@ def maize_SPP(soil_= "loam"):
     else:
         i = 1
     soil = vg_SPP(i)
-    min_b = [-5., -5., -20.] 
+    min_b = [-5., -5., -1000.] 
     max_b = [5., 5., 0.] 
-    cell_number = [5,5,20]#[4, 4, 4]#
+    cell_number = [2,2,2]#
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -156,7 +156,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
-
+    print('demotype',demoType)
     if demoType == "dumux":
         s = RichardsWrapper(RichardsSP())  # water only
     # elif demoType == "dumux_dirichlet_2c":
@@ -332,8 +332,9 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         h = h.flatten()
     else:
         h = np.ones((20*45*75))*-100 #TODO
+    #h = np.array([i for i in range(20*45*75)])*-100
     #s.setInitialConditionHead(h)  # cm
-    s.setHomogeneousIC(-100., equilibrium = True)  # cm pressure head
+    s.setHomogeneousIC(-1000./2, equilibrium = True)  # cm pressure head
     
     s.initializeProblem()
     s.wilting_point = -15000
@@ -362,7 +363,26 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
 
     #print('getWaterContent', rank, s.getWaterContent())
     write_file_array('getWaterContent',data= s.getWaterContent(), space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
- 
+    print('xWat =  s.getSolution(0)')
+    xWat =  s.getSolution(0)
+    if rank == 0:
+        print('xWat', xWat[4])
+    write_file_array('getSolution',data=xWat, space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
+    print('xWat =  s.getSolutionHead()')
+    xWat =  s.getSolutionHead()
+    if rank == 0:
+        print('hp', xWat[4])
+    write_file_array('getSolutionHead',data=xWat, space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
+    # print(rank, 's.getSolutionHead_()', s.getSolutionHead_())
+    print(rank,'sbasegetDofIndices', s.base.getDofIndices())
+    print(rank,'sbasegetPointIndices_', s.base.getPointIndices())
+    print(rank,'sbasegetCellIndices_', s.base.getCellIndices())
+    print('xWat =  s.getSolutionHead_',s.getSolutionHead_())
+    print('s.base.getGlobal2localCellIdx()',s.base.getGlobal2localCellIdx())
+    print('s.base.getLocal2globalPointIdx()',s.base.getLocal2globalPointIdx())
+    print('s.getCellCenters()',s.getCellCenters())
+    print('s.base.getSolutionAt',s.base.getSolutionAt(4,0))
+    raise Exception
     #print('getDofIndices',rank, s.getDofIndices())
     #print('getDofCoordinates',rank, s.getDofCoordinates())
     #print('getCellCenters',rank, s.getCellCenters())

@@ -122,11 +122,11 @@ public:
 				std::cout << "\n" << toString() << "\n" << std::flush; // add my story
 				Dumux::DumuxMessage::print(/*firstCall=*/true); // print dumux start message
 			}
-				std::cout<<"mpiHelper::isFake "<<Dune::MPIHelper::isFake<<" " //Dune::FakeMPIHelper::isFake<<" "<<Dune::MPIHelper::isFake<<" size "
-				<<Dune::MPIHelper::getCollectiveCommunication().size()<<" doMPI "<<doMPI<<std::endl;
+				//std::cout<<"mpiHelper::isFake "<<Dune::MPIHelper::isFake<<" " //Dune::FakeMPIHelper::isFake<<" "<<Dune::MPIHelper::isFake<<" size "
+				//<<Dune::MPIHelper::getCollectiveCommunication().size()<<" doMPI "<<doMPI<<std::endl;
 			if(doMPI)
 			{
-			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+				mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
 			}
 		// }else{
 			// if (verbose) { // even if we have MPI, run model sequentially.
@@ -399,6 +399,8 @@ public:
         nonLinearSolver->setVerbose(false);
 		//std::cout<<"timeLoop->start();"<<std::endl;
         timeLoop->start();
+		
+		xBackUp = x;
         auto xOld = x;
         do {
 			//std::cout<<"nonLinearSolver->suggestTimeStepSize"<<std::endl;
@@ -455,6 +457,8 @@ public:
         nonLinearSolver->setVerbose(false);
 		//std::cout<<"1cyl, timeLoop->start();"<<std::endl;
         timeLoop->start();
+		
+		xBackUp = x;
         auto xOld = x;
         do {
 			//std::cout<<"1cyl, nonLinearSolver->suggestTimeStepSize"<<std::endl;
@@ -479,6 +483,10 @@ public:
         simTime += dt;
     }
 	
+    virtual void reset() {
+        checkInitialized();
+		x = xBackUp;
+	}
     /**
      * Finds the steady state of the problem.
      *
@@ -527,12 +535,20 @@ public:
         checkInitialized();
         std::vector<VectorType> cells;
         cells.reserve(gridGeometry->gridView().size(0));
+		
+		//std::cout<<"getCellCenters rank:"<<rank<<"\n";
         for (const auto& e : elements(gridGeometry->gridView())) {
             auto p = e.geometry().center();
+			
+			//int gIdx = cellIdx->index(e);
+			//std::cout<<"	gIdx "<<gIdx;
+			
             VectorType vp;
             for (int i=0; i<dim; i++) { // found no better way
                 vp[i] = p[i];
+			//	std::cout<<" "<<p[i];
             }
+			//std::cout<<std::endl;
             cells.push_back(vp);
         }
         return cells;
@@ -678,6 +694,19 @@ public:
         return sol;
     }
 	
+    /**
+     * Returns the current solution for a single mpi process.
+     * Gathering and mapping is done in Python
+     */
+    virtual std::vector<double> getOldSolution(int eqIdx = 0) {
+        int n = checkInitialized();
+        std::vector<double> sol;
+        sol.resize(n);
+        for (int c = 0; c<n; c++) {
+            sol[c] = xBackUp[c][eqIdx];
+        }
+        return sol;
+    }
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
@@ -891,6 +920,13 @@ public:
         }
     }
 
+    virtual std::map<int, int> getGlobal2localCellIdx() {
+        return localCellIdx;
+    }
+	
+    virtual std::vector<int> getLocal2globalPointIdx() {
+        return globalPointIdx;
+    }
 protected:
 
     using Grid = typename Problem::Grid;
@@ -914,6 +950,7 @@ protected:
     std::vector<int> globalPointIdx; // local to global index mapper
 
     SolutionVector x;
+    SolutionVector xBackUp;
 
 };
 
@@ -937,6 +974,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getParameter", &Solver::getParameter)
             .def("initializeProblem", &Solver::initializeProblem)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
+			.def("reset", &Solver::reset)
             // simulation
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
             .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1)
@@ -951,9 +989,12 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getDofCoordinates", &Solver::getDofCoordinates)
             .def("getPointIndices", &Solver::getPointIndices)
             .def("getCellIndices", &Solver::getCellIndices)
+            .def("getGlobal2localCellIdx", &Solver::getGlobal2localCellIdx) // localCellIdx
+            .def("getLocal2globalPointIdx", &Solver::getLocal2globalPointIdx) // globalPointIdx
             .def("getDofIndices", &Solver::getDofIndices)
+            .def("getOldSolution", &Solver::getOldSolution, py::arg("eqIdx") = 0)
             .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
-            .def("setSolution", &Solver::getSolution)
+            .def("setSolution", &Solver::setSolution)
             .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)

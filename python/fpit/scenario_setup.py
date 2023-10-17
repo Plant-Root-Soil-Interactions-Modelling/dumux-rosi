@@ -20,11 +20,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
 # from rosi_richards2c import Richards2CSP  # C++ part (Dumux binding), macroscopic soil model
-from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards10c_cyl import Richards10CCylFoam # C++ part (Dumux binding)
+from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from rosi_richards10c import Richards10CSP  # C++ part (Dumux binding), macroscopic soil model
-from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
@@ -50,6 +51,18 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 
+def write_file_float(name, data, directory_):
+    if rank == 0:
+        name2 = directory_+ name+ '.txt'
+        with open(name2, 'a') as log:
+            log.write(repr( data)  +'\n')
+        
+def write_file_array(name, data, space =",", directory_ ="./results/" ):
+    if rank == 0:
+        name2 = directory_+ name+ '.txt'
+        with open(name2, 'a') as log:
+            log.write(space.join([num for num in map(str, data)])  +'\n')
+
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
         
@@ -66,9 +79,9 @@ def maize_SPP(soil_= "loam"):
     else:
         i = 1
     soil = vg_SPP(i)
-    min_b = [-5., -5, -20.] 
-    max_b = [5., 5, 0.] 
-    cell_number = [2, 2, 10]#[5, 5, 20]
+    min_b = [-5., -5., -10.] 
+    max_b = [5., 5., 0.] 
+    cell_number = [4,4,4]#
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -133,30 +146,24 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type, times = None, 
+def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
                         net_inf = None, usemoles = True):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
-        soil type is fixed and homogeneous 
+        soil demoType is fixed and homogeneous 
         domain is periodic (if 2d or 3d)
         initial potentials are linear from @param p_top to @param p_bot
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
-
-    if type == "dumux":
-        s = RichardsWrapper(RichardsSP())  # water only
-    # elif type == "dumux_dirichlet_2c":
-    #    s = RichardsWrapper(Richards2CSP())  # water and one solute
-    elif type == "dumux_dirichlet_nc":
-        s = RichardsWrapper(RichardsNCSP())  # water and N solute      
-    elif ((type == "dumux_dirichlet_10c") or ("dumux_10c")):
-        s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
+    do1D = False
+    if do1D:
+        s = RichardsNoMPIWrapper(Richards10CCylFoam(), usemoles)  # water and N solute          
     else:
-        raise Exception("choose type: dumux, dumux_dirichlet_2c, dumux_dirichlet_nc")
+        s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
+            
     s.soil = soil_
-    s.vg_soil = vg.Parameters(soil_)
-    # vg.create_mfp_lookup(s.vg_soil, -1.e5, 1000)
+    s.vg_soil = vg.Parameters(soil_) 
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.betaC = 0.001 
     s.betaO = 0.1 
@@ -174,13 +181,22 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.k_RC = 0.1 
     s.k_RO = 0.1 
     
-    s.k_sorp = 0.4/1e6*0#0.2*100
-    s.f_sorp = 0.5#0.9
-    s.CSSmax =C_S/10/1e6# 1e-4*10000*0.
-    s.alpha =0.1# 0.
+    s.k_sorp = 0.4*1e6
+    s.f_sorp = 0.5
+    if demoType == "dumux_10c":
+        s.CSSmax =C_S/10/1e6# 1e-4*10000*0.
+        s.alpha =0.1# 0.
+        unitConversion = 1e3
+        CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
+    elif demoType == "dumux_w":
+        s.CSSmax = 0.
+        s.alpha = 0.
+        unitConversion = 0.
+        CSS2_init = 0.
+    else:
+        raise Exception
     
-    unitConversion = 1e3
-    CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
+    
     s.ICcc = np.array([C_S *unitConversion,
                         1. *unitConversion,
                         C_S/10* unitConversion,
@@ -188,18 +204,28 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
                         C_S/10* unitConversion,
                         C_S/10* unitConversion,
                         CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
+        
+    
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
+    
+    if do1D:
+        a_in = 0.05
+        a_out = 0.5664008176051574
+        cell_number = 9
+        lb = 0.5
+        points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), cell_number + 1, base = lb)
+        s.createGrid1d(points)
+    else:
+        s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
+
     #cell_number = str(cell_number)
+    cell_number_ = cell_number
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)    
-    s.setParameter("Problem.reactionExclusive", "1")
+    s.setParameter("Problem.reactionExclusive", s.dumux_str(int(not do1D)))
     
     # BC
-    if False: # times is not None:
-        s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
-    else:
-        s.setTopBC("noFlux")
+    s.setTopBC("noFlux")
     s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
     s.solidDensity = 2700 # [kg/m^3 solid]
     s.solidMolarMass = 60.08e-3 # [kg/mol] 
@@ -211,37 +237,24 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
-    if (type == "dumux_10c") or (type == "dumux_dirichlet_nc")or (type == "dumux_dirichlet_10c"):  # solute BC
-        s.Ds = 1e-9 # m^2/s
-        s.Dl = 3e-12
-        s.numComp = 8
-        s.numFluidComp = 2
-        # s.setTopBC_solute("outflow", 0.)
-        # s.setBotBC_solute("outflow", 0.)
-        s.setParameter( "Soil.BC.Bot.C1Type", str(2)) #put free flow later
-        s.setParameter( "Soil.BC.Top.C1Type", str(2))
-        s.setParameter( "Soil.BC.Bot.C1Value", str(0)) 
-        s.setParameter( "Soil.BC.Top.C1Value", str(0 )) 
+    s.Ds = 1e-9 # m^2/s
+    s.Dl = 3e-12
+    s.numComp = 8
+    s.numFluidComp = 2
+    s.setParameter("1.Component.LiquidDiffusionCoefficient", str(s.Ds)) #m^2/s
+    s.setParameter("2.Component.LiquidDiffusionCoefficient", str(s.Dl)) #m^2/s
 
-        s.setParameter("1.Component.LiquidDiffusionCoefficient", str(s.Ds)) #m^2/s
-
-        s.setParameter( "Soil.BC.Bot.C2Type", str(2))
-        s.setParameter( "Soil.BC.Top.C2Type", str(2))
-        s.setParameter( "Soil.BC.Bot.C2Value", str(0)) 
-        s.setParameter( "Soil.BC.Top.C2Value", str(0 )) 
-        s.setParameter("2.Component.LiquidDiffusionCoefficient", str(s.Dl)) #m^2/s
-
-        s.decay = 0. #1.e-5
-        
-        for i in range(s.numFluidComp + 1, s.numComp+1):
-            s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
-            s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
-            s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
-            s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
-        for i in range(s.numComp):
-            molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
-            s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
+    s.decay = 0. #1.e-5
     
+    for i in range(1, s.numComp+1):
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
+        s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
+        s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
+    for i in range(s.numComp):
+        molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
+        s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
+
     s.setParameter("Soil.betaC", str(s.betaC))
     s.setParameter("Soil.betaO", str(s.betaO ))
     s.setParameter("Soil.C_S_W_thresC", str(s.C_S_W_thresC )) #mol/cm3
@@ -286,40 +299,34 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, type,
     #dumux-rosi\python\modules\richards.py
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
+    #s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+    s.setParameter("Newton.MaxRelativeShift", "1e-15")
     s.setParameter("Problem.verbose", "-1")
-    # s.setParameter("Problem.doSoluteFlow", "0")
-    # if (type == "dumux_dirichlet_2c") or (type == "dumux_dirichlet_nc") or (type == "dumux_dirichlet_10c"):
-        # s.setParameter("Component.MolarMass", "1.2e-2")  # carbon 12 g/mol
-        # s.setParameter("Component.LiquidDiffusionCoefficient", "0")  # 5e-10 m2 s-1 # Darrah et al. 1991
-        # s.setParameter("Component.BufferPower", "0")  # 5 buffer power = \rho * Kd [1]
-        # #s.setParameter("Component.Decay", "1.e-5")  # decay [d^-1] (Awad et al. 2017) 
     
     # IC
-    IgotTheFile = False
-    if IgotTheFile:
-        df = pd.read_csv("data_magda/init_pot_"+str(year)+".csv")  # initial potential
-        h  = np.flip(df[soil_type].loc[:].values) #cm
-        h = np.repeat(h[:,np.newaxis],cell_number[0],axis=1) #x-axis
-        h = np.repeat(h[:,:,np.newaxis],cell_number[1],axis=2) #y-axis
-        h = h.flatten()
-    else:
-        h = np.ones((20*45*75))*-100 #TODO
-    #s.setInitialConditionHead(h)  # cm
-    s.setHomogeneousIC(-100., equilibrium = True)  # cm pressure head
+    if do1D:
+        s.setParameter("Problem.EnableGravity", "false")
+    s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
     
     s.initializeProblem()
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
-
-    solute_conc = np.array(s.getSolution_(1))
-    # print( sum(solute_conc))
-    try:
-        assert min(solute_conc) >=0
-    except:
-        print("soil_sol_fluxes", solute_conc)
-        print("min(solute_conc)",min(solute_conc))
+    
+    
+    solute_conc = np.array(s.getSolution(1))
+    if rank == 0:
+        try:
+            assert min(solute_conc) >=0
+        except:
+            print("soil_sol_fluxes", solute_conc)
+            print("min(solute_conc)",min(solute_conc))
+            raise Exception
+        
+    cidx = np.array(s.base.getCellIndices())
+    cidx_sorted = np.sort(cidx)
+    if (cidx != cidx_sorted).any():
+        print('too many threads for  the number of cells: ,',cidx,cidx_sorted)
         raise Exception
         
     return s, s.vg_soil
@@ -569,8 +576,8 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
                 recreateComsol_ = False, usemoles = True):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
-    global picker  # make sure it is not garbage collected away...
-
+    #global picker  # make sure it is not garbage collected away...
+    
     if fname.endswith(".rsml"):
         r = XylemFluxPython(fname)
     elif fname.endswith(".xml"):
@@ -581,9 +588,10 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-
+        
         rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed)
+
         rs.setSeed(seed)
         rs.readParameters(path + fname)
         #if not stochastic:
@@ -596,16 +604,15 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             r = PhloemFluxPython(rs,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
             r = XylemFluxPython(rs)
-
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
                             pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
                             cut = False, noChanges = True)
-
-    picker = lambda x, y, z: soil_model.pick([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+    
+    picker = lambda x, y, z: soil_model.pick_([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-    # comm.barrier()
-    # print("survived setSoilGrid", rank)
+    #assert rs.getSeedVal() == seed
+    print('seedval at rank',rank,  rs.getSeedVal())
     assert rs.getSeedVal() == seed
     # if rank == 0:
     if plantType == "plant":    
@@ -631,15 +638,7 @@ def div0f(a, b, c):    # function to avoid division by 0
     else:
         return a/c
 
-def write_file_float(name, data, directory_):
-    name2 = directory_+ name+ '.txt'
-    with open(name2, 'a') as log:
-        log.write(repr( data)  +'\n')
-        
-def write_file_array(name, data, space =",", directory_ ="./results/" ):
-    name2 = directory_+ name+ '.txt'
-    with open(name2, 'a') as log:
-        log.write(space.join([num for num in map(str, data)])  +'\n')
+            
 def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,  depth_,  
                     dist, con, l, conc = None, c_ = None, directory ="./results/"):#krs_,
     """  saves numpy arrays ass npy files """
