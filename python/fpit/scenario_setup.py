@@ -147,7 +147,8 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
 
 def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
-                        net_inf = None, usemoles = True):
+                        net_inf = None, usemoles = True, dirResults = "",#"./results/parallel"+str(max_rank)+"/",
+                        lowWater = False):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil demoType is fixed and homogeneous 
@@ -156,6 +157,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
+    if len(dirResults) == 0:
+        diResults = "./results/parallel"+str(max_rank)+"/"
     do1D = False
     if do1D:
         s = RichardsNoMPIWrapper(Richards10CCylFoam(), usemoles)  # water and N solute          
@@ -306,7 +309,10 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     # IC
     if do1D:
         s.setParameter("Problem.EnableGravity", "false")
-    s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
+    if lowWater: 
+        s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
+    else:
+        s.setHomogeneousIC(-1000., equilibrium = not do1D)  # cm pressure head
     
     
     s.initializeProblem()
@@ -314,7 +320,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
     
-    write_file_array('getWaterContent',s.getWaterContent(), directory_ ="./results/parallel"+str(max_rank)+"/")
+    write_file_array('getWaterContent',s.getWaterContent(), directory_ =dirResults)
     
     solute_conc = np.array(s.getSolution(1))
     if rank == 0:

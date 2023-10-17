@@ -31,7 +31,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
-results_dir="./results/parallel"+str(max_rank)+"/"
+results_dir="./results/lowWater"+str(max_rank)+"/"
 
 if rank == 0:
     if not os.path.exists(results_dir):
@@ -84,7 +84,7 @@ initsim = 5.5
           
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
             min_b, max_b, cell_number, demoType = mode, times = x_, net_inf = y_,
-            usemoles = usemoles)
+            usemoles = usemoles, dirResults = results_dir, lowWater = True)
 
           
 path = "../../../CPlantBox/modelparameter/structural/plant/"
@@ -249,6 +249,8 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         
         write_file_array("trans", r.Ev, directory_ =results_dir)
         write_file_array("transrate",r.Jw, directory_ =results_dir)
+        write_file_array("transrate",r.Jw, directory_ =results_dir)
+        
     try:
         assert abs(s.bulkMassErrorPlant_abs)  < 1e-5
     except:
@@ -421,8 +423,9 @@ sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
 rs.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
                                  sourceSol = np.full((rs.numComp, len(sizeSoilCell)),0.), # mol/day
                                  dt = 0.,        # day    
-                                 seg_fluxes = 0.)# [cm3/day]
-                                 
+                                 seg_fluxes = 0.,# [cm3/day]
+                                 doWater = True, doSolute = True, doSolid = True,
+                                 useSoilData = True)
 vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
 
 if False:

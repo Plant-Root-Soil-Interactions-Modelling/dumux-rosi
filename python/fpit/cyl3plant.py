@@ -235,7 +235,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # proposed_outer_mucil_fluxes_limited = np.maximum(proposed_outer_mucil_fluxes, -(comp2content + Q_outer_totW )/(dt*innerSurf))
             
             r.SinkLim1DS = abs(seg_fluxes_limited - seg_fluxes) # remember the error caused by the limitation
-            
+            print('limitation of inner water BC for 1DS:', max(r.SinkLim1DS), 
+                    seg_fluxes[np.where(r.SinkLim1DS == max(r.SinkLim1DS))[0]], 
+                    seg_fluxes_limited[np.where(r.SinkLim1DS == max(r.SinkLim1DS))[0]])
             ##
             # 2.3B simulation
             ##
@@ -445,6 +447,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("errorIteration"+str(max_rank), errs, directory_ =results_dir) 
                 write_file_array("errorIteration1d3d"+str(max_rank), r.maxDiff1d3dCW_abs, directory_ =results_dir) 
                 write_file_float("errorIteration_time"+str(max_rank), rs_age, directory_ =results_dir) 
+                write_file_array("errorIteration_SinkLim3DS"+str(max_rank), r.SinkLim3DS, directory_ =results_dir) 
+                write_file_array("errorIteration_SinkLim1DS"+str(max_rank), r.SinkLim1DS, directory_ =results_dir) 
+                write_file_array("errorIteration_seg_fluxes_limited"+str(max_rank), seg_fluxes_limited, directory_ =results_dir) 
+                write_file_array("errorIteration_seg_fluxes"+str(max_rank), seg_fluxes, directory_ =results_dir) 
+                write_file_array("errorIteration_soil_fluxes_limited"+str(max_rank), soil_fluxes_limited, directory_ =results_dir) 
+                write_file_array("errorIteration_soil_fluxes"+str(max_rank), soil_fluxes, directory_ =results_dir) 
                 
             if False:#rank == 0:    
                 write_file_float("soil_fluxes_"+str(max_rank), soil_fluxes, directory_ =results_dir) 
@@ -454,7 +462,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             print('end iteration', rank, n_iter, err)
             n_iter += 1
             #end iteration
-        
+        if rank == 0:
+            write_file_array("seg_fluxes",np.array(rs.outputFlux), directory_ =results_dir)
+            write_file_array("soil_fluxes",soil_fluxes, directory_ =results_dir)
         ####
         #   error rates    
         ####
