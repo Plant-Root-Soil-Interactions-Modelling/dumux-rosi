@@ -143,10 +143,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if (rank == 0):
                 soil_fluxes_ = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
                 soil_fluxes = np.zeros(len(cell_volumes))
-                print('soil_fluxes_',soil_fluxes_.keys(),  soil_fluxes_.items(),  soil_fluxes_.values(),  soil_fluxes_ )
                 soil_fluxes[np.array(list(soil_fluxes_.keys()))] = np.array(list(soil_fluxes_.values())) #easier to handle array than dict. maybe change sumSegFluxes() function to choose type of output
             else:
                 soil_fluxes = None
+            seg_fluxes = comm.bcast(seg_fluxes, root=0)
             soil_fluxes = comm.bcast(soil_fluxes, root=0)
             rs.outputFlux = comm.bcast(rs.outputFlux, root = 0) 
             
@@ -196,7 +196,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
             proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
             proposed_outer_mucil_fluxes = comm.bcast(proposed_outer_mucil_fluxes, root = 0)
-            
             
             assert (np.array([len(seg_fluxes), len(proposed_outer_fluxes),len(seg_sol_fluxes),
                                len(proposed_outer_sol_fluxes), len(seg_mucil_fluxes),
@@ -436,7 +435,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             errW3ds = np.linalg.norm(new_soil_water - new_soil_water_old)
             errs = np.concatenate((np.array([errRxPlant, errW1ds, errW3ds]), r.SinkLim3DS,r.SinkLim1DS ))
-            err = max(r.maxDiff1d3dCW_abs)
+            err = comm.bcast(max(r.maxDiff1d3dCW_abs), root = 0)
             
             rx_old = rx.copy()
             new_soil_water_old = new_soil_water.copy()
@@ -452,7 +451,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("new_soil_water_"+str(max_rank), new_soil_water, directory_ =results_dir) 
                 write_file_array("soil_water_"+str(max_rank), soil_water, directory_ =results_dir) 
                 write_file_array("outer_R_bc_wat_B"+str(max_rank), outer_R_bc_wat, directory_ =results_dir) 
-            
+            print('end iteration', rank, n_iter, err)
             n_iter += 1
             #end iteration
         
@@ -470,7 +469,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             raise Exception
 
         # error 3DS-1DS
-        print('soil_fluxes',soil_fluxes, soil_source_sol, dt)
         r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                 seg_fluxes =seg_fluxes*0)
                                 

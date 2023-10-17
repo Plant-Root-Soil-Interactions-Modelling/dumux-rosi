@@ -249,29 +249,8 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
         
         write_file_array("trans", r.Ev, directory_ =results_dir)
         write_file_array("transrate",r.Jw, directory_ =results_dir)
-        write_file_array("Q_ST", Q_ST, directory_ =results_dir)#mmol
-        write_file_array("C_ST", C_ST, directory_ =results_dir)#mmol/cm3
-        write_file_array("C_meso", C_meso, directory_ =results_dir)
-        write_file_array("Q_meso", Q_meso, directory_ =results_dir)
-        
-        
-        write_file_array("Q_S_ST", Q_S_ST, directory_ =results_dir)#mmol
-        write_file_array("C_S_ST", C_S_ST, directory_ =results_dir)#mmol/cm3
-        write_file_array("C_S_meso", C_S_meso, directory_ =results_dir)
-        write_file_array("Q_S_meso", Q_S_meso, directory_ =results_dir)
-        
-        write_file_array("Q_Rm", Q_Rm, directory_ =results_dir)
-        write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
-        write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
-        write_file_array("psiXyl", r.psiXyl, directory_ =results_dir)
-        write_file_array("Fpsi", r.Fpsi, directory_ =results_dir)
-        write_file_array("fw", r.fw, directory_ =results_dir)
-        write_file_array("gco2", r.gco2, directory_ =results_dir)
-        write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
-        write_file_float("Q_Ag", Q_in, directory_ =results_dir)
-        write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
     try:
-        assert abs(s.bulkMassErrorPlant_rel)  < 1e-5
+        assert abs(s.bulkMassErrorPlant_abs)  < 1e-5
     except:
         print("\n\n\nissue bulk soil balance", np.array([s.bulkMassErrorPlant_abs, s.bulkMassErrorPlant_rel, #not cumulative 
                                         s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
@@ -411,6 +390,28 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
             print("min(C_ST) < 0.0", min(C_ST),np.mean(C_ST),max(C_ST))
             raise Exception
             
+        
+        write_file_array("Q_ST", Q_ST, directory_ =results_dir)#mmol
+        write_file_array("C_ST", C_ST, directory_ =results_dir)#mmol/cm3
+        write_file_array("C_meso", C_meso, directory_ =results_dir)
+        write_file_array("Q_meso", Q_meso, directory_ =results_dir)
+        
+        
+        write_file_array("Q_S_ST", Q_S_ST, directory_ =results_dir)#mmol
+        write_file_array("C_S_ST", C_S_ST, directory_ =results_dir)#mmol/cm3
+        write_file_array("C_S_meso", C_S_meso, directory_ =results_dir)
+        write_file_array("Q_S_meso", Q_S_meso, directory_ =results_dir)
+        
+        write_file_array("Q_Rm", Q_Rm, directory_ =results_dir)
+        write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
+        write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
+        write_file_array("psiXyl", r.psiXyl, directory_ =results_dir)
+        write_file_array("Fpsi", r.Fpsi, directory_ =results_dir)
+        write_file_array("fw", r.fw, directory_ =results_dir)
+        write_file_array("gco2", r.gco2, directory_ =results_dir)
+        write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
+        write_file_float("Q_Ag", Q_in, directory_ =results_dir)
+        write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
         
             
 

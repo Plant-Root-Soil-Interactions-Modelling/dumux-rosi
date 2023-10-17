@@ -81,7 +81,7 @@ def maize_SPP(soil_= "loam"):
     soil = vg_SPP(i)
     min_b = [-5., -5., -10.] 
     max_b = [5., 5., 0.] 
-    cell_number = [4,4,4]#
+    cell_number = [4,4,5]#
     area = 20 * 44  # cm2
     
     # min_b = [-5., -5, -10.] 
@@ -308,11 +308,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         s.setParameter("Problem.EnableGravity", "false")
     s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
     
+    
     s.initializeProblem()
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
     
+    write_file_array('getWaterContent',s.getWaterContent(), directory_ ="./results/parallel"+str(max_rank)+"/")
     
     solute_conc = np.array(s.getSolution(1))
     if rank == 0:
