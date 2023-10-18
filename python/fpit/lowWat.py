@@ -150,8 +150,9 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
     print("Day", rs_age)
     seg2cell_old = rs.seg2cell
     Ntbu = Nt
-    
+    print(rank,'simulating')
     if (rank == 0) and (not static_plant) :
+        
         rs.simulate(dt)#(rank == 0))  # because of dumux.pick(), blocks if I do not let all threads do the simulate.
         seg2cell_new = rs.seg2cell
         
@@ -167,8 +168,10 @@ while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
             print(len(cell2segVals), len(set(cell2segVals)))
             raise Exception
 
-
+    
+    print(rank,'simulated')
     rs.update()
+    print(rank,'updated')
     
     if False:   
         for lId, cyl in enumerate(rs.cyls):

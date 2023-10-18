@@ -43,8 +43,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     airSegsId = np.array(list(set(np.concatenate((r.cell2seg[-1],np.where(np.array(r.organTypes) != 2)[0])) )))#aboveground
     rhizoSegsId = np.array([i for i in range(len(organTypes)) if i not in airSegsId])
     
-    assert (np.array([not isinstance(cyl,AirSegment) for cyl in np.array(r.cyls)[rhizoSegsId]])).all()
-
+    # check that rhizoSegsId and airSegsId are as expected
+    local_isRootSeg = np.array([not isinstance(cyl,AirSegment) for cyl in np.array(r.cyls)])
+    global_isRootSeg = r.getXcyl(local_isRootSeg, doSum = False, reOrder = True)
+    assert (global_isRootSeg[rhizoSegsId]).all()
+    
     Q_Exud = Q_plant[0]; Q_mucil = Q_plant[1] #mol/day
     if len(Q_Exud) > 0:
         try:
@@ -92,7 +95,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         rhizoWAfter_old = np.full(len(organTypes),0.)
         n_iter = 0
         err = 1.e6 
-        max_err = 1e-13 # ???
+        max_err = r.limErr1d3dAbs # ???
         max_iter = 100 #??
         rsx_set = r.get_inner_heads(weather=weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         rsx_old = rsx_set.copy()
@@ -232,7 +235,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             #omax = rho_ * krw * kc * ((h - criticalPressure_) / dz )* pos0
             # proposed_outer_sol_fluxes_limited = np.maximum(proposed_outer_sol_fluxes, -(comp1content + Q_outer_totW )/dt)
             # proposed_outer_mucil_fluxes_limited = np.maximum(proposed_outer_mucil_fluxes, -(comp2content + Q_outer_totW )/dt)
-            print('1rst seg_fluxes_limited',seg_fluxes_limited[rhizoSegsId],'diff', seg_fluxes_limited[rhizoSegsId] - seg_fluxes[rhizoSegsId])
+            print(rank, '1rst seg_fluxes_limited',seg_fluxes_limited[rhizoSegsId],'diff', seg_fluxes_limited[rhizoSegsId] - seg_fluxes[rhizoSegsId])
     
             ##
             # 2.3B simulation
@@ -244,10 +247,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
             
             rs.time_rhizo_i += (timeit.default_timer() - start_time_rhizo)
-            seg_fluxes_limited = r.seg_fluxes_limited #get 2nd limitation 
-        
+            seg_fluxes_limited = r.getXcyl(r.seg_fluxes_limited, doSum = False, reOrder = True) # get 2nd limitation, gather and cast among thread 
+            
+            try:
+                assert (seg_fluxes_limited[airSegsId] == seg_fluxes[airSegsId]).all()
+            except:
+                print('seg_fluxes_limited vs seg_flux', seg_fluxes_limited[airSegsId] - seg_fluxes[airSegsId])
+                raise Exception
+            
             r.SinkLim1DS = abs(seg_fluxes_limited - seg_fluxes) # remember the error caused by the limitation
-            print('2nd seg_fluxes_limited',max(r.SinkLim1DS))
+            
             ##
             # 2.4 data after, for post proccessing
             # maybe move this part to within the solve function to go less often through the list of 1DS
@@ -483,7 +492,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_rx"+str(max_rank), rx, directory_ =results_dir) 
                 write_file_array("fpit_rhizoWAfter_"+str(max_rank), rhizoWAfter_[rhizoSegsId] , directory_ =results_dir) 
 
-            print('end iteration', rank, n_iter, err)
+            print('end iteration', rank, n_iter, err, max(r.maxDiff1d3dCW_abs))
             n_iter += 1
             #end iteration
         if rank == 0:

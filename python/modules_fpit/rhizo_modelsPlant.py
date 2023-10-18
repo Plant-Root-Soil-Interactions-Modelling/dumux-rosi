@@ -651,6 +651,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         #print('getVolumesCyl',rank, V_rhizo )
         return self.getXcyl(V_rhizo, doSum, reOrder)
         
+        
     def getC_rhizo(self,soilShape, idComp = 1, konz = True): # if konz:  mol/m3 wat or mol/m3 scv, else: mol
         """ return component concentration or content, only in voxel with 1D-domains"""
         #print('getC_rhizo', rank, idComp, konz)
@@ -1345,7 +1346,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         proposed_inner_fluxes = argv[0]
         proposed_outer_fluxes = argv[1]
 
-        self.seg_fluxes_limited = proposed_inner_fluxes # store for post processing
+        self.seg_fluxes_limited = np.full(len(self.cyls), np.nan) # store for post processing
         
         for lId, cyl in enumerate(self.cyls):  # run cylindrical models
             gId = self.eidx[lId]  # for one process gId == lId
@@ -1353,6 +1354,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print(rank, "cyl no ",lId+1,"/",len(self.cyls),'gId')
             if isinstance(cyl, AirSegment):  
                 cyl.setInnerFluxCyl(proposed_inner_fluxes[gId])
+                self.seg_fluxes_limited[lId] = proposed_inner_fluxes[gId]
             else:
                 if n_iter > 0:
                     cyl.reset()
@@ -1445,7 +1447,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print(rank, lId, 'end solve',QflowIn, QflowIn_limited )
                     
                     
-                    self.seg_fluxes_limited[gId] = QflowIn_limited
+                    self.seg_fluxes_limited[lId] = QflowIn_limited
                     # try:
                         # assert abs(buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)) < 1e-5
                     # except:#check water mass balance
