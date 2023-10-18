@@ -42,6 +42,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     
     airSegsId = np.array(list(set(np.concatenate((r.cell2seg[-1],np.where(np.array(r.organTypes) != 2)[0])) )))#aboveground
     rhizoSegsId = np.array([i for i in range(len(organTypes)) if i not in airSegsId])
+    
+    assert (np.array([not isinstance(cyl,AirSegment) for cyl in np.array(r.cyls)[rhizoSegsId]])).all()
+
     Q_Exud = Q_plant[0]; Q_mucil = Q_plant[1] #mol/day
     if len(Q_Exud) > 0:
         try:
@@ -91,6 +94,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         err = 1.e6 
         max_err = 1e-13 # ???
         max_iter = 100 #??
+        rsx_set = r.get_inner_heads(weather=weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
+        rsx_old = rsx_set.copy()
         while err > max_err and n_iter < max_iter:
             
             """ 1. xylem model """
@@ -101,7 +106,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             
             # send soil concentration to plant:
-            rsx = r.get_inner_heads(weather=weatherX)  # matric potential at the root soil interface, i.e. inner values of the cylindric models (not extrapolation to the interface!) [cm]
             
             start_time_plant = timeit.default_timer()
             comm.barrier()
@@ -110,7 +114,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 assert min(rs.Csoil_seg ) >= 0.
                 try:
                     rs.solve_photosynthesis(sim_time_ = rs_age, 
-                                sxx_=rsx, 
+                                sxx_=rsx_set, 
                                 cells_ = False,#(i == 0),#for 1st computation, use cell data
                                 ea_ = weatherX["ea"],#not used
                                 es_=weatherX["es"],#not used
@@ -119,7 +123,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                 outputDir_= "./results/rhizoplantExud")
                 except:
                     rs.solve_photosynthesis(sim_time_ = rs_age, 
-                                sxx_=rsx, 
+                                sxx_=rsx_set, 
                                 cells_ = False,#(i == 0),#for 1st computation, use cell data
                                 ea_ = weatherX["ea"],#not used
                                 es_=weatherX["es"],#not used
@@ -127,7 +131,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                 TairC_= weatherX["TairC"],#not used
                                 outputDir_= "./results/rhizoplantExud")
                     
-                
+            
             comm.barrier()
             
             ##
@@ -140,14 +144,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             rs.time_plant_cumulW += (timeit.default_timer() - start_time_plant)
             
-            if (rank == 0):
-                soil_fluxes_ = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
-                soil_fluxes = np.zeros(len(cell_volumes))
-                soil_fluxes[np.array(list(soil_fluxes_.keys()))] = np.array(list(soil_fluxes_.values())) #easier to handle array than dict. maybe change sumSegFluxes() function to choose type of output
-            else:
-                soil_fluxes = None
             seg_fluxes = comm.bcast(seg_fluxes, root=0)
-            soil_fluxes = comm.bcast(soil_fluxes, root=0)
             rs.outputFlux = comm.bcast(rs.outputFlux, root = 0) 
             
             
@@ -210,7 +207,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if n_iter > 0:
                 r.reset() # go back to water and solute value at the BEGINING of the time step
             print('did reset')
-            rhizoWBefore_ = r.getWaterVolumesCyl(doSum = False, reOrder = True)
+            rhizoWBefore_ = r.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3
             rhizoWBefore = sum(rhizoWBefore_) 
             
             rhizoTotCBefore_ = r.getTotCContentAll(doSum = False, reOrder = True)#np.array([ sum(cylC) for cylC in rhizoTotCBefore__]) 
@@ -219,25 +216,24 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             soil_solute = np.array( [np.array(r.getC_rhizo(len(cell_volumes), idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
             
             ##
-            # 2.3A limit the net negative BCs
+            # 2.3A 1st limit to the net negative BCs
             # update the INNER BC for water as will be < 0  normally
             # update the OUTER BCs for solutes as will < 0 normally (necessary/TODO?)
             # TODO: necessary to limit the outer solute BC by the BC content? because we can also gain by reactions
             # for now no limit on the solute fluxes
             ##
-            innerSurf = 2 * np.pi * r.seg_length * r.radii
-            outerSurf = 2 * np.pi * r.seg_length * r.outer_radii
-            Q_outer_totW = proposed_outer_fluxes * outerSurf * dt
-            seg_fluxes_limited = np.maximum(seg_fluxes, -(rhizoWBefore_ - r.vg_soil.theta_R + Q_outer_totW )/(dt*innerSurf))
+            cylVolume =  np.pi *(np.array( r.outer_radii)*np.array( r.outer_radii )- np.array( r.radii) * np.array( r.radii))* np.array( r.seg_length)
+            assert ((rhizoWBefore_ - r.vg_soil.theta_R * cylVolume)[rhizoSegsId] >=0).all()
+
+            Q_outer_totW = proposed_outer_fluxes * dt
+            seg_fluxes_limited = np.maximum(seg_fluxes, -(rhizoWBefore_ - r.vg_soil.theta_R * cylVolume+ Q_outer_totW )/dt)
             seg_fluxes_limited[airSegsId] = seg_fluxes[airSegsId] # limitation only relevent for root segments belowground
             
-            # proposed_outer_sol_fluxes_limited = np.maximum(proposed_outer_sol_fluxes, -(comp1content + Q_outer_totW )/(dt*innerSurf))
-            # proposed_outer_mucil_fluxes_limited = np.maximum(proposed_outer_mucil_fluxes, -(comp2content + Q_outer_totW )/(dt*innerSurf))
-            
-            r.SinkLim1DS = abs(seg_fluxes_limited - seg_fluxes) # remember the error caused by the limitation
-            print('limitation of inner water BC for 1DS:', max(r.SinkLim1DS), 
-                    seg_fluxes[np.where(r.SinkLim1DS == max(r.SinkLim1DS))[0]], 
-                    seg_fluxes_limited[np.where(r.SinkLim1DS == max(r.SinkLim1DS))[0]])
+            #omax = rho_ * krw * kc * ((h - criticalPressure_) / dz )* pos0
+            # proposed_outer_sol_fluxes_limited = np.maximum(proposed_outer_sol_fluxes, -(comp1content + Q_outer_totW )/dt)
+            # proposed_outer_mucil_fluxes_limited = np.maximum(proposed_outer_mucil_fluxes, -(comp2content + Q_outer_totW )/dt)
+            print('1rst seg_fluxes_limited',seg_fluxes_limited[rhizoSegsId],'diff', seg_fluxes_limited[rhizoSegsId] - seg_fluxes[rhizoSegsId])
+    
             ##
             # 2.3B simulation
             ##
@@ -248,7 +244,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
             
             rs.time_rhizo_i += (timeit.default_timer() - start_time_rhizo)
+            seg_fluxes_limited = r.seg_fluxes_limited #get 2nd limitation 
         
+            r.SinkLim1DS = abs(seg_fluxes_limited - seg_fluxes) # remember the error caused by the limitation
+            print('2nd seg_fluxes_limited',max(r.SinkLim1DS))
             ##
             # 2.4 data after, for post proccessing
             # maybe move this part to within the solve function to go less often through the list of 1DS
@@ -344,8 +343,21 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # TODO: take into account BC != 0
             # TODO: currently, only limit water flow. not lear how to limit solute flow
             ##          
-            lower_lim = np.ones(soil_fluxes.shape) * s.vg_soil.theta_R
-            soil_fluxes_limited = np.maximum(soil_fluxes, -(water_content - lower_lim)/dt) # update to limit the net sinks 
+            
+            if (rank == 0):
+                soil_fluxes_ = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
+                soil_fluxes = np.zeros(len(cell_volumes))
+                soil_fluxes[np.array(list(soil_fluxes_.keys()))] = np.array(list(soil_fluxes_.values())) #easier to handle array than dict. maybe change sumSegFluxes() function to choose type of output
+            else:
+                soil_fluxes = None
+            soil_fluxes = comm.bcast(soil_fluxes, root=0)
+            if (rank == 0):
+                soil_fluxes_limited_ = rs.sumSegFluxes(seg_fluxes_limited)  # [cm3/day]  per soil cell
+                soil_fluxes_limited = np.zeros(len(cell_volumes))
+                soil_fluxes_limited[np.array(list(soil_fluxes_limited_.keys()))] = np.array(list(soil_fluxes_limited_.values())) #easier to handle array than dict. maybe change sumSegFluxes() function to choose type of output
+            else:
+                soil_fluxes_limited = None
+            soil_fluxes_limited = comm.bcast(soil_fluxes_limited, root=0)
             
             soil_sources_limited = np.concatenate((np.array([soil_fluxes_limited]),soil_source_sol ))
             soil_contents = np.concatenate((np.array([water_content]),soil_solute_content )) 
@@ -430,35 +442,47 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # TODO: see which value are more sensible. very low rx in the leaves may make the level of change always low in the plant
             
             r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
-                                    seg_fluxes =seg_fluxes*0, diff1d3dCW_rel_lim = np.Inf)
+                                    seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf) # just to get error value, will not throw an error
             rx = np.array(rs.psiXyl)
+            
+            rsx = r.get_inner_heads(weather=weatherX)  # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models (not extrapolation to the interface!) [cm]
+            errWrsi = np.linalg.norm(rsx - rsx_old)
+            rsx_set = (rsx+rsx_old)/2
+            rsx_old = rsx_set.copy()
+            
             errRxPlant = np.linalg.norm(rx - rx_old)
             errW1ds = np.linalg.norm(rhizoWAfter_[rhizoSegsId] - rhizoWAfter_old[rhizoSegsId])
             
             errW3ds = np.linalg.norm(new_soil_water - new_soil_water_old)
-            errs = np.concatenate((np.array([errRxPlant, errW1ds, errW3ds]), r.SinkLim3DS,r.SinkLim1DS ))
+            errs =np.array([errRxPlant, errW1ds, errW3ds, max(r.SinkLim3DS),max(r.SinkLim1DS),max(r.maxDiff1d3dCW_abs), errWrsi])
             err = comm.bcast(max(r.maxDiff1d3dCW_abs), root = 0)
             
             rx_old = rx.copy()
             new_soil_water_old = new_soil_water.copy()
             rhizoWAfter_old = rhizoWAfter_.copy()
             
+            TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
+            theta3ds = s.getWaterContent()
             if rank == 0:
-                write_file_array("errorIteration"+str(max_rank), errs, directory_ =results_dir) 
-                write_file_array("errorIteration1d3d"+str(max_rank), r.maxDiff1d3dCW_abs, directory_ =results_dir) 
-                write_file_float("errorIteration_time"+str(max_rank), rs_age, directory_ =results_dir) 
-                write_file_array("errorIteration_SinkLim3DS"+str(max_rank), r.SinkLim3DS, directory_ =results_dir) 
-                write_file_array("errorIteration_SinkLim1DS"+str(max_rank), r.SinkLim1DS, directory_ =results_dir) 
-                write_file_array("errorIteration_seg_fluxes_limited"+str(max_rank), seg_fluxes_limited, directory_ =results_dir) 
-                write_file_array("errorIteration_seg_fluxes"+str(max_rank), seg_fluxes, directory_ =results_dir) 
-                write_file_array("errorIteration_soil_fluxes_limited"+str(max_rank), soil_fluxes_limited, directory_ =results_dir) 
-                write_file_array("errorIteration_soil_fluxes"+str(max_rank), soil_fluxes, directory_ =results_dir) 
+                write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir )
+                write_file_array('fpit_watVolTheta',np.array([sum(new_soil_water),np.mean(theta3ds)]), directory_ =results_dir )
+                write_file_array("fpit_error"+str(max_rank), errs, directory_ =results_dir) 
+                write_file_array("fpit_error1d3d"+str(max_rank), r.maxDiff1d3dCW_abs, directory_ =results_dir) 
+                write_file_float("fpit_time"+str(max_rank), rs_age, directory_ =results_dir) 
+                write_file_array("fpit_SinkLim3DS"+str(max_rank), r.SinkLim3DS, directory_ =results_dir) 
+                write_file_array("fpit_SinkLim1DS"+str(max_rank), r.SinkLim1DS, directory_ =results_dir) 
+                write_file_array("fpit_seg_fluxes_limited"+str(max_rank), seg_fluxes_limited, directory_ =results_dir) 
+                write_file_array("fpit_seg_fluxes"+str(max_rank), seg_fluxes, directory_ =results_dir) 
+                write_file_array("fpit_soil_fluxes_limited"+str(max_rank), soil_fluxes_limited, directory_ =results_dir) 
+                write_file_array("fpit_soil_fluxes"+str(max_rank), soil_fluxes, directory_ =results_dir) 
                 
-            if False:#rank == 0:    
-                write_file_float("soil_fluxes_"+str(max_rank), soil_fluxes, directory_ =results_dir) 
-                write_file_array("new_soil_water_"+str(max_rank), new_soil_water, directory_ =results_dir) 
-                write_file_array("soil_water_"+str(max_rank), soil_water, directory_ =results_dir) 
-                write_file_array("outer_R_bc_wat_B"+str(max_rank), outer_R_bc_wat, directory_ =results_dir) 
+                write_file_float("fpit_n_iter"+str(max_rank), n_iter, directory_ =results_dir) 
+                write_file_array("fpit_psi_sri_real_"+str(max_rank), rsx, directory_ =results_dir) 
+                write_file_array("fpit_psi_sri_set_"+str(max_rank), rsx_set, directory_ =results_dir) 
+                write_file_array("fpit_new_soil_water_"+str(max_rank), new_soil_water, directory_ =results_dir) 
+                write_file_array("fpit_rx"+str(max_rank), rx, directory_ =results_dir) 
+                write_file_array("fpit_rhizoWAfter_"+str(max_rank), rhizoWAfter_[rhizoSegsId] , directory_ =results_dir) 
+
             print('end iteration', rank, n_iter, err)
             n_iter += 1
             #end iteration

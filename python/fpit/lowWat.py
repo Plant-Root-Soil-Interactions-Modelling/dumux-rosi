@@ -57,15 +57,16 @@ genotype = "WT"
 comp = "phenolics"
 usemoles = True
 """ parameters   """
-soil_, min_b, max_b, cell_number, area, Kc = scenario.maize_SPP(soil_type)
+soil_ = scenario.vg_SPP(0)
+
+min_b = [-1., -1., -5.] 
+max_b = [1., 1., 0.] 
+cell_number = [2,2,5]#
 #min_b = [-5., -5, -5.] 
 #max_b = [5., 5, 0.] 
 #cell_number = [5, 5, 5]
 sim_time = 1 #154   #  [day]
 # dt_inner = 360 / (24 * 3600)  # time step [day] 20
-
-x_, y_, lai =[],[],[] #evap.net_infiltration(year, soil_type, genotype, sim_time, Kc)
-trans_maize = []#evap.get_transpiration(year, sim_time, area, lai, Kc)
 
 
 """ rhizosphere model parameters """
@@ -80,10 +81,10 @@ mode = "dumux_w"
 
 """ initialize """
 
-initsim = 5.5
+initsim = 9.5
           
 s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
-            min_b, max_b, cell_number, demoType = mode, times = x_, net_inf = y_,
+            min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
             usemoles = usemoles, dirResults = results_dir, lowWater = True)
 
           
@@ -96,7 +97,8 @@ rs, r = scenario.create_mapped_plant(wilting_point, nc, logbase, mode,initsim,
                                         min_b, max_b, cell_number, s, xml_name,
                                         path, plantType = "plant", 
                                         recreateComsol_ = recreateComsol,
-                                        usemoles = usemoles)  # pass parameter file for dynamic growth
+                                        usemoles = usemoles,
+                                        limErr1d3d = 1e-8)  # pass parameter file for dynamic growth
 
 
 
@@ -115,7 +117,7 @@ Q_in  = 0
 Nt = len(rs.nodes)
 r.minLoop = 1000
 r.maxLoop = 5000
-dt = 1/24
+dt = 1/2/24
 simMax = initsim + 3
 
 TranspirationCumul = 0

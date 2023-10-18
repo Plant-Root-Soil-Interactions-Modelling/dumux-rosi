@@ -692,6 +692,11 @@ public:
 					} else { // outflow
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
+						if ((f!= 0)&&verbose)
+						{
+							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
+							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<std::endl;
+						}
 						f = std::min(f, omax);
 					}
 					break;

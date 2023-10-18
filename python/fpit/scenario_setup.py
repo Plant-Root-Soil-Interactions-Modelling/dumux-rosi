@@ -303,16 +303,16 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     #s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-    s.setParameter("Newton.MaxRelativeShift", "1e-15")
+    s.setParameter("Newton.MaxRelativeShift", "1e-10")
     s.setParameter("Problem.verbose", "-1")
     
     # IC
     if do1D:
         s.setParameter("Problem.EnableGravity", "false")
     if lowWater: 
-        s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
-    else:
         s.setHomogeneousIC(-1000., equilibrium = not do1D)  # cm pressure head
+    else:
+        s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
     
     
     s.initializeProblem()
@@ -321,6 +321,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.ddt = 1.e-5  # [day] initial Dumux time step
     
     write_file_array('getWaterContent',s.getWaterContent(), directory_ =dirResults)
+    write_file_array('getSolutionHead',s.getSolutionHead(), directory_ =dirResults)
     
     solute_conc = np.array(s.getSolution(1))
     if rank == 0:
@@ -581,7 +582,7 @@ def setKrKx_phloem(r): #inC
 def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
                 stochastic = False, mods = None, plantType = "plant",
-                recreateComsol_ = False, usemoles = True):
+                recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     #global picker  # make sure it is not garbage collected away...
@@ -598,7 +599,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         
         rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
-                                    recreateComsol_, usemoles, seedNum = seed)
+                                    recreateComsol_, usemoles, seedNum = seed, limErr1d3dAbs = limErr1d3d)
 
         rs.setSeed(seed)
         rs.readParameters(path + fname)

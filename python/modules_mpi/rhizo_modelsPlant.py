@@ -1075,7 +1075,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
                 
     def initialize_(self,gId,x,cc ):
-        if ((self.seg2cell[gId] > 0) and (self.organTypes[gId] == 2)):
+        if ((self.seg2cell[gId] >= 0) and (self.organTypes[gId] == 2)):
             if self.mode == "dumux":
                 self.cyls.append(self.initialize_dumux_(gId, x[self.seg2cell[gId]], False, False))
             elif self.mode == "dumux_exact":

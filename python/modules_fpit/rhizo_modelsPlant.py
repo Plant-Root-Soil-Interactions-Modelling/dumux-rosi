@@ -40,7 +40,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     # TODO copy mapped segments constructors (!)...
 
     def __init__(self, wilting_point, NC, logbase, mode, soil, recreateComsol_, 
-                usemoles, seedNum=None,results_dir = './results/' ):
+                usemoles, seedNum=None,results_dir = './results/' ,limErr1d3dAbs = 1e-11):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         if not seedNum is None:
             super().__init__(seednum = seedNum)
@@ -62,7 +62,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.rhizoVol_ = np.array([])
         self.seg2cell_old = {}
         self.cell2seg_old = {}
-
+        self.limErr1d3dAbs = limErr1d3dAbs
         
         
         self.cyls = []
@@ -161,7 +161,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         self.toAdd = comm.bcast(self.toAdd, root = 0) 
         self.seg_length = comm.bcast(self.seg_length, root = 0)  
-        self.outer_radii = comm.bcast(self.outer_radii, root = 0)
+        self.outer_radii = np.array( comm.bcast(self.outer_radii, root = 0))
         self.radii =np.array( comm.bcast(self.radii, root = 0)    )
         self.seg2cell = comm.bcast(self.seg2cell, root = 0)    
         self.cell2seg = comm.bcast(self.cell2seg, root = 0)         
@@ -181,9 +181,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         sizeSoilCell = comm.bcast(self.soilModel.getCellVolumes()/1e6, root = 0) #m3
         try:
-            maxlim1d3d = max(self.maxDiff1d3dCW_rel[0]*10, 1e-13)
+            maxlim1d3d = max(self.maxDiff1d3dCW_abs[0]*10,self.limErr1d3dAbs)
         except:
-            maxlim1d3d = 1e-13
+            maxlim1d3d = self.limErr1d3dAbs
         
         print("broadcastPlantShape",rank)
         self.broadcastPlantShape() 
@@ -203,7 +203,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      seg_fluxes = 0.,# [cm3/day]
                                      doWater = True, doSolute = True, doSolid = True,
                                      # useSoilData = True,
-                                     diff1d3dCW_rel_lim = maxlim1d3d)
+                                     diff1d3dCW_abs_lim = maxlim1d3d)
         
         
         self.checkVolumeBalance(finishedUpdate = False)
@@ -273,7 +273,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      seg_fluxes = 0.,# [cm3/day]
                                      doWater = True, doSolute = True, doSolid = True,
                                      # useSoilData = True,
-                                     diff1d3dCW_rel_lim = max(self.maxDiff1d3dCW_rel[0]*2, 1e-12) )# error after update should be = error before update
+                                     diff1d3dCW_abs_lim = max(self.maxDiff1d3dCW_rel[0]*2,self.limErr1d3dAbs) )# error after update should be = error before update
         # maybe check here that rhizo concentration + outerBC_flow == 3D concentration
         # self.checkMassOMoleBalance()#doSolute = False)
         self.nsOld = sum(self.repartitionOld)
@@ -427,10 +427,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      doWater = True, doSolute = True, doSolid = True,
                                      useSoilData = False,
                                      doKonz = True,
-                                     diff1d3dCW_rel_lim = 1e-11):#would need to do it for each cell, not overall
+                                     diff1d3dCW_abs_lim = None):#would need to do it for each cell, not overall?
         verbose = False
         if verbose:
             print("checkMassOMoleBalance2", rank)
+        if diff1d3dCW_abs_lim is None:
+           diff1d3dCW_abs_lim = self.limErr1d3dAbs
         
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
@@ -501,13 +503,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[0] = max(self.maxDiff1d3dCW_abs[0], diff1d3dCW_abs)
                     self.maxDiff1d3dCW_rel[0] = max(self.maxDiff1d3dCW_rel[0], diff1d3dCW_rel)
-                    if diff1d3dCW_rel > diff1d3dCW_rel_lim:#1e-10 :
+                    if diff1d3dCW_abs > diff1d3dCW_abs_lim:#1e-10 :
                         print("checkMassOMoleBalance2error")
                         print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat[cellId], dt)
                         print("wat_rhizo_",wat_rhizo_)
                         print("Diff1d3dW",diff1d3dCW_abs, diff1d3dCW_rel, self.sumDiff1d3dCW_abs[0],
                             self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
-                            diff1d3dCW_rel_lim)
+                            diff1d3dCW_abs_lim)
                         print(np.array(self.organTypes)[idCylsAll])
                         print(np.array(self.radii)[idCylsAll],np.array(self.outer_radii)[idCylsAll])
                         raise Exception 
@@ -565,7 +567,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             if verbose:
                                 print("content", cellId, idComp, mol_total, 'mol_rhizo',mol_rhizo,mol_rhizo_,"sourceSol_ * dt",sourceSol_ * dt, 
                                         diff1d3dCW_abs, diff1d3dCW_rel)
-                            if diff1d3dCW_rel > diff1d3dCW_rel_lim:
+                            if diff1d3dCW_abs > diff1d3dCW_abs_lim:
                                 print('error for component', rank, cellId)
                                 print(cellId, idComp,mol_total , sourceSol_ , dt)
                                 print(mol_rhizo, abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_* dt)*100))
@@ -1066,7 +1068,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
                 
     def initialize_(self,gId,x,cc ):
-        if ((self.seg2cell[gId] > 0) and (self.organTypes[gId] == 2)):
+        if ((self.seg2cell[gId] >= 0) and (self.organTypes[gId] == 2)):
             self.cyls.append(self.initialize_dumux_nc_(gId, x[self.seg2cell[gId]], cc[self.seg2cell[gId]]))
         else:
             a_in = self.radii[gId]#get Perimeter instead? not used for now anyway
@@ -1107,7 +1109,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
             # print(a_in,a_out,lb)
             # print( a_in)
-            cyl.setParameter("Problem.verbose", "-1")
+            cyl.setParameter("Problem.verbose", "0")
             cyl.setParameter("Problem.reactionExclusive", "0")    
             cyl.setParameter( "Soil.Grid.Cells",str( self.NC-1)) # -1 to go from vertices to cell (dof)
             if self.recreateComsol:
@@ -1187,7 +1189,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 len(Cells), len(cAll[j-1]), j)
                         raise Exception
                         
-            cyl.setParameter("Newton.MaxRelativeShift", "1e-15")
+            cyl.setParameter("Newton.MaxRelativeShift", "1e-10")
             cyl.initializeProblem()
             cyl.setCriticalPressure(self.soilModel.wilting_point)  # cm pressure head
             cyl.bulkDensity_m3 = self.soilModel.bulkDensity_m3
@@ -1196,6 +1198,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.solidMolDensity =self.soilModel.solidMolDensity         
             cyl.ddt = 1.e-5
             cyl.gId = gId    
+            ThetaCyl = cyl.getWaterContent()
+            assert (ThetaCyl >= self.vg_soil.theta_R).all()
+            assert (ThetaCyl <= self.vg_soil.theta_S).all()
             #print(cyl.getSolutionHead(),x, gId, self.seg2cell[gId])#cyl.getSolutionHead_(),
             #raise Exception
             assert len(cyl.getSolutionHead()) == (self.NC - 1)
@@ -1340,12 +1345,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         proposed_inner_fluxes = argv[0]
         proposed_outer_fluxes = argv[1]
 
-
+        self.seg_fluxes_limited = proposed_inner_fluxes # store for post processing
         
         for lId, cyl in enumerate(self.cyls):  # run cylindrical models
             gId = self.eidx[lId]  # for one process gId == lId
             if verbose:
-                print(rank, "cyl no ",lId,"/",len(self.cyls),'gId')
+                print(rank, "cyl no ",lId+1,"/",len(self.cyls),'gId')
             if isinstance(cyl, AirSegment):  
                 cyl.setInnerFluxCyl(proposed_inner_fluxes[gId])
             else:
@@ -1426,30 +1431,34 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
                 try:
                     if verbose:
-                        print(rank, lId, 'start solve')
-                    csl_b = cyl.getContentCyl(2, True, l)
+                        print(rank, lId, 'start solve', 'BC water',QflowIn, QflowIn*dt )
+                    csl_b = cyl.getContentCyl(2, True, l)  
+                    cyl.ddt = 1.e-5
                     cyl.solve(dt, maxDt = 2500/(24*3600))
                     csl_a = cyl.getContentCyl(2, True, l)
                     buWAfter_ =  cyl.getWaterVolumesCyl(l)
                     buWAfter = sum(buWAfter_ )
                     buCCAfter_ = cyl.getContentCyl(1, True, l)
                     buTotCAfter = self.getTotCContent(cyl,l)
+                    QflowIn_limited = (buWAfter - buWBefore)/dt - QflowOut
                     if verbose:
-                        print(rank, lId, 'end solve', abs(sum(buTotCAfter) - ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt)), csl_b-csl_a )
+                        print(rank, lId, 'end solve',QflowIn, QflowIn_limited )
                     
-                    try:
-                        assert abs(buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)) < 1e-5
-                    except:#check water mass balance
-                        print("before",buWBefore_ )
-                        print("after",buWAfter_ )
-                        print("water conservation ",lId,gId, buWAfter ,"before", buWBefore )
-                        print("QflowIn", QflowIn ,"QflowOut", QflowOut,"dt", dt)
-                        print( "l",l,"a_in", self.radii[gId] ,"a_out",self.outer_radii[gId] )
-                        print("diff",( buWBefore + (QflowIn + QflowOut) * dt))
-                        #print("issue water conservation ",buWAfter , buWBefore)
-                        print("qflowout",qOut , "qflowin",qIn)
-                        print("theta", cyl.getWaterContent())
-                        raise Exception
+                    
+                    self.seg_fluxes_limited[gId] = QflowIn_limited
+                    # try:
+                        # assert abs(buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)) < 1e-5
+                    # except:#check water mass balance
+                        # print("before",buWBefore_ )
+                        # print("after",buWAfter_ )
+                        # print("water conservation ",lId,gId, buWAfter ,"before", buWBefore,QflowOut )
+                        # print("QflowIn", QflowIn ,"QflowOut", QflowOut,"dt", dt)
+                        # print( "l",l,"a_in", self.radii[gId] ,"a_out",self.outer_radii[gId] )
+                        # print("diff",( buWBefore + (QflowIn + QflowOut) * dt))
+                        # #print("issue water conservation ",buWAfter , buWBefore)
+                        # print("qflowout",qOut , "qflowin",qIn)
+                        # print("theta", cyl.getWaterContent())
+                        # raise Exception
                     if ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt) > 0:
                         try:#check solute mass balance
                             assert abs((sum(buTotCAfter) - ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))/sum(buTotCAfter)*100) < 1.
