@@ -71,7 +71,7 @@ for i in range(0, N):
     t_pot = -trans * sinusoidal(t)  # potential transpiration ...
     print("t_pot", t_pot)
 
-    hs = np.transpose(np.array([[sx[mapping[j]][0] for j in range(0, ns)]]))
+    hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
     for j in range(0, len(nodes) - 1):  # from matric to total
         hs[j, 0] += nodes[j + 1][2]
     # print("hs", hs.shape, np.min(hs), np.max(hs))

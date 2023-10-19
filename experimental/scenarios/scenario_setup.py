@@ -1,9 +1,9 @@
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-# sys.path.append("../../../../build-cmake/cpp/python_binding/");
+import sys; sys.path.append("../../python/modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-import van_genuchten as vg
-from xylem_flux import XylemFluxPython  # Python hybrid solver
-from HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
+import functional.van_genuchten as vg
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.HydraulicsDoussan import HydraulicsDoussan  # Doussan solver
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 import plantbox as pb
@@ -47,7 +47,7 @@ def set_scenario1D(sstr, doussan = False):
     loam = [0.08, 0.43, alpha, n, Ks]
     soil_ = loam
     soil = vg.Parameters(soil_)
-    sra_table_lookup = open_sra_lookup("../table_jan2")
+    sra_table_lookup = open_sra_lookup("../../python/coupled/table_jan2")
 
     """ Initialize macroscopic soil model """
     s = RichardsWrapper(RichardsSP())
@@ -66,7 +66,7 @@ def set_scenario1D(sstr, doussan = False):
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     """ root system """
-    fname = "../../../../grids/RootSystem_verysimple2.rsml"
+    fname = "../../grids/RootSystem_verysimple2.rsml"
     trans = 0.5 * 15 * 75  # average per day [cm3 /day] (sinusoidal) ########################################################### ANPASSEN
     rs_age = 78  # initial root system age
 

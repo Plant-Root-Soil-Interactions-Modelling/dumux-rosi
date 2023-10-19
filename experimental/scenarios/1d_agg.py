@@ -4,8 +4,8 @@ Jan's new scenarios with aggregated (cut) root system and SRA fix point iteratio
 see aggregated rs
 """
 
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
+import sys; sys.path.append("../.../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 from scenario_setup import *
 import aggregated_rs as agg
@@ -59,7 +59,7 @@ start_time = timeit.default_timer()
 
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 cell_centers = s.getCellCenters()
-hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
+hsb = np.array([sx[mapping[2 * j + 1]] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
 cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
 kr_ = np.zeros((ns,))
 rsx = hsb.copy()  # initial values for fix point iteration

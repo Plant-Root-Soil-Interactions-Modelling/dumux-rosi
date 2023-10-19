@@ -2,14 +2,14 @@
 sets up the aggregated root system described by Krs, and (per Layer) SUF, mean radii, summed length  
 """
 
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../");
+import sys; sys.path.append("../.../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 import plantbox as pb  # CPlantBox
-from xylem_flux import *  # root system Python hybrid solver
+from functional.xylem_flux import *  # root system Python hybrid solver
 from rhizo_models import *
-import vtk_plot as vp
-import van_genuchten as vg
+import visualisation.vtk_plot as vp
+import functional.van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt

@@ -4,9 +4,9 @@ import scipy.sparse.linalg as LA
 from scipy.sparse import identity as I
 import scipy.linalg as la
 
-from fv_grid import *
-from fv_solver import *
-import van_genuchten as vg
+from fv.fv_grid import *
+from fv.fv_solver import *
+import functional.van_genuchten as vg
 
 
 class FVAdvectionDiffusion(FVSolver):
@@ -14,15 +14,15 @@ class FVAdvectionDiffusion(FVSolver):
     AdvectionDiffusion solver (first draft)
     """
 
-    def __init__(self, grid :FVGrid):
+    def __init__(self, grid:FVGrid):
         super().__init__(grid)
         mid = self.grid.centers()  # precompute cell face normals
         cols = np.ones((1, self.grid.number_of_neighbours), dtype = np.int64)
         self.fn = mid[self.grid.neighbours] - mid[np.outer(np.arange(0, self.n), cols)]
         for i in range(0, self.grid.dim):
-            self.fn[:, :, i] = self.fn[:, :, i] / np.linalg.norm(self.fn, axis = 2)  # normalize
+            self.fn[:,:, i] = self.fn[:,:, i] / np.linalg.norm(self.fn, axis = 2)  # normalize
         for (i, j) in self.grid.boundary_faces:
-            self.fn[i, j, :] = 0  # set face boundary normals to zero
+            self.fn[i, j,:] = 0  # set face boundary normals to zero
         self.b = np.ones((self.n,)) * 1.  # [1] buffer power
         self.D = np.ones((self.n,)) * 0.864  #  [cm2/day] effective diffusion, 1.e-5 cm2/s = 0.864 cm2 / day
         self.u = np.zeros((self.n, self.grid.dim))  # [cm/day] velocity field
@@ -69,7 +69,7 @@ class FVAdvectionDiffusion(FVSolver):
 
         u = 0.5 * (self.u[np.outer(np.arange(0, self.n), cols)] + self.u[self.grid.neighbours])  # boundary normals are zero TODO change u0 to surface fluxes?
         un = np.multiply(u, self.fn)
-        self.beta = np.sum(beta_ - un[:, :, 0] , axis = 1)  # TODO for nD
+        self.beta = np.sum(beta_ - un[:,:, 0] , axis = 1)  # TODO for nD
 
         self.alpha = -beta_
         for (i, j) in self.grid.boundary_faces:
@@ -139,7 +139,7 @@ class FVAdvectionDiffusion1D(FVAdvectionDiffusion):
         uses a direct banded solver, and builds sparse accordingly 
     """
 
-    def __init__(self, grid :FVGrid):
+    def __init__(self, grid:FVGrid):
         super().__init__(grid)
         self.ab = np.zeros((3, self.n))
 
@@ -153,8 +153,8 @@ class FVAdvectionDiffusion1D(FVAdvectionDiffusion):
         self.ab[0, 0] = 0
         self.ab[2, -1] = 0
         self.ab[0, 1:] = -dt * self.alpha[:-1, 1]
-        self.ab[1, :] = np.ones(self.beta.shape) - dt * self.beta
-        self.ab[2, :-1] = -dt * self.alpha[1:, 0]
+        self.ab[1,:] = np.ones(self.beta.shape) - dt * self.beta
+        self.ab[2,:-1] = -dt * self.alpha[1:, 0]
         return la.solve_banded ((1, 1), self.ab, c, overwrite_ab = True)
 
 
@@ -164,7 +164,7 @@ class FVAdvectionDiffusion_richards(FVAdvectionDiffusion):
     for effective Diffusivity (Millington and Quirk, 1961) and Darcy velocity 
     """
 
-    def __init__(self, grid :FVGrid, richards):
+    def __init__(self, grid:FVGrid, richards):
         super().__init__(grid)
         self.richards = richards
 
@@ -190,7 +190,7 @@ class FVAdvectionDiffusion1D_richards(FVAdvectionDiffusion1D):
     for effective Diffusivity (Millington and Quirk, 1961) and Darcy velocity 
     """
 
-    def __init__(self, grid :FVGrid, richards):
+    def __init__(self, grid:FVGrid, richards):
         super().__init__(grid)
         self.richards = richards
 

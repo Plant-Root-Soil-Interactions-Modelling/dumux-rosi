@@ -1,5 +1,5 @@
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src");
 
 import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
@@ -53,7 +53,7 @@ print("rs_age", rs_age)
 
 rs = r.rs
 start_time = timeit.default_timer()
-x = s.getSolutionHead()[:, 0]  # initial condition of soil [cm]
+x = s.getSolutionHead()[:]  # initial condition of soil [cm]
 x = comm.bcast(x, root = 0)  # Soil part runs parallel
 ns = len(rs.segments)
 dcyl = int(np.floor(ns / max_rank))

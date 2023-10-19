@@ -4,8 +4,8 @@ Benchmark M1.2 static root system in soil, root hydrualics with Meunier with rhi
 also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
+import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
 
 import plantbox as pb
 from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
@@ -86,7 +86,7 @@ min_b = [-4., -4., -15.]
 max_b = [4., 4., 0.]
 cell_number = [8, 8, 15]  #  [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
-fname = "../../grids/RootSystem8.rsml"
+fname = "../../../grids/RootSystem8.rsml"
 
 name = "c12_sra"
 loam = [0.08, 0.43, 0.04, 1.6, 50]  # do not change, or adapt look up table L144

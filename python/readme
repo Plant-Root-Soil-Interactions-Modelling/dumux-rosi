@@ -10,5 +10,4 @@ Additional folders for common resources:
 
 modules/		the Python modules of dumux-rosi: 
 			* Python part of the DuMux bindings for water and solute movement in the soil
-			* Python part of the XylemFlux class for water movement in roots
 			* Auxilliary class for coupling rhizosphere models (rhizo_models.py) 

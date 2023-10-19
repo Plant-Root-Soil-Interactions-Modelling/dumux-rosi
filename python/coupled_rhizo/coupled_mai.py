@@ -1,7 +1,5 @@
-import sys; sys.path.append("../modules/");  
-sys.path.append("../../../CPlantBox/");
-sys.path.append("../../../CPlantBox/src")
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 import plantbox as pb  # CPlantBox
 from rosi_richardsnc import RichardsNCSP

@@ -1,9 +1,9 @@
 import numpy as np
 import copy
 
-from fv_grid import *
-from fv_solver import *
-import van_genuchten as vg
+from fv.fv_grid import *
+from fv.fv_solver import *
+import functional.van_genuchten as vg
 
 
 class FVSystem(FVSolver):
@@ -11,7 +11,7 @@ class FVSystem(FVSolver):
     A Simulation loop for several equations (FVRichards, or FVAdvectionDiffusion)
     """
 
-    def __init__(self, grid :FVGrid):
+    def __init__(self, grid:FVGrid):
         """ Initializes the solver """
         super().__init__(grid)
         self.solvers = []
@@ -20,7 +20,7 @@ class FVSystem(FVSolver):
         """ add a solver to the system of equations, one solver per equation """
         self.solvers.append(solver)
 
-    def solve(self, output_times :list, max_dt = 0.5, verbose = True):
+    def solve(self, output_times:list, max_dt = 0.5, verbose = True):
         """ solves richards equation for several output times 
         @param output_times       final simulation times [day]
         @param max_dt             maximal time step [day]
