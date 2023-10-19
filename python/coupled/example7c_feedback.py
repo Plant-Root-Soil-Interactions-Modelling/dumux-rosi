@@ -1,8 +1,9 @@
 """ CPLantBox tutorial example 7c (see CPlantBox/tutorial/latex/PlantBox_RootSystem/tutorial.tex) """
 
 """ coupling with DuMux as solver for the soil part """
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/")
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
+
 from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 from functional.root_conductivities import *  # hard coded conductivities
 import plantbox as pb
@@ -80,14 +81,14 @@ rs = pb.MappedRootSystem()
 rs.readParameters(path + name + ".xml")
 if not periodic:
     sdf = pb.SDF_PlantBox(0.99 * (max_b[0] - min_b[0]), 0.99 * (max_b[1] - min_b[1]), max_b[2] - min_b[2])
-else :
+else:
     sdf = pb.SDF_PlantBox(np.Inf, np.Inf, max_b[2] - min_b[2])
 rs.setGeometry(sdf)
 r = XylemFluxPython(rs)
 init_conductivities(r, age_dependent)
 
 """ Coupling (map indices) """
-picker = lambda x, y, z : s.pick([x, y, z])
+picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 r.rs.setRectangularGrid(pb.Vector3d(min_b), pb.Vector3d(max_b), pb.Vector3d(cell_number), True)
 

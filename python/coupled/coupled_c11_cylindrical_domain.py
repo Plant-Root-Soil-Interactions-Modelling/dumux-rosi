@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -58,7 +58,7 @@ def solve(soil, simtimes, q_r, N):
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
     s.setBotBC("noflux")
-    s.readGrid("grids/c11_0.05mm.msh") 
+    s.readGrid("grids/c11_0.05mm.msh")
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
     s.setCriticalPressure(-15000)
@@ -89,7 +89,7 @@ def solve(soil, simtimes, q_r, N):
             collar_flux = r.collar_flux(0., rx, sx)
             off = abs(100 * (1 - fluxes_approx[cci] / (-trans)))
             print("fluxes at {:g}: approx {:g}, exact {:g}, collar flux {:g} [g day-1], approximation is {:g}% off"
-                  .format(cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux[0], off))  
+                  .format(cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux[0], off))
             fluxes = fluxes_exact
             sum_flux = 0.
             for f in fluxes.values():
@@ -98,7 +98,7 @@ def solve(soil, simtimes, q_r, N):
         else:
             fluxes = None
 
-        fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
+        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
         s.setSource(fluxes)  # g day-1, richards.py
         s.solve(dt)
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
 
     if rank == 0:
-        fig, ax = plt.subplots(2, 3, figsize=(14, 14))
+        fig, ax = plt.subplots(2, 3, figsize = (14, 14))
         t0 = timeit.default_timer()
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
@@ -136,9 +136,9 @@ if __name__ == "__main__":
             ax[i, j].legend(["final: {:.3f} d".format(t)])
             ax[i, j].title.set_text(soil[5] + ", q = {:.2f} cm/d".format(qj))
             ax[i, j].set_ylim(-15000, 0.)
-            #np.savetxt("results/c11.txt", np.vstack((np.array(x), np.array(y))), delimiter=';')
-            with open("results/c11.txt",'ab') as f:
-                np.savetxt(f, np.vstack((np.array(x), np.array(y))), delimiter=';')
+            # np.savetxt("results/c11.txt", np.vstack((np.array(x), np.array(y))), delimiter=';')
+            with open("results/c11.txt", 'ab') as f:
+                np.savetxt(f, np.vstack((np.array(x), np.array(y))), delimiter = ';')
 
     if rank == 0:
         print("Elapsed time: ", timeit.default_timer() - t0, "s")

@@ -1,13 +1,13 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/") 
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 from math import *
 import numpy as np
@@ -69,12 +69,12 @@ cci = picker(0, 0, 0)  # collar cell index
 # for i in range(0, len(n) - 1):  # segments
 #     print("soil index", r.rs.seg2cell[i])
 
-r_outer = r.segOuterRadii()
-seg_length = r.segLength()
+r_outer = r.rs.segOuterRadii()
+seg_length = r.rs.segLength()
 
 """ Initialize local soil models (around each root segment) """
 cyls = []
-points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base=logbase)
+points = np.logspace(np.log(r_root) / np.log(logbase), np.log(r_outer[i]) / np.log(logbase), NC, base = logbase)
 ns = len(seg_length)  # number of segments
 for i in range(0, ns):
     cyl = RichardsWrapper(RichardsCylFoam())
@@ -119,7 +119,7 @@ for i in range(0, NT):
     """
     Local soil model
     """
-    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # [cm3/day]
+    proposed_inner_fluxes = r.segFluxes(0., rx, rsx, approx = False)  # [cm3/day]
     proposed_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
     for j, cyl in enumerate(cyls):  # set cylindrical model fluxes
         l = seg_length[j]
@@ -134,7 +134,7 @@ for i in range(0, NT):
     Macroscopic soil model
     """
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]
+    soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]
     s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
     s.solve(dt)
 
@@ -167,7 +167,7 @@ for i in range(0, NT):
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label="water in domain")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_collar_cell), label = "water in domain")
 # ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cyl), label="water cylindric")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
@@ -175,8 +175,8 @@ ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
 # ax2.plot(np.linspace(0, sim_time, NT), np.array(collar_sx), label="soil at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="minimum hx")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rsx), label="minimum hrs")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "minimum hx")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rsx), label = "minimum hrs")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
@@ -186,7 +186,7 @@ ax3.set_title("Water uptake")
 ax3.plot(np.linspace(0, sim_time, NT), -np.array(water_uptake))
 ax3.set_xlabel("Time (days)")
 ax3.set_ylabel("Uptake (cm/day)")
- 
+
 # ax4.set_title("Water in domain")
 # ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
 # ax4.set_xlabel("Time (days)")
@@ -201,7 +201,7 @@ plt.show()
 # plt.xlabel("x (cm)")
 # plt.ylabel("Matric potential (cm)")
 # plt.show()
-# 
+#
 # plt.title("Darcy velocity")
 # h = np.array(cyls[0].getSolutionHead())
 # x = np.array(cyls[0].getDofCoordinates())

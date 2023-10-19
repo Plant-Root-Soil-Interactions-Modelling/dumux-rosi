@@ -1,5 +1,5 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../build-cmake/cpp/python_binding/"); sys.path.append("../../modules/fv/");
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -28,35 +28,35 @@ def sinusoidal(t):
 
 
 def soil_root_interface_table(rx, sx, inner_, outer_, f):
-    assert rx.shape == sx.shape          
-    rsx = f((rx, sx, inner_ , outer_))                                                      
+    assert rx.shape == sx.shape
+    rsx = f((rx, sx, inner_ , outer_))
     return rsx
 
 
 def soil_root_interface(rx, sx, inner_r, outer_r, r, sp, t):
     assert rx.shape == sx.shape
-    types = r.rs.subTypes    
+    types = r.rs.subTypes
     segs = r.rs.segments
-    rsx = np.zeros(rx.shape)  
+    rsx = np.zeros(rx.shape)
     hintmin = -1.e5
-    hintmax = -2.      
-    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)    
-    for i in range(0, len(rx)): 
+    hintmax = -2.
+    k_soilfun = lambda hsoil, hint: (vg.fast_mfp[sp](hsoil) - vg.fast_mfp[sp](hint)) / (hsoil - hint)
+    for i in range(0, len(rx)):
         s = segs[i]
-        z = 0.5 * (r.rs.nodes[s.x].z + r.rs.nodes[s.y].z)  # segment mid point          
-        if (sx[i] - z) < hintmax: 
-            if (sx[i] - z) > hintmin: 
+        z = 0.5 * (r.rs.nodes[s.x].z + r.rs.nodes[s.y].z)  # segment mid point
+        if (sx[i] - z) < hintmax:
+            if (sx[i] - z) > hintmin:
                 a = inner_r[i]
-                kr = r.kr_f(t, types[i])  #  kr_f = [](double age, int type, int orgtype, int numleaf)                 
+                kr = r.kr_f(t, types[i])  #  kr_f = [](double age, int type, int orgtype, int numleaf)
                 rho = outer_r[i] / a  # Eqn [5]
                 rho2 = rho * rho
-                b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]                  
-                fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i] - z, x)) / (b * k_soilfun(sx[i] - z, x) + a * kr) - x                                               
-                rsx[i] = fsolve(fun, rx[i])                                                    
-            else: 
+                b = 2 * (rho2 - 1) / (1 - 0.53 * 0.53 * rho2 + 2 * rho2 * (np.log(rho) + np.log(0.53)))  # Eqn [7]
+                fun = lambda x: (a * kr * rx[i] + b * sx[i] * k_soilfun(sx[i] - z, x)) / (b * k_soilfun(sx[i] - z, x) + a * kr) - x
+                rsx[i] = fsolve(fun, rx[i])
+            else:
                 rsx[i] = rx[i]
         else:
-            rsx[i] = sx[i]    
+            rsx[i] = sx[i]
     return rsx
 
 """ 
@@ -72,16 +72,16 @@ min_b = [-7.5, -37.5, -110.]
 max_b = [7.5, 37.5, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
-fname = "../../../grids/RootSystem_verysimple2.rsml" 
+fname = "../../../grids/RootSystem_verysimple2.rsml"
 
 name = "jan_scenario_wet"  # name to export resutls
 
 alpha = 0.018;  # (cm-1)
 n = 1.8;
-Ks = 28.46;  # (cm d-1) 
+Ks = 28.46;  # (cm d-1)
 loam = [0.08, 0.43, alpha, n, Ks]
 p_top = -310  # -5000, -310
-p_bot = -200  # 
+p_bot = -200  #
 
 soil_ = loam
 soil = vg.Parameters(soil_)
@@ -98,7 +98,7 @@ dt = 60 / (24 * 3600)  # time step [day], 120 schwankt stark
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 20  # for output and results, skip iteration
 
-""" Initialize macroscopic soil model """  
+""" Initialize macroscopic soil model """
 vg.create_mfp_lookup(soil, -1.e5, 1000)
 s = RichardsWrapper(RichardsSP())
 s.initialize()
@@ -120,10 +120,10 @@ r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(m
 init_conductivities_scenario_jan_const(r)
 
 """ Coupling (map indices) """
-picker = lambda x, y, z: s.pick([x, y, z])    
+picker = lambda x, y, z: s.pick([x, y, z])
 cci = picker(r.rs.nodes[0].x, r.rs.nodes[0].y, r.rs.nodes[0].z)  # collar cell index
 r.rs.setSoilGrid(picker)  # maps segment
-outer_r = r.rs.segOuterRadii() 
+outer_r = r.rs.segOuterRadii()
 
 """ sanity checks """
 # r.plot_conductivities()
@@ -151,18 +151,18 @@ print("inner_r*kr", kr_min * radius_min, kr_max * radius_max)
 sra_table_lookup = open_sra_lookup("table_jan")
 
 # quick check
-# rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]), r, sp, outer_r)   
+# rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]), r, sp, outer_r)
 # print(r.rs.radii[0])
 # print(outer_r[0])
-# rsx3 = sra_table_lookup((-15000, -700, 0.1679960056208074, 0.6952332821448589))   
-# print(rsx2, rsx3)        
+# rsx3 = sra_table_lookup((-15000, -700, 0.1679960056208074, 0.6952332821448589))
+# print(rsx2, rsx3)
 
 """ for fixed root system """
 inner_ = np.zeros((len(outer_r),))
 outer_ = np.zeros(len(outer_r),)
 for i in range(0, len(outer_r)):
     inner_[i] = max(min(radii[i] , 0.2), 0.01)
-    outer_[i] = max(min(outer_r[i] , 20), 0.1)    
+    outer_[i] = max(min(outer_r[i] , 20), 0.1)
 mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
 
 """ Numerical solution (a) """
@@ -170,22 +170,22 @@ start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
 hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
-rsx = hsb.copy()  # initial values for fix point iteration 
+rsx = hsb.copy()  # initial values for fix point iteration
 
 t = 0.
 
 for i in range(0, NT):
-    
-    wall_iteration = timeit.default_timer()    
+
+    wall_iteration = timeit.default_timer()
 
     if rank == 0:  # root part is not parallel
- 
-        wall_fixpoint = timeit.default_timer()    
- 
+
+        wall_fixpoint = timeit.default_timer()
+
         if i == 0:  # only first time
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False       
-            rx_old = rx.copy() 
-         
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
+            rx_old = rx.copy()
+
         err = 1.e6
         c = 1
         while err > 1. and c < 100:
@@ -196,52 +196,52 @@ for i in range(0, NT):
             wall_interpolation = timeit.default_timer() - wall_interpolation
 
             """ xylem matric potential """
-            wall_xylem = timeit.default_timer()            
-            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False                                                 
+            wall_xylem = timeit.default_timer()
+            rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
             # print(err)
             rx_old = rx.copy()
             c += 1
-        
+
         # print(c, "iterations", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
 
-        wall_fixpoint = timeit.default_timer() - wall_fixpoint 
-        
+        wall_fixpoint = timeit.default_timer() - wall_fixpoint
+
         # rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, [])  # xylem_flux.py, cells = False
         fluxes = r.segFluxes(rs_age + t, rx, rsx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = True
         min_rsx = np.min(rsx)  # for console output
-        max_rsx = np.max(rsx)        
- 
+        max_rsx = np.max(rsx)
+
 #         sum_flux = 0.
 #         for f in fluxes.values():
-#             sum_flux += f        
-#         print(sum_flux, r.collar_flux(rs_age + t, rx, rsx))    
- 
+#             sum_flux += f
+#         print(sum_flux, r.collar_flux(rs_age + t, rx, rsx))
+
     else:
         fluxes = None
-         
-    wall_soil = timeit.default_timer()  
-    fluxes = comm.bcast(r.sumSoilFluxes(fluxes), root=0)  # Soil part runs parallel
-    s.setSource(fluxes.copy())  # richards.py 
+
+    wall_soil = timeit.default_timer()
+    fluxes = comm.bcast(r.sumSoilFluxes(fluxes), root = 0)  # Soil part runs parallel
+    s.setSource(fluxes.copy())  # richards.py
     s.solve(dt)
     sx = s.getSolutionHead()  # richards.py
-    hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment    
+    hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
     water = s.getWaterVolume()
-    wall_soil = timeit.default_timer() - wall_soil    
- 
+    wall_soil = timeit.default_timer() - wall_soil
+
     wall_iteration = timeit.default_timer() - wall_iteration
- 
+
     if rank == 0 and i % skip == 0:
         min_sx = np.min(sx)
         max_sx = np.max(sx)
         min_rx = np.min(rx)
-        max_rx = np.max(rx)                
+        max_rx = np.max(rx)
         x_.append(t)
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil=[], cells=False)
+        cf_ = r.collar_flux(rs_age + t, rx, rsx, k_soil = [], cells = False)
         print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         y_.append(sum_flux)  # cm4/day
         w_.append(water)  # cm3
@@ -260,10 +260,10 @@ s.writeDumuxVTK(name)
 """ Plot """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-            
+
     plot_transpiration(x_, y_, cf, lambda t: trans * sinusoidal(t))
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
-    
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
+
     ana = pb.SegmentAnalyser(r.rs)
     ana.addData("pressure", rx)
     vp.plot_roots(ana, "pressure")

@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -132,7 +132,7 @@ for i in range(0, NT):
         rsx[j] = p  # getInnerHead(p, rx[j], q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
 
     # fluxes per segment according to schröder guess
-    seg_fluxes = r.segFluxes(0., rx, rsx, approx=False, cells=False)  # [cm3/day]
+    seg_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False)  # [cm3/day]
 
     # water for net flux
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
@@ -174,15 +174,15 @@ for i in range(0, NT):
 fig, (ax1, ax2) = plt.subplots(2, 1)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_domain), label="water in domain")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_domain), label = "water in domain")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
 # ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="soil voxel at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="minimum hx")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="minimum hrs")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "minimum hx")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label = "minimum hrs")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
@@ -192,7 +192,7 @@ ax2.set_ylim(-15000, 0)
 # ax3.plot(np.linspace(0, sim_time, NT), -np.array(uptake))
 # ax3.set_xlabel("Time (days)")
 # ax3.set_ylabel("Uptake (cm/day)")
-# 
+#
 # ax4.set_title("Water in domain")
 # ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
 # ax4.set_xlabel("Time (days)")

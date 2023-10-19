@@ -1,12 +1,12 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 import numpy as np
 from scipy import optimize
@@ -69,7 +69,7 @@ def getInnerHead2(p, rp, q_root, q_out, r_in, r_out, soil):
 def getInnerHead3(p, rp, q_root, q_out, r_in, r_out, soil):
     """ find rsx so that it correspond to q_root """
     f = lambda q_root: kr * (getInnerHead(p, rp, q_root, q_out, r_in, r_out, soil) - rp) - q_root
-    sol = optimize.root_scalar(f, x0=q_root, x1=0.5 * (q_root + 1.e-6))
+    sol = optimize.root_scalar(f, x0 = q_root, x1 = 0.5 * (q_root + 1.e-6))
     rsx = getInnerHead(p, rp, sol.root, q_out, r_in, r_out, soil)
     print("q_root", sol.root, "@", rsx, "initial", q_root, rp, p)
     return rsx
@@ -122,8 +122,8 @@ r.setKr([kr])
 r.setKx([kx])
 
 inner_radii = np.array(r.rs.radii)
-outer_radii = r.segOuterRadii()
-seg_length = r.segLength()
+outer_radii = r.rs.segOuterRadii()
+seg_length = r.rs.segLength()
 ns = len(seg_length)
 
 """ Coupling soil and root model (map indices) """
@@ -155,7 +155,7 @@ net_flux = np.zeros(cell_volumes.shape)
 # initial
 sx = s.getSolutionHead()  # [cm]
 rx = r.solve(0., -q_r, sx[cci], rsx, False, critP)  # [cm]
-seg_fluxes = r.segFluxes(0., rx, sx, approx=False, cells=True)  # [cm3/day]
+seg_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
 
 for i in range(0, NT):
 
@@ -165,7 +165,7 @@ for i in range(0, NT):
     rx = r.solve(0., -q_r, sx[cci], rsx, False, critP)  # [cm]
 
     # fluxes per segment according to the classic sink
-    seg_fluxes = r.segFluxes(0., rx, sx, approx=False, cells=True)  # [cm3/day]
+    seg_fluxes = r.segFluxes(0., rx, sx, approx = False, cells = True)  # [cm3/day]
 
     # solutions of previous time step
     for j in range(0, ns):  # for each segment
@@ -176,7 +176,7 @@ for i in range(0, NT):
         rsx[j] = getInnerHead(p, rp, q_in, q_out, inner_radii[j], outer_radii[j], sp)  # [cm]
 
     # fluxes per segment according to schröder guess
-    seg_fluxes = r.segFluxes(0., rx, rsx, approx=False, cells=False)  # [cm3/day]
+    seg_fluxes = r.segFluxes(0., rx, rsx, approx = False, cells = False)  # [cm3/day]
 
     # water for net flux
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
@@ -191,7 +191,7 @@ for i in range(0, NT):
 
     seg_outer_fluxes = r.splitSoilFluxes(net_flux / dt)
 
-    soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day]
+    soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]
     sum_flux = 0.
     for k, f in soil_fluxes.items():
         sum_flux += f
@@ -218,15 +218,15 @@ for i in range(0, NT):
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cell), label="water cell")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_cell), label = "water cell")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="soil voxel at root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="root collar")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="1d cylindrical model at root surface")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label = "soil voxel at root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "root collar")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label = "1d cylindrical model at root surface")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")

@@ -1,9 +1,9 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules")   
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # for soil part wrappring RichardsSP
@@ -110,12 +110,12 @@ def solve(soil, simtimes, q_r, N):
             rx = r.solve_neumann(0., -trans, rsx, False)  # xylem_flux.py, True: soil matric potential per cell, False: soil matric potential per segment
 
             # For the soil model
-            seg_fluxes = r.segFluxes(0., rx, rsx, approx=False)  # class XylemFlux is defined in CPlantBox XylemFlux.h
-            soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # class XylemFlux is defined in CPlantBox XylemFlux.h
+            seg_fluxes = r.segFluxes(0., rx, rsx, approx = False)  # class XylemFlux is defined in CPlantBox XylemFlux.h
+            soil_fluxes = r.sumSegFluxes(seg_fluxes)  # class XylemFlux is defined in CPlantBox XylemFlux.h
 
             fluxes_exact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h
             collar_flux = r.collar_flux(0., rx, sx)
-            print("fluxes at {:g}, exact {:g}, collar flux {:g} [g day-1]".format(cci, fluxes_exact[cci], collar_flux[0])) 
+            # print("fluxes at {:g}, exact {:g}, collar flux {:g} [g day-1]".format(cci, fluxes_exact[cci], collar_flux[0]))
             print("fluxes at {:g},  soil {:g}".format(cci, soil_fluxes[cci]))
 
             fluxes = soil_fluxes
@@ -134,7 +134,7 @@ def solve(soil, simtimes, q_r, N):
         else:
             fluxes = None
 
-        fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
+        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
         s.setSource(fluxes)  # g day-1, richards.py
 
         s.solve(dt)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
 
     if rank == 0:
-        fig, ax = plt.subplots(2, 3, figsize=(14, 14))
+        fig, ax = plt.subplots(2, 3, figsize = (14, 14))
         t0 = timeit.default_timer()
 
     jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
@@ -171,8 +171,8 @@ if __name__ == "__main__":
     for soil, qj, i, j in jobs:
         y, yc, x, t = solve(soil, sim_times, qj, N)
         if rank == 0:
-            ax[i, j].plot(x, y, "r*", label="sink based")
-            ax[i, j].plot(np.linspace(r_root, r_out, N), yc, "b", label="cylindrical")
+            ax[i, j].plot(x, y, "r*", label = "sink based")
+            ax[i, j].plot(np.linspace(r_root, r_out, N), yc, "b", label = "cylindrical")
             ax[i, j].set_xlabel("r (cm)")
             ax[i, j].set_ylabel("water potential (cm)")
             ax[i, j].title.set_text(soil[5] + ", q = {:g} cm/d, final: {:g} d".format(qj, t))

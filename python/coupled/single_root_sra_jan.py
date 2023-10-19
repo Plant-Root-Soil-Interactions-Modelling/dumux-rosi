@@ -1,5 +1,5 @@
-import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -99,8 +99,8 @@ k_soil = np.zeros((ns, 1))
 
 """ initialize """
 sx = s.getSolutionHead()  # [cm]
-hx = r.solve(0., -q_r, 0, sx, True, critP) 
-hsb = np.array([sx[rs.seg2cell[j]][0] for j in range(0, ns)]) 
+hx = r.solve(0., -q_r, 0, sx, True, critP)
+hsb = np.array([sx[rs.seg2cell[j]][0] for j in range(0, ns)])
 hrs = 0.5 * (hsb + hx[1:])
 
 # b = 2  # r_root  # (1 - r_root) / (0.6 - r_root)  # todo (?)
@@ -113,34 +113,34 @@ for i in range(0, NT):
 
     sx = s.getSolutionHead()  # [cm]
     hsb = np.array([sx[rs.seg2cell[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
-    hx = np.array(r.solve(0., -q_r, 0, hrs, False, critP)) 
+    hx = np.array(r.solve(0., -q_r, 0, hrs, False, critP))
 
     hrs = 0.5 * (hsb + hx[1:])
     hrs0 = hrs.copy()  # remember
 
-    """ slide 12 of jans presentation """    
-    
+    """ slide 12 of jans presentation """
+
     for i in range(0, 20):
-        
-        hx = r.solve(0., -q_r, 0, hrs, False, critP)  # [cm] solve(self, sim_time:float, trans:list, sx:float, sxx, cells:bool, wilting_point:float, soil_k=[]):        
-        # hx = r.solve_dirichlet(0., collar_p, 0, hrs, False)  
-        
-#         k_soil = np.array([vg.hydraulic_conductivity(sx[rs.seg2cell[j]][0], sp) for j in range(0, ns)]) * b  #  resulting hrs >= hbs ???    
-#         k_soil = np.array([vg.hydraulic_conductivity(hrs[j], sp) for j in range(0, ns)]) * b             
+
+        hx = r.solve(0., -q_r, 0, hrs, False, critP)  # [cm] solve(self, sim_time:float, trans:list, sx:float, sxx, cells:bool, wilting_point:float, soil_k=[]):
+        # hx = r.solve_dirichlet(0., collar_p, 0, hrs, False)
+
+#         k_soil = np.array([vg.hydraulic_conductivity(sx[rs.seg2cell[j]][0], sp) for j in range(0, ns)]) * b  #  resulting hrs >= hbs ???
+#         k_soil = np.array([vg.hydraulic_conductivity(hrs[j], sp) for j in range(0, ns)]) * b
         for j, _ in enumerate(hsb):
             d = hsb[j] - hrs[j]  # at least [1 cm]
             k_soil[j] = (vg.matric_flux_potential(hsb[j], sp) - vg.matric_flux_potential(hrs[j], sp)) / d
-    
-        for j in range(0, ns): 
+
+        for j in range(0, ns):
             hrs[j] = fsolve(lambda x:k_root[j] * (x - hx[j + 1]) + b * k_soil[j] * (x - hsb[j]), hrs[j])
-        
+
         hrs = np.maximum(hrs, critP)
 
     print("bulk", hsb[1], "hrs0", hrs0[1], "hrs", hrs[1])
-    # print(k_root[1], k_soil[1]) 
-        
+    # print(k_root[1], k_soil[1])
+
     # print(k_soil)
-    seg_fluxes = r.segFluxes(0., hx, hrs, approx=False, cells=False)  # [cm3/day]
+    seg_fluxes = r.segFluxes(0., hx, hrs, approx = False, cells = False)  # [cm3/day]
 
     # water for net flux
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)
@@ -170,15 +170,15 @@ for i in range(0, NT):
 fig, (ax1, ax2) = plt.subplots(2, 1)
 
 ax1.set_title("Water amount")
-ax1.plot(np.linspace(0, sim_time, NT), np.array(water_domain), label="water in domain")
+ax1.plot(np.linspace(0, sim_time, NT), np.array(water_domain), label = "water in domain")
 ax1.legend()
 ax1.set_xlabel("Time (days)")
 ax1.set_ylabel("(cm3)")
 
 ax2.set_title("Pressure")
 # ax2.plot(np.linspace(0, sim_time, NT), np.array(collar), label="root collar soil cell")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label="minimum hx")
-ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label="minimum hrs")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(min_rx), label = "minimum hx")
+ax2.plot(np.linspace(0, sim_time, NT), np.array(p1d), label = "minimum hrs")
 ax2.legend()
 ax2.set_xlabel("Time (days)")
 ax2.set_ylabel("Matric potential (cm)")
@@ -188,7 +188,7 @@ ax2.set_ylim(-15000, 0)
 # ax3.plot(np.linspace(0, sim_time, NT), -np.array(uptake))
 # ax3.set_xlabel("Time (days)")
 # ax3.set_ylabel("Uptake (cm/day)")
-# 
+#
 # ax4.set_title("Water in domain")
 # ax4.plot(np.linspace(0, sim_time, NT), np.array(water_domain))
 # ax4.set_xlabel("Time (days)")

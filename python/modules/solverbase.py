@@ -232,7 +232,7 @@ class SolverWrapper():
             raise Exception('problem was not created, call initializeProblem()')
         else:
             return False
-        
+
     @property
     def simTime(self):
         """ Current simulation time (read only) [days]"""
@@ -285,7 +285,7 @@ class SolverWrapper():
         else:
             return []
 
-    def interpolateNN(self, xi, eq = 0):
+    def interpolateNN(self, xi, eq = None):
         """ solution at the points xi (todo currently works only for CCTpfa)"""
         self.checkGridInitialized()
         solution = self.getSolution()
@@ -294,9 +294,11 @@ class SolverWrapper():
         else:
             y = []
         for i in range(0, xi.shape[0]):
-            idx = self.pickCell(xi[i,:])  # cm -> m
-            if rank == 0:
+            idx = self.pickCell(xi[i,:])
+            if eq and rank == 0:
                 y[i] = solution[idx, eq]
+            elif rank == 0:
+                y[i] = solution[idx]
         return y
 
     def writeVTK(self, file:str, small:bool = False):
@@ -329,19 +331,19 @@ class SolverWrapper():
             indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
-        if len(indices) >0:  # only for rank 0 not empty
+        if len(indices) > 0:  # only for rank 0 not empty
             try:
                 assert len(indices) == len(x), "_map: indices and values have different length"
             except:
                 print(len(indices) , len(x), indices)
                 raise Exception
             ndof = max(indices) + 1
-            if isinstance(x[0], (list,type(np.array([])))) :
+            if isinstance(x[0], (list, type(np.array([])))):
                 m = len(x[0])
                 p = np.zeros((ndof, m), dtype = dtype)
                 for i in range(0, len(indices)):  #
                     p[indices[i],:] = np.array(x[i], dtype = dtype)
-            else:#option to get array of shape (N,) instead of (N,1)
+            else:  # option to get array of shape (N,) instead of (N,1)
                 p = np.zeros(ndof, dtype = dtype)
                 for i in range(0, len(indices)):  #
                     p[indices[i]] = np.array(x[i], dtype = dtype)

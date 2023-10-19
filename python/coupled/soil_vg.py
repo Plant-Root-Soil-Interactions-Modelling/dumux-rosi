@@ -1,6 +1,10 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
+"""
+plots a soil retention curve
+"""
+
 import functional.van_genuchten as vg
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,9 +18,9 @@ wilting_point = -15000
 
 sp = vg.Parameters(soil)
 
-print("pressure at residual water content", vg.pressure_head(0.1 * 1.1, sp))
+print("matric potential at residual water content", vg.pressure_head(0.1 * 1.1, sp))
 print("water content at -1664.67", vg.water_content(-1664.67, sp))
-print("pressure at wilting point", vg.water_content(wilting_point, sp))
+print("water content at wilting point", vg.water_content(wilting_point, sp))
 
 k = vg.hydraulic_conductivity(wilting_point, sp)
 print(k)
