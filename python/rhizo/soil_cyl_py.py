@@ -1,9 +1,9 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-import van_genuchten as vg
-from fv_grid import *
-import fv_richards as richards  # Python solver
+import functional.van_genuchten as vg
+from fv.fv_grid import *
+import fv.fv_richards as richards  # Python solver
 
 import numpy as np
 from scipy import sparse
@@ -43,16 +43,16 @@ print("elapsed time", time.time() - t)
 
 col = ["r*", "g*", "b", "m", "c", "y"] * 5
 for i in range(0, len(sim_times)):
-    plt.plot(rich.grid.centers(), h[i,:], col[i], label="Time {:g} days".format(sim_times[i]))
+    plt.plot(rich.grid.centers(), h[i,:], col[i], label = "Time {:g} days".format(sim_times[i]))
 plt.xlabel("cm")
 plt.ylabel("matric potential (cm)")
 plt.legend()
 
-data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows=8)
+data = np.loadtxt("cylinder_1d_Comsol.txt", skiprows = 8)
 z_comsol = data[:, 0]
-plt.plot(z_comsol + 0.02, data[:, 25], "k", label="comsol 10 days")
-plt.plot(z_comsol + 0.02, data[:, -1], "k:", label="comsol 20 days")
- 
+plt.plot(z_comsol + 0.02, data[:, 25], "k", label = "comsol 10 days")
+plt.plot(z_comsol + 0.02, data[:, -1], "k:", label = "comsol 20 days")
+
 plt.xlabel("distance from root axis (cm)")
 plt.xlabel("soil matric potential (cm)")
 plt.legend()

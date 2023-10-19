@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
@@ -41,11 +41,11 @@ s.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute 
 # s.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
 # s.setParameter("Soil.BC.Top.CValue", "0.007")  # michaelisMenten=8 (SType = Solute Type)
 
-s.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
-s.setParameter("Soil.BC.Bot.CValue", "0.")
-# s.setParameter("Soil.BC.Bot.SType", "8")  # michaelisMenten=8 (SType = Solute Type)
-# s.setParameter("RootSystem.Uptake.Vmax", s.dumux_str(3.26e-6 * 24 * 3600))  # (mol)g /cm^2 / s
-# s.setParameter("RootSystem.Uptake.Km", s.dumux_str(5.8e-3))  # (mol)g / cm3 -> g/m3
+# s.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+# s.setParameter("Soil.BC.Bot.CValue", "0.")
+s.setParameter("Soil.BC.Bot.SType", "8")  # michaelisMenten=8 (SType = Solute Type)
+s.setParameter("RootSystem.Uptake.Vmax", s.dumux_str(3.26e-6 * 24 * 3600))  # (mol)g /cm^2 / s
+s.setParameter("RootSystem.Uptake.Km", s.dumux_str(5.8e-3))  # (mol)g / cm3 -> g/m3
 
 s.setVGParameters([loam])
 s.initializeProblem()
@@ -79,8 +79,8 @@ for i, dt in enumerate(np.diff(times)):
     x = s.getSolutionHead()
     y = np.array(s.getSolution(1))  # solute concentration kg/m3 -> g/cm3
 
-    ax1.plot(points[:], x, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
-    ax2.plot(points[:], y, col[i % len(col)], label="dumux {:g} days".format(s.simTime))
+    ax1.plot(points[:], x, col[i % len(col)], label = "dumux {:g} days".format(s.simTime))
+    ax2.plot(points[:], y, col[i % len(col)], label = "dumux {:g} days".format(s.simTime))
 
     f.append(s.getNeumann(idx))  # [kg/kg] -> 1/1000 [kg/m3] [] -> 1 [g/cm3] # solute concentration
 
@@ -94,14 +94,14 @@ ax1.set_ylabel("soil matric potential (cm)")
 ax1.legend()
 
 # data = np.loadtxt("comsol_c_diff.txt", skiprows=8)  # linear effective diffusion model
-data = np.loadtxt("c_diff_results.txt", skiprows=8)  # buffer power = 140
+data = np.loadtxt("c_diff_results.txt", skiprows = 8)  # buffer power = 140
 # data = np.loadtxt("c_diff_results_nob.txt", skiprows=8)  # buffer power = 0
 
 z_comsol = data[:, 0]
 # ax2.plot(z_comsol + 0.02, data[:, 1], "r", label="initial")
 # ax2.plot(z_comsol + 0.02, data[:, 2], "r", label="10 hours")
-ax2.plot(z_comsol + 0.02, data[:, 25], "r", label="comsol 10 days")
-ax2.plot(z_comsol + 0.02, data[:, -1], "g", label="comsol 20 days")
+ax2.plot(z_comsol + 0.02, data[:, 25], "r", label = "comsol 10 days")
+ax2.plot(z_comsol + 0.02, data[:, -1], "g", label = "comsol 20 days")
 ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()

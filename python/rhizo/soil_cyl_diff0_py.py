@@ -1,9 +1,9 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-import van_genuchten as vg
-from fv_grid import *
-import fv_advectiondiffusion as ad  # Python solver
+import functional.van_genuchten as vg
+from fv.fv_grid import *
+import fv.fv_advectiondiffusion as ad  # Python solver
 
 import numpy as np
 from scipy import sparse
@@ -50,13 +50,13 @@ print("elapsed time", time.time() - t)
 
 col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
 for i in range(0, len(sim_times)):
-    plt.plot(ad.grid.centers(), c[i,:], col[i], label="Time {:g} days".format(sim_times[i]))
+    plt.plot(ad.grid.centers(), c[i,:], col[i], label = "Time {:g} days".format(sim_times[i]))
 plt.xlabel("cm")
 plt.ylabel("solute concentration (g/cm3)")
-data = np.loadtxt("c_diff_results.txt", skiprows=8)  
+data = np.loadtxt("c_diff_results.txt", skiprows = 8)
 z_comsol = data[:, 0]
-plt.plot(z_comsol + 0.02, data[:, 25], "k", label="comsol 10 days")
-plt.plot(z_comsol + 0.02, data[:, -1], "k:", label="comsol 20 days")
+plt.plot(z_comsol + 0.02, data[:, 25], "k", label = "comsol 10 days")
+plt.plot(z_comsol + 0.02, data[:, -1], "k:", label = "comsol 20 days")
 plt.xlabel("distance from root axis (cm)")
 plt.legend()
 plt.show()

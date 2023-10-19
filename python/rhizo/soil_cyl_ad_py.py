@@ -1,11 +1,11 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/");  sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
- 
-import van_genuchten as vg
-from fv_grid import *
-import fv_advectiondiffusion as ad  # Python solver
-import fv_richards as richards  # Python solver
-import fv_system as system  # Python solver
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
+
+import functional.van_genuchten as vg
+from fv.fv_grid import *
+import fv.fv_advectiondiffusion as ad  # Python solver
+import fv.fv_richards as richards  # Python solver
+import fv.fv_system as system  # Python solver
 
 import numpy as np
 from scipy import sparse
@@ -56,25 +56,25 @@ fig, (ax1, ax2) = plt.subplots(1, 2)
 col = ["r*", "g*", "b*", "c*", "m*", "y*", ]
 
 for i in range(0, len(sim_times)):
-    ax1.plot(ad.grid.centers(), c[i][0,:], col[i], label="Time {:g} days".format(sim_times[i]))
+    ax1.plot(ad.grid.centers(), c[i][0,:], col[i], label = "Time {:g} days".format(sim_times[i]))
 for i in range(0, len(sim_times)):
-    ax2.plot(ad.grid.centers(), c[i][1,:], col[i], label="Time {:g} days".format(sim_times[i]))
+    ax2.plot(ad.grid.centers(), c[i][1,:], col[i], label = "Time {:g} days".format(sim_times[i]))
 
-data = np.loadtxt("../../cpp/soil_richards/python/cylinder_1d_Comsol.txt", skiprows=8)
+data = np.loadtxt("../../cpp/soil_richards/python/cylinder_1d_Comsol.txt", skiprows = 8)
 z_comsol = data[:, 0]
-ax1.plot(z_comsol + 0.02, data[:, 24], "k", label="comsol 10 days")
-ax1.plot(z_comsol + 0.02, data[:, 49], "k:", label="comsol 20 days")
+ax1.plot(z_comsol + 0.02, data[:, 24], "k", label = "comsol 10 days")
+ax1.plot(z_comsol + 0.02, data[:, 49], "k:", label = "comsol 20 days")
 ax1.set_xlabel("distance from root axis (cm)")
 ax1.set_ylabel("soil matric potential (cm)")
 ax1.legend()
 
-data = np.loadtxt("c_results.txt", skiprows=8)  # buffer power = 100
+data = np.loadtxt("c_results.txt", skiprows = 8)  # buffer power = 100
 # data = np.loadtxt("c_results_nob.txt", skiprows=8) # buffer power = 0
 
 z_comsol = data[:, 0]
-ax2.plot(z_comsol + 0.02, data[:, 2], "r", label="~0.42 days")  # indices = days_ indicdes +1 (radii)
-ax2.plot(z_comsol + 0.02, data[:, 24], "g", label="comsol ~9.2 days")
-ax2.plot(z_comsol + 0.02, data[:, 49], "b:", label="comsol 20 days")
+ax2.plot(z_comsol + 0.02, data[:, 2], "r", label = "~0.42 days")  # indices = days_ indicdes +1 (radii)
+ax2.plot(z_comsol + 0.02, data[:, 24], "g", label = "comsol ~9.2 days")
+ax2.plot(z_comsol + 0.02, data[:, 49], "b:", label = "comsol 20 days")
 ax2.set_xlabel('distance from the root axis (cm)')
 ax2.set_ylabel('solute concentration (g/cm3)')
 ax2.legend()

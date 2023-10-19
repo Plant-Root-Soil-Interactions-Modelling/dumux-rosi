@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
@@ -10,7 +10,7 @@ import numpy as np
 import os
 import time
 
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 """ 
 Cylindrical 1D model (DuMux) Water movement only 
