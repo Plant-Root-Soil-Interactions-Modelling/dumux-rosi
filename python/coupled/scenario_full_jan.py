@@ -1,26 +1,35 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import *  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import vtk_plot as vp
-import van_genuchten as vg
-from root_conductivities import *
+import visualisation.vtk_plot as vp
+import functional.van_genuchten as vg
+from functional.root_conductivities import *
 from rhizo_models import plot_transpiration
 
 from math import *
-import numpy as np
 import matplotlib.pyplot as plt
 import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 from scipy.optimize import fsolve
 from scipy import sparse
 import scipy.sparse.linalg as LA
+from scipy.interpolate import RegularGridInterpolator
 
-from sra_table_lookup import *  # <------- new
+
+def open_sra_lookup(filename):
+    """ opens the look from a file """
+    sra_table = np.load(filename + ".npy")
+    x = np.load(filename + "_.npy", allow_pickle = True)
+    kx_ = x[0]
+    sx_ = x[1]
+    inner_ = x[2]
+    outer_ = x[3]
+    return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)
 
 
 def sinusoidal(t):
@@ -72,7 +81,7 @@ min_b = [-7.5, -37.5, -110.]
 max_b = [7.5, 37.5, 0.]
 cell_number = [1, 1, 55]  # [8, 38, 55]  # 2cm3
 periodic = True  # check data first
-fname = "../../../grids/RootSystem_verysimple2.rsml"
+fname = "../../grids/RootSystem_verysimple2.rsml"
 
 name = "jan_scenario_wet"  # name to export resutls
 
@@ -133,7 +142,7 @@ types = (np.array(types) == 12) * 1  # all 0, only 12 are laterals
 r.rs.subTypes = list(types)
 r.test()  # sanity checks
 
-seg_length = r.segLength()
+seg_length = r.rs.segLength()
 ns = len(seg_length)
 # print("press any key"); input()
 print("outer radii", np.min(outer_r) , np.max(outer_r))
@@ -148,7 +157,7 @@ kr_max = 0.000181
 kr_min = 0.0000173
 print("inner_r*kr", kr_min * radius_min, kr_max * radius_max)
 
-sra_table_lookup = open_sra_lookup("table_jan")
+sra_table_lookup = open_sra_lookup("table_jan2")
 
 # quick check
 # rsx2 = soil_root_inerface(np.array([-15000]), np.array([-700]), r, sp, outer_r)
@@ -169,7 +178,7 @@ mapping = np.array([r.rs.seg2cell[j] for j in range(0, ns)])
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps, cf = [], [], [], [], [], []
 sx = s.getSolutionHead()  # inital condition, solverbase.py
-hsb = np.array([sx[mapping[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
+hsb = np.array([sx[mapping[j]] for j in range(0, ns)])  # soil bulk matric potential per segment
 rsx = hsb.copy()  # initial values for fix point iteration
 
 t = 0.

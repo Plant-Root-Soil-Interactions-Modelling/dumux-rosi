@@ -1,14 +1,14 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-from fv_grid import *
-import fv_richards as rich
-import van_genuchten as vg
+from fv.fv_grid import *
+import fv.fv_richards as rich
+import functional.van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -76,8 +76,8 @@ cci = picker(0, 0, 0)  # collar cell index
 
 segs = r.get_segments()
 
-r_outer = r.segOuterRadii()
-seg_length = r.segLength()
+r_outer = r.rs.segOuterRadii()
+seg_length = r.rs.segLength()
 
 """ Initialize local soil models (around each root segment) """
 cyls = []
@@ -165,7 +165,7 @@ for i in range(0, NT):
     Macroscopic soil model
     """
     soil_water = np.multiply(np.array(s.getWaterContent()), cell_volumes)  # water per cell [cm3]
-    soil_fluxes = r.sumSoilFluxes(realized_inner_fluxes)  # [cm3/day]
+    soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]
 
     s.setSource(soil_fluxes.copy())  # [cm3/day], richards.py
 

@@ -19,11 +19,11 @@ wilting_point = -15000
 sp = vg.Parameters(soil)
 
 print("matric potential at residual water content", vg.pressure_head(0.1 * 1.1, sp))
-print("water content at -1664.67", vg.water_content(-1664.67, sp))
+print("water content at -1664.67 cm", vg.water_content(-1664.67, sp))
 print("water content at wilting point", vg.water_content(wilting_point, sp))
 
 k = vg.hydraulic_conductivity(wilting_point, sp)
-print(k)
+print("hydraulic conductivity at wilting point", k, "cm2/day")
 
 h_ = np.linspace(-1e3, 0., 1000)
 theta = np.zeros(h_.shape)

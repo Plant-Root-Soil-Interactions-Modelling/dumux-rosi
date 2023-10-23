@@ -1,12 +1,12 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 import numpy as np
 from scipy import optimize
@@ -67,8 +67,8 @@ r.setKr([kr])
 r.setKx([kx])
 
 inner_radii = np.array(r.rs.radii)
-outer_radii = r.segOuterRadii()
-seg_length = r.segLength()
+outer_radii = r.rs.segOuterRadii()
+seg_length = r.rs.segLength()
 ns = len(seg_length)
 
 """ Coupling soil and root model (map indices) """
@@ -100,7 +100,7 @@ k_soil = np.zeros((ns, 1))
 """ initialize """
 sx = s.getSolutionHead()  # [cm]
 hx = r.solve(0., -q_r, 0, sx, True, critP)
-hsb = np.array([sx[rs.seg2cell[j]][0] for j in range(0, ns)])
+hsb = np.array([sx[rs.seg2cell[j]] for j in range(0, ns)])
 hrs = 0.5 * (hsb + hx[1:])
 
 # b = 2  # r_root  # (1 - r_root) / (0.6 - r_root)  # todo (?)
@@ -112,7 +112,7 @@ k_root = np.multiply(np.array([r.kr_f(0., rs.subTypes[j], rs.organTypes[j], 0) f
 for i in range(0, NT):
 
     sx = s.getSolutionHead()  # [cm]
-    hsb = np.array([sx[rs.seg2cell[j]][0] for j in range(0, ns)])  # soil bulk matric potential per segment
+    hsb = np.array([sx[rs.seg2cell[j]] for j in range(0, ns)])  # soil bulk matric potential per segment
     hx = np.array(r.solve(0., -q_r, 0, hrs, False, critP))
 
     hrs = 0.5 * (hsb + hx[1:])
@@ -150,7 +150,7 @@ for i in range(0, NT):
     min_rx.append(np.min(np.array(hx)))
     p1d.append(np.min(np.array(hrs)))
 
-    soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day]
+    soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]
     sum_flux = 0.
     for k, f in soil_fluxes.items():
         sum_flux += f

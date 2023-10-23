@@ -97,9 +97,6 @@ for i in range(0, N):
 
 print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-""" VTK visualisation """
-vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, np.array(min_b), np.array(max_b), cell_number, name)
-
 """ transpiration over time """
 fig, ax1 = plt.subplots()
 ax1.plot(x_, trans * sinusoidal(x_), 'k')  # potential
@@ -111,3 +108,8 @@ ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
 ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
 np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
 plt.show()
+
+""" VTK visualisation """
+print(rx.shape)
+vp.plot_roots_and_soil(r.rs, "pressure head", rx, s, periodic, np.array(min_b), np.array(max_b), cell_number, name)
+

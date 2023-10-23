@@ -1,24 +1,19 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/") 
-sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import *  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsUG  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import vtk_plot as vp
-import van_genuchten as vg
-from root_conductivities import *
+import visualisation.vtk_plot as vp
+import functional.van_genuchten as vg
+from functional.root_conductivities import *
 
-from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-
-
-def sinusoidal(t):
-    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
 
 """ 
 Benchmark M1.2 static root system in soil (with the classic sink)
@@ -55,7 +50,7 @@ s.initialize()
 
 # s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 # s.readGrid("../../grids/cylinder_tobi_fast_r2.81.msh")  # [cm] MRI_default_file (old dumux dimenions, dimensionsin vtu % vtp off by factor 100, root system is very large)
-s.readGrid("../../grids/cylinder_tobi_fast_r2.81(x100).msh")  # [cm] MRI_default_file scaled x100, dimensions of vtu & vtp in paraview match, but initial pressure distribution (with equilibrium) is totally off 
+s.readGrid("../../grids/cylinder_tobi_fast_r2.81(x100).msh")  # [cm] MRI_default_file scaled x100, dimensions of vtu & vtp in paraview match, but initial pressure distribution (with equilibrium) is totally off
 
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium Homogenious IC does not work with cylinder_tobi_fast_r2.81(x100).msh
 s.setTopBC("noFlux")
@@ -112,7 +107,7 @@ for i in range(0, N):
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
+    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
 
    #  s.ddt = dt / 10
@@ -120,7 +115,7 @@ for i in range(0, N):
 
     sx = s.getSolutionHead()  # richards.py
     water = s.getWaterVolume()
-     
+
     if rank == 0:
         n = round(float(i) / float(N) * 100.)
         min_sx = np.min(sx)
@@ -136,10 +131,10 @@ for i in range(0, N):
         cpx.append(rx[0])
         cps.append(float(sx[cci]))
         # print("Time:", t, ", collar flux", f, "cm^3/day at", rx[0], "cm xylem ", float(sx_old[cci]), "cm soil", "; domain water", s.getWaterVolume(), "cm3")
-        
+
     test += 1
     t += dt
-    
+
     s.writeDumuxVTK(name + str(test))
 # s.writeDumuxVTK(name)
 

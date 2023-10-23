@@ -1,9 +1,9 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
@@ -89,7 +89,7 @@ def solve(soil, simtimes, q_r, N):
             collar_flux = r.collar_flux(0., rx, sx)
             off = abs(100 * (1 - fluxes_approx[cci] / (-trans)))
             print("fluxes at {:g}: approx {:g}, exact {:g}, collar flux {:g} [g day-1], approximation is {:g}% off"
-                  .format(cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux[0], off))
+                  .format(cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux, off))
             fluxes = fluxes_exact
             sum_flux = 0.
             for f in fluxes.values():

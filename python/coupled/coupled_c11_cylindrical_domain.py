@@ -1,13 +1,12 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsUG  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
-from math import *
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
@@ -19,6 +18,8 @@ Benchmark M1.1 single root in in soil (using the classic sink)
 additionally, compares exact root system flux (Meunier et al.) with approximation
 
 also works parallel with mpiexec (only slightly faster, due to overhead)
+
+TODO mesh file is missing
 """
 
 r_root = 0.02  # cm
@@ -58,7 +59,7 @@ def solve(soil, simtimes, q_r, N):
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setTopBC("noflux")
     s.setBotBC("noflux")
-    s.readGrid("grids/c11_0.05mm.msh")
+    s.readGrid("../../grids/c11_0.05mm.msh")
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
     s.setCriticalPressure(-15000)

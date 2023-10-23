@@ -1,12 +1,12 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
-import rsml_reader as rsml
+import rsml.rsml_reader as rsml
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
-import van_genuchten as vg
+import functional.van_genuchten as vg
 
 import numpy as np
 from scipy import optimize
@@ -103,8 +103,8 @@ r.setKr([kr])
 r.setKx([kx])
 
 inner_radii = np.array(r.rs.radii)
-outer_radii = r.segOuterRadii()
-seg_length = r.segLength()
+outer_radii = r.rs.segOuterRadii()
+seg_length = r.rs.segLength()
 ns = len(seg_length)
 
 """ Coupling soil and root model (map indices) """
@@ -162,7 +162,7 @@ for i in range(0, NT):
     min_rx.append(np.min(np.array(rx)));
     p1d.append(np.min(np.array(rsx)));
 
-    soil_fluxes = r.sumSoilFluxes(seg_fluxes)  # [cm3/day]
+    soil_fluxes = r.sumSegFluxes(seg_fluxes)  # [cm3/day]
     sum_flux = 0.
     for k, f in soil_fluxes.items():
         sum_flux += f

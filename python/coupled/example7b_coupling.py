@@ -4,7 +4,7 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.xylem_flux import *  # Python hybrid solver
 from functional.root_conductivities import *  # hard coded conductivities
 import plantbox as pb
 import visualisation.vtk_plot as vp
@@ -14,11 +14,6 @@ from richards import RichardsWrapper  # Python part
 import numpy as np
 import matplotlib.pyplot as plt
 import timeit
-
-
-def sinusoidal(t):
-    return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
-
 
 """ Parameters """
 min_b = [-4., -4., -25.]

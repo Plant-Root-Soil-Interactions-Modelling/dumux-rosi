@@ -1,5 +1,5 @@
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
+import sys; sys.path.append("../../modules/"); sys.path.append("../../../../CPlantBox/");  sys.path.append("../../../../CPlantBox/src/python_modules")
+sys.path.append("../../../build-cmake/cpp/python_binding/")
 
 from xylem_flux import XylemFluxPython  # Python hybrid solver
 import plantbox as pb
@@ -16,6 +16,20 @@ import matplotlib.pyplot as plt
 import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
+
+def sinusoidal(t):
+    return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
+
+
+def mfp(h, soil):
+#     return vg.matric_flux_potential(h, soil)
+    return vg.fast_mfp[soil](h)
+
+
+def imfp(mfp, soil):
+#     return vg.matric_potential_mfp(h, soil)
+    return vg.fast_imfp[soil](mfp)
+
 """ 
 Benchmark M1.2 static root system in soil (with the classic sink)
 
@@ -28,22 +42,22 @@ max_b = [4., 4., 0.]
 cell_number = [8, 8, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15]
 periodic = False
 
-name = "DuMux_1cm_schroeder_clay"
+name = "DuMux_1cm"
 sand = [0.045, 0.43, 0.15, 3, 1000]
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 clay = [0.1, 0.4, 0.01, 1.1, 10]
 soil = loam
 
 sp = vg.Parameters(soil)
-initial = -300. + 7.5  # -659.8 + 7.5  # -659.8 + 7.5  # -659.8
+vg.create_mfp_lookup(sp)
+initial = -659.8 + 7.5  # -659.8
 
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 1  # [day] for task b
+sim_time = 0.5  # [day] for task b
 age_dependent = False  # conductivities
 dt = 360. / (24 * 3600)  # [days] Time step must be very small
-dx = 1.e-5
 
 """ Initialize macroscopic soil model """
 cpp_base = RichardsSP()
@@ -72,65 +86,54 @@ picker = lambda x, y, z: s.pick([x, y, z])
 r.rs.setSoilGrid(picker)  # maps segments
 cci = picker(nodes[0, 0], nodes[0, 1], nodes[0, 2])  # collar cell index
 
+""" MFP for Schroeder """
+mfp_ = lambda h: mfp(h, sp)
+imfp_ = lambda mfp: imfp(mfp, sp)
+
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
 x_, y_, w_, cpx, cps = [], [], [], [], []
-water_uptake = []
+sx = s.getSolutionHead()  # inital condition, solverbase.py
+rx = r.solve(rs_age + 0., 0., sx[cci], sx, True, wilting_point, [])
 
 N = round(sim_time / dt)
 t = 0.
 
-k = vg.hydraulic_conductivity(wilting_point, sp)  # hydraulic conductivity at wilting point
-rx = []
-
 for i in range(0, N):
-
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
 
     if rank == 0:  # Root simulation is not parallel
 
-        hrs = sx.copy()
-        k_soilroot = np.array([])
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], hrs, True, wilting_point, k_soilroot)  # [cm] in xylem_flux.py, cells = True
+        rsx = r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
 
-        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, sx, approx = False, cells = True))  # classic sink in case of no stress
+        seg_nostress = np.array(r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False))  # classic sink in case of no stress
+        seg_stress = np.array(r.segSRAStressedAnalyticalFlux(sx, mfp_)) 
+        # print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
+        # print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
 
-        # seg_stress = np.array(r.segSRAStressedFlux(sx, wilting_point, k, mfp_, imfp_, dx))  # steady rate approximation in case of stress
-        seg_stress = np.array(r.segSRAStressedAnalyticalFlux(sx, mfp_))
-        print("stressed:", np.min(seg_stress), np.max(seg_stress), np.sum(seg_stress))
-        print("nostress:", np.min(seg_nostress), np.max(seg_nostress), np.sum(seg_nostress), "at", -trans * sinusoidal(t))
-
-        # seg_stress = np.maximum(seg_nostress, seg_stress)  # limit by potential transpiration, ensure unstressed>stressed
-#         if len(rx) > 0:
-#             rsx = r.segSchroeder(rs_age + t, rx, sx, wilting_point, mfp_, imfp_)  # ! more unstable in case of mai scenario
-#             rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], rsx, False, wilting_point, [])  # update rsx to last solution
-#         else:  # first time step
         seg_head = np.array(r.segSRA(rs_age + t, rx, sx, wilting_point, mfp_, imfp_))  # to determine if stressed or not
         seg_fluxes = np.zeros(seg_nostress.shape)
-        ii = seg_head <= (wilting_point + 1)  # indices of stressed segments
+        ii = seg_head == -15000  # indices of stressed segments
         print("stessed", sum(ii.flat), ii.shape)
-        if sum(ii.flat) > 0:
-            seg_fluxes = np.maximum(seg_stress, seg_nostress)
-        else:
-            seg_fluxes = seg_nostress
+        seg_fluxes[ii] = seg_stress[ii]
+        seg_fluxes[~ii] = seg_nostress[~ii]  # ~ = boolean not
 
-#         seg_fluxes[ii] = np.maximum(seg_stress[ii], seg_nostress[ii])
-#         seg_fluxes[~ii] = seg_nostress[~ii]
-
-        fluxes = r.sumSoilFluxes(seg_fluxes)  # seg_fluxes
+        fluxes = r.sumSoilFluxes(seg_fluxes)
 
         sum_flux = 0.
         for f in fluxes.values():
             sum_flux += f
-        water_uptake.append(sum_flux)
-        print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx, [], cells = True), "= prescribed", -trans * sinusoidal(t))
+        # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, rsx, [], cells = False), "= prescribed", -trans * sinusoidal(t))
+        # print("Summed fluxes ", sum_flux, "= collar flux", r.collar_flux(rs_age + t, rx, sx), "= prescribed", -trans * sinusoidal(t))
 
     else:
         fluxes = None
 
-    fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
-
+    fluxes = comm.bcast(fluxes, root=0)  # Soil part runs parallel
     s.setSource(fluxes)  # richards.py
+
+    # simualte soil (parallel)
+    s.ddt = dt / 10
     s.solve(dt)
 
     sx = s.getSolutionHead()  # richards.py
@@ -144,9 +147,11 @@ for i in range(0, N):
         max_rx = np.max(rx)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g} days {:g}"
               .format(min_sx, max_sx, min_rx, max_rx, s.simTime, rx[0]))
-        # f = r.collar_flux(rs_age + t, rx, sx, [], cells = True) # exact root collar flux
+        f = float(r.collar_flux(rs_age + t, rx, sx))  # exact root collar flux
+        # f = r.collar_flux(rs_age + t, rx, rsx, [], cells = False),
         x_.append(t)
-        y_.append(sum_flux)  # sum_flux, f[0]
+        # y_.append(sum_flux)
+        y_.append(f)
         w_.append(water)
         cpx.append(rx[0])
         cps.append(float(sx[cci]))
@@ -171,10 +176,7 @@ if rank == 0:
     ax2.plot(x_, np.cumsum(-np.array(y_) * dt), 'c--')  # cumulative transpiration (neumann)
     ax1.set_xlabel("Time [d]")
     ax1.set_ylabel("Transpiration $[cm^3 d^{-1}]$")
-    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc = 'upper left')
-    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
-
-    np.savetxt(name, np.vstack((x_, -np.array(y_), -np.array(water_uptake))), delimiter = ';')
-
+    ax1.legend(['Potential', 'Actual', 'Cumulative'], loc='upper left')
+    np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter=';')
     plt.show()
 
