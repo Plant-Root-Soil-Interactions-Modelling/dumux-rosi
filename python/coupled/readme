@@ -1,1 +1,9 @@
-experiments regarding the steady rate assumption
+examples of coupling the root system with a soil model 
+some examples might include steady rate perirhizal resistance 
+
+couple_c11* 			about benchmark example C11 (see Schnepf et al. 2020, Frontiers in Plant Science)
+example6c, 7b, 7c 		described in the tutorial within the CPlantBox repository
+scenario_full_jan		experimental
+single_* 				various experiments on a single root
+soil_vg.py				plots a soil retention curve
+UG_test.py				test of coupling with a unstructured grid

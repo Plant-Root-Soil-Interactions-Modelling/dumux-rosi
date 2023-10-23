@@ -24,7 +24,7 @@ Coupled to cylindrical rhizosphere models using 1d richards equation (DUMUX solv
 
 Method description: 
 We use a Dirichlet-Neumann boundary condition, and prescribe the pressure head at the soil-root interface, which we compute via iterations from the xylem pressure head and the bulk soil pressure head. Contrary to the first method, this method does not require a very small time step. The  result is the same as with the neumann-neumann boundary condition, but tiem steps can be chosen larger and it is more stable 
-Before runnin g this approach, a lookup table for the pressure heads must be created by running create_sri_lookup_tables.py
+Before running this approach, a lookup table for the pressure heads must be created by running create_sri_lookup_tables.py
 
 complicated MPI support (a non-mpi version of richards_cyl is needed, see script dumux3_nompi.sh)
 """
