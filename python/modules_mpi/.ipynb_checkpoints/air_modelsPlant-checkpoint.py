@@ -1,0 +1,115 @@
+# import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src");
+# sys.path.append("../../build-cmake/cpp/python_binding/")
+
+import plantbox as pb
+import functional.xylem_flux as xylem_flux
+import sys
+from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
+from rosi_richards2c_cyl import Richards2CCylFoam  # C++ part (Dumux binding)
+from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
+from fv.fv_grid import *
+import fv.fv_richards as rich  # local pure Python cylindrical models
+import functional.van_genuchten as vg
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import norm
+from scipy.interpolate import griddata as gd
+from mpl_toolkits.mplot3d import Axes3D
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+import multiprocessing
+from multiprocessing import Process, active_children
+import psutil
+from threading import Thread 
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
+
+#TODO: adapt to represent better air domain (air flux, co2, h2o, T gradient...
+# soil-air analogy:
+# rhizosphere => leaf boundary layer
+# bulk soil: canopy space + above-canopy space
+# outer BC of bulk soil: value at point of  measurment (Xm aboveground)
+
+class AirSegment():#solve later the atmospheric flow also via dumux?
+    def __init__(self, a_in:float = 1., a_out:float = 1.1):
+        
+        self.a_in = a_in #cm
+        
+        self.a_out = a_out
+        points = np.array([a_in,self.a_out ]) #need at least 2 nodes == 1 cell
+        self.grid = FVGrid1Dcyl(points)
+        
+        #to use?
+        self.n = self.grid.n_cells
+        self.x0 = np.zeros((self.n,))  # solution of last time step [cm]
+        self.sim_time = 0.
+        self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing a list of values
+        self.sources = np.zeros((self.n,))  # [cm3 / cm3]
+        
+    def solve(self, dt, maxDt = None):
+        print("dummy solve function for airSegments. does nothing (for now?)")
+        
+    #water
+    #get
+    def getInnerHead(self,shift=0, val:float=-90000):  # [cm]
+        return self.get_inner_head(val)
+    def get_inner_head(self, val):
+        return val
+    def getInnerFlux(self,val=0):
+        return self.get_inner_flux()
+    def get_inner_flux(self):#return val equal to the "proposed flux" for that segment
+        return self.innerFlux
+    def getWaterVolume(self):
+        return 0
+    def getWaterContent(self):
+        return np.array([0])
+    def getSolutionHead(self):
+        return np.array([0])
+    def getWaterVolumesCyl(self, length):
+        return np.array([0])
+        
+    #set
+    def setInnerFluxCyl(self,val) :#flux computed by the plant (transpiration for leaf, 0 else)
+        self.innerFlux = val
+    def setOuterFluxCyl(self,val) :
+        pass
+    def setInnerMatricPotential(self,val):
+        pass
+    def setRootSystemBC(self,*arg):
+        pass
+    
+    #solute
+    #get
+    def getInnerSolutes(self,shift=0, compId = 1, isDissolved = True):
+        return 0
+    def get_inner_concentration(self):
+        return 0
+    def getSolution_(self,val):
+        return np.array([0])
+    def getContentCyl(self,idComp, isDissolved, length):
+        return np.array([0])
+    #set
+    def setOuterBC_solute(self,*arg):
+        pass
+    def setInnerBC_solute(self,*arg):
+        pass
+    
+    #all
+    #def solve(self,*arg):
+    #    print("solve aire segment")
+        
+    #shape
+    def getDofCoordinates(self):
+        raise Exception
+        return np.array([0])
+    def getPoints(self):
+        return self.grid.nodes
+    def getCellSurfacesCyl(self):
+        """nompi version of  """
+        return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2
+    def getCellSurfacesCyl_(self):
+        """nompi version of  """
+        return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2
+        
+
+
+

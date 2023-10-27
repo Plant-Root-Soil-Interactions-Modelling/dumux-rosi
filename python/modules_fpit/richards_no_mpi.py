@@ -33,6 +33,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getSolutionHead(eqIdx)), 0)
 
+    def getKrw(self):
+        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
+        self.checkInitialized()
+        return self._map((self.base.getKrw()), 0)
+
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
@@ -91,13 +96,39 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
-        assert not self.useMoles
-        dics = self.base.getAllNeumann(eqIdx)
-        flat_dic = {}
-        for d in dics:
-            flat_dic.update(d)
-        for key, value in flat_dic:
-            flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        if not self.useMoles:
+            assert  eqIdx == 0
+            unitConversion = 1/  1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        else:
+            if eqIdx == 0:
+                molarMassWat = 18. # [g/mol]
+                densityWat = 1. #[g/cm3]
+                # [mol/cm3] = [g/cm3] /  [g/mol] 
+                molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+                unitConversion =- (1/10000) * (24.* 3600.)  / molarDensityWat; # [mol m-2 s-1]*[cm2/m2]*[s/d] * [cm3/mol]-> [cm/d] 
+            else:
+                unitConversion =- (1/10000) * (24.* 3600.) ; # [mol m-2 s-1] -> [mol cm-2 d-1] 
+        dics = self.base.getAllNeumann(eqIdx) #[mol or kg /(m^2 * s)]
+        #print('dics',dics, 'unitConversion',unitConversion,self.getPoints(),self.getPoints()[-1])
+        if self.dimWorld != 1:#??
+            flat_dic = {}
+            for d in dics:
+                flat_dic.update(d)
+        else:
+            flat_dic = dics
+        try:
+            for key, value in flat_dic.items():          
+                posFace = 1.
+                if (self.dimWorld == 1) and (key == 0):
+                    posFace /= (self.getPoints()[key]/100) #axyssymmetric, was multiplied by r coord of face (in cm) in neumann
+                elif (self.dimWorld == 1) and (key != 0):
+                    posFace /= (self.getPoints()[-1]/100) #axyssymmetric
+                flat_dic[key]  = value * unitConversion *posFace # [kg m-2 s-1] / rho = [m s-1] -> cm / day 
+                #print('get flat_dic', key,flat_dic[key],(key != 0), (key == 0),(self.dimWorld == 1) ,value , unitConversion ,posFace)
+                    
+        except:
+            print('error unpacking dict',flat_dic,type(flat_dic))
+            raise Exception
         return flat_dic
 
     def getNetFlux(self, eqIdx=0):

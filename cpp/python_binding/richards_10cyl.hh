@@ -23,6 +23,14 @@ public:
     std::vector<double> getRF_out() {
     	return this->problem->getRF_(); // 
     }
+    
+    /**
+     * set verbose
+     */
+    virtual void setVerbose(int verbose) {
+        this->checkInitialized();
+    	this->problem->verbose = verbose;
+    }
 
 };
 
@@ -39,6 +47,7 @@ void init_richards_10cyl(py::module &m, std::string name) {
 													py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
 
+   .def("setVerbose",&RichardsFoam::setVerbose)
    .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsFoam::setCriticalPressure)
    .def("getSolutionHead", &RichardsFoam::getSolutionHead, py::arg("eqIdx") = 0)

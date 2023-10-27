@@ -37,6 +37,10 @@ class SolverWrapper():
         """ reset solution vector to value before solve function """
         self.base.reset()
         
+    def setVerbose(self, verbose:int):
+        """ set verbose level """
+        self.base.setVerbose(verbose)
+        
 
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """

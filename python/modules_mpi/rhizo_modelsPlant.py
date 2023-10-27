@@ -1141,12 +1141,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.dx2[lId] = 0.5 * (points[1] - points[0]) #when updating
                 else:
                     self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
-            # print(a_in,a_out,lb)
-            # print( a_in)
-            if False:#i==1:
-                cyl.setParameter("Problem.verbose", "0")
-            else:
-                cyl.setParameter("Problem.verbose", "-1")
+            cyl.setParameter("Problem.verbose", "0")
+            
             cyl.setParameter("Problem.reactionExclusive", "0")    
             cyl.setParameter( "Soil.Grid.Cells",str( self.NC-1)) # -1 to go from vertices to cell (dof)
             if self.recreateComsol:
@@ -1252,7 +1248,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.setParameter("Newton.EnableShiftCriterion", "true")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
 
-            cyl.setParameter("Newton.MaxRelativeShift", "1e-15")
+            cyl.setParameter("Newton.MaxRelativeShift", "1e-10")
 
             cyl.setParameter("Newton.MaxSteps", "30")
             cyl.setParameter("Newton.ResidualReduction", "1e-10")

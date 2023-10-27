@@ -131,7 +131,6 @@ public:
 			 // <<" "<< numFluidComponents<<std::endl;
 
             if (useTotalMoleOrMassBalance) {//just for water phase
-            //DUNE_THROW(Dune::NotImplemented, "localresidual::computeStorage: using useTotalMoleOrMassBalance");
             	//auto compIdx = replaceCompEqIdx - conti0EqIdx;
                 storage[replaceCompEqIdx] += massOrMoleDensity(volVars, phaseIdx)
                                              * (volVars.porosity()*volVars.saturation(phaseIdx))

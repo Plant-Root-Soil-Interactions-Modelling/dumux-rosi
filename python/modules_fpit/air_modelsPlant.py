@@ -35,8 +35,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         self.a_in = a_in #cm
         
         self.a_out = a_out
-        points = np.array([a_in,self.a_out ]) #need at least 2 nodes == 1 cell
-        self.grid = FVGrid1Dcyl(points)
+        self.points = np.array([a_in,self.a_out ]) #need at least 2 nodes == 1 cell
+        self.grid = FVGrid1Dcyl(self.points)
         
         #to use?
         self.n = self.grid.n_cells
@@ -67,6 +67,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return np.array([0])
     def getWaterVolumesCyl(self, length):
         return np.array([0])
+    def getKrw(self):# could return here the air resistance instead of having it in the photosynthesis class
+        return np.array([np.Inf])
         
     #set
     def setInnerFluxCyl(self,val) :#flux computed by the plant (transpiration for leaf, 0 else)
@@ -86,6 +88,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return 0
     def getSolution_(self,val):
         return np.array([0])
+    def getSolution(self,val):
+        return np.array([0])
     def getContentCyl(self,idComp, isDissolved, length):
         return np.array([0])
     #set
@@ -102,6 +106,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def getDofCoordinates(self):
         raise Exception
         return np.array([0])
+    def getCellCenters(self):
+        return (self.points[1:] +  self.points[:-1])/2
     def getPoints(self):
         return self.grid.nodes
     def getCellSurfacesCyl(self):

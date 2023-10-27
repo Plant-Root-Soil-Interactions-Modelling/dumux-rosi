@@ -51,15 +51,15 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 
-def write_file_float(name, data, directory_):
-    if rank == 0:
+def write_file_float(name, data, directory_, allranks = False):
+    if (rank == 0) or allranks:
         name2 = directory_+ name+ '.txt'
         with open(name2, 'a') as log:
             log.write(repr( data)  +'\n')
         
-def write_file_array(name, data, space =",", directory_ ="./results/" ):
-    if rank == 0:
-        name2 = directory_+ name+ '.txt'
+def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
+    if (rank == 0) or allranks:
+        name2 = directory_+ name+ fileType
         with open(name2, 'a') as log:
             log.write(space.join([num for num in map(str, data)])  +'\n')
 
@@ -148,7 +148,7 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
 def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
                         net_inf = None, usemoles = True, dirResults = "",#"./results/parallel"+str(max_rank)+"/",
-                        lowWater = False):
+                        p_mean_ = -100):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil demoType is fixed and homogeneous 
@@ -219,7 +219,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), cell_number + 1, base = lb)
         s.createGrid1d(points)
     else:
-        s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
+        s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
 
     #cell_number = str(cell_number)
     cell_number_ = cell_number
@@ -303,16 +303,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     #s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-    s.setParameter("Newton.MaxRelativeShift", "1e-10")
-    s.setParameter("Problem.verbose", "-1")
+    s.MaxRelativeShift = 1e-10
+    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
+    s.setParameter("Problem.verbose", "0")
     
     # IC
     if do1D:
         s.setParameter("Problem.EnableGravity", "false")
-    if lowWater: 
-        s.setHomogeneousIC(-1000., equilibrium = not do1D)  # cm pressure head
-    else:
-        s.setHomogeneousIC(-100., equilibrium = not do1D)  # cm pressure head
+    s.setHomogeneousIC(p_mean_, equilibrium = not do1D)  # cm pressure head
     
     
     s.initializeProblem()
@@ -337,7 +335,6 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     if (cidx != cidx_sorted).any():
         print('too many threads for  the number of cells: ,',cidx,cidx_sorted)
         raise Exception
-        
     return s, s.vg_soil
 
 def set_all_sd(rs, s):
@@ -480,9 +477,12 @@ def phloemParam(r,weatherInit ):
     r.leafGrowthZone = 2 # cm
     r.StemGrowthPerPhytomer = True # 
     r.psi_osmo_proto = -10000*1.0197 #schopfer2006
-    r.fwr = 0#0.1
+    
+    r.fwr = 1e-16
+    r.fw_cutoff =  0.09497583
     r.sh = 4e-4
     r.gm=0.01
+    r.p_lcrit =  -15000*0.6
     
     r.limMaxErr = 1/100
     r.maxLoop = 10000
@@ -555,7 +555,7 @@ def setKrKx_phloem(r): #inC
     kr_r1 = 5e-2
     kr_r2 = 5e-2
     kr_r3 = 5e-2
-    l_kr = 0.8 #cm
+    l_kr =  0.8 #cm
     
     r.setKr_st([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] , kr_length_= l_kr)
     r.setKx_st([[kz_r0,kz_r12,kz_r12,kz_r0],[kz_s,kz_s ],[kz_l]])
@@ -581,7 +581,7 @@ def setKrKx_phloem(r): #inC
     
 def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
-                stochastic = False, mods = None, plantType = "plant",
+                stochastic = False, mods = None, plantType = "plant",l_ks_ = "dx_2",
                 recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
@@ -592,14 +592,13 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
     elif fname.endswith(".xml"):
         seed = 1
         weatherInit = weather(initSim)
-        
         if plantType == "plant":
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        
         rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
-                                    recreateComsol_, usemoles, seedNum = seed, limErr1d3dAbs = limErr1d3d)
+                                    recreateComsol_, usemoles, seedNum = seed, 
+                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
 
         rs.setSeed(seed)
         rs.readParameters(path + fname)

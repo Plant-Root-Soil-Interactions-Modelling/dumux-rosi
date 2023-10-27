@@ -213,7 +213,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     s.initialize()
     
-    s.createGrid(min_b, max_b, cell_number, False)  # [cm] #######################################################################
+    s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
+    #######################################################################
 
     #cell_number = str(cell_number)
     cell_number_ = cell_number
@@ -313,7 +314,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-    s.setParameter("Newton.MaxRelativeShift", "1e-15")
+    s.setParameter("Newton.MaxRelativeShift", "1e-10")
     s.setParameter("Problem.verbose", "-1")
     # s.setParameter("Problem.doSoluteFlow", "0")
     # if (demoType == "dumux_dirichlet_2c") or (demoType == "dumux_dirichlet_nc") or (demoType == "dumux_dirichlet_10c"):
@@ -334,7 +335,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         h = np.ones((20*45*75))*-100 #TODO
     #h = np.array([i for i in range(20*45*75)])*-100
     #s.setInitialConditionHead(h)  # cm
-    s.setHomogeneousIC(-1000./2, equilibrium = True)  # cm pressure head
+    s.setHomogeneousIC(-1000., equilibrium = True)  # cm pressure head
     
     s.initializeProblem()
     s.wilting_point = -15000
@@ -363,64 +364,6 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
 
     #print('getWaterContent', rank, s.getWaterContent())
     write_file_array('getWaterContent',data= s.getWaterContent(), space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
-    print('xWat =  s.getSolution(0)')
-    xWat =  s.getSolution(0)
-    if rank == 0:
-        print('xWat', xWat[4])
-    write_file_array('getSolution',data=xWat, space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
-    print('xWat =  s.getSolutionHead()')
-    xWat =  s.getSolutionHead()
-    if rank == 0:
-        print('hp', xWat[4])
-    write_file_array('getSolutionHead',data=xWat, space =",", directory_ ="./results/parallel"+str(max_rank)+"/")
-    # print(rank, 's.getSolutionHead_()', s.getSolutionHead_())
-    print(rank,'sbasegetDofIndices', s.base.getDofIndices())
-    print(rank,'sbasegetPointIndices_', s.base.getPointIndices())
-    print(rank,'sbasegetCellIndices_', s.base.getCellIndices())
-    print('xWat =  s.getSolutionHead_',s.getSolutionHead_())
-    print('s.base.getGlobal2localCellIdx()',s.base.getGlobal2localCellIdx())
-    print('s.base.getLocal2globalPointIdx()',s.base.getLocal2globalPointIdx())
-    print('s.getCellCenters()',s.getCellCenters())
-    print('s.base.getSolutionAt',s.base.getSolutionAt(4,0))
-    raise Exception
-    #print('getDofIndices',rank, s.getDofIndices())
-    #print('getDofCoordinates',rank, s.getDofCoordinates())
-    #print('getCellCenters',rank, s.getCellCenters())
-    #print('getPoints',rank, s.getPoints())
-    #print('getCellIndices',rank,s.base.getCellIndices(),s._flat0(comm.gather(s.base.getCellIndices(), root = 0)))
-    #print('getPointIndices',rank,s._flat0(comm.gather(s.base.getPointIndices(), root = 0)))
-    #print('getDofIndices',rank,s.base.getDofIndices(),s._flat0(comm.gather(s.base.getDofIndices(), root = 0)))
-    
-    
-    # min_b = np.array(min_b)
-    # max_b = np.array(max_b)
-    # cell_number_ = np.array(cell_number_)
-    
-    # for i in range(100):
-        # randsV = np.random.rand(len(min_b) )
-        # testVal = min_b + (max_b - min_b) * randsV
-        # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
-        # print(testVal,sout, poutpout)
-        # assert sout == poutpout
-    # testVal = np.array([ 0., 0., -5.])
-    # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
-    # print(testVal,sout, poutpout)#[ 2. -1. -7.]
-    # #assert sout == poutpout
-    # testVal = np.array([ 0., 0., -6.])
-    # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
-    # print(testVal,sout, poutpout)#[ 2. -1. -7.]
-    # #assert sout == poutpout
-    # testVal = np.array([ 0., 0., -7.])
-    # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
-    # print(testVal,sout, poutpout)#[ 2. -1. -7.]
-    #assert sout == poutpout
-    # for i in range(100):
-        # randsV = np.random.rand(len(min_b) )
-        # testVal = np.round( min_b + (max_b - min_b) * randsV)
-        # sout = np.array(s.pick(testVal)); poutpout = s.pick_(testVal)
-        # print(testVal,sout, poutpout)#[ 2. -1. -7.]
-        # assert sout == poutpout
-    # raise Exception
     
     return s, s.vg_soil
 

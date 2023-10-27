@@ -382,9 +382,6 @@ class SolverWrapper():
             indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
-        if rank == 0:
-            print(rank, '_map', 'indices',indices, 'x',x)
-            print(rank, '_map', 'x[np.where(x==4)]',x[np.where(indices==4)])
         if len(indices) >0:  # only for rank 0 not empty
             try:
                 assert len(indices) == len(x), "_map: indices and values have different length"

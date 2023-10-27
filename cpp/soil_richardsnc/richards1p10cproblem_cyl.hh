@@ -180,6 +180,10 @@ public:
 		isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
 	};
 
+	enum dzScalingType {
+		dx_2 = 1,
+		dx = 2
+	};
 	enum BCTypes {
 		constantPressure = 1,
 		constantConcentration = 1,
@@ -209,12 +213,13 @@ public:
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		
-		 verbose =  getParam<int>("Problem.verbose", -1);
+		 verbose =  getParam<int>("Problem.verbose", 0);
 		 toFile =  getParam<bool>("Problem.toFile", false);
 		doSoluteFlow =   getParam<bool>("Problem.doSoluteFlow", doSoluteFlow);
-		reactionExclusive=   getParam<bool>("Problem.reactionExclusive");
+		reactionExclusive=   getParam<bool>("Problem.reactionExclusive",(dimWorld > 1));
+				dzScaling = getParam<int>("Soil.BC.dzScaling", 2); 
 		
-		if(verbose>=0)
+		if(verbose>0)
 		{
 			const auto& myParams = Parameters::paramTree();
 			myParams.report();
@@ -598,10 +603,13 @@ public:
 			//(see material/fluidmatrix interaction /vangenuchten.hh)
 			MaterialLawParams params = this->spatialParams().materialLawParams(element);
 			Scalar p = MaterialLaw::pc(params, s) + pRef_;//water pressure?
-			Scalar h = -toHead_(p); // todo why minus -pc?
+			Scalar h = -toHead_(p); // in cm todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
-			
-			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
+			// multiply distance by 2 to better limit the flow (because we can have sharp decrease of wat. pot. 
+            //between cell center and cell face) which cannot be taken into account because of the discretisation.
+			Scalar dz = 100 *  std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); //2 *// m->cm
+            if (dzScaling == dx){dz = dz * 2;}
+            
 			Scalar krw = MaterialLaw::krw(params, s);//	The relative permeability for the wetting phase [between 0 and 1]
 			
 			//std::cout<<"NumEqVector neumann(), dimworld: "<<dimWorld<<", pos: ";
@@ -618,7 +626,7 @@ public:
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
                 case constantPressure: {
-                    f = rhoW * kc * ((h - bcTopValues_[pressureIdx]) / dz - gravityOn_)*pos[0] *unitConversion; // maximal inflow
+                    f = rhoW * kc * ((h - bcTopValues_[pressureIdx]) / dz - gravityOn_)*pos0 *unitConversion; // maximal inflow
                     //std::cout << "!";
                     break;
                 }
@@ -628,6 +636,7 @@ public:
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax)*pos0;
 					} else { // outflow
+                    // mol/m2/s = mol/m3 * m/s * - * (cm -cm )/cm
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						f = std::min(f, omax)*pos0;
 					}
@@ -643,8 +652,22 @@ public:
 					//kg/m3 * m2 
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
 						f = std::max(f, imax);
+                        if ((f!= 0)&&verbose)
+						{
+							std::cout<<"onupperBoundary_constantFluxCyl, f: "<<bcTopValues_[pressureIdx]<<" "<<
+                            f<<", imax: "<<imax<<", std::max(f, imax): "<<(std::max(f, imax))
+							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
+						}
 					} else { // outflow
+                    //mol/m3 * [m/s] *[-] *[m/m] = molm2/s
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+                        
+						if ((f!= 0)&&verbose)
+						{
+							std::cout<<"onLowerBoundary_constantFluxCyl, finput: "<<bcTopValues_[pressureIdx]
+                            <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
+							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
+						}
 						f = std::min(f, omax);
 					}
 					break;
@@ -665,7 +688,7 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
                 case constantPressure: {
-                    f = rhoW * kc * ((h - bcBotValues_[pressureIdx]) / dz - gravityOn_)* pos[0]; // maximal inflow
+                    f = rhoW * kc * ((h - bcBotValues_[pressureIdx]) / dz - gravityOn_)* pos0; // maximal inflow
 //                    Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 //                    f = std::min(f, omax); rho_
                     break;
@@ -688,14 +711,21 @@ public:
 					//<<" density "<<volVars.density(h2OIdx)<<" unit conversion "<<unitConversion<<" "<<pos[0]<<std::endl;
 					if (f < 0) { // inflow
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						if ((f!= 0)&&verbose)
+						{
+							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<bcBotValues_[pressureIdx]<<" "<<
+                            f<<", imax: "<<imax<<", std::max(f, imax): "<<(std::max(f, imax))
+							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
+						}
 						f = std::max(f, imax);
 					} else { // outflow
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
 						if ((f!= 0)&&verbose)
 						{
-							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
-							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<std::endl;
+							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<bcBotValues_[pressureIdx]<<" "<<
+                            f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
+							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
 						f = std::min(f, omax);
 					}
@@ -730,7 +760,8 @@ public:
 				switch (bcSTopType_.at(i_s)) {
 				case constantConcentration: {
 					GlobalPosition ePos = element.geometry().center();
-					Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+					Scalar dz =  std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+                    if (dzScaling == dx){dz = dz * 2;}
 					//!!! att component param set
 					static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
 					Scalar porosity = this->spatialParams().porosity(element);
@@ -778,7 +809,8 @@ public:
 				switch (bcSBotType_.at(i_s)) {
 				case constantConcentration: {
 					GlobalPosition ePos = element.geometry().center();
-					Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+					Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+                    if (dzScaling == dx){dz = dz * 2;}
 					static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
 					Scalar porosity = this->spatialParams().porosity(element);
 					Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);
@@ -1189,6 +1221,10 @@ public:
 	
 	bool RFmethod2 = false;
 	bool doSoluteFlow = true;
+    
+	int verbose;
+    int dzScaling;
+    
 private:
 
 	//! cm pressure head -> Pascal
@@ -1241,7 +1277,6 @@ private:
 	Scalar dt_ = 0.;
 
 	std::ofstream myfile_;
-	int verbose;
 	bool toFile;
 	bool reactionExclusive;
 	
