@@ -141,7 +141,6 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
             aboveGround = np.array([])
             if not (self.cell2seg.get(-1) is None):
                 aboveGround = self.cell2seg.get(-1)                
-            print('airSegs',self.cell2seg.get(-1), np.where(np.array(self.organTypes) != 2)[0])
             self.airSegs = np.array(list(set(np.concatenate((aboveGround,
                                                         np.where(np.array(self.organTypes) != 2)[0])) )))
             if len (self.airSegs) > 0:
@@ -694,7 +693,24 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         #print('getVolumesCyl',rank, V_rhizo )
         return self.getXcyl(V_rhizo, doSum, reOrder)
         
+       
+    def getKrw(self,idCyls=None):#[-] unitless
+        doSum = False
+        reOrder = True
+        localIdCyls =   self.getLocalIdCyls(idCyls)                     
+        krws = np.array([self.cyls[i].getKrw()[0] for i in localIdCyls ]) 
+        return self.getXcyl(krws, doSum, reOrder)
         
+    def getDeltaR(self,idCyls=None):#[-] unitless
+        doSum = False
+        reOrder = True
+        localIdCyls =   self.getLocalIdCyls(idCyls)      
+        cc0 = np.array([self.cyls[i].getCellCenters()[0] for i in localIdCyls ]) 
+        p0 = np.array([ self.cyls[i].getPoints()[0]  for i in localIdCyls ]) 
+        deltaR = cc0 - p0
+        return self.getXcyl(deltaR, doSum, reOrder)
+    
+            
     def getC_rhizo(self,soilShape, idComp = 1, konz = True): # if konz:  mol/m3 wat or mol/m3 scv, else: mol
         """ return component concentration or content, only in voxel with 1D-domains"""
         #print('getC_rhizo', rank, idComp, konz)
@@ -899,7 +915,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         """
         gId = self.eidx[lId]
         cellId = self.seg2cell[gId]
-        verbose = (cellId == 437) or (cellId == 257)
+        verbose = False # (cellId == 437) or (cellId == 257)
         segsId =  np.array(self.cell2seg[cellId])
         segsId = np.array([ids for ids in segsId if self.organTypes[ids]==2 ])# only root organs
         if verbose:
@@ -907,7 +923,8 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         try:
             hasNewSegs =(np.array([ bool(rootId not in self.cylSoilidx_all) for rootId in segsId]).any())
         except:
-            print(rank, 'error with ahsnewsegs', lId, gId,  np.array(self.cell2seg[cellId]), np.array(self.organTypes)[np.array(self.cell2seg[cellId])])
+            print(rank, 'error with ahsnewsegs', lId, gId,  np.array(self.cell2seg[cellId]), 
+                  np.array(self.organTypes)[np.array(self.cell2seg[cellId])])
             print(rank, segsId,self.cylSoilidx, self.cylSoilidx_all)
             raise Exception
         oldPoints = np.array(cyl.getPoints()).flatten() # cm
@@ -1391,7 +1408,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
     def solve(self, dt, n_iter, *argv):#dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes
         """ set bc for cyl and solves it """
         self.last_dt = dt
-        verbose = True
+        verbose = False
         #inner = bot = plant
         #outer = top = soil
         proposed_inner_fluxes = argv[0]
@@ -1488,7 +1505,8 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                 maxRelShift = self.soilModel.MaxRelativeShift
                 try:
                     if verbose:
-                        print(rank, lId, 'start solve','buWBefore',buWBefore,'Qin',QflowIn,'QflowOut',QflowOut,'dt',dt )
+                        print(rank, lId,gId, 'start solve','buWBefore',buWBefore,'Qin',QflowIn,
+                              proposed_inner_fluxes[gId],qIn, 'QflowOut',QflowOut,'dt',dt )
                                         
                     redoSolve = True
                     n_iter_solve = 0
@@ -1496,9 +1514,31 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                         try:
                             cyl.ddt = 1.e-5 #do I need to reset it each time?
                             cyl.solve(dt, maxDt = maxDt_temp)
-                            redoSolve = False
+                                             
                             # newton parameters are re-read at each 'solve()' calls
+                            neumanns = cyl.getAllNeumann(0)    
+                            QflowIn_limited = neumanns[0] * (2 * np.pi * self.radii[gId] * l)
+                            QflowOut_limited = neumanns[self.NC -2 ] * (2 * np.pi *np.array( self.outer_radii)[gId] * l)
+                            
+                            buWAfter_ =  cyl.getWaterVolumesCyl(l)
+                            buWAfter = sum(buWAfter_ )
+                            buCCAfter_ = cyl.getContentCyl(1, True, l)
+                            buTotCAfter = self.getTotCContent(cyl,l)
+                            diffWproposed = buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)
+                            diffWtemp = buWAfter - ( buWBefore + (QflowIn_temp + QflowOut_temp) * dt)
+                            diffWlimited = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
+                            if verbose:
+                                print(rank, lId,gId,n_iter_solve,dt, 'end solve QflowIn',QflowIn,
+                                      'QflowIn_limited',QflowIn_limited,'diff',QflowIn - QflowIn_limited,
+                                     'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_limited,
+                                      'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
+                                      'buWBefore',buWBefore,'diffWproposed',diffWproposed,
+                                      'diffWtemp',diffWtemp,'diffWlimited',diffWlimited,'neumanns',neumanns,
+                                      'with qflowIn',qIn,' and qflowout',qOut,cyl.getCellCenters())
+
+
                             cyl.setParameter("Newton.MaxRelativeShift", str(self.soilModel.MaxRelativeShift))
+                            redoSolve = False
                         except:     
                             if n_iter_solve < 5:
                                 print(rank, lId,gId,' with qflowIn',qIn,' or qflowout',qOut,'maxDt',maxDt_temp,'dt',dt,
@@ -1506,11 +1546,15 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                                 maxRelShift *= 10.
                                 # newton parameters are re-read at each 'solve()' calls
                                 cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                            elif n_iter_solve > 20:
+                                
+                                
+                                
+                            elif n_iter_solve > 50:
                                 raise Exception
                             elif (QflowIn_temp < 0 or QflowOut_temp < 0):
-                                divVale = 10
-                                print(rank, lId,gId,'qflowIn',qIn,' or qflowout',qOut,'too low, and/or','maxDt',maxDt_temp,'too high.',
+                                divVale = 1/0.9
+                                print(rank, lId,gId,'qflowIn',qIn,' or qflowout',qOut,
+                                      'too low, and/or','maxDt',maxDt_temp,'too high.',
                                       'Decrease manually the lowest and maxDt_temp by',divVale)
                                 if QflowIn_temp <= QflowOut_temp:
                                     QflowIn_temp /=divVale
@@ -1532,15 +1576,26 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                     buWAfter = sum(buWAfter_ )
                     buCCAfter_ = cyl.getContentCyl(1, True, l)
                     buTotCAfter = self.getTotCContent(cyl,l)
-                    if verbose:
-                        print(rank, lId, 'end solve QflowIn',QflowIn, 'QflowIn_limited',QflowIn_temp,'diff',QflowIn - QflowIn_temp,
-                             'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_temp,'diff',QflowOut - QflowOut_temp)
+                    diffW = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
+                                                                                                                                   
+                                                                                                                   
                     
                     
-                    self.seg_fluxes_limited[lId] = QflowIn_temp #QflowIn_limited
+                    if abs(diffW) > 1e-13:
+                        print("abs(diffW) > 1e-13",rank, lId,gId,n_iter_solve,dt, 'end solve QflowIn',QflowIn, 
+                              'QflowIn_limited',QflowIn_limited,'diff',QflowIn - QflowIn_limited,
+                             'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_limited,
+                              'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
+                              'buWBefore',buWBefore, 'diff',diffW)
+                        # raise Exception only raise exception at the end of the iteration loop I suppose.
+
+
+                    self.seg_fluxes_limited[lId] = QflowIn_limited
                     if ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt) > 0:
                         try:#check solute mass balance
-                            assert abs((sum(buTotCAfter) - ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))/sum(buTotCAfter)*100) < 1.
+                            assert abs((sum(buTotCAfter) - \
+                                        ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ \
+                                                               topVal_mucil) * dt))/sum(buTotCAfter)*100) < 1.
                         except:
                             print("error mass C")
                             print("before",buTotCBefore )
@@ -1549,7 +1604,8 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                             print("QCflowIn", botVal, botVal_mucil ,"QCflowOut", topVal, topVal_mucil,"dt", dt)
                             print("qCIn",valueBotBC,"qCOut",valueTopBC)
                             print( "l",l,"a_in", self.radii[gId] ,"a_out",self.outer_radii[gId] )
-                            print("diff",( sum(buTotCAfter) -( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))/sum(buTotCAfter)*100)
+                            print("diff",( sum(buTotCAfter) -( sum(buTotCBefore) + \
+                                                              (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))/sum(buTotCAfter)*100)
                             for ncomp in range(self.numComp):
                                 print("ncomp_before", ncomp +1, solsBefore[ncomp])
                                 print("ncomp_after",ncomp +1 , np.array(cyl.getSolution(ncomp + 1)).flatten() )
@@ -1561,7 +1617,8 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
                         assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
                     
                 except:
-                    print( "gId",gId,"l",l,"a_in", self.radii[gId] ,"a_out",self.outer_radii[gId],'maxRelShift',maxRelShift )
+                    print( "gId",gId,"l",l,"a_in", self.radii[gId] ,
+                          "a_out",self.outer_radii[gId],'maxRelShift',maxRelShift )
                     print("water conservation ",lId, "before", buWBefore , "all cells",buWBefore_)
                     print("QWflowIn", QflowIn ,"QWflowOut", QflowOut,"qWflowIn", qIn ,"qWflowOut", qOut,"dt", dt)
                     print("theta_old", WaterContentOld)

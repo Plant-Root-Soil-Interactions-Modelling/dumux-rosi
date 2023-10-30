@@ -23,10 +23,10 @@ from scenario_setup import write_file_array, write_file_float
 def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     r = [], wilting_point =-15000, 
                     outer_R_bc_sol=[], #mol
-                    outer_R_bc_wat = [], 
+                    outer_R_bc_wat = [], seg_fluxes=[],
                     results_dir = './results/',
                   adaptRSI  = True, plantType = "plant",
-                  k_iter_ = 100):#m3 , directory_ =results_dir
+                  k_iter_ = 100,lightType_ = ""):#m3 , directory_ =results_dir
     """     
     simulates the coupled scenario       
         root architecture is not growing  
@@ -95,8 +95,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         
         
         comm.barrier()
-            
-        rs.Qlight = weatherX["Qlight"]
+        if lightType_ == "":
+            rs.Qlight = weatherX["Qlight"]
+        elif lightType_ == "nolight":
+            rs.Qlight = 0.
+        else:
+            raise Exception
         rs.Csoil_seg = r.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
         solution0_3ds_old = np.array(s.getSolution(0))
         solution0_1ds_old = np.array([cyl.getSolution(0) for cyl in r.cyls],dtype=object)
@@ -118,7 +122,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         # weightBefore = True
         rsx_old_  = r.get_inner_heads(weather=weatherX) 
         r.rhizoMassWError_abs =1.# 
-        while ( (err > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13)) and (n_iter < max_iter) :
+        while ( (np.floor(err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13)) and (n_iter < max_iter) :
             
             """ 1. xylem model """
             print('1. xylem model')
@@ -132,7 +136,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             start_time_plant = timeit.default_timer()
             comm.barrier()
 
-            if r.SRIBefore :
+            if r.SRIBefore or (r.beforeAtNight and (weatherX["Qlight"] == 0.)) :
                 rsx_set = rsx_old_
 
             # s.vg_soil.Ksat [cm/d] conductivity AT SATURATION. decrease with wat. content, via krw value 
@@ -146,19 +150,22 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 dist_factor =  np.array(r.radii)# * 100.
             else:
                 raise Exception
-            # 
+                
             if rank == 0:
                 #soilKIn = Ksat * krw  / deltaR_cm # [cm/d] * [-] / [cm] = day-1
-                soilKIn =np.divide(vg.hydraulic_conductivity(rsx_set, r.vg_soil), np.array(r.radii) * 100.) # y use the root radius?
-                soilKOut = s.vg_soil.Ksat  / (np.array(r.radii) * 100.)#deltaR_cm # [cm/d]  / [cm]  = day-1
+                soilKIn =np.divide(vg.hydraulic_conductivity(rsx_set, r.vg_soil),dist_factor)
+                #np.array(r.radii) * 100.) # y use the root radius?
+                soilKOut = s.vg_soil.Ksat  /dist_factor# (np.array(r.radii) * 100.)#deltaR_cm # [cm/d]  / [cm]  = day-1
                 soilK = soilKIn
                 
-                if len(np.array(rs.outputFlux)) > 0.:
-                    soilK[np.where(np.array(rs.outputFlux) > 0. ) ] = soilKOut[np.where(np.array(rs.outputFlux) > 0. ) ]
-                soilK *= vg.hydraulic_conductivity(rsx_set, r.vg_soil)
-                soilK[r.airSegs] = np.Inf # works when sending it to C++?
+                if( len(seg_fluxes) > 0.) and not (r.SRIBefore  or (r.beforeAtNight and (weatherX["Qlight"] == 0.))):
+                    soilK[np.where(seg_fluxes> 0. ) ] = soilKOut[np.where(seg_fluxes > 0. ) ]
+                    
+                if len(r.airSegs) > 0:   
+                    soilK[r.airSegs] = np.Inf # works when sending it to C++?
                 # write_file_array("fpit_deltaR_cm", deltaR_cm, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_krw", krw, directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_dist_factor", dist_factor, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_soilK", soilK, directory_ =results_dir, fileType = '.csv') 
                 #print('soilK',soilK,'soilKIn',soilKIn,'soilKOut', soilKOut,'perimeter_cm',perimeter_cm,
                 #      'krw',krw,'Ksat',Ksat,s.vg_soil.Ksat)
@@ -170,34 +177,34 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 
                     
                 assert min(rs.Csoil_seg ) >= 0.
-                try:
-                    write_file_array("fpit_rsxUsed",np.array(rsx_set),directory_ =results_dir, fileType = '.csv')
-                    rs.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
-                                sxx_=rsx_set, 
-                                cells_ = False,#(i == 0),#for 1st computation, use cell data
-                                ea_ = weatherX["ea"],#not used
-                                es_=weatherX["es"],#not used
-                                verbose_ = False, doLog_ = False,
-                                TairC_= weatherX["TairC"],#not used
-                                            soil_k_ = soilK, # [day-1]
-                                outputDir_= "./results/rhizoplantExud")
-                    seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
-                    write_file_array("fpit_fw",np.array(rs.fw),directory_ =results_dir, fileType = '.csv')#pg
-                    write_file_array("fpit_pg",np.array(rs.pg),directory_ =results_dir, fileType = '.csv')
-                    
-                    
-                except:
-                    rs.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
-                                sxx_=rsx_set, 
-                                cells_ = False,#(i == 0),#for 1st computation, use cell data
-                                ea_ = weatherX["ea"],#not used
-                                es_=weatherX["es"],#not used
-                                verbose_ = True, doLog_ = True,
-                                TairC_= weatherX["TairC"],#not used
-                                outputDir_= "./results/rhizoplantExud")
-                    raise Exception
+                
+                write_file_array("fpit_rsxUsed",np.array(rsx_set),directory_ =results_dir, fileType = '.csv')
+                write_file_float("fpit_weatherX",weatherX,directory_ =results_dir)
+                rs.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
+                            sxx_=rsx_set, 
+                            cells_ = False,#(i == 0),#for 1st computation, use cell data
+                            ea_ = weatherX["ea"],#not used
+                            es_=weatherX["es"],#not used
+                            verbose_ = False, doLog_ = False,
+                            TairC_= weatherX["TairC"],#not used
+                                        soil_k_ = soilK, # [day-1]
+                            outputDir_= "./results/rhizoplantExud")
+                seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
+                TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
+                write_file_array("fpit_Ev",np.array(rs.Ev),directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_Jw",np.array(rs.Jw),directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_fw",np.array(rs.fw),directory_ =results_dir, fileType = '.csv')#pg
+                write_file_array("fpit_pg",np.array(rs.pg),directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_n_iter",np.array([ n_iter,rs.loop ]), directory_ =results_dir, fileType = '.csv') 
+
+                write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir, fileType = '.csv' )
+                write_file_array("fpit_errPhoto", np.array(rs.maxErr) , directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_errPhotoAbs", np.array(rs.maxErrAbs) , directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_organTypes", organTypes, directory_ =results_dir, fileType = '.csv') 
+
+
             elif (rank == 0):
-                transpiration = 2 *  sinusoidal2(rs_age, dt)
+                transpiration = 6. *  sinusoidal2(rs_age, dt)
                 rx = rs.solve(rs_age, 
                              -transpiration, 0., 
                              rsx_set, cells = False, 
@@ -215,6 +222,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 seg_fluxes = None
             
             comm.barrier()
+            
+            if (plantType == "plant") and (rank == 0):
+                leavesSegs = np.where(organTypes ==4)
+                fluxes_leaves = seg_fluxes[leavesSegs]
+                if (min(rs.Ev) < 0) or (min(rs.Jw) < 0) or (min(fluxes_leaves)<-1e-15):
+                    print("leaf looses water", min(rs.Ev),min(rs.Jw), min(fluxes_leaves))
+                    print("seg_fluxes",seg_fluxes,"leavesSegs", leavesSegs)                
+                    raise Exception
             
             ##
             # 1.2 get data (unlimited fluxes)
@@ -241,7 +256,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 2.1 distribute 3D flows between the 1DS
             #     use value per 1DS !!AT THE END OF THE TIME STEP!! => weight for @splitSoilVals()
             ##
-            if r.weightBefore :
+            if r.weightBefore  or (r.beforeAtNight and (weatherX["Qlight"] == 0.)):
                 waterContent = waterContentOld
             else:
                 waterContent = r.getWaterVolumesCyl(doSum = False, reOrder = True)
@@ -335,12 +350,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 2.3B simulation
             ##
             start_time_rhizo = timeit.default_timer()
-            #print("solve 1d soil", rank)
+            print("solve 1d soil", rank)
             #seg_fluxes_limited
+            comm.barrier()
             r.solve(dt, n_iter,seg_fluxes , proposed_outer_fluxes, seg_sol_fluxes,proposed_outer_sol_fluxes, 
                         seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
             
-
+            comm.barrier()
+            print("solve 1d soil_finished", rank)
             rs.time_rhizo_i += (timeit.default_timer() - start_time_rhizo)
             for lId, cyl in enumerate(r.cyls):
                 if not isinstance(cyl, AirSegment):
@@ -360,6 +377,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         print('issue phead',gId,rank, pHead, sol0 )
                         raise Exception
 
+            comm.barrier()
+            print("share seg_fluxes_limited", rank)
             seg_fluxes_limited = r.getXcyl(r.seg_fluxes_limited, doSum = False, reOrder = True) # get 2nd limitation, gather and cast among thread 
             if len(airSegsId)>0:                
                 try:
@@ -467,7 +486,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
             buTotCBefore = comm.bcast(sum(s.getTotCContent()), root = 0) 
             
-            soil_solute_content = comm.bcast(np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]),
+            soil_solute_content = comm.bcast(np.array([np.array(
+                s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]),
                                                 root = 0) # mol
 
             
@@ -518,7 +538,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##    
             
             start_time_3ds = timeit.default_timer()
-            #print("solve 3d soil")
+            print("solve 3d soil")
             k_soil_solve = 0
             redoSolve = True
             maxRelShift = s.MaxRelativeShift
@@ -544,7 +564,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     else:
                         raise Exception
                 
-            #print("done")
+            print("done")
             rs.time_3ds_i += (timeit.default_timer() - start_time_3ds)
             
             ##
@@ -639,7 +659,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             new_soil_water_old = new_soil_water.copy()
             err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds),root= 0)
             diff1d3dCurrant =abs(max(r.maxDiff1d3dCW_abs) - maxDiff1d3dCW_absBU) # to not depend on cumulative error
-
+            #r.diffW = comm.bcast(max(comm.gather(r.diffW ,root = 0),root = 0))
             #errs =np.array([errRxPlant, errW1ds, errW3ds, 
             #                max(r.SinkLim3DS),max(r.SinkLim1DS),max(r.maxDiff1d3dCW_abs), 
             #                errWrsi, maxDiff1d3dCW_absBU, 
@@ -657,8 +677,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             rhizoWaterPerVoxel = r.getWaterVolumesCyl(doSum = False, reOrder = True)
             
-            if plantType == "plant":
-                TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
             theta3ds = s.getWaterContent()
             if  (n_iter % skip == 0) and (rank == 0):
                 write_file_array("fpit_diffBCS1dsFluxIn", diffBCS1dsFluxIn, directory_ =results_dir, fileType = '.csv') 
@@ -667,13 +685,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_diffBCS1dsFluxIn_rhizoSegsId", diffBCS1dsFluxIn[rhizoSegsId], directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffBCS1dsFluxOut_rhizoSegsId", diffBCS1dsFluxOut[rhizoSegsId], directory_ =results_dir, fileType = '.csv') 
                 
-                if plantType == "plant":
-                    write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir, fileType = '.csv' )
-                    write_file_array("fpit_errPhoto", np.array([rs.maxErr]) , directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_errPhotoAbs", np.array([rs.maxErrAbs]) , directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_n_iter",np.array([ n_iter,rs.loop ]), directory_ =results_dir, fileType = '.csv') 
                 
-                else:
+                if (plantType != "plant") :
                     write_file_array('fpit_transRate',np.array([transpiration]), directory_ =results_dir, fileType = '.csv' )
                     write_file_array("fpit_n_iter",np.array([ n_iter ]), directory_ =results_dir, fileType = '.csv') 
 
@@ -681,7 +694,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_errorMass1d", np.array(errorsEachW), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error1d3d", r.maxDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
-                write_file_float("fpit_time", rs_age, directory_ =results_dir ) 
+                write_file_array("fpit_time", np.array([rs_age,rs.Qlight]), directory_ =results_dir ) 
                 write_file_array("fpit_SinkLim3DS", r.SinkLim3DS, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_SinkLim1DS", r.SinkLim1DS, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_seg_fluxes_limited", seg_fluxes_limited, directory_ =results_dir, fileType = '.csv') 
@@ -704,6 +717,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_rx", rx, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoWAfter", rhizoWAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
 
+                    
             print('end iteration', rank, n_iter, err, max(r.maxDiff1d3dCW_abs))
             n_iter += 1
             #end iteration
@@ -791,6 +805,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
 
         # end time step inner loop
 
-    return outer_R_bc_sol, outer_R_bc_wat # first guess for next fixed point iteration
+    return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes # first guess for next fixed point iteration
     #end of inner loop
 

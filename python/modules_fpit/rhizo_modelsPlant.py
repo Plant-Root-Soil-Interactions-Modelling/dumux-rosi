@@ -703,8 +703,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         reOrder = True
         localIdCyls =   self.getLocalIdCyls(idCyls)      
         cc0 = np.array([self.cyls[i].getCellCenters()[0] for i in localIdCyls ]) 
-        p0 = np.array([ self.cyls[i].getPoints()[0]  for i in localIdCyls ]) 
-        print('cc0',cc0,'p0',p0)
+        p0 = np.array([ self.cyls[i].getPoints()[0]  for i in localIdCyls ], dtype=object).flatten() 
         deltaR = cc0 - p0
         return self.getXcyl(deltaR, doSum, reOrder)
     
@@ -1405,12 +1404,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def solve(self, dt, n_iter, *argv):#dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes
         """ set bc for cyl and solves it """
         self.last_dt = dt
-        verbose = False
+        verbose = True
         #inner = bot = plant
         #outer = top = soil
         proposed_inner_fluxes = argv[0]
         proposed_outer_fluxes = argv[1]
-
+        self.diffW = 0.
         self.seg_fluxes_limited = np.full(len(self.cyls), np.nan) # store for post processing
         
         for lId, cyl in enumerate(self.cyls):  # run cylindrical models
@@ -1521,14 +1520,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             buCCAfter_ = cyl.getContentCyl(1, True, l)
                             buTotCAfter = self.getTotCContent(cyl,l)
                             diffWproposed = buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)
-                            diffWlimited = buWAfter - ( buWBefore + (QflowIn_temp + QflowOut_temp) * dt)
+                            diffWtemp = buWAfter - ( buWBefore + (QflowIn_temp + QflowOut_temp) * dt)
+                            diffWlimited = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
                             if verbose:
-                                print(rank, lId,gId,dt, 'end solve QflowIn',QflowIn,
+                                print(rank, lId,gId,n_iter_solve,dt, 'end solve QflowIn',QflowIn,
                                       'QflowIn_limited',QflowIn_limited,'diff',QflowIn - QflowIn_limited,
                                      'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_limited,
                                       'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
                                       'buWBefore',buWBefore,'diffWproposed',diffWproposed,
-                                      'diffWlimited',diffWlimited,'neumanns',neumanns,
+                                      'diffWtemp',diffWtemp,'diffWlimited',diffWlimited,'neumanns',neumanns,
                                       'with qflowIn',qIn,' and qflowout',qOut,cyl.getCellCenters())
 
 
@@ -1541,9 +1541,6 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 maxRelShift *= 10.
                                 # newton parameters are re-read at each 'solve()' calls
                                 cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                                
-                                
-                                
                             elif n_iter_solve > 50:
                                 raise Exception
                             elif (QflowIn_temp < 0 or QflowOut_temp < 0):
@@ -1571,14 +1568,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     buCCAfter_ = cyl.getContentCyl(1, True, l)
                     buTotCAfter = self.getTotCContent(cyl,l)
                     diffW = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
-                    
+                    self.diffW = max(diffW,abs(self.diffW))
                     if abs(diffW) > 1e-13:
                         
-                        print(rank, lId,gId,dt, 'end solve QflowIn',QflowIn, 'QflowIn_limited',QflowIn_limited,'diff',QflowIn - QflowIn_limited,
+                        print("abs(diffW) > 1e-13",rank, lId,gId,n_iter_solve,dt, 'end solve QflowIn',QflowIn, 
+                              'QflowIn_limited',QflowIn_limited,'diff',QflowIn - QflowIn_limited,
                              'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_limited,
                               'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
                               'buWBefore',buWBefore, 'diff',diffW)
-                        raise Exception
+                        # raise Exception only raise exception at the end of the iteration loop I suppose.
 
                     self.seg_fluxes_limited[lId] = QflowIn_limited
                     if ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt) > 0:

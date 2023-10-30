@@ -109,7 +109,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def getCellCenters(self):
         return (self.points[1:] +  self.points[:-1])/2
     def getPoints(self):
-        return self.grid.nodes
+        return self.points
     def getCellSurfacesCyl(self):
         """nompi version of  """
         return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2

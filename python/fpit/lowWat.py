@@ -42,18 +42,23 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/2/24
-    p_mean = -100
-    k_iter = 100
-    l_ks =  "dx_2"#"root", "dx", "dx_2"
-    organism = "RS"
+    dt = 1/60/60/24
+    p_mean = -5000
+    k_iter = 25
+    l_ks =  "dx"#"root", "dx", "dx_2"
+    organism = "plant"# "RS"#
     weightBefore = False
     SRIBefore = False
+    beforeAtNight = True
     adaptRSI_  = False
-    results_dir="./results/"+l_ks+str(int(weightBefore))\
-                    +str(int(SRIBefore))+str(int(adaptRSI_))\
+    lightType =""#+- "nolight" # or ""
+    extraName = ""
+    results_dir="./results/"+extraName+lightType+l_ks+str(int(weightBefore))\
+                    +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
-                    +"_"+str(int(dt*24*60))+"mn_"+str(int((dt*24*60 - int(dt*24*60))*60))+"s_"+str(max_rank)+"_"+str(abs(p_mean))+"/"
+                    +"_"+str(int(dt*24*60))+"mn_"\
+                    +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
+                    +str(max_rank)+"_"+str(abs(p_mean))+"/"
     print('results_dir',results_dir)
     if rank == 0:
         if not os.path.exists(results_dir):
@@ -111,9 +116,15 @@ if __name__ == '__main__':
     if organism == "plant":
         path = "../../../CPlantBox/modelparameter/structural/plant/"
         xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter file
-    else:
+    elif organism == "RS":
         path = "./"
         xml_name = "data_magda/Zeamays_synMRI_modified.xml"
+    elif organism == "RSstatic":
+        path = "./"
+        xml_name = "../../grids/RootSystem8.rsml"
+    else:
+        raise Exception
+    
 
 
     # all thread need a plant object, but only thread 0 will make it grow
@@ -126,7 +137,7 @@ if __name__ == '__main__':
 
     rs.weightBefore = weightBefore
     rs.SRIBefore = SRIBefore
-
+    rs.beforeAtNight = beforeAtNight
     rs_age = initsim
 
 
@@ -183,6 +194,7 @@ if __name__ == '__main__':
                 "diff1d3dCurrant","rhizoMassWError_rel",'err'])
     write_file_array("error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
+    seg_fluxes_ = np.array([])
     while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
 
         rs_age += dt
@@ -211,6 +223,7 @@ if __name__ == '__main__':
         print(rank,'simulated')
         rs.update()
         print(rank,'updated')
+        write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
         
                            
         if False:   
@@ -230,16 +243,16 @@ if __name__ == '__main__':
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
 
         print('to the inner loop')
-        net_sol_flux, net_flux = cyl3.simulate_const(s, 
+        net_sol_flux, net_flux, seg_fluxes_ = cyl3.simulate_const(s, 
                                                 r,  dt, dt_inner, rs_age, 
                                                 Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
                                                 r= rs,plantType = organism,
                                                  adaptRSI=adaptRSI_,
                                                 wilting_point = wilting_point,
                                                 outer_R_bc_sol = net_sol_flux, 
-                                                outer_R_bc_wat = net_flux,
+                                                outer_R_bc_wat = net_flux,seg_fluxes=seg_fluxes_,
                                                 results_dir = results_dir,
-                                                    k_iter_ = k_iter)
+                                                    k_iter_ = k_iter,lightType_=lightType)
 
         time_rhizo_cumul += r.time_rhizo_i
         time_3ds_cumul += r.time_3ds_i
@@ -278,7 +291,7 @@ if __name__ == '__main__':
 
         write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
                             time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)
-        write_file_float("time", rs_age, directory_ =results_dir)
+        write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
 
         if (mode == "dumux_10c"):
             write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)

@@ -659,7 +659,7 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
 					} else { // outflow
-                    //mol/m3 * [m/s] *[-] *[m/m] = molm2/s
+                    //mol/m3 * [m/s] *[-] *[cm/cm] = mol/m2/s * pos0 for axysimmetric scaling
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
                         
 						if ((f!= 0)&&verbose)
