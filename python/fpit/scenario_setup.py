@@ -303,23 +303,37 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setVGParameters([soil_])
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     #s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-    s.MaxRelativeShift = 1e-10
+    s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
-    s.setParameter("Problem.verbose", "0")
+    s.setParameter("Problem.verbose", "1")
     
     # IC
     if do1D:
         s.setParameter("Problem.EnableGravity", "false")
-    s.setHomogeneousIC(p_mean_, equilibrium = not do1D)  # cm pressure head
-    
+    if isinstance(p_mean_,(int,float)):
+        s.setHomogeneousIC(p_mean_, equilibrium = not do1D)  # cm pressure head
+    elif isinstance(p_mean_,type(np.array([]))):
+        pass
+    else:
+        print(type(p_mean_))
+        raise Exception
     
     s.initializeProblem()
+    
+    if isinstance(p_mean_,(int,float)):
+        pass
+    elif isinstance(p_mean_,type(np.array([]))):
+        s.setInitialConditionHead(p_mean_)
+    else:
+        print(type(p_mean_))
+        raise Exception
+        
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
     
-    write_file_array('getWaterContent',s.getWaterContent(), directory_ =dirResults)
-    write_file_array('getSolutionHead',s.getSolutionHead(), directory_ =dirResults)
+    write_file_array('getWaterContent',s.getWaterContent(), directory_ =dirResults, fileType = '.csv')
+    write_file_array('getSolutionHead',s.getSolutionHead(), directory_ =dirResults, fileType = '.csv')
     
     solute_conc = np.array(s.getSolution(1))
     if rank == 0:

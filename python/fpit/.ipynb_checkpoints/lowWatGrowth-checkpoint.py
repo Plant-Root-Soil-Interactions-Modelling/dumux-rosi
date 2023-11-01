@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/6/24
-    p_mean = -1000
-    k_iter = 20
+    dt = 1/2/24
+    p_mean = -100
+    k_iter = 21
     l_ks =  "dx"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
     weightBefore = False
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
     #testWeather = [scenario.weather(testT/100.)["Qlight"]  for testT in range(100)]
-    static_plant = True
+    static_plant = False
     s.buTotCAfter = 0
     s.buTotCBefore = 0
     print('start loop', rank)
@@ -180,11 +180,6 @@ if __name__ == '__main__':
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
     error_st_abs = 0;error_st_rel=0
 
-    #errs =np.array(["errRxPlant", "errW1ds", "errW3ds", "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(r.maxDiff1d3dCW_abs)", 
-    #            "errWrsi", "maxDiff1d3dCW_absBU", 
-    #            "bulkMassErrorWater_abs","bulkMassErrorWater_absLim","rhizoMassWError_absLim","rhizoMassWError_abs",
-    #            "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))","sum(abs(diffouter_R_bc_wat))",
-    #            "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel "])
     errs = np.array(["errRxPlant", "errW1ds", "errW3ds", 
                       "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(r.maxDiff1d3dCW_abs)", 
                 "errWrsi", "maxDiff1d3dCW_absBU", 

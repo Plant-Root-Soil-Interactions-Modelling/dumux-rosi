@@ -83,16 +83,12 @@ class SolverWrapper():
     def initializeProblem(self):
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
-        cell = self.getCellCenters()
-        if not isinstance(cell, float): # cell float if rank >0
-            cell0 = cell[0]
-            if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
-                self.dimWorld = 1
-            else:
-                self.dimWorld = len(self.getCellCenters()[0])        
-            assert ((self.dimWorld  == 1) or ( self.dimWorld  == 3))
+        cell0 = self.getCellCenters()[0]
+        if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
+            self.dimWorld = 1
         else:
-            self.dimWorld = 0
+            self.dimWorld = len(self.getCellCenters()[0])        
+        assert ((self.dimWorld  == 1) or ( self.dimWorld  == 3))
 
 
     def setInitialCondition(self, ic, eqIdx = 0):
@@ -154,7 +150,7 @@ class SolverWrapper():
 
     def getCellSurfacesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2) * 1.e4  # m3 -> cm3
+        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2).flatten() * 1.e4  # m3 -> cm3
 
     def getCellSurfacesCyl_(self):
         """nompi version of  """
@@ -364,15 +360,12 @@ class SolverWrapper():
             ndof = max(indices) + 1
             if isinstance(x[0], list):
                 m = len(x[0])
-                p = np.zeros((ndof, m), dtype = dtype)
-                for i in range(0, len(indices)):  #
-                    p[indices[i],:] = np.array(x[i], dtype = dtype)
             else:
-                p = np.zeros(ndof, dtype = dtype)
-                for i in range(0, len(indices)):  #
-                    p[indices[i]] = np.array(x[i], dtype = dtype)
-            
-            return p#.flatten()
+                m = 1
+            p = np.zeros((ndof, m), dtype = dtype)
+            for i in range(0, len(indices)):  #
+                p[indices[i],:] = np.array(x[i], dtype = dtype)
+            return p
         else:
             return 0
 

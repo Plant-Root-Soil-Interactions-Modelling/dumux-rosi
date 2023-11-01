@@ -355,7 +355,6 @@ class SolverWrapper():
             indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
         else:
             raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
-        print(rank, '_map', 'indices',indices, 'x',x)
         if indices:  # only for rank 0 not empty
             assert len(indices) == len(x), "_map: indices and values have different length"
             ndof = max(indices) + 1

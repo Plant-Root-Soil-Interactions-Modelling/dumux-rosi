@@ -538,7 +538,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##    
             
             start_time_3ds = timeit.default_timer()
-            print("solve 3d soil")
+            print("solve 3d soil", rank)
             k_soil_solve = 0
             redoSolve = True
             maxRelShift = s.MaxRelativeShift
@@ -546,12 +546,15 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 s.ddt = 1.e-5
                 try:
                     comm.barrier()
-                    s.solve(dt)  # in modules/solverbase.py
+                    print("entering the s.solve", rank)
+                    s.solve(dt, maxDt = 250/(3600*24))  # in modules/solverbase.py
+                    print("leaving the s.solve", rank)
                     comm.barrier()
                     redoSolve = False
                     # newton parameters are re-read at each 'solve()' calls
                     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))# reset value
-                except:
+                except Exception as err:
+                    print(rank, f"Unexpected {err=}, {type(err)=}")
                     if k_soil_solve < 5:
                         print(rank,
                               'soil.solve() failed. Increase NewtonMaxRelativeShift from',

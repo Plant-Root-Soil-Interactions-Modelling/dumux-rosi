@@ -73,6 +73,7 @@ public:
 
     bool periodic = false; // periodic domain
     std::array<int, dim> numberOfCells;
+    int verbose = 0;
 
     SolverBase() {
         for (int i=0; i<dim; i++) { // initialize numberOfCells
@@ -325,6 +326,7 @@ public:
      * i.e. can be analyzed using getSolution().
      */
     virtual void initializeProblem() {
+        verbose =  Dumux::getParam<int>("Problem.verbose",0);
         problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
@@ -377,7 +379,7 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    virtual void solve(double dt, double maxDt = -1) {
+    virtual void solve(double dt, double maxDt = -1, bool solverVerbose = false) {
         checkInitialized();
         using namespace Dumux;
 
@@ -396,25 +398,26 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);//
-        nonLinearSolver->setVerbose(false);
-		//std::cout<<"timeLoop->start();"<<std::endl;
+        nonLinearSolver->setVerbose(solverVerbose);
+        if(verbose){std::cout<<rank<<" timeLoop->start();"<<std::endl;}
         timeLoop->start();
 		
 		xBackUp = x;
         auto xOld = x;
         do {
-			//std::cout<<"nonLinearSolver->suggestTimeStepSize"<<std::endl;
+			if(verbose){std::cout<<rank<< " before, nonLinearSolver->suggestTimeStepSize, current time: "<<timeLoop->time()
+                            <<" simTime "<<simTime<<std::endl;}
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
             ddt = std::max(ddt, 1.); // limit minimal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
-	//std::cout<<"assembler->setPreviousSolution"<<std::endl;
+            if(verbose){std::cout<<rank<<" before assembler->setPreviousSolution, ddt: "<<ddt<<std::endl;}
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-//std::cout<<"nonLinearSolver->solve"<<std::endl;
+            if(verbose){std::cout<<rank<<" nonLinearSolver->solve"<<std::endl;}
             nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
 
             xOld = x; // make the new solution the old solution
-//std::cout<<"gridVariables->advanceTimeStep"<<std::endl;
+            if(verbose){std::cout<<rank<<" gridVariables->advanceTimeStep"<<std::endl;}
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -431,7 +434,7 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    void solveNoMPI(double dt, double maxDt = -1) {
+    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false) {
 		
         checkInitialized();
         using namespace Dumux;
@@ -454,7 +457,7 @@ public:
 								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver, 
 								Dune::FakeMPIHelper::getCollectiveCommunication());//
-        nonLinearSolver->setVerbose(false);
+        nonLinearSolver->setVerbose(solverVerbose);
 		//std::cout<<"1cyl, timeLoop->start();"<<std::endl;
         timeLoop->start();
 		
@@ -975,9 +978,9 @@ void init_solverbase(py::module &m, std::string name) {
             .def("initializeProblem", &Solver::initializeProblem)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
 			.def("reset", &Solver::reset)
-            // simulation
-            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
-            .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1)
+            // simulation 
+            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
+            .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)
             .def("getPoints", &Solver::getPoints) //
@@ -1003,6 +1006,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("pick", &Solver::pick)
             // members
             .def_readonly("simTime", &Solver::simTime) // read only
+            .def_readwrite("verbose", &Solver::verbose) // initial internal time step
             .def_readwrite("ddt", &Solver::ddt) // initial internal time step
             .def_readonly("rank", &Solver::rank) // read only
             .def_readonly("maxRank", &Solver::maxRank) // read only

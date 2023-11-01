@@ -17,17 +17,6 @@ import matplotlib.pyplot as plt
 import timeit
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 
-def write_file_float(name, data, directory_, allranks = False):
-    if (rank == 0) or allranks:
-        name2 = directory_+ name+ '.txt'
-        with open(name2, 'a') as log:
-            log.write(repr( data)  +'\n')
-        
-def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.csv', allranks = False ):
-    if (rank == 0) or allranks:
-        name2 = directory_+ name+ fileType
-        with open(name2, 'a') as log:
-            log.write(space.join([num for num in map(str, data)])  +'\n')
 
 def sinusoidal(t):
     return np.sin(2. * pi * np.array(t) - 0.5 * pi) + 1.
@@ -151,7 +140,7 @@ for i in range(0, N):
         
     sx = np.maximum(sx, wilting_point)    
     s.setInitialCondition(sx)  # need to revise method
-    s.solve(dt, maxDt = 250/(3600*24))    
+    s.solve(dt)    
 
     uptake = float((s.getWaterVolume() - old_water_volume) / dt)  # the actual uptake in this time step 
 

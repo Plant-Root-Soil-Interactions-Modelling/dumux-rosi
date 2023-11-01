@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/60/60/24
-    p_mean = -5000
-    k_iter = 25
+    dt = 1/6/24
+    p_mean = -1000
+    k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
     weightBefore = False
