@@ -21,7 +21,7 @@ else:
 from importlib import reload
 import plantbox as pb  # CPlantBox
 import visualisation.vtk_plot as vp
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import timeit
 import numpy as np
 
@@ -35,7 +35,6 @@ from rhizo_modelsPlant import *
 import evapotranspiration as evap
 #import cyl_exu
 import cyl3plant as cyl3
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import os
 import pandas as pd
 from scenario_setup import write_file_array, write_file_float, div0, div0f
@@ -48,7 +47,7 @@ if __name__ == '__main__':
     k_iter = 20
     simMax = 3.
     lightType =""#+- "nolight" # or ""
-    extraName = "testerror3d"
+    extraName = "testerror3dinitSolverVerbosebis"
     results_dir="./results/"+extraName+str(k_iter)+"k_"\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -109,8 +108,8 @@ if __name__ == '__main__':
         res = eval(j)
 
     # run a loop
-    for i in res:
-        res[i] = -abs(10000*res[i])
+    #for i in res:
+    #    res[i] = -abs(10000*res[i])
     print('source0',res)
     s.setSource(res.copy(), eq_idx = 0)  # [mol/day], in modules/richards.py
 
@@ -124,13 +123,15 @@ if __name__ == '__main__':
         comm.barrier()
         s.setParameter("Newton.MaxRelativeShift", str(1e-10))
         redoSolve = True
+        k_soil_solve = 0
+        maxRelShift = 1e-8
         while redoSolve:
             s.ddt = 1.e-5
             try:
                 comm.barrier()
                 print("entering the s.solve", rank)
                     
-                s.solve(dt, maxDt = 20/(3600*24))  # in modules/solverbase.py
+                s.solve(dt, maxDt = 20/(3600*24), solverVerbose = True)  # in modules/solverbase.py
                 print("leaving the s.solve", rank)
                 comm.barrier()
                 redoSolve = False

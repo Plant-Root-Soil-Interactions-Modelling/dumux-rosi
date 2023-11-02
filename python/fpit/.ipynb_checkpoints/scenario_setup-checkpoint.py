@@ -311,13 +311,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     if do1D:
         s.setParameter("Problem.EnableGravity", "false")
     if isinstance(p_mean_,(int,float)):
+        print('set pmean float',p_mean_)
         s.setHomogeneousIC(p_mean_, equilibrium = not do1D)  # cm pressure head
     elif isinstance(p_mean_,type(np.array([]))):
         pass
     else:
         print(type(p_mean_))
         raise Exception
-    print('len(pmean)',len(p_mean_))
     
     s.initializeProblem()
     

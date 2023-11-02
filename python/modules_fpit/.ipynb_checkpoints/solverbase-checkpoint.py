@@ -93,7 +93,9 @@ class SolverWrapper():
     def initializeProblem(self, rank_ = 0):
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
+        print('initialized problem')
         cell = self.getCellCenters()
+        print('cell',cell)
         if len(cell) > 0: # cell float if rank >0
             cell0 = cell[0]
             if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
@@ -113,12 +115,12 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, maxDt = -1.):
+    def solve(self, dt:float, maxDt = -1., solverVerbose = False):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
-        self.base.solve(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+        self.base.solve(dt * 24.*3600., maxDt * 24.*3600., solverVerbose)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """

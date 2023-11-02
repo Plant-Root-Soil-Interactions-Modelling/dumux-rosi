@@ -1,4 +1,4 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/")
+import sys; sys.path.append("../modules_fpit/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/")
 sys.path.append("../../build-cmake/cpp/python_binding/")
 
 from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
@@ -66,19 +66,26 @@ def solve(soil, simtimes, q_r, N):
     """ Soil problem """
     s = RichardsWrapper(RichardsSP(), False)
     s.initialize()
+    print('did init')
     s.setHomogeneousIC(-100)  # cm pressure head
-    s.setTopBC("noflux")
-    s.setBotBC("noflux")
+    print('w1')
     s.createGrid([-l, -l, -1.], [l, l, 0.], [N, N, 1])  # [cm]
+    print('w2')
+    s.setTopBC("noflux")
+    print('w3')
+    s.setBotBC("noflux")
+    print('w4')
     s.setVGParameters([soil[0:5]])
+    print('w5')
     s.initializeProblem()
+    print('w6')
     s.setCriticalPressure(-15000)
-
+    print('crit pressure')
     """ Coupling (map indices) """
     picker = lambda x, y, z: s.pick([x, y, z])
     r.rs.setSoilGrid(picker)
     cci = picker(0, 0, 0)  # collar cell index
-
+    print('picker')
     """ Numerical solution """
     start_time = timeit.default_timer()
     nsp = N  # number of sample points for output
@@ -88,17 +95,22 @@ def solve(soil, simtimes, q_r, N):
 
     dt_ = np.diff(simtimes)
     s.ddt = 1.e-5  # initial Dumux time step [days]
-
+    print('to dt_')
     for dt in dt_:
-
         sx = s.getSolutionHead()
-
+        print('sx')
         if rank == 0:  # Root part is not parallel
+            print('solve_neumann, cci', cci, 'trans', trans)
             rx = r.solve_neumann(0., -trans, sx, True)  # xylem_flux.py
+            print('solve_neumann finished',min(rx), max(rx) )
             fluxes_approx = r.soilFluxes(0., rx, sx, True)  # class XylemFlux is defined in MappedOrganism.h
+            print('fluxes_approx',fluxes_approx)
             fluxes_exact = r.soilFluxes(0., rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h
+            print('fluxes_exact',fluxes_exact)
             collar_flux = r.collar_flux(0., rx, sx)
+            print('collar_flux',collar_flux)
             off = abs(100 * (1 - fluxes_approx[cci] / (-trans)))
+            print('off',off)
             print('cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux[0], off',cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux, off)
             print("fluxes at {:g}: approx {:g}, exact {:g}, collar flux {:g} [g day-1], approximation is {:g}% off"
                   .format(cci, fluxes_approx[cci], fluxes_exact[cci], collar_flux, off))
@@ -109,9 +121,13 @@ def solve(soil, simtimes, q_r, N):
             print("Summed fluxes {:g} = {:g} [g day-1],  index 0: {:g}\n".format(sum_flux, -trans, fluxes[cci]))
         else:
             fluxes = None
-
+            rx = None
+        print('share data')
         fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
+        rx = comm.bcast(rx, root = 0)  # Soil part runs parallel
+        print('set source')
         s.setSource(fluxes)  # g day-1, richards.py
+        print('did set source')
         write_file_array('rx'+str(max_rank),rx, directory_ ="./", fileType = '.csv')
         write_file_float('fluxes'+str(max_rank),fluxes, directory_ ="./")
         print("to solve")
@@ -121,6 +137,9 @@ def solve(soil, simtimes, q_r, N):
         if x0 < -15000:
             if rank == 0:
                 print("Simulation time at -15000 cm > {:.3f} cm after {:.3f} days".format(float(x0), s.simTime))
+            testrx = np.array(s.interpolateNN(x_))
+            write_file_array('testrx'+str(max_rank),testrx, directory_ ="./", fileType = '.csv')
+            print('np.array(s.interpolateNN(x_))',rank,np.array(s.interpolateNN(x_)))
             y = s.to_head(np.array(s.interpolateNN(x_)))
             return y, x_[:, 1], s.simTime
 

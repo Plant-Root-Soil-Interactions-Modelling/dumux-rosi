@@ -338,22 +338,26 @@ public:
 
         simTime = 0; // reset
         ddt = -1;
-
+        std::cout<<"getpointIdx"<<std::endl;
         pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim); // global index mappers
+        std::cout<<"getcellIdx"<<std::endl;
         cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0);
-
+        
+        std::cout<<"getlocalCellIdx"<<std::endl;
         localCellIdx.clear();
         for (const auto& e : Dune::elements(gridGeometry->gridView())) {
             int eIdx = gridGeometry->elementMapper().index(e);
             int gIdx = cellIdx->index(e);
             localCellIdx[gIdx] = eIdx;
         }
+        std::cout<<"getglobalPointIdx"<<std::endl;
         globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
         for (const auto& v : Dune::vertices(gridGeometry->gridView())) {
             int vIdx = gridGeometry->vertexMapper().index(v);
             int gIdx = pointIdx->index(v);
             globalPointIdx[vIdx] = gIdx;
         }
+        std::cout<<"finished filling the maps"<<std::endl;
     }
 
     /**

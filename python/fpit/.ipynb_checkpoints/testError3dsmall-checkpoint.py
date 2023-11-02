@@ -46,8 +46,9 @@ if __name__ == '__main__':
     dt = 1/2/24
     k_iter = 20
     simMax = 3.
+    p_mean = -14900
     lightType =""#+- "nolight" # or ""
-    extraName = "testerror3dinitSolverVerbosebis"
+    extraName = "testerror3dsmall"
     results_dir="./results/"+extraName+str(k_iter)+"k_"\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -74,7 +75,7 @@ if __name__ == '__main__':
 
     min_b = [-5, -5, -10.] 
     max_b = [5, 5, 0.] 
-    cell_number = [5,5,20]
+    cell_number = [2,2,2]
     #min_b = [-5., -5, -5.] 
     #max_b = [5., 5, 0.] 
     #cell_number = [5, 5, 5]
@@ -99,7 +100,7 @@ if __name__ == '__main__':
 
     s, soil = scenario.create_soil_model(soil_type, 2013, soil_,#comp, 
                 min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
-                usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean)
+                usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean)#min())
     currentDay = 0.
     
     
@@ -108,14 +109,17 @@ if __name__ == '__main__':
         res = eval(j)
 
     # run a loop
+    minSink = 0
     #for i in res:
     #    res[i] = -abs(10000*res[i])
+    minSink = -10000 #min(res[i], minSink)
+    res = {0: minSink, 1: minSink, 2: minSink,3: minSink, 4: minSink, 5: minSink, 6:minSink}
     print('source0',res)
     s.setSource(res.copy(), eq_idx = 0)  # [mol/day], in modules/richards.py
 
     # bar
-    def bar(soil, dt):
-        s.solve(dt, maxDt = 250/(3600*24))
+    #def bar(soil, dt):
+    #    s.solve(dt, maxDt = 250/(3600*24))
     while currentDay < simMax: #for i, dt in enumerate(np.diff(times)):
 
         currentDay += dt
@@ -123,33 +127,12 @@ if __name__ == '__main__':
         comm.barrier()
         s.setParameter("Newton.MaxRelativeShift", str(1e-10))
         redoSolve = True
-        k_soil_solve = 0
-        maxRelShift = 1e-8
-        while redoSolve:
-            s.ddt = 1.e-5
-            try:
-                comm.barrier()
-                print("entering the s.solve", rank)
-                    
-                s.solve(dt, maxDt = 20/(3600*24), solverVerbose = True)  # in modules/solverbase.py
-                print("leaving the s.solve", rank)
-                comm.barrier()
-                redoSolve = False
-                # newton parameters are re-read at each 'solve()' calls
-                s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))# reset value
-            except Exception as err:
-                print(rank, f"Unexpected {err=}, {type(err)=}")
-                if k_soil_solve < 5:
-                    print(rank,
-                          'soil.solve() failed. Increase NewtonMaxRelativeShift from',
-                          maxRelShift,'to',maxRelShift*10.)
-                    maxRelShift *= 10.
-                    # newton parameters are re-read at each 'solve()' calls
-                    s.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                    s.reset()
-                    k_soil_solve += 1
-                else:
-                    raise Exception
+        s.ddt = 1.e-5
+        comm.barrier()
+        print("entering the s.solve", rank)
+
+        s.solve(dt, maxDt = 20/(3600*24))  # in modules/solverbase.py
+        print("leaving the s.solve", rank)
         water_content =comm.bcast( np.array(s.getWaterContent()), root = 0) 
         SolutionHead =comm.bcast( np.array(s.getSolutionHead()), root = 0) 
         write_file_array('getWaterContent',water_content, directory_ =results_dir, fileType = '.csv')

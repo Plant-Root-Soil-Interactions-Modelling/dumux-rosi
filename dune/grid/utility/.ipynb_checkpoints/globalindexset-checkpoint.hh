@@ -325,6 +325,7 @@ namespace Dune
     : gridview_(gridview),
       codim_(codim)
     {
+          bool verbose = false;
       int rank = gridview.comm().rank();
       int size = gridview.comm().size();
 
@@ -342,8 +343,11 @@ namespace Dune
       // without double, aka. redundant entities, on the interprocessor boundary via global reduce. */
       nGlobalEntity_ = gridview.comm().template sum<int>(nLocalEntity);
 	
-	  //std::cout<<"check output start "<<rank<<" "<<codim_<<" nLocalEntity "<<nLocalEntity
-	  //<<" nGlobalEntity_ "<<nGlobalEntity_<<std::endl;
+        if (verbose)
+          {
+	  std::cout<<"check output start "<<rank<<" size "<<size<<" codim_ "<<codim_<<" nLocalEntity "<<nLocalEntity
+	  <<" nGlobalEntity_ "<<nGlobalEntity_<<std::endl;
+        }
 		// for sharing the data
 	std::vector<int>  sortedGlobalIdSet(nGlobalEntity_);//gather data on all threads
 	std::vector<int>  P(size,0);//specifies the displacement (relative to recvbuf ) at which to place the incoming data from process i
@@ -358,14 +362,17 @@ namespace Dune
 		P[i] = P[i-1] +  offset[i-1];
 	  }
 	  int myoffset = P[rank];
-	  //std::cout<<"checkP "<<rank<<" "<<myoffset<<" "<<P.data()[rank]<<std::endl;
+          
+        if (verbose)
+          {
+	  std::cout<<"checkP "<<rank<<" "<<myoffset<<" "<<P.data()[rank]<<std::endl;
 	  
-      //for (int i=0; i<P.size(); i++)
-	  //{
-		//  std::cout<<"P "<<P[i]<<" offset "<<offset[i]<<", ";
-	  //}
-	  //std::cout<<" offset[rank] "<<offset[rank]<<std::endl;
-		
+      for (int i=0; i<P.size(); i++)
+	  {
+		  std::cout<<"P "<<P[i]<<" offset "<<offset[i]<<", ";
+	  }
+	  std::cout<<" offset[rank] "<<offset[rank]<<std::endl;
+        }
 		std::vector<int>  sendbuf(offset[rank]);//array with id of owned entities
 
 
@@ -383,7 +390,10 @@ namespace Dune
           /** if the entity is owned by the process, go ahead with computing the global index */
           if (iter->partitionType() == Dune::InteriorEntity)
           {
-			  //std::cout<<"sendbuf[localcontrib] = id "<<localcontrib<<" "<<id<<std::endl;
+        if (verbose)
+          {
+			  std::cout<<"sendbuf[localcontrib] = id "<<localcontrib<<" "<<id<<std::endl;
+        }
 			sendbuf[localcontrib] = id;
 			localcontrib++;
           }
@@ -397,12 +407,30 @@ namespace Dune
 
 		  for(Iterator iter = gridview_.template begin<0>();iter!=gridview_.template end<0>(); ++iter)
 		  {
+        if (verbose)
+          {
+              std::cout<<"got iter"<<std::endl;
+        }
 			for (size_t i=0; i<iter->subEntities(codim_); i++)
 			{
+        if (verbose)
+          {
+              std::cout<<"got subEntities "<<i;
+        }
 			  IdType id=globalIdSet.subId(*iter,i,codim_);// real id
 
+        if (verbose)
+          {
+                std::cout<<" id "<<id;
+        }
 			  Index idx = gridview_.indexSet().subIndex(*iter,i,codim_);/** local index?  */
 
+        if (verbose)
+          {
+                std::cout<<", idx "<<idx;
+        
+                std::cout<<", sortedGlobalIdSet[id] "<<sortedGlobalIdSet[id];
+        }
 			  if (!firstTime[idx] )
 				continue;
 
@@ -411,39 +439,55 @@ namespace Dune
 			  if (uniqueEntityPartition->owner(idx) == rank)  /** if the entity is owned by the process, go ahead */
 			  {
 				 const Index lindex = localcontrib;// idx;
-			  //std::cout<<"sendbuf[lindex] = id "<<idx<<" "<<lindex<<" "<<id<<std::endl;
-				sendbuf[lindex] = id;
-				localcontrib++;
+                  
+        if (verbose)
+          {
+                  std::cout<<" [sendbuf[lindex] = id "<<idx<<" "<<lindex<<" "<<id<<"] ";
+        }
+                    sendbuf[lindex] = id;
+                    localcontrib++;
 			  }
+                
+        if (verbose)
+          {
+            std::cout<<std::endl;
+        }
 			}
 
 		  }
       }
 
-
-	  //std::cout<<"checksendbuf "<<rank<<" "<<sendbuf.size()<<std::endl;
+        if (verbose)
+          {
+	  std::cout<<"checksendbuf "<<rank<<" "<<sendbuf.size()<<std::endl;
 	  
-      //for (int i=0; i<sendbuf.size(); i++)
-	  //{
-		//  std::cout<<"sendbuf "<<sendbuf[i]<<", ";
-	  //}std::cout<<std::endl;
+      for (int i=0; i<sendbuf.size(); i++)
+	  {
+		  std::cout<<"sendbuf "<<sendbuf[i]<<", ";
+	  }std::cout<<std::endl;
+        }
 	  
 	  gridview_.comm().barrier();
 
       // 2nd stage of global index calculation: communicate global index for non-owned entities
 		//int gatherv (const T* in, int sendlen, T* out, int* recvlen, int* displ) const
 		gridview_.comm(). template allgatherv<int>(sendbuf.data(), nLocalEntity,sortedGlobalIdSet.data(),offset.data(), P.data());
-		//std::cout<<"gatherv "<<rank<<" nLocalEntity "<<nLocalEntity<<" "<<P.data()[rank]<<std::endl;
+          if (verbose)
+          {
+		std::cout<<"gatherv "<<rank<<" nLocalEntity "<<nLocalEntity<<" "<<P.data()[rank]<<std::endl;
+          }
 		
 		// Sort the vector in ascending order
 		std::sort(sortedGlobalIdSet.begin(), sortedGlobalIdSet.end());
-	  //std::cout<<"sortedGlobalIdSet "<<rank<<std::endl;
-      //for (int i=0; i<sortedGlobalIdSet.size(); i++)
-	  //{
-		//  std::cout<<"sortedGlobalIdSet "<<sortedGlobalIdSet[i]<<", ";
-	  //}std::cout<<std::endl;
+          if (verbose)
+          {
+	  std::cout<<"sortedGlobalIdSet "<<rank<<std::endl;
+      for (int i=0; i<sortedGlobalIdSet.size(); i++)
+	  {
+		  std::cout<<"sortedGlobalIdSet "<<sortedGlobalIdSet[i]<<", ";
+	  }std::cout<<"finished sorting the globalidset "<<std::endl;
 
-		
+          }
 		// create and fill the map
       // initialize map that stores an entity's global index via it's globally unique id as key
       globalIndex_.clear();
@@ -457,51 +501,72 @@ namespace Dune
       }
       else  // if (codim==0) else
       {
-		  std::vector<bool> firstTime(gridview_.size(codim_));
-		  std::fill(firstTime.begin(), firstTime.end(), true);
-
 		  for(Iterator iter = gridview_.template begin<0>();iter!=gridview_.template end<0>(); ++iter)
 		  {
+              if (verbose)
+          {
+              std::cout<<"got iter"<<std::endl;
+              }
 			for (size_t i=0; i<iter->subEntities(codim_); i++)
 			{
+                if (verbose)
+          {
+              std::cout<<"got subEntities "<<i;
+                }
 			  IdType id=globalIdSet.subId(*iter,i,codim_);
-
+                if (verbose)
+          {
+                std::cout<<" id "<<id;
+                }
 			  Index idx = gridview_.indexSet().subIndex(*iter,i,codim_);
+                if (verbose)
+          {
+                std::cout<<", idx "<<idx;
+                std::cout<<", sortedGlobalIdSet[id] "<<sortedGlobalIdSet[id];
+                }
 
 				globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[id])); /** insert pair (key, value) into the map */
 
 				const Index lindex = idx;
 				localGlobalMap_[lindex] = sortedGlobalIdSet[id];
+                if (verbose)
+          {
+			  std::cout<<"globalIndex_["<<id<<"] "<<globalIndex_[id]<<", ";
+			  std::cout<<"localGlobalMap_["<<idx<<"] "<<localGlobalMap_[idx]<<", ";
 
+            std::cout<<std::endl;
+                }
 			}
-
 		  }
       }
-	  //std::cout<<"check outputend"<<std::endl;
-      if (codim_==0)  // This case is simpler
-      {
-        for (Iterator iter = gridview_.template begin<0>(); iter!=gridview_.template end<0>(); ++iter)
-        {
-          const IdType id = globalIdSet.id(*iter);      /** retrieve the entity's id */
-		  //std::cout<<"globalIndex_["<<id<<"] "<<globalIndex_[id]<<", ";
-        }
-      }
-      else  // if (codim==0) else
-      {
-		  for(Iterator iter = gridview_.template begin<0>();iter!=gridview_.template end<0>(); ++iter)
-		  {
-			for (size_t i=0; i<iter->subEntities(codim_); i++)
-			{
-			  IdType id=globalIdSet.subId(*iter,i,codim_);
+          if (verbose)
+          {std::cout<<std::endl;
+          std::cout<<"check outputend"<<std::endl;
+          if (codim_==0)  // This case is simpler
+          {
+            for (Iterator iter = gridview_.template begin<0>(); iter!=gridview_.template end<0>(); ++iter)
+            {
+              const IdType id = globalIdSet.id(*iter);      /** retrieve the entity's id */
+              std::cout<<"globalIndex_["<<id<<"] "<<globalIndex_[id]<<", ";
+            }
+          }
+          else  // if (codim==0) else
+          {
+              for(Iterator iter = gridview_.template begin<0>();iter!=gridview_.template end<0>(); ++iter)
+              {
+                for (size_t i=0; i<iter->subEntities(codim_); i++)
+                {
+                  IdType id=globalIdSet.subId(*iter,i,codim_);
 
-			  Index idx = gridview_.indexSet().subIndex(*iter,i,codim_);
-			  //std::cout<<"globalIndex_["<<id<<"] "<<globalIndex_[id]<<", ";
-			  //std::cout<<"localGlobalMap_["<<idx<<"] "<<localGlobalMap_[idx]<<", ";
+                  Index idx = gridview_.indexSet().subIndex(*iter,i,codim_);
+                  std::cout<<"globalIndex_["<<id<<"] "<<globalIndex_[id]<<", ";
+                  std::cout<<"localGlobalMap_["<<idx<<"] "<<localGlobalMap_[idx]<<", ";
 
-			}
+                }
 
-		  }
-      }//std::cout<<std::endl;
+              }
+          }std::cout<<std::endl;
+          }
 		
     }
 
