@@ -47,7 +47,7 @@ if __name__ == '__main__':
     k_iter = 20
     simMax = 3.
     lightType =""#+- "nolight" # or ""
-    extraName = "testerror3dinitSolverVerbosebis"
+    extraName = "testerror3dinitSolverVerbosebisbis"
     results_dir="./results/"+extraName+str(k_iter)+"k_"\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -102,6 +102,8 @@ if __name__ == '__main__':
                 usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean)
     currentDay = 0.
     
+    s.setParameter("LinearSolver.Verbosity", str(1))
+    
     
     with open("./error3d/source0bis.txt") as f:
         j = f.readlines()[0]
@@ -154,6 +156,7 @@ if __name__ == '__main__':
         SolutionHead =comm.bcast( np.array(s.getSolutionHead()), root = 0) 
         write_file_array('getWaterContent',water_content, directory_ =results_dir, fileType = '.csv')
         write_file_array('getSolutionHead',SolutionHead, directory_ =results_dir, fileType = '.csv')
+        write_file_float('day',currentDay, directory_ =results_dir)
         
 
 """

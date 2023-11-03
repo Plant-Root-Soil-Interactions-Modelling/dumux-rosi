@@ -2,7 +2,7 @@
 #
 #SBATCH --job-name=gblid121
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=2
+#SBATCH --ntasks=4
 #SBATCH --nodes=1
 #SBATCH --partition=cpu256
 #SBATCH --time=20-00:00:00
@@ -16,4 +16,4 @@ cd $HOME/DUMUXexud/dumux-rosi/python/coupled
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=2 mpirun -n 2 python3 coupled_c11.py
+DUMUX_NUM_THREADS=4 mpirun -n 4 python3 coupled_c11B.py

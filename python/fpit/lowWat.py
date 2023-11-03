@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/6/2/24
+    dt = 1/60/24
     p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"

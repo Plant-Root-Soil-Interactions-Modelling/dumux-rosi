@@ -1,0 +1,1500 @@
+64 Newton::solveLinearSystem : entering the try section 12
+64 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+64 solveLinearSystemImpl_, before converged = ls.solve 
+64 121 amgbackend::solve isParallel 1
+85 Solve: M deltax^k = r 
+85 Newton::solveLinearSystem : entering the try section 12
+85 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+85 solveLinearSystemImpl_, before converged = ls.solve 
+85 121 amgbackend::solve isParallel 1
+70 Solve: M deltax^k = r 
+70 Newton::solveLinearSystem : entering the try section 12
+70 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+70 solveLinearSystemImpl_, before converged = ls.solve 
+70 121 amgbackend::solve isParallel 1
+99 Solve: M deltax^k = r 
+99 Newton::solveLinearSystem : entering the try section 12
+99 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+99 solveLinearSystemImpl_, before converged = ls.solve 
+99 121 amgbackend::solve isParallel 1
+9 Solve: M deltax^k = r 
+9 Newton::solveLinearSystem : entering the try section 12
+9 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+9 solveLinearSystemImpl_, before converged = ls.solve 
+9 121 amgbackend::solve isParallel 1
+37 Solve: M deltax^k = r 
+37 Newton::solveLinearSystem : entering the try section 12
+37 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+37 solveLinearSystemImpl_, before converged = ls.solve 
+37 121 amgbackend::solve isParallel 1
+109 Solve: M deltax^k = r 
+109 Newton::solveLinearSystem : entering the try section 12
+109 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+109 solveLinearSystemImpl_, before converged = ls.solve 
+109 121 amgbackend::solve isParallel 1
+93 Solve: M deltax^k = r 
+93 Newton::solveLinearSystem : entering the try section 12
+93 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+93 solveLinearSystemImpl_, before converged = ls.solve 
+93 121 amgbackend::solve isParallel 1
+20 Solve: M deltax^k = r 
+20 Newton::solveLinearSystem : entering the try section 12
+20 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+20 solveLinearSystemImpl_, before converged = ls.solve 
+20 121 amgbackend::solve isParallel 1
+94 Solve: M deltax^k = r 
+94 Newton::solveLinearSystem : entering the try section 12
+94 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+94 solveLinearSystemImpl_, before converged = ls.solve 
+94 121 amgbackend::solve isParallel 1
+31 Solve: M deltax^k = r 
+31 Newton::solveLinearSystem : entering the try section 12
+31 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+31 solveLinearSystemImpl_, before converged = ls.solve 
+31 121 amgbackend::solve isParallel 1
+89 Solve: M deltax^k = r 
+89 Newton::solveLinearSystem : entering the try section 12
+89 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+89 solveLinearSystemImpl_, before converged = ls.solve 
+89 121 amgbackend::solve isParallel 1
+17 Solve: M deltax^k = r 
+17 Newton::solveLinearSystem : entering the try section 12
+17 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+17 solveLinearSystemImpl_, before converged = ls.solve 
+17 121 amgbackend::solve isParallel 1
+35 Solve: M deltax^k = r 
+35 Newton::solveLinearSystem : entering the try section 12
+35 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+35 solveLinearSystemImpl_, before converged = ls.solve 
+35 121 amgbackend::solve isParallel 1
+88 Solve: M deltax^k = r 
+88 Newton::solveLinearSystem : entering the try section 12
+88 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+88 solveLinearSystemImpl_, before converged = ls.solve 
+88 121 amgbackend::solve isParallel 1
+90 Solve: M deltax^k = r 
+90 Newton::solveLinearSystem : entering the try section 12
+90 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+90 solveLinearSystemImpl_, before converged = ls.solve 
+90 121 amgbackend::solve isParallel 1
+113 Solve: M deltax^k = r 
+113 Newton::solveLinearSystem : entering the try section 12
+113 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+113 solveLinearSystemImpl_, before converged = ls.solve 
+113 121 amgbackend::solve isParallel 1
+87 Solve: M deltax^k = r 
+87 Newton::solveLinearSystem : entering the try section 12
+87 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+87 solveLinearSystemImpl_, before converged = ls.solve 
+87 121 amgbackend::solve isParallel 1
+60 Solve: M deltax^k = r 
+60 Newton::solveLinearSystem : entering the try section 12
+60 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+60 solveLinearSystemImpl_, before converged = ls.solve 
+60 121 amgbackend::solve isParallel 1
+30 Solve: M deltax^k = r 
+30 Newton::solveLinearSystem : entering the try section 12
+30 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+30 solveLinearSystemImpl_, before converged = ls.solve 
+30 121 amgbackend::solve isParallel 1
+52 Solve: M deltax^k = r 
+52 Newton::solveLinearSystem : entering the try section 12
+52 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+52 solveLinearSystemImpl_, before converged = ls.solve 
+52 121 amgbackend::solve isParallel 1
+3 Solve: M deltax^k = r 
+3 Newton::solveLinearSystem : entering the try section 12
+3 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+3 solveLinearSystemImpl_, before converged = ls.solve 
+3 121 amgbackend::solve isParallel 1
+65 Solve: M deltax^k = r 
+65 Newton::solveLinearSystem : entering the try section 12
+65 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+65 solveLinearSystemImpl_, before converged = ls.solve 
+65 121 amgbackend::solve isParallel 1
+119 Solve: M deltax^k = r 
+119 Newton::solveLinearSystem : entering the try section 12
+119 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+119 solveLinearSystemImpl_, before converged = ls.solve 
+119 121 amgbackend::solve isParallel 1
+110 Solve: M deltax^k = r 
+110 Newton::solveLinearSystem : entering the try section 12
+110 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+110 solveLinearSystemImpl_, before converged = ls.solve 
+110 121 amgbackend::solve isParallel 1
+28 Solve: M deltax^k = r 
+28 Newton::solveLinearSystem : entering the try section 12
+28 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+28 solveLinearSystemImpl_, before converged = ls.solve 
+28 121 amgbackend::solve isParallel 1
+96 Solve: M deltax^k = r 
+96 Newton::solveLinearSystem : entering the try section 12
+96 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+96 solveLinearSystemImpl_, before converged = ls.solve 
+96 121 amgbackend::solve isParallel 1
+14 Solve: M deltax^k = r 
+14 Newton::solveLinearSystem : entering the try section 12
+14 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+14 solveLinearSystemImpl_, before converged = ls.solve 
+14 121 amgbackend::solve isParallel 1
+42 Solve: M deltax^k = r 
+42 Newton::solveLinearSystem : entering the try section 12
+42 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+42 solveLinearSystemImpl_, before converged = ls.solve 
+42 121 amgbackend::solve isParallel 1
+5 121 before Dune::BiCGSTABSolver 
+59 121 before Dune::BiCGSTABSolver 
+24 121 before Dune::BiCGSTABSolver 
+68 121 before Dune::BiCGSTABSolver 
+39 121 before Dune::BiCGSTABSolver 
+97 121 before Dune::BiCGSTABSolver 
+91 121 before Dune::BiCGSTABSolver 
+118 121 before Dune::BiCGSTABSolver 
+103 121 before Dune::BiCGSTABSolver 
+105 121 before Dune::BiCGSTABSolver 
+47 121 before Dune::BiCGSTABSolver 
+46 121 before Dune::BiCGSTABSolver 
+29 121 before Dune::BiCGSTABSolver 
+86 121 before Dune::BiCGSTABSolver 
+25 121 before Dune::BiCGSTABSolver 
+49 121 before Dune::BiCGSTABSolver 
+23 121 before Dune::BiCGSTABSolver 
+102 121 before Dune::BiCGSTABSolver 
+114 121 before Dune::BiCGSTABSolver 
+4 121 before Dune::BiCGSTABSolver 
+33 121 before Dune::BiCGSTABSolver 
+83 121 before Dune::BiCGSTABSolver 
+74 121 before Dune::BiCGSTABSolver 
+44 121 before Dune::BiCGSTABSolver 
+66 121 before Dune::BiCGSTABSolver 
+2 121 before Dune::BiCGSTABSolver 
+45 121 before Dune::BiCGSTABSolver 
+10 121 before Dune::BiCGSTABSolver 
+34 121 before Dune::BiCGSTABSolver 
+78 121 before Dune::BiCGSTABSolver 
+8 121 before Dune::BiCGSTABSolver 
+22 121 before Dune::BiCGSTABSolver 
+15 121 before Dune::BiCGSTABSolver 
+26 121 before Dune::BiCGSTABSolver 
+38 121 before Dune::BiCGSTABSolver 
+43 121 before Dune::BiCGSTABSolver 
+56 121 before Dune::BiCGSTABSolver 
+41 121 before Dune::BiCGSTABSolver 
+21 121 before Dune::BiCGSTABSolver 
+106 121 before Dune::BiCGSTABSolver 
+104 121 before Dune::BiCGSTABSolver 
+67 121 before Dune::BiCGSTABSolver 
+51 121 before Dune::BiCGSTABSolver 
+36 121 before Dune::BiCGSTABSolver 
+63 121 before Dune::BiCGSTABSolver 
+64 121 before Dune::BiCGSTABSolver 
+85 121 before Dune::BiCGSTABSolver 
+70 121 before Dune::BiCGSTABSolver 
+99 121 before Dune::BiCGSTABSolver 
+9 121 before Dune::BiCGSTABSolver 
+37 121 before Dune::BiCGSTABSolver 
+109 121 before Dune::BiCGSTABSolver 
+93 121 before Dune::BiCGSTABSolver 
+20 121 before Dune::BiCGSTABSolver 
+94 121 before Dune::BiCGSTABSolver 
+31 121 before Dune::BiCGSTABSolver 
+89 121 before Dune::BiCGSTABSolver 
+17 121 before Dune::BiCGSTABSolver 
+35 121 before Dune::BiCGSTABSolver 
+88 121 before Dune::BiCGSTABSolver 
+90 121 before Dune::BiCGSTABSolver 
+113 121 before Dune::BiCGSTABSolver 
+87 121 before Dune::BiCGSTABSolver 
+60 121 before Dune::BiCGSTABSolver 
+30 121 before Dune::BiCGSTABSolver 
+52 121 before Dune::BiCGSTABSolver 
+3 121 before Dune::BiCGSTABSolver 
+65 121 before Dune::BiCGSTABSolver 
+119 121 before Dune::BiCGSTABSolver 
+110 121 before Dune::BiCGSTABSolver 
+28 121 before Dune::BiCGSTABSolver 
+96 121 before Dune::BiCGSTABSolver 
+14 121 before Dune::BiCGSTABSolver 
+54 121 before Dune::BiCGSTABSolver 
+72 121 before Dune::BiCGSTABSolver 
+13 121 before Dune::BiCGSTABSolver 
+101 121 before Dune::BiCGSTABSolver 
+112 121 before Dune::BiCGSTABSolver 
+100 121 before Dune::BiCGSTABSolver 
+50 121 before Dune::BiCGSTABSolver 
+48 121 before Dune::BiCGSTABSolver 
+61 121 before Dune::BiCGSTABSolver 
+77 121 before Dune::BiCGSTABSolver 
+84 121 before Dune::BiCGSTABSolver 
+71 121 before Dune::BiCGSTABSolver 
+55 121 before Dune::BiCGSTABSolver 
+116 121 before Dune::BiCGSTABSolver 
+11 121 before Dune::BiCGSTABSolver 
+62 121 before Dune::BiCGSTABSolver 
+18 121 before Dune::BiCGSTABSolver 
+16 121 before Dune::BiCGSTABSolver 
+58 121 before Dune::BiCGSTABSolver 
+27 121 before Dune::BiCGSTABSolver 
+80 121 before Dune::BiCGSTABSolver 
+111 121 before Dune::BiCGSTABSolver 
+6 121 before Dune::BiCGSTABSolver 
+82 121 before Dune::BiCGSTABSolver 
+98 121 before Dune::BiCGSTABSolver 
+40 121 before Dune::BiCGSTABSolver 
+57 121 before Dune::BiCGSTABSolver 
+120 121 before Dune::BiCGSTABSolver 
+81 121 before Dune::BiCGSTABSolver 
+117 121 before Dune::BiCGSTABSolver 
+108 121 before Dune::BiCGSTABSolver 
+12 121 before Dune::BiCGSTABSolver 
+107 121 before Dune::BiCGSTABSolver 
+69 121 before Dune::BiCGSTABSolver 
+76 121 before Dune::BiCGSTABSolver 
+42 121 before Dune::BiCGSTABSolver 
+115 121 before Dune::BiCGSTABSolver 
+79 121 before Dune::BiCGSTABSolver 
+1 121 before Dune::BiCGSTABSolver 
+73 121 before Dune::BiCGSTABSolver 
+32 121 before Dune::BiCGSTABSolver 
+92 121 before Dune::BiCGSTABSolver 
+53 121 before Dune::BiCGSTABSolver 
+7 121 before Dune::BiCGSTABSolver 
+95 121 before Dune::BiCGSTABSolver 
+19 121 before Dune::BiCGSTABSolver 
+75 121 before Dune::BiCGSTABSolver 
+Using a direct coarse solver (SuperLU)
+Building hierarchy of 2 levels (inclusive coarse solver) took 0.0321623 seconds.
+0 121 before Dune::BiCGSTABSolver 
+=== BiCGSTABSolver
+112 finished solveLinearSystemImpl_ 1
+112 converged value: 1 121 1 let s go get convergedRemote
+112 to  comm_.min(converged) 
+112 did  comm_.min(converged) convergedRemote: 1
+112 final convergedRemote: 1
+112 Update: x^(k+1) = x^k - deltax^k 
+112 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+112 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+112 Newton iteration 13 done112 , maximum relative shift = 9.294e-07
+112 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+100 finished solveLinearSystemImpl_ 1
+100 converged value: 1 121 1 let s go get convergedRemote
+100 to  comm_.min(converged) 
+100 did  comm_.min(converged) convergedRemote: 1
+100 final convergedRemote: 1
+100 Update: x^(k+1) = x^k - deltax^k 
+100 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+100 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+100 Newton iteration 13 done100 , maximum relative shift = 9.294e-07
+100 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+50 finished solveLinearSystemImpl_ 1
+50 converged value: 1 121 1 let s go get convergedRemote
+50 to  comm_.min(converged) 
+50 did  comm_.min(converged) convergedRemote: 1
+50 final convergedRemote: 1
+50 Update: x^(k+1) = x^k - deltax^k 
+50 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+50 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+50 Newton iteration 13 done50 , maximum relative shift = 9.294e-07
+50 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+48 finished solveLinearSystemImpl_ 1
+48 converged value: 1 121 1 let s go get convergedRemote
+48 to  comm_.min(converged) 
+48 did  comm_.min(converged) convergedRemote: 1
+48 final convergedRemote: 1
+48 Update: x^(k+1) = x^k - deltax^k 
+48 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+48 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+48 Newton iteration 13 done48 , maximum relative shift = 9.294e-07
+48 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+61 finished solveLinearSystemImpl_ 1
+61 converged value: 1 121 1 let s go get convergedRemote
+61 to  comm_.min(converged) 
+61 did  comm_.min(converged) convergedRemote: 1
+61 final convergedRemote: 1
+61 Update: x^(k+1) = x^k - deltax^k 
+61 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+61 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+61 Newton iteration 13 done61 , maximum relative shift = 9.294e-07
+61 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+77 finished solveLinearSystemImpl_ 1
+77 converged value: 1 121 1 let s go get convergedRemote
+77 to  comm_.min(converged) 
+77 did  comm_.min(converged) convergedRemote: 1
+77 final convergedRemote: 1
+77 Update: x^(k+1) = x^k - deltax^k 
+77 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+77 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+77 Newton iteration 13 done77 , maximum relative shift = 9.294e-07
+77 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+84 finished solveLinearSystemImpl_ 1
+84 converged value: 1 121 1 let s go get convergedRemote
+84 to  comm_.min(converged) 
+84 did  comm_.min(converged) convergedRemote: 1
+84 final convergedRemote: 1
+84 Update: x^(k+1) = x^k - deltax^k 
+84 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+84 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+84 Newton iteration 13 done84 , maximum relative shift = 9.294e-07
+84 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+71 finished solveLinearSystemImpl_ 1
+71 converged value: 1 121 1 let s go get convergedRemote
+71 to  comm_.min(converged) 
+71 did  comm_.min(converged) convergedRemote: 1
+71 final convergedRemote: 1
+71 Update: x^(k+1) = x^k - deltax^k 
+71 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+71 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+71 Newton iteration 13 done71 , maximum relative shift = 9.294e-07
+71 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+55 finished solveLinearSystemImpl_ 1
+55 converged value: 1 121 1 let s go get convergedRemote
+55 to  comm_.min(converged) 
+55 did  comm_.min(converged) convergedRemote: 1
+55 final convergedRemote: 1
+55 Update: x^(k+1) = x^k - deltax^k 
+55 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+55 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+55 Newton iteration 13 done55 , maximum relative shift = 9.294e-07
+55 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+116 finished solveLinearSystemImpl_ 1
+116 converged value: 1 121 1 let s go get convergedRemote
+116 to  comm_.min(converged) 
+116 did  comm_.min(converged) convergedRemote: 1
+116 final convergedRemote: 1
+116 Update: x^(k+1) = x^k - deltax^k 
+116 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+116 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+116 Newton iteration 13 done116 , maximum relative shift = 9.294e-07
+116 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+11 finished solveLinearSystemImpl_ 1
+11 converged value: 1 121 1 let s go get convergedRemote
+11 to  comm_.min(converged) 
+11 did  comm_.min(converged) convergedRemote: 1
+11 final convergedRemote: 1
+11 Update: x^(k+1) = x^k - deltax^k 
+11 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+11 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+11 Newton iteration 13 done11 , maximum relative shift = 9.294e-07
+11 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+62 finished solveLinearSystemImpl_ 1
+62 converged value: 1 121 1 let s go get convergedRemote
+62 to  comm_.min(converged) 
+62 did  comm_.min(converged) convergedRemote: 1
+62 final convergedRemote: 1
+62 Update: x^(k+1) = x^k - deltax^k 
+62 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+62 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+62 Newton iteration 13 done62 , maximum relative shift = 9.294e-07
+62 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+18 finished solveLinearSystemImpl_ 1
+18 converged value: 1 121 1 let s go get convergedRemote
+18 to  comm_.min(converged) 
+18 did  comm_.min(converged) convergedRemote: 1
+18 final convergedRemote: 1
+18 Update: x^(k+1) = x^k - deltax^k 
+18 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+18 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+18 Newton iteration 13 done18 , maximum relative shift = 9.294e-07
+18 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+16 finished solveLinearSystemImpl_ 1
+16 converged value: 1 121 1 let s go get convergedRemote
+16 to  comm_.min(converged) 
+16 did  comm_.min(converged) convergedRemote: 1
+16 final convergedRemote: 1
+16 Update: x^(k+1) = x^k - deltax^k 
+16 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+16 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+16 Newton iteration 13 done16 , maximum relative shift = 9.294e-07
+16 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+58 finished solveLinearSystemImpl_ 1
+58 converged value: 1 121 1 let s go get convergedRemote
+58 to  comm_.min(converged) 
+58 did  comm_.min(converged) convergedRemote: 1
+58 final convergedRemote: 1
+58 Update: x^(k+1) = x^k - deltax^k 
+58 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+58 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+58 Newton iteration 13 done58 , maximum relative shift = 9.294e-07
+58 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+27 finished solveLinearSystemImpl_ 1
+27 converged value: 1 121 1 let s go get convergedRemote
+27 to  comm_.min(converged) 
+27 did  comm_.min(converged) convergedRemote: 1
+27 final convergedRemote: 1
+27 Update: x^(k+1) = x^k - deltax^k 
+27 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+27 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+27 Newton iteration 13 done27 , maximum relative shift = 9.294e-07
+27 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+80 finished solveLinearSystemImpl_ 1
+80 converged value: 1 121 1 let s go get convergedRemote
+80 to  comm_.min(converged) 
+80 did  comm_.min(converged) convergedRemote: 1
+80 final convergedRemote: 1
+80 Update: x^(k+1) = x^k - deltax^k 
+80 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+80 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+80 Newton iteration 13 done80 , maximum relative shift = 9.294e-07
+80 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+111 finished solveLinearSystemImpl_ 1
+111 converged value: 1 121 1 let s go get convergedRemote
+111 to  comm_.min(converged) 
+111 did  comm_.min(converged) convergedRemote: 1
+111 final convergedRemote: 1
+111 Update: x^(k+1) = x^k - deltax^k 
+111 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+111 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+111 Newton iteration 13 done111 , maximum relative shift = 9.294e-07
+111 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+6 finished solveLinearSystemImpl_ 1
+6 converged value: 1 121 1 let s go get convergedRemote
+6 to  comm_.min(converged) 
+6 did  comm_.min(converged) convergedRemote: 1
+6 final convergedRemote: 1
+6 Update: x^(k+1) = x^k - deltax^k 
+6 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+6 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+6 Newton iteration 13 done6 , maximum relative shift = 9.294e-07
+6 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+82 finished solveLinearSystemImpl_ 1
+82 converged value: 1 121 1 let s go get convergedRemote
+82 to  comm_.min(converged) 
+82 did  comm_.min(converged) convergedRemote: 1
+82 final convergedRemote: 1
+82 Update: x^(k+1) = x^k - deltax^k 
+82 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+82 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+82 Newton iteration 13 done82 , maximum relative shift = 9.294e-07
+82 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+98 finished solveLinearSystemImpl_ 1
+98 converged value: 1 121 1 let s go get convergedRemote
+98 to  comm_.min(converged) 
+98 did  comm_.min(converged) convergedRemote: 1
+98 final convergedRemote: 1
+98 Update: x^(k+1) = x^k - deltax^k 
+98 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+98 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+98 Newton iteration 13 done98 , maximum relative shift = 9.294e-07
+98 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+40 finished solveLinearSystemImpl_ 1
+40 converged value: 1 121 1 let s go get convergedRemote
+40 to  comm_.min(converged) 
+40 did  comm_.min(converged) convergedRemote: 1
+40 final convergedRemote: 1
+40 Update: x^(k+1) = x^k - deltax^k 
+40 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+40 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+40 Newton iteration 13 done40 , maximum relative shift = 9.294e-07
+40 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+57 finished solveLinearSystemImpl_ 1
+57 converged value: 1 121 1 let s go get convergedRemote
+57 to  comm_.min(converged) 
+57 did  comm_.min(converged) convergedRemote: 1
+57 final convergedRemote: 1
+57 Update: x^(k+1) = x^k - deltax^k 
+57 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+57 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+57 Newton iteration 13 done57 , maximum relative shift = 9.294e-07
+57 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+120 finished solveLinearSystemImpl_ 1
+120 converged value: 1 121 1 let s go get convergedRemote
+120 to  comm_.min(converged) 
+120 did  comm_.min(converged) convergedRemote: 1
+120 final convergedRemote: 1
+120 Update: x^(k+1) = x^k - deltax^k 
+120 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+120 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+120 Newton iteration 13 done120 , maximum relative shift = 9.294e-07
+120 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+81 finished solveLinearSystemImpl_ 1
+81 converged value: 1 121 1 let s go get convergedRemote
+81 to  comm_.min(converged) 
+81 did  comm_.min(converged) convergedRemote: 1
+81 final convergedRemote: 1
+81 Update: x^(k+1) = x^k - deltax^k 
+81 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+81 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+81 Newton iteration 13 done81 , maximum relative shift = 9.294e-07
+81 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+117 finished solveLinearSystemImpl_ 1
+117 converged value: 1 121 1 let s go get convergedRemote
+117 to  comm_.min(converged) 
+117 did  comm_.min(converged) convergedRemote: 1
+117 final convergedRemote: 1
+117 Update: x^(k+1) = x^k - deltax^k 
+117 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+117 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+117 Newton iteration 13 done117 , maximum relative shift = 9.294e-07
+117 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+108 finished solveLinearSystemImpl_ 1
+108 converged value: 1 121 1 let s go get convergedRemote
+108 to  comm_.min(converged) 
+108 did  comm_.min(converged) convergedRemote: 1
+108 final convergedRemote: 1
+108 Update: x^(k+1) = x^k - deltax^k 
+108 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+108 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+108 Newton iteration 13 done108 , maximum relative shift = 9.294e-07
+108 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+12 finished solveLinearSystemImpl_ 1
+12 converged value: 1 121 1 let s go get convergedRemote
+12 to  comm_.min(converged) 
+12 did  comm_.min(converged) convergedRemote: 1
+12 final convergedRemote: 1
+12 Update: x^(k+1) = x^k - deltax^k 
+12 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+12 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+12 Newton iteration 13 done12 , maximum relative shift = 9.294e-07
+12 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+107 finished solveLinearSystemImpl_ 1
+107 converged value: 1 121 1 let s go get convergedRemote
+107 to  comm_.min(converged) 
+107 did  comm_.min(converged) convergedRemote: 1
+107 final convergedRemote: 1
+107 Update: x^(k+1) = x^k - deltax^k 
+107 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+107 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+107 Newton iteration 13 done107 , maximum relative shift = 9.294e-07
+107 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+69 finished solveLinearSystemImpl_ 1
+69 converged value: 1 121 1 let s go get convergedRemote
+69 to  comm_.min(converged) 
+69 did  comm_.min(converged) convergedRemote: 1
+69 final convergedRemote: 1
+69 Update: x^(k+1) = x^k - deltax^k 
+69 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+69 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+69 Newton iteration 13 done69 , maximum relative shift = 9.294e-07
+69 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+  0.5      1.98865e-30
+=== rate=7.36887e-33, T=0.0121603, TIT=0.0243206, IT=0.5
+0 finished solveLinearSystemImpl_ 1
+0 converged value: 1 121 1 let s go get convergedRemote
+0 to  comm_.min(converged) 
+0 did  comm_.min(converged) convergedRemote: 1
+0 final convergedRemote: 1
+0 Update: x^(k+1) = x^k - deltax^k 
+0 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+0 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+0 Newton iteration 13 done0 , maximum relative shift = 9.294e-07
+0 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+42 finished solveLinearSystemImpl_ 1
+42 converged value: 1 121 1 let s go get convergedRemote
+42 to  comm_.min(converged) 
+42 did  comm_.min(converged) convergedRemote: 1
+42 final convergedRemote: 1
+42 Update: x^(k+1) = x^k - deltax^k 
+42 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+42 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+42 Newton iteration 13 done42 , maximum relative shift = 9.294e-07
+42 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+75 finished solveLinearSystemImpl_ 1
+75 converged value: 1 121 1 let s go get convergedRemote
+75 to  comm_.min(converged) 
+75 did  comm_.min(converged) convergedRemote: 1
+75 final convergedRemote: 1
+75 Update: x^(k+1) = x^k - deltax^k 
+75 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+75 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+75 Newton iteration 13 done75 , maximum relative shift = 9.294e-07
+75 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+115 finished solveLinearSystemImpl_ 1
+115 converged value: 1 121 1 let s go get convergedRemote
+115 to  comm_.min(converged) 
+115 did  comm_.min(converged) convergedRemote: 1
+115 final convergedRemote: 1
+115 Update: x^(k+1) = x^k - deltax^k 
+115 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+115 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+115 Newton iteration 13 done115 , maximum relative shift = 9.294e-07
+115 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+79 finished solveLinearSystemImpl_ 1
+79 converged value: 1 121 1 let s go get convergedRemote
+79 to  comm_.min(converged) 
+79 did  comm_.min(converged) convergedRemote: 1
+79 final convergedRemote: 1
+79 Update: x^(k+1) = x^k - deltax^k 
+79 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+79 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+79 Newton iteration 13 done79 , maximum relative shift = 9.294e-07
+79 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+1 finished solveLinearSystemImpl_ 1
+1 converged value: 1 121 1 let s go get convergedRemote
+1 to  comm_.min(converged) 
+1 did  comm_.min(converged) convergedRemote: 1
+1 final convergedRemote: 1
+1 Update: x^(k+1) = x^k - deltax^k 
+1 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+1 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+1 Newton iteration 13 done1 , maximum relative shift = 9.294e-07
+1 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+73 finished solveLinearSystemImpl_ 1
+73 converged value: 1 121 1 let s go get convergedRemote
+73 to  comm_.min(converged) 
+73 did  comm_.min(converged) convergedRemote: 1
+73 final convergedRemote: 1
+73 Update: x^(k+1) = x^k - deltax^k 
+73 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+73 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+73 Newton iteration 13 done73 , maximum relative shift = 9.294e-07
+73 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+32 finished solveLinearSystemImpl_ 1
+32 converged value: 1 121 1 let s go get convergedRemote
+32 to  comm_.min(converged) 
+32 did  comm_.min(converged) convergedRemote: 1
+32 final convergedRemote: 1
+32 Update: x^(k+1) = x^k - deltax^k 
+32 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+32 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+32 Newton iteration 13 done32 , maximum relative shift = 9.294e-07
+32 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+92 finished solveLinearSystemImpl_ 1
+92 converged value: 1 121 1 let s go get convergedRemote
+92 to  comm_.min(converged) 
+92 did  comm_.min(converged) convergedRemote: 1
+92 final convergedRemote: 1
+92 Update: x^(k+1) = x^k - deltax^k 
+92 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+92 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+92 Newton iteration 13 done92 , maximum relative shift = 9.294e-07
+92 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+53 finished solveLinearSystemImpl_ 1
+53 converged value: 1 121 1 let s go get convergedRemote
+53 to  comm_.min(converged) 
+53 did  comm_.min(converged) convergedRemote: 1
+53 final convergedRemote: 1
+53 Update: x^(k+1) = x^k - deltax^k 
+53 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+53 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+53 Newton iteration 13 done53 , maximum relative shift = 9.294e-07
+53 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+7 finished solveLinearSystemImpl_ 1
+7 converged value: 1 121 1 let s go get convergedRemote
+7 to  comm_.min(converged) 
+7 did  comm_.min(converged) convergedRemote: 1
+7 final convergedRemote: 1
+7 Update: x^(k+1) = x^k - deltax^k 
+7 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+7 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+7 Newton iteration 13 done7 , maximum relative shift = 9.294e-07
+7 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+95 finished solveLinearSystemImpl_ 1
+95 converged value: 1 121 1 let s go get convergedRemote
+95 to  comm_.min(converged) 
+95 did  comm_.min(converged) convergedRemote: 1
+95 final convergedRemote: 1
+95 Update: x^(k+1) = x^k - deltax^k 
+95 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+95 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+95 Newton iteration 13 done95 , maximum relative shift = 9.294e-07
+95 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+19 finished solveLinearSystemImpl_ 1
+19 converged value: 1 121 1 let s go get convergedRemote
+19 to  comm_.min(converged) 
+19 did  comm_.min(converged) convergedRemote: 1
+19 final convergedRemote: 1
+19 Update: x^(k+1) = x^k - deltax^k 
+19 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+19 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+19 Newton iteration 13 done19 , maximum relative shift = 9.294e-07
+19 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+76 finished solveLinearSystemImpl_ 1
+76 converged value: 1 121 1 let s go get convergedRemote
+76 to  comm_.min(converged) 
+76 did  comm_.min(converged) convergedRemote: 1
+76 final convergedRemote: 1
+76 Update: x^(k+1) = x^k - deltax^k 
+76 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+76 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+76 Newton iteration 13 done76 , maximum relative shift = 9.294e-07
+76 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+5 finished solveLinearSystemImpl_ 1
+5 converged value: 1 121 1 let s go get convergedRemote
+5 to  comm_.min(converged) 
+5 did  comm_.min(converged) convergedRemote: 1
+5 final convergedRemote: 1
+5 Update: x^(k+1) = x^k - deltax^k 
+5 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+5 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+5 Newton iteration 13 done5 , maximum relative shift = 9.294e-07
+5 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+59 finished solveLinearSystemImpl_ 1
+59 converged value: 1 121 1 let s go get convergedRemote
+59 to  comm_.min(converged) 
+59 did  comm_.min(converged) convergedRemote: 1
+59 final convergedRemote: 1
+59 Update: x^(k+1) = x^k - deltax^k 
+59 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+59 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+59 Newton iteration 13 done59 , maximum relative shift = 9.294e-07
+59 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+24 finished solveLinearSystemImpl_ 1
+24 converged value: 1 121 1 let s go get convergedRemote
+24 to  comm_.min(converged) 
+24 did  comm_.min(converged) convergedRemote: 1
+24 final convergedRemote: 1
+24 Update: x^(k+1) = x^k - deltax^k 
+24 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+24 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+24 Newton iteration 13 done24 , maximum relative shift = 9.294e-07
+24 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+68 finished solveLinearSystemImpl_ 1
+68 converged value: 1 121 1 let s go get convergedRemote
+68 to  comm_.min(converged) 
+68 did  comm_.min(converged) convergedRemote: 1
+68 final convergedRemote: 1
+68 Update: x^(k+1) = x^k - deltax^k 
+68 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+68 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+68 Newton iteration 13 done68 , maximum relative shift = 9.294e-07
+68 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+39 finished solveLinearSystemImpl_ 1
+39 converged value: 1 121 1 let s go get convergedRemote
+39 to  comm_.min(converged) 
+39 did  comm_.min(converged) convergedRemote: 1
+39 final convergedRemote: 1
+39 Update: x^(k+1) = x^k - deltax^k 
+39 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+39 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+39 Newton iteration 13 done39 , maximum relative shift = 9.294e-07
+39 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+97 finished solveLinearSystemImpl_ 1
+97 converged value: 1 121 1 let s go get convergedRemote
+97 to  comm_.min(converged) 
+97 did  comm_.min(converged) convergedRemote: 1
+97 final convergedRemote: 1
+97 Update: x^(k+1) = x^k - deltax^k 
+97 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+97 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+97 Newton iteration 13 done97 , maximum relative shift = 9.294e-07
+97 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+91 finished solveLinearSystemImpl_ 1
+91 converged value: 1 121 1 let s go get convergedRemote
+91 to  comm_.min(converged) 
+91 did  comm_.min(converged) convergedRemote: 1
+91 final convergedRemote: 1
+91 Update: x^(k+1) = x^k - deltax^k 
+91 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+91 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+91 Newton iteration 13 done91 , maximum relative shift = 9.294e-07
+91 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+118 finished solveLinearSystemImpl_ 1
+118 converged value: 1 121 1 let s go get convergedRemote
+118 to  comm_.min(converged) 
+118 did  comm_.min(converged) convergedRemote: 1
+118 final convergedRemote: 1
+118 Update: x^(k+1) = x^k - deltax^k 
+118 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+118 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+118 Newton iteration 13 done118 , maximum relative shift = 9.294e-07
+118 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+103 finished solveLinearSystemImpl_ 1
+103 converged value: 1 121 1 let s go get convergedRemote
+103 to  comm_.min(converged) 
+103 did  comm_.min(converged) convergedRemote: 1
+103 final convergedRemote: 1
+103 Update: x^(k+1) = x^k - deltax^k 
+103 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+103 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+103 Newton iteration 13 done103 , maximum relative shift = 9.294e-07
+103 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+105 finished solveLinearSystemImpl_ 1
+105 converged value: 1 121 1 let s go get convergedRemote
+105 to  comm_.min(converged) 
+105 did  comm_.min(converged) convergedRemote: 1
+105 final convergedRemote: 1
+105 Update: x^(k+1) = x^k - deltax^k 
+105 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+105 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+105 Newton iteration 13 done105 , maximum relative shift = 9.294e-07
+105 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+47 finished solveLinearSystemImpl_ 1
+47 converged value: 1 121 1 let s go get convergedRemote
+47 to  comm_.min(converged) 
+47 did  comm_.min(converged) convergedRemote: 1
+47 final convergedRemote: 1
+47 Update: x^(k+1) = x^k - deltax^k 
+47 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+47 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+47 Newton iteration 13 done47 , maximum relative shift = 9.294e-07
+47 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+46 finished solveLinearSystemImpl_ 1
+46 converged value: 1 121 1 let s go get convergedRemote
+46 to  comm_.min(converged) 
+46 did  comm_.min(converged) convergedRemote: 1
+46 final convergedRemote: 1
+46 Update: x^(k+1) = x^k - deltax^k 
+46 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+46 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+46 Newton iteration 13 done46 , maximum relative shift = 9.294e-07
+46 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+29 finished solveLinearSystemImpl_ 1
+29 converged value: 1 121 1 let s go get convergedRemote
+29 to  comm_.min(converged) 
+29 did  comm_.min(converged) convergedRemote: 1
+29 final convergedRemote: 1
+29 Update: x^(k+1) = x^k - deltax^k 
+29 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+29 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+29 Newton iteration 13 done29 , maximum relative shift = 9.294e-07
+29 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+86 finished solveLinearSystemImpl_ 1
+86 converged value: 1 121 1 let s go get convergedRemote
+86 to  comm_.min(converged) 
+86 did  comm_.min(converged) convergedRemote: 1
+86 final convergedRemote: 1
+86 Update: x^(k+1) = x^k - deltax^k 
+86 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+86 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+86 Newton iteration 13 done86 , maximum relative shift = 9.294e-07
+86 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+25 finished solveLinearSystemImpl_ 1
+25 converged value: 1 121 1 let s go get convergedRemote
+25 to  comm_.min(converged) 
+25 did  comm_.min(converged) convergedRemote: 1
+25 final convergedRemote: 1
+25 Update: x^(k+1) = x^k - deltax^k 
+25 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+25 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+25 Newton iteration 13 done25 , maximum relative shift = 9.294e-07
+25 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+49 finished solveLinearSystemImpl_ 1
+49 converged value: 1 121 1 let s go get convergedRemote
+49 to  comm_.min(converged) 
+49 did  comm_.min(converged) convergedRemote: 1
+49 final convergedRemote: 1
+49 Update: x^(k+1) = x^k - deltax^k 
+49 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+49 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+49 Newton iteration 13 done49 , maximum relative shift = 9.294e-07
+49 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+23 finished solveLinearSystemImpl_ 1
+23 converged value: 1 121 1 let s go get convergedRemote
+23 to  comm_.min(converged) 
+23 did  comm_.min(converged) convergedRemote: 1
+23 final convergedRemote: 1
+23 Update: x^(k+1) = x^k - deltax^k 
+23 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+23 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+23 Newton iteration 13 done23 , maximum relative shift = 9.294e-07
+23 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+102 finished solveLinearSystemImpl_ 1
+102 converged value: 1 121 1 let s go get convergedRemote
+102 to  comm_.min(converged) 
+102 did  comm_.min(converged) convergedRemote: 1
+102 final convergedRemote: 1
+102 Update: x^(k+1) = x^k - deltax^k 
+102 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+102 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+102 Newton iteration 13 done102 , maximum relative shift = 9.294e-07
+102 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+114 finished solveLinearSystemImpl_ 1
+114 converged value: 1 121 1 let s go get convergedRemote
+114 to  comm_.min(converged) 
+114 did  comm_.min(converged) convergedRemote: 1
+114 final convergedRemote: 1
+114 Update: x^(k+1) = x^k - deltax^k 
+114 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+114 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+114 Newton iteration 13 done114 , maximum relative shift = 9.294e-07
+114 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+4 finished solveLinearSystemImpl_ 1
+4 converged value: 1 121 1 let s go get convergedRemote
+4 to  comm_.min(converged) 
+4 did  comm_.min(converged) convergedRemote: 1
+4 final convergedRemote: 1
+4 Update: x^(k+1) = x^k - deltax^k 
+4 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+4 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+4 Newton iteration 13 done4 , maximum relative shift = 9.294e-07
+4 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+33 finished solveLinearSystemImpl_ 1
+33 converged value: 1 121 1 let s go get convergedRemote
+33 to  comm_.min(converged) 
+33 did  comm_.min(converged) convergedRemote: 1
+33 final convergedRemote: 1
+33 Update: x^(k+1) = x^k - deltax^k 
+33 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+33 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+33 Newton iteration 13 done33 , maximum relative shift = 9.294e-07
+33 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+83 finished solveLinearSystemImpl_ 1
+83 converged value: 1 121 1 let s go get convergedRemote
+83 to  comm_.min(converged) 
+83 did  comm_.min(converged) convergedRemote: 1
+83 final convergedRemote: 1
+83 Update: x^(k+1) = x^k - deltax^k 
+83 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+83 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+83 Newton iteration 13 done83 , maximum relative shift = 9.294e-07
+83 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+74 finished solveLinearSystemImpl_ 1
+74 converged value: 1 121 1 let s go get convergedRemote
+74 to  comm_.min(converged) 
+74 did  comm_.min(converged) convergedRemote: 1
+74 final convergedRemote: 1
+74 Update: x^(k+1) = x^k - deltax^k 
+74 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+74 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+74 Newton iteration 13 done74 , maximum relative shift = 9.294e-07
+74 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+44 finished solveLinearSystemImpl_ 1
+44 converged value: 1 121 1 let s go get convergedRemote
+44 to  comm_.min(converged) 
+44 did  comm_.min(converged) convergedRemote: 1
+44 final convergedRemote: 1
+44 Update: x^(k+1) = x^k - deltax^k 
+44 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+44 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+44 Newton iteration 13 done44 , maximum relative shift = 9.294e-07
+44 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+66 finished solveLinearSystemImpl_ 1
+66 converged value: 1 121 1 let s go get convergedRemote
+66 to  comm_.min(converged) 
+66 did  comm_.min(converged) convergedRemote: 1
+66 final convergedRemote: 1
+66 Update: x^(k+1) = x^k - deltax^k 
+66 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+66 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+66 Newton iteration 13 done66 , maximum relative shift = 9.294e-07
+66 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+2 finished solveLinearSystemImpl_ 1
+2 converged value: 1 121 1 let s go get convergedRemote
+2 to  comm_.min(converged) 
+2 did  comm_.min(converged) convergedRemote: 1
+2 final convergedRemote: 1
+2 Update: x^(k+1) = x^k - deltax^k 
+2 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+2 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+2 Newton iteration 13 done2 , maximum relative shift = 9.294e-07
+2 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+45 finished solveLinearSystemImpl_ 1
+45 converged value: 1 121 1 let s go get convergedRemote
+45 to  comm_.min(converged) 
+45 did  comm_.min(converged) convergedRemote: 1
+45 final convergedRemote: 1
+45 Update: x^(k+1) = x^k - deltax^k 
+45 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+45 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+45 Newton iteration 13 done45 , maximum relative shift = 9.294e-07
+45 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+10 finished solveLinearSystemImpl_ 1
+10 converged value: 1 121 1 let s go get convergedRemote
+10 to  comm_.min(converged) 
+10 did  comm_.min(converged) convergedRemote: 1
+10 final convergedRemote: 1
+10 Update: x^(k+1) = x^k - deltax^k 
+10 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+10 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+10 Newton iteration 13 done10 , maximum relative shift = 9.294e-07
+10 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+34 finished solveLinearSystemImpl_ 1
+34 converged value: 1 121 1 let s go get convergedRemote
+34 to  comm_.min(converged) 
+34 did  comm_.min(converged) convergedRemote: 1
+34 final convergedRemote: 1
+34 Update: x^(k+1) = x^k - deltax^k 
+34 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+34 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+34 Newton iteration 13 done34 , maximum relative shift = 9.294e-07
+34 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+78 finished solveLinearSystemImpl_ 1
+78 converged value: 1 121 1 let s go get convergedRemote
+78 to  comm_.min(converged) 
+78 did  comm_.min(converged) convergedRemote: 1
+78 final convergedRemote: 1
+78 Update: x^(k+1) = x^k - deltax^k 
+78 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+78 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+78 Newton iteration 13 done78 , maximum relative shift = 9.294e-07
+78 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+8 finished solveLinearSystemImpl_ 1
+8 converged value: 1 121 1 let s go get convergedRemote
+8 to  comm_.min(converged) 
+8 did  comm_.min(converged) convergedRemote: 1
+8 final convergedRemote: 1
+8 Update: x^(k+1) = x^k - deltax^k 
+8 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+8 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+8 Newton iteration 13 done8 , maximum relative shift = 9.294e-07
+8 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+22 finished solveLinearSystemImpl_ 1
+22 converged value: 1 121 1 let s go get convergedRemote
+22 to  comm_.min(converged) 
+22 did  comm_.min(converged) convergedRemote: 1
+22 final convergedRemote: 1
+22 Update: x^(k+1) = x^k - deltax^k 
+22 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+22 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+22 Newton iteration 13 done22 , maximum relative shift = 9.294e-07
+22 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+15 finished solveLinearSystemImpl_ 1
+15 converged value: 1 121 1 let s go get convergedRemote
+15 to  comm_.min(converged) 
+15 did  comm_.min(converged) convergedRemote: 1
+15 final convergedRemote: 1
+15 Update: x^(k+1) = x^k - deltax^k 
+15 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+15 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+15 Newton iteration 13 done15 , maximum relative shift = 9.294e-07
+15 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+26 finished solveLinearSystemImpl_ 1
+26 converged value: 1 121 1 let s go get convergedRemote
+26 to  comm_.min(converged) 
+26 did  comm_.min(converged) convergedRemote: 1
+26 final convergedRemote: 1
+26 Update: x^(k+1) = x^k - deltax^k 
+26 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+26 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+26 Newton iteration 13 done26 , maximum relative shift = 9.294e-07
+26 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+38 finished solveLinearSystemImpl_ 1
+38 converged value: 1 121 1 let s go get convergedRemote
+38 to  comm_.min(converged) 
+38 did  comm_.min(converged) convergedRemote: 1
+38 final convergedRemote: 1
+38 Update: x^(k+1) = x^k - deltax^k 
+38 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+38 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+38 Newton iteration 13 done38 , maximum relative shift = 9.294e-07
+38 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+43 finished solveLinearSystemImpl_ 1
+43 converged value: 1 121 1 let s go get convergedRemote
+43 to  comm_.min(converged) 
+43 did  comm_.min(converged) convergedRemote: 1
+43 final convergedRemote: 1
+43 Update: x^(k+1) = x^k - deltax^k 
+43 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+43 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+43 Newton iteration 13 done43 , maximum relative shift = 9.294e-07
+43 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+56 finished solveLinearSystemImpl_ 1
+56 converged value: 1 121 1 let s go get convergedRemote
+56 to  comm_.min(converged) 
+56 did  comm_.min(converged) convergedRemote: 1
+56 final convergedRemote: 1
+56 Update: x^(k+1) = x^k - deltax^k 
+56 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+56 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+56 Newton iteration 13 done56 , maximum relative shift = 9.294e-07
+56 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+41 finished solveLinearSystemImpl_ 1
+41 converged value: 1 121 1 let s go get convergedRemote
+41 to  comm_.min(converged) 
+41 did  comm_.min(converged) convergedRemote: 1
+41 final convergedRemote: 1
+41 Update: x^(k+1) = x^k - deltax^k 
+41 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+41 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+41 Newton iteration 13 done41 , maximum relative shift = 9.294e-07
+41 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+21 finished solveLinearSystemImpl_ 1
+21 converged value: 1 121 1 let s go get convergedRemote
+21 to  comm_.min(converged) 
+21 did  comm_.min(converged) convergedRemote: 1
+21 final convergedRemote: 1
+21 Update: x^(k+1) = x^k - deltax^k 
+21 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+21 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+21 Newton iteration 13 done21 , maximum relative shift = 9.294e-07
+21 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+106 finished solveLinearSystemImpl_ 1
+106 converged value: 1 121 1 let s go get convergedRemote
+106 to  comm_.min(converged) 
+106 did  comm_.min(converged) convergedRemote: 1
+106 final convergedRemote: 1
+106 Update: x^(k+1) = x^k - deltax^k 
+106 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+106 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+106 Newton iteration 13 done106 , maximum relative shift = 9.294e-07
+106 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+104 finished solveLinearSystemImpl_ 1
+104 converged value: 1 121 1 let s go get convergedRemote
+104 to  comm_.min(converged) 
+104 did  comm_.min(converged) convergedRemote: 1
+104 final convergedRemote: 1
+104 Update: x^(k+1) = x^k - deltax^k 
+104 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+104 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+104 Newton iteration 13 done104 , maximum relative shift = 9.294e-07
+104 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+67 finished solveLinearSystemImpl_ 1
+67 converged value: 1 121 1 let s go get convergedRemote
+67 to  comm_.min(converged) 
+67 did  comm_.min(converged) convergedRemote: 1
+67 final convergedRemote: 1
+67 Update: x^(k+1) = x^k - deltax^k 
+67 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+67 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+67 Newton iteration 13 done67 , maximum relative shift = 9.294e-07
+67 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+51 finished solveLinearSystemImpl_ 1
+51 converged value: 1 121 1 let s go get convergedRemote
+51 to  comm_.min(converged) 
+51 did  comm_.min(converged) convergedRemote: 1
+51 final convergedRemote: 1
+51 Update: x^(k+1) = x^k - deltax^k 
+51 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+51 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+51 Newton iteration 13 done51 , maximum relative shift = 9.294e-07
+51 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+36 finished solveLinearSystemImpl_ 1
+36 converged value: 1 121 1 let s go get convergedRemote
+36 to  comm_.min(converged) 
+36 did  comm_.min(converged) convergedRemote: 1
+36 final convergedRemote: 1
+36 Update: x^(k+1) = x^k - deltax^k 
+36 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+36 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+36 Newton iteration 13 done36 , maximum relative shift = 9.294e-07
+36 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+63 finished solveLinearSystemImpl_ 1
+63 converged value: 1 121 1 let s go get convergedRemote
+63 to  comm_.min(converged) 
+63 did  comm_.min(converged) convergedRemote: 1
+63 final convergedRemote: 1
+63 Update: x^(k+1) = x^k - deltax^k 
+63 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+63 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+63 Newton iteration 13 done63 , maximum relative shift = 9.294e-07
+63 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+64 finished solveLinearSystemImpl_ 1
+64 converged value: 1 121 1 let s go get convergedRemote
+64 to  comm_.min(converged) 
+64 did  comm_.min(converged) convergedRemote: 1
+64 final convergedRemote: 1
+64 Update: x^(k+1) = x^k - deltax^k 
+64 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+64 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+64 Newton iteration 13 done64 , maximum relative shift = 9.294e-07
+64 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+85 finished solveLinearSystemImpl_ 1
+85 converged value: 1 121 1 let s go get convergedRemote
+85 to  comm_.min(converged) 
+85 did  comm_.min(converged) convergedRemote: 1
+85 final convergedRemote: 1
+85 Update: x^(k+1) = x^k - deltax^k 
+85 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+85 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+85 Newton iteration 13 done85 , maximum relative shift = 9.294e-07
+85 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+70 finished solveLinearSystemImpl_ 1
+70 converged value: 1 121 1 let s go get convergedRemote
+70 to  comm_.min(converged) 
+70 did  comm_.min(converged) convergedRemote: 1
+70 final convergedRemote: 1
+70 Update: x^(k+1) = x^k - deltax^k 
+70 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+70 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+70 Newton iteration 13 done70 , maximum relative shift = 9.294e-07
+70 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+99 finished solveLinearSystemImpl_ 1
+99 converged value: 1 121 1 let s go get convergedRemote
+99 to  comm_.min(converged) 
+99 did  comm_.min(converged) convergedRemote: 1
+99 final convergedRemote: 1
+99 Update: x^(k+1) = x^k - deltax^k 
+99 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+99 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+99 Newton iteration 13 done99 , maximum relative shift = 9.294e-07
+99 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+9 finished solveLinearSystemImpl_ 1
+9 converged value: 1 121 1 let s go get convergedRemote
+9 to  comm_.min(converged) 
+9 did  comm_.min(converged) convergedRemote: 1
+9 final convergedRemote: 1
+9 Update: x^(k+1) = x^k - deltax^k 
+9 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+9 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+9 Newton iteration 13 done9 , maximum relative shift = 9.294e-07
+9 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+37 finished solveLinearSystemImpl_ 1
+37 converged value: 1 121 1 let s go get convergedRemote
+37 to  comm_.min(converged) 
+37 did  comm_.min(converged) convergedRemote: 1
+37 final convergedRemote: 1
+37 Update: x^(k+1) = x^k - deltax^k 
+37 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+37 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+37 Newton iteration 13 done37 , maximum relative shift = 9.294e-07
+37 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+109 finished solveLinearSystemImpl_ 1
+109 converged value: 1 121 1 let s go get convergedRemote
+109 to  comm_.min(converged) 
+109 did  comm_.min(converged) convergedRemote: 1
+109 final convergedRemote: 1
+109 Update: x^(k+1) = x^k - deltax^k 
+109 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+109 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+109 Newton iteration 13 done109 , maximum relative shift = 9.294e-07
+109 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+93 finished solveLinearSystemImpl_ 1
+93 converged value: 1 121 1 let s go get convergedRemote
+93 to  comm_.min(converged) 
+93 did  comm_.min(converged) convergedRemote: 1
+93 final convergedRemote: 1
+93 Update: x^(k+1) = x^k - deltax^k 
+93 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+93 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+93 Newton iteration 13 done93 , maximum relative shift = 9.294e-07
+93 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+20 finished solveLinearSystemImpl_ 1
+20 converged value: 1 121 1 let s go get convergedRemote
+20 to  comm_.min(converged) 
+20 did  comm_.min(converged) convergedRemote: 1
+20 final convergedRemote: 1
+20 Update: x^(k+1) = x^k - deltax^k 
+20 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+20 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+20 Newton iteration 13 done20 , maximum relative shift = 9.294e-07
+20 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+94 finished solveLinearSystemImpl_ 1
+94 converged value: 1 121 1 let s go get convergedRemote
+94 to  comm_.min(converged) 
+94 did  comm_.min(converged) convergedRemote: 1
+94 final convergedRemote: 1
+94 Update: x^(k+1) = x^k - deltax^k 
+94 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+94 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+94 Newton iteration 13 done94 , maximum relative shift = 9.294e-07
+94 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+31 finished solveLinearSystemImpl_ 1
+31 converged value: 1 121 1 let s go get convergedRemote
+31 to  comm_.min(converged) 
+31 did  comm_.min(converged) convergedRemote: 1
+31 final convergedRemote: 1
+31 Update: x^(k+1) = x^k - deltax^k 
+31 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+31 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+31 Newton iteration 13 done31 , maximum relative shift = 9.294e-07
+31 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+89 finished solveLinearSystemImpl_ 1
+89 converged value: 1 121 1 let s go get convergedRemote
+89 to  comm_.min(converged) 
+89 did  comm_.min(converged) convergedRemote: 1
+89 final convergedRemote: 1
+89 Update: x^(k+1) = x^k - deltax^k 
+89 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+89 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+89 Newton iteration 13 done89 , maximum relative shift = 9.294e-07
+89 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+17 finished solveLinearSystemImpl_ 1
+17 converged value: 1 121 1 let s go get convergedRemote
+17 to  comm_.min(converged) 
+17 did  comm_.min(converged) convergedRemote: 1
+17 final convergedRemote: 1
+17 Update: x^(k+1) = x^k - deltax^k 
+17 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+17 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+17 Newton iteration 13 done17 , maximum relative shift = 9.294e-07
+17 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+35 finished solveLinearSystemImpl_ 1
+35 converged value: 1 121 1 let s go get convergedRemote
+35 to  comm_.min(converged) 
+35 did  comm_.min(converged) convergedRemote: 1
+35 final convergedRemote: 1
+35 Update: x^(k+1) = x^k - deltax^k 
+35 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+35 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+35 Newton iteration 13 done35 , maximum relative shift = 9.294e-07
+35 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+88 finished solveLinearSystemImpl_ 1
+88 converged value: 1 121 1 let s go get convergedRemote
+88 to  comm_.min(converged) 
+88 did  comm_.min(converged) convergedRemote: 1
+88 final convergedRemote: 1
+88 Update: x^(k+1) = x^k - deltax^k 
+88 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+88 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+88 Newton iteration 13 done88 , maximum relative shift = 9.294e-07
+88 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+90 finished solveLinearSystemImpl_ 1
+90 converged value: 1 121 1 let s go get convergedRemote
+90 to  comm_.min(converged) 
+90 did  comm_.min(converged) convergedRemote: 1
+90 final convergedRemote: 1
+90 Update: x^(k+1) = x^k - deltax^k 
+90 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+90 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+90 Newton iteration 13 done90 , maximum relative shift = 9.294e-07
+90 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+113 finished solveLinearSystemImpl_ 1
+113 converged value: 1 121 1 let s go get convergedRemote
+113 to  comm_.min(converged) 
+113 did  comm_.min(converged) convergedRemote: 1
+113 final convergedRemote: 1
+113 Update: x^(k+1) = x^k - deltax^k 
+113 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+113 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+113 Newton iteration 13 done113 , maximum relative shift = 9.294e-07
+113 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+87 finished solveLinearSystemImpl_ 1
+87 converged value: 1 121 1 let s go get convergedRemote
+87 to  comm_.min(converged) 
+87 did  comm_.min(converged) convergedRemote: 1
+87 final convergedRemote: 1
+87 Update: x^(k+1) = x^k - deltax^k 
+87 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+87 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+87 Newton iteration 13 done87 , maximum relative shift = 9.294e-07
+87 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+60 finished solveLinearSystemImpl_ 1
+60 converged value: 1 121 1 let s go get convergedRemote
+60 to  comm_.min(converged) 
+60 did  comm_.min(converged) convergedRemote: 1
+60 final convergedRemote: 1
+60 Update: x^(k+1) = x^k - deltax^k 
+60 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+60 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+60 Newton iteration 13 done60 , maximum relative shift = 9.294e-07
+60 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+30 finished solveLinearSystemImpl_ 1
+30 converged value: 1 121 1 let s go get convergedRemote
+30 to  comm_.min(converged) 
+30 did  comm_.min(converged) convergedRemote: 1
+30 final convergedRemote: 1
+30 Update: x^(k+1) = x^k - deltax^k 
+30 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+30 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+30 Newton iteration 13 done30 , maximum relative shift = 9.294e-07
+30 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+52 finished solveLinearSystemImpl_ 1
+52 converged value: 1 121 1 let s go get convergedRemote
+52 to  comm_.min(converged) 
+52 did  comm_.min(converged) convergedRemote: 1
+52 final convergedRemote: 1
+52 Update: x^(k+1) = x^k - deltax^k 
+52 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+52 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+52 Newton iteration 13 done52 , maximum relative shift = 9.294e-07
+52 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+3 finished solveLinearSystemImpl_ 1
+3 converged value: 1 121 1 let s go get convergedRemote
+3 to  comm_.min(converged) 
+3 did  comm_.min(converged) convergedRemote: 1
+3 final convergedRemote: 1
+3 Update: x^(k+1) = x^k - deltax^k 
+3 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+3 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+3 Newton iteration 13 done3 , maximum relative shift = 9.294e-07
+3 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+65 finished solveLinearSystemImpl_ 1
+65 converged value: 1 121 1 let s go get convergedRemote
+65 to  comm_.min(converged) 
+65 did  comm_.min(converged) convergedRemote: 1
+65 final convergedRemote: 1
+65 Update: x^(k+1) = x^k - deltax^k 
+65 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+65 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+65 Newton iteration 13 done65 , maximum relative shift = 9.294e-07
+65 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+119 finished solveLinearSystemImpl_ 1
+119 converged value: 1 121 1 let s go get convergedRemote
+119 to  comm_.min(converged) 
+119 did  comm_.min(converged) convergedRemote: 1
+119 final convergedRemote: 1
+119 Update: x^(k+1) = x^k - deltax^k 
+119 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+119 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+119 Newton iteration 13 done119 , maximum relative shift = 9.294e-07
+119 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+110 finished solveLinearSystemImpl_ 1
+110 converged value: 1 121 1 let s go get convergedRemote
+110 to  comm_.min(converged) 
+110 did  comm_.min(converged) convergedRemote: 1
+110 final convergedRemote: 1
+110 Update: x^(k+1) = x^k - deltax^k 
+110 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+110 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+110 Newton iteration 13 done110 , maximum relative shift = 9.294e-07
+110 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+28 finished solveLinearSystemImpl_ 1
+28 converged value: 1 121 1 let s go get convergedRemote
+28 to  comm_.min(converged) 
+28 did  comm_.min(converged) convergedRemote: 1
+28 final convergedRemote: 1
+28 Update: x^(k+1) = x^k - deltax^k 
+28 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+28 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+28 Newton iteration 13 done28 , maximum relative shift = 9.294e-07
+28 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+96 finished solveLinearSystemImpl_ 1
+96 converged value: 1 121 1 let s go get convergedRemote
+96 to  comm_.min(converged) 
+96 did  comm_.min(converged) convergedRemote: 1
+96 final convergedRemote: 1
+96 Update: x^(k+1) = x^k - deltax^k 
+96 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+96 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+96 Newton iteration 13 done96 , maximum relative shift = 9.294e-07
+96 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+14 finished solveLinearSystemImpl_ 1
+14 converged value: 1 121 1 let s go get convergedRemote
+14 to  comm_.min(converged) 
+14 did  comm_.min(converged) convergedRemote: 1
+14 final convergedRemote: 1
+14 Update: x^(k+1) = x^k - deltax^k 
+14 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+14 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+14 Newton iteration 13 done14 , maximum relative shift = 9.294e-07
+14 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+54 finished solveLinearSystemImpl_ 1
+54 converged value: 1 121 1 let s go get convergedRemote
+54 to  comm_.min(converged) 
+54 did  comm_.min(converged) convergedRemote: 1
+54 final convergedRemote: 1
+54 Update: x^(k+1) = x^k - deltax^k 
+54 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+54 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+54 Newton iteration 13 done54 , maximum relative shift = 9.294e-07
+54 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+72 finished solveLinearSystemImpl_ 1
+72 converged value: 1 121 1 let s go get convergedRemote
+72 to  comm_.min(converged) 
+72 did  comm_.min(converged) convergedRemote: 1
+72 final convergedRemote: 1
+72 Update: x^(k+1) = x^k - deltax^k 
+72 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+72 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+72 Newton iteration 13 done72 , maximum relative shift = 9.294e-07
+72 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+13 finished solveLinearSystemImpl_ 1
+13 converged value: 1 121 1 let s go get convergedRemote
+13 to  comm_.min(converged) 
+13 did  comm_.min(converged) convergedRemote: 1
+13 final convergedRemote: 1
+13 Update: x^(k+1) = x^k - deltax^k 
+13 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+13 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+13 Newton iteration 13 done13 , maximum relative shift = 9.294e-07
+13 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+101 finished solveLinearSystemImpl_ 1
+101 converged value: 1 121 1 let s go get convergedRemote
+101 to  comm_.min(converged) 
+101 did  comm_.min(converged) convergedRemote: 1
+101 final convergedRemote: 1
+101 Update: x^(k+1) = x^k - deltax^k 
+101 newtonUpdateShift_: to shift_ = comm_.max(shift_) 
+101 newtonUpdateShift_: did shift_ = comm_.max(shift_) 
+101 Newton iteration 13 done101 , maximum relative shift = 9.294e-07
+101 Assemble: r(x^k) = dS/dt + div F - q;   M = grad r
+111 Solve: M deltax^k = r 
+111 Newton::solveLinearSystem : entering the try section 13
+111 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+111 solveLinearSystemImpl_, before converged = ls.solve 
+111 121 amgbackend::solve isParallel 1
+6 Solve: M deltax^k = r 
+6 Newton::solveLinearSystem : entering the try section 13
+6 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+6 solveLinearSystemImpl_, before converged = ls.solve 
+6 121 amgbackend::solve isParallel 1
+82 Solve: M deltax^k = r 
+82 Newton::solveLinearSystem : entering the try section 13
+82 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+82 solveLinearSystemImpl_, before converged = ls.solve 
+82 121 amgbackend::solve isParallel 1
+98 Solve: M deltax^k = r 
+98 Newton::solveLinearSystem : entering the try section 13
+98 in solveLinearSystemImpl_ typename std::enable_if_t<!isMultiTypeBlockVector<V>(), bool>
+98 solveLinearSystemImpl_, before converged = ls.solve 
+98 121 amgbackend::solve isParallel 1
