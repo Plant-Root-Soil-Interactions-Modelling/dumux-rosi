@@ -1,0 +1,3000 @@
+73 nonLinearSolver->solve
+11 gridVariables->advanceTimeStep
+11 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+11 before assembler->setPreviousSolution, ddt: 4.98667
+11 nonLinearSolver->solve
+98 gridVariables->advanceTimeStep
+98 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+98 before assembler->setPreviousSolution, ddt: 4.98667
+98 nonLinearSolver->solve
+78 gridVariables->advanceTimeStep
+78 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+78 before assembler->setPreviousSolution, ddt: 4.98667
+78 nonLinearSolver->solve
+102 gridVariables->advanceTimeStep
+102 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+102 before assembler->setPreviousSolution, ddt: 4.98667
+102 nonLinearSolver->solve
+108 gridVariables->advanceTimeStep
+108 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+108 before assembler->setPreviousSolution, ddt: 4.98667
+108 nonLinearSolver->solve
+7 gridVariables->advanceTimeStep
+7 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+7 before assembler->setPreviousSolution, ddt: 4.98667
+7 nonLinearSolver->solve
+9 gridVariables->advanceTimeStep
+9 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+9 before assembler->setPreviousSolution, ddt: 4.98667
+9 nonLinearSolver->solve
+54 gridVariables->advanceTimeStep
+54 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+54 before assembler->setPreviousSolution, ddt: 4.98667
+54 nonLinearSolver->solve
+119 gridVariables->advanceTimeStep
+119 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+119 before assembler->setPreviousSolution, ddt: 4.98667
+119 nonLinearSolver->solve
+13 gridVariables->advanceTimeStep
+13 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+13 before assembler->setPreviousSolution, ddt: 4.98667
+13 nonLinearSolver->solve
+56 gridVariables->advanceTimeStep
+56 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+56 before assembler->setPreviousSolution, ddt: 4.98667
+56 nonLinearSolver->solve
+0 gridVariables->advanceTimeStep
+0 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+0 before assembler->setPreviousSolution, ddt: 4.98667
+0 nonLinearSolver->solve
+58 gridVariables->advanceTimeStep
+58 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+58 before assembler->setPreviousSolution, ddt: 4.98667
+58 nonLinearSolver->solve
+67 gridVariables->advanceTimeStep
+67 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+67 before assembler->setPreviousSolution, ddt: 4.98667
+67 nonLinearSolver->solve
+92 gridVariables->advanceTimeStep
+92 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+92 before assembler->setPreviousSolution, ddt: 4.98667
+92 nonLinearSolver->solve
+1 gridVariables->advanceTimeStep
+1 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+1 before assembler->setPreviousSolution, ddt: 4.98667
+1 nonLinearSolver->solve
+57 gridVariables->advanceTimeStep
+57 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+57 before assembler->setPreviousSolution, ddt: 4.98667
+57 nonLinearSolver->solve
+87 gridVariables->advanceTimeStep
+87 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+87 before assembler->setPreviousSolution, ddt: 4.98667
+87 nonLinearSolver->solve
+77 gridVariables->advanceTimeStep
+77 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+77 before assembler->setPreviousSolution, ddt: 4.98667
+77 nonLinearSolver->solve
+4 gridVariables->advanceTimeStep
+4 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+4 before assembler->setPreviousSolution, ddt: 4.98667
+4 nonLinearSolver->solve
+106 gridVariables->advanceTimeStep
+106 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+106 before assembler->setPreviousSolution, ddt: 4.98667
+106 nonLinearSolver->solve
+95 gridVariables->advanceTimeStep
+95 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+95 before assembler->setPreviousSolution, ddt: 4.98667
+95 nonLinearSolver->solve
+64 gridVariables->advanceTimeStep
+64 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+64 before assembler->setPreviousSolution, ddt: 4.98667
+64 nonLinearSolver->solve
+5 gridVariables->advanceTimeStep
+5 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+5 before assembler->setPreviousSolution, ddt: 4.98667
+5 nonLinearSolver->solve
+107 gridVariables->advanceTimeStep
+107 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+107 before assembler->setPreviousSolution, ddt: 4.98667
+107 nonLinearSolver->solve
+116 gridVariables->advanceTimeStep
+116 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+116 before assembler->setPreviousSolution, ddt: 4.98667
+116 nonLinearSolver->solve
+118 gridVariables->advanceTimeStep
+118 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+118 before assembler->setPreviousSolution, ddt: 4.98667
+118 nonLinearSolver->solve
+18 gridVariables->advanceTimeStep
+18 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+18 before assembler->setPreviousSolution, ddt: 4.98667
+18 nonLinearSolver->solve
+100 gridVariables->advanceTimeStep
+100 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+100 before assembler->setPreviousSolution, ddt: 4.98667
+100 nonLinearSolver->solve
+104 gridVariables->advanceTimeStep
+104 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+104 before assembler->setPreviousSolution, ddt: 4.98667
+104 nonLinearSolver->solve
+55 gridVariables->advanceTimeStep
+55 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+55 before assembler->setPreviousSolution, ddt: 4.98667
+55 nonLinearSolver->solve
+19 gridVariables->advanceTimeStep
+19 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+19 before assembler->setPreviousSolution, ddt: 4.98667
+19 nonLinearSolver->solve
+32 gridVariables->advanceTimeStep
+32 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+32 before assembler->setPreviousSolution, ddt: 4.98667
+32 nonLinearSolver->solve
+39 gridVariables->advanceTimeStep
+39 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+39 before assembler->setPreviousSolution, ddt: 4.98667
+39 nonLinearSolver->solve
+46 gridVariables->advanceTimeStep
+46 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+46 before assembler->setPreviousSolution, ddt: 4.98667
+46 nonLinearSolver->solve
+6 gridVariables->advanceTimeStep
+6 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+6 before assembler->setPreviousSolution, ddt: 4.98667
+6 nonLinearSolver->solve
+71 gridVariables->advanceTimeStep
+71 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+71 before assembler->setPreviousSolution, ddt: 4.98667
+71 nonLinearSolver->solve
+44 gridVariables->advanceTimeStep
+44 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+44 before assembler->setPreviousSolution, ddt: 4.98667
+44 nonLinearSolver->solve
+86 gridVariables->advanceTimeStep
+86 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+86 before assembler->setPreviousSolution, ddt: 4.98667
+86 nonLinearSolver->solve
+21 gridVariables->advanceTimeStep
+21 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+21 before assembler->setPreviousSolution, ddt: 4.98667
+21 nonLinearSolver->solve
+72 gridVariables->advanceTimeStep
+72 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+72 before assembler->setPreviousSolution, ddt: 4.98667
+72 nonLinearSolver->solve
+31 gridVariables->advanceTimeStep
+31 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+31 before assembler->setPreviousSolution, ddt: 4.98667
+31 nonLinearSolver->solve
+63 gridVariables->advanceTimeStep
+63 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+63 before assembler->setPreviousSolution, ddt: 4.98667
+63 nonLinearSolver->solve
+112 gridVariables->advanceTimeStep
+112 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+112 before assembler->setPreviousSolution, ddt: 4.98667
+112 nonLinearSolver->solve
+26 gridVariables->advanceTimeStep
+26 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+26 before assembler->setPreviousSolution, ddt: 4.98667
+26 nonLinearSolver->solve
+61 gridVariables->advanceTimeStep
+61 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+61 before assembler->setPreviousSolution, ddt: 4.98667
+61 nonLinearSolver->solve
+45 gridVariables->advanceTimeStep
+45 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+45 before assembler->setPreviousSolution, ddt: 4.98667
+45 nonLinearSolver->solve
+3 gridVariables->advanceTimeStep
+3 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+3 before assembler->setPreviousSolution, ddt: 4.98667
+3 nonLinearSolver->solve
+20 gridVariables->advanceTimeStep
+20 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+20 before assembler->setPreviousSolution, ddt: 4.98667
+20 nonLinearSolver->solve
+103 gridVariables->advanceTimeStep
+103 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+103 before assembler->setPreviousSolution, ddt: 4.98667
+103 nonLinearSolver->solve
+76 gridVariables->advanceTimeStep
+76 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+76 before assembler->setPreviousSolution, ddt: 4.98667
+76 nonLinearSolver->solve
+22 gridVariables->advanceTimeStep
+22 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+22 before assembler->setPreviousSolution, ddt: 4.98667
+22 nonLinearSolver->solve
+117 gridVariables->advanceTimeStep
+117 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+117 before assembler->setPreviousSolution, ddt: 4.98667
+117 nonLinearSolver->solve
+15 gridVariables->advanceTimeStep
+15 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+15 before assembler->setPreviousSolution, ddt: 4.98667
+15 nonLinearSolver->solve
+120 gridVariables->advanceTimeStep
+120 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+120 before assembler->setPreviousSolution, ddt: 4.98667
+120 nonLinearSolver->solve
+88 gridVariables->advanceTimeStep
+88 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+88 before assembler->setPreviousSolution, ddt: 4.98667
+88 nonLinearSolver->solve
+34 gridVariables->advanceTimeStep
+34 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+34 before assembler->setPreviousSolution, ddt: 4.98667
+34 nonLinearSolver->solve
+2 gridVariables->advanceTimeStep
+2 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+2 before assembler->setPreviousSolution, ddt: 4.98667
+2 nonLinearSolver->solve
+105 gridVariables->advanceTimeStep
+105 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+105 before assembler->setPreviousSolution, ddt: 4.98667
+105 nonLinearSolver->solve
+68 gridVariables->advanceTimeStep
+68 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+68 before assembler->setPreviousSolution, ddt: 4.98667
+68 nonLinearSolver->solve
+24 gridVariables->advanceTimeStep
+24 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+24 before assembler->setPreviousSolution, ddt: 4.98667
+24 nonLinearSolver->solve
+28 gridVariables->advanceTimeStep
+28 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+28 before assembler->setPreviousSolution, ddt: 4.98667
+28 nonLinearSolver->solve
+50 gridVariables->advanceTimeStep
+50 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+50 before assembler->setPreviousSolution, ddt: 4.98667
+50 nonLinearSolver->solve
+41 gridVariables->advanceTimeStep
+41 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+41 before assembler->setPreviousSolution, ddt: 4.98667
+41 nonLinearSolver->solve
+33 gridVariables->advanceTimeStep
+33 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+33 before assembler->setPreviousSolution, ddt: 4.98667
+33 nonLinearSolver->solve
+109 gridVariables->advanceTimeStep
+109 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+109 before assembler->setPreviousSolution, ddt: 4.98667
+109 nonLinearSolver->solve
+37 gridVariables->advanceTimeStep
+37 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+37 before assembler->setPreviousSolution, ddt: 4.98667
+37 nonLinearSolver->solve
+110 gridVariables->advanceTimeStep
+110 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+110 before assembler->setPreviousSolution, ddt: 4.98667
+110 nonLinearSolver->solve
+99 gridVariables->advanceTimeStep
+99 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+99 before assembler->setPreviousSolution, ddt: 4.98667
+99 nonLinearSolver->solve
+101 gridVariables->advanceTimeStep
+101 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+101 before assembler->setPreviousSolution, ddt: 4.98667
+101 nonLinearSolver->solve
+115 gridVariables->advanceTimeStep
+115 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+115 before assembler->setPreviousSolution, ddt: 4.98667
+115 nonLinearSolver->solve
+89 gridVariables->advanceTimeStep
+89 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+89 before assembler->setPreviousSolution, ddt: 4.98667
+89 nonLinearSolver->solve
+83 gridVariables->advanceTimeStep
+83 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+83 before assembler->setPreviousSolution, ddt: 4.98667
+83 nonLinearSolver->solve
+75 gridVariables->advanceTimeStep
+75 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+75 before assembler->setPreviousSolution, ddt: 4.98667
+75 nonLinearSolver->solve
+52 gridVariables->advanceTimeStep
+52 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+52 before assembler->setPreviousSolution, ddt: 4.98667
+52 nonLinearSolver->solve
+82 gridVariables->advanceTimeStep
+82 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+82 before assembler->setPreviousSolution, ddt: 4.98667
+82 nonLinearSolver->solve
+29 gridVariables->advanceTimeStep
+29 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+29 before assembler->setPreviousSolution, ddt: 4.98667
+29 nonLinearSolver->solve
+81 gridVariables->advanceTimeStep
+81 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+81 before assembler->setPreviousSolution, ddt: 4.98667
+81 nonLinearSolver->solve
+74 gridVariables->advanceTimeStep
+74 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+74 before assembler->setPreviousSolution, ddt: 4.98667
+74 nonLinearSolver->solve
+27 gridVariables->advanceTimeStep
+27 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+27 before assembler->setPreviousSolution, ddt: 4.98667
+27 nonLinearSolver->solve
+79 gridVariables->advanceTimeStep
+79 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+79 before assembler->setPreviousSolution, ddt: 4.98667
+79 nonLinearSolver->solve
+60 gridVariables->advanceTimeStep
+60 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+60 before assembler->setPreviousSolution, ddt: 4.98667
+60 nonLinearSolver->solve
+93 gridVariables->advanceTimeStep
+93 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+93 before assembler->setPreviousSolution, ddt: 4.98667
+93 nonLinearSolver->solve
+17 gridVariables->advanceTimeStep
+17 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+17 before assembler->setPreviousSolution, ddt: 4.98667
+17 nonLinearSolver->solve
+30 gridVariables->advanceTimeStep
+30 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+30 before assembler->setPreviousSolution, ddt: 4.98667
+30 nonLinearSolver->solve
+84 gridVariables->advanceTimeStep
+84 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+84 before assembler->setPreviousSolution, ddt: 4.98667
+84 nonLinearSolver->solve
+14 gridVariables->advanceTimeStep
+14 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+14 before assembler->setPreviousSolution, ddt: 4.98667
+14 nonLinearSolver->solve
+36 gridVariables->advanceTimeStep
+36 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+36 before assembler->setPreviousSolution, ddt: 4.98667
+36 nonLinearSolver->solve
+40 gridVariables->advanceTimeStep
+40 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+40 before assembler->setPreviousSolution, ddt: 4.98667
+40 nonLinearSolver->solve
+43 gridVariables->advanceTimeStep
+43 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+43 before assembler->setPreviousSolution, ddt: 4.98667
+43 nonLinearSolver->solve
+65 gridVariables->advanceTimeStep
+65 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+65 before assembler->setPreviousSolution, ddt: 4.98667
+65 nonLinearSolver->solve
+90 gridVariables->advanceTimeStep
+90 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+90 before assembler->setPreviousSolution, ddt: 4.98667
+90 nonLinearSolver->solve
+23 gridVariables->advanceTimeStep
+23 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+23 before assembler->setPreviousSolution, ddt: 4.98667
+23 nonLinearSolver->solve
+47 gridVariables->advanceTimeStep
+47 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+47 before assembler->setPreviousSolution, ddt: 4.98667
+47 nonLinearSolver->solve
+85 gridVariables->advanceTimeStep
+85 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+85 before assembler->setPreviousSolution, ddt: 4.98667
+85 nonLinearSolver->solve
+8 gridVariables->advanceTimeStep
+8 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+8 before assembler->setPreviousSolution, ddt: 4.98667
+8 nonLinearSolver->solve
+25 gridVariables->advanceTimeStep
+25 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+25 before assembler->setPreviousSolution, ddt: 4.98667
+25 nonLinearSolver->solve
+114 gridVariables->advanceTimeStep
+114 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+114 before assembler->setPreviousSolution, ddt: 4.98667
+114 nonLinearSolver->solve
+91 gridVariables->advanceTimeStep
+91 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+91 before assembler->setPreviousSolution, ddt: 4.98667
+91 nonLinearSolver->solve
+62 gridVariables->advanceTimeStep
+62 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+62 before assembler->setPreviousSolution, ddt: 4.98667
+62 nonLinearSolver->solve
+10 gridVariables->advanceTimeStep
+10 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+10 before assembler->setPreviousSolution, ddt: 4.98667
+10 nonLinearSolver->solve
+42 gridVariables->advanceTimeStep
+42 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+42 before assembler->setPreviousSolution, ddt: 4.98667
+42 nonLinearSolver->solve
+59 gridVariables->advanceTimeStep
+59 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+59 before assembler->setPreviousSolution, ddt: 4.98667
+59 nonLinearSolver->solve
+69 gridVariables->advanceTimeStep
+69 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+69 before assembler->setPreviousSolution, ddt: 4.98667
+69 nonLinearSolver->solve
+48 gridVariables->advanceTimeStep
+48 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+48 before assembler->setPreviousSolution, ddt: 4.98667
+48 nonLinearSolver->solve
+53 gridVariables->advanceTimeStep
+53 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+53 before assembler->setPreviousSolution, ddt: 4.98667
+53 nonLinearSolver->solve
+35 gridVariables->advanceTimeStep
+35 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+35 before assembler->setPreviousSolution, ddt: 4.98667
+35 nonLinearSolver->solve
+70 gridVariables->advanceTimeStep
+70 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+70 before assembler->setPreviousSolution, ddt: 4.98667
+70 nonLinearSolver->solve
+38 gridVariables->advanceTimeStep
+38 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+38 before assembler->setPreviousSolution, ddt: 4.98667
+38 nonLinearSolver->solve
+16 gridVariables->advanceTimeStep
+16 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+16 before assembler->setPreviousSolution, ddt: 4.98667
+16 nonLinearSolver->solve
+80 gridVariables->advanceTimeStep
+80 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+80 before assembler->setPreviousSolution, ddt: 4.98667
+80 nonLinearSolver->solve
+12 gridVariables->advanceTimeStep
+12 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+12 before assembler->setPreviousSolution, ddt: 4.98667
+12 nonLinearSolver->solve
+96 gridVariables->advanceTimeStep
+96 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+96 before assembler->setPreviousSolution, ddt: 4.98667
+96 nonLinearSolver->solve
+97 gridVariables->advanceTimeStep
+97 before, nonLinearSolver->suggestTimeStepSize, current time: 10.6773 simTime 47220
+97 before assembler->setPreviousSolution, ddt: 4.98667
+97 nonLinearSolver->solve
+24 gridVariables->advanceTimeStep
+24 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+24 before assembler->setPreviousSolution, ddt: 6.64889
+24 nonLinearSolver->solve
+28 gridVariables->advanceTimeStep
+28 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+28 before assembler->setPreviousSolution, ddt: 6.64889
+28 nonLinearSolver->solve
+50 gridVariables->advanceTimeStep
+50 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+50 before assembler->setPreviousSolution, ddt: 6.64889
+50 nonLinearSolver->solve
+41 gridVariables->advanceTimeStep
+41 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+41 before assembler->setPreviousSolution, ddt: 6.64889
+41 nonLinearSolver->solve
+33 gridVariables->advanceTimeStep
+33 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+33 before assembler->setPreviousSolution, ddt: 6.64889
+33 nonLinearSolver->solve
+109 gridVariables->advanceTimeStep
+109 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+109 before assembler->setPreviousSolution, ddt: 6.64889
+109 nonLinearSolver->solve
+37 gridVariables->advanceTimeStep
+37 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+37 before assembler->setPreviousSolution, ddt: 6.64889
+37 nonLinearSolver->solve
+110 gridVariables->advanceTimeStep
+110 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+110 before assembler->setPreviousSolution, ddt: 6.64889
+110 nonLinearSolver->solve
+99 gridVariables->advanceTimeStep
+99 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+99 before assembler->setPreviousSolution, ddt: 6.64889
+99 nonLinearSolver->solve
+101 gridVariables->advanceTimeStep
+101 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+101 before assembler->setPreviousSolution, ddt: 6.64889
+101 nonLinearSolver->solve
+115 gridVariables->advanceTimeStep
+115 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+115 before assembler->setPreviousSolution, ddt: 6.64889
+115 nonLinearSolver->solve
+89 gridVariables->advanceTimeStep
+89 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+89 before assembler->setPreviousSolution, ddt: 6.64889
+89 nonLinearSolver->solve
+97 gridVariables->advanceTimeStep
+97 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+97 before assembler->setPreviousSolution, ddt: 6.64889
+97 nonLinearSolver->solve
+75 gridVariables->advanceTimeStep
+75 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+75 before assembler->setPreviousSolution, ddt: 6.64889
+75 nonLinearSolver->solve
+52 gridVariables->advanceTimeStep
+52 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+52 before assembler->setPreviousSolution, ddt: 6.64889
+52 nonLinearSolver->solve
+82 gridVariables->advanceTimeStep
+82 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+82 before assembler->setPreviousSolution, ddt: 6.64889
+82 nonLinearSolver->solve
+29 gridVariables->advanceTimeStep
+29 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+29 before assembler->setPreviousSolution, ddt: 6.64889
+29 nonLinearSolver->solve
+81 gridVariables->advanceTimeStep
+81 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+81 before assembler->setPreviousSolution, ddt: 6.64889
+81 nonLinearSolver->solve
+74 gridVariables->advanceTimeStep
+74 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+74 before assembler->setPreviousSolution, ddt: 6.64889
+74 nonLinearSolver->solve
+27 gridVariables->advanceTimeStep
+27 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+27 before assembler->setPreviousSolution, ddt: 6.64889
+27 nonLinearSolver->solve
+79 gridVariables->advanceTimeStep
+79 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+79 before assembler->setPreviousSolution, ddt: 6.64889
+79 nonLinearSolver->solve
+60 gridVariables->advanceTimeStep
+60 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+60 before assembler->setPreviousSolution, ddt: 6.64889
+60 nonLinearSolver->solve
+93 gridVariables->advanceTimeStep
+93 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+93 before assembler->setPreviousSolution, ddt: 6.64889
+93 nonLinearSolver->solve
+17 gridVariables->advanceTimeStep
+17 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+17 before assembler->setPreviousSolution, ddt: 6.64889
+17 nonLinearSolver->solve
+30 gridVariables->advanceTimeStep
+30 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+30 before assembler->setPreviousSolution, ddt: 6.64889
+30 nonLinearSolver->solve
+84 gridVariables->advanceTimeStep
+84 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+84 before assembler->setPreviousSolution, ddt: 6.64889
+84 nonLinearSolver->solve
+14 gridVariables->advanceTimeStep
+14 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+14 before assembler->setPreviousSolution, ddt: 6.64889
+14 nonLinearSolver->solve
+36 gridVariables->advanceTimeStep
+36 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+36 before assembler->setPreviousSolution, ddt: 6.64889
+36 nonLinearSolver->solve
+40 gridVariables->advanceTimeStep
+40 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+40 before assembler->setPreviousSolution, ddt: 6.64889
+40 nonLinearSolver->solve
+43 gridVariables->advanceTimeStep
+43 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+43 before assembler->setPreviousSolution, ddt: 6.64889
+43 nonLinearSolver->solve
+65 gridVariables->advanceTimeStep
+65 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+65 before assembler->setPreviousSolution, ddt: 6.64889
+65 nonLinearSolver->solve
+90 gridVariables->advanceTimeStep
+90 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+90 before assembler->setPreviousSolution, ddt: 6.64889
+90 nonLinearSolver->solve
+23 gridVariables->advanceTimeStep
+23 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+23 before assembler->setPreviousSolution, ddt: 6.64889
+23 nonLinearSolver->solve
+47 gridVariables->advanceTimeStep
+47 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+47 before assembler->setPreviousSolution, ddt: 6.64889
+47 nonLinearSolver->solve
+85 gridVariables->advanceTimeStep
+85 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+85 before assembler->setPreviousSolution, ddt: 6.64889
+85 nonLinearSolver->solve
+8 gridVariables->advanceTimeStep
+8 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+8 before assembler->setPreviousSolution, ddt: 6.64889
+8 nonLinearSolver->solve
+25 gridVariables->advanceTimeStep
+25 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+25 before assembler->setPreviousSolution, ddt: 6.64889
+25 nonLinearSolver->solve
+114 gridVariables->advanceTimeStep
+114 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+114 before assembler->setPreviousSolution, ddt: 6.64889
+114 nonLinearSolver->solve
+91 gridVariables->advanceTimeStep
+91 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+91 before assembler->setPreviousSolution, ddt: 6.64889
+91 nonLinearSolver->solve
+62 gridVariables->advanceTimeStep
+62 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+62 before assembler->setPreviousSolution, ddt: 6.64889
+62 nonLinearSolver->solve
+10 gridVariables->advanceTimeStep
+10 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+10 before assembler->setPreviousSolution, ddt: 6.64889
+10 nonLinearSolver->solve
+42 gridVariables->advanceTimeStep
+42 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+42 before assembler->setPreviousSolution, ddt: 6.64889
+42 nonLinearSolver->solve
+59 gridVariables->advanceTimeStep
+59 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+59 before assembler->setPreviousSolution, ddt: 6.64889
+59 nonLinearSolver->solve
+69 gridVariables->advanceTimeStep
+69 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+69 before assembler->setPreviousSolution, ddt: 6.64889
+69 nonLinearSolver->solve
+48 gridVariables->advanceTimeStep
+48 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+48 before assembler->setPreviousSolution, ddt: 6.64889
+48 nonLinearSolver->solve
+53 gridVariables->advanceTimeStep
+53 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+53 before assembler->setPreviousSolution, ddt: 6.64889
+53 nonLinearSolver->solve
+35 gridVariables->advanceTimeStep
+35 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+35 before assembler->setPreviousSolution, ddt: 6.64889
+35 nonLinearSolver->solve
+70 gridVariables->advanceTimeStep
+70 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+70 before assembler->setPreviousSolution, ddt: 6.64889
+70 nonLinearSolver->solve
+38 gridVariables->advanceTimeStep
+38 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+38 before assembler->setPreviousSolution, ddt: 6.64889
+38 nonLinearSolver->solve
+16 gridVariables->advanceTimeStep
+16 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+16 before assembler->setPreviousSolution, ddt: 6.64889
+16 nonLinearSolver->solve
+80 gridVariables->advanceTimeStep
+80 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+80 before assembler->setPreviousSolution, ddt: 6.64889
+80 nonLinearSolver->solve
+12 gridVariables->advanceTimeStep
+12 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+12 before assembler->setPreviousSolution, ddt: 6.64889
+12 nonLinearSolver->solve
+96 gridVariables->advanceTimeStep
+96 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+96 before assembler->setPreviousSolution, ddt: 6.64889
+96 nonLinearSolver->solve
+83 gridVariables->advanceTimeStep
+83 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+83 before assembler->setPreviousSolution, ddt: 6.64889
+83 nonLinearSolver->solve
+66 gridVariables->advanceTimeStep
+66 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+66 before assembler->setPreviousSolution, ddt: 6.64889
+66 nonLinearSolver->solve
+111 gridVariables->advanceTimeStep
+111 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+111 before assembler->setPreviousSolution, ddt: 6.64889
+111 nonLinearSolver->solve
+49 gridVariables->advanceTimeStep
+49 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+49 before assembler->setPreviousSolution, ddt: 6.64889
+49 nonLinearSolver->solve
+113 gridVariables->advanceTimeStep
+113 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+113 before assembler->setPreviousSolution, ddt: 6.64889
+113 nonLinearSolver->solve
+94 gridVariables->advanceTimeStep
+94 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+94 before assembler->setPreviousSolution, ddt: 6.64889
+94 nonLinearSolver->solve
+51 gridVariables->advanceTimeStep
+51 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+51 before assembler->setPreviousSolution, ddt: 6.64889
+51 nonLinearSolver->solve
+73 gridVariables->advanceTimeStep
+73 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+73 before assembler->setPreviousSolution, ddt: 6.64889
+73 nonLinearSolver->solve
+11 gridVariables->advanceTimeStep
+11 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+11 before assembler->setPreviousSolution, ddt: 6.64889
+11 nonLinearSolver->solve
+98 gridVariables->advanceTimeStep
+98 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+98 before assembler->setPreviousSolution, ddt: 6.64889
+98 nonLinearSolver->solve
+78 gridVariables->advanceTimeStep
+78 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+78 before assembler->setPreviousSolution, ddt: 6.64889
+78 nonLinearSolver->solve
+102 gridVariables->advanceTimeStep
+102 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+102 before assembler->setPreviousSolution, ddt: 6.64889
+102 nonLinearSolver->solve
+108 gridVariables->advanceTimeStep
+108 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+108 before assembler->setPreviousSolution, ddt: 6.64889
+108 nonLinearSolver->solve
+7 gridVariables->advanceTimeStep
+7 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+7 before assembler->setPreviousSolution, ddt: 6.64889
+7 nonLinearSolver->solve
+9 gridVariables->advanceTimeStep
+9 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+9 before assembler->setPreviousSolution, ddt: 6.64889
+9 nonLinearSolver->solve
+54 gridVariables->advanceTimeStep
+54 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+54 before assembler->setPreviousSolution, ddt: 6.64889
+54 nonLinearSolver->solve
+119 gridVariables->advanceTimeStep
+119 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+119 before assembler->setPreviousSolution, ddt: 6.64889
+119 nonLinearSolver->solve
+13 gridVariables->advanceTimeStep
+13 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+13 before assembler->setPreviousSolution, ddt: 6.64889
+13 nonLinearSolver->solve
+56 gridVariables->advanceTimeStep
+56 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+56 before assembler->setPreviousSolution, ddt: 6.64889
+56 nonLinearSolver->solve
+0 gridVariables->advanceTimeStep
+0 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+0 before assembler->setPreviousSolution, ddt: 6.64889
+0 nonLinearSolver->solve
+58 gridVariables->advanceTimeStep
+58 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+58 before assembler->setPreviousSolution, ddt: 6.64889
+58 nonLinearSolver->solve
+67 gridVariables->advanceTimeStep
+67 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+67 before assembler->setPreviousSolution, ddt: 6.64889
+67 nonLinearSolver->solve
+92 gridVariables->advanceTimeStep
+92 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+92 before assembler->setPreviousSolution, ddt: 6.64889
+92 nonLinearSolver->solve
+1 gridVariables->advanceTimeStep
+1 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+1 before assembler->setPreviousSolution, ddt: 6.64889
+1 nonLinearSolver->solve
+57 gridVariables->advanceTimeStep
+57 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+57 before assembler->setPreviousSolution, ddt: 6.64889
+57 nonLinearSolver->solve
+87 gridVariables->advanceTimeStep
+87 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+87 before assembler->setPreviousSolution, ddt: 6.64889
+87 nonLinearSolver->solve
+77 gridVariables->advanceTimeStep
+77 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+77 before assembler->setPreviousSolution, ddt: 6.64889
+77 nonLinearSolver->solve
+4 gridVariables->advanceTimeStep
+4 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+4 before assembler->setPreviousSolution, ddt: 6.64889
+4 nonLinearSolver->solve
+106 gridVariables->advanceTimeStep
+106 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+106 before assembler->setPreviousSolution, ddt: 6.64889
+106 nonLinearSolver->solve
+95 gridVariables->advanceTimeStep
+95 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+95 before assembler->setPreviousSolution, ddt: 6.64889
+95 nonLinearSolver->solve
+64 gridVariables->advanceTimeStep
+64 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+64 before assembler->setPreviousSolution, ddt: 6.64889
+64 nonLinearSolver->solve
+5 gridVariables->advanceTimeStep
+5 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+5 before assembler->setPreviousSolution, ddt: 6.64889
+5 nonLinearSolver->solve
+107 gridVariables->advanceTimeStep
+107 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+107 before assembler->setPreviousSolution, ddt: 6.64889
+107 nonLinearSolver->solve
+116 gridVariables->advanceTimeStep
+116 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+116 before assembler->setPreviousSolution, ddt: 6.64889
+116 nonLinearSolver->solve
+118 gridVariables->advanceTimeStep
+118 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+118 before assembler->setPreviousSolution, ddt: 6.64889
+118 nonLinearSolver->solve
+18 gridVariables->advanceTimeStep
+18 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+18 before assembler->setPreviousSolution, ddt: 6.64889
+18 nonLinearSolver->solve
+100 gridVariables->advanceTimeStep
+100 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+100 before assembler->setPreviousSolution, ddt: 6.64889
+100 nonLinearSolver->solve
+104 gridVariables->advanceTimeStep
+104 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+104 before assembler->setPreviousSolution, ddt: 6.64889
+104 nonLinearSolver->solve
+55 gridVariables->advanceTimeStep
+55 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+55 before assembler->setPreviousSolution, ddt: 6.64889
+55 nonLinearSolver->solve
+19 gridVariables->advanceTimeStep
+19 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+19 before assembler->setPreviousSolution, ddt: 6.64889
+19 nonLinearSolver->solve
+32 gridVariables->advanceTimeStep
+32 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+32 before assembler->setPreviousSolution, ddt: 6.64889
+32 nonLinearSolver->solve
+39 gridVariables->advanceTimeStep
+39 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+39 before assembler->setPreviousSolution, ddt: 6.64889
+39 nonLinearSolver->solve
+46 gridVariables->advanceTimeStep
+46 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+46 before assembler->setPreviousSolution, ddt: 6.64889
+46 nonLinearSolver->solve
+6 gridVariables->advanceTimeStep
+6 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+6 before assembler->setPreviousSolution, ddt: 6.64889
+6 nonLinearSolver->solve
+71 gridVariables->advanceTimeStep
+71 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+71 before assembler->setPreviousSolution, ddt: 6.64889
+71 nonLinearSolver->solve
+44 gridVariables->advanceTimeStep
+44 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+44 before assembler->setPreviousSolution, ddt: 6.64889
+44 nonLinearSolver->solve
+86 gridVariables->advanceTimeStep
+86 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+86 before assembler->setPreviousSolution, ddt: 6.64889
+86 nonLinearSolver->solve
+21 gridVariables->advanceTimeStep
+21 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+21 before assembler->setPreviousSolution, ddt: 6.64889
+21 nonLinearSolver->solve
+72 gridVariables->advanceTimeStep
+72 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+72 before assembler->setPreviousSolution, ddt: 6.64889
+72 nonLinearSolver->solve
+31 gridVariables->advanceTimeStep
+31 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+31 before assembler->setPreviousSolution, ddt: 6.64889
+31 nonLinearSolver->solve
+63 gridVariables->advanceTimeStep
+63 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+63 before assembler->setPreviousSolution, ddt: 6.64889
+63 nonLinearSolver->solve
+112 gridVariables->advanceTimeStep
+112 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+112 before assembler->setPreviousSolution, ddt: 6.64889
+112 nonLinearSolver->solve
+26 gridVariables->advanceTimeStep
+26 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+26 before assembler->setPreviousSolution, ddt: 6.64889
+26 nonLinearSolver->solve
+61 gridVariables->advanceTimeStep
+61 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+61 before assembler->setPreviousSolution, ddt: 6.64889
+61 nonLinearSolver->solve
+45 gridVariables->advanceTimeStep
+45 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+45 before assembler->setPreviousSolution, ddt: 6.64889
+45 nonLinearSolver->solve
+3 gridVariables->advanceTimeStep
+3 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+3 before assembler->setPreviousSolution, ddt: 6.64889
+3 nonLinearSolver->solve
+20 gridVariables->advanceTimeStep
+20 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+20 before assembler->setPreviousSolution, ddt: 6.64889
+20 nonLinearSolver->solve
+103 gridVariables->advanceTimeStep
+103 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+103 before assembler->setPreviousSolution, ddt: 6.64889
+103 nonLinearSolver->solve
+76 gridVariables->advanceTimeStep
+76 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+76 before assembler->setPreviousSolution, ddt: 6.64889
+76 nonLinearSolver->solve
+22 gridVariables->advanceTimeStep
+22 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+22 before assembler->setPreviousSolution, ddt: 6.64889
+22 nonLinearSolver->solve
+117 gridVariables->advanceTimeStep
+117 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+117 before assembler->setPreviousSolution, ddt: 6.64889
+117 nonLinearSolver->solve
+15 gridVariables->advanceTimeStep
+15 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+15 before assembler->setPreviousSolution, ddt: 6.64889
+15 nonLinearSolver->solve
+120 gridVariables->advanceTimeStep
+120 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+120 before assembler->setPreviousSolution, ddt: 6.64889
+120 nonLinearSolver->solve
+88 gridVariables->advanceTimeStep
+88 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+88 before assembler->setPreviousSolution, ddt: 6.64889
+88 nonLinearSolver->solve
+34 gridVariables->advanceTimeStep
+34 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+34 before assembler->setPreviousSolution, ddt: 6.64889
+34 nonLinearSolver->solve
+2 gridVariables->advanceTimeStep
+2 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+2 before assembler->setPreviousSolution, ddt: 6.64889
+2 nonLinearSolver->solve
+105 gridVariables->advanceTimeStep
+105 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+105 before assembler->setPreviousSolution, ddt: 6.64889
+105 nonLinearSolver->solve
+68 gridVariables->advanceTimeStep
+68 before, nonLinearSolver->suggestTimeStepSize, current time: 15.664 simTime 47220
+68 before assembler->setPreviousSolution, ddt: 6.64889
+68 nonLinearSolver->solve
+17 gridVariables->advanceTimeStep
+17 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+17 before assembler->setPreviousSolution, ddt: 9.41926
+17 nonLinearSolver->solve
+30 gridVariables->advanceTimeStep
+30 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+30 before assembler->setPreviousSolution, ddt: 9.41926
+30 nonLinearSolver->solve
+84 gridVariables->advanceTimeStep
+84 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+84 before assembler->setPreviousSolution, ddt: 9.41926
+84 nonLinearSolver->solve
+14 gridVariables->advanceTimeStep
+14 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+14 before assembler->setPreviousSolution, ddt: 9.41926
+14 nonLinearSolver->solve
+36 gridVariables->advanceTimeStep
+36 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+36 before assembler->setPreviousSolution, ddt: 9.41926
+36 nonLinearSolver->solve
+40 gridVariables->advanceTimeStep
+40 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+40 before assembler->setPreviousSolution, ddt: 9.41926
+40 nonLinearSolver->solve
+43 gridVariables->advanceTimeStep
+43 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+43 before assembler->setPreviousSolution, ddt: 9.41926
+43 nonLinearSolver->solve
+65 gridVariables->advanceTimeStep
+65 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+65 before assembler->setPreviousSolution, ddt: 9.41926
+65 nonLinearSolver->solve
+90 gridVariables->advanceTimeStep
+90 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+90 before assembler->setPreviousSolution, ddt: 9.41926
+90 nonLinearSolver->solve
+23 gridVariables->advanceTimeStep
+23 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+23 before assembler->setPreviousSolution, ddt: 9.41926
+23 nonLinearSolver->solve
+47 gridVariables->advanceTimeStep
+47 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+47 before assembler->setPreviousSolution, ddt: 9.41926
+47 nonLinearSolver->solve
+85 gridVariables->advanceTimeStep
+85 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+85 before assembler->setPreviousSolution, ddt: 9.41926
+85 nonLinearSolver->solve
+8 gridVariables->advanceTimeStep
+8 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+8 before assembler->setPreviousSolution, ddt: 9.41926
+8 nonLinearSolver->solve
+25 gridVariables->advanceTimeStep
+25 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+25 before assembler->setPreviousSolution, ddt: 9.41926
+25 nonLinearSolver->solve
+114 gridVariables->advanceTimeStep
+114 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+114 before assembler->setPreviousSolution, ddt: 9.41926
+114 nonLinearSolver->solve
+91 gridVariables->advanceTimeStep
+91 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+91 before assembler->setPreviousSolution, ddt: 9.41926
+91 nonLinearSolver->solve
+62 gridVariables->advanceTimeStep
+62 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+62 before assembler->setPreviousSolution, ddt: 9.41926
+62 nonLinearSolver->solve
+10 gridVariables->advanceTimeStep
+10 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+10 before assembler->setPreviousSolution, ddt: 9.41926
+10 nonLinearSolver->solve
+42 gridVariables->advanceTimeStep
+42 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+42 before assembler->setPreviousSolution, ddt: 9.41926
+42 nonLinearSolver->solve
+59 gridVariables->advanceTimeStep
+59 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+59 before assembler->setPreviousSolution, ddt: 9.41926
+59 nonLinearSolver->solve
+69 gridVariables->advanceTimeStep
+69 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+69 before assembler->setPreviousSolution, ddt: 9.41926
+69 nonLinearSolver->solve
+48 gridVariables->advanceTimeStep
+48 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+48 before assembler->setPreviousSolution, ddt: 9.41926
+48 nonLinearSolver->solve
+53 gridVariables->advanceTimeStep
+53 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+53 before assembler->setPreviousSolution, ddt: 9.41926
+53 nonLinearSolver->solve
+35 gridVariables->advanceTimeStep
+35 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+35 before assembler->setPreviousSolution, ddt: 9.41926
+35 nonLinearSolver->solve
+70 gridVariables->advanceTimeStep
+70 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+70 before assembler->setPreviousSolution, ddt: 9.41926
+70 nonLinearSolver->solve
+38 gridVariables->advanceTimeStep
+38 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+38 before assembler->setPreviousSolution, ddt: 9.41926
+38 nonLinearSolver->solve
+16 gridVariables->advanceTimeStep
+16 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+16 before assembler->setPreviousSolution, ddt: 9.41926
+16 nonLinearSolver->solve
+80 gridVariables->advanceTimeStep
+80 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+80 before assembler->setPreviousSolution, ddt: 9.41926
+80 nonLinearSolver->solve
+12 gridVariables->advanceTimeStep
+12 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+12 before assembler->setPreviousSolution, ddt: 9.41926
+12 nonLinearSolver->solve
+96 gridVariables->advanceTimeStep
+96 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+96 before assembler->setPreviousSolution, ddt: 9.41926
+96 nonLinearSolver->solve
+83 gridVariables->advanceTimeStep
+83 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+83 before assembler->setPreviousSolution, ddt: 9.41926
+83 nonLinearSolver->solve
+66 gridVariables->advanceTimeStep
+66 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+66 before assembler->setPreviousSolution, ddt: 9.41926
+66 nonLinearSolver->solve
+111 gridVariables->advanceTimeStep
+111 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+111 before assembler->setPreviousSolution, ddt: 9.41926
+111 nonLinearSolver->solve
+49 gridVariables->advanceTimeStep
+49 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+49 before assembler->setPreviousSolution, ddt: 9.41926
+49 nonLinearSolver->solve
+113 gridVariables->advanceTimeStep
+113 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+113 before assembler->setPreviousSolution, ddt: 9.41926
+113 nonLinearSolver->solve
+94 gridVariables->advanceTimeStep
+94 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+94 before assembler->setPreviousSolution, ddt: 9.41926
+94 nonLinearSolver->solve
+51 gridVariables->advanceTimeStep
+51 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+51 before assembler->setPreviousSolution, ddt: 9.41926
+51 nonLinearSolver->solve
+73 gridVariables->advanceTimeStep
+73 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+73 before assembler->setPreviousSolution, ddt: 9.41926
+73 nonLinearSolver->solve
+11 gridVariables->advanceTimeStep
+11 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+11 before assembler->setPreviousSolution, ddt: 9.41926
+11 nonLinearSolver->solve
+98 gridVariables->advanceTimeStep
+98 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+98 before assembler->setPreviousSolution, ddt: 9.41926
+98 nonLinearSolver->solve
+78 gridVariables->advanceTimeStep
+78 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+78 before assembler->setPreviousSolution, ddt: 9.41926
+78 nonLinearSolver->solve
+102 gridVariables->advanceTimeStep
+102 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+102 before assembler->setPreviousSolution, ddt: 9.41926
+102 nonLinearSolver->solve
+108 gridVariables->advanceTimeStep
+108 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+108 before assembler->setPreviousSolution, ddt: 9.41926
+108 nonLinearSolver->solve
+7 gridVariables->advanceTimeStep
+7 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+7 before assembler->setPreviousSolution, ddt: 9.41926
+7 nonLinearSolver->solve
+9 gridVariables->advanceTimeStep
+9 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+9 before assembler->setPreviousSolution, ddt: 9.41926
+9 nonLinearSolver->solve
+54 gridVariables->advanceTimeStep
+54 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+54 before assembler->setPreviousSolution, ddt: 9.41926
+54 nonLinearSolver->solve
+119 gridVariables->advanceTimeStep
+119 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+119 before assembler->setPreviousSolution, ddt: 9.41926
+119 nonLinearSolver->solve
+13 gridVariables->advanceTimeStep
+13 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+13 before assembler->setPreviousSolution, ddt: 9.41926
+13 nonLinearSolver->solve
+56 gridVariables->advanceTimeStep
+56 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+56 before assembler->setPreviousSolution, ddt: 9.41926
+56 nonLinearSolver->solve
+0 gridVariables->advanceTimeStep
+0 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+0 before assembler->setPreviousSolution, ddt: 9.41926
+0 nonLinearSolver->solve
+58 gridVariables->advanceTimeStep
+58 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+58 before assembler->setPreviousSolution, ddt: 9.41926
+58 nonLinearSolver->solve
+67 gridVariables->advanceTimeStep
+67 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+67 before assembler->setPreviousSolution, ddt: 9.41926
+67 nonLinearSolver->solve
+92 gridVariables->advanceTimeStep
+92 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+92 before assembler->setPreviousSolution, ddt: 9.41926
+92 nonLinearSolver->solve
+1 gridVariables->advanceTimeStep
+1 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+1 before assembler->setPreviousSolution, ddt: 9.41926
+1 nonLinearSolver->solve
+57 gridVariables->advanceTimeStep
+57 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+57 before assembler->setPreviousSolution, ddt: 9.41926
+57 nonLinearSolver->solve
+87 gridVariables->advanceTimeStep
+87 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+87 before assembler->setPreviousSolution, ddt: 9.41926
+87 nonLinearSolver->solve
+77 gridVariables->advanceTimeStep
+77 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+77 before assembler->setPreviousSolution, ddt: 9.41926
+77 nonLinearSolver->solve
+4 gridVariables->advanceTimeStep
+4 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+4 before assembler->setPreviousSolution, ddt: 9.41926
+4 nonLinearSolver->solve
+106 gridVariables->advanceTimeStep
+106 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+106 before assembler->setPreviousSolution, ddt: 9.41926
+106 nonLinearSolver->solve
+95 gridVariables->advanceTimeStep
+95 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+95 before assembler->setPreviousSolution, ddt: 9.41926
+95 nonLinearSolver->solve
+64 gridVariables->advanceTimeStep
+64 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+64 before assembler->setPreviousSolution, ddt: 9.41926
+64 nonLinearSolver->solve
+5 gridVariables->advanceTimeStep
+5 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+5 before assembler->setPreviousSolution, ddt: 9.41926
+5 nonLinearSolver->solve
+107 gridVariables->advanceTimeStep
+107 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+107 before assembler->setPreviousSolution, ddt: 9.41926
+107 nonLinearSolver->solve
+116 gridVariables->advanceTimeStep
+116 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+116 before assembler->setPreviousSolution, ddt: 9.41926
+116 nonLinearSolver->solve
+118 gridVariables->advanceTimeStep
+118 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+118 before assembler->setPreviousSolution, ddt: 9.41926
+118 nonLinearSolver->solve
+18 gridVariables->advanceTimeStep
+18 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+18 before assembler->setPreviousSolution, ddt: 9.41926
+18 nonLinearSolver->solve
+100 gridVariables->advanceTimeStep
+100 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+100 before assembler->setPreviousSolution, ddt: 9.41926
+100 nonLinearSolver->solve
+104 gridVariables->advanceTimeStep
+104 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+104 before assembler->setPreviousSolution, ddt: 9.41926
+104 nonLinearSolver->solve
+55 gridVariables->advanceTimeStep
+55 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+55 before assembler->setPreviousSolution, ddt: 9.41926
+55 nonLinearSolver->solve
+19 gridVariables->advanceTimeStep
+19 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+19 before assembler->setPreviousSolution, ddt: 9.41926
+19 nonLinearSolver->solve
+32 gridVariables->advanceTimeStep
+32 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+32 before assembler->setPreviousSolution, ddt: 9.41926
+32 nonLinearSolver->solve
+39 gridVariables->advanceTimeStep
+39 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+39 before assembler->setPreviousSolution, ddt: 9.41926
+39 nonLinearSolver->solve
+46 gridVariables->advanceTimeStep
+46 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+46 before assembler->setPreviousSolution, ddt: 9.41926
+46 nonLinearSolver->solve
+6 gridVariables->advanceTimeStep
+6 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+6 before assembler->setPreviousSolution, ddt: 9.41926
+6 nonLinearSolver->solve
+71 gridVariables->advanceTimeStep
+71 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+71 before assembler->setPreviousSolution, ddt: 9.41926
+71 nonLinearSolver->solve
+44 gridVariables->advanceTimeStep
+44 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+44 before assembler->setPreviousSolution, ddt: 9.41926
+44 nonLinearSolver->solve
+86 gridVariables->advanceTimeStep
+86 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+86 before assembler->setPreviousSolution, ddt: 9.41926
+86 nonLinearSolver->solve
+21 gridVariables->advanceTimeStep
+21 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+21 before assembler->setPreviousSolution, ddt: 9.41926
+21 nonLinearSolver->solve
+72 gridVariables->advanceTimeStep
+72 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+72 before assembler->setPreviousSolution, ddt: 9.41926
+72 nonLinearSolver->solve
+31 gridVariables->advanceTimeStep
+31 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+31 before assembler->setPreviousSolution, ddt: 9.41926
+31 nonLinearSolver->solve
+63 gridVariables->advanceTimeStep
+63 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+63 before assembler->setPreviousSolution, ddt: 9.41926
+63 nonLinearSolver->solve
+112 gridVariables->advanceTimeStep
+112 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+112 before assembler->setPreviousSolution, ddt: 9.41926
+112 nonLinearSolver->solve
+26 gridVariables->advanceTimeStep
+26 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+26 before assembler->setPreviousSolution, ddt: 9.41926
+26 nonLinearSolver->solve
+61 gridVariables->advanceTimeStep
+61 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+61 before assembler->setPreviousSolution, ddt: 9.41926
+61 nonLinearSolver->solve
+45 gridVariables->advanceTimeStep
+45 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+45 before assembler->setPreviousSolution, ddt: 9.41926
+45 nonLinearSolver->solve
+3 gridVariables->advanceTimeStep
+3 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+3 before assembler->setPreviousSolution, ddt: 9.41926
+3 nonLinearSolver->solve
+20 gridVariables->advanceTimeStep
+20 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+20 before assembler->setPreviousSolution, ddt: 9.41926
+20 nonLinearSolver->solve
+103 gridVariables->advanceTimeStep
+103 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+103 before assembler->setPreviousSolution, ddt: 9.41926
+103 nonLinearSolver->solve
+76 gridVariables->advanceTimeStep
+76 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+76 before assembler->setPreviousSolution, ddt: 9.41926
+76 nonLinearSolver->solve
+22 gridVariables->advanceTimeStep
+22 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+22 before assembler->setPreviousSolution, ddt: 9.41926
+22 nonLinearSolver->solve
+117 gridVariables->advanceTimeStep
+117 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+117 before assembler->setPreviousSolution, ddt: 9.41926
+117 nonLinearSolver->solve
+15 gridVariables->advanceTimeStep
+15 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+15 before assembler->setPreviousSolution, ddt: 9.41926
+15 nonLinearSolver->solve
+120 gridVariables->advanceTimeStep
+120 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+120 before assembler->setPreviousSolution, ddt: 9.41926
+120 nonLinearSolver->solve
+88 gridVariables->advanceTimeStep
+88 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+88 before assembler->setPreviousSolution, ddt: 9.41926
+88 nonLinearSolver->solve
+34 gridVariables->advanceTimeStep
+34 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+34 before assembler->setPreviousSolution, ddt: 9.41926
+34 nonLinearSolver->solve
+2 gridVariables->advanceTimeStep
+2 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+2 before assembler->setPreviousSolution, ddt: 9.41926
+2 nonLinearSolver->solve
+105 gridVariables->advanceTimeStep
+105 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+105 before assembler->setPreviousSolution, ddt: 9.41926
+105 nonLinearSolver->solve
+89 gridVariables->advanceTimeStep
+89 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+89 before assembler->setPreviousSolution, ddt: 9.41926
+89 nonLinearSolver->solve
+24 gridVariables->advanceTimeStep
+24 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+24 before assembler->setPreviousSolution, ddt: 9.41926
+24 nonLinearSolver->solve
+28 gridVariables->advanceTimeStep
+28 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+28 before assembler->setPreviousSolution, ddt: 9.41926
+28 nonLinearSolver->solve
+50 gridVariables->advanceTimeStep
+50 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+50 before assembler->setPreviousSolution, ddt: 9.41926
+50 nonLinearSolver->solve
+41 gridVariables->advanceTimeStep
+41 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+41 before assembler->setPreviousSolution, ddt: 9.41926
+41 nonLinearSolver->solve
+33 gridVariables->advanceTimeStep
+33 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+33 before assembler->setPreviousSolution, ddt: 9.41926
+33 nonLinearSolver->solve
+109 gridVariables->advanceTimeStep
+109 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+109 before assembler->setPreviousSolution, ddt: 9.41926
+109 nonLinearSolver->solve
+37 gridVariables->advanceTimeStep
+37 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+37 before assembler->setPreviousSolution, ddt: 9.41926
+37 nonLinearSolver->solve
+110 gridVariables->advanceTimeStep
+110 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+110 before assembler->setPreviousSolution, ddt: 9.41926
+110 nonLinearSolver->solve
+99 gridVariables->advanceTimeStep
+99 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+99 before assembler->setPreviousSolution, ddt: 9.41926
+99 nonLinearSolver->solve
+101 gridVariables->advanceTimeStep
+101 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+101 before assembler->setPreviousSolution, ddt: 9.41926
+101 nonLinearSolver->solve
+115 gridVariables->advanceTimeStep
+115 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+115 before assembler->setPreviousSolution, ddt: 9.41926
+115 nonLinearSolver->solve
+68 gridVariables->advanceTimeStep
+68 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+68 before assembler->setPreviousSolution, ddt: 9.41926
+68 nonLinearSolver->solve
+97 gridVariables->advanceTimeStep
+97 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+97 before assembler->setPreviousSolution, ddt: 9.41926
+97 nonLinearSolver->solve
+75 gridVariables->advanceTimeStep
+75 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+75 before assembler->setPreviousSolution, ddt: 9.41926
+75 nonLinearSolver->solve
+52 gridVariables->advanceTimeStep
+52 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+52 before assembler->setPreviousSolution, ddt: 9.41926
+52 nonLinearSolver->solve
+82 gridVariables->advanceTimeStep
+82 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+82 before assembler->setPreviousSolution, ddt: 9.41926
+82 nonLinearSolver->solve
+29 gridVariables->advanceTimeStep
+29 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+29 before assembler->setPreviousSolution, ddt: 9.41926
+29 nonLinearSolver->solve
+81 gridVariables->advanceTimeStep
+81 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+81 before assembler->setPreviousSolution, ddt: 9.41926
+81 nonLinearSolver->solve
+74 gridVariables->advanceTimeStep
+74 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+74 before assembler->setPreviousSolution, ddt: 9.41926
+74 nonLinearSolver->solve
+27 gridVariables->advanceTimeStep
+27 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+27 before assembler->setPreviousSolution, ddt: 9.41926
+27 nonLinearSolver->solve
+79 gridVariables->advanceTimeStep
+79 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+79 before assembler->setPreviousSolution, ddt: 9.41926
+79 nonLinearSolver->solve
+60 gridVariables->advanceTimeStep
+60 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+60 before assembler->setPreviousSolution, ddt: 9.41926
+60 nonLinearSolver->solve
+93 gridVariables->advanceTimeStep
+93 before, nonLinearSolver->suggestTimeStepSize, current time: 22.3129 simTime 47220
+93 before assembler->setPreviousSolution, ddt: 9.41926
+93 nonLinearSolver->solve
+24 gridVariables->advanceTimeStep
+24 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+24 before assembler->setPreviousSolution, ddt: 13.344
+24 nonLinearSolver->solve
+28 gridVariables->advanceTimeStep
+28 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+28 before assembler->setPreviousSolution, ddt: 13.344
+28 nonLinearSolver->solve
+50 gridVariables->advanceTimeStep
+50 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+50 before assembler->setPreviousSolution, ddt: 13.344
+50 nonLinearSolver->solve
+41 gridVariables->advanceTimeStep
+41 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+41 before assembler->setPreviousSolution, ddt: 13.344
+41 nonLinearSolver->solve
+33 gridVariables->advanceTimeStep
+33 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+33 before assembler->setPreviousSolution, ddt: 13.344
+33 nonLinearSolver->solve
+109 gridVariables->advanceTimeStep
+109 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+109 before assembler->setPreviousSolution, ddt: 13.344
+109 nonLinearSolver->solve
+37 gridVariables->advanceTimeStep
+37 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+37 before assembler->setPreviousSolution, ddt: 13.344
+37 nonLinearSolver->solve
+110 gridVariables->advanceTimeStep
+110 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+110 before assembler->setPreviousSolution, ddt: 13.344
+110 nonLinearSolver->solve
+99 gridVariables->advanceTimeStep
+99 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+99 before assembler->setPreviousSolution, ddt: 13.344
+99 nonLinearSolver->solve
+101 gridVariables->advanceTimeStep
+101 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+101 before assembler->setPreviousSolution, ddt: 13.344
+101 nonLinearSolver->solve
+93 gridVariables->advanceTimeStep
+93 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+93 before assembler->setPreviousSolution, ddt: 13.344
+93 nonLinearSolver->solve
+68 gridVariables->advanceTimeStep
+68 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+68 before assembler->setPreviousSolution, ddt: 13.344
+68 nonLinearSolver->solve
+97 gridVariables->advanceTimeStep
+97 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+97 before assembler->setPreviousSolution, ddt: 13.344
+97 nonLinearSolver->solve
+75 gridVariables->advanceTimeStep
+75 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+75 before assembler->setPreviousSolution, ddt: 13.344
+75 nonLinearSolver->solve
+52 gridVariables->advanceTimeStep
+52 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+52 before assembler->setPreviousSolution, ddt: 13.344
+52 nonLinearSolver->solve
+82 gridVariables->advanceTimeStep
+82 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+82 before assembler->setPreviousSolution, ddt: 13.344
+82 nonLinearSolver->solve
+29 gridVariables->advanceTimeStep
+29 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+29 before assembler->setPreviousSolution, ddt: 13.344
+29 nonLinearSolver->solve
+81 gridVariables->advanceTimeStep
+81 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+81 before assembler->setPreviousSolution, ddt: 13.344
+81 nonLinearSolver->solve
+74 gridVariables->advanceTimeStep
+74 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+74 before assembler->setPreviousSolution, ddt: 13.344
+74 nonLinearSolver->solve
+27 gridVariables->advanceTimeStep
+27 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+27 before assembler->setPreviousSolution, ddt: 13.344
+27 nonLinearSolver->solve
+79 gridVariables->advanceTimeStep
+79 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+79 before assembler->setPreviousSolution, ddt: 13.344
+79 nonLinearSolver->solve
+60 gridVariables->advanceTimeStep
+60 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+60 before assembler->setPreviousSolution, ddt: 13.344
+60 nonLinearSolver->solve
+115 gridVariables->advanceTimeStep
+115 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+115 before assembler->setPreviousSolution, ddt: 13.344
+115 nonLinearSolver->solve
+17 gridVariables->advanceTimeStep
+17 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+17 before assembler->setPreviousSolution, ddt: 13.344
+17 nonLinearSolver->solve
+30 gridVariables->advanceTimeStep
+30 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+30 before assembler->setPreviousSolution, ddt: 13.344
+30 nonLinearSolver->solve
+84 gridVariables->advanceTimeStep
+84 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+84 before assembler->setPreviousSolution, ddt: 13.344
+84 nonLinearSolver->solve
+14 gridVariables->advanceTimeStep
+14 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+14 before assembler->setPreviousSolution, ddt: 13.344
+14 nonLinearSolver->solve
+36 gridVariables->advanceTimeStep
+36 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+36 before assembler->setPreviousSolution, ddt: 13.344
+36 nonLinearSolver->solve
+40 gridVariables->advanceTimeStep
+40 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+40 before assembler->setPreviousSolution, ddt: 13.344
+40 nonLinearSolver->solve
+43 gridVariables->advanceTimeStep
+43 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+43 before assembler->setPreviousSolution, ddt: 13.344
+43 nonLinearSolver->solve
+65 gridVariables->advanceTimeStep
+65 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+65 before assembler->setPreviousSolution, ddt: 13.344
+65 nonLinearSolver->solve
+90 gridVariables->advanceTimeStep
+90 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+90 before assembler->setPreviousSolution, ddt: 13.344
+90 nonLinearSolver->solve
+23 gridVariables->advanceTimeStep
+23 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+23 before assembler->setPreviousSolution, ddt: 13.344
+23 nonLinearSolver->solve
+47 gridVariables->advanceTimeStep
+47 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+47 before assembler->setPreviousSolution, ddt: 13.344
+47 nonLinearSolver->solve
+85 gridVariables->advanceTimeStep
+85 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+85 before assembler->setPreviousSolution, ddt: 13.344
+85 nonLinearSolver->solve
+8 gridVariables->advanceTimeStep
+8 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+8 before assembler->setPreviousSolution, ddt: 13.344
+8 nonLinearSolver->solve
+25 gridVariables->advanceTimeStep
+25 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+25 before assembler->setPreviousSolution, ddt: 13.344
+25 nonLinearSolver->solve
+114 gridVariables->advanceTimeStep
+114 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+114 before assembler->setPreviousSolution, ddt: 13.344
+114 nonLinearSolver->solve
+91 gridVariables->advanceTimeStep
+91 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+91 before assembler->setPreviousSolution, ddt: 13.344
+91 nonLinearSolver->solve
+62 gridVariables->advanceTimeStep
+62 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+62 before assembler->setPreviousSolution, ddt: 13.344
+62 nonLinearSolver->solve
+10 gridVariables->advanceTimeStep
+10 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+10 before assembler->setPreviousSolution, ddt: 13.344
+10 nonLinearSolver->solve
+42 gridVariables->advanceTimeStep
+42 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+42 before assembler->setPreviousSolution, ddt: 13.344
+42 nonLinearSolver->solve
+59 gridVariables->advanceTimeStep
+59 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+59 before assembler->setPreviousSolution, ddt: 13.344
+59 nonLinearSolver->solve
+69 gridVariables->advanceTimeStep
+69 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+69 before assembler->setPreviousSolution, ddt: 13.344
+69 nonLinearSolver->solve
+48 gridVariables->advanceTimeStep
+48 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+48 before assembler->setPreviousSolution, ddt: 13.344
+48 nonLinearSolver->solve
+53 gridVariables->advanceTimeStep
+53 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+53 before assembler->setPreviousSolution, ddt: 13.344
+53 nonLinearSolver->solve
+35 gridVariables->advanceTimeStep
+35 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+35 before assembler->setPreviousSolution, ddt: 13.344
+35 nonLinearSolver->solve
+70 gridVariables->advanceTimeStep
+70 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+70 before assembler->setPreviousSolution, ddt: 13.344
+70 nonLinearSolver->solve
+38 gridVariables->advanceTimeStep
+38 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+38 before assembler->setPreviousSolution, ddt: 13.344
+38 nonLinearSolver->solve
+16 gridVariables->advanceTimeStep
+16 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+16 before assembler->setPreviousSolution, ddt: 13.344
+16 nonLinearSolver->solve
+80 gridVariables->advanceTimeStep
+80 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+80 before assembler->setPreviousSolution, ddt: 13.344
+80 nonLinearSolver->solve
+12 gridVariables->advanceTimeStep
+12 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+12 before assembler->setPreviousSolution, ddt: 13.344
+12 nonLinearSolver->solve
+96 gridVariables->advanceTimeStep
+96 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+96 before assembler->setPreviousSolution, ddt: 13.344
+96 nonLinearSolver->solve
+83 gridVariables->advanceTimeStep
+83 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+83 before assembler->setPreviousSolution, ddt: 13.344
+83 nonLinearSolver->solve
+66 gridVariables->advanceTimeStep
+66 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+66 before assembler->setPreviousSolution, ddt: 13.344
+66 nonLinearSolver->solve
+111 gridVariables->advanceTimeStep
+111 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+111 before assembler->setPreviousSolution, ddt: 13.344
+111 nonLinearSolver->solve
+49 gridVariables->advanceTimeStep
+49 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+49 before assembler->setPreviousSolution, ddt: 13.344
+49 nonLinearSolver->solve
+113 gridVariables->advanceTimeStep
+113 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+113 before assembler->setPreviousSolution, ddt: 13.344
+113 nonLinearSolver->solve
+94 gridVariables->advanceTimeStep
+94 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+94 before assembler->setPreviousSolution, ddt: 13.344
+94 nonLinearSolver->solve
+51 gridVariables->advanceTimeStep
+51 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+51 before assembler->setPreviousSolution, ddt: 13.344
+51 nonLinearSolver->solve
+73 gridVariables->advanceTimeStep
+73 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+73 before assembler->setPreviousSolution, ddt: 13.344
+73 nonLinearSolver->solve
+11 gridVariables->advanceTimeStep
+11 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+11 before assembler->setPreviousSolution, ddt: 13.344
+11 nonLinearSolver->solve
+98 gridVariables->advanceTimeStep
+98 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+98 before assembler->setPreviousSolution, ddt: 13.344
+98 nonLinearSolver->solve
+78 gridVariables->advanceTimeStep
+78 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+78 before assembler->setPreviousSolution, ddt: 13.344
+78 nonLinearSolver->solve
+102 gridVariables->advanceTimeStep
+102 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+102 before assembler->setPreviousSolution, ddt: 13.344
+102 nonLinearSolver->solve
+108 gridVariables->advanceTimeStep
+108 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+108 before assembler->setPreviousSolution, ddt: 13.344
+108 nonLinearSolver->solve
+7 gridVariables->advanceTimeStep
+7 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+7 before assembler->setPreviousSolution, ddt: 13.344
+7 nonLinearSolver->solve
+9 gridVariables->advanceTimeStep
+9 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+9 before assembler->setPreviousSolution, ddt: 13.344
+9 nonLinearSolver->solve
+54 gridVariables->advanceTimeStep
+54 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+54 before assembler->setPreviousSolution, ddt: 13.344
+54 nonLinearSolver->solve
+119 gridVariables->advanceTimeStep
+119 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+119 before assembler->setPreviousSolution, ddt: 13.344
+119 nonLinearSolver->solve
+13 gridVariables->advanceTimeStep
+13 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+13 before assembler->setPreviousSolution, ddt: 13.344
+13 nonLinearSolver->solve
+56 gridVariables->advanceTimeStep
+56 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+56 before assembler->setPreviousSolution, ddt: 13.344
+56 nonLinearSolver->solve
+0 gridVariables->advanceTimeStep
+0 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+0 before assembler->setPreviousSolution, ddt: 13.344
+0 nonLinearSolver->solve
+58 gridVariables->advanceTimeStep
+58 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+58 before assembler->setPreviousSolution, ddt: 13.344
+58 nonLinearSolver->solve
+67 gridVariables->advanceTimeStep
+67 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+67 before assembler->setPreviousSolution, ddt: 13.344
+67 nonLinearSolver->solve
+92 gridVariables->advanceTimeStep
+92 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+92 before assembler->setPreviousSolution, ddt: 13.344
+92 nonLinearSolver->solve
+1 gridVariables->advanceTimeStep
+1 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+1 before assembler->setPreviousSolution, ddt: 13.344
+1 nonLinearSolver->solve
+57 gridVariables->advanceTimeStep
+57 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+57 before assembler->setPreviousSolution, ddt: 13.344
+57 nonLinearSolver->solve
+87 gridVariables->advanceTimeStep
+87 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+87 before assembler->setPreviousSolution, ddt: 13.344
+87 nonLinearSolver->solve
+77 gridVariables->advanceTimeStep
+77 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+77 before assembler->setPreviousSolution, ddt: 13.344
+77 nonLinearSolver->solve
+4 gridVariables->advanceTimeStep
+4 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+4 before assembler->setPreviousSolution, ddt: 13.344
+4 nonLinearSolver->solve
+106 gridVariables->advanceTimeStep
+106 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+106 before assembler->setPreviousSolution, ddt: 13.344
+106 nonLinearSolver->solve
+95 gridVariables->advanceTimeStep
+95 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+95 before assembler->setPreviousSolution, ddt: 13.344
+95 nonLinearSolver->solve
+64 gridVariables->advanceTimeStep
+64 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+64 before assembler->setPreviousSolution, ddt: 13.344
+64 nonLinearSolver->solve
+5 gridVariables->advanceTimeStep
+5 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+5 before assembler->setPreviousSolution, ddt: 13.344
+5 nonLinearSolver->solve
+107 gridVariables->advanceTimeStep
+107 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+107 before assembler->setPreviousSolution, ddt: 13.344
+107 nonLinearSolver->solve
+116 gridVariables->advanceTimeStep
+116 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+116 before assembler->setPreviousSolution, ddt: 13.344
+116 nonLinearSolver->solve
+118 gridVariables->advanceTimeStep
+118 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+118 before assembler->setPreviousSolution, ddt: 13.344
+118 nonLinearSolver->solve
+18 gridVariables->advanceTimeStep
+18 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+18 before assembler->setPreviousSolution, ddt: 13.344
+18 nonLinearSolver->solve
+100 gridVariables->advanceTimeStep
+100 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+100 before assembler->setPreviousSolution, ddt: 13.344
+100 nonLinearSolver->solve
+104 gridVariables->advanceTimeStep
+104 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+104 before assembler->setPreviousSolution, ddt: 13.344
+104 nonLinearSolver->solve
+55 gridVariables->advanceTimeStep
+55 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+55 before assembler->setPreviousSolution, ddt: 13.344
+55 nonLinearSolver->solve
+19 gridVariables->advanceTimeStep
+19 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+19 before assembler->setPreviousSolution, ddt: 13.344
+19 nonLinearSolver->solve
+32 gridVariables->advanceTimeStep
+32 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+32 before assembler->setPreviousSolution, ddt: 13.344
+32 nonLinearSolver->solve
+39 gridVariables->advanceTimeStep
+39 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+39 before assembler->setPreviousSolution, ddt: 13.344
+39 nonLinearSolver->solve
+46 gridVariables->advanceTimeStep
+46 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+46 before assembler->setPreviousSolution, ddt: 13.344
+46 nonLinearSolver->solve
+6 gridVariables->advanceTimeStep
+6 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+6 before assembler->setPreviousSolution, ddt: 13.344
+6 nonLinearSolver->solve
+71 gridVariables->advanceTimeStep
+71 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+71 before assembler->setPreviousSolution, ddt: 13.344
+71 nonLinearSolver->solve
+44 gridVariables->advanceTimeStep
+44 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+44 before assembler->setPreviousSolution, ddt: 13.344
+44 nonLinearSolver->solve
+86 gridVariables->advanceTimeStep
+86 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+86 before assembler->setPreviousSolution, ddt: 13.344
+86 nonLinearSolver->solve
+21 gridVariables->advanceTimeStep
+21 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+21 before assembler->setPreviousSolution, ddt: 13.344
+21 nonLinearSolver->solve
+72 gridVariables->advanceTimeStep
+72 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+72 before assembler->setPreviousSolution, ddt: 13.344
+72 nonLinearSolver->solve
+31 gridVariables->advanceTimeStep
+31 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+31 before assembler->setPreviousSolution, ddt: 13.344
+31 nonLinearSolver->solve
+63 gridVariables->advanceTimeStep
+63 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+63 before assembler->setPreviousSolution, ddt: 13.344
+63 nonLinearSolver->solve
+112 gridVariables->advanceTimeStep
+112 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+112 before assembler->setPreviousSolution, ddt: 13.344
+112 nonLinearSolver->solve
+26 gridVariables->advanceTimeStep
+26 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+26 before assembler->setPreviousSolution, ddt: 13.344
+26 nonLinearSolver->solve
+61 gridVariables->advanceTimeStep
+61 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+61 before assembler->setPreviousSolution, ddt: 13.344
+61 nonLinearSolver->solve
+45 gridVariables->advanceTimeStep
+45 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+45 before assembler->setPreviousSolution, ddt: 13.344
+45 nonLinearSolver->solve
+3 gridVariables->advanceTimeStep
+3 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+3 before assembler->setPreviousSolution, ddt: 13.344
+3 nonLinearSolver->solve
+20 gridVariables->advanceTimeStep
+20 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+20 before assembler->setPreviousSolution, ddt: 13.344
+20 nonLinearSolver->solve
+103 gridVariables->advanceTimeStep
+103 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+103 before assembler->setPreviousSolution, ddt: 13.344
+103 nonLinearSolver->solve
+76 gridVariables->advanceTimeStep
+76 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+76 before assembler->setPreviousSolution, ddt: 13.344
+76 nonLinearSolver->solve
+22 gridVariables->advanceTimeStep
+22 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+22 before assembler->setPreviousSolution, ddt: 13.344
+22 nonLinearSolver->solve
+117 gridVariables->advanceTimeStep
+117 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+117 before assembler->setPreviousSolution, ddt: 13.344
+117 nonLinearSolver->solve
+15 gridVariables->advanceTimeStep
+15 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+15 before assembler->setPreviousSolution, ddt: 13.344
+15 nonLinearSolver->solve
+120 gridVariables->advanceTimeStep
+120 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+120 before assembler->setPreviousSolution, ddt: 13.344
+120 nonLinearSolver->solve
+88 gridVariables->advanceTimeStep
+88 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+88 before assembler->setPreviousSolution, ddt: 13.344
+88 nonLinearSolver->solve
+34 gridVariables->advanceTimeStep
+34 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+34 before assembler->setPreviousSolution, ddt: 13.344
+34 nonLinearSolver->solve
+2 gridVariables->advanceTimeStep
+2 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+2 before assembler->setPreviousSolution, ddt: 13.344
+2 nonLinearSolver->solve
+105 gridVariables->advanceTimeStep
+105 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+105 before assembler->setPreviousSolution, ddt: 13.344
+105 nonLinearSolver->solve
+89 gridVariables->advanceTimeStep
+89 before, nonLinearSolver->suggestTimeStepSize, current time: 31.7321 simTime 47220
+89 before assembler->setPreviousSolution, ddt: 13.344
+89 nonLinearSolver->solve
+92 gridVariables->advanceTimeStep
+92 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+92 before assembler->setPreviousSolution, ddt: 17.7919
+92 nonLinearSolver->solve
+1 gridVariables->advanceTimeStep
+1 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+1 before assembler->setPreviousSolution, ddt: 17.7919
+1 nonLinearSolver->solve
+57 gridVariables->advanceTimeStep
+57 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+57 before assembler->setPreviousSolution, ddt: 17.7919
+57 nonLinearSolver->solve
+87 gridVariables->advanceTimeStep
+87 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+87 before assembler->setPreviousSolution, ddt: 17.7919
+87 nonLinearSolver->solve
+77 gridVariables->advanceTimeStep
+77 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+77 before assembler->setPreviousSolution, ddt: 17.7919
+77 nonLinearSolver->solve
+4 gridVariables->advanceTimeStep
+4 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+4 before assembler->setPreviousSolution, ddt: 17.7919
+4 nonLinearSolver->solve
+106 gridVariables->advanceTimeStep
+106 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+106 before assembler->setPreviousSolution, ddt: 17.7919
+106 nonLinearSolver->solve
+95 gridVariables->advanceTimeStep
+95 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+95 before assembler->setPreviousSolution, ddt: 17.7919
+95 nonLinearSolver->solve
+64 gridVariables->advanceTimeStep
+64 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+64 before assembler->setPreviousSolution, ddt: 17.7919
+64 nonLinearSolver->solve
+5 gridVariables->advanceTimeStep
+5 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+5 before assembler->setPreviousSolution, ddt: 17.7919
+5 nonLinearSolver->solve
+107 gridVariables->advanceTimeStep
+107 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+107 before assembler->setPreviousSolution, ddt: 17.7919
+107 nonLinearSolver->solve
+116 gridVariables->advanceTimeStep
+116 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+116 before assembler->setPreviousSolution, ddt: 17.7919
+116 nonLinearSolver->solve
+118 gridVariables->advanceTimeStep
+118 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+118 before assembler->setPreviousSolution, ddt: 17.7919
+118 nonLinearSolver->solve
+18 gridVariables->advanceTimeStep
+18 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+18 before assembler->setPreviousSolution, ddt: 17.7919
+18 nonLinearSolver->solve
+100 gridVariables->advanceTimeStep
+100 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+100 before assembler->setPreviousSolution, ddt: 17.7919
+100 nonLinearSolver->solve
+104 gridVariables->advanceTimeStep
+104 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+104 before assembler->setPreviousSolution, ddt: 17.7919
+104 nonLinearSolver->solve
+55 gridVariables->advanceTimeStep
+55 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+55 before assembler->setPreviousSolution, ddt: 17.7919
+55 nonLinearSolver->solve
+19 gridVariables->advanceTimeStep
+19 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+19 before assembler->setPreviousSolution, ddt: 17.7919
+19 nonLinearSolver->solve
+32 gridVariables->advanceTimeStep
+32 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+32 before assembler->setPreviousSolution, ddt: 17.7919
+32 nonLinearSolver->solve
+39 gridVariables->advanceTimeStep
+39 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+39 before assembler->setPreviousSolution, ddt: 17.7919
+39 nonLinearSolver->solve
+46 gridVariables->advanceTimeStep
+46 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+46 before assembler->setPreviousSolution, ddt: 17.7919
+46 nonLinearSolver->solve
+6 gridVariables->advanceTimeStep
+6 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+6 before assembler->setPreviousSolution, ddt: 17.7919
+6 nonLinearSolver->solve
+71 gridVariables->advanceTimeStep
+71 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+71 before assembler->setPreviousSolution, ddt: 17.7919
+71 nonLinearSolver->solve
+44 gridVariables->advanceTimeStep
+44 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+44 before assembler->setPreviousSolution, ddt: 17.7919
+44 nonLinearSolver->solve
+86 gridVariables->advanceTimeStep
+86 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+86 before assembler->setPreviousSolution, ddt: 17.7919
+86 nonLinearSolver->solve
+21 gridVariables->advanceTimeStep
+21 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+21 before assembler->setPreviousSolution, ddt: 17.7919
+21 nonLinearSolver->solve
+72 gridVariables->advanceTimeStep
+72 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+72 before assembler->setPreviousSolution, ddt: 17.7919
+72 nonLinearSolver->solve
+31 gridVariables->advanceTimeStep
+31 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+31 before assembler->setPreviousSolution, ddt: 17.7919
+31 nonLinearSolver->solve
+63 gridVariables->advanceTimeStep
+63 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+63 before assembler->setPreviousSolution, ddt: 17.7919
+63 nonLinearSolver->solve
+112 gridVariables->advanceTimeStep
+112 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+112 before assembler->setPreviousSolution, ddt: 17.7919
+112 nonLinearSolver->solve
+26 gridVariables->advanceTimeStep
+26 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+26 before assembler->setPreviousSolution, ddt: 17.7919
+26 nonLinearSolver->solve
+61 gridVariables->advanceTimeStep
+61 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+61 before assembler->setPreviousSolution, ddt: 17.7919
+61 nonLinearSolver->solve
+45 gridVariables->advanceTimeStep
+45 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+45 before assembler->setPreviousSolution, ddt: 17.7919
+45 nonLinearSolver->solve
+3 gridVariables->advanceTimeStep
+3 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+3 before assembler->setPreviousSolution, ddt: 17.7919
+3 nonLinearSolver->solve
+20 gridVariables->advanceTimeStep
+20 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+20 before assembler->setPreviousSolution, ddt: 17.7919
+20 nonLinearSolver->solve
+103 gridVariables->advanceTimeStep
+103 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+103 before assembler->setPreviousSolution, ddt: 17.7919
+103 nonLinearSolver->solve
+76 gridVariables->advanceTimeStep
+76 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+76 before assembler->setPreviousSolution, ddt: 17.7919
+76 nonLinearSolver->solve
+22 gridVariables->advanceTimeStep
+22 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+22 before assembler->setPreviousSolution, ddt: 17.7919
+22 nonLinearSolver->solve
+117 gridVariables->advanceTimeStep
+117 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+117 before assembler->setPreviousSolution, ddt: 17.7919
+117 nonLinearSolver->solve
+15 gridVariables->advanceTimeStep
+15 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+15 before assembler->setPreviousSolution, ddt: 17.7919
+15 nonLinearSolver->solve
+120 gridVariables->advanceTimeStep
+120 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+120 before assembler->setPreviousSolution, ddt: 17.7919
+120 nonLinearSolver->solve
+88 gridVariables->advanceTimeStep
+88 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+88 before assembler->setPreviousSolution, ddt: 17.7919
+88 nonLinearSolver->solve
+34 gridVariables->advanceTimeStep
+34 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+34 before assembler->setPreviousSolution, ddt: 17.7919
+34 nonLinearSolver->solve
+2 gridVariables->advanceTimeStep
+2 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+2 before assembler->setPreviousSolution, ddt: 17.7919
+2 nonLinearSolver->solve
+105 gridVariables->advanceTimeStep
+105 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+105 before assembler->setPreviousSolution, ddt: 17.7919
+105 nonLinearSolver->solve
+101 gridVariables->advanceTimeStep
+101 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+101 before assembler->setPreviousSolution, ddt: 17.7919
+101 nonLinearSolver->solve
+24 gridVariables->advanceTimeStep
+24 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+24 before assembler->setPreviousSolution, ddt: 17.7919
+24 nonLinearSolver->solve
+28 gridVariables->advanceTimeStep
+28 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+28 before assembler->setPreviousSolution, ddt: 17.7919
+28 nonLinearSolver->solve
+50 gridVariables->advanceTimeStep
+50 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+50 before assembler->setPreviousSolution, ddt: 17.7919
+50 nonLinearSolver->solve
+41 gridVariables->advanceTimeStep
+41 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+41 before assembler->setPreviousSolution, ddt: 17.7919
+41 nonLinearSolver->solve
+33 gridVariables->advanceTimeStep
+33 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+33 before assembler->setPreviousSolution, ddt: 17.7919
+33 nonLinearSolver->solve
+109 gridVariables->advanceTimeStep
+109 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+109 before assembler->setPreviousSolution, ddt: 17.7919
+109 nonLinearSolver->solve
+37 gridVariables->advanceTimeStep
+37 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+37 before assembler->setPreviousSolution, ddt: 17.7919
+37 nonLinearSolver->solve
+110 gridVariables->advanceTimeStep
+110 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+110 before assembler->setPreviousSolution, ddt: 17.7919
+110 nonLinearSolver->solve
+99 gridVariables->advanceTimeStep
+99 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+99 before assembler->setPreviousSolution, ddt: 17.7919
+99 nonLinearSolver->solve
+89 gridVariables->advanceTimeStep
+89 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+89 before assembler->setPreviousSolution, ddt: 17.7919
+89 nonLinearSolver->solve
+93 gridVariables->advanceTimeStep
+93 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+93 before assembler->setPreviousSolution, ddt: 17.7919
+93 nonLinearSolver->solve
+68 gridVariables->advanceTimeStep
+68 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+68 before assembler->setPreviousSolution, ddt: 17.7919
+68 nonLinearSolver->solve
+97 gridVariables->advanceTimeStep
+97 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+97 before assembler->setPreviousSolution, ddt: 17.7919
+97 nonLinearSolver->solve
+75 gridVariables->advanceTimeStep
+75 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+75 before assembler->setPreviousSolution, ddt: 17.7919
+75 nonLinearSolver->solve
+52 gridVariables->advanceTimeStep
+52 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+52 before assembler->setPreviousSolution, ddt: 17.7919
+52 nonLinearSolver->solve
+82 gridVariables->advanceTimeStep
+82 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+82 before assembler->setPreviousSolution, ddt: 17.7919
+82 nonLinearSolver->solve
+29 gridVariables->advanceTimeStep
+29 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+29 before assembler->setPreviousSolution, ddt: 17.7919
+29 nonLinearSolver->solve
+81 gridVariables->advanceTimeStep
+81 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+81 before assembler->setPreviousSolution, ddt: 17.7919
+81 nonLinearSolver->solve
+74 gridVariables->advanceTimeStep
+74 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+74 before assembler->setPreviousSolution, ddt: 17.7919
+74 nonLinearSolver->solve
+27 gridVariables->advanceTimeStep
+27 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+27 before assembler->setPreviousSolution, ddt: 17.7919
+27 nonLinearSolver->solve
+79 gridVariables->advanceTimeStep
+79 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+79 before assembler->setPreviousSolution, ddt: 17.7919
+79 nonLinearSolver->solve
+60 gridVariables->advanceTimeStep
+60 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+60 before assembler->setPreviousSolution, ddt: 17.7919
+60 nonLinearSolver->solve
+115 gridVariables->advanceTimeStep
+115 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+115 before assembler->setPreviousSolution, ddt: 17.7919
+115 nonLinearSolver->solve
+17 gridVariables->advanceTimeStep
+17 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+17 before assembler->setPreviousSolution, ddt: 17.7919
+17 nonLinearSolver->solve
+30 gridVariables->advanceTimeStep
+30 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+30 before assembler->setPreviousSolution, ddt: 17.7919
+30 nonLinearSolver->solve
+84 gridVariables->advanceTimeStep
+84 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+84 before assembler->setPreviousSolution, ddt: 17.7919
+84 nonLinearSolver->solve
+14 gridVariables->advanceTimeStep
+14 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+14 before assembler->setPreviousSolution, ddt: 17.7919
+14 nonLinearSolver->solve
+36 gridVariables->advanceTimeStep
+36 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+36 before assembler->setPreviousSolution, ddt: 17.7919
+36 nonLinearSolver->solve
+40 gridVariables->advanceTimeStep
+40 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+40 before assembler->setPreviousSolution, ddt: 17.7919
+40 nonLinearSolver->solve
+43 gridVariables->advanceTimeStep
+43 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+43 before assembler->setPreviousSolution, ddt: 17.7919
+43 nonLinearSolver->solve
+65 gridVariables->advanceTimeStep
+65 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+65 before assembler->setPreviousSolution, ddt: 17.7919
+65 nonLinearSolver->solve
+90 gridVariables->advanceTimeStep
+90 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+90 before assembler->setPreviousSolution, ddt: 17.7919
+90 nonLinearSolver->solve
+23 gridVariables->advanceTimeStep
+23 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+23 before assembler->setPreviousSolution, ddt: 17.7919
+23 nonLinearSolver->solve
+47 gridVariables->advanceTimeStep
+47 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+47 before assembler->setPreviousSolution, ddt: 17.7919
+47 nonLinearSolver->solve
+85 gridVariables->advanceTimeStep
+85 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+85 before assembler->setPreviousSolution, ddt: 17.7919
+85 nonLinearSolver->solve
+8 gridVariables->advanceTimeStep
+8 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+8 before assembler->setPreviousSolution, ddt: 17.7919
+8 nonLinearSolver->solve
+25 gridVariables->advanceTimeStep
+25 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+25 before assembler->setPreviousSolution, ddt: 17.7919
+25 nonLinearSolver->solve
+114 gridVariables->advanceTimeStep
+114 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+114 before assembler->setPreviousSolution, ddt: 17.7919
+114 nonLinearSolver->solve
+91 gridVariables->advanceTimeStep
+91 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+91 before assembler->setPreviousSolution, ddt: 17.7919
+91 nonLinearSolver->solve
+62 gridVariables->advanceTimeStep
+62 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+62 before assembler->setPreviousSolution, ddt: 17.7919
+62 nonLinearSolver->solve
+10 gridVariables->advanceTimeStep
+10 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+10 before assembler->setPreviousSolution, ddt: 17.7919
+10 nonLinearSolver->solve
+42 gridVariables->advanceTimeStep
+42 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+42 before assembler->setPreviousSolution, ddt: 17.7919
+42 nonLinearSolver->solve
+59 gridVariables->advanceTimeStep
+59 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+59 before assembler->setPreviousSolution, ddt: 17.7919
+59 nonLinearSolver->solve
+69 gridVariables->advanceTimeStep
+69 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+69 before assembler->setPreviousSolution, ddt: 17.7919
+69 nonLinearSolver->solve
+48 gridVariables->advanceTimeStep
+48 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+48 before assembler->setPreviousSolution, ddt: 17.7919
+48 nonLinearSolver->solve
+53 gridVariables->advanceTimeStep
+53 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+53 before assembler->setPreviousSolution, ddt: 17.7919
+53 nonLinearSolver->solve
+35 gridVariables->advanceTimeStep
+35 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+35 before assembler->setPreviousSolution, ddt: 17.7919
+35 nonLinearSolver->solve
+70 gridVariables->advanceTimeStep
+70 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+70 before assembler->setPreviousSolution, ddt: 17.7919
+70 nonLinearSolver->solve
+38 gridVariables->advanceTimeStep
+38 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+38 before assembler->setPreviousSolution, ddt: 17.7919
+38 nonLinearSolver->solve
+16 gridVariables->advanceTimeStep
+16 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+16 before assembler->setPreviousSolution, ddt: 17.7919
+16 nonLinearSolver->solve
+80 gridVariables->advanceTimeStep
+80 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+80 before assembler->setPreviousSolution, ddt: 17.7919
+80 nonLinearSolver->solve
+12 gridVariables->advanceTimeStep
+12 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+12 before assembler->setPreviousSolution, ddt: 17.7919
+12 nonLinearSolver->solve
+96 gridVariables->advanceTimeStep
+96 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+96 before assembler->setPreviousSolution, ddt: 17.7919
+96 nonLinearSolver->solve
+83 gridVariables->advanceTimeStep
+83 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+83 before assembler->setPreviousSolution, ddt: 17.7919
+83 nonLinearSolver->solve
+66 gridVariables->advanceTimeStep
+66 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+66 before assembler->setPreviousSolution, ddt: 17.7919
+66 nonLinearSolver->solve
+111 gridVariables->advanceTimeStep
+111 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+111 before assembler->setPreviousSolution, ddt: 17.7919
+111 nonLinearSolver->solve
+49 gridVariables->advanceTimeStep
+49 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+49 before assembler->setPreviousSolution, ddt: 17.7919
+49 nonLinearSolver->solve
+113 gridVariables->advanceTimeStep
+113 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+113 before assembler->setPreviousSolution, ddt: 17.7919
+113 nonLinearSolver->solve
+94 gridVariables->advanceTimeStep
+94 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+94 before assembler->setPreviousSolution, ddt: 17.7919
+94 nonLinearSolver->solve
+51 gridVariables->advanceTimeStep
+51 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+51 before assembler->setPreviousSolution, ddt: 17.7919
+51 nonLinearSolver->solve
+73 gridVariables->advanceTimeStep
+73 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+73 before assembler->setPreviousSolution, ddt: 17.7919
+73 nonLinearSolver->solve
+11 gridVariables->advanceTimeStep
+11 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+11 before assembler->setPreviousSolution, ddt: 17.7919
+11 nonLinearSolver->solve
+98 gridVariables->advanceTimeStep
+98 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+98 before assembler->setPreviousSolution, ddt: 17.7919
+98 nonLinearSolver->solve
+78 gridVariables->advanceTimeStep
+78 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+78 before assembler->setPreviousSolution, ddt: 17.7919
+78 nonLinearSolver->solve
+102 gridVariables->advanceTimeStep
+102 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+102 before assembler->setPreviousSolution, ddt: 17.7919
+102 nonLinearSolver->solve
+108 gridVariables->advanceTimeStep
+108 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+108 before assembler->setPreviousSolution, ddt: 17.7919
+108 nonLinearSolver->solve
+7 gridVariables->advanceTimeStep
+7 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+7 before assembler->setPreviousSolution, ddt: 17.7919
+7 nonLinearSolver->solve
+9 gridVariables->advanceTimeStep
+9 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+9 before assembler->setPreviousSolution, ddt: 17.7919
+9 nonLinearSolver->solve
+54 gridVariables->advanceTimeStep
+54 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+54 before assembler->setPreviousSolution, ddt: 17.7919
+54 nonLinearSolver->solve
+119 gridVariables->advanceTimeStep
+119 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+119 before assembler->setPreviousSolution, ddt: 17.7919
+119 nonLinearSolver->solve
+13 gridVariables->advanceTimeStep
+13 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+13 before assembler->setPreviousSolution, ddt: 17.7919
+13 nonLinearSolver->solve
+56 gridVariables->advanceTimeStep
+56 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+56 before assembler->setPreviousSolution, ddt: 17.7919
+56 nonLinearSolver->solve
+0 gridVariables->advanceTimeStep
+0 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+0 before assembler->setPreviousSolution, ddt: 17.7919
+0 nonLinearSolver->solve
+58 gridVariables->advanceTimeStep
+58 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+58 before assembler->setPreviousSolution, ddt: 17.7919
+58 nonLinearSolver->solve
+67 gridVariables->advanceTimeStep
+67 before, nonLinearSolver->suggestTimeStepSize, current time: 45.0761 simTime 47220
+67 before assembler->setPreviousSolution, ddt: 17.7919
+67 nonLinearSolver->solve
+22 gridVariables->advanceTimeStep
+leaving the s.solve 22
+done
+117 gridVariables->advanceTimeStep
+leaving the s.solve 117
+done
+15 gridVariables->advanceTimeStep
+leaving the s.solve 15
+done
+120 gridVariables->advanceTimeStep
+leaving the s.solve 120
+done
+88 gridVariables->advanceTimeStep
+leaving the s.solve 88
+done
+34 gridVariables->advanceTimeStep
+leaving the s.solve 34
+done
+2 gridVariables->advanceTimeStep
+leaving the s.solve 2
+done
+105 gridVariables->advanceTimeStep
+leaving the s.solve 105
+done
+101 gridVariables->advanceTimeStep
+leaving the s.solve 101
+done
+24 gridVariables->advanceTimeStep
+leaving the s.solve 24
+done
+28 gridVariables->advanceTimeStep
+leaving the s.solve 28
+done
+50 gridVariables->advanceTimeStep
+leaving the s.solve 50
+done
+41 gridVariables->advanceTimeStep
+leaving the s.solve 41
+done
+33 gridVariables->advanceTimeStep
+leaving the s.solve 33
+done
+109 gridVariables->advanceTimeStep
+leaving the s.solve 109
+done
+37 gridVariables->advanceTimeStep
+leaving the s.solve 37
+done
+110 gridVariables->advanceTimeStep
+leaving the s.solve 110
+done
+67 gridVariables->advanceTimeStep
+leaving the s.solve 67
+done
+89 gridVariables->advanceTimeStep
+leaving the s.solve 89
+done
+93 gridVariables->advanceTimeStep
+leaving the s.solve 93
+done
+68 gridVariables->advanceTimeStep
+leaving the s.solve 68
+done
+97 gridVariables->advanceTimeStep
+leaving the s.solve 97
+done
+75 gridVariables->advanceTimeStep
+leaving the s.solve 75
+done
+52 gridVariables->advanceTimeStep
+leaving the s.solve 52
+done
+82 gridVariables->advanceTimeStep
+leaving the s.solve 82
+done
+29 gridVariables->advanceTimeStep
+leaving the s.solve 29
+done
+81 gridVariables->advanceTimeStep
+leaving the s.solve 81
+done
+74 gridVariables->advanceTimeStep
+leaving the s.solve 74
+done
+27 gridVariables->advanceTimeStep
+leaving the s.solve 27
+done
+79 gridVariables->advanceTimeStep
+leaving the s.solve 79
+done
+60 gridVariables->advanceTimeStep
+leaving the s.solve 60
+done
+115 gridVariables->advanceTimeStep
+leaving the s.solve 115
+done
+17 gridVariables->advanceTimeStep
+leaving the s.solve 17
+done
+30 gridVariables->advanceTimeStep
+leaving the s.solve 30
+done
+84 gridVariables->advanceTimeStep
+leaving the s.solve 84
+done
+14 gridVariables->advanceTimeStep
+leaving the s.solve 14
+done
+36 gridVariables->advanceTimeStep
+leaving the s.solve 36
+done
+40 gridVariables->advanceTimeStep
+leaving the s.solve 40
+done
+43 gridVariables->advanceTimeStep
+leaving the s.solve 43
+done
+65 gridVariables->advanceTimeStep
+leaving the s.solve 65
+done
+90 gridVariables->advanceTimeStep
+leaving the s.solve 90
+done
+23 gridVariables->advanceTimeStep
+leaving the s.solve 23
+done
+47 gridVariables->advanceTimeStep
+leaving the s.solve 47
+done
+85 gridVariables->advanceTimeStep
+leaving the s.solve 85
+done
+8 gridVariables->advanceTimeStep
+leaving the s.solve 8
+done
+25 gridVariables->advanceTimeStep
+leaving the s.solve 25
+done
+114 gridVariables->advanceTimeStep
+leaving the s.solve 114
+done
+91 gridVariables->advanceTimeStep
+leaving the s.solve 91
+done
+62 gridVariables->advanceTimeStep
+leaving the s.solve 62
+done
+10 gridVariables->advanceTimeStep
+leaving the s.solve 10
+done
+42 gridVariables->advanceTimeStep
+leaving the s.solve 42
+done
+59 gridVariables->advanceTimeStep
+leaving the s.solve 59
+done
+69 gridVariables->advanceTimeStep
+leaving the s.solve 69
+done
+48 gridVariables->advanceTimeStep
+leaving the s.solve 48
+done
+53 gridVariables->advanceTimeStep
+leaving the s.solve 53
+done
+35 gridVariables->advanceTimeStep
+leaving the s.solve 35
+done
+70 gridVariables->advanceTimeStep
+leaving the s.solve 70
+done
+38 gridVariables->advanceTimeStep
+leaving the s.solve 38
+done
+16 gridVariables->advanceTimeStep
+leaving the s.solve 16
+done
+80 gridVariables->advanceTimeStep
+leaving the s.solve 80
+done
+12 gridVariables->advanceTimeStep
+leaving the s.solve 12
+done
+96 gridVariables->advanceTimeStep
+leaving the s.solve 96
+done
+83 gridVariables->advanceTimeStep
+leaving the s.solve 83
+done
+66 gridVariables->advanceTimeStep
+leaving the s.solve 66
+done
+111 gridVariables->advanceTimeStep
+leaving the s.solve 111
+done
+49 gridVariables->advanceTimeStep
+leaving the s.solve 49
+done
+113 gridVariables->advanceTimeStep
+leaving the s.solve 113
+done
+94 gridVariables->advanceTimeStep
+leaving the s.solve 94
+done
+51 gridVariables->advanceTimeStep
+leaving the s.solve 51
+done
+73 gridVariables->advanceTimeStep
+leaving the s.solve 73
+done
+11 gridVariables->advanceTimeStep
+leaving the s.solve 11
+done
+98 gridVariables->advanceTimeStep
+leaving the s.solve 98
+done
+78 gridVariables->advanceTimeStep
+leaving the s.solve 78
+done
+102 gridVariables->advanceTimeStep
+leaving the s.solve 102
+done
+108 gridVariables->advanceTimeStep
+leaving the s.solve 108
+done
+7 gridVariables->advanceTimeStep
+leaving the s.solve 7
+done
+9 gridVariables->advanceTimeStep
+leaving the s.solve 9
+done
+54 gridVariables->advanceTimeStep
+leaving the s.solve 54
+done
+119 gridVariables->advanceTimeStep
+leaving the s.solve 119
+done
+13 gridVariables->advanceTimeStep
+leaving the s.solve 13
+done
+56 gridVariables->advanceTimeStep
+leaving the s.solve 56
+done
+0 gridVariables->advanceTimeStep
+leaving the s.solve 0
+done
+58 gridVariables->advanceTimeStep
+leaving the s.solve 58
+done
+99 gridVariables->advanceTimeStep
+leaving the s.solve 99
+done
+92 gridVariables->advanceTimeStep
+leaving the s.solve 92
+done
+1 gridVariables->advanceTimeStep
+leaving the s.solve 1
+done
+57 gridVariables->advanceTimeStep
+leaving the s.solve 57
+done
+87 gridVariables->advanceTimeStep
+leaving the s.solve 87
+done
+77 gridVariables->advanceTimeStep
+leaving the s.solve 77
+done
+4 gridVariables->advanceTimeStep
+leaving the s.solve 4
+done
+106 gridVariables->advanceTimeStep
+leaving the s.solve 106
+done
+95 gridVariables->advanceTimeStep
+leaving the s.solve 95
+done
+64 gridVariables->advanceTimeStep
+leaving the s.solve 64
+done
+5 gridVariables->advanceTimeStep
+leaving the s.solve 5
+done
+107 gridVariables->advanceTimeStep
+leaving the s.solve 107
+done
+116 gridVariables->advanceTimeStep
+leaving the s.solve 116
+done
+118 gridVariables->advanceTimeStep
+leaving the s.solve 118
+done
+18 gridVariables->advanceTimeStep
+leaving the s.solve 18
+done
+100 gridVariables->advanceTimeStep
+leaving the s.solve 100
+done
+104 gridVariables->advanceTimeStep
+leaving the s.solve 104
+done
+55 gridVariables->advanceTimeStep
+leaving the s.solve 55
+done
+19 gridVariables->advanceTimeStep
+leaving the s.solve 19
+done
+32 gridVariables->advanceTimeStep
+leaving the s.solve 32
+done
+39 gridVariables->advanceTimeStep
+leaving the s.solve 39
+done
+46 gridVariables->advanceTimeStep
+leaving the s.solve 46
+done
+6 gridVariables->advanceTimeStep
+leaving the s.solve 6
+done
+71 gridVariables->advanceTimeStep
+leaving the s.solve 71
+done
+44 gridVariables->advanceTimeStep
+leaving the s.solve 44
+done
+86 gridVariables->advanceTimeStep
+leaving the s.solve 86
+done
+21 gridVariables->advanceTimeStep
+leaving the s.solve 21
+done
+72 gridVariables->advanceTimeStep
+leaving the s.solve 72
+done
+31 gridVariables->advanceTimeStep
+leaving the s.solve 31
+done
+63 gridVariables->advanceTimeStep
+leaving the s.solve 63
+done
+112 gridVariables->advanceTimeStep
+leaving the s.solve 112
+done
+26 gridVariables->advanceTimeStep
+leaving the s.solve 26
+done
+61 gridVariables->advanceTimeStep
+leaving the s.solve 61
+done
+45 gridVariables->advanceTimeStep
+leaving the s.solve 45
+done
+3 gridVariables->advanceTimeStep
+leaving the s.solve 3
+done
+20 gridVariables->advanceTimeStep
+leaving the s.solve 20
+done
+103 gridVariables->advanceTimeStep
+leaving the s.solve 103
+done
+76 gridVariables->advanceTimeStep
+leaving the s.solve 76
+done
+errorCbalance soil 3d? 0 0.0 , 0.0 , 0.0 , 0.0 , soil_source_sol 0.0 , s.bulkMassErrorPlant_abs 0.0 , bulkMassError1ds_abs  0.0 9.69027777777793
+errorWbalance soil 3d? 0 86.99858524634422 , 86.9987606313754 , -0.00017538503093908353 , bulkMassErrorWater_abs 2.4158453015843406e-13 , bulkMassErrorWater_absLim 2.4158453015843406e-13 9.69027777777793
+end iteration 1 2 0.1362942302395324 0.0
+left iteration 1 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 3 2 0.1362942302395324 0.0
+left iteration 3 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 2 2 0.1362942302395324 0.0
+left iteration 2 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 17 2 0.1362942302395324 0.0
+left iteration 17 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 33 2 0.1362942302395324 0.0
+left iteration 33 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 7 2 0.1362942302395324 0.0
+left iteration 7 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 9 2 0.1362942302395324 0.0
+left iteration 9 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 107 2 0.1362942302395324 0.0
+left iteration 107 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 63 2 0.1362942302395324 0.0
+left iteration 63 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 108 2 0.1362942302395324 0.0
+left iteration 108 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 54 2 0.1362942302395324 0.0
+left iteration 54 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 119 2 0.1362942302395324 0.0
+left iteration 119 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 13 2 0.1362942302395324 0.0
+left iteration 13 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 56 2 0.1362942302395324 0.0
+left iteration 56 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 76 2 0.1362942302395324 0.0
+left iteration 76 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 58 2 0.1362942302395324 0.0
+left iteration 58 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 99 2 0.1362942302395324 0.0
+left iteration 99 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 92 2 0.1362942302395324 0.0
+left iteration 92 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 57 2 0.1362942302395324 0.0
+left iteration 57 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 87 2 0.1362942302395324 0.0
+left iteration 87 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 77 2 0.1362942302395324 0.0
+left iteration 77 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 4 2 0.1362942302395324 0.0
+left iteration 4 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 106 2 0.1362942302395324 0.0
+left iteration 106 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 95 2 0.1362942302395324 0.0
+left iteration 95 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 64 2 0.1362942302395324 0.0
+left iteration 64 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 5 2 0.1362942302395324 0.0
+left iteration 5 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 116 2 0.1362942302395324 0.0
+left iteration 116 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 118 2 0.1362942302395324 0.0
+left iteration 118 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 18 2 0.1362942302395324 0.0
+left iteration 18 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 100 2 0.1362942302395324 0.0
+left iteration 100 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 104 2 0.1362942302395324 0.0
+left iteration 104 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 55 2 0.1362942302395324 0.0
+left iteration 55 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 19 2 0.1362942302395324 0.0
+left iteration 19 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 32 2 0.1362942302395324 0.0
+left iteration 32 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 39 2 0.1362942302395324 0.0
+left iteration 39 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 46 2 0.1362942302395324 0.0
+left iteration 46 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 6 2 0.1362942302395324 0.0
+left iteration 6 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 71 2 0.1362942302395324 0.0
+left iteration 71 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 44 2 0.1362942302395324 0.0
+left iteration 44 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 86 2 0.1362942302395324 0.0
+left iteration 86 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 21 2 0.1362942302395324 0.0
+left iteration 21 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 72 2 0.1362942302395324 0.0
+left iteration 72 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 31 2 0.1362942302395324 0.0
+left iteration 31 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 112 2 0.1362942302395324 0.0
+left iteration 112 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 26 2 0.1362942302395324 0.0
+left iteration 26 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 61 2 0.1362942302395324 0.0
+left iteration 61 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 45 2 0.1362942302395324 0.0
+left iteration 45 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 20 2 0.1362942302395324 0.0
+left iteration 20 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 103 2 0.1362942302395324 0.0
+left iteration 103 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 110 2 0.1362942302395324 0.0
+left iteration 110 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 22 2 0.1362942302395324 0.0
+left iteration 22 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 117 2 0.1362942302395324 0.0
+left iteration 117 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 15 2 0.1362942302395324 0.0
+left iteration 15 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 120 2 0.1362942302395324 0.0
+left iteration 120 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 88 2 0.1362942302395324 0.0
+left iteration 88 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 34 2 0.1362942302395324 0.0
+left iteration 34 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 105 2 0.1362942302395324 0.0
+left iteration 105 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 101 2 0.1362942302395324 0.0
+left iteration 101 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 24 2 0.1362942302395324 0.0
+left iteration 24 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 28 2 0.1362942302395324 0.0
+left iteration 28 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 50 2 0.1362942302395324 0.0
+left iteration 50 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 41 2 0.1362942302395324 0.0
+left iteration 41 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 109 2 0.1362942302395324 0.0
+left iteration 109 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 37 2 0.1362942302395324 0.0
+left iteration 37 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 67 2 0.1362942302395324 0.0
+left iteration 67 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 89 2 0.1362942302395324 0.0
+left iteration 89 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 93 2 0.1362942302395324 0.0
+left iteration 93 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 68 2 0.1362942302395324 0.0
+left iteration 68 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 97 2 0.1362942302395324 0.0
+left iteration 97 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 75 2 0.1362942302395324 0.0
+left iteration 75 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 52 2 0.1362942302395324 0.0
+left iteration 52 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 82 2 0.1362942302395324 0.0
+left iteration 82 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 29 2 0.1362942302395324 0.0
+left iteration 29 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 81 2 0.1362942302395324 0.0
+left iteration 81 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 74 2 0.1362942302395324 0.0
+left iteration 74 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 27 2 0.1362942302395324 0.0
+left iteration 27 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 79 2 0.1362942302395324 0.0
+left iteration 79 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 60 2 0.1362942302395324 0.0
+left iteration 60 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 115 2 0.1362942302395324 0.0
+left iteration 115 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 30 2 0.1362942302395324 0.0
+left iteration 30 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 84 2 0.1362942302395324 0.0
+left iteration 84 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 14 2 0.1362942302395324 0.0
+left iteration 14 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 36 2 0.1362942302395324 0.0
+left iteration 36 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 40 2 0.1362942302395324 0.0
+left iteration 40 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 43 2 0.1362942302395324 0.0
+left iteration 43 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 65 2 0.1362942302395324 0.0
+left iteration 65 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 90 2 0.1362942302395324 0.0
+left iteration 90 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 23 2 0.1362942302395324 0.0
+left iteration 23 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 47 2 0.1362942302395324 0.0
+left iteration 47 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 85 2 0.1362942302395324 0.0
+left iteration 85 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 8 2 0.1362942302395324 0.0
+left iteration 8 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 25 2 0.1362942302395324 0.0
+left iteration 25 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 114 2 0.1362942302395324 0.0
+left iteration 114 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 91 2 0.1362942302395324 0.0
+left iteration 91 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 62 2 0.1362942302395324 0.0
+left iteration 62 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 10 2 0.1362942302395324 0.0
+left iteration 10 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 42 2 0.1362942302395324 0.0
+left iteration 42 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 59 2 0.1362942302395324 0.0
+left iteration 59 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 69 2 0.1362942302395324 0.0
+left iteration 69 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 48 2 0.1362942302395324 0.0
+left iteration 48 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 53 2 0.1362942302395324 0.0
+left iteration 53 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 35 2 0.1362942302395324 0.0
+left iteration 35 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 70 2 0.1362942302395324 0.0
+left iteration 70 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 38 2 0.1362942302395324 0.0
+left iteration 38 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 16 2 0.1362942302395324 0.0
+left iteration 16 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 80 2 0.1362942302395324 0.0
+left iteration 80 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 12 2 0.1362942302395324 0.0
+left iteration 12 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 96 2 0.1362942302395324 0.0
+left iteration 96 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 83 2 0.1362942302395324 0.0
+left iteration 83 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 66 2 0.1362942302395324 0.0
+left iteration 66 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 111 2 0.1362942302395324 0.0
+left iteration 111 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 49 2 0.1362942302395324 0.0
+left iteration 49 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 113 2 0.1362942302395324 0.0
+left iteration 113 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 94 2 0.1362942302395324 0.0
+left iteration 94 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 51 2 0.1362942302395324 0.0
+left iteration 51 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 73 2 0.1362942302395324 0.0
+left iteration 73 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 11 2 0.1362942302395324 0.0
+left iteration 11 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 98 2 0.1362942302395324 0.0
+left iteration 98 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 78 2 0.1362942302395324 0.0
+left iteration 78 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 102 2 0.1362942302395324 0.0
+left iteration 102 3 0.1362942302395324 0.0 1.894491508114271e-14
+end iteration 0 2 0.1362942302395324 1.7236802994341494e-05
+left iteration 0 3 0.1362942302395324 1.7236802994341494e-05 1.894491508114271e-14

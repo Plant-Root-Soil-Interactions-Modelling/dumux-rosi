@@ -737,19 +737,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         #   error rates    
         ####
         
-        # error mass 1DS
-        if False:
-            if (r.rhizoMassWError_abs > 1e-9) or (r.rhizoMassCError_abs > 1e-9):
-                maxdiffrhizoC = np.where(errorsEachC == max(abs(errorsEachC)))
-                print("ERROR rhizoMassWError_abs, rel", r.rhizoMassWError_abs,r.rhizoMassWError_rel  )
-                print("ERROR rhizoMassCError_abs, rel", r.rhizoMassCError_abs,r.rhizoMassCError_rel  )
-                print(errorsEachC, sum(abs(errorsEachC[np.where(organTypes == 2)])))
-                print(maxdiffrhizoC, dt)
-                # raise Exception
 
         # error 3DS-1DS
+        print('error 3DS-1DS', rank)
         r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                 seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf)
+        print('finished  error 3DS-1DS', rank)
                                 
         if rank == 0:            
             for nc in range(r.numFluidComp, r.numComp):
@@ -761,53 +754,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
                     raise Exception
                     
-        # error mass plant 
-        if False:
-            try:
-                assert s.bulkMassErrorPlant_abs < 1.e-5
-            except:
-                print(soil_source_sol)
-                print("buTotCAfter ,  buTotCBefore", buTotCAfter ,  buTotCBefore)
-                print( "sum(Q_Exud) , sum(Q_mucil)", sum(Q_Exud) , sum(Q_mucil))
-                print("3ds source",sum(soil_source_sol.flatten()))
-                print(s.bulkMassErrorPlant_abs ,s.bulkMassErrorPlant_rel)
-                print(s.bulkMassError1ds_abs ,s.bulkMassError1ds_rel)
-                print(r.rhizoMassCError_abs, r.rhizoMassCError_rel)
-                print(r.sumdiffSoilData_abs, r.sumdiffSoilData_rel)
-                print(r.maxdiffSoilData_abs, r.maxdiffSoilData_rel)
-                print("rhizoErrors:")
-                maxdiffrhizoC = np.where(abs(errorsEachC) > 1e-9)
-                print("rhizoMassCError_abs, rel", r.rhizoMassCError_abs,r.rhizoMassCError_rel  )
-                print("errorsEachC",errorsEachC, sum(abs(errorsEachC[np.where(organTypes == 2)])), organTypes[maxdiffrhizoC])
-                cyls = np.array(r.cyls)
-                print("maxdiffrhizoC",maxdiffrhizoC, dt, cyls[maxdiffrhizoC])
-                print(rhizoTotCAfter__[maxdiffrhizoC],rhizoTotCBefore__[maxdiffrhizoC], seg_sol_fluxes, 
-                    proposed_outer_sol_fluxes[maxdiffrhizoC], seg_mucil_fluxes[maxdiffrhizoC], proposed_outer_mucil_fluxes[maxdiffrhizoC])
-                print("cyls",[[dd.getSolution(i + 1) for i in range(r.numComp)] for dd in cyls[maxdiffrhizoC]])
-                raise Exception
 
-        # error mass 3DS
-        if False:
-            try:
-                # use soil_fluxes and not seg_fluxes. seg_fluxes includes air segments. sum(seg_fluxes) ~ 0.
-                # maybe 0.1% of error is too large
-                assert s.bulkMassErrorWater_abs < 1e-9
-            except:
-                print(new_soil_water , soil_water , seg_fluxes*dt)
-                print(sum(new_soil_water) , sum(soil_water) , sum(soil_fluxes.values())*dt)
-                print(s.bulkMassErrorWater_abs)
-                print( s.bulkMassErrorWater_rel )
-                print(new_soil_water)
-                raise Exception
-            if False:    
-                try:
-                    assert (abs(((new_soil_water - soil_water ) - (soil_fluxes*dt + outer_R_bc_wat ))/((new_soil_water - soil_water ) )) < 0.1).all()
-                except:
-                    print(new_soil_water - (soil_water +soil_fluxes* dt + outer_R_bc_wat ))
-                    raise Exception
-
+        print('end time step inner loop')
         # end time step inner loop
-
+    print('end of inner loop')
     return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes # first guess for next fixed point iteration
     #end of inner loop
 
