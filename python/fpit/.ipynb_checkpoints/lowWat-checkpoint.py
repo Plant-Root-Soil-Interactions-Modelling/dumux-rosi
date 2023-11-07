@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/60/24
+    dt = 1/30/24
     p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     adaptRSI_  = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/"+extraName+lightType+l_ks+str(int(weightBefore))\
+    results_dir="./results/newGIdSet"+extraName+lightType+l_ks+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -278,8 +278,11 @@ if __name__ == '__main__':
             TranspirationCumul += sum(r.outputFlux)
         
 
+        comm.barrier()
         print(rank, 'getTotCContent')
-        buTotCAfter = sum(s.getTotCContent())   
+        buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
+        comm.barrier()
+        print(rank, 'getWaterContent')
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
         print(rank, 'get s.errorCumul')
