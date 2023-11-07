@@ -1,0 +1,5000 @@
+2  before  alpha = rho_new / < rt, v > 
+74  before v = A * y 
+74  before  alpha = rho_new / < rt, v > 
+33  before v = A * y 
+33  before  alpha = rho_new / < rt, v > 
+92  before v = A * y 
+92  before  alpha = rho_new / < rt, v > 
+105  before v = A * y 
+105  before  alpha = rho_new / < rt, v > 
+10  before v = A * y 
+10  before  alpha = rho_new / < rt, v > 
+63  before v = A * y 
+63  before  alpha = rho_new / < rt, v > 
+11  before v = A * y 
+11  before  alpha = rho_new / < rt, v > 
+112  before v = A * y 
+112  before  alpha = rho_new / < rt, v > 
+39  before v = A * y 
+39  before  alpha = rho_new / < rt, v > 
+3  before v = A * y 
+3  before  alpha = rho_new / < rt, v > 
+9  before v = A * y 
+9  before  alpha = rho_new / < rt, v > 
+31  before v = A * y 
+31  before  alpha = rho_new / < rt, v > 
+61  before v = A * y 
+61  before  alpha = rho_new / < rt, v > 
+47  before v = A * y 
+47  before  alpha = rho_new / < rt, v > 
+94  before v = A * y 
+94  before  alpha = rho_new / < rt, v > 
+20  before v = A * y 
+20  before  alpha = rho_new / < rt, v > 
+35  before v = A * y 
+35  before  alpha = rho_new / < rt, v > 
+95  before v = A * y 
+95  before  alpha = rho_new / < rt, v > 
+6  before v = A * y 
+6  before  alpha = rho_new / < rt, v > 
+109  before v = A * y 
+109  before  alpha = rho_new / < rt, v > 
+99  before v = A * y 
+99  before  alpha = rho_new / < rt, v > 
+115  before v = A * y 
+115  before  alpha = rho_new / < rt, v > 
+5  before v = A * y 
+5  before  alpha = rho_new / < rt, v > 
+116  before v = A * y 
+116  before  alpha = rho_new / < rt, v > 
+96  before v = A * y 
+96  before  alpha = rho_new / < rt, v > 
+30  before v = A * y 
+30  before  alpha = rho_new / < rt, v > 
+37  before v = A * y 
+37  before  alpha = rho_new / < rt, v > 
+120  before v = A * y 
+120  before  alpha = rho_new / < rt, v > 
+17  before v = A * y 
+17  before  alpha = rho_new / < rt, v > 
+15  before v = A * y 
+15  before  alpha = rho_new / < rt, v > 
+73  before v = A * y 
+73  before  alpha = rho_new / < rt, v > 
+1  before v = A * y 
+1  before  alpha = rho_new / < rt, v > 
+43  before v = A * y 
+43  before  alpha = rho_new / < rt, v > 
+4  before v = A * y 
+4  before  alpha = rho_new / < rt, v > 
+65  before v = A * y 
+65  before  alpha = rho_new / < rt, v > 
+66  before v = A * y 
+66  before  alpha = rho_new / < rt, v > 
+90  before v = A * y 
+90  before  alpha = rho_new / < rt, v > 
+60  before v = A * y 
+60  before  alpha = rho_new / < rt, v > 
+107  before v = A * y 
+107  before  alpha = rho_new / < rt, v > 
+69  before v = A * y 
+69  before  alpha = rho_new / < rt, v > 
+8  before v = A * y 
+8  before  alpha = rho_new / < rt, v > 
+16  before v = A * y 
+16  before  alpha = rho_new / < rt, v > 
+111  before v = A * y 
+111  before  alpha = rho_new / < rt, v > 
+64  before v = A * y 
+64  before  alpha = rho_new / < rt, v > 
+66  before alpha = rho_new / h; 
+66  before apply first correction to x 
+66  before r = r - alpha*v 
+66  before test stop criteria 
+66 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+66 === rate=3.36558e-26, T=0.0206786, TIT=0.0413571, IT=0.5
+24  before v = A * y 
+24  before  alpha = rho_new / < rt, v > 
+24  before alpha = rho_new / h; 
+24  before apply first correction to x 
+24  before r = r - alpha*v 
+24  before test stop criteria 
+24 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+24 === rate=3.36558e-26, T=0.0207163, TIT=0.0414327, IT=0.5
+90  before alpha = rho_new / h; 
+90  before apply first correction to x 
+90  before r = r - alpha*v 
+90  before test stop criteria 
+90 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+90 === rate=3.36558e-26, T=0.0207007, TIT=0.0414013, IT=0.5
+44  before v = A * y 
+44  before  alpha = rho_new / < rt, v > 
+44  before alpha = rho_new / h; 
+44  before apply first correction to x 
+44  before r = r - alpha*v 
+44  before test stop criteria 
+44 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+44 === rate=3.36558e-26, T=0.0207351, TIT=0.0414702, IT=0.5
+22  before v = A * y 
+22  before  alpha = rho_new / < rt, v > 
+22  before alpha = rho_new / h; 
+22  before apply first correction to x 
+22  before r = r - alpha*v 
+22  before test stop criteria 
+22 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+22 === rate=3.36558e-26, T=0.0207512, TIT=0.0415025, IT=0.5
+13  before v = A * y 
+13  before  alpha = rho_new / < rt, v > 
+13  before alpha = rho_new / h; 
+13  before apply first correction to x 
+13  before r = r - alpha*v 
+13  before test stop criteria 
+13 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+13 === rate=3.36558e-26, T=0.0207374, TIT=0.0414747, IT=0.5
+60  before alpha = rho_new / h; 
+60  before apply first correction to x 
+60  before r = r - alpha*v 
+60  before test stop criteria 
+60 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+60 === rate=3.36558e-26, T=0.0207449, TIT=0.0414898, IT=0.5
+107  before alpha = rho_new / h; 
+107  before apply first correction to x 
+107  before r = r - alpha*v 
+107  before test stop criteria 
+107 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+107 === rate=3.36558e-26, T=0.0207172, TIT=0.0414344, IT=0.5
+78  before v = A * y 
+78  before  alpha = rho_new / < rt, v > 
+78  before alpha = rho_new / h; 
+78  before apply first correction to x 
+78  before r = r - alpha*v 
+78  before test stop criteria 
+78 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+78 === rate=3.36558e-26, T=0.0207238, TIT=0.0414477, IT=0.5
+69  before alpha = rho_new / h; 
+69  before apply first correction to x 
+69  before r = r - alpha*v 
+69  before test stop criteria 
+69 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+69 === rate=3.36558e-26, T=0.0206777, TIT=0.0413555, IT=0.5
+51  before v = A * y 
+51  before  alpha = rho_new / < rt, v > 
+51  before alpha = rho_new / h; 
+51  before apply first correction to x 
+51  before r = r - alpha*v 
+51  before test stop criteria 
+51 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+51 === rate=3.36558e-26, T=0.0207162, TIT=0.0414323, IT=0.5
+81  before v = A * y 
+81  before  alpha = rho_new / < rt, v > 
+81  before alpha = rho_new / h; 
+81  before apply first correction to x 
+81  before r = r - alpha*v 
+81  before test stop criteria 
+81 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+81 === rate=3.36558e-26, T=0.0206885, TIT=0.041377, IT=0.5
+8  before alpha = rho_new / h; 
+8  before apply first correction to x 
+8  before r = r - alpha*v 
+8  before test stop criteria 
+8 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+8 === rate=3.36558e-26, T=0.0207175, TIT=0.041435, IT=0.5
+21  before v = A * y 
+21  before  alpha = rho_new / < rt, v > 
+21  before alpha = rho_new / h; 
+21  before apply first correction to x 
+21  before r = r - alpha*v 
+21  before test stop criteria 
+21 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+21 === rate=3.36558e-26, T=0.0207283, TIT=0.0414566, IT=0.5
+16  before alpha = rho_new / h; 
+16  before apply first correction to x 
+16  before r = r - alpha*v 
+16  before test stop criteria 
+16 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+16 === rate=3.36558e-26, T=0.0207016, TIT=0.0414031, IT=0.5
+38  before v = A * y 
+38  before  alpha = rho_new / < rt, v > 
+38  before alpha = rho_new / h; 
+38  before apply first correction to x 
+38  before r = r - alpha*v 
+38  before test stop criteria 
+38 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+38 === rate=3.36558e-26, T=0.0206955, TIT=0.0413911, IT=0.5
+56  before v = A * y 
+56  before  alpha = rho_new / < rt, v > 
+56  before alpha = rho_new / h; 
+56  before apply first correction to x 
+56  before r = r - alpha*v 
+56  before test stop criteria 
+56 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+56 === rate=3.36558e-26, T=0.0207284, TIT=0.0414567, IT=0.5
+111  before alpha = rho_new / h; 
+111  before apply first correction to x 
+111  before r = r - alpha*v 
+111  before test stop criteria 
+111 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+111 === rate=3.36558e-26, T=0.0207471, TIT=0.0414941, IT=0.5
+41  before v = A * y 
+41  before  alpha = rho_new / < rt, v > 
+41  before alpha = rho_new / h; 
+41  before apply first correction to x 
+41  before r = r - alpha*v 
+41  before test stop criteria 
+41 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+41 === rate=3.36558e-26, T=0.0207061, TIT=0.0414123, IT=0.5
+58  before v = A * y 
+58  before  alpha = rho_new / < rt, v > 
+58  before alpha = rho_new / h; 
+58  before apply first correction to x 
+58  before r = r - alpha*v 
+58  before test stop criteria 
+58 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+58 === rate=3.36558e-26, T=0.0207236, TIT=0.0414473, IT=0.5
+45  before v = A * y 
+45  before  alpha = rho_new / < rt, v > 
+45  before alpha = rho_new / h; 
+45  before apply first correction to x 
+45  before r = r - alpha*v 
+45  before test stop criteria 
+45 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+45 === rate=3.36558e-26, T=0.0207267, TIT=0.0414534, IT=0.5
+42  before v = A * y 
+42  before  alpha = rho_new / < rt, v > 
+42  before alpha = rho_new / h; 
+42  before apply first correction to x 
+42  before r = r - alpha*v 
+42  before test stop criteria 
+42 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+42 === rate=3.36558e-26, T=0.0207242, TIT=0.0414483, IT=0.5
+0  before alpha = rho_new / h; 
+0  before apply first correction to x 
+0  before r = r - alpha*v 
+0  before test stop criteria 
+0 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+0 === rate=3.36558e-26, T=0.0100051, TIT=0.0200101, IT=0.5
+91  before alpha = rho_new / h; 
+91  before apply first correction to x 
+91  before r = r - alpha*v 
+91  before test stop criteria 
+91 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+91 === rate=3.36558e-26, T=0.0207073, TIT=0.0414146, IT=0.5
+97  before alpha = rho_new / h; 
+97  before apply first correction to x 
+97  before r = r - alpha*v 
+97  before test stop criteria 
+97 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+97 === rate=3.36558e-26, T=0.0206788, TIT=0.0413577, IT=0.5
+110  before v = A * y 
+110  before  alpha = rho_new / < rt, v > 
+110  before alpha = rho_new / h; 
+110  before apply first correction to x 
+110  before r = r - alpha*v 
+110  before test stop criteria 
+110 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+110 === rate=3.36558e-26, T=0.0207436, TIT=0.0414871, IT=0.5
+32  before v = A * y 
+32  before  alpha = rho_new / < rt, v > 
+32  before alpha = rho_new / h; 
+32  before apply first correction to x 
+32  before r = r - alpha*v 
+32  before test stop criteria 
+32 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+32 === rate=3.36558e-26, T=0.0206806, TIT=0.0413613, IT=0.5
+80  before alpha = rho_new / h; 
+80  before apply first correction to x 
+80  before r = r - alpha*v 
+80  before test stop criteria 
+80 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+80 === rate=3.36558e-26, T=0.0207008, TIT=0.0414016, IT=0.5
+7  before alpha = rho_new / h; 
+7  before apply first correction to x 
+7  before r = r - alpha*v 
+7  before test stop criteria 
+7 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+7 === rate=3.36558e-26, T=0.020753, TIT=0.041506, IT=0.5
+85  before v = A * y 
+85  before  alpha = rho_new / < rt, v > 
+85  before alpha = rho_new / h; 
+85  before apply first correction to x 
+85  before r = r - alpha*v 
+85  before test stop criteria 
+85 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+85 === rate=3.36558e-26, T=0.0207166, TIT=0.0414332, IT=0.5
+28  before v = A * y 
+28  before  alpha = rho_new / < rt, v > 
+28  before alpha = rho_new / h; 
+28  before apply first correction to x 
+28  before r = r - alpha*v 
+28  before test stop criteria 
+28 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+28 === rate=3.36558e-26, T=0.0207296, TIT=0.0414591, IT=0.5
+93  before alpha = rho_new / h; 
+93  before apply first correction to x 
+93  before r = r - alpha*v 
+93  before test stop criteria 
+93 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+93 === rate=3.36558e-26, T=0.0207038, TIT=0.0414077, IT=0.5
+89  before v = A * y 
+89  before  alpha = rho_new / < rt, v > 
+89  before alpha = rho_new / h; 
+89  before apply first correction to x 
+89  before r = r - alpha*v 
+89  before test stop criteria 
+89 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+89 === rate=3.36558e-26, T=0.0206969, TIT=0.0413939, IT=0.5
+86  before v = A * y 
+86  before  alpha = rho_new / < rt, v > 
+86  before alpha = rho_new / h; 
+86  before apply first correction to x 
+86  before r = r - alpha*v 
+86  before test stop criteria 
+86 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+86 === rate=3.36558e-26, T=0.0207654, TIT=0.0415307, IT=0.5
+101  before v = A * y 
+101  before  alpha = rho_new / < rt, v > 
+101  before alpha = rho_new / h; 
+101  before apply first correction to x 
+101  before r = r - alpha*v 
+101  before test stop criteria 
+101 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+101 === rate=3.36558e-26, T=0.0206976, TIT=0.0413952, IT=0.5
+77  before v = A * y 
+77  before  alpha = rho_new / < rt, v > 
+77  before alpha = rho_new / h; 
+77  before apply first correction to x 
+77  before r = r - alpha*v 
+77  before test stop criteria 
+77 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+77 === rate=3.36558e-26, T=0.0207168, TIT=0.0414337, IT=0.5
+67  before alpha = rho_new / h; 
+67  before apply first correction to x 
+67  before r = r - alpha*v 
+67  before test stop criteria 
+67 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+67 === rate=3.36558e-26, T=0.0206834, TIT=0.0413669, IT=0.5
+46  before v = A * y 
+46  before  alpha = rho_new / < rt, v > 
+46  before alpha = rho_new / h; 
+46  before apply first correction to x 
+46  before r = r - alpha*v 
+46  before test stop criteria 
+46 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+46 === rate=3.36558e-26, T=0.0207484, TIT=0.0414969, IT=0.5
+34  before v = A * y 
+34  before  alpha = rho_new / < rt, v > 
+34  before alpha = rho_new / h; 
+34  before apply first correction to x 
+34  before r = r - alpha*v 
+34  before test stop criteria 
+34 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+34 === rate=3.36558e-26, T=0.0207032, TIT=0.0414063, IT=0.5
+57  before v = A * y 
+57  before  alpha = rho_new / < rt, v > 
+57  before alpha = rho_new / h; 
+57  before apply first correction to x 
+57  before r = r - alpha*v 
+57  before test stop criteria 
+57 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+57 === rate=3.36558e-26, T=0.0207328, TIT=0.0414656, IT=0.5
+100  before alpha = rho_new / h; 
+100  before apply first correction to x 
+100  before r = r - alpha*v 
+100  before test stop criteria 
+100 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+100 === rate=3.36558e-26, T=0.0206998, TIT=0.0413996, IT=0.5
+36  before alpha = rho_new / h; 
+36  before apply first correction to x 
+36  before r = r - alpha*v 
+36  before test stop criteria 
+36 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+36 === rate=3.36558e-26, T=0.0206942, TIT=0.0413883, IT=0.5
+14  before v = A * y 
+14  before  alpha = rho_new / < rt, v > 
+14  before alpha = rho_new / h; 
+14  before apply first correction to x 
+14  before r = r - alpha*v 
+14  before test stop criteria 
+14 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+14 === rate=3.36558e-26, T=0.0207589, TIT=0.0415177, IT=0.5
+68  before v = A * y 
+68  before  alpha = rho_new / < rt, v > 
+68  before alpha = rho_new / h; 
+68  before apply first correction to x 
+68  before r = r - alpha*v 
+68  before test stop criteria 
+68 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+68 === rate=3.36558e-26, T=0.0206775, TIT=0.041355, IT=0.5
+2  before alpha = rho_new / h; 
+2  before apply first correction to x 
+2  before r = r - alpha*v 
+2  before test stop criteria 
+2 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+2 === rate=3.36558e-26, T=0.0207288, TIT=0.0414575, IT=0.5
+106  before v = A * y 
+106  before  alpha = rho_new / < rt, v > 
+106  before alpha = rho_new / h; 
+106  before apply first correction to x 
+106  before r = r - alpha*v 
+106  before test stop criteria 
+106 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+106 === rate=3.36558e-26, T=0.0207107, TIT=0.0414214, IT=0.5
+74  before alpha = rho_new / h; 
+74  before apply first correction to x 
+74  before r = r - alpha*v 
+74  before test stop criteria 
+74 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+74 === rate=3.36558e-26, T=0.0207225, TIT=0.041445, IT=0.5
+33  before alpha = rho_new / h; 
+33  before apply first correction to x 
+33  before r = r - alpha*v 
+33  before test stop criteria 
+33 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+33 === rate=3.36558e-26, T=0.0206871, TIT=0.0413742, IT=0.5
+98  before v = A * y 
+98  before  alpha = rho_new / < rt, v > 
+98  before alpha = rho_new / h; 
+98  before apply first correction to x 
+98  before r = r - alpha*v 
+98  before test stop criteria 
+98 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+98 === rate=3.36558e-26, T=0.0206911, TIT=0.0413822, IT=0.5
+18  before v = A * y 
+18  before  alpha = rho_new / < rt, v > 
+18  before alpha = rho_new / h; 
+18  before apply first correction to x 
+18  before r = r - alpha*v 
+18  before test stop criteria 
+18 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+18 === rate=3.36558e-26, T=0.0207558, TIT=0.0415116, IT=0.5
+49  before v = A * y 
+49  before  alpha = rho_new / < rt, v > 
+49  before alpha = rho_new / h; 
+49  before apply first correction to x 
+49  before r = r - alpha*v 
+49  before test stop criteria 
+49 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+49 === rate=3.36558e-26, T=0.0207133, TIT=0.0414265, IT=0.5
+87  before v = A * y 
+87  before  alpha = rho_new / < rt, v > 
+87  before alpha = rho_new / h; 
+87  before apply first correction to x 
+87  before r = r - alpha*v 
+87  before test stop criteria 
+87 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+87 === rate=3.36558e-26, T=0.0207518, TIT=0.0415035, IT=0.5
+92  before alpha = rho_new / h; 
+92  before apply first correction to x 
+92  before r = r - alpha*v 
+92  before test stop criteria 
+92 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+92 === rate=3.36558e-26, T=0.0207147, TIT=0.0414295, IT=0.5
+105  before alpha = rho_new / h; 
+105  before apply first correction to x 
+105  before r = r - alpha*v 
+105  before test stop criteria 
+105 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+105 === rate=3.36558e-26, T=0.0207008, TIT=0.0414016, IT=0.5
+10  before alpha = rho_new / h; 
+10  before apply first correction to x 
+10  before r = r - alpha*v 
+10  before test stop criteria 
+10 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+10 === rate=3.36558e-26, T=0.0207523, TIT=0.0415046, IT=0.5
+63  before alpha = rho_new / h; 
+63  before apply first correction to x 
+63  before r = r - alpha*v 
+63  before test stop criteria 
+63 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+63 === rate=3.36558e-26, T=0.0207743, TIT=0.0415486, IT=0.5
+75  before v = A * y 
+75  before  alpha = rho_new / < rt, v > 
+75  before alpha = rho_new / h; 
+75  before apply first correction to x 
+75  before r = r - alpha*v 
+75  before test stop criteria 
+75 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+75 === rate=3.36558e-26, T=0.0207117, TIT=0.0414233, IT=0.5
+11  before alpha = rho_new / h; 
+11  before apply first correction to x 
+11  before r = r - alpha*v 
+11  before test stop criteria 
+11 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+11 === rate=3.36558e-26, T=0.0207269, TIT=0.0414538, IT=0.5
+50  before v = A * y 
+50  before  alpha = rho_new / < rt, v > 
+50  before alpha = rho_new / h; 
+50  before apply first correction to x 
+50  before r = r - alpha*v 
+50  before test stop criteria 
+50 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+50 === rate=3.36558e-26, T=0.0207001, TIT=0.0414002, IT=0.5
+12  before v = A * y 
+12  before  alpha = rho_new / < rt, v > 
+12  before alpha = rho_new / h; 
+12  before apply first correction to x 
+12  before r = r - alpha*v 
+12  before test stop criteria 
+12 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+12 === rate=3.36558e-26, T=0.0207333, TIT=0.0414667, IT=0.5
+112  before alpha = rho_new / h; 
+112  before apply first correction to x 
+112  before r = r - alpha*v 
+112  before test stop criteria 
+112 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+112 === rate=3.36558e-26, T=0.0206915, TIT=0.0413831, IT=0.5
+39  before alpha = rho_new / h; 
+39  before apply first correction to x 
+39  before r = r - alpha*v 
+39  before test stop criteria 
+39 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+39 === rate=3.36558e-26, T=0.0207062, TIT=0.0414125, IT=0.5
+3  before alpha = rho_new / h; 
+3  before apply first correction to x 
+3  before r = r - alpha*v 
+3  before test stop criteria 
+3 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+3 === rate=3.36558e-26, T=0.0207205, TIT=0.041441, IT=0.5
+9  before alpha = rho_new / h; 
+9  before apply first correction to x 
+9  before r = r - alpha*v 
+9  before test stop criteria 
+9 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+9 === rate=3.36558e-26, T=0.0207175, TIT=0.041435, IT=0.5
+27  before v = A * y 
+27  before  alpha = rho_new / < rt, v > 
+27  before alpha = rho_new / h; 
+27  before apply first correction to x 
+27  before r = r - alpha*v 
+27  before test stop criteria 
+27 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+27 === rate=3.36558e-26, T=0.020715, TIT=0.0414299, IT=0.5
+19  before v = A * y 
+19  before  alpha = rho_new / < rt, v > 
+19  before alpha = rho_new / h; 
+19  before apply first correction to x 
+19  before r = r - alpha*v 
+19  before test stop criteria 
+19 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+19 === rate=3.36558e-26, T=0.0207457, TIT=0.0414913, IT=0.5
+31  before alpha = rho_new / h; 
+31  before apply first correction to x 
+31  before r = r - alpha*v 
+31  before test stop criteria 
+31 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+31 === rate=3.36558e-26, T=0.0207337, TIT=0.0414675, IT=0.5
+61  before alpha = rho_new / h; 
+61  before apply first correction to x 
+61  before r = r - alpha*v 
+61  before test stop criteria 
+61 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+61 === rate=3.36558e-26, T=0.0207482, TIT=0.0414964, IT=0.5
+47  before alpha = rho_new / h; 
+47  before apply first correction to x 
+47  before r = r - alpha*v 
+47  before test stop criteria 
+47 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+47 === rate=3.36558e-26, T=0.0207512, TIT=0.0415025, IT=0.5
+25  before v = A * y 
+25  before  alpha = rho_new / < rt, v > 
+25  before alpha = rho_new / h; 
+25  before apply first correction to x 
+25  before r = r - alpha*v 
+25  before test stop criteria 
+25 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+25 === rate=3.36558e-26, T=0.020714, TIT=0.041428, IT=0.5
+94  before alpha = rho_new / h; 
+94  before apply first correction to x 
+94  before r = r - alpha*v 
+94  before test stop criteria 
+94 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+94 === rate=3.36558e-26, T=0.0207508, TIT=0.0415015, IT=0.5
+102  before v = A * y 
+102  before  alpha = rho_new / < rt, v > 
+102  before alpha = rho_new / h; 
+102  before apply first correction to x 
+102  before r = r - alpha*v 
+102  before test stop criteria 
+102 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+102 === rate=3.36558e-26, T=0.0207045, TIT=0.041409, IT=0.5
+84  before v = A * y 
+84  before  alpha = rho_new / < rt, v > 
+84  before alpha = rho_new / h; 
+84  before apply first correction to x 
+84  before r = r - alpha*v 
+84  before test stop criteria 
+84 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+84 === rate=3.36558e-26, T=0.0207008, TIT=0.0414016, IT=0.5
+83  before v = A * y 
+83  before  alpha = rho_new / < rt, v > 
+83  before alpha = rho_new / h; 
+83  before apply first correction to x 
+83  before r = r - alpha*v 
+83  before test stop criteria 
+83 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+83 === rate=3.36558e-26, T=0.0207072, TIT=0.0414143, IT=0.5
+20  before alpha = rho_new / h; 
+20  before apply first correction to x 
+20  before r = r - alpha*v 
+20  before test stop criteria 
+20 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+20 === rate=3.36558e-26, T=0.0207339, TIT=0.0414677, IT=0.5
+48  before v = A * y 
+48  before  alpha = rho_new / < rt, v > 
+48  before alpha = rho_new / h; 
+48  before apply first correction to x 
+48  before r = r - alpha*v 
+48  before test stop criteria 
+48 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+48 === rate=3.36558e-26, T=0.0207139, TIT=0.0414279, IT=0.5
+23  before v = A * y 
+23  before  alpha = rho_new / < rt, v > 
+23  before alpha = rho_new / h; 
+23  before apply first correction to x 
+23  before r = r - alpha*v 
+23  before test stop criteria 
+23 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+23 === rate=3.36558e-26, T=0.0207613, TIT=0.0415226, IT=0.5
+35  before alpha = rho_new / h; 
+35  before apply first correction to x 
+35  before r = r - alpha*v 
+35  before test stop criteria 
+35 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+35 === rate=3.36558e-26, T=0.0207058, TIT=0.0414115, IT=0.5
+55  before v = A * y 
+55  before  alpha = rho_new / < rt, v > 
+55  before alpha = rho_new / h; 
+55  before apply first correction to x 
+55  before r = r - alpha*v 
+55  before test stop criteria 
+55 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+55 === rate=3.36558e-26, T=0.0207456, TIT=0.0414913, IT=0.5
+52  before v = A * y 
+52  before  alpha = rho_new / < rt, v > 
+52  before alpha = rho_new / h; 
+52  before apply first correction to x 
+52  before r = r - alpha*v 
+52  before test stop criteria 
+52 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+52 === rate=3.36558e-26, T=0.02071, TIT=0.0414199, IT=0.5
+95  before alpha = rho_new / h; 
+95  before apply first correction to x 
+95  before r = r - alpha*v 
+95  before test stop criteria 
+95 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+95 === rate=3.36558e-26, T=0.0207459, TIT=0.0414917, IT=0.5
+70  before v = A * y 
+70  before  alpha = rho_new / < rt, v > 
+70  before alpha = rho_new / h; 
+70  before apply first correction to x 
+70  before r = r - alpha*v 
+70  before test stop criteria 
+70 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+70 === rate=3.36558e-26, T=0.0207465, TIT=0.041493, IT=0.5
+40  before v = A * y 
+40  before  alpha = rho_new / < rt, v > 
+40  before alpha = rho_new / h; 
+40  before apply first correction to x 
+40  before r = r - alpha*v 
+40  before test stop criteria 
+40 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+40 === rate=3.36558e-26, T=0.0207181, TIT=0.0414361, IT=0.5
+104  before v = A * y 
+104  before  alpha = rho_new / < rt, v > 
+104  before alpha = rho_new / h; 
+104  before apply first correction to x 
+104  before r = r - alpha*v 
+104  before test stop criteria 
+104 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+104 === rate=3.36558e-26, T=0.0207063, TIT=0.0414126, IT=0.5
+6  before alpha = rho_new / h; 
+6  before apply first correction to x 
+6  before r = r - alpha*v 
+6  before test stop criteria 
+6 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+6 === rate=3.36558e-26, T=0.020743, TIT=0.0414859, IT=0.5
+109  before alpha = rho_new / h; 
+109  before apply first correction to x 
+109  before r = r - alpha*v 
+109  before test stop criteria 
+109 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+109 === rate=3.36558e-26, T=0.0207344, TIT=0.0414688, IT=0.5
+99  before alpha = rho_new / h; 
+99  before apply first correction to x 
+99  before r = r - alpha*v 
+99  before test stop criteria 
+99 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+99 === rate=3.36558e-26, T=0.020688, TIT=0.041376, IT=0.5
+115  before alpha = rho_new / h; 
+115  before apply first correction to x 
+115  before r = r - alpha*v 
+115  before test stop criteria 
+115 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+115 === rate=3.36558e-26, T=0.020707, TIT=0.041414, IT=0.5
+117  before v = A * y 
+117  before  alpha = rho_new / < rt, v > 
+117  before alpha = rho_new / h; 
+117  before apply first correction to x 
+117  before r = r - alpha*v 
+117  before test stop criteria 
+117 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+117 === rate=3.36558e-26, T=0.0207132, TIT=0.0414265, IT=0.5
+5  before alpha = rho_new / h; 
+5  before apply first correction to x 
+5  before r = r - alpha*v 
+5  before test stop criteria 
+5 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+5 === rate=3.36558e-26, T=0.0206914, TIT=0.0413827, IT=0.5
+82  before v = A * y 
+82  before  alpha = rho_new / < rt, v > 
+82  before alpha = rho_new / h; 
+82  before apply first correction to x 
+82  before r = r - alpha*v 
+82  before test stop criteria 
+82 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+82 === rate=3.36558e-26, T=0.0207124, TIT=0.0414247, IT=0.5
+62  before v = A * y 
+62  before  alpha = rho_new / < rt, v > 
+62  before alpha = rho_new / h; 
+62  before apply first correction to x 
+62  before r = r - alpha*v 
+62  before test stop criteria 
+62 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+62 === rate=3.36558e-26, T=0.0207758, TIT=0.0415516, IT=0.5
+103  before v = A * y 
+103  before  alpha = rho_new / < rt, v > 
+103  before alpha = rho_new / h; 
+103  before apply first correction to x 
+103  before r = r - alpha*v 
+103  before test stop criteria 
+103 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+103 === rate=3.36558e-26, T=0.0207038, TIT=0.0414075, IT=0.5
+54  before v = A * y 
+54  before  alpha = rho_new / < rt, v > 
+54  before alpha = rho_new / h; 
+54  before apply first correction to x 
+54  before r = r - alpha*v 
+54  before test stop criteria 
+54 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+54 === rate=3.36558e-26, T=0.0207402, TIT=0.0414804, IT=0.5
+79  before v = A * y 
+79  before  alpha = rho_new / < rt, v > 
+79  before alpha = rho_new / h; 
+79  before apply first correction to x 
+79  before r = r - alpha*v 
+79  before test stop criteria 
+79 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+79 === rate=3.36558e-26, T=0.0207379, TIT=0.0414758, IT=0.5
+88  before v = A * y 
+88  before  alpha = rho_new / < rt, v > 
+88  before alpha = rho_new / h; 
+88  before apply first correction to x 
+88  before r = r - alpha*v 
+88  before test stop criteria 
+88 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+88 === rate=3.36558e-26, T=0.0206946, TIT=0.0413892, IT=0.5
+113  before v = A * y 
+113  before  alpha = rho_new / < rt, v > 
+113  before alpha = rho_new / h; 
+113  before apply first correction to x 
+113  before r = r - alpha*v 
+113  before test stop criteria 
+113 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+113 === rate=3.36558e-26, T=0.0206962, TIT=0.0413925, IT=0.5
+116  before alpha = rho_new / h; 
+116  before apply first correction to x 
+116  before r = r - alpha*v 
+116  before test stop criteria 
+116 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+116 === rate=3.36558e-26, T=0.0207516, TIT=0.0415031, IT=0.5
+26  before v = A * y 
+26  before  alpha = rho_new / < rt, v > 
+26  before alpha = rho_new / h; 
+26  before apply first correction to x 
+26  before r = r - alpha*v 
+26  before test stop criteria 
+26 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+26 === rate=3.36558e-26, T=0.0207074, TIT=0.0414148, IT=0.5
+76  before v = A * y 
+76  before  alpha = rho_new / < rt, v > 
+76  before alpha = rho_new / h; 
+76  before apply first correction to x 
+76  before r = r - alpha*v 
+76  before test stop criteria 
+76 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+76 === rate=3.36558e-26, T=0.0207186, TIT=0.0414372, IT=0.5
+96  before alpha = rho_new / h; 
+96  before apply first correction to x 
+96  before r = r - alpha*v 
+96  before test stop criteria 
+96 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+96 === rate=3.36558e-26, T=0.020676, TIT=0.041352, IT=0.5
+29  before v = A * y 
+29  before  alpha = rho_new / < rt, v > 
+29  before alpha = rho_new / h; 
+29  before apply first correction to x 
+29  before r = r - alpha*v 
+29  before test stop criteria 
+29 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+29 === rate=3.36558e-26, T=0.0207282, TIT=0.0414564, IT=0.5
+30  before alpha = rho_new / h; 
+30  before apply first correction to x 
+30  before r = r - alpha*v 
+30  before test stop criteria 
+30 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+30 === rate=3.36558e-26, T=0.0207294, TIT=0.0414588, IT=0.5
+37  before alpha = rho_new / h; 
+37  before apply first correction to x 
+37  before r = r - alpha*v 
+37  before test stop criteria 
+37 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+37 === rate=3.36558e-26, T=0.0206975, TIT=0.0413951, IT=0.5
+120  before alpha = rho_new / h; 
+120  before apply first correction to x 
+120  before r = r - alpha*v 
+120  before test stop criteria 
+120 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+120 === rate=3.36558e-26, T=0.0207564, TIT=0.0415127, IT=0.5
+17  before alpha = rho_new / h; 
+17  before apply first correction to x 
+17  before r = r - alpha*v 
+17  before test stop criteria 
+17 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+17 === rate=3.36558e-26, T=0.0207064, TIT=0.0414127, IT=0.5
+15  before alpha = rho_new / h; 
+15  before apply first correction to x 
+15  before r = r - alpha*v 
+15  before test stop criteria 
+15 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+15 === rate=3.36558e-26, T=0.02076, TIT=0.04152, IT=0.5
+64  before alpha = rho_new / h; 
+64  before apply first correction to x 
+64  before r = r - alpha*v 
+64  before test stop criteria 
+64 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+64 === rate=3.36558e-26, T=0.0206792, TIT=0.0413585, IT=0.5
+119  before v = A * y 
+119  before  alpha = rho_new / < rt, v > 
+119  before alpha = rho_new / h; 
+119  before apply first correction to x 
+119  before r = r - alpha*v 
+119  before test stop criteria 
+119 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+119 === rate=3.36558e-26, T=0.0207294, TIT=0.0414589, IT=0.5
+72  before v = A * y 
+72  before  alpha = rho_new / < rt, v > 
+72  before alpha = rho_new / h; 
+72  before apply first correction to x 
+72  before r = r - alpha*v 
+72  before test stop criteria 
+72 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+72 === rate=3.36558e-26, T=0.0207113, TIT=0.0414227, IT=0.5
+73  before alpha = rho_new / h; 
+73  before apply first correction to x 
+73  before r = r - alpha*v 
+73  before test stop criteria 
+73 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+73 === rate=3.36558e-26, T=0.020689, TIT=0.0413779, IT=0.5
+1  before alpha = rho_new / h; 
+1  before apply first correction to x 
+1  before r = r - alpha*v 
+1  before test stop criteria 
+1 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+1 === rate=3.36558e-26, T=0.020701, TIT=0.0414021, IT=0.5
+71  before v = A * y 
+71  before  alpha = rho_new / < rt, v > 
+71  before alpha = rho_new / h; 
+71  before apply first correction to x 
+71  before r = r - alpha*v 
+71  before test stop criteria 
+71 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+71 === rate=3.36558e-26, T=0.0207107, TIT=0.0414213, IT=0.5
+59  before v = A * y 
+59  before  alpha = rho_new / < rt, v > 
+59  before alpha = rho_new / h; 
+59  before apply first correction to x 
+59  before r = r - alpha*v 
+59  before test stop criteria 
+59 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+59 === rate=3.36558e-26, T=0.0207317, TIT=0.0414633, IT=0.5
+114  before v = A * y 
+114  before  alpha = rho_new / < rt, v > 
+114  before alpha = rho_new / h; 
+114  before apply first correction to x 
+114  before r = r - alpha*v 
+114  before test stop criteria 
+114 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+114 === rate=3.36558e-26, T=0.0207302, TIT=0.0414603, IT=0.5
+118  before v = A * y 
+118  before  alpha = rho_new / < rt, v > 
+118  before alpha = rho_new / h; 
+118  before apply first correction to x 
+118  before r = r - alpha*v 
+118  before test stop criteria 
+118 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+118 === rate=3.36558e-26, T=0.0207381, TIT=0.0414762, IT=0.5
+43  before alpha = rho_new / h; 
+43  before apply first correction to x 
+43  before r = r - alpha*v 
+43  before test stop criteria 
+43 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+43 === rate=3.36558e-26, T=0.0207204, TIT=0.0414407, IT=0.5
+108  before v = A * y 
+108  before  alpha = rho_new / < rt, v > 
+108  before alpha = rho_new / h; 
+108  before apply first correction to x 
+108  before r = r - alpha*v 
+108  before test stop criteria 
+108 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+108 === rate=3.36558e-26, T=0.0207436, TIT=0.0414871, IT=0.5
+4  before alpha = rho_new / h; 
+4  before apply first correction to x 
+4  before r = r - alpha*v 
+4  before test stop criteria 
+4 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+4 === rate=3.36558e-26, T=0.0206866, TIT=0.0413733, IT=0.5
+65  before alpha = rho_new / h; 
+65  before apply first correction to x 
+65  before r = r - alpha*v 
+65  before test stop criteria 
+65 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+65 === rate=3.36558e-26, T=0.0206822, TIT=0.0413644, IT=0.5
+53  before v = A * y 
+53  before  alpha = rho_new / < rt, v > 
+53  before alpha = rho_new / h; 
+53  before apply first correction to x 
+53  before r = r - alpha*v 
+53  before test stop criteria 
+53 istlsolver::printOutput 
+  0.5      1.03248e-24      1.83455e-13
+53 === rate=3.36558e-26, T=0.0207098, TIT=0.0414195, IT=0.5
+89 BiCGSTABSolver::apply 
+86 BiCGSTABSolver::apply 
+101 BiCGSTABSolver::apply 
+77 BiCGSTABSolver::apply 
+67 BiCGSTABSolver::apply 
+46 BiCGSTABSolver::apply 
+34 BiCGSTABSolver::apply 
+57 BiCGSTABSolver::apply 
+100 BiCGSTABSolver::apply 
+36 BiCGSTABSolver::apply 
+14 BiCGSTABSolver::apply 
+68 BiCGSTABSolver::apply 
+2 BiCGSTABSolver::apply 
+106 BiCGSTABSolver::apply 
+74 BiCGSTABSolver::apply 
+33 BiCGSTABSolver::apply 
+98 BiCGSTABSolver::apply 
+18 BiCGSTABSolver::apply 
+49 BiCGSTABSolver::apply 
+87 BiCGSTABSolver::apply 
+92 BiCGSTABSolver::apply 
+105 BiCGSTABSolver::apply 
+10 BiCGSTABSolver::apply 
+63 BiCGSTABSolver::apply 
+75 BiCGSTABSolver::apply 
+11 BiCGSTABSolver::apply 
+50 BiCGSTABSolver::apply 
+12 BiCGSTABSolver::apply 
+112 BiCGSTABSolver::apply 
+39 BiCGSTABSolver::apply 
+3 BiCGSTABSolver::apply 
+9 BiCGSTABSolver::apply 
+27 BiCGSTABSolver::apply 
+19 BiCGSTABSolver::apply 
+31 BiCGSTABSolver::apply 
+61 BiCGSTABSolver::apply 
+47 BiCGSTABSolver::apply 
+25 BiCGSTABSolver::apply 
+94 BiCGSTABSolver::apply 
+102 BiCGSTABSolver::apply 
+84 BiCGSTABSolver::apply 
+83 BiCGSTABSolver::apply 
+20 BiCGSTABSolver::apply 
+48 BiCGSTABSolver::apply 
+23 BiCGSTABSolver::apply 
+35 BiCGSTABSolver::apply 
+55 BiCGSTABSolver::apply 
+52 BiCGSTABSolver::apply 
+95 BiCGSTABSolver::apply 
+70 BiCGSTABSolver::apply 
+40 BiCGSTABSolver::apply 
+104 BiCGSTABSolver::apply 
+6 BiCGSTABSolver::apply 
+109 BiCGSTABSolver::apply 
+99 BiCGSTABSolver::apply 
+115 BiCGSTABSolver::apply 
+117 BiCGSTABSolver::apply 
+5 BiCGSTABSolver::apply 
+82 BiCGSTABSolver::apply 
+62 BiCGSTABSolver::apply 
+103 BiCGSTABSolver::apply 
+54 BiCGSTABSolver::apply 
+79 BiCGSTABSolver::apply 
+88 BiCGSTABSolver::apply 
+113 BiCGSTABSolver::apply 
+116 BiCGSTABSolver::apply 
+26 BiCGSTABSolver::apply 
+76 BiCGSTABSolver::apply 
+96 BiCGSTABSolver::apply 
+29 BiCGSTABSolver::apply 
+30 BiCGSTABSolver::apply 
+37 BiCGSTABSolver::apply 
+120 BiCGSTABSolver::apply 
+17 BiCGSTABSolver::apply 
+53 BiCGSTABSolver::apply 
+64 BiCGSTABSolver::apply 
+119 BiCGSTABSolver::apply 
+72 BiCGSTABSolver::apply 
+73 BiCGSTABSolver::apply 
+1 BiCGSTABSolver::apply 
+71 BiCGSTABSolver::apply 
+59 BiCGSTABSolver::apply 
+114 BiCGSTABSolver::apply 
+118 BiCGSTABSolver::apply 
+43 BiCGSTABSolver::apply 
+108 BiCGSTABSolver::apply 
+4 BiCGSTABSolver::apply 
+65 BiCGSTABSolver::apply 
+15 BiCGSTABSolver::apply 
+66 BiCGSTABSolver::apply 
+24 BiCGSTABSolver::apply 
+90 BiCGSTABSolver::apply 
+44 BiCGSTABSolver::apply 
+22 BiCGSTABSolver::apply 
+13 BiCGSTABSolver::apply 
+60 BiCGSTABSolver::apply 
+107 BiCGSTABSolver::apply 
+78 BiCGSTABSolver::apply 
+69 BiCGSTABSolver::apply 
+51 BiCGSTABSolver::apply 
+81 BiCGSTABSolver::apply 
+8 BiCGSTABSolver::apply 
+21 BiCGSTABSolver::apply 
+16 BiCGSTABSolver::apply 
+38 BiCGSTABSolver::apply 
+56 BiCGSTABSolver::apply 
+111 BiCGSTABSolver::apply 
+41 BiCGSTABSolver::apply 
+58 BiCGSTABSolver::apply 
+45 BiCGSTABSolver::apply 
+42 BiCGSTABSolver::apply 
+91 BiCGSTABSolver::apply 
+97 BiCGSTABSolver::apply 
+110 BiCGSTABSolver::apply 
+32 BiCGSTABSolver::apply 
+80 BiCGSTABSolver::apply 
+7 BiCGSTABSolver::apply 
+85 BiCGSTABSolver::apply 
+28 BiCGSTABSolver::apply 
+93 BiCGSTABSolver::apply 
+64 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+64  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+64  before p = r 
+64  before  y = W^-1 * p 
+64  before apply preconditioner 0.5 250
+119 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+119  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+119  before p = r 
+119  before  y = W^-1 * p 
+119  before apply preconditioner 0.5 250
+72 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+72  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+72  before p = r 
+72  before  y = W^-1 * p 
+72  before apply preconditioner 0.5 250
+73 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+73  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+73  before p = r 
+73  before  y = W^-1 * p 
+73  before apply preconditioner 0.5 250
+1 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+1  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+1  before p = r 
+1  before  y = W^-1 * p 
+1  before apply preconditioner 0.5 250
+71 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+71  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+71  before p = r 
+71  before  y = W^-1 * p 
+71  before apply preconditioner 0.5 250
+59 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+59  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+59  before p = r 
+59  before  y = W^-1 * p 
+59  before apply preconditioner 0.5 250
+114 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+114  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+114  before p = r 
+114  before  y = W^-1 * p 
+114  before apply preconditioner 0.5 250
+118 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+118  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+118  before p = r 
+118  before  y = W^-1 * p 
+118  before apply preconditioner 0.5 250
+43 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+43  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+43  before p = r 
+43  before  y = W^-1 * p 
+43  before apply preconditioner 0.5 250
+108 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+108  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+108  before p = r 
+108  before  y = W^-1 * p 
+108  before apply preconditioner 0.5 250
+4 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+4  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+4  before p = r 
+4  before  y = W^-1 * p 
+4  before apply preconditioner 0.5 250
+65 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+65  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+65  before p = r 
+65  before  y = W^-1 * p 
+65  before apply preconditioner 0.5 250
+15 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+15  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+15  before p = r 
+15  before  y = W^-1 * p 
+15  before apply preconditioner 0.5 250
+66 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+66  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+66  before p = r 
+66  before  y = W^-1 * p 
+66  before apply preconditioner 0.5 250
+24 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+24  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+24  before p = r 
+24  before  y = W^-1 * p 
+24  before apply preconditioner 0.5 250
+90 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+90  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+90  before p = r 
+90  before  y = W^-1 * p 
+90  before apply preconditioner 0.5 250
+44 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+44  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+44  before p = r 
+44  before  y = W^-1 * p 
+44  before apply preconditioner 0.5 250
+22 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+22  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+22  before p = r 
+22  before  y = W^-1 * p 
+22  before apply preconditioner 0.5 250
+13 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+13  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+13  before p = r 
+13  before  y = W^-1 * p 
+13  before apply preconditioner 0.5 250
+60 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+60  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+60  before p = r 
+60  before  y = W^-1 * p 
+60  before apply preconditioner 0.5 250
+107 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+107  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+107  before p = r 
+107  before  y = W^-1 * p 
+107  before apply preconditioner 0.5 250
+78 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+78  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+78  before p = r 
+78  before  y = W^-1 * p 
+78  before apply preconditioner 0.5 250
+69 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+69  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+69  before p = r 
+69  before  y = W^-1 * p 
+69  before apply preconditioner 0.5 250
+51 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+51  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+51  before p = r 
+51  before  y = W^-1 * p 
+51  before apply preconditioner 0.5 250
+81 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+81  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+81  before p = r 
+81  before  y = W^-1 * p 
+81  before apply preconditioner 0.5 250
+8 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+8  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+8  before p = r 
+8  before  y = W^-1 * p 
+8  before apply preconditioner 0.5 250
+21 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+21  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+21  before p = r 
+21  before  y = W^-1 * p 
+21  before apply preconditioner 0.5 250
+16 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+16  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+16  before p = r 
+16  before  y = W^-1 * p 
+16  before apply preconditioner 0.5 250
+38 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+38  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+38  before p = r 
+38  before  y = W^-1 * p 
+38  before apply preconditioner 0.5 250
+56 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+56  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+56  before p = r 
+56  before  y = W^-1 * p 
+56  before apply preconditioner 0.5 250
+111 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+111  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+111  before p = r 
+111  before  y = W^-1 * p 
+111  before apply preconditioner 0.5 250
+41 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+41  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+41  before p = r 
+41  before  y = W^-1 * p 
+41  before apply preconditioner 0.5 250
+58 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+58  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+58  before p = r 
+58  before  y = W^-1 * p 
+58  before apply preconditioner 0.5 250
+45 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+45  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+45  before p = r 
+45  before  y = W^-1 * p 
+45  before apply preconditioner 0.5 250
+0 BiCGSTABSolver::apply 
+0 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+0  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+0  before p = r 
+0  before  y = W^-1 * p 
+0  before apply preconditioner 0.5 250
+42 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+42  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+42  before p = r 
+42  before  y = W^-1 * p 
+42  before apply preconditioner 0.5 250
+91 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+91  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+91  before p = r 
+91  before  y = W^-1 * p 
+91  before apply preconditioner 0.5 250
+97 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+97  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+97  before p = r 
+97  before  y = W^-1 * p 
+97  before apply preconditioner 0.5 250
+110 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+110  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+110  before p = r 
+110  before  y = W^-1 * p 
+110  before apply preconditioner 0.5 250
+32 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+32  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+32  before p = r 
+32  before  y = W^-1 * p 
+32  before apply preconditioner 0.5 250
+80 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+80  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+80  before p = r 
+80  before  y = W^-1 * p 
+80  before apply preconditioner 0.5 250
+7 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+7  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+7  before p = r 
+7  before  y = W^-1 * p 
+7  before apply preconditioner 0.5 250
+85 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+85  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+85  before p = r 
+85  before  y = W^-1 * p 
+85  before apply preconditioner 0.5 250
+28 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+28  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+28  before p = r 
+28  before  y = W^-1 * p 
+28  before apply preconditioner 0.5 250
+17 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+17  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+17  before p = r 
+17  before  y = W^-1 * p 
+17  before apply preconditioner 0.5 250
+89 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+89  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+89  before p = r 
+89  before  y = W^-1 * p 
+89  before apply preconditioner 0.5 250
+86 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+86  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+86  before p = r 
+86  before  y = W^-1 * p 
+86  before apply preconditioner 0.5 250
+101 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+101  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+101  before p = r 
+101  before  y = W^-1 * p 
+101  before apply preconditioner 0.5 250
+77 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+77  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+77  before p = r 
+77  before  y = W^-1 * p 
+77  before apply preconditioner 0.5 250
+67 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+67  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+67  before p = r 
+67  before  y = W^-1 * p 
+67  before apply preconditioner 0.5 250
+46 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+46  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+46  before p = r 
+46  before  y = W^-1 * p 
+46  before apply preconditioner 0.5 250
+34 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+34  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+34  before p = r 
+34  before  y = W^-1 * p 
+34  before apply preconditioner 0.5 250
+57 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+57  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+57  before p = r 
+57  before  y = W^-1 * p 
+57  before apply preconditioner 0.5 250
+100 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+100  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+100  before p = r 
+100  before  y = W^-1 * p 
+100  before apply preconditioner 0.5 250
+36 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+36  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+36  before p = r 
+36  before  y = W^-1 * p 
+36  before apply preconditioner 0.5 250
+14 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+14  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+14  before p = r 
+14  before  y = W^-1 * p 
+14  before apply preconditioner 0.5 250
+68 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+68  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+68  before p = r 
+68  before  y = W^-1 * p 
+68  before apply preconditioner 0.5 250
+2 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+2  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+2  before p = r 
+2  before  y = W^-1 * p 
+2  before apply preconditioner 0.5 250
+106 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+106  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+106  before p = r 
+106  before  y = W^-1 * p 
+106  before apply preconditioner 0.5 250
+74 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+74  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+74  before p = r 
+74  before  y = W^-1 * p 
+74  before apply preconditioner 0.5 250
+33 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+33  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+33  before p = r 
+33  before  y = W^-1 * p 
+33  before apply preconditioner 0.5 250
+98 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+98  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+98  before p = r 
+98  before  y = W^-1 * p 
+98  before apply preconditioner 0.5 250
+18 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+18  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+18  before p = r 
+18  before  y = W^-1 * p 
+18  before apply preconditioner 0.5 250
+49 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+49  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+49  before p = r 
+49  before  y = W^-1 * p 
+49  before apply preconditioner 0.5 250
+87 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+87  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+87  before p = r 
+87  before  y = W^-1 * p 
+87  before apply preconditioner 0.5 250
+92 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+92  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+92  before p = r 
+92  before  y = W^-1 * p 
+92  before apply preconditioner 0.5 250
+105 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+105  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+105  before p = r 
+105  before  y = W^-1 * p 
+105  before apply preconditioner 0.5 250
+10 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+10  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+10  before p = r 
+10  before  y = W^-1 * p 
+10  before apply preconditioner 0.5 250
+63 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+63  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+63  before p = r 
+63  before  y = W^-1 * p 
+63  before apply preconditioner 0.5 250
+75 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+75  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+75  before p = r 
+75  before  y = W^-1 * p 
+75  before apply preconditioner 0.5 250
+11 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+11  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+11  before p = r 
+11  before  y = W^-1 * p 
+11  before apply preconditioner 0.5 250
+50 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+50  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+50  before p = r 
+50  before  y = W^-1 * p 
+50  before apply preconditioner 0.5 250
+12 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+12  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+12  before p = r 
+12  before  y = W^-1 * p 
+12  before apply preconditioner 0.5 250
+112 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+112  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+112  before p = r 
+112  before  y = W^-1 * p 
+112  before apply preconditioner 0.5 250
+39 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+39  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+39  before p = r 
+39  before  y = W^-1 * p 
+39  before apply preconditioner 0.5 250
+3 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+3  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+3  before p = r 
+3  before  y = W^-1 * p 
+3  before apply preconditioner 0.5 250
+9 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+9  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+9  before p = r 
+9  before  y = W^-1 * p 
+9  before apply preconditioner 0.5 250
+27 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+27  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+27  before p = r 
+27  before  y = W^-1 * p 
+27  before apply preconditioner 0.5 250
+19 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+19  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+19  before p = r 
+19  before  y = W^-1 * p 
+19  before apply preconditioner 0.5 250
+31 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+31  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+31  before p = r 
+31  before  y = W^-1 * p 
+31  before apply preconditioner 0.5 250
+61 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+61  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+61  before p = r 
+61  before  y = W^-1 * p 
+61  before apply preconditioner 0.5 250
+47 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+47  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+47  before p = r 
+47  before  y = W^-1 * p 
+47  before apply preconditioner 0.5 250
+25 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+25  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+25  before p = r 
+25  before  y = W^-1 * p 
+25  before apply preconditioner 0.5 250
+94 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+94  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+94  before p = r 
+94  before  y = W^-1 * p 
+94  before apply preconditioner 0.5 250
+102 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+102  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+102  before p = r 
+102  before  y = W^-1 * p 
+102  before apply preconditioner 0.5 250
+84 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+84  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+84  before p = r 
+84  before  y = W^-1 * p 
+84  before apply preconditioner 0.5 250
+83 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+83  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+83  before p = r 
+83  before  y = W^-1 * p 
+83  before apply preconditioner 0.5 250
+20 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+20  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+20  before p = r 
+20  before  y = W^-1 * p 
+20  before apply preconditioner 0.5 250
+48 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+48  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+48  before p = r 
+48  before  y = W^-1 * p 
+48  before apply preconditioner 0.5 250
+23 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+23  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+23  before p = r 
+23  before  y = W^-1 * p 
+23  before apply preconditioner 0.5 250
+35 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+35  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+35  before p = r 
+35  before  y = W^-1 * p 
+35  before apply preconditioner 0.5 250
+55 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+55  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+55  before p = r 
+55  before  y = W^-1 * p 
+55  before apply preconditioner 0.5 250
+52 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+52  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+52  before p = r 
+52  before  y = W^-1 * p 
+52  before apply preconditioner 0.5 250
+95 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+95  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+95  before p = r 
+95  before  y = W^-1 * p 
+95  before apply preconditioner 0.5 250
+70 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+70  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+70  before p = r 
+70  before  y = W^-1 * p 
+70  before apply preconditioner 0.5 250
+40 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+40  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+40  before p = r 
+40  before  y = W^-1 * p 
+40  before apply preconditioner 0.5 250
+104 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+104  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+104  before p = r 
+104  before  y = W^-1 * p 
+104  before apply preconditioner 0.5 250
+6 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+6  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+6  before p = r 
+6  before  y = W^-1 * p 
+6  before apply preconditioner 0.5 250
+109 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+109  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+109  before p = r 
+109  before  y = W^-1 * p 
+109  before apply preconditioner 0.5 250
+99 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+99  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+99  before p = r 
+99  before  y = W^-1 * p 
+99  before apply preconditioner 0.5 250
+115 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+115  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+115  before p = r 
+115  before  y = W^-1 * p 
+115  before apply preconditioner 0.5 250
+117 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+117  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+117  before p = r 
+117  before  y = W^-1 * p 
+117  before apply preconditioner 0.5 250
+5 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+5  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+5  before p = r 
+5  before  y = W^-1 * p 
+5  before apply preconditioner 0.5 250
+82 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+82  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+82  before p = r 
+82  before  y = W^-1 * p 
+82  before apply preconditioner 0.5 250
+62 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+62  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+62  before p = r 
+62  before  y = W^-1 * p 
+62  before apply preconditioner 0.5 250
+103 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+103  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+103  before p = r 
+103  before  y = W^-1 * p 
+103  before apply preconditioner 0.5 250
+54 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+54  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+54  before p = r 
+54  before  y = W^-1 * p 
+54  before apply preconditioner 0.5 250
+79 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+79  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+79  before p = r 
+79  before  y = W^-1 * p 
+79  before apply preconditioner 0.5 250
+88 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+88  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+88  before p = r 
+88  before  y = W^-1 * p 
+88  before apply preconditioner 0.5 250
+113 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+113  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+113  before p = r 
+113  before  y = W^-1 * p 
+113  before apply preconditioner 0.5 250
+116 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+116  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+116  before p = r 
+116  before  y = W^-1 * p 
+116  before apply preconditioner 0.5 250
+26 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+26  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+26  before p = r 
+26  before  y = W^-1 * p 
+26  before apply preconditioner 0.5 250
+76 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+76  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+76  before p = r 
+76  before  y = W^-1 * p 
+76  before apply preconditioner 0.5 250
+96 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+96  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+96  before p = r 
+96  before  y = W^-1 * p 
+96  before apply preconditioner 0.5 250
+29 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+29  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+29  before p = r 
+29  before  y = W^-1 * p 
+29  before apply preconditioner 0.5 250
+30 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+30  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+30  before p = r 
+30  before  y = W^-1 * p 
+30  before apply preconditioner 0.5 250
+37 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+37  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+37  before p = r 
+37  before  y = W^-1 * p 
+37  before apply preconditioner 0.5 250
+120 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+120  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+120  before p = r 
+120  before  y = W^-1 * p 
+120  before apply preconditioner 0.5 250
+93 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+93  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+93  before p = r 
+93  before  y = W^-1 * p 
+93  before apply preconditioner 0.5 250
+53 === BiCGSTABSolver
+ Iter          Defect            Rate
+    0      4.52334e-16
+53  (it = 0.5; it < _maxit; it+=.5) 0.5 250
+53  before p = r 
+53  before  y = W^-1 * p 
+53  before apply preconditioner 0.5 250
+11  before v = A * y 
+11  before  alpha = rho_new / < rt, v > 
+3  before v = A * y 
+3  before  alpha = rho_new / < rt, v > 
+9  before v = A * y 
+9  before  alpha = rho_new / < rt, v > 
+30  before v = A * y 
+30  before  alpha = rho_new / < rt, v > 
+1  before v = A * y 
+1  before  alpha = rho_new / < rt, v > 
+60  before v = A * y 
+60  before  alpha = rho_new / < rt, v > 
+107  before v = A * y 
+107  before  alpha = rho_new / < rt, v > 
+16  before v = A * y 
+16  before  alpha = rho_new / < rt, v > 
+0  before v = A * y 
+0  before  alpha = rho_new / < rt, v > 
+7  before v = A * y 
+7  before  alpha = rho_new / < rt, v > 
+17  before v = A * y 
+17  before  alpha = rho_new / < rt, v > 
+76  before v = A * y 
+76  before  alpha = rho_new / < rt, v > 
+76  before alpha = rho_new / h; 
+76  before apply first correction to x 
+76  before r = r - alpha*v 
+76  before test stop criteria 
+76 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+76 === rate=4.56931e-26, T=0.0214359, TIT=0.0428718, IT=0.5
+76 gridVariables->advanceTimeStep
+leaving the s.solve 76
+96  before v = A * y 
+96  before  alpha = rho_new / < rt, v > 
+96  before alpha = rho_new / h; 
+96  before apply first correction to x 
+96  before r = r - alpha*v 
+96  before test stop criteria 
+96 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+96 === rate=4.56931e-26, T=0.0214023, TIT=0.0428046, IT=0.5
+96 gridVariables->advanceTimeStep
+leaving the s.solve 96
+29  before v = A * y 
+29  before  alpha = rho_new / < rt, v > 
+29  before alpha = rho_new / h; 
+29  before apply first correction to x 
+29  before r = r - alpha*v 
+29  before test stop criteria 
+29 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+29 === rate=4.56931e-26, T=0.0213974, TIT=0.0427948, IT=0.5
+29 gridVariables->advanceTimeStep
+leaving the s.solve 29
+9  before alpha = rho_new / h; 
+9  before apply first correction to x 
+9  before r = r - alpha*v 
+9  before test stop criteria 
+9 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+9 === rate=4.56931e-26, T=0.0214009, TIT=0.0428018, IT=0.5
+9 gridVariables->advanceTimeStep
+leaving the s.solve 9
+37  before v = A * y 
+37  before  alpha = rho_new / < rt, v > 
+37  before alpha = rho_new / h; 
+37  before apply first correction to x 
+37  before r = r - alpha*v 
+37  before test stop criteria 
+37 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+37 === rate=4.56931e-26, T=0.0214279, TIT=0.0428558, IT=0.5
+37 gridVariables->advanceTimeStep
+leaving the s.solve 37
+17  before alpha = rho_new / h; 
+17  before apply first correction to x 
+17  before r = r - alpha*v 
+17  before test stop criteria 
+17 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+17 === rate=4.56931e-26, T=0.0213886, TIT=0.0427772, IT=0.5
+17 gridVariables->advanceTimeStep
+leaving the s.solve 17
+93  before v = A * y 
+93  before  alpha = rho_new / < rt, v > 
+93  before alpha = rho_new / h; 
+93  before apply first correction to x 
+93  before r = r - alpha*v 
+93  before test stop criteria 
+93 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+93 === rate=4.56931e-26, T=0.0213956, TIT=0.0427913, IT=0.5
+93 gridVariables->advanceTimeStep
+leaving the s.solve 93
+120  before v = A * y 
+120  before  alpha = rho_new / < rt, v > 
+120  before alpha = rho_new / h; 
+120  before apply first correction to x 
+120  before r = r - alpha*v 
+120  before test stop criteria 
+120 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+120 === rate=4.56931e-26, T=0.0214366, TIT=0.0428732, IT=0.5
+120 gridVariables->advanceTimeStep
+leaving the s.solve 120
+64  before v = A * y 
+64  before  alpha = rho_new / < rt, v > 
+64  before alpha = rho_new / h; 
+64  before apply first correction to x 
+64  before r = r - alpha*v 
+64  before test stop criteria 
+64 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+64 === rate=4.56931e-26, T=0.0213899, TIT=0.0427798, IT=0.5
+64 gridVariables->advanceTimeStep
+leaving the s.solve 64
+119  before v = A * y 
+119  before  alpha = rho_new / < rt, v > 
+119  before alpha = rho_new / h; 
+119  before apply first correction to x 
+119  before r = r - alpha*v 
+119  before test stop criteria 
+119 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+119 === rate=4.56931e-26, T=0.0214593, TIT=0.0429186, IT=0.5
+119 gridVariables->advanceTimeStep
+leaving the s.solve 119
+72  before v = A * y 
+72  before  alpha = rho_new / < rt, v > 
+72  before alpha = rho_new / h; 
+72  before apply first correction to x 
+72  before r = r - alpha*v 
+72  before test stop criteria 
+72 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+72 === rate=4.56931e-26, T=0.0214031, TIT=0.0428062, IT=0.5
+72 gridVariables->advanceTimeStep
+leaving the s.solve 72
+73  before v = A * y 
+73  before  alpha = rho_new / < rt, v > 
+73  before alpha = rho_new / h; 
+73  before apply first correction to x 
+73  before r = r - alpha*v 
+73  before test stop criteria 
+73 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+73 === rate=4.56931e-26, T=0.0214045, TIT=0.0428091, IT=0.5
+73 gridVariables->advanceTimeStep
+leaving the s.solve 73
+30  before alpha = rho_new / h; 
+30  before apply first correction to x 
+30  before r = r - alpha*v 
+30  before test stop criteria 
+30 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+30 === rate=4.56931e-26, T=0.0214145, TIT=0.0428291, IT=0.5
+30 gridVariables->advanceTimeStep
+leaving the s.solve 30
+71  before v = A * y 
+71  before  alpha = rho_new / < rt, v > 
+71  before alpha = rho_new / h; 
+71  before apply first correction to x 
+71  before r = r - alpha*v 
+71  before test stop criteria 
+71 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+71 === rate=4.56931e-26, T=0.0214378, TIT=0.0428755, IT=0.5
+71 gridVariables->advanceTimeStep
+leaving the s.solve 71
+59  before v = A * y 
+59  before  alpha = rho_new / < rt, v > 
+59  before alpha = rho_new / h; 
+59  before apply first correction to x 
+59  before r = r - alpha*v 
+59  before test stop criteria 
+59 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+59 === rate=4.56931e-26, T=0.0214029, TIT=0.0428057, IT=0.5
+59 gridVariables->advanceTimeStep
+leaving the s.solve 59
+114  before v = A * y 
+114  before  alpha = rho_new / < rt, v > 
+114  before alpha = rho_new / h; 
+114  before apply first correction to x 
+114  before r = r - alpha*v 
+114  before test stop criteria 
+114 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+114 === rate=4.56931e-26, T=0.0214089, TIT=0.0428179, IT=0.5
+114 gridVariables->advanceTimeStep
+leaving the s.solve 114
+118  before v = A * y 
+118  before  alpha = rho_new / < rt, v > 
+118  before alpha = rho_new / h; 
+118  before apply first correction to x 
+118  before r = r - alpha*v 
+118  before test stop criteria 
+118 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+118 === rate=4.56931e-26, T=0.0214278, TIT=0.0428555, IT=0.5
+118 gridVariables->advanceTimeStep
+leaving the s.solve 118
+43  before v = A * y 
+43  before  alpha = rho_new / < rt, v > 
+43  before alpha = rho_new / h; 
+43  before apply first correction to x 
+43  before r = r - alpha*v 
+43  before test stop criteria 
+43 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+43 === rate=4.56931e-26, T=0.0214098, TIT=0.0428196, IT=0.5
+43 gridVariables->advanceTimeStep
+leaving the s.solve 43
+108  before v = A * y 
+108  before  alpha = rho_new / < rt, v > 
+108  before alpha = rho_new / h; 
+108  before apply first correction to x 
+108  before r = r - alpha*v 
+108  before test stop criteria 
+108 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+108 === rate=4.56931e-26, T=0.0214455, TIT=0.0428909, IT=0.5
+108 gridVariables->advanceTimeStep
+leaving the s.solve 108
+4  before v = A * y 
+4  before  alpha = rho_new / < rt, v > 
+4  before alpha = rho_new / h; 
+4  before apply first correction to x 
+4  before r = r - alpha*v 
+4  before test stop criteria 
+4 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+4 === rate=4.56931e-26, T=0.0214216, TIT=0.0428432, IT=0.5
+4 gridVariables->advanceTimeStep
+leaving the s.solve 4
+65  before v = A * y 
+65  before  alpha = rho_new / < rt, v > 
+65  before alpha = rho_new / h; 
+65  before apply first correction to x 
+65  before r = r - alpha*v 
+65  before test stop criteria 
+65 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+65 === rate=4.56931e-26, T=0.0213785, TIT=0.042757, IT=0.5
+65 gridVariables->advanceTimeStep
+leaving the s.solve 65
+15  before v = A * y 
+15  before  alpha = rho_new / < rt, v > 
+15  before alpha = rho_new / h; 
+15  before apply first correction to x 
+15  before r = r - alpha*v 
+15  before test stop criteria 
+15 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+15 === rate=4.56931e-26, T=0.0214342, TIT=0.0428683, IT=0.5
+15 gridVariables->advanceTimeStep
+leaving the s.solve 15
+66  before v = A * y 
+66  before  alpha = rho_new / < rt, v > 
+66  before alpha = rho_new / h; 
+66  before apply first correction to x 
+66  before r = r - alpha*v 
+66  before test stop criteria 
+66 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+66 === rate=4.56931e-26, T=0.0214008, TIT=0.0428017, IT=0.5
+66 gridVariables->advanceTimeStep
+leaving the s.solve 66
+24  before v = A * y 
+24  before  alpha = rho_new / < rt, v > 
+24  before alpha = rho_new / h; 
+24  before apply first correction to x 
+24  before r = r - alpha*v 
+24  before test stop criteria 
+24 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+24 === rate=4.56931e-26, T=0.0213768, TIT=0.0427536, IT=0.5
+24 gridVariables->advanceTimeStep
+leaving the s.solve 24
+90  before v = A * y 
+90  before  alpha = rho_new / < rt, v > 
+90  before alpha = rho_new / h; 
+90  before apply first correction to x 
+90  before r = r - alpha*v 
+90  before test stop criteria 
+90 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+90 === rate=4.56931e-26, T=0.0214198, TIT=0.0428396, IT=0.5
+90 gridVariables->advanceTimeStep
+leaving the s.solve 90
+44  before v = A * y 
+44  before  alpha = rho_new / < rt, v > 
+44  before alpha = rho_new / h; 
+44  before apply first correction to x 
+44  before r = r - alpha*v 
+44  before test stop criteria 
+44 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+44 === rate=4.56931e-26, T=0.0214385, TIT=0.0428771, IT=0.5
+44 gridVariables->advanceTimeStep
+leaving the s.solve 44
+22  before v = A * y 
+22  before  alpha = rho_new / < rt, v > 
+22  before alpha = rho_new / h; 
+22  before apply first correction to x 
+22  before r = r - alpha*v 
+22  before test stop criteria 
+22 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+22 === rate=4.56931e-26, T=0.0214158, TIT=0.0428315, IT=0.5
+22 gridVariables->advanceTimeStep
+leaving the s.solve 22
+13  before v = A * y 
+13  before  alpha = rho_new / < rt, v > 
+13  before alpha = rho_new / h; 
+13  before apply first correction to x 
+13  before r = r - alpha*v 
+13  before test stop criteria 
+13 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+13 === rate=4.56931e-26, T=0.0214506, TIT=0.0429012, IT=0.5
+13 gridVariables->advanceTimeStep
+leaving the s.solve 13
+1  before alpha = rho_new / h; 
+1  before apply first correction to x 
+1  before r = r - alpha*v 
+1  before test stop criteria 
+1 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+1 === rate=4.56931e-26, T=0.0214091, TIT=0.0428182, IT=0.5
+1 gridVariables->advanceTimeStep
+leaving the s.solve 1
+60  before alpha = rho_new / h; 
+60  before apply first correction to x 
+60  before r = r - alpha*v 
+60  before test stop criteria 
+60 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+60 === rate=4.56931e-26, T=0.0214141, TIT=0.0428282, IT=0.5
+60 gridVariables->advanceTimeStep
+leaving the s.solve 60
+78  before v = A * y 
+78  before  alpha = rho_new / < rt, v > 
+78  before alpha = rho_new / h; 
+78  before apply first correction to x 
+78  before r = r - alpha*v 
+78  before test stop criteria 
+78 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+78 === rate=4.56931e-26, T=0.0214286, TIT=0.0428572, IT=0.5
+78 gridVariables->advanceTimeStep
+leaving the s.solve 78
+69  before v = A * y 
+69  before  alpha = rho_new / < rt, v > 
+69  before alpha = rho_new / h; 
+69  before apply first correction to x 
+69  before r = r - alpha*v 
+69  before test stop criteria 
+69 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+69 === rate=4.56931e-26, T=0.0214323, TIT=0.0428647, IT=0.5
+69 gridVariables->advanceTimeStep
+leaving the s.solve 69
+51  before v = A * y 
+51  before  alpha = rho_new / < rt, v > 
+51  before alpha = rho_new / h; 
+51  before apply first correction to x 
+51  before r = r - alpha*v 
+51  before test stop criteria 
+51 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+51 === rate=4.56931e-26, T=0.0213782, TIT=0.0427563, IT=0.5
+51 gridVariables->advanceTimeStep
+leaving the s.solve 51
+81  before v = A * y 
+81  before  alpha = rho_new / < rt, v > 
+81  before alpha = rho_new / h; 
+81  before apply first correction to x 
+81  before r = r - alpha*v 
+81  before test stop criteria 
+81 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+81 === rate=4.56931e-26, T=0.021386, TIT=0.0427719, IT=0.5
+81 gridVariables->advanceTimeStep
+leaving the s.solve 81
+8  before v = A * y 
+8  before  alpha = rho_new / < rt, v > 
+8  before alpha = rho_new / h; 
+8  before apply first correction to x 
+8  before r = r - alpha*v 
+8  before test stop criteria 
+8 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+8 === rate=4.56931e-26, T=0.0214, TIT=0.0428, IT=0.5
+8 gridVariables->advanceTimeStep
+leaving the s.solve 8
+21  before v = A * y 
+21  before  alpha = rho_new / < rt, v > 
+21  before alpha = rho_new / h; 
+21  before apply first correction to x 
+21  before r = r - alpha*v 
+21  before test stop criteria 
+21 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+21 === rate=4.56931e-26, T=0.0214142, TIT=0.0428284, IT=0.5
+21 gridVariables->advanceTimeStep
+leaving the s.solve 21
+107  before alpha = rho_new / h; 
+107  before apply first correction to x 
+107  before r = r - alpha*v 
+107  before test stop criteria 
+107 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+107 === rate=4.56931e-26, T=0.0214105, TIT=0.0428211, IT=0.5
+107 gridVariables->advanceTimeStep
+leaving the s.solve 107
+done
+38  before v = A * y 
+38  before  alpha = rho_new / < rt, v > 
+38  before alpha = rho_new / h; 
+38  before apply first correction to x 
+38  before r = r - alpha*v 
+38  before test stop criteria 
+38 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+38 === rate=4.56931e-26, T=0.021459, TIT=0.042918, IT=0.5
+38 gridVariables->advanceTimeStep
+leaving the s.solve 38
+56  before v = A * y 
+56  before  alpha = rho_new / < rt, v > 
+56  before alpha = rho_new / h; 
+56  before apply first correction to x 
+56  before r = r - alpha*v 
+56  before test stop criteria 
+56 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+56 === rate=4.56931e-26, T=0.0214065, TIT=0.042813, IT=0.5
+56 gridVariables->advanceTimeStep
+leaving the s.solve 56
+111  before v = A * y 
+111  before  alpha = rho_new / < rt, v > 
+111  before alpha = rho_new / h; 
+111  before apply first correction to x 
+111  before r = r - alpha*v 
+111  before test stop criteria 
+111 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+111 === rate=4.56931e-26, T=0.0214456, TIT=0.0428912, IT=0.5
+111 gridVariables->advanceTimeStep
+leaving the s.solve 111
+done
+41  before v = A * y 
+41  before  alpha = rho_new / < rt, v > 
+41  before alpha = rho_new / h; 
+41  before apply first correction to x 
+41  before r = r - alpha*v 
+41  before test stop criteria 
+41 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+41 === rate=4.56931e-26, T=0.0214267, TIT=0.0428534, IT=0.5
+41 gridVariables->advanceTimeStep
+leaving the s.solve 41
+58  before v = A * y 
+58  before  alpha = rho_new / < rt, v > 
+58  before alpha = rho_new / h; 
+58  before apply first correction to x 
+58  before r = r - alpha*v 
+58  before test stop criteria 
+58 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+58 === rate=4.56931e-26, T=0.021402, TIT=0.042804, IT=0.5
+58 gridVariables->advanceTimeStep
+leaving the s.solve 58
+45  before v = A * y 
+45  before  alpha = rho_new / < rt, v > 
+45  before alpha = rho_new / h; 
+45  before apply first correction to x 
+45  before r = r - alpha*v 
+45  before test stop criteria 
+45 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+45 === rate=4.56931e-26, T=0.0214495, TIT=0.042899, IT=0.5
+45 gridVariables->advanceTimeStep
+leaving the s.solve 45
+16  before alpha = rho_new / h; 
+16  before apply first correction to x 
+16  before r = r - alpha*v 
+16  before test stop criteria 
+16 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+16 === rate=4.56931e-26, T=0.0213895, TIT=0.042779, IT=0.5
+16 gridVariables->advanceTimeStep
+leaving the s.solve 16
+42  before v = A * y 
+42  before  alpha = rho_new / < rt, v > 
+42  before alpha = rho_new / h; 
+42  before apply first correction to x 
+42  before r = r - alpha*v 
+42  before test stop criteria 
+42 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+42 === rate=4.56931e-26, T=0.021405, TIT=0.0428099, IT=0.5
+42 gridVariables->advanceTimeStep
+leaving the s.solve 42
+91  before v = A * y 
+91  before  alpha = rho_new / < rt, v > 
+91  before alpha = rho_new / h; 
+91  before apply first correction to x 
+91  before r = r - alpha*v 
+91  before test stop criteria 
+91 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+91 === rate=4.56931e-26, T=0.0214082, TIT=0.0428163, IT=0.5
+91 gridVariables->advanceTimeStep
+leaving the s.solve 91
+97  before v = A * y 
+97  before  alpha = rho_new / < rt, v > 
+97  before alpha = rho_new / h; 
+97  before apply first correction to x 
+97  before r = r - alpha*v 
+97  before test stop criteria 
+97 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+97 === rate=4.56931e-26, T=0.0213998, TIT=0.0427996, IT=0.5
+97 gridVariables->advanceTimeStep
+leaving the s.solve 97
+110  before v = A * y 
+110  before  alpha = rho_new / < rt, v > 
+110  before alpha = rho_new / h; 
+110  before apply first correction to x 
+110  before r = r - alpha*v 
+110  before test stop criteria 
+110 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+110 === rate=4.56931e-26, T=0.0214475, TIT=0.0428951, IT=0.5
+110 gridVariables->advanceTimeStep
+leaving the s.solve 110
+32  before v = A * y 
+32  before  alpha = rho_new / < rt, v > 
+32  before alpha = rho_new / h; 
+32  before apply first correction to x 
+32  before r = r - alpha*v 
+32  before test stop criteria 
+32 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+32 === rate=4.56931e-26, T=0.0214075, TIT=0.042815, IT=0.5
+32 gridVariables->advanceTimeStep
+leaving the s.solve 32
+done
+80  before v = A * y 
+80  before  alpha = rho_new / < rt, v > 
+80  before alpha = rho_new / h; 
+80  before apply first correction to x 
+80  before r = r - alpha*v 
+80  before test stop criteria 
+80 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+80 === rate=4.56931e-26, T=0.0213724, TIT=0.0427448, IT=0.5
+80 gridVariables->advanceTimeStep
+leaving the s.solve 80
+done
+0  before alpha = rho_new / h; 
+0  before apply first correction to x 
+0  before r = r - alpha*v 
+0  before test stop criteria 
+0 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+0 === rate=4.56931e-26, T=0.0107868, TIT=0.0215736, IT=0.5
+0 gridVariables->advanceTimeStep
+leaving the s.solve 0
+85  before v = A * y 
+85  before  alpha = rho_new / < rt, v > 
+85  before alpha = rho_new / h; 
+85  before apply first correction to x 
+85  before r = r - alpha*v 
+85  before test stop criteria 
+85 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+85 === rate=4.56931e-26, T=0.0213939, TIT=0.0427879, IT=0.5
+85 gridVariables->advanceTimeStep
+leaving the s.solve 85
+done
+28  before v = A * y 
+28  before  alpha = rho_new / < rt, v > 
+28  before alpha = rho_new / h; 
+28  before apply first correction to x 
+28  before r = r - alpha*v 
+28  before test stop criteria 
+28 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+28 === rate=4.56931e-26, T=0.0213938, TIT=0.0427876, IT=0.5
+28 gridVariables->advanceTimeStep
+leaving the s.solve 28
+done
+7  before alpha = rho_new / h; 
+7  before apply first correction to x 
+7  before r = r - alpha*v 
+7  before test stop criteria 
+7 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+7 === rate=4.56931e-26, T=0.0214451, TIT=0.0428902, IT=0.5
+7 gridVariables->advanceTimeStep
+leaving the s.solve 7
+89  before v = A * y 
+89  before  alpha = rho_new / < rt, v > 
+89  before alpha = rho_new / h; 
+89  before apply first correction to x 
+89  before r = r - alpha*v 
+89  before test stop criteria 
+89 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+89 === rate=4.56931e-26, T=0.0213937, TIT=0.0427873, IT=0.5
+89 gridVariables->advanceTimeStep
+leaving the s.solve 89
+86  before v = A * y 
+86  before  alpha = rho_new / < rt, v > 
+86  before alpha = rho_new / h; 
+86  before apply first correction to x 
+86  before r = r - alpha*v 
+86  before test stop criteria 
+86 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+86 === rate=4.56931e-26, T=0.0213796, TIT=0.0427592, IT=0.5
+86 gridVariables->advanceTimeStep
+leaving the s.solve 86
+done
+101  before v = A * y 
+101  before  alpha = rho_new / < rt, v > 
+101  before alpha = rho_new / h; 
+101  before apply first correction to x 
+101  before r = r - alpha*v 
+101  before test stop criteria 
+101 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+101 === rate=4.56931e-26, T=0.0214469, TIT=0.0428937, IT=0.5
+101 gridVariables->advanceTimeStep
+leaving the s.solve 101
+done
+77  before v = A * y 
+77  before  alpha = rho_new / < rt, v > 
+77  before alpha = rho_new / h; 
+77  before apply first correction to x 
+77  before r = r - alpha*v 
+77  before test stop criteria 
+77 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+77 === rate=4.56931e-26, T=0.0214428, TIT=0.0428856, IT=0.5
+77 gridVariables->advanceTimeStep
+leaving the s.solve 77
+done
+67  before v = A * y 
+67  before  alpha = rho_new / < rt, v > 
+67  before alpha = rho_new / h; 
+67  before apply first correction to x 
+67  before r = r - alpha*v 
+67  before test stop criteria 
+67 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+67 === rate=4.56931e-26, T=0.021406, TIT=0.042812, IT=0.5
+67 gridVariables->advanceTimeStep
+leaving the s.solve 67
+done
+46  before v = A * y 
+46  before  alpha = rho_new / < rt, v > 
+46  before alpha = rho_new / h; 
+46  before apply first correction to x 
+46  before r = r - alpha*v 
+46  before test stop criteria 
+46 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+46 === rate=4.56931e-26, T=0.0214376, TIT=0.0428751, IT=0.5
+46 gridVariables->advanceTimeStep
+leaving the s.solve 46
+done
+34  before v = A * y 
+34  before  alpha = rho_new / < rt, v > 
+34  before alpha = rho_new / h; 
+34  before apply first correction to x 
+34  before r = r - alpha*v 
+34  before test stop criteria 
+34 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+34 === rate=4.56931e-26, T=0.0214095, TIT=0.042819, IT=0.5
+34 gridVariables->advanceTimeStep
+leaving the s.solve 34
+done
+57  before v = A * y 
+57  before  alpha = rho_new / < rt, v > 
+57  before alpha = rho_new / h; 
+57  before apply first correction to x 
+57  before r = r - alpha*v 
+57  before test stop criteria 
+57 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+57 === rate=4.56931e-26, T=0.0214038, TIT=0.0428077, IT=0.5
+57 gridVariables->advanceTimeStep
+leaving the s.solve 57
+done
+100  before v = A * y 
+100  before  alpha = rho_new / < rt, v > 
+100  before alpha = rho_new / h; 
+100  before apply first correction to x 
+100  before r = r - alpha*v 
+100  before test stop criteria 
+100 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+100 === rate=4.56931e-26, T=0.0214272, TIT=0.0428545, IT=0.5
+100 gridVariables->advanceTimeStep
+leaving the s.solve 100
+done
+36  before v = A * y 
+36  before  alpha = rho_new / < rt, v > 
+36  before alpha = rho_new / h; 
+36  before apply first correction to x 
+36  before r = r - alpha*v 
+36  before test stop criteria 
+36 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+36 === rate=4.56931e-26, T=0.0213939, TIT=0.0427879, IT=0.5
+36 gridVariables->advanceTimeStep
+leaving the s.solve 36
+done
+14  before v = A * y 
+14  before  alpha = rho_new / < rt, v > 
+14  before alpha = rho_new / h; 
+14  before apply first correction to x 
+14  before r = r - alpha*v 
+14  before test stop criteria 
+14 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+14 === rate=4.56931e-26, T=0.0214384, TIT=0.0428768, IT=0.5
+14 gridVariables->advanceTimeStep
+leaving the s.solve 14
+done
+68  before v = A * y 
+68  before  alpha = rho_new / < rt, v > 
+68  before alpha = rho_new / h; 
+68  before apply first correction to x 
+68  before r = r - alpha*v 
+68  before test stop criteria 
+68 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+68 === rate=4.56931e-26, T=0.0214367, TIT=0.0428734, IT=0.5
+68 gridVariables->advanceTimeStep
+leaving the s.solve 68
+done
+2  before v = A * y 
+2  before  alpha = rho_new / < rt, v > 
+2  before alpha = rho_new / h; 
+2  before apply first correction to x 
+2  before r = r - alpha*v 
+2  before test stop criteria 
+2 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+2 === rate=4.56931e-26, T=0.0214101, TIT=0.0428203, IT=0.5
+2 gridVariables->advanceTimeStep
+leaving the s.solve 2
+done
+106  before v = A * y 
+106  before  alpha = rho_new / < rt, v > 
+106  before alpha = rho_new / h; 
+106  before apply first correction to x 
+106  before r = r - alpha*v 
+106  before test stop criteria 
+106 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+106 === rate=4.56931e-26, T=0.0214159, TIT=0.0428319, IT=0.5
+106 gridVariables->advanceTimeStep
+leaving the s.solve 106
+done
+74  before v = A * y 
+74  before  alpha = rho_new / < rt, v > 
+74  before alpha = rho_new / h; 
+74  before apply first correction to x 
+74  before r = r - alpha*v 
+74  before test stop criteria 
+74 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+74 === rate=4.56931e-26, T=0.0214032, TIT=0.0428063, IT=0.5
+74 gridVariables->advanceTimeStep
+leaving the s.solve 74
+done
+33  before v = A * y 
+33  before  alpha = rho_new / < rt, v > 
+33  before alpha = rho_new / h; 
+33  before apply first correction to x 
+33  before r = r - alpha*v 
+33  before test stop criteria 
+33 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+33 === rate=4.56931e-26, T=0.0214129, TIT=0.0428259, IT=0.5
+33 gridVariables->advanceTimeStep
+leaving the s.solve 33
+done
+98  before v = A * y 
+98  before  alpha = rho_new / < rt, v > 
+98  before alpha = rho_new / h; 
+98  before apply first correction to x 
+98  before r = r - alpha*v 
+98  before test stop criteria 
+98 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+98 === rate=4.56931e-26, T=0.0213872, TIT=0.0427745, IT=0.5
+98 gridVariables->advanceTimeStep
+leaving the s.solve 98
+done
+18  before v = A * y 
+18  before  alpha = rho_new / < rt, v > 
+18  before alpha = rho_new / h; 
+18  before apply first correction to x 
+18  before r = r - alpha*v 
+18  before test stop criteria 
+18 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+18 === rate=4.56931e-26, T=0.021364, TIT=0.0427281, IT=0.5
+18 gridVariables->advanceTimeStep
+leaving the s.solve 18
+done
+49  before v = A * y 
+49  before  alpha = rho_new / < rt, v > 
+49  before alpha = rho_new / h; 
+49  before apply first correction to x 
+49  before r = r - alpha*v 
+49  before test stop criteria 
+49 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+49 === rate=4.56931e-26, T=0.0213881, TIT=0.0427761, IT=0.5
+49 gridVariables->advanceTimeStep
+leaving the s.solve 49
+done
+87  before v = A * y 
+87  before  alpha = rho_new / < rt, v > 
+87  before alpha = rho_new / h; 
+87  before apply first correction to x 
+87  before r = r - alpha*v 
+87  before test stop criteria 
+87 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+87 === rate=4.56931e-26, T=0.0213847, TIT=0.0427695, IT=0.5
+87 gridVariables->advanceTimeStep
+leaving the s.solve 87
+done
+92  before v = A * y 
+92  before  alpha = rho_new / < rt, v > 
+92  before alpha = rho_new / h; 
+92  before apply first correction to x 
+92  before r = r - alpha*v 
+92  before test stop criteria 
+92 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+92 === rate=4.56931e-26, T=0.021397, TIT=0.0427941, IT=0.5
+92 gridVariables->advanceTimeStep
+leaving the s.solve 92
+done
+105  before v = A * y 
+105  before  alpha = rho_new / < rt, v > 
+105  before alpha = rho_new / h; 
+105  before apply first correction to x 
+105  before r = r - alpha*v 
+105  before test stop criteria 
+105 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+105 === rate=4.56931e-26, T=0.0214301, TIT=0.0428601, IT=0.5
+105 gridVariables->advanceTimeStep
+leaving the s.solve 105
+done
+10  before v = A * y 
+10  before  alpha = rho_new / < rt, v > 
+10  before alpha = rho_new / h; 
+10  before apply first correction to x 
+10  before r = r - alpha*v 
+10  before test stop criteria 
+10 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+10 === rate=4.56931e-26, T=0.0214185, TIT=0.042837, IT=0.5
+10 gridVariables->advanceTimeStep
+leaving the s.solve 10
+done
+63  before v = A * y 
+63  before  alpha = rho_new / < rt, v > 
+63  before alpha = rho_new / h; 
+63  before apply first correction to x 
+63  before r = r - alpha*v 
+63  before test stop criteria 
+63 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+63 === rate=4.56931e-26, T=0.0214699, TIT=0.0429398, IT=0.5
+63 gridVariables->advanceTimeStep
+leaving the s.solve 63
+done
+75  before v = A * y 
+75  before  alpha = rho_new / < rt, v > 
+75  before alpha = rho_new / h; 
+75  before apply first correction to x 
+75  before r = r - alpha*v 
+75  before test stop criteria 
+75 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+75 === rate=4.56931e-26, T=0.0214251, TIT=0.0428501, IT=0.5
+75 gridVariables->advanceTimeStep
+leaving the s.solve 75
+done
+53  before v = A * y 
+53  before  alpha = rho_new / < rt, v > 
+53  before alpha = rho_new / h; 
+53  before apply first correction to x 
+53  before r = r - alpha*v 
+53  before test stop criteria 
+53 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+53 === rate=4.56931e-26, T=0.021416, TIT=0.042832, IT=0.5
+53 gridVariables->advanceTimeStep
+leaving the s.solve 53
+done
+50  before v = A * y 
+50  before  alpha = rho_new / < rt, v > 
+50  before alpha = rho_new / h; 
+50  before apply first correction to x 
+50  before r = r - alpha*v 
+50  before test stop criteria 
+50 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+50 === rate=4.56931e-26, T=0.0213816, TIT=0.0427632, IT=0.5
+50 gridVariables->advanceTimeStep
+leaving the s.solve 50
+done
+12  before v = A * y 
+12  before  alpha = rho_new / < rt, v > 
+12  before alpha = rho_new / h; 
+12  before apply first correction to x 
+12  before r = r - alpha*v 
+12  before test stop criteria 
+12 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+12 === rate=4.56931e-26, T=0.0214449, TIT=0.0428899, IT=0.5
+12 gridVariables->advanceTimeStep
+leaving the s.solve 12
+done
+112  before v = A * y 
+112  before  alpha = rho_new / < rt, v > 
+112  before alpha = rho_new / h; 
+112  before apply first correction to x 
+112  before r = r - alpha*v 
+112  before test stop criteria 
+112 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+112 === rate=4.56931e-26, T=0.0213812, TIT=0.0427624, IT=0.5
+112 gridVariables->advanceTimeStep
+leaving the s.solve 112
+done
+39  before v = A * y 
+39  before  alpha = rho_new / < rt, v > 
+39  before alpha = rho_new / h; 
+39  before apply first correction to x 
+39  before r = r - alpha*v 
+39  before test stop criteria 
+39 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+39 === rate=4.56931e-26, T=0.0214595, TIT=0.0429189, IT=0.5
+39 gridVariables->advanceTimeStep
+leaving the s.solve 39
+done
+11  before alpha = rho_new / h; 
+11  before apply first correction to x 
+11  before r = r - alpha*v 
+11  before test stop criteria 
+11 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+11 === rate=4.56931e-26, T=0.0214145, TIT=0.042829, IT=0.5
+11 gridVariables->advanceTimeStep
+leaving the s.solve 11
+done
+3  before alpha = rho_new / h; 
+3  before apply first correction to x 
+3  before r = r - alpha*v 
+3  before test stop criteria 
+3 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+3 === rate=4.56931e-26, T=0.0214174, TIT=0.0428348, IT=0.5
+3 gridVariables->advanceTimeStep
+leaving the s.solve 3
+done
+27  before v = A * y 
+27  before  alpha = rho_new / < rt, v > 
+27  before alpha = rho_new / h; 
+27  before apply first correction to x 
+27  before r = r - alpha*v 
+27  before test stop criteria 
+27 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+27 === rate=4.56931e-26, T=0.0213991, TIT=0.0427982, IT=0.5
+27 gridVariables->advanceTimeStep
+leaving the s.solve 27
+done
+19  before v = A * y 
+19  before  alpha = rho_new / < rt, v > 
+19  before alpha = rho_new / h; 
+19  before apply first correction to x 
+19  before r = r - alpha*v 
+19  before test stop criteria 
+19 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+19 === rate=4.56931e-26, T=0.0213633, TIT=0.0427267, IT=0.5
+19 gridVariables->advanceTimeStep
+leaving the s.solve 19
+done
+31  before v = A * y 
+31  before  alpha = rho_new / < rt, v > 
+31  before alpha = rho_new / h; 
+31  before apply first correction to x 
+31  before r = r - alpha*v 
+31  before test stop criteria 
+31 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+31 === rate=4.56931e-26, T=0.0214211, TIT=0.0428422, IT=0.5
+31 gridVariables->advanceTimeStep
+leaving the s.solve 31
+done
+61  before v = A * y 
+61  before  alpha = rho_new / < rt, v > 
+61  before alpha = rho_new / h; 
+61  before apply first correction to x 
+61  before r = r - alpha*v 
+61  before test stop criteria 
+61 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+61 === rate=4.56931e-26, T=0.0214309, TIT=0.0428618, IT=0.5
+61 gridVariables->advanceTimeStep
+leaving the s.solve 61
+done
+47  before v = A * y 
+47  before  alpha = rho_new / < rt, v > 
+47  before alpha = rho_new / h; 
+47  before apply first correction to x 
+47  before r = r - alpha*v 
+47  before test stop criteria 
+47 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+47 === rate=4.56931e-26, T=0.0214537, TIT=0.0429074, IT=0.5
+47 gridVariables->advanceTimeStep
+leaving the s.solve 47
+done
+25  before v = A * y 
+25  before  alpha = rho_new / < rt, v > 
+25  before alpha = rho_new / h; 
+25  before apply first correction to x 
+25  before r = r - alpha*v 
+25  before test stop criteria 
+25 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+25 === rate=4.56931e-26, T=0.0213723, TIT=0.0427446, IT=0.5
+25 gridVariables->advanceTimeStep
+leaving the s.solve 25
+done
+94  before v = A * y 
+94  before  alpha = rho_new / < rt, v > 
+94  before alpha = rho_new / h; 
+94  before apply first correction to x 
+94  before r = r - alpha*v 
+94  before test stop criteria 
+94 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+94 === rate=4.56931e-26, T=0.0214096, TIT=0.0428192, IT=0.5
+94 gridVariables->advanceTimeStep
+leaving the s.solve 94
+done
+102  before v = A * y 
+102  before  alpha = rho_new / < rt, v > 
+102  before alpha = rho_new / h; 
+102  before apply first correction to x 
+102  before r = r - alpha*v 
+102  before test stop criteria 
+102 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+102 === rate=4.56931e-26, T=0.0214566, TIT=0.0429131, IT=0.5
+102 gridVariables->advanceTimeStep
+leaving the s.solve 102
+done
+84  before v = A * y 
+84  before  alpha = rho_new / < rt, v > 
+84  before alpha = rho_new / h; 
+84  before apply first correction to x 
+84  before r = r - alpha*v 
+84  before test stop criteria 
+84 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+84 === rate=4.56931e-26, T=0.0213877, TIT=0.0427753, IT=0.5
+84 gridVariables->advanceTimeStep
+leaving the s.solve 84
+done
+83  before v = A * y 
+83  before  alpha = rho_new / < rt, v > 
+83  before alpha = rho_new / h; 
+83  before apply first correction to x 
+83  before r = r - alpha*v 
+83  before test stop criteria 
+83 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+83 === rate=4.56931e-26, T=0.0213804, TIT=0.0427608, IT=0.5
+83 gridVariables->advanceTimeStep
+leaving the s.solve 83
+done
+20  before v = A * y 
+20  before  alpha = rho_new / < rt, v > 
+20  before alpha = rho_new / h; 
+20  before apply first correction to x 
+20  before r = r - alpha*v 
+20  before test stop criteria 
+20 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+20 === rate=4.56931e-26, T=0.0213909, TIT=0.0427819, IT=0.5
+20 gridVariables->advanceTimeStep
+leaving the s.solve 20
+done
+48  before v = A * y 
+48  before  alpha = rho_new / < rt, v > 
+48  before alpha = rho_new / h; 
+48  before apply first correction to x 
+48  before r = r - alpha*v 
+48  before test stop criteria 
+48 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+48 === rate=4.56931e-26, T=0.0213889, TIT=0.0427778, IT=0.5
+48 gridVariables->advanceTimeStep
+leaving the s.solve 48
+done
+23  before v = A * y 
+23  before  alpha = rho_new / < rt, v > 
+23  before alpha = rho_new / h; 
+23  before apply first correction to x 
+23  before r = r - alpha*v 
+23  before test stop criteria 
+23 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+23 === rate=4.56931e-26, T=0.0214128, TIT=0.0428257, IT=0.5
+23 gridVariables->advanceTimeStep
+leaving the s.solve 23
+done
+35  before v = A * y 
+35  before  alpha = rho_new / < rt, v > 
+35  before alpha = rho_new / h; 
+35  before apply first correction to x 
+35  before r = r - alpha*v 
+35  before test stop criteria 
+35 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+35 === rate=4.56931e-26, T=0.0214178, TIT=0.0428356, IT=0.5
+35 gridVariables->advanceTimeStep
+leaving the s.solve 35
+done
+55  before v = A * y 
+55  before  alpha = rho_new / < rt, v > 
+55  before alpha = rho_new / h; 
+55  before apply first correction to x 
+55  before r = r - alpha*v 
+55  before test stop criteria 
+55 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+55 === rate=4.56931e-26, T=0.0214548, TIT=0.0429095, IT=0.5
+55 gridVariables->advanceTimeStep
+leaving the s.solve 55
+done
+52  before v = A * y 
+52  before  alpha = rho_new / < rt, v > 
+52  before alpha = rho_new / h; 
+52  before apply first correction to x 
+52  before r = r - alpha*v 
+52  before test stop criteria 
+52 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+52 === rate=4.56931e-26, T=0.0214205, TIT=0.042841, IT=0.5
+52 gridVariables->advanceTimeStep
+leaving the s.solve 52
+done
+95  before v = A * y 
+95  before  alpha = rho_new / < rt, v > 
+95  before alpha = rho_new / h; 
+95  before apply first correction to x 
+95  before r = r - alpha*v 
+95  before test stop criteria 
+95 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+95 === rate=4.56931e-26, T=0.0214215, TIT=0.0428429, IT=0.5
+95 gridVariables->advanceTimeStep
+leaving the s.solve 95
+done
+70  before v = A * y 
+70  before  alpha = rho_new / < rt, v > 
+70  before alpha = rho_new / h; 
+70  before apply first correction to x 
+70  before r = r - alpha*v 
+70  before test stop criteria 
+70 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+70 === rate=4.56931e-26, T=0.0214232, TIT=0.0428464, IT=0.5
+70 gridVariables->advanceTimeStep
+leaving the s.solve 70
+done
+40  before v = A * y 
+40  before  alpha = rho_new / < rt, v > 
+40  before alpha = rho_new / h; 
+40  before apply first correction to x 
+40  before r = r - alpha*v 
+40  before test stop criteria 
+40 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+40 === rate=4.56931e-26, T=0.0214299, TIT=0.0428598, IT=0.5
+40 gridVariables->advanceTimeStep
+leaving the s.solve 40
+done
+104  before v = A * y 
+104  before  alpha = rho_new / < rt, v > 
+104  before alpha = rho_new / h; 
+104  before apply first correction to x 
+104  before r = r - alpha*v 
+104  before test stop criteria 
+104 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+104 === rate=4.56931e-26, T=0.0214113, TIT=0.0428226, IT=0.5
+104 gridVariables->advanceTimeStep
+leaving the s.solve 104
+done
+6  before v = A * y 
+6  before  alpha = rho_new / < rt, v > 
+6  before alpha = rho_new / h; 
+6  before apply first correction to x 
+6  before r = r - alpha*v 
+6  before test stop criteria 
+6 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+6 === rate=4.56931e-26, T=0.0214315, TIT=0.0428629, IT=0.5
+6 gridVariables->advanceTimeStep
+leaving the s.solve 6
+done
+109  before v = A * y 
+109  before  alpha = rho_new / < rt, v > 
+109  before alpha = rho_new / h; 
+109  before apply first correction to x 
+109  before r = r - alpha*v 
+109  before test stop criteria 
+109 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+109 === rate=4.56931e-26, T=0.021449, TIT=0.0428981, IT=0.5
+109 gridVariables->advanceTimeStep
+leaving the s.solve 109
+done
+99  before v = A * y 
+99  before  alpha = rho_new / < rt, v > 
+99  before alpha = rho_new / h; 
+99  before apply first correction to x 
+99  before r = r - alpha*v 
+99  before test stop criteria 
+99 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+99 === rate=4.56931e-26, T=0.0213758, TIT=0.0427516, IT=0.5
+99 gridVariables->advanceTimeStep
+leaving the s.solve 99
+done
+115  before v = A * y 
+115  before  alpha = rho_new / < rt, v > 
+115  before alpha = rho_new / h; 
+115  before apply first correction to x 
+115  before r = r - alpha*v 
+115  before test stop criteria 
+115 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+115 === rate=4.56931e-26, T=0.0214104, TIT=0.0428208, IT=0.5
+115 gridVariables->advanceTimeStep
+leaving the s.solve 115
+done
+117  before v = A * y 
+117  before  alpha = rho_new / < rt, v > 
+117  before alpha = rho_new / h; 
+117  before apply first correction to x 
+117  before r = r - alpha*v 
+117  before test stop criteria 
+117 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+117 === rate=4.56931e-26, T=0.0214221, TIT=0.0428441, IT=0.5
+117 gridVariables->advanceTimeStep
+leaving the s.solve 117
+done
+5  before v = A * y 
+5  before  alpha = rho_new / < rt, v > 
+5  before alpha = rho_new / h; 
+5  before apply first correction to x 
+5  before r = r - alpha*v 
+5  before test stop criteria 
+5 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+5 === rate=4.56931e-26, T=0.0214349, TIT=0.0428698, IT=0.5
+5 gridVariables->advanceTimeStep
+leaving the s.solve 5
+done
+82  before v = A * y 
+82  before  alpha = rho_new / < rt, v > 
+82  before alpha = rho_new / h; 
+82  before apply first correction to x 
+82  before r = r - alpha*v 
+82  before test stop criteria 
+82 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+82 === rate=4.56931e-26, T=0.0213878, TIT=0.0427755, IT=0.5
+82 gridVariables->advanceTimeStep
+leaving the s.solve 82
+done
+62  before v = A * y 
+62  before  alpha = rho_new / < rt, v > 
+62  before alpha = rho_new / h; 
+62  before apply first correction to x 
+62  before r = r - alpha*v 
+62  before test stop criteria 
+62 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+62 === rate=4.56931e-26, T=0.0214601, TIT=0.0429201, IT=0.5
+62 gridVariables->advanceTimeStep
+leaving the s.solve 62
+done
+103  before v = A * y 
+103  before  alpha = rho_new / < rt, v > 
+103  before alpha = rho_new / h; 
+103  before apply first correction to x 
+103  before r = r - alpha*v 
+103  before test stop criteria 
+103 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+103 === rate=4.56931e-26, T=0.0214536, TIT=0.0429071, IT=0.5
+103 gridVariables->advanceTimeStep
+leaving the s.solve 103
+done
+54  before v = A * y 
+54  before  alpha = rho_new / < rt, v > 
+54  before alpha = rho_new / h; 
+54  before apply first correction to x 
+54  before r = r - alpha*v 
+54  before test stop criteria 
+54 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+54 === rate=4.56931e-26, T=0.0214538, TIT=0.0429075, IT=0.5
+54 gridVariables->advanceTimeStep
+leaving the s.solve 54
+done
+79  before v = A * y 
+79  before  alpha = rho_new / < rt, v > 
+79  before alpha = rho_new / h; 
+79  before apply first correction to x 
+79  before r = r - alpha*v 
+79  before test stop criteria 
+79 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+79 === rate=4.56931e-26, T=0.021449, TIT=0.0428981, IT=0.5
+79 gridVariables->advanceTimeStep
+leaving the s.solve 79
+done
+88  before v = A * y 
+88  before  alpha = rho_new / < rt, v > 
+88  before alpha = rho_new / h; 
+88  before apply first correction to x 
+88  before r = r - alpha*v 
+88  before test stop criteria 
+88 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+88 === rate=4.56931e-26, T=0.0213748, TIT=0.0427497, IT=0.5
+88 gridVariables->advanceTimeStep
+leaving the s.solve 88
+done
+113  before v = A * y 
+113  before  alpha = rho_new / < rt, v > 
+113  before alpha = rho_new / h; 
+113  before apply first correction to x 
+113  before r = r - alpha*v 
+113  before test stop criteria 
+113 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+113 === rate=4.56931e-26, T=0.0213989, TIT=0.0427978, IT=0.5
+113 gridVariables->advanceTimeStep
+leaving the s.solve 113
+done
+116  before v = A * y 
+116  before  alpha = rho_new / < rt, v > 
+116  before alpha = rho_new / h; 
+116  before apply first correction to x 
+116  before r = r - alpha*v 
+116  before test stop criteria 
+116 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+116 === rate=4.56931e-26, T=0.0214353, TIT=0.0428706, IT=0.5
+116 gridVariables->advanceTimeStep
+leaving the s.solve 116
+done
+26  before v = A * y 
+26  before  alpha = rho_new / < rt, v > 
+26  before alpha = rho_new / h; 
+26  before apply first correction to x 
+26  before r = r - alpha*v 
+26  before test stop criteria 
+26 istlsolver::printOutput 
+  0.5      9.66907e-29      2.13759e-13
+26 === rate=4.56931e-26, T=0.0213962, TIT=0.0427925, IT=0.5
+26 gridVariables->advanceTimeStep
+leaving the s.solve 26
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+done
+errorCbalance soil 3d? 0 0.0 , 0.0 , 0.0 , 0.0 , soil_source_sol 0.0 , s.bulkMassErrorPlant_abs 0.0 , bulkMassError1ds_abs  0.0 9.50416666666667
+errorWbalance soil 3d? 0 87.05860584078052 , 87.05886033981817 , -0.000254499037907418 , bulkMassErrorWater_abs 2.5579538487363607e-13 , bulkMassErrorWater_absLim 2.5579538487363607e-13 9.50416666666667
+end iteration 95 2 0.13802369174283993 0.0
+left iteration 95 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 95
+end iteration 115 2 0.13802369174283993 0.0
+left iteration 115 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 115
+end iteration 5 2 0.13802369174283993 0.0
+left iteration 5 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 5
+end iteration 1 2 0.13802369174283993 0.0
+left iteration 1 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 1
+end iteration 3 2 0.13802369174283993 0.0
+left iteration 3 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 3
+end iteration 35 2 0.13802369174283993 0.0
+left iteration 35 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 35
+end iteration 26 2 0.13802369174283993 0.0
+left iteration 26 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 26
+end iteration 76 2 0.13802369174283993 0.0
+left iteration 76 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 76
+end iteration 29 2 0.13802369174283993 0.0
+left iteration 29 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 29
+end iteration 9 2 0.13802369174283993 0.0
+left iteration 9 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 9
+end iteration 17 2 0.13802369174283993 0.0
+left iteration 17 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 17
+end iteration 93 2 0.13802369174283993 0.0
+left iteration 93 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 93
+end iteration 120 2 0.13802369174283993 0.0
+left iteration 120 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 120
+end iteration 119 2 0.13802369174283993 0.0
+left iteration 119 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 119
+end iteration 72 2 0.13802369174283993 0.0
+left iteration 72 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 72
+end iteration 73 2 0.13802369174283993 0.0
+left iteration 73 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 73
+end iteration 30 2 0.13802369174283993 0.0
+left iteration 30 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 30
+end iteration 71 2 0.13802369174283993 0.0
+left iteration 71 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 71
+end iteration 59 2 0.13802369174283993 0.0
+left iteration 59 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 59
+end iteration 114 2 0.13802369174283993 0.0
+left iteration 114 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 114
+end iteration 43 2 0.13802369174283993 0.0
+left iteration 43 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 43
+end iteration 108 2 0.13802369174283993 0.0
+left iteration 108 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 108
+end iteration 4 2 0.13802369174283993 0.0
+left iteration 4 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 4
+end iteration 65 2 0.13802369174283993 0.0
+left iteration 65 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 65
+end iteration 15 2 0.13802369174283993 0.0
+left iteration 15 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 15
+end iteration 66 2 0.13802369174283993 0.0
+left iteration 66 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 66
+end iteration 24 2 0.13802369174283993 0.0
+left iteration 24 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 24
+end iteration 90 2 0.13802369174283993 0.0
+left iteration 90 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 90
+end iteration 44 2 0.13802369174283993 0.0
+left iteration 44 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 44
+end iteration 22 2 0.13802369174283993 0.0
+left iteration 22 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 22
+end iteration 13 2 0.13802369174283993 0.0
+left iteration 13 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 13
+end iteration 60 2 0.13802369174283993 0.0
+left iteration 60 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 60
+end iteration 78 2 0.13802369174283993 0.0
+left iteration 78 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 78
+end iteration 69 2 0.13802369174283993 0.0
+left iteration 69 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 69
+end iteration 51 2 0.13802369174283993 0.0
+left iteration 51 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 51
+end iteration 81 2 0.13802369174283993 0.0
+left iteration 81 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 81
+end iteration 8 2 0.13802369174283993 0.0
+left iteration 8 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 8
+end iteration 107 2 0.13802369174283993 0.0
+left iteration 107 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 107
+end iteration 38 2 0.13802369174283993 0.0
+left iteration 38 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 38
+end iteration 111 2 0.13802369174283993 0.0
+left iteration 111 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 111
+end iteration 56 2 0.13802369174283993 0.0
+left iteration 56 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 56
+end iteration 41 2 0.13802369174283993 0.0
+left iteration 41 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 41
+end iteration 58 2 0.13802369174283993 0.0
+left iteration 58 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 58
+end iteration 45 2 0.13802369174283993 0.0
+left iteration 45 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 45
+end iteration 42 2 0.13802369174283993 0.0
+left iteration 42 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 42
+end iteration 91 2 0.13802369174283993 0.0
+left iteration 91 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 91
+end iteration 97 2 0.13802369174283993 0.0
+left iteration 97 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 97
+end iteration 32 2 0.13802369174283993 0.0
+left iteration 32 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 32
+end iteration 80 2 0.13802369174283993 0.0
+left iteration 80 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 80
+end iteration 110 2 0.13802369174283993 0.0
+left iteration 110 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 110
+end iteration 85 2 0.13802369174283993 0.0
+left iteration 85 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 85
+end iteration 28 2 0.13802369174283993 0.0
+left iteration 28 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 28
+end iteration 37 2 0.13802369174283993 0.0
+left iteration 37 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 37
+end iteration 7 2 0.13802369174283993 0.0
+left iteration 7 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 7
+end iteration 86 2 0.13802369174283993 0.0
+left iteration 86 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 86
+end iteration 101 2 0.13802369174283993 0.0
+left iteration 101 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 101
+end iteration 77 2 0.13802369174283993 0.0
+left iteration 77 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 77
+end iteration 67 2 0.13802369174283993 0.0
+left iteration 67 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 67
+end iteration 46 2 0.13802369174283993 0.0
+left iteration 46 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 46
+end iteration 34 2 0.13802369174283993 0.0
+left iteration 34 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 34
+end iteration 57 2 0.13802369174283993 0.0
+left iteration 57 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 57
+end iteration 100 2 0.13802369174283993 0.0
+left iteration 100 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 100
+end iteration 36 2 0.13802369174283993 0.0
+left iteration 36 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 36
+end iteration 14 2 0.13802369174283993 0.0
+left iteration 14 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 14
+end iteration 68 2 0.13802369174283993 0.0
+left iteration 68 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 68
+end iteration 2 2 0.13802369174283993 0.0
+left iteration 2 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 2
+end iteration 106 2 0.13802369174283993 0.0
+left iteration 106 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 106
+end iteration 74 2 0.13802369174283993 0.0
+left iteration 74 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 74
+end iteration 33 2 0.13802369174283993 0.0
+left iteration 33 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 33
+end iteration 98 2 0.13802369174283993 0.0
+left iteration 98 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 98
+end iteration 18 2 0.13802369174283993 0.0
+left iteration 18 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 18
+end iteration 49 2 0.13802369174283993 0.0
+left iteration 49 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 49
+end iteration 87 2 0.13802369174283993 0.0
+left iteration 87 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 87
+end iteration 92 2 0.13802369174283993 0.0
+left iteration 92 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 92
+end iteration 105 2 0.13802369174283993 0.0
+left iteration 105 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 105
+end iteration 10 2 0.13802369174283993 0.0
+left iteration 10 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 10
+end iteration 63 2 0.13802369174283993 0.0
+left iteration 63 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 63
+end iteration 75 2 0.13802369174283993 0.0
+left iteration 75 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 75
+end iteration 53 2 0.13802369174283993 0.0
+left iteration 53 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 53
+end iteration 50 2 0.13802369174283993 0.0
+left iteration 50 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 50
+end iteration 12 2 0.13802369174283993 0.0
+left iteration 12 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 12
+end iteration 39 2 0.13802369174283993 0.0
+left iteration 39 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 39
+end iteration 11 2 0.13802369174283993 0.0
+left iteration 11 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 11
+end iteration 27 2 0.13802369174283993 0.0
+left iteration 27 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 27
+end iteration 19 2 0.13802369174283993 0.0
+left iteration 19 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 19
+end iteration 31 2 0.13802369174283993 0.0
+left iteration 31 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 31
+end iteration 61 2 0.13802369174283993 0.0
+left iteration 61 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 61
+end iteration 47 2 0.13802369174283993 0.0
+left iteration 47 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 47
+end iteration 25 2 0.13802369174283993 0.0
+left iteration 25 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 25
+end iteration 94 2 0.13802369174283993 0.0
+left iteration 94 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 94
+end iteration 102 2 0.13802369174283993 0.0
+left iteration 102 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 102
+end iteration 84 2 0.13802369174283993 0.0
+left iteration 84 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 84
+end iteration 83 2 0.13802369174283993 0.0
+left iteration 83 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 83
+end iteration 20 2 0.13802369174283993 0.0
+left iteration 20 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 20
+end iteration 48 2 0.13802369174283993 0.0
+left iteration 48 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 48
+end iteration 23 2 0.13802369174283993 0.0
+left iteration 23 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 23
+end iteration 55 2 0.13802369174283993 0.0
+left iteration 55 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 55
+end iteration 52 2 0.13802369174283993 0.0
+left iteration 52 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 52
+end iteration 70 2 0.13802369174283993 0.0
+left iteration 70 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 70
+end iteration 40 2 0.13802369174283993 0.0
+left iteration 40 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 40
+end iteration 104 2 0.13802369174283993 0.0
+left iteration 104 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 104
+end iteration 6 2 0.13802369174283993 0.0
+left iteration 6 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 6
+end iteration 109 2 0.13802369174283993 0.0
+left iteration 109 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 109
+end iteration 99 2 0.13802369174283993 0.0
+left iteration 99 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 99
+end iteration 82 2 0.13802369174283993 0.0
+left iteration 82 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 82
+end iteration 62 2 0.13802369174283993 0.0
+left iteration 62 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 62
+end iteration 103 2 0.13802369174283993 0.0
+left iteration 103 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 103
+end iteration 54 2 0.13802369174283993 0.0
+left iteration 54 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 54
+end iteration 79 2 0.13802369174283993 0.0
+left iteration 79 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 79
+end iteration 88 2 0.13802369174283993 0.0
+left iteration 88 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 88
+end iteration 113 2 0.13802369174283993 0.0
+left iteration 113 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 113
+end iteration 89 2 0.13802369174283993 0.0
+left iteration 89 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 89
+end iteration 112 2 0.13802369174283993 0.0
+left iteration 112 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 112
+end iteration 117 2 0.13802369174283993 0.0
+left iteration 117 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 117
+end iteration 116 2 0.13802369174283993 0.0
+left iteration 116 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 116
+end iteration 96 2 0.13802369174283993 0.0
+left iteration 96 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 96
+end iteration 64 2 0.13802369174283993 0.0
+left iteration 64 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 64
+end iteration 118 2 0.13802369174283993 0.0
+left iteration 118 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 118
+end iteration 21 2 0.13802369174283993 0.0
+left iteration 21 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 21
+end iteration 16 2 0.13802369174283993 0.0
+left iteration 16 3 0.13802369174283993 0.0 1.0476862433161926e-14
+error 3DS-1DS 16
+end iteration 0 2 0.13802369174283993 1.723680388687754e-05
+left iteration 0 3 0.13802369174283993 1.723680388687754e-05 1.0476862433161926e-14
+error 3DS-1DS 0
+finished  error 3DS-1DS 73
+end time step inner loop
+end of inner loop
+73 left cyl3.simulate_const
+finished  error 3DS-1DS 30
+end time step inner loop
+end of inner loop
+30 left cyl3.simulate_const
+finished  error 3DS-1DS 71
+end time step inner loop
+end of inner loop
+71 left cyl3.simulate_const
+finished  error 3DS-1DS 59
+end time step inner loop
+end of inner loop
+59 left cyl3.simulate_const
+finished  error 3DS-1DS 64
+end time step inner loop
+end of inner loop
+64 left cyl3.simulate_const
+finished  error 3DS-1DS 114
+end time step inner loop
+end of inner loop
+114 left cyl3.simulate_const
+finished  error 3DS-1DS 43
+end time step inner loop
+end of inner loop
+43 left cyl3.simulate_const
+finished  error 3DS-1DS 108
+end time step inner loop
+end of inner loop
+108 left cyl3.simulate_const
+finished  error 3DS-1DS 4
+end time step inner loop
+end of inner loop
+4 left cyl3.simulate_const
+finished  error 3DS-1DS 65
+end time step inner loop
+end of inner loop
+65 left cyl3.simulate_const
+finished  error 3DS-1DS 15
+end time step inner loop
+end of inner loop
+15 left cyl3.simulate_const
+finished  error 3DS-1DS 66
+end time step inner loop
+end of inner loop
+66 left cyl3.simulate_const
+finished  error 3DS-1DS 24
+end time step inner loop
+end of inner loop
+24 left cyl3.simulate_const
+finished  error 3DS-1DS 90
+end time step inner loop
+end of inner loop
+90 left cyl3.simulate_const
+finished  error 3DS-1DS 44
+end time step inner loop
+end of inner loop
+44 left cyl3.simulate_const
+finished  error 3DS-1DS 22
+end time step inner loop
+end of inner loop
+22 left cyl3.simulate_const
+finished  error 3DS-1DS 5
+end time step inner loop
+end of inner loop
+5 left cyl3.simulate_const
+finished  error 3DS-1DS 13
+end time step inner loop
+end of inner loop
+13 left cyl3.simulate_const
+finished  error 3DS-1DS 60
+end time step inner loop
+end of inner loop
+60 left cyl3.simulate_const
+finished  error 3DS-1DS 78
+end time step inner loop
+end of inner loop
+78 left cyl3.simulate_const
+finished  error 3DS-1DS 69
+end time step inner loop
+end of inner loop
+69 left cyl3.simulate_const
+finished  error 3DS-1DS 51
+end time step inner loop
+end of inner loop
+51 left cyl3.simulate_const
+finished  error 3DS-1DS 81
+end time step inner loop
+end of inner loop
+81 left cyl3.simulate_const
+finished  error 3DS-1DS 8
+end time step inner loop
+end of inner loop
+8 left cyl3.simulate_const
+finished  error 3DS-1DS 118
+end time step inner loop
+end of inner loop
+118 left cyl3.simulate_const
+finished  error 3DS-1DS 107
+end time step inner loop
+end of inner loop
+107 left cyl3.simulate_const
+finished  error 3DS-1DS 38
+end time step inner loop
+end of inner loop
+38 left cyl3.simulate_const
+finished  error 3DS-1DS 111
+end time step inner loop
+end of inner loop
+111 left cyl3.simulate_const
+finished  error 3DS-1DS 56
+end time step inner loop
+end of inner loop
+56 left cyl3.simulate_const
+finished  error 3DS-1DS 41
+end time step inner loop
+end of inner loop
+41 left cyl3.simulate_const
+finished  error 3DS-1DS 58
+end time step inner loop
+end of inner loop
+58 left cyl3.simulate_const
+finished  error 3DS-1DS 21
+end time step inner loop
+end of inner loop
+21 left cyl3.simulate_const
+finished  error 3DS-1DS 45
+end time step inner loop
+end of inner loop
+45 left cyl3.simulate_const
+finished  error 3DS-1DS 42
+end time step inner loop
+end of inner loop
+42 left cyl3.simulate_const
+finished  error 3DS-1DS 91
+end time step inner loop
+end of inner loop
+91 left cyl3.simulate_const
+finished  error 3DS-1DS 97
+end time step inner loop
+end of inner loop
+97 left cyl3.simulate_const
+finished  error 3DS-1DS 32
+end time step inner loop
+end of inner loop
+32 left cyl3.simulate_const
+finished  error 3DS-1DS 80
+end time step inner loop
+end of inner loop
+80 left cyl3.simulate_const
+finished  error 3DS-1DS 110
+end time step inner loop
+end of inner loop
+110 left cyl3.simulate_const
+finished  error 3DS-1DS 85
+end time step inner loop
+end of inner loop
+85 left cyl3.simulate_const
+finished  error 3DS-1DS 28
+end time step inner loop
+end of inner loop
+28 left cyl3.simulate_const
+finished  error 3DS-1DS 37
+end time step inner loop
+end of inner loop
+37 left cyl3.simulate_const
+finished  error 3DS-1DS 7
+end time step inner loop
+end of inner loop
+7 left cyl3.simulate_const
+finished  error 3DS-1DS 86
+end time step inner loop
+end of inner loop
+86 left cyl3.simulate_const
+finished  error 3DS-1DS 101
+end time step inner loop
+end of inner loop
+101 left cyl3.simulate_const
+finished  error 3DS-1DS 77
+end time step inner loop
+end of inner loop
+77 left cyl3.simulate_const
+finished  error 3DS-1DS 67
+end time step inner loop
+end of inner loop
+67 left cyl3.simulate_const
+finished  error 3DS-1DS 46
+end time step inner loop
+end of inner loop
+46 left cyl3.simulate_const
+finished  error 3DS-1DS 34
+end time step inner loop
+end of inner loop
+34 left cyl3.simulate_const
+finished  error 3DS-1DS 57
+end time step inner loop
+end of inner loop
+57 left cyl3.simulate_const
+finished  error 3DS-1DS 100
+end time step inner loop
+end of inner loop
+100 left cyl3.simulate_const
+finished  error 3DS-1DS 36
+end time step inner loop
+end of inner loop
+36 left cyl3.simulate_const
+finished  error 3DS-1DS 14
+end time step inner loop
+end of inner loop
+14 left cyl3.simulate_const
+finished  error 3DS-1DS 68
+end time step inner loop
+end of inner loop
+68 left cyl3.simulate_const
+finished  error 3DS-1DS 2
+end time step inner loop
+end of inner loop
+2 left cyl3.simulate_const
+finished  error 3DS-1DS 106
+end time step inner loop
+end of inner loop
+106 left cyl3.simulate_const
+finished  error 3DS-1DS 74
+end time step inner loop
+end of inner loop
+74 left cyl3.simulate_const
+finished  error 3DS-1DS 33
+end time step inner loop
+end of inner loop
+33 left cyl3.simulate_const
+finished  error 3DS-1DS 98
+end time step inner loop
+end of inner loop
+98 left cyl3.simulate_const
+finished  error 3DS-1DS 18
+end time step inner loop
+end of inner loop
+18 left cyl3.simulate_const
+finished  error 3DS-1DS 49
+end time step inner loop
+end of inner loop
+49 left cyl3.simulate_const
+finished  error 3DS-1DS 87
+end time step inner loop
+end of inner loop
+87 left cyl3.simulate_const
+finished  error 3DS-1DS 92
+end time step inner loop
+end of inner loop
+92 left cyl3.simulate_const
+finished  error 3DS-1DS 105
+end time step inner loop
+end of inner loop
+105 left cyl3.simulate_const
+finished  error 3DS-1DS 10
+end time step inner loop
+end of inner loop
+10 left cyl3.simulate_const
+finished  error 3DS-1DS 63
+end time step inner loop
+end of inner loop
+63 left cyl3.simulate_const
+finished  error 3DS-1DS 75
+end time step inner loop
+end of inner loop
+75 left cyl3.simulate_const
+finished  error 3DS-1DS 53
+end time step inner loop
+end of inner loop
+53 left cyl3.simulate_const
+finished  error 3DS-1DS 50
+end time step inner loop
+end of inner loop
+50 left cyl3.simulate_const
+finished  error 3DS-1DS 89
+end time step inner loop
+end of inner loop
+89 left cyl3.simulate_const
+finished  error 3DS-1DS 12
+end time step inner loop
+end of inner loop
+12 left cyl3.simulate_const
+finished  error 3DS-1DS 39
+end time step inner loop
+end of inner loop
+39 left cyl3.simulate_const
+finished  error 3DS-1DS 1
+end time step inner loop
+end of inner loop
+1 left cyl3.simulate_const
+1 did s.data writing
+finished  error 3DS-1DS 11
+end time step inner loop
+end of inner loop
+11 left cyl3.simulate_const
+finished  error 3DS-1DS 27
+end time step inner loop
+end of inner loop
+27 left cyl3.simulate_const
+finished  error 3DS-1DS 19
+end time step inner loop
+end of inner loop
+19 left cyl3.simulate_const
+finished  error 3DS-1DS 31
+end time step inner loop
+end of inner loop
+31 left cyl3.simulate_const
+finished  error 3DS-1DS 61
+end time step inner loop
+end of inner loop
+61 left cyl3.simulate_const
+finished  error 3DS-1DS 47
+end time step inner loop
+end of inner loop
+47 left cyl3.simulate_const
+finished  error 3DS-1DS 25
+end time step inner loop
+end of inner loop
+25 left cyl3.simulate_const
+finished  error 3DS-1DS 94
+end time step inner loop
+end of inner loop
+94 left cyl3.simulate_const
+finished  error 3DS-1DS 102
+end time step inner loop
+end of inner loop
+102 left cyl3.simulate_const
+finished  error 3DS-1DS 84
+end time step inner loop
+end of inner loop
+84 left cyl3.simulate_const
+finished  error 3DS-1DS 83
+end time step inner loop
+end of inner loop
+83 left cyl3.simulate_const
+finished  error 3DS-1DS 20
+end time step inner loop
+end of inner loop
+20 left cyl3.simulate_const
+finished  error 3DS-1DS 48
+end time step inner loop
+end of inner loop
+48 left cyl3.simulate_const
+finished  error 3DS-1DS 3
+end time step inner loop
+end of inner loop
+3 left cyl3.simulate_const
+finished  error 3DS-1DS 23
+end time step inner loop
+end of inner loop
+23 left cyl3.simulate_const
+finished  error 3DS-1DS 55
+end time step inner loop
+end of inner loop
+55 left cyl3.simulate_const
+finished  error 3DS-1DS 16
+end time step inner loop
+end of inner loop
+16 left cyl3.simulate_const
+finished  error 3DS-1DS 52
+end time step inner loop
+end of inner loop
+52 left cyl3.simulate_const
+finished  error 3DS-1DS 70
+end time step inner loop
+end of inner loop
+70 left cyl3.simulate_const
+finished  error 3DS-1DS 40
+end time step inner loop
+end of inner loop
+40 left cyl3.simulate_const
+finished  error 3DS-1DS 104
+end time step inner loop
+end of inner loop
+104 left cyl3.simulate_const
+finished  error 3DS-1DS 6
+end time step inner loop
+end of inner loop
+6 left cyl3.simulate_const
+finished  error 3DS-1DS 109
+end time step inner loop
+end of inner loop
+109 left cyl3.simulate_const
+finished  error 3DS-1DS 95
+end time step inner loop
+end of inner loop
+95 left cyl3.simulate_const
+finished  error 3DS-1DS 112
+end time step inner loop
+end of inner loop
+112 left cyl3.simulate_const
+finished  error 3DS-1DS 115
+end time step inner loop
+end of inner loop
+115 left cyl3.simulate_const
+finished  error 3DS-1DS 99
+end time step inner loop
+end of inner loop
+99 left cyl3.simulate_const
+finished  error 3DS-1DS 82
+end time step inner loop
+end of inner loop
+82 left cyl3.simulate_const
+finished  error 3DS-1DS 62
+end time step inner loop
+end of inner loop
+62 left cyl3.simulate_const
+finished  error 3DS-1DS 103
+end time step inner loop
+end of inner loop
+103 left cyl3.simulate_const
+finished  error 3DS-1DS 54
+end time step inner loop
+end of inner loop
+54 left cyl3.simulate_const
+finished  error 3DS-1DS 79
+end time step inner loop
+end of inner loop
+79 left cyl3.simulate_const
+finished  error 3DS-1DS 88
+end time step inner loop
+end of inner loop
+88 left cyl3.simulate_const
+finished  error 3DS-1DS 117
+end time step inner loop
+end of inner loop
+117 left cyl3.simulate_const
+finished  error 3DS-1DS 113
+end time step inner loop
+end of inner loop
+113 left cyl3.simulate_const
+finished  error 3DS-1DS 35
+end time step inner loop
+end of inner loop
+35 left cyl3.simulate_const
+finished  error 3DS-1DS 26
+end time step inner loop
+end of inner loop
+26 left cyl3.simulate_const
+finished  error 3DS-1DS 116
+end time step inner loop
+end of inner loop
+116 left cyl3.simulate_const
+finished  error 3DS-1DS 76
+end time step inner loop
+end of inner loop
+76 left cyl3.simulate_const
+finished  error 3DS-1DS 0
+end time step inner loop
+end of inner loop
+0 left cyl3.simulate_const
+finished  error 3DS-1DS 9
+end time step inner loop
+end of inner loop
+9 left cyl3.simulate_const
+9 did s.data writing
+finished  error 3DS-1DS 17
+end time step inner loop
+end of inner loop
+17 left cyl3.simulate_const
+17 did s.data writing
+finished  error 3DS-1DS 93
+end time step inner loop
+end of inner loop
+93 left cyl3.simulate_const
+finished  error 3DS-1DS 96
+end time step inner loop
+end of inner loop
+96 left cyl3.simulate_const
+finished  error 3DS-1DS 120
+end time step inner loop
+end of inner loop
+120 left cyl3.simulate_const
+finished  error 3DS-1DS 119
+end time step inner loop
+end of inner loop
+119 left cyl3.simulate_const
+finished  error 3DS-1DS 72
+end time step inner loop
+end of inner loop
+72 left cyl3.simulate_const
+15 did s.data writing
+107 did s.data writing
+97 did s.data writing
+110 did s.data writing
+85 did s.data writing
+37 did s.data writing
+7 did s.data writing
+77 did s.data writing
+67 did s.data writing
+46 did s.data writing
+34 did s.data writing
+14 did s.data writing
+2 did s.data writing
+106 did s.data writing
+33 did s.data writing
+49 did s.data writing
+105 did s.data writing
+10 did s.data writing
+63 did s.data writing
+53 did s.data writing
+39 did s.data writing
+11 did s.data writing
+27 did s.data writing
+19 did s.data writing
+31 did s.data writing
+61 did s.data writing
+47 did s.data writing
+25 did s.data writing
+94 did s.data writing
+83 did s.data writing
+3 did s.data writing
+23 did s.data writing
+55 did s.data writing
+70 did s.data writing
+6 did s.data writing
+109 did s.data writing
+95 did s.data writing
+115 did s.data writing
+99 did s.data writing
+62 did s.data writing
+103 did s.data writing
+79 did s.data writing
+113 did s.data writing
+35 did s.data writing
+finished  error 3DS-1DS 29
+end time step inner loop
+end of inner loop
+29 left cyl3.simulate_const
+29 did s.data writing
+69 did s.data writing
+69 got s.errorCumul
+69 write some otehr stuff
+69 finished other data writing
+69 do C growth? False
+69 share Q_Exud_i_seg
+51 did s.data writing
+51 got s.errorCumul
+51 write some otehr stuff
+51 finished other data writing
+51 do C growth? False
+51 share Q_Exud_i_seg
+81 did s.data writing
+81 got s.errorCumul
+81 write some otehr stuff
+81 finished other data writing
+81 do C growth? False
+81 share Q_Exud_i_seg
+8 did s.data writing
+118 did s.data writing
+15 got s.errorCumul
+15 write some otehr stuff
+15 finished other data writing
+15 do C growth? False
+15 share Q_Exud_i_seg
+38 did s.data writing
+38 got s.errorCumul
+38 write some otehr stuff
+38 finished other data writing
+38 do C growth? False
+38 share Q_Exud_i_seg
+111 did s.data writing
+111 got s.errorCumul
+111 write some otehr stuff
+111 finished other data writing
+111 do C growth? False
+111 share Q_Exud_i_seg
+56 did s.data writing
+41 did s.data writing
+41 got s.errorCumul
+41 write some otehr stuff
+41 finished other data writing
+41 do C growth? False
+41 share Q_Exud_i_seg
+58 did s.data writing
+21 did s.data writing
+21 got s.errorCumul
+21 write some otehr stuff
+21 finished other data writing
+21 do C growth? False
+21 share Q_Exud_i_seg
+45 did s.data writing
+45 got s.errorCumul
+45 write some otehr stuff
+45 finished other data writing
+45 do C growth? False
+45 share Q_Exud_i_seg
+42 did s.data writing
+42 got s.errorCumul
+42 write some otehr stuff
+42 finished other data writing
+42 do C growth? False
+42 share Q_Exud_i_seg
+91 did s.data writing
+91 got s.errorCumul
+91 write some otehr stuff
+91 finished other data writing
+91 do C growth? False
+91 share Q_Exud_i_seg
+107 got s.errorCumul
+107 write some otehr stuff
+107 finished other data writing
+107 do C growth? False
+107 share Q_Exud_i_seg
+80 did s.data writing
+97 got s.errorCumul
+97 write some otehr stuff
+97 finished other data writing
+97 do C growth? False
+97 share Q_Exud_i_seg
+28 did s.data writing
+85 got s.errorCumul
+85 write some otehr stuff
+85 finished other data writing
+85 do C growth? False
+85 share Q_Exud_i_seg
+37 got s.errorCumul
+37 write some otehr stuff
+37 finished other data writing
+37 do C growth? False
+37 share Q_Exud_i_seg
+86 did s.data writing
+101 did s.data writing
+101 got s.errorCumul
+101 write some otehr stuff
+101 finished other data writing
+101 do C growth? False
+101 share Q_Exud_i_seg
+7 got s.errorCumul
+7 write some otehr stuff
+7 finished other data writing
+7 do C growth? False
+7 share Q_Exud_i_seg
+77 got s.errorCumul
+77 write some otehr stuff
+77 finished other data writing
+77 do C growth? False
+77 share Q_Exud_i_seg
+67 got s.errorCumul
+67 write some otehr stuff
+67 finished other data writing
+67 do C growth? False
+67 share Q_Exud_i_seg
+46 got s.errorCumul
+46 write some otehr stuff
+46 finished other data writing
+46 do C growth? False
+46 share Q_Exud_i_seg
+57 did s.data writing
+57 got s.errorCumul
+57 write some otehr stuff
+57 finished other data writing
+57 do C growth? False
+57 share Q_Exud_i_seg
+100 did s.data writing
+36 did s.data writing
+34 got s.errorCumul
+34 write some otehr stuff
+34 finished other data writing
+34 do C growth? False
+34 share Q_Exud_i_seg
+68 did s.data writing
+74 did s.data writing
+98 did s.data writing
+18 did s.data writing
+33 got s.errorCumul
+33 write some otehr stuff
+33 finished other data writing
+33 do C growth? False
+33 share Q_Exud_i_seg
+87 did s.data writing
+87 got s.errorCumul
+87 write some otehr stuff
+87 finished other data writing
+87 do C growth? False
+87 share Q_Exud_i_seg
+92 did s.data writing
+49 got s.errorCumul
+49 write some otehr stuff
+49 finished other data writing
+49 do C growth? False
+49 share Q_Exud_i_seg
+10 got s.errorCumul
+10 write some otehr stuff
+10 finished other data writing
+10 do C growth? False
+10 share Q_Exud_i_seg
+75 did s.data writing
+75 got s.errorCumul
+75 write some otehr stuff
+75 finished other data writing
+75 do C growth? False
+75 share Q_Exud_i_seg
+63 got s.errorCumul
+63 write some otehr stuff
+63 finished other data writing
+63 do C growth? False
+63 share Q_Exud_i_seg
+50 did s.data writing
+89 did s.data writing
+12 did s.data writing
+53 got s.errorCumul
+53 write some otehr stuff
+53 finished other data writing
+53 do C growth? False
+53 share Q_Exud_i_seg
+1 got s.errorCumul
+1 write some otehr stuff
+1 finished other data writing
+1 do C growth? False
+1 share Q_Exud_i_seg
+39 got s.errorCumul
+39 write some otehr stuff
+39 finished other data writing
+39 do C growth? False
+39 share Q_Exud_i_seg
+11 got s.errorCumul
+11 write some otehr stuff
+11 finished other data writing
+11 do C growth? False
+11 share Q_Exud_i_seg
+27 got s.errorCumul
+27 write some otehr stuff
+27 finished other data writing
+27 do C growth? False
+27 share Q_Exud_i_seg
+19 got s.errorCumul
+19 write some otehr stuff
+19 finished other data writing
+19 do C growth? False
+19 share Q_Exud_i_seg
+31 got s.errorCumul
+31 write some otehr stuff
+31 finished other data writing
+31 do C growth? False
+31 share Q_Exud_i_seg
+61 got s.errorCumul
+61 write some otehr stuff
+61 finished other data writing
+61 do C growth? False
+61 share Q_Exud_i_seg
+47 got s.errorCumul
+47 write some otehr stuff
+47 finished other data writing
+47 do C growth? False
+47 share Q_Exud_i_seg
+25 got s.errorCumul
+25 write some otehr stuff
+25 finished other data writing
+25 do C growth? False
+25 share Q_Exud_i_seg
+102 did s.data writing
+84 did s.data writing
+20 did s.data writing
+48 did s.data writing
+83 got s.errorCumul
+83 write some otehr stuff
+83 finished other data writing
+83 do C growth? False
+83 share Q_Exud_i_seg
+3 got s.errorCumul
+3 write some otehr stuff
+3 finished other data writing
+3 do C growth? False
+3 share Q_Exud_i_seg
+23 got s.errorCumul
+23 write some otehr stuff
+23 finished other data writing
+23 do C growth? False
+23 share Q_Exud_i_seg
+16 did s.data writing
+52 did s.data writing
+55 got s.errorCumul
+55 write some otehr stuff
+55 finished other data writing
+55 do C growth? False
+55 share Q_Exud_i_seg
+40 did s.data writing
+104 did s.data writing
+109 got s.errorCumul
+109 write some otehr stuff
+109 finished other data writing
+109 do C growth? False
+109 share Q_Exud_i_seg
+112 did s.data writing
+95 got s.errorCumul
+95 write some otehr stuff
+95 finished other data writing
+95 do C growth? False
+95 share Q_Exud_i_seg
+115 got s.errorCumul
+115 write some otehr stuff
+115 finished other data writing
+115 do C growth? False
+115 share Q_Exud_i_seg
+82 did s.data writing
+99 got s.errorCumul
+99 write some otehr stuff
+99 finished other data writing
+99 do C growth? False
+99 share Q_Exud_i_seg
+62 got s.errorCumul
+62 write some otehr stuff
+62 finished other data writing
+62 do C growth? False
+62 share Q_Exud_i_seg
+54 did s.data writing
+103 got s.errorCumul
+103 write some otehr stuff
+103 finished other data writing
+103 do C growth? False
+103 share Q_Exud_i_seg
+88 did s.data writing
+117 did s.data writing
+79 got s.errorCumul
+79 write some otehr stuff
+79 finished other data writing
+79 do C growth? False
+79 share Q_Exud_i_seg
+113 got s.errorCumul
+113 write some otehr stuff
+113 finished other data writing
+113 do C growth? False
+113 share Q_Exud_i_seg
+26 did s.data writing
+116 did s.data writing
+29 got s.errorCumul
+29 write some otehr stuff
+29 finished other data writing
+29 do C growth? False
+29 share Q_Exud_i_seg
+35 got s.errorCumul
+35 write some otehr stuff
+35 finished other data writing
+35 do C growth? False
+35 share Q_Exud_i_seg
+9 got s.errorCumul
+9 write some otehr stuff
+9 finished other data writing
+9 do C growth? False
+9 share Q_Exud_i_seg
+93 did s.data writing
+93 got s.errorCumul
+93 write some otehr stuff
+93 finished other data writing
+93 do C growth? False
+93 share Q_Exud_i_seg
+96 did s.data writing
+120 did s.data writing
+120 got s.errorCumul
+120 write some otehr stuff
+120 finished other data writing
+120 do C growth? False
+120 share Q_Exud_i_seg
+119 did s.data writing
+119 got s.errorCumul
+119 write some otehr stuff
+119 finished other data writing
+119 do C growth? False
+119 share Q_Exud_i_seg
+76 did s.data writing
+73 did s.data writing
+73 got s.errorCumul
+73 write some otehr stuff
+73 finished other data writing
+73 do C growth? False
+73 share Q_Exud_i_seg
+30 did s.data writing
+30 got s.errorCumul
+30 write some otehr stuff
+30 finished other data writing
+30 do C growth? False
+30 share Q_Exud_i_seg
+71 did s.data writing
+71 got s.errorCumul
+71 write some otehr stuff
+71 finished other data writing
+71 do C growth? False
+71 share Q_Exud_i_seg
+59 did s.data writing
+59 got s.errorCumul
+59 write some otehr stuff
+59 finished other data writing
+59 do C growth? False
+59 share Q_Exud_i_seg
+114 did s.data writing
+114 got s.errorCumul
+114 write some otehr stuff
+114 finished other data writing
+43 did s.data writing
+43 got s.errorCumul
+43 write some otehr stuff
+43 finished other data writing
+43 do C growth? False
+43 share Q_Exud_i_seg
+108 did s.data writing
+4 did s.data writing
+65 did s.data writing
+65 got s.errorCumul
+65 write some otehr stuff
+65 finished other data writing
+65 do C growth? False
+65 share Q_Exud_i_seg
+72 did s.data writing
+66 did s.data writing
+66 got s.errorCumul
+66 write some otehr stuff
+66 finished other data writing
+66 do C growth? False
+66 share Q_Exud_i_seg
+24 did s.data writing
+90 did s.data writing
+44 did s.data writing
+22 did s.data writing
+22 got s.errorCumul
+22 write some otehr stuff
+22 finished other data writing
+22 do C growth? False
+22 share Q_Exud_i_seg
+5 did s.data writing
+5 got s.errorCumul
+5 write some otehr stuff
+5 finished other data writing
+5 do C growth? False
+5 share Q_Exud_i_seg
+13 did s.data writing
+13 got s.errorCumul
+13 write some otehr stuff
+13 finished other data writing
+13 do C growth? False
+13 share Q_Exud_i_seg
+60 did s.data writing
+78 did s.data writing
+78 got s.errorCumul
+78 write some otehr stuff
+78 finished other data writing
+78 do C growth? False
+78 share Q_Exud_i_seg
+70 got s.errorCumul
+70 write some otehr stuff
+70 finished other data writing
+70 do C growth? False
+70 share Q_Exud_i_seg
+6 got s.errorCumul
+6 write some otehr stuff
+6 finished other data writing
+6 do C growth? False
+6 share Q_Exud_i_seg
+82 got s.errorCumul
+82 write some otehr stuff
+82 finished other data writing
+82 do C growth? False
+82 share Q_Exud_i_seg
+54 got s.errorCumul
+54 write some otehr stuff
+54 finished other data writing
+54 do C growth? False
+54 share Q_Exud_i_seg
+26 got s.errorCumul
+26 write some otehr stuff
+26 finished other data writing
+26 do C growth? False
+26 share Q_Exud_i_seg
+76 got s.errorCumul
+76 write some otehr stuff
+76 finished other data writing
+76 do C growth? False
+76 share Q_Exud_i_seg
+64 did s.data writing
+114 do C growth? False
+114 share Q_Exud_i_seg
+108 got s.errorCumul
+108 write some otehr stuff
+108 finished other data writing
+108 do C growth? False
+108 share Q_Exud_i_seg
+72 got s.errorCumul
+72 write some otehr stuff
+72 finished other data writing
+72 do C growth? False
+72 share Q_Exud_i_seg
+24 got s.errorCumul
+24 write some otehr stuff
+24 finished other data writing
+24 do C growth? False
+24 share Q_Exud_i_seg
+44 got s.errorCumul
+44 write some otehr stuff
+44 finished other data writing
+44 do C growth? False
+44 share Q_Exud_i_seg
+118 got s.errorCumul
+118 write some otehr stuff
+118 finished other data writing
+118 do C growth? False
+118 share Q_Exud_i_seg
+58 got s.errorCumul
+58 write some otehr stuff
+58 finished other data writing
+58 do C growth? False
+58 share Q_Exud_i_seg
+32 did s.data writing
+110 got s.errorCumul
+110 write some otehr stuff
+110 finished other data writing
+110 do C growth? False
+110 share Q_Exud_i_seg
+28 got s.errorCumul
+28 write some otehr stuff
+28 finished other data writing
+28 do C growth? False
+28 share Q_Exud_i_seg
+86 got s.errorCumul
+86 write some otehr stuff
+86 finished other data writing
+86 do C growth? False
+86 share Q_Exud_i_seg
+100 got s.errorCumul
+100 write some otehr stuff
+100 finished other data writing
+100 do C growth? False
+100 share Q_Exud_i_seg
+36 got s.errorCumul
+36 write some otehr stuff
+36 finished other data writing
+36 do C growth? False
+36 share Q_Exud_i_seg
+14 got s.errorCumul
+14 write some otehr stuff
+14 finished other data writing
+14 do C growth? False
+14 share Q_Exud_i_seg
+2 got s.errorCumul
+2 write some otehr stuff
+2 finished other data writing
+2 do C growth? False
+2 share Q_Exud_i_seg
+68 got s.errorCumul
+68 write some otehr stuff
+68 finished other data writing
+68 do C growth? False
+68 share Q_Exud_i_seg
+106 got s.errorCumul
+106 write some otehr stuff
+106 finished other data writing
+106 do C growth? False
+106 share Q_Exud_i_seg
+74 got s.errorCumul
+74 write some otehr stuff
+74 finished other data writing
+74 do C growth? False
+74 share Q_Exud_i_seg
+98 got s.errorCumul
+98 write some otehr stuff
+98 finished other data writing
+98 do C growth? False
+98 share Q_Exud_i_seg
+18 got s.errorCumul
+18 write some otehr stuff
+18 finished other data writing
+18 do C growth? False
+18 share Q_Exud_i_seg
+92 got s.errorCumul
+92 write some otehr stuff
+92 finished other data writing
+92 do C growth? False
+92 share Q_Exud_i_seg
+50 got s.errorCumul
+50 write some otehr stuff
+50 finished other data writing
+50 do C growth? False
+50 share Q_Exud_i_seg
+12 got s.errorCumul
+12 write some otehr stuff
+12 finished other data writing
+12 do C growth? False
+12 share Q_Exud_i_seg
+102 got s.errorCumul
+102 write some otehr stuff
+102 finished other data writing
+102 do C growth? False
+102 share Q_Exud_i_seg
+94 got s.errorCumul
+94 write some otehr stuff
+94 finished other data writing
+94 do C growth? False
+94 share Q_Exud_i_seg
+84 got s.errorCumul
+84 write some otehr stuff
+84 finished other data writing
+84 do C growth? False
+84 share Q_Exud_i_seg
+20 got s.errorCumul
+20 write some otehr stuff
+20 finished other data writing
+20 do C growth? False
+20 share Q_Exud_i_seg
+52 got s.errorCumul
+52 write some otehr stuff
+52 finished other data writing
+52 do C growth? False
+52 share Q_Exud_i_seg
+40 got s.errorCumul
+40 write some otehr stuff
+40 finished other data writing
+40 do C growth? False
+40 share Q_Exud_i_seg
+48 got s.errorCumul
+48 write some otehr stuff
+48 finished other data writing
+48 do C growth? False
+48 share Q_Exud_i_seg
+60 got s.errorCumul
+60 write some otehr stuff
+60 finished other data writing
+60 do C growth? False
+60 share Q_Exud_i_seg
+56 got s.errorCumul
+56 write some otehr stuff
+56 finished other data writing
+56 do C growth? False
+56 share Q_Exud_i_seg
+32 got s.errorCumul
+32 write some otehr stuff
+32 finished other data writing
+32 do C growth? False
+32 share Q_Exud_i_seg
+16 got s.errorCumul
+16 write some otehr stuff
+16 finished other data writing
+16 do C growth? False
+16 share Q_Exud_i_seg
+17 got s.errorCumul
+17 write some otehr stuff
+17 finished other data writing
+17 do C growth? False
+17 share Q_Exud_i_seg
+90 got s.errorCumul
+90 write some otehr stuff
+90 finished other data writing
+90 do C growth? False
+90 share Q_Exud_i_seg
+0 did s.data writing
