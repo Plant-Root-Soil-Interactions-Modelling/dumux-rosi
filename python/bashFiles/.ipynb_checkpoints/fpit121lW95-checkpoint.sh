@@ -6,12 +6,12 @@
 #SBATCH --nodes=1
 #SBATCH --partition=cpu256
 #SBATCH --time=20-00:00:00
-#SBATCH --mem=10G
+#SBATCH --mem=100G
 #SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END,FAIL,ALL
 #SBATCH --mail-user=m.giraud@fz-juelich.de
 
 
-cd $HOME/DUMUXexud/dumux-rosi/python/fpit 
+cd $HOME/DUMUXexudRelease/DUMUX/dumux-rosi/python/fpit 
 
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}

@@ -305,13 +305,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     #s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
     s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
-    s.setParameter("Problem.verbose", "1")
+    s.setParameter("Problem.verbose", "0")
     
     # IC
     if do1D:
         s.setParameter("Problem.EnableGravity", "false")
     if isinstance(p_mean_,(int,float)):
-        print('set pmean float',p_mean_)
+        #print('set pmean float',p_mean_)
         s.setHomogeneousIC(p_mean_, equilibrium = not do1D)  # cm pressure head
     elif isinstance(p_mean_,type(np.array([]))):
         pass
@@ -455,7 +455,7 @@ def weather(simDuration, hp:float=1):
         weatherVar = {'TairC' : TairC_,'TairK' : TairC_ + 273.15,'Pair':Pair,"es":es,
                         'Qlight': Q_,'rbl':rbl,'rcanopy':rcanopy,'rair':rair,"ea":ea,
                         'cs':cs, 'RH':RH_, 'p_mean':pmean, 'vg':loam}
-        print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
+        #print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
         return weatherVar
 
 def phloemParam(r,weatherInit ):

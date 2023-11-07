@@ -155,10 +155,7 @@ if __name__ == "__main__":
 
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
 
-    if rank == 0:
-        fig, ax = plt.subplots(2, 3, figsize = (14, 14))
-        t0 = timeit.default_timer()
-    jobs = ([sand, 0.1, 0, 0], [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
+    jobs = ( [loam, 0.1, 0, 1], [clay, 0.1, 0, 2], [sand, 0.05, 1, 0], [loam, 0.05, 1, 1], [clay, 0.05, 1, 2])
     for soil, qj, i, j in jobs:
         y, x, t = solve(soil, sim_times, qj, 41)
         write_file_array('soilHeadnew'+str(max_rank),y, directory_ ="./", fileType = '.csv')

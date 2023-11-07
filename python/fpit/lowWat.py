@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/60/24
+    dt = 1/30/24
     p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     adaptRSI_  = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/"+extraName+lightType+l_ks+str(int(weightBefore))\
+    results_dir="./results/newGIdSet"+extraName+lightType+l_ks+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -278,16 +278,26 @@ if __name__ == '__main__':
             TranspirationCumul += sum(r.outputFlux)
         
 
-        buTotCAfter = sum(s.getTotCContent())   
+        comm.barrier()
+        print(rank, 'getTotCContent')
+        buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
+        comm.barrier()
+        print(rank, 'getWaterContent')
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
+        print(rank, 'get s.errorCumul')
         if rank == 0:
-            s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
-            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
-            if buTotCAfter != 0:
-                s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
+            if (mode == "dumux_10c"):
+                s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
+                if buTotCAfter != 0:
+                    s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
+                else:
+                    s.bulkMassErrorCumul_rel =np.nan
             else:
+                s.bulkMassErrorCumul_abs = np.nan
                 s.bulkMassErrorCumul_rel =np.nan
+                
+            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
             s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
 
         print(rank, 'got s.errorCumul')
