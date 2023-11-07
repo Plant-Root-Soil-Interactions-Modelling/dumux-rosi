@@ -278,16 +278,23 @@ if __name__ == '__main__':
             TranspirationCumul += sum(r.outputFlux)
         
 
+        print(rank, 'getTotCContent')
         buTotCAfter = sum(s.getTotCContent())   
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
+        print(rank, 'get s.errorCumul')
         if rank == 0:
-            s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
-            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
-            if buTotCAfter != 0:
-                s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
+            if (mode == "dumux_10c"):
+                s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
+                if buTotCAfter != 0:
+                    s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
+                else:
+                    s.bulkMassErrorCumul_rel =np.nan
             else:
+                s.bulkMassErrorCumul_abs = np.nan
                 s.bulkMassErrorCumul_rel =np.nan
+                
+            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
             s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
 
         print(rank, 'got s.errorCumul')

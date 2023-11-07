@@ -429,7 +429,7 @@ namespace Dune
           {
                 std::cout<<", idx "<<idx;
         
-                std::cout<<", sortedGlobalIdSet[id] "<<sortedGlobalIdSet[id];
+                std::cout<<", sortedGlobalIdSet[idx] "<<sortedGlobalIdSet[idx];
         }
 			  if (!firstTime[idx] )
 				continue;
@@ -522,13 +522,13 @@ namespace Dune
                 if (verbose)
           {
                 std::cout<<", idx "<<idx;
-                std::cout<<", sortedGlobalIdSet[id] "<<sortedGlobalIdSet[id];
+                std::cout<<", sortedGlobalIdSet[idx] "<<sortedGlobalIdSet[idx];
                 }
 
-				globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[id])); /** insert pair (key, value) into the map */
+				globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[idx])); /** insert pair (key, value) into the map */
 
 				const Index lindex = idx;
-				localGlobalMap_[lindex] = sortedGlobalIdSet[id];
+				localGlobalMap_[lindex] = sortedGlobalIdSet[idx];
                 if (verbose)
           {
 			  std::cout<<"globalIndex_["<<id<<"] "<<globalIndex_[id]<<", ";
