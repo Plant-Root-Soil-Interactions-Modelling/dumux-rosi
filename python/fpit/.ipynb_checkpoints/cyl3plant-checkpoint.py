@@ -26,7 +26,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     outer_R_bc_wat = [], seg_fluxes=[],
                     results_dir = './results/',
                   adaptRSI  = True, plantType = "plant",
-                  k_iter_ = 100,lightType_ = ""):#m3 , directory_ =results_dir
+                  k_iter_ = 100,lightType_ = "", outer_n_iter = 0):#m3 , directory_ =results_dir
     """     
     simulates the coupled scenario       
         root architecture is not growing  
@@ -112,8 +112,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         proposed_outer_fluxes_old = 0
         outer_R_bc_wat_old =  outer_R_bc_wat.copy()
         n_iter = 0
-        err = 1.e6 
-        max_err = 1# ???
+        r.err = 1.e6 
+        max_err = 1.# ???
         max_iter = k_iter_#100 #??
         rsx_set = r.get_inner_heads(weather=weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         rsx_old = rsx_set.copy()
@@ -122,7 +122,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         # weightBefore = True
         rsx_old_  = r.get_inner_heads(weather=weatherX) 
         r.rhizoMassWError_abs =1.# 
-        while ( (np.floor(err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13)) and (n_iter < max_iter) :
+        while ( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13)) and (n_iter < max_iter) :
             
             """ 1. xylem model """
             print('1. xylem model')
@@ -304,8 +304,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 2.2 data before solve, for post proccessing
             # maybe move this part to within the solve function to go less often through the list of 1DS
             ##
-            if n_iter > 0:
+            if (n_iter > 0) :
                 r.reset() # go back to water and solute value at the BEGINING of the time step
+                
             solution0_1ds_new = np.array([cyl.getSolution(0) for cyl in r.cyls],dtype=object)
             #print('test reset',rank,solution0_1ds_new , solution0_1ds_old)
             try:
@@ -477,7 +478,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # 3.1 data before, for post proccessing AND source adaptation
             ##
-            if n_iter > 0:
+            if (n_iter > 0) :
                 s.reset() #reset at the last moment: over functions use the solution/content at the end of the time step
             solution0_3ds_new = np.array(s.getSolution(0))
             assert (solution0_3ds_new == solution0_3ds_old).all()
@@ -660,7 +661,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             errW3ds = np.linalg.norm(new_soil_water - new_soil_water_old)
             new_soil_water_old = new_soil_water.copy()
-            err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds),root= 0)
+            r.rhizoMassWError_abs = comm.bcast(r.rhizoMassWError_abs,root= 0)
+            r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds),root= 0)
+            r.maxDiff1d3dCW_abs = comm.bcast(r.maxDiff1d3dCW_abs,root= 0)
             diff1d3dCurrant =abs(max(r.maxDiff1d3dCW_abs) - maxDiff1d3dCW_absBU) # to not depend on cumulative error
             #r.diffW = comm.bcast(max(comm.gather(r.diffW ,root = 0),root = 0))
             #errs =np.array([errRxPlant, errW1ds, errW3ds, 
@@ -676,7 +679,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                             s.bulkMassErrorWater_abs,s.bulkMassErrorWater_absLim,
                             r.rhizoMassWError_absLim,r.rhizoMassWError_abs,
                             sum(abs(diffBCS1dsFluxIn)), sum(abs(diffBCS1dsFluxOut)),sum(abs(diffouter_R_bc_wat)),
-                           diff1d3dCurrant, r.rhizoMassWError_rel,err ])
+                           diff1d3dCurrant, r.rhizoMassWError_rel,r.err ])
             
             rhizoWaterPerVoxel = r.getWaterVolumesCyl(doSum = False, reOrder = True)
             
@@ -697,7 +700,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_errorMass1d", np.array(errorsEachW), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error1d3d", r.maxDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_time", np.array([rs_age,rs.Qlight]), directory_ =results_dir ) 
+                write_file_array("fpit_time", np.array([rs_age,rs.Qlight,dt,i]), directory_ =results_dir ) 
                 write_file_array("fpit_SinkLim3DS", r.SinkLim3DS, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_SinkLim1DS", r.SinkLim1DS, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_seg_fluxes_limited", seg_fluxes_limited, directory_ =results_dir, fileType = '.csv') 
@@ -721,16 +724,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_rhizoWAfter", rhizoWAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
 
                     
-            print('end iteration', rank, n_iter, err, max(r.maxDiff1d3dCW_abs))
+            print('end iteration', rank, n_iter, r.err, max(r.maxDiff1d3dCW_abs))
             n_iter += 1
             #end iteration
         if rank == 0:
-            write_file_array("seg_fluxes",np.array(rs.outputFlux), directory_ =results_dir)
-            write_file_array("soil_fluxes",soil_fluxes, directory_ =results_dir)
-            write_file_array("error", errs, directory_ =results_dir) 
-            write_file_array("error", errs, directory_ =results_dir, fileType = '.csv') 
-            write_file_array("n_iter",np.array([ n_iter ]), directory_ =results_dir)
-        print('left iteration', rank, n_iter, err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs)
+            write_file_array("N_seg_fluxes",np.array(rs.outputFlux), directory_ =results_dir)
+            write_file_array("N_soil_fluxes",soil_fluxes, directory_ =results_dir)
+            write_file_array("N_error", errs, directory_ =results_dir) 
+            write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv') 
+            write_file_array("N_n_iter",np.array([ n_iter ]), directory_ =results_dir)
+        print('left iteration', rank, n_iter, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs)
         if abs(r.rhizoMassWError_abs) > 1e-13:
             raise Exception
         ####

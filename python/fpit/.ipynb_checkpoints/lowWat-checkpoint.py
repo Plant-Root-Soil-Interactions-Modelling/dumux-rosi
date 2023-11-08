@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     
-    dt = 1/30/24
+    dt = 1/2/24
     p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     adaptRSI_  = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/newGIdSet"+extraName+lightType+l_ks+str(int(weightBefore))\
+    results_dir="./results/"+extraName+lightType+l_ks+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -192,9 +192,10 @@ if __name__ == '__main__':
                       "rhizoMassWError_absLim","rhizoMassWError_abs",
                 "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))","sum(abs(diffouter_R_bc_wat))",
                 "diff1d3dCurrant","rhizoMassWError_rel",'err'])
-    write_file_array("error", errs, directory_ =results_dir, fileType = '.csv')
+    write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
     seg_fluxes_ = np.array([])
+    dt_inner = dt
     while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
 
         rs_age += dt
@@ -239,21 +240,38 @@ if __name__ == '__main__':
 
         comm.barrier()
 
-        dt_inner = dt
 
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
 
         print(rank, 'to cyl3.simulate_const')
-        net_sol_flux, net_flux, seg_fluxes_ = cyl3.simulate_const(s, 
-                                                r,  dt, dt_inner, rs_age, 
-                                                Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
-                                                r= rs,plantType = organism,
-                                                 adaptRSI=adaptRSI_,
-                                                wilting_point = wilting_point,
-                                                outer_R_bc_sol = net_sol_flux, 
-                                                outer_R_bc_wat = net_flux,seg_fluxes=seg_fluxes_,
-                                                results_dir = results_dir,
-                                                    k_iter_ = k_iter,lightType_=lightType)
+        n_iter = 0
+        rs.rhizoMassWError_abs = 1.
+        rs.err = 1.
+        max_err = 1.
+        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)) and (n_iter < k_iter) :
+            net_sol_flux_, net_flux_, seg_fluxes__ = cyl3.simulate_const(s, 
+                                                    r,  dt, dt_inner, rs_age, 
+                                                    Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
+                                                    r= rs,plantType = organism,
+                                                     adaptRSI=adaptRSI_,
+                                                    wilting_point = wilting_point,
+                                                    outer_R_bc_sol = net_sol_flux, 
+                                                    outer_R_bc_wat = net_flux,seg_fluxes=seg_fluxes_,
+                                                    results_dir = results_dir,
+                                                        k_iter_ = k_iter,lightType_=lightType, outer_n_iter = n_iter)
+            n_iter += 1
+            write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv') 
+            if ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)):
+                print(rank, "error too high, decrease dt_inner from", dt_inner,"to", dt_inner/2)
+                dt_inner /= 2
+                s.reset()
+                rs.reset()
+            else:
+                net_sol_flux = net_sol_flux_
+                net_flux = net_flux_ 
+                seg_fluxes_ = seg_fluxes__
+                
+                
         print(rank, 'left cyl3.simulate_const')
         time_rhizo_cumul += r.time_rhizo_i
         time_3ds_cumul += r.time_3ds_i
