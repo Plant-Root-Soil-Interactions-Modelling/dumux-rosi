@@ -43,8 +43,8 @@ if __name__ == '__main__':
     initsim =float(sys.argv[1])# initsim = 9.5
     
     dt = 1/2/24
-    p_mean = -1000
-    k_iter = 20
+    p_mean = -100
+    k_iter = 21
     l_ks =  "dx"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
     weightBefore = False
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
     #testWeather = [scenario.weather(testT/100.)["Qlight"]  for testT in range(100)]
-    static_plant = True
+    static_plant = False
     s.buTotCAfter = 0
     s.buTotCBefore = 0
     print('start loop', rank)
@@ -180,11 +180,6 @@ if __name__ == '__main__':
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
     error_st_abs = 0;error_st_rel=0
 
-    #errs =np.array(["errRxPlant", "errW1ds", "errW3ds", "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(r.maxDiff1d3dCW_abs)", 
-    #            "errWrsi", "maxDiff1d3dCW_absBU", 
-    #            "bulkMassErrorWater_abs","bulkMassErrorWater_absLim","rhizoMassWError_absLim","rhizoMassWError_abs",
-    #            "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))","sum(abs(diffouter_R_bc_wat))",
-    #            "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel "])
     errs = np.array(["errRxPlant", "errW1ds", "errW3ds", 
                       "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(r.maxDiff1d3dCW_abs)", 
                 "errWrsi", "maxDiff1d3dCW_absBU", 
@@ -192,10 +187,9 @@ if __name__ == '__main__':
                       "rhizoMassWError_absLim","rhizoMassWError_abs",
                 "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))","sum(abs(diffouter_R_bc_wat))",
                 "diff1d3dCurrant","rhizoMassWError_rel",'err'])
-    write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
+    write_file_array("error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
     seg_fluxes_ = np.array([])
-    dt_inner = dt
     while rs_age < simMax: #for i, dt in enumerate(np.diff(times)):
 
         rs_age += dt
@@ -234,45 +228,27 @@ if __name__ == '__main__':
                     write_file_float("segIdxCyl"+str(gId),gId, directory_ =results_dir, allranks = True)
                     write_file_array("pressureHeadcyl"+str(gId),np.array(cyl.getSolutionHead()).flatten(), directory_ =results_dir, allranks = True)
                     write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), directory_ =results_dir, allranks = True)
-                    write_file_array("solute_conc_cyl"+str(gId)+"_"+str(1), np.array(cyl.getSolution(1)).flatten()* rs.molarDensityWat_m3/1e6 , 
-                                     directory_ =results_dir, allranks = True) 
+                    write_file_array("solute_conc_cyl"+str(gId)+"_"+str(1), np.array(cyl.getSolution(1)).flatten()* rs.molarDensityWat_m3/1e6 , directory_ =results_dir, allranks = True) 
 
 
         comm.barrier()
 
+        dt_inner = dt
 
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
 
-        print(rank, 'to cyl3.simulate_const')
-        n_iter = 0
-        rs.rhizoMassWError_abs = 1.
-        rs.err = 1.
-        max_err = 1.
-        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)) and (n_iter < k_iter) :
-            net_sol_flux_, net_flux_, seg_fluxes__ = cyl3.simulate_const(s, 
-                                                    r,  dt, dt_inner, rs_age, 
-                                                    Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
-                                                    r= rs,plantType = organism,
-                                                     adaptRSI=adaptRSI_,
-                                                    wilting_point = wilting_point,
-                                                    outer_R_bc_sol = net_sol_flux, 
-                                                    outer_R_bc_wat = net_flux,seg_fluxes=seg_fluxes_,
-                                                    results_dir = results_dir,
-                                                        k_iter_ = k_iter,lightType_=lightType, outer_n_iter = n_iter)
-            n_iter += 1
-            write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv') 
-            if ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)):
-                print(rank, "error too high, decrease dt_inner from", dt_inner,"to", dt_inner/2)
-                dt_inner /= 2
-                s.reset()
-                rs.reset()
-            else:
-                net_sol_flux = net_sol_flux_
-                net_flux = net_flux_ 
-                seg_fluxes_ = seg_fluxes__
-                
-                
-        print(rank, 'left cyl3.simulate_const')
+        print('to the inner loop')
+        net_sol_flux, net_flux, seg_fluxes_ = cyl3.simulate_const(s, 
+                                                r,  dt, dt_inner, rs_age, 
+                                                Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
+                                                r= rs,plantType = organism,
+                                                 adaptRSI=adaptRSI_,
+                                                wilting_point = wilting_point,
+                                                outer_R_bc_sol = net_sol_flux, 
+                                                outer_R_bc_wat = net_flux,seg_fluxes=seg_fluxes_,
+                                                results_dir = results_dir,
+                                                    k_iter_ = k_iter,lightType_=lightType)
+
         time_rhizo_cumul += r.time_rhizo_i
         time_3ds_cumul += r.time_3ds_i
         r.time_rhizo_i = 0
@@ -288,7 +264,6 @@ if __name__ == '__main__':
                 write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
 
             write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
-        print(rank, 'did s.data writing')
         errLeuning_abs = abs(sum(r.outputFlux))
         if organism == "plant":
             TranspirationCumul += sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
@@ -296,40 +271,30 @@ if __name__ == '__main__':
             TranspirationCumul += sum(r.outputFlux)
         
 
-        comm.barrier()
-        print(rank, 'getTotCContent')
-        buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
-        comm.barrier()
-        print(rank, 'getWaterContent')
+        buTotCAfter = sum(s.getTotCContent())   
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
-        print(rank, 'get s.errorCumul')
         if rank == 0:
-            if (mode == "dumux_10c"):
-                s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
-                if buTotCAfter != 0:
-                    s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
-                else:
-                    s.bulkMassErrorCumul_rel =np.nan
-            else:
-                s.bulkMassErrorCumul_abs = np.nan
-                s.bulkMassErrorCumul_rel =np.nan
-                
+            s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
             s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
+            if buTotCAfter != 0:
+                s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
+            else:
+                s.bulkMassErrorCumul_rel =np.nan
             s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
 
-        print(rank, 'got s.errorCumul')
+
         write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
                             time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)
         write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
-        print(rank, 'write some otehr stuff')
+
         if (mode == "dumux_10c"):
             write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
             write_file_float("Q_Exud_i", sum(Q_Exud_i_seg), directory_ =results_dir)
             write_file_float("Q_Mucil_i", sum(Q_Mucil_i_seg), directory_ =results_dir)
             write_file_float("Q_Exud_tot", Q_Exud_inflate, directory_ =results_dir)
             write_file_float("Q_Mucil_tot", Q_Mucil_inflate, directory_ =results_dir)
-        
+
         if rank == 0:
             #absolute and relative (%) error
             write_file_array("errorsPlant", np.array([error_st_abs,error_st_rel,#cumulative
@@ -347,7 +312,7 @@ if __name__ == '__main__':
             write_file_array("trans", r.Ev, directory_ =results_dir)
             write_file_array("transrate",r.Jw, directory_ =results_dir)
             write_file_array("transrate",r.Jw, directory_ =results_dir)
-        print(rank, 'finished other data writing')
+
         try:
             assert abs(s.bulkMassErrorPlant_abs)  < 1e-5
         except:
@@ -358,7 +323,7 @@ if __name__ == '__main__':
             print("\n\n\n")
             raise Exception
 
-        print(rank, 'do C growth?',  (mode == "dumux_10c") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
+
 
         if (mode == "dumux_10c") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
 
@@ -472,13 +437,10 @@ if __name__ == '__main__':
         elif rank > 0:
             Q_Exud_i_seg = None
             Q_Mucil_i_seg = None
-        
-        print(rank, 'share Q_Exud_i_seg')
 
         Q_Exud_i_seg = comm.bcast(Q_Exud_i_seg, root = 0) 
         Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
 
-        print(rank, 'print data to linux')
         if (rank == 0) and (mode == "dumux_10c")  :
             print("\n\n\n\t\tat ", int(np.floor(rs_age)),"d", int((rs_age%1)*24),"h",  round(r.Qlight *1e6),"mumol m-2 s-1")
             print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(error_st_abs, error_st_rel))
@@ -514,8 +476,7 @@ if __name__ == '__main__':
             write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
             write_file_float("Q_Ag", Q_in, directory_ =results_dir)
             write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
-        
-        print(rank, 'print data to linux')
+
 
 
     """ output """

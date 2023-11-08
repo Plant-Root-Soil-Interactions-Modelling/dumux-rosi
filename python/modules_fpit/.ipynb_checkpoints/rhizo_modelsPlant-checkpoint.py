@@ -142,6 +142,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 aboveGround = self.cell2seg.get(-1)                
             self.airSegs = np.array(list(set(np.concatenate((aboveGround,
                                                         np.where(np.array(self.organTypes) != 2)[0])) )))
+            self.airSegs.sort()#to go from local segIdx to global segIdx easely
             if len (self.airSegs) > 0:
                 self.outer_radii[self.airSegs ] = np.array(self.radii)[self.airSegs ]*1.1 #dummy outer radii
             if isinstance(self.outer_radii_old, type(self.outer_radii)):
@@ -207,7 +208,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if len(newEidxSoil) > 0:
             assert (np.array(self.organTypes)[newEidxSoil] == 2).all()
         
-        #print('parsing plant dataBIS', rank,np.array( self.organTypesArray),newEidxSoil,newEidxAir,self.newEidx)
+        #print('parsing plant dataBIS', rank,self.rhizoSegsId,self.airSegs,np.array( self.organTypesArray),newEidxSoil,newEidxAir,self.newEidx)
         
         
     def update(self):
@@ -229,8 +230,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         comm.barrier()
         if self.newEidx is None:
             self.newEidx = np.array(range(len(self.eidx), len(self.radii)), np.int64)  # segment indices for process
+        #print('self.newEidx, self.eidx',self.newEidx, self.eidx)
         self.eidx = np.concatenate((self.eidx,np.array(self.newEidx, dtype = np.int64)), dtype = np.int64)
-        
         
         comm.barrier()
         print('checkMassOMoleBalance2 after broadcastPlantShape')
@@ -665,7 +666,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def getLocalIdCyls(self,idCyls=None):
         if idCyls is None:
             idCyls = self.eidx
-        return np.array([ np.where(self.eidx == i)[0] for i in idCyls]).flatten()#np.where(idCyls in self.eidx)[0] 
+        outout = np.array([ np.where(self.eidx == i)[0] for i in idCyls])
+        return outout.flatten()#np.where(idCyls in self.eidx)[0] 
         
     def getContentCyl(self,idCyls=None, idComp=1, doSum = True, reOrder = False):#mol
         isDissolved = (idComp <= self.numFluidComp)
@@ -679,7 +681,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         return self.getXcyl(mol_rhizo, doSum, reOrder)
         
     def getWaterVolumesCyl(self,idCyls=None, doSum = True, reOrder = False):#cm3
-        localIdCyls =   self.getLocalIdCyls(idCyls)                      
+        localIdCyls =   self.getLocalIdCyls(idCyls)           
         wat_rhizo = np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length_[i])) for i in localIdCyls ]) #cm3
         #print('lens', len(self.eidx), len(wat_rhizo))
         #print('getWaterVolumesCyl',wat_rhizo,idCyls, np.array(self.organTypes)[np.array(self.eidx)]  )
@@ -994,41 +996,45 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             volWatNew = theta_new *volNew
             molFrNew = []
             for nComp in range(1, self.numComp +1):
-                isDissolved = (nComp <= self.numFluidComp)
-                if isDissolved: # mol phase = [cm3 phase] * [m3/cm3] * [mol phase /m3 phase] 
-                    molarPhaseOld = theta_old*volOld/1e6 * self.phaseDensity(nComp ) 
-                    molarPhaseNew = volWatNew/1e6 * self.phaseDensity(nComp ) # 
+                if (molFrOld[nComp -1] != 0.).any():
+                    isDissolved = (nComp <= self.numFluidComp)
+                    if isDissolved: # mol phase = [cm3 phase] * [m3/cm3] * [mol phase /m3 phase] 
+                        molarPhaseOld = theta_old*volOld/1e6 * self.phaseDensity(nComp ) 
+                        molarPhaseNew = volWatNew/1e6 * self.phaseDensity(nComp ) # 
+                    else:
+                        molarPhaseOld = volOld/1e6 * self.phaseDensity(nComp )
+                        molarPhaseNew = volNew/1e6 * self.phaseDensity(nComp ) 
+                    gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])/(centersOld[1:] - centersOld[:-1])   
+                    gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
+                    cOld = sum(molFrOld[nComp -1] *   molarPhaseOld  )    
+                    try:
+                        assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))< 1e-13
+                    except:
+                        print('contentoldA',cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] ), 
+                                sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
+                        print('contentoldB',molFrOld[nComp -1] *   molarPhaseOld, cOld,'diff', cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
+                        print('watcontA',cyl.getWaterContent(), cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100)
+                        print('watcontB',theta_old,volOld/1e6, self.phaseDensity(nComp ) , cyl.phaseDensity(nComp ))
+                        print('molFrOld',molFrOld[nComp -1])
+                        print('molarPhaseOld', molarPhaseOld,np.multiply(cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100 , 
+                                                cyl.getWaterContent()) *cyl.molarDensityWat_m3)
+                        raise Exception
+
+                    molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, gradient =gradientNew, 
+                                    cellCenters = centersNew, volumes = molarPhaseNew,isWater = False))  
+                    if verbose:            
+                        print('\t',gId,'nComp', nComp, "cOld",cOld,molFrOld[nComp -1],molarPhaseOld )
+                        print('\t',gId,"molFrNew", molFrNew[nComp -1], 
+                                    "cNew", molFrNew[nComp -1]* molarPhaseNew, 
+                                    sum(molFrNew[nComp -1]* molarPhaseNew) )
+                        print('\t',gId,"gradient", gradientOld, gradientNew,'ratio', 
+                        sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld)) 
+                        print('\t',gId,"error",nComp,  abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio),
+                                abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
+                    assert abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13
                 else:
-                    molarPhaseOld = volOld/1e6 * self.phaseDensity(nComp )
-                    molarPhaseNew = volNew/1e6 * self.phaseDensity(nComp ) 
-                gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])/(centersOld[1:] - centersOld[:-1])   
-                gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
-                cOld = sum(molFrOld[nComp -1] *   molarPhaseOld  )    
-                try:
-                    assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))< 1e-13
-                except:
-                    print('contentoldA',cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] ), 
-                            sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
-                    print('contentoldB',molFrOld[nComp -1] *   molarPhaseOld, cOld,'diff', cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
-                    print('watcontA',cyl.getWaterContent(), cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100)
-                    print('watcontB',theta_old,volOld/1e6, self.phaseDensity(nComp ) , cyl.phaseDensity(nComp ))
-                    print('molFrOld',molFrOld[nComp -1])
-                    print('molarPhaseOld', molarPhaseOld,np.multiply(cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100 , 
-                                            cyl.getWaterContent()) *cyl.molarDensityWat_m3)
-                    raise Exception
+                    molFrNew.append(molFrOld[nComp -1])
                     
-                molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, gradient =gradientNew, 
-                                cellCenters = centersNew, volumes = molarPhaseNew,isWater = False))  
-                if verbose:            
-                    print('\t',gId,'nComp', nComp, "cOld",cOld,molFrOld[nComp -1],molarPhaseOld )
-                    print('\t',gId,"molFrNew", molFrNew[nComp -1], 
-                                "cNew", molFrNew[nComp -1]* molarPhaseNew, 
-                                sum(molFrNew[nComp -1]* molarPhaseNew) )
-                    print('\t',gId,"gradient", gradientOld, gradientNew,'ratio', 
-                    sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld)) 
-                    print('\t',gId,"error",nComp,  abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio),
-                            abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
-                assert abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13
             self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                         x = newHead,# cm
                                                         cAll = molFrNew, # mol/mol water or mol/mol scv
@@ -1075,11 +1081,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         # print('get_watVol_leftoverI_B',rank, idCell,wat_total,wat_rhizo,idCylsAll,idCyls)
         watVol_res = wat_total - wat_rhizo #m3
         if watVol_res < 0.:
-            if ((watVol_res > -1e-13) and (len(idSegs) == len(idCylsAll))): # rounding error probably
+            if ((watVol_res > min(-1e-13,-self.maxDiff1d3dCW_abs[0])) and (len(idSegs) == len(idCylsAll))): # rounding error probably
                 watVol_res = 0.
             else:
                 print("getXX_leftoverI")
-                print(idCell, wat_total,wat_rhizo, wat_total - wat_rhizo)
+                print(idCell, wat_total,wat_rhizo, wat_total - wat_rhizo,self.maxDiff1d3dCW_abs[0])
                 print( len(idSegs), len(idCyls),  len(idCylsAll))# how many old and new cylinders?
                 raise Exception
         comm.Barrier()        
@@ -1111,7 +1117,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         #if rank==0:
         #    print('getC_content_leftoverI',rank, idCell,idComp,res_CC,'mol_total',mol_total, 'mol_rhizo',mol_rhizo,mol_rhizo_,idCylsAll,idCyls)
         if res_CC < 0.:
-            if ((res_CC > -1e-13) and (len(idSegs) == len(idCylsAll))): # rounding error probably 
+            if ((res_CC > min(-1e-13,-self.maxDiff1d3dCW_abs[idComp])) and (len(idSegs) == len(idCylsAll))): # rounding error probably 
                 res_CC = 0.
             else:
                 print("getC_content_leftoverI", idCell)
