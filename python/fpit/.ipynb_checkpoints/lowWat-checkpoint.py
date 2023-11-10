@@ -52,7 +52,7 @@ if __name__ == '__main__':
     beforeAtNight = True
     adaptRSI_  = False
     lightType =""#+- "nolight" # or ""
-    extraName = ""
+    extraName = "hangs"
     results_dir="./results/"+extraName+lightType+l_ks+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
@@ -179,19 +179,20 @@ if __name__ == '__main__':
     Q_Exud_i = None
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
     error_st_abs = 0;error_st_rel=0
-
-    #errs =np.array(["errRxPlant", "errW1ds", "errW3ds", "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(r.maxDiff1d3dCW_abs)", 
-    #            "errWrsi", "maxDiff1d3dCW_absBU", 
-    #            "bulkMassErrorWater_abs","bulkMassErrorWater_absLim","rhizoMassWError_absLim","rhizoMassWError_abs",
-    #            "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))","sum(abs(diffouter_R_bc_wat))",
-    #            "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel "])
-    errs = np.array(["errRxPlant", "errW1ds", "errW3ds", 
-                      "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(r.maxDiff1d3dCW_abs)", 
-                "errWrsi", "maxDiff1d3dCW_absBU", 
-                "bulkMassErrorWater_abs","bulkMassErrorWater_absLim",
-                      "rhizoMassWError_absLim","rhizoMassWError_abs",
-                "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))","sum(abs(diffouter_R_bc_wat))",
-                "diff1d3dCurrant","rhizoMassWError_rel",'err'])
+    errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errC1ds", "errC3ds",
+                     "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(abs(r.OutLim1DS))",
+                     "max(abs(r.InOutBC_Cdiff))",
+                     "max(r.maxDiff1d3dCW_abs)",
+                     "errWrsi", "maxDiff1d3dCW_absBU",
+                     "bulkMassErrorWater_abs","bulkMassErrorWater_absLim",
+                     "rhizoMassWError_absLim","rhizoMassWError_abs",
+                     "bulkMassErrorC_abs","bulkMassCErrorPlant",
+                     "rhizoMassCError_absLim","rhizoMassCError_abs",
+                     "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))",
+                     "sum(abs(diffouter_R_bc_wat))",
+                     "sum(abs(diffBCS1dsFluxOut_sol))",
+                     "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
+                     "diff1d3dCurrant","rhizoMassWError_rel",'err'])
     write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
     seg_fluxes_ = np.array([])
@@ -334,8 +335,8 @@ if __name__ == '__main__':
             #absolute and relative (%) error
             write_file_array("errorsPlant", np.array([error_st_abs,error_st_rel,#cumulative
                                                 errLeuning_abs]), directory_ =results_dir) #not cumulative
-            write_file_array("errorsBulkSoil", np.array([s.bulkMassErrorPlant_abs, s.bulkMassErrorPlant_rel, #not cumulative 
-                                                s.bulkMassError1ds_abs, s.bulkMassError1ds_rel, 
+            write_file_array("errorsBulkSoil", np.array([s.bulkMassCErrorPlant_abs, s.bulkMassCErrorPlant_rel, #not cumulative 
+                                                s.bulkMassCError1ds_abs, s.bulkMassCError1ds_rel, 
                                                 s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
                                                 s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
                                                 s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir)#cumulative
@@ -349,9 +350,9 @@ if __name__ == '__main__':
             write_file_array("transrate",r.Jw, directory_ =results_dir)
         print(rank, 'finished other data writing')
         try:
-            assert abs(s.bulkMassErrorPlant_abs)  < 1e-5
+            assert abs(s.bulkMassCErrorPlant_abs)  < 1e-5
         except:
-            print("\n\n\nissue bulk soil balance", np.array([s.bulkMassErrorPlant_abs, s.bulkMassErrorPlant_rel, #not cumulative 
+            print("\n\n\nissue bulk soil balance", np.array([s.bulkMassCErrorPlant_abs, s.bulkMassCErrorPlant_rel, #not cumulative 
                                             s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
                                             s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
                                             s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]))
