@@ -43,7 +43,7 @@ if __name__ == '__main__':
     initsim =float(sys.argv[1])# initsim = 9.5
     
     dt = 1/2/24
-    p_mean = -1000
+    p_mean = -100
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -51,9 +51,12 @@ if __name__ == '__main__':
     SRIBefore = False
     beforeAtNight = True
     adaptRSI_  = False
+    static_plant = False
     lightType =""#+- "nolight" # or ""
-    extraName = "hangs"
-    results_dir="./results/"+extraName+lightType+l_ks+str(int(weightBefore))\
+    extraName = ""
+    mode = "dumux_10c"  
+    modeBis = "dumux_3c"  
+    results_dir="./results/0init"+extraName+modeBis+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -104,13 +107,12 @@ if __name__ == '__main__':
     nc = 10
 
     logbase = 0.5  # according to Mai et al. (2019)
-    mode = "dumux_w"  
 
     """ initialize """
 
 
     s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
-                min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
+                min_b, max_b, cell_number, demoType = modeBis, times = None, net_inf = None,
                 usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean)
 
     if organism == "plant":
@@ -170,8 +172,7 @@ if __name__ == '__main__':
     r.time_3ds_i = 0
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
-    #testWeather = [scenario.weather(testT/100.)["Qlight"]  for testT in range(100)]
-    static_plant = True
+    
     s.buTotCAfter = 0
     s.buTotCBefore = 0
     print('start loop', rank)
@@ -274,6 +275,7 @@ if __name__ == '__main__':
                 
                 
         print(rank, 'left cyl3.simulate_const')
+        comm.barrier()
         time_rhizo_cumul += r.time_rhizo_i
         time_3ds_cumul += r.time_3ds_i
         r.time_rhizo_i = 0
@@ -281,15 +283,21 @@ if __name__ == '__main__':
         time_plant_cumul = r.time_plant_cumulW + r.time_plant_cumulS 
 
         if True:
+            print(rank,"cellVol")
             write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
+            print(rank,"theta")
             write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
             for i in range(rs.numFluidComp):
+                print(rank,"Soil_solute_conc"+str(i+1))
                 write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
             for i in range(rs.numFluidComp, rs.numComp):
+                print(rank,"Soil_solute_conc"+str(i+1))
                 write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
-
+            print(rank,"Soil_solute_conc"+str(rs.numComp+1))
             write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
+            
         print(rank, 'did s.data writing')
+        comm.barrier()
         errLeuning_abs = abs(sum(r.outputFlux))
         if organism == "plant":
             TranspirationCumul += sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
@@ -334,20 +342,20 @@ if __name__ == '__main__':
         if rank == 0:
             #absolute and relative (%) error
             write_file_array("errorsPlant", np.array([error_st_abs,error_st_rel,#cumulative
-                                                errLeuning_abs]), directory_ =results_dir) #not cumulative
+                                                errLeuning_abs]), directory_ =results_dir, fileType = '.csv') #not cumulative
             write_file_array("errorsBulkSoil", np.array([s.bulkMassCErrorPlant_abs, s.bulkMassCErrorPlant_rel, #not cumulative 
                                                 s.bulkMassCError1ds_abs, s.bulkMassCError1ds_rel, 
                                                 s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
                                                 s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
-                                                s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir)#cumulative
+                                                s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir, fileType = '.csv')#cumulative
             write_file_array("errorMassRhizo", np.array([rs.rhizoMassCError_abs, rs.rhizoMassCError_rel,
                                                         rs.rhizoMassWError_abs, rs.rhizoMassWError_rel]), directory_ =results_dir)# not cumulative
-            write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir)
-            write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir)# cumulative (?)
+            write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
+            write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# cumulative (?)
 
-            write_file_array("trans", r.Ev, directory_ =results_dir)
-            write_file_array("transrate",r.Jw, directory_ =results_dir)
-            write_file_array("transrate",r.Jw, directory_ =results_dir)
+            write_file_array("trans", r.Ev, directory_ =results_dir, fileType = '.csv')
+            write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
+            write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
         print(rank, 'finished other data writing')
         try:
             assert abs(s.bulkMassCErrorPlant_abs)  < 1e-5
@@ -372,7 +380,7 @@ if __name__ == '__main__':
 
             start_time_plant = timeit.default_timer()
 
-            r.startPM(startphloem, endphloem, stepphloem, ( weatherX["TairC"]  +273.15) , verbose_phloem, filename)
+            r.startPM(startphloem, endphloem, stepphloem, ( rs.weatherX["TairC"]  +273.15) , verbose_phloem, filename)
 
             r.time_plant_cumulS += (timeit.default_timer() - start_time_plant)
 
@@ -418,7 +426,7 @@ if __name__ == '__main__':
             try:
                 assert Q_in > 0
             except:
-                print(error_st_abs, Q_in, error_st_rel, weatherX, r.plant.organTypes)
+                print(error_st_abs, Q_in, error_st_rel, rs.weatherX, r.plant.organTypes)
                 raise Exception
 
             try:

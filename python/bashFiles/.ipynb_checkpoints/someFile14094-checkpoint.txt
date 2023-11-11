@@ -1,0 +1,1000 @@
+--------------------------------------------------------------------------
+By default, for Open MPI 4.0 and later, infiniband ports on a device
+are not used by default.  The intent is to use UCX for these devices.
+You can override this policy by setting the btl_openib_allow_ib MCA parameter
+to true.
+
+  Local host:              node01
+  Local adapter:           mlx5_0
+  Local port:              1
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There was an error initializing an OpenFabrics device.
+
+  Local host:   node01
+  Local device: mlx5_0
+--------------------------------------------------------------------------
+[node01:4161931] 77 more processes have sent help message help-mpi-btl-openib.txt / ib port not selected
+[node01:4161931] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+[node01:4161931] 77 more processes have sent help message help-mpi-btl-openib.txt / error in device init
+[node01:4161931] 43 more processes have sent help message help-mpi-btl-openib.txt / ib port not selected
+[node01:4161931] 43 more processes have sent help message help-mpi-btl-openib.txt / error in device init
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+results_dir ./results/0initdumux_3cdx00010plant20k_9.5_30mn_0s_121_100/
+
+DuMux Solver 3D (CCTpfa method) no problem initialized on process rank 1/121
+
+Science, my lad, is made up of mistakes, but they are mistakes which it is useful to make, because they lead little by little to the truth.
+ - Jules Verne, A journey to the center of the earth
+
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getpointIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getcellIdx
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+15 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+19 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+13 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+119 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+12 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+105 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+10 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+22 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+2 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+4 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+27 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+26 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+14 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+9 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+3 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+18 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+113 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+5 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+1 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+23 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+7 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+57 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+117 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+120 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+8 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+89 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+11 getsolution
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+getlocalCellIdx
+getglobalPointIdx
+finished filling the maps
+initialized problem
+cell []
+6 getsolution
+cell []
+109 getsolution
+cell []
+85 getsolution
+cell []
+77 getsolution
+cell []
+17 getsolution
+cell []
+79 getsolution
+cell []
+61 getsolution
+cell []
+101 getsolution
+cell []
+81 getsolution
+cell []
+35 getsolution
+cell []
+78 getsolution
+cell []
+67 getsolution
+cell []
+31 getsolution
+cell []
+93 getsolution
+cell []
+53 getsolution
+cell []
+55 getsolution
+cell []
+21 getsolution
+cell []
+73 getsolution
+cell []
+43 getsolution
+cell []
+71 getsolution
+cell []
+51 getsolution
+cell []
+59 getsolution
+cell []
+45 getsolution
+cell []
+cell []
+52 getsolution
+54 getsolution
+cell []
+69 getsolution
+cell []
+33 getsolution
+cell []
+41 getsolution
+cell []
+97 getsolution
+cell []
+47 getsolution
+cell []
+46 getsolution
+cell []
+107 getsolution
+cell []
+44 getsolution
+cell []
+83 getsolution
+cell []
+42 getsolution
+cell []

@@ -58,6 +58,7 @@ def write_file_float(name, data, directory_, allranks = False):
             log.write(repr( data)  +'\n')
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
+    np.array(data).reshape(-1)
     if (rank == 0) or allranks:
         name2 = directory_+ name+ fileType
         with open(name2, 'a') as log:
@@ -187,13 +188,21 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.k_sorp = 0.4*1e6
     s.f_sorp = 0.5
     if demoType == "dumux_10c":
-        s.CSSmax =C_S/10/1e6# 1e-4*10000*0.
+        s.CSSmax =C_S/10/1e6 # 1e-4*10000*0.
         s.alpha =0.1# 0.
         unitConversion = 1e3
+        doBio = 1.
+        CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
+    if demoType == "dumux_3c":
+        s.CSSmax =0. # 1e-4*10000*0.
+        s.alpha =0.1# 0.
+        unitConversion = 1e3
+        doBio = 0.
         CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
     elif demoType == "dumux_w":
         s.CSSmax = 0.
         s.alpha = 0.
+        doBio = 0.
         unitConversion = 0.
         CSS2_init = 0.
     else:
@@ -202,10 +211,10 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     s.ICcc = np.array([C_S *unitConversion,
                         1. *unitConversion,
-                        C_S/10* unitConversion,
-                        C_S/10* unitConversion,
-                        C_S/10* unitConversion,
-                        C_S/10* unitConversion,
+                        C_S/10* unitConversion *doBio,
+                        C_S/10* unitConversion *doBio,
+                        C_S/10* unitConversion *doBio,
+                        C_S/10* unitConversion *doBio,
                         CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
         
     
