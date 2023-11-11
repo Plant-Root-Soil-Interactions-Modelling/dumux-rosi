@@ -171,7 +171,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.betaC = 0.001 
     s.betaO = 0.1 
-    C_S = 0.1 # in mol/m3 water
+    C_S = 1.e-8 # in mol/m3 water
     s.C_S_W_thresC = C_S/1e6 # in mol/cm3 water
     s.C_S_W_thresO = C_S/1e6
     s.k_decay = 0.2
@@ -210,7 +210,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     
     s.ICcc = np.array([C_S *unitConversion,
-                        1. *unitConversion,
+                        1.e-10 *unitConversion,
                         C_S/10* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,

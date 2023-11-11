@@ -240,9 +240,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      doWater = True, doSolute = True, doSolid = True,
                                      # useSoilData = True,
                                      diff1d3dCW_abs_lim = maxlim1d3d)
-        
-        print(rank, 'test getC_content_leftoverI')
-        c_content_leftover_test = dict([(362,np.array([self.getC_content_leftoverI(362, 1) for ncomp in range(1, self.numComp + 1)])) ])# mol    
+        # can only work before the growth.
+        #print(rank, 'test getC_content_leftoverI')
+        #c_content_leftover_test = dict([(362,np.array([self.getC_content_leftoverI(362, 1) for ncomp in range(1, self.numComp + 1)])) ])# mol    
         print(rank, 'test getC_content_leftoverI_END')
         self.checkVolumeBalance(finishedUpdate = False)
         self.checkRadii()
@@ -1102,9 +1102,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 res_CC = 0.
             else:
                 print("getC_content_leftoverI", idCell)
-                print("res_CC = ",res_CC," < 0, idComp:",idComp,'mol_total',mol_total ,'mol_rhizo', mol_rhizo,'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs ) 
+                print("res_CC = ",res_CC," < ",(-1e-13 -self.maxDiff1d3dCW_abs[idComp]),"or",len(idSegs),"=/=",len(idCylsAll),
+                ", idComp:",idComp,'mol_total',mol_total ,
+                'mol_rhizo', mol_rhizo,'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs ) 
                 print("mol_rhizo_", mol_rhizo_, "idCylsAll",idCylsAll)
-                print('lens', len(idSegs), len(idCyls))# how many old and new cylinders?
+                print('lens', len(idSegs),len(idCylsAll), len(idCyls))# how many old and new cylinders?
                 raise Exception
         comm.Barrier()
         return res_CC
