@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=lowWat95
+#SBATCH --job-name=1c
 #SBATCH --cpus-per-task=1
 #SBATCH --ntasks=121
 #SBATCH --nodes=1
@@ -16,4 +16,5 @@ cd $HOME/DUMUXexudRelease/DUMUX/dumux-rosi/python/fpit
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=121 mpirun -n 121 python3 lowWat.py 9.5
+DUMUX_NUM_THREADS=121 mpirun -n 121 python3 XcGrowth.py 9.5 dumux_w
+#lowWat.py 9.5

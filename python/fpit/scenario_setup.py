@@ -59,10 +59,15 @@ def write_file_float(name, data, directory_, allranks = False):
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
     np.array(data).reshape(-1)
-    if (rank == 0) or allranks:
-        name2 = directory_+ name+ fileType
-        with open(name2, 'a') as log:
-            log.write(space.join([num for num in map(str, data)])  +'\n')
+    try:
+        if (rank == 0) or allranks:
+            name2 = directory_+ name+ fileType
+            print('write_file_array',name)
+            with open(name2, 'a') as log:
+                log.write(space.join([num for num in map(str, data)])  +'\n')
+    except:
+        print(name, data,data.shape)
+        raise Exception
 
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
@@ -249,7 +254,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
-    s.Ds = 1e-9 # m^2/s
+    s.Ds = 1e-9*100 # m^2/s
     s.Dl = 3e-12
     s.numComp = 8
     s.numFluidComp = 2

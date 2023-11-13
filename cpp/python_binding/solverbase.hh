@@ -408,12 +408,14 @@ public:
 		
 		xBackUp = x;
         auto xOld = x;
+        double minddt = std::min(1.,dt);//in case we have very small simulation time
         do {
 			if(verbose){std::cout<<rank<< " before, nonLinearSolver->suggestTimeStepSize, current time: "<<timeLoop->time()
                             <<" simTime "<<simTime<<std::endl;}
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
-            ddt = std::max(ddt, 1.); // limit minimal suggestion
+            ddt = std::max(ddt, minddt); // limit minimal and maximal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            ddt = timeLoop->timeStepSize();//limited ddt to stay below dt
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
             if(verbose){std::cout<<rank<<" before assembler->setPreviousSolution, ddt: "<<ddt<<std::endl;}
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
@@ -438,11 +440,12 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false) {
+    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false, bool saveBC = false) {
 		
         checkInitialized();
         using namespace Dumux;
-
+        clearSaveBC();
+        
         if (ddt<1.e-6) { // happens at the first call
             ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
         }
@@ -467,19 +470,25 @@ public:
 		
 		xBackUp = x;
         auto xOld = x;
+        double minddt = std::min(1.,dt);//in case we have very small simulation time
         do {
 			//std::cout<<"1cyl, nonLinearSolver->suggestTimeStepSize"<<std::endl;
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
-            ddt = std::max(ddt, 1.); // limit minimal suggestion
+            ddt = std::max(ddt, minddt); // limit minimal and maximal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            ddt = timeLoop->timeStepSize();//limited ddt to stay below dt
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
-	//std::cout<<"1cyl, assembler->setPreviousSolution"<<std::endl;
+            //std::cout<<"1cyl, assembler->setPreviousSolution"<<std::endl;
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
-//std::cout<<"1cyl, nonLinearSolver->solve"<<std::endl;
+            //std::cout<<"1cyl, nonLinearSolver->solve"<<std::endl;
             nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
 
             xOld = x; // make the new solution the old solution
-//std::cout<<"1cyl, gridVariables->advanceTimeStep"<<std::endl;
+            //std::cout<<"1cyl, gridVariables->advanceTimeStep"<<std::endl;
+            if(saveBC)
+            {
+                doSaveBC(timeLoop->time() );
+            }
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -490,6 +499,9 @@ public:
         simTime += dt;
     }
 	
+    virtual void clearSaveBC() {}
+    virtual void doSaveBC(double currentTime) {}
+    
     virtual void reset() {
         checkInitialized();
 		x = xBackUp;
@@ -987,7 +999,8 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("reset", &Solver::reset)
             // simulation 
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
-            .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
+            .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false,
+                py::arg("saveBC") = false)
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)
             .def("getPoints", &Solver::getPoints) //

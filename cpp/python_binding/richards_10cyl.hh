@@ -69,6 +69,10 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 0)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
+    .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
+    .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 
+    .def_readwrite("BC_time", &RichardsFoam::BC_time) 
+    .def_readwrite("BC_ddt", &RichardsFoam::BC_ddt) 
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)

@@ -39,6 +39,28 @@ public:
     	outerIdx = this->pick({ rOut });
 	}
 
+    
+    
+    void clearSaveBC() {    
+        BC_in_vals.clear();
+        BC_out_vals.clear();
+        BC_time.clear();
+        BC_ddt.clear();
+    }
+    void doSaveBC(double currentTime) {
+        std::vector<double> BC_in_vals_i(nEV.size());
+        std::vector<double> BC_out_vals_i(nEV.size());
+        for(int nc = 0.; nc < nEV.size(); nc++)
+        {
+            BC_in_vals_i.at(nc) = getInnerFlux(nc)/rIn;// [ mol / (m^2 \cdot s)]_axissymmetric / [axyssimetric factor] = [ mol / (m^2 * s)]
+            BC_out_vals_i.at(nc) = getOuterFlux(nc)/rOut;// [ mol / (m^2 \cdot s)]_axissymmetric  / [axyssimetric factor] = [ mol / (m^2 * s)]
+        }
+        BC_in_vals.push_back(BC_in_vals_i);
+        BC_out_vals.push_back(BC_out_vals_i);
+        BC_time.push_back(currentTime );
+        BC_ddt.push_back(this->ddt);
+    }
+    
     /**
      * [ kg / (m^2 \cdot s)]
      */
@@ -90,11 +112,21 @@ public:
             s += volumes.at(i)*water_content.at(i);
         return s;
     }
+    
+    int numComp(){return nEV.size();}
 
     int innerIdx = -1;
     int outerIdx = -1;
     double rIn = 0.;
     double rOut = 0.;
+    
+    
+    using NumEqVector = typename Problem::NumEqVector;
+    NumEqVector nEV;
+    std::vector<std::vector<double>> BC_in_vals;
+    std::vector<std::vector<double>> BC_out_vals;
+    std::vector<double> BC_time;
+    std::vector<double> BC_ddt;
 
 };
 
@@ -130,6 +162,13 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
    .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 1)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
+        
+   .def("numComp",&RichardsFoam::numComp)
+
+    .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
+    .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 
+    .def_readwrite("BC_time", &RichardsFoam::BC_time) 
+    .def_readwrite("BC_ddt", &RichardsFoam::BC_ddt) 
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)

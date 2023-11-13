@@ -59,10 +59,15 @@ def write_file_float(name, data, directory_, allranks = False):
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
     np.array(data).reshape(-1)
-    if (rank == 0) or allranks:
-        name2 = directory_+ name+ fileType
-        with open(name2, 'a') as log:
-            log.write(space.join([num for num in map(str, data)])  +'\n')
+    try:
+        if (rank == 0) or allranks:
+            name2 = directory_+ name+ fileType
+            print('write_file_array',name)
+            with open(name2, 'a') as log:
+                log.write(space.join([num for num in map(str, data)])  +'\n')
+    except:
+        print(name, data,data.shape)
+        raise Exception
 
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
@@ -171,7 +176,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.betaC = 0.001 
     s.betaO = 0.1 
-    C_S = 0.1 # in mol/m3 water
+    C_S = 1.e-8 # in mol/m3 water
     s.C_S_W_thresC = C_S/1e6 # in mol/cm3 water
     s.C_S_W_thresO = C_S/1e6
     s.k_decay = 0.2
@@ -210,7 +215,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     
     s.ICcc = np.array([C_S *unitConversion,
-                        1. *unitConversion,
+                        1.e-10 *unitConversion,
                         C_S/10* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,
@@ -249,7 +254,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
-    s.Ds = 1e-9 # m^2/s
+    s.Ds = 1e-9*100 # m^2/s
     s.Dl = 3e-12
     s.numComp = 8
     s.numFluidComp = 2

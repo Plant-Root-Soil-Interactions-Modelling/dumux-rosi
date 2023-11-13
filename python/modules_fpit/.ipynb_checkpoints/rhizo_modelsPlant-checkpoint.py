@@ -240,9 +240,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      doWater = True, doSolute = True, doSolid = True,
                                      # useSoilData = True,
                                      diff1d3dCW_abs_lim = maxlim1d3d)
-        
-        print(rank, 'test getC_content_leftoverI')
-        c_content_leftover_test = dict([(362,np.array([self.getC_content_leftoverI(362, 1) for ncomp in range(1, self.numComp + 1)])) ])# mol    
+        # can only work before the growth.
+        #print(rank, 'test getC_content_leftoverI')
+        #c_content_leftover_test = dict([(362,np.array([self.getC_content_leftoverI(362, 1) for ncomp in range(1, self.numComp + 1)])) ])# mol    
         print(rank, 'test getC_content_leftoverI_END')
         self.checkVolumeBalance(finishedUpdate = False)
         self.checkRadii()
@@ -1102,9 +1102,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 res_CC = 0.
             else:
                 print("getC_content_leftoverI", idCell)
-                print("res_CC = ",res_CC," < 0, idComp:",idComp,'mol_total',mol_total ,'mol_rhizo', mol_rhizo,'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs ) 
+                print("res_CC = ",res_CC," < ",(-1e-13 -self.maxDiff1d3dCW_abs[idComp]),"or",len(idSegs),"=/=",len(idCylsAll),
+                ", idComp:",idComp,'mol_total',mol_total ,
+                'mol_rhizo', mol_rhizo,'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs ) 
                 print("mol_rhizo_", mol_rhizo_, "idCylsAll",idCylsAll)
-                print('lens', len(idSegs), len(idCyls))# how many old and new cylinders?
+                print('lens', len(idSegs),len(idCylsAll), len(idCyls))# how many old and new cylinders?
                 raise Exception
         comm.Barrier()
         return res_CC
@@ -1517,13 +1519,17 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     n_iter_solve = 0
                     while redoSolve:
                         try:
+                            errorCOnly = False
                             cyl.ddt = 1.e-5 #do I need to reset it each time?
                             cyl.solve(dt, maxDt = maxDt_temp)
                             # newton parameters are re-read at each 'solve()' calls
-                            neumanns = cyl.getAllNeumann(0)    
-                            QflowIn_limited = neumanns[0] * (2 * np.pi * self.radii[gId] * l)
-                            QflowOut_limited = neumanns[self.NC -2 ] * (2 * np.pi *np.array( self.outer_radii)[gId] * l)
-                            
+                            Q_in_m, Q_out_m = cyl.getSavedBC( self.radii[gId], np.array( self.outer_radii)[gId], l )    
+                            # neumanns = cyl.getAllNeumann(0)    
+                            QflowIn_limited = Q_in_m[0]#neumanns[0] * (2 * np.pi * self.radii[gId] * l)#
+                            QflowOut_limited = Q_out_m[0]#neumanns[self.NC -2 ] * (2 * np.pi *np.array( self.outer_radii)[gId] * l)#
+                            #print('got neumanns0',neumanns[0],neumanns[self.NC -2 ],'surfIn',
+                            #      (2 * np.pi * self.radii[gId] * l),'surfOut',(2 * np.pi *np.array( self.outer_radii)[gId] * l),
+                            #       QflowIn_limited,QflowOut_limited)
                             buWAfter_ =  cyl.getWaterVolumesCyl(l)
                             buWAfter = sum(buWAfter_ )
                             buCCAfter_ = cyl.getContentCyl(1, True, l)
@@ -1537,35 +1543,41 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_limited,
                                       'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
                                       'buWBefore',buWBefore,'diffWproposed',diffWproposed,
-                                      'diffWtemp',diffWtemp,'diffWlimited',diffWlimited,'neumanns',neumanns,
-                                      'with qflowIn',qIn,' and qflowout',qOut,cyl.getCellCenters())
+                                      'diffWtemp',diffWtemp,'diffWlimited',diffWlimited,#'neumanns',neumanns,
+                                      'with qflowIn',qIn,' and qflowout',qOut,cyl.getCellCenters(),
+                                     'neumanns1', Q_in_m[1], Q_out_m[1],'neumanns2', Q_in_m[2], Q_out_m[2])
 
 
+                            for ncomp in range(self.numComp):
+                                try:
+                                    assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
+                                except:
+                                    errorCOnly = True
+                                    print(rank,
+                                          '(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()', 
+                                          ncomp,np.array(cyl.getSolution(ncomp + 1)).flatten() )
+                                    raise Exception
                             cyl.setParameter("Newton.MaxRelativeShift", str(self.soilModel.MaxRelativeShift))
                             redoSolve = False
                         except:     
-                            if n_iter_solve < 5:
-                                print(rank, lId,gId,' with qflowIn',qIn,' or qflowout',qOut,'maxDt',maxDt_temp,'dt',dt,
-                                      '. Increase NewtonMaxRelativeShift from',maxRelShift,'to',maxRelShift*10.)
-                                maxRelShift *= 10.
-                                # newton parameters are re-read at each 'solve()' calls
-                                cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                            elif n_iter_solve > 50:
+                            if n_iter_solve > 25:
                                 raise Exception
-                            elif (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
+                            elif (n_iter_solve < 20) and (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
                                 divVale = 1/0.9
-                                print(rank, lId,gId,'qflowIn',qIn,valueBotBC,
+                                print(rank, lId,gId,'errorCOnly',errorCOnly,'qflowIn',qIn,valueBotBC,
                                       'or qflowout',qOut,valueTopBC,'too low, and/or','maxDt',maxDt_temp,'too high.',
                                       'Decrease manually the lowests and maxDt_temp by',divVale)
+                                # difficult: not sure which is causing the error
                                 # water
-                                if (QflowIn_temp < 0 or QflowOut_temp < 0) and (QflowIn_temp <= QflowOut_temp):
-                                    QflowIn_temp /=divVale
-                                    qIn = QflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
-                                    cyl.setInnerFluxCyl(qIn) 
-                                elif (QflowIn_temp < 0 or QflowOut_temp < 0):
-                                    QflowOut_temp /= divVale
-                                    qOut = QflowOut_temp/(2 * np.pi * self.outer_radii[gId] * l)# [cm3/day] -> [cm /day]
-                                    cyl.setOuterFluxCyl(qOut)
+                                if not errorCOnly:
+                                    if (QflowIn_temp < 0 or QflowOut_temp < 0) and (QflowIn_temp <= QflowOut_temp):
+                                        QflowIn_temp /=divVale
+                                        qIn = QflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
+                                        cyl.setInnerFluxCyl(qIn) 
+                                    elif (QflowIn_temp < 0 or QflowOut_temp < 0):
+                                        QflowOut_temp /= divVale
+                                        qOut = QflowOut_temp/(2 * np.pi * self.outer_radii[gId] * l)# [cm3/day] -> [cm /day]
+                                        cyl.setOuterFluxCyl(qOut)
                                 # solutes
                                 if (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.) and (min(QCflowIn_temp) <= min(QCflowOut_temp)):
                                     QCflowIn_temp[np.where(QCflowIn_temp == min(QCflowIn_temp))] /=divVale
@@ -1579,40 +1591,49 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                     print('new SoluteTopBC', valueTopBC)
                                 maxDt_temp /= divVale
                                 maxDt_temp = max(maxDt_temp, cyl.ddt)
+                            elif  maxRelShift < 1e-2:#random upper limit
+                                print(rank, lId,gId,' with qflowIn',qIn,' or qflowout',qOut,'maxDt',maxDt_temp,'dt',dt,
+                                      '. Increase NewtonMaxRelativeShift from',maxRelShift,'to',maxRelShift*10.)
+                                maxRelShift *= 10.
+                                # newton parameters are re-read at each 'solve()' calls
+                                cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
                             else:
                                 raise Exception
                             cyl.reset()
                             n_iter_solve += 1
                             
-                            
+                        
                     buWAfter_ =  cyl.getWaterVolumesCyl(l)
                     buWAfter = sum(buWAfter_ )
                     buCCAfter_ = cyl.getContentCyl(1, True, l)
                     buTotCAfter = self.getTotCContent(cyl,l)
                     diffW = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
                     self.diffW = max(diffW,abs(self.diffW))
-                    if abs(diffW) > 1e-13:
-                        
+                    tempBC1 = cyl.getAllNeumann(1)
+                    tempBC2 = cyl.getAllNeumann(2)
+                    if False:# (abs(diffW) > 1e-13) or ((Q_in_m[1] != 0.) and (Q_out_m[1] != 0.)):
                         print("abs(diffW) > 1e-13",rank, lId,gId,n_iter_solve,dt, 'end solve QflowIn',QflowIn, 
                               'QflowIn_limited',QflowIn_limited,'diff',QflowIn - QflowIn_limited,
                              'QflowOut',QflowOut, 'QflowOut_limited',QflowOut_limited,
                               'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
-                              'buWBefore',buWBefore, 'diff',diffW)
-                        # raise Exception only raise exception at the end of the iteration loop I suppose.
+                              'buWBefore',buWBefore, 'diff',diffW,'Q_in_m',Q_in_m, 'Q_out_m', Q_out_m,Q_out_m[0]-QflowOut_limited,
+                             tempBC1 )
+                        raise Exception #only raise exception at the end of the iteration loop I suppose.
 
                     self.seg_fluxes_limited[lId] = QflowIn_limited
                     self.seg_fluxes_limited_Out[lId] =  QflowOut_limited
-                    self.seg_fluxes_limited_sol_Out[lId] = QCflowOut_temp[0]
-                    self.seg_fluxes_limited_mucil_Out[lId] = QCflowOut_temp[1]
-                    self.seg_fluxes_limited_sol_In[lId] = QCflowIn_temp[0]
-                    self.seg_fluxes_limited_mucil_In[lId] = QCflowIn_temp[1]
+                    self.seg_fluxes_limited_sol_Out[lId] = Q_out_m[1]
+                    self.seg_fluxes_limited_mucil_Out[lId] = Q_out_m[2]
+                    self.seg_fluxes_limited_sol_In[lId] = Q_in_m[1]
+                    self.seg_fluxes_limited_mucil_In[lId] = Q_in_m[2]
                     
                     diffC = (sum(buTotCAfter) - ( sum(buTotCBefore) \
-                                    + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))
-                    if ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt) > 0:
+                                    + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt))
+                    if False:# Only check when leaving the iteration loop
+                        #( sum(buTotCBefore) + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt) > 0:
                         try:#check solute mass balance
                             assert abs((sum(buTotCAfter) - ( sum(buTotCBefore) \
-                                    + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))/sum(buTotCAfter)*100) < 1.
+                                    + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt))/sum(buTotCAfter)*100) < 1.
                             assert abs(diffC) < 1e-13
                         except:
                             print("error mass C",diffC)

@@ -41,8 +41,8 @@ from scenario_setup import write_file_array, write_file_float, div0, div0f
 if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
-    
-    dt = 1/2/24
+    mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
+    dt = 1/60/24
     p_mean = -100
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
@@ -54,9 +54,7 @@ if __name__ == '__main__':
     static_plant = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    mode = "dumux_10c"  
-    modeBis = "dumux_3c"  
-    results_dir="./results/0init"+extraName+modeBis+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
+    results_dir="./results/errorChighDs"+mode+extraName+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -112,7 +110,7 @@ if __name__ == '__main__':
 
 
     s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
-                min_b, max_b, cell_number, demoType = modeBis, times = None, net_inf = None,
+                min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
                 usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean)
 
     if organism == "plant":
@@ -194,6 +192,7 @@ if __name__ == '__main__':
                      "sum(abs(diffBCS1dsFluxOut_sol))",
                      "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
                      "diff1d3dCurrant","rhizoMassWError_rel",'err'])
+    write_file_array("OuterSuccess_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
     seg_fluxes_ = np.array([])
@@ -263,7 +262,7 @@ if __name__ == '__main__':
                                                         k_iter_ = k_iter,lightType_=lightType, outer_n_iter = n_iter)
             n_iter += 1
             write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv')
-            if ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)):
+            if ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-13)):
                 print(rank, "error too high, decrease dt_inner from", dt_inner,"to", dt_inner/2)
                 dt_inner /= 2
                 s.reset()
@@ -316,7 +315,7 @@ if __name__ == '__main__':
 
         print(rank, 'get s.errorCumul')
         if rank == 0:
-            if (mode == "dumux_10c"):
+            if (mode != "dumux_w"):
                 s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
                 if buTotCAfter != 0:
                     s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
@@ -328,20 +327,25 @@ if __name__ == '__main__':
                 
             s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
             s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
-
+        else:
+            s.bulkMassErrorCumul_abs = None
+            s.bulkMassErrorCumul_rel = None
+            s.bulkMassErrorWaterCumul_abs = None
+            s.bulkMassErrorWaterCumul_rel = None
+            
         print(rank, 'got s.errorCumul')
         write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
                             time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)
         write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
         print(rank, 'write some otehr stuff')
-        if (mode == "dumux_10c"):
+        if (mode != "dumux_w"):
             write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
             write_file_float("Q_Exud_i", sum(Q_Exud_i_seg), directory_ =results_dir)
             write_file_float("Q_Mucil_i", sum(Q_Mucil_i_seg), directory_ =results_dir)
             write_file_float("Q_Exud_tot", Q_Exud_inflate, directory_ =results_dir)
             write_file_float("Q_Mucil_tot", Q_Mucil_inflate, directory_ =results_dir)
         
-        if rank == 0:
+        if (mode != "dumux_w"):
             #absolute and relative (%) error
             write_file_array("errorsPlant", np.array([error_st_abs,error_st_rel,#cumulative
                                                 errLeuning_abs]), directory_ =results_dir, fileType = '.csv') #not cumulative
@@ -369,9 +373,9 @@ if __name__ == '__main__':
             print("\n\n\n")
             raise Exception
 
-        print(rank, 'do C growth?',  (mode == "dumux_10c") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
+        print(rank, 'do C growth?',  (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
 
-        if (mode == "dumux_10c") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
+        if (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
 
             startphloem=rs_age
             endphloem = rs_age + dt
@@ -490,7 +494,7 @@ if __name__ == '__main__':
         Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
 
         print(rank, 'print data to linux')
-        if (rank == 0) and (mode == "dumux_10c")  :
+        if (rank == 0) and (mode != "dumux_w")  :
             print("\n\n\n\t\tat ", int(np.floor(rs_age)),"d", int((rs_age%1)*24),"h",  round(r.Qlight *1e6),"mumol m-2 s-1")
             print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(error_st_abs, error_st_rel))
             print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(errLeuning_abs))

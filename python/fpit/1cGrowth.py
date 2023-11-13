@@ -54,9 +54,9 @@ if __name__ == '__main__':
     static_plant = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    mode = "dumux_10c"  
-    modeBis = "dumux_3c"  
-    results_dir="./results/0init"+extraName+modeBis+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
+    mode = "dumux_w"  
+    modeBis = "dumux_w"  
+    results_dir="./results/"+modeBis+extraName+modeBis+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\

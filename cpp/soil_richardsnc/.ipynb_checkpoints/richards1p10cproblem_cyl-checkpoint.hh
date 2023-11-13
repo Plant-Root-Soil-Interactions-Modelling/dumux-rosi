@@ -659,7 +659,7 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
 					} else { // outflow
-                    //mol/m3 * [m/s] *[-] *[m/m] = molm2/s
+                    //mol/m3 * [m/s] *[-] *[cm/cm] = mol/m2/s * pos0 for axysimmetric scaling
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
                         
 						if ((f!= 0)&&verbose)
@@ -779,12 +779,23 @@ public:
 					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)* unitConversion; // g/cm2/day || mol/cm2/day  -> kg/(m²*s) || mol/(m²*s)
 					break;
 				}
-				case constantFluxCyl: {
+				case constantFluxCyl: {// massOrMolFraction
 					//usemole:
 					//[mol/(cm2 * s)]  = [mol/(cm2 * d)] * [cm2/m2] * d/s
-					//flux[i] = -bcSTopValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+                    double soluteFlow = bcSTopValue_.at(i_s);
+                    if(massOrMolFraction <= 0.)// to not have solute < 0.
+                    {
+                        soluteFlow = std::max(soluteFlow, 0.);
+                    }
+                    
+					flux[i] = -soluteFlow/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
 					//std::cout<<"constantfluxCyl "<<flux[i];
+						if ((bcSTopValue_.at(i_s)!= 0)&&verbose)
+						{
+							std::cout<<"onUpperBoundary_constantFluxCyl, Fs: "<<bcSTopValue_.at(i_s)<<" soluteFlow"<<
+                            soluteFlow<<", flux[i]: "<<flux[i]<<", massOrMolFraction: "<<massOrMolFraction
+							<<" unitConversion "<<unitConversion<<" pos[0] "<<pos[0]<<std::endl;
+						}
 					break;
 				}
 				case outflow: {
@@ -828,7 +839,18 @@ public:
 				}
 				case constantFluxCyl: {
 					//flux[i] = -bcSBotValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day -> kg/(m²*s)
+                    double soluteFlow = bcSBotValue_.at(i_s);
+                    if(massOrMolFraction <= 0.)// to not have solute < 0.
+                    {
+                        soluteFlow = std::max(soluteFlow, 0.);
+                    }
+					flux[i] = -soluteFlow/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day -> kg/(m²*s)
+						if ((bcSTopValue_.at(i_s)!= 0)&&verbose)
+						{
+							std::cout<<"onLowerBoundary_constantFluxCyl, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow: "<<
+                            soluteFlow<<", flux[i]: "<<flux[i]<<", massOrMolFraction: "<<massOrMolFraction
+							<<" unitConversion "<<unitConversion<<" pos[0] "<<pos[0]<<std::endl;
+						}
 					break;
 				}
 				case outflow: {//?? free outflow??
@@ -1172,9 +1194,7 @@ public:
 	/*!
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
 	 */
-	void writeBoundaryFluxes() {
-		myfile_ << time_ <<"\n";
-	}
+	void writeBoundaryFluxes() {}
 
 	/**
 	 * debug info TODO make meaningful for 2c
