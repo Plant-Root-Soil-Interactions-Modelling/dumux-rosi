@@ -177,8 +177,12 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.betaC = 0.001 
     s.betaO = 0.1 
     C_S = 0. # in mol/m3 water
-    s.C_S_W_thresC = C_S/1e6 # in mol/cm3 water
-    s.C_S_W_thresO = C_S/1e6
+    
+    ## ATT! C_S_W_thres has to be > 0
+    s.C_S_W_thresC = 0.1/1e6 # in mol/cm3 water
+    s.C_S_W_thresO = 0.05/1e6
+    
+    
     s.k_decay = 0.2
     s.k_decay2 = 0.6 
     s.k_DC = 1. 
@@ -193,12 +197,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.k_sorp = 0.4*1e6
     s.f_sorp = 0.5
     if demoType == "dumux_10c":
+        C_S = 1e-8 # in mol/m3 water
         s.CSSmax =C_S/10/1e6 # 1e-4*10000*0.
         s.alpha =0.1# 0.
         unitConversion = 1e3
         doBio = 1.
         CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
     elif demoType == "dumux_3c":
+        C_S = 1e-8 # in mol/m3 water
         s.CSSmax =0. # 1e-4*10000*0.
         s.alpha =0.1# 0.
         unitConversion = 1e3
@@ -215,8 +221,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         raise Exception
     
     
-    s.C_aOLim=1.e-10
-    s.C_aCLim=1.e-10
+    s.C_aOLim=1.e-10*0.
+    s.C_aCLim=1.e-10*0.
     s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
     s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
     
@@ -228,7 +234,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
                         C_S/10* unitConversion *doBio,
                         CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
         
-    
+        
     s.initialize()
     
     if do1D:
@@ -371,6 +377,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     if (cidx != cidx_sorted).any():
         print('too many threads for  the number of cells: ,',cidx,cidx_sorted)
         raise Exception
+        
     return s, s.vg_soil
 
 def set_all_sd(rs, s):

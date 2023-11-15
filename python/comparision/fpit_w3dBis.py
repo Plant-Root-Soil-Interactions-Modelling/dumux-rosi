@@ -3,16 +3,16 @@ sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 
-from rosi_richards10c_cyl import Richards10CCylFoam  # C++ part (Dumux binding)
 
 # from richards import RichardsWrapper  # Python part
-from richards_no_mpi import RichardsNoMPIWrapper as RichardsWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
+from richards import RichardsWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+from rosi_richards10c import Richards10CSP  # C++ part (Dumux binding), macroscopic soil model
 
 def write_file_array(name, data, space =",", rank_ = rank):
     name2 = './results/'+ str(rank_)+"_"+name+ '.txt'
@@ -40,7 +40,7 @@ else:
         except:
             pass
 usemoles = True
-s = RichardsWrapper(Richards10CCylFoam(), usemoles)
+s = RichardsWrapper(Richards10CSP(), usemoles)
 
 s.initialize()
 
@@ -49,25 +49,25 @@ s.initialize()
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
 
-maxDt_temp = 250/(24*3600)
-lb = 0.5
-nCells = 10
-r_in = 0.05
-r_out = 0.46336442546789647
-l = 1.0 #length in cm
-points = np.logspace(np.log(r_in) / np.log(lb), np.log(r_out) / np.log(lb), nCells, base = lb)
-s.createGrid1d(points)
-# s.createGrid([r_in], [0.6], [nCells])  # [cm]
-s.setParameter( "Soil.Grid.Cells", str(nCells-1))
+min_b = [-5, -5, -10.] 
+max_b = [5, 5, 0.] 
+cell_number = [5,5,20]
 
-initPHead = -90.92702796 
+maxDt_temp = 250/(24*3600)
+
+
+s.createGrid(min_b, max_b, cell_number, False)  # [cm]
+cell_number_ = cell_number
+cell_number= s.dumux_str(cell_number)
+s.setParameter( "Soil.Grid.Cells", cell_number)
+
+initPHead = -100
 s.setHomogeneousIC(initPHead)  # cm pressure head
 
+s.setOuterBC("constantFlux", 0)  #  [cm/day]
+s.setInnerBC("constantFlux",0* -10)  #  [cm/day]
 
-#s.setParameter("Soil.IC.P", "-90.92702796")
-s.setOuterBC("constantFluxCyl", 0.)  #  [cm/day]
-s.setInnerBC("constantFluxCyl", 0.)  #  [cm/day]
-s.setParameter("Problem.reactionExclusive", "0")   
+s.setParameter("Problem.reactionExclusive", "1")   
 #s.setICZ_solute(0.)  # [kg/m2] 
 
 molarMassWat = 18. # [g/mol]
@@ -86,7 +86,7 @@ MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
 exud = 1.*0 # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 exuds_in = exud*0
 exudl_in = exud * 0
-Qexud = (exuds_in+ exudl_in)* (2 * np.pi * r_in * l)
+Qexud =0.# (exuds_in+ exudl_in)* (2 * np.pi * r_in * l)
 
 Ds = 1e-8 # m^2/s
 Dl = 1e-9
@@ -104,23 +104,23 @@ s.bulkDensity_m3 =bulkDensity_m3 #mol / m3 bulk soil
 s.setParameter( "Soil.MolarMass", str(solidMolarMass))
 s.setParameter( "Soil.solidDensity", str(solidDensity))
 
-s.setParameter( "Soil.BC.Bot.C1Type", str(3))
-s.setParameter( "Soil.BC.Top.C1Type", str(3))
-s.setParameter( "Soil.BC.Bot.C1Value", str(exuds_in)) 
-s.setParameter( "Soil.BC.Top.C1Value", str(exud)) 
+s.setParameter( "Soil.BC.Bot.C1Type", str(2))
+s.setParameter( "Soil.BC.Top.C1Type", str(2))
+s.setParameter( "Soil.BC.Bot.C1Value", str(0)) 
+s.setParameter( "Soil.BC.Top.C1Value", str(0)) 
 
 s.setParameter("1.Component.LiquidDiffusionCoefficient", str(Ds)) #m^2/s
 
-s.setParameter( "Soil.BC.Bot.C2Type", str(3))
-s.setParameter( "Soil.BC.Top.C2Type", str(3))
-s.setParameter( "Soil.BC.Bot.C2Value", str(exudl_in)) 
-s.setParameter( "Soil.BC.Top.C2Value", str(exud)) 
+s.setParameter( "Soil.BC.Bot.C2Type", str(2))
+s.setParameter( "Soil.BC.Top.C2Type", str(2))
+s.setParameter( "Soil.BC.Bot.C2Value", str(0)) 
+s.setParameter( "Soil.BC.Top.C2Value", str(0)) 
 s.setParameter("2.Component.LiquidDiffusionCoefficient", str(Dl)) #m^2/s
 
 for i in range(numFluidComp + 1, numComp+1):
     print("Soil.BC.Bot.C"+str(i)+"Type")
-    s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(3))
-    s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
+    s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
     s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
     s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
         
@@ -128,8 +128,8 @@ for i in range(numFluidComp + 1, numComp+1):
     
 s.setParameter("Soil.betaC", str(0.001 ))
 s.setParameter("Soil.betaO", str(0.1 ))
-s.setParameter("Soil.C_S_W_thresC", str(0.1 )) #mol/cm3
-s.setParameter("Soil.C_S_W_thresO", str(0.05 )) #mol/cm3
+s.setParameter("Soil.C_S_W_thresC", str(0.1 /1e6)) #mol/cm3
+s.setParameter("Soil.C_S_W_thresO", str(0.1 /1e6 )) #mol/cm3
 s.setParameter("Soil.k_decay", str(0.2 ))
 s.setParameter("Soil.k_decay2", str(0.6 ))
 #s.setParameter("Soil.k_decay3", str(1 ))
@@ -188,27 +188,6 @@ s.setParameter("Soil.IC.C8", str(0 ))
 s.setVGParameters([loam])
 
 s.setParameter("Problem.verbose", "0")
-if False:
-    s.setParameter("Problem.reactionExclusive", "0")
-    
-    s.setParameter("Flux.UpwindWeight", "0.5")
-    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-    s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
-    s.setParameter("Newton.EnableChop", "true")
-    s.setParameter("Newton.EnableResidualCriterion", "true")
-    s.setParameter("Newton.EnableShiftCriterion", "true")
-    s.setParameter("Newton.MaxAbsoluteResidual", "1e-10")
-
-    s.setParameter("Newton.MaxSteps", "30")
-    s.setParameter("Newton.ResidualReduction", "1e-10")
-    s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
-    s.setParameter("Newton.TargetSteps", "10")
-    s.setParameter("Newton.UseLineSearch", "false")
-    s.setParameter("Newton.EnablePartialReassembly", "true")
-    s.setParameter("Grid.Overlap", "0")  #no effec5
-
-s.setParameter("Newton.MaxRelativeShift", "1e-9")
-s.setParameter("Problem.EnableGravity", "false")
 
 s.initializeProblem()
 
@@ -224,14 +203,10 @@ x = np.array(s.getSolutionHead())
 
 QWexudIn  = 0. # cm3/day
 QWexudOut = 0.0069749956986250895 # cm3/day
-QWexud    = QWexudIn + QWexudOut
-qOut = s.distributeSource(QWexudOut, 0, l, 2)# [cm3/day]
-print('QWexudOut',QWexudOut,qOut,sum(qOut))
+QWexud    = 0.#QWexudIn + QWexudOut
 
-qIn = QWexudIn/ (2 * np.pi * r_in * l) # [cm3/day] -> [cm /day]
-s.setInnerFluxCyl(qIn)  
 
-vols = s.getCellSurfacesCyl()  * l  #cm3 scv
+vols = 1.  #cm3 scv
 theta = np.array(s.getWaterContent())
 buWBefore = theta*vols
   

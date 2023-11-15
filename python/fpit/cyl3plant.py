@@ -920,10 +920,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         if rank == 0:            
             for nc in range(r.numFluidComp, r.numComp):
                 try:
-                    assert (abs(outer_R_bc_sol[nc]) < 1e-16).all()
+                    assert (abs(outer_R_bc_sol[nc][cellIds]) < 1e-16).all()
                 except:
                     print("outer_R_bc_sol[nc][cellIds] != 0.",rank, nc+1, cellIds)
-                    print(outer_R_bc_sol[nc])
+                    print(outer_R_bc_sol[nc][cellIds])
                     print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
                     raise Exception
                     

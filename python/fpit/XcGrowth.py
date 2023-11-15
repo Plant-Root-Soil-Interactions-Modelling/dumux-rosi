@@ -56,7 +56,7 @@ if __name__ == '__main__':
     useOuterFluxCyl_sol = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
+    results_dir="./results/errorNew"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
                     +lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\

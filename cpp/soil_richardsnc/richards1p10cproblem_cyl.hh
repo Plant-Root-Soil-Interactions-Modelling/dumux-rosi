@@ -1014,7 +1014,7 @@ public:
 			int CxDIdx = (i == 0) ? CoDIdx : CcDIdx;
 			C_afrSoil[i] =  std::max(massOrMoleFraction(volVars,0, CxAIdx - numFluidComps, false), 0.);//mol C/mol solid soil
 			C_a[i]  = bulkSoilDensity * C_afrSoil[i] ;													//mol C/m3 scv
-            C_aLimited[i]  = std::max(C_a[i]-C_aLim[i],0.);
+            C_aLimited[i]  = C_a[i];//std::max(C_a[i]-C_aLim[i],0.);
 			C_dfrSoil[i]  =  std::max(massOrMoleFraction(volVars,0, CxDIdx - numFluidComps, false), 0.);//mol C/mol solid soil
 			C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil							//mol C/m3 scv
 		}

@@ -53,8 +53,8 @@ maxDt_temp = 250/(24*3600)
 lb = 0.5
 nCells = 10
 r_in = 0.05
-r_out = 0.46336442546789647
-l = 1.0 #length in cm
+r_out = 0.463364
+l = 1.0000000000000002 #length in cm
 points = np.logspace(np.log(r_in) / np.log(lb), np.log(r_out) / np.log(lb), nCells, base = lb)
 s.createGrid1d(points)
 # s.createGrid([r_in], [0.6], [nCells])  # [cm]
@@ -83,10 +83,13 @@ solidMolDensity = solidDensity/solidMolarMass
 bulkDensity_m3 = solidMolDensity*(1.-0.43)
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1.*0 # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
-exuds_in = exud*0
-exudl_in = exud * 0
+exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+exuds_in = exud
+exudl_in = exud /3
 Qexud = (exuds_in+ exudl_in)* (2 * np.pi * r_in * l)
+
+s.C_aOLim=1.e-10
+s.C_aCLim=1.e-10
 
 Ds = 1e-8 # m^2/s
 Dl = 1e-9
@@ -158,6 +161,8 @@ s.setParameter("Soil.micro_maxC", str(2 ))# 1/d
 s.setParameter("Soil.micro_maxO", str(0.01 ))# 1/d
 s.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
 
+s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
+s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
 s.k_sorp = 0.2*10000
 s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
 s.f_sorp = 0.1
@@ -170,12 +175,15 @@ s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = m
 
 C_L = 10*0  #mol/cm3 wat
 s.setParameter("Soil.IC.C2", str(C_L/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol
-COa = 0.011 * 1e6*0#mol C / m3 space
+
+
+
+COa = 0.011 * 1e6*0 + s.C_aOLim #mol C / m3 space
 s.setParameter("Soil.IC.C3",str(COa/ bulkDensity_m3)) #mol C / mol Soil 
 #s.setParameter("Soil.IC.C3", str(0.009127163)) #[mol/mol soil] == 233.8 [mol/m3 bulk soil]
 COd = 0.05 * 1e6*0#mol C / m3 space
 s.setParameter("Soil.IC.C4", str(COd/bulkDensity_m3 ))
-CCa = 0.011 * 1e6*0#mol C / m3 space
+CCa = 0.011 * 1e6*0 + s.C_aCLim #mol C / m3 space
 s.setParameter("Soil.IC.C5", str(CCa/ bulkDensity_m3)) 
 CCd = 0.05 * 1e6*0  #mol C / m3 space
 s.setParameter("Soil.IC.C6", str(CCd/bulkDensity_m3 ))
@@ -234,7 +242,9 @@ s.setInnerFluxCyl(qIn)
 vols = s.getCellSurfacesCyl()  * l  #cm3 scv
 theta = np.array(s.getWaterContent())
 buWBefore = theta*vols
-  
+
+for nc in range(8):
+    print(sum( np.array(s.getSolution_(nc)).flatten()))
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
@@ -248,9 +258,9 @@ for i, dt in enumerate(np.diff(times)):
     
     print('tot wat vol', buWAfter, qOut)   
     print("content",sum(buWBefore), sum(buWAfter), QWexud*dt)
-    print(sum(buWBefore) + QWexud*dt - sum(buWAfter) , sum(buWBefore) - sum(buWAfter) )
+    print(sum(buWBefore) + QWexud*dt - sum(buWAfter))# , sum(buWBefore) - sum(buWAfter) )
     buWBefore = buWAfter
-    s.reset()
-
+    for nc in range(8):
+        print(sum( np.array(s.getSolution_(nc)).flatten()))
 print("finished")
 

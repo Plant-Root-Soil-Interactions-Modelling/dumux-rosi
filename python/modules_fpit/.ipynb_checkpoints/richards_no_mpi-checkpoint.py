@@ -254,12 +254,14 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             else:
                 isDissolved = (eqIdx <= numFluidComp)
                 seg_values = self.getContentCyl(eqIdx, isDissolved, length)
-
-            assert min(seg_values) >= 0.
+            # during the solve() loop, we might still get seg_values <0
+            # assert min(seg_values) >= 0.
+            #print('distributeVals',eqIdx,'real seg_values',seg_values)
+            seg_values = np.maximum(seg_values,0.)
 
             if (sum(seg_values) == 0.):# should normally only happen with source >= 0
                 weightVals =np.full(len(seg_values), 1 /len(seg_values))
-            if source < 0:# goes away from the 1d models
+            elif source < 0:# goes away from the 1d models
                 weightVals = seg_values /sum(seg_values)
                 if verbose:
                     print("sum(seg_values[segIds])", seg_values, weightVals)

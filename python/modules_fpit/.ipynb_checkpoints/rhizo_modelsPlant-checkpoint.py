@@ -460,7 +460,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      useSoilData = False,
                                      doKonz = True,
                                      diff1d3dCW_abs_lim = None):#would need to do it for each cell, not overall?
-        verbose = False
+        verbose = True
         if verbose:
             print("checkMassOMoleBalance2", rank)
         if diff1d3dCW_abs_lim is None:
@@ -858,66 +858,73 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print('BEFORE possible changes. new content',val_new* volumes, 'totContent',totContent,
                   'sum new content',sum(val_new* volumes),
                   'sum(val_new* volumes)-totContent', sum(val_new* volumes)-totContent)
-        if (max(val_new) >  maxVal):
-            if verbose:
-                print(rank, 'updateConcentration: issue with element content concentraiton: max(val_new) >  maxVal. adapt gradient', val_new )
-            tempTheta = val_new.copy()
-            idtemp = np.where(val_new >  maxVal)
-            extraWater = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
-            val_new[idtemp] = maxVal
-            while  extraWater >  1e-20:
+        if (max(val_new) - maxVal >  0):
+            if (max(val_new) - maxVal > 1e-20):
+                val_new = np.minimum(val_new, maxVal)
+            else:
                 if verbose:
-                    print(rank, 'updateConcentration: take out extra element content', extraWater )
-                canAdd = (maxVal - val_new)* volumes 
-                assert sum(canAdd) >= extraWater 
-                idtemp = np.where(canAdd > 0 )
-                totCtemp = sum(val_new*volumes) 
-                val_new[idtemp] = np.minimum(maxVal,(val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp)))/volumes[idtemp]
-                extraWater -=  (sum(val_new*volumes) - totCtemp) #extraWater/len(idtemp)
-            if verbose:
-                print(rank, 'updateConcentration: finished taking out extra element content', extraWater , val_new, 
-                  sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
-            assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
+                    print(rank, 'updateConcentration: issue with element content concentraiton: max(val_new) >  maxVal. adapt gradient', val_new )
+                tempTheta = val_new.copy()
+                idtemp = np.where(val_new >  maxVal)
+                extraWater = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
+                val_new[idtemp] = maxVal
+                while  extraWater >  1e-20:
+                    if verbose:
+                        print(rank, 'updateConcentration: take out extra element content', extraWater )
+                    canAdd = (maxVal - val_new)* volumes 
+                    assert sum(canAdd) >= extraWater 
+                    idtemp = np.where(canAdd > 0 )
+                    totCtemp = sum(val_new*volumes) 
+                    val_new[idtemp] = np.minimum(maxVal,(val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp)))/volumes[idtemp]
+                    extraWater -=  (sum(val_new*volumes) - totCtemp) #extraWater/len(idtemp)
+                if verbose:
+                    print(rank, 'updateConcentration: finished taking out extra element content', extraWater , val_new, 
+                      sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
+                assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
 
-        if (min(val_new) <  minVal):
-            if verbose:
-                print(rank, 'updateConcentration: issue with element content concentraiton: min(val_new) <  minVal. adapt gradient', val_new )
-            tempTheta = val_new.copy()
-            if verbose:
-                print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
-            idtemp = np.where(val_new <  minVal)
-            if verbose:
-                print('np.where(val_new <  minVal)',val_new,idtemp)
-            missingWater = sum((minVal - val_new[idtemp]) * volumes[idtemp])
-            print('missingWater',missingWater)
-            val_new[idtemp] = minVal
-            if verbose:
-                print('val_new[idtemp] = minVal',val_new)
-            while  missingWater > 1e-20:
+        if ( minVal - min(val_new) > 0):
+            if ( minVal - min(val_new) >  1e-20 ):
+                val_new = np.maximum(val_new, minVal)
+            else:
                 if verbose:
-                    print(rank, 'updateConcentration: add missing water', missingWater,(minVal - val_new[idtemp]) * volumes[idtemp],(minVal - val_new) * volumes)
-                canTake = (val_new - minVal )* volumes 
+                    print(rank, 'updateConcentration: issue with element content concentraiton: min(val_new) <  minVal. adapt gradient', val_new )
+                tempTheta = val_new.copy()
                 if verbose:
-                    print('canTake',canTake , (val_new - minVal )* volumes )
-                assert sum(canTake) >= missingWater 
-                idtemp = np.where(canTake > 0 )
+                    print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
+                idtemp = np.where(val_new <  minVal)
                 if verbose:
-                    print('np.where(canTake > 0 )',idtemp,val_new[idtemp])
-                totCtemp = sum(val_new*volumes) 
-                val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingWater/len(volumes[idtemp])))/volumes[idtemp] # might be too igh in some places
-                missingWater -= ( totCtemp - sum(val_new*volumes) )
-            if verbose:
-                print(rank, 'updateConcentration: finished adding missing element content', missingWater , val_new, 
-                  sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
-                print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
-                print('val_new',val_new,'tempTheta',tempTheta,
-                  'diff good',abs(sum(val_new * volumes) - sum(tempTheta * volumes)),'diff bad',abs(sum(val_new) - sum(tempTheta)) )
-            assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
+                    print('np.where(val_new <  minVal)',val_new,idtemp)
+                missingWater = sum((minVal - val_new[idtemp]) * volumes[idtemp])
+                print('missingWater',missingWater)
+                val_new[idtemp] = minVal
+                if verbose:
+                    print('val_new[idtemp] = minVal',val_new)
+                while  missingWater > 1e-20:
+                    if verbose:
+                        print(rank, 'updateConcentration: add missing water', missingWater,(minVal - val_new[idtemp]) * volumes[idtemp],(minVal - val_new) * volumes)
+                    canTake = (val_new - minVal )* volumes 
+                    if verbose:
+                        print('canTake',canTake , (val_new - minVal )* volumes )
+                    assert sum(canTake) >= missingWater 
+                    idtemp = np.where(canTake > 0 )
+                    if verbose:
+                        print('np.where(canTake > 0 )',idtemp,val_new[idtemp])
+                    totCtemp = sum(val_new*volumes) 
+                    val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingWater/len(volumes[idtemp])))/volumes[idtemp] # might be too igh in some places
+                    missingWater -= ( totCtemp - sum(val_new*volumes) )
+                if verbose:
+                    print(rank, 'updateConcentration: finished adding missing element content', missingWater , val_new, 
+                      sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
+                    print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
+                    print('val_new',val_new,'tempTheta',tempTheta,
+                      'diff good',abs(sum(val_new * volumes) - sum(tempTheta * volumes)),'diff bad',abs(sum(val_new) - sum(tempTheta)) )
+                assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
                 
         if verbose:
             print('AFTER possible changes. new content',val_new* volumes, 'totContent',totContent,
                   'sum new content',sum(val_new* volumes),
                   'change ratio error', sum(val_new* volumes)-totContent)
+        # if min or max val out by 1e-20, adapt manually the values:
         return val_new
     
     def interAndExtraPolation_(self,pt,pointsOld_, chip, spl):
@@ -1068,7 +1075,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                              'new content', molFrNew[nComp -1]* molarPhaseNew, 'old content',molFrOld[nComp -1] *   molarPhaseOld,
                               'sum new content',sum(molFrNew[nComp -1]* molarPhaseNew),sum(molFrNew[nComp -1]* molarPhaseOld),
                               'sum old content',sum(molFrOld[nComp -1] *   molarPhaseOld) ,
-                               'change ratio error', sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio )
+                               'change ratio error', sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio,
+                                                (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) )
                         raise Exception
                 else:
                     molFrNew.append(molFrOld[nComp -1])
@@ -1608,7 +1616,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                       'diff',QflowOut - QflowOut_limited, 'buWAfter',buWAfter,
                                       'buWBefore',buWBefore,'diffWproposed',diffWproposed,
                                       'diffWtemp',diffWtemp,'diffWlimited',diffWlimited,
-                                      'with qflowIn',qIn,'QCflowOut_temp',QCflowOut_temp,
+                                      'with qflowIn',qIn,'QCflowIn_temp',QCflowIn_temp,
+                                      'QCflowOut_temp',QCflowOut_temp,
                                      'neumanns1', Q_in_m[1], Q_out_m[1],
                                       'neumanns2', Q_in_m[2], Q_out_m[2])
 
