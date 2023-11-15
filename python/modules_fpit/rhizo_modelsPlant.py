@@ -857,9 +857,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if verbose:
             print('BEFORE possible changes. new content',val_new* volumes, 'totContent',totContent,
                   'sum new content',sum(val_new* volumes),
-                  'sum(val_new* volumes)-totContent', sum(val_new* volumes)-totContent)
+                  'sum(val_new* volumes)-totContent', sum(val_new* volumes)-totContent,
+                 'max(val_new) - maxVal ',max(val_new) - maxVal ,)
         if (max(val_new) - maxVal >  0):
-            if (max(val_new) - maxVal > 1e-20):
+            if (max(val_new) - maxVal < 1e-20):
                 val_new = np.minimum(val_new, maxVal)
             else:
                 if verbose:
@@ -883,7 +884,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
 
         if ( minVal - min(val_new) > 0):
-            if ( minVal - min(val_new) >  1e-20 ):
+            if ( minVal - min(val_new) <  1e-20 ):
                 val_new = np.maximum(val_new, minVal)
             else:
                 if verbose:

@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/4/24
+    dt = 1/3/24
     p_mean = -100
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"

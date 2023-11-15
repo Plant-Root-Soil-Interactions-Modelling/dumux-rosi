@@ -221,8 +221,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         raise Exception
     
     
-    s.C_aOLim=1.e-10*0.
-    s.C_aCLim=1.e-10*0.
+    s.C_aOLim=1.e-10
+    s.C_aCLim=1.e-10
     s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
     s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
     

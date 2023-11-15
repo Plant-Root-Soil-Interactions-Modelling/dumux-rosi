@@ -16,4 +16,4 @@ cd $HOME/DUMUXexudRelease/DUMUX/dumux-rosi/python/fpit
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=121 mpirun -n 121 python3 10cGrowth.py 9.5
+DUMUX_NUM_THREADS=121 mpirun -n 121 python3 10cGrowth.py 9.5 dumux_10c
