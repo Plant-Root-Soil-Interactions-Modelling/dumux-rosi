@@ -93,18 +93,9 @@ class SolverWrapper():
     def initializeProblem(self, rank_ = 0):
         """ After the grid is created, the problem can be initialized """
         self.base.initializeProblem()
-        print('initialized problem')
-        cell = self.getCellCenters()
-        print('initializeProblem::cell',cell)
-        if len(cell) > 0: # cell float if rank >0
-            cell0 = cell[0]
-            if (isinstance(cell0, float) or isinstance(cell0, np.float) ):
-                self.dimWorld = 1
-            else:
-                self.dimWorld = len(cell0)        
-            assert ((self.dimWorld  == 1) or ( self.dimWorld  == 3))
-        else:
-            self.dimWorld = 0
+        print(rank, 'initialized problem')
+        self.dimWorld = self.base.dimWorld
+        print(rank, 'initializeProblem::dimWorld',self.dimWorld)
 
 
     def setInitialCondition(self, ic, eqIdx = 0):
@@ -209,17 +200,17 @@ class SolverWrapper():
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkInitialized()
-        print(rank, 'getsolution')
+        #print(rank, 'getsolution')
         comm.barrier()
-        print(rank, 'base.getSolution(eqIdx',eqIdx)
+        #print(rank, 'base.getSolution(eqIdx',eqIdx)
         temp1 =  self.base.getSolution(eqIdx)
-        print(rank, 'gather', len(temp1))
+        #print(rank, 'gather', len(temp1))
         temp1 = comm.gather(temp1, root = 0)
-        print(rank, '_flat0' )
+        #print(rank, '_flat0' )
         temp1 = self._flat0(temp1)
-        print(rank, '_map' )
+        #print(rank, '_map' )
         temp1 = self._map(temp1, 0)
-        print(rank, 'return' )
+        #print(rank, 'return' )
         comm.barrier()
         return temp1
 

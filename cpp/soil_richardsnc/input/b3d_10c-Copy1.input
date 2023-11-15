@@ -1,6 +1,6 @@
 [Problem]
-Name = 3d_10c
-EnableGravity = "true"
+Name = cylinder_1d_10
+EnableGravity = "false"
 verbose = "1"
 toFile = "false"
 extenction = "txt"
@@ -13,7 +13,8 @@ MaxTimeStepSize = 60 # [s]
 
 [Soil.Grid]
 UpperRight = 0.1 0.1 0.53
-LowerLeft = 0. 0. 0.
+LowerLeft = 0. 0. 0.#-0.05 -0.05 -0.53
+# Cells = 1 1 4
 Cells = 9 9 52
 
 
@@ -23,7 +24,7 @@ Value = -0.26 # [cm day-1]
 C1Type = 3 # constant flux
 C1Value = 1 # [mol/cm2/day-1] 
 C2Type = 3 # constant flux
-C2Value = 0.3 # [mol/cm2/day-1]
+C2Value = 0.3333333333333333 # [mol/cm2/day-1]
 C3Type = 3 # constant flux
 C3Value = 0 # [g/cm2/day]
 C4Type = 3 # constant flux
@@ -86,19 +87,18 @@ alpha = 0.1 #[1/d]
 CriticalPressure = -15000
 MolarMass = 60.08e-3 #kg/mol
 solidDensity = 2700 #kg/m^3
-C_aOLim = 1e-10
-C_aCLim = 1e-10
 
 [Soil.IC]
 P = -100 # cm pressure head (initial guess)
-C1 = 0.
-C2 = 0.
-C3 = 1e-10
-C4 = 0.
-C5 = 1e-10
-C6 = 0.
-C7 = 0.
-C8 = 0.
+C1 = "  1.8   5.4   7.2   9.  162. "
+C1Z = "0.0001 0.0003 0.0004 0.0005 0.009"
+C2 = 180.
+C3 = 0.42942170240415856
+C4 = 1.9519168291098115
+C5 = 0.42942170240415856
+C6 = 1.9519168291098115
+C7 = 0.0011711500974658868
+C8 = 0
 
 
 
@@ -141,7 +141,7 @@ EnableChop = "false"
 EnableResidualCriterion = "true"
 EnableShiftCriterion = "true"
 MaxAbsoluteResidual = "1e-10"
-MaxRelativeShift = "1e-8"
+MaxRelativeShift = "1e-10"
 MaxSteps = "30"
 ResidualReduction = "1e-5"
 SatisfyResidualAndShiftCriterion = "true"

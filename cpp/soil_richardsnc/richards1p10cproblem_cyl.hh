@@ -296,6 +296,9 @@ public:
 		 v_maxL = getParam<double>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
 		 K_L = getParam<double>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
 		 
+         C_aLim = std::vector<double>{getParam<double>("Soil.C_aOLim",0.)*m3_2_cm3, //mol C/cm3 scv => mol C/m3 scv
+									getParam<double>("Soil.C_aCLim", 0.)*m3_2_cm3};
+                                    
 		 m_max = std::vector<double>{getParam<double>("Soil.m_maxO", m_max_[0])/(24.*60.*60.),
 									getParam<double>("Soil.m_maxC", m_max_[1])/(24.*60.*60.)};	//Maximum reaction rate 
 		 //for troubleshooting , can have m_maxBis != m_max
@@ -325,8 +328,7 @@ public:
 		 k_sorp = getParam<double>("Soil.k_sorp", k_sorp_)* m3_2_cm3;// mol/m3 water
 		 CSSmax = getParam<double>("Soil.CSSmax", CSSmax_)* m3_2_cm3;//mol/m3
 		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[s-1]
-		 
-		 
+         
 		 
 		 m_maxBis = std::vector<double>{getParam<double>("Soil.m_maxOBis", m_max[0]*(24.*60.*60.))/(24.*60.*60.),
 							getParam<double>("Soil.m_maxCBis", m_max[1]*(24.*60.*60.))/(24.*60.*60.)};	//Maximum reaction rate 
@@ -350,7 +352,7 @@ public:
 		 
 
 		// Output
-		std::string filestr = this->name() + "_1p5cProblem.txt"; // output file
+		std::string filestr = this->name() + "_1p10cProblem.txt"; // output file
 		myfile_.open(filestr.c_str());
 		// std::cout << "Richards1P10CProblemR_cyl constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
 				// <<  bcBotType_ << ", " << bcBotValues_.at(0) 
@@ -741,12 +743,13 @@ public:
 			
 		}
 		
-		flux[h2OIdx] = f;
+		flux[h2OIdx] = f;// [mol /(m^2 * s)] * pos0
 
 		/*
 		 * SOLUTES
 		 */
 		
+			//[kg/m3] or [mol/m3]
 		Scalar rhoW = useMoles ? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
 		double g2kg = 1./1000. ;
 		double m2_2_cm2 = 10000;
@@ -780,22 +783,32 @@ public:
 					break;
 				}
 				case constantFluxCyl: {// massOrMolFraction
-					//usemole:
-					//[mol/(cm2 * s)]  = [mol/(cm2 * d)] * [cm2/m2] * d/s
-                    double soluteFlow = bcSTopValue_.at(i_s);
-                    if(massOrMolFraction <= 0.)// to not have solute < 0.
-                    {
-                        soluteFlow = std::max(soluteFlow, 0.);
-                    }
-                    
-					flux[i] = -soluteFlow/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
-					//std::cout<<"constantfluxCyl "<<flux[i];
-						if ((bcSTopValue_.at(i_s)!= 0)&&verbose)
+                
+                    double soluteFlow =  -bcSTopValue_.at(i_s)/(24.*60.*60.)*unitConversion; // [mols/(m2 * s)]
+                    if (soluteFlow > 0) { // outflow
+                        GlobalPosition ePos = element.geometry().center();
+                        Scalar dz =  std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);// m
+                        if (dzScaling == dx){dz = dz * 2;}
+                        //!!! att component param set
+                        static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
+                        Scalar porosity = this->spatialParams().porosity(element);
+                        Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);// [m^2/s]
+                        Scalar minCvalue = 0.;// mol/mol
+                        // [m^2/s] * ([mols / molw]* [molw/m3] + [mols / molw]* [molw/m3]) /m + [molw /(m^2 * s)] * [mols / molw]
+                        //  [mols/m2/s]
+                        Scalar omax = (de * (massOrMolFraction*rhoW - minCvalue*rhoW) / dz + flux[h2OIdx] * massOrMolFraction);
+						if (verbose)
 						{
-							std::cout<<"onUpperBoundary_constantFluxCyl, Fs: "<<bcSTopValue_.at(i_s)<<" soluteFlow"<<
-                            soluteFlow<<", flux[i]: "<<flux[i]<<", massOrMolFraction: "<<massOrMolFraction
+							std::cout<<"onUpperBoundary_constantFluxCyl, Fs: "<<bcSTopValue_.at(i_s)<<" soluteFlow "<<
+                            soluteFlow<<", omax: "<<omax<<" min "<<std::min(soluteFlow, omax)<<", massOrMolFraction: "<<massOrMolFraction
 							<<" unitConversion "<<unitConversion<<" pos[0] "<<pos[0]<<std::endl;
 						}
+						soluteFlow = std::min(soluteFlow, omax);
+                        
+                    }
+                    
+					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+					//std::cout<<"constantfluxCyl "<<flux[i];
 					break;
 				}
 				case outflow: {
@@ -838,19 +851,32 @@ public:
 					break;
 				}
 				case constantFluxCyl: {
-					//flux[i] = -bcSBotValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
-                    double soluteFlow = bcSBotValue_.at(i_s);
-                    if(massOrMolFraction <= 0.)// to not have solute < 0.
-                    {
-                        soluteFlow = std::max(soluteFlow, 0.);
-                    }
-					flux[i] = -soluteFlow/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day -> kg/(m²*s)
-						if ((bcSTopValue_.at(i_s)!= 0)&&verbose)
+                        
+                    double soluteFlow =  -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion; // [mols/(m2 * s)]
+                    if (soluteFlow > 0) { // outflow
+                        GlobalPosition ePos = element.geometry().center();
+                        Scalar dz =  std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);// m
+                        if (dzScaling == dx){dz = dz * 2;}
+                        //!!! att component param set
+                        static const Scalar d = getParam<Scalar>(std::to_string(i)+".Component.LiquidDiffusionCoefficient"); // m2 / s
+                        Scalar porosity = this->spatialParams().porosity(element);
+                        Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(h2OIdx) ,d);// [m^2/s]
+                        Scalar minCvalue = 0.;// mol/mol
+                        // [m^2/s] * ([mols / molw]* [molw/m3] + [mols / molw]* [molw/m3]) /m + [molw /(m^2 * s)] * [mols / molw]
+                        //  [mols/m2/s]
+                        Scalar omax = (de * (massOrMolFraction*rhoW - minCvalue*rhoW) / dz + flux[h2OIdx] * massOrMolFraction);
+						if (verbose)
 						{
-							std::cout<<"onLowerBoundary_constantFluxCyl, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow: "<<
-                            soluteFlow<<", flux[i]: "<<flux[i]<<", massOrMolFraction: "<<massOrMolFraction
+							std::cout<<"onLowerBoundary_constantFluxCyl, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow "<<
+                            soluteFlow<<", omax: "<<omax<<" min "<<std::min(soluteFlow, omax)<<", massOrMolFraction: "<<massOrMolFraction
 							<<" unitConversion "<<unitConversion<<" pos[0] "<<pos[0]<<std::endl;
 						}
+						soluteFlow = std::min(soluteFlow, omax);
+                        
+                    }
+                    
+					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+                        
 					break;
 				}
 				case outflow: {//?? free outflow??
@@ -887,18 +913,25 @@ public:
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
 		bool dobioChemicalReaction = true; //by default, do biochemical reactions
-		double pos0 = 1;
+		double pos0; 
+        double svc_volume;
 		if (dimWorld == 1)//1daxissymmetric model
 		{
 			pos0 = pos[0];
-		}
+            svc_volume = 1.;//with 1d model, need to evaluate manually the volume of the cell.
+                            // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
+		}else{ // dimWorld == 3
+			pos0 = 1.;
+            svc_volume = scv.volume();
+        }
   
 															  
 		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
-				source[i] = source_[i]->at(eIdx)/scv.volume() * pos0;
+            
+				source[i] = source_[i]->at(eIdx)/svc_volume * pos0;// [ mol / (m^3 \cdot s)]
 				if(dobioChemicalReaction&&(i> h2OIdx)&&(source[i]> 0)&&reactionExclusive)
 				{//if we have a reaction in the cell via source and source-biochemreaction mutually exclusive, 
 					//biochem is disabled
@@ -974,13 +1007,14 @@ public:
 		double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
 		//double C_S_S = C_S_W * theta;							//mol C/m3 scv
 		
-		std::vector<double> C_afrSoil(2), C_a(2), C_dfrSoil(2), C_d(2);
+		std::vector<double> C_afrSoil(2), C_a(2), C_aLimited(2), C_dfrSoil(2), C_d(2);
 		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
 		{
 			int CxAIdx = (i == 0) ? CoAIdx : CcAIdx;
 			int CxDIdx = (i == 0) ? CoDIdx : CcDIdx;
 			C_afrSoil[i] =  std::max(massOrMoleFraction(volVars,0, CxAIdx - numFluidComps, false), 0.);//mol C/mol solid soil
 			C_a[i]  = bulkSoilDensity * C_afrSoil[i] ;													//mol C/m3 scv
+            C_aLimited[i]  = std::max(C_a[i]-C_aLim[i],0.);
 			C_dfrSoil[i]  =  std::max(massOrMoleFraction(volVars,0, CxDIdx - numFluidComps, false), 0.);//mol C/mol solid soil
 			C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil							//mol C/m3 scv
 		}
@@ -989,10 +1023,8 @@ public:
 		double CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
 		
         //	depolymerisation large polymer to small polymers
-		//	[s-1] * ([mol C/m3 bulk soil]/([mol C/m3 bulk soil]*[mol C/m3 bulk soil])) * [mol C/m3 bulk solid]
-		// double F_depoly = v_maxL * (C_L/(K_L+ C_L)) * C_a[0]  ; //mol C/(m^3 bulk soil *s)
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-		double F_depoly = v_maxL * (C_L_W/(K_L+ C_L_W)) * C_a[0];// mol C/(m^3 bulk soil *s)
+		double F_depoly = v_maxL * (C_L_W/(K_L+ C_L_W)) * C_aLimited[0];// mol C/(m^3 bulk soil *s)
 		
 		double F_uptake_S = 0.;
 		double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
@@ -1006,12 +1038,12 @@ public:
 			//				Uptake			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 wat] = [mol C_oX / m3 wat /s]
-			F_uptake_S_A[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+			F_uptake_S_A[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_aLimited[i] ;			//mol C/(m^3 bulk soil *s)
 			F_uptake_S_D[i] = (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s)
 			
 			//				Decay
 			// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
-			F_decay_A[i] = m_maxBis[i]  * C_a[i]  - F_uptake_S_A[i] ;			//mol C/(m^3 bulk soil *s)
+			F_decay_A[i] = m_maxBis[i]  * C_aLimited[i]  - F_uptake_S_A[i] ;			//mol C/(m^3 bulk soil *s)
 			F_decay_D[i] = m_maxBis[i]  * beta[i]  * C_d[i]  - F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
 			
 			//				Other
@@ -1024,12 +1056,12 @@ public:
 				std::cout<<"F_growth["<<i<<"] " << std::scientific<<std::setprecision(20)
 				<<micro_max[i] <<" "<< C_S_W <<" "<< k_S[i] <<" "<< C_a[i]<<" "<<F_growth[i]<<std::endl;
 				std::cout<<"F_decay_A["<<i<<"] " << std::scientific<<std::setprecision(20)
-				<<m_maxBis[i] <<" "<< C_a[i]  <<" "<< F_uptake_S_A[i]  <<" "
+				<<m_maxBis[i] <<" "<< C_aLimited[i]  <<" "<< F_uptake_S_A[i]  <<" "
 				<< F_decay_A[i] <<std::endl;
 			}
 			phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_W)/(k_phi * C_S_W_thres[i])));								// - 
 			// [-] * [1/s] * [mol C/m3 bulk soil]
-			F_deact[i]  = (1 - phi[i] ) * k_D[i]  * C_a[i] ;			//mol C/(m^3 bulk soil *s)
+			F_deact[i]  = (1 - phi[i] ) * k_D[i]  * C_aLimited[i] ;			//mol C/(m^3 bulk soil *s)
 			F_react[i]  = phi[i]  * k_R[i]  * C_d[i] ;				//mol C/(m^3 bulk soil *s)
 			
 			F_uptake_S += F_uptake_S_A[i] + F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
@@ -1332,6 +1364,7 @@ private:
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
+	std::vector<double>  C_aLim ; //[mol C/m3] Minimum concentraiton of active organisme (to be able to restart from a solute concentration of 0)
 	std::vector<double>  m_max ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
 	std::vector<double>  micro_max ; //[s-1] Maximum growth rate coefficient for the corresponding microbial group
 	std::vector<double>  beta ; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group

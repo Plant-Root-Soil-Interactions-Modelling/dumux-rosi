@@ -59,7 +59,8 @@ void init_richards_10(py::module &m, std::string name) {
    .def("getAvgDensity",&Richards_::getAvgDensity)
    .def("getCSS1_out",&Richards_::getCSS1_out)
    .def("getRF_out",&Richards_::getRF_out)
-   .def("getAvgDensity",&Richards_::getAvgDensity);
+   .def("getAvgDensity",&Richards_::getAvgDensity)
+   .def_readonly("dimWorld", &Richards_::dimWorld);
 
 }
 

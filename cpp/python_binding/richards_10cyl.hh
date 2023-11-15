@@ -76,6 +76,7 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)
+   .def_readonly("dimWorld", &RichardsFoam::dimWorld)
    .def("getCSS1_out",&RichardsFoam::getCSS1_out)
    .def("getRF_out",&RichardsFoam::getRF_out)
    .def("getAvgDensity",&RichardsFoam::getAvgDensity);

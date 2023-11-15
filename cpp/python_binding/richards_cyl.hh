@@ -174,7 +174,8 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)
-   .def("getAvgDensity",&RichardsFoam::getAvgDensity);
+   .def("getAvgDensity",&RichardsFoam::getAvgDensity)
+   .def_readonly("dimWorld", &RichardsFoam::dimWorld);
 }
 
 

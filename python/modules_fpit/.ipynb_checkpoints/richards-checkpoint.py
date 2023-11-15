@@ -328,7 +328,7 @@ class RichardsWrapper(SolverWrapper):
                 CC *= self.bulkDensity_m3/1e6 #mol/cm3 scv
         return CC
 
-    def setSource(self, source_map, eq_idx = 0):
+    def setSource(self, source_map, eq_idx = 0, cyl_length = None):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         # useMole fraction or mass fraction? 
@@ -343,10 +343,18 @@ class RichardsWrapper(SolverWrapper):
                 unitConversion = 1/ 24. / 3600.  * molarDensityWat; # [cm3/day] -> [mol/s] 
             else:
                 unitConversion = 1/ 24. / 3600. ; # [mol/day] -> [mol/s] 
-                
-        for key, value in source_map.items():
-            source_map[key] = value * unitConversion #
-        #print("setSource", source_map, eq_idx)
+
+        # to go from [mol/s] to [mol/m3/s].
+        # for dimWorld==3, scv.volume() computed in dumux. otherwise, do it here
+        if self.dimWorld == 1:
+            vols = self.getCellSurfacesCyl() / 1e4 * cyl_length / 100 #m3 scv
+        else:
+            vols = np.ones(max(list(source_map.keys())) +1)
+
+        # print("setSourceA", source_map, eq_idx)
+        for cellId, value in source_map.items(): 
+            source_map[cellId] = value * unitConversion / vols[cellId] 
+        # print("setSourceB", source_map, eq_idx)
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):

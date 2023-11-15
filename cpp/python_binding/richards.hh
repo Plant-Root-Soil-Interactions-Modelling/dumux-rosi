@@ -428,7 +428,8 @@ void init_richards(py::module &m, std::string name) {
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)
    .def("setSBotBC",&Richards_::setSBotBC)
-   .def("getAvgDensity",&Richards_::getAvgDensity);
+   .def("getAvgDensity",&Richards_::getAvgDensity)
+   .def_readonly("dimWorld", &Richards_::dimWorld);
 
 }
 

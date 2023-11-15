@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/60/24
+    dt = 1/4/24
     p_mean = -100
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
@@ -52,9 +52,12 @@ if __name__ == '__main__':
     beforeAtNight = True
     adaptRSI_  = False
     static_plant = False
+    useOuterFluxCyl_w = False
+    useOuterFluxCyl_sol = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/errorChighDs"+mode+extraName+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
+    results_dir="./results/"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
+                    +lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -139,6 +142,8 @@ if __name__ == '__main__':
     rs.SRIBefore = SRIBefore
     rs.beforeAtNight = beforeAtNight
     rs_age = initsim
+    rs.useOuterFluxCyl_w = useOuterFluxCyl_w
+    rs.useOuterFluxCyl_sol = useOuterFluxCyl_sol
 
 
     net_sol_flux =  np.array([np.array([]),np.array([])])
@@ -247,9 +252,11 @@ if __name__ == '__main__':
         print(rank, 'to cyl3.simulate_const')
         n_iter = 0
         rs.rhizoMassWError_abs = 1.
+        rs.rhizoMassCError_abs = 1.
+        rs.errDiffBCs = 1.
         rs.err = 1.
         max_err = 1.
-        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-13)) and (n_iter < k_iter) :
+        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-13) or (max(abs(rs.errDiffBCs)) > 1e-5) ) and (n_iter < k_iter) :
             net_sol_flux_, net_flux_, seg_fluxes__ = cyl3.simulate_const(s, 
                                                     r,  dt, dt_inner, rs_age, 
                                                     Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
