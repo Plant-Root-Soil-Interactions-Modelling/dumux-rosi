@@ -65,7 +65,7 @@ public:
 
     using VectorType = std::array<double, dim>;
     bool isBox = Problem::isBox; // numerical method
-
+    int dimWorld = dim;
     double simTime = 0;
     double ddt = -1; // internal time step, minus indicates that its uninitialized
     int maxRank = -1; // max mpi rank
@@ -387,6 +387,7 @@ public:
         checkInitialized();
         using namespace Dumux;
 
+        //problem->verbose =  getParam<int>("Problem.verbose", 0);
         if (ddt<1.e-6) { // happens at the first call
             ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
         }
@@ -445,6 +446,7 @@ public:
         checkInitialized();
         using namespace Dumux;
         clearSaveBC();
+        //problem->verbose =  getParam<int>("Problem.verbose", 0);
         
         if (ddt<1.e-6) { // happens at the first call
             ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
@@ -1025,6 +1027,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
             // members
+            .def_readonly("dimWorld", &Solver::dimWorld) // read only
             .def_readonly("simTime", &Solver::simTime) // read only
             .def_readwrite("verbose", &Solver::verbose) // initial internal time step
             .def_readwrite("ddt", &Solver::ddt) // initial internal time step

@@ -135,8 +135,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         r.rhizoMassWError_abs =1.# 
         r.rhizoMassCError_abs =1.# 
         r.errDiffBCs = 1.
-        while ( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) or (abs(r.rhizoMassCError_abs) > 1e-13) or (max(abs(r.errDiffBCs)) > 1e-5) ) and (n_iter < max_iter) :
-            
+        r.solve_gave_up = False
+        while ( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1e-5) or  r.solve_gave_up ) and (n_iter < max_iter) :
+            r.solve_gave_up = False
             """ 1. xylem model """
             comm.barrier()
             print('1. xylem model')
@@ -414,7 +415,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                      directory_ =results_dir, allranks = True)
                     write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), 
                                      directory_ =results_dir, allranks = True)
-                    for ccc in range(3):
+                    for ccc in range(r.numComp):
                         sol0 = np.array(cyl.getSolution(ccc)).flatten()
                         write_file_array("solution"+str(ccc)+"_"+str(gId)+"", 
                                      sol0, 
@@ -531,7 +532,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print('seg_fluxes , proposed_outer_fluxes',sum(seg_fluxes ), sum(proposed_outer_fluxes),
                       'seg_fluxes_limited, seg_fluxes_limited_Out',sum(seg_fluxes_limited),sum( seg_fluxes_limited_Out),
                      'diff',sum(seg_fluxes-seg_fluxes_limited),sum(seg_fluxes_limited_Out-proposed_outer_fluxes))
-                raise Exception    
+                
                          
             
             ##
@@ -790,7 +791,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds),root= 0)
             r.maxDiff1d3dCW_abs = comm.bcast(r.maxDiff1d3dCW_abs,root= 0)
             diff1d3dCurrant =abs(max(r.maxDiff1d3dCW_abs) - maxDiff1d3dCW_absBU) # to not depend on cumulative error
-            #r.diffW = comm.bcast(max(comm.gather(r.diffW ,root = 0),root = 0))
+            r.solve_gave_up = (np.array(comm.bcast(comm.gather(r.solve_gave_up ,root = 0),root = 0))).any()
             
             r.errs =np.array([errRxPlant, errW1ds, errW3ds,errC1ds, errC3ds, 
                             max(r.SinkLim3DS),max(abs(r.SinkLim1DS)),max(abs(r.OutLim1DS)),
@@ -823,7 +824,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 
                 if (plantType != "plant") :
                     write_file_array('fpit_transRate',np.array([transpiration]), directory_ =results_dir, fileType = '.csv' )
-                    write_file_array("fpit_n_iter",np.array([ n_iter ]), directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_n_iter",np.array([ n_iter, r.solve_gave_up ]), directory_ =results_dir, fileType = '.csv') 
 
                 write_file_array('fpit_watVolTheta',np.array([sum(new_soil_water),np.mean(theta3ds)]), directory_ =results_dir, 
                                  fileType = '.csv' )

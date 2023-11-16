@@ -1093,7 +1093,11 @@ public:
 		
 		q[CSS2Idx] +=  Reac_CSS2 * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
-		
+					if(verbose)
+			{
+                std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
+                <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
+            }
 		//for post-processing		
 			setSorp(Reac_CSS2, scv.dofIndex());
 			setTheta(theta, scv.dofIndex());

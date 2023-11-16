@@ -354,7 +354,8 @@ class RichardsWrapper(SolverWrapper):
         # print("setSourceA", source_map, eq_idx)
         for cellId, value in source_map.items(): 
             source_map[cellId] = value * unitConversion / vols[cellId] 
-        # print("setSourceB", source_map, eq_idx)
+        if self.dimWorld == 1:
+            print("setSource", rank, eq_idx,source_map)
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):

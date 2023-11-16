@@ -387,6 +387,7 @@ public:
         checkInitialized();
         using namespace Dumux;
 
+        //problem->verbose =  getParam<int>("Problem.verbose", 0);
         if (ddt<1.e-6) { // happens at the first call
             ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
         }
@@ -445,6 +446,7 @@ public:
         checkInitialized();
         using namespace Dumux;
         clearSaveBC();
+        //problem->verbose =  getParam<int>("Problem.verbose", 0);
         
         if (ddt<1.e-6) { // happens at the first call
             ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something

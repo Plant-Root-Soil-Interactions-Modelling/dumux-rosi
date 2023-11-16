@@ -227,7 +227,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         splitVals = list()
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
             splitVals.append(self.distributeSource( src, eqIdx[i], length, numFluidComp))
-        return np.array(splitVals)
+        return np.array(splitVals, dtype = object)
             
     def distributeSource(self, source: float, eqIdx: int, length: float, numFluidComp: int):
         assert self.dimWorld != 3
@@ -243,11 +243,15 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                     test_values.remove(value)
                     break                        
             self.setSource(res.copy(), eq_idx = eqIdx, cyl_length = length)  # [mol/day], in modules/richards.py
+        else:
+            res = dict()
+            res[0] = 0.
+            self.setSource(res.copy(), eq_idx = eqIdx, cyl_length = length)  # [mol/day], in modules/richards.py
         return splitVals
     
     def distributeVals(self, source: float, eqIdx: int, length: float, numFluidComp: int):
         splitVals = np.array([0.])
-        verbose = False
+        verbose = True
         if source != 0.:# [cm3/day] or [mol/day]
             if eqIdx == 0:
                 seg_values = self.getWaterVolumesCyl(length)
@@ -279,5 +283,5 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                 print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals),(sum(weightVals) - 1.) ,(sum(weightVals) - 1.) < 1e-13)
                 print('splitVals',splitVals, seg_values, len(splitVals) == len(seg_values))
                 raise Exception
-            
+            print(rank,'distributeVals',eqIdx,'seg_values',seg_values,'splitVals',splitVals)   
         return splitVals

@@ -227,7 +227,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
     
     s.ICcc = np.array([C_S *unitConversion,
-                       0 *unitConversion,
+                       C_S/2 *unitConversion,
                         (C_S/10+s.C_aOLim)* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,
                         (C_S/10+s.C_aCLim)* unitConversion *doBio,

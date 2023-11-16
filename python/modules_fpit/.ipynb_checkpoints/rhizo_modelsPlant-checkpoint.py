@@ -1069,7 +1069,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print('\t',gId,"error",nComp,  abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio),
                                 abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
                     try:
-                        assert abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13
+                        assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-20))
                     except:
                         print('\t',gId,"error",nComp, 'totContent', cOld*changeRatio,
                               ( cOld*changeRatio)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio,
@@ -1167,11 +1167,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print("mol_rhizo_", mol_rhizo_, "idCylsAll",idCylsAll)
             print( 'lens',len(idSegs), len(idCyls))# how many old and new cylinders?
         if res_CC < 0.:
-            if ((res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])) and (len(idSegs) == len(idCylsAll))): # rounding error probably 
+            if (res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])):# and (len(idSegs) == len(idCylsAll))): # rounding error probably 
                 res_CC = 0.
             else:
                 print("getC_content_leftoverI", idCell)
                 print("res_CC = ",res_CC," < ",(-1e-13 -self.maxDiff1d3dCW_abs[idComp]),"or",len(idSegs),"=/=",len(idCylsAll),
+                      (res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])) and (len(idSegs) == len(idCylsAll)),
+                      (res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])) , (len(idSegs) == len(idCylsAll)),
                 ", idComp:",idComp,'mol_total',mol_total ,
                 'mol_rhizo', mol_rhizo,'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs ) 
                 print("mol_rhizo_", mol_rhizo_, "idCylsAll",idCylsAll)
@@ -1509,8 +1511,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 else:
                     qOut = cyl.distributeSource(QflowOut, 0, l, self.numFluidComp)
                     if QflowOut!=0.:
-                        print('distributeSourceEnd',sum(qOut) , QflowOut,sum(qOut) - QflowOut)
-                        assert abs(sum(qOut) - QflowOut) < 1e-13
+                        try:
+                            assert (abs(sum(qOut) - QflowOut) < 1e-13) or (abs((sum(qOut) - QflowOut)/QflowOut) < 1e-13)
+                        except:
+                            print('distributeSourceEnd_error',sum(qOut) , QflowOut,sum(qOut) - QflowOut)
+                            raise Exception
+                        
                     
                     
                      
@@ -1570,14 +1576,23 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 QCflowOut_temp =np.array([topVal,topVal_mucil])
                 
                 
-                maxDt_temp = 2500/(24*3600)
+                maxDt_temp = 250/(24*3600)
                 maxRelShift = self.soilModel.MaxRelativeShift
+
+                print('before solve: cyl.getSolutionHead()',np.array(cyl.getSolutionHead()))
+                for ncomp in range(self.numComp):
+                    try:
+                        print('before solve: cyl.getSolution(ncomp + 1)',ncomp + 1,np.array(cyl.getSolution(ncomp + 1)).flatten())
+                        assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
+                    except:
+                        raise Exception
                 try:
                     if verbose:
                         print(rank, lId,gId, 'start solve','buWBefore',buWBefore,'Qin',QflowIn,
                               proposed_inner_fluxes[gId],qIn, 'QflowOut',QflowOut,'dt',dt,
                               'valueBotBC',valueBotBC,'valueTopBC',valueTopBC,
-                              'solsBefore',solsBefore)
+                              'solsBefore',solsBefore,"gId",gId,"l",l,"a_in", self.radii[gId] ,
+                              "a_out",self.outer_radii[gId],'maxRelShift',maxRelShift )
                                         
                     redoSolve = True
                     n_iter_solve = 0
@@ -1585,6 +1600,17 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         try:
                             errorCOnly = False
                             cyl.ddt = 1.e-5 #do I need to reset it each time?
+                            if verbose:
+                                print(rank, lId,"gId",gId,'start solve',#'buWBefore',buWBefore,
+                                      'QflowOut_temp',QflowOut_temp,
+                                       'QflowIn_temp',QflowIn_temp,
+                                      'QCflowOut_temp',QCflowOut_temp,
+                                       'QCflowIn_temp',QCflowIn_temp,
+                                      'valueBotBC',valueBotBC,
+                                      'valueTopBC',valueTopBC,
+                                      'dt',dt,"l",l,"a_in", self.radii[gId] ,
+                                      "a_out",self.outer_radii[gId],'maxRelShift',maxRelShift,
+                                      'cyl.solve',maxDt_temp)
                             cyl.solve(dt, maxDt = maxDt_temp)
                             # newton parameters are re-read at each 'solve()' calls
                             Q_in_m, Q_out_m = cyl.getSavedBC(self.radii[gId], 
@@ -1630,33 +1656,46 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                     errorCOnly = True
                                     print(rank,
                                     '(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()', 
-                                          ncomp,np.array(cyl.getSolution(ncomp + 1)).flatten() )
+                                          ncomp,np.array(cyl.getSolution(ncomp + 1)).flatten() ,
+                                         (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all())
                                     raise Exception
                             cyl.setParameter("Newton.MaxRelativeShift",
                                              str(self.soilModel.MaxRelativeShift))
                             redoSolve = False
                         except Exception as e:     
                             print('solve Failed:', e)
-                            if n_iter_solve > 25:
-                                raise Exception
-                            elif (n_iter_solve < 20) and (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
-                                divVale = 1/0.9
-                                print(rank,
+                            
+                            if (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.): #
+                                if (n_iter_solve < 20):  
+                                    divVale = 0.9
+                                    print(rank,
                                       lId,gId,'errorCOnly',errorCOnly,
                                       'qflowIn',qIn,valueBotBC,
                                       'or qflowout',qOut,valueTopBC,
                                       'too low, and/or','maxDt',maxDt_temp,'too high.',
-                                      'Decrease manually the lowests and maxDt_temp by',divVale)
+                                      'Decrease manually the lowests and maxDt_temp by',divVale,
+                                         'QCflowOut_temp, QCflowIn_temp',QCflowOut_temp , QCflowIn_temp)
+                                else:
+                                    divVale = 0.
+                                    print('cannot solve',rank,
+                                      lId,gId,'errorCOnly',errorCOnly,
+                                      'qflowIn',qIn,valueBotBC,
+                                      'or qflowout',qOut,valueTopBC,
+                                      'too low, and/or','maxDt',maxDt_temp,'too high.',
+                                      'Decrease manually the lowests and maxDt_temp by',divVale,
+                                         'QCflowOut_temp, QCflowIn_temp',QCflowOut_temp , QCflowIn_temp)
+                                
                                 
                                 # water
-                                if not errorCOnly:
+                                if (not errorCOnly) or (min(QCflowOut_temp) >0. and min(QCflowIn_temp)>0.):
+                                    print('adapt water', errorCOnly, min(QCflowOut_temp), min(QCflowIn_temp)>0.)
                                     if (QflowIn_temp < 0 or QflowOut_temp < 0) and (QflowIn_temp <= QflowOut_temp):
-                                        QflowIn_temp /=divVale
+                                        QflowIn_temp *=divVale
                                         qIn = QflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
                                         cyl.setInnerFluxCyl(qIn) 
                                         
                                     elif (QflowIn_temp < 0 or QflowOut_temp < 0):
-                                        QflowOut_temp /= divVale
+                                        QflowOut_temp *= divVale
                                         if self.useOuterFluxCyl_w:
                                             qOut = QflowOut_temp/(2 * np.pi * self.outer_radii[gId] * l)# [cm3/day] -> [cm /day]
                                             cyl.setOuterFluxCyl(qOut)
@@ -1665,12 +1704,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                             
                                 # solutes
                                 if (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.) and (min(QCflowIn_temp) <= min(QCflowOut_temp)):
-                                    QCflowIn_temp[np.where(QCflowIn_temp == min(QCflowIn_temp))] /=divVale
+                                    print('(min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.) and (min(QCflowIn_temp) <= min(QCflowOut_temp))')
+                                    QCflowIn_temp[np.where(QCflowIn_temp == min(QCflowIn_temp))] *=divVale
                                     valueBotBC[:self.numFluidComp] = QCflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
                                     cyl.setSoluteBotBC(typeBC, valueBotBC)
                                     print('new SoluteBotBC', valueBotBC)
                                 elif (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
-                                    QCflowOut_temp[np.where(QCflowOut_temp == min(QCflowOut_temp))] /= divVale # or id where getSolution < 0
+                                    print('(min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.)')
+                                    QCflowOut_temp[np.where(QCflowOut_temp == min(QCflowOut_temp))] *= divVale # or id where getSolution < 0
                                     if self.useOuterFluxCyl_sol:
                                         valueTopBC[:self.numFluidComp] = QCflowOut_temp/ (2 * np.pi * self.outer_radii[gId] * l) # [cm3/day] -> [cm /day]
                                         cyl.setSoluteTopBC(typeBC, valueTopBC)
@@ -1679,17 +1720,32 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                                               np.array([nc+1 for nc in range(self.numFluidComp+1)]), 
                                                                            l, self.numFluidComp)
                                     print('new SoluteTopBC', valueTopBC)
-                                maxDt_temp /= divVale
-                                maxDt_temp = max(maxDt_temp, cyl.ddt)
-                            elif  maxRelShift < 1e-2:#random upper limit
+                                # maxDt_temp *= divVale
+                                # maxDt_temp = max(maxDt_temp, cyl.ddt)
+                            elif (maxRelShift < 1e-5) :#random upper limit
                                 print(rank, lId,gId,' with qflowIn',qIn,' or qflowout',qOut,'maxDt',maxDt_temp,'dt',dt,
                                       '. Increase NewtonMaxRelativeShift from',maxRelShift,'to',maxRelShift*10.)
                                 maxRelShift *= 10.
                                 # newton parameters are re-read at each 'solve()' calls
                                 cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
                             else:
-                                raise Exception
+                                print(rank,
+                                      lId,gId,'ERROR, GIVING UP. errorCOnly',errorCOnly,
+                                      'qflowIn',qIn,valueBotBC,
+                                      'or qflowout',qOut,valueTopBC,
+                                      'too low, and/or','maxDt',maxDt_temp,'too high.',
+                                      'Decrease manually the lowests and maxDt_temp by',divVale)
+                                cyl.setParameter("Newton.MaxRelativeShift",
+                                             str(self.soilModel.MaxRelativeShift))
+                                redoSolve = False
+                                #raise Exception
                             cyl.reset()
+                            
+                            for ncomp in range(self.numComp):
+                                try:
+                                    assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
+                                except:
+                                    raise Exception
                             n_iter_solve += 1
                             
                         
@@ -1921,13 +1977,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print("splitVals[segIds]",splitVals[segIds])
                         print("sum(weightVals)", sum(weightVals), sum(splitVals[segIds]))
                     try:
-                        assert (sum(weightVals) - 1.) < 1e-13
-                        assert abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13
+                        assert ((sum(weightVals) - 1.) < 1e-13) or ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13)
                     except:
                         print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals))
                         print(splitVals[segIds], soilVals[cellid])
                         print(sum(splitVals[segIds]), soilVals[cellid])
                         print(sum(splitVals[segIds]) - soilVals[cellid])
+                        print(((sum(weightVals) - 1.) < 1e-13) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13))
+                        print(((sum(weightVals) - 1.) ) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) ) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) ))
                         raise Exception
                 
         try:

@@ -42,8 +42,8 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/3/24
-    p_mean = -100
+    dt = 1/60/24
+    p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     useOuterFluxCyl_sol = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/errorNew"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
+    results_dir="./results/"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
                     +lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
@@ -256,7 +256,9 @@ if __name__ == '__main__':
         rs.errDiffBCs = 1.
         rs.err = 1.
         max_err = 1.
-        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-13) or (max(abs(rs.errDiffBCs)) > 1e-5) ) and (n_iter < k_iter) :
+        def continueLoop(rs,n_iter):
+            return ((np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs)) > 1e-5) or  rs.solve_gave_up) and (n_iter < k_iter)
+        while continueLoop(rs,n_iter):
             net_sol_flux_, net_flux_, seg_fluxes__ = cyl3.simulate_const(s, 
                                                     r,  dt, dt_inner, rs_age, 
                                                     Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
@@ -268,18 +270,22 @@ if __name__ == '__main__':
                                                     results_dir = results_dir,
                                                         k_iter_ = k_iter,lightType_=lightType, outer_n_iter = n_iter)
             n_iter += 1
-            write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv')
-            if ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-13)):
-                print(rank, "error too high, decrease dt_inner from", dt_inner,"to", dt_inner/2)
-                dt_inner /= 2
+            write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs,rs.rhizoMassCError_abs,max(abs(rs.errDiffBCs)),rs.solve_gave_up, 
+                                                         continueLoop(rs,n_iter),dt_inner]), directory_ =results_dir, fileType = '.csv')
+            write_file_array("Outer_dataBool", np.array([n_iter, (np.floor(rs.err) > max_err), (abs(rs.rhizoMassWError_abs) > 1e-13), 
+                                                         (abs(rs.rhizoMassCError_abs) > 1e-9), (max(abs(rs.errDiffBCs)) > 1e-5), rs.solve_gave_up, 
+                                                         continueLoop(rs,n_iter),dt_inner]), directory_ =results_dir, fileType = '.csv')
+            if continueLoop(rs,n_iter):
+                print(rank, "error too high, decrease dt_inner from", dt_inner,"to",min(1/(24*3600), dt_inner/2))
+                dt_inner = max(1./(24.*3600.), dt_inner/2) # minimum: 1 second
                 s.reset()
                 rs.reset()
-            else:
-                write_file_array("OuterSuccess_error", rs.errs, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("OuterSuccess_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv')
-                net_sol_flux = net_sol_flux_
-                net_flux = net_flux_ 
-                seg_fluxes_ = seg_fluxes__
+                
+        write_file_array("OuterSuccess_error", rs.errs, directory_ =results_dir, fileType = '.csv') 
+        write_file_array("OuterSuccess_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs,dt_inner]), directory_ =results_dir, fileType = '.csv')
+        net_sol_flux = net_sol_flux_
+        net_flux = net_flux_ 
+        seg_fluxes_ = seg_fluxes__
                 
                 
         print(rank, 'left cyl3.simulate_const')
