@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=3derr7
+#SBATCH --job-name=3derr30
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=7
+#SBATCH --ntasks=31
 #SBATCH --nodes=1
 #SBATCH --partition=cpu256
 #SBATCH --time=20-00:00:00
@@ -11,9 +11,7 @@
 #SBATCH --mail-user=m.giraud@fz-juelich.de
 
 
-cd $HOME/DUMUXexud/dumux-rosi/python/fpit 
+cd $HOME/DUMUXexudRelease/DUMUX/dumux-rosi/build-cmake/cpp/soil_richardsnc
 
 
-#export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
-#export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=7 mpirun -n 7 python3 testError3d.py
+DUMUX_NUM_THREADS=31 mpirun -np 31 ./richards10c_PyBi ./input/b3d_10c.input

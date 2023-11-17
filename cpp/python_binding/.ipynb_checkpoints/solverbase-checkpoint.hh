@@ -327,6 +327,8 @@ public:
      */
     virtual void initializeProblem() {
         verbose =  Dumux::getParam<int>("Problem.verbose",0);
+        int verboseIndexSet =  Dumux::getParam<int>("Problem.verboseIndexSet",0);
+        
         problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
@@ -338,10 +340,12 @@ public:
 
         simTime = 0; // reset
         ddt = -1;
-        //std::cout<<"getpointIdx"<<std::endl;
-        pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim); // global index mappers
-        //std::cout<<"getcellIdx"<<std::endl;
-        cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0);
+        if(verboseIndexSet){std::cout<<"getpointIdx"<<std::endl;}
+        pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim, verboseIndexSet); // global index mappers
+        
+        if(verboseIndexSet){std::cout<<"getcellIdx"<<std::endl;}
+        cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0, verboseIndexSet);
+        if(verboseIndexSet){std::cout<<"GOTcellIdx"<<std::endl;}
         
         //std::cout<<"getlocalCellIdx"<<std::endl;
         localCellIdx.clear();

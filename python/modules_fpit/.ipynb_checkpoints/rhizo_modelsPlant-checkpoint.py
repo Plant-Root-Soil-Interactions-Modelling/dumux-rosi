@@ -869,18 +869,18 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print(rank,'isWater',isWater, 'updateConcentration error', 'val_new',val_new,'totContent',totContent, 
                   'gradient',gradient, 'cellCenters',cellCenters, 'volumes',volumes )
         if isWater:
-            maxVal =  self.vg_soil.theta_S
-            minVal = self.vg_soil.theta_R
+            maxVal = self.vg_soil.theta_S#* volumes
+            minVal = self.vg_soil.theta_R#* volumes
         else:
-            maxVal = np.Inf
-            minVal = 0.
+            maxVal = np.Inf#* volumes
+            minVal = 0.#* volumes
         if verbose:
             print('BEFORE possible changes. new content',val_new* volumes, 'totContent',totContent,
                   'sum new content',sum(val_new* volumes),
                   'sum(val_new* volumes)-totContent', sum(val_new* volumes)-totContent,
-                 'max(val_new) - maxVal ',max(val_new) - maxVal ,)
-        if (max(val_new) - maxVal >  0):
-            if (max(val_new) - maxVal < 1e-20):
+                 'max(val_new) - maxVal ',max(val_new - maxVal))
+        if (max(val_new - maxVal) >  0):
+            if (max(val_new - maxVal) < 1e-20):
                 val_new = np.minimum(val_new, maxVal)
             else:
                 if verbose:
@@ -889,22 +889,26 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 idtemp = np.where(val_new >  maxVal)
                 extraWater = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
                 val_new[idtemp] = maxVal
+
+                n_iter = 0
                 while  extraWater >  1e-20:
+                    n_iter += 1
+                    assert n_iter < 20
                     if verbose:
                         print(rank, 'updateConcentration: take out extra element content', extraWater )
                     canAdd = (maxVal - val_new)* volumes 
                     assert sum(canAdd) >= extraWater 
                     idtemp = np.where(canAdd > 0 )
                     totCtemp = sum(val_new*volumes) 
-                    val_new[idtemp] = np.minimum(maxVal,(val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp)))/volumes[idtemp]
+                    val_new[idtemp] = np.minimum(maxVal*volumes[idtemp],(val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp))/volumes[idtemp])
                     extraWater -=  (sum(val_new*volumes) - totCtemp) #extraWater/len(idtemp)
                 if verbose:
                     print(rank, 'updateConcentration: finished taking out extra element content', extraWater , val_new, 
                       sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
                 assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
 
-        if ( minVal - min(val_new) > 0):
-            if ( minVal - min(val_new) <  1e-20 ):
+        if (  max(minVal - val_new) > 0):
+            if (  max(minVal -val_new) <  1e-20 ):
                 val_new = np.maximum(val_new, minVal)
             else:
                 if verbose:
@@ -912,15 +916,19 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 tempTheta = val_new.copy()
                 if verbose:
                     print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
-                idtemp = np.where(val_new <  minVal)
+                idtemp = np.where(val_new <  minVal )
                 if verbose:
                     print('np.where(val_new <  minVal)',val_new,idtemp)
                 missingWater = sum((minVal - val_new[idtemp]) * volumes[idtemp])
-                print('missingWater',missingWater)
+
                 val_new[idtemp] = minVal
                 if verbose:
                     print('val_new[idtemp] = minVal',val_new)
+
+                n_iter = 0
                 while  missingWater > 1e-20:
+                    n_iter += 1
+                    assert n_iter <= 20
                     if verbose:
                         print(rank, 'updateConcentration: add missing water', missingWater,(minVal - val_new[idtemp]) * volumes[idtemp],(minVal - val_new) * volumes)
                     canTake = (val_new - minVal )* volumes 
@@ -931,7 +939,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     if verbose:
                         print('np.where(canTake > 0 )',idtemp,val_new[idtemp])
                     totCtemp = sum(val_new*volumes) 
-                    val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingWater/len(volumes[idtemp])))/volumes[idtemp] # might be too igh in some places
+                    val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingWater/len(volumes[idtemp]))/volumes[idtemp])# # might be too igh in some places
                     missingWater -= ( totCtemp - sum(val_new*volumes) )
                 if verbose:
                     print(rank, 'updateConcentration: finished adding missing element content', missingWater , val_new, 
@@ -940,12 +948,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     print('val_new',val_new,'tempTheta',tempTheta,
                       'diff good',abs(sum(val_new * volumes) - sum(tempTheta * volumes)),'diff bad',abs(sum(val_new) - sum(tempTheta)) )
                 assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
-                
+
         if verbose:
             print('AFTER possible changes. new content',val_new* volumes, 'totContent',totContent,
                   'sum new content',sum(val_new* volumes),
                   'change ratio error', sum(val_new* volumes)-totContent)
-        # if min or max val out by 1e-20, adapt manually the values:
         return val_new
     
     def interAndExtraPolation_(self,pt,pointsOld_, chip, spl):
@@ -1908,16 +1915,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         """ split soilFlux array according to the values in seg_values """
         verbose = False
         if troubleShootId <0. :
-            cellIds = self.getCellIds()
+            cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         else:
             cellIds = np.array([troubleShootId])
             verbose = True            
-            cellIds_All = np.array(comm.bcast(comm.gather(cellIds, root=0), root=0))
-            try:
-                assert (cellIds_All[1:] == cellIds_All[:-1]).all()
-            except:
-                print('different cell ids', cellIds_All)
-                raise Exception
             
         assert min(seg_values) >= 0.
         assert seg_values.shape == (len(self.organTypes), )

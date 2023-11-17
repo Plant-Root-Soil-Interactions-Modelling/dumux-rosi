@@ -321,11 +321,11 @@ namespace Dune
      * This constructor calculates the complete set of global unique indices so that we can then
      *  later query the global index, by directly passing the entity in question.
      */
-    GlobalIndexSet(const GridView& gridview, int codim)
+    GlobalIndexSet(const GridView& gridview, int codim, bool verbose = false)
     : gridview_(gridview),
       codim_(codim)
     {
-          bool verbose = false;
+          //bool verbose = false;
       int rank = gridview.comm().rank();
       int size = gridview.comm().size();
 
@@ -365,7 +365,7 @@ namespace Dune
           
         if (verbose)
           {
-	  std::cout<<"checkP "<<rank<<" "<<myoffset<<" "<<P.data()[rank]<<std::endl;
+	  std::cout<<"checkP "<<rank<<" "<<myoffset<<" "<<P[rank]<<std::endl;
 	  
       for (int i=0; i<P.size(); i++)
 	  {
@@ -474,7 +474,7 @@ namespace Dune
 		gridview_.comm(). template allgatherv<int>(sendbuf.data(), nLocalEntity,sortedGlobalIdSet.data(),offset.data(), P.data());
           if (verbose)
           {
-		std::cout<<"gatherv "<<rank<<" nLocalEntity "<<nLocalEntity<<" "<<P.data()[rank]<<std::endl;
+		std::cout<<"gatherv "<<rank<<" nLocalEntity "<<nLocalEntity<<" "<<P[rank]<<std::endl;
           }
 		
 		// Sort the vector in ascending order

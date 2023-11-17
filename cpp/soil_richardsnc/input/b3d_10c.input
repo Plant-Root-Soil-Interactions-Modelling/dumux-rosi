@@ -1,9 +1,10 @@
 [Problem]
 Name = 3d_10c
 EnableGravity = "true"
-verbose = "1"
+verbose = "0"
 toFile = "false"
 extenction = "txt"
+verboseIndexSet = "1"
 
 [TimeLoop]
 TEnd = 60#10h
@@ -12,9 +13,9 @@ DtInitial =  1 # [s]
 MaxTimeStepSize = 60 # [s]
 
 [Soil.Grid]
-UpperRight = 0.1 0.1 0.53
-LowerLeft = 0. 0. 0.
-Cells = 9 9 52
+UpperRight = 5. 5. 0. #0.1 0.1 0.53
+LowerLeft = -5. -5. -10. # 0. 0. 0.
+Cells = 5 5 20 #9 9 52
 
 
 [Soil.BC.Bot]
