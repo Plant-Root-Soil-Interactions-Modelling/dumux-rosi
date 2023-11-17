@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/60/24
+    dt = 1/3/24
     p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
@@ -56,14 +56,16 @@ if __name__ == '__main__':
     useOuterFluxCyl_sol = False
     lightType =""#+- "nolight" # or ""
     extraName = ""
-    results_dir="./results/"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
+    results_dir="./results/noAdsorption"+mode+extraName+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
                     +lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
                     +str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
                         +organism+str(k_iter)+"k_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
                     +str(max_rank)+"_"+str(abs(p_mean))+"/"
-    print('results_dir',results_dir)
+    comm.barrier()
+    print('results_dir',results_dir, flush = True)
+    comm.barrier()
     if rank == 0:
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)

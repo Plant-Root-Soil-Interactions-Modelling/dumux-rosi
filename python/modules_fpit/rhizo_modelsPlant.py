@@ -253,9 +253,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.outer_radii_ = self.outer_radii[self.eidx]
         self.rhizoVol_ = self.rhizoVol[self.eidx]
         
-        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         
+        cellIds = self.getCellIds()
         
         print("updateOld", rank)
         for i, cyl in enumerate(self.cyls):
@@ -373,8 +372,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def checkRadii(self):
         """ vol soil == vol perirhizal (without the root volume)"""
         comm.Barrier()
-        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        
+        cellIds = self.getCellIds()
+            
         for cellId in cellIds:
             #print("cellid",cellId, rank)
             vol_total = self.soilModel.getCellVolumes() #cm3
@@ -409,10 +409,22 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     raise Exception
         comm.Barrier()
     
-    def checkVolumeBalance(self, finishedUpdate):
-        comm.Barrier()
+    def getCellIds(self):
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        
+        cellIds_All = np.array(comm.bcast(comm.gather(cellIds, root=0), root=0))
+        try:
+            assert (cellIds_All[1:] == cellIds_All[:-1]).all()
+        except:
+            print('different cell ids', cellIds_All)
+            raise Exception
+        return cellIds
+    
+    def checkVolumeBalance(self, finishedUpdate):
+        comm.Barrier()
+        
+        cellIds = self.getCellIds()
         for cellId in cellIds:
             vol_total = self.soilModel.getCellVolumes()
             if rank == 0:
@@ -466,18 +478,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if diff1d3dCW_abs_lim is None:
             diff1d3dCW_abs_lim = self.limErr1d3dAbs
         
-        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-        if verbose:
-            print("cellIds for checkMassOMoleBalance2",rank, cellIds)
         
-        cellIds_All = np.array(comm.bcast(comm.gather(cellIds, root=0), root=0))
-
-        try:
-            assert (cellIds_All[1:] == cellIds_All[:-1]).all()
-        except:
-            print('different cell ids', cellIds_All)
-            raise Exception
+        cellIds = self.getCellIds()
         self.sumDiff1d3dCW_abs = np.full(self.numComp+1, 0.)
         self.sumDiff1d3dCW_rel = np.full(self.numComp+1, 0.)
         self.maxDiff1d3dCW_abs = np.full(self.numComp+1, 0.)
@@ -690,37 +692,55 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     
     def getC_rhizo(self,soilShape, idComp = 1, konz = True): # if konz:  mol/m3 wat or mol/m3 scv, else: mol
         """ return component concentration or content, only in voxel with 1D-domains"""
-        #print('getC_rhizo', rank, idComp, konz)
+        
+        verbose = (max_rank > 1)
+        if verbose:
+            print('getC_rhizo, start', rank, idComp, konz)
         isDissolved = (idComp <= self.numFluidComp)
         
         contentOrKonz = np.full(soilShape, 0.)
         
             
-        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-        for idCell in cellIds:
+        cellIds = self.getCellIds()
+            
+        for ncell, idCell in enumerate(cellIds):
             idSegs = self.cell2seg[idCell]#all segments in the cell
-            #print('getC', rank , idCell)
+            if verbose:
+                print('getC_rhizo, rank , idCell', rank , idCell)
             idCylsAll, idCyls= self.getIdCyllMPI(idCell)
+            if verbose:
+                print('getC_rhizo, idCylsAll', rank,idCylsAll)
             if len(idCylsAll) > 0:
                 mol_rhizo = self.getContentCyl(idCyls, idComp)
+                if verbose:
+                    print('getC_rhizo, mol_rhizo',rank, mol_rhizo,isDissolved)
                 if konz:
                     if isDissolved:
+                        if verbose:
+                            print('getC_rhizo, getWaterVolumesCyl',rank)
                         V_rhizo = self.getWaterVolumesCyl(idCyls)/1e6
                     else:
-                        V_rhizo = self.getVolumesCyl(idCyls)/1e6#sum(np.array([sum(cc.getCellSurfacesCyl()*self.seg_length[idCyls[i]] )/1e6 for i, cc in enumerate(cyls_i) ])) # m3
+                        if verbose:
+                            print('getC_rhizo, getVolumesCyl',rank)
+                        V_rhizo = self.getVolumesCyl(idCyls)/1e6
+                    if verbose:
+                        print('getC_rhizo,V_rhizo',V_rhizo)
                     V_tot =  V_rhizo 
                 else:
                     V_tot = 1
                     V_rhizo = np.nan
                 res_CC = ( mol_rhizo)/(V_tot)#mol/m3 or mol
+                if verbose:
+                    print("res_CC < 0? ",res_CC,ncell,len(cellIds),contentOrKonz.shape, idComp, 
+                          'mol_rhizo',mol_rhizo,V_tot ,V_rhizo ,idCyls, idSegs, idCell, flush=True)
                 if res_CC < 0:
-                    print("res_CC < 0:",idComp,  mol_rhizo,V_tot ,V_rhizo , V_root)
-                    print(idCyls, idSegs, idCell)
+                    print("res_CC < 0:",idComp,  mol_rhizo,V_tot ,V_rhizo, flush=True)
+                    print(idCyls, idSegs, idCell, flush=True)
                     raise Exception
                 
                 contentOrKonz[idCell] =  res_CC
-                
+                print('set contentOrKonz',rank,contentOrKonz[idCell]) 
+        print('getC_rhizo_finished',rank,contentOrKonz[0])       
         return contentOrKonz
         
     def checkSoilBC(self, outer_R_bc_wat, #cm3 wat
@@ -808,9 +828,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             raise Exception
             
         if (len(sourceWat) > 0) and (rank == 0):
-            cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-
+            
+            cellIds = self.getCellIds()
+                
             for cellId in cellIds:
                 self.soilWatVol_old[cellId] += sourceWat[cellId]/1e6 * dt #m3
                 for i in range(self.numComp):
@@ -1167,11 +1187,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print("mol_rhizo_", mol_rhizo_, "idCylsAll",idCylsAll)
             print( 'lens',len(idSegs), len(idCyls))# how many old and new cylinders?
         if res_CC < 0.:
-            if (res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])):# and (len(idSegs) == len(idCylsAll))): # rounding error probably 
+            if (res_CC >(-self.maxDiff1d3dCW_abs[idComp]*10)):# and (len(idSegs) == len(idCylsAll))): # rounding error probably 
                 res_CC = 0.
             else:
                 print("getC_content_leftoverI", idCell)
-                print("res_CC = ",res_CC," < ",(-1e-13 -self.maxDiff1d3dCW_abs[idComp]),"or",len(idSegs),"=/=",len(idCylsAll),
+                print("res_CC = ",res_CC," < ",(-self.maxDiff1d3dCW_abs[idComp]*10),"or",len(idSegs),"=/=",len(idCylsAll),
                       (res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])) and (len(idSegs) == len(idCylsAll)),
                       (res_CC >(-1e-13 -self.maxDiff1d3dCW_abs[idComp])) , (len(idSegs) == len(idCylsAll)),
                 ", idComp:",idComp,'mol_total',mol_total ,
@@ -1889,10 +1909,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         verbose = False
         if troubleShootId <0. :
             cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments, cyl
+            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         else:
             cellIds = np.array([troubleShootId])
-            verbose = True
+            verbose = True            
             
         assert min(seg_values) >= 0.
         assert seg_values.shape == (len(self.organTypes), )

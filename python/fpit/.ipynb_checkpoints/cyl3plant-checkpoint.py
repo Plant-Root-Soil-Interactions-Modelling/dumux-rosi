@@ -269,17 +269,23 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
             print(rank, '2. local 1D soil models (1DS)')
             comm.barrier()
-            
+            print(rank,'2.1 distribute 3D flows between the 1DS')
             ##
             # 2.1 distribute 3D flows between the 1DS
             #     use value per 1DS !!AT THE END OF THE TIME STEP!! => weight for @splitSoilVals()
             ##
+            print(rank,'2.1 distribute 3D flows between the 1DS')
             if r.weightBefore  or (r.beforeAtNight and (r.weatherX["Qlight"] == 0.)):
+                print(rank,'waterContent = waterContentOld')
                 waterContent = waterContentOld
             else:
+                print(rank,'waterContent = r.getWaterVolumesCyl(doSum = False, reOrder = True)')
                 waterContent = r.getWaterVolumesCyl(doSum = False, reOrder = True)
+            print(rank,'get comp1content')
             comp1content = r.getContentCyl(idComp=1, doSum = False, reOrder = True)
+            print(rank,'get comp2content')
             comp2content = r.getContentCyl(idComp=2, doSum = False, reOrder = True)
+            print(rank,'check comp1content',len(airSegsId))
             
             if len(airSegsId)>0:
                 try:
@@ -287,32 +293,45 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     assert (comp1content[airSegsId] == 0.).all()
                     assert (comp2content[airSegsId] == 0.).all()
                     assert waterContent.shape == (len(organTypes), )
+                    print(rank,'2.1 asserts',(waterContent[airSegsId] == 0.).all(),(comp1content[airSegsId] == 0.).all(),
+                          (comp2content[airSegsId] == 0.).all(),waterContent.shape == (len(organTypes), ))
                 except:
                     print(rank,'len(airSegsId)>0', '(waterContent[airSegsId] != 0.).all()', waterContent,
                           comp1content,comp2content,airSegsId,waterContent.shape)
                     raise Exception
                     
+            comm.barrier()
+            print(rank, 'todo: splitSoilValsA')
+            comm.barrier()
+            print(rank, 'splitSoilValsB')
             if rank == 0:
+                print(rank, 'get proposed_fluxes')
                 if max(abs(outer_R_bc_wat )) > 0:
                     assert outer_R_bc_wat.shape == ( len(cell_volumes), )
                     proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt, waterContent) #cm3/day
                 else:
-                    proposed_outer_fluxes = np.full(len(organTypes), 0.)                
+                    proposed_outer_fluxes = np.full(len(organTypes), 0.)   
+                print(rank, 'got proposed_outer_fluxes')
                 if max(abs(outer_R_bc_sol[0] )) > 0:
                     proposed_outer_sol_fluxes = r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content)#mol/day
                 else:
                     proposed_outer_sol_fluxes = np.full(len(organTypes), 0.)
+                print(rank, 'got proposed_outer_sol_fluxes')
                 if max(abs(outer_R_bc_sol[1] )) > 0:
                     proposed_outer_mucil_fluxes = r.splitSoilVals(outer_R_bc_sol[1] / dt, comp2content)
                 else:
                     proposed_outer_mucil_fluxes = np.full(len(organTypes), 0.)
+                print(rank, 'got proposed_outer_mucil_fluxes')
             else:
                 proposed_outer_fluxes = None
                 proposed_outer_sol_fluxes = None
                 proposed_outer_mucil_fluxes = None
+                print(rank, 'set proposed_fluxes to none')
+            print(rank,'to comm.barrier')
             comm.barrier()
-            print(rank, 'comm.bcast(fluxes)')
+            print(rank, 'did_comm.bcast(fluxes)')
             comm.barrier()
+            print(rank,'left comm.barrier')
             proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
             proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
             proposed_outer_mucil_fluxes = comm.bcast(proposed_outer_mucil_fluxes, root = 0)
@@ -366,8 +385,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
             print('getC_rhizo')
             comm.barrier()
+            print('get soil_solute')
             soil_solute = np.array( [np.array(r.getC_rhizo(len(cell_volumes), idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
+            print('got soil_solute')
             
+            comm.barrier()
             ##
             # 2.3A 1st limit to the net negative BCs
             # update the INNER BC for water as will be < 0  normally
@@ -375,8 +397,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # TODO: necessary to limit the outer solute BC by the BC content? because we can also gain by reactions
             # for now no limit on the solute fluxes
             ##
+            print('2.3A 1st limit to the net negative BCs')
             cylVolume =  np.pi *(np.array( r.outer_radii)*np.array( r.outer_radii )- np.array( r.radii) * np.array( r.radii))* np.array( r.seg_length)
             assert ((rhizoWBefore_ - r.vg_soil.theta_R * cylVolume)[rhizoSegsId] >=0).all()
+            print('did assert ((rhizoWBefore_ - r.vg_soil.theta_R * cylVolume)[rhizoSegsId] >=0).all()')
+            comm.barrier()
 
             Q_outer_totW = proposed_outer_fluxes * dt
             # seg_fluxes_limited = np.maximum(seg_fluxes, -(rhizoWBefore_ - r.vg_soil.theta_R * cylVolume+ Q_outer_totW )/dt)
@@ -391,6 +416,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # 2.3B simulation
             ##
+            print('2.3B simulation')
             start_time_rhizo = timeit.default_timer()
             comm.barrier()
             print("solve 1d soil", rank)
@@ -894,8 +920,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_rhizoWAfter", rhizoWAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoTotCAfter", rhizoTotCAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
 
-                    
+            comm.barrier()
             print('end iteration', rank, n_iter, r.err,r.maxDiff1d3dCW_abs)
+            comm.barrier()
             n_iter += 1
             #end iteration
         if rank == 0:
@@ -904,7 +931,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             write_file_array("N_error", r.errs, directory_ =results_dir) 
             write_file_array("N_error", r.errs, directory_ =results_dir, fileType = '.csv') 
             write_file_array("N_n_iter",np.array([ n_iter ]), directory_ =results_dir)
+        
+        comm.barrier()
         print('left iteration', rank, n_iter, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs)
+        comm.barrier()
         #if abs(r.rhizoMassWError_abs) > 1e-13:
         #    raise Exception
         ####
@@ -913,10 +943,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         
 
         # error 3DS-1DS
+        comm.barrier()
         print('error 3DS-1DS', rank)
         r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                 seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf)
         print('finished  error 3DS-1DS', rank)
+        comm.barrier()
                                 
         if rank == 0:            
             for nc in range(r.numFluidComp, r.numComp):
@@ -928,12 +960,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
                     raise Exception
                     
-
+        comm.barrier()
         print('end time step inner loop')
-        
-        print(rank, 'test getC_content_leftoverI')
-        c_content_leftover_test = dict([(362,np.array([r.getC_content_leftoverI(362, 1) for ncomp in range(1, r.numComp + 1)])) ])# mol    
-        
+           
+        comm.barrier()
         # end time step inner loop
     print('end of inner loop')
     return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes # first guess for next fixed point iteration
