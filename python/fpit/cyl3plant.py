@@ -21,7 +21,7 @@ from scenario_setup import write_file_array, write_file_float
 
 
 def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
-                    r = [], wilting_point =-15000, 
+                    r = [],
                     outer_R_bc_sol=[], #mol
                     outer_R_bc_wat = [], seg_fluxes=[],
                     results_dir = './results/',
@@ -224,7 +224,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 rx = rs.solve(rs_age, 
                              -transpiration, 0., 
                              rsx_set, cells = False, 
-                             wilting_point = wilting_point, soil_k = [])
+                              soil_k = [])
                 rs.psiXyl = rx
                 seg_fluxes = np.array(rs.segFluxes(rs_age_i_dt, rx, rsx_set, 
                                                    False, False, #approx, cells

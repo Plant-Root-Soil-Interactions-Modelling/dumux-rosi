@@ -38,7 +38,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
     # TODO copy mapped segments constructors (!)...
 
-    def __init__(self, wilting_point, NC, logbase, mode, soil, recreateComsol_, 
+    def __init__(self,  NC, logbase, mode, soil, recreateComsol_, 
                 usemoles, seedNum=None,results_dir = './results/' ,limErr1d3dAbs = 1e-11,
                 l_ks = "dx_2"):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
@@ -97,6 +97,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.numComp = self.soilModel.numComp
         self.soil = self.soilModel.soil
         self.vg_soil = self.soilModel.vg_soil
+        self.theta_wilting_point = vg.water_content( self.wilting_point, self.vg_soil)
         
         self.solidDensity = self.soilModel.solidDensity#2700 # [kg/m^3 solid]
         self.solidMolarMass = self.soilModel.solidMolarMass#60.08e-3 # [kg/mol] 
@@ -869,8 +870,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print(rank,'isWater',isWater, 'updateConcentration error', 'val_new',val_new,'totContent',totContent, 
                   'gradient',gradient, 'cellCenters',cellCenters, 'volumes',volumes )
         if isWater:
-            maxVal = self.vg_soil.theta_S#* volumes
-            minVal = self.vg_soil.theta_R#* volumes
+            maxVal = self.vg_soil.theta_S# keep that or set lower higher bound?
+            minVal = self.theta_wilting_point  # self.vg_soil.theta_R# do not use thetar => lead to -Inf pressure head
         else:
             maxVal = np.Inf#* volumes
             minVal = 0.#* volumes
@@ -1026,7 +1027,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
             
             wOld = sum(theta_old*volOld)
-            changeRatioW = max(min(changeRatio, sum(self.vg_soil.theta_S*volNew)/wOld),sum(self.vg_soil.theta_R*volNew)/wOld)
+            changeRatioW = max(min(changeRatio, sum(self.vg_soil.theta_S*volNew)/wOld),sum(self.theta_wilting_point*volNew)/wOld)
             try:
                 assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
             except:
@@ -1046,7 +1047,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print('\t',gId,"points",oldPoints, points,centersNew)
                 print('\t',gId,"gradient",gradientOld, gradientNew)
                 print('\t',gId,"theta",theta_new, theta_old)
-                print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S)   
+                print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S,self.theta_wilting_point)   
                 print('\t',gId,"changeRatio",changeRatio, changeRatioW)    
             
                 

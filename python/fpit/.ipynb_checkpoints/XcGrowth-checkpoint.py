@@ -42,8 +42,8 @@ if __name__ == '__main__':
 
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/60/24
-    p_mean = -5000
+    dt = 1/3/24
+    p_mean = -1000
     k_iter = 20
     l_ks =  "dx"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -103,7 +103,6 @@ if __name__ == '__main__':
 
 
     """ rhizosphere model parameters """
-    wilting_point = -15000  # cm
     recreateComsol = False
 
     periodic = False
@@ -133,7 +132,7 @@ if __name__ == '__main__':
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    rs, r = scenario.create_mapped_plant(wilting_point, nc, logbase, mode,initsim,
+    rs, r = scenario.create_mapped_plant( nc, logbase, mode,initsim,
                                             min_b, max_b, cell_number, s, xml_name,
                                             path, plantType = organism, 
                                             recreateComsol_ = recreateComsol,
@@ -266,7 +265,6 @@ if __name__ == '__main__':
                                                     Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
                                                     r= rs,plantType = organism,
                                                      adaptRSI=adaptRSI_,
-                                                    wilting_point = wilting_point,
                                                     outer_R_bc_sol = net_sol_flux, 
                                                     outer_R_bc_wat = net_flux,seg_fluxes=seg_fluxes_,
                                                     results_dir = results_dir,

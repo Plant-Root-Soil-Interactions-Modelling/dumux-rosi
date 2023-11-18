@@ -636,7 +636,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
+        rs = RhizoMappedSegments( nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
     elif fname.endswith(".xml"):
@@ -646,7 +646,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
+        rs = RhizoMappedSegments( nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
 

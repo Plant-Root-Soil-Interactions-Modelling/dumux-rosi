@@ -622,7 +622,7 @@ def setKrKx_phloem(r): #inC
     r.setAcross_st([[Across_s_r0,Across_s_r12,Across_s_r12,Across_s_r0],[Across_s_s,Across_s_s],[Across_s_l]])
     return r
     
-def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
+def create_mapped_plant( nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
                 stochastic = False, mods = None, plantType = "plant",l_ks_ = "dx_2",
                 recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11):
@@ -636,7 +636,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
+        rs = RhizoMappedSegments( nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
     elif fname.endswith(".xml"):
@@ -646,7 +646,7 @@ def create_mapped_plant(wilting_point, nc, logbase, mode,initSim,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(wilting_point, nc, logbase, mode, soil_model, 
+        rs = RhizoMappedSegments( nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
 
@@ -721,70 +721,3 @@ def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,
 
 
 
-def simulate_const(s, r, trans, sim_time, dt):
-    """ 
-        classic model:
-        potential at root soil interface equals mean matric potential of surrounding finite volume
-    """
-    wilting_point = -15000  # cm
-    skip = 6  # for output and results, skip iteration
-    rs_age = 0.  # day
-
-    start_time = timeit.default_timer()
-    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
-    sx = s.getSolutionHead()  # inital condition, solverbase.py
-    ns = len(r.rs.segments)
-    if rank == 0:
-        map_ = r.rs.seg2cell  # because seg2cell is a map
-        mapping = np.array([map_[j] for j in range(0, ns)], dtype = np.int64)  # convert to a list
-
-    N = int(np.ceil(sim_time / dt))
-
-    """ simulation loop """
-    for i in range(0, N):
-
-        t = i * dt  # current simulation time
-
-        """ 1. xylem model """
-        if rank == 0:  # Root part is not parallel
-            rx = r.solve(rs_age, -trans * sinusoidal2(t, dt), 0., sx, cells = True, wilting_point = wilting_point)  # xylem_flux.py
-            fluxes = r.soilFluxes(rs_age, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = False
-        else:
-            fluxes = None
-        fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
-
-        """ 2. soil model """
-        s.setSource(fluxes.copy())  # richards.py
-        s.solve(dt)
-        sx = s.getSolutionHead()  # richards.py
-
-        """ validity check """
-
-        """ remember results ... """
-        if rank == 0 and i % skip == 0:
-
-            sx_ = sx[:, 0]
-            psi_x_.append(rx.copy())  # cm (per root node)
-            psi_s_.append(np.array([sx_[ci] for ci in mapping]))  # cm (per root segment)
-            sink = np.zeros(sx_.shape)
-            for k, v in fluxes.items():
-                sink[k] += v
-            sink_.append(sink)  # cm3/day (per soil cell)
-            x_.append(t)  # day
-            y_.append(np.sum(sink))  # cm3/day
-            psi_s2_.append(sx_)  # cm (per soil cell)
-
-            min_sx, min_rx, max_sx, max_rx = np.min(sx), np.min(rx), np.max(sx), np.max(rx)
-            n = round(float(i) / float(N) * 100.)
-            print("\n[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g}, {:g}"
-                    .format(min_sx, max_sx, min_rx, max_rx, np.sum(sink), -trans * sinusoidal2(t, dt)))
-
-    if rank == 0:
-        print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_
-
-
-if __name__ == '__main__':
-
-    pass
