@@ -62,7 +62,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
     try:
         if (rank == 0) or allranks:
             name2 = directory_+ name+ fileType
-            #print('write_file_array',name)
+            print('write_file_array',name)
             with open(name2, 'a') as log:
                 log.write(space.join([num for num in map(str, data)])  +'\n')
     except:
@@ -176,7 +176,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.betaC = 0.001 
     s.betaO = 0.1 
-    C_S = 0. # in mol/m3 water
+    C_S = 1.e-8 # in mol/m3 water
     s.C_S_W_thresC = C_S/1e6 # in mol/cm3 water
     s.C_S_W_thresO = C_S/1e6
     s.k_decay = 0.2
@@ -198,7 +198,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         unitConversion = 1e3
         doBio = 1.
         CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
-    elif demoType == "dumux_3c":
+    if demoType == "dumux_3c":
         s.CSSmax =0. # 1e-4*10000*0.
         s.alpha =0.1# 0.
         unitConversion = 1e3
@@ -211,20 +211,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         unitConversion = 0.
         CSS2_init = 0.
     else:
-        print('demoType',demoType)
         raise Exception
     
     
-    s.C_aOLim=1.e-10
-    s.C_aCLim=1.e-10
-    s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
-    s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
-    
     s.ICcc = np.array([C_S *unitConversion,
-                       0 *unitConversion,
-                        (C_S/10+s.C_aOLim)* unitConversion *doBio,
+                        1.e-10 *unitConversion,
                         C_S/10* unitConversion *doBio,
-                        (C_S/10+s.C_aCLim)* unitConversion *doBio,
+                        C_S/10* unitConversion *doBio,
+                        C_S/10* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,
                         CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
         
@@ -260,7 +254,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
 
-    s.Ds = 1e-9 # m^2/s
+    s.Ds = 1e-9*100 # m^2/s
     s.Dl = 3e-12
     s.numComp = 8
     s.numFluidComp = 2
@@ -317,7 +311,6 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
-
 
     # Paramters
     #dumux-rosi\python\modules\richards.py

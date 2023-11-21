@@ -661,7 +661,7 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
 					} else { // outflow
-                    //mol/m3 * [m/s] *[-] *[cm/cm] = mol/m2/s * pos0 for axysimmetric scaling
+                    //mol/m3 * [m/s] *[-] *[m/m] = molm2/s
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
                         
 						if ((f!= 0)&&verbose)
@@ -782,6 +782,7 @@ public:
 					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)* unitConversion; // g/cm2/day || mol/cm2/day  -> kg/(m²*s) || mol/(m²*s)
 					break;
 				}
+<<<<<<< HEAD
 				case constantFluxCyl: {// massOrMolFraction
                 
                     double soluteFlow =  -bcSTopValue_.at(i_s)/(24.*60.*60.)*unitConversion; // [mols/(m2 * s)]
@@ -808,6 +809,13 @@ public:
                     }
                     
 					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+=======
+				case constantFluxCyl: {
+					//usemole:
+					//[mol/(cm2 * s)]  = [mol/(cm2 * d)] * [cm2/m2] * d/s
+					//flux[i] = -bcSTopValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+>>>>>>> parent of 9d3ca38a... adapt evaluation of BC from dumux to python
 					//std::cout<<"constantfluxCyl "<<flux[i];
 					break;
 				}
@@ -851,6 +859,7 @@ public:
 					break;
 				}
 				case constantFluxCyl: {
+<<<<<<< HEAD
                         
                     double soluteFlow =  -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion; // [mols/(m2 * s)]
                     if (soluteFlow > 0) { // outflow
@@ -877,6 +886,10 @@ public:
                     
 					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
                         
+=======
+					//flux[i] = -bcSBotValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion*pos[0]; // g/cm2/day -> kg/(m²*s)
+>>>>>>> parent of 9d3ca38a... adapt evaluation of BC from dumux to python
 					break;
 				}
 				case outflow: {//?? free outflow??
@@ -1226,7 +1239,9 @@ public:
 	/*!
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
 	 */
-	void writeBoundaryFluxes() {}
+	void writeBoundaryFluxes() {
+		myfile_ << time_ <<"\n";
+	}
 
 	/**
 	 * debug info TODO make meaningful for 2c

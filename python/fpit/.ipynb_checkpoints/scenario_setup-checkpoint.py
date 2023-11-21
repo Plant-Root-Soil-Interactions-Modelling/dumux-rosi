@@ -59,6 +59,7 @@ def write_file_float(name, data, directory_, allranks = False):
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
     np.array(data).reshape(-1)
+<<<<<<< HEAD
     try:
         if (rank == 0) or allranks:
             name2 = directory_+ name+ fileType
@@ -68,6 +69,12 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
     except:
         print(name, data,data.shape)
         raise Exception
+=======
+    if (rank == 0) or allranks:
+        name2 = directory_+ name+ fileType
+        with open(name2, 'a') as log:
+            log.write(space.join([num for num in map(str, data)])  +'\n')
+>>>>>>> parent of 9d3ca38a... adapt evaluation of BC from dumux to python
 
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
@@ -176,7 +183,11 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.betaC = 0.001 
     s.betaO = 0.1 
+<<<<<<< HEAD
     C_S = 0. # in mol/m3 water
+=======
+    C_S = 0.1 # in mol/m3 water
+>>>>>>> parent of 9d3ca38a... adapt evaluation of BC from dumux to python
     s.C_S_W_thresC = C_S/1e6 # in mol/cm3 water
     s.C_S_W_thresO = C_S/1e6
     s.k_decay = 0.2
@@ -221,8 +232,14 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
     
     s.ICcc = np.array([C_S *unitConversion,
+<<<<<<< HEAD
                        0 *unitConversion,
                         (C_S/10+s.C_aOLim)* unitConversion *doBio,
+=======
+                        1. *unitConversion,
+                        C_S/10* unitConversion *doBio,
+                        C_S/10* unitConversion *doBio,
+>>>>>>> parent of 9d3ca38a... adapt evaluation of BC from dumux to python
                         C_S/10* unitConversion *doBio,
                         (C_S/10+s.C_aCLim)* unitConversion *doBio,
                         C_S/10* unitConversion *doBio,

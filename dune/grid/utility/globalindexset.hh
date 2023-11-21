@@ -329,7 +329,7 @@ namespace Dune
       int rank = gridview.comm().rank();
       int size = gridview.comm().size();
 
-      //const typename GridView::IndexSet& indexSet = gridview.indexSet();
+      const typename GridView::IndexSet& indexSet = gridview.indexSet();
 
       std::unique_ptr<UniqueEntityPartition> uniqueEntityPartition;
       if (codim_!=0)

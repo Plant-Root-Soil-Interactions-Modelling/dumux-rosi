@@ -250,7 +250,7 @@ if __name__ == '__main__':
         rs.rhizoMassWError_abs = 1.
         rs.err = 1.
         max_err = 1.
-        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-13)) and (n_iter < k_iter) :
+        while ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)) and (n_iter < k_iter) :
             net_sol_flux_, net_flux_, seg_fluxes__ = cyl3.simulate_const(s, 
                                                     r,  dt, dt_inner, rs_age, 
                                                     Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
@@ -262,15 +262,13 @@ if __name__ == '__main__':
                                                     results_dir = results_dir,
                                                         k_iter_ = k_iter,lightType_=lightType, outer_n_iter = n_iter)
             n_iter += 1
-            write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv')
+            write_file_array("Outer_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv') 
             if ( (np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13)):
                 print(rank, "error too high, decrease dt_inner from", dt_inner,"to", dt_inner/2)
                 dt_inner /= 2
                 s.reset()
                 rs.reset()
             else:
-                write_file_array("OuterSuccess_error", rs.errs, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("OuterSuccess_data", np.array([n_iter, rs.err, rs.rhizoMassWError_abs]), directory_ =results_dir, fileType = '.csv')
                 net_sol_flux = net_sol_flux_
                 net_flux = net_flux_ 
                 seg_fluxes_ = seg_fluxes__

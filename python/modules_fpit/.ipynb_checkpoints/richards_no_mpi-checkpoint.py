@@ -29,7 +29,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         @param mxDt    maximal time step [days] 
         """
         #print("solveNoMPI")
-        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600., saveBC = True)  # days -> s
+        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
 
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
@@ -97,47 +97,9 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         model dependent units [Pa, ...]"""
         self.checkInitialized()
         return self._map((self.base.getSolution(eqIdx)), 0)
-    
-    def getSavedBC(self,  rIn, rOut, length):
-        assert self.dimWorld != 3
-        verbose = False
-        BC_in_vals = np.array(self.base.BC_in_vals) #[ mol / (m^2 \cdot s)]
-        BC_out_vals = np.array(self.base.BC_out_vals) #[ mol / (m^2 \cdot s)]
-        BC_ddt = np.array(self.base.BC_ddt)# s
-        q_out_vals = BC_out_vals* BC_ddt[:, None] #mol / m^2
-        q_in_vals = BC_in_vals* BC_ddt[:, None] #mol / m^2
-        if  verbose:
-            print('q_out_vals',q_out_vals)
-        q_out = np.sum(q_out_vals,axis = 0) #mol / m^2
-        q_in = np.sum(q_in_vals,axis = 0) #mol / m^2
-        if  verbose:
-            print('q_out',q_out,'sum(BC_ddt)',sum(BC_ddt), 'dt',dt, 'length',length,'rIn',rIn,' rOut', rOut )
-        q_out_m = q_out/ sum(BC_ddt)  #mol / m^2/s
-        q_in_m = q_in/ sum(BC_ddt) #mol / m^2/s
-        if  verbose:
-            print('q_out_m',q_out_m)
-        if not self.useMoles:
-            raise Exception # unitConversions = 1/  10000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
-        else:
-            molarMassWat = 18. # [g/mol]
-            densityWat = 1. #[g/cm3]
-            # [mol/cm3] = [g/cm3] /  [g/mol] 
-            molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
-            unitConversionW =- (1/1e4) * (24.* 3600.)  / molarDensityWat; # [m2/cm2]*[s/d] * [cm3/mol]
-            unitConversion =- (1/1e4) * (24.* 3600.) ; # [m2/cm2]*[s/d]
-            unitConversions = np.full(len(q_in_m), unitConversion)
-            unitConversions[0] = unitConversionW
-        # water: [mol m-2 s-1]*[m2/cm2]*[s/d] * [cm3/mol] * cm2-> [cm3/d] 
-        # solute: [mol m-2 s-1]*[m2/cm2]*[s/d] * cm2 -> [mol/d] 
-        Q_in_m  = q_in_m * unitConversions * (2 * np.pi * rIn  * length)
-        Q_out_m = q_out_m * unitConversions * (2 * np.pi * rOut * length) 
-        if  verbose:
-            print('unitConversions',unitConversions)
-        return(Q_in_m, Q_out_m)
 
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
-        verbose = False
         if not self.useMoles:
             assert  eqIdx == 0
             unitConversion = 1/  1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
@@ -151,8 +113,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             else:
                 unitConversion =- (1/10000) * (24.* 3600.) ; # [mol m-2 s-1] -> [mol cm-2 d-1] 
         dics = self.base.getAllNeumann(eqIdx) #[mol or kg /(m^2 * s)]
-        if  verbose:
-            print('dics',dics, 'unitConversion',unitConversion,self.getPoints(),self.getPoints()[-1])
+        #print('dics',dics, 'unitConversion',unitConversion,self.getPoints(),self.getPoints()[-1])
         if self.dimWorld != 1:#??
             flat_dic = {}
             for d in dics:
@@ -166,9 +127,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                     posFace /= (self.getPoints()[key]/100) #axyssymmetric, was multiplied by r coord of face (in cm) in neumann
                 elif (self.dimWorld == 1) and (key != 0):
                     posFace /= (self.getPoints()[-1]/100) #axyssymmetric
-                flat_dic[key]  = value * unitConversion *posFace # [kg m-2 s-1] / rho /m= [s-1] -> 1 / day 
-                if  verbose:
-                    print('get flat_dic', key,flat_dic[key],(key != 0), (key == 0),(self.dimWorld == 1) ,value , unitConversion ,posFace)
+                flat_dic[key]  = value * unitConversion *posFace # [kg m-2 s-1] / rho = [m s-1] -> cm / day 
+                #print('get flat_dic', key,flat_dic[key],(key != 0), (key == 0),(self.dimWorld == 1) ,value , unitConversion ,posFace)
                     
         except:
             print('error unpacking dict',flat_dic,type(flat_dic))

@@ -1271,8 +1271,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.setParameter("Soil.alpha", str(self.soilModel.alpha)) #[1/d]
 
 
-            cyl.setParameter("Soil.C_aOLim", str(self.soilModel.C_aOLim)) #[molC/cm3 scv]
-            cyl.setParameter("Soil.C_aCLim", str(self.soilModel.C_aCLim)) #[molC/cm3 scv]
+            #cyl.setParameter("Soil.C_aOLim", str(self.soilModel.C_aOLim)) #[molC/cm3 scv]
+            #cyl.setParameter("Soil.C_aCLim", str(self.soilModel.C_aCLim)) #[molC/cm3 scv]
             cyl.setParameter("1.Component.LiquidDiffusionCoefficient", str(self.soilModel.Ds)) #m^2/s
 
             cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str(self.soilModel.Dl)) #m^2/s
@@ -1574,7 +1574,6 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     n_iter_solve = 0
                     while redoSolve:
                         try:
-                            errorCOnly = False
                             cyl.ddt = 1.e-5 #do I need to reset it each time?
                             cyl.solve(dt, maxDt = maxDt_temp)
                             # newton parameters are re-read at each 'solve()' calls
@@ -1629,7 +1628,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             print('solve Failed:', e)
                             if n_iter_solve > 25:
                                 raise Exception
-                            elif (n_iter_solve < 20) and (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
+                            elif (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
                                 divVale = 1/0.9
                                 print(rank,
                                       lId,gId,'errorCOnly',errorCOnly,
@@ -1671,18 +1670,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                     print('new SoluteTopBC', valueTopBC)
                                 maxDt_temp /= divVale
                                 maxDt_temp = max(maxDt_temp, cyl.ddt)
-                            elif  maxRelShift < 1e-2:#random upper limit
-                                print(rank, lId,gId,' with qflowIn',qIn,' or qflowout',qOut,'maxDt',maxDt_temp,'dt',dt,
-                                      '. Increase NewtonMaxRelativeShift from',maxRelShift,'to',maxRelShift*10.)
-                                maxRelShift *= 10.
-                                # newton parameters are re-read at each 'solve()' calls
-                                cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
                             else:
                                 raise Exception
                             cyl.reset()
                             n_iter_solve += 1
                             
-                        
+                            
                     buWAfter_ =  cyl.getWaterVolumesCyl(l)
                     buWAfter = sum(buWAfter_ )
                     buCCAfter_ = cyl.getContentCyl(1, True, l)
@@ -1718,7 +1711,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         #( sum(buTotCBefore) + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt) > 0:
                         try:#check solute mass balance
                             assert abs((sum(buTotCAfter) - ( sum(buTotCBefore) \
-                                    + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt))/sum(buTotCAfter)*100) < 1.
+                                    + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))/sum(buTotCAfter)*100) < 1.
                             assert abs(diffC) < 1e-13
                         except:
                             print("error mass C",diffC)
