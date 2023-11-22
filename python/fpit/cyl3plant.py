@@ -20,13 +20,23 @@ from functional.xylem_flux import sinusoidal2, sinusoidal
 from scenario_setup import write_file_array, write_file_float
 
 
+def continueLoop_(rs,n_iter, dt_inner,failedLoop,real_dtinner, name):
+    sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
+    sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
+    cL = ((np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs)) > 1.) or  rs.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter)
+
+    comm.barrier()
+    print('continue loop?',rank,cL)
+    comm.barrier()
+    return cL
+        
 def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     r = [],
                     outer_R_bc_sol=[], #mol
                     outer_R_bc_wat = [], seg_fluxes=[],
                     results_dir = './results/',
                   adaptRSI  = True, plantType = "plant",
-                  k_iter_ = 100,lightType_ = "", outer_n_iter = 0):#m3 , directory_ =results_dir
+                  k_iter_ = 100,lightType_ = "", outer_n_iter = 0,continueLoop =continueLoop_):
     """     
     simulates the coupled scenario       
         root architecture is not growing  
@@ -42,8 +52,15 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     """
     subtypes = np.asarray(rs.rs.subTypes, int)
     organTypes = np.asarray(rs.rs.organTypes, int)
+
+    comm.barrier()
+    print("cyl3plant:cell_volumes", rank)
+    comm.barrier()
     cell_volumes = comm.bcast(s.getCellVolumes() , root = 0) #cm3
-    
+
+    comm.barrier()
+    print("cyl3plant:GOTcell_volumes", rank)
+    comm.barrier()
     airSegsId = r.airSegs
     #np.array(list(set(np.concatenate((np.array([]),#to avoid error if there are no air segs
     #                                              r.cell2seg.get(-1),
@@ -86,15 +103,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     
 
     
-    N = 1#int(np.ceil(sim_time / dt))  # number of iterations
+    N = int(np.ceil(sim_time / dt))  # number of iterations
     skip = 1  # 3 * 6  # for output and results, skip iteration
+    
     """ simualtion loop """
-    for i in range(N):
+    for Ni in range(N):
 
-        rs_age_i_dt = rs_age + i * dt  # current simulation time
+        rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
         comm.barrier()
-        print("simualtion loop, i, N:",i, N,rs_age_i_dt)
+        print("simualtion loop, Ni, N:",Ni, N,rs_age_i_dt)
         comm.barrier()
         r.weatherX = weather(rs_age_i_dt)
 
@@ -134,9 +152,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         rsx_old_  = r.get_inner_heads(weather=r.weatherX) 
         r.rhizoMassWError_abs =1.# 
         r.rhizoMassCError_abs =1.# 
-        r.errDiffBCs = 1.
+        r.errDiffBCs = np.array([1.])
         r.solve_gave_up = False
-        while ( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1e-5) or  r.solve_gave_up ) and (n_iter < max_iter) :
+        
+        
+        while  continueLoop(r,n_iter, dt,np.nan,Ni * dt,'fpit_loopdata'):
+            #( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) 
+            #or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1.) 
+            #or  r.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter) :
             r.solve_gave_up = False
             """ 1. xylem model """
             comm.barrier()
@@ -211,7 +234,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_Jw",np.array(rs.Jw),directory_ =results_dir, fileType = '.csv')
                 write_file_array("fpit_fw",np.array(rs.fw),directory_ =results_dir, fileType = '.csv')#pg
                 write_file_array("fpit_pg",np.array(rs.pg),directory_ =results_dir, fileType = '.csv')
-                write_file_array("fpit_n_iter",np.array([ n_iter,rs.loop ]), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_n_iter",np.array([ n_iter,rs.loop , r.solve_gave_up]), directory_ =results_dir, fileType = '.csv') 
 
                 write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir, fileType = '.csv' )
                 write_file_array("fpit_errPhoto", np.array(rs.maxErr) , directory_ =results_dir, fileType = '.csv') 
@@ -256,13 +279,19 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             seg_mucil_fluxes = Q_mucil/dt
             
             rs.time_plant_cumulW += (timeit.default_timer() - start_time_plant)
-            
+
+            comm.barrier()
+            print("cyl3plant:seg_fluxes", rank)
+            comm.barrier()
             seg_fluxes = comm.bcast(seg_fluxes, root=0)
             rs.outputFlux = comm.bcast(rs.outputFlux, root = 0) 
             
             
             rs.psiXyl = comm.bcast(rs.psiXyl, root = 0) 
             
+            comm.barrier()
+            print("cyl3plant:GOTseg_fluxes", rank)
+            comm.barrier()
             assert min(np.concatenate((seg_mucil_fluxes,seg_sol_fluxes))) >= 0. #currently, no net plant solute uptake
                 
             """ 2. local 1D soil models (1DS)"""
@@ -335,6 +364,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
             proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
             proposed_outer_mucil_fluxes = comm.bcast(proposed_outer_mucil_fluxes, root = 0)
+            
+            comm.barrier()
+            print("cyl3plant:GOTproposed_outer_fluxes", rank)
+            comm.barrier()
             try:
                 assert (np.array([len(seg_fluxes), len(proposed_outer_fluxes),len(seg_sol_fluxes),
                                len(proposed_outer_sol_fluxes), len(seg_mucil_fluxes),
@@ -579,7 +612,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             for nc in range(r.numComp):
                 soil_source_sol[nc][cellIds] = np.array(new_soil_solute[nc][cellIds] - soil_solute[nc][cellIds] - outer_R_bc_sol[nc][cellIds])/dt
 
+            comm.barrier()
+            print("cyl3plant:soil_source_sol", rank)
+            comm.barrier()
             soil_source_sol = comm.bcast(soil_source_sol, root = 0)    
+            
+            comm.barrier()
+            print("cyl3plant:GOTsoil_source_sol", rank)
+            comm.barrier()
             assert soil_source_sol.shape == (r.numComp, len(cell_volumes))
 
             
@@ -594,6 +634,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             solution0_3ds_new = np.array(s.getSolution(0))
             assert (solution0_3ds_new == solution0_3ds_old).all()
             
+            comm.barrier()
+            print("cyl3plant:water_contentsoil_water", rank)
+            comm.barrier()
             water_content = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
             soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
             buTotCBefore = comm.bcast(sum(s.getTotCContent()), root = 0) 
@@ -603,6 +646,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                                 root = 0) # mol
 
             
+            comm.barrier()
+            print("cyl3plant:GOTwater_contentsoil_water", rank)
+            comm.barrier()
             ##
             # 3.2 adapt and set sources
             # TODO: take into account BC != 0 (rain, evaporation)
@@ -616,7 +662,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 soil_fluxes[np.array(list(soil_fluxes_.keys()))] = np.array(list(soil_fluxes_.values())) 
             else:
                 soil_fluxes = None
+            comm.barrier()
+            print("cyl3plant:soil_fluxes", rank)
+            comm.barrier()
             soil_fluxes = comm.bcast(soil_fluxes, root=0)
+            comm.barrier()
+            print("cyl3plant:GOTsoil_fluxes", rank)
+            comm.barrier()
             if (rank == 0):
                 soil_fluxes_limited_ = rs.sumSegFluxes(seg_fluxes_limited)  # [cm3/day]  per soil cell
                 soil_fluxes_limited = np.zeros(len(cell_volumes))
@@ -624,7 +676,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 soil_fluxes_limited[np.array(list(soil_fluxes_limited_.keys()))] = np.array(list(soil_fluxes_limited_.values()))
             else:
                 soil_fluxes_limited = None
+            comm.barrier()
+            print("cyl3plant:soil_fluxes_limited", rank)
+            comm.barrier()
             soil_fluxes_limited = comm.bcast(soil_fluxes_limited, root=0)
+            comm.barrier()
+            print("cyl3plant:GOTsoil_fluxes_limited", rank)
+            comm.barrier()
             
             soil_sources_limited = np.concatenate((np.array([soil_fluxes_limited]),soil_source_sol ))
             soil_contents = np.concatenate((np.array([water_content]),soil_solute_content )) 
@@ -685,10 +743,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # 3.4 data after, for post proccessing 
             ##
+            comm.barrier()
+            print("cyl3plant:buTotCAfter", rank)
+            comm.barrier()
             buTotCAfter =comm.bcast( sum(s.getTotCContent()) , root = 0)    
             water_content =comm.bcast( np.array(s.getWaterContent()), root = 0) 
             new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
             
+            comm.barrier()
+            print("cyl3plant:GOTbuTotCAfter", rank)
+            comm.barrier()
             
             ##
             # 3.5 error rates 
@@ -723,7 +787,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 3.6 get 1DS outer BC (from limited-flux: used at next iteration)
             ##
             outer_R_bc_wat = new_soil_water - soil_water - soil_fluxes_limited *dt # change in water per cell [cm3]
+            comm.barrier()
+            print("cyl3plant:soil_solute_content_new", rank)
+            comm.barrier()
             soil_solute_content_new = comm.bcast(np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]), root = 0) # mol
+            comm.barrier()
+            print("cyl3plant:GOTsoil_solute_content_new", rank)
+            comm.barrier()
             outer_R_bc_sol = np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
             assert outer_R_bc_sol.shape == (r.numComp, len(cell_volumes))
 
@@ -758,23 +828,23 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rsx_old = rsx_set.copy()
             
             
-            diffBCS1dsFluxIn = seg_fluxes  - seg_fluxes_old #only for water as plant exud is outside of loop
+            diffBCS1dsFluxIn =   seg_fluxes  - seg_fluxes_old   #only for water as plant exud is outside of loop
             
             
             
             seg_fluxes_old = seg_fluxes.copy()
-            diffBCS1dsFluxOut = proposed_outer_fluxes  - proposed_outer_fluxes_old
-            diffBCS1dsFluxOut_sol = proposed_outer_sol_fluxes  - proposed_outer_sol_fluxes_old
-            diffBCS1dsFluxOut_mucil = proposed_outer_mucil_fluxes  - proposed_outer_mucil_fluxes_old
+            diffBCS1dsFluxOut =   proposed_outer_fluxes  - proposed_outer_fluxes_old 
+            diffBCS1dsFluxOut_sol =   proposed_outer_sol_fluxes  - proposed_outer_sol_fluxes_old 
+            diffBCS1dsFluxOut_mucil =   proposed_outer_mucil_fluxes  - proposed_outer_mucil_fluxes_old 
             
             proposed_outer_fluxes_old = proposed_outer_fluxes.copy()
             proposed_outer_sol_fluxes_old =proposed_outer_sol_fluxes.copy()
             proposed_outer_mucil_fluxes_old =proposed_outer_mucil_fluxes.copy()
             
-            diffouter_R_bc_wat = outer_R_bc_wat  - outer_R_bc_wat_old
+            diffouter_R_bc_wat =   outer_R_bc_wat  - outer_R_bc_wat_old 
             outer_R_bc_wat_old = outer_R_bc_wat.copy()
             
-            diffouter_R_bc_sol = outer_R_bc_sol  - outer_R_bc_sol_old
+            diffouter_R_bc_sol =   outer_R_bc_sol  - outer_R_bc_sol_old 
             outer_R_bc_sol_old = outer_R_bc_sol.copy()
             
             
@@ -786,39 +856,58 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rhizoWAfter_old = rhizoWAfter_.copy()
             rhizoTotCAfter_old = rhizoTotCAfter_.copy()
             
-            errBCS1dsFluxIn = np.linalg.norm(diffBCS1dsFluxIn)
-            errBCS1dsFluxOut = np.linalg.norm(diffBCS1dsFluxOut)
-            errBCS1dsFluxOut_sol = np.linalg.norm(diffBCS1dsFluxOut_sol)
-            errBCS1dsFluxOut_mucil = np.linalg.norm(diffBCS1dsFluxOut_mucil)
-            errOuter_R_bc_wat = np.linalg.norm(diffouter_R_bc_wat)
-            errOuter_R_bc_sol = np.linalg.norm(diffouter_R_bc_sol.reshape(-1))
+            errBCS1dsFluxIn =max(abs((diffBCS1dsFluxIn/ np.where(seg_fluxes,seg_fluxes,1.))*100))# np.linalg.norm(diffBCS1dsFluxIn)
+            errBCS1dsFluxOut = max(abs((diffBCS1dsFluxOut/ np.where(proposed_outer_fluxes,proposed_outer_fluxes,1.))*100))#np.linalg.norm(diffBCS1dsFluxOut)
+            errBCS1dsFluxOut_sol = max(abs((diffBCS1dsFluxOut_sol/ np.where(proposed_outer_sol_fluxes,proposed_outer_sol_fluxes,1.))*100))
+            errBCS1dsFluxOut_mucil = max(abs((diffBCS1dsFluxOut_mucil/ np.where(proposed_outer_mucil_fluxes,proposed_outer_mucil_fluxes,1.))*100))
+            errOuter_R_bc_wat = max(abs((diffouter_R_bc_wat/ np.where(outer_R_bc_wat,outer_R_bc_wat,1.))*100))
+            #errOuter_R_bc_sol = max(abs((diffouter_R_bc_sol[:r.numFluidComp].reshape(-1)/ np.where(outer_R_bc_sol[:r.numFluidComp].reshape(-1),
+            #                                                                                       outer_R_bc_sol[:r.numFluidComp].reshape(-1),1.))*100))
+            #mucilage flow is basically nill
+            errOuter_R_bc_sol = max(abs((diffouter_R_bc_sol[:1].reshape(-1)/ np.where(outer_R_bc_sol[:1].reshape(-1),
+                                                                                                   outer_R_bc_sol[:1].reshape(-1),1.))*100))
             r.errDiffBCs = np.array([errBCS1dsFluxIn,
                                   errBCS1dsFluxOut, 
                                   errOuter_R_bc_wat,
                                   errBCS1dsFluxOut_sol, 
-                                  errBCS1dsFluxOut_mucil,
-                                  errOuter_R_bc_sol,
-                                 sum(abs(diffBCS1dsFluxIn)), 
-                                  sum(abs(diffBCS1dsFluxOut)),
-                                  sum(abs(diffouter_R_bc_wat)),
-                                  sum(abs(diffBCS1dsFluxOut_sol.reshape(-1))),
-                                  sum(abs(diffBCS1dsFluxOut_mucil)),
-                                  sum(abs(diffouter_R_bc_sol.reshape(-1)))])
-            
+                                  #errBCS1dsFluxOut_mucil,#mucilage flow is basically nill
+                                  errOuter_R_bc_sol
+                                    ])
+            #sum(abs(diffBCS1dsFluxIn)), sum(abs(diffBCS1dsFluxOut)),sum(abs(diffouter_R_bc_wat)),
+            #sum(abs(diffBCS1dsFluxOut_sol.reshape(-1))), sum(abs(diffBCS1dsFluxOut_mucil)),sum(abs(diffouter_R_bc_sol.reshape(-1)))])
+            comm.barrier()
+            print("cyl3plant:errDiffBCs", rank)
+            comm.barrier()
+            r.errDiffBCs = comm.bcast(r.errDiffBCs,root= 0)
+            comm.barrier()
+            print("cyl3plant:GOTerrDiffBCs", rank)
+            comm.barrier()
             errW3ds = np.linalg.norm(new_soil_water - new_soil_water_old)
             errC3ds = np.linalg.norm(soil_solute_content_new - soil_solute_content_new_old)
             
             new_soil_water_old = new_soil_water.copy()
             soil_solute_content_new_old = soil_solute_content_new.copy()
             
+            comm.barrier()
+            print("cyl3plant:errsandCo", rank)
+            comm.barrier()
             r.rhizoMassWError_abs = comm.bcast(r.rhizoMassWError_abs,root= 0)
             r.rhizoMassCError_abs = comm.bcast(r.rhizoMassCError_abs,root= 0)
             
             r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds),root= 0)
             r.maxDiff1d3dCW_abs = comm.bcast(r.maxDiff1d3dCW_abs,root= 0)
             diff1d3dCurrant =abs(max(r.maxDiff1d3dCW_abs) - maxDiff1d3dCW_absBU) # to not depend on cumulative error
+            comm.barrier()
+            print("cyl3plant:solve_gave_up", rank)
+            comm.barrier()
             r.solve_gave_up = (np.array(comm.bcast(comm.gather(r.solve_gave_up ,root = 0),root = 0))).any()
+            comm.barrier()
+            print("cyl3plant:solve_gave_up", rank)
+            comm.barrier()
             
+            comm.barrier()
+            print("cyl3plant:GOTerrsandCo", rank)
+            comm.barrier()
             r.errs =np.array([errRxPlant, errW1ds, errW3ds,errC1ds, errC3ds, 
                             max(r.SinkLim3DS),max(abs(r.SinkLim1DS)),max(abs(r.OutLim1DS)),
                             max(abs(r.InOutBC_Cdiff.reshape(-1))),
@@ -841,6 +930,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_diffBCS1dsFluxOut_sol", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffBCS1dsFluxOut_mucil", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                 
+                write_file_array("fpit_errBCS1dsFluxOut_mucilBis", abs((diffBCS1dsFluxOut_mucil/ np.where(proposed_outer_mucil_fluxes,proposed_outer_mucil_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
+                
+                write_file_array("fpit_diffBCS1dsFluxInBis", abs((diffBCS1dsFluxIn/ np.where(seg_fluxes,seg_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_diffBCS1dsFluxOutBis", abs((diffBCS1dsFluxOut/ np.where(proposed_outer_fluxes,proposed_outer_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_diffouter_R_bc_watBis", abs((diffBCS1dsFluxOut_sol/ np.where(proposed_outer_sol_fluxes,proposed_outer_sol_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
+                
                 write_file_array("fpit_diffBCS1dsFluxIn", diffBCS1dsFluxIn, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffBCS1dsFluxOut", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffouter_R_bc_wat", diffouter_R_bc_wat, directory_ =results_dir, fileType = '.csv') 
@@ -858,7 +953,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_errorMassC1d", np.array(errorsEachC), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error", r.errs, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error1d3d", r.maxDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_time", np.array([rs_age,rs.Qlight,dt,i]), directory_ =results_dir ) 
+                write_file_array("fpit_time", np.array([rs_age,rs.Qlight,sim_time,dt,Ni,n_iter]), directory_ =results_dir ) 
                 write_file_array("fpit_SinkLim3DS", r.SinkLim3DS, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_SinkLim1DS", r.SinkLim1DS, directory_ =results_dir, fileType = '.csv') 
                 
@@ -902,6 +997,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 for nc in range(r.numComp):# normally all 0 for nc >= numFluidComp
                     write_file_array("fpit_outer_R_bc_sol"+str(nc+1), outer_R_bc_sol[nc], directory_ =results_dir, fileType = '.csv')  
                     write_file_array("fpit_diffouter_R_bc_sol"+str(nc+1), diffouter_R_bc_sol[nc], directory_ =results_dir, fileType = '.csv') 
+                    
+                    write_file_array("fpit_diffouter_R_bc_solBis"+str(nc+1), abs((diffouter_R_bc_sol[nc]/ np.where(outer_R_bc_sol[nc],outer_R_bc_sol[nc],1.))*100), directory_ =results_dir, fileType = '.csv') 
+                    write_file_float("fpit_diffouter_R_bc_solBismax"+str(nc+1),max( abs((diffouter_R_bc_sol[nc]/ np.where(outer_R_bc_sol[nc],outer_R_bc_sol[nc],1.))*100)), directory_ =results_dir) 
                 
                 write_file_array("fpit_outer_R_bc_wat", outer_R_bc_wat, directory_ =results_dir, fileType = '.csv')  
                 
@@ -916,6 +1014,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_new_soil_water", new_soil_water, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoWaterPerVoxel", rhizoWaterPerVoxel, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rx", rx, directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_sumErrors1ds3ds", np.concatenate((r.sumDiff1d3dCW_abs, r.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_maxErrors1ds3ds", np.concatenate((r.maxDiff1d3dCW_abs, r.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# 
                 
                 write_file_array("fpit_rhizoWAfter", rhizoWAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoTotCAfter", rhizoTotCAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
@@ -930,13 +1030,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             write_file_array("N_soil_fluxes",soil_fluxes, directory_ =results_dir)
             write_file_array("N_error", r.errs, directory_ =results_dir) 
             write_file_array("N_error", r.errs, directory_ =results_dir, fileType = '.csv') 
-            write_file_array("N_n_iter",np.array([ n_iter ]), directory_ =results_dir)
+            write_file_array("N_n_iter",np.array([ n_iter,N ]), directory_ =results_dir)
         
-        comm.barrier()
-        print('left iteration', rank, n_iter, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs)
-        comm.barrier()
-        #if abs(r.rhizoMassWError_abs) > 1e-13:
-        #    raise Exception
+            
         ####
         #   error rates    
         ####
@@ -964,8 +1060,18 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         print('end time step inner loop')
            
         comm.barrier()
+        
+        comm.barrier()
+        failedLoop = continueLoop(r,0, dt,np.nan,Ni * dt,'fpit_testdata')
+        print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
+        comm.barrier()
+        if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
+            print('Failed, no need to go on, leave inner loop now and reset lower time step')
+            break
         # end time step inner loop
-    print('end of inner loop')
-    return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes # first guess for next fixed point iteration
+    dt_inner =float(Ni)*float( dt) # get the real simetime if sim_time / dt != int
+    print('end of inner loop, failed?',failedLoop, n_iter,Ni,'/',N, dt_inner, dt)
+    
+    return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes, dt_inner, failedLoop# fluxes == first guess for next fixed point iteration
     #end of inner loop
 

@@ -326,6 +326,7 @@ public:
 		 k_decay2 = getParam<double>("Soil.k_decay2", k_decay2_);//
 		 f_sorp = getParam<double>("Soil.f_sorp", f_sorp);//[-]
 		 k_sorp = getParam<double>("Soil.k_sorp", k_sorp_)* m3_2_cm3;// mol/m3 water
+		 css1Function = getParam<double>("Soil.css1Function", 0);// 0: TraiRhizo, 1: linear css1, 2: no css1 
 		 CSSmax = getParam<double>("Soil.CSSmax", CSSmax_)* m3_2_cm3;//mol/m3
 		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[s-1]
          
@@ -427,10 +428,23 @@ public:
 				double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
 				double theta =  volVars.saturation(h2OIdx) * volVars.porosity();
 				// [-] * [m3 solid / m3 scv] * [m3 scv /m3 wat] * [mol C/m3 solid] / [mol C/m3 wat] = [-]							//m3 water /m3 scv				
-				//return 1+f_sorp*(solidVolFr/theta)*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ;
 				
 				// [m3 scv zone 1/m3 scv] * [m3 scv/m3 wat] * [mol C/m3 scv zone 1] / [mol C/m3 wat] = [-]	
-				double RF_ = 1+f_sorp*(1/theta)*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ; //
+                double RF_;
+                
+                switch(css1Function) {
+                  case 0:
+                    RF_ = 1+f_sorp*(1/theta)*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ; 
+                    break;
+                  case 1:
+                    RF_ = 1+f_sorp*(1/theta)*CSSmax ; 
+                    break;
+                  case 2:
+                    RF_ = 1 ;
+                    break;
+                  default:
+                    DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+                }
 
 				//RF_all[scv.dofIndex()][compIdx] = RF;
 				
@@ -1020,7 +1034,21 @@ public:
 		}
 		//[mol C / m3 scv] = [mol scv/m3 scv] * [mol C/mol scv]
 		double CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) / (1 - f_sorp) ; // mol C / m3 scv zone 2
-		double CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
+		double CSS1;// = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
+        
+        switch(css1Function) {
+          case 0:
+            CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
+            break;
+          case 1:
+            CSS1 = CSSmax*C_S_W;
+            break;
+          case 2:
+            CSS1 = 0.;
+            break;
+          default:
+            DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+        }
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
@@ -1339,13 +1367,13 @@ private:
 	
 	static constexpr Scalar eps_ = 1.e-7;
 	double temperatureK;
-	// static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
-	// static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	// static constexpr Scalar pRef_ = 1.e5; // Pa
-	static constexpr Scalar g_ = 9.80665; // cm / s^2 (for type conversions)
-	//of pure water and of solution (as low solute content)
+	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
 	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr Scalar pRef_ = 101300; // Pa
+	static constexpr Scalar pRef_ = 1.e5; // Pa
+	//static constexpr Scalar g_ = 9.80665; // cm / s^2 (for type conversions)
+	//of pure water and of solution (as low solute content)
+	//static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
+	//static constexpr Scalar pRef_ = 101300; // Pa
 
 	
 	// default value in CPB units
@@ -1394,12 +1422,14 @@ private:
 	double m_maxBisO;
 	double m_maxBis_Cs;
 	double theta;
+    int css1Function;
 	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
 	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  
 	//must be g/cm^3 (you already mentioned that this was not clear).
 
 };
 
+    
 } //end namespace Dumux
 
 #endif

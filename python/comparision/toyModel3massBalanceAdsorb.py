@@ -6,6 +6,7 @@ from rosi_richards10c_cyl import Richards10CCylFoam  # C++ part (Dumux binding)
 
 from richards import RichardsWrapper  # Python part
 
+import matplotlib; matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -62,7 +63,7 @@ def getTotCContent( kjg, cyl, l, init=False):
 # theta_r, theta_s, alpha, n, Ks
 loam = [0.045, 0.43, 0.04, 1.6, 50]
 
-nCells = 50
+nCells = 10
 logbase = 0.5
 r_in = 0.02
 r_out = 0.6
@@ -78,7 +79,7 @@ s.setParameter( "Soil.Grid.Cells", str(nCells))
 s.setParameter("Problem.reactionExclusive", "0")
 s.setHomogeneousIC(-100.)  # cm pressure head
 wout = 0.1 * 0
-win = -1.
+win = -0.05
 s.setOuterBC("constantFluxCyl", wout)  #  [cm/day]
 s.setInnerBC("constantFluxCyl", win)  #  [cm/day]
 WatBC =  win* (2 * np.pi * r_in * l) +wout * (2 * np.pi * r_out * l) 
@@ -97,7 +98,7 @@ solidMolDensity = solidDensity/solidMolarMass
 bulkDensity_m3 = solidMolDensity*(1.-0.43)
 
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
-exud = 1. *0# [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
+exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 exuds_in = exud
 exudl_in = exud 
 exuds_out = - exuds_in / 24
@@ -182,7 +183,7 @@ s.CSSmax = 140/1e6#1e-4 *1e5
 s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
 s.setParameter("Soil.alpha", str(0.1)) #[1/d]
 
-gradient = True
+gradient = False
 if gradient:
     #C_S = np.array([0.1, 0.3, 0.4, 0.5, 9])  #mol/cm3 wat
     #s.setParameter("Soil.IC.C1Z", "0.0001 0.0003 0.0004 0.0005 0.009" )  #mol/cm3 / mol/cm3 = mol/mol 
@@ -223,7 +224,7 @@ s.setVGParameters([loam])
 
 
 s.setParameter("Problem.EnableGravity", "false")
-s.setParameter("Problem.verbose", "10")
+s.setParameter("Problem.verbose", "0")
 s.setParameter("Flux.UpwindWeight", "0.5")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
 s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")

@@ -105,6 +105,7 @@ public:
         } else {
             setParameter("Grid.Overlap","1");
         }
+        
         setParameter("Flux.UpwindWeight", "0.5"); // Timo's advice for flows that are not strongly convection dominated, Dumux default = 1
 		
 		// if(doMPI)

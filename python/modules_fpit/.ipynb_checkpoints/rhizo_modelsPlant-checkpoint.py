@@ -17,7 +17,7 @@ from scenario_setup import write_file_array
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size(); size = comm.Get_size()
 import psutil
 from air_modelsPlant import AirSegment
 from scipy import sparse
@@ -181,7 +181,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             assert sum(self.toAddAir) == ( len(self.airSegs ) - self.nsAirOld )
             #for next time step
         
-        
+        if size > 1:
+            comm.barrier()
+            print("broadcastPlantShape:bcasts", rank)
+            comm.barrier()
         self.airSegs = comm.bcast(self.airSegs , root = 0) 
         self.toAddSoil = comm.bcast(self.toAddSoil, root = 0) 
         self.toAddAir = comm.bcast(self.toAddAir, root = 0) 
@@ -192,6 +195,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.cell2seg = comm.bcast(self.cell2seg, root = 0)         
         self.organTypes =np.array( comm.bcast(self.organTypes, root = 0) ) 
         self.organTypesArray =np.array( comm.bcast(self.organTypes, root = 0)   )
+        
+        if size > 1:
+            comm.barrier()
+            print("broadcastPlantShape:GOTbcasts", rank)
+            comm.barrier()
         self.organTypesArray =np.array( self.organTypesArray)
         self.rhizoVol = (self.outer_radii**2 - np.array(self.radii)**2)*np.pi*self.seg_length
         #print('parsing plant data', rank, len(self.seg_length), len(self.radii),
@@ -218,13 +226,25 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         @þaram newEidx  in case of mpi the cylinder indices per process
         """
         
+        if size > 1:
+            comm.barrier()
+            print("update:sizeSoilCell", rank)
+            comm.barrier()
         sizeSoilCell = comm.bcast(self.soilModel.getCellVolumes()/1e6, root = 0) #m3
+        
+        if size > 1:
+            comm.barrier()
+            print("update:GOTsizeSoilCell", rank)
+            comm.barrier()
         try:
             maxlim1d3d = max(self.maxDiff1d3dCW_abs[0]*10,self.limErr1d3dAbs)
         except:
             maxlim1d3d = self.limErr1d3dAbs
         
-        print("broadcastPlantShape",rank)
+        if size > 1:
+            comm.barrier()
+            print("broadcastPlantShape",rank)
+            comm.barrier()
         self.broadcastPlantShape() 
         
         comm.barrier()
@@ -233,8 +253,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         #print('self.newEidx, self.eidx',self.newEidx, self.eidx)
         self.eidx = np.concatenate((self.eidx,np.array(self.newEidx, dtype = np.int64)), dtype = np.int64)
         
-        comm.barrier()
-        print('checkMassOMoleBalance2 after broadcastPlantShape')
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2 after broadcastPlantShape')
+            comm.barrier()
         self.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
                                      sourceSol = np.full((self.numComp, len(sizeSoilCell)),0.), # mol/day
                                      dt = 0.,        # day    
@@ -245,7 +267,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         # can only work before the growth.
         #print(rank, 'test getC_content_leftoverI')
         #c_content_leftover_test = dict([(362,np.array([self.getC_content_leftoverI(362, 1) for ncomp in range(1, self.numComp + 1)])) ])# mol    
-        print(rank, 'test getC_content_leftoverI_END')
+        if size > 1:
+            comm.barrier()
+            print(rank, 'checkVolumeBalance')
+            comm.barrier()
         self.checkVolumeBalance(finishedUpdate = False)
         self.checkRadii()
         
@@ -257,11 +282,18 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         cellIds = self.getCellIds()
         
-        print("updateOld", rank)
+        if size > 1:
+            comm.barrier()
+            print("updateOld", rank,len(self.cyls))
+            comm.barrier()
         for i, cyl in enumerate(self.cyls):
             if not isinstance(cyl, AirSegment) :
                 self.updateOld(i, cyl)
                 
+        if size > 1:
+            comm.barrier()
+            print("updateOld_finished", rank)
+            comm.barrier()
         if (len(self.seg_length) != len(self.seg_length_old)) or( len(self.cylSoilidx_all) == 0):
             volLeftOver = np.array([self.get_Vol_leftoverI(i) for i in range(len(sizeSoilCell))])# m3        
 
@@ -273,39 +305,66 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             except:
                 print(watVol_leftover)
                 raise Exception
+
+            if size > 1:
+                comm.barrier()
+                print("(len(self.seg_length) != len(self.seg_length_old)) or( len(self.cylSoilidx_all) == 0): getC_content_leftoverI", rank)
+                comm.barrier()
             c_content_leftover = dict([(i,np.array([self.getC_content_leftoverI(i, ncomp) for ncomp in range(1, self.numComp + 1)])) for i in cellIds])# mol    
 
             #m3 wat * (mol wat/m3 wat) or m3 scv * (mol scv/m3 scv)
             phaseMol = dict([(i, np.array([watVol_leftover[i]* self.molarDensityWat_m3 if ncomp <= self.numFluidComp else volLeftOver[i]*self.bulkDensity_m3 for ncomp in range(1, self.numComp + 1)])) for i in cellIds])
 
             # in mol/mol wat or mol/mol bulk soil
+            
+            if size > 1:
+                comm.barrier()
+                print("(len(self.seg_length) != len(self.seg_length_old)) or( len(self.cylSoilidx_all) == 0): get_CC_leftover", rank)
+                comm.barrier()
             CC_leftover = self.get_CC_leftover(c_content_leftover, phaseMol, cellIds)
 
 
             try:
                 assert CC_leftover[cellIds[0]].shape == (self.numComp,)
             except:
-                print(c_content_leftover,  CC_leftover)
+                print('CC_leftover[cellIds[0]].shape != (self.numComp,)',c_content_leftover,  CC_leftover)
                 raise Exception
 
 
+            if size > 1:
+                comm.barrier()
+                print("get_XX_leftover", rank)
+                comm.barrier()
 
-            XX_leftover = self.get_XX_leftover(watVol_leftover[cellIds], volLeftOver[cellIds], cellIds )# dict(zip(cellIds, XX_leftover))
-            #watcont = self.soilModel.getWaterContent()
-            # write_file_array('watcontbis',watcont, ',',self.results_dir)
-            # if rank == 0:
-                # print('XX_leftover[53]',XX_leftover[53], watcont[53])
-            # raise Exception
-            #raise Exception
+            XX_leftover = self.get_XX_leftover(watVol_leftover[cellIds], volLeftOver[cellIds], cellIds )
+            
+            if size > 1:
+                comm.barrier()
+                print("initialize_", rank)
+                comm.barrier()
             for gId in self.newEidx:#only initialize the new eidx
                 self.initialize_(gId,XX_leftover,CC_leftover)
         self.cylidx = self.eidx
         self.cylSoilidx = np.array([gId for lId, gId in enumerate(self.cylidx) if (not isinstance(self.cyls[lId], AirSegment))])
         self.cylsSoil = np.array([cyl for cyl in self.cyls if (not isinstance(cyl, AirSegment))])
+
+        if size > 1:
+            comm.barrier()
+            print("get cylSoilidx_all", rank)
+            comm.barrier()
         self.cylSoilidx_all = np.concatenate(comm.bcast(comm.gather(np.array(self.cylSoilidx),root = 0),root = 0))# all epreviously existsing segs
         
+        if size > 1:
+            comm.barrier()
+            print("checkVolumeBalance(finishedUpdate = True)", rank)
+            comm.barrier()
         self.checkVolumeBalance(finishedUpdate = True)
-        print("afterUpdate")
+        
+        if size > 1:
+            comm.barrier()
+            print("afterUpdate: checkMassOMoleBalance2")        
+            comm.barrier()
+        
         self.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
                                      sourceSol = np.full((self.numComp, len(sizeSoilCell)),0.), # mol/day
                                      dt = 0.,        # day    
@@ -314,10 +373,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      # useSoilData = True,
                                      diff1d3dCW_abs_lim = max(self.maxDiff1d3dCW_rel[0]*2,self.limErr1d3dAbs) )
         
+        if size > 1:
+            comm.barrier()
+            print("afterUpdate: share ns")        
+            comm.barrier()
+        
+        
         self.nsSoilOld = sum(self.repartitionSoilOld )
         self.nsSoilOld = comm.bcast(self.nsSoilOld, root = 0)  
         self.nsAirOld = sum(self.repartitionAirOld )
         self.nsAirOld = comm.bcast(self.nsAirOld, root = 0)  
+        
+        if size > 1:
+            comm.barrier()
+            print("afterUpdate: DID share ns", rank)
+            comm.barrier()
     
     def get_CC_leftover(self,c_content_leftover, #mol
                         phaseMol,     #mol water or mol scv
@@ -342,8 +412,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def get_XX_leftover(self,watVol_leftover, #m3
                         volLeftOver,     #m3
                         cellIds):   
+        
         theta_leftOver = np.array([watVol_leftover[idvol]/vol if vol > 0 else np.nan for idvol, vol in enumerate(volLeftOver) ])
-        #print('get_XX_leftover_AA', rank, watVol_leftover, volLeftOver, theta_leftOver)
+        
         lowTheta = np.where(theta_leftOver <self.vg_soil.theta_R )
         if len(volLeftOver[lowTheta]) > 0:
             assert max(volLeftOver[lowTheta]) < 1e-13 # low theta, no new segments in the soil voxel
@@ -362,7 +433,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print(theta_leftOver[highTheta],volLeftOver[highTheta])
                 print(theta_leftOver[correctTheta])
                 raise Exception
-        
+        if False:
+            idVerbose = np.where(cellIds == 26)[0]
+            print('get_XX_leftover_AA', rank,
+              '{:20.17e}cm3_W, {:20.17e}cm3_scv, {:20.17e}cm3/cm3, {:20.17e}cm '.format(
+                  watVol_leftover[idVerbose][0],volLeftOver[idVerbose][0],
+                  theta_leftOver[idVerbose][0], XX_leftover[idVerbose][0]),
+              cellIds[idVerbose][0])
         # using dict() and zip() to convert arrays to dictionary
         return dict(zip(cellIds, XX_leftover))
         
@@ -377,13 +454,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         cellIds = self.getCellIds()
             
         for cellId in cellIds:
-            #print("cellid",cellId, rank)
+            verbose = False
             vol_total = self.soilModel.getCellVolumes() #cm3
             if rank == 0:
                 vol_total = vol_total[cellId] # cm3
-                
+
+            if size > 1:
+                comm.barrier()
+                print("checkRadii:vol_total", rank)
+                comm.barrier()
             vol_total = comm.bcast(vol_total, root = 0) 
-            
+
+            if size > 1:
+                comm.barrier()
+                print("checkRadii:GOTvol_total", rank)
+                comm.barrier()
             idSegs = np.array(self.cell2seg[cellId])#all segments in the cell
             idCylsAll = np.array([ids for ids in idSegs if self.organTypes[ids]==2 ]) 
             if len(idCylsAll)>0:
@@ -395,9 +480,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 try:
                     assert abs(((vol_total - sum(vol_rootRhizo - vol_root))/vol_total)*100) < 1e-12
                 except:
+                    print('error checkRadii',rank)
                     for rr in range(max_rank):
                         if rank == rr:
-                            comm.Barrier()
                             print("\n",rank,cellId,"checkRadii error",  vol_total,
                                   'vol_rootRhizo',vol_rootRhizo,sum(vol_rootRhizo))
                             print("\n",rank,cellId,'voltot-volrootrhizo',vol_total - sum(vol_rootRhizo))
@@ -406,15 +491,25 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             print("\n",rank,cellId,'radi in and out, lengths_I', radii_in,radii_out, lengths_I)
                             print("\n",rank,cellId, 'ots',self.organTypesArray,idSegs,type(self.organTypesArray), type(idSegs))
                             print("\n",rank,cellId, 'ots',self.organTypesArray[idSegs])
-                            comm.Barrier()
                     raise Exception
+                if verbose:
+                    print('checkradii verbose',vol_total - sum(vol_rootRhizo - vol_root),vol_total , sum(vol_rootRhizo - vol_root))
         comm.Barrier()
     
     def getCellIds(self):
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-        
+
+        if size > 1:
+            comm.barrier()
+            print("getCellIds:cellIds_All", rank)
+            comm.barrier()
         cellIds_All = np.array(comm.bcast(comm.gather(cellIds, root=0), root=0))
+
+        if size > 1:
+            comm.barrier()
+            print("getCellIds:GOTcellIds_All", rank)
+            comm.barrier()
         try:
             assert (cellIds_All[1:] == cellIds_All[:-1]).all()
         except:
@@ -423,21 +518,41 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         return cellIds
     
     def checkVolumeBalance(self, finishedUpdate):
-        comm.Barrier()
-        
+        if size > 1:
+            comm.barrier()
+            print('checkVolumeBalance start', rank)
+            comm.barrier()
         cellIds = self.getCellIds()
         for cellId in cellIds:
+            verbose = False
+            if size > 1:
+                comm.barrier()
+                print('checkVolumeBalance cellId',cellId)
+                comm.barrier()
             vol_total = self.soilModel.getCellVolumes()
             if rank == 0:
                 vol_total = vol_total[cellId] # cm3.
+            if size > 1:
+                comm.barrier()
+                print('checkVolumeBalance::vol_total',rank)
+                comm.barrier()
             vol_total =     comm.bcast(vol_total, root=0)
+            if size > 1:
+                comm.barrier()
+                print('checkVolumeBalance::getIdCyllMPI',rank)
+                comm.barrier()
             idCylsAll, idCyls =  self.getIdCyllMPI(cellId)
             if(len(idCylsAll) >0):
-                
-                vol_rhizo_ =self.getVolumesCyl(idCyls,doSum = False)# comm.bcast(self._flat0(comm.gather(vol_rhizo_, root=0)), root=0)
+                if size > 1:
+                    comm.barrier()
+                    print('checkVolumeBalance::getVolumesCyl',rank)
+                    comm.barrier()
+                vol_rhizo_ =self.getVolumesCyl(idCyls,doSum = False)
                 vol_rhizo = sum(vol_rhizo_)#cm3 sum(vol_rhizo_)
-                    
-                
+                if size > 1:
+                    comm.barrier()
+                    print('checkVolumeBalance(abs((vol_total - vol_rhizo)) > 1e-10)',rank,(abs((vol_total - vol_rhizo)) > 1e-10))
+                    comm.barrier()
                 if (abs((vol_total - vol_rhizo)) > 1e-10):# or ((vol_total - vol_rhizo) < 0.):
                     print("checkVolumeBalance--error")
                     print(rank, cellId, vol_total, vol_rhizo, (vol_total - vol_rhizo),vol_rhizo_  )
@@ -462,6 +577,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print("vol cyls",np.array([sum(self.cyls[i].getCellSurfacesCyl()) for i in localIdCyls])*np.array(self.seg_length_)[localIdCyls])
                         print("points", np.array([self.cyls[i].getPoints() for i in localIdCyls]))
                     raise Exception
+                if (verbose) and (rank ==0):
+                    print('checkVolumeBalance verbose',vol_total - vol_rhizo,vol_total, vol_rhizo)
         comm.Barrier()
     
                     
@@ -472,8 +589,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      doWater = True, doSolute = True, doSolid = True,
                                      useSoilData = False,
                                      doKonz = True,
-                                     diff1d3dCW_abs_lim = None):#would need to do it for each cell, not overall?
-        verbose = True
+                                     diff1d3dCW_abs_lim = None,
+                              verbose_ = False,
+                              takeFlux=True):#would need to do it for each cell, not overall?
+        verbose = verbose_
         if verbose:
             print("checkMassOMoleBalance2", rank)
         if diff1d3dCW_abs_lim is None:
@@ -498,8 +617,16 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             wat_total_ = self.soilWatVol_old * 1e6# [cm3].
         else:
             wat_total_ = self.soilModel.getWaterVolumes()# [cm3].
-            
+
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2::wat_total_',rank)
+            comm.barrier()
         wat_total_ = comm.bcast(wat_total_, root=0)
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2::GOTwat_total_',rank)
+            comm.barrier()
         
         self.all1d3dDiff =  np.full(len(wat_total_), 0.)
 
@@ -509,7 +636,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         else:
             mol_total_ = [self.soilModel.getContent(idComp, idComp <= 2)  for  idComp in range(1,NC+1) ]# solute content [mol].
         
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2::mol_total_',rank)
+            comm.barrier()
         mol_total_ = comm.bcast(mol_total_, root=0)
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2::GOTmol_total_',rank)
+            comm.barrier()
         
         for cellId in cellIds:
             verbose = False
@@ -529,26 +664,40 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 
                 
                 if rank == 0:
+                    if takeFlux:
+                        sourceWat_ = sourceWat[cellId]
+                    else:
+                        sourceWat_ = 0
+                        
                     if verbose:
-                        print("in water",rank, cellId, 'wat_total',wat_total,'wat_rhizo',  wat_rhizo, sourceWat[cellId] * dt , idCyls , self.eidx,idCyls,localIdCyls )    
-                    #print(cellId, 0,wat_total , sourceWat[cellId] * dt , wat_rhizo, wat_rhizo_)
-                    diff1d3dCW_abs = abs(wat_total+ sourceWat[cellId] * dt - wat_rhizo)
+                        print("in water",rank, cellId, 'wat_total',wat_total,'wat_rhizo',  wat_rhizo, sourceWat_ * dt , idCyls , localIdCyls )    
+                    #print(cellId, 0,wat_total , sourceWat_ * dt , wat_rhizo, wat_rhizo_)
+                    diff1d3dCW_abs = abs(wat_total+ sourceWat_ * dt - wat_rhizo)
                     self.all1d3dDiff[cellId] = diff1d3dCW_abs
-                    diff1d3dCW_rel = abs(diff1d3dCW_abs/(wat_total+ sourceWat[cellId] * dt) *100)
+                    diff1d3dCW_rel = abs(diff1d3dCW_abs/(wat_total+ sourceWat_ * dt) *100)
                     self.sumDiff1d3dCW_abs[0] += diff1d3dCW_abs
                     self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[0] = max(self.maxDiff1d3dCW_abs[0], diff1d3dCW_abs)
                     self.maxDiff1d3dCW_rel[0] = max(self.maxDiff1d3dCW_rel[0], diff1d3dCW_rel)
                     if diff1d3dCW_abs > diff1d3dCW_abs_lim:#1e-10 :
                         print("checkMassOMoleBalance2error")
-                        print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat[cellId], dt)
+                        print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat_, dt)
                         print("wat_rhizo_",wat_rhizo_)
                         print("Diff1d3dW",diff1d3dCW_abs, diff1d3dCW_rel, self.sumDiff1d3dCW_abs[0],
                             self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
-                            diff1d3dCW_abs_lim)
+                            'diff1d3dCW_abs_lim',diff1d3dCW_abs_lim)
                         print(np.array(self.organTypes)[idCylsAll])
                         print(np.array(self.radii)[idCylsAll],np.array(self.outer_radii)[idCylsAll])
-                        # raise Exception #turn off for now to make evaluation easier 
+                        raise Exception #turn off for now to make evaluation easier 
+                    if verbose:
+                        print("checkMassOMoleBalance2verbose")
+                        print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat_, dt)
+                        print("wat_rhizo_",wat_rhizo_)
+                        print("Diff1d3dW",diff1d3dCW_abs, diff1d3dCW_rel, self.sumDiff1d3dCW_abs[0],
+                            self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
+                            'diff1d3dCW_abs_lim',diff1d3dCW_abs_lim)
+                        print(np.array(self.organTypes)[idCylsAll])
+                        print(np.array(self.radii)[idCylsAll],np.array(self.outer_radii)[idCylsAll])
                     
                 for idComp in range(1, NC +1): 
                     #comm.barrier()
@@ -558,46 +707,54 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     #comm.barrier()
                         
                     mol_total = mol_total_[idComp -1][cellId] # solute content [mol]
-                    
-                    #comm.barrier()
-                    #print('getting mol total', rank, idComp,cellId)
+
+                    if size > 1:
+                        comm.barrier()
+                        print('checkMassOMoleBalance2::mol_total',rank)
+                        comm.barrier()
                     mol_total = comm.bcast(mol_total, root=0)
-                    #print('got mol total', rank, idComp,cellId)
-                    #comm.barrier()
+                    if size > 1:
+                        comm.barrier()
+                        print('checkMassOMoleBalance2::GOTmol_total',rank)
+                        comm.barrier()
                     
                     if idComp not in self.canBeNull:
                         assert mol_total > 0.
                     else:
                         assert mol_total >= 0.
                                         
-                    #mol_rhizo_ = np.array([sum(self.cyls[i].getContentCyl( idComp, isDissolved, self.seg_length_[i] )) for i in localIdCyls ]) #cm3
-                    #print('getting mol rhizo', rank, idComp,cellId)
-                    mol_rhizo_ = self.getContentCyl(idCyls, idComp, doSum = False)#sum(comm.bcast(self._flat0(comm.gather(mol_rhizo_, root=0)), root=0))
+                    mol_rhizo_ = self.getContentCyl(idCyls, idComp, doSum = False)
                     mol_rhizo = sum(mol_rhizo_)
                     #print('got mol rhizo', rank, idComp,cellId)
                         
                             
                     if rank == 0:
                         try:
-                            sourceSol_ = sourceSol[idComp-1][cellId]             
+                            if takeFlux:
+                                sourceSol_ = sourceSol[idComp-1][cellId]      
+                            else:
+                                sourceSol_ = 0.
                         except:
                             print('error could not get sourcesol_')
                             print(sourceSol, idComp, cellId)
                             raise Exception
                         if (mol_total  + sourceSol_ * dt  == 0) :
                             diff1d3dCW_abs = abs(mol_total  + sourceSol_ * dt)
-                            diff1d3dCW_rel = np.nan
+                            if diff1d3dCW_abs!=0:
+                                diff1d3dCW_rel = 100.
+                            else:
+                                diff1d3dCW_rel = 0.
                             if verbose:
                                 print("content", cellId, idComp, mol_total, mol_rhizo,"sourceSol_ * dt",sourceSol_ * dt, 
                                         diff1d3dCW_abs, diff1d3dCW_rel)
-                            #print(cellId, idComp,mol_total , sourceSol[idComp-1][cellId] * dt , mol_rhizo, mol_rhizo_)
+                            #print(cellId, idComp,mol_total , sourceSol_ * dt , mol_rhizo, mol_rhizo_)
                             if ((mol_rhizo > 0)):
                                 print('error for component', rank, cellId)
                                 print(idComp, mol_total, mol_rhizo)
                                 raise Exception
                         else:
-                            #print(cellId, idComp,mol_total , sourceSol[idComp-1][cellId] * dt , mol_rhizo, mol_rhizo_)
-                            #print(cellId, idComp,mol_total , sourceSol[idComp-1][cellId] * dt)
+                            #print(cellId, idComp,mol_total , sourceSol_  * dt , mol_rhizo, mol_rhizo_)
+                            #print(cellId, idComp,mol_total ,sourceSol_  * dt)
                             diff1d3dCW_abs = abs(mol_total + sourceSol_ * dt - mol_rhizo)
                             diff1d3dCW_rel = abs(diff1d3dCW_abs/(mol_total +sourceSol_ * dt) *100)
                             if verbose:
@@ -616,21 +773,53 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         self.maxDiff1d3dCW_rel[idComp] = max(self.maxDiff1d3dCW_rel[idComp], diff1d3dCW_rel)
                         if verbose:
                             print("check compBis", idComp,cellId, rank, mol_rhizo,mol_total, sourceSol_ * dt,"error",diff1d3dCW_abs, diff1d3dCW_rel)
-        self.maxDiff1d3dCW_abs = comm.bcast(self.maxDiff1d3dCW_abs,root= 0) # used later as max axceptable error
-        comm.Barrier()            
+        
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2::maxDiff1d3dCW_abs',rank)
+            comm.barrier()
+        self.maxDiff1d3dCW_abs = comm.bcast(self.maxDiff1d3dCW_abs,root= 0) # used later as max axceptable error        
+        if size > 1:
+            comm.barrier()
+            print('checkMassOMoleBalance2::GOTmaxDiff1d3dCW_abs',rank)
+            comm.barrier()           
     
     def getIdCyllMPI(self,cellId, getidCylsAll = True):    
         idSegs = self.cell2seg[cellId]#all segments in the cell
         idCyls =np.array( list(set(idSegs).intersection(self.cylSoilidx))) #all the segments which already have cylinder
         if getidCylsAll:
+            if size > 1:
+                comm.barrier()
+                print('getIdCyllMPI::getidCylsAll',rank)
+                comm.barrier()
             return np.array( comm.bcast(self._flat0(comm.gather(idCyls, root=0)), root=0)), idCyls
+            if size > 1:
+                comm.barrier()
+                print('getIdCyllMPI::GOTgetidCylsAll',rank)
+                comm.barrier()
         else:
             return idCyls
             
     def getXcyl(self,X_rhizo, doSum = True, reOrder = False):
+        if size > 1:
+            comm.barrier()
+            print('getXcyl::X_rhizo',rank)
+            comm.barrier()
         X_rhizo = np.array( comm.bcast(self._flat0(comm.gather(X_rhizo, root=0)), root=0))
+        if size > 1:
+            comm.barrier()
+            print('getXcyl::GOTX_rhizo',rank)
+            comm.barrier()
         if reOrder:
+            if size > 1:
+                comm.barrier()
+                print('getXcyl::idCyll',rank)
+                comm.barrier()
             idCyll = np.array( comm.bcast(self._flat0(comm.gather(self.eidx, root=0)), root=0))
+            if size > 1:
+                comm.barrier()
+                print('getXcyl::GOTidCyll',rank)
+                comm.barrier()
             try:
                 assert X_rhizo.shape == idCyll.shape
             except:
@@ -740,8 +929,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     raise Exception
                 
                 contentOrKonz[idCell] =  res_CC
-                print('set contentOrKonz',rank,contentOrKonz[idCell]) 
-        print('getC_rhizo_finished',rank,contentOrKonz[0])       
+                if size > 1:
+                    print('set contentOrKonz',rank,contentOrKonz[idCell]) 
+        if size > 1:
+            print('getC_rhizo_finished',rank,contentOrKonz[0])       
         return contentOrKonz
         
     def checkSoilBC(self, outer_R_bc_wat, #cm3 wat
@@ -844,7 +1035,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         raise Exception
         comm.Barrier()
     
-    def updateConcentration(self,totContent, gradient, cellCenters, volumes,isWater):
+    def updateConcentration(self,totContent,changeRatio, gradient, theta_old_, volumes,isWater):
         """ give the new theta or solute mole fraction to get specific total content and gradient
             volumes: either bulk soil or water volumes
         """
@@ -864,11 +1055,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             assert (abs(((val_new[1:] - val_new[:-1] )) - gradient) < 1e-13).all() #check gradient ok / (cellCenters[1:] - cellCenters[:-1])
         except:
             print(rank,'isWater',isWater, 'updateConcentration error', 'val_new',val_new,'totContent',totContent, 
-                  'gradient',gradient, 'cellCenters',cellCenters, 'volumes',volumes )
+                  'gradient',gradient, 'theta_old',theta_old_, 'volumes',volumes,'changeRatio',changeRatio )
             raise Exception
         if verbose:
             print(rank,'isWater',isWater, 'updateConcentration error', 'val_new',val_new,'totContent',totContent, 
-                  'gradient',gradient, 'cellCenters',cellCenters, 'volumes',volumes )
+                  'gradient',gradient, 'theta_old',theta_old_, 'volumes',volumes,'changeRatio',changeRatio ) 
         if isWater:
             maxVal = self.vg_soil.theta_S# keep that or set lower higher bound?
             minVal = self.theta_wilting_point  # self.vg_soil.theta_R# do not use thetar => lead to -Inf pressure head
@@ -880,80 +1071,142 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                   'sum new content',sum(val_new* volumes),
                   'sum(val_new* volumes)-totContent', sum(val_new* volumes)-totContent,
                  'max(val_new) - maxVal ',max(val_new - maxVal))
-        if (max(val_new - maxVal) >  0):
-            if (max(val_new - maxVal) < 1e-20):
-                val_new = np.minimum(val_new, maxVal)
-            else:
-                if verbose:
-                    print(rank, 'updateConcentration: issue with element content concentraiton: max(val_new) >  maxVal. adapt gradient', val_new )
-                tempTheta = val_new.copy()
-                idtemp = np.where(val_new >  maxVal)
-                extraWater = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
-                val_new[idtemp] = maxVal
-
-                n_iter = 0
-                while  extraWater >  1e-20:
+        n_iter = 0
+        if True:
+            while ((max(val_new - maxVal) >  0) or  (  max(minVal - val_new) > 0)) and (n_iter < 5):
+                while (max(val_new - maxVal) >  0) and (n_iter < 5):
+                    if (max(val_new - maxVal) < 1e-14):
+                        val_new = np.minimum(val_new, maxVal)
+                    else:
+                        if verbose:
+                            print(rank, 'updateConcentration: issue with element content concentraiton: max(val_new) >  maxVal. adapt gradient', val_new ,'n_iter',n_iter)
+                        idtemp =np.where(val_new >  maxVal)[0]
+                        if not (((self.NC-2) in idtemp) and ((self.NC-1) in idtemp)):
+                            for nrws, idr in enumerate(idtemp):
+                                matrix[max(self.NC-2,idr),] *= 0
+                                matrix[max(self.NC-2,idr),idr] = 1
+                                aB[max(self.NC-2,idr-1)] = maxVal # mass balance more important than keeping the gradient
+                        else:
+                            for nrws, idr in enumerate(idtemp):
+                                matrix[max(0,idr-1),] *= 0
+                                matrix[max(0,idr-1),idr] = 1
+                                aB[max(0,idr-1)] = maxVal # mass balance more important than keepig the gradient
+                        SPmatrix = sparse.csc_matrix(sparse.coo_matrix(matrix))
+                        val_new = LA.spsolve(SPmatrix, aB, use_umfpack = True)
+                        if verbose:
+                            print(rank, 'updateConcentration: took out extra water', val_new)
                     n_iter += 1
-                    assert n_iter < 20
-                    if verbose:
-                        print(rank, 'updateConcentration: take out extra element content', extraWater )
-                    canAdd = (maxVal - val_new)* volumes 
-                    assert sum(canAdd) >= extraWater 
-                    idtemp = np.where(canAdd > 0 )
-                    totCtemp = sum(val_new*volumes) 
-                    val_new[idtemp] = np.minimum(maxVal*volumes[idtemp],(val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp))/volumes[idtemp])
-                    extraWater -=  (sum(val_new*volumes) - totCtemp) #extraWater/len(idtemp)
-                if verbose:
-                    print(rank, 'updateConcentration: finished taking out extra element content', extraWater , val_new, 
-                      sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
-                assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
 
-        if (  max(minVal - val_new) > 0):
-            if (  max(minVal -val_new) <  1e-20 ):
-                val_new = np.maximum(val_new, minVal)
-            else:
-                if verbose:
-                    print(rank, 'updateConcentration: issue with element content concentraiton: min(val_new) <  minVal. adapt gradient', val_new )
-                tempTheta = val_new.copy()
-                if verbose:
-                    print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
-                idtemp = np.where(val_new <  minVal )
-                if verbose:
-                    print('np.where(val_new <  minVal)',val_new,idtemp)
-                missingWater = sum((minVal - val_new[idtemp]) * volumes[idtemp])
-
-                val_new[idtemp] = minVal
-                if verbose:
-                    print('val_new[idtemp] = minVal',val_new)
-
-                n_iter = 0
-                while  missingWater > 1e-20:
+                while (  max(minVal - val_new) > 0) and (n_iter < 5):
+                    if (  max(minVal -val_new) <  1e-14 ):
+                        print('max(minVal -val_new) <  1e-14', max(minVal -val_new),np.maximum(val_new, minVal))
+                        val_new = np.maximum(val_new, minVal)
+                    else:
+                        if verbose:
+                            print(rank, 'updateConcentration: issue with element content concentraiton: min(val_new) <  minVal. adapt gradient', val_new,'n_iter',n_iter )
+                        idtemp =np.where(val_new < minVal )[0]
+                        print('idtemp =np.where(val_new ==  min(val_new) )[0]',rank,idtemp,(0 in idtemp) and (1 in idtemp))
+                        if (0 in idtemp) and (1 in idtemp):
+                            for nrws, idr in enumerate(idtemp):
+                                matrix[min(self.NC-2,idr),] *= 0
+                                matrix[min(self.NC-2,idr),idr] = 1
+                                aB[min(self.NC-2,idr)] = minVal # mass balance more important than keeping the gradient
+                                print(rank,'[max(self.NC-2,idr-1)],[max(self.NC-2,idr),idr]',idr,minVal)
+                        else:
+                            for nrws, idr in enumerate(idtemp):
+                                matrix[max(0,idr-1),] *= 0
+                                matrix[max(0,idr-1),idr] = 1
+                                aB[max(0,idr-1)] = minVal # mass balance more important than keepig the gradient
+                                print(rank,'[max(0,idr-1),idr],[max(0,idr-1),]',idr,minVal)
+                        SPmatrix = sparse.csc_matrix(sparse.coo_matrix(matrix))
+                        val_new = LA.spsolve(SPmatrix, aB, use_umfpack = True)
+                        if verbose:
+                            print(rank, 'updateConcentration: added missing water', val_new)
                     n_iter += 1
-                    assert n_iter <= 20
-                    if verbose:
-                        print(rank, 'updateConcentration: add missing water', missingWater,(minVal - val_new[idtemp]) * volumes[idtemp],(minVal - val_new) * volumes)
-                    canTake = (val_new - minVal )* volumes 
-                    if verbose:
-                        print('canTake',canTake , (val_new - minVal )* volumes )
-                    assert sum(canTake) >= missingWater 
-                    idtemp = np.where(canTake > 0 )
-                    if verbose:
-                        print('np.where(canTake > 0 )',idtemp,val_new[idtemp])
-                    totCtemp = sum(val_new*volumes) 
-                    val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingWater/len(volumes[idtemp]))/volumes[idtemp])# # might be too igh in some places
-                    missingWater -= ( totCtemp - sum(val_new*volumes) )
-                if verbose:
-                    print(rank, 'updateConcentration: finished adding missing element content', missingWater , val_new, 
-                      sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
-                    print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
-                    print('val_new',val_new,'tempTheta',tempTheta,
-                      'diff good',abs(sum(val_new * volumes) - sum(tempTheta * volumes)),'diff bad',abs(sum(val_new) - sum(tempTheta)) )
-                assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-20
+        
+        try:
+            assert (val_new >= minVal).all()
+            assert (val_new <= maxVal).all()
+            assert abs(sum(val_new* volumes)-totContent) < 1e-14
+        except:
+            n_iter = 0
+            while  ((max(val_new - maxVal) >  0) or  (  max(minVal - val_new) > 0)) and (n_iter <= 5):
+                n_iter += 1
+                if (val_new - maxVal > 0).any():
+                    if (max(val_new - maxVal) < 1e-14):
+                        val_new = np.minimum(val_new, maxVal)
+                    else:
+                        tempTheta = val_new.copy()
+                        idtemp = np.where(val_new >  maxVal)
+                        extraWater = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
+                        val_new[idtemp] = maxVal
 
+                        n_iter_ = 0
+                        while  (extraWater >  1e-20) and (n_iter_ <= 5):
+                            n_iter_ += 1
+                            if verbose:
+                                print(rank, 'updateConcentration: take out extra element content', extraWater )
+                            canAdd = (maxVal - val_new)* volumes 
+                            assert sum(canAdd) >= extraWater 
+                            idtemp = np.where(canAdd > 0 )
+                            totCtemp = sum(val_new*volumes) 
+                            val_new[idtemp] = np.minimum(maxVal*volumes[idtemp],(val_new[idtemp]*volumes[idtemp]+extraWater/len(idtemp))/volumes[idtemp])
+                            extraWater -=  (sum(val_new*volumes) - totCtemp) #extraWater/len(idtemp)
+                        if verbose:
+                            print(rank, 'updateConcentration: finished taking out extra element content', extraWater , val_new, 
+                              sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
+                        assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-16
+                        
+                if (minVal - val_new  > 0).any():
+                    if (  max(minVal -val_new) <  1e-14 ):
+                        print('max(minVal -val_new) <  1e-14', max(minVal -val_new),np.maximum(val_new, minVal))
+                        val_new = np.maximum(val_new, minVal)
+                    else:
+                        tempTheta = val_new.copy()
+                        if verbose:
+                            print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
+                        idtemp = np.where(val_new <  minVal )
+                        if verbose:
+                            print('np.where(val_new <  minVal)',val_new,idtemp)
+                        missingWater = sum((minVal - val_new[idtemp]) * volumes[idtemp])
+
+                        val_new[idtemp] = minVal
+                        if verbose:
+                            print('val_new[idtemp] = minVal',val_new)
+
+                        n_iter_ = 0
+                        while  (missingWater > 1e-20) and (n_iter_ <= 5):
+                                n_iter_ += 1
+                                if verbose:
+                                    print(rank, 'updateConcentration: add missing water', missingWater,(minVal - val_new[idtemp]) * volumes[idtemp],(minVal - val_new) * volumes)
+                                canTake = (val_new - minVal )* volumes 
+                                if verbose:
+                                    print('canTake',canTake , (val_new - minVal )* volumes )
+                                assert sum(canTake) >= missingWater 
+                                idtemp = np.where(canTake > 0 )
+                                if verbose:
+                                    print('np.where(canTake > 0 )',idtemp,val_new[idtemp])
+                                totCtemp = sum(val_new*volumes) 
+                                val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingWater/len(volumes[idtemp]))/volumes[idtemp])# # might be too igh in some places
+                                missingWater -= ( totCtemp - sum(val_new*volumes) )
+
+                        if verbose:
+                            print(rank, 'updateConcentration: finished adding missing element content', missingWater , val_new, 
+                              sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
+                            print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
+                            print('val_new',val_new,'tempTheta',tempTheta,
+                              'diff good',abs(sum(val_new * volumes) - sum(tempTheta * volumes)),'diff bad',abs(sum(val_new) - sum(tempTheta)) )
+                        assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-16
+
+        
         if verbose:
             print('AFTER possible changes. new content',val_new* volumes, 'totContent',totContent,
                   'sum new content',sum(val_new* volumes),
-                  'change ratio error', sum(val_new* volumes)-totContent)
+                  'change ratio error', sum(val_new* volumes)-totContent,'n_iter',n_iter)
+            
+        assert (val_new >= minVal).all()
+        assert (val_new <= maxVal).all()
+        assert abs(sum(val_new* volumes)-totContent) < 1e-14
         return val_new
     
     def interAndExtraPolation_(self,pt,pointsOld_, chip, spl):
@@ -1023,7 +1276,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print('\t',gId,'radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
             ##  water:
             theta_old = cyl.getWaterContent() # cm3/cm3
-            gradientOld = (theta_old[1:] - theta_old[:-1])/(centersOld[1:] - centersOld[:-1])           
+            gradientOld = (theta_old[1:] - theta_old[:-1])#/(centersOld[1:] - centersOld[:-1])           
             gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
             
             wOld = sum(theta_old*volOld)
@@ -1037,7 +1290,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 print('radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
                 print('theta', theta_old)
                 raise Exception
-            theta_new = self.updateConcentration(totContent = wOld*changeRatioW, gradient =gradientNew, cellCenters = centersNew, volumes = volNew,isWater = True)
+            theta_new = self.updateConcentration(totContent = wOld*changeRatioW,changeRatio=changeRatioW, gradient =gradientNew, theta_old_ = theta_old, volumes = volNew,isWater = True)
             newHead = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])# cm
 
             if verbose:            
@@ -1081,11 +1334,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                                 cyl.getWaterContent()) *cyl.molarDensityWat_m3)
                         raise Exception
                     try:
-                        molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, gradient =gradientNew, 
-                                    cellCenters = centersNew, volumes = molarPhaseNew,isWater = False)) 
+                        molFrNew.append(self.updateConcentration(totContent = cOld*changeRatio, changeRatio=changeRatio,gradient =gradientNew, 
+                                    theta_old_ = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False)) 
                     except:
                         print('updateConcentration failed','cOld',cOld,'changeRatio',changeRatio,'gradientNew',gradientNew,'molarPhaseNew',
-                             molarPhaseNew,'centersNew',centersNew,'molFrOld',molFrOld[nComp -1] ,'molarPhaseOld',   molarPhaseOld )
+                             molarPhaseNew,'molFrOld[nComp -1]',molFrOld[nComp -1],'molFrOld',molFrOld[nComp -1] ,'molarPhaseOld',   molarPhaseOld )
                         raise Exception
                     if verbose:            
                         print('\t',gId,'nComp', nComp, "cOld",cOld,molFrOld[nComp -1],molarPhaseOld )
@@ -1137,12 +1390,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         return newVol
         
     def get_watVol_leftoverI(self, idCell):# m3
+        verbose = False
         comm.Barrier()
         wat_total = self.soilModel.getWaterContent() # m3/m3 #self.soilWatVol_old
         sizeSoilCell = self.soilModel.getCellVolumes()/1e6 #m3
         if rank == 0:
             wat_total = wat_total[idCell] * sizeSoilCell[idCell] # [m3] water content before bulk flow
+        if size > 1:
+            comm.barrier()
+            print('get_watVol_leftoverI::wat_total',rank)
+            comm.barrier()
         wat_total = comm.bcast(wat_total,root = 0)
+        if size > 1:
+            comm.barrier()
+            print('get_watVol_leftoverI::GOwat_total',rank)
+            comm.barrier()
         wat_rhizo = 0
         idCyls = []
         idCylsAll = []
@@ -1153,8 +1415,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             if len(idCylsAll) > 0: # we have old segments
                 wat_rhizo= self.getWaterVolumesCyl(idCyls)/1e6 #m3
                 #wat_rhizo = sum(np.array([sum(self.cyls[int(np.where(self.eidx == gId)[0])].getWaterVolumesCyl(self.seg_length[gId]))/1e6 for lId, gId in enumerate(idCyls) ])) #[m3]
-        # print('get_watVol_leftoverI_B',rank, idCell,wat_total,wat_rhizo,idCylsAll,idCyls)
         watVol_res = wat_total - wat_rhizo #m3
+        if verbose:
+            print('get_watVol_leftoverI_B',rank, idCell,wat_total,wat_rhizo,watVol_res, len(idSegs), len(idCyls),  len(idCylsAll))
         if watVol_res < 0.:
             if ((watVol_res > (-1e-13-self.maxDiff1d3dCW_abs[0])) and (len(idSegs) == len(idCylsAll))): # rounding error probably
                 watVol_res = 0.
@@ -1174,7 +1437,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         mol_total = self.soilModel.getContent(idComp, isDissolved)#mol #self.soilContent_old[idComp]
         if rank == 0:
             mol_total = mol_total[idCell] # mol
+        if size > 1:
+            comm.barrier()
+            print('getC_content_leftoverI::mol_total',rank)
+            comm.barrier()
         mol_total = comm.bcast(mol_total,root = 0)
+        if size > 1:
+            comm.barrier()
+            print('getC_content_leftoverI::GOTmol_total',rank)
+            comm.barrier()
         mol_rhizo = 0
         mol_rhizo_ = 0
         idCyls = []
@@ -1230,7 +1501,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                          0./(2700/ 60.08e-3* (1. - 0.43)),              # mol/mol scv
                                          0./(2700/ 60.08e-3* (1. - 0.43))],             # mol/mol scv
                                          Cells = []):                                   # cm
-
+        verbose = (self.seg2cell[gId]==26)
         a_in = self.radii[gId]
         a_out = self.outer_radii[gId]
         lId =int( np.where(self.eidx == gId)[0])
@@ -1258,7 +1529,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 cyl.setParameter("Soil.BC.dzScaling", "2")
             else:
                 raise Exception
-            
+            cyl.setParameter( "Soil.css1Function", str(self.soilModel.css1Function))
             cyl.setParameter("Problem.verbose", "0")
             cyl.setParameter("Problem.reactionExclusive", "0")    
             cyl.setParameter( "Soil.Grid.Cells",str( self.NC-1)) # -1 to go from vertices to cell (dof)
@@ -1266,7 +1537,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 cyl.setHomogeneousIC(-100.)  # cm pressure head
             else:
                 # cyl.setHomogeneousIC(x)  # cm pressure head
-                #print("Soil.IC.P", cyl.dumux_str(x), Cells)
+                if verbose:
+                    print("Soil.IC.P", cyl.dumux_str(x), Cells)
                 cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
             # cyl.setICZ_solute(c)  # [kg/m2] 
             
@@ -1353,9 +1625,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             ThetaCyl = cyl.getWaterContent()
             assert (ThetaCyl >= self.vg_soil.theta_R).all()
             assert (ThetaCyl <= self.vg_soil.theta_S).all()
+            pHeadcyl = cyl.getSolutionHead()
             #print(cyl.getSolutionHead(),x, gId, self.seg2cell[gId])#cyl.getSolutionHead_(),
             #raise Exception
-            assert len(cyl.getSolutionHead()) == (self.NC - 1)
+            #if verbose:
+            print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl(self.seg_length[gId])),self.seg_length[gId],
+                  pHeadcyl , x,pHeadcyl - x,'Cells',Cells)
+            assert len(pHeadcyl) == (self.NC - 1)
+            assert (abs(pHeadcyl - x) < 1e-12).all()
             
             return cyl
         else:
@@ -1380,7 +1657,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 rsx[i] = cyl.get_inner_head()  # [cm]
             else:
                 raise Exception("RhizoMappedSegments.get_inner_heads: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather( rsx, root = 0))) # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_heads:inner_heads", rank)
+        comm.barrier()
+        inner_heads= self._map(self._flat0(comm.gather( rsx, root = 0))) # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_heads:GOTinner_heads", rank)
+        comm.barrier()
+        return inner_heads
 
     def get_inner_solutes(self, shift = 0, compId = 1):
         """ matric potential at the root surface interface [mol/cm3]"""
@@ -1388,8 +1672,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         isDissolved = (compId <= self.numFluidComp)
         for i, cyl in enumerate(self.cyls):  # run cylindrical models
             rsx[i] = cyl.getInnerSolutes(shift, compId, isDissolved)  # [cm]
-            #print('rsx', rsx[i])
-        return self._map(self._flat0(comm.gather(rsx, root = 0))).flatten()  # gathers and maps correctly
+            #print('rsx', rsx[i])        comm.barrier()
+        comm.barrier()
+        print("get_inner_solutes:inner_solutes", rank)
+        comm.barrier()
+        inner_solutes= self._map(self._flat0(comm.gather(rsx, root = 0))).flatten()  # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_solutes:GOTinner_solutes", rank)
+        comm.barrier()
+        return inner_solutes
 
     def get_soil_k(self, rx):
         """ TODO """
@@ -1405,11 +1696,26 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     raise Exception
         else:
             raise Exception("RhizoMappedSegments.get_soil_k: Warning, mode {:s} not implemented or unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(soil_k, root = 0)))
+        comm.barrier()
+        print("get_soil_k:soil_k", rank)
+        comm.barrier()
+        soil_k = self._map(self._flat0(comm.gather(soil_k, root = 0)))
+        comm.barrier()
+        print("get_soil_k:GOTsoil_k", rank)
+        comm.barrier()
+        return soil_k
 
     def get_dx2(self):
         """ TODO doc me AND only for mode="dumux" yet (set in initialize)"""
-        return self._map(self._flat0(comm.gather(self.dx2, root = 0)))
+        comm.barrier()
+        print(rank, 'get_dx2:dx2')
+        comm.barrier()
+        
+        dx2 = self._map(self._flat0(comm.gather(self.dx2, root = 0)))
+        comm.barrier()
+        print(rank, 'get_dx2:GOTdx2')
+        comm.barrier()
+        return dx2
 
     def get_inner_fluxes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
@@ -1426,7 +1732,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 fluxes[i] = cyl.get_inner_flux() * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.last_dt  # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
             else:
                 raise Exception("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
+        
+        comm.barrier()
+        print("get_inner_fluxes:inner_fluxes", rank)
+        comm.barrier()
+        inner_fluxes =  self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_fluxes:GOTinner_fluxes", rank)
+        comm.barrier()
+        return inner_fluxes
 
     def get_concentration(self, compId, konz = True):  
         """ solute or water concentration """
@@ -1455,7 +1769,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             return concentration # mol/cm3
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_concentration:concentration", rank)
+        comm.barrier()    
+        concentration = self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_concentration:GOTconcentration", rank)
+        comm.barrier()
+        return concentration
 
     def get_inner_concentrations(self):  # TODO
         raise Exception("do not use get_inner_concentrations yet")
@@ -1467,7 +1788,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             #pass  # currently zero flux !!!!!!
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_concentrations:inner_concentrations", rank)
+        comm.barrier()
+        inner_concentrations = self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_concentrations:GOTinner_concentrations", rank)
+        comm.barrier()
+        return inner_concentrations
 
     def get_inner_mass_fluxes(self):  # TODO check
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
@@ -1478,7 +1806,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 fluxes[i] = -float(cyl.getInnerFlux(1)) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
         else:
             raise Exception("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_concentrations:inner_mass_fluxes", rank)
+        comm.barrier()
+        inner_mass_fluxes = self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_inner_concentrations:GOTinner_mass_fluxes", rank)
+        comm.barrier()
+        return inner_mass_fluxes
 
     def get_water_volumes(self):
         """ fluxes [cm3/day] at the root surface, i.e. inner boundary  """
@@ -1489,7 +1824,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 volumes[i] = cyl.getWaterVolume()
         else:
             raise Exception("RhizoMappedSegments.get_water_volumes: Warning, mode {:s} unknown".format(self.mode))
-        return self._map(self._flat0(comm.gather(volumes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_water_volumes:water_volumes", rank)
+        comm.barrier()
+        water_volumes = self._map(self._flat0(comm.gather(volumes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_water_volumes:GOTwater_volumes", rank)
+        comm.barrier()
+        return water_volumes
 
     def solve(self, dt, n_iter, *argv):#dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes
         """ set bc for cyl and solves it """
@@ -1613,6 +1955,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print('before solve: cyl.getSolution(ncomp + 1)',ncomp + 1,np.array(cyl.getSolution(ncomp + 1)).flatten())
                         assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
                     except:
+                        print('(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()',np.array(cyl.getSolution(ncomp + 1)).flatten(),
+                             cyl.getContentCyl(ncomp + 1, (ncomp < self.numFluidComp), l))
                         raise Exception
                 try:
                     if verbose:
@@ -1694,6 +2038,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             print('solve Failed:', e)
                             
                             if (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.): #
+                                cyl.reset() # do reset before re.-distributing the sink
                                 if (n_iter_solve < 20):  
                                     divVale = 0.9
                                     print(rank,
@@ -1756,6 +2101,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 maxRelShift *= 10.
                                 # newton parameters are re-read at each 'solve()' calls
                                 cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
+                                cyl.reset()
                             else:
                                 print(rank,
                                       lId,gId,'ERROR, GIVING UP. errorCOnly',errorCOnly,
@@ -1767,8 +2113,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                              str(self.soilModel.MaxRelativeShift))
                                 redoSolve = False
                                 self.solve_gave_up = True
-                                #raise Exception
-                            cyl.reset()
+                                cyl.reset()
+                            
                             
                             for ncomp in range(self.numComp):
                                 try:
@@ -1910,7 +2256,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 volumes[i] = cyl_water
         else:
             raise Exception("RhizoMappedSegments.get_water_volume: unknown solver {}".format(self.mode))
-        return self._map(self._flat0(comm.gather(volumes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_water_volume:water_volume", rank)
+        comm.barrier()
+        water_volume=self._map(self._flat0(comm.gather(volumes, root = 0)))  # gathers and maps correctly
+        comm.barrier()
+        print("get_water_volume:GOTwater_volume", rank)
+        comm.barrier()
+        return water_volume
     
     def splitSoilVals(self, soilVals, seg_values, troubleShootId = -1):
         """ split soilFlux array according to the values in seg_values """
@@ -2048,7 +2401,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     
     def _map(self, x):
         """Converts @param x to a numpy array and maps it to the right indices                 """
+        
+        comm.barrier()
+        print(rank, '_map:indices')
+        comm.barrier()
         indices = self._flat0(comm.gather(self.eidx, root = 0))  # gather segment indices from all threads
+        comm.barrier()
+        print(rank, '_map:GOTindices')
+        comm.barrier()
+        
         if len(indices) > 0:  # only for rank 0 it is not empty
             assert len(indices) == len(x), "RhizoMappedSegments._map: indices and values have different length"
             p = np.zeros((len(x),), dtype = np.float64)

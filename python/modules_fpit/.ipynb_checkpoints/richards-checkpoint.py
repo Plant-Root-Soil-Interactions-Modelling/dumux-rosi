@@ -374,6 +374,10 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
+        if size > 1:
+            comm.barrier()
+            print("richards::getSolutionHead", rank)
+            comm.barrier()
         return (self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0))#.flatten()
 
     def getSolutionHead_(self, eqIdx = 0):
@@ -389,17 +393,29 @@ class RichardsWrapper(SolverWrapper):
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
+        if size > 1:
+            comm.barrier()
+            print("richards::getKrw", rank)
+            comm.barrier()
         return self._map(self._flat0(comm.gather(self.base.getKrw(), root = 0)), 0)
         
         
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
+        if size > 1:
+            comm.barrier()
+            print("richards::getSaturation", rank)
+            comm.barrier()
         return self._map(self._flat0(comm.gather(self.base.getSaturation(), root = 0)), 0)
         
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
+        if size > 1:
+            comm.barrier()
+            print("richards::getWaterContent", rank)
+            comm.barrier()
         return (self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2))#.flatten()
 
     def getWaterContent_(self):
@@ -462,8 +478,13 @@ class RichardsWrapper(SolverWrapper):
         vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
         C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
         
-        #print(idComp, isDissolved, vols, C_,self.bulkDensity_m3, self.molarDensityWat_m3)
         
+        try:
+            assert (C_ >= 0.).all()
+        except:
+            print('getContentCyl',idComp, isDissolved, vols, C_)
+            raise Exception
+            
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv

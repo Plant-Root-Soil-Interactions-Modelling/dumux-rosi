@@ -387,9 +387,9 @@ protected:
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
 
-	static constexpr double g_ = 9.80665; // cm / s^2 (for type conversions)
+	static constexpr double g_ = 9.81;//9.80665; // cm / s^2 (for type conversions)
 	static constexpr double rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr double pRef_ = 101300; // Pa
+	static constexpr double pRef_ = 1.e5; // Pa 101300; // Pa
 
 	//! cm pressure head -> Pascal
 	static double toPa(double ph) {
@@ -428,7 +428,8 @@ void init_richards(py::module &m, std::string name) {
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)
    .def("setSBotBC",&Richards_::setSBotBC)
-   .def("getAvgDensity",&Richards_::getAvgDensity);
+   .def("getAvgDensity",&Richards_::getAvgDensity)
+   .def_readonly("dimWorld", &Richards_::dimWorld);
 
 }
 

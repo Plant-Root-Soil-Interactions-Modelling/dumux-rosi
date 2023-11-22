@@ -1,6 +1,7 @@
 import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
+import matplotlib; matplotlib.use('agg')
 
 from rosi_richards10c_cyl import Richards10CCylFoam  # C++ part (Dumux binding)
 
@@ -121,6 +122,7 @@ s.solidMolarMass=solidMolarMass
 s.solidMolDensity=solidMolDensity
 s.bulkDensity_m3 =bulkDensity_m3 #mol / m3 bulk soil
 
+s.setParameter( "Soil.css1Function", str(1))
 s.setParameter( "Soil.MolarMass", str(solidMolarMass))
 s.setParameter( "Soil.solidDensity", str(solidDensity))
 
@@ -178,9 +180,9 @@ s.setParameter("Soil.micro_maxC", str(2 ))# 1/d
 s.setParameter("Soil.micro_maxO", str(0.01 ))# 1/d
 s.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
 
-s.k_sorp = 0.#1#0.4/1e6#0.2*100
+s.k_sorp = 1#0.2*100
 s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
-s.f_sorp = 0.5#0.3
+s.f_sorp = 0.1#0.3
 s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
 s.CSSmax = 140/1e6#1e-4 *1e5
 s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
@@ -202,10 +204,10 @@ if gradient:
     s.setParameter("Soil.IC.C1Z",s.dumux_str(ZC_S))   # "0.0002 0.006" )  #mol/cm3 / mol/cm3 = mol/mol 
     s.setParameter("Soil.IC.C1", s.dumux_str(C_S/molarDensityWat))   #mol/cm3 / mol/cm3 = mol/mol 
 else:
-    C_S = 0.1  #mol/cm3 wat
+    C_S = 0.1*0  #mol/cm3 wat
     s.setParameter("Soil.IC.C1", str(C_S/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol 
 
-C_L = 10  #mol/cm3 wat
+C_L = 10*0  #mol/cm3 wat
 s.setParameter("Soil.IC.C2", str(C_L/ molarDensityWat) )  #mol/cm3 / mol/cm3 = mol/mol
 COa = 0.011 * 1e6#mol C / m3 space
 s.setParameter("Soil.IC.C3",str(COa/ bulkDensity_m3)) #mol C / mol Soil 
@@ -227,7 +229,7 @@ s.setVGParameters([loam])
 
 
 s.setParameter("Problem.EnableGravity", "false")
-s.setParameter("Problem.verbose", "10")
+s.setParameter("Problem.verbose", "0")
 s.setParameter("Flux.UpwindWeight", "0.5")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
 s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
@@ -247,9 +249,9 @@ s.setParameter("Newton.EnablePartialReassembly", "true")
 s.setParameter("Grid.Overlap", "0")  #no effec5
 
 s.initializeProblem()
-s.setParameter("Flux.UpwindWeight", "1")
 s.setCriticalPressure(-15000)  # cm pressure head
 
+s.setParameter("Flux.UpwindWeight", "1.")
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 

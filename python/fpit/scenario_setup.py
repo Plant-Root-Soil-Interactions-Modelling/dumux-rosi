@@ -154,7 +154,7 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
 def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
                         net_inf = None, usemoles = True, dirResults = "",#"./results/parallel"+str(max_rank)+"/",
-                        p_mean_ = -100):
+                        p_mean_ = -100,css1Function = 2):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil demoType is fixed and homogeneous 
@@ -194,7 +194,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.k_RC = 0.1 
     s.k_RO = 0.1 
     
-    s.k_sorp = 0.4*1e6
+    s.k_sorp = 0.4
     s.f_sorp = 0.5
     if demoType == "dumux_10c":
         C_S = 1e-8 # in mol/m3 water
@@ -202,6 +202,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         s.alpha =0.1# 0.
         unitConversion = 1e3
         doBio = 1.
+        
         CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
     elif demoType == "dumux_3c":
         C_S = 1e-8 # in mol/m3 water
@@ -221,11 +222,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         raise Exception
     
     
+    s.css1Function = css1Function
     s.C_aOLim=1.e-10
     s.C_aCLim=1.e-10
     s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
     s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
     
+    s.setParameter( "Soil.css1Function", str(s.css1Function))
     s.ICcc = np.array([C_S *unitConversion,
                        C_S/2 *unitConversion,
                         (C_S/10+s.C_aOLim)* unitConversion *doBio,
