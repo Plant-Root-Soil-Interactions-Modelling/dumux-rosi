@@ -1069,7 +1069,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             print('Failed, no need to go on, leave inner loop now and reset lower time step')
             break
         # end time step inner loop
-    dt_inner =float(Ni)*float( dt) # get the real simetime if sim_time / dt != int
+    dt_inner =float(Ni+1)*float( dt) # get the real simetime if sim_time / dt != int
     print('end of inner loop, failed?',failedLoop, n_iter,Ni,'/',N, dt_inner, dt)
     
     return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes, dt_inner, failedLoop# fluxes == first guess for next fixed point iteration

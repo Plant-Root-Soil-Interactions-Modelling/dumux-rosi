@@ -154,7 +154,7 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
 def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
                         net_inf = None, usemoles = True, dirResults = "",#"./results/parallel"+str(max_rank)+"/",
-                        p_mean_ = -100,css1Function = 2):
+                        p_mean_ = -100,css1Function = 3):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil demoType is fixed and homogeneous 
@@ -198,12 +198,12 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.f_sorp = 0.5
     if demoType == "dumux_10c":
         C_S = 1e-8 # in mol/m3 water
-        s.CSSmax =C_S/10/1e6 *0# 1e-4*10000*0.
+        s.CSSmax =1/1e6 # 1e-4*10000*0.
         s.alpha =0.1# 0.
         unitConversion = 1e3
         doBio = 1.
         
-        CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
+        CSS2_init = 0#s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp*1e6)) * (1 - s.f_sorp)#mol C/ m3 scv
     elif demoType == "dumux_3c":
         C_S = 1e-8 # in mol/m3 water
         s.CSSmax =0. # 1e-4*10000*0.

@@ -68,7 +68,7 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 nCells = 10
 logbase = 0.5
 r_in = 0.02
-r_out = 0.20364735053163258
+r_out = 0.5
 l = 1 #length in cm
 doLogarithmic = True
 if doLogarithmic:
@@ -103,8 +103,8 @@ bulkDensity_m3 = solidMolDensity*(1.-0.43)
 MolarMass = 1.8e-2 #[kg/mol] 0.02003 #[kg/mol]
 exud = 1. # [mol/cm2/d]#1.0* MolarMass *1000# [mol/cm2/d] * [kg/mol] * [g/kg] =  [g/cm2/d]
 exuds_in = exud
-exudl_in = exud 
-exuds_out = - exuds_in / 24
+exudl_in = exud
+exuds_out = - exuds_in / 24*0
 exudl_out = - exudl_in / 3 *0
 Qexud = (exuds_in+ exudl_in)* (2 * np.pi * r_in * l) + (exuds_out+ exudl_out)* (2 * np.pi * r_out * l)
 
@@ -122,7 +122,7 @@ s.solidMolarMass=solidMolarMass
 s.solidMolDensity=solidMolDensity
 s.bulkDensity_m3 =bulkDensity_m3 #mol / m3 bulk soil
 
-s.setParameter( "Soil.css1Function", str(1))
+s.setParameter( "Soil.css1Function", str(3))
 s.setParameter( "Soil.MolarMass", str(solidMolarMass))
 s.setParameter( "Soil.solidDensity", str(solidDensity))
 
@@ -180,11 +180,11 @@ s.setParameter("Soil.micro_maxC", str(2 ))# 1/d
 s.setParameter("Soil.micro_maxO", str(0.01 ))# 1/d
 s.setParameter("Soil.v_maxL", str(1.5 ))#[d-1]
 
-s.k_sorp = 1#0.2*100
+s.k_sorp = 0.4
 s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
-s.f_sorp = 0.1#0.3
+s.f_sorp = 0.5
 s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-s.CSSmax = 140/1e6#1e-4 *1e5
+s.CSSmax = 1/1e6#1e-4 *1e5
 s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
 s.setParameter("Soil.alpha", str(0.1)) #[1/d]
 
@@ -230,7 +230,6 @@ s.setVGParameters([loam])
 
 s.setParameter("Problem.EnableGravity", "false")
 s.setParameter("Problem.verbose", "0")
-s.setParameter("Flux.UpwindWeight", "0.5")
 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
 s.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
 s.setParameter("Newton.EnableChop", "true")
@@ -251,11 +250,11 @@ s.setParameter("Grid.Overlap", "0")  #no effec5
 s.initializeProblem()
 s.setCriticalPressure(-15000)  # cm pressure head
 
-s.setParameter("Flux.UpwindWeight", "1.")
+#s.setParameter("Flux.UpwindWeight", "1.")
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 1., 2.]  # days
+times = np.array([0.,0.001, 1., 2.] )/24. # days
 s.ddt = 1.e-5
 
 points = s.getDofCoordinates().flatten()
@@ -307,7 +306,7 @@ buWBefore_ =  s.getWaterVolumesCyl(l)
 vols = s.getCellSurfacesCyl()  * l  #cm3 scv
 print("cyl shape",r_in, r_out, l)
 print(sum(vols),np.pi*(r_out**2 - r_in**2),sum(vols)-np.pi*(r_out**2 - r_in**2))
-print("theta", np.array(s.getWaterContent()).flatten() )
+#print("theta", np.array(s.getWaterContent()).flatten() )
 
 for i, dt in enumerate(np.diff(times)):
 
@@ -316,20 +315,20 @@ for i, dt in enumerate(np.diff(times)):
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-    s.solve(dt, maxDt = 2500/(24*3600))
+    s.solve(dt, maxDt = 1)
     
     buTotCAfter = getTotCContent(0, s,l)
     buWAfter_ =  s.getWaterVolumesCyl(l)
     
-    print("content",sum(buTotCBefore), sum(buTotCAfter), Qexud*dt)
+    print("content, before",sum(buTotCBefore),'after', sum(buTotCAfter), 'added',Qexud*dt)
     print(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter) )
-    print("% error sollutes ",(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter))/sum(buTotCAfter)*100 )
+    print("% error sollutes ",(sum(buTotCBefore) +Qexud*dt - sum(buTotCAfter))/(sum(buTotCBefore) +Qexud*dt)*100 )
     
     print("water",sum(buWBefore_), sum(buWAfter_), WatBC*dt)
     print(sum(buWBefore_) +WatBC*dt - sum(buWAfter_) )
     print("% error water ",(sum(buWBefore_) +WatBC*dt - sum(buWAfter_))/sum(buWAfter_)*100 )
-    print("theta", np.array(s.getWaterContent()).flatten() )
-    print("ccs1",  np.array(s.base.getCSS1_out()).flatten())
+    #print("theta", np.array(s.getWaterContent()).flatten() )
+    #print("ccs1",  np.array(s.base.getCSS1_out()).flatten())
     buTotCBefore = buTotCAfter
     buWBefore_  = buWAfter_
     

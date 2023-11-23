@@ -21,6 +21,28 @@ class Richards1P10CProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 	
+    
+	std::vector<double> Reac_CSS2 ;
+	
+	double getReac_CSS2 (int index)
+	{
+		//std::cout<<index<<std::endl;
+		if(Reac_CSS2.size() <= index)
+		{
+			DUNE_THROW(Dune::InvalidStateException, "Reac_CSS2");			
+		}
+		return Reac_CSS2.at(index);
+	}
+	void setReac_CSS2(double input, int index ) const 
+	{
+		//std::cout<<index<<std::endl;
+		if(Reac_CSS2.size() <= index)
+		{
+			DUNE_THROW(Dune::InvalidStateException, "setReac_CSS2");			
+		}
+		const_cast<double&>(Reac_CSS2.at(index) ) = input;
+	}
+    
 	std::vector<double> testSorp ;
 	
 	double getSorp (int index)
@@ -345,6 +367,7 @@ public:
 		auto nCells_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
 		auto myMultiply = [] (int previousResult, int item) {return previousResult * (item + 1);};
 		int nVertices = std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply ); //std::multiplies<int>()
+        Reac_CSS2.resize(nVertices);
 		
 		testSorp.resize(nVertices);
 		testCSS1.resize(nVertices);
@@ -432,18 +455,29 @@ public:
 				// [m3 scv zone 1/m3 scv] * [m3 scv/m3 wat] * [mol C/m3 scv zone 1] / [mol C/m3 wat] = [-]	
                 double RF_;
                 
-                switch(css1Function) {
+                
+		// (mol Soil / m3 soil)  
+		double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
+		// m3 soil/m3 scv
+		double solVolFr = (1 - volVars.porosity());
+		// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
+		double bulkSoilDensity = solidDensity * solVolFr;
+        
+                switch(css1Function) {//add later the pos0 factor
                   case 0:
-                    RF_ = 1+f_sorp*(1/theta)*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ; 
+                    RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; 
                     break;
                   case 1:
-                    RF_ = 1+f_sorp*(1/theta)*CSSmax ; 
+                    RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; 
                     break;
-                  case 2:
-                    RF_ = 1 ;
+                  case 3:
+                    RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; 
+                    break;
+                  case 6:
+                    RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; 
                     break;
                   default:
-                    DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+                    DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, 2, or)"+ std::to_string(css1Function));
                 }
 
 				//RF_all[scv.dofIndex()][compIdx] = RF;
@@ -1043,8 +1077,11 @@ public:
           case 1:
             CSS1 = CSSmax*C_S_W;
             break;
-          case 2:
-            CSS1 = 0.;
+          case 4:
+            CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
+            break;
+          case 6:
+            CSS1 = CSSmax*C_S_W;
             break;
           default:
             DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
@@ -1100,17 +1137,11 @@ public:
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 scv /s] 
-		double Reac_CSS2 =  (alpha*(CSS1-CSS2)) ;//already in /m3 scv (as * (1-f_sorp) done)
-		double RF_ = 1;
+        int dofIndex = scv.dofIndex();
+		setReac_CSS2(alpha*(CSS1-CSS2), dofIndex) ;//already in /m3 scv (as * (1-f_sorp) done)
 		
-		if(RFmethod2)
-		{
-			int dofIndex = scv.dofIndex();
-			RF_ = bufferPower(dofIndex, volVars, soluteIdx);
-		}
-
 		//[mol solute / m3 scv/s] 
-		q[soluteIdx] += (1/RF_) * (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S - Reac_CSS2)* pos0 ;
+		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S - Reac_CSS2[dofIndex])* pos0 ;
 		q[mucilIdx]  += (-F_depoly +  k_decay2 * F_decay) * pos0;
 		
 		q[CoAIdx] += (  - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
@@ -1119,7 +1150,7 @@ public:
 		q[CcAIdx] += (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0;
 		q[CcDIdx] += (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0;
 		
-		q[CSS2Idx] +=  Reac_CSS2 * pos0 ;
+		q[CSS2Idx] +=  Reac_CSS2[dofIndex] * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
 					if(verbose)
 			{
@@ -1127,7 +1158,7 @@ public:
                 <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
             }
 		//for post-processing		
-			setSorp(Reac_CSS2, scv.dofIndex());
+			setSorp(Reac_CSS2[dofIndex], scv.dofIndex());
 			setTheta(theta, scv.dofIndex());
 			setCSS1(CSS1*f_sorp, scv.dofIndex());
 		// if((massOrMoleFraction(volVars,0, soluteIdx, true)<-1.e-20)&&(dimWorld > 1))
@@ -1303,11 +1334,12 @@ public:
 	std::vector<double> bcSTopValue_ = std::vector<double>(numSolutes);
 	std::vector<double> bcSBotValue_= std::vector<double>(numSolutes);
 	
-	bool RFmethod2 = false;
 	bool doSoluteFlow = true;
     
 	int verbose;
     int dzScaling;
+    
+    bool RFmethod2 = false;
     
 private:
 

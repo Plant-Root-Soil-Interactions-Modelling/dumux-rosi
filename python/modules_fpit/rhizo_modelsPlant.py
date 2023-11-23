@@ -715,14 +715,18 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     mol_total = comm.bcast(mol_total, root=0)
                     if size > 1:
                         comm.barrier()
-                        print('checkMassOMoleBalance2::GOTmol_total',rank)
+                        print('checkMassOMoleBalance2::GOTmol_total',rank, mol_total, idComp,cellId )
                         comm.barrier()
                     
                     if idComp not in self.canBeNull:
                         assert mol_total > 0.
                     else:
                         assert mol_total >= 0.
-                                        
+
+                    comm.barrier()
+                    if size > 1:
+                        print('checkMassOMoleBalance2::getContentCyl',rank,idComp,cellId)
+                    comm.barrier()   
                     mol_rhizo_ = self.getContentCyl(idCyls, idComp, doSum = False)
                     mol_rhizo = sum(mol_rhizo_)
                     #print('got mol rhizo', rank, idComp,cellId)

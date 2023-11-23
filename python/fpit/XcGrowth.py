@@ -43,7 +43,7 @@ if __name__ == '__main__':
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 1/3/24
-    p_mean = -100
+    p_mean = -1000
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -54,15 +54,15 @@ if __name__ == '__main__':
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 2
+    css1Function_ = 6
     lightType =""#+- "nolight" # or ""
     extraName = ""
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"
-    results_dir="./results/css2"+l_ks+mode+extraName\
-                +str(css1Function_)+str(initsim)\
+    results_dir="./results/withAds"+l_ks+mode+extraName\
+                +str(css1Function_)+"_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
                     +str(max_rank)+"_"+str(abs(p_mean))+"/"
@@ -326,7 +326,11 @@ if __name__ == '__main__':
                                                                    continueLoop= continueLoop)
             cL = continueLoop(rs,n_iter, dt_inner,failedLoop,real_dtinner,name="Outer_data")
             n_iter += 1
-            assert (real_dtinner == dt_inner ) or failedLoop
+            try:
+                assert (real_dtinner == dt ) or failedLoop
+            except:
+                print('real_dtinner',real_dtinner ,dt, dt_inner , failedLoop)
+                raise Exception
             if cL or failedLoop:
                 currentN = int(np.ceil(dt / dt_inner))
                 comm.barrier()
