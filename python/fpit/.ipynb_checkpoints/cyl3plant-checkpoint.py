@@ -156,14 +156,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         r.solve_gave_up = False
         
         
-        while  continueLoop(r,n_iter, dt,np.nan,Ni * dt,'fpit_loopdata'):
+        while  continueLoop(r,n_iter, dt,False,Ni * dt,'fpit_loopdata'):
             #( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) 
             #or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1.) 
             #or  r.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter) :
             r.solve_gave_up = False
             """ 1. xylem model """
             comm.barrier()
-            print('1. xylem model')
+            print('1. xylem model', rank)
             comm.barrier()
             
             ##
@@ -894,7 +894,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.rhizoMassWError_abs = comm.bcast(r.rhizoMassWError_abs,root= 0)
             r.rhizoMassCError_abs = comm.bcast(r.rhizoMassCError_abs,root= 0)
             
-            r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds),root= 0)
+            r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds, s.bulkMassCErrorPlant_rel),root= 0)
             r.maxDiff1d3dCW_abs = comm.bcast(r.maxDiff1d3dCW_abs,root= 0)
             diff1d3dCurrant =abs(max(r.maxDiff1d3dCW_abs) - maxDiff1d3dCW_absBU) # to not depend on cumulative error
             comm.barrier()
@@ -1062,7 +1062,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         comm.barrier()
         
         comm.barrier()
-        failedLoop = continueLoop(r,0, dt,np.nan,Ni * dt,'fpit_testdata')
+        failedLoop = continueLoop(r,0, dt, False,Ni * dt,'fpit_testdata')
         print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
         comm.barrier()
         if (failedLoop):# no need to go on, leave inner loop now and reset lower time step

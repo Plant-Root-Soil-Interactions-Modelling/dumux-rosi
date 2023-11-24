@@ -477,7 +477,7 @@ public:
                     RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; 
                     break;
                   default:
-                    DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, 2, or)"+ std::to_string(css1Function));
+                    DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, 2, or) "+ std::to_string(css1Function));
                 }
 
 				//RF_all[scv.dofIndex()][compIdx] = RF;
@@ -1077,7 +1077,7 @@ public:
           case 1:
             CSS1 = CSSmax*C_S_W;
             break;
-          case 4:
+          case 3:
             CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
             break;
           case 6:

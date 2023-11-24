@@ -43,7 +43,7 @@ if __name__ == '__main__':
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 1/3/24
-    p_mean = -1000
+    p_mean = -100
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 6
+    css1Function_ = 0
     lightType =""#+- "nolight" # or ""
     extraName = ""
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
@@ -278,16 +278,22 @@ if __name__ == '__main__':
         rs.errDiffBCs = 1.
         rs.err = 1.
         max_err = 1.
-        def continueLoop(rs,n_iter, dt_inner=np.nan,failedLoop=np.nan,real_dtinner=np.nan,name="continueLoop",doPrint = True, fileType = '.csv' ):
+        def continueLoop(rs,n_iter, dt_inner=np.nan,failedLoop=False,real_dtinner=np.nan,name="continueLoop",doPrint = True, fileType = '.csv' ):
             sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
             cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < k_iter)
 
             comm.barrier()
-            print('continue loop?',rank,cL)
+            print('continue loop?',rank,cL,failedLoop,  np.floor(rs.err),  rs.solve_gave_up,max(abs(sumDiff1d3dCW_rel)),n_iter < k_iter)
             comm.barrier()
-            
+            cL = comm.bcast(cL,root = 0)
+            failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
+            comm.barrier()
+            if size > 1:
+                print('continue loopBis?',rank,cL,failedLoop_)
+            comm.barrier()
+            assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
             if doPrint:
                 if not os.path.isfile(results_dir+name+fileType):
                     write_file_array(name, np.array(['n_iter', 'err', 
@@ -310,6 +316,7 @@ if __name__ == '__main__':
                                                         #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), (max(abs(rs.errDiffBCs*0)) > 1e-5), 
                                                         rs.solve_gave_up, 
                                                              dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
+            
             return cL
         failedLoop = False
         cL = True

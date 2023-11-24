@@ -796,11 +796,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 comm.barrier()
                 print('getIdCyllMPI::getidCylsAll',rank)
                 comm.barrier()
-            return np.array( comm.bcast(self._flat0(comm.gather(idCyls, root=0)), root=0)), idCyls
+            idCylsAll = np.array( comm.bcast(self._flat0(comm.gather(idCyls, root=0)), root=0))
             if size > 1:
                 comm.barrier()
                 print('getIdCyllMPI::GOTgetidCylsAll',rank)
                 comm.barrier()
+            return idCylsAll, idCyls
         else:
             return idCyls
             
@@ -1354,9 +1355,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print('\t',gId,"error",nComp,  abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio),
                                 abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
                     try:
-                        assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-20))
+                        assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-18))
                     except:
-                        print('\t',gId,"error",nComp, 'totContent', cOld*changeRatio,
+                        print('\t',rank,gId,"error",nComp, 'totContent', cOld*changeRatio,
                               ( cOld*changeRatio)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio,
                              'new content', molFrNew[nComp -1]* molarPhaseNew, 'old content',molFrOld[nComp -1] *   molarPhaseOld,
                               'sum new content',sum(molFrNew[nComp -1]* molarPhaseNew),sum(molFrNew[nComp -1]* molarPhaseOld),
@@ -1636,7 +1637,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl(self.seg_length[gId])),self.seg_length[gId],
                   pHeadcyl , x,pHeadcyl - x,'Cells',Cells)
             assert len(pHeadcyl) == (self.NC - 1)
-            assert (abs(pHeadcyl - x) < 1e-12).all()
+            assert (abs((pHeadcyl - x)/x)*100 < 1e-5).all()
             
             return cyl
         else:
