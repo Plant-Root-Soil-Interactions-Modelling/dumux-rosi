@@ -43,7 +43,7 @@ if __name__ == '__main__':
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 1/3/24
-    p_mean = -100
+    p_mean = -1000
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -57,11 +57,12 @@ if __name__ == '__main__':
     css1Function_ = 0
     lightType =""#+- "nolight" # or ""
     extraName = ""
+    mpiVerbose = False
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"
-    results_dir="./results/withAds"+l_ks+mode+extraName\
+    results_dir="./results/"+str(mpiVerbose)+l_ks+mode+extraName\
                 +str(css1Function_)+"_"+str(initsim)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -147,6 +148,8 @@ if __name__ == '__main__':
     rs_age = initsim
     rs.useOuterFluxCyl_w = useOuterFluxCyl_w
     rs.useOuterFluxCyl_sol = useOuterFluxCyl_sol
+    s.mpiVerbose = mpiVerbose
+    rs.mpiVerbose = mpiVerbose
 
 
     net_sol_flux =  np.array([np.array([]),np.array([])])
@@ -179,8 +182,6 @@ if __name__ == '__main__':
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
     
-    s.buTotCAfter = 0
-    s.buTotCBefore = 0
     print('start loop', rank)
     secId = None
     Q_Exud_i = None
@@ -199,7 +200,7 @@ if __name__ == '__main__':
                      "sum(abs(diffouter_R_bc_wat))",
                      "sum(abs(diffBCS1dsFluxOut_sol))",
                      "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
-                     "diff1d3dCurrant","rhizoMassWError_rel",'err'])
+                     "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel",'err'])
     write_file_array("OuterSuccess_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
@@ -278,14 +279,16 @@ if __name__ == '__main__':
         rs.errDiffBCs = 1.
         rs.err = 1.
         max_err = 1.
+        r.diff1d3dCurrant_rel = 1e6
         def continueLoop(rs,n_iter, dt_inner=np.nan,failedLoop=False,real_dtinner=np.nan,name="continueLoop",doPrint = True, fileType = '.csv' ):
-            sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
-            sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
+            # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
+            # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
-            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < k_iter)
+            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (r.diff1d3dCurrant_rel>1))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
+            #r.diff1d3dCurrant_rel
 
             comm.barrier()
-            print('continue loop?',rank,cL,failedLoop,  np.floor(rs.err),  rs.solve_gave_up,max(abs(sumDiff1d3dCW_rel)),n_iter < k_iter)
+            print('continue loop?',rank,cL,failedLoop,  np.floor(rs.err),  rs.solve_gave_up,r.diff1d3dCurrant_rel,n_iter < k_iter)
             comm.barrier()
             cL = comm.bcast(cL,root = 0)
             failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
@@ -298,22 +301,23 @@ if __name__ == '__main__':
                 if not os.path.isfile(results_dir+name+fileType):
                     write_file_array(name, np.array(['n_iter', 'err', 
                                                      #'rhizoMassWError_abs','rhizoMassCError_abs','maxAbsErrDiffBCs',
-                                                     'maxAbsSumDiff1d3dCW_rel','solve_gave_up', 
+                                                     'diff1d3dCurrant_rel','solve_gave_up', 
                                                              'dt_inner','real_dtinner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
                     write_file_array(name+"Bool", np.array(['n_iter',  'err', 
                                                             #'rhizoMassWError_abs','rhizoMassCError_abs','maxAbsErrDiffBCs',
-                                                            'maxAbsSumDiff1d3dCW_rel',
+                                                            'diff1d3dCurrant_rel',
                                                             'solve_gave_up',  
                                                              'dt_inner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
                     
                 write_file_array(name, np.array([n_iter, rs.err, 
                                                  #rs.rhizoMassWError_abs,rs.rhizoMassCError_abs,max(abs(rs.errDiffBCs)),
-                                                 max(abs(sumDiff1d3dCW_rel)),rs.solve_gave_up, 
+                                                 r.diff1d3dCurrant_rel,rs.solve_gave_up, 
                                                              dt_inner, real_dtinner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"2", rs.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"Bool", np.array([n_iter, (np.floor(rs.err) > max_err), 
-                                                        (max(abs(sumDiff1d3dCW_rel))>1),
-                                                        #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), (max(abs(rs.errDiffBCs*0)) > 1e-5), 
+                                                        r.diff1d3dCurrant_rel,
+                                                        #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), 
+                                                        #(max(abs(rs.errDiffBCs*0)) > 1e-5), 
                                                         rs.solve_gave_up, 
                                                              dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
             

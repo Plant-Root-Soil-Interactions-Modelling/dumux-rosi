@@ -41,6 +41,59 @@ class SolverWrapper():
         """ set verbose level """
         self.base.setVerbose(verbose)
         
+    
+    def allgatherv(self,X_rhizo): 
+        try:
+            assert isinstance(X_rhizo, (list, type(np.array([]))))
+        except:
+            print('allgatherv_type error',rank,type(X_rhizo),X_rhizo )
+            raise Exception
+            
+        X_rhizo = np.array(X_rhizo)
+            
+        if len((X_rhizo).shape) == 2:
+            local_size = (X_rhizo).shape[0] * (X_rhizo).shape[1]
+            shape0 = (X_rhizo).shape[0]#max(np.array(comm.allgather((X_rhizo).shape[0])))
+            shape1 = (X_rhizo).shape[1]#
+            # print('shape0',shape0)
+            X_rhizo_type = type(X_rhizo[0][0])
+        elif len((X_rhizo).shape) == 1:
+            local_size = (X_rhizo).shape[0]
+            shape0 = (X_rhizo).shape[0]
+            shape1 = 0
+            X_rhizo_type = type(X_rhizo[0])
+        else:
+            raise Exception 
+        
+        
+        X_rhizo = np.array(X_rhizo, dtype = np.float64)
+        all_sizes = np.array(comm.allgather(local_size))
+        work_size = sum(all_sizes)
+        all_X_rhizo = np.zeros(work_size)
+
+        offsets = np.zeros(len(all_sizes))
+        offsets[1:]=np.cumsum(all_sizes)[:-1]
+        all_sizes =tuple(all_sizes)
+        offsets =tuple( offsets)
+        # print("offsets",offsets,all_sizes)
+        comm.barrier()
+        if (self.mpiVerbose and (size > 1)):
+            print('before allgatherv',rank,'all_sizes',all_sizes,
+                  'offsets',offsets,'work_size',work_size,#'X_rhizo'X_rhizo,[all_X_rhizo,all_sizes,offsets],
+                  'shape0',shape0,'shape1',shape1, '(X_rhizo).shape',(X_rhizo).shape)
+        comm.barrier()
+
+        comm.Allgatherv( [X_rhizo.reshape(-1), MPI.DOUBLE],[all_X_rhizo,all_sizes,offsets,MPI.DOUBLE])
+        # print('allgathervB',rank,all_X_rhizo,X_rhizo )
+        all_X_rhizo = np.array(all_X_rhizo, dtype =X_rhizo_type)
+        # print('allgathervC',rank,all_X_rhizo,X_rhizo_type )
+        if shape1 > 0:
+            all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
+        comm.barrier()
+        if (self.mpiVerbose and (size > 1)):
+            print('allgathervC, after reshape',rank,all_X_rhizo,'shape0',shape0,'shape1',shape1 )
+        comm.barrier()
+        return all_X_rhizo
 
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
@@ -126,7 +179,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getPoints", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getPoints(), root = 0)), 1) * 100.  # m -> cm
+        return self._map(self.allgatherv(self.base.getPoints()), 1) * 100.  # m -> cm
 
     def getPoints_(self):
         """nompi version of """
@@ -140,7 +193,7 @@ class SolverWrapper():
         comm.barrier()
         print("solverbase::getCellCenters", rank)
         comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
+        return self._map(self.allgatherv(self.base.getCellCenters()), 2) * 100.  # m -> cm
 
     def getCellCenters_(self):
         """nompi version of """
@@ -155,7 +208,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getDofCoordinates", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getDofCoordinates(), root = 0)), 0) * 100.  # m -> cm
+        return self._map(self.allgatherv(self.base.getDofCoordinates()), 0) * 100.  # m -> cm
 
     def getDofCoordinates_(self):
         """nompi version of """
@@ -169,7 +222,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCells", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getCells(), root = 0)), 2, np.int64)
+        return self._map(self.allgatherv(self.base.getCells()), 2, np.int64)
 
     def getCells_(self):
         """nompi version of """
@@ -182,7 +235,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCellSurfacesCyl", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2) * 1.e4  # m3 -> cm3
+        return self._map(self.allgatherv(self.base.getCellSurfacesCyl()), 2) * 1.e4  # m3 -> cm3
 
     def getCellSurfacesCyl_(self):
         """nompi version of  """
@@ -195,7 +248,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCellVolumes", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m2 -> cm2
+        return self._map(self.allgatherv(self.base.getCellVolumes()), 2) * 1.e6  # m2 -> cm2
 
     def getCellVolumes_(self):
         """nompi version of  """
@@ -207,7 +260,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCellVolumesCyl", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumesCyl(), root = 0)), 2) * 1.e6  # m3 -> cm3
+        return self._map(self.allgatherv(self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
 
     def getCellVolumesCyl_(self):
         """nompi version of  """
@@ -222,7 +275,11 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getDofIndices", rank)
             comm.barrier()
-        return self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
+        
+        if rank > 0:
+            return []
+        else:
+            return self.allgatherv(self.base.getDofIndices())
 
     def getDofIndices_(self):
         """nompi version of  """
@@ -238,7 +295,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getSolution", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root = 0)),0)
+        return self._map(self.allgatherv(self.base.getSolution(eqIdx)),0)
 
     def getAvgDensity_(self):
         """nompi version of  """
@@ -297,7 +354,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getNetFlux", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root = 0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+        return self._map(self.allgatherv(self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def getNetFlux_(self, eqIdx = 0):
         """nompi version of """
@@ -428,18 +485,19 @@ class SolverWrapper():
             print("solverbase::_map", rank)
             comm.barrier()
         if type_ == 0:  # auto (dof)
-            indices = self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
+            indices = self.allgatherv(self.base.getDofIndices())
         elif type_ == 1:  # points
-            indices = self._flat0(comm.gather(self.base.getPointIndices(), root = 0))
+            indices = self.allgatherv(self.base.getPointIndices())
         elif type_ == 2:  # cells
-            indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
+            indices = self.allgatherv(self.base.getCellIndices())
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
-        if len(indices) >0:  # only for rank 0 not empty
+        if rank == 0:
             try:
                 assert len(indices) == len(x), "_map: indices and values have different length"
             except:
-                print(len(indices) , len(x), indices)
+                print('assert len(indices) == len(x)',
+                      len(indices) , len(x), indices)
                 raise Exception
             ndof = max(indices) + 1
             if isinstance(x[0], (list,type(np.array([])))) :
@@ -460,7 +518,7 @@ class SolverWrapper():
         """flattens the gathered list in rank 0, empty list for other ranks """
         if size > 1:
             comm.barrier()
-            print("solverbase::_flat0", rank)
+            print("solverbase::_flat0", rank,xx)
             comm.barrier()
         if rank == 0:
             return np.array([item for sublist in xx for item in sublist])

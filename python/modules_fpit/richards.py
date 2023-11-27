@@ -16,6 +16,7 @@ class RichardsWrapper(SolverWrapper):
         self.soils = []
         self.param_group = "Soil."
         self.useMoles = usemoles
+        self.mpiVerbose = False
 
     def setParameterGroup(self, group:str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
@@ -374,11 +375,11 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        if size > 1:
+        if (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print("richards::getSolutionHead", rank)
             comm.barrier()
-        return (self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0))#.flatten()
+        return (self._map(self.allgatherv(self.base.getSolutionHead(eqIdx)), 0))#.flatten()
 
     def getSolutionHead_(self, eqIdx = 0):
         """ no mpi version of getSolutionHead() """
@@ -393,30 +394,30 @@ class RichardsWrapper(SolverWrapper):
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if size > 1:
+        if (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print("richards::getKrw", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getKrw(), root = 0)), 0)
+        return self._map(self.allgatherv(self.base.getKrw()), 0)
         
         
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if size > 1:
+        if (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print("richards::getSaturation", rank)
             comm.barrier()
-        return self._map(self._flat0(comm.gather(self.base.getSaturation(), root = 0)), 0)
+        return self._map(self.allgatherv(self.base.getSaturation()), 0)
         
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if size > 1:
+        if (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print("richards::getWaterContent", rank)
             comm.barrier()
-        return (self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2))#.flatten()
+        return (self._map(self.allgatherv(self.base.getWaterContent()), 2))#.flatten()
 
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
@@ -458,17 +459,21 @@ class RichardsWrapper(SolverWrapper):
         for i in range(self.numComp):
             isDissolved = (i < 2)
             totC += self.getContent(i+1, isDissolved)
+        # mol/mol * (mol/m3) = mol/m3 
         C_S_W = self.molarDensityWat_m3*np.array(self.getSolution(1))#.flatten()
         
         init = (self.simTime == 0.)
         
-        css1 = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp)) * self.f_sorp
+        css1 = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp # if cell is empty, can get it directly from the solver.
+        # test that and see if we have same results., shouldn t it be k_sorp * 1e6?
+        # print('richards:getTotCContent, css1', 'evaluted adhoc', css1, 'got from dumux:',self.base.getCSS1_out())
 
         totC += css1*vols
+        CC_shape = self.getCellCenters().shape
         try:
-            assert np.array(totC).shape == (self.getCellCenters().shape[0],)
+            assert np.array(totC).shape == (CC_shape[0],)
         except:
-            print(np.array(totC).shape , self.getCellCenters().shape)
+            print('totC',np.array(totC).shape , 'CC_shape',CC_shape)
             raise Exception
         return totC
         

@@ -214,33 +214,52 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 # write_file_array("fpit_soilKBis", soil_k, directory_ =results_dir, fileType = '.csv') 
             if( plantType == "plant") and (rank == 0):
                 
-                    
-                assert min(rs.Csoil_seg ) >= 0.
-                
-                write_file_array("fpit_rsxUsed",np.array(rsx_set),directory_ =results_dir, fileType = '.csv')
-                write_file_float("fpit_weatherX",r.weatherX,directory_ =results_dir)
-                rs.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
-                            sxx_=rsx_set, 
-                            cells_ = False,#(i == 0),#for 1st computation, use cell data
-                            ea_ = r.weatherX["ea"],#not used
-                            es_=r.weatherX["es"],#not used
-                            verbose_ = False, doLog_ = False,
-                            TairC_= r.weatherX["TairC"],#not used
-                                        soil_k_ = soilK, # [day-1]
-                            outputDir_= "./results/rhizoplantExud")
-                seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
-                TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
-                write_file_array("fpit_Ev",np.array(rs.Ev),directory_ =results_dir, fileType = '.csv')
-                write_file_array("fpit_Jw",np.array(rs.Jw),directory_ =results_dir, fileType = '.csv')
-                write_file_array("fpit_fw",np.array(rs.fw),directory_ =results_dir, fileType = '.csv')#pg
-                write_file_array("fpit_pg",np.array(rs.pg),directory_ =results_dir, fileType = '.csv')
-                write_file_array("fpit_n_iter",np.array([ n_iter,rs.loop , r.solve_gave_up]), directory_ =results_dir, fileType = '.csv') 
+                try:                    
+                    assert min(rs.Csoil_seg ) >= 0.
 
-                write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir, fileType = '.csv' )
-                write_file_array("fpit_errPhoto", np.array(rs.maxErr) , directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_errPhotoAbs", np.array(rs.maxErrAbs) , directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_organTypes", organTypes, directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_rsxUsed",np.array(rsx_set),directory_ =results_dir, fileType = '.csv')
+                    write_file_float("fpit_weatherX",r.weatherX,directory_ =results_dir)
+                    rs.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
+                                sxx_=rsx_set, 
+                                cells_ = False,#(i == 0),#for 1st computation, use cell data
+                                ea_ = r.weatherX["ea"],#not used
+                                es_=r.weatherX["es"],#not used
+                                verbose_ = False, doLog_ = False,
+                                TairC_= r.weatherX["TairC"],#not used
+                                            soil_k_ = soilK, # [day-1]
+                                outputDir_= "./results/rhizoplantExud")
+                    seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
+                    TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
+                    write_file_array("fpit_Ev",np.array(rs.Ev),directory_ =results_dir, fileType = '.csv')
+                    write_file_array("fpit_Jw",np.array(rs.Jw),directory_ =results_dir, fileType = '.csv')
+                    write_file_array("fpit_fw",np.array(rs.fw),directory_ =results_dir, fileType = '.csv')#pg
+                    write_file_array("fpit_pg",np.array(rs.pg),directory_ =results_dir, fileType = '.csv')
+                    write_file_array("fpit_n_iter",np.array([ n_iter,rs.loop , r.solve_gave_up]), directory_ =results_dir, fileType = '.csv') 
 
+                    write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir, fileType = '.csv' )
+                    write_file_array("fpit_errPhoto", np.array(rs.maxErr) , directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_errPhotoAbs", np.array(rs.maxErrAbs) , directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_organTypes", organTypes, directory_ =results_dir, fileType = '.csv') 
+            
+                    if (plantType == "plant") and (rank == 0):
+                        leavesSegs = np.where(organTypes ==4)
+                        fluxes_leaves = seg_fluxes[leavesSegs]
+                        if (min(rs.Ev) < 0) or (min(rs.Jw) < 0) or (min(fluxes_leaves)<-1e-15):
+                            print("leaf looses water", min(rs.Ev),min(rs.Jw), min(fluxes_leaves))
+                            print("seg_fluxes",seg_fluxes,"leavesSegs", leavesSegs)                
+                            raise Exception
+                except:
+                    rs.minLoop = 5
+                    rs.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
+                                sxx_=rsx_set, 
+                                cells_ = False,#(i == 0),#for 1st computation, use cell data
+                                ea_ = r.weatherX["ea"],#not used
+                                es_=r.weatherX["es"],#not used
+                                verbose_ = False, doLog_ = False,
+                                TairC_= r.weatherX["TairC"],#not used
+                                            soil_k_ = soilK, # [day-1]
+                                outputDir_= "./results/errorPhoto/")
+                    raise Exception
 
             elif (rank == 0):
                 transpiration = 6. *  sinusoidal2(rs_age, dt)
@@ -622,8 +641,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
             assert soil_source_sol.shape == (r.numComp, len(cell_volumes))
 
-            
-            
+            # mabe check here that sum(soil_source_sol) == Qmucil + Qexud
+            s.errSoil_source_sol_abs = sum(soil_source_sol.flatten()) - (sum(Q_Exud) + sum(Q_mucil))/dt
+            if (sum(Q_Exud) + sum(Q_mucil))/dt != 0.:
+                s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(Q_Exud) + sum(Q_mucil))/dt)*100)
+            else:
+                s.errSoil_source_sol_rel = np.nan
+                
             """ 3. global soil models (3DS)"""
             
             ##
@@ -761,6 +785,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             s.bulkMassErrorWater_abs = abs(sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes)*dt))
             s.bulkMassErrorWater_rel = abs(s.bulkMassErrorWater_abs /sum(new_soil_water) )*100
             
+            s.bulkMassCErrorPlant_absReal = buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil))
             s.bulkMassCErrorPlant_abs = abs(buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))
             if buTotCAfter > 0:
                 s.bulkMassCErrorPlant_rel = abs(s.bulkMassCErrorPlant_abs/buTotCAfter*100)
@@ -894,7 +919,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.rhizoMassWError_abs = comm.bcast(r.rhizoMassWError_abs,root= 0)
             r.rhizoMassCError_abs = comm.bcast(r.rhizoMassCError_abs,root= 0)
             
-            r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds, s.bulkMassCErrorPlant_rel),root= 0)
+            r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds, 
+                                   s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel),root= 0)
             r.maxDiff1d3dCW_abs = comm.bcast(r.maxDiff1d3dCW_abs,root= 0)
             diff1d3dCurrant =abs(max(r.maxDiff1d3dCW_abs) - maxDiff1d3dCW_absBU) # to not depend on cumulative error
             comm.barrier()
@@ -926,6 +952,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             theta3ds = s.getWaterContent()# proposed_outer_mucil_fluxes
             if  (n_iter % skip == 0) and (rank == 0):
+                write_file_array("fpit_errbulkMass",np.array([s.bulkMassCErrorPlant_abs, s.bulkMassCErrorPlant_rel, #not cumulative 
+                                                s.bulkMassCError1ds_abs, s.bulkMassCError1ds_rel, 
+                                                s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel,
+                                                s.bulkMassCErrorPlant_absReal,
+                                                s.errSoil_source_sol_abs, s.errSoil_source_sol_rel]), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_errorMassRhizo", np.array([r.rhizoMassCError_abs, r.rhizoMassCError_rel,
+                                                        r.rhizoMassWError_abs, r.rhizoMassWError_rel]), 
+                                 directory_ =results_dir, fileType = '.csv')# not cumulativecumulative (?)
                 write_file_array("fpit_errDiffBCs", r.errDiffBCs, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffBCS1dsFluxOut_sol", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffBCS1dsFluxOut_mucil", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 

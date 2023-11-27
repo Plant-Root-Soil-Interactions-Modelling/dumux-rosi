@@ -197,7 +197,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.k_sorp = 0.4
     s.f_sorp = 0.5
     if demoType == "dumux_10c":
-        C_S = 1e-8 # in mol/m3 water
+        C_S = 0#1e-8 # in mol/m3 water
         s.CSSmax =1/1e6 # 1e-4*10000*0.
         s.alpha =0.1# 0.
         unitConversion = 1e3
