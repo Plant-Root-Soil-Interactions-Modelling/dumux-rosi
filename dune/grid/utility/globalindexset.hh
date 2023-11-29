@@ -333,7 +333,8 @@ namespace Dune
 
       std::unique_ptr<UniqueEntityPartition> uniqueEntityPartition;
       if (codim_!=0)
-        uniqueEntityPartition = std::unique_ptr<UniqueEntityPartition>(new UniqueEntityPartition(gridview,codim_));
+        uniqueEntityPartition = std::make_unique<UniqueEntityPartition>(gridview,codim_);//change from dune_release 2.7
+        //uniqueEntityPartition = std::unique_ptr<UniqueEntityPartition>(new UniqueEntityPartition(gridview,codim_));
 
       int nLocalEntity = (codim_==0)
                     ? std::distance(gridview.template begin<0, Dune::Interior_Partition>(), gridview.template end<0, Dune::Interior_Partition>())
