@@ -29,7 +29,7 @@ class SolverWrapper():
         self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
         
 
-    def initialize(self, args_ = [""], verbose = True):
+    def initialize(self, args_ = [""], verbose = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose)
         
@@ -76,12 +76,13 @@ class SolverWrapper():
         all_sizes =tuple(all_sizes)
         offsets =tuple( offsets)
         # print("offsets",offsets,all_sizes)
-        comm.barrier()
+        
         if (self.mpiVerbose and (size > 1)):
+            comm.barrier()
             print('before allgatherv',rank,'all_sizes',all_sizes,
                   'offsets',offsets,'work_size',work_size,#'X_rhizo'X_rhizo,[all_X_rhizo,all_sizes,offsets],
                   'shape0',shape0,'shape1',shape1, '(X_rhizo).shape',(X_rhizo).shape)
-        comm.barrier()
+            comm.barrier()
 
         comm.Allgatherv( [X_rhizo.reshape(-1), MPI.DOUBLE],[all_X_rhizo,all_sizes,offsets,MPI.DOUBLE])
         # print('allgathervB',rank,all_X_rhizo,X_rhizo )
@@ -89,10 +90,11 @@ class SolverWrapper():
         # print('allgathervC',rank,all_X_rhizo,X_rhizo_type )
         if shape1 > 0:
             all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
-        comm.barrier()
+        
         if (self.mpiVerbose and (size > 1)):
+            comm.barrier()
             print('allgathervC, after reshape',rank,all_X_rhizo,'shape0',shape0,'shape1',shape1 )
-        comm.barrier()
+            comm.barrier()
         return all_X_rhizo
 
     def createGridFromInput(self, modelParamGroup = ""):

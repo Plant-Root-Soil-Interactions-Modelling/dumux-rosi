@@ -33,20 +33,23 @@ int main(int argc, char** argv) //try
     // parse command line arguments and input file
 	auto s = Richards<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver, 3>();
     
-    // initialize MPI, finalize is done automatically on exit
-    const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
+    // already done in s.initialize
+    //const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
-    
+    for(int i = 0; i < argc; ++i)
+	{
+        std::cout << argv[i] << '\n';
+	}
 	std::vector<std::string> args_{""};
 	s.initialize(args_);
-	// std::string icz = "-100";
-    // s.setParameter("Soil.IC.P", icz) ; // cm pressure head
-	// s.setParameter("Soil.BC.Top.Type", "2");
-	// s.setParameter("Soil.BC.Top.Value", "0.");
-	// s.setParameter("Soil.BC.Bot.Type", "2");
-	// s.setParameter("Soil.BC.Bot.Value", "0.");
+	std::string icz = "-1000";
+    s.setParameter("Soil.IC.P", icz) ; // cm pressure head
+	s.setParameter("Soil.BC.Top.Type", "3");
+	s.setParameter("Soil.BC.Top.Value", "1.");
+	s.setParameter("Soil.BC.Bot.Type", "3");
+	s.setParameter("Soil.BC.Bot.Value", "0.");
     
     
 	//s.setParameter("Problem.verboseIndexSet", "0");
@@ -65,13 +68,19 @@ int main(int argc, char** argv) //try
 	s.setParameter( "Soil.VanGenuchten.Alpha", "0.04");
 	s.setParameter("Soil.VanGenuchten.N", "1.6");
 	s.setParameter("Soil.VanGenuchten.Ks", "50");
-
+	
+	s.setParameter("Problem.EnableGravity", "true");
+	s.setParameter("Problem.reactionExclusive", "1");
+	s.setParameter("Soil.MolarMass", "0.06008");
+	s.setParameter("Soil.solidDensity", "2700");
+    
     
 	std::cout<<"to initializeProblem"<<std::endl;
     s.initializeProblem();
     
 	std::cout<<"initializeProblem created"<<std::endl;
-    
+    s.solve(60.);
+	std::cout<<"s.solve finished"<<std::endl;
 	
     return 0;
 }

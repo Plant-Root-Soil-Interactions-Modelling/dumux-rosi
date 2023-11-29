@@ -232,9 +232,9 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.ICcc = np.array([C_S *unitConversion,
                        C_S/2 *unitConversion,
                         (C_S/10+s.C_aOLim)* unitConversion *doBio,
-                        C_S/10* unitConversion *doBio,
+                        (C_S/10+s.C_aOLim)* unitConversion *doBio,
                         (C_S/10+s.C_aCLim)* unitConversion *doBio,
-                        C_S/10* unitConversion *doBio,
+                        (C_S/10+s.C_aCLim)* unitConversion *doBio,
                         CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
         
         
@@ -673,7 +673,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
     picker = lambda x, y, z: soil_model.pick_([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     #assert rs.getSeedVal() == seed
-    print('seedval at rank',rank,  rs.getSeedVal())
+    # print('seedval at rank',rank,  rs.getSeedVal())
     assert rs.getSeedVal() == seed
     # if rank == 0:
     if plantType == "plant":    

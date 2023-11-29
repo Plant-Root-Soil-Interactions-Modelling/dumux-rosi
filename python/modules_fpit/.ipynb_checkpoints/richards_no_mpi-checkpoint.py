@@ -17,7 +17,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         super().__init__(base, usemoles)
         self.useMoles = usemoles
 
-    def initialize(self, args_ = [""], verbose = True, doMPI = False):
+    def initialize(self, args_ = [""], verbose = False, doMPI = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         #print('solverbase_no_mpi:init')
         self.base.initialize(args_, verbose, doMPI)
@@ -251,7 +251,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     
     def distributeVals(self, source: float, eqIdx: int, length: float, numFluidComp: int):
         splitVals = np.array([0.])
-        verbose = True
+        verbose = False
         if source != 0.:# [cm3/day] or [mol/day]
             if eqIdx == 0:
                 seg_values = self.getWaterVolumesCyl(length)
@@ -283,5 +283,6 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                 print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals),(sum(weightVals) - 1.) ,(sum(weightVals) - 1.) < 1e-13)
                 print('splitVals',splitVals, seg_values, len(splitVals) == len(seg_values))
                 raise Exception
-            print(rank,'distributeVals',eqIdx,'seg_values',seg_values,'splitVals',splitVals)   
+            if verbose:
+                print(rank,'distributeVals',eqIdx,'seg_values',seg_values,'splitVals',splitVals)   
         return splitVals

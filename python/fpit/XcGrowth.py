@@ -38,12 +38,35 @@ import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
 
-if __name__ == '__main__':
 
-    initsim =float(sys.argv[1])# initsim = 9.5
-    mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
+"""
+     * \brief Suggest a new number of time steps
+     *
+     * The default behavior is to suggest the old time-step number
+     * scaled by the ratio between the target iterations and the
+     * iterations required to actually solve the last time-step.
+        // be aggressive increasing the time-step number but
+        // conservative when decreasing it. the rationale is
+        // that we want to avoid failing in the next iteration
+        // nNew > nOld ==> dtnew < dtOld
+"""
+def suggestNumStepsChange(nOld, numIter_, targetIter_, results_dir):# taken from dumux
+    if (numIter_ > targetIter_) :
+        percent = float(numIter_ - targetIter_)/float(targetIter_)
+        change = 1.0 + percent
+    else:
+        percent = float(targetIter_ - numIter_)/float(targetIter_)
+        change = 1 /(1.0 + percent/1.2)
+    write_file_array("suggestNumStepsChange",np.array([nOld, numIter_, targetIter_, percent,change, np.ceil(nOld * change)]), directory_ =results_dir, fileType = '.csv') 
+    return int(np.ceil(nOld * change))
+    
+
+def XcGrowth(initsim, mode,simMax,doProfile):
+
+    #initsim =float(sys.argv[1])# initsim = 9.5
+    #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 1/3/24
-    p_mean = -1000
+    p_mean = -100
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -56,17 +79,20 @@ if __name__ == '__main__':
     useOuterFluxCyl_sol = False
     css1Function_ = 0
     lightType =""#+- "nolight" # or ""
-    extraName = ""
     mpiVerbose = False
+    doProfilestr = ""
+    if doProfile:
+        doProfilestr = "cProf"
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
-    #+organism+str(k_iter)+"k_"
-    results_dir="./results/"+str(mpiVerbose)+l_ks+mode+extraName\
-                +str(css1Function_)+"_"+str(initsim)\
+    #+organism+str(k_iter)+"k_"+str(css1Function_)
+    results_dir="./results/checkNchng"+doProfilestr+str(int(mpiVerbose))+l_ks+mode\
+                +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
                     +str(max_rank)+"_"+str(abs(p_mean))+"/"
+    
     comm.barrier()
     print('results_dir',results_dir, flush = True)
     comm.barrier()
@@ -164,7 +190,7 @@ if __name__ == '__main__':
     Nt = len(rs.nodes)
     r.minLoop = 1000
     r.maxLoop = 5000
-    simMax = initsim + 3
+    #simMax = initsim + 3
 
     TranspirationCumul = 0
     cell_volumes = s.getCellVolumes()  # cm3
@@ -182,7 +208,8 @@ if __name__ == '__main__':
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
     
-    print('start loop', rank)
+    if mpiVerbose or (max_rank == 1):
+        print('start loop', rank)
     secId = None
     Q_Exud_i = None
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
@@ -207,16 +234,19 @@ if __name__ == '__main__':
     seg_fluxes_ = np.array([])
     dt_inner = float(dt)#/float(2.)
     start = True
+    rs.new_soil_solute = np.array([0.])
     while rs_age < simMax:
 
         rs_age += dt
         comm.barrier()
-        print(rank,"Day", rs_age)
+        if mpiVerbose or (max_rank == 1):
+            print(rank,"Day", rs_age)
         comm.barrier()
         seg2cell_old = rs.seg2cell
         Ntbu = Nt
         comm.barrier()
-        print(rank,'simulating')
+        if mpiVerbose or (max_rank == 1):
+            print(rank,'simulating')
         comm.barrier()
         if (rank == 0) and (not static_plant) :
 
@@ -237,11 +267,13 @@ if __name__ == '__main__':
 
 
         comm.barrier()
-        print(rank,'simulated')
+        if mpiVerbose or (max_rank == 1):
+            print(rank,'simulated')
         comm.barrier()
         rs.update()
         comm.barrier()
-        print(rank,'updated')
+        if mpiVerbose or (max_rank == 1):
+            print(rank,'updated')
         comm.barrier()
         if start:
             nots = len(np.array(rs.organTypes))
@@ -271,7 +303,8 @@ if __name__ == '__main__':
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
 
         comm.barrier()
-        print(rank, 'to cyl3.simulate_const')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'to cyl3.simulate_const')
         comm.barrier()
         n_iter = 0
         rs.rhizoMassWError_abs = 1.
@@ -279,21 +312,22 @@ if __name__ == '__main__':
         rs.errDiffBCs = 1.
         rs.err = 1.
         max_err = 1.
-        r.diff1d3dCurrant_rel = 1e6
+        rs.diff1d3dCurrant_rel = 1e6
         def continueLoop(rs,n_iter, dt_inner=np.nan,failedLoop=False,real_dtinner=np.nan,name="continueLoop",doPrint = True, fileType = '.csv' ):
             # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
-            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (r.diff1d3dCurrant_rel>1))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
-            #r.diff1d3dCurrant_rel
+            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (rs.diff1d3dCurrant_rel>1) or (min(rs.new_soil_solute.reshape(-1)) >= 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
+            #rs.diff1d3dCurrant_rel
 
             comm.barrier()
-            print('continue loop?',rank,cL,failedLoop,  np.floor(rs.err),  rs.solve_gave_up,r.diff1d3dCurrant_rel,n_iter < k_iter)
+            if mpiVerbose or (max_rank == 1):
+                print('continue loop?',rank,cL,failedLoop,  np.floor(rs.err),  rs.solve_gave_up,rs.diff1d3dCurrant_rel,n_iter < k_iter)
             comm.barrier()
             cL = comm.bcast(cL,root = 0)
             failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
             comm.barrier()
-            if size > 1:
+            if mpiVerbose and (max_rank > 1):
                 print('continue loopBis?',rank,cL,failedLoop_)
             comm.barrier()
             assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
@@ -311,11 +345,11 @@ if __name__ == '__main__':
                     
                 write_file_array(name, np.array([n_iter, rs.err, 
                                                  #rs.rhizoMassWError_abs,rs.rhizoMassCError_abs,max(abs(rs.errDiffBCs)),
-                                                 r.diff1d3dCurrant_rel,rs.solve_gave_up, 
+                                                 rs.diff1d3dCurrant_rel,rs.solve_gave_up, 
                                                              dt_inner, real_dtinner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"2", rs.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"Bool", np.array([n_iter, (np.floor(rs.err) > max_err), 
-                                                        r.diff1d3dCurrant_rel,
+                                                        rs.diff1d3dCurrant_rel,
                                                         #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), 
                                                         #(max(abs(rs.errDiffBCs*0)) > 1e-5), 
                                                         rs.solve_gave_up, 
@@ -342,13 +376,23 @@ if __name__ == '__main__':
             except:
                 print('real_dtinner',real_dtinner ,dt, dt_inner , failedLoop)
                 raise Exception
+            nOld = int(dt/dt_inner)
+            nNew = suggestNumStepsChange(nOld, n_iter, np.ceil(k_iter/2), results_dir)
+            try:
+                assert nOld == int(nOld)
+                assert nNew == int(nNew)
+            except:
+                print('nNew iisue',nNew , int(nNew), nOld,dt,dt_inner,(nOld == int(nOld)), (nNew == int(nNew)))
+                raise Exception
+                
+            dt_inner = dt/float(nNew)
             if cL or failedLoop:
-                currentN = int(np.ceil(dt / dt_inner))
+                #currentN = int(np.ceil(dt / dt_inner))
                 comm.barrier()
-                print(rank, "error too high, decrease N from", currentN,"to",currentN*2)
-                dt_inner = dt/(float(currentN*2.))
-                dt_inner = max(1./(24.*3600.), dt_inner) # minimum: 1 second
-                print(rank, "error too high, decrease N from", dt/float(currentN),"to",min(1/(24*3600), dt_inner))
+                print(rank, "error too high, decrease N, dt from", nOld, dt/float(nOld),"to",nNew, dt_inner)
+                #dt_inner = dt/(float(currentN*2.))
+                #dt_inner = max(1./(24.*3600.), dt_inner) # minimum: 1 second
+                # print(rank, "error too high, decrease N from", dt/float(currentN),"to",min(1/(24*3600), dt_inner))
                 comm.barrier()
                 s.reset()
                 rs.reset()
@@ -363,7 +407,8 @@ if __name__ == '__main__':
                 
                 
         comm.barrier()
-        print(rank, 'left cyl3.simulate_const')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'left cyl3.simulate_const')
         comm.barrier()
         time_rhizo_cumul += r.time_rhizo_i
         time_3ds_cumul += r.time_3ds_i
@@ -373,30 +418,36 @@ if __name__ == '__main__':
 
         if True:
             comm.barrier()
-            print(rank,"cellVol")
+            if mpiVerbose or (max_rank == 1):
+                print(rank,"cellVol")
             comm.barrier()
             write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
             comm.barrier()
-            print(rank,"theta")
+            if mpiVerbose or (max_rank == 1):
+                print(rank,"theta")
             comm.barrier()
             write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
             for i in range(rs.numFluidComp):
                 comm.barrier()
-                print(rank,"Soil_solute_conc"+str(i+1))
+                if mpiVerbose or (max_rank == 1):
+                    print(rank,"Soil_solute_conc"+str(i+1))
                 comm.barrier()
                 write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
             for i in range(rs.numFluidComp, rs.numComp):
                 comm.barrier()
-                print(rank,"Soil_solute_conc"+str(i+1))
+                if mpiVerbose or (max_rank == 1):
+                    print(rank,"Soil_solute_conc"+str(i+1))
                 comm.barrier()
                 write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
             comm.barrier()
-            print(rank,"Soil_solute_conc"+str(rs.numComp+1))
+            if mpiVerbose or (max_rank == 1):
+                print(rank,"Soil_solute_conc"+str(rs.numComp+1))
             comm.barrier()
             write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten()[:-1]* rs.bulkDensity_m3 /1e6 , directory_ =results_dir) 
            
         comm.barrier() 
-        print(rank, 'did s.data writing')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'did s.data writing')
         comm.barrier()
         errLeuning_abs = abs(sum(r.outputFlux))
         if organism == "plant":
@@ -406,15 +457,18 @@ if __name__ == '__main__':
         
 
         comm.barrier()
-        print(rank, 'getTotCContent')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'getTotCContent')
         buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
         comm.barrier()
-        print(rank, 'getWaterContent')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'getWaterContent')
         comm.barrier()
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
         comm.barrier()
-        print(rank, 'get s.errorCumul')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'get s.errorCumul')
         comm.barrier()
         if rank == 0:
             if (mode != "dumux_w"):
@@ -435,13 +489,15 @@ if __name__ == '__main__':
             s.bulkMassErrorWaterCumul_abs = None
             s.bulkMassErrorWaterCumul_rel = None
             
-        print(rank, 'got s.errorCumul')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'got s.errorCumul')
         write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
                             time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)
         write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
         write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
         write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# 
-        print(rank, 'write some otehr stuff')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'write some otehr stuff')
         if (mode != "dumux_w"):
             write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
             write_file_float("Q_Exud_i", sum(Q_Exud_i_seg), directory_ =results_dir)
@@ -464,7 +520,8 @@ if __name__ == '__main__':
             write_file_array("trans", r.Ev, directory_ =results_dir, fileType = '.csv')
             write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
             write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
-        print(rank, 'finished other data writing')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'finished other data writing')
         try:
             assert abs(s.bulkMassCErrorPlant_abs)  < 1e-5
         except:
@@ -475,7 +532,8 @@ if __name__ == '__main__':
             print("\n\n\n")
             raise Exception
 
-        print(rank, 'do C growth?',  (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'do C growth?',  (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
 
         if (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
 
@@ -532,11 +590,12 @@ if __name__ == '__main__':
             Q_Exud_i      = (Q_Exud    - Q_Exudbu)*inflateVal
             Q_Mucil_i     = (Q_Mucil   - Q_Mucilbu)*inflateVal
 
-            try:
-                assert Q_in > 0
-            except:
-                print(error_st_abs, Q_in, error_st_rel, rs.weatherX, r.plant.organTypes)
-                raise Exception
+            # can get negative respiration at night
+            #try:
+            #    assert Q_in > 0
+            #except:
+            #    print(error_st_abs, Q_in, error_st_rel, rs.weatherX, r.plant.organTypes)
+            #    raise Exception
 
             try:
                 assert  (error_st_rel< 1.) or abs(Q_in) < 1e-13
@@ -592,14 +651,16 @@ if __name__ == '__main__':
             Q_Mucil_i_seg = None
         
         comm.barrier()
-        print(rank, 'share Q_Exud_i_seg')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'share Q_Exud_i_seg')
         comm.barrier()
 
         Q_Exud_i_seg = comm.bcast(Q_Exud_i_seg, root = 0) 
         Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
 
         comm.barrier()
-        print(rank, 'print data to linux')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'print data to linux')
         comm.barrier()
         if (rank == 0) and (mode != "dumux_w")  :
             print("\n\n\n\t\tat ", int(np.floor(rs_age)),"d", int((rs_age%1)*24),"h",  round(r.Qlight *1e6),"mumol m-2 s-1")
@@ -638,12 +699,14 @@ if __name__ == '__main__':
             write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
         
         comm.barrier()
-        print(rank, 'print data to linux')
+        if mpiVerbose or (max_rank == 1):
+            print(rank, 'print data to linux')
         comm.barrier()
 
 
     """ output """
-    print('finished loop, get images')
+    if mpiVerbose or (max_rank == 1):
+        print('finished simulation')
     sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
     rs.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
                                      sourceSol = np.full((rs.numComp, len(sizeSoilCell)),0.), # mol/day
@@ -688,4 +751,31 @@ if __name__ == '__main__':
                 print("idcomp_done", i, rank)
     # to plot: cumulative An, Exud, mucil and each element in the soil
     # Also images of the 3D soil.
-    print("fin", rank)
+    if mpiVerbose or (max_rank == 1):
+        print("fin", rank)
+    return results_dir
+
+        
+
+if __name__ == '__main__':
+    initsim =float(sys.argv[1])# initsim = 9.5
+    mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
+    doProfile = False
+    simMax = initsim + 3.
+    if len(sys.argv)>3:
+        simMax = float(sys.argv[3])
+    if len(sys.argv)>4:
+        doProfile = bool(sys.argv[4])
+        
+    if doProfile:
+        import cProfile
+        import pstats, io
+        pr = cProfile.Profile()
+        pr.enable()
+    results_dir = XcGrowth(initsim, mode,simMax,doProfile)
+    if doProfile:
+        pr.disable()
+        filename = results_dir+'profile'+str(rank)+'.prof' 
+        s = io.StringIO()
+        ps = pstats.Stats(pr, stream=s).sort_stats('tottime')
+        ps.dump_stats(filename)

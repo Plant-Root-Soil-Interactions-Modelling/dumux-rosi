@@ -357,7 +357,7 @@ namespace Dune
       /** Share number of locally owned entities */
       gridview_.comm().template allgather<int>(&nLocalEntity, 1, offset.data());
 
-      for (int i=1; i<size+1; i++)
+      for (int i=1; i<P.size(); i++)
 	  {
 		P[i] = P[i-1] +  offset[i-1];
 	  }
