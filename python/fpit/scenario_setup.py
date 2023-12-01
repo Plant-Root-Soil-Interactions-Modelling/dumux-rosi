@@ -32,7 +32,7 @@ from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid
 
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
-import evapotranspiration as evap
+# import evapotranspiration as evap
 from functional.xylem_flux import *
 from datetime import *
 from functional.plant_conductivities import init_conductivities

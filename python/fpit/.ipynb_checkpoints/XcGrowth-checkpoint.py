@@ -30,7 +30,7 @@ scenario = reload(scenario)
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 rhizo_modelsPlant = reload(rhizo_modelsPlant)
 from rhizo_modelsPlant import *
-import evapotranspiration as evap
+#import evapotranspiration as evap
 #import cyl_exu
 import cyl3plant as cyl3
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
@@ -61,12 +61,12 @@ def suggestNumStepsChange(nOld, numIter_, targetIter_, results_dir):# taken from
     return int(np.ceil(nOld * change))
     
 
-def XcGrowth(initsim, mode,simMax,doProfile):
+def XcGrowth(initsim, mode,simMax,extraName):
 
     #initsim =float(sys.argv[1])# initsim = 9.5
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/3/24
-    p_mean = -100
+    dt = 1/12/24
+    p_mean = -1000
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -80,14 +80,12 @@ def XcGrowth(initsim, mode,simMax,doProfile):
     css1Function_ = 0
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
-    doProfilestr = ""
-    if doProfile:
-        doProfilestr = "cProf"
+    
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/checkNchng"+doProfilestr+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/bis"+extraName+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -218,7 +216,7 @@ def XcGrowth(initsim, mode,simMax,doProfile):
                      "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(abs(r.OutLim1DS))",
                      "max(abs(r.InOutBC_Cdiff))",
                      "max(r.maxDiff1d3dCW_abs)",
-                     "errWrsi", "maxDiff1d3dCW_absBU",
+                     "errWrsi",# "maxDiff1d3dCW_absBU",
                      "bulkMassErrorWater_abs","bulkMassErrorWater_absLim",
                      "rhizoMassWError_absLim","rhizoMassWError_abs",
                      "bulkMassErrorC_abs","bulkMassCErrorPlant",
@@ -317,7 +315,7 @@ def XcGrowth(initsim, mode,simMax,doProfile):
             # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
-            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (rs.diff1d3dCurrant_rel>1) or (min(rs.new_soil_solute.reshape(-1)) >= 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
+            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (rs.diff1d3dCurrant_rel>1) or (min(rs.new_soil_solute.reshape(-1)) < 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
             comm.barrier()
@@ -335,31 +333,31 @@ def XcGrowth(initsim, mode,simMax,doProfile):
                 if not os.path.isfile(results_dir+name+fileType):
                     write_file_array(name, np.array(['n_iter', 'err', 
                                                      #'rhizoMassWError_abs','rhizoMassCError_abs','maxAbsErrDiffBCs',
-                                                     'diff1d3dCurrant_rel','solve_gave_up', 
+                                                     'diff1d3dCurrant_rel','solve_gave_up', 'min__soil_solute',
                                                              'dt_inner','real_dtinner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
                     write_file_array(name+"Bool", np.array(['n_iter',  'err', 
                                                             #'rhizoMassWError_abs','rhizoMassCError_abs','maxAbsErrDiffBCs',
                                                             'diff1d3dCurrant_rel',
-                                                            'solve_gave_up',  
+                                                            'solve_gave_up',  'min__soil_solute',
                                                              'dt_inner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
                     
                 write_file_array(name, np.array([n_iter, rs.err, 
                                                  #rs.rhizoMassWError_abs,rs.rhizoMassCError_abs,max(abs(rs.errDiffBCs)),
-                                                 rs.diff1d3dCurrant_rel,rs.solve_gave_up, 
+                                                 rs.diff1d3dCurrant_rel,rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)),
                                                              dt_inner, real_dtinner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"2", rs.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"Bool", np.array([n_iter, (np.floor(rs.err) > max_err), 
-                                                        rs.diff1d3dCurrant_rel,
+                                                        rs.diff1d3dCurrant_rel > 1,
                                                         #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), 
                                                         #(max(abs(rs.errDiffBCs*0)) > 1e-5), 
-                                                        rs.solve_gave_up, 
+                                                        rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)) < 0.,
                                                              dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
             
             return cL
         failedLoop = False
         cL = True
         while cL or failedLoop:
-            net_sol_flux_, net_flux_, seg_fluxes__, real_dtinner,failedLoop = cyl3.simulate_const(s, 
+            net_sol_flux_, net_flux_, seg_fluxes__, real_dtinner,failedLoop, n_iter_inner_max = cyl3.simulate_const(s, 
                                                     r, sim_time= dt,dt= dt_inner, rs_age=rs_age, 
                                                     Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
                                                     r= rs,plantType = organism,
@@ -372,18 +370,25 @@ def XcGrowth(initsim, mode,simMax,doProfile):
             cL = continueLoop(rs,n_iter, dt_inner,failedLoop,real_dtinner,name="Outer_data")
             n_iter += 1
             try:
-                assert (real_dtinner == dt ) or failedLoop
+                assert (abs(real_dtinner - dt) < dt_inner ) or failedLoop                
             except:
                 print('real_dtinner',real_dtinner ,dt, dt_inner , failedLoop)
-                raise Exception
+                write_file_array("real_dtinner_error", np.array([real_dtinner ,dt, dt_inner , failedLoop,abs((real_dtinner - dt)/dt*100.),rs_age]), 
+                                 directory_ =results_dir, fileType = '.csv') 
+                
+                
             nOld = int(dt/dt_inner)
-            nNew = suggestNumStepsChange(nOld, n_iter, np.ceil(k_iter/2), results_dir)
+            if failedLoop:# if the inner computation failed, we also need to decrease the timestep
+                n_iter_inner_max = k_iter
+            nNew = suggestNumStepsChange(nOld, n_iter_inner_max, np.ceil(k_iter/2), results_dir)
             try:
                 assert nOld == int(nOld)
                 assert nNew == int(nNew)
             except:
                 print('nNew iisue',nNew , int(nNew), nOld,dt,dt_inner,(nOld == int(nOld)), (nNew == int(nNew)))
-                raise Exception
+                write_file_array("nNew_error", np.array([nNew , int(nNew), nOld,dt,dt_inner,(nOld == int(nOld)), (nNew == int(nNew)),
+                                                         real_dtinner ,dt, dt_inner , failedLoop,abs((real_dtinner - dt)/dt*100.),rs_age]), 
+                                 directory_ =results_dir, fileType = '.csv') 
                 
             dt_inner = dt/float(nNew)
             if cL or failedLoop:
@@ -760,19 +765,22 @@ def XcGrowth(initsim, mode,simMax,doProfile):
 if __name__ == '__main__':
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    doProfile = False
+    
     simMax = initsim + 3.
     if len(sys.argv)>3:
         simMax = float(sys.argv[3])
+    extraName =""
     if len(sys.argv)>4:
-        doProfile = bool(sys.argv[4])
-        
+        extraName = bool(sys.argv[4])
+    
+    doProfile = ( extraName == "cProfile")
+    
     if doProfile:
         import cProfile
         import pstats, io
         pr = cProfile.Profile()
         pr.enable()
-    results_dir = XcGrowth(initsim, mode,simMax,doProfile)
+    results_dir = XcGrowth(initsim, mode,simMax,extraName)
     if doProfile:
         pr.disable()
         filename = results_dir+'profile'+str(rank)+'.prof' 

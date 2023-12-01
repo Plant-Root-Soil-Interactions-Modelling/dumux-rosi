@@ -468,13 +468,13 @@ public:
                     RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; 
                     break;
                   case 1:
-                    RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; 
+                    RF_ = 1;//+(1/theta)*(f_sorp*CSSmax )  ; //none
                     break;
                   case 3:
                     RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; 
                     break;
                   case 6:
-                    RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; 
+                    RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; //linear
                     break;
                   default:
                     DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, 2, or) "+ std::to_string(css1Function));
@@ -1075,13 +1075,13 @@ public:
             CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
             break;
           case 1:
-            CSS1 = CSSmax*C_S_W;
+            CSS1 = 0.;//none
             break;
           case 3:
             CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
             break;
           case 6:
-            CSS1 = CSSmax*C_S_W;
+            CSS1 = CSSmax*C_S_W;//linear
             break;
           default:
             DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));

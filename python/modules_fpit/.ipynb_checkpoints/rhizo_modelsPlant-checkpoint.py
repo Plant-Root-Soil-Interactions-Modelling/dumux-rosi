@@ -1907,7 +1907,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def solve(self, dt, n_iter, *argv):#dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes
         """ set bc for cyl and solves it """
         self.last_dt = dt
-        verbose = False
+        
         #inner = bot = plant
         #outer = top = soil
         proposed_inner_fluxes = argv[0]
@@ -1926,6 +1926,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.seg_fluxes_limited_mucil_In = np.full(len(self.cyls), np.nan) # store for post processing
         
         for lId, cyl in enumerate(self.cyls):  # run cylindrical models
+            verbose = False
             gId = self.eidx[lId]  # for one process gId == lId
             if verbose:
                 print(rank, "cyl no ",lId+1,"/",len(self.cyls),'gId')
@@ -2042,6 +2043,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     redoSolve = True
                     n_iter_solve = 0
                     while redoSolve:
+                        verbose = True
                         try:
                             errorCOnly = False
                             cyl.ddt = 1.e-5 #do I need to reset it each time?

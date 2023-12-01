@@ -11,9 +11,9 @@
 #SBATCH --mail-user=m.giraud@fz-juelich.de
 
 
-cd $HOME/DUMUXexudRelease/DUMUX/dumux-rosi/python/fpit 
+cd $HOME/DUMUXexudDune27/DUMUX/dumux-rosi/python/fpit 
 
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=121 mpirun -n 121 python3 XcGrowth.py 9.5 dumux_10c 10.0 1
+DUMUX_NUM_THREADS=121 mpirun -n 121 python3 XcGrowth.py 9.5 dumux_10c 10.0 cProfile
