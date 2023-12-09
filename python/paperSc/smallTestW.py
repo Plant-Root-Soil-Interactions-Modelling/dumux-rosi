@@ -1,4 +1,4 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
+import sys; sys.path.append("../modules_fpit/"); sys.path.append("../../../CPlantBox/");  sys.path.append("../../build-cmake/cpp/python_binding/")
 sys.path.append("../../../CPlantBox/src/python_modules")
 
 import matplotlib; matplotlib.use('agg')
@@ -6,6 +6,7 @@ import matplotlib; matplotlib.use('agg')
 from rosi_richards10c_cyl import Richards10CCylFoam  # C++ part (Dumux binding)
 
 from richards import RichardsWrapper  # Python part
+from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial 
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,7 +35,8 @@ else:
         except:
             pass
 usemoles = True
-s = RichardsWrapper(Richards10CCylFoam(), usemoles)
+#s = RichardsWrapper(Richards10CCylFoam(), usemoles)
+s=RichardsNoMPIWrapper(Richards10CCylFoam(), usemoles)
 
 s.initialize()
 
@@ -68,12 +70,17 @@ loam = [0.045, 0.43, 0.04, 1.6, 50]
 nCells = 10
 logbase = 0.5
 r_in = 0.02
-r_out = 0.2500184914854141
-l = 1 #length in cm
+r_out = 0.7981351842686684
+l = 1.0000000000000002 #length in cm
 doLogarithmic = True
 if doLogarithmic:
-    points = np.logspace(np.log(r_in) / np.log(logbase), np.log(r_out) / np.log(logbase), nCells, base = logbase)
-    s.createGrid1d(points)
+    # s.points = np.logspace(np.log(r_in) / np.log(logbase), np.log(r_out) / np.log(logbase), nCells, base = logbase)
+    s.points = np.array([0.05,  0.06747797, 0.09106553, 0.12289834,
+                         0.1658586,  0.22383603,
+                         0.30208002, 0.40767492 ,0.55018151, 0.74250263])
+    s.createGrid1d(s.points)
+    r_in = s.points[0]
+    r_out = s.points[-1]
     nCells -= 1
 else:
     s.createGrid([r_in], [r_out], [nCells])  # [cm]
@@ -81,12 +88,14 @@ s.setParameter( "Soil.Grid.Cells", str(nCells))
 
 s.setParameter("Problem.reactionExclusive", "0")
 s.setHomogeneousIC( -108.5)  # cm pressure head
-wout = 0.1*0 
+wout = 0.1 
 win = -0.057400356841653545
-s.setOuterBC("constantFluxCyl", wout)  #  [cm/day]
+s.setOuterBC("constantFluxCyl",0.)# wout)  #  [cm/day]
 s.setInnerBC("constantFluxCyl", win)  #  [cm/day]
 WatBC =  win* (2 * np.pi * r_in * l) +wout * (2 * np.pi * r_out * l) 
 #s.setICZ_solute(0.)  # [kg/m2] 
+s.numFluidComp = 2
+
 
 molarMassWat = 18. # [g/mol]
 densityWat = 1. #[g/cm3]
@@ -248,6 +257,8 @@ s.setParameter("Newton.EnablePartialReassembly", "true")
 s.setParameter("Grid.Overlap", "0")  #no effec5
 
 s.initializeProblem()
+
+qOut = s.distributeSource(wout * (2 * np.pi * r_out * l) , 0, l, s.numFluidComp)
 s.setCriticalPressure(-15000)  # cm pressure head
 
 #s.setParameter("Flux.UpwindWeight", "1.")

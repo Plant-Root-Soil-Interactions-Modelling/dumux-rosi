@@ -22,7 +22,7 @@
  * \brief Richards equation realized with Richards box model.
  */
 
-#include "../python_binding/py_richards10c.hh"
+#include "../python_binding/py_richards10c_cyl.hh"
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) //try
 {
     using namespace Dumux;
     // parse command line arguments and input file
-	auto s = Richards<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver, 3>();
+	auto s = Richards<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver, 1>();
     
     // already done in s.initialize
     //const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -46,9 +46,9 @@ int main(int argc, char** argv) //try
 	s.initialize(args_);
 	std::string icz = "-1000";
     s.setParameter("Soil.IC.P", icz) ; // cm pressure head
-	s.setParameter("Soil.BC.Top.Type", "2");
+	s.setParameter("Soil.BC.Top.Type", "3");
 	s.setParameter("Soil.BC.Top.Value", "1.");
-	s.setParameter("Soil.BC.Bot.Type", "2");
+	s.setParameter("Soil.BC.Bot.Type", "3");
 	s.setParameter("Soil.BC.Bot.Value", "0.");
     
     

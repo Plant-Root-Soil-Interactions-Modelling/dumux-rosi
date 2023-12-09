@@ -190,14 +190,13 @@ s.initializeProblem()
 s.setCriticalPressure(-15000)  # cm pressure head
 
 
-fig, (ax1, ax2) = plt.subplots(1, 2)
 
-times = [0., 0.010416666666666666]  # days
-s.ddt = 1.e-5
+times = [0., 0.010416666666666666, 0.010416666666666666*2.]  # days
+
 
 
 for i, dt in enumerate(np.diff(times)):
-
+    s.ddt = 1.e-5
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 

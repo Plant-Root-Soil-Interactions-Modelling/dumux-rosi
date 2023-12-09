@@ -417,13 +417,21 @@ class RichardsWrapper(SolverWrapper):
             comm.barrier()
             print("richards::getWaterContent", rank)
             comm.barrier()
-        return (self._map(self.allgatherv(self.base.getWaterContent()), 2))#.flatten()
+        theta= (self._map(self.allgatherv(self.base.getWaterContent()), 2))#.flatten()
+        if len(theta) > 0:
+            assert min(theta) >= self.vg_soil.theta_R # better install a systematic heck no? and/or put it at the end of each solve function
+            assert max(theta) <= self.vg_soil.theta_S
+        return theta
 
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
         self.checkInitialized()
         #assert max_rank == 1
-        return np.array(self.base.getWaterContent())
+        theta = np.array(self.base.getWaterContent())
+        if len(theta) > 0:
+            assert min(theta) >= self.vg_soil.theta_R
+            assert max(theta) <= self.vg_soil.theta_S
+        return theta
 
     def getWaterVolume(self):
         """Returns total water volume of the domain [cm3]"""
@@ -480,6 +488,7 @@ class RichardsWrapper(SolverWrapper):
     
     def getContentCyl(self,idComp, isDissolved, length ):
         assert self.dimWorld != 3
+        assert idComp > 0 # do not use for water content
         vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
         C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
         
@@ -519,8 +528,16 @@ class RichardsWrapper(SolverWrapper):
         
     def getContent(self,idComp, isDissolved):
         assert self.dimWorld != 1
+        assert idComp > 0 # do not use for water content
         vols = (1/  1e6)*self.getCellVolumes()#.flatten() #m3 scv            
         C_ = self.getSolution(idComp)#.flatten()  # mol/mol wat or mol/mol scv
+        
+        try:
+            assert (C_ >= 0.).all()
+        except:
+            print('getContent',idComp, isDissolved,min( vols),max( vols),min( C_),max( C_))
+            raise Exception
+            
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv

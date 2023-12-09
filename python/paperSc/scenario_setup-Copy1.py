@@ -153,30 +153,42 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
-def getBiochemParam(s,paramIdx, noAds):
-    s.numFluidComp = 2
-    s.numComp = 8
-    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
+def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
+                        net_inf = None, usemoles = True, dirResults = "",#"./results/parallel"+str(max_rank)+"/",
+                        p_mean_ = -100,css1Function = 0,paramIndx =0):
+    """
+        Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
+        soil demoType is fixed and homogeneous 
+        domain is periodic (if 2d or 3d)
+        initial potentials are linear from @param p_top to @param p_bot
+        
+        returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
+    """
+    if len(dirResults) == 0:
+        diResults = "./results/parallel"+str(max_rank)+"/"
+    s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
+            
     
-    s.mg_per_molC = 12000
+    #@see dumux-rosi\cpp\python_binding\solverbase.hh
+    
+    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIndx]
+    mg_per_molC =12000
     s.betaC = paramSet['beta_C'] # -
     s.betaO = paramSet['beta_O'] # -
 
     ## ATT! C_S_W_thres has to be > 0
-    s.C_S_W_thresC =  paramSet['C_thres,C']/s.mg_per_molC# mgC/cm3 water => mol/cm3 water
-    s.C_S_W_thresO =  paramSet['C_thres,O']/s.mg_per_molC# mgC/cm3 water => mol/cm3 water
+    s.C_S_W_thresC =  paramSet['C_thres,C']/mg_per_molC# mgC/cm3 water => mol/cm3 water
+    s.C_S_W_thresO =  paramSet['C_thres,O']/mg_per_molC# mgC/cm3 water => mol/cm3 water
 
     Ds = paramSet['DS_W'] #cm^2/d
     Dl = 0.003456 #cm^2/d
-    s.Ds = Ds /(24*3600) /10000 # m^2/s
-    s.Dl = Dl /(24*3600) /10000# m^2/s
 
-    s.k_SC =  paramSet['k_C,S'] * s.mg_per_molC/paramSet['theta'] #[cm^3 water /mgC/d] => [cm^3 bulk soil/mol/d ]
+    s.k_SC =  paramSet['k_C,S'] * mg_per_molC/paramSet['theta'] #[cm^3 water /mgC/d] => [cm^3 bulk soil/mol/d ]
     s.k_DC =  paramSet['k_d,C'] #1/d
     s.k_DO =  paramSet['k_d,O']#1/d
 
-    s.K_L =  paramSet['K_L'] /s.mg_per_molC#[mol cm-3 soil]
-    s.k_SO =  paramSet['k_O,S'] * s.mg_per_molC/paramSet['theta']
+    s.K_L =  paramSet['K_L'] /mg_per_molC#[mol cm-3 soil]
+    s.k_SO =  paramSet['k_O,S'] * mg_per_molC/paramSet['theta']
 
     s.k_RC =  paramSet['k_r,C']#1/d
     s.k_RO =  paramSet['k_r,O']#1/d
@@ -192,29 +204,83 @@ def getBiochemParam(s,paramIdx, noAds):
     s.k_decay = paramSet['Y'] # -
     s.k_growthC = paramSet['Y_C'] # -
     s.k_growthO = paramSet['Y_O'] #- 
-    if noAds:
-        s.CSSmax = 0.
-    else:
-        s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 bulk soil
-    # can cause issue
-    s.k_sorp = paramSet['k_sorp'] /s.mg_per_molC# mol C/cm3 bulk soil
-    
+    s.CSSmax = paramSet['CSS_max']/mg_per_molC # mol C/cm3 bulk soil
+    s.k_sorp = paramSet['k_sorp'] /mg_per_molC# mol C/cm3 bulk soil
     s.alpha = 0.1# -
     s.f_sorp = 0.5
     s.k_phi = 0.1
+
+
+    C_S = paramSet['CS_init'] /mg_per_molC## in mol/cm3 water
+    C_L = paramSet['CL_init'] /mg_per_molC## in mol/cm3 water
+    unitConversion = 1.0e6 # mol/cm3  => mol/m3 
+    s.bulkDensity =  paramSet['ro_B']*1000 #g/cm3 => kg/m3
+    s.solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
+    s.solidMolarMass = 60.08e-3 # [kg/mol] 
+
+    s.soil = soil_
+    s.soil[1] = 1- s.bulkDensity/s.solidDensity #== size of air volume
+    s.vg_soil = vg.Parameters(soil_) 
+    CSS2_init = s.CSSmax*1e6 * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ m3 scv
+
+
+
+    s.css1Function = css1Function
     s.C_aOLim=1.e-10*0.
     s.C_aCLim=1.e-10*0.
-    
-    return s
-
-def setBiochemParam(s):
-
     s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
     s.setParameter("Soil.C_aCLim", str(s.C_aCLim)) #[molC/cm3 scv]
 
+    s.setParameter( "Soil.css1Function", str(s.css1Function))
+    s.ICcc = np.array([C_S *unitConversion,
+                       C_L*unitConversion,
+                        9.16666666666667e-07* unitConversion,
+                        8.33333333333333e-06* unitConversion,
+                        8.33333333333333e-07* unitConversion,
+                        8.33333333333333e-06* unitConversion,
+                        CSS2_init, 0.])# in mol/m3 water or mol/m3 scv
+
+    s.initialize()
+
+    s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
+
+    #cell_number = str(cell_number)
+    cell_number_ = cell_number
+    cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
+    s.setParameter( "Soil.Grid.Cells", cell_number)    
+    s.setParameter("Problem.reactionExclusive", s.dumux_str(1))
+
+    # BC
+    s.setTopBC("noFlux")
+    s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
+    # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
+    s.solidMolDensity = s.solidDensity/s.solidMolarMass
+    # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
+    s.bulkDensity_m3 = s.solidMolDensity*(1.- s.vg_soil.theta_S)
+
+    s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
+    s.setParameter( "Soil.solidDensity", str(s.solidDensity))
+
+    s.Ds = Ds /(24*3600) /10000 # m^2/s
+    s.Dl = Dl /(24*3600) /10000# m^2/s
+    s.numComp = 8
+    s.numFluidComp = 2
     s.setParameter("1.Component.LiquidDiffusionCoefficient", str(s.Ds)) #m^2/s
     s.setParameter("2.Component.LiquidDiffusionCoefficient", str(s.Dl)) #m^2/s
 
+    s.decay = 0. #1.e-5
+
+    for i in range(1, s.numComp+1):
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
+        s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
+        s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
+    for i in range(s.numComp):
+        molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) #mol/m3 to mol/mol
+        
+        #print('C',i+1,s.ICcc[i], s.phaseDensity(isDissolved = (i <2)),molarC )
+        s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
+        
 
     s.setParameter("Soil.betaC", str(s.betaC)) # -
     s.setParameter("Soil.betaO", str(s.betaO )) # -
@@ -222,8 +288,10 @@ def setBiochemParam(s):
     s.setParameter("Soil.C_S_W_thresO", str(s.C_S_W_thresO )) #mol/cm3
     s.setParameter("Soil.k_decay", str(s.k_decay ))
     s.setParameter("Soil.k_decay2", str(s.k_decay2))
+    #s.setParameter("Soil.k_decay3", str(1 ))
     s.setParameter("Soil.k_DC", str(s.k_DC )) # 1/d
     s.setParameter("Soil.k_DO", str(s.k_DO )) # 1/d
+    #s.setParameter("Soil.k_growthBis", str(1 )) #bool
     s.setParameter("Soil.k_growthC", str(s.k_growthC ))
     s.setParameter("Soil.k_growthO", str(s.k_growthO ))
     s.setParameter("Soil.K_L", str(s.K_L))#[mol/cm3]
@@ -232,7 +300,9 @@ def setBiochemParam(s):
     s.setParameter("Soil.k_RO", str(s.k_RO))
 
     s.setParameter("Soil.k_SC", str(s.k_SC )) #cm^3/mol/d
+    #s.setParameter("Soil.k_SCBis", str(k_SC )) #cm^3/mol/d
     s.setParameter("Soil.k_SO", str(s.k_SO )) #cm^3/mol/d
+    #s.setParameter("Soil.k_SOBis", str(k_SO )) #cm^3/mol/d
 
     s.setParameter("Soil.m_maxC", str(s.m_maxC  ))# 1/d
     s.setParameter("Soil.m_maxO", str(s.m_maxO  ))# 1/d
@@ -244,122 +314,17 @@ def setBiochemParam(s):
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
-    return s
-
-def setIC3D(s, paramIdx, ICcc = None):
-    # s.setHomogeneousIC(p_mean_, equilibrium = True) #-97.5)  # cm pressure head
-    if ICcc is None:
-        paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
-        C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
-        C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
-
-        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
-        unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        s.ICcc = np.array([C_S *unitConversion,
-                           C_L*unitConversion,
-                            9.16666666666667e-07* unitConversion,
-                            8.33333333333333e-06* unitConversion,
-                            8.33333333333333e-07* unitConversion,
-                            8.33333333333333e-06* unitConversion,
-                            CSS2_init*unitConversion,
-                           0.])# in mol/m3 water or mol/m3 scv
-    else:
-        s.ICcc = ICcc
-    
-    for i in range(s.numComp):
-        #mol/m3 to mol/mol
-        molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) 
-        # print('C',i+1,s.ICcc[i], s.phaseDensity(isDissolved = (i < s.numFluidComp)),molarC )
-        s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
-    return s
 
 
-def setDefault(s):
-    molarMassWat = 18. # [g/mol]
-    densityWat = 1. #[g/cm3]
-    # [mol/cm3] = [g/cm3] /  [g/mol] 
-    molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
-    s.molarDensityWat = molarDensityWat
 
+    # Paramters
+    #dumux-rosi\python\modules\richards.py
+    s.setVGParameters([soil_])
+    #@see dumux-rosi\cpp\python_binding\solverbase.hh
+    #s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
     s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
-    s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
-    # s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true") #<= helps  reach convergence
-    return s
-
-def setSoilParam(s,paramIdx):
-    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
-    s.bulkDensity =  paramSet['ro_B']*1000 #g/cm3 => kg/m3
-    s.solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
-    s.solidMolarMass = 60.08e-3 # [kg/mol] 
-
-    # theta_r, theta_s, alpha, n, Ks
-    s.soil = [0.045, np.nan, 0.04, 1.6, 50]
-
-    s.soil[1] = 1- s.bulkDensity/s.solidDensity #== size of air volume
-    s.vg_soil = vg.Parameters(s.soil) 
-    # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
-    s.solidMolDensity = s.solidDensity/s.solidMolarMass
-    # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
-    s.bulkDensity_m3 = s.solidMolDensity*(1.- s.vg_soil.theta_S)
-
-    s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
-    s.setParameter( "Soil.solidDensity", str(s.solidDensity))
-    s.setVGParameters([s.soil])
-    return s
-
-def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
-                        net_inf = None, usemoles = True, dirResults = "",
-                      #"./results/parallel"+str(max_rank)+"/",
-                        p_mean_ = -100,css1Function = 0,paramIndx =0,
-                     noAds = False, ICcc = None):
-    """
-        Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
-        soil demoType is fixed and homogeneous 
-        domain is periodic (if 2d or 3d)
-        initial potentials are linear from @param p_top to @param p_bot
-        
-        returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
-    """
-    if len(dirResults) == 0:
-        dirResults = "./results/parallel"+str(max_rank)+"/"
-    s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
-            
-    
-    #@see dumux-rosi\cpp\python_binding\solverbase.hh
-
-    s.initialize()
-    setDefault(s)
-    setSoilParam(s,paramIndx)
-    getBiochemParam(s,paramIndx,noAds)
-    
-    setBiochemParam(s)
-    
-    setIC3D(s, paramIndx, ICcc)
-    
-    s.css1Function = css1Function
-    s.setParameter( "Soil.css1Function", str(s.css1Function))
-
-    s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
-
-    #cell_number = str(cell_number)
-    cell_number_ = cell_number
-    cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
-    s.setParameter( "Soil.Grid.Cells", cell_number)    
-    s.setParameter("Problem.reactionExclusive", "1")
-
-    # BC
-    s.setTopBC("noFlux")
-    s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
-    
-    for i in range(1, s.numComp+1):
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
-        s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
-        s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
-        
-        
     
     # IC
     if isinstance(p_mean_,(int,float)):
@@ -370,10 +335,9 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     else:
         print(type(p_mean_))
         raise Exception
-        
+    
     s.initializeProblem()
     
-        
     if isinstance(p_mean_,(int,float)):
         pass
     elif isinstance(p_mean_,type(np.array([]))):
@@ -381,10 +345,13 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     else:
         print(type(p_mean_))
         raise Exception
+        
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
     
+    write_file_array('getWaterContent',s.getWaterContent(), directory_ =dirResults, fileType = '.csv')
+    write_file_array('getSolutionHead',s.getSolutionHead(), directory_ =dirResults, fileType = '.csv')
     
     solute_conc = np.array(s.getSolution(1))
     if rank == 0:
@@ -404,50 +371,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         for ncomp in range(s.numComp):
             print('after creation: s.getSolution(ncomp + 1)',
                   ncomp + 1,np.array(s.getSolution(ncomp + 1)).flatten())
-    
-    aaa = np.array(["Soil.MolarMass", s.solidMolarMass, 
-                    "Soil.solidDensity", s.solidDensity,
-                    "Soil.betaC", str(s.betaC ),
-                    "Soil.betaO", str(s.betaO),
-                    "Soil.C_S_W_thresC", str(s.C_S_W_thresC ),
-                    "Soil.C_S_W_thresO", str(s.C_S_W_thresO ),
-                    "Soil.k_decay", str(s.k_decay),
-                    "Soil.k_decay2", str(s.k_decay2 ),
-                    "Soil.k_DC", str(s.k_DC  ),
-                    "Soil.k_DO", str(s.k_DO  ),
-                    "Soil.k_growthC", str(s.k_growthC),
-                    "Soil.k_growthO", str(s.k_growthO),
-                    "Soil.K_L", str(s.K_L),
-                    "Soil.k_phi", str(s.k_phi ),
-                    "Soil.k_RC", str(s.k_RC),
-                    "Soil.k_RO", str(s.k_RO ),
-                    "Soil.k_SC", str(s.k_SC ),
-                    "Soil.k_SO", str(s.k_SO ),
-                    "Soil.m_maxC", str(s.m_maxC  ),
-                    "Soil.m_maxO", str(s.m_maxO  ),
-                    "Soil.micro_maxC", str(s.micro_maxC ),
-                    "Soil.micro_maxO", str(s.micro_maxO ),
-                    "Soil.v_maxL", str(s.v_maxL),
-                    "Soil.k_sorp", str(s.k_sorp),
-                    "Soil.f_sorp", str(s.f_sorp),
-                    "Soil.CSSmax", str(s.CSSmax),
-                    "Soil.alpha", str(s.alpha),
-                    "Soil.C_aOLim", str(s.C_aOLim),
-                    "Soil.C_aCLim", str(s.C_aCLim),
-                    "1.Component.LiquidDiffusionCoefficient", str(s.Ds),
-                    "2.Component.LiquidDiffusionCoefficient", str(s.Dl),
-                    "Newton.MaxRelativeShift",str(s.MaxRelativeShift),
-                    'wiltingPoint',s.wilting_point, 'bulkDensity',s.bulkDensity,
-                    'bulkDensity_m3',s.bulkDensity_m3,'solidDensity',s.solidDensity, 
-                    'solidMolarMass',s.solidMolarMass,
-                    ' solidMolDensity', s.solidMolDensity, 
-                    "Soil.css1Function", str(s.css1Function)],dtype=object) 
-
-    name2 = dirResults+ "soil3dParams"+ '.csv'
-    space ="\n"
-    if rank == 0:
-        with open(name2, 'a') as log:
-            log.write(space.join([num for num in map(str, aaa)])  +'\n')        
+            
     return s, s.vg_soil
 
 def set_all_sd(rs, s):

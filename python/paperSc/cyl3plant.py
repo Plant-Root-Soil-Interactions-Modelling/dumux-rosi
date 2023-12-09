@@ -356,7 +356,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comp2content = r.getContentCyl(idComp=2, doSum = False, reOrder = True)
             if r.mpiVerbose or (max_rank == 1):
                 print(rank,'check comp1content',len(airSegsId))
-            
+
+            assert (waterContent >= 0.).all()
+            assert (comp1content >= 0.).all()
+            assert (comp2content >= 0.).all()
             if len(airSegsId)>0:
                 try:
                     assert (waterContent[airSegsId] == 0.).all()
@@ -778,7 +781,27 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             for idComp in range(s.numComp+1):#mol/day
                 if (max(abs(soil_sources_limited[idComp])) != 0.):
-                    test_values = list(soil_sources_limited[idComp].copy())
+                    SSL = soil_sources_limited[idComp].copy()
+                    SSL = np.maximum(SSL, -soil_contents[idComp]/dt)
+                    
+                    toAdd= np.maximum(0., -(soil_contents[idComp]/dt + SSL))
+                    SSL[np.where(toAdd>0.)] += toAdd[np.where(toAdd>0.)] #+ 1e-20
+                    
+                    k_limit_source3d = 0
+                    epsilon_source3d = 1e-25
+                    while (not (SSL*dt >= -soil_contents[idComp]).all()) and (k_limit_source3d <= 10):
+                        SSL[np.where(SSL*dt < -soil_contents[idComp])] += epsilon_source3d
+                        epsilon_source3d *= 10
+                        k_limit_source3d += 1
+                    
+                    try:
+                        assert min(soil_contents[idComp] + SSL*dt) >=0.
+                    except:
+                        print(soil_sources_limited[idComp], SSL,dt,  min(soil_contents[idComp] + SSL*dt) )
+                        write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
+                        raise Exception
+                    
+                    test_values = list(SSL)
                     test_keys = np.array([i for i in range(len(test_values))])
                     res = {}
                     for key in test_keys:
@@ -787,6 +810,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                             test_values.remove(value)
                             break                        
                     write_file_float("setsource_"+str(idComp), res, directory_ =results_dir) 
+                    write_file_array("setsourceLim1_"+str(idComp),  soil_sources_limited[idComp], 
+                                     directory_ =results_dir, fileType =".csv") 
+                    write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
                     s.setSource(res.copy(), eq_idx = idComp)  # [mol/day], in modules/richards.py
             r.SinkLim3DS = abs(soil_fluxes_limited - soil_fluxes) # at the end of the fixed point iteration, should be ~ 0        
             
@@ -801,9 +827,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             redoSolve = True
             maxRelShift = s.MaxRelativeShift
             while redoSolve:
-                s.ddt = 1.e-5
+                s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
                 try:
-                    
+                    decreaseMaxRelShift = False
                     if r.mpiVerbose or (max_rank == 1):
                         comm.barrier()
                         print("entering the s.solve", rank)
@@ -811,24 +837,62 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     if r.mpiVerbose or (max_rank == 1):
                         print("leaving the s.solve", rank)
                         comm.barrier()
+                    solComp = [s.getSolution(ncom+1) for ncom in range(s.numComp)]
+                    whereError = None
+                    if rank == 0:
+                        whereError = [np.where(SC <0.) for SC in solComp]
+                        solComp = [min(SC) for SC in solComp]
+                    solComp = comm.bcast(solComp, root = 0)
+                    whereError = comm.bcast(whereError, root = 0)
+                    if min(solComp) <0.:
+                        print("min(solComp) <0.", rank, solComp, whereError)
+                        decreaseMaxRelShift = True
+                        raise Exception
                     redoSolve = False
                     # newton parameters are re-read at each 'solve()' calls
                     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))# reset value
+                    s.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
+                    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
+                    s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
+                    
+                    s.setParameter("Newton.MaxSteps", "18")
+                    s.setParameter("Newton.MaxTimeStepDivisions", "10")
                 except Exception as err:
+                    s.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
+                    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
+                    s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
                     if r.mpiVerbose or (max_rank == 1):
-                        print(rank, f"Unexpected {err=}, {type(err)=}")
-                    if k_soil_solve < 5:
-                        if r.mpiVerbose or (max_rank == 1):
-                            print(rank,
-                              'soil.solve() failed. Increase NewtonMaxRelativeShift from',
-                              maxRelShift,'to',maxRelShift*10.)
-                        maxRelShift *= 10.
+                        print(rank, f"Unexpected {err=}, {type(err)=}", 'k_soil_solve',k_soil_solve)
+                    if k_soil_solve > 6:
+                        raise Exception
+                    if k_soil_solve == 0:
+                        s.setParameter("Newton.MaxSteps", "200")
+                        s.setParameter("Newton.MaxTimeStepDivisions", "100")
+                    elif k_soil_solve == 1: # worth making the computation more precise?
+                        print(rank,
+                              'soil.solve() failed. making the computation more precise')
+                        s.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
+                        s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+                        s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+                        s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift/10.))# reset value
+                    else:
+                        if decreaseMaxRelShift:
+                            change = 0.1
+                        else:
+                            change = 10
+                        print(rank,
+                              'soil.solve() failed. NewtonMaxRelativeShift from',
+                              maxRelShift,'to',maxRelShift*change)
+                        maxRelShift *= change
                         # newton parameters are re-read at each 'solve()' calls
                         s.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                        s.reset()
-                        k_soil_solve += 1
-                    else:
-                        raise Exception
+                    s.reset()
+                    for ncomp in range(r.numComp):
+                        try:
+                            assert (np.array(s.getSolution(ncomp + 1)).flatten() >= 0).all()
+                        except:
+                            raise Exception
+                    k_soil_solve += 1
                 
             if r.mpiVerbose or (max_rank == 1):
                 print("done")
@@ -1050,11 +1114,17 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if  (n_iter % skip == 0) and (rank == 0):
                 write_file_array("fpit_sumDiff1d3dCW_relBU", r.sumDiff1d3dCW_relBU, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_sumDiff1d3dCW_absBU", r.sumDiff1d3dCW_absBU, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_errbulkMass",np.array([s.bulkMassCErrorPlant_abs, s.bulkMassCErrorPlant_rel, #not cumulative 
-                                                s.bulkMassCError1ds_abs, s.bulkMassCError1ds_rel, 
-                                                s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel,
-                                                s.bulkMassCErrorPlant_absReal,
-                                                s.errSoil_source_sol_abs, s.errSoil_source_sol_rel]), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_errbulkMass",
+                                 np.array([s.bulkMassCErrorPlant_abs,
+                                           s.bulkMassCErrorPlant_rel, #not cumulative
+                                           s.bulkMassCError1ds_abs,
+                                           s.bulkMassCError1ds_rel, 
+                                           s.bulkMassErrorWater_abs,
+                                           s.bulkMassErrorWater_rel,
+                                           s.bulkMassCErrorPlant_absReal,
+                                           s.errSoil_source_sol_abs, 
+                                           s.errSoil_source_sol_rel]), 
+                                 directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_errorMassRhizo", np.array([r.rhizoMassCError_abs, r.rhizoMassCError_rel,
                                                         r.rhizoMassWError_abs, r.rhizoMassWError_rel]), 
                                  directory_ =results_dir, fileType = '.csv')# not cumulativecumulative (?)
@@ -1146,8 +1216,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_new_soil_water", new_soil_water, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoWaterPerVoxel", rhizoWaterPerVoxel, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rx", rx, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_sumErrors1ds3ds", np.concatenate((r.sumDiff1d3dCW_abs, r.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
-                write_file_array("fpit_maxErrors1ds3ds", np.concatenate((r.maxDiff1d3dCW_abs, r.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# 
+                write_file_array("fpit_sumErrors1ds3dsAbs", r.sumDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_sumErrors1ds3dsRel", r.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_maxErrors1ds3dsAbs", r.maxDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_maxErrors1ds3dsRel", r.maxDiff1d3dCW_rel, directory_ =results_dir, fileType = '.csv')
                 
                 write_file_array("fpit_rhizoWAfter", rhizoWAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoTotCAfter", rhizoTotCAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
@@ -1158,7 +1230,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
             n_iter += 1
             n_iter_inner_max = max(n_iter_inner_max,n_iter)
-            #end iteration
+
         if rank == 0:
             write_file_array("N_seg_fluxes",np.array(rs.outputFlux), directory_ =results_dir)
             write_file_array("N_soil_fluxes",soil_fluxes, directory_ =results_dir)
