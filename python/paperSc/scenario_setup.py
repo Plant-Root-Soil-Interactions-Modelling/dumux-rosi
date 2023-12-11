@@ -284,6 +284,8 @@ def setDefault(s):
     s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
+    s.setParameter("Newton.EnableChop", "true")# force solute mole fraction > 0 and water in possible pressure ranges
+    # s.setParameter("Problem.verbose_local_residual", "true")# reset value
     s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
     # s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true") #<= helps  reach convergence
     return s
@@ -494,14 +496,20 @@ def qair2rh(qair, press,TK):
     RH = 26.3 * press * qair  /(exp((17.67*(TK - T0))/(TK- 29.65)))
     return RH
     
-def weather(simDuration, hp:float=1):
+    
+
+def resistance2conductance(resistance,r, weatherX):
+    resistance = resistance* (1/100) #[s/m] * [m/cm] = [s/cm]
+    resistance = resistance * r.R_ph * weatherX["TairK"] / r.Patm # [s/cm] * [K] * [hPa cm3 K−1 mmol−1] * [hPa] = [s] * [cm2 mmol−1]
+    resistance = resistance * (1000) * (1/10000)# [s cm2 mmol−1] * [mmol/mol] * [m2/cm2] = [s m2 mol−1]
+    return 1/resistance
+    
+def weather(simDuration, spellData, hp:float=1):
         if simDuration == 0.:
             raise Exception
-        vgSoil = [0.059, 0.45, 0.00644, 1.503, 1]
-        loam = [0.08, 0.43, 0.04, 1.6, 50]
         Qnigh = 0; Qday = 960e-6 #458*2.1
-        condition = "wet"
-        if condition == "wet":
+        
+        if  ((spellData['condition'] == "wet") or (simDuration <= spellData['spellStart']) or (simDuration > spellData['spellEnd'])):
             Tnigh = 15.8; Tday = 22
             #Tnigh = 13; Tday = 20.7
             #specificHumidity = 0.0097
@@ -509,7 +517,7 @@ def weather(simDuration, hp:float=1):
             Pair = 1010.00 #hPa
             thetaInit = 0.4#
             cs = 350e-6
-        elif condition == "dry":
+        elif spellData['condition'] == "dry":
             Tnigh = 20.7; Tday = 30.27
             #Tnigh = 15.34; Tday = 23.31
             #specificHumidity = 0.0097# 0.0111
@@ -518,6 +526,10 @@ def weather(simDuration, hp:float=1):
             thetaInit = 28/100   
             #thetaInit = 10.47/100
             cs = 350e-6
+        else:
+            print('spellData',spellData)
+            raise Exception
+            
         coefhours = sinusoidal(simDuration)/2
         RH_ = RHnigh + (RHday - RHnigh) * coefhours
         TairC_ = Tnigh + (Tday - Tnigh) * coefhours
@@ -548,11 +560,11 @@ def weather(simDuration, hp:float=1):
             #raise Exception
             
 
-        pmean = theta2H(vgSoil, thetaInit)
+        # pmean = theta2H(vgSoil, thetaInit)
 
         weatherVar = {'TairC' : TairC_,'TairK' : TairC_ + 273.15,'Pair':Pair,"es":es,
                         'Qlight': Q_,'rbl':rbl,'rcanopy':rcanopy,'rair':rair,"ea":ea,
-                        'cs':cs, 'RH':RH_, 'p_mean':pmean, 'vg':loam}
+                        'cs':cs, 'RH':RH_, 'theta':thetaInit}
         #print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
         return weatherVar
 
@@ -695,7 +707,7 @@ def setKrKx_phloem(r): #inC
 def create_mapped_plant( nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
                 stochastic = False, mods = None, plantType = "plant",l_ks_ = "dx_2",
-                recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11):
+                recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11, spellData =None):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     #global picker  # make sure it is not garbage collected away...
@@ -711,7 +723,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
                                  limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
     elif fname.endswith(".xml"):
         seed = 1
-        weatherInit = weather(initSim)
+        weatherInit = weather(initSim,spellData)
         if plantType == "plant":
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:

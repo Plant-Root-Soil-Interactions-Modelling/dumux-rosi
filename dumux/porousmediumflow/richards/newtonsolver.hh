@@ -48,10 +48,22 @@ class RichardsNewtonSolver : public NewtonSolver<Assembler, LinearSolver, Reasse
     using Scalar = typename Assembler::Scalar;
     using ParentType = NewtonSolver<Assembler, LinearSolver, Reassembler, Comm>;
     using SolutionVector = typename Assembler::ResidualType;
+    //using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+    //using SolidSystem = GetPropType<TypeTag, Properties::SolidSystem>;
 
     using MaterialLaw = typename Assembler::Problem::SpatialParams::MaterialLaw;
     using Indices = typename Assembler::GridVariables::VolumeVariables::Indices;
-    enum { pressureIdx = Indices::pressureIdx };
+    using VolumeVariables = typename Assembler::GridVariables::VolumeVariables;
+    static constexpr int numFComponents =  VolumeVariables::FluidSystem::numComponents;
+    static constexpr int numSComponents =  VolumeVariables::SolidSystem::numComponents - VolumeVariables::SolidSystem::numInertComponents; 
+    
+    enum { 
+    numComponents = numFComponents + numSComponents,
+        //numComponents = VolumeVariables::ModelTraits::numFluidComponents(),
+        //numComponents = GetPropType<TypeTag, Properties::ModelTraits>::numComponents(),
+        //nElem =  VolumeVariables::numFluidComponents() + VolumeVariables::numSolidComponents() -1 ,
+        pressureIdx = Indices::pressureIdx };
+    //enum { numComponents    = ModelTraits::numFluidComponents() };
 
 public:
     using ParentType::ParentType;
@@ -74,8 +86,7 @@ private:
         uCurrentIter -= deltaU;
 
         // do not clamp anything after 5 iterations
-        if (this->numSteps_ <= 4)
-        {
+        
             // clamp saturation change to at most 20% per iteration
             const auto& fvGridGeometry = this->assembler().fvGridGeometry();
             for (const auto& element : elements(fvGridGeometry.gridView()))
@@ -87,28 +98,38 @@ private:
                 {
                     auto dofIdxGlobal = scv.dofIndex();
 
-                    // calculate the old wetting phase saturation
-                    const auto& spatialParams = this->assembler().problem().spatialParams();
-                    const auto elemSol = elementSolution(element, uCurrentIter, fvGridGeometry);
-                    const auto& materialLawParams = spatialParams.materialLawParams(element, scv, elemSol);
-                    const Scalar pcMin = MaterialLaw::pc(materialLawParams, 1.0);
-                    const Scalar pw = uLastIter[dofIdxGlobal][pressureIdx];
-                    using std::max;
-                    const Scalar pn = max(this->assembler().problem().nonWettingReferencePressure(), pw + pcMin);
-                    const Scalar pcOld = pn - pw;
-                    const Scalar SwOld = max(0.0, MaterialLaw::sw(materialLawParams, pcOld));
+                    if (this->numSteps_ <= 4)
+                    {
+                    
+                        // calculate the old wetting phase saturation
+                        const auto& spatialParams = this->assembler().problem().spatialParams();
+                        const auto elemSol = elementSolution(element, uCurrentIter, fvGridGeometry);
+                        const auto& materialLawParams = spatialParams.materialLawParams(element, scv, elemSol);
+                        const Scalar pcMin = MaterialLaw::pc(materialLawParams, 1.0);
+                        const Scalar pw = uLastIter[dofIdxGlobal][pressureIdx];
+                        const Scalar pn = std::max(this->assembler().problem().nonWettingReferencePressure(), pw + pcMin);
+                        const Scalar pcOld = pn - pw;
+                        const Scalar SwOld = std::max(0.0, MaterialLaw::sw(materialLawParams, pcOld));
 
-                    // convert into minimum and maximum wetting phase
-                    // pressures
-                    const Scalar pwMin = pn - MaterialLaw::pc(materialLawParams, SwOld - 0.2);
-                    const Scalar pwMax = pn - MaterialLaw::pc(materialLawParams, SwOld + 0.2);
+                        // convert into minimum and maximum wetting phase
+                        // pressures
+                        const Scalar pwMin = pn - MaterialLaw::pc(materialLawParams, SwOld - 0.2);
+                        const Scalar pwMax = pn - MaterialLaw::pc(materialLawParams, SwOld + 0.2);
 
-                    // clamp the result
-                    using std::min; using std::max;
-                    uCurrentIter[dofIdxGlobal][pressureIdx] = max(pwMin, min(uCurrentIter[dofIdxGlobal][pressureIdx], pwMax));
+                        // clamp the result
+                        //using std::min; using std::max;
+                        uCurrentIter[dofIdxGlobal][pressureIdx] = std::max(pwMin, std::min(uCurrentIter[dofIdxGlobal][pressureIdx], pwMax));
+                    }//
+                    
+                    for(int eqIdx = pressureIdx +1; eqIdx < numComponents ;  eqIdx++)
+                    {
+                        // std::cout<<"eqIdx "<<eqIdx<<" numComponents "<<numComponents;
+                        // std::cout<<"uCurrentIter[dofIdxGlobal]["<<eqIdx<<"] "<<uCurrentIter[dofIdxGlobal][eqIdx]<<", ";
+                        uCurrentIter[dofIdxGlobal][eqIdx] = std::max(0., uCurrentIter[dofIdxGlobal][eqIdx]);//all other elemnents >=0.
+                    }
                 }
             }
-        }
+        
 
         if (this->enableResidualCriterion())
             this->computeResidualReduction_(uCurrentIter);

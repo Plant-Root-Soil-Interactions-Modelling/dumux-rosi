@@ -25,8 +25,8 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
 import timeit
 import numpy as np
 
-import scenario_setup as scenario
-scenario = reload(scenario)
+import scenario_setup
+scenario_setup = reload(scenario_setup)
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 rhizo_modelsPlant = reload(rhizo_modelsPlant)
 from rhizo_modelsPlant import *
@@ -61,7 +61,7 @@ def suggestNumStepsChange(nOld, numIter_, targetIter_, results_dir):# taken from
     return int(np.ceil(nOld * change))
     
 
-def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
+def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     #initsim =float(sys.argv[1])# initsim = 9.5
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
@@ -86,7 +86,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/paramIndx"+extraName+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/paramIndx"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -119,7 +119,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
     comp = "phenolics"
     usemoles = True
     """ parameters   """
-    soil_ = scenario.vg_SPP(0)
+    soil_ = scenario_setup.vg_SPP(0)
 
     min_b = [-5, -5, -10.] 
     max_b = [5, 5, 0.] 
@@ -141,7 +141,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
     """ initialize """
 
 
-    s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp, 
+    s, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
                 min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
                 usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean, 
                                          css1Function = css1Function_,
@@ -163,12 +163,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    rs, r = scenario.create_mapped_plant( nc, logbase, mode,initsim,
+    rs, r = scenario_setup.create_mapped_plant( nc, logbase, mode,initsim,
                                             min_b, max_b, cell_number, s, xml_name,
                                             path, plantType = organism, 
                                             recreateComsol_ = recreateComsol,
                                             usemoles = usemoles,l_ks_ = l_ks,
-                                            limErr1d3d = 5e-13)  # pass parameter file for dynamic growth
+                                            limErr1d3d = 5e-13, spellData = spellData)  # pass parameter file for dynamic growth
 
     rs.weightBefore = weightBefore
     rs.SRIBefore = SRIBefore
@@ -178,6 +178,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
     rs.useOuterFluxCyl_sol = useOuterFluxCyl_sol
     s.mpiVerbose = mpiVerbose
     rs.mpiVerbose = mpiVerbose
+    rs.spellData = spellData
+    rs.enteredSpell = (rs.spellData['scenario'] == 'none') or (rs.spellData['scenario'] == 'baseline')
+    rs.leftSpell = (rs.spellData['scenario'] == 'baseline')
 
 
     net_sol_flux =  np.array([np.array([]),np.array([])])
@@ -768,6 +771,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_):
         
 
 if __name__ == '__main__':
+    print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     
@@ -778,17 +782,45 @@ if __name__ == '__main__':
     if len(sys.argv)>4:
         paramIndx_base = int(sys.argv[4])
     extraName =""
-    if len(sys.argv)>5:
-        extraName = sys.argv[5]
+    if len(sys.argv)>6:
+        extraName = sys.argv[6]
     
     doProfile = ( extraName == "cProfile")
     
+    scenario = "baseline"
+    if len(sys.argv)>5:
+        scenario = sys.argv[5]
+    
+    if scenario == "none":
+        spellStart = 0 #not used
+        condition = "wet"
+        spellDuration =  np.Inf
+    elif scenario == "baseline":
+        spellStart = np.Inf
+        condition = "wet"
+        spellDuration =   7
+    elif scenario == "earlyDry":
+        spellStart = 11 
+        condition = "dry"
+        spellDuration =   7
+    elif scenario == "lateDry":
+        spellStart = 18
+        condition = "dry"
+        spellDuration =   7
+    else :
+        print("scenario", scenario,"not recognised")
+        raise Exception
+        
+    #simInit = 10
+    #simEnd = 25
+    spellEnd = spellStart + spellDuration
+    spellData = {'scenario':scenario,'spellStart':spellStart,'spellEnd':spellEnd, 'condition':condition}
     if doProfile:
         import cProfile
         import pstats, io
         pr = cProfile.Profile()
         pr.enable()
-    results_dir = XcGrowth(initsim, mode,simMax,extraName,paramIndx_base )
+    results_dir = XcGrowth(initsim, mode,simMax,extraName,paramIndx_base,spellData )
     if doProfile:
         pr.disable()
         filename = results_dir+'profile'+str(rank)+'.prof' 

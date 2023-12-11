@@ -115,11 +115,12 @@ public:
 						b = problem.bufferPower(dofIndex, volVars, compIdx);
 					}
 					// mol solute / m3 space
-                    storage[eqIdx] += volVars.porosity()*volVars.saturation(phaseIdx) //m3 liquide / m3 space
+                    storage[eqIdx] += std::max(0.,//manually force it to remaine above 0.
+                                    volVars.porosity()*volVars.saturation(phaseIdx) //m3 liquide / m3 space
 									  * b // [-]
                                       * massOrMoleDensity(volVars, phaseIdx) // mol liquid / m3 liquid
                                       * massOrMoleFraction(volVars, phaseIdx, compIdx) // mol solute / mol liquid 
-									  * scv.center()[0]; 
+									  * scv.center()[0]); 
 					// std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
 					// <<" numFluidComponents "<<numFluidComponents<<" numFluidPhases "<<numFluidPhases <<" storage "<<storage[eqIdx]
 					// <<" poro "<<volVars.porosity()<<" saturation "<<volVars.saturation(phaseIdx)<<std::endl;
@@ -186,10 +187,11 @@ public:
 			{
 				auto eqIdx = Indices::conti0EqIdx + numFluidComponents + sCompIdx ;
 				// mol comp / m3 space
-				storage[eqIdx] += (1 - volVars.porosity())// m3 solide / m3 space
+				storage[eqIdx] += std::max(0.,//manually force it to remaine above 0.
+                                (1 - volVars.porosity())// m3 solide / m3 space
 								* massOrMoleDensity	//mol solid / m3 solide
 								* massOrMoleFraction(volVars, sCompIdx) // mol comp / mol solid
-								* scv.center()[0];
+								* scv.center()[0]);
 				//std::cout<<eqIdx<<" "<<storage[eqIdx]<<" ";
 			}
 		}

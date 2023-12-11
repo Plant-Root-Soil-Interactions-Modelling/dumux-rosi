@@ -232,6 +232,7 @@ public:
 		
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", (dimWorld > 1));
 		temperatureK = Dumux::getParam<double>("Problem.temperatureK", 273.15+10);
+		verbose_local_residual = Dumux::getParam<bool>("Problem.verbose_local_residual", verbose_local_residual);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		
@@ -1340,6 +1341,7 @@ public:
     int dzScaling;
     
     bool RFmethod2 = false;
+	bool verbose_local_residual = false;
     
 private:
 
@@ -1455,9 +1457,6 @@ private:
 	double m_maxBis_Cs;
 	double theta;
     int css1Function;
-	//from Magdalena:  have just rechecked all the solute units by looking if the mass of exuded C equals 
-	//the mass of C in the soil domain during the simulation and realized that the unit of s.getSolution_(EqIdx)  
-	//must be g/cm^3 (you already mentioned that this was not clear).
 
 };
 

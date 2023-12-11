@@ -115,10 +115,11 @@ public:
 						b = problem.bufferPower(dofIndex, volVars, compIdx);
 					}
 					// mol solute / m3 space
-                    storage[eqIdx] += volVars.porosity()*volVars.saturation(phaseIdx) //m3 liquide / m3 space
+                    storage[eqIdx] += std::max(0.,//manually force it to remaine above 0.
+                                        volVars.porosity()*volVars.saturation(phaseIdx) //m3 liquide / m3 space
 									  * b // [-]
                                       * massOrMoleDensity(volVars, phaseIdx) // mol liquid / m3 liquid
-                                      * massOrMoleFraction(volVars, phaseIdx, compIdx) ;// mol solute / mol liquid 
+                                      * massOrMoleFraction(volVars, phaseIdx, compIdx) );// mol solute / mol liquid 
 									  
 					// std::cout<<"computeStorage, storage[eqIdx]: phaseIdx "<<phaseIdx<<" compIdx "<<compIdx<<" eqIdx "<<eqIdx
 					// <<" numFluidComponents "<<numFluidComponents<<" numFluidPhases "<<numFluidPhases <<" storage "<<storage[eqIdx]
@@ -175,6 +176,10 @@ public:
         NumEqVector storage(0.0);
 		if(numSolidComps > numInertSolidComps)
 		{
+                if(problem.verbose_local_residual)
+                {
+                     std::cout<<"solid storage ";
+                }
 			//soil mass or mol density (mol soil C / m3 soil)
 		double massOrMoleDensity =  useMoles ? volVars.solidComponentMolarDensity(soilIdx) : volVars.solidComponentDensity(soilIdx);
 			//component mole fraction (mol comp C/mol soil C)
@@ -186,19 +191,23 @@ public:
 			{
 				auto eqIdx = Indices::conti0EqIdx + numFluidComponents + sCompIdx ;
 				// mol comp / m3 space
-				storage[eqIdx] += (1 - volVars.porosity())// m3 solide / m3 space
+				storage[eqIdx] += std::max(0.,//manually force it to remaine above 0.
+                                (1 - volVars.porosity())// m3 solide / m3 space
 								* massOrMoleDensity	//mol solid / m3 solide
-								* massOrMoleFraction(volVars, sCompIdx); // mol comp / mol solid
+								* massOrMoleFraction(volVars, sCompIdx)); // mol comp / mol solid
 								
 				//std::cout<<eqIdx<<" "<<storage[eqIdx]<<" ";
+                if(problem.verbose_local_residual)
+                {
+                     std::cout<<", ("<<storage[eqIdx]<<", "<<  massOrMoleFraction(volVars, sCompIdx)<<")";
+                }
 			}
+            if(problem.verbose_local_residual)
+                {
+                     std::cout<<std::endl;
+                }
 		}
 		
-		// std::cout<<"solid storage ";
-		// for(int i = 0; i < storage.size(); i++)
-		// {
-			// std::cout<<storage[i]<<" ";
-		// }std::cout<<std::endl;
         return storage;
     }
 

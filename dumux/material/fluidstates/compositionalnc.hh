@@ -294,7 +294,13 @@ public:
             temperature_[phaseIdx] = fs.temperature();
             for (int compIdx = 0; compIdx < numComponents; ++compIdx)
             {
-                moleFraction_[phaseIdx][compIdx] = fs.moleFraction(phaseIdx, compIdx);
+                moleFraction_[phaseIdx][compIdx] = std::max(0., fs.moleFraction(phaseIdx, compIdx));//refuse results bellow 0...
+                //if(phaseIdx != compIdx)
+                //{
+                 //   moleFraction_[phaseIdx][compIdx] = std::max(0., fs.moleFraction(phaseIdx, compIdx));//refuse results bellow 0...
+                //}else{
+                //    moleFraction_[phaseIdx][compIdx] = fs.moleFraction(phaseIdx, compIdx);//... unless it s the water element
+                //}
                 fugacityCoefficient_[phaseIdx][compIdx] = fs.fugacityCoefficient(phaseIdx, compIdx);
                 averageMolarMass_[phaseIdx] += moleFraction_[phaseIdx][compIdx]*FluidSystem::molarMass(compIdx);
                 sumMoleFractions_[phaseIdx] += moleFraction_[phaseIdx][compIdx];
@@ -344,8 +350,15 @@ public:
      */
     void setMoleFraction(int phaseIdx, int compIdx, Scalar value)
     {
-        moleFraction_[phaseIdx][compIdx] = value;
+        moleFraction_[phaseIdx][compIdx] = std::max(0.,value);//refuse values bellow 0.
 
+       // if(phaseIdx != compIdx)
+        //{
+         //   moleFraction_[phaseIdx][compIdx] = std::max(0., value);//refuse results bellow 0...
+        //}else{
+         //   moleFraction_[phaseIdx][compIdx] = value;//... unless it s the water element
+        //}
+        
         // re-calculate the mean molar mass
         sumMoleFractions_[phaseIdx] = 0.0;
         averageMolarMass_[phaseIdx] = 0.0;

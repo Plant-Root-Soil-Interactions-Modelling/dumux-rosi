@@ -189,7 +189,7 @@ public:
      */
     void setMoleFraction( int compIdx, Scalar value)
     {
-        moleFraction_[compIdx] = value;
+        moleFraction_[compIdx] = std::max(0., value); //refuse value below 00.
 
         // re-calculate the mean molar mass
         sumMoleFractions_ = 0.0;

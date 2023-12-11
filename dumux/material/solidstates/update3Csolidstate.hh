@@ -50,8 +50,8 @@ void update3CSolidstate(const ElemSol& elemSol,
     {
         solidState.setVolumeFraction(sCompIdx, 0);//assume all the others do not take up space
 		int compIdx = sCompIdx + solidVolFracOffset;
-		solidState.setMoleFraction(sCompIdx, priVars[compIdx]);
-        sumSecondaryFractions += priVars[compIdx];
+		solidState.setMoleFraction(sCompIdx, std::max(0.,priVars[compIdx]) ); //refuse values bellow 0.
+        sumSecondaryFractions += std::max(0.,priVars[compIdx]) ; //refuse values bellow 0.
     }
 	solidState.setMoleFraction(solidState.mainCompIdx, 1.0 - sumSecondaryFractions);
 }

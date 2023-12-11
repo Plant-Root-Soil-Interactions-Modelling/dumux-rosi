@@ -13,7 +13,7 @@ import plantbox as pb
 import timeit
 import visualisation.vtk_plot as vp
 import functional.van_genuchten as vg
-from scenario_setup import weather
+from scenario_setup import weather, resistance2conductance
 from decimal import *
 from functional.xylem_flux import sinusoidal2, sinusoidal
 
@@ -115,13 +115,45 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
-        
         if r.mpiVerbose or (max_rank == 1):
             comm.barrier()
             print("simualtion loop, Ni, N:",Ni, N,rs_age_i_dt)
             comm.barrier()
-        r.weatherX = weather(rs_age_i_dt)
+            
+        hp_ = max([tempnode[2] for tempnode in rs.get_nodes()]) /100. #canopy height
+        r.weatherX = weather(simDuration = rs_age_i_dt, hp =  hp_, spellData= r.spellData)
 
+        
+        # here add function to change water content if we leave or enter spell period.
+        # loss of water gradient won t matter because before and after we ll have not RWU
+        # TODO: adapt the error indexes to take that changei nto account
+        if (r.spellData['scenario'] != 'none') and (r.spellData['scenario'] != 'baseline'):
+            if  ((rs_age_i_dt > r.spellData['spellStart']) and (not r.enteredSpell)) or ((rs_age_i_dt > r.spellData['spellEnd']) and (not r.leftSpell)):
+                if ((rs_age_i_dt > r.spellData['spellEnd']) and (not r.leftSpell)):
+                    r.leftSpell = True
+                if ((rs_age_i_dt > r.spellData['spellStart']) and (not r.enteredSpell)):
+                    r.enteredSpell = True
+                pheadinit_cm =  vg.pressure_head( r.weatherX['theta'], s.vg_soil) 
+
+                cellsZ = comm.bcast(np.array( [ loc[2] for loc in s.getCellCenters()]))#cm
+                meanZ = np.average(cellsZ)
+                pheadinit_cm_all = pheadinit_cm - (cellsZ - meanZ)
+                pheadinit_Pa = s.to_pa(pheadinit_cm_all)
+
+                s.base.setSolution(pheadinit_Pa,0 )#need equilibrium
+                for locIdCyl, cyl in enumerate(r.cyls):
+                    if not isinstance(cyl, AirSegment):
+                        globalIdCyl = r.eidx[ locIdCyl]
+                        cellId = r.seg2cell[globalIdCyl]
+                        pheadinit_PaCyl = pheadinit_Pa[cellId]
+                        cyl.base.setSolution(pheadinit_Pa,0 )
+
+        rs.Patm = r.weatherX["Pair"]
+        
+        ##resistances
+        rs.g_bl = resistance2conductance(r.weatherX["rbl"],rs, r.weatherX) / rs.a2_bl
+        rs.g_canopy = resistance2conductance(r.weatherX["rcanopy"],rs, r.weatherX) / rs.a2_canopy
+        rs.g_air = resistance2conductance(r.weatherX["rair"],rs, r.weatherX) / rs.a2_air
         
         
         comm.barrier()
@@ -237,7 +269,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                 TairC_= r.weatherX["TairC"],#not used
                                             soil_k_ = soilK, # [day-1]
                                 outputDir_= "./results/rhizoplantExud")
-                    seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
+                    if (r.spellData['scenario'] == 'none') or ((r.spellData['scenario'] != 'baseline') and (rs_age_i_dt > r.spellData['spellStart']) and (rs_age_i_dt <= r.spellData['spellEnd'])):
+                        seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
+                    else:
+                        seg_fluxes = np.full(len(np.array(rs.outputFlux)),0.)
+                        
                     TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
                     write_file_array("fpit_Ev",np.array(rs.Ev),directory_ =results_dir, fileType = '.csv')
                     write_file_array("fpit_Jw",np.array(rs.Jw),directory_ =results_dir, fileType = '.csv')
@@ -315,7 +351,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print("cyl3plant:seg_fluxes", rank)
                 comm.barrier()
             seg_fluxes = comm.bcast(seg_fluxes, root=0)
-            rs.outputFlux = comm.bcast(rs.outputFlux, root = 0) 
+            rs.outputFlux = comm.bcast(np.array(rs.outputFlux), root = 0) 
             
             
             rs.psiXyl = comm.bcast(rs.psiXyl, root = 0) 
@@ -1006,11 +1042,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rsx_old = rsx_set.copy()
             
             
-            diffBCS1dsFluxIn =   seg_fluxes  - seg_fluxes_old   #only for water as plant exud is outside of loop
+            diffBCS1dsFluxIn =   np.array(rs.outputFlux)  - seg_fluxes_old   #only for water as plant exud is outside of loop
             
             
             
-            seg_fluxes_old = seg_fluxes.copy()
+            seg_fluxes_old = np.array(rs.outputFlux).copy()
             diffBCS1dsFluxOut =   proposed_outer_fluxes  - proposed_outer_fluxes_old 
             diffBCS1dsFluxOut_sol =   proposed_outer_sol_fluxes  - proposed_outer_sol_fluxes_old 
             diffBCS1dsFluxOut_mucil =   proposed_outer_mucil_fluxes  - proposed_outer_mucil_fluxes_old 
@@ -1034,7 +1070,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rhizoWAfter_old = rhizoWAfter_.copy()
             rhizoTotCAfter_old = rhizoTotCAfter_.copy()
             
-            errBCS1dsFluxIn =max(abs((diffBCS1dsFluxIn/ np.where(seg_fluxes,seg_fluxes,1.))*100))# np.linalg.norm(diffBCS1dsFluxIn)
+            errBCS1dsFluxIn =max(abs((diffBCS1dsFluxIn/ np.where(np.array(rs.outputFlux),np.array(rs.outputFlux),1.))*100))# np.linalg.norm(diffBCS1dsFluxIn)
             errBCS1dsFluxOut = max(abs((diffBCS1dsFluxOut/ np.where(proposed_outer_fluxes,proposed_outer_fluxes,1.))*100))#np.linalg.norm(diffBCS1dsFluxOut)
             errBCS1dsFluxOut_sol = max(abs((diffBCS1dsFluxOut_sol/ np.where(proposed_outer_sol_fluxes,proposed_outer_sol_fluxes,1.))*100))
             errBCS1dsFluxOut_mucil = max(abs((diffBCS1dsFluxOut_mucil/ np.where(proposed_outer_mucil_fluxes,proposed_outer_mucil_fluxes,1.))*100))
@@ -1134,7 +1170,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 
                 write_file_array("fpit_errBCS1dsFluxOut_mucilBis", abs((diffBCS1dsFluxOut_mucil/ np.where(proposed_outer_mucil_fluxes,proposed_outer_mucil_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
                 
-                write_file_array("fpit_diffBCS1dsFluxInBis", abs((diffBCS1dsFluxIn/ np.where(seg_fluxes,seg_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_diffBCS1dsFluxInBis", abs((diffBCS1dsFluxIn/ np.where(np.array(rs.outputFlux),np.array(rs.outputFlux),1.))*100), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffBCS1dsFluxOutBis", abs((diffBCS1dsFluxOut/ np.where(proposed_outer_fluxes,proposed_outer_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_diffouter_R_bc_watBis", abs((diffBCS1dsFluxOut_sol/ np.where(proposed_outer_sol_fluxes,proposed_outer_sol_fluxes,1.))*100), directory_ =results_dir, fileType = '.csv') 
                 
@@ -1172,7 +1208,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                  fileType = '.csv') 
                 
                 write_file_array("fpit_seg_fluxes_limited", seg_fluxes_limited, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_seg_fluxes", seg_fluxes, directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_seg_fluxes", np.array(rs.outputFlux), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_seg_fluxes_limited_Out",seg_fluxes_limited_Out, directory_ =results_dir, fileType = '.csv')
                 write_file_array("fpit_proposed_outer_fluxes", proposed_outer_fluxes, directory_ =results_dir, fileType = '.csv')
                 
@@ -1282,6 +1318,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     if r.mpiVerbose or (max_rank == 1):
         print('end of inner loop, failed?',failedLoop, n_iter,Ni,'/',N, dt_inner, dt)
     
-    return outer_R_bc_sol, outer_R_bc_wat, seg_fluxes, dt_inner, failedLoop, n_iter_inner_max# fluxes == first guess for next fixed point iteration
+    return outer_R_bc_sol, outer_R_bc_wat, np.array(rs.outputFlux), dt_inner, failedLoop, n_iter_inner_max# fluxes == first guess for next fixed point iteration
     #end of inner loop
 

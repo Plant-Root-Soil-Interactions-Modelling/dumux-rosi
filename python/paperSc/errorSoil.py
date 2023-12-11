@@ -189,6 +189,15 @@ for ncomp in range(s.numComp):
     scenario.write_file_array("solScompStart", solScomp, directory_ =results_dir, fileType =".csv") 
 
 times = np.array([ step_* dt_ for step_ in range(2)] ) # days
+
+
+if False:
+    s.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
+    s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+    s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+    s.setParameter("Newton.MaxRelativeShift", str(1e-9))# reset value
+    s.setParameter("Newton.MaxAbsoluteResidual", str(1e-20))# reset value
+    s.setParameter("Newton.ResidualReduction", str(1e-20))# reset value
 for i, dt in enumerate(np.diff(times)):
     s.ddt =min( 1.e-5,s.ddt)
 

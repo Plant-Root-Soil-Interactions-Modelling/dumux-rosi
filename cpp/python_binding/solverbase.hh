@@ -709,6 +709,8 @@ public:
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
+     * solution == mole (or mass) fraction for all elements EXCEPT the liquide phase
+     * solution == pressure (absolute?) for the liquide phase
      */
     virtual std::vector<double> getSolution(int eqIdx = 0) {
         int n = checkInitialized();
