@@ -116,7 +116,10 @@ pRef_ = 1.e5 #Pa 101300; // Pa
 pheadinit_hPa = pheadinit_cm/100. *rho_*g_ +pRef_
 s.base.setSolution(pheadinit_hPa,0 )
 for eqIdx in range(1,9):
-    solInit = pd.read_csv(data_dir +'Soil_solute_conc'+str(eqIdx)+'.txt').iloc[-1].to_numpy()
+    if eqIdx != 7:
+        solInit = pd.read_csv(data_dir +'Soil_solute_conc'+str(eqIdx)+'.txt').iloc[-1].to_numpy()
+    else:
+        solInit = pd.read_csv(data_dir +'Soil_solute_conc1.txt').iloc[-1].to_numpy()/100. # random
     s.base.setSolution(solInit,eqIdx )
     
 # source
@@ -126,7 +129,7 @@ water_content = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per 
 
 soil_contents = np.concatenate((np.array([water_content]),soil_solute_content )) 
 soil_source = np.full((s.numComp+1,5*5*20),0. )
-if True:
+if False:
     for idComp in range(s.numComp+1):
         if idComp != 7:
             try:
@@ -187,7 +190,7 @@ for ncomp in range(s.numComp):
     print('before solve: s.getSolution(ncomp + 1)',ncomp + 1,
          min(solScomp), max(solScomp))
     scenario.write_file_array("solScompStart", solScomp, directory_ =results_dir, fileType =".csv") 
-
+        
 times = np.array([ step_* dt_ for step_ in range(2)] ) # days
 for i, dt in enumerate(np.diff(times)):
     s.ddt =min( 1.e-5,s.ddt)

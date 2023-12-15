@@ -513,6 +513,14 @@ public:
         checkInitialized();
 		x = xBackUp;
 	}
+    virtual void resetManual() {
+        checkInitialized();
+		x = xBackUpManual;
+	}
+    virtual void saveManual() {
+        checkInitialized();
+		xBackUpManual = x;
+	}
     /**
      * Finds the steady state of the problem.
      *
@@ -744,8 +752,9 @@ public:
      */
     virtual void setSolution( std::vector<double> sol, int eqIdx = 0) {
         int n = checkInitialized();
+        std::vector<int> dofIndices = getDofIndices() ;
         for (int c = 0; c<n; c++) {
-            x[c][eqIdx] = sol[c] ;
+            x[c][eqIdx] = sol[dofIndices[c]] ;
         }
     }
 
@@ -982,6 +991,7 @@ protected:
 
     SolutionVector x;
     SolutionVector xBackUp;
+    SolutionVector xBackUpManual;
 
 };
 
@@ -1006,6 +1016,8 @@ void init_solverbase(py::module &m, std::string name) {
             .def("initializeProblem", &Solver::initializeProblem)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
 			.def("reset", &Solver::reset)
+			.def("resetManual", &Solver::resetManual)
+			.def("saveManual", &Solver::saveManual)
             // simulation 
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
             .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false,

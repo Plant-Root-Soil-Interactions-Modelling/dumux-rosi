@@ -243,7 +243,7 @@ def setBiochemParam(s):
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
+    s.setParameter("Soil.alpha", str(s.alpha*0.)) #[1/d]
     return s
 
 def setIC3D(s, paramIdx, ICcc = None):
@@ -253,14 +253,14 @@ def setIC3D(s, paramIdx, ICcc = None):
         C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
-        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
+        CSS2_init = 0.*s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        s.ICcc = np.array([C_S *unitConversion,
-                           C_L*unitConversion,
-                            9.16666666666667e-07* unitConversion,
-                            8.33333333333333e-06* unitConversion,
-                            8.33333333333333e-07* unitConversion,
-                            8.33333333333333e-06* unitConversion,
+        s.ICcc = np.array([C_S *unitConversion*0.,
+                           C_L*unitConversion*0.,
+                            9.16666666666667e-07* unitConversion*0.,
+                            8.33333333333333e-06* unitConversion*0.,
+                            8.33333333333333e-07* unitConversion*0.,
+                            8.33333333333333e-06* unitConversion*0.,
                             CSS2_init*unitConversion,
                            0.])# in mol/m3 water or mol/m3 scv
     else:
@@ -285,9 +285,9 @@ def setDefault(s):
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
     s.setParameter("Newton.EnableChop", "true")# force solute mole fraction > 0 and water in possible pressure ranges
-    # s.setParameter("Problem.verbose_local_residual", "true")# reset value
+    # s.setParameter("Problem.verbose_local_residual", "true")# for debug
     s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
-    # s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true") #<= helps  reach convergence
+    
     return s
 
 def setSoilParam(s,paramIdx):

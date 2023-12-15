@@ -86,7 +86,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/paramIndx"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/onlyAds"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -123,7 +123,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     min_b = [-5, -5, -10.] 
     max_b = [5, 5, 0.] 
-    cell_number = [5,5,20]
+    cell_number = [1,1,1]#[5,5,20]
     #min_b = [-5., -5, -5.] 
     #max_b = [5., 5, 0.] 
     #cell_number = [5, 5, 5]
@@ -287,6 +287,15 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("time", np.array([rs_age,0.]), directory_ =results_dir)
             write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
             write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
+
+            for nc in range(rs.numComp):# normally all 0 for nc >= numFluidComp
+
+                write_file_array("fpit_sol_content_diff1d3dabs"+str(nc+1), rs.allDiff1d3dCW_abs[nc+1], directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_sol_content_diff1d3drel"+str(nc+1), rs.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
+
+                write_file_array("fpit_sol_content3d"+str(nc+1), s.getContent(nc+1, nc < s.numFluidComp), directory_ =results_dir, fileType = '.csv')  
+                write_file_array("fpit_sol_content1d"+str(nc+1), rs.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
+                                 directory_ =results_dir, fileType = '.csv')  
             start = False
         write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
         
@@ -322,7 +331,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
-            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (rs.diff1d3dCurrant_rel>1) or (min(rs.new_soil_solute.reshape(-1)) < 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
+            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (np.floor(rs.diff1d3dCurrant_rel)>1) or (min(rs.new_soil_solute.reshape(-1)) < 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
             comm.barrier()
@@ -364,6 +373,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         failedLoop = False
         cL = True
         while cL or failedLoop:
+            s.base.saveManual()# <= that actually only works for the last solve. I need a better method to reset to the beginning of the whole stuff
+            rs.saveManual()
+            rs.leftSpellBU = rs.leftSpell
+            rs.enteredSpellBU = rs.enteredSpell
             net_sol_flux_, net_flux_, seg_fluxes__, real_dtinner,failedLoop, n_iter_inner_max = cyl3.simulate_const(s, 
                                                     r, sim_time= dt,dt= dt_inner, rs_age=rs_age, 
                                                     Q_plant=[Q_Exud_i_seg, Q_Mucil_i_seg],
@@ -406,8 +419,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 #dt_inner = max(1./(24.*3600.), dt_inner) # minimum: 1 second
                 # print(rank, "error too high, decrease N from", dt/float(currentN),"to",min(1/(24*3600), dt_inner))
                 comm.barrier()
-                s.reset()
-                rs.reset()
+                s.base.resetManual()# <= that actually only works for the last solve. I need a better method to reset to the beginning of the whole stuff
+                rs.resetManual()
+                rs.leftSpell = rs.leftSpellBU
+                rs.enteredSpell = rs.enteredSpellBU
+                rs.checkMassOMoleBalance2(None,None, dt,
+                                    seg_fluxes =None, diff1d3dCW_abs_lim = np.Inf, takeFlux = False)
+                # to get correct error values for sumDiff1d3dCW_relBU
+                
         cL_ = continueLoop(rs,0, dt_inner,failedLoop,real_dtinner,name="TestOuter_data")
         if cL_:
             raise Exception#only left the loop because reached the max number of iteration.
@@ -444,7 +463,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 if mpiVerbose or (max_rank == 1):
                     print(rank,"Soil_solute_conc"+str(i+1))
                 comm.barrier()
-                write_file_array("Soil_solute_conc"+str(i+1), np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
+                write_file_array("Soil_solute_conc"+str(i+1), 
+                                 np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, directory_ =results_dir) 
             for i in range(rs.numFluidComp, rs.numComp):
                 comm.barrier()
                 if mpiVerbose or (max_rank == 1):
@@ -630,9 +650,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 raise Exception
 
             Q_Exud_i_seg = np.array( Q_Exud_i[1:] ) #from nod to semgment
-            Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])
+            Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])*0.
 
-            airSegsId = np.array(list(set(np.concatenate((rs.cell2seg.get(-1),np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
+            airSegsId = rs.airSegs
+            #np.array(list(set(np.concatenate((rs.cell2seg.get(-1),np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
             try:
                 assert (Q_Exud_i_seg[airSegsId] == 0).all()
                 assert (Q_Mucil_i_seg[airSegsId] == 0).all()
@@ -771,6 +792,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         
 
 if __name__ == '__main__':
+    # python3 XcGrowth.py 9 dumux_10c 10 0 customDry noAds 9.02 0.02
     print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
@@ -781,7 +803,7 @@ if __name__ == '__main__':
     paramIndx_base = 0
     if len(sys.argv)>4:
         paramIndx_base = int(sys.argv[4])
-    extraName =""
+    extraName ="" # noAds?
     if len(sys.argv)>6:
         extraName = sys.argv[6]
     
@@ -807,6 +829,14 @@ if __name__ == '__main__':
         spellStart = 18
         condition = "dry"
         spellDuration =   7
+    elif scenario == "customDry":
+        spellStart = float(sys.argv[7])
+        condition = "dry"
+        spellDuration =   float(sys.argv[8])
+    elif scenario == "customWet":
+        spellStart = float(sys.argv[7])
+        condition = "wet"
+        spellDuration =   float(sys.argv[8])
     else :
         print("scenario", scenario,"not recognised")
         raise Exception

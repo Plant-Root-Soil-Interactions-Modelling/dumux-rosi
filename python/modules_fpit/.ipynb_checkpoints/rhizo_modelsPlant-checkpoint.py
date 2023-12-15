@@ -13,7 +13,7 @@ from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial m
 from fv.fv_grid import *
 import fv.fv_richards as rich  # local pure Python cylindrical models
 import functional.van_genuchten as vg
-from scenario_setup import write_file_array
+from scenario_setup import write_file_array, setDefault
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -116,11 +116,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.eidx = np.array([], dtype=np.int64)
         # additional variables
         self.last_dt = 0.
+        self.sumDiff1d3dCW_relBU = np.full(self.numComp+1, 0.)
+        self.diff1d3dCurrant_rel = 0.
 
     def reset(self):
         for cyl in self.cyls:
             cyl.reset()
         
+    def resetManual(self):
+        for cyl in self.cyls:
+            cyl.resetManual()
+            
+    def saveManual(self):
+        for cyl in self.cyls:
+            cyl.saveManual()
+            
     def getDistribution(self, ns:int):      
         dcyl = int(np.floor(ns /  max_rank))
         repartition = np.array([dcyl for i in range( max_rank)])
@@ -217,6 +227,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.newEidx = np.concatenate((newEidxSoil, newEidxAir))
         if len(newEidxSoil) > 0:
             assert (np.array(self.organTypes)[newEidxSoil] == 2).all()
+        self.cellWithRoots = np.array([self.seg2cell[cylid] for cylid in self.rhizoSegsId]).reshape(-1)
+        cellIds_All =self.allgatherv(self.cellWithRoots).reshape(size,-1)
+        try:
+            assert(isinstance(cellIds_All[0][0],(int,np.int64)))
+            assert (cellIds_All[1:] == cellIds_All[:-1]).all()
+        except:
+            print('different cell ids', cellIds_All, type(cellIds_All[0]))
+            print( type(cellIds_All[0][0]))
+            raise Exception
         
         
     def update(self):
@@ -497,26 +516,32 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         comm.Barrier()
     
     def getCellIds(self):
-        cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-        cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        if False:
+            # only send cells which have roots in them
+            cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+        else:
+            cellIds = self.cellWithRoots
 
-        if (self.mpiVerbose and (size > 1)):
-            comm.barrier()
-            print("getCellIds:cellIds_All", rank)
-            comm.barrier()
-        cellIds_All =self.allgatherv(cellIds).reshape(size,-1)
+            if (self.mpiVerbose and (size > 1)):
+                comm.barrier()
+                print("getCellIds:cellIds_All", rank)
+                comm.barrier()
+            cellIds_All =self.allgatherv(cellIds).reshape(size,-1)
+
+            if (self.mpiVerbose and (size > 1)):
+                comm.barrier()
+                print("getCellIds:GOTcellIds_All", rank)
+                comm.barrier()
+            try:
+                assert(isinstance(cellIds_All[0][0],(int,np.int64)))
+                assert (cellIds_All[1:] == cellIds_All[:-1]).all()
+            except:
+                print('different cell ids', cellIds_All, type(cellIds_All[0]))
+                print( type(cellIds_All[0][0]))
+                raise Exception
+            return cellIds
         
-        if (self.mpiVerbose and (size > 1)):
-            comm.barrier()
-            print("getCellIds:GOTcellIds_All", rank)
-            comm.barrier()
-        try:
-            assert(isinstance(cellIds_All[0][0],(int,np.int64)))
-            assert (cellIds_All[1:] == cellIds_All[:-1]).all()
-        except:
-            print('different cell ids', cellIds_All, type(cellIds_All[0]))
-            print( type(cellIds_All[0][0]))
-            raise Exception
         return cellIds
     
     def checkVolumeBalance(self, finishedUpdate):
@@ -602,6 +627,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         
         cellIds = self.getCellIds()
+        self.allDiff1d3dCW_rel = np.full((self.numComp+1,max(cellIds)+1), 0.)
+        self.allDiff1d3dCW_abs = np.full((self.numComp+1,max(cellIds)+1), 0.)
+        
         self.sumDiff1d3dCW_abs = np.full(self.numComp+1, 0.)
         self.sumDiff1d3dCW_rel = np.full(self.numComp+1, 0.)
         self.maxDiff1d3dCW_abs = np.full(self.numComp+1, 0.)
@@ -677,6 +705,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     diff1d3dCW_abs = abs(wat_total+ sourceWat_ * dt - wat_rhizo)
                     self.all1d3dDiff[cellId] = diff1d3dCW_abs
                     diff1d3dCW_rel = abs(diff1d3dCW_abs/(wat_total+ sourceWat_ * dt) *100)
+                    self.allDiff1d3dCW_abs[0][cellId] = diff1d3dCW_abs
+                    self.allDiff1d3dCW_rel[0][cellId] = diff1d3dCW_rel
                     self.sumDiff1d3dCW_abs[0] += diff1d3dCW_abs
                     self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[0] = max(self.maxDiff1d3dCW_abs[0], diff1d3dCW_abs)
@@ -766,18 +796,20 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             if verbose:
                                 print("content", cellId, idComp, mol_total, 'mol_rhizo',mol_rhizo,mol_rhizo_,"sourceSol_ * dt",sourceSol_ * dt, 
                                         diff1d3dCW_abs, diff1d3dCW_rel)
-                            if diff1d3dCW_abs > diff1d3dCW_abs_lim:
+                            if False:#diff1d3dCW_abs > diff1d3dCW_abs_lim:
                                 print('error for component', rank, cellId)
                                 print(cellId, idComp,mol_total , sourceSol_ , dt)
                                 print(mol_rhizo, abs((mol_total + sourceSol_ * dt - mol_rhizo)/(mol_total + sourceSol_* dt)*100))                                
                                 # raise Exception #turn off for now to make evaluation easier 
-                                
+
+                        self.allDiff1d3dCW_abs[idComp][cellId] = diff1d3dCW_abs
+                        self.allDiff1d3dCW_rel[idComp][cellId] = diff1d3dCW_rel
                         
                         self.sumDiff1d3dCW_abs[idComp] += diff1d3dCW_abs
                         self.sumDiff1d3dCW_rel[idComp] += diff1d3dCW_rel
                         self.maxDiff1d3dCW_abs[idComp] = max(self.maxDiff1d3dCW_abs[idComp], diff1d3dCW_abs)
                         self.maxDiff1d3dCW_rel[idComp] = max(self.maxDiff1d3dCW_rel[idComp], diff1d3dCW_rel)
-                        if verbose:
+                        if False:#verbose:
                             print("check compBis", idComp,cellId, rank, mol_rhizo,mol_total, sourceSol_ * dt,"error",diff1d3dCW_abs, diff1d3dCW_rel)
         
         if (self.mpiVerbose and (size > 1)):
@@ -877,7 +909,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def getLocalIdCyls(self,idCyls=None):
         if idCyls is None:
             idCyls = self.eidx
-        outout = np.array([ np.where(self.eidx == i)[0] for i in idCyls])
+        try:
+            outout = np.array([ np.where(self.eidx == i)[0] for i in idCyls])
+        except:
+            print('error getLocalIdCyls', self.eidx, idCyls)
+            raise Exception
         return outout.flatten()#np.where(idCyls in self.eidx)[0] 
         
     def getContentCyl(self,idCyls=None, idComp=1, doSum = True, reOrder = False):#mol
@@ -1084,7 +1120,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         """ give the new theta or solute mole fraction to get specific total content and gradient
             volumes: either bulk soil or water volumes
         """
-        verbose = self.mpiVerbose# and (size > 1)) or verbose:
+        verbose = True#self.mpiVerbose# and (size > 1)) or verbose:
             
         matrix_size = self.NC -1
         sub_diag_values = -1.
@@ -1204,7 +1240,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         if verbose:
                             print(rank, 'updateConcentration: finished taking out extra element content', extraWater , val_new, 
                               sum(val_new * volumes), sum(tempTheta * volumes),sum(val_new * volumes) - sum(tempTheta * volumes))
-                        assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14
+                        try:
+                            assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14
+                        except:
+                            print('abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14', abs(sum(val_new * volumes) - sum(tempTheta * volumes)),
+                                  sum(val_new * volumes), sum(tempTheta * volumes), val_new * volumes,tempTheta * volumes)
+                            raise Exception
                         
                 if (minVal - val_new  > 0).any():
                     if (  max(minVal -val_new) <  1e-14 ):
@@ -1246,7 +1287,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             print('sum(tempTheta* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempTheta* volumes)-totContent)
                             print('val_new',val_new,'tempTheta',tempTheta,
                               'diff good',abs(sum(val_new * volumes) - sum(tempTheta * volumes)),'diff bad',abs(sum(val_new) - sum(tempTheta)) )
-                        assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14
+                        #assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14
+                        try:
+                            assert abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14
+                        except:
+                            print('abs(sum(val_new * volumes) - sum(tempTheta * volumes)) < 1e-14', abs(sum(val_new * volumes) - sum(tempTheta * volumes)),
+                                  sum(val_new * volumes), sum(tempTheta * volumes), val_new * volumes,tempTheta * volumes)
+                            raise Exception
 
         
         if verbose:
@@ -1680,6 +1727,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.ddt = 1.e-5
             cyl.gId = gId    
             ThetaCyl = cyl.getWaterContent()
+            setDefault(cyl)
             assert (ThetaCyl >= self.vg_soil.theta_R).all()
             assert (ThetaCyl <= self.vg_soil.theta_S).all()
             pHeadcyl = cyl.getSolutionHead()
@@ -2387,140 +2435,149 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             comm.barrier()
         return water_volume
     
-    def splitSoilVals(self, soilVals, seg_values, troubleShootId = -1, verbose = False):
+    def splitSoilVals(self, soilVals, #fluxes: can be <, =, or > 0
+                      seg_values, # contents: are >= 0.
+                      troubleShootId = -1, verbose = False):
         """ split soilFlux array according to the values in seg_values """
         #verbose = False
-        if troubleShootId <0. :
-            cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
-            cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-        else:
-            cellIds = np.array([troubleShootId])
-            verbose = True            
-            
-        assert min(seg_values) >= 0.
-        assert seg_values.shape == (len(self.organTypes), )
-        # sum seg_values per voxel
-        organTypes = np.array(self.organTypes)
-        
-        if (organTypes != 2).any():
-            try:
-                assert (seg_values[np.where(organTypes != 2)] == 0.).all()
-            except:
-                print(seg_values, organTypes)
-                print(seg_values[np.where(organTypes != 2)])
-                raise Exception
-            # print(seg_values, organTypes)
-            # print(seg_values[np.where(organTypes != 2)])
-            # raise Exception
-            
-        
-        seg_values_voxel = np.full(len(self.organTypes), 0.)
-        splitVals = np.full(len(self.organTypes), 0.)
-        if (soilVals[cellIds] != 0.).any():
-            for cellid in cellIds:
-                segIds = self.cell2seg[cellid]
-                if soilVals[cellid] != 0:#
-                    assert (splitVals[segIds] == 0.).all()
-                    ots = organTypes[segIds]
-                    rootIds = np.array([sid for sid in segIds if (organTypes[sid] == 2)])
-                    if len(rootIds) > 0:
-                        weightVals = np.full(len(seg_values[segIds]), 0.)
+        try:
+            if troubleShootId <0. :
+                cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+                cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+            else:
+                cellIds = np.array([troubleShootId])
+                verbose = True            
 
-                        if (ots != 2).any():
-                            try:
-                                assert (seg_values[segIds][np.where(ots != 2)] == 0.).all()
-                            except:
-                                print(cellid, segIds, ots, seg_values[segIds])
-                                raise Exception
-                        if verbose:
-                            print("soilVals[cellid]", cellid, soilVals[cellid],
-                                  seg_values_voxel[segIds],segIds,
-                                 seg_values[segIds])
-                        if soilVals[cellid] < 0:# goes away from the 1d models
-                            seg_values_voxel[rootIds] = sum(seg_values[rootIds])
-                            weightVals[np.where(ots == 2)] = seg_values[rootIds] / seg_values_voxel[rootIds]
+            assert min(seg_values) >= 0.
+            assert seg_values.shape == (len(self.organTypes), )
+            # sum seg_values per voxel
+            organTypes = np.array(self.organTypes)
 
-                            if verbose:
-                                print("sum(seg_values[segIds])", seg_values_voxel[segIds],
-                                      weightVals)
-                        else:# goes toward  the 1d models
-                            if verbose: 
-                                print("soilVals[cellid] > 0A", seg_values_voxel[segIds],
-                                      (seg_values[segIds] == 0.).all(),
-                                      min(abs(seg_values[rootIds])) == 0.,
-                                      weightVals, seg_values[rootIds])
-                            if (seg_values[segIds] == 0.).all():# all seg_values == 0
-                                seg_values_voxel[rootIds] = float(len(seg_values[rootIds]))
-                                weightVals[np.where(ots == 2)] = 1./float(len(seg_values[rootIds]))
-                                if verbose: 
-                                    print("(seg_values[segIds] == 0.).all()",
-                                          float(len(seg_values[rootIds])), 
-                                          seg_values_voxel[rootIds] ,
-                                          weightVals[np.where(ots == 2)] )
-                            else:
-                                if min(abs(seg_values[rootIds])) == 0.:# at least 1 seg_values = 0 
-                                    if verbose: 
-                                        print("if min(abs(seg_values[rootIds]))A",
-                                              seg_values[rootIds],
-                                             np.where(seg_values[rootIds] == 0.), 
-                                              seg_values[rootIds][np.where(seg_values[rootIds] == 0.)],
-                                             np.maximum(seg_values[rootIds],1.e-14))
-                                    seg_values[rootIds] = np.maximum(seg_values[rootIds],1.e-14)
-                                    #[np.where(seg_values[rootIds] == 0.)] = 1.e-14 # to avoid /0
-                                    if verbose:# none == 0
-                                        print("if min(abs(seg_values[rootIds]))B", seg_values[rootIds])
-                                    assert min(abs(seg_values[rootIds])) != 0.
-                                seg_values_voxel[rootIds] = sum(1/seg_values[rootIds])
-                                weightVals[np.where(ots == 2)] = (1 / seg_values[rootIds]) / seg_values_voxel[rootIds]
-                            if verbose: 
-                                print("soilVals[cellid] < 0B", seg_values_voxel[segIds], 
-                                      weightVals, seg_values[rootIds])
+            if (organTypes != 2).any():
+                try:
+                    assert (seg_values[np.where(organTypes != 2)] == 0.).all()
+                except:
+                    print(seg_values, organTypes)
+                    print(seg_values[np.where(organTypes != 2)])
+                    raise Exception
+                # print(seg_values, organTypes)
+                # print(seg_values[np.where(organTypes != 2)])
+                # raise Exception
 
-                        splitVals[segIds] = weightVals * soilVals[cellid]
-                        if verbose:
-                            print("splitVals[segIds]",splitVals[segIds])
-                            print("sum(weightVals)", sum(weightVals), sum(splitVals[segIds]))
-                        try:
-                            assert ((sum(weightVals) - 1.) < 1e-13) or ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13)
-                        except:
-                            print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals))
-                            print(splitVals[segIds], soilVals[cellid])
-                            print(sum(splitVals[segIds]), soilVals[cellid])
-                            print(sum(splitVals[segIds]) - soilVals[cellid])
-                            print(((sum(weightVals) - 1.) < 1e-13) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13))
-                            print(((sum(weightVals) - 1.) ) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) ) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) ))
-                            raise Exception
 
-            try:
-                assert abs((sum(splitVals) - sum(soilVals[cellIds]))/sum(soilVals[cellIds]))*100. < 0.1
-            except:
-                print('abs((sum(splitVals) - sum(soilVals[cellIds]))/sum(soilVals[cellIds]))*100. >= 0.1')
-                print(sum(splitVals), sum(soilVals),  sum(soilVals[cellIds]))
-                print('splitVals',splitVals,'soilVals',soilVals )
-                print(sum(splitVals) -  sum(soilVals[cellIds]))
-                splitVals_ = 0.
-                soilVals_ = 0.
+            seg_values_voxel = np.full(len(self.organTypes), 0.)
+            splitVals = np.full(len(self.organTypes), 0.)
+            if (soilVals[cellIds] != 0.).any():
                 for cellid in cellIds:
                     segIds = self.cell2seg[cellid]
-                    splitVals_ += sum(splitVals[segIds])
-                    soilVals_ +=  soilVals[cellid]
-                    print(cellid,segIds,sum(splitVals[segIds]), soilVals[cellid],
-                        "current",splitVals_,  soilVals_,splitVals_-  soilVals_,
-                        "to",sum(splitVals),sum(soilVals[cellIds]),sum(splitVals)-sum(soilVals[cellIds]),
-                        (sum(splitVals)-sum(soilVals[cellIds]))/sum(soilVals[cellIds]),
-                        sum(soilVals))
-                raise Exception
+                    if soilVals[cellid] != 0:#
+                        assert (splitVals[segIds] == 0.).all()
+                        ots = organTypes[segIds]
+                        rootIds = np.array([sid for sid in segIds if (organTypes[sid] == 2)])
+                        if len(rootIds) > 0:
+                            weightVals = np.full(len(seg_values[segIds]), 0.)
 
-            try:
-                assert (splitVals[np.where(organTypes != 2)] == 0.).all()
-            except:
-                print("np.where(organTypes != 2)", np.where(organTypes != 2))
-                print("splitVals",splitVals,organTypes )
-                print(splitVals[np.where(organTypes != 2)] )
-                print("seg_values",seg_values)
-                print(seg_values[np.where(organTypes != 2)] )
-                raise Exception
-        return splitVals
+                            if (ots != 2).any():
+                                try:
+                                    assert (seg_values[segIds][np.where(ots != 2)] == 0.).all()
+                                except:
+                                    print(cellid, segIds, ots, seg_values[segIds])
+                                    raise Exception
+                            if verbose:
+                                print("soilVals[cellid]", cellid, soilVals[cellid],
+                                      seg_values_voxel[segIds],segIds,
+                                     seg_values[segIds])
+                            if soilVals[cellid] < 0:# goes away from the 1d models
+                                seg_values_voxel[rootIds] = sum(seg_values[rootIds])
+                                weightVals[np.where(ots == 2)] = seg_values[rootIds] / seg_values_voxel[rootIds]
+
+                                if verbose:
+                                    print("sum(seg_values[segIds])", seg_values_voxel[segIds],
+                                          weightVals)
+                            else:# goes toward  the 1d models
+                                if verbose: 
+                                    print("soilVals[cellid] > 0A", seg_values_voxel[segIds],
+                                          (seg_values[segIds] == 0.).all(),
+                                          min(abs(seg_values[rootIds])) == 0.,
+                                          weightVals, seg_values[rootIds])
+                                if (seg_values[segIds] == 0.).all():# all seg_values == 0
+                                    seg_values_voxel[rootIds] = float(len(seg_values[rootIds]))
+                                    weightVals[np.where(ots == 2)] = 1./float(len(seg_values[rootIds]))
+                                    if verbose: 
+                                        print("(seg_values[segIds] == 0.).all()",
+                                              float(len(seg_values[rootIds])), 
+                                              seg_values_voxel[rootIds] ,
+                                              weightVals[np.where(ots == 2)] )
+                                else:
+                                    if min(abs(seg_values[rootIds])) == 0.:# at least 1 seg_values = 0 
+                                        if verbose: 
+                                            print("if min(abs(seg_values[rootIds]))A",
+                                                  seg_values[rootIds],
+                                                 np.where(seg_values[rootIds] == 0.), 
+                                                  seg_values[rootIds][np.where(seg_values[rootIds] == 0.)],
+                                                 np.maximum(seg_values[rootIds],1.e-14))
+                                        seg_values[rootIds] = np.maximum(seg_values[rootIds],1.e-14)
+                                        #[np.where(seg_values[rootIds] == 0.)] = 1.e-14 # to avoid /0
+                                        if verbose:# none == 0
+                                            print("if min(abs(seg_values[rootIds]))B", seg_values[rootIds])
+                                        assert min(abs(seg_values[rootIds])) != 0.
+                                    seg_values_voxel[rootIds] = sum(1/seg_values[rootIds])
+                                    weightVals[np.where(ots == 2)] = (1 / seg_values[rootIds]) / seg_values_voxel[rootIds]
+                                if verbose: 
+                                    print("soilVals[cellid] < 0B", seg_values_voxel[segIds], 
+                                          weightVals, seg_values[rootIds])
+
+                            splitVals[segIds] = weightVals * soilVals[cellid]
+                            if verbose:
+                                print("splitVals[segIds]",splitVals[segIds])
+                                print("sum(weightVals)", sum(weightVals), sum(splitVals[segIds]))
+                            try:
+                                assert ((sum(weightVals) - 1.) < 1e-13) or ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13)
+                            except:
+                                print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals))
+                                print(splitVals[segIds], soilVals[cellid])
+                                print(sum(splitVals[segIds]), soilVals[cellid])
+                                print(sum(splitVals[segIds]) - soilVals[cellid])
+                                print(((sum(weightVals) - 1.) < 1e-13) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13))
+                                print(((sum(weightVals) - 1.) ) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) ) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) ))
+                                raise Exception
+
+                try:
+                    assert abs((sum(splitVals) - sum(soilVals[cellIds]))/sum(soilVals[cellIds]))*100. < 0.1
+                except:
+                    print('abs((sum(splitVals) - sum(soilVals[cellIds]))/sum(soilVals[cellIds]))*100. >= 0.1')
+                    print(sum(splitVals), sum(soilVals),  sum(soilVals[cellIds]))
+                    print('splitVals',splitVals,'soilVals',soilVals ,'seg_values',seg_values)
+                    print(sum(splitVals) -  sum(soilVals[cellIds]))
+                    splitVals_ = 0.
+                    soilVals_ = 0.
+                    for cellid in cellIds:
+                        segIds = self.cell2seg[cellid]
+                        splitVals_ += sum(splitVals[segIds])
+                        soilVals_ +=  soilVals[cellid]
+                        print(cellid,segIds,sum(splitVals[segIds]), soilVals[cellid],'organTypes[segIds]',organTypes[segIds],
+                            "current",splitVals_,  soilVals_,splitVals_-  soilVals_,
+                            "to",sum(splitVals),sum(soilVals[cellIds]),sum(splitVals)-sum(soilVals[cellIds]),
+                            (sum(splitVals)-sum(soilVals[cellIds]))/sum(soilVals[cellIds]),
+                            sum(soilVals))
+                    raise Exception
+
+                try:
+                    assert (splitVals[np.where(organTypes != 2)] == 0.).all()
+                except:
+                    print("np.where(organTypes != 2)", np.where(organTypes != 2))
+                    print("splitVals",splitVals,organTypes )
+                    print(splitVals[np.where(organTypes != 2)] )
+                    print("seg_values",seg_values)
+                    print(seg_values[np.where(organTypes != 2)] )
+                    raise Exception
+            return splitVals
+        except:
+            print('relaunch splitsoilVals with verbose = True')
+            self.splitSoilVals(soilVals, #fluxes: can be <, =, or > 0
+                      seg_values, # contents: are >= 0.
+                      troubleShootId = -1, verbose = True)
+            raise Exception # eception should be raise anyway in the splitSoilVals
     
     def _map(self, x):
         """Converts @param x to a numpy array and maps it to the right indices                 """

@@ -34,7 +34,7 @@ everything scripted, no input file needed, also works parallel with mpiexec
 def setShape(s,r_in, r_out,doLogarithmic=True):
     nCells = 10
     logbase = 0.5
-    s.l = 1.0000000000000002 #length in cm
+    s.l = 1.0 #length in cm
     doLogarithmic = True
     s.r_in = r_in
     s.r_out = r_out
@@ -81,6 +81,9 @@ def setDefault(s):
     s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
+    s.setParameter("Newton.EnableChop", "true")# force solute mole fraction > 0 and water in possible pressure ranges
+    # s.setParameter("Problem.verbose_local_residual", "true")# for debug
+    s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
     return s
 
 def setSoilParam(s,paramIdx):
@@ -105,10 +108,10 @@ def setSoilParam(s,paramIdx):
     return s
 
 
-def getBiochemParam(s,paramIdx):
+def getBiochemParam(s,paramIdx, noAds):
     s.numFluidComp = 2
     s.numComp = 8
-    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
     s.mg_per_molC = 12000
     s.betaC = paramSet['beta_C'] # -
     s.betaO = paramSet['beta_O'] # -
@@ -139,9 +142,12 @@ def getBiochemParam(s,paramIdx):
 
     s.v_maxL = paramSet['v_max,L'] #1/d
     s.k_decay = paramSet['Y'] # -
-    s.k_growthC = paramSet['Y_C'] # -
-    s.k_growthO = paramSet['Y_O'] #- 
-    s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 bulk soil
+    s.k_growthC = paramSet['Y_C'] # -    
+    s.k_growthO = paramSet['Y_O'] # -    
+    if noAds:
+        s.CSSmax = 0.
+    else:
+        s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 bulk soil
     # can cause issue
     s.k_sorp = paramSet['k_sorp'] /s.mg_per_molC# mol C/cm3 bulk soil
     s.alpha = 0.1# -

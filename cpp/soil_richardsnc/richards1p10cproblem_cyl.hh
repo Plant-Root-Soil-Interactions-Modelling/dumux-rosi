@@ -466,16 +466,18 @@ public:
         
                 switch(css1Function) {//add later the pos0 factor
                   case 0:
-                    RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; 
+                    RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; //nonlinear
                     break;
                   case 1:
-                    RF_ = 1;//+(1/theta)*(f_sorp*CSSmax )  ; //none
+                    RF_ = 1;//none
+                    break;
+                  case 2:
+                  // [-] +  [m3 scv/m3 wat] * [m3 scv zone 1/m3 scv] * [???] = 
+                  //[-] + [m3 scv zone 1/m3 wat]* [???] so CSSmax is in [m3 wat/m3 scv zone 1] in such cases
+                    RF_ =  1+(1/theta)*(f_sorp*CSSmax )   ; //linear
                     break;
                   case 3:
-                    RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; 
-                    break;
-                  case 6:
-                    RF_ = 1+(1/theta)*(f_sorp*CSSmax )  ; //linear
+                    RF_ = 1  ; //via pde
                     break;
                   default:
                     DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, 2, or) "+ std::to_string(css1Function));
@@ -1078,11 +1080,12 @@ public:
           case 1:
             CSS1 = 0.;//none
             break;
-          case 3:
-            CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
+          case 2:
+          // [mol C/m3 scv zone 1] = [m3 soil water/m3 scv zone 1] * [mol C/m3 soil water]
+            CSS1 = CSSmax*C_S_W;//linear, with CSSmax in [m3 wat/m3 scv zone 1]
             break;
-          case 6:
-            CSS1 = CSSmax*C_S_W;//linear
+          case 3:
+            CSS1 = 0.;//only pde
             break;
           default:
             DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
@@ -1139,7 +1142,13 @@ public:
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 scv /s] 
         int dofIndex = scv.dofIndex();
-		setReac_CSS2(alpha*(CSS1-CSS2), dofIndex) ;//already in /m3 scv (as * (1-f_sorp) done)
+        if (css1Function != 3)//nonlinear, none, linear
+        {
+            setReac_CSS2(alpha*(CSS1-CSS2), dofIndex) ;//already in /m3 scv (as * (1-f_sorp) done)
+        }else{//only via pde
+            setReac_CSS2(alpha*(C_S_W-CSS2), dofIndex) ;
+        }
+            
 		
 		//[mol solute / m3 scv/s] 
 		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S - Reac_CSS2[dofIndex])* pos0 ;

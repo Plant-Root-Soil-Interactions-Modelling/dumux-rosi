@@ -66,9 +66,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         print("cyl3plant:GOTcell_volumes", rank)
         comm.barrier()
     airSegsId = r.airSegs
-    #np.array(list(set(np.concatenate((np.array([]),#to avoid error if there are no air segs
-    #                                              r.cell2seg.get(-1),
-    #                                              np.where(np.array(r.organTypes) != 2)[0])) )))#aboveground
     rhizoSegsId = r.rhizoSegsId
     # np.array([i for i in range(len(organTypes)) if i not in airSegsId])
     
@@ -101,10 +98,15 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
     assert len(rs.rs.segments) == (len(rs.rs.nodes) -1)
     seg2cell = rs.rs.seg2cell
+    write_file_array('seg2cell_keys',seg2cell,directory_ =results_dir, fileType = '.csv')
+    write_file_array('seg2cell_vals',np.array(list(seg2cell.values())),directory_ =results_dir, fileType = '.csv')
     cell2seg = rs.rs.cell2seg
-    cellIds = np.fromiter(cell2seg.keys(), dtype=int)
-    cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-    
+    cellIds =r.cellWithRoots # np.fromiter(cell2seg.keys(), dtype=int)
+    #cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
+    #cellIds_root =rs.cellWithRoots #only cells which contain root segments
+    emptyCells = np.array(list(set([xsoil for xsoil in range(len(cell_volumes))]) - set(cellIds))) # -1 (air) not included
+    write_file_array('emptyCells',emptyCells,directory_ =results_dir, fileType = '.csv')
+    write_file_array('cellWithRoots',cellIds,directory_ =results_dir, fileType = '.csv')
 
     
     N = int(np.ceil(sim_time / dt))  # number of iterations
@@ -115,6 +117,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
+        
         if r.mpiVerbose or (max_rank == 1):
             comm.barrier()
             print("simualtion loop, Ni, N:",Ni, N,rs_age_i_dt)
@@ -122,32 +125,74 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
         hp_ = max([tempnode[2] for tempnode in rs.get_nodes()]) /100. #canopy height
         r.weatherX = weather(simDuration = rs_age_i_dt, hp =  hp_, spellData= r.spellData)
-
-        
+        if False:
+            write_file_array('change_soil',np.array([rs_age_i_dt, (r.spellData['scenario'] != 'none'),(r.spellData['scenario'] != 'baseline'),
+                                               (rs_age_i_dt > r.spellData['spellStart']) , 
+                                                 (not r.enteredSpell),
+                                                 (rs_age_i_dt > r.spellData['spellEnd']) , (not r.leftSpell),
+                                                r.spellData['spellStart'],r.spellData['spellEnd'], r.spellData['condition']   ]), 
+                         directory_ =results_dir, fileType = '.csv')
         # here add function to change water content if we leave or enter spell period.
         # loss of water gradient won t matter because before and after we ll have not RWU
-        # TODO: adapt the error indexes to take that changei nto account
+        # TODO: move to a separate function 
         if (r.spellData['scenario'] != 'none') and (r.spellData['scenario'] != 'baseline'):
             if  ((rs_age_i_dt > r.spellData['spellStart']) and (not r.enteredSpell)) or ((rs_age_i_dt > r.spellData['spellEnd']) and (not r.leftSpell)):
+                doChange = True
                 if ((rs_age_i_dt > r.spellData['spellEnd']) and (not r.leftSpell)):
                     r.leftSpell = True
                 if ((rs_age_i_dt > r.spellData['spellStart']) and (not r.enteredSpell)):
                     r.enteredSpell = True
+                    if r.spellData['condition'] == 'wet':#normally not needed
+                        doChange = False
                 pheadinit_cm =  vg.pressure_head( r.weatherX['theta'], s.vg_soil) 
 
                 cellsZ = comm.bcast(np.array( [ loc[2] for loc in s.getCellCenters()]))#cm
                 meanZ = np.average(cellsZ)
                 pheadinit_cm_all = pheadinit_cm - (cellsZ - meanZ)
                 pheadinit_Pa = s.to_pa(pheadinit_cm_all)
-
-                s.base.setSolution(pheadinit_Pa,0 )#need equilibrium
-                for locIdCyl, cyl in enumerate(r.cyls):
-                    if not isinstance(cyl, AirSegment):
-                        globalIdCyl = r.eidx[ locIdCyl]
-                        cellId = r.seg2cell[globalIdCyl]
-                        pheadinit_PaCyl = pheadinit_Pa[cellId]
-                        cyl.base.setSolution(pheadinit_Pa,0 )
-
+                r.checkMassOMoleBalance2(None,None, dt,
+                                    seg_fluxes =None, diff1d3dCW_abs_lim =np.Inf, takeFlux = False) 
+                print('error before change',r.sumDiff1d3dCW_rel ,'pheadinit_cm',pheadinit_cm, r.weatherX['theta'],
+                      vg.pressure_head(0.4, s.vg_soil) ,
+                      rs_age_i_dt,
+                      r.spellData['condition'],r.spellData['spellStart'],r.spellData['spellEnd'],
+                     (r.spellData['condition'] == "wet") , (rs_age_i_dt <= r.spellData['spellStart']), (rs_age_i_dt > r.spellData['spellEnd']))
+                if doChange:# but then i also need to adaptthe water mol fraction of the solutes to keep the same content
+                    nc_content = np.array([comm.bcast(s.getContent(nc+1, nc < 2))  for nc in range(r.numFluidComp)])# mol
+                    write_file_array('sgetWaterContent4change',comm.bcast(s.getSolution(0),root = 0), directory_ =results_dir, fileType = '.csv')
+                    s.base.setSolution(pheadinit_Pa,0 )#need equilibrium, still works with mpi?
+                    # [cm3 wat/cm3 scv] * [cm3 scv] * [m3/cm3] * [mol/m3 wat] = mol wat
+                    newWatMol = (comm.bcast(s.getWaterContent(),root = 0) * cell_volumes) * (1/1e6) * s.molarDensityWat_m3 
+                    nc_molFr =np.array( [nc_c/newWatMol for nc_c in nc_content])
+                    for nc in range(r.numFluidComp):
+                        s.base.setSolution(nc_molFr[nc],nc+1 )
+                        write_file_array('nc_molFr'+str(nc+1),nc_molFr[nc], directory_ =results_dir, fileType = '.csv')
+                    write_file_array('pheadinit_Pa',pheadinit_Pa, directory_ =results_dir, fileType = '.csv')
+                    write_file_array('newWatMol',newWatMol, directory_ =results_dir, fileType = '.csv')
+                    write_file_array('sgetWaterContent4change',comm.bcast(s.getSolution(0),root = 0), directory_ =results_dir, fileType = '.csv')
+                    for locIdCyl, cyl in enumerate(r.cyls):
+                        if not isinstance(cyl, AirSegment):
+                            globalIdCyl = r.eidx[ locIdCyl]
+                            cellId = r.seg2cell[globalIdCyl]
+                            length_cyl =  r.seg_length[globalIdCyl]
+                            cyl_cell_volumes = cyl.getCellSurfacesCyl() * length_cyl #cm3 scv
+                            
+                            pheadinit_PaCyl = np.full(r.NC-1,pheadinit_Pa[cellId])
+                            
+                            nc_content = np.array([cyl.getContentCyl(nc+1, nc < 2,length_cyl)  for nc in range(r.numFluidComp)])# mol
+                            cyl.base.setSolution(pheadinit_PaCyl,0 )
+                            newWatMol = (cyl.getWaterContent() * cyl_cell_volumes) * (1/1e6) * s.molarDensityWat_m3 
+                            nc_molFr =np.array( [nc_c/newWatMol for nc_c in nc_content])
+                            for nc in range(r.numFluidComp):
+                                cyl.base.setSolution(nc_molFr[nc],nc+1 )
+                r.checkMassOMoleBalance2(None,None, dt,
+                                    seg_fluxes =None, 
+                                          diff1d3dCW_abs_lim = np.Inf, 
+                                         takeFlux = False,
+                                        verbose_ =False) 
+                print('error after change',r.sumDiff1d3dCW_rel )
+                
+                
         rs.Patm = r.weatherX["Pair"]
         
         ##resistances
@@ -184,8 +229,24 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         max_iter = k_iter_#100 #??
         rsx_set = r.get_inner_heads(weather=r.weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         rsx_old = rsx_set.copy()
+
+        if( ((np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU)) > 1.))):# supposedly == to the last r.diff1d3dCurrant_rel, except when we use reset (faile)
+            issueComp = np.where(np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU)) > 1.)
+            if r.sumDiff1d3dCW_abs[issueComp] > 1e-13:
+                print('r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relBU',r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relBU, r.diff1d3dCurrant_rel,
+                     np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU)),max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU),
+                                     r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU)
+                raise Exception
+            
         r.sumDiff1d3dCW_absBU = r.sumDiff1d3dCW_abs # to go from cumulative to instantenuous 1d3d error
         r.sumDiff1d3dCW_relBU = r.sumDiff1d3dCW_rel # to go from cumulative to instantenuous 1d3d error
+
+        write_file_array("N_sumDiff1d3dCW_relBU", r.sumDiff1d3dCW_relBU, directory_ =results_dir, fileType = '.csv') 
+        write_file_array("N_sumDiff1d3dCW_absBU", r.sumDiff1d3dCW_absBU, directory_ =results_dir, fileType = '.csv') 
+        write_file_array("N_sumDiff1d3dCW_rel", r.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = '.csv') 
+        write_file_array("N_sumDiff1d3dCW_abs", r.sumDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
+        write_file_float("N_diff1d3dCurrant_rel", r.diff1d3dCurrant_rel, directory_ =results_dir) 
+        
         waterContentOld = r.getWaterVolumesCyl(doSum = False, reOrder = True)
         # weightBefore = True
         rsx_old_  = r.get_inner_heads(weather=r.weatherX) 
@@ -656,6 +717,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             # mass water error to check when leaving fixed point iteration (with seg_fluxes)
             errorsEachC = rhizoTotCAfter_ - ( rhizoTotCBefore_ + (seg_sol_fluxes+ proposed_outer_sol_fluxes+ seg_mucil_fluxes+ proposed_outer_mucil_fluxes)*dt)
+            errorsEachC_rel = errorsEachC/rhizoTotCAfter_
             if len(airSegsId)>0:                
                 try:
                     assert (errorsEachC[airSegsId] == 0.).all()
@@ -998,7 +1060,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             assert outer_R_bc_sol.shape == (r.numComp, len(cell_volumes))
             
 
+            outer_R_bc_wat[emptyCells] = 0.
+            for nc in range(r.numFluidComp):
                 
+                outer_R_bc_sol[nc][emptyCells] = 0.# only use BC for cells with roots.
             for nc in range(r.numFluidComp, r.numComp):
                 outer_R_bc_sol[nc][:] = 0.# we coudl have rounding errors.
                 # all changes in cellIds for 3D soil is cause by biochemical reactions computed in 1D models.
@@ -1113,9 +1178,18 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel, errWrsi, errW3ds,errC1ds, errC3ds, 
                                    s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel),root= 0)
-            r.maxDiff1d3dCW_abs = comm.bcast(r.maxDiff1d3dCW_abs,root= 0)
-            r.diff1d3dCurrant = max(r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absBU) # to not depend on cumulative error
-            r.diff1d3dCurrant_rel =max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU) # to not depend on cumulative error
+            r.maxDiff1d3dCW_abs =np.array( comm.bcast(r.maxDiff1d3dCW_abs,root= 0))
+            
+            compErrorAboveLim = np.where(r.sumDiff1d3dCW_abs > 1e-13) 
+            try:
+                r.diff1d3dCurrant = max(np.append((r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absBU)[compErrorAboveLim],0.)) 
+                # to not depend on cumulative error
+                r.diff1d3dCurrant_rel =max(np.append((r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relBU)[compErrorAboveLim],0.))
+                # to not depend on cumulative error
+            except:
+                print('r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absBU',r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absBU,
+                     r.sumDiff1d3dCW_abs, r.sumDiff1d3dCW_absBU,compErrorAboveLim)
+                raise Exception
             if r.mpiVerbose or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:solve_gave_up", rank)
@@ -1148,8 +1222,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             theta3ds = s.getWaterContent()# proposed_outer_mucil_fluxes
             if  (n_iter % skip == 0) and (rank == 0):
-                write_file_array("fpit_sumDiff1d3dCW_relBU", r.sumDiff1d3dCW_relBU, directory_ =results_dir, fileType = '.csv') 
-                write_file_array("fpit_sumDiff1d3dCW_absBU", r.sumDiff1d3dCW_absBU, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_errbulkMass",
                                  np.array([s.bulkMassCErrorPlant_abs,
                                            s.bulkMassCErrorPlant_rel, #not cumulative
@@ -1189,6 +1261,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                  fileType = '.csv' )
                 write_file_array("fpit_errorMassW1d", np.array(errorsEachW), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_errorMassC1d", np.array(errorsEachC), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_errorMassC1d_rel", np.array(errorsEachC_rel), directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error", r.errs, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_error1d3d", r.maxDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_time", np.array([rs_age,rs.Qlight,sim_time,dt,Ni,n_iter]), directory_ =results_dir ) 
@@ -1233,6 +1306,15 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_soil_fluxes", soil_fluxes, directory_ =results_dir, fileType = '.csv') 
                 
                 for nc in range(r.numComp):# normally all 0 for nc >= numFluidComp
+                    
+                    write_file_array("fpit_sol_content_diff1d3dabs"+str(nc+1), r.allDiff1d3dCW_abs[nc+1], directory_ =results_dir, fileType = '.csv')
+                    write_file_array("fpit_sol_content_diff1d3drel"+str(nc+1), r.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
+                    write_file_array("fpit_sol_content_3dabs"+str(nc+1), r.contentIn3d[nc+1], directory_ =results_dir, fileType = '.csv')
+                    write_file_array("fpit_sol_content_1dabs"+str(nc+1), r.contentIn1d[nc+1], directory_ =results_dir, fileType = '.csv')
+                    
+                    write_file_array("fpit_sol_content3d"+str(nc+1), s.getContent(nc+1, nc < s.numFluidComp), directory_ =results_dir, fileType = '.csv')  
+                    write_file_array("fpit_sol_content1d"+str(nc+1), r.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
+                                     directory_ =results_dir, fileType = '.csv')  
                     write_file_array("fpit_outer_R_bc_sol"+str(nc+1), outer_R_bc_sol[nc], directory_ =results_dir, fileType = '.csv')  
                     write_file_array("fpit_diffouter_R_bc_sol"+str(nc+1), diffouter_R_bc_sol[nc], directory_ =results_dir, fileType = '.csv') 
                     
@@ -1291,6 +1373,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
                                 
         if rank == 0:            
+            
             for nc in range(r.numFluidComp, r.numComp):
                 try:
                     assert (abs(outer_R_bc_sol[nc][cellIds]) < 1e-16).all()
