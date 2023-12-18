@@ -33,6 +33,7 @@ class SolverWrapper():
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose)
         
+        
     def reset(self):
         """ reset solution vector to value before solve function """
         self.base.reset()
@@ -115,6 +116,7 @@ class SolverWrapper():
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
+        self.numberOfCellsTot = np.prod(self.numberOfCells)
 
     def createGrid1d(self, points):
         """ todo
@@ -123,6 +125,7 @@ class SolverWrapper():
         for v in points:
             p.append([v / 100.])  # cm -> m
         self.base.createGrid1d(p)
+        self.numberOfCellsTot = np.prod(self.numberOfCells)
 
 #     def createGrid3d(self, points, p0):
 #         """ todo
@@ -169,12 +172,12 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, maxDt = -1., solverVerbose = False):
+    def solve(self, dt:float, maxDt = -1., solverVerbose = False, saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
-        self.base.solve(dt * 24.*3600., maxDt * 24.*3600., solverVerbose)  # days -> s
+        self.base.solve(dt * 24.*3600., maxDt * 24.*3600., solverVerbose, saveInnerFluxes = saveInnerFluxes_)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """

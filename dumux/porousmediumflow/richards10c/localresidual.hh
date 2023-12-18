@@ -109,11 +109,11 @@ public:
                 if (eqIdx != replaceCompEqIdx) {
 					Scalar b = 1;
 					
-					if(!problem.RFmethod2)
-					{
+					//if(!problem.RFmethod2)
+					//{
 						int dofIndex = scv.dofIndex();
 						b = problem.bufferPower(dofIndex, volVars, compIdx);
-					}
+					//}
 					// mol solute / m3 space
                     storage[eqIdx] += std::max(0.,//manually force it to remaine above 0.
                                         volVars.porosity()*volVars.saturation(phaseIdx) //m3 liquide / m3 space
@@ -274,14 +274,14 @@ public:
 				
 				Scalar b = 1;
 				//not sure it works because it s on a face
-				if((eqIdx != replaceCompEqIdx)&&problem.RFmethod2)
-				{
-					const auto& insideScv = fvGeometry.scv(scvf.insideScvIdx());
-					const auto& insideVolVars = elemVolVars[insideScv];
-					int dofIndex = insideScv.dofIndex();
-					b = problem.bufferPower(dofIndex, insideVolVars, compIdx);
-					//flux[eqIdx] /= b;
-				}
+				//if((eqIdx != replaceCompEqIdx)&&problem.RFmethod2)
+				// {
+					// const auto& insideScv = fvGeometry.scv(scvf.insideScvIdx());
+					// const auto& insideVolVars = elemVolVars[insideScv];
+					// int dofIndex = insideScv.dofIndex();
+					// b = problem.bufferPower(dofIndex, insideVolVars, compIdx);
+					// //flux[eqIdx] /= b;
+				// }
 
                 if ((eqIdx != replaceCompEqIdx)&&(compIdx != problem.mucilIdx)&&(problem.doSoluteFlow))
 				{
@@ -321,11 +321,11 @@ public:
             }
 
             //! Add advective phase energy fluxes. For isothermal model the contribution is zero.
-            EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, phaseIdx);
+            // EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, phaseIdx);
         }
 
         //! Add diffusive energy fluxes. For isothermal model the contribution is zero.
-        EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
+        // EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
 		
 		// std::cout<<"computeFlux ";
 		// for(int i = 0; i< flux.size(); i++)
@@ -333,7 +333,9 @@ public:
 			// std::cout<<flux[i]<<" ";
 			
 		// }std::cout<<std::endl;
-
+		
+		int insideScvDofIndex = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+		problem.setFlux(flux, insideScvDofIndex);
         return flux;
     }
 

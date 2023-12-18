@@ -485,7 +485,6 @@ class RichardsWrapper(SolverWrapper):
             raise Exception
         return totC
         
-    
     def getContentCyl(self,idComp, isDissolved, length ):
         assert self.dimWorld != 3
         assert idComp > 0 # do not use for water content
@@ -515,6 +514,24 @@ class RichardsWrapper(SolverWrapper):
             return self.molarDensityWat_m3
         else:   # mol scv / m3 scv
             return self.bulkDensity_m3
+         
+    def getFlux_10c(self):
+        return self._map(self.allgatherv(self.getFlux_10c_()), 0) #TODO: check that gathergin works   
+    
+    def getFlux_10c_(self):# cm3 or mol
+        verbose = False
+        inFluxes = np.array(self.base.inFluxes) #[ mol / s]
+        inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
+        try:
+            assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.numComp+1)
+        except:
+            print('shape failed, inFluxes',inFluxes, inFluxes.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.numComp+1))
+            raise Exception
+        
+        inFluxes_tot = np.array([inFx * inFluxes_ddt[idx] for idx, inFx in enumerate(inFluxes)]) # cm3 or mol at each dumux sub-time step
+        inFluxes_tot = inFluxes_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
+        return inFluxes_tot
+        
             
     def getConcentration(self,idComp, isDissolved):
         C_ = self.getSolution(idComp)#.flatten()  # mol/mol wat or mol/mol scv

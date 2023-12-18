@@ -64,6 +64,11 @@ class SolverBase {
 public:
 
     using VectorType = std::array<double, dim>;
+    using NumEqVector = typename Problem::NumEqVector;
+	
+    int numComp(){return nEV.size();}
+    NumEqVector nEV;
+	
     bool isBox = Problem::isBox; // numerical method
     int dimWorld = dim;
     double simTime = 0;
@@ -388,7 +393,7 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    virtual void solve(double dt, double maxDt = -1, bool solverVerbose = false) {
+    virtual void solve(double dt, double maxDt = -1, bool solverVerbose = false, bool saveInnerFluxes = false) {
         checkInitialized();
         using namespace Dumux;
 
@@ -430,6 +435,11 @@ public:
 
             xOld = x; // make the new solution the old solution
             if(verbose){std::cout<<rank<<" gridVariables->advanceTimeStep"<<std::endl;}
+			
+            if(saveInnerFluxes)
+            {
+				doSaveInnerFluxes(timeLoop->time() );
+            }
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -446,7 +456,7 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false, bool saveBC = false) {
+    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false, bool saveBC = false, bool saveInnerFluxes = false) {
 		
         checkInitialized();
         using namespace Dumux;
@@ -496,6 +506,10 @@ public:
             {
                 doSaveBC(timeLoop->time() );
             }
+            if(saveInnerFluxes)
+            {
+                doSaveInnerFluxes(timeLoop->time() );
+            }
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -509,6 +523,13 @@ public:
     virtual void clearSaveBC() {}
     virtual void doSaveBC(double currentTime) {}
     
+    void doSaveInnerFluxes(double currentTime) {
+        std::vector<std::vector<double>> inFluxes_i = getFlux_10c();
+        inFluxes.push_back(inFluxes_i);
+        inFluxes_time.push_back(currentTime );
+        inFluxes_ddt.push_back(this->ddt);
+    }
+	
     virtual void reset() {
         checkInitialized();
 		x = xBackUp;
@@ -967,6 +988,10 @@ public:
     virtual std::vector<int> getLocal2globalPointIdx() {
         return globalPointIdx;
     }
+    std::vector<std::vector<std::vector<double>>> inFluxes;//[time][cellidx][eqIdx]
+    std::vector<double> inFluxes_time;
+    std::vector<double> inFluxes_ddt;
+	
 protected:
 
     using Grid = typename Problem::Grid;
@@ -992,6 +1017,36 @@ protected:
     SolutionVector x;
     SolutionVector xBackUp;
     SolutionVector xBackUpManual;
+	
+	
+	virtual std::vector<NumEqVector> getProblemFlux_10c()
+	{
+		std::vector<NumEqVector> flux_10c_;
+		return flux_10c_;
+	}
+	
+    void clearInnerFluxes() {    
+        inFluxes.clear();
+        inFluxes_time.clear();
+        inFluxes_ddt.clear();
+    }
+	
+	
+    std::vector<std::vector<double>> getFlux_10c() {		
+    	std::vector<NumEqVector> flux_10c_ = getProblemFlux_10c();//this->problem->getFlux10c_(); // 
+		int numComp_ = numComp();
+		std::vector<double> f10c_row(numComp_);
+		std::vector<std::vector<double>> flux_10c(flux_10c_.size(), f10c_row);
+		
+		for(int cellIdx = 0; cellIdx < flux_10c.size(); cellIdx ++)
+		{
+			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
+			{
+				flux_10c.at(cellIdx).at(eqIdx) = flux_10c_.at(cellIdx)[eqIdx];
+			}
+		}
+		return flux_10c;
+    }
 
 };
 
@@ -1019,9 +1074,10 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("resetManual", &Solver::resetManual)
 			.def("saveManual", &Solver::saveManual)
             // simulation 
-            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
+            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false, 
+				py::arg("saveInnerFluxes") = false)
             .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false,
-                py::arg("saveBC") = false)
+                py::arg("saveBC") = false, py::arg("saveInnerFluxes") = false)//, bool  = false
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)
             .def("getPoints", &Solver::getPoints) //
@@ -1046,6 +1102,9 @@ void init_solverbase(py::module &m, std::string name) {
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
             // members
+            .def_readonly("inFluxes", &Solver::inFluxes) // read only
+            .def_readonly("inFluxes_time", &Solver::inFluxes_time) // read only
+            .def_readonly("inFluxes_ddt", &Solver::inFluxes_ddt) // read only
             .def_readonly("dimWorld", &Solver::dimWorld) // read only
             .def_readonly("simTime", &Solver::simTime) // read only
             .def_readwrite("verbose", &Solver::verbose) // initial internal time step

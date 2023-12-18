@@ -98,6 +98,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getSolution(eqIdx)), 0)
     
+    
     def getSavedBC(self,  rIn, rOut, length):
         assert self.dimWorld != 3
         verbose = False

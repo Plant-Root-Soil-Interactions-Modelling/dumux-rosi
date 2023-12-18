@@ -268,14 +268,14 @@ public:
 				
 				Scalar b = 1;
 				//not sure it works because it s on a face
-				if((eqIdx != replaceCompEqIdx)&&problem.RFmethod2)
-				{
-					const auto& insideScv = fvGeometry.scv(scvf.insideScvIdx());
-					const auto& insideVolVars = elemVolVars[insideScv];
-					int dofIndex = insideScv.dofIndex();
-					b = problem.bufferPower(dofIndex, insideVolVars, compIdx);
-					//flux[eqIdx] /= b;
-				}
+				// if((eqIdx != replaceCompEqIdx)&&problem.RFmethod2)
+				// {
+					// const auto& insideScv = fvGeometry.scv(scvf.insideScvIdx());
+					// const auto& insideVolVars = elemVolVars[insideScv];
+					// int dofIndex = insideScv.dofIndex();
+					// b = problem.bufferPower(dofIndex, insideVolVars, compIdx);
+					// flux[eqIdx] /= b;
+				// }
 
                 if ((eqIdx != replaceCompEqIdx)&&(compIdx != problem.mucilIdx))
 				{
@@ -315,11 +315,11 @@ public:
             }
 
             //! Add advective phase energy fluxes. For isothermal model the contribution is zero.
-            EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, phaseIdx);
+            // EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, phaseIdx);
         }
 
         //! Add diffusive energy fluxes. For isothermal model the contribution is zero.
-        EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
+		// EnergyLocalResidual::heatConductionFlux(flux, fluxVars);
 		
 		// std::cout<<"computeFlux "<<scvf.center()<<" ";
 		// for(int i = 0; i< flux.size(); i++)

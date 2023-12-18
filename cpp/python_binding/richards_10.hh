@@ -20,14 +20,21 @@
 template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards10 : public Richards<Problem, Assembler, LinearSolver, dim> {
 public:
-
+    using NumEqVector = typename Problem::NumEqVector;
+	
     std::vector<double> getCSS1_out() {
     	return this->problem->getCSS1_(); // 
     }
     std::vector<double> getRF_out() {
     	return this->problem->getRF_(); // 
     }
-
+	
+	std::vector<NumEqVector> getProblemFlux_10c()
+	{	
+		return this->problem->getFlux10c_();
+	}
+	
+	
 };
 
 /**
@@ -59,6 +66,7 @@ void init_richards_10(py::module &m, std::string name) {
    .def("getAvgDensity",&Richards_::getAvgDensity)
    .def("getCSS1_out",&Richards_::getCSS1_out)
    .def("getRF_out",&Richards_::getRF_out)
+   .def("getProblemFlux_10c",&Richards_::getProblemFlux_10c)
    .def("getAvgDensity",&Richards_::getAvgDensity)
    .def_readonly("dimWorld", &Richards_::dimWorld);
 

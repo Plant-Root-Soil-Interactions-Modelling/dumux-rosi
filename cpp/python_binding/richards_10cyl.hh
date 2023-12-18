@@ -15,6 +15,7 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 1>
 class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim> {
 public:
 
+    using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards10Cyl() { }
 
     std::vector<double> getCSS1_out() {
@@ -22,7 +23,13 @@ public:
     }
     std::vector<double> getRF_out() {
     	return this->problem->getRF_(); // 
-    }
+	}
+    
+	std::vector<NumEqVector> getProblemFlux_10c()
+	{	
+		return this->problem->getFlux10c_();
+	}
+	
     
     /**
      * set verbose
@@ -79,6 +86,7 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def_readonly("dimWorld", &RichardsFoam::dimWorld)
    .def("getCSS1_out",&RichardsFoam::getCSS1_out)
    .def("getRF_out",&RichardsFoam::getRF_out)
+   .def("getProblemFlux_10c",&RichardsFoam::getProblemFlux_10c)
    .def("getAvgDensity",&RichardsFoam::getAvgDensity);
 }
 

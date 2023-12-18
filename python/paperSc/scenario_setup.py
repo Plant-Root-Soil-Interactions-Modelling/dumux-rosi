@@ -255,7 +255,7 @@ def setIC3D(s, paramIdx, ICcc = None):
 
         CSS2_init = 0.*s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        s.ICcc = np.array([C_S *unitConversion*0.,
+        s.ICcc = np.array([C_S *unitConversion,
                            C_L*unitConversion*0.,
                             9.16666666666667e-07* unitConversion*0.,
                             8.33333333333333e-06* unitConversion*0.,

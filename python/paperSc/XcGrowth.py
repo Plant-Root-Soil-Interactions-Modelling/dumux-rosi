@@ -793,6 +793,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
 if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 0 customDry noAds 9.02 0.02
+    # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
     print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 

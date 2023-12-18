@@ -21,6 +21,125 @@ class Richards1P10CProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 	
+	
+	// exports, used by the binding
+	using Grid = GetPropType<TypeTag, Properties::Grid>;
+	using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
+
+	// other
+	using GridView = GetPropType<TypeTag, Properties::GridView>;
+	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+	using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
+	using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+	using FVElementGeometry = typename FVGridGeometry::LocalView;
+	using SubControlVolume = typename FVGridGeometry::SubControlVolume;
+	using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
+	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
+	using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	using Element = typename GridView::template Codim<0>::Entity;
+	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+	using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
+	using MaterialLawParams = typename MaterialLaw::Params;
+	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
+	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
+	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+	using SolidSystem = GetPropType<TypeTag, Properties::SolidSystem>;
+	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
+	
+	
+    static constexpr bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
+	
+    static constexpr int numFluidComps = FluidSystem::numComponents;
+    static constexpr int numSolidComps = SolidSystem::numComponents;
+    static constexpr int numInertSolidComps =  SolidSystem::numInertComponents;
+
+	enum {
+		pressureIdx = 0, // index of primary variables
+		h2OIdx = FluidSystem::liquidPhaseIdx, // fluid index
+		soluteIdx = 1, // 1st solute index
+		mucilIdx = 2, // mucil index
+		CoAIdx = 3, // active oligotrophes
+		CoDIdx = 4, // dormant oligo
+		CcAIdx = 5, // active copiotrophes
+		CcDIdx = 6, // dormant copio
+		CSS2Idx = 7,
+		co2Idx = 8, 
+		soilIdx = SolidSystem::mainCompIdx + numFluidComps,
+		
+		//don t think EqIndx != pvdIdx when we have just 1 phase
+		conti0EqIdx = pressureIdx, // indices of the equations
+		transportEqIdx = conti0EqIdx + soluteIdx,
+		//transportMucilEqIdx = conti0EqIdx + mucilIdx,//is this correct?
+
+		dimWorld = GridView::dimensionworld,
+		
+		
+		numFluidSolutes = numFluidComps -  soluteIdx,
+		numSolidSolutes = numSolidComps -  1,
+		numSolutes = numFluidSolutes + numSolidSolutes,
+
+
+		//!!!!!!!!!!!!
+		numComponents_ = numFluidComps + numSolidSolutes,//ignore the soil as component
+		//!!!!!!!!!!!!
+		
+		isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
+	};
+
+	enum dzScalingType {
+		dx_2 = 1,
+		dx = 2
+	};
+	enum BCTypes {
+		constantPressure = 1,
+		constantConcentration = 1,
+		constantFlux = 2,
+		constantFluxCyl = 3,
+		atmospheric = 4,
+		freeDrainage = 5,
+		outflow = 6,
+		linear = 7,
+		michaelisMenten = 8,
+		managed = 9,
+		outflowCyl = 10
+	};
+
+	enum GridParameterIndex {
+		materialLayerNumber = 0
+	};
+	
+	
+	
+	std::vector<NumEqVector> Flux_10c ;
+	
+	NumEqVector getFlux10c (int index)
+	{
+		//std::cout<<index<<std::endl;
+		if(Flux_10c.size() <= index)
+		{
+			DUNE_THROW(Dune::InvalidStateException, "getFlux");			
+		}
+		return Flux_10c.at(index);
+	}
+	std::vector<NumEqVector> getFlux10c_ ()
+	{
+		return Flux_10c;
+	}
+	void setFlux(NumEqVector input, int index ) const 
+	{
+		//std::cout<<index<<std::endl;
+		if(Flux_10c.size() <= index)
+		{
+			DUNE_THROW(Dune::InvalidStateException, "setFlux");			
+		}
+		const_cast<NumEqVector&>(Flux_10c.at(index) ) = input;
+	}
+	
+	
     
 	std::vector<double> Reac_CSS2 ;
 	
@@ -133,96 +252,6 @@ public:
 		const_cast<double&>(RF.at(index)) = input;
 	}
 		
-	
-	// exports, used by the binding
-	using Grid = GetPropType<TypeTag, Properties::Grid>;
-	using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
-	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
-
-	// other
-	using GridView = GetPropType<TypeTag, Properties::GridView>;
-	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-	using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-	using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-	using FVElementGeometry = typename FVGridGeometry::LocalView;
-	using SubControlVolume = typename FVGridGeometry::SubControlVolume;
-	using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
-	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
-	using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
-	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-	using Element = typename GridView::template Codim<0>::Entity;
-	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-	using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
-	using MaterialLawParams = typename MaterialLaw::Params;
-	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
-	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
-	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
-	using SolidSystem = GetPropType<TypeTag, Properties::SolidSystem>;
-	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
-	
-	
-    static constexpr bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
-	
-    static constexpr int numFluidComps = FluidSystem::numComponents;
-    static constexpr int numSolidComps = SolidSystem::numComponents;
-    static constexpr int numInertSolidComps =  SolidSystem::numInertComponents;
-
-	enum {
-		pressureIdx = 0, // index of primary variables
-		h2OIdx = FluidSystem::liquidPhaseIdx, // fluid index
-		soluteIdx = 1, // 1st solute index
-		mucilIdx = 2, // mucil index
-		CoAIdx = 3, // active oligotrophes
-		CoDIdx = 4, // dormant oligo
-		CcAIdx = 5, // active copiotrophes
-		CcDIdx = 6, // dormant copio
-		CSS2Idx = 7,
-		co2Idx = 8, 
-		soilIdx = SolidSystem::mainCompIdx + numFluidComps,
-		
-		//don t think EqIndx != pvdIdx when we have just 1 phase
-		conti0EqIdx = pressureIdx, // indices of the equations
-		transportEqIdx = conti0EqIdx + soluteIdx,
-		//transportMucilEqIdx = conti0EqIdx + mucilIdx,//is this correct?
-
-		dimWorld = GridView::dimensionworld,
-		
-		
-		numFluidSolutes = numFluidComps -  soluteIdx,
-		numSolidSolutes = numSolidComps -  1,
-		numSolutes = numFluidSolutes + numSolidSolutes,
-
-
-		//!!!!!!!!!!!!
-		numComponents_ = numFluidComps + numSolidSolutes,//ignore the soil as component
-		//!!!!!!!!!!!!
-		
-		isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
-	};
-
-	enum dzScalingType {
-		dx_2 = 1,
-		dx = 2
-	};
-	enum BCTypes {
-		constantPressure = 1,
-		constantConcentration = 1,
-		constantFlux = 2,
-		constantFluxCyl = 3,
-		atmospheric = 4,
-		freeDrainage = 5,
-		outflow = 6,
-		linear = 7,
-		michaelisMenten = 8,
-		managed = 9,
-		outflowCyl = 10
-	};
-
-	enum GridParameterIndex {
-		materialLayerNumber = 0
-	};
 
 	/*!
 	 * \brief Constructor: constructed in the main file
@@ -367,8 +396,11 @@ public:
 		
 		auto nCells_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
 		auto myMultiply = [] (int previousResult, int item) {return previousResult * (item + 1);};
+		int nCells_all = std::reduce(nCells_.begin(), nCells_.end(), 1, std::multiplies<int>() ); //
 		int nVertices = std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply ); //std::multiplies<int>()
-        Reac_CSS2.resize(nVertices);
+        
+		Reac_CSS2.resize(nVertices);
+        Flux_10c.resize(nCells_all);
 		
 		testSorp.resize(nVertices);
 		testCSS1.resize(nVertices);
@@ -458,11 +490,11 @@ public:
                 
                 
 		// (mol Soil / m3 soil)  
-		double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
+		// double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
 		// m3 soil/m3 scv
-		double solVolFr = (1 - volVars.porosity());
+		// double solVolFr = (1 - volVars.porosity());
 		// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
-		double bulkSoilDensity = solidDensity * solVolFr;
+		// double bulkSoilDensity = solidDensity * solVolFr;
         
                 switch(css1Function) {//add later the pos0 factor
                   case 0:

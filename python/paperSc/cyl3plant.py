@@ -92,7 +92,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         Q_mucil = np.full(len(organTypes),0.)
 
     if(len(outer_R_bc_sol[0]) == 0):
-        outer_R_bc_sol = np.full((r.numComp,len(cell_volumes)), 0.)  
+        outer_R_bc_sol = np.full((r.numComp,s.numberOfCellsTot), 0.)  
     if(len(outer_R_bc_wat) == 0):
         outer_R_bc_wat = np.full(cell_volumes.shape, 0.)        
             
@@ -101,10 +101,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     write_file_array('seg2cell_keys',seg2cell,directory_ =results_dir, fileType = '.csv')
     write_file_array('seg2cell_vals',np.array(list(seg2cell.values())),directory_ =results_dir, fileType = '.csv')
     cell2seg = rs.rs.cell2seg
-    cellIds =r.cellWithRoots # np.fromiter(cell2seg.keys(), dtype=int)
+    cellIds = r.cellWithRoots # np.fromiter(cell2seg.keys(), dtype=int)
     #cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
     #cellIds_root =rs.cellWithRoots #only cells which contain root segments
-    emptyCells = np.array(list(set([xsoil for xsoil in range(len(cell_volumes))]) - set(cellIds))) # -1 (air) not included
+    emptyCells = np.array(list(set([xsoil for xsoil in range(s.numberOfCellsTot)]) - set(cellIds))) # -1 (air) not included
     write_file_array('emptyCells',emptyCells,directory_ =results_dir, fileType = '.csv')
     write_file_array('cellWithRoots',cellIds,directory_ =results_dir, fileType = '.csv')
 
@@ -480,7 +480,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if rank == 0:
                 print(rank, 'get proposed_fluxes')
                 if max(abs(outer_R_bc_wat )) > 0:
-                    assert outer_R_bc_wat.shape == ( len(cell_volumes), )
+                    assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
                     proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt, waterContent) #cm3/day
                 else:
                     proposed_outer_fluxes = np.full(len(organTypes), 0.)   
@@ -584,7 +584,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
             if r.mpiVerbose or (max_rank == 1):
                 print('get soil_solute')
-            soil_solute = np.array( [np.array(r.getC_rhizo(len(cell_volumes), idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
+            soil_solute = np.array( [np.array(r.getC_rhizo(s.numberOfCellsTot, idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
             if r.mpiVerbose or (max_rank == 1):
                 print('got soil_solute')
                 comm.barrier()
@@ -773,7 +773,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             
             # mol per voxel, TODO: find a way to use one function for that and rhizoTotCAfter_
-            r.new_soil_solute = np.array( [np.array(r.getC_rhizo(len(cell_volumes), idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
+            r.new_soil_solute = np.array( [np.array(r.getC_rhizo(s.numberOfCellsTot, idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
             try:
                 assert min(r.new_soil_solute.flatten()) >=0
             except:
@@ -797,7 +797,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print("cyl3plant:GOTsoil_source_sol", rank)
                 comm.barrier()
                 
-            assert soil_source_sol.shape == (r.numComp, len(cell_volumes))
+            assert soil_source_sol.shape == (r.numComp, s.numberOfCellsTot)
 
             # mabe check here that sum(soil_source_sol) == Qmucil + Qexud
             s.errSoil_source_sol_abs = sum(soil_source_sol.flatten()) - (sum(Q_Exud) + sum(Q_mucil))/dt
@@ -841,7 +841,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             if (rank == 0):
                 soil_fluxes_ = rs.sumSegFluxes(seg_fluxes)  # [cm3/day]  per soil cell
-                soil_fluxes = np.zeros(len(cell_volumes))
+                soil_fluxes = np.zeros(s.numberOfCellsTot)
                 #easier to handle array than dict. maybe change sumSegFluxes() function to choose type of output
                 soil_fluxes[np.array(list(soil_fluxes_.keys()))] = np.array(list(soil_fluxes_.values())) 
             else:
@@ -857,7 +857,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
             if (rank == 0):
                 soil_fluxes_limited_ = rs.sumSegFluxes(seg_fluxes_limited)  # [cm3/day]  per soil cell
-                soil_fluxes_limited = np.zeros(len(cell_volumes))
+                soil_fluxes_limited = np.zeros(s.numberOfCellsTot)
                 #easier to handle array than dict. maybe change sumSegFluxes() function to choose type of output
                 soil_fluxes_limited[np.array(list(soil_fluxes_limited_.keys()))] = np.array(list(soil_fluxes_limited_.values()))
             else:
@@ -874,8 +874,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             soil_sources_limited = np.concatenate((np.array([soil_fluxes_limited]),soil_source_sol ))
             soil_contents = np.concatenate((np.array([water_content]),soil_solute_content )) 
-            assert soil_sources_limited.shape == (s.numComp+1, len(cell_volumes) )
-            assert soil_contents.shape == (s.numComp+1, len(cell_volumes))
+            assert soil_sources_limited.shape == (s.numComp+1, s.numberOfCellsTot)
+            assert soil_contents.shape == (s.numComp+1, s.numberOfCellsTot)
             
             for idComp in range(s.numComp+1):#mol/day
                 if (max(abs(soil_sources_limited[idComp])) != 0.):
@@ -1045,7 +1045,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # 3.6 get 1DS outer BC (from limited-flux: used at next iteration)
             ##
-            outer_R_bc_wat = new_soil_water - soil_water - soil_fluxes_limited *dt # change in water per cell [cm3]
+            # issue here: mass balance error would be added to the outer_R_bc_wat
+            
+            outer_R_bc = np.transpose(s.getFlux_10c())
+            
+            outer_R_bc_wat = outer_R_bc[0]# [cm3] #new_soil_water - soil_water - soil_fluxes_limited *dt # change in water per cell [cm3]
             if r.mpiVerbose or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:soil_solute_content_new", rank)
@@ -1056,16 +1060,18 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print("cyl3plant:GOTsoil_solute_content_new", rank)
                 comm.barrier()
                 
-            outer_R_bc_sol = np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
-            assert outer_R_bc_sol.shape == (r.numComp, len(cell_volumes))
+            # issue here: mass balance error would be added to the outer_R_bc_wat
+            outer_R_bc_sol = outer_R_bc[1:]#np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
+            assert outer_R_bc_sol.shape == (r.numComp, s.numberOfCellsTot)
+            print(outer_R_bc_sol)
             
-
-            outer_R_bc_wat[emptyCells] = 0.
-            for nc in range(r.numFluidComp):
+            if len(emptyCells) > 0:
+                outer_R_bc_wat[emptyCells] = 0.
+                for nc in range(r.numFluidComp):
+                    outer_R_bc_sol[nc][emptyCells] = 0.# only use BC for cells with roots.
                 
-                outer_R_bc_sol[nc][emptyCells] = 0.# only use BC for cells with roots.
             for nc in range(r.numFluidComp, r.numComp):
-                outer_R_bc_sol[nc][:] = 0.# we coudl have rounding errors.
+                outer_R_bc_sol[nc][:] = 0.# to not have balance error as 3d flux
                 # all changes in cellIds for 3D soil is cause by biochemical reactions computed in 1D models.
                 # thus, for elements which do not flow (range(r.numComp, r.numFluidComp)), there are no changes
                 # except those prescribed by the 1d model.
