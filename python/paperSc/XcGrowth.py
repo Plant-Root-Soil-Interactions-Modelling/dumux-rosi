@@ -77,7 +77,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 0
+    css1Function_ = 5
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
     noAds = (extraName == 'noAds')
@@ -86,7 +86,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/onlyAds"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -121,9 +121,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     """ parameters   """
     soil_ = scenario_setup.vg_SPP(0)
 
-    min_b = [-5, -5, -10.] 
+    min_b = [-5, -5, -5.]# [-5, -5, -10.] 
     max_b = [5, 5, 0.] 
-    cell_number = [1,1,1]#[5,5,20]
+    cell_number = [1,1,1]#[5,5,20]# 
     #min_b = [-5., -5, -5.] 
     #max_b = [5., 5, 0.] 
     #cell_number = [5, 5, 5]
@@ -181,6 +181,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     rs.spellData = spellData
     rs.enteredSpell = (rs.spellData['scenario'] == 'none') or (rs.spellData['scenario'] == 'baseline')
     rs.leftSpell = (rs.spellData['scenario'] == 'baseline')
+    rs.diff1d3dCurrant = np.Inf
+    rs.diff1d3dCurrant_rel = np.Inf
 
 
     net_sol_flux =  np.array([np.array([]),np.array([])])
@@ -331,7 +333,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
-            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (np.floor(rs.diff1d3dCurrant_rel)>1) or (min(rs.new_soil_solute.reshape(-1)) < 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
+            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or (np.floor(rs.diff1d3dCurrant_rel*10.)/10.>0.1) or (min(rs.new_soil_solute.reshape(-1)) < 0))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
             comm.barrier()
@@ -363,7 +365,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                                              dt_inner, real_dtinner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"2", rs.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"Bool", np.array([n_iter, (np.floor(rs.err) > max_err), 
-                                                        rs.diff1d3dCurrant_rel > 1,
+                                                        (np.floor(rs.diff1d3dCurrant_rel*10.)/10. > 0.1),
                                                         #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), 
                                                         #(max(abs(rs.errDiffBCs*0)) > 1e-5), 
                                                         rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)) < 0.,
@@ -423,6 +425,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 rs.resetManual()
                 rs.leftSpell = rs.leftSpellBU
                 rs.enteredSpell = rs.enteredSpellBU
+                print('checkMassOMoleBalance2_428')
                 rs.checkMassOMoleBalance2(None,None, dt,
                                     seg_fluxes =None, diff1d3dCW_abs_lim = np.Inf, takeFlux = False)
                 # to get correct error values for sumDiff1d3dCW_relBU
@@ -649,7 +652,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                          (np.array(r.Csoil_seg ) == np.array(r.Csoil_node)[1:]).all())
                 raise Exception
 
-            Q_Exud_i_seg = np.array( Q_Exud_i[1:] ) #from nod to semgment
+            Q_Exud_i_seg = np.array( Q_Exud_i[1:] )*100 #from nod to semgment
             Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])*0.
 
             airSegsId = rs.airSegs
@@ -742,6 +745,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     if mpiVerbose or (max_rank == 1):
         print('finished simulation')
     sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
+    print('checkMassOMoleBalance2_747')
     rs.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
                                      sourceSol = np.full((rs.numComp, len(sizeSoilCell)),0.), # mol/day
                                      dt = 0.,        # day    

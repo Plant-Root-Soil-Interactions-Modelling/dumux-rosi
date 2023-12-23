@@ -22,6 +22,7 @@ class Richards10 : public Richards<Problem, Assembler, LinearSolver, dim> {
 public:
     using NumEqVector = typename Problem::NumEqVector;
 	
+	
     std::vector<double> getCSS1_out() {
     	return this->problem->getCSS1_(); // 
     }
@@ -29,12 +30,65 @@ public:
     	return this->problem->getRF_(); // 
     }
 	
+    std::vector<double> getSorp() {
+    	return this->problem->getSorp_(); // 
+    }
+    std::vector<double> getReac_CSS2() {
+    	return this->problem->getReac_CSS2_(); // 
+    }
 	std::vector<NumEqVector> getProblemFlux_10c()
 	{	
 		return this->problem->getFlux10c_();
 	}
+	std::vector<NumEqVector> getProblemSource_10c()
+	{	
+		return this->problem->getSource10c_();
+	}
+	double computeRF(double C_S_W, double theta, double svc_volume)
+	{	
+		return this->problem->computeRF(C_S_W, theta, svc_volume);
+	}
+	double computeCSS1(double C_S_W, double theta, double svc_volume)
+	{	
+		return this->problem->computeCSS1(C_S_W, theta, svc_volume);
+	}
+	std::vector<double> computeRFs()
+	{	
+		std::vector<double> C_S_fr = this->getSolution(1); // [mol / mol] wat
+		std::vector<double> theta = this->getWaterContent();// [m3/m3]
+		std::vector<double> svc_volume = this->getCellVolumes(); // [m3]
+		std::vector<double> RFs(C_S_fr.size());// - 
+		for(int rfIdx = 0; rfIdx < RFs.size(); rfIdx ++)
+		{
+			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+													theta.at(rfIdx), 
+													svc_volume.at(rfIdx));//m3
+		}
+		return RFs;
+	}
+	std::vector<double> computeCSS1s()
+	{	
+		std::vector<double> C_S_fr = this->getSolution(1); // [mol / mol] wat
+		std::vector<double> theta = this->getWaterContent();// [m3/m3]
+		std::vector<double> svc_volume = this->getCellVolumes(); // [m3]
+		std::vector<double> CSS1s(C_S_fr.size());// - 
+		for(int rfIdx = 0; rfIdx < CSS1s.size(); rfIdx ++)
+		{
+			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+													theta.at(rfIdx), 
+													svc_volume.at(rfIdx));//m3
+		}
+		return CSS1s;// mol/,3
+	}
 	
+	// other values to reset?
+    virtual void resetInnerVals() {this->problem->setCSS1_(CSS1_saved);}
+    virtual void saveInnerVals() { CSS1_saved = this->problem->getCSS1_();}
+    virtual void resetInnerValsManual() {this->problem->setCSS1_(CSS1_savedManually);}
+    virtual void saveInnerValsManual() { CSS1_savedManually = this->problem->getCSS1_();}
 	
+	std::vector<double> CSS1_saved;
+	std::vector<double> CSS1_savedManually;
 };
 
 /**
@@ -66,8 +120,14 @@ void init_richards_10(py::module &m, std::string name) {
    .def("getAvgDensity",&Richards_::getAvgDensity)
    .def("getCSS1_out",&Richards_::getCSS1_out)
    .def("getRF_out",&Richards_::getRF_out)
+   .def("getSorp",&Richards_::getSorp)
+   .def("getReac_CSS2",&Richards_::getReac_CSS2)
    .def("getProblemFlux_10c",&Richards_::getProblemFlux_10c)
    .def("getAvgDensity",&Richards_::getAvgDensity)
+   .def("computeRF",&Richards_::computeRF)
+   .def("computeCSS1",&Richards_::computeCSS1)
+   .def("computeRFs",&Richards_::computeRFs)
+   .def("computeCSS1s",&Richards_::computeCSS1s)
    .def_readonly("dimWorld", &Richards_::dimWorld);
 
 }

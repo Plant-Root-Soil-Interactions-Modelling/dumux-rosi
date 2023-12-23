@@ -55,10 +55,10 @@ int main(int argc, char** argv) //try
 	//s.setParameter("Problem.verboseIndexSet", "0");
 	std::cout<<"to create grid"<<std::endl;
 	
-	std::array<double, 3> boundsMin{-0.05, -0.05, -0.1};//std::vector<double> 
-	std::array<double, 3> boundsMax{0.05, 0.05, 0.};// std::vector<double> 
-	std::array<int, 3> numberOfCells{5, 5, 20};
-	s.setParameter("Soil.Grid.Cells", "5 5 20");
+	std::array<double, 1> boundsMin{-0.05};//std::vector<double> 
+	std::array<double, 1> boundsMax{0.05};// std::vector<double> 
+	std::array<int, 3> numberOfCells{5};
+	s.setParameter("Soil.Grid.Cells", "5");
     s.createGrid(boundsMin,boundsMax, numberOfCells)  ;// [m]
     
 	std::cout<<"grid created"<<std::endl;

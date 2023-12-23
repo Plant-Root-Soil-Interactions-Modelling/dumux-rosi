@@ -380,6 +380,23 @@ public:
     	this->problem->bcSBotValue_ = values;
     }
 
+    double molarMassWat = 18.; // [g/mol]
+    double densityWat_m3 = 1e6 ;//[g/m3]
+    //[mol/m3] = [g/m3] /  [g/mol] 
+    double molarDensityWat_m3 =  densityWat_m3 / molarMassWat;
+	
+	
+	
+	virtual std::vector<double> computeRFs()
+	{	
+		std::vector<double> RFs;
+		return RFs;
+	}
+	virtual std::vector<double> computeCSS1s()
+	{	
+		std::vector<double> CSS1s;
+		return CSS1s;
+	}
 protected:
 
     std::vector<double> cellVolume;

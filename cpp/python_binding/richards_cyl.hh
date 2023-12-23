@@ -47,7 +47,7 @@ public:
         BC_time.clear();
         BC_ddt.clear();
     }
-    void doSaveBC(double currentTime) {
+    void doSaveBC(double ddt_current) {
 		int numC = this->numComp();
         std::vector<double> BC_in_vals_i(numC);
         std::vector<double> BC_out_vals_i(numC);
@@ -58,8 +58,8 @@ public:
         }
         BC_in_vals.push_back(BC_in_vals_i);
         BC_out_vals.push_back(BC_out_vals_i);
-        BC_time.push_back(currentTime );
-        BC_ddt.push_back(this->ddt);
+        //BC_time.push_back(currentTime );
+        BC_ddt.push_back(ddt_current);
     }
     
     /**

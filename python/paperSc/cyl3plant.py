@@ -55,13 +55,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     subtypes = np.asarray(rs.rs.subTypes, int)
     organTypes = np.asarray(rs.rs.organTypes, int)
 
-    if r.mpiVerbose or (max_rank == 1):
+    if r.mpiVerbose:# or (max_rank == 1):
         comm.barrier()
         print("cyl3plant:cell_volumes", rank)
         comm.barrier()
     cell_volumes = comm.bcast(s.getCellVolumes() , root = 0) #cm3
 
-    if r.mpiVerbose or (max_rank == 1):
+    if r.mpiVerbose:# or (max_rank == 1):
         comm.barrier()
         print("cyl3plant:GOTcell_volumes", rank)
         comm.barrier()
@@ -92,7 +92,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         Q_mucil = np.full(len(organTypes),0.)
 
     if(len(outer_R_bc_sol[0]) == 0):
-        outer_R_bc_sol = np.full((r.numComp,s.numberOfCellsTot), 0.)  
+        outer_R_bc_sol = np.full((r.numComp+1,s.numberOfCellsTot), 0.)  
     if(len(outer_R_bc_wat) == 0):
         outer_R_bc_wat = np.full(cell_volumes.shape, 0.)        
             
@@ -118,7 +118,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
         
-        if r.mpiVerbose or (max_rank == 1):
+        if r.mpiVerbose:# or (max_rank == 1):
             comm.barrier()
             print("simualtion loop, Ni, N:",Ni, N,rs_age_i_dt)
             comm.barrier()
@@ -150,6 +150,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 meanZ = np.average(cellsZ)
                 pheadinit_cm_all = pheadinit_cm - (cellsZ - meanZ)
                 pheadinit_Pa = s.to_pa(pheadinit_cm_all)
+                print('checkMassOMoleBalance2_153')
                 r.checkMassOMoleBalance2(None,None, dt,
                                     seg_fluxes =None, diff1d3dCW_abs_lim =np.Inf, takeFlux = False) 
                 print('error before change',r.sumDiff1d3dCW_rel ,'pheadinit_cm',pheadinit_cm, r.weatherX['theta'],
@@ -185,6 +186,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                             nc_molFr =np.array( [nc_c/newWatMol for nc_c in nc_content])
                             for nc in range(r.numFluidComp):
                                 cyl.base.setSolution(nc_molFr[nc],nc+1 )
+                print('checkMassOMoleBalance2_189')
                 r.checkMassOMoleBalance2(None,None, dt,
                                     seg_fluxes =None, 
                                           diff1d3dCW_abs_lim = np.Inf, 
@@ -263,7 +265,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.solve_gave_up = False
             """ 1. xylem model """
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print('1. xylem model', rank)
                 comm.barrier()
@@ -407,7 +409,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rs.time_plant_cumulW += (timeit.default_timer() - start_time_plant)
 
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:seg_fluxes", rank)
                 comm.barrier()
@@ -417,7 +419,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             rs.psiXyl = comm.bcast(rs.psiXyl, root = 0) 
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTseg_fluxes", rank)
                 comm.barrier()
@@ -425,33 +427,33 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 
             """ 2. local 1D soil models (1DS)"""
             comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank, '2. local 1D soil models (1DS)')
             comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'2.1 distribute 3D flows between the 1DS')
             ##
             # 2.1 distribute 3D flows between the 1DS
             #     use value per 1DS !!AT THE END OF THE TIME STEP!! => weight for @splitSoilVals()
             ##
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'2.1 distribute 3D flows between the 1DS')
             if r.weightBefore  or (r.beforeAtNight and (r.weatherX["Qlight"] == 0.)):
-                if r.mpiVerbose or (max_rank == 1):
+                if r.mpiVerbose:# or (max_rank == 1):
                     print(rank,'waterContent = waterContentOld')
                 waterContent = waterContentOld
             else:
-                if r.mpiVerbose or (max_rank == 1):
+                if r.mpiVerbose:# or (max_rank == 1):
                     print(rank,'waterContent = r.getWaterVolumesCyl(doSum = False, reOrder = True)')
                 waterContent = r.getWaterVolumesCyl(doSum = False, reOrder = True)
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'get comp1content')
             comp1content = r.getContentCyl(idComp=1, doSum = False, reOrder = True)
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'get comp2content')
             comp2content = r.getContentCyl(idComp=2, doSum = False, reOrder = True)
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'check comp1content',len(airSegsId))
 
             assert (waterContent >= 0.).all()
@@ -463,7 +465,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     assert (comp1content[airSegsId] == 0.).all()
                     assert (comp2content[airSegsId] == 0.).all()
                     assert waterContent.shape == (len(organTypes), )
-                    if r.mpiVerbose or (max_rank == 1):
+                    if r.mpiVerbose:# or (max_rank == 1):
                         print(rank,'2.1 asserts',(waterContent[airSegsId] == 0.).all(),(comp1content[airSegsId] == 0.).all(),
                           (comp2content[airSegsId] == 0.).all(),waterContent.shape == (len(organTypes), ))
                 except:
@@ -472,42 +474,46 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     raise Exception
                     
             comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank, 'todo: splitSoilValsA')
             comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank, 'splitSoilValsB')
             if rank == 0:
-                print(rank, 'get proposed_fluxes')
+                if r.mpiVerbose:# or (max_rank == 1):
+                    print(rank, 'get proposed_fluxes')
                 if max(abs(outer_R_bc_wat )) > 0:
                     assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
                     proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt, waterContent) #cm3/day
                 else:
                     proposed_outer_fluxes = np.full(len(organTypes), 0.)   
-                print(rank, 'got proposed_outer_fluxes')
+                if r.mpiVerbose:# or (max_rank == 1):
+                    print(rank, 'got proposed_outer_fluxes')
                 if max(abs(outer_R_bc_sol[0] )) > 0:
                     proposed_outer_sol_fluxes = r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content)#mol/day
                 else:
                     proposed_outer_sol_fluxes = np.full(len(organTypes), 0.)
-                print(rank, 'got proposed_outer_sol_fluxes')
+                if r.mpiVerbose:# or (max_rank == 1):
+                    print(rank, 'got proposed_outer_sol_fluxes')
                 if max(abs(outer_R_bc_sol[1] )) > 0:
                     proposed_outer_mucil_fluxes = r.splitSoilVals(outer_R_bc_sol[1] / dt, comp2content)
                 else:
                     proposed_outer_mucil_fluxes = np.full(len(organTypes), 0.)
-                print(rank, 'got proposed_outer_mucil_fluxes')
+                if r.mpiVerbose:# or (max_rank == 1):
+                    print(rank, 'got proposed_outer_mucil_fluxes')
             else:
                 proposed_outer_fluxes = None
                 proposed_outer_sol_fluxes = None
                 proposed_outer_mucil_fluxes = None
-                if r.mpiVerbose or (max_rank == 1):
+                if r.mpiVerbose:# or (max_rank == 1):
                     print(rank, 'set proposed_fluxes to none')
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'to comm.barrier')
                 comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank, 'did_comm.bcast(fluxes)')
                 comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank,'left comm.barrier')
                 
             proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
@@ -515,7 +521,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             proposed_outer_mucil_fluxes = comm.bcast(proposed_outer_mucil_fluxes, root = 0)
             
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTproposed_outer_fluxes", rank)
                 comm.barrier()
@@ -536,17 +542,19 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # maybe move this part to within the solve function to go less often through the list of 1DS
             ##
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print(rank, '2.2 data before solve, for post proccessing')
                 comm.barrier()
                 
             if (n_iter > 0) :
+                if r.mpiVerbose or (max_rank == 1):
+                    print('r.reset')
                 r.reset() # go back to water and solute value at the BEGINING of the time step
-                
+                    
             solution0_1ds_new = np.array([cyl.getSolution(0) for cyl in r.cyls],dtype=object)
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print('did reset')#,rank,solution0_1ds_new , solution0_1ds_old)
                 comm.barrier()
@@ -560,7 +568,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print(rank, r.eidx)
                 raise Exception
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print('getWaterVolumesCyl')
                 comm.barrier()
@@ -569,23 +577,30 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rhizoWBefore = sum(rhizoWBefore_) 
             
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print('getTotCContentAll')
                 comm.barrier()
-                
+                  
+            rhizoTotCBefore_eachC = np.array([r.getContentCyl(idComp=idC) for idC in range(1,r.numComp+2)])
+            #print('rhizoTotCBefore_eachC',rhizoTotCBefore_eachC)
+            
             rhizoTotCBefore_ = r.getTotCContentAll(doSum = False, reOrder = True)
             rhizoTotCBefore = sum(rhizoTotCBefore_) 
             
-            
-            if r.mpiVerbose or (max_rank == 1):
+            for nc in range(r.numComp+1):
+                write_file_float("fpit_sol_content1d_before_"+str(nc+1),sum( r.getContentCyl(idComp = nc+1, doSum = False, reOrder = True)), 
+                                     directory_ =results_dir)#, fileType = '.csv') 
+
+
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print('getC_rhizo')
                 comm.barrier()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print('get soil_solute')
-            soil_solute = np.array( [np.array(r.getC_rhizo(s.numberOfCellsTot, idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
-            if r.mpiVerbose or (max_rank == 1):
+            soil_solute = np.array( [np.array(r.getC_rhizo(s.numberOfCellsTot, idComp = idc + 1, konz = False)) for idc in range(r.numComp+1)])
+            if r.mpiVerbose:# or (max_rank == 1):
                 print('got soil_solute')
                 comm.barrier()
             ##
@@ -595,12 +610,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # TODO: necessary to limit the outer solute BC by the BC content? because we can also gain by reactions
             # for now no limit on the solute fluxes
             ##
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print('2.3A 1st limit to the net negative BCs')
             cylVolume =  np.pi *(np.array( r.outer_radii)*np.array( r.outer_radii )- np.array( r.radii) * np.array( r.radii))* np.array( r.seg_length)
             assert ((rhizoWBefore_ - r.vg_soil.theta_R * cylVolume)[rhizoSegsId] >=0).all()
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print('did assert ((rhizoWBefore_ - r.vg_soil.theta_R * cylVolume)[rhizoSegsId] >=0).all()')
                 comm.barrier()
 
@@ -617,7 +632,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # 2.3B simulation
             ##
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print('2.3B simulation')
             start_time_rhizo = timeit.default_timer()
             if r.mpiVerbose or (max_rank == 1):
@@ -629,32 +644,35 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.solve(dt, n_iter,seg_fluxes , proposed_outer_fluxes, seg_sol_fluxes,proposed_outer_sol_fluxes, 
                         seg_mucil_fluxes, proposed_outer_mucil_fluxes) # cm3/day or mol/day
             
-            if r.mpiVerbose or (max_rank == 1):
+            rhizoTotCAfter_eachC = np.array([r.getContentCyl(idComp=idC) for idC in range(1,r.numComp+2)])
+            
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("solve 1d soil_finished", rank)
                 comm.barrier()
             rs.time_rhizo_i += (timeit.default_timer() - start_time_rhizo)
-            for lId, cyl in enumerate(r.cyls):
-                if not isinstance(cyl, AirSegment):
-                    gId = r.eidx[lId]
-                    
-                    pHead = np.array(cyl.getSolutionHead()).flatten()
-                    write_file_array("watercontentcyl"+str(gId),cyl.getWaterContent(), 
-                                     directory_ =results_dir, allranks = True)
-                    write_file_array("pressureHeadcyl"+str(gId),pHead, 
-                                     directory_ =results_dir, allranks = True)
-                    write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), 
-                                     directory_ =results_dir, allranks = True)
-                    for ccc in range(r.numComp):
-                        sol0 = np.array(cyl.getSolution(ccc)).flatten()
-                        write_file_array("solution"+str(ccc)+"_"+str(gId)+"", 
-                                     sol0, 
-                                     directory_ =results_dir, allranks = True)
-                    if max(pHead) > 0:
-                        print('issue phead',gId,rank, pHead, sol0 )
-                        raise Exception
+            if False:
+                for lId, cyl in enumerate(r.cyls):
+                    if not isinstance(cyl, AirSegment):
+                        gId = r.eidx[lId]
+                        
+                        pHead = np.array(cyl.getSolutionHead()).flatten()
+                        write_file_array("watercontentcyl"+str(gId),cyl.getWaterContent(), 
+                                         directory_ =results_dir, allranks = True)
+                        write_file_array("pressureHeadcyl"+str(gId),pHead, 
+                                         directory_ =results_dir, allranks = True)
+                        write_file_array("coordcyl"+str(gId), cyl.getDofCoordinates().flatten(), 
+                                         directory_ =results_dir, allranks = True)
+                        for ccc in range(r.numComp):
+                            sol0 = np.array(cyl.getSolution(ccc)).flatten()
+                            write_file_array("solution"+str(ccc)+"_"+str(gId)+"", 
+                                         sol0, 
+                                         directory_ =results_dir, allranks = True)
+                        if max(pHead) > 0:
+                            print('issue phead',gId,rank, pHead, sol0 )
+                            raise Exception
 
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("share seg_fluxes_limited", rank)# get 2nd limitation, gather and cast among thread 
                 comm.barrier()
@@ -748,7 +766,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 errorsEachW[airSegsId] = 0 # error evaluation only adapted for root segments belowground            
             r.rhizoMassWError_abs = sum(abs(errorsEachW[rhizoSegsId]))
             r.rhizoMassWError_rel = abs(r.rhizoMassWError_abs/sum(rhizoWAfter_[rhizoSegsId])*100)
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 print(rank, "for proposed flux: rhizoMassWError_abs, rel", r.rhizoMassWError_abs,r.rhizoMassWError_rel, 
                     max(abs(seg_fluxes-seg_fluxes_limited)))
                 
@@ -773,7 +791,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             
             # mol per voxel, TODO: find a way to use one function for that and rhizoTotCAfter_
-            r.new_soil_solute = np.array( [np.array(r.getC_rhizo(s.numberOfCellsTot, idComp = idc + 1, konz = False)) for idc in range(r.numComp)])
+            r.new_soil_solute = np.array( [np.array(r.getC_rhizo(s.numberOfCellsTot, idComp = idc + 1, konz = False)) for idc in range(r.numComp+1)])
             try:
                 assert min(r.new_soil_solute.flatten()) >=0
             except:
@@ -783,24 +801,27 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             #mol/day
             soil_source_sol = np.full(r.new_soil_solute.shape,0. )
-            for nc in range(r.numComp):
+            for nc in range(r.numComp+1):
                 soil_source_sol[nc][cellIds] = np.array(r.new_soil_solute[nc][cellIds] - soil_solute[nc][cellIds] - outer_R_bc_sol[nc][cellIds])/dt
-
-            if r.mpiVerbose or (max_rank == 1):
+            
+            
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:soil_source_sol", rank)
                 comm.barrier()
             soil_source_sol = comm.bcast(soil_source_sol, root = 0)    
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTsoil_source_sol", rank)
                 comm.barrier()
                 
-            assert soil_source_sol.shape == (r.numComp, s.numberOfCellsTot)
+            assert soil_source_sol.shape == (r.numComp+1, s.numberOfCellsTot)
 
             # mabe check here that sum(soil_source_sol) == Qmucil + Qexud
             s.errSoil_source_sol_abs = sum(soil_source_sol.flatten()) - (sum(Q_Exud) + sum(Q_mucil))/dt
+            print('\n\n\nsoil_source_sol',soil_source_sol.flatten(),s.errSoil_source_sol_abs,'sum', sum(soil_source_sol.flatten()),
+                (sum(Q_Exud) + sum(Q_mucil))/dt,'\n\n\n')
             if (sum(Q_Exud) + sum(Q_mucil))/dt != 0.:
                 s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(Q_Exud) + sum(Q_mucil))/dt)*100)
             else:
@@ -812,31 +833,36 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 3.1 data before, for post proccessing AND source adaptation
             ##
             if (n_iter > 0) :
+                if r.mpiVerbose or (max_rank == 1):
+                    print('s.reset')
                 s.reset() #reset at the last moment: over functions use the solution/content at the end of the time step
             solution0_3ds_new = np.array(s.getSolution(0))
             assert (solution0_3ds_new == solution0_3ds_old).all()
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:water_contentsoil_water", rank)
                 comm.barrier()
             water_content = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
             soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
-            buTotCBefore = comm.bcast(sum(s.getTotCContent()), root = 0) 
+            #buTotCBefore = comm.bcast(s.getTotCContent(), root = 0) 
+            buTotCBeforeEach = comm.bcast(s.getTotCContent_each(), root = 0) 
+            buTotCBeforeAll = buTotCBeforeEach.sum(axis = 0)
+            buTotCBefore = sum(buTotCBeforeAll)
+            
             
             soil_solute_content = comm.bcast(np.array([np.array(
-                s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]),
+                s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp+1)]),
                                                 root = 0) # mol
 
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTwater_contentsoil_water", rank)
                 comm.barrier()
             ##
             # 3.2 adapt and set sources
             # TODO: take into account BC != 0 (rain, evaporation)
-            # TODO: currently, only limit water flow. not clear how to limit solute flow
             ##          
             
             if (rank == 0):
@@ -846,12 +872,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 soil_fluxes[np.array(list(soil_fluxes_.keys()))] = np.array(list(soil_fluxes_.values())) 
             else:
                 soil_fluxes = None
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:soil_fluxes", rank)
                 comm.barrier()
             soil_fluxes = comm.bcast(soil_fluxes, root=0)
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTsoil_fluxes", rank)
                 comm.barrier()
@@ -862,40 +888,46 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 soil_fluxes_limited[np.array(list(soil_fluxes_limited_.keys()))] = np.array(list(soil_fluxes_limited_.values()))
             else:
                 soil_fluxes_limited = None
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:soil_fluxes_limited", rank)
                 comm.barrier()
             soil_fluxes_limited = comm.bcast(soil_fluxes_limited, root=0)
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTsoil_fluxes_limited", rank)
                 comm.barrier()
             
             soil_sources_limited = np.concatenate((np.array([soil_fluxes_limited]),soil_source_sol ))
-            soil_contents = np.concatenate((np.array([water_content]),soil_solute_content )) 
-            assert soil_sources_limited.shape == (s.numComp+1, s.numberOfCellsTot)
-            assert soil_contents.shape == (s.numComp+1, s.numberOfCellsTot)
+            soil_contents = np.concatenate((np.array([soil_water]),soil_solute_content ))  # water_content
+            assert soil_sources_limited.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
+            assert soil_contents.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
             
-            for idComp in range(s.numComp+1):#mol/day
-                if (max(abs(soil_sources_limited[idComp])) != 0.):
-                    SSL = soil_sources_limited[idComp].copy()
-                    SSL = np.maximum(SSL, -soil_contents[idComp]/dt)
+            for idComp in range(s.numComp+1):#cm3/day, mol/day
+            
+                SSL = soil_sources_limited[idComp].copy()
+                soil_contents_temp = soil_contents[idComp].copy()
+                if idComp == 1:# add source of css1
+                    SSL += soil_sources_limited[s.numComp+1].copy()
+                    soil_contents_temp += soil_contents[s.numComp+1].copy()
                     
-                    toAdd= np.maximum(0., -(soil_contents[idComp]/dt + SSL))
+                if (max(abs(SSL)) != 0.):
+                    SSL = np.maximum(SSL, -soil_contents_temp/dt)
+                    
+                    toAdd= np.maximum(0., -(soil_contents_temp/dt + SSL))
                     SSL[np.where(toAdd>0.)] += toAdd[np.where(toAdd>0.)] #+ 1e-20
                     
                     k_limit_source3d = 0
                     epsilon_source3d = 1e-25
-                    while (not (SSL*dt >= -soil_contents[idComp]).all()) and (k_limit_source3d <= 10):
-                        SSL[np.where(SSL*dt < -soil_contents[idComp])] += epsilon_source3d
+                    while (not (SSL*dt >= -soil_contents_temp).all()) and (k_limit_source3d <= 10):
+                        SSL[np.where(SSL*dt < -soil_contents_temp)] += epsilon_source3d
                         epsilon_source3d *= 10
                         k_limit_source3d += 1
                     
                     try:
-                        assert min(soil_contents[idComp] + SSL*dt) >=0.
+                        assert min(soil_contents_temp + SSL*dt) >=0.
                     except:
-                        print(soil_sources_limited[idComp], SSL,dt,  min(soil_contents[idComp] + SSL*dt) )
+                        print(soil_sources_limited[idComp], SSL,dt,  min(soil_contents_temp + SSL*dt) )
                         write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
                         raise Exception
                     
@@ -907,11 +939,15 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                             res[key] = value
                             test_values.remove(value)
                             break                        
-                    write_file_float("setsource_"+str(idComp), res, directory_ =results_dir) 
+                    #write_file_float("setsource_"+str(idComp), res, directory_ =results_dir) #mol/day
                     write_file_array("setsourceLim1_"+str(idComp),  soil_sources_limited[idComp], 
                                      directory_ =results_dir, fileType =".csv") 
                     write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
+                    print('res',soil_sources_limited[idComp],res)
                     s.setSource(res.copy(), eq_idx = idComp)  # [mol/day], in modules/richards.py
+            write_file_array("setsourceLim1_"+str(s.numComp+1),  soil_sources_limited[s.numComp+1], 
+                                     directory_ =results_dir, fileType =".csv") 
+            
             r.SinkLim3DS = abs(soil_fluxes_limited - soil_fluxes) # at the end of the fixed point iteration, should be ~ 0        
             
             ##
@@ -928,11 +964,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
                 try:
                     decreaseMaxRelShift = False
-                    if r.mpiVerbose or (max_rank == 1):
+                    if r.mpiVerbose:# or (max_rank == 1):
                         comm.barrier()
                         print("entering the s.solve", rank)
-                    s.solve(dt, maxDt = 250/(3600*24))  # in modules/solverbase.py
-                    if r.mpiVerbose or (max_rank == 1):
+                    s.solve(dt, maxDt = 250/(3600*24), solverVerbose = False)  # in modules/solverbase.py
+                    if r.mpiVerbose:# or (max_rank == 1):
                         print("leaving the s.solve", rank)
                         comm.barrier()
                     solComp = [s.getSolution(ncom+1) for ncom in range(s.numComp)]
@@ -959,7 +995,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     s.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
                     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
                     s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
-                    if r.mpiVerbose or (max_rank == 1):
+                    if r.mpiVerbose:# or (max_rank == 1):
                         print(rank, f"Unexpected {err=}, {type(err)=}", 'k_soil_solve',k_soil_solve)
                     if k_soil_solve > 6:
                         raise Exception
@@ -991,23 +1027,34 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         except:
                             raise Exception
                     k_soil_solve += 1
-                
-            if r.mpiVerbose or (max_rank == 1):
+            
+            if r.mpiVerbose:# or (max_rank == 1):
                 print("done")
             rs.time_3ds_i += (timeit.default_timer() - start_time_3ds)
             
             ##
             # 3.4 data after, for post proccessing 
             ##
-            if r.mpiVerbose or (max_rank == 1):
+            
+            print('allDiff1d3dCW_1030',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
+            print('checkMassOMoleBalance2_1033')
+            r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
+                                    seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf,
+                                    verbose_ = True,takeFlux=True) # just to get error value, will not throw an error
+            print('allDiff1d3dCW_1037',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
+            
+            
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:buTotCAfter", rank)
                 comm.barrier()
-            buTotCAfter =comm.bcast( sum(s.getTotCContent()) , root = 0)    
+            buTotCAfterEach = comm.bcast(s.getTotCContent_each(), root = 0) 
+            buTotCAfterAll = buTotCAfterEach.sum(axis = 0)
+            buTotCAfter = sum(buTotCAfterAll)
             water_content =comm.bcast( np.array(s.getWaterContent()), root = 0) 
             new_soil_water = np.multiply(water_content, cell_volumes)  # calculate net flux
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTbuTotCAfter", rank)
                 comm.barrier()
@@ -1034,13 +1081,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if rank == 0:
                 print("errorCbalance soil 3d?",rank, buTotCAfter ,',', buTotCBefore ,',',  sum(Q_Exud) ,',',  sum(Q_mucil), 
                         ', soil_source_sol', sum(soil_source_sol.flatten())*dt,', s.bulkMassCErrorPlant_abs', s.bulkMassCErrorPlant_abs,
-                        ', bulkMassCError1ds_abs ',  s.bulkMassCError1ds_abs , rs_age_i_dt)
+                        ',s.bulkMassCErrorPlant_rel',s.bulkMassCErrorPlant_rel,
+                        ', bulkMassCError1ds_abs ',  s.bulkMassCError1ds_abs ,
+                        ', s.bulkMassCError1ds_rel',s.bulkMassCError1ds_rel, 'time',rs_age_i_dt)
             s.buTotCAfter = buTotCAfter
             s.buTotCBefore = buTotCBefore
             
             if rank == 0:
                 print("errorWbalance soil 3d?",rank, sum(new_soil_water) ,',', sum(soil_water) ,',',   sum(soil_fluxes)*dt,
-                            ', bulkMassErrorWater_abs', s.bulkMassErrorWater_abs,', bulkMassErrorWater_absLim',  s.bulkMassErrorWater_absLim , rs_age_i_dt)
+                            ', bulkMassErrorWater_abs', s.bulkMassErrorWater_abs,', bulkMassErrorWater_absLim', 
+                            s.bulkMassErrorWater_absLim ,'time' ,rs_age_i_dt)
 
             ##
             # 3.6 get 1DS outer BC (from limited-flux: used at next iteration)
@@ -1048,22 +1098,69 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # issue here: mass balance error would be added to the outer_R_bc_wat
             
             outer_R_bc = np.transpose(s.getFlux_10c())
+            bulkSoil_sources = np.transpose(s.getSource_10c()) #buTotCBeforeEach[-1], buTotCAfterEach[-1]))
             
+            #raise Exception
             outer_R_bc_wat = outer_R_bc[0]# [cm3] #new_soil_water - soil_water - soil_fluxes_limited *dt # change in water per cell [cm3]
-            if r.mpiVerbose or (max_rank == 1):
+            sources_wat =  bulkSoil_sources[0]
+            
+            s.bulkMassErrorWaterAll_real = new_soil_water - (soil_water + sources_wat + outer_R_bc_wat)
+            s.bulkMassErrorWaterAll_abs = abs(s.bulkMassErrorWaterAll_real)
+            s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /new_soil_water )*100
+            
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:soil_solute_content_new", rank)
                 comm.barrier()
             soil_solute_content_new = comm.bcast(np.array([np.array(s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp)]), root = 0) # mol
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTsoil_solute_content_new", rank)
                 comm.barrier()
                 
             # issue here: mass balance error would be added to the outer_R_bc_wat
-            outer_R_bc_sol = outer_R_bc[1:]#np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
-            assert outer_R_bc_sol.shape == (r.numComp, s.numberOfCellsTot)
-            print(outer_R_bc_sol)
+            outer_R_bc_sol = outer_R_bc[1:] # cm3 #np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
+            sources_sol =  bulkSoil_sources[1:] # mol
+            
+            assert outer_R_bc_sol.shape == (r.numComp+1, s.numberOfCellsTot)
+            #outer_R_bc_solAll = outer_R_bc_sol.sum(axis = 0)
+            
+            ## valid for all cells
+            
+            s.bulkMassCError1dsAll_real = buTotCAfterEach - ( buTotCBeforeEach + sources_sol + outer_R_bc_sol)
+            
+            # TODO: TAKE OUT
+            print('\n\n\nbulkMassCError1dsAll_real', s.bulkMassCError1dsAll_real[[1,-1,-3]].flatten(), 
+                        'diff 1d3d',r.diff1d3dCurrant,r.diff1d3dCurrant_rel)
+            print('allDiff1d3dCW',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten(),
+                    'rel',r.allDiff1d3dCW_rel[[1,-1,-3]].flatten(),'\n\n\n')
+            # print('buTotCAfterEach',buTotCAfterEach , 'buTotCBeforeEach',buTotCBeforeEach ,'sources_sol',sources_sol , 'outer_R_bc_sol',outer_R_bc_sol)
+            print('buTotCBeforeEach',buTotCBeforeEach.flatten(),'buTotCAfterEach',buTotCAfterEach.flatten())
+            print('rhizoTotCBefore_eachC',rhizoTotCBefore_eachC,'rhizoTotCAfter_eachC',rhizoTotCAfter_eachC)
+            print('RHIZO_CSS1',r.getContentCyl(None,9,True))
+            print('3D_CSS1' ,s.getContent(9,False) )
+            if (r.allDiff1d3dCW_abs[1] == 0) and (r.allDiff1d3dCW_abs[-1] != 0):
+                raise Exception
+            if max(r.allDiff1d3dCW_rel[[1,-1,-3]].flatten()) > 1.:
+                raise Exception
+            
+            # TODO: TAKE OUT_END
+            
+            s.bulkMassCError1dsAll_real[0] += s.bulkMassCError1dsAll_real[-1]#put together CS and CSS1
+            s.bulkMassCError1dsAll_real[-1][:] = 0.
+
+            s.bulkMassCError1dsAll_abs = abs(s.bulkMassCError1dsAll_real)
+            #s.bulkMassCError1dsAll_rel = np.full(len(s.bulkMassCError1dsAll_abs),0.)
+            #s.bulkMassCError1dsAll_rel[np.where(buTotCAfterAll > 0)] = abs(s.bulkMassCError1dsAll_abs/buTotCAfterAll*100)
+            s.bulkMassCError1dsAll_rel = np.array([np.where(buTotCAfterEach[nc] > 0, abs(s.bulkMassCError1dsAll_abs[nc]/buTotCAfterEach[nc]*100),
+                                            s.bulkMassCError1dsAll_abs[nc]) for nc in range(len(buTotCAfterEach))])
+            try:
+                assert s.bulkMassCError1dsAll_real.shape == s.bulkMassCError1dsAll_rel.shape == (s.numComp +1, s.numberOfCellsTot )
+            except:
+                print(s.bulkMassCError1dsAll_real.shape , s.bulkMassCError1dsAll_rel.shape , (s.numComp +1, s.numberOfCellsTot ))
+                raise Exception
+                
+                
             
             if len(emptyCells) > 0:
                 outer_R_bc_wat[emptyCells] = 0.
@@ -1087,9 +1184,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             """ 4. prints and evaluation of the iteration """
             # TODO: see which value are more sensible. very low rx in the leaves may make the level of change always low in the plant
-            
+            print('checkMassOMoleBalance2_1166')
             r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
-                                    seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf) # just to get error value, will not throw an error
+                                    seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf,
+                                    verbose_ = True) # just to get error value, will not throw an error
             rx = np.array(rs.psiXyl)
             
             rsx = r.get_inner_heads(weather=r.weatherX)  # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models (not extrapolation to the interface!) [cm]
@@ -1160,12 +1258,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                     ])
             #sum(abs(diffBCS1dsFluxIn)), sum(abs(diffBCS1dsFluxOut)),sum(abs(diffouter_R_bc_wat)),
             #sum(abs(diffBCS1dsFluxOut_sol.reshape(-1))), sum(abs(diffBCS1dsFluxOut_mucil)),sum(abs(diffouter_R_bc_sol.reshape(-1)))])
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:errDiffBCs", rank)
                 comm.barrier()
             r.errDiffBCs = comm.bcast(r.errDiffBCs,root= 0)
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTerrDiffBCs", rank)
                 comm.barrier()
@@ -1175,7 +1273,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             new_soil_water_old = new_soil_water.copy()
             soil_solute_content_new_old = soil_solute_content_new.copy()
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:errsandCo", rank)
                 comm.barrier()
@@ -1196,17 +1294,17 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print('r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absBU',r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absBU,
                      r.sumDiff1d3dCW_abs, r.sumDiff1d3dCW_absBU,compErrorAboveLim)
                 raise Exception
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:solve_gave_up", rank)
                 comm.barrier()
             r.solve_gave_up = (np.array(comm.bcast(comm.gather(r.solve_gave_up ,root = 0),root = 0))).any()
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:solve_gave_up", rank)
                 comm.barrier()
             
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print("cyl3plant:GOTerrsandCo", rank)
                 comm.barrier()
@@ -1319,13 +1417,27 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     write_file_array("fpit_sol_content_1dabs"+str(nc+1), r.contentIn1d[nc+1], directory_ =results_dir, fileType = '.csv')
                     
                     write_file_array("fpit_sol_content3d"+str(nc+1), s.getContent(nc+1, nc < s.numFluidComp), directory_ =results_dir, fileType = '.csv')  
-                    write_file_array("fpit_sol_content1d"+str(nc+1), r.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
-                                     directory_ =results_dir, fileType = '.csv')  
+                    write_file_float("fpit_sol_content1d"+str(nc+1), sum(r.getContentCyl(idComp = nc+1, doSum = False, reOrder = True)), 
+                                     directory_ =results_dir)#, fileType = '.csv')  
                     write_file_array("fpit_outer_R_bc_sol"+str(nc+1), outer_R_bc_sol[nc], directory_ =results_dir, fileType = '.csv')  
                     write_file_array("fpit_diffouter_R_bc_sol"+str(nc+1), diffouter_R_bc_sol[nc], directory_ =results_dir, fileType = '.csv') 
                     
                     write_file_array("fpit_diffouter_R_bc_solBis"+str(nc+1), abs((diffouter_R_bc_sol[nc]/ np.where(outer_R_bc_sol[nc],outer_R_bc_sol[nc],1.))*100), directory_ =results_dir, fileType = '.csv') 
                     write_file_float("fpit_diffouter_R_bc_solBismax"+str(nc+1),max( abs((diffouter_R_bc_sol[nc]/ np.where(outer_R_bc_sol[nc],outer_R_bc_sol[nc],1.))*100)), directory_ =results_dir) 
+                
+                    write_file_array("fpit_buTotCBeforeEach"+str(nc+1), buTotCBeforeEach[nc], directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_buTotCAfterEach"+str(nc+1), buTotCAfterEach[nc], directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_bulkMassCError1dsAll_real"+str(nc+1), s.bulkMassCError1dsAll_real[nc], directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_sources_sol_real"+str(nc+1), sources_sol[nc], directory_ =results_dir, fileType = '.csv') 
+                
+            
+                write_file_array("fpit_buTotCAfterEach"+str(s.numComp+1), buTotCAfterEach[s.numComp], directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_sol_content3d"+str(s.numComp+1), s.getContent(s.numComp+1, False), directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_CSS1_th3d", s.getCSS1_out(), directory_ =results_dir, fileType = '.csv') 
+                write_file_float("fpit_sol_content1d"+str(s.numComp+1),sum( r.getContentCyl(idComp = s.numComp+1, doSum = False, reOrder = True)), 
+                                 directory_ =results_dir)#, fileType = '.csv')
+                write_file_array("fpit_sources_sol_real"+str(s.numComp+1), sources_sol[s.numComp], directory_ =results_dir, fileType = '.csv') 
+                write_file_array("fpit_bulkMassCError1dsAll_real"+str(s.numComp+1), s.bulkMassCError1dsAll_real[s.numComp], directory_ =results_dir, fileType = '.csv') 
                 
                 write_file_array("fpit_outer_R_bc_wat", outer_R_bc_wat, directory_ =results_dir, fileType = '.csv')  
                 
@@ -1348,7 +1460,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 write_file_array("fpit_rhizoWAfter", rhizoWAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
                 write_file_array("fpit_rhizoTotCAfter", rhizoTotCAfter_[rhizoSegsId] , directory_ =results_dir, fileType = '.csv') 
 
-            if r.mpiVerbose or (max_rank == 1):
+            if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
                 print('end iteration', rank, n_iter, r.err,r.maxDiff1d3dCW_abs)
                 comm.barrier()
@@ -1369,12 +1481,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         
 
         # error 3DS-1DS
-        if r.mpiVerbose or (max_rank == 1):
+        if r.mpiVerbose:# or (max_rank == 1):
             comm.barrier()
             print('error 3DS-1DS', rank)
+        print('checkMassOMoleBalance2_1466')
         r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                 seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf)
-        if r.mpiVerbose or (max_rank == 1):
+        if r.mpiVerbose:# or (max_rank == 1):
             print('finished  error 3DS-1DS', rank)
             comm.barrier()
                                 
@@ -1389,14 +1502,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     print(soil_solute_content_new[nc] , soil_solute_content[nc] , soil_source_sol[nc]*dt)
                     raise Exception
                     
-        if r.mpiVerbose or (max_rank == 1):
+        if r.mpiVerbose:# or (max_rank == 1):
             comm.barrier()
             print('end time step inner loop')
             comm.barrier()
         
         
         failedLoop = continueLoop(r,0, dt, False,Ni * dt,'fpit_testdata')
-        if r.mpiVerbose or (max_rank == 1):
+        if r.mpiVerbose:# or (max_rank == 1):
             print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
             comm.barrier()
         if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
@@ -1404,7 +1517,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             break
         # end time step inner loop
     dt_inner =float(Ni+1)*float( dt) # get the real simetime if sim_time / dt != int
-    if r.mpiVerbose or (max_rank == 1):
+    if r.mpiVerbose:# or (max_rank == 1):
         print('end of inner loop, failed?',failedLoop, n_iter,Ni,'/',N, dt_inner, dt)
     
     return outer_R_bc_sol, outer_R_bc_wat, np.array(rs.outputFlux), dt_inner, failedLoop, n_iter_inner_max# fluxes == first guess for next fixed point iteration

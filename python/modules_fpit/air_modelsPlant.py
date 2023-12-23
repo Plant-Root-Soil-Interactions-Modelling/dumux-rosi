@@ -90,6 +90,10 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return 0
     def get_inner_concentration(self):
         return 0
+    def getCSS1_out_real(self):
+        return np.array([0])
+    def getCSS1_out_th(self):
+        return np.array([0])
     def getSolution_(self,val):
         return np.array([0])
     def getSolution(self,val):

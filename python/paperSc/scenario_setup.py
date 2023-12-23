@@ -155,7 +155,7 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 
 def getBiochemParam(s,paramIdx, noAds):
     s.numFluidComp = 2
-    s.numComp = 8
+    # s.numComp = 8
     paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
     
     s.mg_per_molC = 12000
@@ -198,7 +198,7 @@ def getBiochemParam(s,paramIdx, noAds):
         s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 bulk soil
     # can cause issue
     s.k_sorp = paramSet['k_sorp'] /s.mg_per_molC# mol C/cm3 bulk soil
-    
+    print('s.CSSmax ',s.CSSmax ,'s.k_sorp ',s.k_sorp )
     s.alpha = 0.1# -
     s.f_sorp = 0.5
     s.k_phi = 0.1
@@ -268,8 +268,9 @@ def setIC3D(s, paramIdx, ICcc = None):
     
     for i in range(s.numComp):
         #mol/m3 to mol/mol
-        molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) 
         # print('C',i+1,s.ICcc[i], s.phaseDensity(isDissolved = (i < s.numFluidComp)),molarC )
+        molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numFluidComp)) 
+        # 
         s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
     return s
 

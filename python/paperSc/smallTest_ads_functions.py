@@ -68,7 +68,7 @@ def setShape1D(s,r_in, r_out,doLogarithmic=True):
     return s
 
     
-def setDefault(s):
+def setDefault(s,css1Function_=0 ):
     s.setParameter("Problem.reactionExclusive", "0")
     molarMassWat = 18. # [g/mol]
     densityWat = 1. #[g/cm3]
@@ -76,7 +76,7 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
-    s.css1Function = 0
+    s.css1Function = css1Function_
     s.setParameter( "Soil.css1Function", str(s.css1Function))
     s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
@@ -110,7 +110,6 @@ def setSoilParam(s,paramIdx):
 
 def getBiochemParam(s,paramIdx, noAds):
     s.numFluidComp = 2
-    s.numComp = 8
     paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
     s.mg_per_molC = 12000
     s.betaC = paramSet['beta_C'] # -

@@ -18,6 +18,20 @@ public:
     using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards10Cyl() { }
 
+	virtual void initializeProblem() {
+		RichardsCyl<Problem, Assembler, LinearSolver, dim>::initializeProblem();
+		
+		this->problem->segLength = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
+		std::vector<double> cellSurfacesCyl = this->getCellSurfacesCyl();//m2
+		std::vector<double> cellVolumesCyl;
+		cellVolumesCyl.resize(cellSurfacesCyl.size());
+		for(int cVC = 0; cVC < cellVolumesCyl.size(); cVC ++)
+		{
+			cellVolumesCyl.at(cVC) = cellSurfacesCyl.at(cVC)* this->problem->segLength;
+		}
+		this->problem->setVolumesCyl(cellVolumesCyl);
+	}
+	
     std::vector<double> getCSS1_out() {
     	return this->problem->getCSS1_(); // 
     }
@@ -25,12 +39,26 @@ public:
     	return this->problem->getRF_(); // 
 	}
     
+    std::vector<double> getSorp() {
+    	return this->problem->getSorp_(); // 
+    }
+    std::vector<double> getReac_CSS2() {
+    	return this->problem->getReac_CSS2_(); // 
+    }
 	std::vector<NumEqVector> getProblemFlux_10c()
 	{	
 		return this->problem->getFlux10c_();
 	}
+	std::vector<NumEqVector> getProblemSource_10c()
+	{	
+		return this->problem->getSource10c_();
+	}
 	
-    
+	// other values to reset?
+    virtual void resetInnerVals() {this->problem->setCSS1_(CSS1_saved);}
+    virtual void saveInnerVals() { CSS1_saved = this->problem->getCSS1_();}
+    virtual void resetInnerValsManual() {this->problem->setCSS1_(CSS1_savedManually);}
+    virtual void saveInnerValsManual() { CSS1_savedManually = this->problem->getCSS1_();}
     /**
      * set verbose
      */
@@ -39,6 +67,44 @@ public:
     	this->problem->verbose = verbose;
     }
 
+	double computeRF(double C_S_W, double theta, double svc_volume)
+	{	
+		return this->problem->computeRF( C_S_W,  theta,  svc_volume);
+	}
+	double computeCSS1(double C_S_W, double theta, double svc_volume)
+	{	
+		return this->problem->computeCSS1( C_S_W,  theta,  svc_volume);
+	}
+	std::vector<double> computeRFs()
+	{	
+		std::vector<double> C_S_fr = this->getSolution(1); // [mol / mol] wat
+		std::vector<double> theta = this->getWaterContent();// [m3/m3]
+		std::vector<double> svc_volume = this->problem->cellVolumesCyl; // [m3]
+		std::vector<double> RFs(C_S_fr.size());// - 
+		for(int rfIdx = 0; rfIdx < RFs.size(); rfIdx ++)
+		{
+			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+													theta.at(rfIdx), 
+													svc_volume.at(rfIdx));//m3
+		}
+		return RFs;
+	}
+	std::vector<double> computeCSS1s()
+	{	
+		std::vector<double> C_S_fr = this->getSolution(1); // [mol / mol] wat
+		std::vector<double> theta = this->getWaterContent();// [m3/m3]
+		std::vector<double> svc_volume = this->problem->cellVolumesCyl; // [m3]
+		std::vector<double> CSS1s(C_S_fr.size());// - 
+		for(int rfIdx = 0; rfIdx < CSS1s.size(); rfIdx ++)
+		{
+			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+													theta.at(rfIdx), 
+													svc_volume.at(rfIdx));//m3
+		}
+		return CSS1s;
+	}
+	std::vector<double> CSS1_saved;
+	std::vector<double> CSS1_savedManually;
 };
 
     
@@ -84,8 +150,14 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)
    .def_readonly("dimWorld", &RichardsFoam::dimWorld)
+   .def("computeRF",&RichardsFoam::computeRF)
+   .def("computeCSS1",&RichardsFoam::computeCSS1)
+   .def("computeRFs",&RichardsFoam::computeRFs)
+   .def("computeCSS1s",&RichardsFoam::computeCSS1s)
    .def("getCSS1_out",&RichardsFoam::getCSS1_out)
    .def("getRF_out",&RichardsFoam::getRF_out)
+   .def("getSorp",&RichardsFoam::getSorp)
+   .def("getReac_CSS2",&RichardsFoam::getReac_CSS2)
    .def("getProblemFlux_10c",&RichardsFoam::getProblemFlux_10c)
    .def("getAvgDensity",&RichardsFoam::getAvgDensity);
 }

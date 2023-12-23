@@ -114,6 +114,32 @@ public:
 	
 	
 	
+	std::vector<NumEqVector> source_10c ;
+	
+	NumEqVector getSource10c (int index)
+	{
+		//std::cout<<index<<std::endl;
+		if(source_10c.size() <= index)
+		{
+			DUNE_THROW(Dune::InvalidStateException, "getSource");			
+		}
+		return source_10c.at(index);
+	}
+	std::vector<NumEqVector> getSource10c_ ()
+	{
+		return source_10c;
+	}
+	void setSource(NumEqVector input, int index ) const 
+	{
+		//std::cout<<index<<std::endl;
+		if(source_10c.size() <= index)
+		{
+			DUNE_THROW(Dune::InvalidStateException, "setSource");			
+		}
+		const_cast<NumEqVector&>(source_10c.at(index) ) = input;
+	}
+	
+	
 	std::vector<NumEqVector> Flux_10c ;
 	
 	NumEqVector getFlux10c (int index)
@@ -143,6 +169,10 @@ public:
     
 	std::vector<double> Reac_CSS2 ;
 	
+	std::vector<double>getReac_CSS2_()
+	{
+		return Reac_CSS2;
+	}
 	double getReac_CSS2 (int index)
 	{
 		//std::cout<<index<<std::endl;
@@ -164,6 +194,10 @@ public:
     
 	std::vector<double> testSorp ;
 	
+	std::vector<double> getSorp_()
+	{
+		return testSorp;
+	}
 	double getSorp (int index)
 	{
 		//std::cout<<index<<std::endl;
@@ -206,6 +240,11 @@ public:
 			DUNE_THROW(Dune::InvalidStateException, "setCSS1");			
 		}
 		const_cast<double&>(testCSS1.at(index)) = input;
+	}
+	
+	void setCSS1_(std::vector<double>  input) const 
+	{
+		const_cast<std::vector<double> &>(testCSS1) = input;
 	}
 	
 	std::vector<double> theta_;
@@ -399,12 +438,13 @@ public:
 		int nCells_all = std::reduce(nCells_.begin(), nCells_.end(), 1, std::multiplies<int>() ); //
 		int nVertices = std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply ); //std::multiplies<int>()
         
-		Reac_CSS2.resize(nVertices);
+		Reac_CSS2.resize(nCells_all);
         Flux_10c.resize(nCells_all);
+		source_10c.resize(nCells_all);
+		testCSS1.resize(nCells_all);
 		
-		testSorp.resize(nVertices);
-		testCSS1.resize(nVertices);
-		theta_.resize(nVertices);
+		testSorp.resize(nCells_all);
+		theta_.resize(nCells_all);
 		RF.resize(nVertices);
 		 
 
@@ -455,7 +495,7 @@ public:
 	 *
 	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
 	 */
-	Scalar bufferPower(int dofIndex, const VolumeVariables& volVars, int compIdx = 0) const {
+	Scalar bufferPower(int dofIndex, const VolumeVariables& volVars, int compIdx , const SubControlVolume& scv) const {
 		switch(compIdx)
 		{
 			case h2OIdx:{
@@ -486,36 +526,26 @@ public:
 				// [-] * [m3 solid / m3 scv] * [m3 scv /m3 wat] * [mol C/m3 solid] / [mol C/m3 wat] = [-]							//m3 water /m3 scv				
 				
 				// [m3 scv zone 1/m3 scv] * [m3 scv/m3 wat] * [mol C/m3 scv zone 1] / [mol C/m3 wat] = [-]	
-                double RF_;
+               
                 
                 
-		// (mol Soil / m3 soil)  
-		// double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
-		// m3 soil/m3 scv
-		// double solVolFr = (1 - volVars.porosity());
-		// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
-		// double bulkSoilDensity = solidDensity * solVolFr;
-        
-                switch(css1Function) {//add later the pos0 factor
-                  case 0:
-                    RF_ = 1+(1/theta)*(f_sorp*CSSmax*(k_sorp/((k_sorp+C_S_W)*(k_sorp+C_S_W))) ) ; //nonlinear
-                    break;
-                  case 1:
-                    RF_ = 1;//none
-                    break;
-                  case 2:
-                  // [-] +  [m3 scv/m3 wat] * [m3 scv zone 1/m3 scv] * [???] = 
-                  //[-] + [m3 scv zone 1/m3 wat]* [???] so CSSmax is in [m3 wat/m3 scv zone 1] in such cases
-                    RF_ =  1+(1/theta)*(f_sorp*CSSmax )   ; //linear
-                    break;
-                  case 3:
-                    RF_ = 1  ; //via pde
-                    break;
-                  default:
-                    DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, 2, or) "+ std::to_string(css1Function));
-                }
-
-				//RF_all[scv.dofIndex()][compIdx] = RF;
+				// (mol Soil / m3 soil)  
+				// double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
+				// m3 soil/m3 scv
+				// double solVolFr = (1 - volVars.porosity());
+				// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
+				// double bulkSoilDensity = solidDensity * solVolFr;
+				
+				double svc_volume;
+				if (dimWorld == 1)//1daxissymmetric model
+				{
+					svc_volume = cellVolumesCyl.at(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+									// for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
+				}else{ // dimWorld == 3
+					svc_volume = scv.volume();
+				}
+				
+				double RF_ = this->computeRF(C_S_W, theta, svc_volume);
 				
 				setRF(RF_, dofIndex);
 				
@@ -984,6 +1014,9 @@ public:
 		return flux;
 	}
 
+    void setVolumesCyl(std::vector<double> cellvoles) {
+        cellVolumesCyl = cellvoles;
+    }
 	/*!
 	 * \copydoc FVProblem::source
 	 *
@@ -998,10 +1031,11 @@ public:
 		bool dobioChemicalReaction = true; //by default, do biochemical reactions
 		double pos0; 
         double svc_volume;
+        int dofIndex = scv.dofIndex();
 		if (dimWorld == 1)//1daxissymmetric model
 		{
 			pos0 = pos[0];
-            svc_volume = 1.;//with 1d model, need to evaluate manually the volume of the cell.
+            svc_volume = cellVolumesCyl.at(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
                             // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
 		}else{ // dimWorld == 3
 			pos0 = 1.;
@@ -1022,8 +1056,8 @@ public:
 				}
 				// if((eIdx == 337)&&(i == 1))
 				// {
-					// std::cout<< eIdx<<" "<<i<<" "<<
-					// source_[i]->at(eIdx) <<" "<< scv.volume()<<" "<<pos0<<std::endl;
+				//	 std::cout<< "source "<<eIdx<<" "<<i<<" "<<
+				//	 source_[i]->at(eIdx) <<" "<< scv.volume()<<" "<<pos0<<" "<<source[i]<<std::endl;
 				// }
 			}else{source[i] = 0.;}												 
 		}		
@@ -1038,20 +1072,64 @@ public:
 		if(dobioChemicalReaction)
 		{
 			bioChemicalReaction(source, volVars, pos0, scv);
+		}else{ 
+			const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
+			{
+				return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
+						(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
+			};
+
+			const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
+			{
+				return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
+						(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
+			};
+			double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
+			double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;	//mol C/m3 soil water
+			double theta = volVars.saturation(h2OIdx) * volVars.porosity(); //m3 water / m3 scv
+        							
+			double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume);
+			// = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
+			setCSS1(CSS1*f_sorp, scv.dofIndex());
 		}
 		
-						// if((eIdx == 337))
-				// {
-					// std::cout<< eIdx<<" "<<source_[1]->at(eIdx)<<" "<< scv.volume()<<" "<<pos0<<", source: ";
-					// for(int kk = 0; kk < source.size(); kk++)
-					// {
-						// std::cout<<"element "<<kk<<" "<<source[kk]<<" ";
-					// }
-					// std::cout<<" diff "<< (source[1] - source_[1]->at(eIdx)/scv.volume());
-					// std::cout<<std::endl;
-				// }
+		setSource(source, dofIndex);// [ mol / (m^3 \cdot s)]
 		
 		return source;
+	}
+	
+	double computeRF(double C_S_W, double theta, double svc_volume) const
+	{
+		double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume);
+		return 1+(CSS1*f_sorp)/(C_S_W*theta);
+	}
+	double computeCSS1(double C_S_W, double theta, double svc_volume) const
+	{// [ mol / m^3]
+		
+		switch(css1Function) {
+		  case 0:
+			return CSSmax*(C_S_W/(C_S_W+k_sorp));
+		  case 1:
+			return 0.;//none
+		  case 2:
+		  // [mol C/m3 scv zone 1] = [m3 soil water/m3 scv zone 1] * [mol C/m3 soil water]
+			return CSSmax*C_S_W/k_sorp;//linear, with CSSmax in [m3 wat/m3 scv zone 1]
+		  case 3:
+			return 0.;//only pde
+		  case 4:
+			return CSSmax*(C_S_W/(C_S_W+k_sorp));
+		  case 5:
+			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp));
+		  case 6://CSSmax is content
+			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp))/svc_volume;
+		  case 7://linear with depends on content
+			return CSSmax*(svc_volume*C_S_W*theta/k_sorp);
+		  case 8://linear with CSSmax is content
+			return CSSmax*C_S_W*theta/k_sorp;
+		  default:
+			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+		}
+		return 1.;
 	}
 	
 		/*!
@@ -1102,26 +1180,24 @@ public:
 			C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil							//mol C/m3 scv
 		}
 		//[mol C / m3 scv] = [mol scv/m3 scv] * [mol C/mol scv]
-		double CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) / (1 - f_sorp) ; // mol C / m3 scv zone 2
-		double CSS1;// = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
+		double CSS2;
+		if(f_sorp < 1.)
+		{
+			CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) / (1 - f_sorp) ; // mol C / m3 scv zone 2
+		}else{CSS2 = 0.;}
+		//double CSS1;// = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
         
-        switch(css1Function) {
-          case 0:
-            CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp));
-            break;
-          case 1:
-            CSS1 = 0.;//none
-            break;
-          case 2:
-          // [mol C/m3 scv zone 1] = [m3 soil water/m3 scv zone 1] * [mol C/m3 soil water]
-            CSS1 = CSSmax*C_S_W;//linear, with CSSmax in [m3 wat/m3 scv zone 1]
-            break;
-          case 3:
-            CSS1 = 0.;//only pde
-            break;
-          default:
-            DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+        double svc_volume;
+        int dofIndex = scv.dofIndex();
+		if (dimWorld == 1)//1daxissymmetric model
+		{
+            svc_volume = cellVolumesCyl.at(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+                            // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
+		}else{ // dimWorld == 3
+            svc_volume = scv.volume();
         }
+		
+			double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume);
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
@@ -1173,13 +1249,15 @@ public:
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 scv /s] 
-        int dofIndex = scv.dofIndex();
-        if (css1Function != 3)//nonlinear, none, linear
-        {
-            setReac_CSS2(alpha*(CSS1-CSS2), dofIndex) ;//already in /m3 scv (as * (1-f_sorp) done)
-        }else{//only via pde
-            setReac_CSS2(alpha*(C_S_W-CSS2), dofIndex) ;
-        }
+		if(f_sorp < 1.)
+		{
+			if (css1Function != 3)//nonlinear, none, linear
+			{
+				setReac_CSS2(alpha*(CSS1-CSS2), dofIndex) ;//already in /m3 scv (as * (1-f_sorp) done)
+			}else{//only via pde
+				setReac_CSS2(alpha*(C_S_W-CSS2), dofIndex) ;
+			}
+		}else{setReac_CSS2(0., dofIndex) ;}
             
 		
 		//[mol solute / m3 scv/s] 
@@ -1194,7 +1272,8 @@ public:
 		
 		q[CSS2Idx] +=  Reac_CSS2[dofIndex] * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
-					if(verbose)
+			
+			if(verbose)
 			{
                 std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
                 <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
@@ -1383,6 +1462,8 @@ public:
     
     bool RFmethod2 = false;
 	bool verbose_local_residual = false;
+	double segLength;
+	std::vector<double> cellVolumesCyl;
     
 private:
 

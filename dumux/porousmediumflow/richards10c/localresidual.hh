@@ -112,7 +112,7 @@ public:
 					//if(!problem.RFmethod2)
 					//{
 						int dofIndex = scv.dofIndex();
-						b = problem.bufferPower(dofIndex, volVars, compIdx);
+						b = problem.bufferPower(dofIndex, volVars, compIdx, scv);
 					//}
 					// mol solute / m3 space
                     storage[eqIdx] += std::max(0.,//manually force it to remaine above 0.

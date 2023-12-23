@@ -22,6 +22,9 @@ target_compile_definitions(richards10c1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>
 add_executable(richards10c_PyBi richards1p10c_PyBi.cc)
 target_compile_definitions(richards10c_PyBi PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
+add_executable(richards3d10c_PyBi_ads richards3d1p10c_PyBi_ads.cc)
+target_compile_definitions(richards3d10c_PyBi_ads PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
+
 add_executable(richards10c richards1p10c.cc)
 target_compile_definitions(richards10c PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 

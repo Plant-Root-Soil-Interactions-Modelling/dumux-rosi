@@ -32,7 +32,11 @@ class SolverWrapper():
     def initialize(self, args_ = [""], verbose = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose)
-        
+    
+    @property
+    def numComp(self):
+        """Get the current voltage."""
+        return self.base.numComp() -1   
         
     def reset(self):
         """ reset solution vector to value before solve function """
@@ -125,7 +129,7 @@ class SolverWrapper():
         for v in points:
             p.append([v / 100.])  # cm -> m
         self.base.createGrid1d(p)
-        self.numberOfCellsTot = np.prod(self.numberOfCells)
+        self.numberOfCellsTot = len(points) -1
 
 #     def createGrid3d(self, points, p0):
 #         """ todo
