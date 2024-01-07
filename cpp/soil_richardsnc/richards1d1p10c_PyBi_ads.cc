@@ -22,13 +22,13 @@
  * \brief Richards equation realized with Richards box model.
  */
 
-#include "../python_binding/py_richards10c.hh"
+#include "../python_binding/py_richards10c_cyl.hh"
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 
 
 std::vector<std::vector<double>> getFluxOrSource_10c(
-	Richards10<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver, 3> s, 
+	Richards10Cyl<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1> s, 
 	bool doGetSource) 
 {
         
@@ -48,80 +48,54 @@ std::vector<std::vector<double>> getFluxOrSource_10c(
 		
         try {
             assert(inSources.size() == inFluxes_ddt.size());
-            assert(inSources[0][0].size() == s.numComp());//+ 1
+            assert(inSources[0].size() == numberOfCellsTot);
+            assert(inSources[0][0].size() == s.numComp());
         } catch (std::exception& e) {
             std::cerr << "Assertion failed: " << e.what() << std::endl;
             throw e;
         }
 
-        std::vector<std::vector<double>> inSources_tot(numberOfCellsTot, std::vector<double>(s.numComp() , 0.0));//+ 2
+        std::vector<std::vector<double>> inSources_tot(numberOfCellsTot, std::vector<double>(s.numComp() , 0.0));
 
         for (size_t isrcs = 0; isrcs < inFluxes_ddt.size(); ++isrcs) {
             for (size_t idc = 0; idc < numberOfCellsTot; ++idc) {
-                for (size_t comp = 0; comp < s.numComp() ; ++comp) {//+ 1
+                for (size_t comp = 0; comp < s.numComp(); ++comp) {
                     inSources_tot[idc][comp] += inSources[isrcs][idc][comp] * vols[idc] * inFluxes_ddt[isrcs];
                 }
             }
         }
 
-        // Sum along the first dimension
-        // for (size_t idc = 0; idc < numberOfCellsTot; ++idc) {
-            // inSources_tot[idc][s.numComp() ] = 0.0;
-            // for (size_t comp = 0; comp < s.numComp() + 1; ++comp) {
-                // inSources_tot[idc][s.numComp() + 1] += inSources_tot[idc][comp];
-            // }
-        // }
-
-        //std::vector<std::vector<double>> d_css1(numberOfCellsTot, std::vector<double>(1, 0.0));
-
-        
-
-        //for (size_t idc = 0; idc < numberOfCellsTot; ++idc) {
-        //    inSources_tot[idc].insert(inSources_tot[idc].end(), d_css1[idc].begin(), d_css1[idc].end());
-        //}
 
         return inSources_tot;
 }
+std::vector<std::array<double, 1>> setShape(
+	//Richards10Cyl<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1> s, 
+	int nVertices, double r_in, double r_out) 
+{
+    //int nVertices = 10;
+    double logbase = Dumux::getParam<double>("Grid.logbase", 0.5);// 0.5;
+	bool doLogarithm = Dumux::getParam<bool>("Grid.doLogarithm", true);
 
-double computeCSS1(double C_S_W, double theta, double svc_volume) 
-	{// [ mol / m^3]
-		
-    using namespace Dumux;
-	double m3_2_cm3 = 1e6;
-	double k_sorp =  getParam<double>("Soil.k_sorp")* m3_2_cm3;// mol/m3 water
-	double CSSmax =  getParam<double>("Soil.CSSmax")* m3_2_cm3;//mol/m3
-	int css1Function = getParam<double>("Soil.css1Function");
-		switch(css1Function) {
-		  case 0:
-			return CSSmax*(C_S_W/(C_S_W+k_sorp));
-		  case 1:
-			return 0.;//none
-		  case 2:
-		  // [mol C/m3 scv zone 1] = [m3 soil water/m3 scv zone 1] * [mol C/m3 soil water]
-			return CSSmax*C_S_W/k_sorp;//linear, with CSSmax in [m3 wat/m3 scv zone 1]
-		  case 3:
-			return 0.;//only pde
-		  case 4:
-			return CSSmax*(C_S_W/(C_S_W+k_sorp));
-		  case 5:
-			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp));
-		  case 6://CSSmax is content
-			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp))/svc_volume;
-		  case 7://linear with depends on content
-			return CSSmax*(svc_volume*C_S_W*theta/k_sorp);
-		  case 8://linear with CSSmax is content
-			return CSSmax*C_S_W*theta/k_sorp;
-		  default:
-			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+	std::vector<std::array<double, 1>> points(nVertices);
+	for (int i = 0; i < nVertices; ++i) {
+		double point;
+		if(doLogarithm)
+		{
+			point = std::pow(logbase, (std::log(r_in) / std::log(logbase)) + i * ((std::log(r_out) / std::log(logbase)) - (std::log(r_in) / std::log(logbase))) / nVertices);
+		}else{
+			point = r_in + (r_out - r_in) * (double(i)/double(nVertices - 1));
 		}
-		return 1.;
+		points.at(i).at(0) = (point);
 	}
+	return points;
+
+}
 
 int main(int argc, char** argv) //try
 {
     using namespace Dumux;
 	// parse command line arguments and input file
-	auto s = Richards10<Richards10CSPProblem, Richards10CSPAssembler, Richards10CSPLinearSolver, 3>();
+	auto s = Richards10Cyl<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1>();
     
     // already done in s.initialize
     //const auto& mpiHelper = Dune::MPIHelper::instance(argc, argv); // of type MPIHelper, or FakeMPIHelper (in mpihelper.hh)
@@ -137,14 +111,16 @@ int main(int argc, char** argv) //try
 	
 	std::cout<<"to create grid"<<std::endl;
 	
-	std::array<double, 3> boundsMin{-0.05, -0.05, -0.1}; 
-	std::array<double, 3> boundsMax{0.05, 0.05, 0.}; 
-	int nCellX = getParam<int>("Soil.nCellX",1);
-	int nCellY = getParam<int>("Soil.nCellY",1);
-	int nCellZ = getParam<int>("Soil.nCellZ",1);
-	std::array<int, 3> numberOfCells{nCellX,nCellY,nCellZ};//{1,1,1};
-    s.createGrid(boundsMin,boundsMax, numberOfCells)  ;// [m]
-	// Soil.Grid.Cells
+    double l = getParam<double>("Problem.segLength",1.); // length in m
+	s.setParameter("Problem.segLength", std::to_string(l));// m
+	double r_in = getParam<double>("Grid.LowerLeft", 0.02/100.);// m
+	double r_out = getParam<double>("Grid.UpperRight", 0.2104870824716315/100.);// m
+	int nVertices = getParam<int>("Grid.Cells", 9) + 1;
+	int nCells = getParam<int>("Grid.Cells", 9);
+	auto points = setShape(nVertices, r_in, r_out);
+	s.createGrid1d(points);
+
+    s.setParameter("Soil.Grid.Cells", std::to_string(nCells));
 	std::cout<<"grid created"<<std::endl;
 	std::cout<<"to initializeProblem"<<std::endl;
     s.initializeProblem();
@@ -155,10 +131,6 @@ int main(int argc, char** argv) //try
 	std::cout<<"initializeProblem created "<<s.numComp()<<std::endl;
 	double f_sorp = getParam<double>("Soil.f_sorp");//[-]
 		 
-    int getFluxcss1 = getParam<double>("Soil.getFluxcss1");
-    //double molarMassWat = 18.; // [g/mol]
-    //double densityWat_m3 = 1e6 ;//[g/m3]
-    //[mol/m3] = [g/m3] /  [g/mol] 
     double molarDensityWat_m3 =  s.molarDensityWat_m3;//densityWat_m3 / molarMassWat;
 	std::vector<double> C_S_fr = s.getSolution(1);//mol/mol
 	std::vector<double> C_S_W(C_S_fr.size());//mol/m3 wat
@@ -184,7 +156,7 @@ int main(int argc, char** argv) //try
 		C_all_init +=  C_tot_init.at(cs)  ;
 	}
 	std::cout<<"Cs all cells "<< C_all_init << std::endl;
-    s.solve(1200, -1, false, true);
+    s.solveNoMPI(1200, -1, false, true, true);
 	std::cout<<"s.solve finished"<<std::endl;
 	std::vector<std::vector<double> > flux10c = getFluxOrSource_10c(s,false);
     std::vector<std::vector<double> > bulkSoil_sources = getFluxOrSource_10c(s, true);
@@ -206,15 +178,10 @@ int main(int argc, char** argv) //try
 		C_tot_end.at(cs) = C_SS1.at(cs) + C_S.at(cs);
 		std::cout<<"cellId "<<cs<<", C_S "<<C_S.at(cs) <<" CSS1 "<<C_SS1.at(cs) 
 		<<" tot "<< C_tot_end.at(cs) <<std::endl;
-		double flux_css1 = 0;
-		if(getFluxcss1)
-		{
-			flux_css1 = f_sorp *computeCSS1(flux10c.at(cs)[1], 1., cellVol.at(cs));
-		}
-		std::cout<<"source "<<bulkSoil_sources.at(cs)[1]<<" flux cs "<<flux10c.at(cs)[1]<<" flux css1 "<<flux_css1<<std::endl;
+		std::cout<<"source "<<bulkSoil_sources.at(cs)[1]<<" flux cs "<<flux10c.at(cs)[1]<<std::endl;
 		C_all_end +=  C_tot_end.at(cs) ;
 		errorMass.at(cs) = C_tot_end.at(cs) 
-		-( C_tot_init.at(cs)  + bulkSoil_sources.at(cs)[1] - flux10c.at(cs)[1] + flux_css1);
+		-( C_tot_init.at(cs)  + bulkSoil_sources.at(cs)[1] - flux10c.at(cs)[1] );
 		std::cout<<"error "<<errorMass.at(cs) << std::endl;
 		Error_all_end += errorMass.at(cs);
 		

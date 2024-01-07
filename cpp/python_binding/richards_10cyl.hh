@@ -1,37 +1,35 @@
 #ifndef PYTHON_RICHARDS_10CYL_SOLVER_H_
 #define PYTHON_RICHARDS_10CYL_SOLVER_H_
 
-#include "richards.hh" // most includes are in solverbase
-#include "richards_cyl.hh" // most includes are in solverbase
+//#include "richards.hh" // most includes are in solverbase
+#include "richards_cyl.hh" // most includes are in 
+//#include "richards_10.hh" // most includes are in solverbase
 
 // writeDumuxVTK
-#include <dumux/io/vtkoutputmodule.hh>
+//#include <dumux/io/vtkoutputmodule.hh>
 
 
 /**
  * Adds solver functionality, that specifically makes sense for Richards equation
  */
 template<class Problem, class Assembler, class LinearSolver, int dim = 1>
-class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim> {
-public:
+class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim> 
+{
+	public:
 
     using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards10Cyl() { }
-
-	virtual void initializeProblem() {
-		RichardsCyl<Problem, Assembler, LinearSolver, dim>::initializeProblem();
-		
-		this->problem->segLength = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
-		std::vector<double> cellSurfacesCyl = this->getCellSurfacesCyl();//m2
-		std::vector<double> cellVolumesCyl;
-		cellVolumesCyl.resize(cellSurfacesCyl.size());
-		for(int cVC = 0; cVC < cellVolumesCyl.size(); cVC ++)
-		{
-			cellVolumesCyl.at(cVC) = cellSurfacesCyl.at(cVC)* this->problem->segLength;
-		}
-		this->problem->setVolumesCyl(cellVolumesCyl);
+	
+	std::vector<double> getCellVolumes(){
+		return this->problem->cellVolumesCyl;
 	}
 	
+    std::vector<NumEqVector> getFluxScvf10c() {
+    	return this->problem->getFluxScvf10c_(); // 
+    }
+    std::vector<int> idxScv4FluxScv_10c() {
+    	return this->problem->idxScv4FluxScv_10c_(); // 
+    }
     std::vector<double> getCSS1_out() {
     	return this->problem->getCSS1_(); // 
     }
@@ -45,6 +43,9 @@ public:
     std::vector<double> getReac_CSS2() {
     	return this->problem->getReac_CSS2_(); // 
     }
+	
+	void resetSetFaceFlux(){this->problem->resetSetFaceFlux();}
+	
 	std::vector<NumEqVector> getProblemFlux_10c()
 	{	
 		return this->problem->getFlux10c_();
@@ -54,18 +55,12 @@ public:
 		return this->problem->getSource10c_();
 	}
 	
-	// other values to reset?
+	//other values to reset?
     virtual void resetInnerVals() {this->problem->setCSS1_(CSS1_saved);}
     virtual void saveInnerVals() { CSS1_saved = this->problem->getCSS1_();}
     virtual void resetInnerValsManual() {this->problem->setCSS1_(CSS1_savedManually);}
     virtual void saveInnerValsManual() { CSS1_savedManually = this->problem->getCSS1_();}
-    /**
-     * set verbose
-     */
-    virtual void setVerbose(int verbose) {
-        this->checkInitialized();
-    	this->problem->verbose = verbose;
-    }
+    
 
 	double computeRF(double C_S_W, double theta, double svc_volume)
 	{	
@@ -79,13 +74,14 @@ public:
 	{	
 		std::vector<double> C_S_fr = this->getSolution(1); // [mol / mol] wat
 		std::vector<double> theta = this->getWaterContent();// [m3/m3]
-		std::vector<double> svc_volume = this->problem->cellVolumesCyl; // [m3]
+		//std::vector<double> svc_volume = this->problem->cellVolumesCyl; // [m3]
 		std::vector<double> RFs(C_S_fr.size());// - 
 		for(int rfIdx = 0; rfIdx < RFs.size(); rfIdx ++)
 		{
+			double svc_volume =  this->problem->getCellVolumesCyl(rfIdx);
 			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
 													theta.at(rfIdx), 
-													svc_volume.at(rfIdx));//m3
+													svc_volume);//m3
 		}
 		return RFs;
 	}
@@ -93,25 +89,33 @@ public:
 	{	
 		std::vector<double> C_S_fr = this->getSolution(1); // [mol / mol] wat
 		std::vector<double> theta = this->getWaterContent();// [m3/m3]
-		std::vector<double> svc_volume = this->problem->cellVolumesCyl; // [m3]
+		//std::vector<double> svc_volume = this->problem->cellVolumesCyl; // [m3]
 		std::vector<double> CSS1s(C_S_fr.size());// - 
 		for(int rfIdx = 0; rfIdx < CSS1s.size(); rfIdx ++)
 		{
+			double svc_volume =  this->problem->getCellVolumesCyl(rfIdx);
 			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
 													theta.at(rfIdx), 
-													svc_volume.at(rfIdx));//m3
+													svc_volume);//m3
 		}
 		return CSS1s;
 	}
 	std::vector<double> CSS1_saved;
 	std::vector<double> CSS1_savedManually;
+	/**
+     * set verbose
+     */
+    virtual void setVerbose(int verbose) {
+        this->checkInitialized();
+    	this->problem->verbose = verbose;
+    }
 };
 
     
 /**
  * pybind11
  */
-template<class Problem, class Assembler, class LinearSolver, int dim = 3>
+template<class Problem, class Assembler, class LinearSolver, int dim = 1>
 void init_richards_10cyl(py::module &m, std::string name) {
     using RichardsFoam = Richards10Cyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
@@ -150,6 +154,8 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)
    .def_readonly("dimWorld", &RichardsFoam::dimWorld)
+   .def("getFluxScvf10c",&RichardsFoam::getFluxScvf10c)
+   .def("idxScv4FluxScv_10c",&RichardsFoam::idxScv4FluxScv_10c)
    .def("computeRF",&RichardsFoam::computeRF)
    .def("computeCSS1",&RichardsFoam::computeCSS1)
    .def("computeRFs",&RichardsFoam::computeRFs)
@@ -159,7 +165,8 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getSorp",&RichardsFoam::getSorp)
    .def("getReac_CSS2",&RichardsFoam::getReac_CSS2)
    .def("getProblemFlux_10c",&RichardsFoam::getProblemFlux_10c)
-   .def("getAvgDensity",&RichardsFoam::getAvgDensity);
+   .def("getAvgDensity",&RichardsFoam::getAvgDensity)
+   ;
 }
 
 

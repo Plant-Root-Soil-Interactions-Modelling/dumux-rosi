@@ -160,7 +160,9 @@ class SolverWrapper():
 
     def initializeProblem(self, rank_ = 0):
         """ After the grid is created, the problem can be initialized """
+        print(rank, 'initialize problem')
         self.base.initializeProblem()
+        print(rank, 'initialized problem')
         if (self.mpiVerbose and (size > 1)):
             print(rank, 'initialized problem')
         self.dimWorld = self.base.dimWorld

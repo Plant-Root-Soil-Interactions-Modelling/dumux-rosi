@@ -387,18 +387,17 @@ public:
 	
 	
 	
-	virtual std::vector<double> computeRFs()
-	{	
-		std::vector<double> RFs;
-		return RFs;
-	}
-	virtual std::vector<double> computeCSS1s()
-	{	
-		std::vector<double> CSS1s;
-		return CSS1s;
-	}
+	// virtual std::vector<double> computeRFs()
+	// {	
+		// std::vector<double> RFs;
+		// return RFs;
+	// }
+	
+	
+
 protected:
 
+	
     std::vector<double> cellVolume;
 
     using SolutionVector = typename Problem::SolutionVector;

@@ -4,6 +4,7 @@ EnableGravity = "false"
 verbose = "1"
 toFile = "false"
 extenction = "txt"
+segLength = "1"
 
 [TimeLoop]
 TEnd = 36000 #10h
@@ -13,8 +14,7 @@ MaxTimeStepSize = 36000 # [s]
 [Soil.Grid]
 UpperRight = 0.0002
 LowerLeft = 0.006
-Cells = 500
-
+Cells = 9
 [Soil.BC.Bot]
 Type = 3 # constant flux
 Value = -0.0026 # [cm day-1]
@@ -56,6 +56,7 @@ C8Type = 3 # constant flux
 C8Value = 0 # [g/cm2/day]
 
 [Soil]
+css1Function = "8"
 betaC = 0.001
 betaO = 0.1
 C_S_W_thresC = 10

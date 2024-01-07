@@ -40,8 +40,6 @@ def setShape(s,r_in, r_out,doLogarithmic=True):
     s.r_out = r_out
     if doLogarithmic:
         s.points = np.logspace(np.log(r_in) / np.log(logbase), np.log(r_out) / np.log(logbase), nCells, base = logbase)
-        #s.points = np.array([0.05,  0.06747797, 0.09106553, 0.12289834, 0.1658586,  0.22383603,
-        #                     0.30208002, 0.40767492 ,0.55018151, 0.74250263])
         s.createGrid1d(s.points)
         nCells -= 1
     else:

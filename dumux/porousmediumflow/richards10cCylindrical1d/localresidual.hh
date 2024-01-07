@@ -328,6 +328,27 @@ public:
 			
 		// }std::cout<<std::endl;
 
+        // int insideScvDofIndex = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+		// problem.setFaceFlux(flux/scvf.center()[0], insideScvDofIndex, scvf.index()); //
+		
+		if(scvf.numOutsideScvs() > 1) //can be 0 (boundary) or 1
+		{
+			DUNE_THROW(Dune::InvalidStateException, "Reac_CSS2");
+		}else{
+			// int localscvIdx = 0;
+			int insideScvDofIndex = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+			// if(scvf.numOutsideScvs() > 0) //can be 0 (boundary) or 1
+			// {
+				// int maxScvIdx = std::max(scvf.insideScvIdx(), scvf.outsideScvIdx());
+				// localscvIdx = int(insideScvDofIndex == maxScvIdx);
+			// }else{
+				// problem.setFaceFlux(flux*0, 1, -1, scvf.index());//dummy value to know it s a boundary
+			// }
+			problem.setFaceFlux(flux/scvf.center()[0], insideScvDofIndex, scvf.index());//localscvIdx, 
+			// added in dumux/assembly/cclocalresidual::evalFlux:
+			// residual[localScvIdx] += evalFlux(...)
+		}
+		
         return flux;
     }
 

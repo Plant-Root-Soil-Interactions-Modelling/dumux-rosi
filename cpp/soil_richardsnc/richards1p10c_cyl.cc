@@ -225,17 +225,17 @@ int main(int argc, char** argv) //try
 	double rho__ = 1.e3;
 	double g__ = 9.80665;
 	double bulkSoilDensity = (2700. / 60.08e-3) * (1 - 0.43) ;//mol soil /m3 scv
-	
+	int dofIdxGlobal;
     if (mpiHelper.rank() == 0)
     {
         Parameters::print();
 		std::ofstream myfile_;
 		std::string filestr = problem->name() + "_1p10cR_cyl_T0." + extenction; // output file
 		myfile_.open(filestr.c_str());
-		for (const auto& vertex : Dune::vertices(fvGridGeometry->gridView()))
+		dofIdxGlobal = 0;
+		for (const auto& e : Dune::elements(fvGridGeometry->gridView()))
 		{
-			const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
-			auto rVal = vertex.geometry().center()[0];
+			auto rVal = e.geometry().center()[0];
 			myfile_ <<rVal<<", ";
 			//std::cout <<rVal<<", ";
 			
@@ -251,6 +251,7 @@ int main(int argc, char** argv) //try
 				{
 					myfile_ << x[dofIdxGlobal][j]* bulkSoilDensity<<", ";
 				} myfile_ << "\n";
+			dofIdxGlobal += 1;
 			
 		}
 		myfile_.close();
@@ -271,11 +272,10 @@ int main(int argc, char** argv) //try
 			std::cout<<"\n\n"<<timeLoop->time()
 				<<" "<<timeLoop->timeStepSize()
 				<<std::endl;
-			for (const auto& vertex : Dune::vertices(fvGridGeometry->gridView()) )
-			{
-				
-				const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
-				auto rVal = vertex.geometry().center()[0];
+		dofIdxGlobal = 0;
+		for (const auto& e : Dune::elements(fvGridGeometry->gridView()))
+		{
+			auto rVal = e.geometry().center()[0];
 				double C_S_W = x[dofIdxGlobal][1]* (1e6/18.);
 				double CSS1 = CSSmax*(C_S_W/(C_S_W+k_sorp)) * f_sorp;
 				double cstot = C_S_W * 0.20621373 				
@@ -295,7 +295,8 @@ int main(int argc, char** argv) //try
 					<<" cs:"<< cstot<<" r_cs:"<<cstot*rVal
 					<<std::endl;
 				}
-			}
+				dofIdxGlobal += 1;
+		}
 			std::cout<<cstot_cls<<" "<<cstot_css1<<" "<<cstot_css2<<" "<<cstot_tot<<", integral cst:"<<cstot_totRval<<std::endl<<std::endl;
 			
 			
@@ -327,10 +328,10 @@ int main(int argc, char** argv) //try
 			std::cout<<"\n\n"<<timeLoop->time()
 				<<" "<<timeLoop->timeStepSize()
 				<<std::endl;
-			for (const auto& vertex : Dune::vertices(fvGridGeometry->gridView()))
-			{
-				const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
-				auto rVal = vertex.geometry().center()[0];
+		dofIdxGlobal = 0;
+		for (const auto& e : Dune::elements(fvGridGeometry->gridView()))
+		{
+			auto rVal = e.geometry().center()[0];
 				cstot_css1 += problem->getCSS1(dofIdxGlobal) * rVal;
 				cstot_css2 += x[dofIdxGlobal][7]*bulkSoilDensity * rVal;
 				cstot_cls += x[dofIdxGlobal][1]*problem->getTheta(dofIdxGlobal)* (1e6/18.) * rVal;
@@ -353,6 +354,7 @@ int main(int argc, char** argv) //try
 					<<" cs:"<< cstot<<" r_cs:"<<cstot*rVal
 					<<std::endl;
 				}
+				dofIdxGlobal += 1;
 			}
 			std::cout<<cstot_cls<<" "<<cstot_css1<<" "<<cstot_css2<<" "<<cstot_tot<<", integral cst:"<<cstot_totRval<<std::endl<<std::endl;
 			
@@ -397,10 +399,12 @@ int main(int argc, char** argv) //try
 		
 		myfile_.open(filestr.c_str());
 		
-		for (const auto& vertex : Dune::vertices(fvGridGeometry->gridView()))
+		dofIdxGlobal = 0;
+		for (const auto& e : Dune::elements(fvGridGeometry->gridView()))
 		{
-			const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
-			auto rVal = vertex.geometry().center()[0];
+			auto rVal = e.geometry().center()[0];
+			//const auto dofIdxGlobal = fvGridGeometry->vertexMapper().index(vertex);
+			//auto rVal = vertex.geometry().center()[0];
 			myfile_ <<rVal<<", ";
 			
 			myfile_ <<x[dofIdxGlobal][0]<<", "<<(( x[dofIdxGlobal][0] - pRefPa)*100/rho__/g__) << ", ";
@@ -413,6 +417,7 @@ int main(int argc, char** argv) //try
 				{
 					myfile_ << x[dofIdxGlobal][j]*bulkSoilDensity<<", "; // [mol C / mol soil] * [mol / m3 space] 
 				} myfile_ << "\n";
+				dofIdxGlobal += 1;
 			
 		}
 		

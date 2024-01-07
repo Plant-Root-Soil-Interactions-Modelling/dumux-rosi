@@ -471,22 +471,26 @@ class RichardsWrapper(SolverWrapper):
         if l is None:
             assert self.dimWorld == 3
             vols = self.getCellVolumes()#.flatten() #cm3 scv   
-            totC = np.array([self.getContent(i+1, (i < 2)) for i in range(self.numComp)])
+            totC = np.array([self.getContent(i+1, (i < 2)) for i in range(self.numComp +1)])
             
         else:
             assert self.dimWorld == 1
             vols = self.getCellSurfacesCyl()  * l  #cm3 scv
-            totC = np.array([self.getContentCyl(i+1, (i < 2),l) for i in range(self.numComp)])
+            totC = np.array([self.getContentCyl(i+1, (i < 2),l) for i in range(self.numComp+1)])
         # mol/mol * (mol/m3) = mol/m3 
-        css1 = self.getCSS1_out()  #mol C / cm3 scv
-            
-        totC = np.vstack((totC, css1*vols))
         
-        try:
-            assert np.array(totC).shape == (self.numComp +1,self.numberOfCellsTot)
-        except:
-            print('totC',totC,totC.shape , (self.numComp +1, self.numberOfCellsTot))
-            raise Exception
+        # css1 = self.getCSS1_out()  #mol C / cm3 scv
+        # print('css1',css1.shape,self.getCellVolumes_().shape)
+        # print('rank',rank,totC.shape, vols.shape )
+        # totC = np.vstack((totC, css1*vols))
+        # raise Exception
+        if rank == 0:
+            try:
+                assert np.array(totC).shape == (self.numComp +1,self.numberOfCellsTot)
+            except:
+                print('totC',totC,totC.shape , (self.numComp +1, self.numberOfCellsTot))
+                raise Exception
+            
         return totC
         
     def getTotCContent(self, l=None):
@@ -518,21 +522,24 @@ class RichardsWrapper(SolverWrapper):
             return self.CSSmax * C_ /( self.k_sorp*1e6) * self.f_sorp
         elif self.css1Function == 8:
             vols = self.getCellVolumes()/1e6#m3
-            watCont = self.getWaterContent()
+            watCont = self.getWaterContent()# m3/m3
+            # mol = 
             C_  = self.molarDensityWat_m3*np.array(self.getSolution(1)) * vols * watCont
             return self.CSSmax * C_ /( self.k_sorp*1e6) * self.f_sorp / (vols *1e6)
         else:
             raise Exception
             
-    def getCSS1_out_real(self):#mol C / cm3 scv
-        return np.array(self.base.getCSS1_out())/1e6
+    #def getCSS1_out_real(self):#mol C / cm3 scv
+    #    return np.array(self.base.getCSS1_out())/1e6
+        
+    def getCSS1_out_(self):#mol C / cm3 scv
+        return self.f_sorp * np.array(self.base.computeCSS1s())/1e6
         
     def getCSS1_out(self):#mol C / cm3 scv
-        init = (self.simTime == 0.)
-        if True:
-            return self.getCSS1_out_th()#so that css1 get redistributed with csw
-        else:
-            return self.getCSS1_out_real()
+        return self._map(self.allgatherv(self.getCSS1_out_()),0)
+        #return self.getCSS1_out_th()#so that css1 get redistributed with csw
+        #else:
+        #    return self.getCSS1_out_real()
         
     def getContentCyl(self,idComp, isDissolved, length,gId = None ):
         assert self.dimWorld != 3
@@ -556,7 +563,7 @@ class RichardsWrapper(SolverWrapper):
             raise Exception
             
         if not isDissolved:
-            if ((self.useMoles) and (idComp != (self.numComp +1))):
+            if ((self.useMoles) and (idComp != (self.base.numComp()))):
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
             return np.multiply(vols , C_  ) # mol
             
@@ -574,8 +581,8 @@ class RichardsWrapper(SolverWrapper):
          
     def getFlux_10c(self):
         flux10c = self._map(self.allgatherv(self.getFlux_10c_()), 0) #TODO: check that gathergin works   
-        
-        assert flux10c.shape == (self.numberOfCellsTot,self.numComp+2 )#numComp + water + css1
+        if rank == 0:
+            assert flux10c.shape == (self.numberOfCellsTot,self.base.numComp() )#numComp + water + css1
         return flux10c
     
     def getFlux_10c_(self):# cm3 or mol
@@ -586,27 +593,30 @@ class RichardsWrapper(SolverWrapper):
         
         try:
             if size == 1:# with MPI, could be that axis 1 size < self.numberOfCellsTot
-                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.numComp+1)
+                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp())
             else:
                 assert inFluxes.shape[0] == len(inFluxes_ddt)
-                assert inFluxes.shape[2] == (self.numComp+1)
+                assert inFluxes.shape[2] == (self.base.numComp())
                 
         except:
-            print('shape failed, inFluxes',size, inFluxes, inFluxes.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.numComp+1))
+            print('shape failed, inFluxes',size, inFluxes, inFluxes.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp()))
             raise Exception
         
         inFluxes_tot = np.array([ np.array([xxx * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inFluxes[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
         
         #inFluxes_tot = np.array([inFx * inFluxes_ddt[idx] for idx, inFx in enumerate(inFluxes)]) # cm3 or mol at each dumux sub-time step
         inFluxes_tot = inFluxes_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
-        css1_flux = np.full((self.numberOfCellsTot,1) , 0.)
+        #css1_flux = np.full((self.numberOfCellsTot,1) , 0.)
         
-        inFluxes_tot = np.hstack((inFluxes_tot, css1_flux))
+        #inFluxes_tot = np.hstack((inFluxes_tot, css1_flux))
+        print('inFluxes_tot',inFluxes_tot[:],inFluxes_tot.shape)
+        print('self.base.getDofIndices()',self.base.getDofIndices()[:])
         return inFluxes_tot
         
     def getSource_10c(self):#, css1_before = None, css1_after = None):
         src10c =  self._map(self.allgatherv(self.getSource_10c_()), 0)#css1_before, css1_after)), 0) #TODO: check that gathergin works   
-        assert src10c.shape == (self.numberOfCellsTot,self.numComp+2 )#numComp + water + css1
+        if rank == 0:
+            assert src10c.shape == (self.numberOfCellsTot,self.base.numComp() )#numComp + water + css1
         return src10c
     
     def getSource_10c_(self):#, css1_before = None, css1_after = None):# cm3 or mol
@@ -615,27 +625,27 @@ class RichardsWrapper(SolverWrapper):
         inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
         
         if self.dimWorld == 1:
-            vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
+            vols = self.getCellSurfacesCyl_() / 1e4 * length / 100 #m3 scv
         elif self.dimWorld == 3:
-            vols = (1/  1e6)*self.getCellVolumes() #m3 scv
+            vols = (1/  1e6)*self.getCellVolumes_() #m3 scv
         else:
             raise Exception
+        if False:    
+            try:
+                assert inSources.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp())
+            except:
+                print('shape failed, inSources',inSources, inSources.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp()))
+                raise Exception
             
-        try:
-            assert inSources.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.numComp+1)
-        except:
-            print('shape failed, inSources',inSources, inSources.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.numComp+1))
-            raise Exception
-        
         inSources_tot = np.array([ np.array([xxx * vols[idc] * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inSources[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
         
         #inSources_tot = np.array([inFx * inFluxes_ddt[idx] * vols for idx, inFx in enumerate(inSources)]) # cm3 or mol at each dumux sub-time step
         inSources_tot = inSources_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
-        d_css1 = np.full( (self.numberOfCellsTot,1),0.)
+        #d_css1 = np.full( (self.numberOfCellsTot,1),0.)
         #if css1_before is not None:
         #    d_css1 = (css1_after - css1_before).reshape(self.numberOfCellsTot,1)
             
-        inSources_tot = np.hstack((inSources_tot,d_css1))
+        #inSources_tot = np.hstack((inSources_tot,d_css1))
             
         
         return inSources_tot

@@ -198,7 +198,7 @@ def getBiochemParam(s,paramIdx, noAds):
         s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 bulk soil
     # can cause issue
     s.k_sorp = paramSet['k_sorp'] /s.mg_per_molC# mol C/cm3 bulk soil
-    print('s.CSSmax ',s.CSSmax ,'s.k_sorp ',s.k_sorp )
+    
     s.alpha = 0.1# -
     s.f_sorp = 0.5
     s.k_phi = 0.1

@@ -25,6 +25,9 @@ target_compile_definitions(richards10c_PyBi PUBLIC GRIDTYPE=Dune::SPGrid<double,
 add_executable(richards3d10c_PyBi_ads richards3d1p10c_PyBi_ads.cc)
 target_compile_definitions(richards3d10c_PyBi_ads PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
+add_executable(richards1d10c_PyBi_ads richards1d1p10c_PyBi_ads.cc)
+target_compile_definitions(richards1d10c_PyBi_ads PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
+
 add_executable(richards10c richards1p10c.cc)
 target_compile_definitions(richards10c PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
 
@@ -56,4 +59,4 @@ add_executable(richardsnc_ug EXCLUDE_FROM_ALL richards1p2c.cc)
 target_compile_definitions(richardsnc_ug PUBLIC GRIDTYPE=Dune::UGGrid<3>)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

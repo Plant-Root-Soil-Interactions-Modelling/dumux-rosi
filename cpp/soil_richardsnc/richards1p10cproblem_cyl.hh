@@ -9,6 +9,7 @@
 #include "../soil_richards/richardsparams.hh"
 
 #include <dune/common/exceptions.hh>
+#include <dumux/discretization/cellcentered/tpfa/fvelementgeometry.hh>
 namespace Dumux {
 
 /*!
@@ -139,37 +140,72 @@ public:
 		const_cast<NumEqVector&>(source_10c.at(index) ) = input;
 	}
 	
+	// [faces][cell on each side][elements]
+	std::vector<NumEqVector> FluxScvf_10c ;//std::array<, 2>
 	
-	std::vector<NumEqVector> Flux_10c ;
+	std::vector<int> idxScv4FluxScv_10c ;//std::array<,2>
 	
-	NumEqVector getFlux10c (int index)
+	// NumEqVector getFlux10c (int index)
+	// {
+		// //std::cout<<index<<std::endl;
+		// if(FluxScv_10c.size() <= index)
+		// {
+			// DUNE_THROW(Dune::InvalidStateException, "getFlux");			
+		// }
+		// return FluxScv_10c.at(index);
+	// }
+	std::vector<NumEqVector> getFluxScvf10c_ ()
 	{
-		//std::cout<<index<<std::endl;
-		if(Flux_10c.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "getFlux");			
-		}
-		return Flux_10c.at(index);
+		return FluxScvf_10c;
+	}
+	std::vector<int> idxScv4FluxScv_10c_ ()
+	{
+		return idxScv4FluxScv_10c;
 	}
 	std::vector<NumEqVector> getFlux10c_ ()
 	{
-		return Flux_10c;
-	}
-	void setFlux(NumEqVector input, int index ) const 
-	{
-		//std::cout<<index<<std::endl;
-		if(Flux_10c.size() <= index)
+		NumEqVector nullVec(0.0);
+		std::vector<NumEqVector> FluxScv_10c(nCells_all, nullVec);// reset
+		for(int index_scvf = 0; index_scvf < FluxScvf_10c.size();index_scvf++)
 		{
-			DUNE_THROW(Dune::InvalidStateException, "setFlux");			
+			// for (int local_index_scv = 0; local_index_scv < 2;local_index_scv++)
+			// {
+				int idxscv = idxScv4FluxScv_10c.at(index_scvf);//.at(local_index_scv);
+				if (idxscv >= 0) // was filled
+				{
+					NumEqVector value = FluxScvf_10c.at(index_scvf);//.at(local_index_scv);
+					FluxScv_10c.at(idxscv) += value;//check for the sign 
+				}
+			// }
+			
 		}
-		const_cast<NumEqVector&>(Flux_10c.at(index) ) = input;
+		return FluxScv_10c;
+	}
+	void setFaceFlux(NumEqVector input, int index_scv, int index_scvf ) const //int local_index_scv, 
+	{
+		//std::cout<<"setFaceFlux "<<index_scv<<" "<<index_scvf<<" " <<//<<local_index_scv<<" "<<
+		//FluxScvf_10c.size()<<" "<<idxScv4FluxScv_10c.size()<<std::endl;
+		//index_scvf -= 1;
+		if((FluxScvf_10c.size() <= index_scvf)||(idxScv4FluxScv_10c.size() <= index_scvf))
+		{
+			
+			DUNE_THROW(Dune::InvalidStateException, "setFaceFlux");			
+		}
+		const_cast<NumEqVector&>(FluxScvf_10c.at(index_scvf) ) = input;//.at(local_index_scv)
+		const_cast<int&>(idxScv4FluxScv_10c.at(index_scvf) ) = index_scv;//.at(local_index_scv)
 	}
 	
+	void resetSetFaceFlux()
+	{
+		NumEqVector nullVec(0.0);
+		FluxScvf_10c = std::vector<NumEqVector>(FluxScvf_10c.size(),nullVec);
+		idxScv4FluxScv_10c = std::vector<int>(idxScv4FluxScv_10c.size(),-1);
+	}
 	
     
 	std::vector<double> Reac_CSS2 ;
 	
-	std::vector<double>getReac_CSS2_()
+	std::vector<double> getReac_CSS2_()
 	{
 		return Reac_CSS2;
 	}
@@ -432,21 +468,103 @@ public:
 		 extra2 = getParam<double>("Soil.extra2", extra2);// 
 		m_maxBisO = getParam<double>("Soil.m_maxBisO2", 0. );
 		m_maxBis_Cs = getParam<double>("Soil.m_maxBis_Cs", 0.  );
+		// std::vector<int> nCells_;
+		// try{
+			// nCells_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
+		// } catch(...) { 
+			// nCells_ = getParam<std::vector<int>>("Grid.Cells");
+		// }
+		//auto myMultiply = [] (int previousResult, int item) {return previousResult * (item + 1);};
+		nCells_all = fvGridGeometry->numScv();
+		// std::reduce(nCells_.begin(), nCells_.end(), 1, std::multiplies<int>() ); //
+		//int nVertices = std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply ); //std::multiplies<int>()
 		
-		auto nCells_ = getParam<std::vector<int>>("Soil.Grid.Cells");// +1;
-		auto myMultiply = [] (int previousResult, int item) {return previousResult * (item + 1);};
-		int nCells_all = std::reduce(nCells_.begin(), nCells_.end(), 1, std::multiplies<int>() ); //
-		int nVertices = std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply ); //std::multiplies<int>()
+		//fvGridGeometry->numScvf() does not account for touching cells
         
+        // const auto gridView = this->fvGridGeometry().gridView();
+        // auto fvGeometry = localView(this->fvGridGeometry());
+
+            // for (const auto& element : elements(gridView()))
+                // assembleElement(element);
+        // for (const auto& element : elements(gridView()))
+        // {
+            // fvGeometry.bindElement(element);
+			// std::cout<<"scvfs"<<std::endl;
+            // for (const auto& scvf : scvfs(fvGeometry))
+            // {
+				// std::cout<<scvf.index()<<"; ";
+            // }std::cout<<std::endl;
+			// std::cout<<"scvfs"<<std::endl;
+            // for (const auto& scv : scvs(fvGeometry))
+            // {
+				// std::cout<<scv.dofIndex()<<"; ";
+            // }std::cout<<std::endl;
+        // }
+		// see dumux/freeflow/rans/problem.hh
+		// auto fvGeometry = localView(fvGridGeometry);//this->fvGridGeometry());
+		 size_t nFaces = fvGridGeometry->numScvf();//fvGeometry.scv(0).index();//fvGridGeometry->numScvf();// std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply );
+		// std::cout<<"scvfs"<<std::endl;
+		// for (const auto& scvf : scvfs(fvGeometry))// there's probably a better way
+		// {
+			// std::cout<<scvf.index()<<"; ";
+			// size_t size_index = scvf.index();
+			// nFaces = std::max(nFaces, size_index);
+			
+		// }std::cout<<std::endl;
+		// std::cout<<"scvs"<<std::endl;
+		// for (const auto& scv : scvs(fvGeometry))// there's probably a better way
+		// {
+			// std::cout<<scv.dofIndex()<<"; ";
+			// //size_t size_index = scvf.index();
+			// //nFaces = std::max(nFaces, size_index);
+			
+		// }std::cout<<std::endl;
+		// for (const auto& element : elements(fvGridGeometry->gridView()))
+		// {
+			
+		// }
+		///
+		
+		// Reac_CSS2.empty();
+        // //Flux_10c.resize(nCells_all);
+		// FluxScvf_10c.empty() ;
+		// idxScv4FluxScv_10c.empty();
+		// source_10c.empty();
+		// testCSS1.empty();
+		
+		// testSorp.empty();
+		// theta_.empty();
+		// RF.empty();
+		
 		Reac_CSS2.resize(nCells_all);
-        Flux_10c.resize(nCells_all);
+        //Flux_10c.resize(nCells_all);
+		//FluxScvf_10c.resize(nFaces) ;
+		
+		NumEqVector nullVec(0.0);
+		FluxScvf_10c = std::vector<NumEqVector>(nFaces,nullVec);
+		idxScv4FluxScv_10c = std::vector<int>(nFaces,-1);
+		
 		source_10c.resize(nCells_all);
 		testCSS1.resize(nCells_all);
 		
 		testSorp.resize(nCells_all);
 		theta_.resize(nCells_all);
-		RF.resize(nVertices);
-		 
+		RF.resize(nFaces);
+		
+		///
+		computedCellVolumesCyl = false;
+		 //for (int scvIdx = 0; scvIdx < fvGridGeometry->numScv(); scvIdx++ )
+		 //for (int scvfIdx = 0; scvfIdx < fvGridGeometry->numScvf(); scvfIdx++ )
+		 //for (int elemIdx = 0; elemIdx < fvGridGeometry->numScvf(); elemIdx++ )
+		 //{
+		 //	elem = fvGridGeometry->element(elemIdx);
+		 //}
+		 // elementMap()
+			 //fvGridGeometry->gridView()->grid()
+        //
+		//const auto& ivScvf = fvGeometry.scvf(0);
+		//auto svc = fvGeometry.scv(0);
+		
 
 		// Output
 		std::string filestr = this->name() + "_1p10cProblem.txt"; // output file
@@ -459,6 +577,60 @@ public:
 				// << std::flush;
 	}
 
+	double getCellVolumesCyl(int dofIndex) const
+	{
+		if(!computedCellVolumesCyl)
+		{
+			const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
+			this->setVolumesCyl(computeCellVolumesCyl_());
+			const_cast<bool&>(computedCellVolumesCyl )  = true;
+		}
+		return cellVolumesCyl.at(dofIndex);
+	}
+
+    void setVolumesCyl(std::vector<double> cellvoles) const
+	{
+		const_cast<std::vector<double>&>(cellVolumesCyl) = cellvoles;
+    }
+
+    /**
+     * The volume [m3] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    std::vector<double> computeCellVolumesCyl_() const
+	{
+        std::vector<double> vols;
+		auto points = this->getPoints_();//get the vertices == faces of 1D domain
+        for (int i = 0; i < (points.size()-1); i++) {
+			double rIn = points.at(i).at(0);
+			double rOut = points.at(i + 1).at(0);
+            vols.push_back((rOut*rOut - rIn*rIn)* M_PI * segLength);
+        }
+        return vols;
+    }
+
+    /**
+     * Returns the Dune vertices (vtk points) of the grid for a single mpi process.
+     * Gathering and mapping is done in Python.
+     */
+    std::vector<std::array<double,1>> getPoints_() const
+	{
+		//auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+		//Scalar z = entity.geometry().center()[dimWorld - 1];
+		
+        std::vector<std::array<double,1>> points;
+        points.reserve(this->fvGridGeometry().gridView().size(dimWorld));
+        for (const auto& v : vertices(this->fvGridGeometry().gridView())) {
+            auto p = v.geometry().center();
+            std::array<double,1> vp;
+            for (int i=0; i<dimWorld; i++) { // found no better way
+                vp[i] = p[i];
+            }
+            points.push_back(vp);
+        }
+        return points;
+    }
 	/**
 	 * \brief Eventually, closes output file
 	 */
@@ -489,6 +661,7 @@ public:
 	Scalar nonWettingReferencePressure() const {
 		return pRef_;
 	}
+	
 
 	/**
 	 * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
@@ -539,7 +712,7 @@ public:
 				double svc_volume;
 				if (dimWorld == 1)//1daxissymmetric model
 				{
-					svc_volume = cellVolumesCyl.at(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+					svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
 									// for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
 				}else{ // dimWorld == 3
 					svc_volume = scv.volume();
@@ -1014,9 +1187,6 @@ public:
 		return flux;
 	}
 
-    void setVolumesCyl(std::vector<double> cellvoles) {
-        cellVolumesCyl = cellvoles;
-    }
 	/*!
 	 * \copydoc FVProblem::source
 	 *
@@ -1035,7 +1205,7 @@ public:
 		if (dimWorld == 1)//1daxissymmetric model
 		{
 			pos0 = pos[0];
-            svc_volume = cellVolumesCyl.at(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+            svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
                             // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
 		}else{ // dimWorld == 3
 			pos0 = 1.;
@@ -1093,7 +1263,7 @@ public:
 			setCSS1(CSS1*f_sorp, scv.dofIndex());
 		}
 		
-		setSource(source, dofIndex);// [ mol / (m^3 \cdot s)]
+		setSource(source/pos0, dofIndex);// [ mol / (m^3 \cdot s)]
 		
 		return source;
 	}
@@ -1191,7 +1361,7 @@ public:
         int dofIndex = scv.dofIndex();
 		if (dimWorld == 1)//1daxissymmetric model
 		{
-            svc_volume = cellVolumesCyl.at(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+            svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
                             // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
 		}else{ // dimWorld == 3
             svc_volume = scv.volume();
@@ -1464,6 +1634,8 @@ public:
 	bool verbose_local_residual = false;
 	double segLength;
 	std::vector<double> cellVolumesCyl;
+	int nCells_all;
+	bool computedCellVolumesCyl = false;
     
 private:
 

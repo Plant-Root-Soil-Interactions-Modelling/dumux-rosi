@@ -700,6 +700,7 @@ public:
         return indices;
     }
 
+
     /**
      * Return the indices of the grid elements for a single mpi process.
      * Used to map the coordinates when gathered from the processes,
@@ -1011,6 +1012,39 @@ public:
     virtual void resetInnerValsManual() {}
     virtual void saveInnerValsManual() {}
 	
+	
+    std::vector<std::vector<double>> getFlux_10c() {		
+    	std::vector<NumEqVector> flux_10c_ = getProblemFlux_10c();//this->problem->getFlux10c_(); // 
+		int numComp_ = numComp();
+		std::vector<double> f10c_row(numComp_);
+		std::vector<std::vector<double>> flux_10c(flux_10c_.size(), f10c_row);
+		
+		for(int cellIdx = 0; cellIdx < flux_10c.size(); cellIdx ++)
+		{
+			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
+			{
+				flux_10c.at(cellIdx).at(eqIdx) = flux_10c_.at(cellIdx)[eqIdx];
+			}
+		}
+		return flux_10c;
+    }
+	
+    std::vector<std::vector<double>> getSource_10c() {		
+    	std::vector<NumEqVector> source_10c_ = getProblemSource_10c();//this->problem->getFlux10c_(); // 
+		int numComp_ = numComp();
+		std::vector<double> f10c_row(numComp_);
+		std::vector<std::vector<double>> source_10c(source_10c_.size(), f10c_row);
+		
+		for(int cellIdx = 0; cellIdx < source_10c.size(); cellIdx ++)
+		{
+			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
+			{
+				source_10c.at(cellIdx).at(eqIdx) = source_10c_.at(cellIdx)[eqIdx];
+			}
+		}
+		return source_10c;
+    }
+	
 protected:
 
     using Grid = typename Problem::Grid;
@@ -1050,8 +1084,10 @@ protected:
         inFluxes.push_back(inFluxes_i);
         //inFluxes_time.push_back(currentTime );
         inFluxes_ddt.push_back(ddt_current);
+		resetSetFaceFlux();
     }
 	
+	void virtual resetSetFaceFlux(){}
 	
 	virtual std::vector<NumEqVector> getProblemFlux_10c()
 	{
@@ -1072,37 +1108,6 @@ protected:
     }
 	
 	
-    std::vector<std::vector<double>> getFlux_10c() {		
-    	std::vector<NumEqVector> flux_10c_ = getProblemFlux_10c();//this->problem->getFlux10c_(); // 
-		int numComp_ = numComp();
-		std::vector<double> f10c_row(numComp_);
-		std::vector<std::vector<double>> flux_10c(flux_10c_.size(), f10c_row);
-		
-		for(int cellIdx = 0; cellIdx < flux_10c.size(); cellIdx ++)
-		{
-			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
-			{
-				flux_10c.at(cellIdx).at(eqIdx) = flux_10c_.at(cellIdx)[eqIdx];
-			}
-		}
-		return flux_10c;
-    }
-	
-    std::vector<std::vector<double>> getSource_10c() {		
-    	std::vector<NumEqVector> source_10c_ = getProblemSource_10c();//this->problem->getFlux10c_(); // 
-		int numComp_ = numComp();
-		std::vector<double> f10c_row(numComp_);
-		std::vector<std::vector<double>> source_10c(source_10c_.size(), f10c_row);
-		
-		for(int cellIdx = 0; cellIdx < source_10c.size(); cellIdx ++)
-		{
-			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
-			{
-				source_10c.at(cellIdx).at(eqIdx) = source_10c_.at(cellIdx)[eqIdx];
-			}
-		}
-		return source_10c;
-    }
 
 };
 

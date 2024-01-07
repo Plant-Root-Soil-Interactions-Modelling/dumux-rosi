@@ -53,11 +53,16 @@ paramIdx = 1640
 stf2.setShape(s,r_in, r_out)
 l = s.l
 stf.setDefault(s)
+print('s.initializeProblem()A')
 stf.setSoilParam(s,paramIdx)
+print('s.initializeProblem()B')
 stf.getBiochemParam(s,paramIdx, noAds = False)
+print('s.initializeProblem()C')
 stf.setBiochemParam(s)
+print('s.initializeProblem()D')
 #ICZ = np.array([8.27842215e-05,0.01063999,4.77502731e-05 ])
 stf.setIC3D(s,  paramIdx)
+print('s.initializeProblem()E')
 
 s.QCflowOut =np.array([0.,0.]) #np.array([ -5.136688687529069e-06 ,-2.910181366106239e-12]  )
 s.QflowOut = 0.
@@ -68,13 +73,14 @@ s.WatBC =  s.win* (2 * np.pi * s.r_in * s.l) + s.QflowOut
 s.Qexud = (s.exuds_in+ s.exudl_in)* (2 * np.pi * s.r_in * s.l) +sum(s.QCflowOut)
 #stf.getBC(s)
 stf2.setBC(s)
-css1Function=5
+css1Function=8
 s.css1Function = css1Function
 s.setParameter( "Soil.css1Function", str(s.css1Function))
 s.setParameter( "Problem.segLength", str(s.l))
 
+print('s.initializeProblem()ee')
 s.initializeProblem()
-
+print('s.initializeProblem()F')
 qOut = s.distributeSource(s.QflowOut , 0, s.l, s.numFluidComp)
 
 valueTopBC = s.distributeSources(s.QCflowOut,

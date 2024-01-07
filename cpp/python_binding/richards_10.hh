@@ -2,15 +2,15 @@
 #define PYTHON_RICHARDS10_SOLVER_H_
 
 // most includes are in solverbase
-#include "solverbase.hh"
+//#include "solverbase.hh"
 
 #include "richards.hh" // most includes are in solverbase
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
-// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
+// #include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+// // #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
+// #include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
-// writeDumuxVTK
-#include <dumux/io/vtkoutputmodule.hh>
+// // writeDumuxVTK
+// #include <dumux/io/vtkoutputmodule.hh>
 
 
 
@@ -36,6 +36,16 @@ public:
     std::vector<double> getReac_CSS2() {
     	return this->problem->getReac_CSS2_(); // 
     }
+	
+    std::vector<NumEqVector> getFluxScvf10c() {
+    	return this->problem->getFluxScvf10c_(); // 
+    }
+    std::vector<int> idxScv4FluxScv_10c() {
+    	return this->problem->idxScv4FluxScv_10c_(); // 
+    }
+	
+	void resetSetFaceFlux(){this->problem->resetSetFaceFlux();}
+	
 	std::vector<NumEqVector> getProblemFlux_10c()
 	{	
 		return this->problem->getFlux10c_();
@@ -89,6 +99,15 @@ public:
 	
 	std::vector<double> CSS1_saved;
 	std::vector<double> CSS1_savedManually;
+	/**
+     * set verbose
+     */
+    virtual void setVerbose(int verbose) {
+        this->checkInitialized();
+    	this->problem->verbose = verbose;
+    }
+	
+	
 };
 
 /**
@@ -117,6 +136,8 @@ void init_richards_10(py::module &m, std::string name) {
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)
    .def("setSBotBC",&Richards_::setSBotBC)
+   .def("getFluxScvf10c",&Richards_::getFluxScvf10c)
+   .def("idxScv4FluxScv_10c",&Richards_::idxScv4FluxScv_10c)
    .def("getAvgDensity",&Richards_::getAvgDensity)
    .def("getCSS1_out",&Richards_::getCSS1_out)
    .def("getRF_out",&Richards_::getRF_out)

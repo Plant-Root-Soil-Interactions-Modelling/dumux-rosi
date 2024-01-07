@@ -9,24 +9,32 @@ LiquidDiffusionCoefficient = "4.76900099537037e-10"
 [ 2 ]
 [ 2.Component ]
 LiquidDiffusionCoefficient = "4e-12"
-[ Grid ]
-LowerLeft = "-0.05 -0.05 -0.1 "
+[Soil.Grid]
+LowerLeft = "0.0002"
 Overlap = "1"
-Periodic = "false false false"
-UpperRight = "0.05 0.05 0 "
+Periodic = "false"
+UpperRight = "0.002104870824716315"
+Cells = 2 #9
+[ Grid ]
+LowerLeft = "0.0002"
+Overlap = "1"
+Periodic = "false"
+UpperRight = "0.002"#"104870824716315"
+Cells = 2 #9
+doLogarithm = false
 [ Problem ]
 Name = "noname"
-reactionExclusive = "1"
+reactionExclusive = "0"
 verbose = "0"
-EnableGravity = "true"
+EnableGravity = "false"
 [ Soil ]
-nCellX = "6"
-nCellY = "6"
-nCellZ = "4"
+nCellX = "9"
+nCellY = "1"
+nCellZ = "1"
 sourceCs = "2.2486750867416185e-05"
 solidDensity = "2650"
 Output.File = "false"
-CSSmax = "0.00012281718316666665"
+CSSmax = "0" #"0.00012281718316666665"
 C_S_W_thresC = "5.2041078333333335e-06"
 C_S_W_thresO = "2.7724750833333334e-06"
 C_aCLim = "0.0"
@@ -104,8 +112,7 @@ C5 = "0.0"
 C6 = "0.0"
 C7 = "0.0"
 C8 = "0.0"
-P = "-95.0 -105.0"
-Z = "-0.1 0.0"
+P = "-95.0"
 [ Soil.VanGenuchten ]
 Alpha = "0.04"
 Ks = "50"
