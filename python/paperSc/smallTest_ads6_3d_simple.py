@@ -40,7 +40,7 @@ usemoles = True
 year = 2013
 min_b = [-5, -5, -10.] 
 max_b = [5, 5, 0.] 
-cell_number = [4,2,2]
+cell_number = [1,2,2]
 soil_type = "loam"
 genotype = "WT"
 comp = "phenolics"
@@ -92,19 +92,16 @@ for i, dt in enumerate(np.diff(times)):
     s.solve(dt, maxDt = 250./(24.*3600.))
 
     outer_R_bc = -np.transpose(s.getFlux_10c())# mol
+    
     bulkSoil_sources = np.transpose(s.getSource_10c()) 
+    #print(s.base.inFluxes)
+    #print(s.base.face2CellIds)
+    #print(-np.transpose(s.base.getFluxScvf10c()))
+    #raise Exception
 
     if rank == 0:
         outer_R_bc_sol = outer_R_bc[1:]# mol
         sources_sol =  bulkSoil_sources[1:] #mol
-        #  mol C / cm3 scv
-        #css1Flow = sources_sol *0.
-        #css1Flow[[-1]] = s.f_sorp * np.array([s.base.computeCSS1(bcs, 1, 1) for bcs in outer_R_bc_sol[0]])
-        #if css1Function_ == 6:
-        #    css1Flow[[-1]] = s.CSSmax * (outer_R_bc_sol[0] /(outer_R_bc_sol[0] + s.k_sorp*1e6)) * s.f_sorp  #  mol C 
-        #else:
-        #    css1Flow[[-1]] = s.CSSmax * (outer_R_bc_sol[0] /(outer_R_bc_sol[0] + s.k_sorp*1e6)) * s.f_sorp * cell_volumes #  mol C 
-        
         print('outer_R_bc_sol',#outer_R_bc_sol,
             outer_R_bc_sol[0])#,'css1Flow',css1Flow[-1])
     buTotCAfterEach = comm.bcast(s.getTotCContent_each(), root = 0) 
@@ -117,6 +114,8 @@ for i, dt in enumerate(np.diff(times)):
     
         s.bulkMassCError1dsAll_real = buTotCAfterEach - buTotCBeforeEach
         s.bulkMassCError1dsAll_real[:-1] -=  (  sources_sol + outer_R_bc_sol ) #+ css1Flow
+        print('shapes', s.bulkMassCError1dsAll_real.shape,
+            sources_sol.shape,outer_R_bc_sol.shape)
         print('s.bulkMassCError1dsAll_real_A',#s.bulkMassCError1dsAll_real, 
                 'cs',s.bulkMassCError1dsAll_real[0],
                'css1', s.bulkMassCError1dsAll_real[-1], 

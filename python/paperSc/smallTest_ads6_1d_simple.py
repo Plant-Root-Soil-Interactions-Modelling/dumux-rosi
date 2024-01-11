@@ -50,31 +50,57 @@ soil_ = scenario_setup.vg_SPP(0)
 mode = "dumux_10c"
 p_mean = -100
 css1Function_ = 8
-paramIdx = 1640
+paramIndx = 1640
 dt = 1./3./24.
 times = np.array([0.,dt,dt*2])  # days
-s, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
-                min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
-                usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean, 
-                                         css1Function = css1Function_,
-                                        paramIndx=paramIdx,
-                                        noAds = False)
+#s3d, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
+#                min_b, max_b, cell_number, 
+demoType = mode
+dirResults = results_dir
+p_mean_ = p_mean
+css1Function = css1Function_
+noAds = True
 
+s=RichardsNoMPIWrapper(Richards10CCylFoam(), usemoles)
+
+   
+r_in = 0.02
+r_out = 0.2
+paramIdx = 1640
+s.initialize()
+
+stf.setShape1D(s,r_in, r_out,length = 1.,nCells = 10,doLogarithmic=False)
+
+stf.setDefault(s)
+s.setParameter("Newton.MaxSteps", "200")
+s.setParameter("Newton.MaxTimeStepDivisions", "100")
+#s.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
+#s.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+#s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+s.setParameter("Problem.reactionExclusive", "0")  
+s.setParameter("Newton.MaxRelativeShift","1e-10")
+stf.setSoilParam(s,paramIndx)
+stf.getBiochemParam(s,paramIndx,noAds)
+stf.setBiochemParam(s)
+stf.setIC(s,paramIndx)
+s.win = 0.; s.exudl_in = 0.
+s.exuds_in =1e-6#02;#( 0.00205364944098248+0.0173749033084651)
+stf.setBC1D(s)
+
+s.initializeProblem()
+print('get length')
+l = s.segLength
+s.Qexud = s.exuds_in * (2 * np.pi * r_in * s.segLength)
+print('set default', l)
+s.wilting_point = -15000
+s.setCriticalPressure(s.wilting_point)  # for boundary conditions
 
 cell_volumes = comm.bcast(s.getCellVolumes() , root = 0) #cm3
 s.numFluidComp = 2
 
-
 buTotCBeforeEach = comm.bcast(s.getTotCContent_each(), root = 0) 
 
-
 print('buTotCBeforeEach',buTotCBeforeEach[[0,-1]])
-s.Qexud = ( 0.00205364944098248+0.0173749033084651)*100
-res = {}
-res[0] = s.Qexud    #c_s   
-#res[1] = s.Qexud  *0.1  #c_s 
-s.setSource(res.copy(), eq_idx = 1)  # [mol/day], in modules/richards.py
-
 #outer_R_bc_sol =  sources_sol*0.          
 
 s.ddt = 1.e-5
@@ -99,23 +125,20 @@ for i, dt in enumerate(np.diff(times)):
     outer_R_bc_sol = outer_R_bc[1:]# mol
     sources_sol =  bulkSoil_sources[1:] #mol
     #  mol C / cm3 scv
-    css1Flow = sources_sol *0.
-    #css1Flow[[-1]] = s.f_sorp * np.array([s.base.computeCSS1(bcs, 1, 1) for bcs in outer_R_bc_sol[0]])
-    #if css1Function_ == 6:
-    #    css1Flow[[-1]] = s.CSSmax * (outer_R_bc_sol[0] /(outer_R_bc_sol[0] + s.k_sorp*1e6)) * s.f_sorp  #  mol C 
-    #else:
-    #    css1Flow[[-1]] = s.CSSmax * (outer_R_bc_sol[0] /(outer_R_bc_sol[0] + s.k_sorp*1e6)) * s.f_sorp * cell_volumes #  mol C 
+    
     print('outer_R_bc_sol',#outer_R_bc_sol,
-            outer_R_bc_sol[0],
-            'css1Flow',css1Flow[-1])
+            outer_R_bc_sol[0])
     buTotCAfterEach = comm.bcast(s.getTotCContent_each(), root = 0) 
     print('buTotCAfterEach',buTotCAfterEach[[0,-1]])
     print('buTotCBefore',sum(buTotCBeforeEach.flatten()),
             'buTotCAfter',sum(buTotCAfterEach.flatten()),
             's.Qexud*dt',s.Qexud*dt,
-            'diff',sum(buTotCAfterEach.flatten()) - sum(buTotCBeforeEach.flatten()) - sum(sources_sol.flatten()))
+            'diff',sum(buTotCAfterEach.flatten()) - sum(buTotCBeforeEach.flatten()) - s.Qexud*dt)
     
-    s.bulkMassCError1dsAll_real = buTotCAfterEach - ( buTotCBeforeEach + sources_sol + outer_R_bc_sol + css1Flow)
+    s.bulkMassCError1dsAll_real = buTotCAfterEach - buTotCBeforeEach 
+    print('shapes', s.bulkMassCError1dsAll_real.shape,
+        sources_sol.shape,outer_R_bc_sol.shape)
+    s.bulkMassCError1dsAll_real[:-1] -= sources_sol + outer_R_bc_sol *0
     print('s.bulkMassCError1dsAll_real_A',#s.bulkMassCError1dsAll_real, 
             'cs',s.bulkMassCError1dsAll_real[0],
            'css1', s.bulkMassCError1dsAll_real[-1], 
@@ -124,8 +147,15 @@ for i, dt in enumerate(np.diff(times)):
     s.bulkMassCError1dsAll_real[-1][:] = 0.
     print('s.bulkMassCError1dsAll_real_B',s.bulkMassCError1dsAll_real[0],
             sum(s.bulkMassCError1dsAll_real.flatten()))
-    print(sum(np.array(s.base.computeCSS1s())*cell_volumes/1e6)*s.f_sorp)
+    #print(sum(np.array(s.base.computeCSS1s())*cell_volumes/1e6)*s.f_sorp)
     buTotCBeforeEach = buTotCAfterEach
     
+    
+print('cell_volumes',cell_volumes)
+print('points',s.getPoints())
+flfl =s.getFlux_10c_()
+flfl_cs = np.array([ff[1] for ff in flfl])
+print('getFlux_10c_',flfl_cs)
+print('getFace2CellIds_', s.getFace2CellIds_())
 
 

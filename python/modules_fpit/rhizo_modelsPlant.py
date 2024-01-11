@@ -927,24 +927,24 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def getContentCyl(self,idCyls=None, idComp=1, doSum = True, reOrder = False):#mol
         isDissolved = (idComp <= self.numFluidComp)
         localIdCyls =   self.getLocalIdCyls(idCyls)             
-        mol_rhizo = np.array([sum(self.cyls[i].getContentCyl( idComp, isDissolved, self.seg_length_[i] )) for i in localIdCyls ]) #cm3
+        mol_rhizo = np.array([sum(self.cyls[i].getContentCyl( idComp, isDissolved)) for i in localIdCyls ]) #cm3
         return self.getXcyl(mol_rhizo, doSum, reOrder)
         
     def getTotCContentAll(self,idCyls=None, doSum = True, reOrder = False):#mol
         localIdCyls =   self.getLocalIdCyls(idCyls)                      
-        mol_rhizo = np.array([sum(self.getTotCContent(self.cyls[i], self.seg_length_[i] )) for i in localIdCyls ]) #mol
+        mol_rhizo = np.array([sum(self.getTotCContent(self.cyls[i] )) for i in localIdCyls ]) #mol
         return self.getXcyl(mol_rhizo, doSum, reOrder)
         
     def getWaterVolumesCyl(self,idCyls=None, doSum = True, reOrder = False):#cm3
         localIdCyls =   self.getLocalIdCyls(idCyls)           
-        wat_rhizo = np.array([sum(self.cyls[i].getWaterVolumesCyl(self.seg_length_[i])) for i in localIdCyls ]) #cm3
+        wat_rhizo = np.array([sum(self.cyls[i].getWaterVolumesCyl()) for i in localIdCyls ]) #cm3
         #print('lens', len(self.eidx), len(wat_rhizo))
         #print('getWaterVolumesCyl',wat_rhizo,idCyls, np.array(self.organTypes)[np.array(self.eidx)]  )
         return self.getXcyl(wat_rhizo, doSum, reOrder)
         
     def getVolumesCyl(self,idCyls=None, doSum = True, reOrder = False):#cm3
         localIdCyls =   self.getLocalIdCyls(idCyls)                     
-        V_rhizo = np.array([sum(self.cyls[i].getCellSurfacesCyl()*self.seg_length_[i]) for i in localIdCyls ]) #cm3
+        V_rhizo = np.array([sum(self.cyls[i].getCellVolumes()) for i in localIdCyls ]) #cm3
         #print('getVolumesCyl',rank, V_rhizo )
         return self.getXcyl(V_rhizo, doSum, reOrder)
         
@@ -1443,16 +1443,16 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                         cOld = sum(molFrOld[nComp -1] *   molarPhaseOld  )    
                         try:
-                            assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))< 1e-13
+                            assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved )))< 1e-13
                         except:
-                            print('contentoldA',cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] ), 
-                                    sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
+                            print('contentoldA',cyl.getContentCyl(nComp, isDissolved), 
+                                    sum(cyl.getContentCyl(nComp, isDissolved)))
                             print('contentoldB',molFrOld[nComp -1] *   molarPhaseOld, cOld,'diff', 
-                                  cOld - sum(cyl.getContentCyl(nComp, isDissolved, self.seg_length_old[gId] )))
-                            print('watcontA',cyl.getWaterContent(), cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100)
+                                  cOld - sum(cyl.getContentCyl(nComp, isDissolved )))
+                            print('watcontA',cyl.getWaterContent(), cyl.getCellVolumes() / 1e6 )
                             print('watcontB',theta_old,volOld/1e6, self.phaseDensity(nComp ) , cyl.phaseDensity(nComp ))
                             print('molFrOld',molFrOld[nComp -1])
-                            print('molarPhaseOld', molarPhaseOld,np.multiply(cyl.getCellSurfacesCyl() / 1e4 * self.seg_length_old[gId] / 100 , 
+                            print('molarPhaseOld', molarPhaseOld,np.multiply(cyl.getCellVolumes() / 1e6 , 
                                                     cyl.getWaterContent()) *cyl.molarDensityWat_m3)
                             raise Exception
                         try:
@@ -1671,7 +1671,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.setParameter( "Soil.css1Function", str(self.soilModel.css1Function))
             cyl.setParameter("Problem.verbose", "0")
             cyl.setParameter("Problem.reactionExclusive", "0")    
-            cyl.setParameter("Problem.segLength", str(self.seg_length[gId]))   
+            cyl.setParameter("Problem.segLength", str(self.seg_length[gId]))   # cm
             cyl.setParameter( "Soil.Grid.Cells",str( self.NC-1)) # -1 to go from vertices to cell (dof)
             if self.recreateComsol:
                 cyl.setHomogeneousIC(-100.)  # cm pressure head
@@ -1775,7 +1775,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             #print(cyl.getSolutionHead(),x, gId, self.seg2cell[gId])#cyl.getSolutionHead_(),
             #raise Exception
             if verbose:
-                print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl(self.seg_length[gId])),self.seg_length[gId],
+                print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl()),self.seg_length[gId],
                   pHeadcyl , x,pHeadcyl - x,'Cells',Cells)
             assert len(pHeadcyl) == (self.NC - 1)
             assert (abs((pHeadcyl - x)/x)*100 < 1e-5).all()
@@ -2035,7 +2035,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 self.seg_fluxes_limited_mucil_In[lId] = proposed_inner_fluxes_mucil[gId] # [mol/day]
                 
             else:
-                l = self.seg_length[gId]
+                l = cyl.segLength#self.seg_length[gId]
                 QflowIn = proposed_inner_fluxes[gId] 
                 qIn = QflowIn/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
                 QflowOut = proposed_outer_fluxes[gId] 
@@ -2044,7 +2044,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     qOut = QflowOut/(2 * np.pi * self.outer_radii[gId] * l)# [cm3/day] -> [cm /day]
                     cyl.setOuterFluxCyl(qOut)
                 else:
-                    qOut = cyl.distributeSource(QflowOut, 0, l, self.numFluidComp)
+                    qOut = cyl.distributeSource(QflowOut, 0,self.numFluidComp)
                     if QflowOut!=0.:
                         try:
                             assert (abs(sum(qOut) - QflowOut) < 1e-13) or (abs((sum(qOut) - QflowOut)/QflowOut) < 1e-13)
@@ -2089,19 +2089,19 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 else:
                     valueTopBC = cyl.distributeSources(np.array([ topVal, topVal_mucil]), 
                                           np.array([nc+1 for nc in range(self.numFluidComp+1)]), 
-                                                       l, self.numFluidComp)
+                                                       self.numFluidComp)
                     if False:#(max(abs(np.array([ topVal, topVal_mucil]))) > 0.):
                         print('valueTopBC',sum(valueTopBC[0]),
                               sum(valueTopBC[1]),topVal, topVal_mucil)
                         # raise Exception
                 
                 
-                buWBefore_ = cyl.getWaterVolumesCyl(l)
+                buWBefore_ = cyl.getWaterVolumesCyl()
                 buWBefore = sum( buWBefore_ )
                 WaterContentOld = cyl.getWaterContent()
                 SolutionHeadOld = cyl.getSolutionHead()
-                buCCBefore_ = cyl.getContentCyl(1, True, l)
-                buTotCBefore = self.getTotCContent(cyl,l)
+                buCCBefore_ = cyl.getContentCyl(1, True)
+                buTotCBefore = self.getTotCContent(cyl)
                 solsBefore = [np.array(cyl.getSolution(ooo + 1)).flatten() for ooo in range(self.numComp)]
                 css1_before = np.array(cyl.getCSS1_out()).flatten() 
                 
@@ -2125,7 +2125,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
                     except:
                         print('(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()',np.array(cyl.getSolution(ncomp + 1)).flatten(),
-                             cyl.getContentCyl(ncomp + 1, (ncomp < self.numFluidComp), l))
+                             cyl.getContentCyl(ncomp + 1, (ncomp < self.numFluidComp)))
                         raise Exception
                 try:
                     if verbose:
@@ -2158,8 +2158,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             cyl.solve(dt, maxDt = maxDt_temp)
                             # newton parameters are re-read at each 'solve()' calls
                             Q_in_m, Q_out_m = cyl.getSavedBC(self.radii[gId], 
-                                                             np.array( self.outer_radii)[gId],
-                                                             l)     
+                                                             np.array( self.outer_radii)[gId])     
                             if not self.useOuterFluxCyl_w:
                                 assert Q_out_m[0] == 0.
                                 Q_out_m[0] = QflowOut_temp
@@ -2171,10 +2170,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             QflowOut_limited = Q_out_m[0]
                             
                             
-                            buWAfter_ =  cyl.getWaterVolumesCyl(l)
+                            buWAfter_ =  cyl.getWaterVolumesCyl()
                             buWAfter = sum(buWAfter_ )
-                            buCCAfter_ = cyl.getContentCyl(1, True, l)
-                            buTotCAfter = self.getTotCContent(cyl,l)
+                            buCCAfter_ = cyl.getContentCyl(1, True)
+                            buTotCAfter = self.getTotCContent(cyl)
                             diffWproposed = buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)
                             diffWtemp = buWAfter - ( buWBefore + (QflowIn_temp + QflowOut_temp) * dt)
                             diffWlimited = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
@@ -2293,7 +2292,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                     else:
                                         valueTopBC = cyl.distributeSources(QCflowOut_temp, 
                                                               np.array([nc+1 for nc in range(self.numFluidComp+1)]), 
-                                                                           l, self.numFluidComp)
+                                                                           self.numFluidComp)
                                     if verbose:
                                         print('new SoluteTopBC', valueTopBC)
                                 # maxDt_temp *= divVale
@@ -2330,10 +2329,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             n_iter_solve += 1
                             
                         
-                    buWAfter_ =  cyl.getWaterVolumesCyl(l)
+                    buWAfter_ =  cyl.getWaterVolumesCyl()
                     buWAfter = sum(buWAfter_ )
-                    buCCAfter_ = cyl.getContentCyl(1, True, l)
-                    buTotCAfter = self.getTotCContent(cyl,l)
+                    buCCAfter_ = cyl.getContentCyl(1, True)
+                    buTotCAfter = self.getTotCContent(cyl)
                     diffW = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
                     diffC = (sum(buTotCAfter) - ( sum(buTotCBefore) \
                                     + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt))
@@ -2413,11 +2412,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
             
         
-    def getTotCContent(self, cyl, l):
+    def getTotCContent(self, cyl):
         if isinstance(cyl, AirSegment):
             return np.full(self.numComp,0.)
         
-        return cyl.getTotCContent(l)
+        return cyl.getTotCContent()
         
     def getTotCContent_deprecated(self, cyl, l):
         if isinstance(cyl, AirSegment):

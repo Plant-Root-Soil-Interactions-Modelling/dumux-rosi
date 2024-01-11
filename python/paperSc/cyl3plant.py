@@ -1097,7 +1097,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # issue here: mass balance error would be added to the outer_R_bc_wat
             
-            outer_R_bc = np.transpose(s.getFlux_10c())
+            outer_R_bc = -np.transpose(s.getFlux_10c())
             bulkSoil_sources = np.transpose(s.getSource_10c()) #buTotCBeforeEach[-1], buTotCAfterEach[-1]))
             
             #raise Exception
@@ -1120,14 +1120,18 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 
             # issue here: mass balance error would be added to the outer_R_bc_wat
             outer_R_bc_sol = outer_R_bc[1:] # cm3 #np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
+            outer_R_bc_sol = np.vstack([outer_R_bc_sol, outer_R_bc_sol[0]*0.]) #add dummy val for css1
             sources_sol =  bulkSoil_sources[1:] # mol
+            sources_sol = np.vstack([sources_sol, sources_sol[0]*0.]) #add dummy val for css1
             
             assert outer_R_bc_sol.shape == (r.numComp+1, s.numberOfCellsTot)
             #outer_R_bc_solAll = outer_R_bc_sol.sum(axis = 0)
             
             ## valid for all cells
             
-            s.bulkMassCError1dsAll_real = buTotCAfterEach - ( buTotCBeforeEach + sources_sol + outer_R_bc_sol)
+            s.bulkMassCError1dsAll_real = buTotCAfterEach - (buTotCBeforeEach+ sources_sol + outer_R_bc_sol)
+            
+            #s.bulkMassCError1dsAll_real = buTotCAfterEach - ( buTotCBeforeEach + sources_sol + outer_R_bc_sol)
             
             # TODO: TAKE OUT
             print('\n\n\nbulkMassCError1dsAll_real', s.bulkMassCError1dsAll_real[[1,-1,-3]].flatten(), 

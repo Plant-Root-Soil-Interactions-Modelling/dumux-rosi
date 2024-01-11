@@ -20,8 +20,13 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
     using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards10Cyl() { }
 	
+	
 	std::vector<double> getCellVolumes(){
 		return this->problem->cellVolumesCyl;
+	}
+	
+	double segLength(){
+		return this->problem->segLength;// m
 	}
 	
     std::vector<NumEqVector> getFluxScvf10c() {
@@ -48,7 +53,7 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 	
 	std::vector<NumEqVector> getProblemFlux_10c()
 	{	
-		return this->problem->getFlux10c_();
+		return this->problem->getFluxScvf10c_();
 	}
 	std::vector<NumEqVector> getProblemSource_10c()
 	{	
@@ -154,6 +159,7 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def_readonly("rIn",&RichardsFoam::rIn)
    .def_readonly("rOut",&RichardsFoam::rOut)
    .def_readonly("dimWorld", &RichardsFoam::dimWorld)
+   .def("segLength", &RichardsFoam::segLength)
    .def("getFluxScvf10c",&RichardsFoam::getFluxScvf10c)
    .def("idxScv4FluxScv_10c",&RichardsFoam::idxScv4FluxScv_10c)
    .def("computeRF",&RichardsFoam::computeRF)

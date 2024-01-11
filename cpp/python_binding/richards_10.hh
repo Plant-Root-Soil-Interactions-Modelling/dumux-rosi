@@ -37,8 +37,17 @@ public:
     	return this->problem->getReac_CSS2_(); // 
     }
 	
-    std::vector<NumEqVector> getFluxScvf10c() {
-    	return this->problem->getFluxScvf10c_(); // 
+    std::vector<std::array<double,9>> getFluxScvf10c() {
+		std::vector<NumEqVector> fluxScvf = this->problem->getFluxScvf10c_();
+		std::vector<std::array<double,9>> fluxScvfOut(fluxScvf.size());
+		for(size_t elem = 0; elem < fluxScvf.size(); elem ++)
+		{
+			for(size_t elem_ = 0; elem_ < fluxScvf.size(); elem_ ++)
+			{
+				fluxScvfOut.at(elem).at(elem_) = fluxScvf.at(elem)[elem_];
+			}
+		}
+    	return fluxScvfOut; // 
     }
     std::vector<int> idxScv4FluxScv_10c() {
     	return this->problem->idxScv4FluxScv_10c_(); // 
@@ -48,8 +57,9 @@ public:
 	
 	std::vector<NumEqVector> getProblemFlux_10c()
 	{	
-		return this->problem->getFlux10c_();
+		return this->problem->getFluxScvf10c_();
 	}
+	
 	std::vector<NumEqVector> getProblemSource_10c()
 	{	
 		return this->problem->getSource10c_();
@@ -143,7 +153,7 @@ void init_richards_10(py::module &m, std::string name) {
    .def("getRF_out",&Richards_::getRF_out)
    .def("getSorp",&Richards_::getSorp)
    .def("getReac_CSS2",&Richards_::getReac_CSS2)
-   .def("getProblemFlux_10c",&Richards_::getProblemFlux_10c)
+   //.def("getProblemFlux_10c",&Richards_::getProblemFlux_10c)
    .def("getAvgDensity",&Richards_::getAvgDensity)
    .def("computeRF",&Richards_::computeRF)
    .def("computeCSS1",&Richards_::computeCSS1)

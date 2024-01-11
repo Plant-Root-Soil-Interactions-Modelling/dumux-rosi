@@ -247,6 +247,9 @@ def setBiochemParam(s):
     return s
 
 def setIC3D(s, paramIdx, ICcc = None):
+    return setIC(s, paramIdx, ICcc)
+
+def setIC(s, paramIdx, ICcc = None):
     # s.setHomogeneousIC(p_mean_, equilibrium = True) #-97.5)  # cm pressure head
     if ICcc is None:
         paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
@@ -255,7 +258,7 @@ def setIC3D(s, paramIdx, ICcc = None):
 
         CSS2_init = 0.*s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        s.ICcc = np.array([C_S *unitConversion,
+        s.ICcc = np.array([C_S *unitConversion*0,
                            C_L*unitConversion*0.,
                             9.16666666666667e-07* unitConversion*0.,
                             8.33333333333333e-06* unitConversion*0.,
@@ -328,7 +331,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     if len(dirResults) == 0:
         dirResults = "./results/parallel"+str(max_rank)+"/"
     s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
-            
+    s.dirResults = dirResults
     
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
 
@@ -340,16 +343,57 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     setBiochemParam(s)
     
     setIC3D(s, paramIndx, ICcc)
+    s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
+    cell_number_ = cell_number
+    cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
+    s.setParameter( "Soil.Grid.Cells", cell_number)   
+    s, s.vg_soil = setupOther(s, css1Function, p_mean_)
+    return s, s.vg_soil
     
+def setShape1D(s,r_in, r_out,length,nCells = 10, doLogarithmic=True):
+    
+    logbase = 0.5
+    #s.l = length#length in cm
+    #doLogarithmic = True
+    s.r_in = r_in
+    s.r_out = r_out
+    if doLogarithmic:
+        s.points = np.logspace(np.log(r_in) / np.log(logbase), np.log(r_out) / np.log(logbase), nCells, base = logbase)
+        s.createGrid1d(s.points)
+        nCells -= 1
+    else:
+        s.createGrid([r_in], [r_out], [nCells])  # [cm]
+    s.setParameter( "Soil.Grid.Cells", str(nCells))
+    s.setParameter( "Problem.segLength", str(length))
+    return s
+def setBC1D(s):
+    
+    s.setOuterBC("constantFluxCyl", 0.)  #  [cm/day]
+    s.setInnerBC("constantFluxCyl", s.win)  #  [cm/day]
+    
+    s.setParameter( "Soil.BC.Bot.C1Type", str(3))
+    s.setParameter( "Soil.BC.Top.C1Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C1Value", str(s.exuds_in)) 
+    s.setParameter( "Soil.BC.Top.C1Value", str(0.)) 
+
+
+    s.setParameter( "Soil.BC.Bot.C2Type", str(3))
+    s.setParameter( "Soil.BC.Top.C2Type", str(3))
+    s.setParameter( "Soil.BC.Bot.C2Value", str(s.exudl_in)) 
+    s.setParameter( "Soil.BC.Top.C2Value", str(0.)) 
+
+    for i in range(s.numFluidComp + 1, s.numComp+1):
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(3))
+        s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(3))
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
+        s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
+
+def setupOther(s, css1Function, p_mean_):
     s.css1Function = css1Function
     s.setParameter( "Soil.css1Function", str(s.css1Function))
 
-    s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
 
-    #cell_number = str(cell_number)
-    cell_number_ = cell_number
-    cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
-    s.setParameter( "Soil.Grid.Cells", cell_number)    
+    #cell_number = str(cell_number) 
     s.setParameter("Problem.reactionExclusive", "1")
 
     # BC
@@ -446,7 +490,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
                     ' solidMolDensity', s.solidMolDensity, 
                     "Soil.css1Function", str(s.css1Function)],dtype=object) 
 
-    name2 = dirResults+ "soil3dParams"+ '.csv'
+    name2 = s.dirResults+ "soil3dParams"+ '.csv'
     space ="\n"
     if rank == 0:
         with open(name2, 'a') as log:

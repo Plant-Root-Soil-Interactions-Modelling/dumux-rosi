@@ -23,13 +23,13 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.base.initialize(args_, verbose, doMPI)
         #print('solverbase_no_mpi:init_end')
         
-    def solve(self, dt:float, maxDt = -1.):
+    def solve(self, dt:float, maxDt = -1., saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
         #print("solveNoMPI")
-        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600., saveBC = True)  # days -> s
+        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600., saveBC = True, saveInnerFluxes = saveInnerFluxes_)  # days -> s
 
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
@@ -99,8 +99,10 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         return self._map((self.base.getSolution(eqIdx)), 0)
     
     
-    def getSavedBC(self,  rIn, rOut, length):
+    def getSavedBC(self,  rIn, rOut ):
+    
         assert self.dimWorld != 3
+        length = self.segLength
         verbose = False
         BC_in_vals = np.array(self.base.BC_in_vals) #[ mol / (m^2 \cdot s)]
         BC_out_vals = np.array(self.base.BC_out_vals) #[ mol / (m^2 \cdot s)]
@@ -223,17 +225,18 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
         
         
-    def distributeSources(self, source, eqIdx, length: float, numFluidComp: int):
+    def distributeSources(self, source, eqIdx, numFluidComp: int):
         """ split the source array according to the values in seg cells """
         splitVals = list()
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
-            splitVals.append(self.distributeSource( src, eqIdx[i], length, numFluidComp))
+            splitVals.append(self.distributeSource( src, eqIdx[i], numFluidComp))
         return np.array(splitVals, dtype = object)
             
-    def distributeSource(self, source: float, eqIdx: int, length: float, numFluidComp: int):
+    def distributeSource(self, source: float, eqIdx: int, numFluidComp: int):
         assert self.dimWorld != 3
+        length = self.segLength
         verbose = False
-        splitVals = self.distributeVals(source, eqIdx, length, numFluidComp)
+        splitVals = self.distributeVals(source, eqIdx, numFluidComp)
         if source != 0.:# [cm3/day] or [mol/day]
             test_values = list(splitVals.copy())
             test_keys = np.array([i for i in range(len(test_values))])
@@ -243,22 +246,22 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                     res[key] = value
                     test_values.remove(value)
                     break                        
-            self.setSource(res.copy(), eq_idx = eqIdx, cyl_length = length)  # [mol/day], in modules/richards.py
+            self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
         else:
             res = dict()
             res[0] = 0.
-            self.setSource(res.copy(), eq_idx = eqIdx, cyl_length = length)  # [mol/day], in modules/richards.py
+            self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
         return splitVals
     
-    def distributeVals(self, source: float, eqIdx: int, length: float, numFluidComp: int):
+    def distributeVals(self, source: float, eqIdx: int, numFluidComp: int):
         splitVals = np.array([0.])
         verbose = False
         if source != 0.:# [cm3/day] or [mol/day]
             if eqIdx == 0:
-                seg_values = self.getWaterVolumesCyl(length)
+                seg_values = self.getWaterVolumes()#getWaterVolumesCyl(length)
             else:
                 isDissolved = (eqIdx <= numFluidComp)
-                seg_values = self.getContentCyl(eqIdx, isDissolved, length)
+                seg_values = self.getContentCyl(eqIdx, isDissolved)
             # during the solve() loop, we might still get seg_values <0 <== NO! when we distribute, need vals > 0
             # assert min(seg_values) >= 0.
             #print('distributeVals',eqIdx,'real seg_values',seg_values)

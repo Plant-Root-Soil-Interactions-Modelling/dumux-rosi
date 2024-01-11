@@ -553,6 +553,14 @@ public:
 		
 		///
 		computedCellVolumesCyl = false;
+		if(dimWorld == 1)
+		{
+			segLength  = Dumux::getParam<double>("Problem.segLength")/100;
+			this->setVolumesCyl(computeCellVolumesCyl_());
+			computedCellVolumesCyl = true;
+		}else{
+			segLength  = -1.;
+		}
 		 //for (int scvIdx = 0; scvIdx < fvGridGeometry->numScv(); scvIdx++ )
 		 //for (int scvfIdx = 0; scvfIdx < fvGridGeometry->numScvf(); scvfIdx++ )
 		 //for (int elemIdx = 0; elemIdx < fvGridGeometry->numScvf(); elemIdx++ )
@@ -579,7 +587,7 @@ public:
 
 	double getCellVolumesCyl(int dofIndex) const
 	{
-		if(!computedCellVolumesCyl)
+		if(!computedCellVolumesCyl) // if we want to change the segLEngth without recreating the object?
 		{
 			const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
 			this->setVolumesCyl(computeCellVolumesCyl_());
@@ -1632,7 +1640,7 @@ public:
     
     bool RFmethod2 = false;
 	bool verbose_local_residual = false;
-	double segLength;
+	double segLength;//m
 	std::vector<double> cellVolumesCyl;
 	int nCells_all;
 	bool computedCellVolumesCyl = false;

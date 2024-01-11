@@ -69,7 +69,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return np.array([0])
     def getSolutionHead(self):
         return np.array([0])
-    def getWaterVolumesCyl(self, length):
+    def getWaterVolumesCyl(self ):
         return np.array([0])
     def getKrw(self):# could return here the air resistance instead of having it in the photosynthesis class
         return np.array([np.Inf])
@@ -98,7 +98,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return np.array([0])
     def getSolution(self,val):
         return np.array([0])
-    def getContentCyl(self,idComp, isDissolved, length):
+    def getContentCyl(self,idComp, isDissolved):
         return np.array([0])
     #set
     def setOuterBC_solute(self,*arg):

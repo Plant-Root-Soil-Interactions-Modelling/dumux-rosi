@@ -329,7 +329,7 @@ class RichardsWrapper(SolverWrapper):
                 CC *= self.bulkDensity_m3/1e6 #mol/cm3 scv
         return CC
 
-    def setSource(self, source_map, eq_idx = 0, cyl_length = None):
+    def setSource(self, source_map, eq_idx = 0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         # useMole fraction or mass fraction? 
@@ -438,15 +438,15 @@ class RichardsWrapper(SolverWrapper):
         assert self.dimWorld != 1
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
         
-    def getWaterVolumesCyl(self, length, verbose = False):
+    def getWaterVolumesCyl(self, verbose = False):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
         assert self.dimWorld != 3
-        vols = self.getCellSurfacesCyl() * length #cm3 scv
+        vols = self.getCellVolumes() #cm3 scv
         watCont = self.getWaterContent()#.flatten() # cm3 wat/cm3 scv
         if(verbose):
             print("getWaterVolumesCyl")
-            print(length)
+            #print(length)
             print(vols , watCont )
             print(np.multiply(vols , watCont  ) )
         
@@ -467,16 +467,14 @@ class RichardsWrapper(SolverWrapper):
         css1_th = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp # if cell is empty, can get it directly from the solver.
         return  np.array(css1_th*vols)
     
-    def getTotCContent_each(self, l=None):
-        if l is None:
-            assert self.dimWorld == 3
+    def getTotCContent_each(self):
+        if self.dimWorld == 3:
             vols = self.getCellVolumes()#.flatten() #cm3 scv   
             totC = np.array([self.getContent(i+1, (i < 2)) for i in range(self.numComp +1)])
             
-        else:
-            assert self.dimWorld == 1
-            vols = self.getCellSurfacesCyl()  * l  #cm3 scv
-            totC = np.array([self.getContentCyl(i+1, (i < 2),l) for i in range(self.numComp+1)])
+        elif self.dimWorld == 1:
+            vols = self.getCellVolumes()#self.getCellSurfacesCyl()  * l  #cm3 scv
+            totC = np.array([self.getContentCyl(i+1, (i < 2)) for i in range(self.numComp+1)])
         # mol/mol * (mol/m3) = mol/m3 
         
         # css1 = self.getCSS1_out()  #mol C / cm3 scv
@@ -493,8 +491,8 @@ class RichardsWrapper(SolverWrapper):
             
         return totC
         
-    def getTotCContent(self, l=None):
-        return self.getTotCContent_each(l).sum(axis=0)
+    def getTotCContent(self):
+        return self.getTotCContent_each().sum(axis=0)
         
     def getCSS1_out_th(self):#mol C / cm3 scv
         if (self.css1Function == 0) or (self.css1Function == 4) :
@@ -541,10 +539,10 @@ class RichardsWrapper(SolverWrapper):
         #else:
         #    return self.getCSS1_out_real()
         
-    def getContentCyl(self,idComp, isDissolved, length,gId = None ):
+    def getContentCyl(self,idComp, isDissolved,gId = None ):
         assert self.dimWorld != 3
         assert idComp > 0 # do not use for water content
-        vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
+        vols = self.getCellVolumes() /1e6#/ 1e4 * length / 100 #m3 scv
         
         if idComp <= self.numComp:
             C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
@@ -580,10 +578,33 @@ class RichardsWrapper(SolverWrapper):
             return self.bulkDensity_m3
          
     def getFlux_10c(self):
-        flux10c = self._map(self.allgatherv(self.getFlux_10c_()), 0) #TODO: check that gathergin works   
+        flux10c = self.allgatherv(self.getFlux_10c_(), keepShape =True) #TODO: check that gathergin works  
+        face2CellIds = self.allgatherv(self.getFace2CellIds_(), keepShape =True)
+
+        #flux10c_ = flux10c[0]
+        face2CellIds = face2CellIds.transpose((1,0))
+        #flux10c = flux10c.transpose((2,0,1))
+        # print('face2CellIds',face2CellIds.shape, flux10c.shape)
+        # print([(nf, np.where(valThreads == max(valThreads))[0][0],  max(valThreads)) for nf, valThreads in enumerate(face2CellIds)])
+        #for nf, valThreads in enumerate(face2CellIds):
+        #    flux10c_[nf][:] = flux10c[np.where(valThreads == max(valThreads))[0]][nf][:]
+        flux10c = np.array([flux10c[np.where(valThreads == max(valThreads))[0][0]][nf][:] for nf, valThreads in enumerate(face2CellIds)])
+        face2CellIds = face2CellIds.max(axis = 1)
+        # print('face2CellIds',face2CellIds)
+        
+        #flux10c = flux10c_
+        # print(flux10c.shape,np.array([np.where(face2CellIds == nCell) for nCell in range(self.numberOfCellsTot)]),
+        #     np.array([flux10c[np.where(face2CellIds == nCell)] for nCell in range(self.numberOfCellsTot)]))
+        flux10cCell = np.array([flux10c[np.where(face2CellIds == nCell)].sum(axis=0) for nCell in range(self.numberOfCellsTot)])  
+        # print(flux10cCell)
         if rank == 0:
-            assert flux10c.shape == (self.numberOfCellsTot,self.base.numComp() )#numComp + water + css1
-        return flux10c
+            assert flux10cCell.shape == (self.numberOfCellsTot,self.base.numComp() )#numComp + water + css1
+        # print('flux shape',flux10cCell.shape)
+        #print('getFlux_10c()',flux10cCell)
+        return flux10cCell
+        
+    def getFace2CellIds_(self):
+        return np.array(self.base.face2CellIds).max(axis = 0)
     
     def getFlux_10c_(self):# cm3 or mol
         verbose = False
@@ -593,7 +614,35 @@ class RichardsWrapper(SolverWrapper):
         
         try:
             if size == 1:# with MPI, could be that axis 1 size < self.numberOfCellsTot
-                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp())
+                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp())
+            else:
+                assert inFluxes.shape[0] == len(inFluxes_ddt)
+                assert inFluxes.shape[2] == (self.base.numComp())
+                
+        except:
+            print('shape failed, inFluxes',size, inFluxes, 'inFluxes.shape',inFluxes.shape,(len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp()))
+            raise Exception
+        
+        inFluxes_tot = np.array([ np.array([xxx * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inFluxes[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+        
+        #inFluxes_tot = np.array([inFx * inFluxes_ddt[idx] for idx, inFx in enumerate(inFluxes)]) # cm3 or mol at each dumux sub-time step
+        inFluxes_tot = inFluxes_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
+        #css1_flux = np.full((self.numberOfCellsTot,1) , 0.)
+        
+        #inFluxes_tot = np.hstack((inFluxes_tot, css1_flux))
+        #print('inFluxes_tot',inFluxes_tot[:],inFluxes_tot.shape)
+        #print('getFlux_10c_()',inFluxes_tot)
+        return inFluxes_tot
+        
+    def getFlux_10c_Old(self):# cm3 or mol
+        verbose = False
+        inFluxes = np.array(self.base.inFluxes) #[ mol / s]
+        inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
+        
+        
+        try:
+            if size == 1:# with MPI, could be that axis 1 size < self.numberOfCellsTot
+                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfCellsTot*6,self.base.numComp())
             else:
                 assert inFluxes.shape[0] == len(inFluxes_ddt)
                 assert inFluxes.shape[2] == (self.base.numComp())
@@ -623,13 +672,13 @@ class RichardsWrapper(SolverWrapper):
         verbose = False
         inSources = np.array(self.base.inSources) #[ mol / (m^3 \cdot s)] 
         inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
-        
-        if self.dimWorld == 1:
-            vols = self.getCellSurfacesCyl_() / 1e4 * length / 100 #m3 scv
-        elif self.dimWorld == 3:
-            vols = (1/  1e6)*self.getCellVolumes_() #m3 scv
-        else:
-            raise Exception
+        vols = self.getCellVolumes()/1e6
+        #if self.dimWorld == 1:
+        #    vols = self.getCellVolumes()/1e6 # / 1e4 * length / 100 #m3 scv
+        #elif self.dimWorld == 3:
+        #    vols = (1/  1e6)*self.getCellVolumes_() #m3 scv
+        #else:
+        #    raise Exception
         if False:    
             try:
                 assert inSources.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp())

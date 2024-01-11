@@ -19,7 +19,7 @@ public:
     /**
      * Calls parent, additionally turns gravity off
      */
-    void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true,
+    virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true,
 							bool doMPI = true) override {
     	Richards<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose, doMPI);
         this->setParameter("Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem

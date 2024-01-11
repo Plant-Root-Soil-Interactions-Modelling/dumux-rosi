@@ -77,7 +77,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 5
+    css1Function_ = 8
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
     noAds = (extraName == 'noAds')

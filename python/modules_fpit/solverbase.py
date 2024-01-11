@@ -34,6 +34,11 @@ class SolverWrapper():
         self.base.initialize(args_, verbose)
     
     @property
+    def dimWorld(self):
+        """Get the current voltage."""
+        return self.base.dimWorld
+        
+    @property
     def numComp(self):
         """Get the current voltage."""
         return self.base.numComp() -1   
@@ -53,7 +58,7 @@ class SolverWrapper():
         self.base.setVerbose(verbose)
         
     
-    def allgatherv(self,X_rhizo): 
+    def allgatherv(self,X_rhizo, keepShape = False): 
         try:
             assert isinstance(X_rhizo, (list, type(np.array([]))))
         except:
@@ -96,11 +101,17 @@ class SolverWrapper():
             comm.barrier()
 
         comm.Allgatherv( [X_rhizo.reshape(-1), MPI.DOUBLE],[all_X_rhizo,all_sizes,offsets,MPI.DOUBLE])
-        # print('allgathervB',rank,all_X_rhizo,X_rhizo )
+        
         all_X_rhizo = np.array(all_X_rhizo, dtype =X_rhizo_type)
-        # print('allgathervC',rank,all_X_rhizo,X_rhizo_type )
-        if shape1 > 0:
-            all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
+        
+        if keepShape:
+            if shape1 > 0:
+                all_X_rhizo = all_X_rhizo.reshape( size,shape0,shape1)
+            else:
+                all_X_rhizo = all_X_rhizo.reshape(size, shape0)
+        else:
+            if shape1 > 0:
+                all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
         
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()
@@ -121,6 +132,12 @@ class SolverWrapper():
         """
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
         self.numberOfCellsTot = np.prod(self.numberOfCells)
+        if self.dimWorld == 3:
+            self.numberOfFacesTot = self.numberOfCellsTot * 6
+        elif self.dimWorld == 1:
+            self.numberOfFacesTot = self.numberOfCellsTot * 2
+        else:
+            raise Exception
 
     def createGrid1d(self, points):
         """ todo
@@ -130,6 +147,7 @@ class SolverWrapper():
             p.append([v / 100.])  # cm -> m
         self.base.createGrid1d(p)
         self.numberOfCellsTot = len(points) -1
+        self.numberOfFacesTot = self.numberOfCellsTot * 2
 
 #     def createGrid3d(self, points, p0):
 #         """ todo
@@ -165,9 +183,6 @@ class SolverWrapper():
         print(rank, 'initialized problem')
         if (self.mpiVerbose and (size > 1)):
             print(rank, 'initialized problem')
-        self.dimWorld = self.base.dimWorld
-        if (self.mpiVerbose and (size > 1)):
-            print(rank, 'initializeProblem::dimWorld',self.dimWorld)
 
 
     def setInitialCondition(self, ic, eqIdx = 0):
@@ -589,3 +604,9 @@ class SolverWrapper():
     def to_head(p):
         """ Converts Pascal [kg/ (m s^2)] to cm pressure head """
         return (p - 1.e5) * 100. / 1000. / 9.81;
+
+    @property
+    def segLength(self):
+        """ [cm] returns None I think for dimWorld != 1"""
+        self.checkInitialized() # is this the correct check? we need to have called initializeProblem before
+        return self.base.segLength()*100 # m to cm

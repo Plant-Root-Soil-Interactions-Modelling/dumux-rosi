@@ -358,12 +358,16 @@ public:
         if(verboseIndexSet){std::cout<<"getpointIdx"<<std::endl;}
         pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim, verboseIndexSet); // global index mappers
         
+        //if(verboseIndexSet){std::cout<<"getfaceIdx"<<std::endl;}
+		//faceIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 1, verboseIndexSet); // global index mappers
+        
         if(verboseIndexSet){std::cout<<"getcellIdx"<<std::endl;}
         cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0, verboseIndexSet);
         if(verboseIndexSet){std::cout<<"GOTcellIdx"<<std::endl;}
         
         //std::cout<<"getlocalCellIdx"<<std::endl;
         localCellIdx.clear();
+        //globalFaceIdx.clear(); // number of vertices
         for (const auto& e : Dune::elements(gridGeometry->gridView())) {
             int eIdx = gridGeometry->elementMapper().index(e);
             int gIdx = cellIdx->index(e);
@@ -987,7 +991,8 @@ public:
     }
     std::vector<std::vector<std::vector<double>>> inSources;//[time][cellidx][eqIdx]
     std::vector<std::vector<std::vector<double>>> inFluxes;//[time][cellidx][eqIdx]
-    std::vector<double> inFluxes_time;
+    std::vector<std::vector<int>> face2CellIds;
+	std::vector<double> inFluxes_time;
     std::vector<double> inFluxes_ddt;
 	
     virtual void reset() {
@@ -1019,11 +1024,11 @@ public:
 		std::vector<double> f10c_row(numComp_);
 		std::vector<std::vector<double>> flux_10c(flux_10c_.size(), f10c_row);
 		
-		for(int cellIdx = 0; cellIdx < flux_10c.size(); cellIdx ++)
+		for(int faceIdx = 0; faceIdx < flux_10c.size(); faceIdx ++)
 		{
 			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
 			{
-				flux_10c.at(cellIdx).at(eqIdx) = flux_10c_.at(cellIdx)[eqIdx];
+				flux_10c.at(faceIdx).at(eqIdx) = flux_10c_.at(faceIdx)[eqIdx];
 			}
 		}
 		return flux_10c;
@@ -1077,10 +1082,13 @@ protected:
     virtual void doSaveBC(double ddt_current) {}
     
     void doSaveInnerFluxesAndSources(double ddt_current) {
-        std::vector<std::vector<double>> inFluxes_i = getFlux_10c();
-        std::vector<std::vector<double>> inSources_i = getSource_10c();
+		//need to save it per face and not per cell i think (for when we have mpi)
+        std::vector<std::vector<double>> inFluxes_i = getFlux_10c();//per face
+        std::vector<int> face2CellId_i = idxScv4FluxScv_10c();//per face
+        std::vector<std::vector<double>> inSources_i = getSource_10c();//per cell
 		
 		inSources.push_back(inSources_i);
+        face2CellIds.push_back(face2CellId_i);
         inFluxes.push_back(inFluxes_i);
         //inFluxes_time.push_back(currentTime );
         inFluxes_ddt.push_back(ddt_current);
@@ -1089,6 +1097,11 @@ protected:
 	
 	void virtual resetSetFaceFlux(){}
 	
+	virtual std::vector<int> idxScv4FluxScv_10c()
+	{
+		std::vector<int> face2CellId;
+		return face2CellId;
+	}
 	virtual std::vector<NumEqVector> getProblemFlux_10c()
 	{
 		std::vector<NumEqVector> flux_10c_;
@@ -1103,6 +1116,7 @@ protected:
     void clearInnerFluxesAndSources() {    
         inSources.clear();
         inFluxes.clear();
+		face2CellIds.clear();
         inFluxes_time.clear();
         inFluxes_ddt.clear();
     }
@@ -1166,6 +1180,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("reportParams", &Solver::reportParams)
             .def("printParams", &Solver::printParams)
             // members
+			.def_readonly("face2CellIds", &Solver::face2CellIds)
             .def_readonly("inSources", &Solver::inSources) // read only
             .def_readonly("inFluxes", &Solver::inFluxes) // read only
             .def_readonly("inFluxes_time", &Solver::inFluxes_time) // read only
