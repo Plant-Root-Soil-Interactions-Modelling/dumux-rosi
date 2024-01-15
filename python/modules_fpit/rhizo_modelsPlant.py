@@ -116,7 +116,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.eidx = np.array([], dtype=np.int64)
         # additional variables
         self.last_dt = 0.
-        self.sumDiff1d3dCW_relBU = np.full(self.numComp+2, 0.)
+        self.sumDiff1d3dCW_relOld = np.full(self.numComp+2, 0.)
         self.diff1d3dCurrant_rel = 0.
 
     def reset(self):
@@ -626,7 +626,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      diff1d3dCW_abs_lim = None,
                               verbose_ = False,
                               takeFlux=True):#would need to do it for each cell, not overall?
-        verbose =True# verbose_
+        verbose = verbose_
         if verbose:
             print("checkMassOMoleBalance2", rank)
         if diff1d3dCW_abs_lim is None:
@@ -694,9 +694,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     else:
                         sourceWat_ = 0
                         
-                    if False:
-                        print("in water",rank, cellId, 'wat_total',wat_total,'wat_rhizo',  wat_rhizo, sourceWat_ * dt , idCyls , localIdCyls )    
-                    #print(cellId, 0,wat_total , sourceWat_ * dt , wat_rhizo, wat_rhizo_)
+                    #print("checkMassOMoleBalance_water",
+                    #        cellId, 0,wat_total , sourceWat_ * dt , wat_rhizo, wat_rhizo_)
                     diff1d3dCW_abs = abs(wat_total+ sourceWat_ * dt - wat_rhizo)
                     self.all1d3dDiff[cellId] = diff1d3dCW_abs
                     diff1d3dCW_rel = abs(diff1d3dCW_abs/(wat_total+ sourceWat_ * dt) *100)
@@ -706,6 +705,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[0] = max(self.maxDiff1d3dCW_abs[0], diff1d3dCW_abs)
                     self.maxDiff1d3dCW_rel[0] = max(self.maxDiff1d3dCW_rel[0], diff1d3dCW_rel)
+                    if False:
+                        print("in water",rank, cellId, 'wat_total',wat_total,'wat_rhizo',  wat_rhizo,'diff',diff1d3dCW_abs, diff1d3dCW_rel,'max', self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0])# , idCyls , localIdCyls )    
                     if diff1d3dCW_abs > diff1d3dCW_abs_lim:#1e-10 :
                         print("checkMassOMoleBalance2error")
                         print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat_, dt)
@@ -2067,6 +2068,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     botVal_mucil = proposed_inner_fluxes_mucil[gId]
                 else:
                     botVal_mucil = proposed_inner_fluxes_mucil
+                    
                 if not isinstance(proposed_outer_fluxes_mucil,float):  # [mol/day]
                     topVal_mucil = proposed_outer_fluxes_mucil[gId]
                 else:

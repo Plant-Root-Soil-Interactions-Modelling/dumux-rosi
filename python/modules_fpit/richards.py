@@ -540,36 +540,38 @@ class RichardsWrapper(SolverWrapper):
         #    return self.getCSS1_out_real()
         
     def getContentCyl(self,idComp, isDissolved,gId = None ):
-        assert self.dimWorld != 3
-        assert idComp > 0 # do not use for water content
-        vols = self.getCellVolumes() /1e6#/ 1e4 * length / 100 #m3 scv
-        
-        if idComp <= self.numComp:
-            C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
-        elif (idComp == (self.numComp +1)):
-            C_ = self.getCSS1_out() *1e6#  mol C / m3 scv
-            #print('getCSS1_out_th',self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp)
-        else:
-            print('wrong idComp', idComp)
-            raise Exception
-        
-        
-        try:
-            assert (C_ >= 0.).all()
-        except:
-            print('getContentCyl',idComp, isDissolved, vols, C_)
-            raise Exception
+        return self.getContent(idComp, isDissolved)
+        if False:
+            assert self.dimWorld != 3
+            assert idComp > 0 # do not use for water content
+            vols = self.getCellVolumes() /1e6#/ 1e4 * length / 100 #m3 scv
             
-        if not isDissolved:
-            if ((self.useMoles) and (idComp != (self.base.numComp()))):
-                C_ *= self.bulkDensity_m3 #mol/m3 scv
-            return np.multiply(vols , C_  ) # mol
+            if idComp <= self.numComp:
+                C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
+            elif (idComp == (self.numComp +1)):
+                C_ = self.getCSS1_out() *1e6#  mol C / m3 scv
+                #print('getCSS1_out_th',self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp)
+            else:
+                print('wrong idComp', idComp)
+                raise Exception
             
-        watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
-        if self.useMoles:
-            C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
-        #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
-        return np.multiply(np.multiply(vols , watCont) , C_ )
+            
+            try:
+                assert (C_ >= 0.).all()
+            except:
+                print('getContentCyl',idComp, isDissolved, vols, C_)
+                raise Exception
+                
+            if not isDissolved:
+                if ((self.useMoles) and (idComp != (self.base.numComp()))):
+                    C_ *= self.bulkDensity_m3 #mol/m3 scv
+                return np.multiply(vols , C_  ) # mol
+                
+            watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
+            if self.useMoles:
+                C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
+            #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
+            return np.multiply(np.multiply(vols , watCont) , C_ )
         
     def phaseDensity(self, isDissolved):# mol / m3
         if isDissolved: #mol wat / m3 wat
@@ -580,6 +582,7 @@ class RichardsWrapper(SolverWrapper):
     def getFlux_10c(self):
         flux10c = self.allgatherv(self.getFlux_10c_(), keepShape =True) #TODO: check that gathergin works  
         face2CellIds = self.allgatherv(self.getFace2CellIds_(), keepShape =True)
+        
 
         #flux10c_ = flux10c[0]
         face2CellIds = face2CellIds.transpose((1,0))
@@ -710,7 +713,7 @@ class RichardsWrapper(SolverWrapper):
         return C_ /1e6 #mol/cm3 scv
         
     def getContent(self,idComp, isDissolved):
-        assert self.dimWorld != 1
+        #assert self.dimWorld != 1
         assert idComp > 0 # do not use for water content
         vols = (1/  1e6)*self.getCellVolumes()#.flatten() #m3 scv            
         

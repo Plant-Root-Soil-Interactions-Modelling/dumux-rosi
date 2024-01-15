@@ -52,7 +52,7 @@ p_mean = -100
 css1Function_ = 8
 paramIndx = 1640
 dt = 1./3./24.
-times = np.array([0.,dt,dt*2])  # days
+times = np.array([0.,dt])#,dt*2])  # days
 #s3d, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
 #                min_b, max_b, cell_number, 
 demoType = mode
@@ -63,13 +63,15 @@ noAds = True
 
 s=RichardsNoMPIWrapper(Richards10CCylFoam(), usemoles)
 
+s.dirResults = dirResults
+
    
 r_in = 0.02
 r_out = 0.2
 paramIdx = 1640
 s.initialize()
 
-stf.setShape1D(s,r_in, r_out,length = 1.,nCells = 10,doLogarithmic=False)
+stf.setShape1D(s,r_in, r_out,length = 1.,nCells = 10,doLogarithmic=True)
 
 stf.setDefault(s)
 s.setParameter("Newton.MaxSteps", "200")
@@ -84,10 +86,11 @@ stf.getBiochemParam(s,paramIndx,noAds)
 stf.setBiochemParam(s)
 stf.setIC(s,paramIndx)
 s.win = 0.; s.exudl_in = 0.
-s.exuds_in =1e-6#02;#( 0.00205364944098248+0.0173749033084651)
-stf.setBC1D(s)
+s.exuds_in =0.2;#( 0.00205364944098248+0.0173749033084651)
 
-s.initializeProblem()
+stf.setBC1D(s)
+s, __ = stf.setupOther(s, css1Function, p_mean_)
+#s.initializeProblem()
 print('get length')
 l = s.segLength
 s.Qexud = s.exuds_in * (2 * np.pi * r_in * s.segLength)

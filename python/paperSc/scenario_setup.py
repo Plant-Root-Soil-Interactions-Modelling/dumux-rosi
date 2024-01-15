@@ -256,15 +256,16 @@ def setIC(s, paramIdx, ICcc = None):
         C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
-        CSS2_init = 0.*s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
+        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        s.ICcc = np.array([C_S *unitConversion*0,
-                           C_L*unitConversion*0.,
-                            9.16666666666667e-07* unitConversion*0.,
-                            8.33333333333333e-06* unitConversion*0.,
-                            8.33333333333333e-07* unitConversion*0.,
-                            8.33333333333333e-06* unitConversion*0.,
-                            CSS2_init*unitConversion,
+        addedVar = 1.
+        s.ICcc = np.array([C_S *unitConversion*addedVar,
+                           C_L*unitConversion*addedVar,
+                            9.16666666666667e-07* unitConversion*addedVar,
+                            8.33333333333333e-06* unitConversion*addedVar,
+                            8.33333333333333e-07* unitConversion*addedVar,
+                            8.33333333333333e-06* unitConversion*addedVar,
+                            CSS2_init*unitConversion*addedVar,
                            0.])# in mol/m3 water or mol/m3 scv
     else:
         s.ICcc = ICcc
@@ -315,7 +316,18 @@ def setSoilParam(s,paramIdx):
     s.setVGParameters([s.soil])
     return s
 
-def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, times = None, 
+def create_soil_model3D(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
+                    times = None, 
+                        net_inf = None, usemoles = True, dirResults = "",
+                      #"./results/parallel"+str(max_rank)+"/",
+                        p_mean_ = -100,css1Function = 0,paramIndx =0,
+                     noAds = False, ICcc = None):
+    create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
+                    times , net_inf , usemoles , dirResults,
+                        p_mean_,css1Function,paramIndx ,
+                     noAds , ICcc )
+def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
+                    times = None, 
                         net_inf = None, usemoles = True, dirResults = "",
                       #"./results/parallel"+str(max_rank)+"/",
                         p_mean_ = -100,css1Function = 0,paramIndx =0,
@@ -347,6 +359,9 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     cell_number_ = cell_number
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)   
+    
+    s.setParameter("Problem.reactionExclusive", "1")
+
     s, s.vg_soil = setupOther(s, css1Function, p_mean_)
     return s, s.vg_soil
     
@@ -359,17 +374,21 @@ def setShape1D(s,r_in, r_out,length,nCells = 10, doLogarithmic=True):
     s.r_out = r_out
     if doLogarithmic:
         s.points = np.logspace(np.log(r_in) / np.log(logbase), np.log(r_out) / np.log(logbase), nCells, base = logbase)
-        s.createGrid1d(s.points)
-        nCells -= 1
+        
     else:
-        s.createGrid([r_in], [r_out], [nCells])  # [cm]
+        s.points = [r_in + (r_out - r_in)/(nCells-1) * i for i in range(nCells) ]
+        
+    s.createGrid1d(s.points)
+    nCells -= 1
     s.setParameter( "Soil.Grid.Cells", str(nCells))
     s.setParameter( "Problem.segLength", str(length))
     return s
 def setBC1D(s):
     
-    s.setOuterBC("constantFluxCyl", 0.)  #  [cm/day]
-    s.setInnerBC("constantFluxCyl", s.win)  #  [cm/day]
+    #s.setOuterBC("constantFluxCyl", 0.)  #  [cm/day]
+    #s.setInnerBC("constantFluxCyl", s.win)  #  [cm/day]
+    s.setInnerBC("fluxCyl",  s.win)  # [cm/day] #Y 0 pressure?
+    s.setOuterBC("fluxCyl",0.)
     
     s.setParameter( "Soil.BC.Bot.C1Type", str(3))
     s.setParameter( "Soil.BC.Top.C1Type", str(3))
@@ -394,29 +413,41 @@ def setupOther(s, css1Function, p_mean_):
 
 
     #cell_number = str(cell_number) 
-    s.setParameter("Problem.reactionExclusive", "1")
-
     # BC
-    s.setTopBC("noFlux")
-    s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
+    if s.dimWorld == 1:
+        s.setParameter("Soil.IC.P", s.dumux_str(p_mean_))
+        s.setInnerBC("fluxCyl",  s.win)  # [cm/day] #Y 0 pressure?
+        s.setOuterBC("fluxCyl", 0.)
+    if s.dimWorld == 3:
+        s.setTopBC("noFlux")
+        s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
+        indxFluxSolute = 2
+        # elif s.dimWorld == 1:
+            # s.setInnerBC("fluxCyl", 0.)  # [cm/day] #Y 0 pressure?
+            # s.setOuterBC("fluxCyl", 0.)
+            # indxFluxSolute = 3
+            # 
+        # else:
+            # raise Exception
     
-    for i in range(1, s.numComp+1):
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
-        s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
-        s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
+        for i in range(1, s.numComp+1):
+            s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(indxFluxSolute))
+            s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(indxFluxSolute))
+            s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
+            s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
         
         
     
     # IC
-    if isinstance(p_mean_,(int,float)):
-        #print('set pmean float',p_mean_)
-        s.setHomogeneousIC(p_mean_, equilibrium = True)  # cm pressure head
-    elif isinstance(p_mean_,type(np.array([]))):
-        pass
-    else:
-        print(type(p_mean_))
-        raise Exception
+    if s.dimWorld == 3:
+        if isinstance(p_mean_,(int,float)):
+            #print('set pmean float',p_mean_)
+            s.setHomogeneousIC(p_mean_, equilibrium = True)  # cm pressure head
+        elif isinstance(p_mean_,type(np.array([]))):
+            pass
+        else:
+            print(type(p_mean_))
+            raise Exception
         
     s.initializeProblem()
     
@@ -490,7 +521,7 @@ def setupOther(s, css1Function, p_mean_):
                     ' solidMolDensity', s.solidMolDensity, 
                     "Soil.css1Function", str(s.css1Function)],dtype=object) 
 
-    name2 = s.dirResults+ "soil3dParams"+ '.csv'
+    name2 = s.dirResults+ "soil"+str(s.dimWorld)+"dParams"+ '.csv'
     space ="\n"
     if rank == 0:
         with open(name2, 'a') as log:

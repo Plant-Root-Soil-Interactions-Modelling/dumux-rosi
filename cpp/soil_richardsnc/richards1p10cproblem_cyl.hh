@@ -191,6 +191,11 @@ public:
 			
 			DUNE_THROW(Dune::InvalidStateException, "setFaceFlux");			
 		}
+		//if(dimWorld == 1)
+		//{
+		//	double scvf_area = 2 * M_PI * scvf.center
+		//	const_cast<NumEqVector&>(input) = input * scvf_area;
+		//}
 		const_cast<NumEqVector&>(FluxScvf_10c.at(index_scvf) ) = input;//.at(local_index_scv)
 		const_cast<int&>(idxScv4FluxScv_10c.at(index_scvf) ) = index_scv;//.at(local_index_scv)
 	}

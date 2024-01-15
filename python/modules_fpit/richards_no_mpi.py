@@ -225,18 +225,20 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
         
         
-    def distributeSources(self, source, eqIdx, numFluidComp: int):
+    def distributeSources(self, source, eqIdx, numFluidComp: int, selectCell = None):
         """ split the source array according to the values in seg cells """
         splitVals = list()
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
-            splitVals.append(self.distributeSource( src, eqIdx[i], numFluidComp))
+            splitVals.append(self.distributeSource( src, eqIdx[i], numFluidComp, selectCell))
         return np.array(splitVals, dtype = object)
             
-    def distributeSource(self, source: float, eqIdx: int, numFluidComp: int):
+    def distributeSource(self, source: float, eqIdx: int, numFluidComp: int, selectCell = None):
         assert self.dimWorld != 3
-        length = self.segLength
+        #length = self.segLength
         verbose = False
-        splitVals = self.distributeVals(source, eqIdx, numFluidComp)
+        splitVals = self.distributeVals(source, eqIdx, numFluidComp, selectCell)
+        
+        
         if source != 0.:# [cm3/day] or [mol/day]
             test_values = list(splitVals.copy())
             test_keys = np.array([i for i in range(len(test_values))])
@@ -253,40 +255,44 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
         return splitVals
     
-    def distributeVals(self, source: float, eqIdx: int, numFluidComp: int):
+    def distributeVals(self, source: float, eqIdx: int, numFluidComp: int, selectCell = None):
         splitVals = np.array([0.])
         verbose = False
         if source != 0.:# [cm3/day] or [mol/day]
-            if eqIdx == 0:
-                seg_values = self.getWaterVolumes()#getWaterVolumesCyl(length)
+            if selectCell == None:
+                if eqIdx == 0:
+                    seg_values = self.getWaterVolumes()#getWaterVolumesCyl(length)
+                else:
+                    isDissolved = (eqIdx <= numFluidComp)
+                    seg_values = self.getContentCyl(eqIdx, isDissolved)
+                # during the solve() loop, we might still get seg_values <0 <== NO! when we distribute, need vals > 0
+                # assert min(seg_values) >= 0.
+                #print('distributeVals',eqIdx,'real seg_values',seg_values)
+                seg_values = np.maximum(seg_values,0.)
+
+                if (sum(seg_values) == 0.):# should normally only happen with source >= 0
+                    weightVals =np.full(len(seg_values), 1 /len(seg_values))
+                elif source < 0:# goes away from the 1d models
+                    weightVals = seg_values /sum(seg_values)
+                    if verbose:
+                        print("sum(seg_values[segIds])", seg_values, weightVals)
+                else:# goes toward  the 1d models
+                    if min(abs(seg_values)) == 0.:# at least 1 seg_values = 0 but not all
+                        seg_values = np.maximum(seg_values,1.e-14)
+                        assert min(abs(seg_values)) != 0.
+                    weightVals = (1 / seg_values) / sum(1/seg_values)
             else:
-                isDissolved = (eqIdx <= numFluidComp)
-                seg_values = self.getContentCyl(eqIdx, isDissolved)
-            # during the solve() loop, we might still get seg_values <0 <== NO! when we distribute, need vals > 0
-            # assert min(seg_values) >= 0.
-            #print('distributeVals',eqIdx,'real seg_values',seg_values)
-            seg_values = np.maximum(seg_values,0.)
-
-            if (sum(seg_values) == 0.):# should normally only happen with source >= 0
-                weightVals =np.full(len(seg_values), 1 /len(seg_values))
-            elif source < 0:# goes away from the 1d models
-                weightVals = seg_values /sum(seg_values)
-                if verbose:
-                    print("sum(seg_values[segIds])", seg_values, weightVals)
-            else:# goes toward  the 1d models
-                if min(abs(seg_values)) == 0.:# at least 1 seg_values = 0 but not all
-                    seg_values = np.maximum(seg_values,1.e-14)
-                    assert min(abs(seg_values)) != 0.
-                weightVals = (1 / seg_values) / sum(1/seg_values)
-
+                assert isinstance(selectCell, int) and (selectCell >= 0) and (selectCell < self.numberOfCellsTot)
+                weightVals = np.zeros(self.numberOfCellsTot)
+                weightVals[selectCell] = 1.
             splitVals = weightVals * source
             try:
                 assert (sum(weightVals) - 1.) < 1e-13
-                assert len(splitVals) == len(seg_values)
+                assert len(splitVals) == self.numberOfCellsTot
             except:
                 print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals),(sum(weightVals) - 1.) ,(sum(weightVals) - 1.) < 1e-13)
-                print('splitVals',splitVals, seg_values, len(splitVals) == len(seg_values))
+                print('splitVals',splitVals, self.numberOfCellsTot, len(splitVals) == self.numberOfCellsTot)
                 raise Exception
             if verbose:
-                print(rank,'distributeVals',eqIdx,'seg_values',seg_values,'splitVals',splitVals)   
+                print(rank,'distributeVals',eqIdx,'splitVals',splitVals)   
         return splitVals

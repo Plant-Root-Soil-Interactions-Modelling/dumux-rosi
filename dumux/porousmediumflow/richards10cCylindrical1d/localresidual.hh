@@ -283,6 +283,7 @@ public:
 					// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())
 					//see @dumux/flux/box/darcyslaw.h (flux())
 					// gives upwindTerm() * Ks [m/s] * dp [Pa] ==> kg_a / s
+					// [kg_a/m^3_h2o] / [Pa*s] * Ks [m/s] * dp [Pa] ==>  
 					auto advF = fluxVars.advectiveFlux(phaseIdx, upwindTerm);
 					//std::cout<<"advF "<<advF<<std::endl;
                     flux[eqIdx] += (advF*scvf.center()[0])/b; //
@@ -344,7 +345,8 @@ public:
 			// }else{
 				// problem.setFaceFlux(flux*0, 1, -1, scvf.index());//dummy value to know it s a boundary
 			// }
-			problem.setFaceFlux(flux/scvf.center()[0], insideScvDofIndex, scvf.index());//localscvIdx, 
+			double scvf_area = 2 * M_PI * scvf.center()[0] * problem.segLength;//m2
+			problem.setFaceFlux(flux/scvf.center()[0]*scvf_area, insideScvDofIndex, scvf.index());//localscvIdx, 
 			// added in dumux/assembly/cclocalresidual::evalFlux:
 			// residual[localScvIdx] += evalFlux(...)
 		}
