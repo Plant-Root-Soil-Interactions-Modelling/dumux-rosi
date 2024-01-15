@@ -1,8 +1,37 @@
+
+from __future__ import print_function
+
+try:
+    import __builtin__
+except ImportError:
+    import builtins as __builtin__
+
+def print(*args, **kwargs):
+    """My custom print() function."""
+    __builtin__.print('your text')
+    sys.stdout.flush()
+    __builtin__.print(*args, **kwargs)
+    sys.stdout.flush()
+
+import sys;
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.interpolate import griddata
 from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
+import os
+
+def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False , writemode = 'a'):
+    np.array(data).reshape(-1)
+    try:
+        if (rank == 0) or allranks:
+            name2 = directory_+ name+ fileType
+            #print('write_file_array',name)
+            with open(name2, writemode) as log:
+                log.write(space.join([num for num in map(str, data)])  +'\n')
+    except:
+        print(name, data,data.shape)
+        raise Exception
 
 
 class SolverWrapper():
@@ -27,6 +56,7 @@ class SolverWrapper():
         self.densityWat_m3 = 1e6 #[g/m3]
         # [mol/m3] = [g/m3] /  [g/mol] 
         self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
+        self.results_dir = "./results/"
         
 
     def initialize(self, args_ = [""], verbose = False):
@@ -48,7 +78,7 @@ class SolverWrapper():
         self.base.setVerbose(verbose)
         
     
-    def allgatherv(self,X_rhizo): 
+    def allgatherv(self,X_rhizo, X_rhizo_type_default = float): 
         try:
             assert isinstance(X_rhizo, (list, type(np.array([]))))
         except:
@@ -67,7 +97,10 @@ class SolverWrapper():
             local_size = (X_rhizo).shape[0]
             shape0 = (X_rhizo).shape[0]
             shape1 = 0
-            X_rhizo_type = type(X_rhizo[0])
+            if len(X_rhizo) > 0:
+                X_rhizo_type = type(X_rhizo[0])
+            else:
+                X_rhizo_type = X_rhizo_type_default
         else:
             raise Exception 
         
@@ -77,18 +110,34 @@ class SolverWrapper():
         work_size = sum(all_sizes)
         all_X_rhizo = np.zeros(work_size)
 
-        offsets = np.zeros(len(all_sizes))
+        offsets = np.zeros(len(all_sizes), dtype=int)
         offsets[1:]=np.cumsum(all_sizes)[:-1]
         all_sizes =tuple(all_sizes)
         offsets =tuple( offsets)
         # print("offsets",offsets,all_sizes)
-        
+        if rank == 0:
+            test = os.listdir(self.results_dir)
+            for item in test:
+                if "allgather" in item:
+                    try:
+                        os.remove(results_dir+item)
+                    except:
+                        pass
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print('before allgatherv',rank,'all_sizes',all_sizes,
                   'offsets',offsets,'work_size',work_size,#'X_rhizo'X_rhizo,[all_X_rhizo,all_sizes,offsets],
                   'shape0',shape0,'shape1',shape1, '(X_rhizo).shape',(X_rhizo).shape)
             comm.barrier()
+            write_file_array("allgatherData"+str(rank), X_rhizo, space =",", directory_ =self.results_dir, 
+                             fileType = '.txt', allranks = True, writemode='w' )
+            write_file_array("allgatherOffsets"+str(rank), offsets, space =",", directory_ =self.results_dir, 
+                             fileType = '.txt', allranks = True, writemode='w' )
+            write_file_array("allgatherAll_sizes"+str(rank), all_sizes, space =",", directory_ =self.results_dir, 
+                             fileType = '.txt', allranks = True, writemode='w' )
+            write_file_array("allgatherOther"+str(rank), np.array([work_size, shape0,shape1]), space =",", directory_ =self.results_dir, 
+                             fileType = '.txt', allranks = True, writemode='w' )
+            print('let s go to allgatherv', rank)
 
         comm.Allgatherv( [X_rhizo.reshape(-1), MPI.DOUBLE],[all_X_rhizo,all_sizes,offsets,MPI.DOUBLE])
         # print('allgathervB',rank,all_X_rhizo,X_rhizo )
@@ -99,7 +148,7 @@ class SolverWrapper():
         
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()
-            print('allgathervC, after reshape',rank,all_X_rhizo,'shape0',shape0,'shape1',shape1 )
+            print('allgathervC, after reshape',rank,all_X_rhizo.shape,'shape0',shape0,'shape1',shape1 )
             comm.barrier()
         return all_X_rhizo
 
@@ -231,7 +280,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCells", rank)
             comm.barrier()
-        return self._map(self.allgatherv(self.base.getCells()), 2, np.int64)
+        return self._map(self.allgatherv(self.base.getCells(), X_rhizo_type_default = int), 2, np.int64)
 
     def getCells_(self):
         """nompi version of """
@@ -288,7 +337,7 @@ class SolverWrapper():
         if rank > 0:
             return []
         else:
-            return self.allgatherv(self.base.getDofIndices())
+            return self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = int)
 
     def getDofIndices_(self):
         """nompi version of  """
@@ -491,14 +540,20 @@ class SolverWrapper():
         """
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()
-            print("solverbase::_map", rank)
+            print("solverbase::_map", rank, type_)
             comm.barrier()
         if type_ == 0:  # auto (dof)
-            indices = self.allgatherv(self.base.getDofIndices())
+            if (self.mpiVerbose and (size > 1)):
+                print("solverbase::_map_getDofIndices", rank, type_)
+            indices = self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = int)
         elif type_ == 1:  # points
-            indices = self.allgatherv(self.base.getPointIndices())
+            if (self.mpiVerbose and (size > 1)):
+                print("solverbase::_map_getPointIndices", rank, type_)
+            indices = self.allgatherv(self.base.getPointIndices(), X_rhizo_type_default = int)
         elif type_ == 2:  # cells
-            indices = self.allgatherv(self.base.getCellIndices())
+            if (self.mpiVerbose and (size > 1)):
+                print("solverbase::_map_getCellIndices", rank, type_)
+            indices = self.allgatherv(self.base.getCellIndices(), X_rhizo_type_default = int)
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
         if rank == 0:

@@ -1,6 +1,21 @@
 """ 
     Maize using rhizosphere models  
 """
+
+from __future__ import print_function
+
+try:
+    import __builtin__
+except ImportError:
+    import builtins as __builtin__
+
+def print(*args, **kwargs):
+    """My custom print() function."""
+    #__builtin__.print('your text')
+    #sys.stdout.flush()
+    __builtin__.print(*args, **kwargs)
+    sys.stdout.flush()
+    
 import matplotlib; matplotlib.use('agg')
 import sys;
 import os
@@ -37,6 +52,11 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
+#xprint = print
+#def print(*args, **kwargs):
+#    xprint('test new print')
+#    xprint(*args, **kwargs)
+#    sys.stdout.flush()
 
 
 """
@@ -86,11 +106,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/onlyAds"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/hangs"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
-                    +str(max_rank)+"_"+str(abs(p_mean))+"/"
+                    +str(max_rank)+"/"
     
     comm.barrier()
     print('results_dir','DUMUXexudDune27/DUMUX/dumux-rosi/python/paperSc/',results_dir, flush = True)
@@ -123,7 +143,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     min_b = [-5, -5, -10.] 
     max_b = [5, 5, 0.] 
-    cell_number = [1,1,1]#[5,5,20]
+    cell_number = [5,5,20]
     #min_b = [-5., -5, -5.] 
     #max_b = [5., 5, 0.] 
     #cell_number = [5, 5, 5]
@@ -168,7 +188,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                             path, plantType = organism, 
                                             recreateComsol_ = recreateComsol,
                                             usemoles = usemoles,l_ks_ = l_ks,
-                                            limErr1d3d = 5e-13, spellData = spellData)  # pass parameter file for dynamic growth
+                                            limErr1d3d = 5e-13, spellData = spellData,
+                                               dirResults = results_dir)  # pass parameter file for dynamic growth
 
     rs.weightBefore = weightBefore
     rs.SRIBefore = SRIBefore
@@ -650,7 +671,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 raise Exception
 
             Q_Exud_i_seg = np.array( Q_Exud_i[1:] ) #from nod to semgment
-            Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])*0.
+            Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])#*0.
 
             airSegsId = rs.airSegs
             #np.array(list(set(np.concatenate((rs.cell2seg.get(-1),np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground

@@ -1218,10 +1218,23 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                               sum(abs(diffouter_R_bc_sol.reshape(-1))), 
                            r.diff1d3dCurrant,r.diff1d3dCurrant_rel, r.rhizoMassWError_rel,r.err ])
             
+            if r.mpiVerbose or (max_rank == 1):
+                comm.barrier()
+                print("cyl3plant:getWaterVolumesCyl", rank)
+                comm.barrier()
             rhizoWaterPerVoxel = r.getWaterVolumesCyl(doSum = False, reOrder = True)
             
+            if r.mpiVerbose or (max_rank == 1):
+                comm.barrier()
+                print("cyl3plant:getWaterContent", rank)
+                comm.barrier()
             theta3ds = s.getWaterContent()# proposed_outer_mucil_fluxes
-            if  (n_iter % skip == 0) and (rank == 0):
+            
+            if r.mpiVerbose or (max_rank == 1):
+                comm.barrier()
+                print("cyl3plant:GOTWaterContent", rank)
+                comm.barrier()
+            if  (n_iter % skip == 0):# and (rank == 0):
                 write_file_array("fpit_errbulkMass",
                                  np.array([s.bulkMassCErrorPlant_abs,
                                            s.bulkMassCErrorPlant_rel, #not cumulative

@@ -58,13 +58,13 @@ def write_file_float(name, data, directory_, allranks = False):
         with open(name2, 'a') as log:
             log.write(repr( data)  +'\n')
         
-def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
+def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False , writemode = 'a'):
     np.array(data).reshape(-1)
     try:
         if (rank == 0) or allranks:
             name2 = directory_+ name+ fileType
             #print('write_file_array',name)
-            with open(name2, 'a') as log:
+            with open(name2, writemode) as log:
                 log.write(space.join([num for num in map(str, data)])  +'\n')
     except:
         print(name, data,data.shape)
@@ -243,7 +243,7 @@ def setBiochemParam(s):
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.setParameter("Soil.alpha", str(s.alpha*0.)) #[1/d]
+    s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
     return s
 
 def setIC3D(s, paramIdx, ICcc = None):
@@ -253,14 +253,14 @@ def setIC3D(s, paramIdx, ICcc = None):
         C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
-        CSS2_init = 0.*s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
+        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        s.ICcc = np.array([C_S *unitConversion*0.,
-                           C_L*unitConversion*0.,
-                            9.16666666666667e-07* unitConversion*0.,
-                            8.33333333333333e-06* unitConversion*0.,
-                            8.33333333333333e-07* unitConversion*0.,
-                            8.33333333333333e-06* unitConversion*0.,
+        s.ICcc = np.array([C_S *unitConversion,
+                           C_L*unitConversion,
+                            9.16666666666667e-07* unitConversion,
+                            8.33333333333333e-06* unitConversion,
+                            8.33333333333333e-07* unitConversion,
+                            8.33333333333333e-06* unitConversion,
                             CSS2_init*unitConversion,
                            0.])# in mol/m3 water or mol/m3 scv
     else:
@@ -326,7 +326,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     """
     if len(dirResults) == 0:
         dirResults = "./results/parallel"+str(max_rank)+"/"
-    s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
+    s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute   
+    s.results_dir = dirResults
             
     
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
@@ -707,7 +708,7 @@ def setKrKx_phloem(r): #inC
 def create_mapped_plant( nc, logbase, mode,initSim,
                 min_b , max_b , cell_number, soil_model, fname, path, 
                 stochastic = False, mods = None, plantType = "plant",l_ks_ = "dx_2",
-                recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11, spellData =None):
+                recreateComsol_ = False, usemoles = True, limErr1d3d = 1e-11, spellData =None,dirResults = ""):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     #global picker  # make sure it is not garbage collected away...
@@ -720,7 +721,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         rs = RhizoMappedSegments( nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed, 
-                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
+                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_, results_dir =dirResults )
     elif fname.endswith(".xml"):
         seed = 1
         weatherInit = weather(initSim,spellData)
@@ -730,7 +731,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         rs = RhizoMappedSegments( nc, logbase, mode, soil_model, 
                                     recreateComsol_, usemoles, seedNum = seed, 
-                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
+                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_, results_dir =dirResults)
 
         rs.setSeed(seed)
         rs.readParameters(path + fname)
