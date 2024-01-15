@@ -356,6 +356,7 @@ class RichardsWrapper(SolverWrapper):
         for cellId, value in source_map.items(): 
             source_map[cellId] = value * unitConversion# / vols[cellId]         
         #mol/s
+        #print('setsource',source_map, eq_idx )
         self.base.setSource(source_map, eq_idx) # 
 
     def applySource(self, dt, source_map, crit_p):
@@ -539,8 +540,7 @@ class RichardsWrapper(SolverWrapper):
         #else:
         #    return self.getCSS1_out_real()
         
-    def getContentCyl(self,idComp, isDissolved,gId = None ):
-        return self.getContent(idComp, isDissolved)
+    def getContentCyl_deprecated(self,idComp, isDissolved,gId = None ):
         if False:
             assert self.dimWorld != 3
             assert idComp > 0 # do not use for water content
@@ -600,8 +600,18 @@ class RichardsWrapper(SolverWrapper):
         #     np.array([flux10c[np.where(face2CellIds == nCell)] for nCell in range(self.numberOfCellsTot)]))
         flux10cCell = np.array([flux10c[np.where(face2CellIds == nCell)].sum(axis=0) for nCell in range(self.numberOfCellsTot)])  
         # print(flux10cCell)
+        flux10cCell = np.transpose(flux10cCell) # [comp][cell]
         if rank == 0:
-            assert flux10cCell.shape == (self.numberOfCellsTot,self.base.numComp() )#numComp + water + css1
+            assert flux10cCell.shape == (self.base.numComp() ,self.numberOfCellsTot)
+        
+        molarMassWat = 18. # [g/mol]
+        densityWat = 1. #[g/cm3]
+        # [mol/cm3] = [g/cm3] /  [g/mol] 
+        molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+        flux10cCell[0] /=  molarDensityWat # mol to cm3 for water 
+        if rank == 0:
+            assert flux10cCell.shape == (self.base.numComp() ,self.numberOfCellsTot)#numComp + water 
+            
         # print('flux shape',flux10cCell.shape)
         #print('getFlux_10c()',flux10cCell)
         return flux10cCell
@@ -665,17 +675,28 @@ class RichardsWrapper(SolverWrapper):
         print('self.base.getDofIndices()',self.base.getDofIndices()[:])
         return inFluxes_tot
         
-    def getSource_10c(self):#, css1_before = None, css1_after = None):
-        src10c =  self._map(self.allgatherv(self.getSource_10c_()), 0)#css1_before, css1_after)), 0) #TODO: check that gathergin works   
+    def getSource_10c(self):
+        src10c =  comm.bcast(self._map(self.allgatherv(self.getSource_10c_()), 0), root = 0)#css1_before, css1_after)), 0) #TODO: check that gathergin works  
+        vols = comm.bcast(self.getCellVolumes(), root = 0)/1e6
+        
+        #print('src10cA',np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)]))
+        src10c = np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)])
+        src10c = np.transpose(src10c) # [comp][cell]
+        #print('src10c',src10c)
+        
+        molarMassWat = 18. # [g/mol]
+        densityWat = 1. #[g/cm3]
+        # [mol/cm3] = [g/cm3] /  [g/mol] 
+        molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+        src10c[0] /=  molarDensityWat # mol to cm3 for water 
         if rank == 0:
-            assert src10c.shape == (self.numberOfCellsTot,self.base.numComp() )#numComp + water + css1
+            assert src10c.shape == (self.base.numComp() ,self.numberOfCellsTot)#numComp + water 
         return src10c
     
     def getSource_10c_(self):#, css1_before = None, css1_after = None):# cm3 or mol
         verbose = False
         inSources = np.array(self.base.inSources) #[ mol / (m^3 \cdot s)] 
         inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
-        vols = self.getCellVolumes()/1e6
         #if self.dimWorld == 1:
         #    vols = self.getCellVolumes()/1e6 # / 1e4 * length / 100 #m3 scv
         #elif self.dimWorld == 3:
@@ -688,8 +709,9 @@ class RichardsWrapper(SolverWrapper):
             except:
                 print('shape failed, inSources',inSources, inSources.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp()))
                 raise Exception
-            
-        inSources_tot = np.array([ np.array([xxx * vols[idc] * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inSources[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+          
+        # inSources_tot = np.array([ np.array([xxx * vols[idc] * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inSources[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+        inSources_tot = np.array([ np.array([xxx * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inSources[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
         
         #inSources_tot = np.array([inFx * inFluxes_ddt[idx] * vols for idx, inFx in enumerate(inSources)]) # cm3 or mol at each dumux sub-time step
         inSources_tot = inSources_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
@@ -698,7 +720,6 @@ class RichardsWrapper(SolverWrapper):
         #    d_css1 = (css1_after - css1_before).reshape(self.numberOfCellsTot,1)
             
         #inSources_tot = np.hstack((inSources_tot,d_css1))
-            
         
         return inSources_tot
             

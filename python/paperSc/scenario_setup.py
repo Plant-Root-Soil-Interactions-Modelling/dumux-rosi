@@ -243,7 +243,7 @@ def setBiochemParam(s):
     s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
-    s.setParameter("Soil.alpha", str(s.alpha*0.)) #[1/d]
+    s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
     return s
 
 def setIC3D(s, paramIdx, ICcc = None):
@@ -286,7 +286,7 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
-    s.MaxRelativeShift = 1e-8
+    s.MaxRelativeShift = 1e-10
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
     s.setParameter("Newton.EnableChop", "true")# force solute mole fraction > 0 and water in possible pressure ranges

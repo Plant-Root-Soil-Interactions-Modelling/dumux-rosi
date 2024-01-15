@@ -329,27 +329,27 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         rs.err = 1.
         max_err = 1.
         rs.diff1d3dCurrant_rel = 1e6
-        def continueLoop(rs,n_iter, dt_inner=np.nan,failedLoop=False,real_dtinner=np.nan,name="continueLoop", isInner = False,doPrint = True, fileType = '.csv' ):
+        def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,real_dtinner: float,name="continueLoop", isInner = False,doPrint = True, fileType = '.csv' ):
             # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
-            n_iter_min = 2
-            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up 
+            n_iter_min = 4
+            cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or failedLoop
                     or (np.floor(rs.diff1d3dCurrant_rel*10.)/10.>0.1) 
                     or (min(rs.new_soil_solute.reshape(-1)) < 0)  
                     or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
             comm.barrier()
-            if mpiVerbose:# or (max_rank == 1):
-                print('continue loop?',rank,n_iter,cL,failedLoop, ' np.floor(rs.err)',
-                np.floor(rs.err),  rs.solve_gave_up,'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, k_iter)
+            if rank == 0:#mpiVerbose:# or (max_rank == 1):
+                print('continue loop?',rank,'n_iter',n_iter,'cL',cL,'failedLoop',failedLoop, ' np.floor(rs.err)',
+                np.floor(rs.err),  'solve_gave_up',rs.solve_gave_up,'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, 'k_iter',k_iter)
             comm.barrier()
             cL = comm.bcast(cL,root = 0)
             failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
             comm.barrier()
-            if mpiVerbose and (max_rank > 1):
-                print('continue loopBis?',rank,cL,failedLoop_)
+            #if mpiVerbose and (max_rank > 1):
+            #    print('continue loopBis?',rank,cL,failedLoop_)
             comm.barrier()
             assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
             

@@ -42,6 +42,12 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getKrw()), 0)
 
+    def getCSS1_out(self):#mol C / cm3 scv
+        return self._map(self.getCSS1_out_(),0)
+
+    def getContentCyl(self,idComp, isDissolved,gId = None ):
+        return self.getContent(idComp, isDissolved)
+
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()

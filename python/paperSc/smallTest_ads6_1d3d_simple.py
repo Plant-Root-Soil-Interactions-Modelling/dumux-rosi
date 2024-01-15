@@ -52,9 +52,9 @@ else:
 usemoles = True
 #s = RichardsWrapper(Richards10CCylFoam(), usemoles)
 year = 2013
-min_b = [-0, -0, -5.] 
-max_b = [5, 5, 0.] 
-cell_number = [2,2,2]
+min_b =np.array( [-0, -0, -5.] )/2
+max_b = np.array([5, 5, 0.] )/2
+cell_number = [2,1,1]
 soil_type = "loam"
 genotype = "WT"
 comp = "phenolics"
@@ -65,7 +65,7 @@ p_mean = -100
 css1Function_ = 8
 paramIdx = 1640
 dt = 1./24.
-times = np.array([dt*i for i in range(5)])  # days
+times = np.array([dt*i for i in range(2)])  # days
 noAds_ = False
 
 s, soil = stf.create_soil_model(soil_type, year, soil_,#comp, 
@@ -110,10 +110,11 @@ stf.setSoilParam(s1d,paramIndx)
 stf.getBiochemParam(s1d,paramIndx,noAds_)
 stf.setBiochemParam(s1d)
 stf.setIC(s1d,paramIndx)
-s1d.win = 0.; s1d.exudl_in = 0.
+s1d.win = -1.; 
+s1d.exudl_in = 0.
 s1d.exuds_in =1e-3
 stf.setBC1D(s1d)
-p_mean_ = s.getSolutionHead()[cell2rhizoId]
+p_mean_ = comm.bcast(s.getSolutionHead(), root = 0)[cell2rhizoId]
 s1d, __ = stf.setupOther(s1d, css1Function, p_mean_)
 #s1d.Qexud = s1d.exuds_in * (2 * np.pi * r_in * s1d.segLength)
 s1d.proposed_inner_fluxes = s1d.win* (2 * np.pi * r_in * s1d.segLength)
@@ -127,8 +128,8 @@ s.outer_R_bc_wat = np.array([0. for i in range(len(cell_volumes))] )
 s.outer_R_bc_sol = np.array([np.array([0. for i in range(len(cell_volumes))]) for i in range(s.numComp+1)])
 
 cellIds = np.array([i for i in range(len(cell_volumes))])
-mol_total_ = [s.getContent(idComp, idComp <= 2)[cell2rhizoId]  for  idComp in range(1,s.numComp+2) ]# solute content [mol].
-wat_total_ = s.getWaterVolumes()
+mol_total_ = [comm.bcast(s.getContent(idComp, idComp <= 2), root = 0)[cell2rhizoId]  for  idComp in range(1,s.numComp+2) ]# solute content [mol].
+wat_total_ = comm.bcast(s.getWaterVolumes(), root = 0)
 print(wat_total_[cell2rhizoId], sum(s1d.getWaterVolumesCyl()))
 
 if False:
@@ -168,7 +169,7 @@ def solve1d(s1d):
     s1d.ddt =min( 1.e-5,s1d.ddt)
     
     QflowIn = s1d.proposed_inner_fluxes 
-    qIn = QflowIn/ (2 * np.pi *s1d.r_in * s1d.segLength) # [cm3/day] -> [cm /day]
+    qIn = s1d.win#QflowIn/ (2 * np.pi *s1d.r_in * s1d.segLength) # [cm3/day] -> [cm /day]
     QflowOut = s1d.proposed_outer_wat_fluxes
     qOut = s1d.distributeSource(QflowOut, 0,s1d.numFluidComp)
     s1d.setInnerFluxCyl(qIn)  
@@ -206,7 +207,9 @@ def solve1d(s1d):
     
     print('solve 1d', s1d.simTime)
     
+    s1d.buTotWBeforeEach1d = comm.bcast(s1d.getWaterVolumes(), root = 0) 
     s1d.buTotCBeforeEach1d =  comm.bcast(s1d.getTotCContent_each(), root = 0) 
+    
     s1d.solve(dt, maxDt = 250./(24.*3600.))
     Q_in_m, Q_out_m = s1d.getSavedBC(s1d.r_in,s1d.r_out)     
     #QflowIn_limited = Q_in_m[0]
@@ -216,8 +219,8 @@ def solve1d(s1d):
 
 def setSource(s, s1d):
 
-    water_content = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
-    soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
+    # water_content = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
+    soil_water = comm.bcast( np.array(s.getWaterVolumes()),root= 0)  # np.multiply(water_content, cell_volumes)  # water per cell [cm3]
     soil_solute_content = comm.bcast(np.array([np.array(
         s.getContent(i+1, isDissolved = (i < s.numFluidComp))) for i in range(s.numComp+1)]),
                                         root = 0) # mol
@@ -236,7 +239,7 @@ def setSource(s, s1d):
     assert soil_sources_limited.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
     
     
-    
+    #print('soil_sources_limited',soil_sources_limited)
     for idComp in range(s.numComp+1):#cm3/day, mol/day
                 
         SSL = soil_sources_limited[idComp].copy()
@@ -277,9 +280,15 @@ def setSource(s, s1d):
             write_file_array("setsourceLim1_"+str(idComp),  soil_sources_limited[idComp], 
                              directory_ =results_dir, fileType =".csv") 
             write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
-            #print('res',soil_sources_limited[idComp],res)
+            # print('res',soil_sources_limited[idComp],res)
             s.setSource(res.copy(), eq_idx = idComp)  # [mol/day], in modules/richards.py
 
+
+buTotWAfterEach = comm.bcast(s.getWaterVolumes(), root = 0) 
+buTotWAfterEach_cell = buTotWAfterEach[cell2rhizoId]
+buTotWAfterEach1d = comm.bcast(s1d.getWaterVolumes(), root = 0) 
+print('diff init',buTotWAfterEach_cell,sum(buTotWAfterEach1d))
+print('diff init Vol',comm.bcast(s.getCellVolumes(), root = 0)[cell2rhizoId],sum(s1d.getCellVolumes()))
 
 for i, dt in enumerate(np.diff(times)):
     s1d.n_iter = 0
@@ -312,18 +321,22 @@ for i, dt in enumerate(np.diff(times)):
         
         print('solve 3d')
             
+        
+        buTotWBeforeEach = comm.bcast(s.getWaterVolumes(), root = 0)     
         buTotCBeforeEach =  comm.bcast(s.getTotCContent_each(), root = 0) 
         s.solve(  dt, maxDt = 250./(24.*3600.))
 
-        outer_R_bc = -np.transpose(s.getFlux_10c())# mol
-        bulkSoil_sources = np.transpose(s.getSource_10c()) 
+        outer_R_bc = s.getFlux_10c()# mol
+        bulkSoil_sources = s.getSource_10c() 
         
-        if rank == 0:
-            s.outer_R_bc_wat = outer_R_bc[0]
-            s.outer_R_bc_sol = outer_R_bc[1:]# mol
+        if True: #rank == 0:
+            s.outer_R_bc_wat = -outer_R_bc[0]
+            # print('s.outer_R_bc_wat',s.outer_R_bc_wat)
+            s.outer_R_bc_sol = -outer_R_bc[1:]# mol
+            s.sources_wat =  bulkSoil_sources[0] #mol
             s.sources_sol =  bulkSoil_sources[1:] #mol
-            print('outer_R_bc_sol',#outer_R_bc_sol,
-                s.outer_R_bc_sol[0])#,'css1Flow',css1Flow[-1])
+            # print('outer_R_bc_sol',#outer_R_bc_sol,
+            #   s.outer_R_bc_sol[0])#,'css1Flow',css1Flow[-1])
             s.outer_R_bc_sol = np.vstack([s.outer_R_bc_sol, s.outer_R_bc_sol[0]*0.]) #add dummy val for css1
             s.sources_sol = np.vstack([s.sources_sol, s.sources_sol[0]*0.]) #add dummy val for css1
             assert s.outer_R_bc_sol.shape == (s.numComp+1, s.numberOfCellsTot)
@@ -334,25 +347,32 @@ for i, dt in enumerate(np.diff(times)):
         
         ## err3d
         buTotCAfterEach = comm.bcast(s.getTotCContent_each(), root = 0) 
-        if rank == 0:
+        if True: #rank == 0:
             print('buTotCAfterEach',buTotCAfterEach[[0,-1]])
             print('buTotCBefore',sum(buTotCBeforeEach.flatten()),
                 'buTotCAfter',sum(buTotCAfterEach.flatten()),
                 's.sources_sol',sum(s.sources_sol.flatten()),
-                'diff',sum(buTotCAfterEach.flatten()) - sum(buTotCBeforeEach.flatten()) - sum(s.sources_sol.flatten()))
+                'diff',sum(buTotCAfterEach.flatten()) - sum(buTotCBeforeEach.flatten()) - sum(s.sources_sol.flatten()) \
+                - sum(s.outer_R_bc_sol.reshape(-1)))
         
-            s.bulkMassCError1dsAll_real = buTotCAfterEach - (buTotCBeforeEach +  s.sources_sol + s.outer_R_bc_sol )
+            s.bulkMassCError3dsAll_real = buTotCAfterEach - (buTotCBeforeEach +  s.sources_sol + s.outer_R_bc_sol )
             
-            print('s.bulkMassCError1dsAll_real_A',#s.bulkMassCError1dsAll_real, 
-                    'cs',s.bulkMassCError1dsAll_real[0],
-                   'css1', s.bulkMassCError1dsAll_real[-1], 
-                   'cstot',s.bulkMassCError1dsAll_real[0] + s.bulkMassCError1dsAll_real[-1])#.flatten())
-            s.bulkMassCError1dsAll_real[0] += s.bulkMassCError1dsAll_real[-1]#put together CS and CSS1
-            s.bulkMassCError1dsAll_real[-1][:] = 0.
-            obj.err3d =abs( sum(s.bulkMassCError1dsAll_real.flatten())/sum(buTotCAfterEach.flatten()))
-            print('s.bulkMassCError1dsAll_real_B',s.bulkMassCError1dsAll_real[0],
-                    sum(s.bulkMassCError1dsAll_real.flatten()),'rel',obj.err3d)
-            
+            print('s.bulkMassCError3dsAll_real_A',#s.bulkMassCError3dsAll_real, 
+                    'cs',s.bulkMassCError3dsAll_real[0],
+                   'css1', s.bulkMassCError3dsAll_real[-1], 
+                   'cstot',s.bulkMassCError3dsAll_real[0] + s.bulkMassCError3dsAll_real[-1])#.flatten())
+            s.bulkMassCError3dsAll_real[0] += s.bulkMassCError3dsAll_real[-1]#put together CS and CSS1
+            s.bulkMassCError3dsAll_real[-1][:] = 0.
+            obj.err3d =abs( sum(s.bulkMassCError3dsAll_real.flatten())/sum(buTotCAfterEach.flatten()))
+            print('s.bulkMassCError3dsAll_real_B',s.bulkMassCError3dsAll_real[0],s.bulkMassCError3dsAll_real,
+                    sum(s.bulkMassCError3dsAll_real.flatten()),'rel',obj.err3d)
+                    
+        buTotWAfterEach = comm.bcast(s.getWaterVolumes(), root = 0) 
+        if True: #rank == 0:
+            # cm3
+            s.bulkMassWError3dsAll_real = buTotWAfterEach - (buTotWBeforeEach +  s.sources_wat + s.outer_R_bc_wat )
+            obj.err3dW =abs( sum(s.bulkMassWError3dsAll_real)/sum(buTotWAfterEach.flatten()))
+            print('s.bulkMassWError3dsAll',s.bulkMassWError3dsAll_real,'rel',obj.err3dW)
                 
         
         ## err1d
@@ -377,7 +397,22 @@ for i, dt in enumerate(np.diff(times)):
         print('diff1d3dCurrant',diff1d3dCurrant,'1d',sum(buTotCAfterEach1d.flatten()),'3d', sum(buTotCAfterEach_cell.flatten()),
                 'rel',obj.diff1d3dCurrant_rel)
                 
-                
+        buTotWAfterEach_cell = buTotWAfterEach[cell2rhizoId]
+        buTotWAfterEach1d = comm.bcast(s1d.getWaterVolumes(), root = 0) 
+        
+        if True: #rank == 0:
+            s1d.bulkMassWError3dsAll_real = (sum(buTotWAfterEach1d) - (sum(s1d.buTotWBeforeEach1d) \
+            + (s1d.Q_outer_proposed + s1d.proposed_inner_fluxes)*dt) )
+            
+            obj.err1dW = abs(s1d.bulkMassWError3dsAll_real )/sum(buTotWAfterEach1d)
+            
+            diff1d3dCurrantW = sum(buTotWAfterEach1d) - buTotWAfterEach_cell
+            obj.diff1d3dCurrantW_rel = abs(diff1d3dCurrantW/sum(buTotWAfterEach1d))
+            print('s1d.bulkMassWError3dsAll_real',s1d.bulkMassWError3dsAll_real,'rel',obj.err1dW)
+        print('diff1d3dCurrantW',diff1d3dCurrantW,'1d',sum(buTotWAfterEach1d),'3d', buTotWAfterEach_cell,
+                'rel',obj.diff1d3dCurrantW_rel)
+        print('s1d.proposed_inner_fluxes',s1d.proposed_inner_fluxes,s1d.seg_fluxes_limited,(s.sources_wat)/dt, s.getCellVolumes() )
+        print('buTotWBeforeEach',buTotWBeforeEach, buTotWAfterEach, (buTotWBeforeEach-buTotWAfterEach)/dt)
         s1d.n_iter += 1
         
 

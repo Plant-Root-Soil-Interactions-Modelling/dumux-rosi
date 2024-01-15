@@ -1129,7 +1129,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         """ give the new theta or solute mole fraction to get specific total content and gradient
             volumes: either bulk soil or water volumes
         """
-        verbose = True#self.mpiVerbose# and (size > 1)) or verbose:
+        verbose = self.mpiVerbose# and (size > 1)) or verbose:
             
         if verbose:
             print(rank,'isWater',isWater, 'updateConcentration error', 'totContent',totContent, 

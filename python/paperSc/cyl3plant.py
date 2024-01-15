@@ -264,7 +264,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         r.solve_gave_up = False
         r.diff1d3dCurrant_rel =1e6
         
-        while  continueLoop(r,n_iter, dt,False,Ni * dt,'fpit_loopdata', isInner = True):
+        while  continueLoop(r,n_iter, dt,False,float(Ni) * dt,'fpit_loopdata', isInner = True):
             #( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) 
             #or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1.) 
             #or  r.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter) :
@@ -830,7 +830,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
 
             # mabe check here that sum(soil_source_sol) == Qmucil + Qexud
             s.errSoil_source_sol_abs = sum(soil_source_sol.flatten()) - (sum(Q_Exud) + sum(Q_mucil))/dt
-            if rank == 0:
+            if False:#rank == 0:
                 print('\n\n\nsoil_source_sol',s.errSoil_source_sol_abs,'sum', sum(soil_source_sol.flatten()),
                 (sum(Q_Exud) + sum(Q_mucil))/dt,'\n\n\n')#soil_source_sol.flatten(),
             if (sum(Q_Exud) + sum(Q_mucil))/dt != 0.:
@@ -1049,12 +1049,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 3.4 data after, for post proccessing 
             ##
             
-            print('allDiff1d3dCW_1030',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
-            print('checkMassOMoleBalance2_1033')
+            #print('allDiff1d3dCW_1030',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
+            #print('checkMassOMoleBalance2_1033')
             r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                     seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf,
                                     verbose_ = False,takeFlux=True) # just to get error value, will not throw an error
-            print('allDiff1d3dCW_1037',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
+            #print('allDiff1d3dCW_1037',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
             
             
             if r.mpiVerbose:# or (max_rank == 1):
@@ -1091,7 +1091,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             else:
                 s.bulkMassCError1ds_rel = np.nan
             
-            if rank == 0:
+            if ((mpiVerbose and (rank == 0)) or (max_rank == 1) :
                 print("errorCbalance soil 3d?",rank, buTotCAfter ,',', buTotCBefore ,',',  sum(Q_Exud) ,',',  sum(Q_mucil), 
                         ', soil_source_sol', sum(soil_source_sol.flatten())*dt,', s.bulkMassCErrorPlant_abs', s.bulkMassCErrorPlant_abs,
                         ',s.bulkMassCErrorPlant_rel',s.bulkMassCErrorPlant_rel,
@@ -1100,7 +1100,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             s.buTotCAfter = buTotCAfter
             s.buTotCBefore = buTotCBefore
             
-            if rank == 0:
+            if ((mpiVerbose and (rank == 0)) or (max_rank == 1) :
                 print("errorWbalance soil 3d?",rank, sum(new_soil_water) ,',', sum(soil_water) ,',',   sum(soil_fluxes)*dt,
                             ', bulkMassErrorWater_abs', s.bulkMassErrorWater_abs,', bulkMassErrorWater_absLim', 
                             s.bulkMassErrorWater_absLim ,'time' ,rs_age_i_dt)
@@ -1110,12 +1110,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # issue here: mass balance error would be added to the outer_R_bc_wat
             
-            outer_R_bc = -np.transpose(s.getFlux_10c())
-            bulkSoil_sources = np.transpose(s.getSource_10c()) #buTotCBeforeEach[-1], buTotCAfterEach[-1]))
+            outer_R_bc = -s.getFlux_10c()
+            bulkSoil_sources = s.getSource_10c() #buTotCBeforeEach[-1], buTotCAfterEach[-1]))
             
             #raise Exception
             outer_R_bc_wat = outer_R_bc[0]# [cm3] #new_soil_water - soil_water - soil_fluxes_limited *dt # change in water per cell [cm3]
-            sources_wat =  bulkSoil_sources[0]
+            sources_wat =  bulkSoil_sources[0]# cm3
             
             s.bulkMassErrorWaterAll_real = new_soil_water - (soil_water + sources_wat + outer_R_bc_wat)
             s.bulkMassErrorWaterAll_abs = abs(s.bulkMassErrorWaterAll_real)
@@ -1132,7 +1132,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
                 
             # issue here: mass balance error would be added to the outer_R_bc_wat
-            outer_R_bc_sol = outer_R_bc[1:] # cm3 #np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
+            outer_R_bc_sol = outer_R_bc[1:] # mol #np.array([soil_solute_content_new[i] - soil_solute_content[i] - soil_source_sol[i]*dt for i in range(r.numComp)])# mol
             outer_R_bc_sol = np.vstack([outer_R_bc_sol, outer_R_bc_sol[0]*0.]) #add dummy val for css1
             sources_sol =  bulkSoil_sources[1:] # mol
             sources_sol = np.vstack([sources_sol, sources_sol[0]*0.]) #add dummy val for css1
@@ -1147,17 +1147,18 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             #s.bulkMassCError1dsAll_real = buTotCAfterEach - ( buTotCBeforeEach + sources_sol + outer_R_bc_sol)
             
             # TODO: TAKE OUT
-            print('\n\n\nbulkMassCError1dsAll_real', s.bulkMassCError1dsAll_real[[1,-1,-3]].flatten(), 
-                        'diff 1d3d',r.diff1d3dCurrant,r.diff1d3dCurrant_rel)
-            print('allDiff1d3dCW',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten(),
-                    'rel',r.allDiff1d3dCW_rel[[1,-1,-3]].flatten(),'\n\n\n')
-            # print('buTotCAfterEach',buTotCAfterEach , 'buTotCBeforeEach',buTotCBeforeEach ,'sources_sol',sources_sol , 'outer_R_bc_sol',outer_R_bc_sol)
-            print('buTotCBeforeEach',sum(buTotCBeforeEach.flatten()),'buTotCAfterEach',sum(buTotCAfterEach.flatten()))
-            print('rhizoTotCBefore_eachC',rhizoTotCBefore_eachC,'rhizoTotCAfter_eachC',rhizoTotCAfter_eachC)
-            print('RHIZO_CSS1',r.getContentCyl(None,9,True),'3D_CSS1' ,sum(s.getContent(9,False)) )
-            #if (r.allDiff1d3dCW_abs[1] == 0) and (r.allDiff1d3dCW_abs[-1] != 0):
-            #    raise Exception
-            # TODO: TAKE OUT_END
+            if False:
+                print('\n\n\nbulkMassCError1dsAll_real', s.bulkMassCError1dsAll_real[[1,-1,-3]].flatten(), 
+                            'diff 1d3d',r.diff1d3dCurrant,r.diff1d3dCurrant_rel)
+                print('allDiff1d3dCW',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten(),
+                        'rel',r.allDiff1d3dCW_rel[[1,-1,-3]].flatten(),'\n\n\n')
+                # print('buTotCAfterEach',buTotCAfterEach , 'buTotCBeforeEach',buTotCBeforeEach ,'sources_sol',sources_sol , 'outer_R_bc_sol',outer_R_bc_sol)
+                print('buTotCBeforeEach',sum(buTotCBeforeEach.flatten()),'buTotCAfterEach',sum(buTotCAfterEach.flatten()))
+                print('rhizoTotCBefore_eachC',rhizoTotCBefore_eachC,'rhizoTotCAfter_eachC',rhizoTotCAfter_eachC)
+                print('RHIZO_CSS1',r.getContentCyl(None,9,True),'3D_CSS1' ,sum(s.getContent(9,False)) )
+                #if (r.allDiff1d3dCW_abs[1] == 0) and (r.allDiff1d3dCW_abs[-1] != 0):
+                #    raise Exception
+                # TODO: TAKE OUT_END
             
             s.bulkMassCError1dsAll_real[0] += s.bulkMassCError1dsAll_real[-1]#put together CS and CSS1
             s.bulkMassCError1dsAll_real[-1][:] = 0.
@@ -1197,7 +1198,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             """ 4. prints and evaluation of the iteration """
             # TODO: see which value are more sensible. very low rx in the leaves may make the level of change always low in the plant
-            print('checkMassOMoleBalance2_1166')
+            #print('checkMassOMoleBalance2_1166')
             r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                     seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf,
                                     verbose_ = False) # just to get error value, will not throw an error
@@ -1330,7 +1331,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                             r.rhizoMassWError_absLim,r.rhizoMassWError_abs,
                             s.bulkMassCError1ds_abs,s.bulkMassCErrorPlant_abs,
                             r.rhizoMassCError_absLim,r.rhizoMassCError_abs,
-                            sum(abs(diffBCS1dsFluxIn)), sum(abs(diffBCS1dsFluxOut)),sum(abs(diffouter_R_bc_wat)),
+                            sum(abs(diffBCS1dsFluxIn)), 
+                            sum(abs(diffBCS1dsFluxOut)),
+                            sum(abs(diffouter_R_bc_wat)),
                             sum(abs(diffBCS1dsFluxOut_sol.reshape(-1))),sum(abs(diffBCS1dsFluxOut_mucil)),
                               sum(abs(diffouter_R_bc_sol.reshape(-1))), 
                            r.diff1d3dCurrant,r.diff1d3dCurrant_rel, r.rhizoMassWError_rel,r.err ])
