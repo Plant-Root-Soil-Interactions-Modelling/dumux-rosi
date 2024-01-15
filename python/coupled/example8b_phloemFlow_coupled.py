@@ -177,8 +177,10 @@ while simDuration <= simMax:
     while dtWatertot < dt:
         dtWatertot += dtWater
         ''' soil conductivity '''
-        
-        soil_k = np.array([vg.hydraulic_conductivity(sx[r.rs.seg2cell[seg_id]][0], s.vg_soil) if r.rs.seg2cell[seg_id] >= 0. else np.Inf for seg_id in range(Nt -1)]) #         
+        try:
+            soil_k = np.array([vg.hydraulic_conductivity(sx[r.rs.seg2cell[seg_id]], s.vg_soil) if r.rs.seg2cell[seg_id] >= 0. else np.Inf for seg_id in range(Nt -1)]) #         
+        except:
+            soil_k = np.array([vg.hydraulic_conductivity(sx[r.rs.seg2cell[seg_id]][0], s.vg_soil) if r.rs.seg2cell[seg_id] >= 0. else np.Inf for seg_id in range(Nt -1)]) #         
         soil_k[np.where(np.array(r.outputFlux)> 0. ) ] = s.vg_soil.Ksat
         soil_k /= sri_distance
         
