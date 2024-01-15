@@ -2044,7 +2044,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 if self.useOuterFluxCyl_w:
                     qOut = QflowOut/(2 * np.pi * self.outer_radii[gId] * l)# [cm3/day] -> [cm /day]
                     cyl.setOuterFluxCyl(qOut)
-                else:
+                else:                    
                     qOut = cyl.distributeSource(QflowOut, 0,self.numFluidComp)
                     if QflowOut!=0.:
                         try:
@@ -2076,6 +2076,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     
                 typeBC = np.full(self.numComp,3)
                 
+                topVals = np.array([ topVal, topVal_mucil])
                 valueTopBC = np.full(self.numComp,0.)
                 valueBotBC = np.full(self.numComp,0.)
 
@@ -2089,9 +2090,14 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     valueTopBC[1] = topVal_mucil / (2 * np.pi * self.outer_radii[gId] * l) # [mol/day] -> [mol/cm2 /day]
                     cyl.setSoluteTopBC(typeBC, valueTopBC)
                 else:
-                    valueTopBC = cyl.distributeSources(np.array([ topVal, topVal_mucil]), 
-                                          np.array([nc+1 for nc in range(self.numFluidComp+1)]), 
-                                                       self.numFluidComp)
+                    valueTopBC = np.zeros((self.numFluidComp,cyl.numberOfCellsTot))
+                    for nc in range(self.numFluidComp):
+                        if (cyl.getContent(nc+1, isDissolved = (nc < self.numFluidComp))).all() == 0.:
+                            cellIndx4Distrib = 0
+                        else:
+                            cellIndx4Distrib = None
+                        valueTopBC[nc] = cyl.distributeSource(topVals[nc],nc+1 , 
+                                                       self.numFluidComp, cellIndx4Distrib)
                     if False:#(max(abs(np.array([ topVal, topVal_mucil]))) > 0.):
                         print('valueTopBC',sum(valueTopBC[0]),
                               sum(valueTopBC[1]),topVal, topVal_mucil)

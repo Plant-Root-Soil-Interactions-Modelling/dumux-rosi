@@ -1091,7 +1091,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             else:
                 s.bulkMassCError1ds_rel = np.nan
             
-            if ((mpiVerbose and (rank == 0)) or (max_rank == 1) :
+            if ((r.mpiVerbose and (rank == 0)) or (max_rank == 1)) :
                 print("errorCbalance soil 3d?",rank, buTotCAfter ,',', buTotCBefore ,',',  sum(Q_Exud) ,',',  sum(Q_mucil), 
                         ', soil_source_sol', sum(soil_source_sol.flatten())*dt,', s.bulkMassCErrorPlant_abs', s.bulkMassCErrorPlant_abs,
                         ',s.bulkMassCErrorPlant_rel',s.bulkMassCErrorPlant_rel,
@@ -1100,7 +1100,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             s.buTotCAfter = buTotCAfter
             s.buTotCBefore = buTotCBefore
             
-            if ((mpiVerbose and (rank == 0)) or (max_rank == 1) :
+            if ((r.mpiVerbose and (rank == 0)) or (max_rank == 1)) :
                 print("errorWbalance soil 3d?",rank, sum(new_soil_water) ,',', sum(soil_water) ,',',   sum(soil_fluxes)*dt,
                             ', bulkMassErrorWater_abs', s.bulkMassErrorWater_abs,', bulkMassErrorWater_absLim', 
                             s.bulkMassErrorWater_absLim ,'time' ,rs_age_i_dt)
