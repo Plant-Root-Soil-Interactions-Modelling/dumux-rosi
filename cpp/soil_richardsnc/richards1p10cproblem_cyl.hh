@@ -544,7 +544,7 @@ public:
         {
             fvGeometry.bindElement(element);
 			
-			std::cout<<"scvfs"<<std::endl;
+			//std::cout<<"scvfs"<<std::endl;
             for (const auto& scvf : scvfs(fvGeometry))
             {
 				//std::cout<<scvf.index()<<"; ";//<<", "<<fvGeometry.scv(scvf.insideScvIdx()).dofIndex()
