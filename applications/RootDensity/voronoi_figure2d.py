@@ -4,12 +4,12 @@ sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
 
 import plantbox as pb
 from functional.Perirhizal import *
-import visualisation.vtk_plot as vp
-import scenario_setup as scenario
 
-import vtk
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+
+from scipy.spatial import Voronoi
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -25,6 +25,68 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 """ parameters """
+
+
+def generate_points(num_points):
+    points = []
+    for _ in range(num_points):
+        x = random.uniform(-10, 10)  # Adjust the range as needed
+        y = random.uniform(-10, 10)
+        points.append(np.array([x, y]))
+    return np.array(points)
+
+
+def flip_(nodes, center, axis):
+    """ flips the nodes around the center according axis """
+    # print(nodes.shape)
+    # print(center.shape)
+    # print(np.ones((nodes.shape[0], 1)).shape)
+    n_ = nodes - np.ones((nodes.shape[0], 1)) @ center
+    n_[:, axis] = -n_[:, axis]
+    n_ = n_ + np.ones((nodes.shape[0], 1)) @ center
+    return n_
+
+
+def mirror(nodes):
+    """ adds mirrored nodes to the 4 sides """
+    width_ = np.array([[20, 20]])
+    center_ = np.array([[0, 0]])
+    nodes_surr = nodes
+    fipped_n = [flip_(nodes, center_, i_) for i_ in range(0, 2)]  # flip them ...
+    zeros = np.zeros((nodes.shape[0], 1))
+    translate_ = np.ones((nodes.shape[0], 1)) @ width_
+    trans0 = np.hstack((translate_[:, 0, np.newaxis], zeros))
+    trans1 = np.hstack((zeros, translate_[:, 1, np.newaxis]))
+    nodes_surr = np.vstack((nodes_surr, fipped_n[0] + trans0))  # add them
+    nodes_surr = np.vstack((nodes_surr, fipped_n[0] - trans0))
+    nodes_surr = np.vstack((nodes_surr, fipped_n[1] + trans1))
+    nodes_surr = np.vstack((nodes_surr, fipped_n[1] - trans1))
+    return nodes_surr
+
+
+# Generate 8 random 3D points
+random_points = generate_points(8)
+print(random_points)
+
+lines = []
+vor = Voronoi(mirror(random_points))
+ver_ = vor.vertices
+reg_ = vor.regions
+for reg in reg_:
+    for ind in range(-1, len(reg) - 1):
+        lines.append([ver_[reg[ind]], ver_[reg[ind + 1]]])
+lines = np.array(lines)
+for i in range(0, lines.shape[0]):
+    plt.plot([lines[i, 0, 0], lines[i, 1, 0]], [lines[i, 0, 1], lines[i, 1, 1]], "b:")
+
+plt.plot(random_points[:, 0], random_points[:, 1], 'r*')
+plt.plot(ver_[:, 0], ver_[:, 1], 'b*')
+plt.xlim([-10, 10])
+plt.ylim([-10, 10])
+
+plt.show()
+
+dd
 
 r = r_.rs  # throw away (TODO ahve to change setup anyway...)
 
