@@ -78,7 +78,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
     cell_centers_z = np.array([cell_centers[mapping[2 * j + 1]][2] for j in range(0, int(ns / 2))])
     seg_centers_z = np.array([0.5 * (nodes[segs[2 * j + 1].x].z + nodes[segs[2 * j + 1].y].z)  for j in range(0, int(ns / 2))])
 
-    hsb = np.array([sx[mapping[2 * j + 1]][0] for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
+    hsb = np.array([sx[mapping[2 * j + 1]]for j in range(0, int(ns / 2))])  # soil bulk matric potential per segment
 
     kr_ = np.zeros((ns,))
     rsx = hsb.copy()  # initial values for fix point iteration
@@ -152,7 +152,7 @@ def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, r
         s.setSource(soil_fluxes.copy())  # richards.py
         s.solve(dt)
         sum_soil_flux = (s.getWaterVolume() - water) / dt
-        sx = s.getSolutionHead()[:, 0]  # richards.py
+        sx = s.getSolutionHead()  # richards.py
         hsb = np.array([sx[mapping[2 * j + 1]] for j in range(0, int(ns / 2))])
 
         wall_soil = timeit.default_timer() - wall_soil
@@ -248,8 +248,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "length"])
-    args = parser.parse_args()
+    args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "length"])
+    # args = parser.parse_args()
 
     name = "par_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()

@@ -86,7 +86,9 @@ if __name__ == "__main__":
     for i in range(0, 3):
         n, t1d = print_timings([['agg', 'maize', '1D', soils[i], 'voronoi']])
         n, t3d = print_timings([['sra', 'maize', '3D', soils[i], 'voronoi']])
+        n, t2d = print_timings([['sra', 'maize', '2D', soils[i], 'voronoi']])
         print("speed up", t3d[0] / t1d[0])
+        print("speed up", t3d[0] / t2d[0])
         n, t1d = print_timings([['agg', 'maize', '1D', soils[i], 'voronoi']])
         n, t3d = print_timings([['sra', 'maize', '3D', soils[i], 'voronoi']])
         print("speed up", t3d[0] / t1d[0])

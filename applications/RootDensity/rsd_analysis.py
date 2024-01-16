@@ -12,19 +12,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 """ parameters """
-# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
-# xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-# simtime = 87.5  # between 75-100 days
+soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
+xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
+simtime = 25.5  # between 75-100 days
 # cell_number = [76, 4, 200]
 # cell_number = [38, 2, 100]
 # cell_number = [19, 1, 50]
+cell_number = [1, 1, 1]
 
-soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
-xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-simtime = 28  # between 75-100 days
-# cell_number = [76, 16, 200]
-cell_number = [38, 8, 100]
+# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
+# xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
+# simtime = 25  # between 75-100 days
+# # cell_number = [76, 16, 200]
+# # cell_number = [38, 8, 100]
 # cell_number = [19, 4, 50]
+# cell_number = [1, 1, 1]
 
 width = max_b - min_b
 
@@ -51,16 +53,17 @@ for j in range(0, sn):
 celldata = grid.GetCellData()
 celldata.AddArray(cell_sd)
 
-outer_radii = peri.get_outer_radii_voronoi()
-# outer_radii = peri.get_outer_radii("surface")
+# outer_radii = peri.get_outer_radii_bounded_voronoi()
+outer_radii = peri.get_outer_radii("length")
 
 print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
 
 ana = pb.SegmentAnalyser(r.mappedSegments())
-outer_radii = np.minimum(outer_radii, 1.)  # limit for visualisation
+outer_radii = np.minimum(outer_radii, 3.)  # limit for visualisation
 ana.addData("outer_r", outer_radii)
-ana.addData("radius", outer_radii)
+vp.plot_roots(ana, "outer_r")
 
+ana.addData("radius", outer_radii)
 # vp.plot_mesh(grid, "surface_density")
 # vp.plot_mesh_cuts(grid, "surface_density")
 vp.plot_roots(ana, "outer_r")

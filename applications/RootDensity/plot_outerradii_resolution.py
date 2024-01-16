@@ -108,7 +108,7 @@ cell_numbers.append([1, 1, 150])
 cell_numbers.append([1, 1, 75])
 cell_numbers.append([1, 1, 38])
 
-for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
+for split_type in ["surface"]:  # ["length", "surface", "volume"]:
     fig, axes = plt.subplots(3, 2, figsize = (20, 18))
     stats = [["min", "max", "median", "mean", "std"]]
     for i, cell_number in enumerate(cell_numbers):
@@ -127,7 +127,7 @@ for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
         # ax.hist(outer_r, bins = 40, rwidth = 0.9)
         ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
         # ax.set_xlim(0, 4)
-        ax.set_ylim(0, 2300)
+        ax.set_ylim(0, 2500)
         ax.set_title(titles[i])
         stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
                       np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
@@ -147,44 +147,44 @@ for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
     plt.show()
 
 # """ spring barley """
-# cell_numbers = []
-# cell_numbers.append([13, 3, 150])
-# cell_numbers.append([7, 2, 75])
-# cell_numbers.append([3, 1, 38])
-# cell_numbers.append([1, 1, 150])
-# cell_numbers.append([1, 1, 75])
-# cell_numbers.append([1, 1, 38])
-#
-# for split_type in ["voronoi"]:  # ["length", "surface", "volume"]:
-#     fig, axes = plt.subplots(3, 2, figsize = (20, 18))
-#     stats = [["min", "max", "median", "mean", "std"]]
-#     for i, cell_number in enumerate(cell_numbers):
-#         outer1, outer2, seg2cell, length1, length2 = get_outer_radii("springbarley", split_type, cell_number)
-#         # outer_r = np.minimum(outer_r, 2)
-#         outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
-#         outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
-#         ax = axes[i % 3, i // 3]
-#         # ax.hist(outer_r, bins = 40, rwidth = 0.9)
-#         # ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
-#         ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
-#         # ax.set_xlim(0, 2)
-#         ax.set_ylim(0, 170)
-#         ax.set_title(titles[i])
-#         stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
-#                       np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
-#
-#         if i < 3:
-#             ax.set_ylabel("Root length [cm] ")
-#         if i == 2 or i == 5:
-#             ax.set_xlabel("Perirhizal outer radius [cm], 40 bins")
-#
-#     print(stats[0])
-#     for i, cell_number in enumerate(cell_numbers):
-#         print("Summary", cell_number, ":")
-#         print(stats[i + 1])
-#
-#     plt.tight_layout()
-#     plt.savefig('res_springbarley_' + split_type + '.png')
-#     plt.show()
+cell_numbers = []
+cell_numbers.append([13, 3, 150])
+cell_numbers.append([7, 2, 75])
+cell_numbers.append([3, 1, 38])
+cell_numbers.append([1, 1, 150])
+cell_numbers.append([1, 1, 75])
+cell_numbers.append([1, 1, 38])
+
+for split_type in ["surface"]:  # ["length", "surface", "volume"]:
+    fig, axes = plt.subplots(3, 2, figsize = (20, 18))
+    stats = [["min", "max", "median", "mean", "std"]]
+    for i, cell_number in enumerate(cell_numbers):
+        outer1, outer2, seg2cell, length1, length2 = get_outer_radii("springbarley", split_type, cell_number)
+        # outer_r = np.minimum(outer_r, 2)
+        outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+        outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
+        ax = axes[i % 3, i // 3]
+        # ax.hist(outer_r, bins = 40, rwidth = 0.9)
+        # ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
+        ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
+        # ax.set_xlim(0, 2)
+        ax.set_ylim(0, 170)
+        ax.set_title(titles[i])
+        stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
+                      np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+
+        if i < 3:
+            ax.set_ylabel("Root length [cm] ")
+        if i == 2 or i == 5:
+            ax.set_xlabel("Perirhizal outer radius [cm], 40 bins")
+
+    print(stats[0])
+    for i, cell_number in enumerate(cell_numbers):
+        print("Summary", cell_number, ":")
+        print(stats[i + 1])
+
+    plt.tight_layout()
+    plt.savefig('res_springbarley_' + split_type + '.png')
+    plt.show()
 
 print("fin")

@@ -1,4 +1,4 @@
-"""small example"""
+""" figures for the icons (2D)"""
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
 sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
 
@@ -25,25 +25,6 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 """ parameters """
-# soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
-# xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-# simtime = 87.5  # 87.5  # between 75-100 days
-# # cell_number = [76, 4, 200]
-# cell_number = [38, 2, 100]
-# # cell_number = [19, 1, 50]
-
-soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
-xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-simtime = 25  # 95  # between 75-100 days
-# cell_number = [76, 16, 200]
-# cell_number = [38, 8, 100]
-cell_number = [19, 4, 50]
-
-width = max_b - min_b
-
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
-r_ = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
-# r_ = scenario.create_mapped_singleroot(min_b , max_b , cell_number, s)
 
 r = r_.rs  # throw away (TODO ahve to change setup anyway...)
 
