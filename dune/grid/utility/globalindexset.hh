@@ -618,7 +618,25 @@ namespace Dune
     {
       return (codim_==codim) ? nGlobalEntity_ : 0;
     }
+	
+    unsigned int getNglobalEntity() const
+    {
+      return nGlobalEntity_;
+    }
+	
+	// to get localGlobalMap_[lindex] = sortedGlobalIdSet[idx];
+	IndexMap getLocalGlobalMap() const
+	{
+		return localGlobalMap_;
+	}
 
+	// globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[idx]));
+	//MapId2Index getGlobalIndex() const
+	std::map<long unsigned,int> getGlobalIndex() const 
+	{
+		return globalIndex_;
+	}
+	
   protected:
     const GridView gridview_;
 
@@ -632,7 +650,8 @@ namespace Dune
 
     /** \brief Stores global index of entities with entity's globally unique id as key
      */
-    MapId2Index globalIndex_;
+    std::map<long unsigned,int>   globalIndex_;
+	//MapId2Index globalIndex_;
   };
 
 }  // namespace Dune

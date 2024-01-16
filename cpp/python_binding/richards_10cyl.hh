@@ -21,6 +21,11 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
     virtual ~Richards10Cyl() { }
 	
 	
+	void setFaceGlobalIndexSet(std::map<int,int>  faceIdx)
+	{
+		this->problem->setFaceGlobalIndexSet(faceIdx);// = faceIdx;
+	}
+	
 	std::vector<double> getCellVolumes(){
 		return this->problem->cellVolumesCyl;
 	}

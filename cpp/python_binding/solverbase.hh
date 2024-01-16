@@ -344,7 +344,9 @@ public:
         verbose =  Dumux::getParam<int>("Problem.verbose",0);
         int verboseIndexSet =  Dumux::getParam<int>("Problem.verboseIndexSet",0);
         
-        problem = std::make_shared<Problem>(gridGeometry);
+		
+		
+		problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
 
@@ -358,21 +360,38 @@ public:
         if(verboseIndexSet){std::cout<<"getpointIdx"<<std::endl;}
         pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim, verboseIndexSet); // global index mappers
         
-        //if(verboseIndexSet){std::cout<<"getfaceIdx"<<std::endl;}
-		//faceIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 1, verboseIndexSet); // global index mappers
-        
+		
         if(verboseIndexSet){std::cout<<"getcellIdx"<<std::endl;}
         cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0, verboseIndexSet);
         if(verboseIndexSet){std::cout<<"GOTcellIdx"<<std::endl;}
         
         //std::cout<<"getlocalCellIdx"<<std::endl;
         localCellIdx.clear();
-        //globalFaceIdx.clear(); // number of vertices
         for (const auto& e : Dune::elements(gridGeometry->gridView())) {
             int eIdx = gridGeometry->elementMapper().index(e);
             int gIdx = cellIdx->index(e);
             localCellIdx[gIdx] = eIdx;
         }
+		
+		
+        if(verboseIndexSet){std::cout<<"getfaceIdx"<<std::endl;}
+		faceGlobalIndexSet = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 1, verboseIndexSet); // global index mappers
+        facemap = faceGlobalIndexSet->getLocalGlobalMap();
+		faceGIdxs = faceGlobalIndexSet->getGlobalIndex();
+		//for(size_t faceGIdxs_)
+		auto nface = faceGlobalIndexSet->getNglobalEntity();
+		//setFaceGlobalIndexSet(facemap);
+		// gridGeometry->numScvf()
+		// globalFaceIdx.clear(); // number of faces
+       // // globalFaceIdx.resize(gridGeometry->gridView().size(1)); // number of faces
+		// // size_t nFaces = fvGridGeometry->numScvf(); both give the same result?
+		// // for (const auto& scvf : scvfs(fvGeometry))
+        // for (const auto& f : Dune::scvfs(gridGeometry->gridView(1))) {
+            // int fIdx = f.index();
+            // int gIdx = globalFaceIdx->index(f);
+            // globalFaceIdx[gIdx] = eIdx;
+        // }
+		
         //std::cout<<"getglobalPointIdx"<<std::endl;
         globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
         for (const auto& v : Dune::vertices(gridGeometry->gridView())) {
@@ -381,6 +400,8 @@ public:
             globalPointIdx[vIdx] = gIdx;
         }
     }
+
+	void virtual setFaceGlobalIndexSet(std::map<int, int> faceGlobalIndexSet){}
 
     /**
      * Sets the initial conditions, for a MPI process
@@ -1024,11 +1045,11 @@ public:
 		std::vector<double> f10c_row(numComp_);
 		std::vector<std::vector<double>> flux_10c(flux_10c_.size(), f10c_row);
 		
-		for(int faceIdx = 0; faceIdx < flux_10c.size(); faceIdx ++)
+		for(int faceIdx_ = 0; faceIdx_ < flux_10c.size(); faceIdx_ ++)
 		{
 			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
 			{
-				flux_10c.at(faceIdx).at(eqIdx) = flux_10c_.at(faceIdx)[eqIdx];
+				flux_10c.at(faceIdx_).at(eqIdx) = flux_10c_.at(faceIdx_)[eqIdx];
 			}
 		}
 		return flux_10c;
@@ -1050,6 +1071,9 @@ public:
 		return source_10c;
     }
 	
+	std::map<int,int> facemap;
+	std::map<long unsigned,int>  faceGIdxs;
+	//std::map<unsigned int, int, std::less<unsigned int>, std::allocator<std::pair<const unsigned int, int> > >
 protected:
 
     using Grid = typename Problem::Grid;
@@ -1069,7 +1093,9 @@ protected:
 
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx; // global index mappers
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx; // global index mappers
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> faceGlobalIndexSet; // global index mappers
     std::map<int, int> localCellIdx; // global to local index mapper
+    //std::map<int, int> g2lFaceIdx; // global to local index mapper
     std::vector<int> globalPointIdx; // local to global index mapper
 
     SolutionVector x;
@@ -1179,7 +1205,9 @@ void init_solverbase(py::module &m, std::string name) {
             .def("pick", &Solver::pick)
             .def("reportParams", &Solver::reportParams)
             .def("printParams", &Solver::printParams)
-            // members
+            // members //
+			.def_readonly("facemap", &Solver::facemap)
+			.def_readonly("faceGIdxs", &Solver::faceGIdxs)
 			.def_readonly("face2CellIds", &Solver::face2CellIds)
             .def_readonly("inSources", &Solver::inSources) // read only
             .def_readonly("inFluxes", &Solver::inFluxes) // read only

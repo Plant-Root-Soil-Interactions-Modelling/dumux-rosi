@@ -580,27 +580,74 @@ class RichardsWrapper(SolverWrapper):
             return self.bulkDensity_m3
          
     def getFlux_10c(self):
-        flux10c = self.allgatherv(self.getFlux_10c_(), keepShape =True) #TODO: check that gathergin works  
-        face2CellIds = self.allgatherv(self.getFace2CellIds_(), keepShape =True)
+        assert self.dimWorld == 3
+        ff10c_ = self.getFlux_10c_()
+        f2cidx_ = self.getFace2CellIds_()
+        #print('ff10c_',rank, ff10c_)
+        #print('f2cidx_',rank, list(f2cidx_))
+        #occurences = [list(f2cidx_).count(idx_) for idx_ in set(f2cidx_)]
+        #print('occurences',rank,[list(f2cidx_).count(idx_) for idx_ in set(f2cidx_)])
+        ff10c = np.array([sum(ff10c_[np.where(f2cidx_ == idx_)[0]]) for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6]) # sum values per cell
+        f2cidx = np.array([idx_ for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6])# keep those local elem  indexes
+        dofind = np.array(self.base.getDofIndices())
+        f2cidx_g = dofind[f2cidx] # get global index
+        #print('f2cidx',rank, f2cidx,f2cidx_)
+        #raise Exception
+        #print('dofind',rank,dofind)
+        f2cidx_gAll = self.allgatherv(f2cidx_g)
+        ff10c_All = self.allgatherv(ff10c)
+        if False:
+            print(f2cidx_gAll)
+            print(ff10c_All)
+            print(len(f2cidx_gAll), len(ff10c_All), len(f2cidx_g), self.numberOfCells)
+            print(f2cidx_gAll)
+        f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)))
+        
+        if False:
+            for jjj in f2cidx_gAll_unique:
+                tempff = ff10c_All[np.where(f2cidx_gAll == jjj)]
+                try:
+                    assert(tempff == tempff[0]).all()
+                except:
+                    print('jjj',jjj,tempff )
+                    raise Exception
+            #print(np.where(f2cidx_gAll == jjj), max(np.where(f2cidx_gAll == jjj)[0]))
+        ff10c_All_unique = np.array([ff10c_All[max(np.where(f2cidx_gAll == idx_)[0])] for idx_ in f2cidx_gAll_unique])
+        
+        #print('ff10c',rank,ff10c)
+        #print('f2cidx',rank,f2cidx)
+        #setf2cidx__ = np.array(list(set(f2cidx)))
+        #print('setf2cidx__',rank, setf2cidx__, setf2cidx__.shape)
+        #setf2cidx_ = self.allgatherv(setf2cidx__)
+        #setf2cidx = self._map( setf2cidx_, 0)
+        #print('setf2cidx_',rank, setf2cidx_)
+        #print('setf2cidx',rank, setf2cidx)
+        #print('faceGIdxs',self.base.faceGIdxs.keys(),len(self.base.faceGIdxs.keys()))
+        #print('facemap',self.base.facemap.keys(),len(self.base.facemap.keys()), self.numberOfFacesTot)
+        
+        # raise Exception
+        # flux10c = self.allgatherv(ff10c)#, keepShape =True) #TODO: check that gathergin works  
+        # face2CellIds = self.allgatherv(f2cidx)#, keepShape =True)
         
 
+        # print('getFlux_10c()',rank,flux10c.shape, np.array(self.getCellVolumes_()).shape ,len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp())
         #flux10c_ = flux10c[0]
-        face2CellIds = face2CellIds.transpose((1,0))
+        #face2CellIds = face2CellIds.transpose((1,0))
         #flux10c = flux10c.transpose((2,0,1))
         # print('face2CellIds',face2CellIds.shape, flux10c.shape)
         # print([(nf, np.where(valThreads == max(valThreads))[0][0],  max(valThreads)) for nf, valThreads in enumerate(face2CellIds)])
         #for nf, valThreads in enumerate(face2CellIds):
         #    flux10c_[nf][:] = flux10c[np.where(valThreads == max(valThreads))[0]][nf][:]
-        flux10c = np.array([flux10c[np.where(valThreads == max(valThreads))[0][0]][nf][:] for nf, valThreads in enumerate(face2CellIds)])
-        face2CellIds = face2CellIds.max(axis = 1)
+        #flux10c = np.array([flux10c[np.where(valThreads == max(valThreads))[0][0]][nf][:] for nf, valThreads in enumerate(face2CellIds)])
+        #face2CellIds = face2CellIds.max(axis = 1)
         # print('face2CellIds',face2CellIds)
         
         #flux10c = flux10c_
         # print(flux10c.shape,np.array([np.where(face2CellIds == nCell) for nCell in range(self.numberOfCellsTot)]),
         #     np.array([flux10c[np.where(face2CellIds == nCell)] for nCell in range(self.numberOfCellsTot)]))
-        flux10cCell = np.array([flux10c[np.where(face2CellIds == nCell)].sum(axis=0) for nCell in range(self.numberOfCellsTot)])  
+        #flux10cCell = np.array([flux10c[np.where(face2CellIds == nCell)].sum(axis=0) for nCell in range(self.numberOfCellsTot)])  
         # print(flux10cCell)
-        flux10cCell = np.transpose(flux10cCell) # [comp][cell]
+        flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
         if rank == 0:
             assert flux10cCell.shape == (self.base.numComp() ,self.numberOfCellsTot)
         
@@ -614,6 +661,7 @@ class RichardsWrapper(SolverWrapper):
             
         # print('flux shape',flux10cCell.shape)
         #print('getFlux_10c()',flux10cCell)
+        #raise Exception
         return flux10cCell
         
     def getFace2CellIds_(self):
@@ -644,7 +692,7 @@ class RichardsWrapper(SolverWrapper):
         
         #inFluxes_tot = np.hstack((inFluxes_tot, css1_flux))
         #print('inFluxes_tot',inFluxes_tot[:],inFluxes_tot.shape)
-        #print('getFlux_10c_()',inFluxes_tot)
+        #print('getFlux_10c_()',rank,inFluxes_tot.shape, np.array(self.getCellVolumes_()).shape ,len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp())
         return inFluxes_tot
         
     def getFlux_10c_Old(self):# cm3 or mol

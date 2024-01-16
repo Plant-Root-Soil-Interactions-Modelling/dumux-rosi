@@ -23,6 +23,11 @@ public:
     using NumEqVector = typename Problem::NumEqVector;
 	
 	
+	void setFaceGlobalIndexSet(std::map<int,int>  faceIdx)
+	{
+		this->problem->setFaceGlobalIndexSet(faceIdx);// = faceIdx;
+	}
+	
     std::vector<double> getCSS1_out() {
     	return this->problem->getCSS1_(); // 
     }

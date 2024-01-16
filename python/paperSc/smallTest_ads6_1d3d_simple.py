@@ -52,9 +52,9 @@ else:
 usemoles = True
 #s = RichardsWrapper(Richards10CCylFoam(), usemoles)
 year = 2013
-min_b =np.array( [-0, -0, -5.] )/2
+min_b =np.array( [-0, -0, -10.] )/2
 max_b = np.array([5, 5, 0.] )/2
-cell_number = [2,1,1]
+cell_number = [5,5,5]
 soil_type = "loam"
 genotype = "WT"
 comp = "phenolics"
@@ -149,7 +149,7 @@ buTotCBeforeEach = comm.bcast(s.getTotCContent_each(), root = 0)
 s1d.buTotCBeforeEach1d = s1d.getTotCContent_each()
 
 
-print('buTotCBeforeEach3d',buTotCBeforeEach[[0,-1]])
+#print('buTotCBeforeEach3d',buTotCBeforeEach[[0]][cell2rhizoId])
 print('buTotCBeforeEach1d',s1d.buTotCBeforeEach1d[[0,-1]].sum())
          
 
@@ -341,14 +341,13 @@ for i, dt in enumerate(np.diff(times)):
             s.sources_sol = np.vstack([s.sources_sol, s.sources_sol[0]*0.]) #add dummy val for css1
             assert s.outer_R_bc_sol.shape == (s.numComp+1, s.numberOfCellsTot)
             assert s.sources_sol.shape == (s.numComp+1, s.numberOfCellsTot)
-            
-            
+              
                 
         
         ## err3d
         buTotCAfterEach = comm.bcast(s.getTotCContent_each(), root = 0) 
         if True: #rank == 0:
-            print('buTotCAfterEach',buTotCAfterEach[[0,-1]])
+            #print('buTotCAfterEach',buTotCAfterEach[[0,-1]])
             print('buTotCBefore',sum(buTotCBeforeEach.flatten()),
                 'buTotCAfter',sum(buTotCAfterEach.flatten()),
                 's.sources_sol',sum(s.sources_sol.flatten()),
@@ -358,13 +357,13 @@ for i, dt in enumerate(np.diff(times)):
             s.bulkMassCError3dsAll_real = buTotCAfterEach - (buTotCBeforeEach +  s.sources_sol + s.outer_R_bc_sol )
             
             print('s.bulkMassCError3dsAll_real_A',#s.bulkMassCError3dsAll_real, 
-                    'cs',s.bulkMassCError3dsAll_real[0],
-                   'css1', s.bulkMassCError3dsAll_real[-1], 
-                   'cstot',s.bulkMassCError3dsAll_real[0] + s.bulkMassCError3dsAll_real[-1])#.flatten())
+                    'cs',s.bulkMassCError3dsAll_real[0][cell2rhizoId],
+                   'css1', s.bulkMassCError3dsAll_real[-1][cell2rhizoId], 
+                   'cstot',s.bulkMassCError3dsAll_real[0][cell2rhizoId] + s.bulkMassCError3dsAll_real[-1][cell2rhizoId])#.flatten())
             s.bulkMassCError3dsAll_real[0] += s.bulkMassCError3dsAll_real[-1]#put together CS and CSS1
             s.bulkMassCError3dsAll_real[-1][:] = 0.
             obj.err3d =abs( sum(s.bulkMassCError3dsAll_real.flatten())/sum(buTotCAfterEach.flatten()))
-            print('s.bulkMassCError3dsAll_real_B',s.bulkMassCError3dsAll_real[0],s.bulkMassCError3dsAll_real,
+            print('s.bulkMassCError3dsAll_real_B',s.bulkMassCError3dsAll_real[0][cell2rhizoId],#s.bulkMassCError3dsAll_real,
                     sum(s.bulkMassCError3dsAll_real.flatten()),'rel',obj.err3d)
                     
         buTotWAfterEach = comm.bcast(s.getWaterVolumes(), root = 0) 
@@ -372,7 +371,7 @@ for i, dt in enumerate(np.diff(times)):
             # cm3
             s.bulkMassWError3dsAll_real = buTotWAfterEach - (buTotWBeforeEach +  s.sources_wat + s.outer_R_bc_wat )
             obj.err3dW =abs( sum(s.bulkMassWError3dsAll_real)/sum(buTotWAfterEach.flatten()))
-            print('s.bulkMassWError3dsAll',s.bulkMassWError3dsAll_real,'rel',obj.err3dW)
+            print('s.bulkMassWError3dsAll',s.bulkMassWError3dsAll_real[cell2rhizoId],'rel',obj.err3dW)
                 
         
         ## err1d
@@ -401,18 +400,21 @@ for i, dt in enumerate(np.diff(times)):
         buTotWAfterEach1d = comm.bcast(s1d.getWaterVolumes(), root = 0) 
         
         if True: #rank == 0:
-            s1d.bulkMassWError3dsAll_real = (sum(buTotWAfterEach1d) - (sum(s1d.buTotWBeforeEach1d) \
-            + (s1d.Q_outer_proposed + s1d.proposed_inner_fluxes)*dt) )
+            s1d.bulkMassWError1dsAll_real = (sum(buTotWAfterEach1d) - (sum(s1d.buTotWBeforeEach1d) \
+            + (s1d.proposed_outer_wat_fluxes + s1d.proposed_inner_fluxes)*dt) )
             
-            obj.err1dW = abs(s1d.bulkMassWError3dsAll_real )/sum(buTotWAfterEach1d)
+            obj.err1dW = abs(s1d.bulkMassWError1dsAll_real )/sum(buTotWAfterEach1d)
             
             diff1d3dCurrantW = sum(buTotWAfterEach1d) - buTotWAfterEach_cell
             obj.diff1d3dCurrantW_rel = abs(diff1d3dCurrantW/sum(buTotWAfterEach1d))
-            print('s1d.bulkMassWError3dsAll_real',s1d.bulkMassWError3dsAll_real,'rel',obj.err1dW)
-        print('diff1d3dCurrantW',diff1d3dCurrantW,'1d',sum(buTotWAfterEach1d),'3d', buTotWAfterEach_cell,
+            print('\n\ns1d.bulkMassWError1dsAll_real',s1d.bulkMassWError1dsAll_real,'rel',obj.err1dW)
+            print('sum(buTotWAfterEach1d)',sum(buTotWAfterEach1d), 'sum(s1d.buTotWBeforeEach1d)',sum(s1d.buTotWBeforeEach1d),
+            'proposed inner',s1d.proposed_inner_fluxes*dt,'proposed outer',s1d.proposed_outer_wat_fluxes *dt)
+        print('\n\ndiff1d3dCurrantW',diff1d3dCurrantW,'1d',sum(buTotWAfterEach1d),'3d', buTotWAfterEach_cell,
                 'rel',obj.diff1d3dCurrantW_rel)
-        print('s1d.proposed_inner_fluxes',s1d.proposed_inner_fluxes,s1d.seg_fluxes_limited,(s.sources_wat)/dt, s.getCellVolumes() )
-        print('buTotWBeforeEach',buTotWBeforeEach, buTotWAfterEach, (buTotWBeforeEach-buTotWAfterEach)/dt)
+        print('s1d.proposed_inner_fluxes',s1d.proposed_inner_fluxes,s1d.seg_fluxes_limited,
+                (s.sources_wat[cell2rhizoId])/dt)#, s.getCellVolumes()[cell2rhizoId] )
+        #print('buTotWBeforeEach',buTotWBeforeEach, buTotWAfterEach, (buTotWBeforeEach-buTotWAfterEach)/dt)
         s1d.n_iter += 1
         
 

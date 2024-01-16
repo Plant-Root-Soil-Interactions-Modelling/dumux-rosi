@@ -10,6 +10,11 @@
 
 #include <dune/common/exceptions.hh>
 #include <dumux/discretization/cellcentered/tpfa/fvelementgeometry.hh>
+
+
+// getDofIndices, getPointIndices, getCellIndices
+#include <dune/grid/utility/globalindexset.hh>
+
 namespace Dumux {
 
 /*!
@@ -171,22 +176,22 @@ public:
 			// for (int local_index_scv = 0; local_index_scv < 2;local_index_scv++)
 			// {
 				int idxscv = idxScv4FluxScv_10c.at(index_scvf);//.at(local_index_scv);
-				if (idxscv >= 0) // was filled
-				{
+				//if (idxscv >= 0) // was filled
+				//{
 					NumEqVector value = FluxScvf_10c.at(index_scvf);//.at(local_index_scv);
 					FluxScv_10c.at(idxscv) += value;//check for the sign 
-				}
+				//}
 			// }
 			
 		}
 		return FluxScv_10c;
 	}
-	void setFaceFlux(NumEqVector input, int index_scv, int index_scvf ) const //int local_index_scv, 
+	void setFaceFlux(NumEqVector input, int index_scvf ) const //, int index_scv //int local_index_scv, 
 	{
 		//std::cout<<"setFaceFlux "<<index_scv<<" "<<index_scvf<<" " <<//<<local_index_scv<<" "<<
 		//FluxScvf_10c.size()<<" "<<idxScv4FluxScv_10c.size()<<std::endl;
 		//index_scvf -= 1;
-		if((FluxScvf_10c.size() <= index_scvf)||(idxScv4FluxScv_10c.size() <= index_scvf))
+		if((FluxScvf_10c.size() <= index_scvf))//||(idxScv4FluxScv_10c.size() <= index_scvf))
 		{
 			
 			DUNE_THROW(Dune::InvalidStateException, "setFaceFlux");			
@@ -197,14 +202,14 @@ public:
 		//	const_cast<NumEqVector&>(input) = input * scvf_area;
 		//}
 		const_cast<NumEqVector&>(FluxScvf_10c.at(index_scvf) ) = input;//.at(local_index_scv)
-		const_cast<int&>(idxScv4FluxScv_10c.at(index_scvf) ) = index_scv;//.at(local_index_scv)
+		//const_cast<int&>(idxScv4FluxScv_10c.at(index_scvf) ) = index_scv;//.at(local_index_scv)
 	}
 	
 	void resetSetFaceFlux()
 	{
-		NumEqVector nullVec(0.0);
-		FluxScvf_10c = std::vector<NumEqVector>(FluxScvf_10c.size(),nullVec);
-		idxScv4FluxScv_10c = std::vector<int>(idxScv4FluxScv_10c.size(),-1);
+		NumEqVector nullVec(0.0);// nFaces
+		FluxScvf_10c = std::vector<NumEqVector>(nFaces,nullVec);//FluxScvf_10c.size()
+		//idxScv4FluxScv_10c = std::vector<int>(idxScv4FluxScv_10c.size(),-1);
 	}
 	
     
@@ -486,31 +491,17 @@ public:
 		
 		//fvGridGeometry->numScvf() does not account for touching cells
         
-        // const auto gridView = this->fvGridGeometry().gridView();
-        // auto fvGeometry = localView(this->fvGridGeometry());
+         const auto gridView = this->fvGridGeometry().gridView();
+        auto fvGeometry = localView(this->fvGridGeometry());
 
             // for (const auto& element : elements(gridView()))
                 // assembleElement(element);
-        // for (const auto& element : elements(gridView()))
-        // {
-            // fvGeometry.bindElement(element);
-			// std::cout<<"scvfs"<<std::endl;
-            // for (const auto& scvf : scvfs(fvGeometry))
-            // {
-				// std::cout<<scvf.index()<<"; ";
-            // }std::cout<<std::endl;
-			// std::cout<<"scvfs"<<std::endl;
-            // for (const auto& scv : scvs(fvGeometry))
-            // {
-				// std::cout<<scv.dofIndex()<<"; ";
-            // }std::cout<<std::endl;
-        // }
+       
 		// see dumux/freeflow/rans/problem.hh
-		// auto fvGeometry = localView(fvGridGeometry);//this->fvGridGeometry());
-		 size_t nFaces = fvGridGeometry->numScvf();//fvGeometry.scv(0).index();//fvGridGeometry->numScvf();// std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply );
+		 nFaces = fvGridGeometry->numScvf();//fvGeometry.scv(0).index();//fvGridGeometry->numScvf();// std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply );
 		// std::cout<<"scvfs"<<std::endl;
-		// for (const auto& scvf : scvfs(fvGeometry))// there's probably a better way
-		// {
+		 for (const auto& scvf : scvfs(fvGeometry))// there's probably a better way
+		{}
 			// std::cout<<scvf.index()<<"; ";
 			// size_t size_index = scvf.index();
 			// nFaces = std::max(nFaces, size_index);
@@ -545,9 +536,29 @@ public:
         //Flux_10c.resize(nCells_all);
 		//FluxScvf_10c.resize(nFaces) ;
 		
-		NumEqVector nullVec(0.0);
-		FluxScvf_10c = std::vector<NumEqVector>(nFaces,nullVec);
+		resetSetFaceFlux();
 		idxScv4FluxScv_10c = std::vector<int>(nFaces,-1);
+		
+		 //auto fvGeometry = localView(fvGridGeometry);//this->fvGridGeometry());
+		 for (const auto& element : elements(gridView))
+        {
+            fvGeometry.bindElement(element);
+			
+			std::cout<<"scvfs"<<std::endl;
+            for (const auto& scvf : scvfs(fvGeometry))
+            {
+				std::cout<<scvf.index()<<"; ";//<<", "<<fvGeometry.scv(scvf.insideScvIdx()).dofIndex()
+				//<<", "<<scvf.insideScvIdx() <<"; ";
+				
+				idxScv4FluxScv_10c.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+            }std::cout<<std::endl;
+			std::cout<<"scvs"<<std::endl;
+            for (const auto& scv : scvs(fvGeometry))
+            {
+				std::cout<<scv.dofIndex()<<"; ";
+            }std::cout<<std::endl;
+			
+        }
 		
 		source_10c.resize(nCells_all);
 		testCSS1.resize(nCells_all);
@@ -1626,6 +1637,10 @@ public:
     	this->spatialParams().setRegularisation(pcEps,krEps);
     }
 
+	void setFaceGlobalIndexSet(std::map<int,int>  faceIdx_)
+	{
+		faceIdx = faceIdx_;
+	}
 
 	// BC, direct access for Python binding (setTopBC, setBotBC, in richards.hh)
 	int bcTopType_;
@@ -1648,7 +1663,9 @@ public:
 	double segLength;//m
 	std::vector<double> cellVolumesCyl;
 	int nCells_all;
+	int nFaces;
 	bool computedCellVolumesCyl = false;
+	std::map<int,int>  faceIdx;
     
 private:
 
