@@ -500,8 +500,8 @@ public:
 		// see dumux/freeflow/rans/problem.hh
 		 nFaces = fvGridGeometry->numScvf();//fvGeometry.scv(0).index();//fvGridGeometry->numScvf();// std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply );
 		// std::cout<<"scvfs"<<std::endl;
-		 for (const auto& scvf : scvfs(fvGeometry))// there's probably a better way
-		{}
+		 //for (const auto& scvf : scvfs(fvGeometry))// there's probably a better way
+		//{}
 			// std::cout<<scvf.index()<<"; ";
 			// size_t size_index = scvf.index();
 			// nFaces = std::max(nFaces, size_index);
@@ -547,16 +547,16 @@ public:
 			std::cout<<"scvfs"<<std::endl;
             for (const auto& scvf : scvfs(fvGeometry))
             {
-				std::cout<<scvf.index()<<"; ";//<<", "<<fvGeometry.scv(scvf.insideScvIdx()).dofIndex()
+				//std::cout<<scvf.index()<<"; ";//<<", "<<fvGeometry.scv(scvf.insideScvIdx()).dofIndex()
 				//<<", "<<scvf.insideScvIdx() <<"; ";
 				
 				idxScv4FluxScv_10c.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
-            }std::cout<<std::endl;
-			std::cout<<"scvs"<<std::endl;
-            for (const auto& scv : scvs(fvGeometry))
-            {
-				std::cout<<scv.dofIndex()<<"; ";
-            }std::cout<<std::endl;
+            }//std::cout<<std::endl;
+			//std::cout<<"scvs"<<std::endl;
+            //for (const auto& scv : scvs(fvGeometry))
+            //{
+			//	std::cout<<scv.dofIndex()<<"; ";
+            //}std::cout<<std::endl;
 			
         }
 		

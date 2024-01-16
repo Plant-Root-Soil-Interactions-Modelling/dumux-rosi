@@ -1509,7 +1509,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         if r.mpiVerbose:# or (max_rank == 1):
             comm.barrier()
             print('error 3DS-1DS', rank)
-        print('checkMassOMoleBalance2_1466')
+        #print('checkMassOMoleBalance2_1466')
         r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
                                 seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf)
         if r.mpiVerbose:# or (max_rank == 1):
