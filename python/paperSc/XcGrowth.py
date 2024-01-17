@@ -738,7 +738,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 print("min(C_ST) < 0.0", min(C_ST),np.mean(C_ST),max(C_ST))
                 raise Exception
 
-
+            tiproots, tipstems, tipleaves = r.get_organ_segments_tips()
+            write_file_array("root_segments_tips",tiproots, 
+                             directory_ =results_dir)
+            write_file_array("rhizoSegsId", np.array(rs.rhizoSegsId), 
+                             directory_ =results_dir)
             write_file_array("Q_ST", Q_ST, directory_ =results_dir)#mmol
             write_file_array("C_ST", C_ST, directory_ =results_dir)#mmol/cm3
             write_file_array("C_meso", C_meso, directory_ =results_dir)
@@ -751,6 +755,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("Q_S_meso", Q_S_meso, directory_ =results_dir)
 
             write_file_array("Q_Rm", Q_Rm, directory_ =results_dir)
+            write_file_array("Q_Mucil", Q_Mucil, directory_ =results_dir)
             write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
             write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
             write_file_array("psiXyl", r.psiXyl, directory_ =results_dir)

@@ -50,6 +50,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
+oldCSV = False
 
 
 def write_file_float(name, data, directory_, allranks = False):
@@ -156,7 +157,11 @@ def init_maize_conductivities(r, skr = 1., skx = 1.):
 def getBiochemParam(s,paramIdx, noAds):
     s.numFluidComp = 2
     # s.numComp = 8
-    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
+    #paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
+    if oldCSV:
+        paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
+    else:
+        paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
     
     s.mg_per_molC = 12000
     s.betaC = paramSet['beta_C'] # -
@@ -252,7 +257,11 @@ def setIC3D(s, paramIdx, ICcc = None):
 def setIC(s, paramIdx, ICcc = None):
     # s.setHomogeneousIC(p_mean_, equilibrium = True) #-97.5)  # cm pressure head
     if ICcc is None:
-        paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+        #paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+        if oldCSV:
+            paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+        else:
+            paramSet = pd.read_csv('./output_random_rows.csv').loc[paramIdx]
         C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
@@ -296,7 +305,11 @@ def setDefault(s):
     return s
 
 def setSoilParam(s,paramIdx):
-    paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+    # paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+    if oldCSV:
+        paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
+    else:
+        paramSet = pd.read_csv('./output_random_rows.csv').loc[paramIdx]
     s.bulkDensity =  paramSet['ro_B']*1000 #g/cm3 => kg/m3
     s.solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     s.solidMolarMass = 60.08e-3 # [kg/mol] 
