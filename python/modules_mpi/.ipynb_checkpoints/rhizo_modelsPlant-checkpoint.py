@@ -625,7 +625,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 raise Exception
             # for some reason, I need to create another variable (X_rhizo[idCyll] = X_rhizo fails)
             X_rhizo2 = np.full(len(X_rhizo), np.nan)
-            X_rhizo2[idCyll] = X_rhizo
+            if len(idCyll)>0:
+                try:
+                    X_rhizo2[idCyll] = X_rhizo
+                except:
+                    print('error X_rhizo2[idCyll] = X_rhizo',idCyll  )
+                    raise Exception
         else:
             X_rhizo2 = X_rhizo
         if doSum:

@@ -32,6 +32,16 @@ class SolverWrapper():
     def initialize(self, args_ = [""], verbose = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose)
+    
+    @property
+    def dimWorld(self):
+        """Get the current voltage."""
+        return self.base.dimWorld
+        
+    @property
+    def numComp(self):
+        """Get the current voltage."""
+        return self.base.numComp() -1   
         
     def reset(self):
         """ reset solution vector to value before solve function """
@@ -48,7 +58,8 @@ class SolverWrapper():
         self.base.setVerbose(verbose)
         
     
-    def allgatherv(self,X_rhizo): 
+    def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
+        
         try:
             assert isinstance(X_rhizo, (list, type(np.array([]))))
         except:
@@ -67,9 +78,12 @@ class SolverWrapper():
             local_size = (X_rhizo).shape[0]
             shape0 = (X_rhizo).shape[0]
             shape1 = 0
-            X_rhizo_type = type(X_rhizo[0])
+            if len(X_rhizo) > 0:
+                X_rhizo_type = type(X_rhizo[0])
+            else:
+                X_rhizo_type = X_rhizo_type_default
         else:
-            raise Exception 
+            raise Exception  
         
         
         X_rhizo = np.array(X_rhizo, dtype = np.float64)
@@ -77,7 +91,7 @@ class SolverWrapper():
         work_size = sum(all_sizes)
         all_X_rhizo = np.zeros(work_size)
 
-        offsets = np.zeros(len(all_sizes))
+        offsets = np.zeros(len(all_sizes), dtype=np.int64)
         offsets[1:]=np.cumsum(all_sizes)[:-1]
         all_sizes =tuple(all_sizes)
         offsets =tuple( offsets)
@@ -91,15 +105,25 @@ class SolverWrapper():
             comm.barrier()
 
         comm.Allgatherv( [X_rhizo.reshape(-1), MPI.DOUBLE],[all_X_rhizo,all_sizes,offsets,MPI.DOUBLE])
-        # print('allgathervB',rank,all_X_rhizo,X_rhizo )
+        
         all_X_rhizo = np.array(all_X_rhizo, dtype =X_rhizo_type)
-        # print('allgathervC',rank,all_X_rhizo,X_rhizo_type )
-        if shape1 > 0:
-            all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
+        
+        if keepShape:
+            if shape1 > 0:
+                all_X_rhizo = all_X_rhizo.reshape( size,shape0,shape1)
+            else:
+                all_X_rhizo = all_X_rhizo.reshape(size, shape0)
+        else:
+            if shape1 > 0:
+                #print('allgathervCa, before reshape, in if shape1 > 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
+                all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
+            else:
+                #print('allgathervCb, before reshape, in if shape1 <= 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
+                all_X_rhizo = all_X_rhizo.reshape(-1)
         
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()
-            print('allgathervC, after reshape',rank,all_X_rhizo,'shape0',shape0,'shape1',shape1 )
+            print('allgathervC, after reshape',rank, 'keepShape',keepShape,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1 )
             comm.barrier()
         return all_X_rhizo
 
@@ -115,6 +139,13 @@ class SolverWrapper():
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
+        self.numberOfCellsTot = np.prod(self.numberOfCells)
+        if self.dimWorld == 3:
+            self.numberOfFacesTot = self.numberOfCellsTot * 6
+        elif self.dimWorld == 1:
+            self.numberOfFacesTot = self.numberOfCellsTot * 2
+        else:
+            raise Exception
 
     def createGrid1d(self, points):
         """ todo
@@ -123,6 +154,8 @@ class SolverWrapper():
         for v in points:
             p.append([v / 100.])  # cm -> m
         self.base.createGrid1d(p)
+        self.numberOfCellsTot = len(points) -1
+        self.numberOfFacesTot = self.numberOfCellsTot * 2
 
 #     def createGrid3d(self, points, p0):
 #         """ todo
@@ -153,12 +186,11 @@ class SolverWrapper():
 
     def initializeProblem(self, rank_ = 0):
         """ After the grid is created, the problem can be initialized """
+        print(rank, 'initialize problem')
         self.base.initializeProblem()
+        print(rank, 'initialized problem')
         if (self.mpiVerbose and (size > 1)):
             print(rank, 'initialized problem')
-        self.dimWorld = self.base.dimWorld
-        if (self.mpiVerbose and (size > 1)):
-            print(rank, 'initializeProblem::dimWorld',self.dimWorld)
 
 
     def setInitialCondition(self, ic, eqIdx = 0):
@@ -169,12 +201,12 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, maxDt = -1., solverVerbose = False):
+    def solve(self, dt:float, maxDt = -1., solverVerbose = False, saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
-        self.base.solve(dt * 24.*3600., maxDt * 24.*3600., solverVerbose)  # days -> s
+        self.base.solve(dt * 24.*3600., maxDt * 24.*3600., solverVerbose, saveInnerFluxes = saveInnerFluxes_)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """
@@ -231,7 +263,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCells", rank)
             comm.barrier()
-        return self._map(self.allgatherv(self.base.getCells()), 2, np.int64)
+        return self._map(self.allgatherv(self.base.getCells(), X_rhizo_type_default = np.int64), 2, np.int64)
 
     def getCells_(self):
         """nompi version of """
@@ -288,7 +320,7 @@ class SolverWrapper():
         if rank > 0:
             return []
         else:
-            return self.allgatherv(self.base.getDofIndices())
+            return self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
 
     def getDofIndices_(self):
         """nompi version of  """
@@ -494,11 +526,11 @@ class SolverWrapper():
             print("solverbase::_map", rank)
             comm.barrier()
         if type_ == 0:  # auto (dof)
-            indices = self.allgatherv(self.base.getDofIndices())
+            indices = self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
         elif type_ == 1:  # points
-            indices = self.allgatherv(self.base.getPointIndices())
+            indices = self.allgatherv(self.base.getPointIndices(), X_rhizo_type_default = np.int64)
         elif type_ == 2:  # cells
-            indices = self.allgatherv(self.base.getCellIndices())
+            indices = self.allgatherv(self.base.getCellIndices(), X_rhizo_type_default = np.int64)
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
         if rank == 0:
@@ -580,3 +612,9 @@ class SolverWrapper():
     def to_head(p):
         """ Converts Pascal [kg/ (m s^2)] to cm pressure head """
         return (p - 1.e5) * 100. / 1000. / 9.81;
+
+    @property
+    def segLength(self):
+        """ [cm] returns None I think for dimWorld != 1"""
+        self.checkInitialized() # is this the correct check? we need to have called initializeProblem before
+        return self.base.segLength()*100 # m to cm

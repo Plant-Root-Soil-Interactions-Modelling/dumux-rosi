@@ -566,15 +566,16 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
                 print('did reset')#,rank,solution0_1ds_new , solution0_1ds_old)
                 comm.barrier()
-            try:
-                diff_solution0_1ds = np.concatenate(np.array([solution0_1ds_new[i] == solution0_1ds_old[i] for i in range(len(solution0_1ds_new))],dtype=object))
-                assert diff_solution0_1ds.all()
-            except:
-                print('issue with assert 1dsnewold',rank)
-                print(rank,solution0_1ds_new , solution0_1ds_old)
-                print(rank, diff_solution0_1ds)
-                print(rank, r.eidx)
-                raise Exception
+            if (len(solution0_1ds_new) != 0) or (len(solution0_1ds_old) != 0) : # some threads could have no cylinders
+                try:
+                    diff_solution0_1ds = np.concatenate(np.array([solution0_1ds_new[i] == solution0_1ds_old[i] for i in range(len(solution0_1ds_new))],dtype=object))
+                    assert diff_solution0_1ds.all()
+                except:
+                    print('issue with assert 1dsnewold',rank)
+                    print(rank,solution0_1ds_new , solution0_1ds_old)
+                    #print(rank, diff_solution0_1ds)
+                    print(rank, r.eidx)
+                    raise Exception
             
             if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()

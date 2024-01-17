@@ -83,7 +83,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     mpiVerbose = False
     noAds = (extraName == 'noAds')
     doSimple = False
-    doMinimumPrint = False
+    doMinimumPrint = True
         
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\

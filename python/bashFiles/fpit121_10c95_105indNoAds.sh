@@ -11,7 +11,7 @@
 #SBATCH --mail-user=m.giraud@fz-juelich.de
 
 
-cd $HOME/DUMUXexudDune27/DUMUX/dumux-rosi/python/paperSc 
+cd $HOME/DumuxDune27/DUMUX/dumux-rosi/python/paperSc 
 
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}

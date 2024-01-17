@@ -58,7 +58,8 @@ class SolverWrapper():
         self.base.setVerbose(verbose)
         
     
-    def allgatherv(self,X_rhizo, keepShape = False): 
+    def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
+        
         try:
             assert isinstance(X_rhizo, (list, type(np.array([]))))
         except:
@@ -77,9 +78,12 @@ class SolverWrapper():
             local_size = (X_rhizo).shape[0]
             shape0 = (X_rhizo).shape[0]
             shape1 = 0
-            X_rhizo_type = type(X_rhizo[0])
+            if len(X_rhizo) > 0:
+                X_rhizo_type = type(X_rhizo[0])
+            else:
+                X_rhizo_type = X_rhizo_type_default
         else:
-            raise Exception 
+            raise Exception  
         
         
         X_rhizo = np.array(X_rhizo, dtype = np.float64)
@@ -87,7 +91,7 @@ class SolverWrapper():
         work_size = sum(all_sizes)
         all_X_rhizo = np.zeros(work_size)
 
-        offsets = np.zeros(len(all_sizes))
+        offsets = np.zeros(len(all_sizes), dtype=np.int64)
         offsets[1:]=np.cumsum(all_sizes)[:-1]
         all_sizes =tuple(all_sizes)
         offsets =tuple( offsets)
@@ -111,11 +115,15 @@ class SolverWrapper():
                 all_X_rhizo = all_X_rhizo.reshape(size, shape0)
         else:
             if shape1 > 0:
+                #print('allgathervCa, before reshape, in if shape1 > 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
                 all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
+            else:
+                #print('allgathervCb, before reshape, in if shape1 <= 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
+                all_X_rhizo = all_X_rhizo.reshape(-1)
         
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()
-            print('allgathervC, after reshape',rank,all_X_rhizo,'shape0',shape0,'shape1',shape1 )
+            print('allgathervC, after reshape',rank, 'keepShape',keepShape,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1 )
             comm.barrier()
         return all_X_rhizo
 
@@ -255,7 +263,7 @@ class SolverWrapper():
             comm.barrier()
             print("solverbase::getCells", rank)
             comm.barrier()
-        return self._map(self.allgatherv(self.base.getCells()), 2, np.int64)
+        return self._map(self.allgatherv(self.base.getCells(), X_rhizo_type_default = np.int64), 2, np.int64)
 
     def getCells_(self):
         """nompi version of """
@@ -312,7 +320,7 @@ class SolverWrapper():
         if rank > 0:
             return []
         else:
-            return self.allgatherv(self.base.getDofIndices())
+            return self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
 
     def getDofIndices_(self):
         """nompi version of  """
@@ -518,11 +526,11 @@ class SolverWrapper():
             print("solverbase::_map", rank)
             comm.barrier()
         if type_ == 0:  # auto (dof)
-            indices = self.allgatherv(self.base.getDofIndices())
+            indices = self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
         elif type_ == 1:  # points
-            indices = self.allgatherv(self.base.getPointIndices())
+            indices = self.allgatherv(self.base.getPointIndices(), X_rhizo_type_default = np.int64)
         elif type_ == 2:  # cells
-            indices = self.allgatherv(self.base.getCellIndices())
+            indices = self.allgatherv(self.base.getCellIndices(), X_rhizo_type_default = np.int64)
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
         if rank == 0:
