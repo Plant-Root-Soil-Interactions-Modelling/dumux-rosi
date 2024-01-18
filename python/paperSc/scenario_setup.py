@@ -207,8 +207,8 @@ def getBiochemParam(s,paramIdx, noAds):
     s.alpha = 0.1# -
     s.f_sorp = 0.5
     s.k_phi = 0.1
-    s.C_aOLim=1.e-10*0.
-    s.C_aCLim=1.e-10*0.
+    s.C_aOLim=1.e-10 # so that microbe community can always regrow
+    s.C_aCLim=1.e-10 # so that microbe community can always regrow
     
     return s
 

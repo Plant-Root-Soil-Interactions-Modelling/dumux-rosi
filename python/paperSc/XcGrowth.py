@@ -89,14 +89,15 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/fixeUpdate"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
                     +str(max_rank)+"_"+str(abs(p_mean))+"/"
     
     comm.barrier()
-    print('results_dir','DUMUXexudDune27/DUMUX/dumux-rosi/python/paperSc/',results_dir, flush = True)
+    if rank == 0:
+        print('results_dir','DUMUXexudDune27/DUMUX/dumux-rosi/python/paperSc/',results_dir, flush = True)
     comm.barrier()
     if rank == 0:
         if not os.path.exists(results_dir):
@@ -583,7 +584,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                  directory_ =results_dir, allranks = True)
                 write_file_array("Cyl_pressureHead_"+str(gId),pHead, 
                                  directory_ =results_dir, allranks = True)
-                write_file_array("Cyl_coord_"+str(gId), cyl.getDofCoordinates().flatten(), 
+                write_file_array("Cyl_coord_"+str(gId),
+                                 cyl.getDofCoordinates().flatten(), 
+                                 directory_ =results_dir, allranks = True)
+                write_file_array("Cyl_cellVol_"+str(gId),
+                                 cyl.getCellVolumes().flatten(), 
                                  directory_ =results_dir, allranks = True)
                 for ccc in range(rs.numComp):
                     sol0 = np.array(cyl.getContent(ccc +1, ccc < 2 )).flatten()
@@ -603,7 +608,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             endphloem = rs_age + dt
             stepphloem = 1
             verbose_phloem = True
-            filename = "results/" +"inPM.txt"
+            filename = results_dir +"inPM"+str(rank)+".txt"
             
             print("startpm",rank)
 
@@ -776,14 +781,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     if mpiVerbose:# or (max_rank == 1):
         print('finished simulation')
     sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
-    print('checkMassOMoleBalance2_747')
-    rs.checkMassOMoleBalance2( sourceWat = np.full(len(sizeSoilCell),0.), # cm3/day 
-                                     sourceSol = np.full((rs.numComp, len(sizeSoilCell)),0.), # mol/day
-                                     dt = 0.,        # day    
-                                     seg_fluxes = 0.,# [cm3/day]
-                                     doWater = True, doSolute = True, doSolid = True, diff1d3dCW_abs_lim = np.Inf,
-                             verbose_ = False)
-    vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
+    #print('checkMassOMoleBalance2_747')
+    rs.checkMassOMoleBalance2()
+    #vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
 
     if False:
 
@@ -820,8 +820,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 print("idcomp_done", i, rank)
     # to plot: cumulative An, Exud, mucil and each element in the soil
     # Also images of the 3D soil.
-    if mpiVerbose:# or (max_rank == 1):
-        print("fin", rank)
+    print("fin", rank)
     return results_dir
 
         

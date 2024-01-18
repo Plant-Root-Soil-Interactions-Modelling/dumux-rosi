@@ -154,7 +154,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 pheadinit_cm_all = pheadinit_cm - (cellsZ - meanZ)
                 pheadinit_Pa = s.to_pa(pheadinit_cm_all)
                 print('checkMassOMoleBalance2_153')
-                r.checkMassOMoleBalance2(None,None, dt,
+                r.checkMassOMoleBalance2(None,None, dt=dt,
                                     seg_fluxes =None, diff1d3dCW_abs_lim =np.Inf, takeFlux = False) 
                 print('error before change',r.sumDiff1d3dCW_rel ,'pheadinit_cm',pheadinit_cm, r.weatherX['theta'],
                       vg.pressure_head(0.4, s.vg_soil) ,
@@ -192,8 +192,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                             nc_molFr =np.array( [nc_c/newWatMol for nc_c in nc_content])
                             for nc in range(r.numFluidComp):
                                 cyl.base.setSolution(nc_molFr[nc],nc+1 )
-                print('checkMassOMoleBalance2_189')
-                r.checkMassOMoleBalance2(None,None, dt,
+                #print('checkMassOMoleBalance2_189')
+                r.checkMassOMoleBalance2(None,None, dt=dt,
                                     seg_fluxes =None, 
                                           diff1d3dCW_abs_lim = np.Inf, 
                                          takeFlux = False,
@@ -746,7 +746,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             # mass water error to check when leaving fixed point iteration (with seg_fluxes)
             errorsEachC = rhizoTotCAfter_ - ( rhizoTotCBefore_ + (seg_sol_fluxes+ proposed_outer_sol_fluxes+ seg_mucil_fluxes+ proposed_outer_mucil_fluxes)*dt)
-            errorsEachC_rel = errorsEachC/rhizoTotCAfter_
+            
+            errorsEachC_rel = np.zeros(errorsEachC)
+            errorsEachC_rel[np.where(rhizoTotCAfter_ != 0)] = errorsEachC/rhizoTotCAfter_
+            errorsEachC_rel[np.where((rhizoTotCAfter_ == 0) and (rhizoTotCBefore_ != 0))] = errorsEachC/rhizoTotCBefore_
             if len(airSegsId)>0:                
                 try:
                     assert (errorsEachC[airSegsId] == 0.).all()
@@ -1052,9 +1055,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             #print('allDiff1d3dCW_1030',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
             #print('checkMassOMoleBalance2_1033')
-            r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
+            r.checkMassOMoleBalance2(dt=dt,
                                     seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf,
-                                    verbose_ = False,takeFlux=True) # just to get error value, will not throw an error
+                                    verbose_ = False,takeFlux=False) # just to get error value, will not throw an error
             #print('allDiff1d3dCW_1037',r.allDiff1d3dCW_abs[[1,-1,-3]].flatten())
             
             
@@ -1200,7 +1203,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             """ 4. prints and evaluation of the iteration """
             # TODO: see which value are more sensible. very low rx in the leaves may make the level of change always low in the plant
             #print('checkMassOMoleBalance2_1166')
-            r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
+            r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt=dt,
                                     seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf,
                                     verbose_ = False) # just to get error value, will not throw an error
             rx = np.array(rs.psiXyl)
@@ -1511,7 +1514,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
             print('error 3DS-1DS', rank)
         #print('checkMassOMoleBalance2_1466')
-        r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt,
+        r.checkMassOMoleBalance2(soil_fluxes*0, soil_source_sol*0, dt=dt,
                                 seg_fluxes =seg_fluxes*0, diff1d3dCW_abs_lim = np.Inf)
         if r.mpiVerbose:# or (max_rank == 1):
             print('finished  error 3DS-1DS', rank)

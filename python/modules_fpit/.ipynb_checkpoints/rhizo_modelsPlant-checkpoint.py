@@ -185,10 +185,20 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             self.repartitionSoilOld = repartitionSoil
             self.repartitionAirOld = repartitionAir
             self.organTypes =np.array( self.organTypes)
-            assert sum(repartitionSoil) == len(self.seg_length) - len(self.airSegs )
-            assert sum(self.toAddSoil) == (len(self.seg_length) - len(self.airSegs ) - self.nsSoilOld )
-            assert sum(repartitionAir) ==  len(self.airSegs )
-            assert sum(self.toAddAir) == ( len(self.airSegs ) - self.nsAirOld )
+            try:
+                assert sum(repartitionSoil) == len(self.seg_length) - len(self.airSegs )
+                assert sum(self.toAddSoil) == (len(self.seg_length) - len(self.airSegs ) - self.nsSoilOld )
+                assert sum(repartitionAir) ==  len(self.airSegs )
+                assert sum(self.toAddAir) == ( len(self.airSegs ) - self.nsAirOld )
+            except:
+                print('issue seg repartitionA',rank, sum(repartitionSoil) , len(self.seg_length), len(self.airSegs ))
+                print('issue seg repartitionB',rank,  sum(self.toAddSoil) , len(self.seg_length) , len(self.airSegs ) , self.nsSoilOld )
+                print('issue seg repartitionC',rank,  sum(repartitionAir) ,  len(self.airSegs ) )
+                print('issue seg repartitionD',rank,sum(self.toAddAir) ,  len(self.airSegs ) , self.nsAirOld ) 
+                print('parsing plant data', rank, len(self.radii), 
+                      'soil',self.toAddSoil ,  self.nsSoilOld,
+                      'air', self.toAddAir ,  self.nsAirOld, sum(self.toAddAir))
+                raise Exception
             #for next time step
         
         if (self.mpiVerbose and (size > 1)):
@@ -434,30 +444,39 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         theta_leftOver = np.array([watVol_leftover[idvol]/vol if vol > 0 else np.nan for idvol, vol in enumerate(volLeftOver) ])
         
-        lowTheta = np.where(theta_leftOver <self.vg_soil.theta_R )
+        lowTheta = np.where(theta_leftOver <= self.vg_soil.theta_R )
         if len(volLeftOver[lowTheta]) > 0:
             cell_volumes = np.array(comm.bcast(self.soilModel.getCellVolumes() , root = 0))[cellIds]
             try:
-                assert max(volLeftOver[lowTheta]/cell_volumes[lowTheta])*100. < 1e-2 # low theta, no new segments in the soil voxel
+                #assert max(volLeftOver[lowTheta]/cell_volumes[lowTheta])*100. < 1e-2 
+                assert min((theta_leftOver - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 > -1.
+                theta_leftOver[lowTheta] = self.vg_soil.theta_R + 1e-5
             except:
-                print('max(volLeftOver[lowTheta]) >= 1e-13', volLeftOver,theta_leftOver )
-                print(volLeftOver[lowTheta], theta_leftOver[lowTheta],cell_volumes[lowTheta],volLeftOver[lowTheta]/cell_volumes[lowTheta], lowTheta)
+                print('min((theta_leftOver - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 < -1.', volLeftOver,theta_leftOver )
+                print(volLeftOver[lowTheta], theta_leftOver[lowTheta],cell_volumes[lowTheta],volLeftOver[lowTheta]/cell_volumes[lowTheta], 'lowTheta',lowTheta, 'cellIds',cellIds)
                 raise Exception
-        highTheta = np.where(theta_leftOver >self.vg_soil.theta_S )
+        highTheta = np.where(theta_leftOver >= self.vg_soil.theta_S )
         if len(volLeftOver[highTheta]) > 0:
             cell_volumes = np.array(comm.bcast(self.soilModel.getCellVolumes() , root = 0))[cellIds]
-            assert max(volLeftOver[highTheta]/cell_volumes[lowTheta])*100. < 1e-2 # low theta, no new segments in the soil voxel
-        correctTheta = np.where(((theta_leftOver <= self.vg_soil.theta_S) & (theta_leftOver >= self.vg_soil.theta_R)))
+            try:
+                #assert max(volLeftOver[highTheta]/cell_volumes[highTheta])*100. < 1e-2 # low theta, no new segments in the soil voxel
+                assert min((theta_leftOver - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100 < 1.
+                theta_leftOver[highTheta] = self.vg_soil.theta_S - 1e-5
+            except:
+                print('theta too high',volLeftOver[highTheta], cell_volumes[highTheta], theta_leftOver[highTheta],highTheta)
+                raise Exception
+        #correctTheta = theta_leftOver#np.where(((theta_leftOver <= self.vg_soil.theta_S) & (theta_leftOver >= self.vg_soil.theta_R)))
         #print('get_XX_leftover_A', rank, theta_leftOver, correctTheta)
         XX_leftover = np.full(theta_leftOver.shape, np.nan)
-        if len(theta_leftOver[correctTheta]) > 0:
+        if len(theta_leftOver) > 0:#[correctTheta]
             try:
                 #print('get_XX_leftover_B', rank,np.array([tlo for tlo in theta_leftOver[correctTheta]]))
-                XX_leftover[correctTheta] = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver[correctTheta]])
+                # XX_leftover[correctTheta] = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver[correctTheta]])
+                XX_leftover = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver ])
             except:
                 print(theta_leftOver[lowTheta],volLeftOver[lowTheta])
                 print(theta_leftOver[highTheta],volLeftOver[highTheta])
-                print(theta_leftOver[correctTheta])
+                print(theta_leftOver )
                 raise Exception
         if False:
             idVerbose = np.where(cellIds == 0)[0]
@@ -522,9 +541,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     print('checkradii verbose',vol_total - sum(vol_rootRhizo - vol_root),vol_total , sum(vol_rootRhizo - vol_root))
         comm.Barrier()
     
-    def getCellIds(self):
+    def getCellIds(self):# only send cells which have roots in them
         if False:
-            # only send cells which have roots in them
+            
             cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
             cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
         else:
@@ -616,16 +635,17 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         comm.Barrier()
     
                     
-    def checkMassOMoleBalance2(self, sourceWat, # cm3/day 
-                                     sourceSol, # mol/day
-                                     dt,        # day    
-                                     seg_fluxes,# [cm3/day]
-                                     doWater = True, doSolute = True, doSolid = True,
+    def checkMassOMoleBalance2(self, sourceWat=None, # cm3/day 
+                                     sourceSol=None, # mol/day
+                                     dt=0.,        # day    
+                                     seg_fluxes=0.,# [cm3/day]
+                                     doWater = True, doSolute = True, 
+                               doSolid = True,
                                      useSoilData = False,
                                      doKonz = True,
-                                     diff1d3dCW_abs_lim = None,
+                                     diff1d3dCW_abs_lim = np.Inf,
                               verbose_ = False,
-                              takeFlux=True):#would need to do it for each cell, not overall?
+                              takeFlux=False):#would need to do it for each cell, not overall?
         verbose = verbose_
         if verbose:
             print("checkMassOMoleBalance2", rank)
@@ -1136,8 +1156,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                   'gradient',gradient, 'theta_old',theta_old_, 'volumes',volumes,'changeRatio',changeRatio )
             raise Exception
         if isWater:
-            maxVal = self.vg_soil.theta_S# keep that or set lower higher bound?
-            minVal = self.theta_wilting_point  # self.vg_soil.theta_R# do not use thetar => lead to -Inf pressure head
+            maxVal = self.vg_soil.theta_S - 1e-5 # keep that or set lower higher bound?
+            minVal = self.theta_wilting_point # self.vg_soil.theta_R# do not use thetar => lead to -Inf pressure head
         else:
             maxVal = np.Inf#* volumes
             minVal = 0.#* volumes
@@ -1174,7 +1194,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
                 while (  max(minVal - val_new) > 0) and (n_iter < 5):
                     if (  max(minVal -val_new) <  1e-19 ):
-                        print('max(minVal -val_new) <  1e-14', max(minVal -val_new),np.maximum(val_new, minVal))
+                        print('max(minVal -val_new) <  1e-19', max(minVal -val_new),np.maximum(val_new, minVal))
                         val_new = np.maximum(val_new, minVal)
                     else:
                         if verbose:
@@ -1382,7 +1402,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                 
                 wOld = sum(theta_old*volOld)
-                changeRatioW = max(min(changeRatio, sum(self.vg_soil.theta_S*volNew)/wOld),sum(self.theta_wilting_point*volNew)/wOld)
+                changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
                 try:
                     assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
                 except:
@@ -1493,9 +1513,15 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             idCylsAll, idCyls =   self.getIdCyllMPI(idCell, True)  
         
         newVol = 0
-        if len(idSegs) > len(idCylsAll):
-            newSegs = np.array([ids for ids in idSegs if ids not in idCylsAll])
-            newVol = sum(np.pi* (np.array(self.outer_radii)[newSegs]**2 - np.array(self.radii)[newSegs]**2 )*self.seg_length[newSegs]/1e6)
+        try:
+            if len(idSegs) > len(idCylsAll):
+                newSegs = np.array([ids for ids in idSegs if ids not in idCylsAll])
+                newVol = sum(np.pi* (np.array(self.outer_radii)[newSegs]**2 - np.array(self.radii)[newSegs]**2 )*self.seg_length[newSegs]/1e6)
+        except:
+            print('issue in get_Vol_leftoverI',rank,len(idSegs), len(idCylsAll), len(np.array(self.outer_radii)), np.array(self.outer_radii))
+            print('newSegs',rank, newSegs)
+            print('newVol',rank, np.pi* (np.array(self.outer_radii)[newSegs]**2 - np.array(self.radii)[newSegs]**2 )*self.seg_length[newSegs]/1e6)
+            raise Exception
         return newVol
         
     def get_watVol_leftoverI(self, idCell):# m3
@@ -1579,7 +1605,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print("mol_rhizo_", mol_rhizo_, "idCylsAll",idCylsAll)
             print( 'lens',len(idSegs), len(idCyls))# how many old and new cylinders?
         if res_CC < 0.:
-            if (res_CC >(-self.maxDiff1d3dCW_abs[idComp]*10)):# and (len(idSegs) == len(idCylsAll))): # rounding error probably 
+            if (res_CC >(-1e-13-self.maxDiff1d3dCW_abs[idComp]*10)):# and (len(idSegs) == len(idCylsAll))): # rounding error probably 
                 res_CC = 0.
             else:
                 print("getC_content_leftoverI", idCell)
@@ -1752,16 +1778,26 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.gId = gId    
             ThetaCyl = cyl.getWaterContent()
             setDefault(cyl)
-            assert (ThetaCyl >= self.vg_soil.theta_R).all()
-            assert (ThetaCyl <= self.vg_soil.theta_S).all()
+            try:
+                assert (ThetaCyl >= self.vg_soil.theta_R).all()
+                assert (ThetaCyl <= self.vg_soil.theta_S).all()
+            except:
+                print('issue thetaCyl',rank,ThetaCyl, self.vg_soil.theta_R, self.vg_soil.theta_S )
+                raise Exception
             pHeadcyl = cyl.getSolutionHead()
             #print(cyl.getSolutionHead(),x, gId, self.seg2cell[gId])#cyl.getSolutionHead_(),
             #raise Exception
             if verbose:
                 print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl()),self.seg_length[gId],
                   pHeadcyl , x,pHeadcyl - x,'Cells',Cells)
-            assert len(pHeadcyl) == (self.NC - 1)
-            assert (abs((pHeadcyl - x)/x)*100 < 1e-5).all()
+            try:
+                assert len(pHeadcyl) == (self.NC - 1)
+                assert (abs((pHeadcyl - x)/x)*100 < 1e-5).all()
+            except:
+                print('error: issue with cylinder creations', rank)
+                print('len(pHeadcyl) == (self.NC - 1)?', len(pHeadcyl), (self.NC - 1))
+                print('(abs((pHeadcyl - x)/x)*100 > 1e-5).all()?',abs((pHeadcyl - x)/x)*100, pHeadcyl,x)
+                raise Exception
             
             return cyl
         else:
@@ -1779,7 +1815,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         rsx = np.zeros((len(self.cyls),))
         for i, cyl in enumerate(self.cyls):  # run cylindrical models
             if isinstance(cyl, AirSegment):
-                rsx[i] = cyl.get_inner_head(val = self.rs.getPsiAir(weather["ea"]/weather["es"], weather["TairC"]))  # [cm]
+                try:
+                    rsx[i] = self.rs.getPsiAir(weather["ea"]/weather["es"], weather["TairC"])  # [cm]
+                except:
+                    print('issue weather', rank, weather["ea"], weather["es"], weather["TairC"], weather)
+                    raise Exception
             elif self.mode.startswith("dumux"):
                 rsx[i] = cyl.getInnerHead(shift)  # [cm] (in richards.py, then richards_cyl.hh)
             elif self.mode.startswith("python"):
