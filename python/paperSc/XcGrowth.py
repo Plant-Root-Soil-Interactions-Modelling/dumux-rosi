@@ -309,8 +309,36 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                         write_file_array("fpit_sol_content1d"+str(nc+1), rs.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
                                          directory_ =results_dir, fileType = '.csv')  
             start = False
-        if (rank == 0) and (not doMinimumPrint):
+        if (rank == 0):# and (not doMinimumPrint):
             write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
+            write_file_array("subTypes", np.array(r.rs.subTypes), directory_ =results_dir)
+            length_Segs = np.array(r.rs.segLength())
+            write_file_array("length_Segs", length_Segs, directory_ =results_dir)
+            orgs = r.plant.getOrgans(-1, False)
+            parentorgid = np.array([org.getParent().getId() for org in orgs])
+            parentNidx = np.array([org.getParent().getNodeId(org.parentNI) for org in orgs])
+            id_orgs = np.array([org.getId() for org in orgs])
+            ot_orgs = np.array([org.organType() for org in orgs])
+            st_orgs = np.array([org.getParameter("subType") for org in orgs])
+            lenOrg = np.array([org.getLength(False) for org in orgs])   
+            write_file_array("id_orgs", id_orgs, directory_ =results_dir)
+            write_file_array("ot_orgs", ot_orgs, directory_ =results_dir)
+            write_file_array("st_orgs", st_orgs, directory_ =results_dir)  
+            write_file_array("lenOrg", lenOrg, directory_ =results_dir) 
+            write_file_array("parentNidx", parentNidx, directory_ =results_dir) 
+            
+            write_file_array("nodes_X",
+                             np.array([tempnode[0] for tempnode in r.get_nodes()]), 
+                             directory_ =results_dir)
+            write_file_array("nodes_Y", np.array([tempnode[1] for tempnode in r.get_nodes()]), directory_ =results_dir)
+            write_file_array("nodes_Z", np.array([tempnode[2] for tempnode in r.get_nodes()]), directory_ =results_dir)
+            idPerNode = np.concatenate([
+                np.full(org.getNumberOfNodes(),org.getId()) for org in orgs]).reshape(-1)
+            globalNodeId = np.concatenate([org.getNodeIds() for org in orgs]).reshape(-1)
+            write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
+            write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
+
+            
         
                            
 
@@ -828,7 +856,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 0 customDry noAds 9.02 0.02
     # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
-    print('sys.argv',sys.argv)
+    if rank == 0:
+        print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5
     mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     

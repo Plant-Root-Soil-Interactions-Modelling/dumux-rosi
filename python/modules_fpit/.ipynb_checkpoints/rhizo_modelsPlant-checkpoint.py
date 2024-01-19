@@ -470,9 +470,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         XX_leftover = np.full(theta_leftOver.shape, np.nan)
         if len(theta_leftOver) > 0:#[correctTheta]
             try:
-                #print('get_XX_leftover_B', rank,np.array([tlo for tlo in theta_leftOver[correctTheta]]))
                 # XX_leftover[correctTheta] = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver[correctTheta]])
-                XX_leftover = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver ])
+                idtocompute = np.where(~np.isnan(theta_leftOver))
+                #print('get_XX_leftover_B', rank,theta_leftOver, theta_leftOver.shape, idtocompute)
+                XX_leftover[idtocompute] = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver[idtocompute]])
+                #print('get_XX_leftover_C',XX_leftover)
             except:
                 print(theta_leftOver[lowTheta],volLeftOver[lowTheta])
                 print(theta_leftOver[highTheta],volLeftOver[highTheta])
@@ -1402,6 +1404,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                 
                 wOld = sum(theta_old*volOld)
+                maxVal = self.vg_soil.theta_S - 1e-5 # keep that or set lower higher bound?
+                minVal = self.theta_wilting_point
                 changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
                 try:
                     assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
@@ -1414,6 +1418,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     raise Exception
                 try:
                     theta_new = self.updateConcentration(totContent = wOld*changeRatioW,changeRatio=changeRatioW, gradient =gradientNew, theta_old_ = theta_old, volumes = volNew,isWater = True)
+                    #newHead = np.full(theta_new.shape, np.nan)
+                    #idtocompute = np.where(~np.isnan(theta_leftOver))
+                    #newHead[idtocompute] = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new[idtocompute]])# cm
                     newHead = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])# cm
                 except:
                     print('issue updateConcentration, gradientNew',gradientNew,points[1:-1],oldPoints[1:-1], gradientOld )
@@ -1626,9 +1633,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             try:
                 self.cyls.append(self.initialize_dumux_nc_(gId, x[self.seg2cell[gId]], cc[self.seg2cell[gId]]))
             except:
-                print('error at initialization',gId,self.seg2cell[gId], self.organTypes[gId],
+                print('error at initialization',gId,self.seg2cell[gId],
+                      self.organTypes[gId],
                     self.radii[gId], self.outer_radii[gId],self.seg_length[gId],
-                    x[self.seg2cell[gId]], cc[self.seg2cell[gId]] )
+                    x[self.seg2cell[gId]],
+                      cc[self.seg2cell[gId]],self.seg2cell[gId] )
+                write_file_float('xErrInit', x, directory_ =self.results_dir )
                 raise Exception
         else:
             a_in = self.radii[gId]#get Perimeter instead? not used for now anyway

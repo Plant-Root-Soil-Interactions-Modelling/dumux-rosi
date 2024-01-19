@@ -747,9 +747,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # mass water error to check when leaving fixed point iteration (with seg_fluxes)
             errorsEachC = rhizoTotCAfter_ - ( rhizoTotCBefore_ + (seg_sol_fluxes+ proposed_outer_sol_fluxes+ seg_mucil_fluxes+ proposed_outer_mucil_fluxes)*dt)
             
-            errorsEachC_rel = np.zeros(errorsEachC)
-            errorsEachC_rel[np.where(rhizoTotCAfter_ != 0)] = errorsEachC/rhizoTotCAfter_
-            errorsEachC_rel[np.where((rhizoTotCAfter_ == 0) and (rhizoTotCBefore_ != 0))] = errorsEachC/rhizoTotCBefore_
+            errorsEachC_rel = np.zeros(errorsEachC.shape)
+            idTemp = np.where(rhizoTotCAfter_ != 0)
+            errorsEachC_rel[idTemp] = errorsEachC[idTemp]/rhizoTotCAfter_[idTemp]
+            idTemp =  np.where(np.logical_and((rhizoTotCAfter_ == 0) , (rhizoTotCBefore_ != 0)))
+            errorsEachC_rel[idTemp] = errorsEachC[idTemp] /rhizoTotCBefore_[idTemp] 
             if len(airSegsId)>0:                
                 try:
                     assert (errorsEachC[airSegsId] == 0.).all()
