@@ -20,6 +20,16 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
 
+def sinusoidal(t):
+    """ sinusoidal function (used for transpiration) (integral over one day is 1)"""
+    return np.sin(2. * np.pi * np.array(t) - 0.5 * np.pi) + 1.
+
+
+def sinusoidal2(t, dt):
+    """ sinusoidal function from 6:00 - 18:00, 0 otherwise (integral over one day is 1)"""
+    return np.maximum(0., np.pi * (np.cos(2 * np.pi * (t - 0.5)) + np.cos(2 * np.pi * ((t + dt) - 0.5))) / 2)
+
+
 def soil_vg_(name:str):
     """ 
     Van Genuchten parameter for soil from Hydrus1D, 
@@ -260,7 +270,7 @@ def open_sra_lookup(filename):
     sx_ = x[1]
     inner_ = x[2]
     outer_ = x[3]
-    return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)
+    return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)  # default is 'linear' (method = 'nearest')
 
 
 def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs, wall_time = 0.):

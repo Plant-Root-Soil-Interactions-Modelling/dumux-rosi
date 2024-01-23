@@ -1,9 +1,11 @@
-""" 
-static root system in soil (1D or 3D) outer radii with Voronoi method, or via densities 
+"""     
+    Upscaled aggregated root hydraulic model Byz
+    
+    x: A: exact, B: aggregated over soil elemnts, C: parallel root system 
+    y: A: Voronoi, B: Uniformly distributed
+    z: A: 3D, B: 2D, C: 1D
 
-aggregated hydraulic model with aggregated perirhizal nonlinear resistances 
-(aggregated  over soil cells, steady rate approach and fixed-point-iteration on aggregated values, 
-in new manuscript notation)
+    Daniel Leitner 1.2024
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -21,11 +23,23 @@ from scenario_setup import *
 
 
 def simulate_agg(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):
+    """
+    assumes a static root architecure
+    values are retrieved in set_scenario(), in scenario_setup.py
+    
+    sim_time             final simulation time
+    r                    reference to PlantHydraulicModel (holds reference to MappedSegments)
+    rho_                 precomputed outer perirhizal radii (
+    rs_age               root system age 
+    trans                daily transpiration rate [cm3/day], shape of sinusoidal2 is applied
+    wilting_point        plant wilting point (normally -15000 cm)
+    soil                 van Genuchten parameter set (of type vg.Parameters)
+    s                    Macroscopic soil grid, e.g. of type RichardsWrapper(RichardsSP())
+    sra_table_lookup     soil look up table for perirhizal model 
+    mapping              mapping segment to cell (np.array)
+    """
 
     print("\nInitial root sytstem age (agg)", rs_age)
-    # print("rs_age", rs_age)
-    # rs_age = r.get_ages(rs_age)
-    # print("rs_age", np.max(rs_age))
 
     dt = 360 / (24 * 3600)  # days
     skip = 10
