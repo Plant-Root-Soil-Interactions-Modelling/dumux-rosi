@@ -89,7 +89,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/fixeUpdate"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
+    results_dir="./results/highThetaDoNew"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
                 +"_"+str(initsim)+"to"+str(simMax)\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
@@ -97,7 +97,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     
     comm.barrier()
     if rank == 0:
-        print('results_dir','DUMUXexudDune27/DUMUX/dumux-rosi/python/paperSc/',results_dir, flush = True)
+        print('results_dir','DumuxDune27',results_dir, flush = True)
     comm.barrier()
     if rank == 0:
         if not os.path.exists(results_dir):
@@ -124,14 +124,19 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     usemoles = True
     """ parameters   """
     soil_ = scenario_setup.vg_SPP(0)
-    
+    doOldCell = False
     if doSimple:
+        max_b = [5, 5, 0.] # 
         min_b = [-5, -5, -5.]# 
         cell_number = [1,1,1]#
+    elif doOldCell:
+        max_b = [5, 5, 0.] # 
+        min_b = [-5, -5, -10.]# 
+        cell_number =[5,5,20]#
     else:
-        min_b = [-5, -5, -10.] #[-5, -5, -5.]# 
-        cell_number = [5,5,20]# [1,1,1]#
-    max_b = [5, 5, 0.] 
+        min_b = [-3./2, -12./2, -40.]
+        cell_number = [3,12,40] # 1cm3 
+        max_b = [3./2, 12./2, 0.]
     
     #min_b = [-5., -5, -5.] 
     #max_b = [5., 5, 0.] 
@@ -269,6 +274,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
             rs.simulate(dt)#(rank == 0))  # because of dumux.pick(), blocks if I do not let all threads do the simulate.
             seg2cell_new = rs.seg2cell
+
+            write_file_array('seg2cell_keys',seg2cell_new,directory_ =results_dir, 
+                             fileType = '.csv')
+            write_file_array('seg2cell_vals',np.array(list(seg2cell_new.values())),
+                             directory_ =results_dir, fileType = '.csv')
 
             # make sure that, once a segment is created, it stays in the same soil voxel
             for segid in seg2cell_old.keys():
@@ -494,7 +504,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         if True:
             if mpiVerbose:# or (max_rank == 1):
                 print(rank,"theta")
-            comm.barrier()
+            comm.barrier()#
+            write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir) 
             write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
             for i in range(rs.numFluidComp):
                 comm.barrier()
@@ -759,7 +770,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             print(rank, 'print data to linux')
         comm.barrier()
         if (rank == 0) and (mode != "dumux_w")  :
-            print("\n\n\n\t\tat ", int(np.floor(rs_age)),"d", int((rs_age%1)*24),"h",  round(r.Qlight *1e6),"mumol m-2 s-1")
+            print("\n\n\n\t\tat ", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn",  
+                  round(r.Qlight *1e6),"mumol m-2 s-1")
             print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(error_st_abs, error_st_rel))
             print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(errLeuning_abs))
             print("C_ST (mmol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(C_ST), min(C_ST), len(np.where(C_ST == min(C_ST) )[0]), max(C_ST)))        
@@ -797,7 +809,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("gco2", r.gco2, directory_ =results_dir)
             write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
             write_file_float("Q_Ag", Q_in, directory_ =results_dir)
-            write_file_array("C_rsi", np.array(r.Csoil_seg ), directory_ =results_dir)#mmol/cm3
+            write_file_array("C_rsi", np.array(r.Csoil_seg ), 
+                             directory_ =results_dir)#mmol/cm3
         
         comm.barrier()
         if mpiVerbose:# or (max_rank == 1):
@@ -842,8 +855,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                         extraArray_ /= sizeSoilCell #cm3
 
 
-                vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_ ,rs.get_concentration(i , konz), s, periodic, min_b, max_b, cell_number, 
-                        soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, 
+                vp.plot_roots_and_soil(rs.mappedSegments(),
+                                       extraArrayName_ ,
+                                       rs.get_concentration(i , konz), s, 
+                                       periodic, min_b, max_b, 
+                                       cell_number, 
+                        soil_type+genotype+"_rx", 
+                                       sol_ind =-1,
+                                       extraArray = extraArray_, 
                         extraArrayName = extraArrayName_)  # VTK vizualisation
                 print("idcomp_done", i, rank)
     # to plot: cumulative An, Exud, mucil and each element in the soil

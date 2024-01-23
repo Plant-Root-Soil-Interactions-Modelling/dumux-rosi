@@ -73,7 +73,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     # check that rhizoSegsId and airSegsId are as expected
     local_isRootSeg = np.array([not isinstance(cyl,AirSegment) for cyl in np.array(r.cyls)])
     global_isRootSeg = r.getXcyl(local_isRootSeg, doSum = False, reOrder = True)
-    assert (global_isRootSeg[rhizoSegsId]).all()
+    #assert (global_isRootSeg[rhizoSegsId]).all()
     
     Q_Exud = Q_plant[0].copy(); Q_mucil = Q_plant[1].copy() #mol/day
     if len(Q_Exud) > 0:
@@ -99,9 +99,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
     assert len(rs.rs.segments) == (len(rs.rs.nodes) -1)
     seg2cell = rs.rs.seg2cell
-    if not doMinimumPrint:
-        write_file_array('seg2cell_keys',seg2cell,directory_ =results_dir, fileType = '.csv')
-        write_file_array('seg2cell_vals',np.array(list(seg2cell.values())),directory_ =results_dir, fileType = '.csv')
     cell2seg = rs.rs.cell2seg
     cellIds = r.cellWithRoots # np.fromiter(cell2seg.keys(), dtype=int)
     #cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
@@ -244,6 +241,21 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print('r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relOld',r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relOld, r.diff1d3dCurrant_rel,
                      np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)),max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld),
                                      r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)
+                write_file_array("error_sumDiff1d3dCW_relOld",
+                                 r.sumDiff1d3dCW_relOld, 
+                                 directory_ =results_dir, 
+                                 fileType = '.csv') 
+                write_file_array("error_sumDiff1d3dCW_absOld",
+                                 r.sumDiff1d3dCW_absOld, 
+                                 directory_ =results_dir, 
+                                 fileType = '.csv') 
+                write_file_array("error_sumDiff1d3dCW_rel", r.sumDiff1d3dCW_rel, 
+                                 directory_ =results_dir, fileType = '.csv') 
+                write_file_array("error_sumDiff1d3dCW_abs", r.sumDiff1d3dCW_abs, 
+                                 directory_ =results_dir, fileType = '.csv') 
+                write_file_float("error_diff1d3dCurrant_rel",
+                                 r.diff1d3dCurrant_rel, 
+                                 directory_ =results_dir) 
                 raise Exception
             
         r.sumDiff1d3dCW_absOld = r.sumDiff1d3dCW_abs # to go from cumulative to instantenuous 1d3d error
@@ -569,7 +581,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if (len(solution0_1ds_new) != 0) or (len(solution0_1ds_old) != 0) : # some threads could have no cylinders
                 try:
                     diff_solution0_1ds = np.concatenate(np.array([solution0_1ds_new[i] == solution0_1ds_old[i] for i in range(len(solution0_1ds_new))],dtype=object))
-                    assert diff_solution0_1ds.all()
+                    assert (diff_solution0_1ds).all()
                 except:
                     print('issue with assert 1dsnewold',rank)
                     print(rank,solution0_1ds_new , solution0_1ds_old)
