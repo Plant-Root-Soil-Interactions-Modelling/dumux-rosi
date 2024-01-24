@@ -102,7 +102,7 @@ if __name__ == "__main__":
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
     method = ["sra"] * 3
     plant = ["maize"] * 3
-    dim = ["3D"] * 3
+    dim = ["1D"] * 3
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     outer_method = ["voronoi"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
