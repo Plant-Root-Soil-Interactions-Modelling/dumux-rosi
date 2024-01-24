@@ -53,6 +53,8 @@ def springbarley_(dim:str):
     max_b = np.array([6.5, 1.5, 0.])
     if dim == "1D":
         cell_number = np.array([1, 1, 150])
+    elif dim == "2D":
+        cell_number = np.array([13, 1, 150])
     else:
         cell_number = np.array([13, 3, 150])
     return min_b, max_b, cell_number
@@ -65,7 +67,7 @@ def maize_(dim:str):
     if dim == "1D":
         cell_number = np.array([1, 1, 150])
     elif dim == "2D":
-        cell_number = np.array([38, 3, 75])
+        cell_number = np.array([38, 1, 150])
     else:
         cell_number = np.array([76, 16, 150])
     return min_b, max_b, cell_number
@@ -203,7 +205,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     if dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
     elif dim == "2D":
-        picker = lambda x, y, z: s.pick([x, y, z])
+        picker = lambda x, y, z: s.pick([x, 0., z])
     elif dim == "3D":
         picker = lambda x, y, z: s.pick([x, y, z])
 

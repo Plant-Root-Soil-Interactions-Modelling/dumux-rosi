@@ -23,7 +23,7 @@ import visualisation.vtk_plot as vp
 from scenario_setup import *
 
 
-def simulate_Axx(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):
+def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping):
     """
     assumes a static root architecure
     values are retrieved in set_scenario(), in scenario_setup.py
@@ -101,7 +101,7 @@ def simulate_Axx(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
             for j in range(0, ns):  # from total to matric
                 rx[j, 0] -= nodes[j + 1][2]
 
-            # rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
+            rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
             # rx = np.minimum(rx, np.ones(rho_.shape) * 0.)
             # hs = np.maximum(hs, np.ones(hs.shape) * (-15999))
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    args = parser.parse_args(['maize', "1D", "hydrus_loam", "length"])
+    args = parser.parse_args(['maize', "2D", "hydrus_loam", "voronoi"])
     # args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_Axx(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping)
 
     """ write """
     s.writeDumuxVTK("results/" + name)

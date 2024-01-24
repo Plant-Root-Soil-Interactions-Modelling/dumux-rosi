@@ -30,13 +30,13 @@ def start_jobs(jobs):
         method, plant, dim, soil, outer_method = job
 
         if method == "sra":
-            py_name = "scenario_sra.py"
+            py_name = "scenario_Axx.py"
         elif method == "sraOld":
             py_name = "scenario_sra_old.py"
         elif method == "agg":
-            py_name = "scenario_agg.py"
+            py_name = "scenario_Bxx.py"
         elif method == "par":
-            py_name = "scenario_par.py"
+            py_name = "scenario_Cxx.py"
         else:
             raise("Unknown method" + method)
 

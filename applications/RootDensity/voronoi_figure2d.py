@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
-from scipy.spatial import Voronoi
+from scipy.spatial import ConvexHull, Voronoi
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -27,12 +27,22 @@ colors = prop_cycle.by_key()['color']
 """ parameters """
 
 
-def generate_points(num_points):
+def generate_random_points(num_points, range_):
     points = []
     for _ in range(num_points):
-        x = random.uniform(-10, 10)  # Adjust the range as needed
-        y = random.uniform(-10, 10)
+        x = random.uniform(-range_, range_)
+        y = random.uniform(-range_, range_)
         points.append(np.array([x, y]))
+    return np.array(points)
+
+
+def generate_regular_points(xnum_points, ynum_points, xrange, yrange):
+    points = []
+    for i in range(ynum_points):
+        for j in range(xnum_points):
+            x = (j + 0.5) * xrange / xnum_points - xrange / 2
+            y = (i + 0.5) * yrange / ynum_points - yrange / 2
+            points.append(np.array([x, y]))
     return np.array(points)
 
 
@@ -64,87 +74,69 @@ def mirror(nodes):
     return nodes_surr
 
 
+def vizualize(points):
+
+    figure, axes = plt.subplots()
+    axes.set_aspect(1)
+
+    # Volumes
+    vol = np.empty((nodes.shape[0]))
+    vol[:] = np.nan
+    for idx, reg_num in enumerate(vor.point_region):
+        indices = vor.regions[reg_num]
+        i_ = reg_num - 1
+        if idx < nodes.shape[0]:
+            if -1 in indices:  # some regions can be opened
+                vol[idx] = np.nan
+            else:
+                vol[idx] = ConvexHull(vor.vertices[indices]).volume
+
+    # Visualize regions
+    lines = []
+    reg_ = vor.regions
+    ver_ = vor.vertices
+    for reg in reg_:
+        if -1 not in reg:
+            for ind in range(-1, len(reg) - 1):
+                lines.append([ver_[reg[ind]], ver_[reg[ind + 1]]])
+    lines = np.array(lines)
+
+    for i in range(0, lines.shape[0]):
+        plt.plot([lines[i, 0, 0], lines[i, 1, 0]], [lines[i, 0, 1], lines[i, 1, 1]], "g:")
+
+    # Visualize Perirhizal radii in 2D
+    for i in range(0, points.shape[0]):
+        a = np.sqrt(vol[i] / np.pi)
+        # print(vol[i], a * a * np.pi)
+        circ = plt.Circle((points[i, 0], points[i, 1]), a, fill = True, alpha = 0.1, linestyle = 'dotted', color = "red")
+        axes.add_artist(circ)
+
+    plt.plot(points[:, 0], points[:, 1], 'r*')
+    plt.plot(ver_[:, 0], ver_[:, 1], 'b*')
+    plt.xlim([-10, 10])
+    plt.ylim([-10, 10])
+
+    plt.show()
+
+
 # Generate 8 random 3D points
-random_points = generate_points(8)
-print(random_points)
+points = generate_random_points(9, 8.)
+print(points)
+# [[ 4.04892037  5.56818163], [ 3.68849136  0.89770249], [ 2.40660187  1.01993938], [-1.87067736  1.70510243], [ 3.91117411 -6.93592641], [-0.9386731  -3.46114548], [ 0.79988892 -0.35288419], [ 2.62590918 -6.30607085]]
 
-lines = []
-vor = Voronoi(mirror(random_points))
-ver_ = vor.vertices
-reg_ = vor.regions
-for reg in reg_:
-    for ind in range(-1, len(reg) - 1):
-        lines.append([ver_[reg[ind]], ver_[reg[ind + 1]]])
-lines = np.array(lines)
-for i in range(0, lines.shape[0]):
-    plt.plot([lines[i, 0, 0], lines[i, 1, 0]], [lines[i, 0, 1], lines[i, 1, 1]], "b:")
+# [[-2.90345978  1.88259082]
+ # [ 5.14163188 -4.20208878]
+ # [-6.28865805 -6.32353276]
+ # [ 6.9969697   6.5203306 ]
+ # [ 6.34113581 -6.15953657]
+ # [-5.17135285  7.72011243]
+ # [ 4.86211936  4.5371164 ]
+ # [ 6.61824728  1.09913438]
+ # [-0.03276024  0.14013829]]
 
-plt.plot(random_points[:, 0], random_points[:, 1], 'r*')
-plt.plot(ver_[:, 0], ver_[:, 1], 'b*')
-plt.xlim([-10, 10])
-plt.ylim([-10, 10])
+points = generate_regular_points(3, 3, 20, 20)
+nodes = mirror(points)
+vor = Voronoi(nodes)
 
-plt.show()
+vizualize(points)
 
-dd
-
-r = r_.rs  # throw away (TODO ahve to change setup anyway...)
-
-r.initialize(False)
-r.simulate(simtime, False)
-
-r.write("rootsystem_geometry_large.py")
-ana = pb.SegmentAnalyser(r.mappedSegments())
-ana.mapPeriodic(width[0], width[1])
-ana.write("rootsystem_large.vtp")
-
-sn = np.prod(cell_number)
-peri = PerirhizalPython(r)
-
-""" add 3d soil surface density """
-sd = peri.get_density("surface")
-sd = -np.minimum(sd, 1.1)  # limit for visualisation
-grid = vp.uniform_grid(min_b, max_b, cell_number)
-cell_sd = vtk.vtkDoubleArray()
-cell_sd.SetName("surface_density")
-cell_sd.SetNumberOfValues(sn)
-for j in range(0, sn):
-    cell_sd.SetValue(j, sd[j])
-celldata = grid.GetCellData()
-celldata.AddArray(cell_sd)
-
-outer_radii = peri.get_outer_radii_voronoi()
-# outer_radii = peri.get_outer_radii("surface")
-
-print()
-print("number of outer", outer_radii.shape)
-print("open regions", np.sum(outer_radii == -1), np.sum(outer_radii == -1) / outer_radii.shape[0])
-print("cell has point outside domain", np.sum(outer_radii == 0), np.sum(outer_radii == 0) / outer_radii.shape[0])
-print()
-
-print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
-# vp.plot_mesh(grid, "surface_density")
-# vp.plot_mesh_cuts(grid, "surface_density")
-# vp.plot_roots(ana, "outer_r")
-
-""" outer_r 3d visualisation """
-ana = pb.SegmentAnalyser(r.mappedSegments())
-outer_radii = -np.minimum(outer_radii, 1.)  # limit for visualisation
-ana.addData("outer_r", outer_radii)
-vp.plot_roots_and_mesh(ana, "subType", grid, "surface_density", True, width[0], width[1])  # outer_r
-
-""" nice histogram """
-fig, axes = plt.subplots(1, 1, figsize = (8, 8))
-rr = peri.to_range_(outer_radii, 0., 2.)
-axes.hist(rr, bins = 40, rwidth = 0.9)
-plt.show()
-
-# Write the VTK unstructured grid to a ParaView VTU file
-domain = pb.SDF_Cuboid(pb.Vector3d(min_b), pb.Vector3d(max_b))
-grid = peri.get_voronoi_mesh(domain)
-writer = vtk.vtkXMLUnstructuredGridWriter()
-writer.SetFileName('rootsystem_mesh_large.vtu')
-writer.SetInputData(grid)
-writer.Write()
-
-print("fin")

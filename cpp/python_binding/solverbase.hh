@@ -174,7 +174,15 @@ public:
         }
         if (dim == 3) {
             if (periodic) {
-                p["Grid.Periodic"] = "true true false";
+                std::string xx = "true ";
+                std::string yy = "true ";
+                if (numberOfCells[0]==1) {
+                    xx = "false ";
+                }
+                if (numberOfCells[1]==1) {
+                    yy = "false ";
+                }
+                p["Grid.Periodic"] = xx+yy+"false";
             } else {
                 p["Grid.Periodic"] = "false false false";
             }
@@ -405,7 +413,7 @@ public:
      * (could be improved, but overhead is likely to be small)
      */
     void solveNoMPI(double dt, double maxDt = -1) {
-		
+
         checkGridInitialized();
         using namespace Dumux;
 
@@ -425,7 +433,7 @@ public:
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
 								 PartialReassembler<Assembler>,
 								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
-        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver, 
+        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
 								Dune::FakeMPIHelper::getCollectiveCommunication());//
         nonLinearSolver->setVerbose(false);
         timeLoop->start();
@@ -448,7 +456,7 @@ public:
 
         simTime += dt;
     }
-	
+
     /**
      * Finds the steady state of the problem.
      *
@@ -836,7 +844,7 @@ public:
     virtual bool checkProblemInitialized() {
         return problemInitialized;
     }
-	
+
 protected:
 
     using Grid = typename Problem::Grid;
@@ -871,7 +879,7 @@ void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
-            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0),  
+            .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0),
 													py::arg("verbose") = true,py::arg("doMPI") = true)
             .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid) // overloads, defaults , py::arg("modelParamGroup") = ""
             .def("createGrid", (void (Solver::*)(std::array<double, dim>, std::array<double, dim>, std::array<int, dim>, bool)) &Solver::createGrid) // overloads, defaults , py::arg("boundsMin"), py::arg("boundsMax"), py::arg("numberOfCells"), py::arg("periodic") = false
