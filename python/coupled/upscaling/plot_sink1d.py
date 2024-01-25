@@ -16,7 +16,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6], ls = [ "-", ":", "-.", "-", ":", "-."]):
+def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6, 13], ls = [ "-", ":", "-.", "-", ":", "-."]):
 
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
@@ -27,7 +27,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     days = 14.5
 
     fnames = []
-    for i in range(0, len(plant)):
+    for i in range(0, len(outer_method)):
         name = method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i]
         fnames.append("results/sink_" + method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i])
 
@@ -98,13 +98,13 @@ if __name__ == "__main__":
 
     # print("1d vs 3d comparison plots were done with plot_sink3d.py")
 
-    # """ springbarley """
+    """ springbarley """
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     # method = ["sra", "agg"]
     # plant = ["springbarley"] * 2
     # soil = ["hydrus_loam"] * 2
     # outer_method = ["voronoi"] * 2  # , "voronoi"]
-    # plot_sink1d(ax, method, plant, soil, outer_method)
+    # plot_sink1d(ax, method, plant, soil, outer_method, label=)
     # plt.savefig('sink1d_springbarley_loam.png')
     # plt.show()
 
@@ -126,14 +126,13 @@ if __name__ == "__main__":
     # plt.savefig('sink1d_springbarley_sandyloam.png')
 
     """ maize """
-    # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    # method = ["sra"]
-    # plant = ["maize"]
-    # soil = ["hydrus_loam"]
-    # outer_method = ["surface"]  # , "voronoi"]
-    #
-    # plot_sink1d(ax, method, plant,  soil,outer_method)
-    # plt.savefig('sink1d_maize_loam.png')
+    fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    method = ["sra"] * 3
+    plant = ["maize"] * 3
+    soil = ["hydrus_sandyloam"] * 3
+    outer_method = ["voronoi", "length", "surface"]  # , "voronoi"]
+    plot_sink1d(ax, method, plant, soil, outer_method, label_ = ["voronoi", "length", "surface"], plot_times = [2., 6., 9., 13])
+    plt.savefig('sink1d_' + soil[0] + '.png')
     #
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     # method = ["sra"]

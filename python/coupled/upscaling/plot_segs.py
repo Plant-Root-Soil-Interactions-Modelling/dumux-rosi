@@ -16,13 +16,15 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6], ls = [ "-", ":", "-.", "-", ":", "-."]):
+def plot_segs(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6], ls = [ "-", ":", "-.", "-", ":", "-."]):
 
     # check with scenario_setup
     l = 150  # cm soil depth
     dx = 1  # cm resolution
     ylim = 120
     days = 14.5
+
+    # fetch root system (random seed is fixed and should be the same as in results)
 
     fnames_hsr = []
     # fnames_hx = []
