@@ -169,8 +169,8 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
                 sink[k] += v
             sink_.append(sink)  # [cm3/day] per soil cell
             hs_.append(sx.copy())  # [cm] per soil cell
-            hx_.append(rx_)  # [cm] total potential per segment
-            hsr_.append(rsx_)  # [cm] total potential per segment
+            hx_.append(rx)  # [cm] total potential per segment
+            hsr_.append(rsx)  # [cm] total potential per segment
 
         t += dt
 
@@ -205,8 +205,8 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['springbarley', "1D", "hydrus_sandyloam", "voronoi"])
-    args = parser.parse_args()
+    args = parser.parse_args(['springbarley', "1D", "hydrus_sandyloam", "voronoi"])
+    # args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()

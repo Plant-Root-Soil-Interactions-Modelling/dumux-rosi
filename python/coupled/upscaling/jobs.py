@@ -14,10 +14,10 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = co
 import numpy as np
 import os
 
-import scenario_sra as sra
+import scenario_Axx as sra
 import scenario_sra_old as sra_old
-import scenario_agg as agg
-import scenario_par as par
+import scenario_Bxx as agg
+import scenario_Cxx as par
 
 
 def start_jobs(jobs):
@@ -108,7 +108,7 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ["sra", "agg", "par"]  # 'sra', sraOld, agg, par
+    method = ["sra"]  # 'sra', sraOld, agg, par
     plant = ['springbarley']  # 'springbarley', 'soybean', 'maize'
     dim = ["1D", "2D", "3D"]  # 1D, 3D
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'

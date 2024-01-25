@@ -25,11 +25,11 @@ def plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_tim
     days = 14.5
 
     fnames_hsr = []
-    fnames_hx = []
-    for i in range(0, len(plant)):
-        name = method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i]
-        fnames_hsr.append("results/hsr_" + method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i])
-        fnames_hx.append("results/hx_" + method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i])
+    # fnames_hx = []
+    for i in range(0, len(outer_method)):
+        name = method[i] + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method[i]
+        fnames_hsr.append("results/hsr_" + method + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method[i])
+        # fnames_hx.append("results/hx_" + method + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method[i])
 
     cmap = plt.get_cmap('Set1')
     col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
@@ -37,18 +37,25 @@ def plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_tim
     """ load data """
     n = len(fnames_hsr)
     data = [np.load(n_ + ".npy")  for n_ in fnames_hsr]
-    data_hx = [np.load(n_ + ".npy")  for n_ in fnames_hx]
 
     """ sink plot """
     ax[0].set_title("Noon")
     ax[1].set_title("Night")
 
     """ noon """
+    all_min = 1.e6
+    all_max = -1.e6
     for i in range(0, n):  # number of files
-
         hsr_ = data[i]
-        hx_ = data_hx[i]
+        peak_id = np.round(hsr_.shape[0] / days * np.array([0.5 + j for j in plot_times]))  # hsr_.shape[0] is the number of saved time steps
+        peak_id = peak_id.astype(int)
+        for ind, j in enumerate(peak_id):
+            all_min = min(all_min, np.min(hsr_[j,:]))
+            all_max = max(all_max, np.max(hsr_[j,:]))
+    print("all_min", all_min, "all_max", all_max)
 
+    for i in range(0, n):  # number of files
+        hsr_ = data[i]
         peak_id = np.round(hsr_.shape[0] / days * np.array([0.5 + j for j in plot_times]))  # hsr_.shape[0] is the number of saved time steps
         peak_id = peak_id.astype(int)
         for ind, j in enumerate(peak_id):
@@ -56,28 +63,33 @@ def plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_tim
             # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
             # ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
             print("Hsr at noon are ranging from ", np.min(hsr_[j,:]), "to ", np.max(hsr_[j,:]), "[cm]")
-            print(len(hsr_[j,:]))
-            print(len(hx_[j,:]))
-            ax[0].hist(hsr_[j,:], range = (-2000, 0), bins = 40, rwidth = 0.9, label = ["hsr 1D"], alpha = 0.5)
-            ax[0].hist(hx_[j,:], range = (-2000, 0), bins = 40, rwidth = 0.9, label = ["hx 1D"], alpha = 0.5)
+            ax[0].hist(hsr_[j,:], range = (all_min, all_max), bins = 40, rwidth = 0.9, label = "hsr " + outer_method[i], alpha = 0.5)
 
         ax[0].legend()
 
     """ midnight """
-    for i in range(0, n):
-
+    all_min = 1.e6
+    all_max = -1.e6
+    for i in range(0, n):  # number of files
         hsr_ = data[i]
-
         redistribution_id = np.round(hsr_.shape[0] / days * np.array([j for j in plot_times]))
         redistribution_id = redistribution_id.astype(int)
+        for ind, j in enumerate(redistribution_id):
+            all_min = min(all_min, np.min(hsr_[j,:]))
+            all_max = max(all_max, np.max(hsr_[j,:]))
+    print("all_min", all_min, "all_max", all_max)
 
+    for i in range(0, n):
+        hsr_ = data[i]
+        redistribution_id = np.round(hsr_.shape[0] / days * np.array([j for j in plot_times]))
+        redistribution_id = redistribution_id.astype(int)
         for ind, j in enumerate(redistribution_id):
             # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
             lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i], int(ind == 0) +
             # ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
             print("Hsr at night are ranging from ", np.min(hsr_[j,:]), "to ", np.max(hsr_[j,:]), "[cm]")
-            ax[1].hist(hsr_[j,:], range = (-1000, 0), bins = 40, rwidth = 0.9, label = ["hsr 1D"], alpha = 0.5)
-            ax[1].hist(hx_[j,:], range = (-1000, 0), bins = 40, rwidth = 0.9, label = ["hx 1D"], alpha = 0.5)
+            ax[1].hist(hsr_[j,:], range = (all_min, all_max), bins = 40, rwidth = 0.9, label = "hsr " + outer_method[i], alpha = 0.5)
+            # ax[1].hist(hx_[j,:], range = (-1000, 0), bins = 40, rwidth = 0.9, label = ["hx 1D"], alpha = 0.5)
 
         ax[1].legend()
 
@@ -90,12 +102,12 @@ if __name__ == "__main__":
 
     """ springbarley """
     fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = ["sra"]
-    plant = ["maize"]
-    dim = ["1D"]
-    soil = ["hydrus_loam"]
-    outer_method = ["length"]
-    plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = dim, plot_times = [2.])  # , 4., 6.
+    method = "sra"
+    plant = "springbarley"
+    dim = "1D"
+    soil = "hydrus_loam"
+    outer_method = ["voronoi", "length"]
+    plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = dim, plot_times = [6.])  # , 4., 6.
     plt.savefig('hsr_springbarley_loam.png')
     plt.show()
 
