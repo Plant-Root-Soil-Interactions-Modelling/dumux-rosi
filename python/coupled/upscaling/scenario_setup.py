@@ -35,7 +35,7 @@ def soil_vg_(name:str):
     Van Genuchten parameter for soil from Hydrus1D, 
     called by maize() and soybean() 
     
-    4D look up tables are created with teh script create_sra_table_v2
+    4D look up tables are created with thes script create_sra_table_v2
     """
     soil = {}
     soil["jan_comp"] = [0.025, 0.403, 0.0383, 1.3774, 60.]

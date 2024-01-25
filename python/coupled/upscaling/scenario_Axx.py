@@ -146,18 +146,18 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
 
             n = round(float(i) / float(N) * 100.)
 
-            rx_ = np.zeros((ns, 1))
-            rsx_ = np.zeros((ns, 1))
-            for j in range(0, ns):  # from total to matric
-                #   print(nodes[j + 1][2])
-                rx_[j, 0] = rx[j, 0] - nodes[j + 1][2]
-                rsx_[j, 0] = rsx[j, 0] - nodes[j + 1][2]
+            # rx_ = np.zeros((ns, 1))
+            # rsx_ = np.zeros((ns, 1))
+            # for j in range(0, ns):  # from total to matric
+            #     #   print(nodes[j + 1][2])
+            #     rx_[j, 0] = rx[j, 0] - nodes[j + 1][2]
+            #     rsx_[j, 0] = rsx[j, 0] - nodes[j + 1][2]
 
             print("number of iterations", c)
             print("t_pot", t_pot, "q_root", sum_root_flux, "soil", sum_soil_flux)
 
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
-                  .format(np.min(sx), np.max(sx), np.min(rx_), np.max(rx_), s.simTime, rx[r.ci, 0]))
+                  .format(np.min(sx), np.max(sx), np.min(rx), np.max(rx), s.simTime, rx[r.ci, 0]))
             print("iteration (interpolation, xylem) : ", wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem))
             print("iteration, soil", wall_iteration / (wall_iteration + wall_soil), wall_soil / (wall_iteration + wall_soil))
             print()
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['maize', "2D", "hydrus_sandyloam", "voronoi"])
+    # args = parser.parse_args(['springbarley', "1D", "hydrus_sandyloam", "voronoi"])
     args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method

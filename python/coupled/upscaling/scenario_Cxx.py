@@ -206,7 +206,7 @@ def simulate_par(s, r, sra_table_lookup, trans, sim_time, dt, wilting_point, rs_
     return hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time
 
 
-def simulate_par(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method):  # def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
+def simulate_par_(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method):  # def simulate_const(s, r, sra_table_lookup, trans, sim_time, dt):
 
     dt = 360 / (24 * 3600)  # days
 
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     print("set_scenario done.")
     sys.stdout.flush()
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, args.outer_method)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par_(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, args.outer_method)
 
     # """ write """
     s.writeDumuxVTK("results/" + name)
