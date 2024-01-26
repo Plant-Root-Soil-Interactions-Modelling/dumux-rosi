@@ -6,6 +6,5 @@
 Module: dumux-rosi
 Version: 0.01
 Maintainer: aschnepf@fz-juelich.de
-Depends: dumux (>= 3.0) dune-common (>= 2.6) dune-uggrid (>= 2.6) dune-pybindxi (>= 0) 
-# dune-pybindxi (>= 0) # if installed,  and python binding will be used
+Depends: dumux (>= 3.0) dune-common (>= 2.6) dune-uggrid (>= 2.6) 
 # dune-alugrid (>= 2.6) 
