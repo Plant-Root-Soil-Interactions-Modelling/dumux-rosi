@@ -16,7 +16,7 @@ cd $HOME/DumuxDune27/DUMUX/dumux-rosi/python/paperSc
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=2 mpirun -n 2 python3 XcGrowth.py $1 dumux_10c $2 $3 $4 $5 $6 $7
+DUMUX_NUM_THREADS=2 mpirun -n 2 python3 XcGrowth.py $1 dumux_10c $2 $3 $4 $5
 
 # $1 : start, $2: end, $3: param ind, $4 scenario, $5 noAds or nothing, $6 start spell, $7 end spell
 

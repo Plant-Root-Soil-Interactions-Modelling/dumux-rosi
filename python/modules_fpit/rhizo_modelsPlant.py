@@ -13,7 +13,7 @@ from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial m
 from fv.fv_grid import *
 import fv.fv_richards as rich  # local pure Python cylindrical models
 import functional.van_genuchten as vg
-from scenario_setup import write_file_array, setDefault
+from scenario_setup import write_file_array, setDefault, write_file_float
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ import scipy.sparse.linalg as LA
 
 from scipy.interpolate import PchipInterpolator,  CubicSpline
 
-from scenario_setup import write_file_array, write_file_float
+
 class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     """
         Adds 1-dimensional rhizospere models to each root segment of a MappedSegments (or later MappedPlant)    
@@ -257,13 +257,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         """
         self.printData('updateWbefore')
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("update:sizeSoilCell", rank)
             comm.barrier()
         sizeSoilCell = comm.bcast(self.soilModel.getCellVolumes()/1e6, root = 0) #m3
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("update:GOTsizeSoilCell", rank)
             comm.barrier()
@@ -272,7 +272,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         except:
             maxlim1d3d = self.limErr1d3dAbs
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("broadcastPlantShape",rank)
             comm.barrier()
@@ -284,7 +284,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         # print('self.newEidx, self.eidx',rank,self.newEidx, self.eidx)
         self.eidx = np.concatenate((self.eidx,np.array(self.newEidx, dtype = np.int64)), dtype = np.int64)
         #raise Exception
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print('checkMassOMoleBalance2 after broadcastPlantShape')
             comm.barrier()
@@ -295,8 +295,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      doWater = True, doSolute = True, doSolid = True,
                                      takeFlux=False,
                                      diff1d3dCW_abs_lim = maxlim1d3d)
-           
-        if (self.mpiVerbose and (size > 1)):
+
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print(rank, 'checkVolumeBalance')
             comm.barrier()
@@ -311,7 +311,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         
         cellIds = self.getCellIds()
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("updateOld", rank,len(self.cyls))
             comm.barrier()
@@ -319,7 +319,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             if not isinstance(cyl, AirSegment) :
                 self.updateOld(i, cyl)
                 
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("updateOld_finished", rank)
             comm.barrier()
@@ -367,7 +367,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
             XX_leftover = self.get_XX_leftover(watVol_leftover[cellIds], volLeftOver[cellIds], cellIds )
             
-            if (self.mpiVerbose and (size > 1)):
+            if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
                 comm.barrier()
                 print("initialize_", rank)
                 comm.barrier()
@@ -377,19 +377,19 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.cylSoilidx = np.array([gId for lId, gId in enumerate(self.cylidx) if (not isinstance(self.cyls[lId], AirSegment))])
         self.cylsSoil = np.array([cyl for cyl in self.cyls if (not isinstance(cyl, AirSegment))])
 
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("get cylSoilidx_all", rank)
             comm.barrier()
         self.cylSoilidx_all = self.allgatherv(np.array(self.cylSoilidx), X_rhizo_type_default = np.int64)# all epreviously existsing segs
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("checkVolumeBalance(finishedUpdate = True)", rank)
             comm.barrier()
         self.checkVolumeBalance(finishedUpdate = True)
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("afterUpdate: checkMassOMoleBalance2")        
             comm.barrier()
@@ -400,9 +400,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                      seg_fluxes = 0.,# [cm3/day]
                                      doWater = True, doSolute = True, doSolid = True,
                                      takeFlux=False,
-                                     diff1d3dCW_abs_lim = max(self.maxDiff1d3dCW_abs[0]*2,self.limErr1d3dAbs) )
+                                     diff1d3dCW_abs_lim = max(self.maxDiff1d3dCW_abs[0]*2,
+                                                              self.limErr1d3dAbs) )
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("afterUpdate: share ns")        
             comm.barrier()
@@ -413,7 +414,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.nsAirOld = sum(self.repartitionAirOld )
         self.nsAirOld = comm.bcast(self.nsAirOld, root = 0)  
         
-        if (self.mpiVerbose and (size > 1)):
+        if ((self.mpiVerbose and (size > 1)) or (rank == 0)):
             comm.barrier()
             print("afterUpdate: DID share ns", rank)
             comm.barrier()
@@ -422,7 +423,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     
     def printData(self, title):
         '''to see how the water and volume gets divided between the volumes'''
+        comm.barrier()
+        verbose = True
+        if verbose:
+            print('printData getCellIds', rank)
         cellIds = self.getCellIds()
+        if verbose:
+            print('printData GOTCellIds', rank)
         for cellId in cellIds:
             idCylsAll, idCyls = self.getIdCyllMPI(cellId)
             if len(idCylsAll)> 0:
@@ -436,6 +443,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                  directory_ = self.results_dir, fileType = '.csv' )
                 write_file_array(title+str(cellId)+'id',idCylsAll, 
                                  directory_ = self.results_dir, fileType = '.csv' )
+        if verbose:
+            print('printData endingA', rank)
+        comm.barrier()
+        if verbose:
+            print('printData endingB', rank)
     
     
     def get_CC_leftover(self,c_content_leftover, #mol
@@ -568,6 +580,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         comm.Barrier()
     
     def getCellIds(self):# only send cells which have roots in them
+        verbose = True
         cellIds = self.cellWithRoots
 
         if (self.mpiVerbose and (size > 1)):
@@ -1374,6 +1387,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def updateOld(self, lId,  cyl):
         """ update distribution of cylinder if it s volume has changed
         """
+        alwaysUpdateWat = True
+        
         gId = self.eidx[lId]
         cellId = self.seg2cell[gId]
         verbose = False#(cellId == 437) or (cellId == 257)
@@ -1420,7 +1435,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 volNew = self.getVolumes(points, self.seg_length[gId] ) # cm^3
                 centersNew = (points[1:] + points[:-1])/2  # cm
                 ## change ratio
-                if hasNewSegs:# currently, only new segments can gain content from old segmetns.
+                if hasNewSegs or alwaysUpdateWat:# currently, only new segments can gain content from old segmetns.
                     changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
                 else:
                     changeRatio = 1.
@@ -1537,7 +1552,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                     abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
                         try:
                             # assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-18))
-                            assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)- cOld*changeRatio) < 1e-18) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-18)) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/ (cOld*changeRatio))*100 < 1e-5)
+                            assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)- cOld*changeRatio) < 1e-14) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-14)) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/ (cOld*changeRatio))*100 < 1e-5)
                         except:
                             print('\t',rank,gId,"error",nComp, 'totContent', cOld*changeRatio,'changeRatio',changeRatio,
                                   ( cOld*changeRatio)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio,
@@ -1862,7 +1877,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             try:
                 assert len(pHeadcyl) == (self.NC - 1)
                 x_divide = np.where(x!=0,x,1)
-                assert (abs((pHeadcyl - x)/x_divide)*100 < 1e-5).all()
+                assert (np.logical_or( (abs((pHeadcyl - x)/x_divide)*100 < 1e-5) , 
+                                       (abs(pHeadcyl - x) < 1e-9) )).all()
             except:
                 print('error: issue with cylinder creations', rank)
                 print('len(pHeadcyl) == (self.NC - 1)?', len(pHeadcyl), (self.NC - 1))

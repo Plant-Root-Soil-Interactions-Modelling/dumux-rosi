@@ -84,16 +84,33 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     noAds = (extraName == 'noAds')
     doSimple = False
     doMinimumPrint = True
+    doOldCell = False
+    if doSimple:
+        max_b = [5, 5, 0.] # 
+        min_b = [-5, -5, -5.]# 
+        cell_number = [1,1,1]#
+    elif doOldCell:
+        max_b = [5, 5, 0.] # 
+        min_b = [-5, -5, -10.]# 
+        cell_number =[5,5,20]#
+    else:
+        min_b = [-3./2, -12./2, -40.]
+        cell_number = [3,12,40] # 1cm3 
+        max_b = [3./2, 12./2, 0.]
+    
         
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
-    results_dir="./results/highThetaDoNew"+extraName+str(spellData['scenario'])+str(paramIndx_)+str(int(mpiVerbose))+l_ks+mode\
-                +"_"+str(initsim)+"to"+str(simMax)\
+    #+str(int(mpiVerbose))+l_ks+mode
+    results_dir="./results/hangs"+extraName+str(spellData['scenario'])\
+    +"_"+str(int(sum(cell_number)))\
+                    +"_"+str(paramIndx_)\
+                    +"_"+str(int(initsim))+"to"+str(int(simMax))\
                     +"_"+str(int(dt*24*60))+"mn_"\
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
-                    +str(max_rank)+"_"+str(abs(p_mean))+"/"
+                    +str(max_rank)+"/"
     
     comm.barrier()
     if rank == 0:
@@ -124,7 +141,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     usemoles = True
     """ parameters   """
     soil_ = scenario_setup.vg_SPP(0)
-    doOldCell = False
     if doSimple:
         max_b = [5, 5, 0.] # 
         min_b = [-5, -5, -5.]# 
@@ -294,12 +310,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
 
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose or (rank == 0):
             print(rank,'simulated')
         comm.barrier()
         rs.update()
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose or (rank == 0):
             print(rank,'updated')
         comm.barrier()
         if start:

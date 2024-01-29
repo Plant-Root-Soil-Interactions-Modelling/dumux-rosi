@@ -59,7 +59,7 @@ class SolverWrapper():
         
     
     def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
-        
+        verbose_ = False
         try:
             assert isinstance(X_rhizo, (list, type(np.array([]))))
         except:
@@ -97,7 +97,7 @@ class SolverWrapper():
         offsets =tuple( offsets)
         # print("offsets",offsets,all_sizes)
         
-        if (self.mpiVerbose and (size > 1)):
+        if verbose_ and (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print('before allgatherv',rank,'all_sizes',all_sizes,
                   'offsets',offsets,'work_size',work_size,#'X_rhizo'X_rhizo,[all_X_rhizo,all_sizes,offsets],
@@ -121,7 +121,7 @@ class SolverWrapper():
                 #print('allgathervCb, before reshape, in if shape1 <= 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
                 all_X_rhizo = all_X_rhizo.reshape(-1)
         
-        if (self.mpiVerbose and (size > 1)):
+        if verbose_ and (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print('allgathervC, after reshape',rank, 'keepShape',keepShape,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1 )
             comm.barrier()
@@ -521,7 +521,8 @@ class SolverWrapper():
         """Converts rows of x to numpy array and maps it to the right indices         
         @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
-        if (self.mpiVerbose and (size > 1)):
+        verbose_ = False
+        if verbose_ and (self.mpiVerbose and (size > 1)):
             comm.barrier()
             print("solverbase::_map", rank)
             comm.barrier()

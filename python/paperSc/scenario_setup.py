@@ -64,7 +64,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
     try:
         if (rank == 0) or allranks:
             name2 = directory_+ name+ fileType
-            #print('write_file_array',name)
+            print('write_file_array',name2)
             with open(name2, 'a') as log:
                 log.write(space.join([num for num in map(str, data)])  +'\n')
     except:
