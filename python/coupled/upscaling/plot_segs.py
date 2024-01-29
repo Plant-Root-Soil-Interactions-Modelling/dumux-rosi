@@ -1,5 +1,5 @@
 """
-     Histograms of Hsr over some points in time 
+     plots hx, hsr, hs segment vise versus z? TODO
 """
 import matplotlib.pyplot as plt
 import numpy as np

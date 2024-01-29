@@ -51,6 +51,7 @@ def plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_tim
         peak_id = peak_id.astype(int)
         for ind, j in enumerate(peak_id):
             all_min = min(all_min, np.min(hsr_[j,:]))
+            all_min = max(all_min, -15000)
             all_max = max(all_max, np.max(hsr_[j,:]))
     print("all_min", all_min, "all_max", all_max)
 
@@ -98,27 +99,27 @@ def plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_tim
 
 if __name__ == "__main__":
 
-    """ maize h_sr over time """
-    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
-    method = "sra"
-    plant = "springbarley"
-    dim = "1D"
-    soil = "hydrus_loam"
-    outer_method = ["voronoi"]
-    plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = dim, plot_times = [1., 4., 6.])  # , 4., 6.
-    plt.savefig('hsr_' + plant + "_" + soil + dim + "_temporal.png")
-    plt.show()
-
     # """ maize h_sr over time """
     # fig, ax = plt.subplots(1, 2, figsize = (18, 10))
     # method = "sra"
     # plant = "springbarley"
     # dim = "1D"
     # soil = "hydrus_loam"
-    # outer_method = ["voronoi", "surface"]
-    # plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = dim, plot_times = [13.])  # , 4., 6.
-    # plt.savefig('hsr_' + plant + "_" + soil + dim + ".png")
+    # outer_method = ["voronoi"]
+    # plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = dim, plot_times = [1., 4., 6.])  # , 4., 6.
+    # plt.savefig('hsr_' + plant + "_" + soil + dim + "_temporal.png")
     # plt.show()
+
+    """ maize h_sr over time """
+    fig, ax = plt.subplots(1, 2, figsize = (18, 10))
+    method = "sra"
+    plant = "maize"
+    dim = "1D"
+    soil = "hydrus_loam"
+    outer_method = ["voronoi", "surface"]
+    plot_hsr(ax, method, dim, plant, soil, outer_method, label_ = dim, plot_times = [13.])  # , 4., 6.
+    plt.savefig('hsr_' + plant + "_" + soil + dim + ".png")
+    plt.show()
 
     plt.show()
 

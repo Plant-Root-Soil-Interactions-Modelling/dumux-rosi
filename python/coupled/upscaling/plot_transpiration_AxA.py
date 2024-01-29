@@ -109,7 +109,7 @@ if __name__ == "__main__":
     cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(voronoi ref)")
     outer_method = ["length"] * 3
     cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(uniform length)")
-    outer_method = ["surface"] * 3
+    outer_method = ["length"] * 3
     cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(unfiorm surface)")
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
     print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length",
