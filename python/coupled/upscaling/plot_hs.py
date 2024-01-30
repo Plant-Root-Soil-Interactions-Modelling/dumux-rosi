@@ -25,7 +25,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6., 13.], ls = ["-", "--", "-.", ":"]):
+def plot_hs(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 6., 13.], ls = ["-", "--", "-.", ":"]):  #  4., 6., 13.
 
     dim = ["3D"] * 3
 
@@ -35,10 +35,10 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     ylim = 110
     days = 14.5
 
-    fnames = []
+    fnames, fnames1D = [], []
     for i in range(0, len(plant)):
-        name = method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i]
-        fnames.append("results/sink_" + method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i])
+        fnames.append("results/hs_" + method[i] + "_" + plant[i] + "_3D_" + soil[i] + "_" + outer_method[i])
+        fnames1D.append("results/hs_" + method[i] + "_" + plant[i] + "_1D_" + soil[i] + "_" + outer_method[i])
 
     cmap = plt.get_cmap('Set1')
     col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
@@ -55,6 +55,7 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
             min_b, max_b, cell_number = setup.springbarley_("3D")
             layer_volume = 3 * 13 * dx  # cm3
         else:
+            print("plot_hs() unknonw plant name")
             raise
 
     # print(cell_number)
@@ -62,74 +63,53 @@ def plot_sink3d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     """ load data """
     n = len(fnames)
     data = [np.load(n_ + ".npy")  for n_ in fnames]
+    data1D = [np.load(n_ + ".npy")  for n_ in fnames1D]
 
     """ sink plot """
     ax[0].set_title(soil[0][7:])
     ax[0].set_ylabel("depth [cm]")
-    ax[0].set_xlabel("sink term at noon [1/day]")
-    ax[1].set_xlabel("sink term at night [1/day]")
-    ax[0].plot([0, 0], [-l, 0.], "k:")
-    ax[1].plot([0, 0], [-l, 0.], "k:")
+    ax[0].set_xlabel("soil matric potential [cm]")
 
     """ noon """
     for i in range(0, n):
 
-        sink_ = data[i]
-        # print("sink_", sink_.shape)
-        sink_ = sink_.reshape((sink_.shape[0], cell_number[-1], cell_number[-2], cell_number[-3]))
-        # print("sink_", sink_.shape)
-        sink_ = np.sum(sink_, 2)
-        # print("sink_", sink_.shape)
-        sink_ = np.sum(sink_, 2)
-        # print("sink_", sink_.shape)
+        hs_ = data[i]
+        hs_ = hs_.reshape((hs_.shape[0], cell_number[-1], cell_number[-2], cell_number[-3]))
+        hs2_ = np.mean(hs_, 2)
+        hs2_ = np.mean(hs2_, 2)
+        hs1D = data1D[i]
 
-        soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
+        soil_z_ = np.linspace(-l + dx / 2., -dx / 2., hs_.shape[1])  # segment mids
 
-        peak_id = np.round(sink_.shape[0] / days * np.array([0.5 + i for i in plot_times]))
+        peak_id = np.round(hs_.shape[0] / days * np.array([i for i in plot_times]))  # 0.5 +
         peak_id = peak_id.astype(int)
 
         for ind, j in enumerate(peak_id):
             lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i]
-            ax[0].plot(sink_[j,:] / layer_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
+            ax[0].plot(hs2_[j,:], soil_z_, label = "3D, " + lstr, color = col[ind])
+            # ax[0].plot(hs1D[j,:], soil_z_, label = "1D, " + lstr, color = col[ind], linestyle = "--")
 
-        ax[0].set_ylim([-ylim, 0.])
+            for k in range(0, len(soil_z_)):
+                d_ = hs_[j, k,:].flat
+                ax[0].plot(d_, [soil_z_[k]] * len(d_), '*', color = col[ind], alpha = 0.1 * 0.1)
+        # ax[0].set_ylim([-ylim, 0.])
         ax[0].legend()
-
-    """ midnight """
-    for i in range(0, n):
-
-        sink_ = data[i]
-        sink_ = sink_.reshape((sink_.shape[0], cell_number[-1], cell_number[-2], cell_number[-3]))
-        sink_ = np.sum(sink_, 2)
-        sink_ = np.sum(sink_, 2)
-
-        soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
-
-        redistribution_id = np.round(sink_.shape[0] / days * np.array([i for i in plot_times]))
-        redistribution_id = redistribution_id.astype(int)
-        # print("redistribution_id", redistribution_id)
-
-        for ind, j in enumerate(redistribution_id):
-            lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i],int(ind == 0) +
-            ax[1].plot(sink_[j,:] / layer_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
-
-        ax[1].set_ylim([-ylim, 0.])
-        ax[1].legend()
 
 
 if __name__ == "__main__":
 
-    for s in ["hydrus_loam", "hydrus_loam", "hydrus_loam"]:
-        fig, ax = plt.subplots(2, 1, figsize = (10, 18))
+    for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
+        fig, ax = plt.subplots(1, 1, figsize = (10, 18))
+        ax = [ax]
         method = ["sra"]
         plant = ["maize"]
         soil = [s]
         outer_method = ["voronoi"]
-        plot_sink3d(ax, method, plant, soil, outer_method, ["ref"])
-        ax[0].set_xlim([0., 0.038])
-        ax[1].set_xlim([-0.0025, 0.0025])
+        plot_hs(ax, method, plant, soil, outer_method, ["ref"])
+        # ax[0].set_xlim([0., 0.038])
+        # ax[1].set_xlim([-0.0025, 0.0025])
         plt.tight_layout()
-        plt.savefig('sink_3d_maize_' + s[7:] + '.png')
+        plt.savefig('hs_3d_' + plant[0] + "_" + outer_method[0] + '_' + s[7:] + '.png')
 
     """ 
     References 3d, 1d 

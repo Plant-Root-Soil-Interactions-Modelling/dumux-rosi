@@ -39,7 +39,7 @@ def to_zrange(x:list, other:list = [], min_:float = -np.inf, max_:float = np.inf
 def plot_hsr_bins(ax, method, dim, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6], ls = [ "-", ":", "-.", "-", ":", "-."]):
 
     outer_r_bins = False  # False: bins per detph
-    vis_hsr = True  # False: Hs; True: Hsr
+    vis_hsr = False  # False: Hs; True: Hsr
 
     # check with scenario_setup
     l = 150  # cm soil depth
@@ -56,7 +56,6 @@ def plot_hsr_bins(ax, method, dim, plant, soil, outer_method, label_ = "3D", plo
 
         r, mapping, length, a, surf, z = pr.get_rootsystem(plant, dim)
         z_.append(z)
-        print(z)
         min_z_ = np.min(z_)
 
     """ load data """
@@ -78,6 +77,7 @@ def plot_hsr_bins(ax, method, dim, plant, soil, outer_method, label_ = "3D", plo
             for j in range(0, d.shape[0]):
                 d2.append(r.get_hs(list(data[i][j,:])))  # converts from hs per cell to hs per segment
             data2.append(np.array(d2))
+    data = data2  # rename
 
     cmap = plt.get_cmap('Set1')
     col = cmap([1, 0, 4, 3, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])  # adjust colors to jans plot
@@ -128,6 +128,8 @@ def plot_hsr_bins(ax, method, dim, plant, soil, outer_method, label_ = "3D", plo
                 else:
                     max_z = i_ * bin_size_z
                     min_z = (i_ + 1) * bin_size_z
+                    # print(len(z_[i]))
+                    # print(len(list(hsr_[j,:])))
                     outer_bin, hsr_bin = to_zrange(z_[i], list(hsr_[j,:]), min_z, max_z)
                     print(i, i_, i_ % 5, i_ // 5, "hsr_bin", min_z, max_z, len(hsr_bin), "ranging", min_z_, 0)
 
@@ -138,7 +140,7 @@ def plot_hsr_bins(ax, method, dim, plant, soil, outer_method, label_ = "3D", plo
                         ax[i_ % 5, i_ // 5].hist(np.array(hsr_bin), range = (all_min[i_], all_max[i_]), bins = 10, rwidth = 0.9, alpha = 0.5, label = lstr)
                 else:
                     if len(hsr_bin) > 0:
-                        ax[i_ % 5, i_ // 5].hist(np.array(hsr_bin), range = (-15000, 0), bins = 10, rwidth = 0.9, alpha = 0.5, label = lstr)
+                        ax[i_ % 5, i_ // 5].hist(np.array(hsr_bin), range = (-3000, 0), bins = 10, rwidth = 0.9, alpha = 0.5, label = lstr)
                     ax[i_ % 5, i_ // 5].set_title("Bin ({:g}-{:g}) cm depth".format(min_z, max_z))
 
         for i_ in range(0, 10):
