@@ -51,6 +51,8 @@ def plot_outer_vtk(method, dim, plant, soil, outer_method, plot_time = 13.):
     vp.plot_roots(ana, "outer_r")
     # vp.plot_roots_and_mesh(ana, "outer_r", grid, "surface_density", True, width[0], width[1])
     # plt.hist(outer_radii, bins = 100, rwidth = 0.9, align = 'mid')
+    fname = method + "_" + plant + "_" + dim + "_" + soil + "_" + outer_method
+    ana.write(fname + ".vtp")
 
 
 if __name__ == "__main__":
