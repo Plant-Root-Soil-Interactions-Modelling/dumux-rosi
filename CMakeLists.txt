@@ -15,7 +15,6 @@ find_package( PythonLibs 3.7.5 REQUIRED )
 
 #find dune-common and set the module path
 find_package(dune-common REQUIRED)
-find_package(dune-pybindxi REQUIRED) # PATHS ../dune-pybindxi/build-cmake/
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" ${dune-common_MODULE_PATH} ) 
 
 #include the dune macros
