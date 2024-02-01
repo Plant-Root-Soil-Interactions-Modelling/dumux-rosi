@@ -109,7 +109,7 @@ public:
         }
 		if(doMPI)
 		{
-			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+			mpiHelper.getCommunication().barrier(); // no one is allowed to mess up the message
 		}
         setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
@@ -150,7 +150,7 @@ public:
     virtual void createGrid(VectorType boundsMin, VectorType boundsMax,
         std::array<int, dim> numberOfCells, bool periodic = false) {
         this->numberOfCells = numberOfCells;
-        auto& p = Dumux::Parameters::paramTree(); // had to modify parameters.hh, its private an no way I can pull it out
+        auto& p = Dumux::Parameters::paramTree_(); // had to modify parameters.hh, its private an no way I can pull it out
         std::ostringstream bmin;
         std::ostringstream bmax;
         std::ostringstream cells;
@@ -257,7 +257,7 @@ public:
      * depending on the Grid you choose at compile time it will accept the file type, or not.
      */
     virtual void readGrid(std::string file) {
-        auto& p = Dumux::Parameters::paramTree();
+        auto& p = Dumux::Parameters::paramTree_();
         p["Grid.File"] = file;
         createGrid();
     }
@@ -282,7 +282,7 @@ public:
      * Writes a parameter into the global Dumux parameter map
      */
     virtual void setParameter(std::string key, std::string value) {
-        auto& p = Dumux::Parameters::paramTree();
+        auto& p = Dumux::Parameters::paramTree_();
         p[key] = value;
     }
 
