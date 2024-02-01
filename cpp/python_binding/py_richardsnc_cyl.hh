@@ -1,10 +1,7 @@
 #ifndef PYTHON_RICHARDS_CYL_H_
 #define PYTHON_RICHARDS_CYL_H_
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
-#include <dune/pybindxi/numpy.h>
-#include <dune/pybindxi/functional.h>
+#include "external/pybind11/include/pybind11/pybind11.h"
 namespace py = pybind11;
 
 #include <config.h> // configuration file
