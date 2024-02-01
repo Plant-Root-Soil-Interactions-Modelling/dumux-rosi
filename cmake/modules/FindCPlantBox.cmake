@@ -28,20 +28,12 @@
 
 # look for header files, only at positions given by the user
 find_path(CPLANTBOX_INCLUDE_DIR
-          NAMES RootSystem.h
+          NAMES PyPlantBox.cpp
           PATHS "${CPLANTBOX_ROOT}"
-                "${CMAKE_SOURCE_DIR}/../external/cplantbox"
-                "${CMAKE_SOURCE_DIR}/../external/CPlantBox"
-                "${CMAKE_SOURCE_DIR}/../cplantbox"
-                "${CMAKE_SOURCE_DIR}/../CPlantBox"
+                "${CMAKE_SOURCE_DIR}/../CPlantBox/src"
           PATH_SUFFIXES "cplantbox" "CPlantBox" "SRC" "src"
           NO_DEFAULT_PATH)
 
-# this only looks if it wasn't found before
-# search in default paths
-find_path(CPLANTBOX_INCLUDE_DIR
-          NAMES RootSystem.h
-          PATH_SUFFIXES "cplantbox" "CPlantBox" "SRC" "src")
 
 # look for library, at position fiven by the user and some defaults
 find_library(CPLANTBOX_LIBRARY
@@ -54,11 +46,6 @@ find_library(CPLANTBOX_LIBRARY
              PATH_SUFFIXES "" "lib" "lib32" "lib64" "src/.libs" "cplantbox" "CPlantBox" "SRC" "src"
              NO_DEFAULT_PATH)
 
-# this only looks if it wasn't found before
-# search in default paths
-find_library(CPLANTBOX_LIBRARY
-             NAMES CPlantBox cplantbox libCPlantBox CPlantBox.a cplantbox.a libCPlantBox.a
-             PATH_SUFFIXES "" "lib" "lib32" "lib64" "src/.libs" "cplantbox" "CPlantBox" "SRC" "src")
 
 include(CMakePushCheckState)
 cmake_push_check_state() # Save variables
