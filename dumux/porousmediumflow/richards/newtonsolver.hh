@@ -1,21 +1,9 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 3 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+//
+// SPDX-FileCopyrightInfo: Copyright © DuMux Project contributors, see AUTHORS.md in root folder
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
 /*!
  * \file
  * \ingroup RichardsModel
@@ -24,6 +12,8 @@
 
 #ifndef DUMUX_RICHARDS_NEWTON_SOLVER_HH
 #define DUMUX_RICHARDS_NEWTON_SOLVER_HH
+
+#include <algorithm>
 
 #include <dumux/common/properties.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
@@ -37,8 +27,6 @@ namespace Dumux {
  * This solver 'knows' what a 'physically meaningful' solution is
  * and can thus do update smarter than the plain Newton solver.
  *
- * \todo make this typetag independent by extracting anything model specific from assembler
- *       or from possible ModelTraits.
  */
 template <class Assembler, class LinearSolver,
           class Reassembler = PartialReassembler<Assembler>,
@@ -47,40 +35,42 @@ class RichardsNewtonSolver : public NewtonSolver<Assembler, LinearSolver, Reasse
 {
     using Scalar = typename Assembler::Scalar;
     using ParentType = NewtonSolver<Assembler, LinearSolver, Reassembler, Comm>;
-    using SolutionVector = typename Assembler::ResidualType;
-
-    using MaterialLaw = typename Assembler::Problem::SpatialParams::MaterialLaw;
     using Indices = typename Assembler::GridVariables::VolumeVariables::Indices;
     enum { pressureIdx = Indices::pressureIdx };
 
+    using typename ParentType::Backend;
+    using typename ParentType::SolutionVector;
+    using typename ParentType::ResidualVector;
+
 public:
     using ParentType::ParentType;
+    using typename ParentType::Variables;
 
 private:
 
     /*!
      * \brief Update the current solution of the Newton method
      *
-     * \param uCurrentIter The solution after the current Newton iteration \f$ u^{k+1} \f$
+     * \param varsCurrentIter The variables after the current Newton iteration \f$ u^{k+1} \f$
      * \param uLastIter The solution after the last Newton iteration \f$ u^k \f$
      * \param deltaU The vector of differences between the last
      *               iterative solution and the next one \f$ \Delta u^k \f$
      */
-    void choppedUpdate_(SolutionVector &uCurrentIter,
+    void choppedUpdate_(Variables &varsCurrentIter,
                         const SolutionVector &uLastIter,
-                        const SolutionVector &deltaU) final
+                        const ResidualVector &deltaU) final
     {
-        uCurrentIter = uLastIter;
-        uCurrentIter -= deltaU;
+        auto uCurrentIter = uLastIter;
+        Backend::axpy(-1.0, deltaU, uCurrentIter);
 
         // do not clamp anything after 5 iterations
         if (this->numSteps_ <= 4)
         {
             // clamp saturation change to at most 20% per iteration
-            const auto& fvGridGeometry = this->assembler().fvGridGeometry();
-            for (const auto& element : elements(fvGridGeometry.gridView()))
+            const auto& gridGeometry = this->assembler().gridGeometry();
+            auto fvGeometry = localView(gridGeometry);
+            for (const auto& element : elements(gridGeometry.gridView()))
             {
-                auto fvGeometry = localView(fvGridGeometry);
                 fvGeometry.bindElement(element);
 
                 for (auto&& scv : scvs(fvGeometry))
@@ -89,37 +79,32 @@ private:
 
                     // calculate the old wetting phase saturation
                     const auto& spatialParams = this->assembler().problem().spatialParams();
-                    const auto elemSol = elementSolution(element, uCurrentIter, fvGridGeometry);
-                    const auto& materialLawParams = spatialParams.materialLawParams(element, scv, elemSol);
-                    const Scalar pcMin = MaterialLaw::pc(materialLawParams, 1.0);
+                    const auto elemSol = elementSolution(element, uCurrentIter, gridGeometry);
+
+                    const auto fluidMatrixInteraction = spatialParams.fluidMatrixInteraction(element, scv, elemSol);
+                    const Scalar pcMin = fluidMatrixInteraction.pc(1.0);
                     const Scalar pw = uLastIter[dofIdxGlobal][pressureIdx];
                     using std::max;
-                    const Scalar pn = max(this->assembler().problem().nonWettingReferencePressure(), pw + pcMin);
+                    const Scalar pn = max(this->assembler().problem().nonwettingReferencePressure(), pw + pcMin);
                     const Scalar pcOld = pn - pw;
-                    const Scalar SwOld = max(0.0, MaterialLaw::sw(materialLawParams, pcOld));
+                    const Scalar SwOld = max(0.0, fluidMatrixInteraction.sw(pcOld));
 
-                    // convert into minimum and maximum wetting phase
-                    // pressures
-                    const Scalar pwMin = pn - MaterialLaw::pc(materialLawParams, SwOld - 0.2);
-                    const Scalar pwMax = pn - MaterialLaw::pc(materialLawParams, SwOld + 0.2);
+                    // convert into minimum and maximum wetting phase pressures
+                    const Scalar pwMin = pn - fluidMatrixInteraction.pc(SwOld - 0.2);
+                    const Scalar pwMax = pn - fluidMatrixInteraction.pc(SwOld + 0.2);
 
                     // clamp the result
-                    using std::min; using std::max;
-                    uCurrentIter[dofIdxGlobal][pressureIdx] = max(pwMin, min(uCurrentIter[dofIdxGlobal][pressureIdx], pwMax));
+                    using std::clamp;
+                    uCurrentIter[dofIdxGlobal][pressureIdx] = clamp(uCurrentIter[dofIdxGlobal][pressureIdx], pwMin, pwMax);
                 }
             }
         }
 
-        if (this->enableResidualCriterion())
-            this->computeResidualReduction_(uCurrentIter);
+        // update the variables
+        this->solutionChanged_(varsCurrentIter, uCurrentIter);
 
-        else
-        {
-            // If we get here, the convergence criterion does not require
-            // additional residual evalutions. Thus, the grid variables have
-            // not yet been updated to the new uCurrentIter.
-            this->assembler().updateGridVariables(uCurrentIter);
-        }
+        if (this->enableResidualCriterion())
+            this->computeResidualReduction_(varsCurrentIter);
     }
 };
 
