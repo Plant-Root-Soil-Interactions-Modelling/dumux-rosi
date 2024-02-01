@@ -34,15 +34,17 @@ endmacro()
 #report other information
 set_and_check(dumux-rosi_PREFIX "${PACKAGE_PREFIX_DIR}")
 set_and_check(dumux-rosi_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
-set(dumux-rosi_CXX_FLAGS "-std=c++17  -fext-numeric-literals")
+set(dumux-rosi_CXX_FLAGS "-std=c++17 ")
 set(dumux-rosi_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare")
 set(dumux-rosi_CXX_FLAGS_MINSIZEREL "-Os -DNDEBUG")
 set(dumux-rosi_CXX_FLAGS_RELEASE " -fdiagnostics-color=always -fno-strict-aliasing -fstrict-overflow -fno-finite-math-only -DNDEBUG=1 -O3 -march=native -funroll-loops -g0 -Wall -Wunused -Wmissing-include-dirs -Wcast-align -Wno-missing-braces -Wmissing-field-initializers -Wno-sign-compare")
 set(dumux-rosi_CXX_FLAGS_RELWITHDEBINFO " -fdiagnostics-color=always -fno-strict-aliasing -fstrict-overflow -fno-finite-math-only -DNDEBUG=1 -O3 -march=native -funroll-loops -g0 -Wall -Wunused -Wmissing-include-dirs -Wcast-align -Wno-missing-braces -Wmissing-field-initializers -Wno-sign-compare -g -ggdb -Wall")
-set(dumux-rosi_DEPENDS "dumux (>= 3.0);dune-common (>= 2.6);dune-uggrid (>= 2.6);dune-pybindxi (>= 0) ")
+set(dumux-rosi_DEPENDS "dumux (>= 3.0);dune-common (>= 2.6);dune-uggrid (>= 2.6) ")
 set(dumux-rosi_SUGGESTS "")
 set(dumux-rosi_MODULE_PATH "${PACKAGE_PREFIX_DIR}/share/dune/cmake/modules")
 set(dumux-rosi_LIBRARIES "")
+set(dumux-rosi_HASPYTHON 1)
+set(dumux-rosi_PYTHONREQUIRES "")
 
 # Lines that are set by the CMake build system via the variable DUNE_CUSTOM_PKG_CONFIG_SECTION
 
@@ -52,4 +54,5 @@ if(dumux-rosi_LIBRARIES)
   get_filename_component(_dir "${CMAKE_CURRENT_LIST_FILE}" PATH)
   include("${_dir}/dumux-rosi-targets.cmake")
 endif()
+
 endif()
