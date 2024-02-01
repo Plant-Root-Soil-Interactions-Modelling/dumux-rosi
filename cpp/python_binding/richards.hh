@@ -4,10 +4,6 @@
 // most includes are in solverbase
 #include "solverbase.hh"
 
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
-// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
-
 // writeDumuxVTK
 #include <dumux/io/vtkoutputmodule.hh>
 
@@ -60,43 +56,6 @@ public:
         this->problem->setSource(ls, eqIdx);
     }
 
-    /**
-     * Applies source term (operator splitting) to the current solution
-     *
-     * Limits soil pressure with wilting point from below
-     *
-     * @param dt 			current time step [s]
-     * @param soilFluxes 	fluxes between root and soil [kg/s] (negative fluxes are a sink)
-     * @param critP 		critical Pressure or wilting point [Pa]
-     */
-    virtual void applySource(double dt, const std::map<int, double>& soilFluxes, double critP) {
-    	if (this->isBox) {
-            throw std::invalid_argument("SolverBase::setInitialCondition: Not implemented yet (sorry)");
-        } else {
-        	if (cellVolume.size()==0) { // buffer cell volumes [m3]
-        		cellVolume = this->getCellVolumes();
-        	}
-        	const auto& params = this->problem->spatialParams();
-        	auto wc = this->getWaterContent();
-            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {  // local elements
-            	auto eIdx = this->gridGeometry->elementMapper().index(e);
-            	int gIdx = this->cellIdx->index(e); // global index
-            	if (soilFluxes.count(gIdx)>0) {
-            		const auto& param = params.materialLawParams(e);
-                	double sink = soilFluxes.at(gIdx)/1000.; // [kg / s] -> [m3]
-                	double new_wc = (wc[eIdx]*cellVolume[eIdx] + dt*sink) / cellVolume[eIdx];
-                	// new_wc -> effective saturation
-                    double sw = new_wc/params.porosity(e); // water_content -> saturation
-                	double p = pRef_-MaterialLaw::pc(param, sw);
-                	if (p<critP) {
-                    	this->x[eIdx] = critP;
-                	} else {
-                		this->x[eIdx] = p;
-                	}
-            	}
-            }
-        }
-    }
 
     /**
      * Sets critical pressure, used for constantFlux, constantFluxCyl, or atmospheric boundary conditions,
