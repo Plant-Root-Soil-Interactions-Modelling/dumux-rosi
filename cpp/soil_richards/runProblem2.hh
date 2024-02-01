@@ -47,7 +47,7 @@
 
 #include "properties.hh"
 
-#include "solverbase.hh"
+#include "../python_binding/solverbase.hh"
 
 class runProblem
 {

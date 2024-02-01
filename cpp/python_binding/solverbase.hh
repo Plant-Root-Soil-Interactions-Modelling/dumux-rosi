@@ -19,7 +19,7 @@
 #include <dune/grid/utility/globalindexset.hh>
 
 // pick
-#include <dumux/common/geometry/intersectingentities.hh>
+//#include <dumux/common/geometry/intersectingentities.hh>
 #include <dumux/discretization/localview.hh>
 
 #include <ostream>
@@ -109,7 +109,7 @@ public:
         }
 		if(doMPI)
 		{
-			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+			mpiHelper.getCommunication().barrier(); // no one is allowed to mess up the message
 		}
         setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
@@ -150,7 +150,7 @@ public:
     virtual void createGrid(VectorType boundsMin, VectorType boundsMax,
         std::array<int, dim> numberOfCells, bool periodic = false) {
         this->numberOfCells = numberOfCells;
-        auto& p = Dumux::Parameters::paramTree(); // had to modify parameters.hh, its private an no way I can pull it out
+        auto& p = Dumux::Parameters::paramTree_(); // had to modify parameters.hh, its private an no way I can pull it out
         std::ostringstream bmin;
         std::ostringstream bmax;
         std::ostringstream cells;
@@ -211,45 +211,6 @@ public:
         gridGeometry->update();
     }
 
-    //    /**
-    //     * Creates a 1D grid with number of cells = [1,1,points.size()-1] where points are the cell centers for 3d/3d
-    //     */
-    //    virtual void createGrid3d(const std::vector<VectorType>& points, const std::vector<VectorType>& p0) {
-    //        assert(dim==3 && "SolverBase::createGrid3d: works only for dim==3");
-    //        Dune::GridFactory<Grid> factory;
-    //        constexpr auto cube = Dune::GeometryTypes::hexahedron;
-    //        std::array<Dune::FieldVector<double, dim>,4> p0_;
-    //        for (int j=0; j<4; j++) {
-    //            for (int i=0; i<dim; i++) {
-    //                p0_[j][i] = p0.at(j).at(i);
-    //            }
-    //        }
-    //        Dune::FieldVector<double, dim> p;
-    //        for (int i=0; i<dim; i++) {
-    //            p[i] = points.at(0).at(i);
-    //        }
-    //        for (int i=0; i<4; i++) {
-    //            factory.insertVertex(p+p0_[i]);
-    //        }
-    //        for (int k = 1; k<points.size(); k++) {
-    //            for (int i=0; i<3; i++) {
-    //                p[i] = points.at(k).at(i);
-    //            }
-    //            for (int i=0; i<4; i++) {
-    //                factory.insertVertex(p+p0_[i]);
-    //            }
-    //        }
-    //        for (int k = 0; k<points.size()-1; k++) {
-    //            factory.insertElement(cube,  {
-    //                static_cast<unsigned int>(4*k), static_cast<unsigned int>(4*k+1),
-    //                static_cast<unsigned int>(4*k+2), static_cast<unsigned int>(4*k+3),
-    //                static_cast<unsigned int>(4*k+4), static_cast<unsigned int>(4*k+5),
-    //                static_cast<unsigned int>(4*k+6), static_cast<unsigned int>(4*k+7)});
-    //        }
-    //        grid = std::shared_ptr<Grid>(factory.createGrid());
-    //        gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
-    //        gridGeometry->update();
-    //    }
 
     /**
      * Creates a grid from a file
@@ -257,7 +218,7 @@ public:
      * depending on the Grid you choose at compile time it will accept the file type, or not.
      */
     virtual void readGrid(std::string file) {
-        auto& p = Dumux::Parameters::paramTree();
+        auto& p = Dumux::Parameters::paramTree_();
         p["Grid.File"] = file;
         createGrid();
     }
@@ -282,7 +243,7 @@ public:
      * Writes a parameter into the global Dumux parameter map
      */
     virtual void setParameter(std::string key, std::string value) {
-        auto& p = Dumux::Parameters::paramTree();
+        auto& p = Dumux::Parameters::paramTree_();
         p[key] = value;
     }
 
@@ -432,9 +393,9 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
 								 PartialReassembler<Assembler>,
-								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
+								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
-								Dune::FakeMPIHelper::getCollectiveCommunication());//
+								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbose(false);
         timeLoop->start();
         auto xOld = x;
@@ -873,7 +834,7 @@ protected:
 
 /**
  * pybind11
- */
+ 
 template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
@@ -924,7 +885,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("checkGridInitialized", &Solver::checkGridInitialized)
             .def("checkProblemInitialized", &Solver::checkProblemInitialized);
 }
-
+*/
 #endif
 
 /**
