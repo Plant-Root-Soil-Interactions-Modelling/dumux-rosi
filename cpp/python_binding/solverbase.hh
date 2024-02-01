@@ -19,6 +19,7 @@
 #include <dune/grid/utility/globalindexset.hh>
 
 // pick
+#include <dumux/geometry/intersectingentities.hh>
 #include <dumux/discretization/localview.hh>
 
 #include <ostream>

@@ -19,10 +19,10 @@
 #ifndef RICHARDS_PARAMETERS_HH
 #define RICHARDS_PARAMETERS_HH
 
-#include <dumux/material/spatialparams/fv.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+//#include <dumux/material/spatialparams/fv.hh>
+//#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
 // #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
+//#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
