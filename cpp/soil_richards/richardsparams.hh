@@ -19,10 +19,8 @@
 #ifndef RICHARDS_PARAMETERS_HH
 #define RICHARDS_PARAMETERS_HH
 
-//#include <dumux/material/spatialparams/fv.hh>
-//#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
-// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
-//#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
+#include <dumux/porousmediumflow/fvspatialparams.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
 
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
@@ -37,25 +35,25 @@ namespace Dumux {
  * supports multiple soil layers (in z-direction),
  * with different VG parameters sets
  */
-template<class FVGridGeometry, class Scalar>
-class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+template<class GridGeometry, class Scalar>
+class RichardsParams : public FVPorousMediumFlowSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>
 {
 public:
 
-    using GridView = typename FVGridGeometry::GridView;
-    using FVElementGeometry = typename FVGridGeometry::LocalView;
+    using GridView = typename GridGeometry::GridView;
+    using FVElementGeometry = typename GridGeometry::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
-    using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
-    using MaterialLawParams = typename MaterialLaw::Params;
+    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>;
+    using MaterialLawParams = Dumux::FluidMatrix::VanGenuchten::Params<double>;
     using PermeabilityType = Scalar;
 
     enum { dimWorld = GridView::dimensionworld };
 
-    RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
+    RichardsParams(std::shared_ptr<const GridGeometry> gridGeometry)
+    : FVSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>(gridGeometry)
     {
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
@@ -97,7 +95,7 @@ public:
     }
 
     /*!
-     * \brief \copydoc FVGridGeometry::porosity
+     * \brief \copydoc GridGeometry::porosity
      */
     template<class ElementSolution>
     Scalar porosity(const Element& element,
@@ -107,7 +105,7 @@ public:
     }
 
     /*!
-     * \brief \copydoc FVGridGeometry::porosity
+     * \brief \copydoc GridGeometry::porosity
      * simper interface
      */
     Scalar porosity(const Element& element) const {
@@ -209,7 +207,7 @@ private:
             }
             return 0;
         } else { // use input file function
-            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            auto eIdx = this->GridGeometry().elementMapper().index(element);
             Scalar z = element.geometry().center()[dimWorld - 1];
             //std::cout << z << "\n";
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file

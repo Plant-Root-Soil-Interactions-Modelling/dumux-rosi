@@ -5,8 +5,8 @@
 #include "solverbase.hh"
 
 //#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
-// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
-//#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/efftoabsdefaultpolicy.hh>
 
 // writeDumuxVTK
 #include <dumux/io/vtkoutputmodule.hh>
@@ -20,8 +20,7 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
 
-    using MaterialLaw = Dumux::EffToAbsLaw<Dumux::RegularizedVanGenuchten<double>>;
-    using MaterialLawParams = typename MaterialLaw::Params;
+    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>;
 
     virtual ~Richards() { }
 
