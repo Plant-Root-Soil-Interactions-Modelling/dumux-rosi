@@ -109,7 +109,7 @@ public:
         }
 		if(doMPI)
 		{
-			mpiHelper.getCollectiveCommunication().barrier(); // no one is allowed to mess up the message
+			mpiHelper.getCommunication().barrier(); // no one is allowed to mess up the message
 		}
         setParameter("Problem.Name","noname");
         Dumux::Parameters::init(argc, argv); // parse command line arguments and input file
@@ -432,9 +432,9 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
 								 PartialReassembler<Assembler>,
-								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
+								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
-								Dune::FakeMPIHelper::getCollectiveCommunication());//
+								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbose(false);
         timeLoop->start();
         auto xOld = x;
@@ -848,7 +848,7 @@ public:
 protected:
 
     using Grid = typename Problem::Grid;
-    using FVGridGeometry = typename Problem::FVGridGeometry;
+    using FVGridGeometry = typename Problem::GridGeometry;
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
     using FluxVariables = typename Problem::FluxVariables;

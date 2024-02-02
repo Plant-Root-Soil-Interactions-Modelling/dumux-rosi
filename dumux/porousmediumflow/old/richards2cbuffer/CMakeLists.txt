@@ -1,0 +1,12 @@
+#install headers
+install(FILES
+richards2cbufferlocalresidual.hh
+richards2cbufferfluxvariables.hh
+richards2cbufferpropertydefaults.hh
+richards2cbuffervolumevariables.hh
+richards2cbufferindices.hh
+richards2cbuffernewtoncontroller.hh
+richards2cbufferproperties.hh
+richards2cbufferproblem.hh
+richards2cbuffermodel.hh
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/porousmediumflow/richards2cbuffer)

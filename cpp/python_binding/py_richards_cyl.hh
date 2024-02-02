@@ -10,7 +10,7 @@ namespace py = pybind11;
 
 #include "../soil_richards/richardsproblem.hh" // the problem class
 
-#include <dumux/linear/amgbackend.hh>
+#include <dumux/linear/istlsolvers.hh>
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/discretization/cctpfa.hh>
@@ -40,7 +40,7 @@ template<class TypeTag> // Set Problem
 struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag>; };
 
 template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::RichardsTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
+struct SpatialParams<TypeTag, TTag::RichardsTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
 
 template<class TypeTag> // Set grid type
 struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>; }; //  Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 1>
@@ -54,7 +54,7 @@ struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>
  */
 using RCFoamTT = Dumux::Properties::TTag::RichardsCylFoamCC;
 using RichardsCylFoamAssembler = Dumux::FVAssembler<RCFoamTT, Dumux::DiffMethod::numeric>;
-using RichardsCylFoamLinearSolver = Dumux::AMGBackend<RCFoamTT>;
+using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<RCFoamTT>;
 using RichardsCylFoamProblem = Dumux::RichardsProblem<RCFoamTT>;
 
 

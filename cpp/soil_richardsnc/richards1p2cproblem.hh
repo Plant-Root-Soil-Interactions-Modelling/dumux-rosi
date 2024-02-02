@@ -21,7 +21,7 @@ public:
 
 	// exports, used by the binding
 	using Grid = GetPropType<TypeTag, Properties::Grid>;
-	using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+	using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
 	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
 	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
@@ -55,7 +55,7 @@ public:
 
 		dimWorld = GridView::dimensionworld,
 
-		isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
+		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box
 	};
 
 	enum BCTypes {

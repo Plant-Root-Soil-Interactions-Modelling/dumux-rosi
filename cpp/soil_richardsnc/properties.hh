@@ -47,9 +47,9 @@ struct Problem<TypeTag, TTag::Richards2CTT> { using type = Richards1P2CProblem<T
 // Set the spatial parameters
 template<class TypeTag>
 struct SpatialParams<TypeTag, TTag::Richards2CTT> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
+    using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
 };
 
 //// Set the physical problem to be solved

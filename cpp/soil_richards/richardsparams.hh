@@ -37,6 +37,7 @@ namespace Dumux {
  */
 template<class GridGeometry, class Scalar>
 class RichardsParams : public FVPorousMediumFlowSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>
+
 {
 public:
 

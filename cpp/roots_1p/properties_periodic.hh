@@ -84,7 +84,7 @@ enum modelType { dgf = 0, rootbox = 1 };
 #if DGF
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsCaviationDGF<FVGridGeometry, Scalar>;
 };
@@ -93,7 +93,7 @@ int simtype = dgf;
 #if ROOTBOX
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
 };
