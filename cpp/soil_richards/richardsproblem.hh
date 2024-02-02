@@ -54,7 +54,7 @@ public:
 		// world dimension
 		dimWorld = GridView::dimensionworld,
 		// discretization method
-		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box
+		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box
 	};
 
 	enum BCTypes {

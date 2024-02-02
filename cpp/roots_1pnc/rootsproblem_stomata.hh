@@ -62,7 +62,7 @@ class RootsStomataProblem: public PorousMediumFlowProblem<TypeTag> {
         conti0EqIdx = 0,  // indices of the equations
         transportEqIdx = 1, //
 
-        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box,
+        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box,
 
         bcDirichlet = 0,
         bcNeumann = 1

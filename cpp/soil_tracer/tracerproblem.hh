@@ -173,7 +173,7 @@ class TracerTest : public PorousMediumFlowProblem<TypeTag>
 
     enum {
         dimWorld = GridView::dimensionworld, // world dimension
-        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box // discretization method
+        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box // discretization method
     };
 
     enum BCTypes {
