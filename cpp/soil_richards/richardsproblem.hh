@@ -4,6 +4,7 @@
 #define RICHARDS_PROBLEM_HH
 
 #include <dumux/porousmediumflow/problem.hh> // base class
+#include <dumux/common/numeqvector.hh>
 
 #include "richardsparams.hh"
 
@@ -21,27 +22,27 @@ public:
 
 	// exports, used by the binding
 	using Grid = GetPropType<TypeTag, Properties::Grid>;
-	using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+	using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
 	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
 	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
 
 	// other
-	using GridView = GetPropType<TypeTag, Properties::GridView>;
+	using GridView = typename GridGeometry::GridView;
 	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-	using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-	using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-	using FVElementGeometry = typename FVGridGeometry::LocalView;
-	using SubControlVolume = typename FVGridGeometry::SubControlVolume;
-	using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
+	using NumEqVector = typename Dumux::NumEqVector<PrimaryVariables>;
+	using FVElementGeometry = typename GridGeometry::LocalView;
+	using SubControlVolume = typename GridGeometry::SubControlVolume;
+	using SubControlVolumeFace = typename GridGeometry::SubControlVolumeFace;
 	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
 	using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
 	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-	using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
-	using MaterialLawParams = typename MaterialLaw::Params;
+    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
+	using MaterialLawParams = typename MaterialLaw::BasicParams;
+	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
 
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
 	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
@@ -50,11 +51,10 @@ public:
 		// copy some indices for convenience
 		pressureIdx = Indices::pressureIdx,
 		conti0EqIdx = Indices::conti0EqIdx,
-		bothPhases = Indices::bothPhases,
 		// world dimension
 		dimWorld = GridView::dimensionworld,
 		// discretization method
-		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box
+		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box
 	};
 
 	enum BCTypes {
@@ -73,8 +73,8 @@ public:
 	/*!
 	 * \brief Constructor: constructed in the main file
 	 */
-	RichardsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
+	RichardsProblem(std::shared_ptr<const GridGeometry> GridGeometry)
+	: PorousMediumFlowProblem<TypeTag>(GridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
@@ -146,12 +146,12 @@ public:
 	 */
 	template<class Entity>
 	PrimaryVariables initial(const Entity& entity) const {
-		auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+		auto eIdx = this->gridGeometry().elementMapper().index(entity);
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		// std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
-		v.setState(bothPhases);
+		v.setState(pressureIdx);
 		return v;
 	}
 
@@ -204,7 +204,7 @@ public:
 			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Dirichlet: unknown boundary type");
 			}
 		}
-		values.setState(Indices::bothPhases);
+		values.setState(pressureIdx);
 		return values;
 	}
 
@@ -370,14 +370,14 @@ public:
 			const SubControlVolume &scv) const {
 		if ((source_ != nullptr)) {
 			if (sourceSlope_<0.) {
-				auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+				auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
 				return source_->at(eIdx)/scv.volume();
 			} else {
 			    Scalar s = elemVolVars[scv].saturation();
 	            MaterialLawParams params = this->spatialParams().materialLawParams(element);
 	            Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
 	            Scalar h = -toHead_(p); // cm
-	            auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+	            auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
 	            if (h<criticalPressure_) {
 	                return 0.;
 	            } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
@@ -489,8 +489,8 @@ public:
 		int uc = 0;
 		bc_flux_lower = 0.;
 		int lc = 0;
-		for (const auto& e :elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
+		for (const auto& e :elements(this->gridGeometry().gridView())) {
+			auto fvGeometry = localView(this->gridGeometry());
 			fvGeometry.bindElement(e);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
@@ -526,8 +526,8 @@ public:
 	 */
 	void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
 		NumEqVector source(0.0);
-		for (const auto& element : elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
+		for (const auto& element : elements(this->gridGeometry().gridView())) {
+			auto fvGeometry = localView(this->gridGeometry());
 			fvGeometry.bindElement(element);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(element, fvGeometry, sol);
@@ -593,12 +593,12 @@ private:
 
 	//! true if on the point lies on the upper boundary
 	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+		return globalPos[dimWorld - 1] > this->gridGeometry().bBoxMax()[dimWorld - 1] - eps_;
 	}
 
 	//! true if on the point lies on the upper boundary
 	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
 	}
 
 	// Initial
