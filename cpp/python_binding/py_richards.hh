@@ -10,7 +10,10 @@ namespace py = pybind11;
 
 #include "../soil_richards/richardsproblem.hh" // the problem class
 
-// #include <dumux/linear/amgbackend.hh>
+#include <dumux/common/properties.hh>
+#include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/discretization/cctpfa.hh>
@@ -63,14 +66,18 @@ struct Grid<TypeTag, TTag::RichardsUGTT> { using type = Dune::UGGrid<3>; };
 /*
  * pick assembler, linear solver and problem
  */
-using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // CC!
+using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // choose CC or Box
+using GridGeometryRSPTT = typename Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
 using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric>;
-using RichardsSPLinearSolver = Dumux::AMGBackend<RSPTT>; // UMFPackBackend AMGBackend
+using RichardsSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
 using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 
-using RUGTT = Dumux::Properties::TTag::RichardsUGCC;
+using RUGTT = Dumux::Properties::TTag::RichardsUGCC; // choose CC or Box
+using GridGeometryRUGTT = typename Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
 using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
-using RichardsUGLinearSolver = Dumux::AMGBackend<RUGTT>;
+using RichardsUGLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRUGTT>,
+		Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
 using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
 
 PYBIND11_MODULE(rosi_richards, m) {
