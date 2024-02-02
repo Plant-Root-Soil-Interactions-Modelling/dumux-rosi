@@ -76,12 +76,6 @@ public:
                                   IOName::massFraction<FS>(VolumeVariables::liquidPhaseIdx, compIdx));
     }
 
-    template <class OutputModule>
-    DUNE_DEPRECATED_MSG("use initOutputModule instead")
-    static void init(OutputModule& out)
-    {
-        initOutputModule(out);
-    }
 
     template <class ModelTraits, class FluidSystem, class SolidSystem = void>
     static std::string primaryVariableName(int pvIdx, int state = 0)

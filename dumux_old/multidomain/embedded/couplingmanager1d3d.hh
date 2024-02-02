@@ -208,7 +208,7 @@ class EmbeddedCouplingManager1d3d<MDTraits, EmbeddedCouplingMode::average>
 
     template<std::size_t id>
     static constexpr bool isBox()
-    { return FVGridGeometry<id>::discMethod == DiscretizationMethod::box; }
+    { return FVGridGeometry<id>::discMethod == DiscretizationMethods::Box; }
 
 
 public:
@@ -585,7 +585,7 @@ class EmbeddedCouplingManager1d3d<MDTraits, EmbeddedCouplingMode::cylindersource
 
     template<std::size_t id>
     static constexpr bool isBox()
-    { return FVGridGeometry<id>::discMethod == DiscretizationMethod::box; }
+    { return FVGridGeometry<id>::discMethod == DiscretizationMethods::Box; }
 
     enum {
         bulkDim = GridView<bulkIdx>::dimension,
@@ -861,7 +861,7 @@ class EmbeddedCouplingManager1d3d<MDTraits, EmbeddedCouplingMode::kernel>
 
     template<std::size_t id>
     static constexpr bool isBox()
-    { return FVGridGeometry<id>::discMethod == DiscretizationMethod::box; }
+    { return FVGridGeometry<id>::discMethod == DiscretizationMethods::Box; }
 
     enum {
         bulkDim = GridView<bulkIdx>::dimension,

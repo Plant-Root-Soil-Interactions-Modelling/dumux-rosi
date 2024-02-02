@@ -51,7 +51,7 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
         pressureIdx = Indices::pressureIdx
     };
     enum {
-        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box
+        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box
     };
     enum {
         bcDirichlet = 0,

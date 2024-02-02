@@ -122,9 +122,7 @@ namespace Dumux {
  * \ingroup RichardsModel
  * \brief Specifies a number properties of the Richards model.
  *
- * \tparam enableDiff specifies if diffusion of water in air is to be considered.
  */
-template<bool enableDiff>
 struct RichardsModelTraits
 {
     using Indices = RichardsIndices;
@@ -134,7 +132,7 @@ struct RichardsModelTraits
     static constexpr int numFluidComponents() { return 1; }
 
     static constexpr bool enableAdvection() { return true; }
-    static constexpr bool enableMolecularDiffusion() { return enableDiff; }
+    static constexpr bool enableMolecularDiffusion() { return false; }
     static constexpr bool enableEnergyBalance() { return false; }
 };
 
@@ -189,17 +187,11 @@ struct LocalResidual<TypeTag, TTag::Richards> { using type = RichardsLocalResidu
 template<class TypeTag>
 struct IOFields<TypeTag, TTag::Richards>
 {
-private:
-    static constexpr bool enableWaterDiffusionInAir
-        = getPropValue<TypeTag, Properties::EnableWaterDiffusionInAir>();
 
 public:
-    using type = RichardsIOFields<enableWaterDiffusionInAir>;
+    using type = RichardsIOFields;
 };
 
-//! The model traits
-template<class TypeTag>
-struct ModelTraits<TypeTag, TTag::Richards> { using type = RichardsModelTraits<getPropValue<TypeTag, Properties::EnableWaterDiffusionInAir>()>; };
 
 //! Set the volume variables property
 template<class TypeTag>
@@ -219,10 +211,6 @@ public:
     using type = RichardsVolumeVariables<Traits>;
 };
 
-//! The default richards model computes no diffusion in the air phase
-//! Turning this on leads to the extended Richards equation (see e.g. Vanderborght et al. 2017)
-template<class TypeTag>
-struct EnableWaterDiffusionInAir<TypeTag, TTag::Richards> { static constexpr bool value = false; };
 
 ////! Use the model after Millington (1961) for the effective diffusivity
 //template<class TypeTag>
@@ -291,8 +279,6 @@ public:
 template<class TypeTag>
 struct ModelTraits<TypeTag, TTag::RichardsNI>
 {
-private:
-    using IsothermalTraits = RichardsModelTraits<getPropValue<TypeTag, Properties::EnableWaterDiffusionInAir>()>;
 public:
     using type = PorousMediumFlowNIModelTraits<IsothermalTraits>;
 };
@@ -301,9 +287,7 @@ public:
 template<class TypeTag>
 struct IOFields<TypeTag, TTag::RichardsNI>
 {
-    static constexpr bool enableWaterDiffusionInAir
-        = getPropValue<TypeTag, Properties::EnableWaterDiffusionInAir>();
-    using RichardsIOF = RichardsIOFields<enableWaterDiffusionInAir>;
+    using RichardsIOF = RichardsIOFields;
     using type = EnergyIOFields<RichardsIOF>;
 };
 

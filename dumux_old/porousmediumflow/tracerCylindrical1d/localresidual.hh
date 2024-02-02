@@ -46,7 +46,7 @@ class TracerLocalResidual: public GetPropType<TypeTag, Properties::BaseLocalResi
     using FVElementGeometry = typename GetPropType<TypeTag, Properties::GridGeometry>::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
-    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
+    using NumEqVector = Dumux::NumEqVector<GetPropType<TypeTag, Properties::PrimaryVariables>>;
     using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
     using ElementFluxVariablesCache = typename GetPropType<TypeTag, Properties::GridFluxVariablesCache>::LocalView;
     using GridView = typename FVGridGeometry::GridView;
@@ -202,7 +202,7 @@ public:
     }
 
     template<class PartialDerivativeMatrices, class T = TypeTag>
-    std::enable_if_t<GetPropType<T, Properties::GridGeometry>::discMethod != DiscretizationMethod::box, void>
+    std::enable_if_t<GetPropType<T, Properties::GridGeometry>::discMethod != DiscretizationMethods::Box, void>
     addFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
                        const Problem& problem,
                        const Element& element,
@@ -246,7 +246,7 @@ public:
     }
 
     template<class JacobianMatrix, class T = TypeTag>
-    std::enable_if_t<GetPropType<T, Properties::GridGeometry>::discMethod == DiscretizationMethod::box, void>
+    std::enable_if_t<GetPropType<T, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box, void>
     addFluxDerivatives(JacobianMatrix& A,
                        const Problem& problem,
                        const Element& element,

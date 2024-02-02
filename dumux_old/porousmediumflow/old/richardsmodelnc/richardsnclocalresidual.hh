@@ -43,7 +43,7 @@ class RichardsLocalResidual : public GetPropType<TypeTag, Properties::BaseLocalR
     using ParentType = GetPropType<TypeTag, Properties::BaseLocalResidual>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using Problem = GetPropType<TypeTag, Properties::Problem>;
-    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
+    using NumEqVector = Dumux::NumEqVector<GetPropType<TypeTag, Properties::PrimaryVariables>>;
     using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
     using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
     using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
@@ -68,8 +68,6 @@ class RichardsLocalResidual : public GetPropType<TypeTag, Properties::BaseLocalR
 		   transportCompIdx = Indices::transportCompIdx
     };
 
-    static constexpr bool enableWaterDiffusionInAir
-        = getPropValue<TypeTag, Properties::EnableWaterDiffusionInAir>();
 
     //static const bool usePH = getPropValue<TypeTag, Properties::UsePH>();
     static const bool useMoles = getPropValue<TypeTag, Properties::UseMoles>();
@@ -113,14 +111,6 @@ public:
                     (volVars.saturation(liquidPhaseIdx)*volVars.porosity()+volVars.buffer());
         }
 
-        // for extended Richards we consider water in air
-        if (enableWaterDiffusionInAir)
-            storage[conti0EqIdx] += volVars.porosity()
-                                    * volVars.molarDensity(gasPhaseIdx)
-                                    * volVars.moleFraction(gasPhaseIdx, liquidCompIdx)
-                                    * FluidSystem::molarMass(liquidCompIdx)
-                                    * volVars.saturation(gasPhaseIdx);
-
         //! The energy storage in the water, air and solid phase
         EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, liquidPhaseIdx);
         EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, gasPhaseIdx);
@@ -156,10 +146,6 @@ public:
                           { return volVars.density(liquidPhaseIdx)*volVars.mobility(liquidPhaseIdx); };
 
         flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm);
-
-        // for extended Richards we consider water vapor diffusion in air
-        if (enableWaterDiffusionInAir)
-            flux[conti0EqIdx] += fluxVars.molecularDiffusionFlux(gasPhaseIdx)[liquidCompIdx]*FluidSystem::molarMass(liquidCompIdx);
 
         //! Add advective phase energy fluxes for the water phase only. For isothermal model the contribution is zero.
         EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, liquidPhaseIdx);

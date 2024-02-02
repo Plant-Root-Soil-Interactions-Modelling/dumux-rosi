@@ -19,6 +19,7 @@ namespace py = pybind11;
 #include <dumux/porousmediumflow/richardsncCylindrical1d/model.hh>
 
 #include <dune/grid/spgrid.hh>
+#include <dune/foamgrid/foamgrid.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
