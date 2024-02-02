@@ -99,7 +99,7 @@ namespace Dune
     typedef typename GridView::Grid::GlobalIdSet::IdType IdType;
     typedef typename GridView::Traits::template Codim<0>::Iterator Iterator;
 
-    typedef typename Grid::CollectiveCommunication CollectiveCommunication;
+    typedef typename Grid::Communication Communication;
 
     typedef std::map<IdType,Index> MapId2Index;
     typedef std::map<Index,Index>    IndexMap;

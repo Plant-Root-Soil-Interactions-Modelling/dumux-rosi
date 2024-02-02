@@ -363,9 +363,9 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
 								 PartialReassembler<Assembler>,
-								Dune::CollectiveCommunication<Dune::FakeMPIHelper::MPICommunicator> >;
+								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
-								Dune::FakeMPIHelper::getCollectiveCommunication());//
+								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbose(false);
         timeLoop->start();
         auto xOld = x;
@@ -711,7 +711,7 @@ public:
 protected:
 
     using Grid = typename Problem::Grid;
-    using FVGridGeometry = typename Problem::FVGridGeometry;
+    using FVGridGeometry = typename Problem::GridGeometry;
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
     using FluxVariables = typename Problem::FluxVariables;

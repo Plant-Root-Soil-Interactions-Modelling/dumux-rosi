@@ -40,7 +40,7 @@
 //#include <dumux/porousmediumflow/implicit/darcyfluxvariables.hh>
 #include <dumux/porousmediumflow/nonisothermal/implicit/propertydefaults.hh>
 #include <dumux/material/components/nullcomponent.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/thermalconductivitysomerton.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/thermalconductivity/somerton.hh>
 #include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
 //#include <dumux/material/fluidsystems/2pimmiscible.hh>
 #include <dumux/material/fluidstates/compositional.hh>
