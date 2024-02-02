@@ -20,7 +20,7 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
 
-    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>;
+    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>
 
     virtual ~Richards() { }
 
