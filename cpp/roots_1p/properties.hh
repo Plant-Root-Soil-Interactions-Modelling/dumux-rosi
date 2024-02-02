@@ -41,7 +41,7 @@ template<class TypeTag>
 struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
 private:
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using GridView = typename FVGridGeometry::GridView;
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
@@ -54,7 +54,7 @@ template<class TypeTag>
 struct FVGridGeometry<TypeTag, TTag::RootsBox> {
 private:
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using GridView = typename FVGridGeometry::GridView;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper

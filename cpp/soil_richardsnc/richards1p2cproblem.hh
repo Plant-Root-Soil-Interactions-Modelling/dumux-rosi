@@ -4,6 +4,8 @@
 #define RICHARDS1P2C_PROBLEM_HH
 
 #include <dumux/porousmediumflow/problem.hh> // base class
+#include <dumux/common/boundarytypes.hh>
+#include <dumux/common/numeqvector.hh>
 
 #include "../soil_richards/richardsparams.hh"
 
@@ -27,10 +29,10 @@ public:
 	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
 
 	// other
-	using GridView = GetPropType<TypeTag, Properties::GridView>;
+	using GridView = typename FVGridGeometry::GridView;
 	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-	using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-	using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+    using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
+	using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
 	using FVElementGeometry = typename FVGridGeometry::LocalView;
 	using SubControlVolume = typename FVGridGeometry::SubControlVolume;
 	using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
