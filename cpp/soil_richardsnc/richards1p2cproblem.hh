@@ -27,7 +27,7 @@ public:
 	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
 
 	// other
-	using GridView = GetPropType<TypeTag, Properties::GridView>;
+	using GridView = typename FVGridGeometry::GridView;
 	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
 	using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
 	using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;

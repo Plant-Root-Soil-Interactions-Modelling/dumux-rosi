@@ -19,8 +19,10 @@
 #ifndef RICHARDS_PARAMETERS_HH
 #define RICHARDS_PARAMETERS_HH
 
-#include <dumux/porousmediumflow/fvspatialparams.hh>
-#include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
+//#include <dumux/material/spatialparams/fv.hh>
+//#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
+// #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
+//#include <dumux/material/fluidmatrixinteractions/2p/efftoabslaw.hh>
 
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/fluidsystems/1pliquid.hh>
@@ -35,25 +37,25 @@ namespace Dumux {
  * supports multiple soil layers (in z-direction),
  * with different VG parameters sets
  */
-template<class GridGeometry, class Scalar>
-class RichardsParams : public FVPorousMediumFlowSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>
-
+template<class FVGridGeometry, class Scalar>
+class RichardsParams : public FVSpatialParams<GridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
 {
 public:
 
-    using GridView = typename GridGeometry::GridView;
-    using FVElementGeometry = typename GridGeometry::LocalView;
+    using GridView = typename FVGridGeometry::GridView;
+    using FVElementGeometry = typename FVGridGeometry::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
-    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw
+    using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
+    using MaterialLawParams = typename MaterialLaw::Params;
     using PermeabilityType = Scalar;
 
     enum { dimWorld = GridView::dimensionworld };
 
-    RichardsParams(std::shared_ptr<const GridGeometry> gridGeometry)
-    : FVPorousMediumFlowSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>(gridGeometry)
+    RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
+    : FVSpatialParams<GridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
     {
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
@@ -71,25 +73,22 @@ public:
         three_ = false;
 
         phi_.resize(qr.size());
-        // Qr, Qs -> effToAbsParams alpha, and n goes to the basicParams
+        // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
         for (int i=0; i<qr.size(); i++) {
             phi_[i] =  qs.at(i); // Richards equation is independent of phi [1]
-            effToAbsParams.push_back(MaterialLaw::EffToAbsParams());
-            effToAbsParams.at(i).setSwr(qr.at(i)/phi_[i]); // Qr
-            effToAbsParams.at(i).setSnr(1.-qs.at(i)/phi_[i]); // Qs
-
-            basicParams.push_back(MaterialLaw::BasicParams());
+            materialParams_.push_back(MaterialLawParams());
+            materialParams_.at(i).setSwr(qr.at(i)/phi_[i]); // Qr
+            materialParams_.at(i).setSnr(1.-qs.at(i)/phi_[i]); // Qs
             Scalar a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
-            basicParams.at(i).setAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
-            basicParams.at(i).setN(n.at(i)); // N
+            materialParams_.at(i).setVgAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
+            materialParams_.at(i).setVgn(n.at(i)); // N
             k_.push_back(kc_.at(i)*mu/(rho*g_)); // Convert to intrinsic permeability
-
             // Regularisation parameters
-//            double eps = 1.e-4; // with 1.e-9 benchmark 3 does not work anymore (and everything becomes slower)
-//            materialParams_.at(i).setPcLowSw(eps);
-//            materialParams_.at(i).setPcHighSw(1. - eps);
-//            materialParams_.at(i).setKrnLowSw(eps);
-//            materialParams_.at(i).setKrwHighSw(1 - eps);
+            double eps = 1.e-4; // with 1.e-9 benchmark 3 does not work anymore (and everything becomes slower)
+            materialParams_.at(i).setPcLowSw(eps);
+            materialParams_.at(i).setPcHighSw(1. - eps);
+            materialParams_.at(i).setKrnLowSw(eps);
+            materialParams_.at(i).setKrwHighSw(1 - eps);
         }
         layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
@@ -98,7 +97,7 @@ public:
     }
 
     /*!
-     * \brief \copydoc GridGeometry::porosity
+     * \brief \copydoc FVGridGeometry::porosity
      */
     template<class ElementSolution>
     Scalar porosity(const Element& element,
@@ -108,7 +107,7 @@ public:
     }
 
     /*!
-     * \brief \copydoc GridGeometry::porosity
+     * \brief \copydoc FVGridGeometry::porosity
      * simper interface
      */
     Scalar porosity(const Element& element) const {
@@ -137,40 +136,40 @@ public:
         return kc_.at(index_(element));
     }
 
-//    //! set of VG parameters for the element
-//    const MaterialLawParams& materialLawParams(const Element& element) const {
-//        return materialParams_.at(index_(element));
-//    }
-//
-//    /*!
-//     * \brief \copydoc FVSpatialParamsOneP::materialLawParams
-//     */
-//    template<class ElementSolution>
-//    const MaterialLawParams& materialLawParams(const Element& element,
-//        const SubControlVolume& scv,
-//        const ElementSolution& elemSol) const {
-//        return materialParams_.at(index_(element));
-//    }
+    //! set of VG parameters for the element
+    const MaterialLawParams& materialLawParams(const Element& element) const {
+        return materialParams_.at(index_(element));
+    }
+
+    /*!
+     * \brief \copydoc FVSpatialParamsOneP::materialLawParams
+     */
+    template<class ElementSolution>
+    const MaterialLawParams& materialLawParams(const Element& element,
+        const SubControlVolume& scv,
+        const ElementSolution& elemSol) const {
+        return materialParams_.at(index_(element));
+    }
 
     //! pointer to the soils layer input file function
     InputFileFunction* layerIFF() {
         return &layer_;
     }
 
-//    /**
-//     * Call to change default setting (of 1.e-6 for both)
-//     *
-//     * pcEps    capillary pressure regularisation
-//     * krEps 	relative permeabiltiy regularisation
-//     */
-//    void setRegularisation(double pcEps, double krEps) {
-//    	for (int i =0; i<materialParams_.size(); i++) {
-//            materialParams_.at(i).setPcLowSw(pcEps);
-//            materialParams_.at(i).setPcHighSw(1. - pcEps);
-//            materialParams_.at(i).setKrnLowSw(krEps);
-//            materialParams_.at(i).setKrwHighSw(1 - krEps);
-//    	}
-//    }
+    /**
+     * Call to change default setting (of 1.e-6 for both)
+     *
+     * pcEps    capillary pressure regularisation
+     * krEps 	relative permeabiltiy regularisation
+     */
+    void setRegularisation(double pcEps, double krEps) {
+    	for (int i =0; i<materialParams_.size(); i++) {
+            materialParams_.at(i).setPcLowSw(pcEps);
+            materialParams_.at(i).setPcHighSw(1. - pcEps);
+            materialParams_.at(i).setKrnLowSw(krEps);
+            materialParams_.at(i).setKrwHighSw(1 - krEps);
+    	}
+    }
 
     void addVanGenuchtenDomain(double minx, double miny, double minz, double maxx, double maxy, double maxz, int layerIndex) {
         homogeneous_ = false;
@@ -185,11 +184,11 @@ public:
         Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
         int i = vgIndex; // rename
         phi_.at(i) =  qs; // Richards equation is independent of phi [1]
-        effToAbsParams.at(i).setSwr(qr/phi_[i]); // Qr
-        effToAbsParams.at(i).setSnr(1.-qs/phi_[i]); // Qs
+        materialParams_.at(i).setSwr(qr/phi_[i]); // Qr
+        materialParams_.at(i).setSnr(1.-qs/phi_[i]); // Qs
         Scalar a = alpha * 100.; // from [1/cm] to [1/m]
-        basicParams.at(i).setAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
-        basicParams.at(i).setN(n); // N
+        materialParams_.at(i).setVgAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
+        materialParams_.at(i).setVgn(n); // N
         k_.push_back(ks*mu/(rho*g_)); // Convert to intrinsic permeability
     }
 
@@ -210,7 +209,7 @@ private:
             }
             return 0;
         } else { // use input file function
-            auto eIdx = this->GridGeometry().elementMapper().index(element);
+            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
             Scalar z = element.geometry().center()[dimWorld - 1];
             //std::cout << z << "\n";
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
@@ -228,9 +227,7 @@ private:
 
     std::vector<Scalar> k_; // permeability [m²]
     std::vector<Scalar> kc_; // hydraulic conductivity [m/s]
-
-    std::vector<MaterialLaw::BasicParams> basicParams;
-    std::vector<MaterialLaw::EffToAbsParams> effToAbsParams;
+    std::vector<MaterialLawParams> materialParams_;
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
 

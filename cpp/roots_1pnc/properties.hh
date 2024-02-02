@@ -33,7 +33,7 @@ template<class TypeTag>
 struct FVGridGeometry<TypeTag, TTag::RootsOnePTwoCBox> {
 private:
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using GridView = typename FVGridGeometry::GridView;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper

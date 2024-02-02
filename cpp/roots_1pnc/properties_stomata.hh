@@ -30,7 +30,7 @@ struct FluidSystem<TypeTag, TTag::RootsOnePTwoC> {
 template<class TypeTag>
 struct FVGridGeometry<TypeTag, TTag::RootsOnePTwoCCCTpfa> {
 private:
-    using GridView = GetPropType<TypeTag, Properties::GridView>;
+    using GridView = typename FVGridGeometry::GridView;
     static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
