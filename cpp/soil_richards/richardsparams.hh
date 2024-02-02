@@ -28,6 +28,7 @@
 #include <dumux/material/fluidsystems/1pliquid.hh>
 
 #include <dumux/io/inputfilefunction.hh>
+#include <dumux/common/fvspatialparams.hh>
 
 namespace Dumux {
 
@@ -38,7 +39,7 @@ namespace Dumux {
  * with different VG parameters sets
  */
 template<class FVGridGeometry, class Scalar>
-class RichardsParams : public FVSpatialParams<GridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
 {
 public:
 
@@ -47,15 +48,15 @@ public:
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using Water = Components::SimpleH2O<Scalar>;
-    using MaterialLaw = EffToAbsLaw<RegularizedVanGenuchten<Scalar>>;
+    using Water = Components::SimpleH2O<Scalar>;    
+	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
     using MaterialLawParams = typename MaterialLaw::Params;
     using PermeabilityType = Scalar;
 
     enum { dimWorld = GridView::dimensionworld };
 
     RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : FVSpatialParams<GridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
+    : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
     {
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
