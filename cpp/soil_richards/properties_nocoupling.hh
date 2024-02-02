@@ -13,7 +13,7 @@ namespace Properties {
 // The point source type (not used)
 template<class TypeTag>
 struct PointSource<TypeTag, TTag::RichardsTT> {
-    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
     using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
 };
 /// Dummy types

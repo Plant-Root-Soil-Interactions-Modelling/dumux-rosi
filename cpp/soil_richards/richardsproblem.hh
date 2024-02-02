@@ -30,7 +30,7 @@ public:
 	using GridView = typename FVGridGeometry::GridView;
 	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
 	using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-	using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+	using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
 	using FVElementGeometry = typename FVGridGeometry::LocalView;
 	using SubControlVolume = typename FVGridGeometry::SubControlVolume;
 	using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;

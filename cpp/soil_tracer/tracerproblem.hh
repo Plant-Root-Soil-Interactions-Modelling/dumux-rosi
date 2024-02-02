@@ -162,7 +162,7 @@ class TracerTest : public PorousMediumFlowProblem<TypeTag>
     using SpatialParams = GetPropType<TypeTag, Properties::SpatialParams>;
     using Element = typename FVGridGeometry::GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
+    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
     using FVElementGeometry = typename FVGridGeometry::LocalView;
     using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
     using SubControlVolume = typename FVGridGeometry::SubControlVolume;
