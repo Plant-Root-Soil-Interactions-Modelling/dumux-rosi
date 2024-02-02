@@ -48,7 +48,7 @@ public:
 #if DGF
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
 };
@@ -57,7 +57,7 @@ int simtype = dgf;
 #if ROOTBOX
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
 };

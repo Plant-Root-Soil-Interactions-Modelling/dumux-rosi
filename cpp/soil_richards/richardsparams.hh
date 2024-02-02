@@ -38,7 +38,7 @@ namespace Dumux {
  * with different VG parameters sets
  */
 template<class FVGridGeometry, class Scalar>
-class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+class RichardsParams : public FVSpatialParams<GridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
 {
 public:
 
@@ -55,7 +55,7 @@ public:
     enum { dimWorld = GridView::dimensionworld };
 
     RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
+    : FVSpatialParams<GridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
     {
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */

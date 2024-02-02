@@ -35,9 +35,9 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
     using NumEqVector = GetPropType<TypeTag, Properties::NumEqVector>;
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-    using FVElementGeometry = typename GetPropType<TypeTag, Properties::FVGridGeometry>::LocalView;
+    using FVElementGeometry = typename GetPropType<TypeTag, Properties::GridGeometry>::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
@@ -51,7 +51,7 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
         pressureIdx = Indices::pressureIdx
     };
     enum {
-        isBox = GetPropType<TypeTag, Properties::FVGridGeometry>::discMethod == DiscretizationMethod::box
+        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethod::box
     };
     enum {
         bcDirichlet = 0,

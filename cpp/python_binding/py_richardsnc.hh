@@ -43,7 +43,7 @@ template<class TypeTag> // Set Problem
 struct Problem<TypeTag, TTag::Richards2CTT> { using type = Richards1P2CProblem<TypeTag>; };
 
 template<class TypeTag> // Set the spatial parameters
-struct SpatialParams<TypeTag, TTag::Richards2CTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
+struct SpatialParams<TypeTag, TTag::Richards2CTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
 
 template<class TypeTag> // Set grid type
 struct Grid<TypeTag, TTag::Richards2CTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; };

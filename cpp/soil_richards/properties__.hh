@@ -47,7 +47,7 @@ struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag
 // Set the spatial parameters
 template<class TypeTag>
 struct SpatialParams<TypeTag, TTag::RichardsTT> {
-    using type = RichardsParams<GetPropType<TypeTag, Properties::FVGridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
+    using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
 };
 
 } // end namespace properties
