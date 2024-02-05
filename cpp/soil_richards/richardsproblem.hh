@@ -23,6 +23,8 @@ class RichardsProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
+    using ParentType = PorousMediumFlowProblem<TypeTag>;
+
 	// exports, used by the binding
 	using Grid = GetPropType<TypeTag, Properties::Grid>;
 	using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
@@ -81,8 +83,8 @@ public:
 	/*!
 	 * \brief Constructor: constructed in the main file
 	 */
-	RichardsProblem(std::shared_ptr<const GridGeometry> GridGeometry)
-	: PorousMediumFlowProblem<TypeTag>(GridGeometry) {
+	RichardsProblem(std::shared_ptr<const GridGeometry> gridGeometry)
+	: ParentType(gridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
 
