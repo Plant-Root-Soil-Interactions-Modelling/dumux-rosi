@@ -13,7 +13,7 @@
 // simulate
 #include <dumux/common/timeloop.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
-#include <dumux/porousmediumflow/richards/newtonsolver.hh>
+#include "../../dumux/porousmediumflow/richards/newtonsolver.hh"
 
 // getDofIndices, getPointIndices, getCellIndices
 #include <dune/grid/utility/globalindexset.hh>
@@ -376,14 +376,14 @@ public:
         }
         timeLoop->setMaxTimeStepSize(maxDt);
 
-        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
+        auto xOld = x;
+        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, xOld); // dynamic
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
         nonLinearSolver->setVerbosity(false);
 
         timeLoop->start();
-        auto xOld = x;
         do {
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
             ddt = std::max(ddt, 1.); // limit minimal suggestion
@@ -428,16 +428,16 @@ public:
         }
         timeLoop->setMaxTimeStepSize(maxDt);
 
-        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
+        auto xOld = x;
+        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop,xOld); // dynamic
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
-        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
-//								 PartialReassembler<Assembler>,
-//								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >; // templates changed???
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
+								 PartialReassembler<Assembler>,
+								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >; 
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
 								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbosity(false);
         timeLoop->start();
-        auto xOld = x;
         do {
             ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
             ddt = std::max(ddt, 1.); // limit minimal suggestion
@@ -670,11 +670,15 @@ public:
             auto e = gridGeometry->element(eIdx);
             auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
             fvGeometry.bindElement(e);
+			
             auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
             elemVolVars.bindElement(e, fvGeometry, x);
+			auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
+			elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
+			
             for (const auto& scvf : scvfs(fvGeometry)) {
                 if (scvf.boundary()) {
-                    double n = problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];  // [ kg / (m2 s)]
+                    double n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
                     f = (std::abs(n) > std::abs(f)) ? n : f;
                 }
             }
@@ -697,9 +701,12 @@ public:
             for (const auto& scvf : scvfs(fvGeometry)) {
                 if (scvf.boundary()) {
                     c++;
-                    auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+                    auto elemVolVars  = Dumux::localView(gridVariables->curGridVolVars());
                     elemVolVars.bindElement(e, fvGeometry, x);
-                    f += problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx]; // [kg / (m2 s)]
+					auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
+					elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
+					
+                    f += problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx]; // [kg / (m2 s)]
                 }
             }
             if (c>0) {
@@ -852,6 +859,7 @@ protected:
     using SolutionVector = typename Problem::SolutionVector;
     using GridVariables = typename Problem::GridVariables;
     using FluxVariables = typename Problem::FluxVariables;
+	using ElementFluxVariablesCache = typename Problem::ElementFluxVariablesCache;
 
     using GridData = Dumux::GridData<Grid>;
     using GridView = typename Grid::Traits::LeafGridView;

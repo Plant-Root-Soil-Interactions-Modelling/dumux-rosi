@@ -85,7 +85,7 @@ public:
     //! simpler interface
     PermeabilityType permeability(const Element& element) const {
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
-        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        auto eIdx = this->gridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
         return kx * mu / (M_PI * a * a);
@@ -144,7 +144,7 @@ public:
     //! Update the Root System Parameters (root system must implement GrowthModule::GrowthInterface)
     void updateParameters(const GrowingSystem& rs) {
 
-        const auto& gridView = this->fvGridGeometry().gridView();
+        const auto& gridView = this->gridGeometry().gridView();
         radii_.resize(gridView.size(0));
         orders_.resize(gridView.size(0));
         ctimes_.resize(gridView.size(0));

@@ -96,7 +96,8 @@ namespace Dune
     typedef typename GridView::Grid Grid;
 
     typedef typename GridView::Grid::GlobalIdSet GlobalIdSet;
-    typedef typename GridView::Grid::GlobalIdSet::IdType IdType;
+    //typedef typename GridView::Grid::GlobalIdSet::IdType IdType;
+    typedef Dune::bigunsignedint<80> IdType;//std::size_t 
     typedef typename GridView::Traits::template Codim<0>::Iterator Iterator;
 
     typedef typename Grid::Communication Communication;
@@ -632,7 +633,7 @@ namespace Dune
 
 	// globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[idx]));
 	//MapId2Index getGlobalIndex() const
-	std::map<long unsigned,int> getGlobalIndex() const 
+	std::map<Dune::bigunsignedint<80>,int> getGlobalIndex() const 
 	{
 		return globalIndex_;
 	}
@@ -650,7 +651,7 @@ namespace Dune
 
     /** \brief Stores global index of entities with entity's globally unique id as key
      */
-    std::map<long unsigned,int>   globalIndex_;
+    std::map<Dune::bigunsignedint<80>,int>   globalIndex_;
 	//MapId2Index globalIndex_;
   };
 

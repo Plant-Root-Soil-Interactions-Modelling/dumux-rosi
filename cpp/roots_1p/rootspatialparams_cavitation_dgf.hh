@@ -51,7 +51,7 @@ public:
     PermeabilityType permeability(const Element& element,
         const SubControlVolume& scv, const ElementSolution& elemSol) const {
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
-        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        auto eIdx = this->gridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
         Scalar p = elemSol[0][0];

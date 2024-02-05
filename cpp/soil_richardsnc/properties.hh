@@ -3,7 +3,7 @@
 #ifndef RICHARDSNC_PROPERTIES_HH
 #define RICHARDSNC_PROPERTIES_HH
 
-#include <dune/grid/yaspgrid.hh>
+//#include <dune/grid/yaspgrid.hh>
 #include <dune/grid/spgrid.hh>
 #if HAVE_DUNE_ALUGRID
 #include <dune/alugrid/grid.hh>
@@ -20,7 +20,7 @@
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
-#include <RootSystem.h>
+#include "../soil_richards/spatialparams.hh"
 
 namespace Dumux {
 namespace Properties {
@@ -39,6 +39,10 @@ struct Grid<TypeTag, TTag::Richards2CTT> { using type = Dune::SPGrid<GetPropType
 template<class TypeTag>
 struct Grid<TypeTag, TTag::Richards2CTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
 #endif
+
+// // Use 2d YaspGrid
+// template<class TypeTag>
+// struct Grid<TypeTag, TTag::Richards2CTT> { using type = Dune::YaspGrid<3>; };
 
 // Set the physical problem to be solved
 template<class TypeTag>

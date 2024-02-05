@@ -193,9 +193,11 @@ public:
 			auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
 			fvGeometry.bindElement(e);
 			for (const auto& scvf : scvfs(fvGeometry)) {
-				auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+				auto elemVolVars  = Dumux::localView(this->gridVariables->curGridVolVars());
 				elemVolVars.bindElement(e, fvGeometry, this->x);
-				f += this->problem->neumann(e, fvGeometry, elemVolVars, scvf)[0]/1000.; // [kg / (m2 s)] -> [m/s]
+				auto elemFluxVars = Dumux::localView(this->gridVariables->gridFluxVarsCache());
+				elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
+				f += this->problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[0]/1000.; // [kg / (m2 s)] -> [m/s]
 			}
 			v[this->cellIdx->index(e)] = f;
 		}

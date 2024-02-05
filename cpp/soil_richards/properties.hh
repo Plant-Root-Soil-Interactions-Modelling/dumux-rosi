@@ -12,7 +12,13 @@
 #ifndef DUMUX_RICHARDS_ANALYTICALPROPERTIES_HH
 #define DUMUX_RICHARDS_ANALYTICALPROPERTIES_HH
 
-#include <dune/grid/yaspgrid.hh>
+#include <dune/grid/spgrid.hh>
+#if HAVE_DUNE_ALUGRID
+#include <dune/alugrid/grid.hh>
+#endif
+#if HAVE_UG
+#include <dune/grid/uggrid.hh>
+#endif
 
 #include <dumux/discretization/cctpfa.hh>
 
@@ -35,12 +41,15 @@ namespace Dumux::Properties {
 // Create new type tags
 namespace TTag {
 struct RichardsAnalytical { using InheritsFrom = std::tuple<Richards>; };
+struct RichardsTT { using InheritsFrom = std::tuple<Richards>; };
 struct RichardsAnalyticalCC { using InheritsFrom = std::tuple<RichardsAnalytical, CCTpfaModel>; };
+struct RichardsBox { using InheritsFrom = std::tuple<RichardsTT, BoxModel>; };
+struct RichardsCC { using InheritsFrom = std::tuple<RichardsTT, CCTpfaModel>; };
 } // end namespace TTag
 
 // Use 2d YaspGrid
 template<class TypeTag>
-struct Grid<TypeTag, TTag::RichardsAnalytical> { using type = Dune::YaspGrid<2>; };
+struct Grid<TypeTag, TTag::RichardsAnalytical> { using type = Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming> ; };//Dune::YaspGrid<2>
 
 // Set the physical problem to be solved
 template<class TypeTag>

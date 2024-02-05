@@ -88,7 +88,7 @@ public:
     //! simpler interface
     PermeabilityType permeability(const Element& element) const {
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure
-        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        auto eIdx = this->gridGeometry().elementMapper().index(element);
         Scalar a = this->radius(eIdx);
         Scalar kx = this->kx(eIdx);
         return kx * mu / (M_PI * a * a);
@@ -156,7 +156,7 @@ public:
     //! Read initial parameters from grid data object
     template<class GridData>
     void initParameters(const GridData& gridData) {
-        const auto& fvGridGeometry = this->fvGridGeometry();
+        const auto& fvGridGeometry = this->gridGeometry();
         kr_.setGridData(gridData, fvGridGeometry);
         kx_.setGridData(gridData, fvGridGeometry);
         order_.setGridData(gridData, fvGridGeometry);

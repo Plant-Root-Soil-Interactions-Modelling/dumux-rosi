@@ -146,7 +146,7 @@ public:
 	 */
 	template<class Entity>
 	PrimaryVariables initial(const Entity& entity) const {
-		auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+		auto eIdx = this->gridGeometry().elementMapper().index(entity);
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		// std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
 		PrimaryVariables v(0.0);
@@ -322,7 +322,7 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 		if ((source_ != nullptr)) {
-			auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+			auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
 			return source_->at(eIdx)/scv.volume();
 		} else {
 			return 0.;
@@ -539,8 +539,8 @@ public:
 		int uc = 0;
 		bc_flux_lower = 0.;
 		int lc = 0;
-		for (const auto& e :elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
+		for (const auto& e :elements(this->gridGeometry().gridView())) {
+			auto fvGeometry = localView(this->gridGeometry());
 			fvGeometry.bindElement(e);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
@@ -576,8 +576,8 @@ public:
 	 */
 	void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
 		NumEqVector source(0.0);
-		for (const auto& element : elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
+		for (const auto& element : elements(this->gridGeometry().gridView())) {
+			auto fvGeometry = localView(this->gridGeometry());
 			fvGeometry.bindElement(element);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(element, fvGeometry, sol);
@@ -622,12 +622,12 @@ private:
 
 	//! true if on the point lies on the upper boundary
 	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+		return globalPos[dimWorld - 1] > this->gridGeometry().bBoxMax()[dimWorld - 1] - eps_;
 	}
 
 	//! true if on the point lies on the upper boundary
 	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
 	}
 
 	// Initial

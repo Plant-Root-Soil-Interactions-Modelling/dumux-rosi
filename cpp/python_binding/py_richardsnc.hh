@@ -11,6 +11,8 @@ namespace py = pybind11;
 #include "../soil_richardsnc/richards1p2cproblem.hh" // the problem class
 
 #include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/discretization/cctpfa.hh>
@@ -18,13 +20,12 @@ namespace py = pybind11;
 
 #include <dumux/porousmediumflow/richardsnc/model.hh> // the model
 
-#include <dune/grid/spgrid.hh>
-//#if HAVE_DUNE_ALUGRID
-//#include <dune/alugrid/grid.hh>
-//#endif
-//#if HAVE_UG
-//#include <dune/grid/uggrid.hh>
-//#endif
+#if HAVE_DUNE_ALUGRID
+#include <dune/alugrid/grid.hh>
+#endif
+#if HAVE_UG
+#include <dune/grid/uggrid.hh>
+#endif
 
 /**
  * create type tags
@@ -60,9 +61,19 @@ struct UseMoles<TypeTag, TTag::Richards2CTT> { static constexpr bool value = fal
  * pick assembler, linear solver and problem
  */
 using RNCSPTT = Dumux::Properties::TTag::RichardsNCSPCC; // CC!
+using GridGeometryRSPTT = typename Dumux::GetPropType<RNCSPTT, Dumux::Properties::GridGeometry>;
 using RichardsNCSPAssembler = Dumux::FVAssembler<RNCSPTT, Dumux::DiffMethod::numeric>;
-using RichardsNCSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<RNCSPTT>;
+using RichardsNCSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,// 
+	Dumux::LinearAlgebraTraitsFromAssembler<RichardsNCSPAssembler>>;
 using RichardsNCSPProblem = Dumux::Richards1P2CProblem<RNCSPTT>;
+
+using RUGTT = Dumux::Properties::TTag::RichardsUGCC; // choose CC or Box
+using GridGeometryRUGTT = Dumux::GetPropType<RUGTT, Dumux::Properties::GridGeometry>; // typename ????
+using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
+using RichardsUGLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRUGTT>,
+		Dumux::LinearAlgebraTraitsFromAssembler<RichardsUGAssembler>>;
+using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
+
 
 PYBIND11_MODULE(rosi_richardsnc, m) {
     init_solverbase<RichardsNCSPProblem, RichardsNCSPAssembler, RichardsNCSPLinearSolver>(m, "BaseRichardsNCSP");

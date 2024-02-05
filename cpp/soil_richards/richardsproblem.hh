@@ -8,8 +8,12 @@
 #include <dumux/common/parameters.hh>
 #include <dumux/common/boundarytypes.hh>
 #include <dumux/common/numeqvector.hh>
+#include <dumux/discretization/method.hh>
+
+#include "../soil_richards/richardsparams.hh"
 
 #include <dumux/porousmediumflow/problem.hh>
+#include <dumux/io/inputfilefunction.hh>
 
 namespace Dumux {
 
@@ -40,13 +44,17 @@ public:
 	using SubControlVolume = typename GridGeometry::SubControlVolume;
 	using SubControlVolumeFace = typename GridGeometry::SubControlVolumeFace;
 	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
-	using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+	//using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    using ElementVolumeVariables = typename GridVariables::GridVolumeVariables::LocalView;
+    using ElementFluxVariablesCache = typename GridVariables::GridFluxVariablesCache::LocalView;
+
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
 	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
-	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
+	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>; 
+	// VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
 	using BasicParams = typename MaterialLaw::BasicParams;
     using EffToAbsParams = typename MaterialLaw::EffToAbsParams;
     using RegularizationParams = typename MaterialLaw::RegularizationParams;
@@ -222,6 +230,7 @@ public:
 	NumEqVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
 			const ElementVolumeVariables& elemVolVars,
+			const ElementFluxVariablesCache&  fluxCache,
 			const SubControlVolumeFace& scvf) const {
 
 		NumEqVector flux;

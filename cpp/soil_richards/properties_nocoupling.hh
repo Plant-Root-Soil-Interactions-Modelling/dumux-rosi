@@ -10,12 +10,13 @@ namespace Properties {
  * no functionality (but Dumux wants its static bindings)
  * ugly, but I found no other option...
  */
-// The point source type (not used)
-template<class TypeTag>
-struct PointSource<TypeTag, TTag::RichardsTT> {
-    using NumEqVector = Dumux::NumEqVector<GetPropType<TypeTag, Properties::PrimaryVariables>>;
-    using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
-};
+// // The point source type (not used)
+// template<class TypeTag>
+// struct PointSource<TypeTag, TTag::RichardsTT> {
+    // using PrimaryVariables = GetPropType<TypeTag, PrimaryVariables>;
+    // using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
+    // using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
+// };
 /// Dummy types
 class DummyPointSourceData {
 public:

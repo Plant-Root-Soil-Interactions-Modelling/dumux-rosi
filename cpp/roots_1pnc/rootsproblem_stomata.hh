@@ -144,11 +144,11 @@ public:
 
     //! evaluates user defined data for vtk fields
     void userData(std::string name, const SolutionVector& sol) { // , const GridVariables& gridVars
-        const auto& gridView = this->fvGridGeometry().gridView();
+        const auto& gridView = this->gridGeometry().gridView();
         userData_[name] = std::vector<Scalar>(gridView.size(0));
-        auto eMapper = this->fvGridGeometry().elementMapper();
-        auto vMapper = this->fvGridGeometry().vertexMapper();
-        for (const auto& e :elements(this->fvGridGeometry().gridView())) {
+        auto eMapper = this->gridGeometry().elementMapper();
+        auto vMapper = this->gridGeometry().vertexMapper();
+        for (const auto& e :elements(this->gridGeometry().gridView())) {
             auto eIdx = eMapper.index(e);
             double d = 0;
             if (name=="kr") {
@@ -283,7 +283,7 @@ public:
         const auto globalPos = scvf.center();
         if (onUpperBoundary_(globalPos)) { // root collar
 
-            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            auto eIdx = this->gridGeometry().elementMapper().index(element);
             auto& volVars = elemVolVars[scvf.insideScvIdx()];
             double p = volVars.pressure(); // pressure at the root collar
             double kx = this->spatialParams().kx(eIdx);
@@ -327,7 +327,7 @@ public:
         if (couplingManager_==nullptr) {
 
             auto params = this->spatialParams();
-            const auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            const auto eIdx = this->gridGeometry().elementMapper().index(element);
             Scalar a = params.radius(eIdx); // root radius (m)
             Scalar kr = params.kr(eIdx); //  radial conductivity (m^2 s / kg)
             Scalar tipP_;
@@ -397,7 +397,7 @@ public:
         PrimaryVariables sourceValue;
 
         if (couplingManager_!=nullptr) { // compute source at every integration point
-            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            auto eIdx = this->gridGeometry().elementMapper().index(element);
             Scalar rootAge = this->spatialParams().age(eIdx) / (24. * 3600.); // days
             if(rootAge>0) {
                 Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[pressureIdx];
@@ -470,7 +470,7 @@ public:
      */
     template<class ElementSolution>
     Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
-        auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+        auto eIdx = this->gridGeometry().elementMapper().index(element);
         double radius = this->spatialParams().radius(eIdx);
         return M_PI*radius*radius;
     }
@@ -482,9 +482,9 @@ public:
 
         NumEqVector source(0.0);
         mLRate_ = 0.;
-        for (const auto& e :elements(this->fvGridGeometry().gridView())) {
+        for (const auto& e :elements(this->gridGeometry().gridView())) {
 
-            auto fvGeometry = localView(this->fvGridGeometry());
+            auto fvGeometry = localView(this->gridGeometry());
             fvGeometry.bindElement(e);
             auto elemVolVars = localView(gridVars.curGridVolVars());
             elemVolVars.bindElement(e, fvGeometry, sol);
@@ -508,7 +508,7 @@ public:
 
                     auto& volVars = elemVolVars[scvf.insideScvIdx()];
                     double p = volVars.pressure();
-                    auto eIdx = this->fvGridGeometry().elementMapper().index(e);
+                    auto eIdx = this->gridGeometry().elementMapper().index(e);
                     double kx = this->spatialParams().kx(eIdx);
                     auto dist = (scvf.center() - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
                     double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
@@ -533,7 +533,7 @@ public:
                 }
             }
             if (couplingManager_!=nullptr) {
-                const auto& gridView = this->fvGridGeometry().gridView();
+                const auto& gridView = this->gridGeometry().gridView();
                 if (userData_.count("pSoil")) {
                     userData_["pSoil"].resize(gridView.size(0));
                 } else {
@@ -569,7 +569,7 @@ public:
      */
     void scvSoilMatricPotential_(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) {
         auto scvIdx = scv.indexInElement();
-        auto key = std::make_pair(this->fvGridGeometry().elementMapper().index(element), scvIdx);
+        auto key = std::make_pair(this->gridGeometry().elementMapper().index(element), scvIdx);
         if (this->pointSourceMap().count(key)) {
             auto pointSources = this->pointSourceMap().at(key);
             for (auto&& pointSource : pointSources) {
@@ -592,8 +592,8 @@ public:
      */
     void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
         NumEqVector source(0.0);
-        for (const auto& element : elements(this->fvGridGeometry().gridView())) {
-            auto fvGeometry = localView(this->fvGridGeometry());
+        for (const auto& element : elements(this->gridGeometry().gridView())) {
+            auto fvGeometry = localView(this->gridGeometry());
             fvGeometry.bindElement(element);
             auto elemVolVars = localView(gridVars.curGridVolVars());
             elemVolVars.bindElement(element, fvGeometry, sol);
@@ -620,7 +620,7 @@ protected:
     }
 
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {  // on root collar
-        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+        return globalPos[dimWorld - 1] > this->gridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
 
     CouplingManager* couplingManager_ = nullptr;

@@ -3,9 +3,22 @@
 #ifndef RICHARDS1P2C_PROBLEM_HH
 #define RICHARDS1P2C_PROBLEM_HH
 
+/* Define to the version of dune-spgrid */
+#define DUNE_SPGRID_VERSION "2.9-git"
+
+/* Define to the major version of dune-spgrid */
+#define DUNE_SPGRID_VERSION_MAJOR 2
+
+/* Define to the minor version of dune-spgrid */
+#define DUNE_SPGRID_VERSION_MINOR 9
+
+/* Define to the revision of dune-spgrid */
+#define DUNE_SPGRID_VERSION_REVISION 0
+
 #include <dumux/porousmediumflow/problem.hh> // base class
 #include <dumux/common/boundarytypes.hh>
 #include <dumux/common/numeqvector.hh>
+#include <dumux/discretization/method.hh>
 
 #include "../soil_richards/richardsparams.hh"
 
@@ -24,6 +37,7 @@ public:
 	// exports, used by the binding
 	using Grid = GetPropType<TypeTag, Properties::Grid>;
 	using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+	using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
 	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
 	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
@@ -41,12 +55,19 @@ public:
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-	using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
-	using MaterialLawParams = typename MaterialLaw::Params;
+	
+	//class TwoPMaterialLaw : public Adapter<TwoPMaterialLaw<ScalarType, BaseLaw, Regularization, EffToAbsPolicy>, PcKrSw>
+	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
+    using BasicParams = typename MaterialLaw::BasicParams;//Dumux::FluidMatrix::VanGenuchten::Params
+    //using Regularization = typename MaterialLaw::RegularizationParam;//Dumux::FluidMatrix::VanGenuchtenRegularization<double>::Params
+    using EffToAbsParams = typename MaterialLaw::EffToAbsParams;//Dumux::FluidMatrix::TwoPEffToAbsDefaultPolicy::Params
+    //using MaterialLawParams = typename Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>::Params;
+	
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
 	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
+	static constexpr bool isBox = GridGeometry::discMethod == DiscretizationMethods::box;
 
 	enum {
 		pressureIdx = 0, // index of primary variables
@@ -57,7 +78,7 @@ public:
 
 		dimWorld = GridView::dimensionworld,
 
-		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box
+		
 	};
 
 	enum BCTypes {
@@ -175,6 +196,9 @@ public:
 	Scalar nonWettingReferencePressure() const {
 		return pRef_;
 	}
+	Scalar nonwettingReferencePressure() const {
+		return nonWettingReferencePressure();
+	}
 
 	/**
 	 * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
@@ -204,7 +228,7 @@ public:
 	 */
 	template<class Entity>
 	PrimaryVariables initial(const Entity& entity) const {
-		auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+		auto eIdx = this->gridGeometry().elementMapper().index(entity);
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoilP_.f(z,eIdx));
@@ -293,12 +317,13 @@ public:
 
 			Scalar s = volVars.saturation(0);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
-			MaterialLawParams params = this->spatialParams().materialLawParams(element);
-			Scalar p = MaterialLaw::pc(params, s) + pRef_;
+			//MaterialLawParams params = this->spatialParams().materialLawParams(element);
+			BasicParams params = this->spatialParams().basicParams(element);
+			Scalar p = MaterialLaw::pc(s) + pRef_;//TODO still works? params, 
 			Scalar h = -toHead_(p); // todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
-			Scalar krw = MaterialLaw::krw(params, s);
+			Scalar krw = MaterialLaw::krw(s);//TODO still works? params, 
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
@@ -479,7 +504,7 @@ public:
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 
-		auto eIdx = this->spatialParams().fvGridGeometry().elementMapper().index(element);
+		auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
 		double h = 0.;
 		if (source_[h2OIdx] != nullptr) {
 			h = source_[h2OIdx]->at(eIdx)/scv.volume();
@@ -605,8 +630,8 @@ public:
 		bc_flux_lower = 0.;
 		int uc = 0;
 		int lc = 0;
-		for (const auto& e :elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
+		for (const auto& e :elements(this->gridGeometry().gridView())) {
+			auto fvGeometry = localView(this->gridGeometry());
 			fvGeometry.bindElement(e);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
@@ -637,8 +662,8 @@ public:
 	 */
 	void computeSourceIntegral(const SolutionVector& sol, const GridVariables& gridVars) const {
 		NumEqVector source(0.0);
-		for (const auto& element : elements(this->fvGridGeometry().gridView())) {
-			auto fvGeometry = localView(this->fvGridGeometry());
+		for (const auto& element : elements(this->gridGeometry().gridView())) {
+			auto fvGeometry = localView(this->gridGeometry());
 			fvGeometry.bindElement(element);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(element, fvGeometry, sol);
@@ -703,12 +728,12 @@ private:
 
 	//! true if on the point lies on the upper boundary
 	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+		return globalPos[dimWorld - 1] > this->gridGeometry().bBoxMax()[dimWorld - 1] - eps_;
 	}
 
 	//! true if on the point lies on the upper boundary
 	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
 	}
 
 	// Initial

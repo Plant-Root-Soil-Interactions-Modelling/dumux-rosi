@@ -35,10 +35,13 @@
 // #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system
 // #include <dumux/common/properties/propertysystem.hh>
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
-#include <dumux/common/valgrind.hh> // for debugging
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a function)
-#include <dumux/linear/amgbackend.hh> // linear solver (currently the only parallel solver available(?))
+
+#include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
+#include <dumux/assembly/fvassembler.hh>
 #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 /**
  * Some small adaption to <dumux/nonlinear/newtonsolver.hh>, which is the only nonlinear solver available.

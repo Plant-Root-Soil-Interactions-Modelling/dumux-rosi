@@ -21,7 +21,7 @@
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/io/vtkoutputmodule.hh>
-#include <dumux/io/grid/gridmanager_yasp.hh>
+#include <dumux/io/grid/gridmanager.hh>
 
 
 // getDofIndices, getPointIndices, getCellIndices
@@ -605,7 +605,7 @@ public:
             elemVolVars.bindElement(e, fvGeometry, x);
             for (const auto& scvf : scvfs(fvGeometry)) {
                 if (scvf.boundary()) {
-                    double n = problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx];  // [ kg / (m2 s)]
+                    double n = problem->neumann(e, fvGeometry, elemVolVars, 0.0,scvf)[eqIdx];  // [ kg / (m2 s)]
                     f = (std::abs(n) > std::abs(f)) ? n : f;
                 }
             }
@@ -630,7 +630,7 @@ public:
                     c++;
                     auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
                     elemVolVars.bindElement(e, fvGeometry, x);
-                    f += problem->neumann(e, fvGeometry, elemVolVars, scvf)[eqIdx]; // [kg / (m2 s)]
+                    f += problem->neumann(e, fvGeometry, elemVolVars, 0.0,scvf)[eqIdx]; // [kg / (m2 s)]
                 }
             }
             if (c>0) {

@@ -6,11 +6,14 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
+#include <dune/foamgrid/foamgrid.hh>		  
 #include "richards_cyl.hh" // includes solverbase
 
 #include "../soil_richardsnc/richards1p2cproblem.hh" // the problem class
 
 #include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/discretization/cctpfa.hh>
@@ -18,8 +21,6 @@ namespace py = pybind11;
 
 #include <dumux/porousmediumflow/richardsncCylindrical1d/model.hh>
 
-#include <dune/grid/spgrid.hh>
-#include <dune/foamgrid/foamgrid.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
@@ -56,15 +57,17 @@ struct UseMoles<TypeTag, TTag::RichardsTT> { static constexpr bool value = false
 /*
  * pick assembler, linear solver and problem
  */
-using RCFoamTT = Dumux::Properties::TTag::RichardsNCCylFoamCC;
-using RichardsCylFoamAssembler = Dumux::FVAssembler<RCFoamTT, Dumux::DiffMethod::numeric>;
-using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<RCFoamTT>;
-using RichardsCylFoamProblem = Dumux::Richards1P2CProblem<RCFoamTT>;
+using RNCCFoamTT = Dumux::Properties::TTag::RichardsNCCylFoamCC;
+using GridGeometryRNCCFoamTT = typename Dumux::GetPropType<RNCCFoamTT, Dumux::Properties::GridGeometry>;						
+using RichardsNCCylFoamAssembler = Dumux::FVAssembler<RNCCFoamTT, Dumux::DiffMethod::numeric>;
+using RichardsNCCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRNCCFoamTT>,//RCFoamTT, 
+	Dumux::LinearAlgebraTraitsFromAssembler<RichardsNCCylFoamAssembler>>;
+using RichardsNCCylFoamProblem = Dumux::Richards1P2CProblem<RNCCFoamTT>;
 
 
 PYBIND11_MODULE(rosi_richardsnc_cyl, m) {
-    init_solverbase<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichardsNCCylFoam");
-    init_richards_cyl<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1 /*dimension*/>(m, "RichardsNCCylFoam");
+    init_solverbase<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichardsNCCylFoam");
+    init_richards_cyl<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "RichardsNCCylFoam");
 }
 
 #endif

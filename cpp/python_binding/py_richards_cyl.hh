@@ -6,11 +6,15 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
+#include <dune/foamgrid/foamgrid.hh>
+//#include <dumux/io/grid/gridmanager_foam.hh>
 #include "richards_cyl.hh" // includes solverbase
 
 #include "../soil_richards/richardsproblem.hh" // the problem class
 
 #include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/discretization/cctpfa.hh>
@@ -18,7 +22,6 @@ namespace py = pybind11;
 
 #include <dumux/porousmediumflow/richardsCylindrical1d/model.hh>
 
-#include <dune/grid/spgrid.hh>
 
 #include <dumux/multidomain/traits.hh>
 #include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
@@ -53,8 +56,10 @@ struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>
  * pick assembler, linear solver and problem
  */
 using RCFoamTT = Dumux::Properties::TTag::RichardsCylFoamCC;
+using GridGeometryRCFoamTT = typename Dumux::GetPropType<RCFoamTT, Dumux::Properties::GridGeometry>;
 using RichardsCylFoamAssembler = Dumux::FVAssembler<RCFoamTT, Dumux::DiffMethod::numeric>;
-using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<RCFoamTT>;
+using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRCFoamTT>,//RCFoamTT, 
+	Dumux::LinearAlgebraTraitsFromAssembler<RichardsCylFoamAssembler>>;
 using RichardsCylFoamProblem = Dumux::RichardsProblem<RCFoamTT>;
 
 

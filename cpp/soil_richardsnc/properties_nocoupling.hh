@@ -14,11 +14,11 @@ namespace Properties {
  * ugly, but I found no other option...
  */
 // The point source type (not used)
-template<class TypeTag>
-struct PointSource<TypeTag, TTag::Richards2CTT> {
-    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
-    using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
-};
+// template<class TypeTag>
+// struct PointSource<TypeTag, TTag::Richards2CTT> {
+    // using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
+    // using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
+// };
 /// Dummy types
 class DummyPointSourceData {
 public:

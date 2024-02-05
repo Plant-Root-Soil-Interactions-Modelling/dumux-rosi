@@ -209,7 +209,7 @@ public:
      */
     template<class Entity>
     PrimaryVariables initial(const Entity& entity) const {
-        auto eIdx = this->fvGridGeometry().elementMapper().index(entity);
+        auto eIdx = this->gridGeometry().elementMapper().index(entity);
         Scalar z = entity.geometry().center()[dimWorld - 1];
         // std::cout << "tracer initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
         return PrimaryVariables(toPa_(initialSoil_.f(z, eIdx)));
@@ -351,7 +351,7 @@ public:
 //     */
 //    GlobalPosition velocity(const Element &element) const {
 //        GlobalPosition vel; // return value
-//        auto fvGeometry = localView(this->fvGridGeometry());
+//        auto fvGeometry = localView(this->gridGeometry());
 //        fvGeometry.bindElement(element);
 //        auto elemVolVars = localView(gridVars.curGridVolVars());
 //        elemVolVars.bindElement(element, fvGeometry, currSol);
@@ -377,12 +377,12 @@ private:
 
     //! true if on the point lies on the upper boundary
     bool onUpperBoundary_(const GlobalPosition &globalPos) const {
-        return globalPos[dimWorld - 1] > this->fvGridGeometry().bBoxMax()[dimWorld - 1] - eps_;
+        return globalPos[dimWorld - 1] > this->gridGeometry().bBoxMax()[dimWorld - 1] - eps_;
     }
 
     //! true if on the point lies on the upper boundary
     bool onLowerBoundary_(const GlobalPosition &globalPos) const {
-        return globalPos[dimWorld - 1] < this->fvGridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+        return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
     }
 
     // Initial
