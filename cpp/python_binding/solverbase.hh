@@ -137,7 +137,7 @@ public:
             // missing concept to add grid data dynamically
         } catch(...) { }
         gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
-        gridGeometry->update();
+        gridGeometry->update(gridManager.grid().leafGridView());
     }
 
 
@@ -208,7 +208,7 @@ public:
         }
         grid = std::shared_ptr<Grid>(factory.createGrid());
         gridGeometry = std::make_shared<FVGridGeometry>(grid->leafGridView());
-        gridGeometry->update();
+        gridGeometry->update(grid->leafGridView());
     }
 
     //    /**
@@ -380,7 +380,7 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
-        nonLinearSolver->setVerbose(false);
+        nonLinearSolver->setVerbosity(false);
 
         timeLoop->start();
         auto xOld = x;
@@ -435,7 +435,7 @@ public:
 								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
 								Dune::FakeMPIHelper::getCommunication());//
-        nonLinearSolver->setVerbose(false);
+        nonLinearSolver->setVerbosity(false);
         timeLoop->start();
         auto xOld = x;
         do {
@@ -470,7 +470,7 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
-        nonLinearSolver->setVerbose(false);
+        nonLinearSolver->setVerbosity(false);
 
         assembler->setPreviousSolution(x);
         nonLinearSolver->solve(x); // solve the non-linear system

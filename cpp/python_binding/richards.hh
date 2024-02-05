@@ -4,7 +4,6 @@
 // most includes are in solverbase
 #include "solverbase.hh"
 
-//#include <dumux/material/fluidmatrixinteractions/2p/regularizedvangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabsdefaultpolicy.hh>
 
@@ -20,7 +19,7 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 3>
 class Richards : public SolverBase<Problem, Assembler, LinearSolver, dim> {
 public:
 
-    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>
+    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // or VanGenuchtenNoReg<double>
 
     virtual ~Richards() { }
 
@@ -317,10 +316,10 @@ void init_richards(py::module &m, std::string name) {
     using Richards_ = Richards<Problem, Assembler, LinearSolver>;
 	py::class_<Richards_, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
    .def(py::init<>())
-   .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0), 
+   .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0),
 											py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("setSource", &Richards_::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
-   .def("applySource", &Richards_::applySource)
+   // .def("applySource", &Richards_::applySource) // Todo is this used somewhere?
    .def("setCriticalPressure", &Richards_::setCriticalPressure)
    .def("setInitialConditionHead", &Richards_::setInitialConditionHead)
    .def("getSolutionHead", &Richards_::getSolutionHead, py::arg("eqIdx") = 0)

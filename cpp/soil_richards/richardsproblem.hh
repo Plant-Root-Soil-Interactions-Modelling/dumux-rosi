@@ -52,10 +52,11 @@ public:
 		pressureIdx = Indices::pressureIdx,
 		conti0EqIdx = Indices::conti0EqIdx,
 		// world dimension
-		dimWorld = GridView::dimensionworld,
+		dimWorld = GridView::dimensionworld
 		// discretization method
-		isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box
 	};
+
+	enum { isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box };
 
 	enum BCTypes {
 		constantPressure = 1,
