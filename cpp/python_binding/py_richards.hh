@@ -6,9 +6,9 @@ namespace py = pybind11;
 
 #include <config.h> // configuration file
 
-#include "richards.hh" // includes solverbase
-
+#include "../soil_richards/richardsparams.hh"
 #include "../soil_richards/richardsproblem.hh" // the problem class
+#include "richards.hh" // includes solverbase
 
 #include <dumux/common/properties.hh>
 #include <dumux/linear/istlsolvers.hh>
@@ -59,25 +59,31 @@ struct Grid<TypeTag, TTag::RichardsSPTT> { using type = Dune::SPGrid<GetPropType
 template<class TypeTag> // Set grid type
 struct Grid<TypeTag, TTag::RichardsUGTT> { using type = Dune::UGGrid<3>; };
 
+// TODO: remove after release (3.6)
+// Set the primary variables type
+template<class TypeTag>
+struct PrimaryVariables<TypeTag, TTag::RichardsTT>
+{ using type = Dune::FieldVector<GetPropType<TypeTag, Properties::Scalar>, GetPropType<TypeTag, Properties::ModelTraits>::numEq()>; };
+
 } }
 
-#include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types (for RichardsTT)
+// #include "../soil_richards/properties_nocoupling.hh" // dummy types for replacing the coupling types (for RichardsTT)
 
 /*
  * pick assembler, linear solver and problem
  */
-using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // choose CC or Box
-using GridGeometryRSPTT = typename Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
-using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric>;
-using RichardsSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
-		Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
-using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
+//using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // choose CC or Box
+//using GridGeometryRSPTT = typename Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
+//using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric>;
+//using RichardsSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+//		Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+//using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 
 using RUGTT = Dumux::Properties::TTag::RichardsUGCC; // choose CC or Box
-using GridGeometryRUGTT = typename Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
+using GridGeometryRUGTT = typename Dumux::GetPropType<RUGTT, Dumux::Properties::GridGeometry>;
 using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
 using RichardsUGLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRUGTT>,
-		Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+		Dumux::LinearAlgebraTraitsFromAssembler<RichardsUGAssembler>>;
 using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
 
 PYBIND11_MODULE(rosi_richards, m) {

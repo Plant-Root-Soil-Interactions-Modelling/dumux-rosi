@@ -313,8 +313,8 @@ protected:
  */
 template<class Problem, class Assembler, class LinearSolver>
 void init_richards(py::module &m, std::string name) {
-    using Richards_ = Richards<Problem, Assembler, LinearSolver>;
-	py::class_<Richards_, SolverBase<Problem, Assembler, LinearSolver>>(m, name.c_str())
+    using Richards_ = Richards<Problem, Assembler, LinearSolver,3>;
+	py::class_<Richards_, SolverBase<Problem, Assembler, LinearSolver,3>>(m, name.c_str())
    .def(py::init<>())
    .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0),
 											py::arg("verbose") = true,py::arg("doMPI") = true)

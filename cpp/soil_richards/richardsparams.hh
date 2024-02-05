@@ -1,21 +1,6 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 2 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+
 #ifndef RICHARDS_PARAMETERS_HH
 #define RICHARDS_PARAMETERS_HH
 
@@ -24,7 +9,7 @@
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabsdefaultpolicy.hh>
 
 #include <dumux/material/components/simpleh2o.hh>
-#include <dumux/material/fluidsystems/1pliquid.hh>
+//#include <dumux/material/fluidsystems/1pliquid.hh>
 
 #include <dumux/io/inputfilefunction.hh>
 
@@ -37,29 +22,33 @@ namespace Dumux {
  * supports multiple soil layers (in z-direction),
  * with different VG parameters sets
  */
-template<class FVGridGeometry, class Scalar>
-class RichardsParams : public FVPorousMediumFlowSpatialParamsMP<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+template<class GridGeometry, class Scalar>
+class RichardsParams : public FVPorousMediumFlowSpatialParamsMP<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>
 {
 public:
 
-    using GridView = typename FVGridGeometry::GridView;
-    using FVElementGeometry = typename FVGridGeometry::LocalView;
+    using ThisType = RichardsParams<GridGeometry, Scalar>;
+    using ParentType = FVPorousMediumFlowSpatialParamsMP<GridGeometry, Scalar, ThisType>;
+    using GridView = typename GridGeometry::GridView;
+    using FVElementGeometry = typename GridGeometry::LocalView;
     using SubControlVolume = typename FVElementGeometry::SubControlVolume;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
 
-    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
-    using BasicParams = typename MaterialLaw::BasicParams;
-    using EffToAbsParams = typename MaterialLaw::EffToAbsParams;
-    using RegularizationParams = typename MaterialLaw::RegularizationParams;
 
-    using PermeabilityType = Scalar;
+    using PcKrSwCurve = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
+    using BasicParams = typename PcKrSwCurve::BasicParams;
+    using EffToAbsParams = typename PcKrSwCurve::EffToAbsParams;
 
     enum { dimWorld = GridView::dimensionworld };
 
-    RichardsParams(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
-    : FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>(fvGridGeometry)
+    using RegularizationParams = typename PcKrSwCurve::RegularizationParams;
+
+    using PermeabilityType = Scalar; // export permeability type
+
+    RichardsParams(std::shared_ptr<const GridGeometry> fvGridGeometry)
+    : FVSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>(fvGridGeometry)
     {
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
@@ -77,7 +66,7 @@ public:
         three_ = false;
 
         phi_.resize(qr.size());
-        // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
+        // Qr, Qs, alpha, and n goes to the PcKrSwCurve VanGenuchten
         for (int i=0; i<qr.size(); i++) {
             phi_[i] =  qs.at(i); // Richards equation is independent of phi [1]
             basicParams_.push_back(BasicParams(0.,0.));
@@ -106,7 +95,7 @@ public:
     }
 
     /*!
-     * \brief \copydoc FVGridGeometry::porosity
+     * \brief \copydoc GridGeometry::porosity
      */
     template<class ElementSolution>
     Scalar porosity(const Element& element,
@@ -116,7 +105,7 @@ public:
     }
 
     /*!
-     * \brief \copydoc FVGridGeometry::porosity
+     * \brief \copydoc GridGeometry::porosity
      * simper interface
      */
     Scalar porosity(const Element& element) const {
@@ -128,13 +117,13 @@ public:
      * [m^2]\
      */
     template<class ElementSolution>
-    PermeabilityType permeability(const Element& element,
+    Scalar permeability(const Element& element,
         const SubControlVolume& scv, const ElementSolution& elemSol) const {
         return permeability(element);
     }
 
     //! simpler interface
-    PermeabilityType permeability(const Element& element) const {
+    Scalar permeability(const Element& element) const {
         return k_.at(index_(element));
     }
 
@@ -165,7 +154,7 @@ public:
     auto fluidMatrixInteraction(const Element& element,
                                 const SubControlVolume& scv,
                                 const ElementSolution& elemSol) const {
-        return makeFluidMatrixInteraction(MaterialLaw(basicParams_.at(index_(element)), effToAbsParams_.at(index_(element)), regularizationParams_.at(index_(element))));
+        return makeFluidMatrixInteraction(PcKrSwCurve(basicParams_.at(index_(element)), effToAbsParams_.at(index_(element)), regularizationParams_.at(index_(element))));
     }
 
 
