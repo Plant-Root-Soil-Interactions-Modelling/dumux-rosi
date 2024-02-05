@@ -361,9 +361,9 @@ public:
 
         auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
-        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
-								 PartialReassembler<Assembler>,
-								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
+//								 PartialReassembler<Assembler>,
+//								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
 								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbose(false);
@@ -693,7 +693,7 @@ public:
         }
         return msg.str();
     }
-	
+
     /**
      * Checks if the grid was initialized, and returns number of local dof
      * i.e. createGrid() or createGrid1d() was called

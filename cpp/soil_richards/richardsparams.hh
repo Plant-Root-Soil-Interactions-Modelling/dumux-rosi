@@ -19,7 +19,7 @@
 #ifndef RICHARDS_PARAMETERS_HH
 #define RICHARDS_PARAMETERS_HH
 
-#include <dumux/common/fvspatialparams.hh>
+#include <dumux/porousmediumflow/fvspatialparamsmp.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabsdefaultpolicy.hh>
 
@@ -38,7 +38,7 @@ namespace Dumux {
  * with different VG parameters sets
  */
 template<class FVGridGeometry, class Scalar>
-class RichardsParams : public FVSpatialParams<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
+class RichardsParams : public FVPorousMediumFlowSpatialParamsMP<FVGridGeometry, Scalar, RichardsParams<FVGridGeometry, Scalar>>
 {
 public:
 
@@ -52,7 +52,7 @@ public:
     using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
     using BasicParams = typename MaterialLaw::BasicParams;
     using EffToAbsParams = typename MaterialLaw::EffToAbsParams;
-    using RegularizationParams = typename MaterialLaw::EffToAbsParams;
+    using RegularizationParams = typename MaterialLaw::RegularizationParams;
 
     using PermeabilityType = Scalar;
 
@@ -80,7 +80,7 @@ public:
         // Qr, Qs, alpha, and n goes to the MaterialLaw VanGenuchten
         for (int i=0; i<qr.size(); i++) {
             phi_[i] =  qs.at(i); // Richards equation is independent of phi [1]
-            basicParams_.push_back(BasicParams());
+            basicParams_.push_back(BasicParams(0.,0.));
             effToAbsParams_.push_back(EffToAbsParams());
             regularizationParams_.push_back(RegularizationParams());
 
@@ -94,10 +94,10 @@ public:
 
             // Regularisation parameters
             double eps = 1.e-4; // with 1.e-9 benchmark 3 does not work anymore (and everything becomes slower)
-            regularizationParams_.at(i).setPcLowSw(eps);
-            regularizationParams_.at(i).setPcHighSw(1. - eps);
-            regularizationParams_.at(i).setKrnLowSw(eps);
-            regularizationParams_.at(i).setKrwHighSw(1 - eps);
+            regularizationParams_.at(i).setPcLowSwe(eps);
+            regularizationParams_.at(i).setPcHighSwe(1. - eps);
+            regularizationParams_.at(i).setKrnLowSwe(eps);
+            regularizationParams_.at(i).setKrwHighSwe(1 - eps);
         }
         layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
@@ -150,6 +150,25 @@ public:
         return basicParams_.at(index_(element));
     }
 
+    //! set of VG parameters for the element
+    const EffToAbsParams& effToAbsParams(const Element& element) const {
+        return effToAbsParams_.at(index_(element));
+    }
+
+    //! set of VG parameters for the element
+    const RegularizationParams& regularizationParams(const Element& element) const {
+        return regularizationParams_.at(index_(element));
+    }
+
+
+    template<class ElementSolution>
+    auto fluidMatrixInteraction(const Element& element,
+                                const SubControlVolume& scv,
+                                const ElementSolution& elemSol) const {
+        return makeFluidMatrixInteraction(MaterialLaw(basicParams_.at(index_(element)), effToAbsParams_.at(index_(element)), regularizationParams_.at(index_(element))));
+    }
+
+
     /*!
      * \brief \copydoc FVSpatialParamsOneP::materialLawParams
      */
@@ -173,10 +192,10 @@ public:
      */
     void setRegularisation(double pcEps, double krEps) {
     	for (int i =0; i<regularizationParams_.size(); i++) {
-    	    regularizationParams_.at(i).setPcLowSw(pcEps);
-    	    regularizationParams_.at(i).setPcHighSw(1. - pcEps);
-    	    regularizationParams_.at(i).setKrnLowSw(krEps);
-    	    regularizationParams_.at(i).setKrwHighSw(1 - krEps);
+    	    regularizationParams_.at(i).setPcLowSwe(pcEps);
+    	    regularizationParams_.at(i).setPcHighSwe(1. - pcEps);
+    	    regularizationParams_.at(i).setKrnLowSwe(krEps);
+    	    regularizationParams_.at(i).setKrwHighSwe(1 - krEps);
     	}
     }
 
@@ -196,8 +215,8 @@ public:
         effToAbsParams_.at(i).setSwr(qr/phi_[i]); // Qr
         effToAbsParams_.at(i).setSnr(1.-qs/phi_[i]); // Qs
         Scalar a = alpha * 100.; // from [1/cm] to [1/m]
-        basicParams_.at(i).setVgAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
-        basicParams_.at(i).setVgn(n); // N
+        basicParams_.at(i).setAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
+        basicParams_.at(i).setN(n); // N
         k_.push_back(ks*mu/(rho*g_)); // Convert to intrinsic permeability
     }
 
@@ -218,7 +237,7 @@ private:
             }
             return 0;
         } else { // use input file function
-            auto eIdx = this->fvGridGeometry().elementMapper().index(element);
+            auto eIdx = this->gridGeometry().elementMapper().index(element);
             Scalar z = element.geometry().center()[dimWorld - 1];
             //std::cout << z << "\n";
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
@@ -236,6 +255,7 @@ private:
 
     std::vector<Scalar> k_; // permeability [m²]
     std::vector<Scalar> kc_; // hydraulic conductivity [m/s]
+
     std::vector<BasicParams> basicParams_;
     std::vector<EffToAbsParams> effToAbsParams_;
     std::vector<RegularizationParams> regularizationParams_;

@@ -430,9 +430,9 @@ public:
 
         auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop); // dynamic
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
-        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
-								 PartialReassembler<Assembler>,
-								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
+        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
+//								 PartialReassembler<Assembler>,
+//								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >; // templates changed???
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
 								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbosity(false);

@@ -40,8 +40,12 @@ public:
 	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
-	using MaterialLawParams = typename MaterialLaw::BasicParams;
+
+	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<double>; // VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
+	using BasicParams = typename MaterialLaw::BasicParams;
+    using EffToAbsParams = typename MaterialLaw::EffToAbsParams;
+    using RegularizationParams = typename MaterialLaw::RegularizationParams;
+
 	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
 
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
@@ -152,7 +156,7 @@ public:
 		// std::cout << "initial " << z << ", " << initialSoil_.f(z,eIdx) << " \n";
 		PrimaryVariables v(0.0);
 		v[pressureIdx] = toPa_(initialSoil_.f(z,eIdx));
-		v.setState(pressureIdx);
+		// v.setState(pressureIdx); // todo ???
 		return v;
 	}
 
@@ -205,8 +209,16 @@ public:
 			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Dirichlet: unknown boundary type");
 			}
 		}
-		values.setState(pressureIdx);
+		// values.setState(pressureIdx); // unused???
 		return values;
+	}
+
+
+	MaterialLaw materialLaw(const Element& element) const {
+	    const BasicParams& basicParams = this->spatialParams().basicParams(element);
+	    const EffToAbsParams& effToAbsParams = this->spatialParams().effToAbsParams(element);
+	    const RegularizationParams& regularizationParams = this->spatialParams().regularizationParams(element);
+	    return MaterialLaw(basicParams, effToAbsParams, regularizationParams);
 	}
 
 	/*!
@@ -229,12 +241,13 @@ public:
 
 			Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
-			MaterialLawParams params = this->spatialParams().materialLawParams(element);
-			Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
+
+			MaterialLaw materialLaw_ = materialLaw(element);
+			Scalar p = materialLaw_.pc(s) + pRef_; // [Pa]
 			Scalar h = -toHead_(p); // cm
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
-			Scalar krw = MaterialLaw::krw(params, s); // [1]
+			Scalar krw = materialLaw_.krw(s); // [1]
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
@@ -273,10 +286,10 @@ public:
 					    Scalar p2 = toPa_(-10000);
 					    // Scalar h3 = 0.5*(h + criticalPressure_);
 					    // Scalar p3 = toPa_(h);
-					    Scalar s2 = MaterialLaw::sw(params, -(p2- pRef_));
+					    Scalar s2 = materialLaw_.sw(-(p2- pRef_));
                         // Scalar s3 = MaterialLaw::sw(params, -(p3- pRef_)) ;
 					    // std::cout << s2 << "\n";
-					    Scalar krw2 = MaterialLaw::krw(params, s2);
+					    Scalar krw2 = materialLaw_.krw(s2);
 					    // Scalar krw3 = MaterialLaw::krw(params, s3);
                         Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
 					    // Scalar harmonic = 2*krw2*krw/(krw2+krw);
@@ -375,8 +388,7 @@ public:
 				return source_->at(eIdx)/scv.volume();
 			} else {
 			    Scalar s = elemVolVars[scv].saturation();
-	            MaterialLawParams params = this->spatialParams().materialLawParams(element);
-	            Scalar p = MaterialLaw::pc(params, s) + pRef_; // [Pa]
+	            Scalar p = materialLaw(element).pc(s) + pRef_; // [Pa]
 	            Scalar h = -toHead_(p); // cm
 	            auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
 	            if (h<criticalPressure_) {
