@@ -5,3 +5,9 @@ pybind11_add_module(rosi_richards SHARED py_richards.cc)
 #pybind11_add_module(rosi_richardsnc SHARED py_richardsnc.cc)
 #pybind11_add_module(rosi_richardsnc_cyl SHARED py_richardsnc_cyl.cc)
 
+target_link_dune_default_libraries(rosi_richards)
+# target_link_libraries(rosi_richards)
+
+#target_link_dune_default_libraries(rosi_richards_cyl)
+#target_link_dune_default_libraries(rosi_richardsnc)
+#target_link_dune_default_libraries(rosi_richardsnc_cyl)
