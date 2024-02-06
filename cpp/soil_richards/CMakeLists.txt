@@ -10,7 +10,7 @@ target_compile_definitions(richards1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 add_executable(richards1d_cyl EXCLUDE_FROM_ALL richards_cyl.cc)
 target_compile_definitions(richards1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
-add_executable(richards_alu EXCLUDE_FROM_ALL richards.cc)
+add_executable(richards_alu richards.cc)
 target_compile_definitions(richards_alu PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
 
 add_executable(richards_ug EXCLUDE_FROM_ALL richards.cc)
@@ -19,3 +19,4 @@ target_compile_definitions(richards_ug PUBLIC GRIDTYPE=Dune::UGGrid<3>)
 #add_executable(test_richards_benchmark_tpfa main.cc)
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
+ 
