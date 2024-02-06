@@ -329,7 +329,7 @@ class RichardsWrapper(SolverWrapper):
                 CC *= self.bulkDensity_m3/1e6 #mol/cm3 scv
         return CC
 
-    def setSource(self, source_map, eq_idx = 0, cyl_length = None):
+    def setSource(self, source_map, eq_idx = 0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkInitialized()
         # useMole fraction or mass fraction? 
@@ -347,17 +347,17 @@ class RichardsWrapper(SolverWrapper):
 
         # to go from [mol/s] to [mol/m3/s].
         # for dimWorld==3, scv.volume() computed in dumux. otherwise, do it here
-        if self.dimWorld == 1:
-            vols = self.getCellSurfacesCyl() / 1e4 * cyl_length / 100 #m3 scv
-        else:
-            vols = np.ones(max(list(source_map.keys())) +1)
+        #if self.dimWorld == 1:
+        #    vols = self.getCellSurfacesCyl() / 1e4 * cyl_length / 100 #m3 scv
+        #else:
+        #    vols = np.ones(max(list(source_map.keys())) +1) # volume computed within dumux
 
         # print("setSourceA", source_map, eq_idx)
         for cellId, value in source_map.items(): 
-            source_map[cellId] = value * unitConversion / vols[cellId] 
-        if False:#self.dimWorld == 1:
-            print("setSource", rank, eq_idx,source_map)
-        self.base.setSource(source_map, eq_idx)
+            source_map[cellId] = value * unitConversion# / vols[cellId]         
+        #mol/s
+        #print('setsource',source_map, eq_idx )
+        self.base.setSource(source_map, eq_idx) # 
 
     def applySource(self, dt, source_map, crit_p):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
@@ -439,15 +439,15 @@ class RichardsWrapper(SolverWrapper):
         assert self.dimWorld != 1
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
         
-    def getWaterVolumesCyl(self, length, verbose = False):
+    def getWaterVolumesCyl(self, verbose = False):
         """Returns total water volume of the domain [cm3]"""
         self.checkInitialized()
         assert self.dimWorld != 3
-        vols = self.getCellSurfacesCyl() * length #cm3 scv
+        vols = self.getCellVolumes() #cm3 scv
         watCont = self.getWaterContent()#.flatten() # cm3 wat/cm3 scv
         if(verbose):
             print("getWaterVolumesCyl")
-            print(length)
+            #print(length)
             print(vols , watCont )
             print(np.multiply(vols , watCont  ) )
         
@@ -459,62 +459,317 @@ class RichardsWrapper(SolverWrapper):
         vols = self.getCellVolumes()#.flatten() #cm3 scv 
         watCont = self.getWaterContent()#.flatten()  # cm3 wat/cm3 scv
         return np.multiply(vols , watCont  )
-    
-    def getTotCContent(self):
-        assert self.dimWorld != 1
-        vols = self.getCellVolumes()#.flatten() #cm3 scv   
-        totC = 0
-        for i in range(self.numComp):
-            isDissolved = (i < 2)
-            totC += self.getContent(i+1, isDissolved)
-        # mol/mol * (mol/m3) = mol/m3 
+        
+    def getCSS1_th(self):
+        raise Exception
         C_S_W = self.molarDensityWat_m3*np.array(self.getSolution(1))#.flatten()
+        vols = self.getCellVolumes()/1e6#m3
+        #mol C / cm3 scv
+        css1_th = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp # if cell is empty, can get it directly from the solver.
+        return  np.array(css1_th*vols)
+    
+    def getTotCContent_each(self):
+        if self.dimWorld == 3:
+            vols = self.getCellVolumes()#.flatten() #cm3 scv   
+            totC = np.array([self.getContent(i+1, (i < 2)) for i in range(self.numComp +1)])
+            
+        elif self.dimWorld == 1:
+            vols = self.getCellVolumes()#self.getCellSurfacesCyl()  * l  #cm3 scv
+            totC = np.array([self.getContentCyl(i+1, (i < 2)) for i in range(self.numComp+1)])
+        # mol/mol * (mol/m3) = mol/m3 
         
-        init = (self.simTime == 0.)
-        
-        css1 = self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp # if cell is empty, can get it directly from the solver.
-        # test that and see if we have same results., shouldn t it be k_sorp * 1e6?
-        # print('richards:getTotCContent, css1', 'evaluted adhoc', css1, 'got from dumux:',self.base.getCSS1_out())
-
-        totC += css1*vols
-        CC_shape = self.getCellCenters().shape
-        try:
-            assert np.array(totC).shape == (CC_shape[0],)
-        except:
-            print('totC',np.array(totC).shape , 'CC_shape',CC_shape)
-            raise Exception
+        # css1 = self.getCSS1_out()  #mol C / cm3 scv
+        # print('css1',css1.shape,self.getCellVolumes_().shape)
+        # print('rank',rank,totC.shape, vols.shape )
+        # totC = np.vstack((totC, css1*vols))
+        # raise Exception
+        if rank == 0:
+            try:
+                assert np.array(totC).shape == (self.numComp +1,self.numberOfCellsTot)
+            except:
+                print('totC',totC,totC.shape , (self.numComp +1, self.numberOfCellsTot))
+                raise Exception
+            
         return totC
         
-    
-    def getContentCyl(self,idComp, isDissolved, length ):
-        assert self.dimWorld != 3
-        assert idComp > 0 # do not use for water content
-        vols = self.getCellSurfacesCyl() / 1e4 * length / 100 #m3 scv
-        C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
+    def getTotCContent(self):
+        return self.getTotCContent_each().sum(axis=0)
         
-        
-        try:
-            assert (C_ >= 0.).all()
-        except:
-            print('getContentCyl',idComp, isDissolved, vols, C_)
+    def getCSS1_out_th(self):#mol C / cm3 scv
+        if (self.css1Function == 0) or (self.css1Function == 4) :
+            C_  = self.molarDensityWat_m3*np.array(self.getSolution(1))#.flatten()
+            return self.CSSmax * (C_ /(C_ + self.k_sorp*1e6)) * self.f_sorp
+        elif (self.css1Function == 1) or (self.css1Function == 3):
+            return 0.
+        elif self.css1Function == 2:
+            C_  = self.molarDensityWat_m3*np.array(self.getSolution(1))#.flatten()
+            return self.CSSmax * C_ /(self.k_sorp*1e6) * self.f_sorp
+        elif self.css1Function == 5:
+            vols = self.getCellVolumes()/1e6#m3
+            watCont = self.getWaterContent()
+            C_  = self.molarDensityWat_m3*np.array(self.getSolution(1)) * vols * watCont
+            return self.CSSmax * (C_ /(C_ + self.k_sorp*1e6)) * self.f_sorp
+        elif self.css1Function == 6:#cssmax is content
+            vols = self.getCellVolumes()/1e6#m3
+            watCont = self.getWaterContent()
+            C_  = self.molarDensityWat_m3*np.array(self.getSolution(1)) * vols * watCont
+            return self.CSSmax *1e6 * (C_ /(C_ + self.k_sorp*1e6)) * self.f_sorp / (vols *1e6)
+        elif self.css1Function == 7:
+            vols = self.getCellVolumes()/1e6#m3
+            watCont = self.getWaterContent()
+            C_  = self.molarDensityWat_m3*np.array(self.getSolution(1)) * vols * watCont
+            return self.CSSmax * C_ /( self.k_sorp*1e6) * self.f_sorp
+        elif self.css1Function == 8:
+            vols = self.getCellVolumes()/1e6#m3
+            watCont = self.getWaterContent()# m3/m3
+            # mol = 
+            C_  = self.molarDensityWat_m3*np.array(self.getSolution(1)) * vols * watCont
+            return self.CSSmax * C_ /( self.k_sorp*1e6) * self.f_sorp / (vols *1e6)
+        else:
             raise Exception
             
-        if not isDissolved:
-            if self.useMoles:
-                C_ *= self.bulkDensity_m3 #mol/m3 scv
-            return np.multiply(vols , C_  ) # mol
+    #def getCSS1_out_real(self):#mol C / cm3 scv
+    #    return np.array(self.base.getCSS1_out())/1e6
+        
+    def getCSS1_out_(self):#mol C / cm3 scv
+        return self.f_sorp * np.array(self.base.computeCSS1s())/1e6
+        
+    def getCSS1_out(self):#mol C / cm3 scv
+        return self._map(self.allgatherv(self.getCSS1_out_()),0)
+        #return self.getCSS1_out_th()#so that css1 get redistributed with csw
+        #else:
+        #    return self.getCSS1_out_real()
+        
+    def getContentCyl_deprecated(self,idComp, isDissolved,gId = None ):
+        if False:
+            assert self.dimWorld != 3
+            assert idComp > 0 # do not use for water content
+            vols = self.getCellVolumes() /1e6#/ 1e4 * length / 100 #m3 scv
             
-        watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
-        if self.useMoles:
-            C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
-        #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
-        return np.multiply(np.multiply(vols , watCont) , C_ )
+            if idComp <= self.numComp:
+                C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
+            elif (idComp == (self.numComp +1)):
+                C_ = self.getCSS1_out() *1e6#  mol C / m3 scv
+                #print('getCSS1_out_th',self.CSSmax * (C_S_W/(C_S_W+ self.k_sorp*1e6)) * self.f_sorp)
+            else:
+                print('wrong idComp', idComp)
+                raise Exception
+            
+            
+            try:
+                assert (C_ >= 0.).all()
+            except:
+                print('getContentCyl',idComp, isDissolved, vols, C_)
+                raise Exception
+                
+            if not isDissolved:
+                if ((self.useMoles) and (idComp != (self.base.numComp()))):
+                    C_ *= self.bulkDensity_m3 #mol/m3 scv
+                return np.multiply(vols , C_  ) # mol
+                
+            watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
+            if self.useMoles:
+                C_ *= self.molarDensityWat_m3 # mol/mol wat* mol wat/m3 wat
+            #print("np.multiply(vols , watCont)", sum(np.multiply(vols , watCont)))    
+            return np.multiply(np.multiply(vols , watCont) , C_ )
         
     def phaseDensity(self, isDissolved):# mol / m3
         if isDissolved: #mol wat / m3 wat
             return self.molarDensityWat_m3
         else:   # mol scv / m3 scv
             return self.bulkDensity_m3
+         
+    def getFlux_10c(self):
+        assert self.dimWorld == 3
+        ff10c_ = self.getFlux_10c_()
+        f2cidx_ = self.getFace2CellIds_()
+        #print('ff10c_',rank, ff10c_)
+        #print('f2cidx_',rank, list(f2cidx_))
+        #occurences = [list(f2cidx_).count(idx_) for idx_ in set(f2cidx_)]
+        #print('occurences',rank,[list(f2cidx_).count(idx_) for idx_ in set(f2cidx_)])
+        ff10c = np.array([sum(ff10c_[np.where(f2cidx_ == idx_)[0]]) for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6]) # sum values per cell
+        f2cidx = np.array([idx_ for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6])# keep those local elem  indexes
+        dofind = np.array(self.base.getDofIndices())
+        f2cidx_g = dofind[f2cidx] # get global index
+        #print('f2cidx',rank, f2cidx,f2cidx_)
+        #raise Exception
+        #print('dofind',rank,dofind)
+        f2cidx_gAll = self.allgatherv(f2cidx_g)
+        ff10c_All = self.allgatherv(ff10c)
+        if False:
+            print(f2cidx_gAll)
+            print(ff10c_All)
+            print(len(f2cidx_gAll), len(ff10c_All), len(f2cidx_g), self.numberOfCells)
+            print(f2cidx_gAll)
+        f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)))
+        
+        if False:
+            for jjj in f2cidx_gAll_unique:
+                tempff = ff10c_All[np.where(f2cidx_gAll == jjj)]
+                try:
+                    assert(tempff == tempff[0]).all()
+                except:
+                    print('jjj',jjj,tempff )
+                    raise Exception
+            #print(np.where(f2cidx_gAll == jjj), max(np.where(f2cidx_gAll == jjj)[0]))
+        ff10c_All_unique = np.array([ff10c_All[max(np.where(f2cidx_gAll == idx_)[0])] for idx_ in f2cidx_gAll_unique])
+        
+        #print('ff10c',rank,ff10c)
+        #print('f2cidx',rank,f2cidx)
+        #setf2cidx__ = np.array(list(set(f2cidx)))
+        #print('setf2cidx__',rank, setf2cidx__, setf2cidx__.shape)
+        #setf2cidx_ = self.allgatherv(setf2cidx__)
+        #setf2cidx = self._map( setf2cidx_, 0)
+        #print('setf2cidx_',rank, setf2cidx_)
+        #print('setf2cidx',rank, setf2cidx)
+        #print('faceGIdxs',self.base.faceGIdxs.keys(),len(self.base.faceGIdxs.keys()))
+        #print('facemap',self.base.facemap.keys(),len(self.base.facemap.keys()), self.numberOfFacesTot)
+        
+        # raise Exception
+        # flux10c = self.allgatherv(ff10c)#, keepShape =True) #TODO: check that gathergin works  
+        # face2CellIds = self.allgatherv(f2cidx)#, keepShape =True)
+        
+
+        # print('getFlux_10c()',rank,flux10c.shape, np.array(self.getCellVolumes_()).shape ,len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp())
+        #flux10c_ = flux10c[0]
+        #face2CellIds = face2CellIds.transpose((1,0))
+        #flux10c = flux10c.transpose((2,0,1))
+        # print('face2CellIds',face2CellIds.shape, flux10c.shape)
+        # print([(nf, np.where(valThreads == max(valThreads))[0][0],  max(valThreads)) for nf, valThreads in enumerate(face2CellIds)])
+        #for nf, valThreads in enumerate(face2CellIds):
+        #    flux10c_[nf][:] = flux10c[np.where(valThreads == max(valThreads))[0]][nf][:]
+        #flux10c = np.array([flux10c[np.where(valThreads == max(valThreads))[0][0]][nf][:] for nf, valThreads in enumerate(face2CellIds)])
+        #face2CellIds = face2CellIds.max(axis = 1)
+        # print('face2CellIds',face2CellIds)
+        
+        #flux10c = flux10c_
+        # print(flux10c.shape,np.array([np.where(face2CellIds == nCell) for nCell in range(self.numberOfCellsTot)]),
+        #     np.array([flux10c[np.where(face2CellIds == nCell)] for nCell in range(self.numberOfCellsTot)]))
+        #flux10cCell = np.array([flux10c[np.where(face2CellIds == nCell)].sum(axis=0) for nCell in range(self.numberOfCellsTot)])  
+        # print(flux10cCell)
+        flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
+        if rank == 0:
+            assert flux10cCell.shape == (self.base.numComp() ,self.numberOfCellsTot)
+        
+        molarMassWat = 18. # [g/mol]
+        densityWat = 1. #[g/cm3]
+        # [mol/cm3] = [g/cm3] /  [g/mol] 
+        molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+        flux10cCell[0] /=  molarDensityWat # mol to cm3 for water 
+        if rank == 0:
+            assert flux10cCell.shape == (self.base.numComp() ,self.numberOfCellsTot)#numComp + water 
+            
+        # print('flux shape',flux10cCell.shape)
+        #print('getFlux_10c()',flux10cCell)
+        #raise Exception
+        return flux10cCell
+        
+    def getFace2CellIds_(self):
+        return np.array(self.base.face2CellIds).max(axis = 0)
+    
+    def getFlux_10c_(self):# cm3 or mol
+        verbose = False
+        inFluxes = np.array(self.base.inFluxes) #[ mol / s]
+        inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
+        
+        
+        try:
+            if size == 1:# with MPI, could be that axis 1 size < self.numberOfCellsTot
+                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp())
+            else:
+                assert inFluxes.shape[0] == len(inFluxes_ddt)
+                assert inFluxes.shape[2] == (self.base.numComp())
+                
+        except:
+            print('shape failed, inFluxes',size, inFluxes, 'inFluxes.shape',inFluxes.shape,(len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp()))
+            raise Exception
+        
+        inFluxes_tot = np.array([ np.array([xxx * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inFluxes[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+        
+        #inFluxes_tot = np.array([inFx * inFluxes_ddt[idx] for idx, inFx in enumerate(inFluxes)]) # cm3 or mol at each dumux sub-time step
+        inFluxes_tot = inFluxes_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
+        #css1_flux = np.full((self.numberOfCellsTot,1) , 0.)
+        
+        #inFluxes_tot = np.hstack((inFluxes_tot, css1_flux))
+        #print('inFluxes_tot',inFluxes_tot[:],inFluxes_tot.shape)
+        #print('getFlux_10c_()',rank,inFluxes_tot.shape, np.array(self.getCellVolumes_()).shape ,len(inFluxes_ddt), self.numberOfFacesTot,self.base.numComp())
+        return inFluxes_tot
+        
+    def getFlux_10c_Old(self):# cm3 or mol
+        verbose = False
+        inFluxes = np.array(self.base.inFluxes) #[ mol / s]
+        inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
+        
+        
+        try:
+            if size == 1:# with MPI, could be that axis 1 size < self.numberOfCellsTot
+                assert inFluxes.shape == (len(inFluxes_ddt), self.numberOfCellsTot*6,self.base.numComp())
+            else:
+                assert inFluxes.shape[0] == len(inFluxes_ddt)
+                assert inFluxes.shape[2] == (self.base.numComp())
+                
+        except:
+            print('shape failed, inFluxes',size, inFluxes, inFluxes.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp()))
+            raise Exception
+        
+        inFluxes_tot = np.array([ np.array([xxx * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inFluxes[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+        
+        #inFluxes_tot = np.array([inFx * inFluxes_ddt[idx] for idx, inFx in enumerate(inFluxes)]) # cm3 or mol at each dumux sub-time step
+        inFluxes_tot = inFluxes_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
+        #css1_flux = np.full((self.numberOfCellsTot,1) , 0.)
+        
+        #inFluxes_tot = np.hstack((inFluxes_tot, css1_flux))
+        print('inFluxes_tot',inFluxes_tot[:],inFluxes_tot.shape)
+        print('self.base.getDofIndices()',self.base.getDofIndices()[:])
+        return inFluxes_tot
+        
+    def getSource_10c(self):
+        src10c =  comm.bcast(self._map(self.allgatherv(self.getSource_10c_()), 0), root = 0)#css1_before, css1_after)), 0) #TODO: check that gathergin works  
+        vols = comm.bcast(self.getCellVolumes(), root = 0)/1e6
+        
+        #print('src10cA',np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)]))
+        src10c = np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)])
+        src10c = np.transpose(src10c) # [comp][cell]
+        #print('src10c',src10c)
+        
+        molarMassWat = 18. # [g/mol]
+        densityWat = 1. #[g/cm3]
+        # [mol/cm3] = [g/cm3] /  [g/mol] 
+        molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+        src10c[0] /=  molarDensityWat # mol to cm3 for water 
+        if rank == 0:
+            assert src10c.shape == (self.base.numComp() ,self.numberOfCellsTot)#numComp + water 
+        return src10c
+    
+    def getSource_10c_(self):#, css1_before = None, css1_after = None):# cm3 or mol
+        verbose = False
+        inSources = np.array(self.base.inSources) #[ mol / (m^3 \cdot s)] 
+        inFluxes_ddt = np.array(self.base.inFluxes_ddt)# s
+        #if self.dimWorld == 1:
+        #    vols = self.getCellVolumes()/1e6 # / 1e4 * length / 100 #m3 scv
+        #elif self.dimWorld == 3:
+        #    vols = (1/  1e6)*self.getCellVolumes_() #m3 scv
+        #else:
+        #    raise Exception
+        if False:    
+            try:
+                assert inSources.shape == (len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp())
+            except:
+                print('shape failed, inSources',inSources, inSources.shape,(len(inFluxes_ddt), self.numberOfCellsTot,self.base.numComp()))
+                raise Exception
+          
+        # inSources_tot = np.array([ np.array([xxx * vols[idc] * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inSources[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+        inSources_tot = np.array([ np.array([xxx * inFluxes_ddt[isrcs] for idc, xxx in enumerate(inSources[isrcs] )]) for isrcs in range(len(inFluxes_ddt))])
+        
+        #inSources_tot = np.array([inFx * inFluxes_ddt[idx] * vols for idx, inFx in enumerate(inSources)]) # cm3 or mol at each dumux sub-time step
+        inSources_tot = inSources_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
+        #d_css1 = np.full( (self.numberOfCellsTot,1),0.)
+        #if css1_before is not None:
+        #    d_css1 = (css1_after - css1_before).reshape(self.numberOfCellsTot,1)
+            
+        #inSources_tot = np.hstack((inSources_tot,d_css1))
+        
+        return inSources_tot
             
     def getConcentration(self,idComp, isDissolved):
         C_ = self.getSolution(idComp)#.flatten()  # mol/mol wat or mol/mol scv
@@ -527,11 +782,18 @@ class RichardsWrapper(SolverWrapper):
         return C_ /1e6 #mol/cm3 scv
         
     def getContent(self,idComp, isDissolved):
-        assert self.dimWorld != 1
+        #assert self.dimWorld != 1
         assert idComp > 0 # do not use for water content
-        vols = (1/  1e6)*self.getCellVolumes()#.flatten() #m3 scv            
-        C_ = self.getSolution(idComp)#.flatten()  # mol/mol wat or mol/mol scv
+        vols = (1/  1e6)*self.getCellVolumes_()#.flatten() #m3 scv            
         
+        if idComp <= self.numComp:
+            C_ = self.getSolution_(idComp)#.flatten() # mol/mol or g/g 
+        elif (idComp == (self.numComp +1)):
+            C_ = self.getCSS1_out_()*1e6 # mol/m3
+        else:
+            print('wrong idComp', idComp)
+            raise Exception
+            
         try:
             assert (C_ >= 0.).all()
         except:
@@ -539,14 +801,14 @@ class RichardsWrapper(SolverWrapper):
             raise Exception
             
         if not isDissolved:
-            if self.useMoles:
+            if ((self.useMoles) and (idComp != (self.numComp +1))):
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
-            return np.multiply(vols , C_  ) 
-        watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
+            return self._map(self.allgatherv(np.multiply(vols , C_  ) ),0)
+        watCont = self.getWaterContent_()#.flatten() # m3 wat/m3 scv
         if self.useMoles:
             C_ *= self.molarDensityWat_m3 # mol/m3 wat
             
-        return np.multiply(np.multiply(vols , watCont) , C_ )
+        return self._map(self.allgatherv(np.multiply(np.multiply(vols , watCont) , C_ )),0)
           
 
     def setSolution_(self, sol, eqIdx = 1):

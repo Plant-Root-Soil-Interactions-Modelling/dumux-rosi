@@ -191,6 +191,17 @@ class SolverWrapper():
         #print(rank, 'initialized problem')
         if (self.mpiVerbose and (size > 1)):
             print(rank, 'initialized problem')
+        
+        self.dofIndices_   = self.base.getDofIndices()
+        self.pointIndices_ = self.base.getPointIndices()
+        self.cellIndices_  = self.base.getCellIndices()
+        
+        self.dofIndices   = self.allgatherv(self.dofIndices_, X_rhizo_type_default = np.int64)
+        self.pointIndices = self.allgatherv(self.pointIndices_, X_rhizo_type_default = np.int64)
+        self.cellIndices  = self.allgatherv(self.cellIndices_, X_rhizo_type_default = np.int64)
+        
+        self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m2 -> cm2
+        self.CellVolumes = self._map(self.allgatherv(self.CellVolumes_), 2)   # m2 -> cm2
 
 
     def setInitialCondition(self, ic, eqIdx = 0):
@@ -285,15 +296,15 @@ class SolverWrapper():
         
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        if (self.mpiVerbose and (size > 1)):
-            comm.barrier()
-            print("solverbase::getCellVolumes", rank)
-            comm.barrier()
-        return self._map(self.allgatherv(self.base.getCellVolumes()), 2) * 1.e6  # m2 -> cm2
+        #if (self.mpiVerbose and (size > 1)):
+        #    comm.barrier()
+        #    print("solverbase::getCellVolumes", rank)
+        #    comm.barrier()
+        return self.CellVolumes #self._map(self.allgatherv(self.base.getCellVolumes()), 2) * 1.e6  # m2 -> cm2
 
     def getCellVolumes_(self):
         """nompi version of  """
-        return np.array(self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
+        return self.CellVolumes_ #return np.array(self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
@@ -309,23 +320,41 @@ class SolverWrapper():
 
     # def quad, int or something (over all domain)
 
-    def getDofIndices(self):
+    def getCellIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
-        self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
-            comm.barrier()
-            print("solverbase::getDofIndices", rank)
-            comm.barrier()
-        
         if rank > 0:
             return []
         else:
-            return self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
+            return self.cellIndices
+        
+    def getPointIndices(self):
+        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
+        if rank > 0:
+            return []
+        else:
+            return self.pointIndices
+        
+    def getDofIndices(self):
+        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
+        if rank > 0:
+            return []
+        else:
+            return self.dofIndices
 
+    def getCellIndices_(self):
+        """nompi version of  """
+        self.checkInitialized()
+        return self.cellIndices
+    
+    def getPointIndices_(self):
+        """nompi version of  """
+        self.checkInitialized()
+        return self.pointIndices
+    
     def getDofIndices_(self):
         """nompi version of  """
         self.checkInitialized()
-        return np.array(self.base.getDofIndices(), dtype = np.int64)
+        return self.dofIndices
 
     def getSolution(self, eqIdx = 0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
@@ -527,13 +556,14 @@ class SolverWrapper():
             print("solverbase::_map", rank)
             comm.barrier()
         if type_ == 0:  # auto (dof)
-            indices = self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
+            indices = self.getDofIndices() #self.allgatherv(self.base.getDofIndices(), X_rhizo_type_default = np.int64)
         elif type_ == 1:  # points
-            indices = self.allgatherv(self.base.getPointIndices(), X_rhizo_type_default = np.int64)
+            indices = self.getPointIndices() #self.allgatherv(self.base.getPointIndices(), X_rhizo_type_default = np.int64)
         elif type_ == 2:  # cells
-            indices = self.allgatherv(self.base.getCellIndices(), X_rhizo_type_default = np.int64)
+            indices =  self.getCellIndices() #self.allgatherv(self.base.getCellIndices(), X_rhizo_type_default = np.int64)
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
+            
         if rank == 0:
             try:
                 assert len(indices) == len(x), "_map: indices and values have different length"
@@ -545,13 +575,16 @@ class SolverWrapper():
             if isinstance(x[0], (list,type(np.array([])))) :
                 m = len(x[0])
                 p = np.zeros((ndof, m), dtype = dtype)
-                for i in range(0, len(indices)):  #
-                    p[indices[i],:] = np.array(x[i], dtype = dtype)
+                p[indices,:] = np.asarray(x, dtype = dtype)
+                #for i in range(0, len(indices)):  #
+                #    p[indices[i],:] = np.array(x[i], dtype = dtype)
             else:
                 p = np.zeros(ndof, dtype = dtype)
-                for i in range(0, len(indices)):  #
-                    p[indices[i]] = np.array(x[i], dtype = dtype)
+                p[indices] = np.asarray(x, dtype = dtype)
+                #for i in range(0, len(indices)):  #
+                #    p[indices[i]] = np.array(x[i], dtype = dtype)
             return p#.flatten()
+        
         else:
             #return array instead of float to be able to have same object type no matter what
             return np.array([])

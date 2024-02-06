@@ -66,7 +66,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     #initsim =float(sys.argv[1])# initsim = 9.5
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/3/24
+    dt = 1/24
     p_mean = -100
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
@@ -88,7 +88,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     if doSimple:
         max_b = [5, 5, 0.] # 
         min_b = [-5, -5, -5.]# 
-        cell_number = [1,1,1]#
+        cell_number = [2,2,2]#
     elif doOldCell:
         max_b = [5, 5, 0.] # 
         min_b = [-5, -5, -10.]# 
@@ -104,8 +104,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
-    results_dir="./results/hangs"+extraName+str(spellData['scenario'])\
-    +"_"+str(int(sum(cell_number)))\
+    results_dir="./results/"+extraName+str(spellData['scenario'])\
+    +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
                     +"_"+str(int(dt*24*60))+"mn_"\
@@ -117,15 +117,16 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         print('results_dir','DumuxDune27',results_dir, flush = True)
     comm.barrier()
     if rank == 0:
-        if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
-        else:
-            test = os.listdir(results_dir)
-            for item in test:
-                try:
-                    os.remove(results_dir+item)
-                except:
-                    pass
+        for extraText in ["","cyl_val/","printData/"]:
+            if not os.path.exists(results_dir+extraText):
+                os.makedirs(results_dir+extraText)
+            else:
+                test = os.listdir(results_dir+extraText)
+                for item in test:
+                    try:
+                        os.remove(results_dir+extraText+item)
+                    except:
+                        pass
     comm.barrier()
     """
      Cylindric rhizosphere models, C exudate from finite volumes
@@ -141,18 +142,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     usemoles = True
     """ parameters   """
     soil_ = scenario_setup.vg_SPP(0)
-    if doSimple:
-        max_b = [5, 5, 0.] # 
-        min_b = [-5, -5, -5.]# 
-        cell_number = [1,1,1]#
-    elif doOldCell:
-        max_b = [5, 5, 0.] # 
-        min_b = [-5, -5, -10.]# 
-        cell_number =[5,5,20]#
-    else:
-        min_b = [-3./2, -12./2, -40.]
-        cell_number = [3,12,40] # 1cm3 
-        max_b = [3./2, 12./2, 0.]
     
     #min_b = [-5., -5, -5.] 
     #max_b = [5., 5, 0.] 
@@ -192,6 +181,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     
 
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
+    write_file_array("cellIds", np.array(s.cellIndices), directory_ =results_dir) # cm3
 
     # all thread need a plant object, but only thread 0 will make it grow
     rs, r = scenario_setup.create_mapped_plant( nc, logbase, mode,initsim,
@@ -267,8 +257,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                      "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
                      "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel",'err'])
     write_file_array("OuterSuccess_error", errs, directory_ =results_dir, fileType = '.csv')
-    write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
-    write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
+    
+    if not doMinimumPrint:
+        write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
+        write_file_array("fpit_error", errs, directory_ =results_dir, fileType = '.csv') 
     seg_fluxes_ = np.array([])
     dt_inner = float(dt)#/float(2.)
     start = True
@@ -288,7 +280,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         comm.barrier()
         if (rank == 0) and (not static_plant) :
 
-            rs.simulate(dt)#(rank == 0))  # because of dumux.pick(), blocks if I do not let all threads do the simulate.
+            rs.simulate(dt, verbose = False)#(rank == 0))  # because of dumux.pick(), blocks if I do not let all threads do the simulate.
             seg2cell_new = rs.seg2cell
 
             write_file_array('seg2cell_keys',seg2cell_new,directory_ =results_dir, 
@@ -521,8 +513,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             if mpiVerbose:# or (max_rank == 1):
                 print(rank,"theta")
             comm.barrier()#
-            write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir) 
-            write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir) 
+            write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
+            write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir, fileType = '.csv') 
+            write_file_array("watVol", np.array(s.getWaterVolumes()), directory_ =results_dir, fileType = '.csv') 
             for i in range(rs.numFluidComp):
                 comm.barrier()
                 if mpiVerbose:# or (max_rank == 1):
@@ -636,20 +629,20 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 
                 pHead = np.array(cyl.getSolutionHead()).flatten()
                 write_file_array("Cyl_watercontent_"+str(gId),cyl.getWaterContent(), 
-                                 directory_ =results_dir, allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 write_file_array("Cyl_pressureHead_"+str(gId),pHead, 
-                                 directory_ =results_dir, allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 write_file_array("Cyl_coord_"+str(gId),
                                  cyl.getDofCoordinates().flatten(), 
-                                 directory_ =results_dir, allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 write_file_array("Cyl_cellVol_"+str(gId),
                                  cyl.getCellVolumes().flatten(), 
-                                 directory_ =results_dir, allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 for ccc in range(rs.numComp):
                     sol0 = np.array(cyl.getContent(ccc +1, ccc < 2 )).flatten()
                     write_file_array("Cyl_content"+str(ccc+1)+"_"+str(gId)+"", 
                                  sol0, 
-                                 directory_ =results_dir, allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 if max(pHead) > 0:
                     print('issue phead',gId,rank, pHead, sol0 )
                     raise Exception
@@ -842,7 +835,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     rs.checkMassOMoleBalance2()
     #vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
 
-    if False:
+    if True:
 
         for konz in np.array([True]):#, False]):
             extraArray_ = rs.soilModel.getWaterContent()
@@ -891,6 +884,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 0 customDry noAds 9.02 0.02
     # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
+    # python3 XcGrowth.py 12 dumux_10c 25 98 baseline
     if rank == 0:
         print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5

@@ -135,7 +135,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         # here add function to change water content if we leave or enter spell period.
         # loss of water gradient won t matter because before and after we ll have not RWU
         # TODO: move to a separate function 
-        if (r.spellData['scenario'] != 'none') and (r.spellData['scenario'] != 'baseline'):
+        if False:#(r.spellData['scenario'] != 'none') and (r.spellData['scenario'] != 'baseline'):
             if  ((rs_age_i_dt > r.spellData['spellStart']) and (not r.enteredSpell)) or ((rs_age_i_dt > r.spellData['spellEnd']) and (not r.leftSpell)):
                 doChange = True
                 if ((rs_age_i_dt > r.spellData['spellEnd']) and (not r.leftSpell)):
@@ -150,53 +150,111 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 meanZ = np.average(cellsZ)
                 pheadinit_cm_all = pheadinit_cm - (cellsZ - meanZ)
                 pheadinit_Pa = s.to_pa(pheadinit_cm_all)
-                print('checkMassOMoleBalance2_153')
+                
                 r.checkMassOMoleBalance2(None,None, dt=dt,
                                     seg_fluxes =None, diff1d3dCW_abs_lim =np.Inf, takeFlux = False) 
-                print('error before change',r.sumDiff1d3dCW_rel ,'pheadinit_cm',pheadinit_cm, r.weatherX['theta'],
-                      vg.pressure_head(0.4, s.vg_soil) ,
-                      rs_age_i_dt,
-                      r.spellData['condition'],r.spellData['spellStart'],r.spellData['spellEnd'],
-                     (r.spellData['condition'] == "wet") , (rs_age_i_dt <= r.spellData['spellStart']), (rs_age_i_dt > r.spellData['spellEnd']))
+                if rank ==0:
+                    print('error before change',r.sumDiff1d3dCW_rel ,r.sumDiff1d3dCW_abs,'pheadinit_cm',pheadinit_cm)
                 if doChange:# but then i also need to adaptthe water mol fraction of the solutes to keep the same content
-                    nc_content = np.array([comm.bcast(s.getContent(nc+1, nc < 2))  for nc in range(r.numFluidComp)])# mol
-                    if not doMinimumPrint:
+                    nc_content = np.array([comm.bcast(s.getContent(nc+1, nc < 2), root=0)  for nc in range(r.numFluidComp)])# mol
+                    if False:#not doMinimumPrint:
                         write_file_array('sgetWaterContent4change',comm.bcast(s.getSolution(0),root = 0), directory_ =results_dir, fileType = '.csv')
+                        write_file_array('sgetSolContent4change',nc_content, directory_ =results_dir, fileType = '.csv')
                     s.base.setSolution(pheadinit_Pa,0 )#need equilibrium, still works with mpi?
                     # [cm3 wat/cm3 scv] * [cm3 scv] * [m3/cm3] * [mol/m3 wat] = mol wat
                     newWatMol = (comm.bcast(s.getWaterContent(),root = 0) * cell_volumes) * (1/1e6) * s.molarDensityWat_m3 
                     nc_molFr =np.array( [nc_c/newWatMol for nc_c in nc_content])
                     for nc in range(r.numFluidComp):
                         s.base.setSolution(nc_molFr[nc],nc+1 )
-                        if not doMinimumPrint:
+                        if True:# not doMinimumPrint:
                             write_file_array('nc_molFr'+str(nc+1),nc_molFr[nc], directory_ =results_dir, fileType = '.csv')
-                    if not doMinimumPrint:
+                    nc_content = np.array([comm.bcast(s.getContent(nc+1, nc < 2), root=0)  for nc in range(r.numFluidComp)])# mol
+                    if False:#not doMinimumPrint:
                         write_file_array('pheadinit_Pa',pheadinit_Pa, directory_ =results_dir, fileType = '.csv')
                         write_file_array('newWatMol',newWatMol, directory_ =results_dir, fileType = '.csv')
                         write_file_array('sgetWaterContent4change',comm.bcast(s.getSolution(0),root = 0), directory_ =results_dir, fileType = '.csv')
+                        write_file_array('sgetSolContent4change',nc_content, directory_ =results_dir, fileType = '.csv')
                     for locIdCyl, cyl in enumerate(r.cyls):
                         if not isinstance(cyl, AirSegment):
-                            globalIdCyl = r.eidx[ locIdCyl]
-                            cellId = r.seg2cell[globalIdCyl]
-                            length_cyl =  r.seg_length[globalIdCyl]
-                            cyl_cell_volumes = cyl.getCellSurfacesCyl() * length_cyl #cm3 scv
+                            pheadOld = cyl.getSolutionHead()
+                            cellId = r.seg2cell[cyl.gId]
+                            cyl_cell_volumes = cyl.getCellVolumesCyl()  #cm3 scv                            
+                            pheadinit_PaCyl = np.full(len(cyl_cell_volumes),pheadinit_Pa[cellId])
+                            oldTheta = cyl.getWaterContent()
                             
-                            pheadinit_PaCyl = np.full(r.NC-1,pheadinit_Pa[cellId])
-                            
-                            nc_content = np.array([cyl.getContentCyl(nc+1, nc < 2,length_cyl)  for nc in range(r.numFluidComp)])# mol
+                            nc_content = np.array([cyl.getContentCyl(nc+1, nc < 2)  for nc in range(r.numFluidComp)])# mol
                             cyl.base.setSolution(pheadinit_PaCyl,0 )
+                            
+                            newTheta = cyl.getWaterContent()
                             newWatMol = (cyl.getWaterContent() * cyl_cell_volumes) * (1/1e6) * s.molarDensityWat_m3 
                             nc_molFr =np.array( [nc_c/newWatMol for nc_c in nc_content])
                             for nc in range(r.numFluidComp):
                                 cyl.base.setSolution(nc_molFr[nc],nc+1 )
+                            nc_content_new = np.array([cyl.getContentCyl(nc+1, nc < 2)  for nc in range(r.numFluidComp)])# mol
+                            
+                            try:
+                                #assert (nc_content.reshape(-1) == nc_content_new.reshape(-1)).all()
+                                assert (abs(
+                                    nc_content.reshape(-1) - nc_content_new.reshape(-1)
+                                ) <= np.minimum(abs(nc_content.reshape(-1)),
+                                                abs( nc_content_new.reshape(-1)))*1e-6  
+                                       ).all()
+                            except:
+                                print('the solute content changed',rank, cyl.gId,'nc_content',nc_content,nc_content_new,'vols',
+                                      cyl_cell_volumes,'newWatMol',newWatMol,'nc_molFr',nc_molFr)
+                                print('evaluation error',
+                                     abs(
+                                    nc_content.reshape(-1) - nc_content_new.reshape(-1)
+                                     ), 
+                                      np.minimum(abs(nc_content.reshape(-1)),
+                                                abs( nc_content_new.reshape(-1)))*1e-6,
+                                     (abs(
+                                    nc_content.reshape(-1) - nc_content_new.reshape(-1)
+                                     ) <= np.minimum(abs(nc_content.reshape(-1)),
+                                                abs( nc_content_new.reshape(-1)))*1e-6  
+                                       ).all()
+                                     )
+                                write_file_array('errorChange_otherInfos'+str(cyl.gId),
+                                                 np.array([cyl.seg_length,
+                                                           pheadinit_Pa[cellId], pheadinit_cm_all[cellId]]), 
+                                                 fileType = '.csv', 
+                                                 directory_ =results_dir,  allranks = True)
+                                write_file_array('errorChange_phead'+str(cyl.gId),
+                                                 pheadOld, 
+                                                 directory_ =results_dir,  allranks = True)
+                                write_file_array('errorChange_phead'+str(cyl.gId),
+                                                 cyl.getSolutionHead(), 
+                                                 directory_ =results_dir,  allranks = True)
+                                write_file_array('errorChange_dofCoord'+str(cyl.gId),cyl.getDofCoordinates(), 
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_points'+str(cyl.gId),cyl.getPoints(), 
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_oldtheta'+str(cyl.gId),oldTheta, 
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_newtheta'+str(cyl.gId),newTheta, 
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_oldC'+str(cyl.gId),nc_content, 
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_newC'+str(cyl.gId), nc_content_new,
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_vols'+str(cyl.gId), cyl_cell_volumes,
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True )
+                                write_file_array('errorChange_newWatMol'+str(cyl.gId), newWatMol,
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                write_file_array('errorChange_nc_molFr'+str(cyl.gId), nc_molFr,
+                                                 directory_ =results_dir, fileType = '.csv', allranks = True)
+                                
+                                raise Exception
                 #print('checkMassOMoleBalance2_189')
+                rsumDiff1d3dCW_abs = r.sumDiff1d3dCW_abs
                 r.checkMassOMoleBalance2(None,None, dt=dt,
                                     seg_fluxes =None, 
                                           diff1d3dCW_abs_lim = np.Inf, 
                                          takeFlux = False,
                                         verbose_ =False) 
-                print('error after change',r.sumDiff1d3dCW_rel )
-                
+                if rank ==0:
+                    print('error after change',r.sumDiff1d3dCW_rel, r.sumDiff1d3dCW_abs )
+                assert (r.sumDiff1d3dCW_abs <= rsumDiff1d3dCW_abs*10).all()
                 
         rs.Patm = r.weatherX["Pair"]
         
@@ -236,11 +294,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         rsx_old = rsx_set.copy()
 
         if( ((np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.))):# supposedly == to the last r.diff1d3dCurrant_rel, except when we use reset (faile)
-            issueComp = np.where(np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.)
-            if r.sumDiff1d3dCW_abs[issueComp] > 1e-13:
+            issueComp = np.where(np.floor((r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.)
+            if (r.sumDiff1d3dCW_abs[issueComp] > 1e-13).any():
                 print('r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relOld',r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relOld, r.diff1d3dCurrant_rel,
                      np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)),max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld),
-                                     r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)
+                                     r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld, ' r.sumDiff1d3dCW_abs', r.sumDiff1d3dCW_abs, 
+                      issueComp,  r.sumDiff1d3dCW_abs[issueComp] )
                 write_file_array("error_sumDiff1d3dCW_relOld",
                                  r.sumDiff1d3dCW_relOld, 
                                  directory_ =results_dir, 
@@ -504,7 +563,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     print(rank, 'get proposed_fluxes')
                 if max(abs(outer_R_bc_wat )) > 0:
                     assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
-                    proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt, waterContent) #cm3/day
+                    #preassureHeads = np.full(waterContent.shape,np.nan)
+                    #preassureHeads[rhizoSegsId] =np.array([ vg.preassure_head(wc, s.vg_soil) for wc in waterContent[rhizoSegsId]])
+                    proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt, waterContent,#preassureHeads,
+                                                           isWater = True) #cm3/day
                 else:
                     proposed_outer_fluxes = np.full(len(organTypes), 0.)   
                 if r.mpiVerbose:# or (max_rank == 1):
@@ -1556,7 +1618,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
             comm.barrier()
         if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
-            print('Failed, no need to go on, leave inner loop now and reset lower time step')
+            if rank == 0:
+                print('Failed, no need to go on, leave inner loop now and reset lower time step')
             break
         # end time step inner loop
     dt_inner =float(Ni+1)*float( dt) # get the real simetime if sim_time / dt != int

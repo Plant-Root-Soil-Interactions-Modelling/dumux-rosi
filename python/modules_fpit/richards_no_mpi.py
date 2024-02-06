@@ -23,6 +23,26 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.base.initialize(args_, verbose, doMPI)
         #print('solverbase_no_mpi:init_end')
         
+        
+    def initializeProblem(self, rank_ = 0):
+        """ After the grid is created, the problem can be initialized """
+        #print(rank, 'initialize problem')
+        self.base.initializeProblem()
+        #print(rank, 'initialized problem')
+        if (self.mpiVerbose and (size > 1)):
+            print(rank, 'initialized problem')
+        
+        self.dofIndices_   = self.base.getDofIndices()
+        self.pointIndices_ = self.base.getPointIndices()
+        self.cellIndices_  = self.base.getCellIndices()
+        
+        self.dofIndices   = self.dofIndices_
+        self.pointIndices = self.pointIndices_
+        self.cellIndices  = self.cellIndices_
+        
+        self.CellVolumes_ = np.array( self.base.getCellVolumes()).reshape(-1) * 1.e6  # m2 -> cm2
+        self.CellVolumes = self._map(self.CellVolumes_ , 0)  # m2 -> cm2
+        
     def solve(self, dt:float, maxDt = -1., saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
@@ -37,6 +57,9 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getSolutionHead(eqIdx)), 0)
 
+    def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
+        return X_rhizo
+    
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
@@ -52,6 +75,9 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
         return self._map((self.base.getWaterContent()), 2)
+    
+    def getWaterContent_(self):
+        return self.getWaterContent()
     
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
@@ -72,26 +98,17 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
         return self._map((self.base.getCells()), 2, np.int64)
 
-    def getCellVolumes(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumes()), 2) * 1.e6  # m3 -> cm3
+    #def getCellVolumes(self):
+    #    """ Gathers element volumes (Nc, 1) [cm3] """
+    #    return self._map((self.base.getCellVolumes()), 2) * 1.e6  # m3 -> cm3
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
-
-    def getDofIndices(self):
-        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
-        self.checkInitialized()
-        return  (self.base.getDofIndices())
+        return self.CellVolumes
 
     def getCellSurfacesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
         return self._map((self.base.getCellSurfacesCyl()), 2) * 1.e4  # m3 -> cm3
-
-    def getCellVolumesCyl(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
 
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
@@ -195,11 +212,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         @param idType 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
         if idType == 0:  # auto (dof)
-            indices = (self.base.getDofIndices())
+            indices = self.getDofIndices_()
         elif idType == 1:  # points
-            indices = (self.base.getPointIndices())
+            indices = self.getPointIndices_()
         elif idType == 2:  # cells
-            indices = (self.base.getCellIndices())
+            indices = self.getCellIndices_()
         else:
             raise Exception('PySolverBase._map: idType must be 0, 1, or 2.')
         if len(indices) >0:  # only for rank 0 not empty
@@ -209,6 +226,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                 print(len(indices) , len(x), indices)
                 raise Exception
             ndof = max(indices) + 1
+            
             try:
                 if isinstance(x[0], (list,type(np.array([])))) :
                     m = len(x[0])
@@ -219,8 +237,10 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                         p = p.flatten()
                 else:
                     p = np.zeros(ndof, dtype = dtype)
-                    for i in range(0, len(indices)):  #
-                        p[indices[i]] = np.array(x[i], dtype = dtype)
+                    p[indices] = np.asarray(x, dtype = dtype)
+                    #p = np.zeros(ndof, dtype = dtype)
+                    #for i in range(0, len(indices)):  #
+                    #    p[indices[i]] = np.array(x[i], dtype = dtype)
             except:
                 print('indices',indices, 'x',x)
                 print('x[0]',x[0])
@@ -267,7 +287,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         if source != 0.:# [cm3/day] or [mol/day]
             if selectCell == None:
                 if eqIdx == 0:
-                    seg_values = self.getWaterVolumes()#getWaterVolumesCyl(length)
+                    seg_values_ = self.getSolutionHead()#self.getWaterVolumes()#getWaterVolumesCyl(length)
+                    seg_values = seg_values_ - min(seg_values_) +1e-14
                 else:
                     isDissolved = (eqIdx <= numFluidComp)
                     seg_values = self.getContentCyl(eqIdx, isDissolved)

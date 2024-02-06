@@ -23,13 +23,33 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.base.initialize(args_, verbose, doMPI)
         #print('solverbase_no_mpi:init_end')
         
-    def solve(self, dt:float, maxDt = -1.):
+        
+    def initializeProblem(self, rank_ = 0):
+        """ After the grid is created, the problem can be initialized """
+        #print(rank, 'initialize problem')
+        self.base.initializeProblem()
+        #print(rank, 'initialized problem')
+        if (self.mpiVerbose and (size > 1)):
+            print(rank, 'initialized problem')
+        
+        self.dofIndices_   = self.base.getDofIndices()
+        self.pointIndices_ = self.base.getPointIndices()
+        self.cellIndices_  = self.base.getCellIndices()
+        
+        self.dofIndices   = self.dofIndices_
+        self.pointIndices = self.pointIndices_
+        self.cellIndices  = self.cellIndices_
+        
+        self.CellVolumes_ = np.array( self.base.getCellVolumes()).reshape(-1) * 1.e6  # m2 -> cm2
+        self.CellVolumes = self._map(self.CellVolumes_ , 0)  # m2 -> cm2
+        
+    def solve(self, dt:float, maxDt = -1., saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
         #print("solveNoMPI")
-        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600., saveBC = True)  # days -> s
+        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600., saveBC = True, saveInnerFluxes = saveInnerFluxes_)  # days -> s
 
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
@@ -37,15 +57,27 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getSolutionHead(eqIdx)), 0)
 
+    def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
+        return X_rhizo
+    
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
         return self._map((self.base.getKrw()), 0)
 
+    def getCSS1_out(self):#mol C / cm3 scv
+        return self._map(self.getCSS1_out_(),0)
+
+    def getContentCyl(self,idComp, isDissolved,gId = None ):
+        return self.getContent(idComp, isDissolved)
+
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
         return self._map((self.base.getWaterContent()), 2)
+    
+    def getWaterContent_(self):
+        return self.getWaterContent()
     
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
@@ -66,26 +98,17 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
         return self._map((self.base.getCells()), 2, np.int64)
 
-    def getCellVolumes(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumes()), 2) * 1.e6  # m3 -> cm3
+    #def getCellVolumes(self):
+    #    """ Gathers element volumes (Nc, 1) [cm3] """
+    #    return self._map((self.base.getCellVolumes()), 2) * 1.e6  # m3 -> cm3
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
-
-    def getDofIndices(self):
-        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
-        self.checkInitialized()
-        return  (self.base.getDofIndices())
+        return self.CellVolumes
 
     def getCellSurfacesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
         return self._map((self.base.getCellSurfacesCyl()), 2) * 1.e4  # m3 -> cm3
-
-    def getCellVolumesCyl(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
 
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
@@ -98,8 +121,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkInitialized()
         return self._map((self.base.getSolution(eqIdx)), 0)
     
-    def getSavedBC(self,  rIn, rOut, length):
+    
+    def getSavedBC(self,  rIn, rOut ):
+    
         assert self.dimWorld != 3
+        length = self.segLength
         verbose = False
         BC_in_vals = np.array(self.base.BC_in_vals) #[ mol / (m^2 \cdot s)]
         BC_out_vals = np.array(self.base.BC_out_vals) #[ mol / (m^2 \cdot s)]
@@ -186,11 +212,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         @param idType 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
         if idType == 0:  # auto (dof)
-            indices = (self.base.getDofIndices())
+            indices = self.getDofIndices_()
         elif idType == 1:  # points
-            indices = (self.base.getPointIndices())
+            indices = self.getPointIndices_()
         elif idType == 2:  # cells
-            indices = (self.base.getCellIndices())
+            indices = self.getCellIndices_()
         else:
             raise Exception('PySolverBase._map: idType must be 0, 1, or 2.')
         if len(indices) >0:  # only for rank 0 not empty
@@ -200,6 +226,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                 print(len(indices) , len(x), indices)
                 raise Exception
             ndof = max(indices) + 1
+            
             try:
                 if isinstance(x[0], (list,type(np.array([])))) :
                     m = len(x[0])
@@ -210,8 +237,10 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                         p = p.flatten()
                 else:
                     p = np.zeros(ndof, dtype = dtype)
-                    for i in range(0, len(indices)):  #
-                        p[indices[i]] = np.array(x[i], dtype = dtype)
+                    p[indices] = np.asarray(x, dtype = dtype)
+                    #p = np.zeros(ndof, dtype = dtype)
+                    #for i in range(0, len(indices)):  #
+                    #    p[indices[i]] = np.array(x[i], dtype = dtype)
             except:
                 print('indices',indices, 'x',x)
                 print('x[0]',x[0])
@@ -222,17 +251,20 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
         
         
-    def distributeSources(self, source, eqIdx, length: float, numFluidComp: int):
+    def distributeSources(self, source, eqIdx, numFluidComp: int, selectCell = None):
         """ split the source array according to the values in seg cells """
         splitVals = list()
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
-            splitVals.append(self.distributeSource( src, eqIdx[i], length, numFluidComp))
+            splitVals.append(self.distributeSource( src, eqIdx[i], numFluidComp, selectCell))
         return np.array(splitVals, dtype = object)
             
-    def distributeSource(self, source: float, eqIdx: int, length: float, numFluidComp: int):
+    def distributeSource(self, source: float, eqIdx: int, numFluidComp: int, selectCell = None):
         assert self.dimWorld != 3
+        #length = self.segLength
         verbose = False
-        splitVals = self.distributeVals(source, eqIdx, length, numFluidComp)
+        splitVals = self.distributeVals(source, eqIdx, numFluidComp, selectCell)
+        
+        
         if source != 0.:# [cm3/day] or [mol/day]
             test_values = list(splitVals.copy())
             test_keys = np.array([i for i in range(len(test_values))])
@@ -242,47 +274,52 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                     res[key] = value
                     test_values.remove(value)
                     break                        
-            self.setSource(res.copy(), eq_idx = eqIdx, cyl_length = length)  # [mol/day], in modules/richards.py
+            self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
         else:
             res = dict()
             res[0] = 0.
-            self.setSource(res.copy(), eq_idx = eqIdx, cyl_length = length)  # [mol/day], in modules/richards.py
+            self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
         return splitVals
     
-    def distributeVals(self, source: float, eqIdx: int, length: float, numFluidComp: int):
+    def distributeVals(self, source: float, eqIdx: int, numFluidComp: int, selectCell = None):
         splitVals = np.array([0.])
         verbose = False
         if source != 0.:# [cm3/day] or [mol/day]
-            if eqIdx == 0:
-                seg_values = self.getWaterVolumesCyl(length)
+            if selectCell == None:
+                if eqIdx == 0:
+                    seg_values_ = self.getSolutionHead()#self.getWaterVolumes()#getWaterVolumesCyl(length)
+                    seg_values = seg_values_ - min(seg_values_) +1e-14
+                else:
+                    isDissolved = (eqIdx <= numFluidComp)
+                    seg_values = self.getContentCyl(eqIdx, isDissolved)
+                # during the solve() loop, we might still get seg_values <0 <== NO! when we distribute, need vals > 0
+                # assert min(seg_values) >= 0.
+                #print('distributeVals',eqIdx,'real seg_values',seg_values)
+                seg_values = np.maximum(seg_values,0.)
+
+                if (sum(seg_values) == 0.):# should normally only happen with source >= 0
+                    weightVals =np.full(len(seg_values), 1 /len(seg_values))
+                elif source < 0:# goes away from the 1d models
+                    weightVals = seg_values /sum(seg_values)
+                    if verbose:
+                        print("sum(seg_values[segIds])", seg_values, weightVals)
+                else:# goes toward  the 1d models
+                    if min(abs(seg_values)) == 0.:# at least 1 seg_values = 0 but not all
+                        seg_values = np.maximum(seg_values,1.e-14)
+                        assert min(abs(seg_values)) != 0.
+                    weightVals = (1 / seg_values) / sum(1/seg_values)
             else:
-                isDissolved = (eqIdx <= numFluidComp)
-                seg_values = self.getContentCyl(eqIdx, isDissolved, length)
-            # during the solve() loop, we might still get seg_values <0
-            # assert min(seg_values) >= 0.
-            #print('distributeVals',eqIdx,'real seg_values',seg_values)
-            seg_values = np.maximum(seg_values,0.)
-
-            if (sum(seg_values) == 0.):# should normally only happen with source >= 0
-                weightVals =np.full(len(seg_values), 1 /len(seg_values))
-            elif source < 0:# goes away from the 1d models
-                weightVals = seg_values /sum(seg_values)
-                if verbose:
-                    print("sum(seg_values[segIds])", seg_values, weightVals)
-            else:# goes toward  the 1d models
-                if min(abs(seg_values)) == 0.:# at least 1 seg_values = 0 but not all
-                    seg_values = np.maximum(seg_values,1.e-14)
-                    assert min(abs(seg_values)) != 0.
-                weightVals = (1 / seg_values) / sum(1/seg_values)
-
+                assert isinstance(selectCell, int) and (selectCell >= 0) and (selectCell < self.numberOfCellsTot)
+                weightVals = np.zeros(self.numberOfCellsTot)
+                weightVals[selectCell] = 1.
             splitVals = weightVals * source
             try:
                 assert (sum(weightVals) - 1.) < 1e-13
-                assert len(splitVals) == len(seg_values)
+                assert len(splitVals) == self.numberOfCellsTot
             except:
                 print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals),(sum(weightVals) - 1.) ,(sum(weightVals) - 1.) < 1e-13)
-                print('splitVals',splitVals, seg_values, len(splitVals) == len(seg_values))
+                print('splitVals',splitVals, self.numberOfCellsTot, len(splitVals) == self.numberOfCellsTot)
                 raise Exception
             if verbose:
-                print(rank,'distributeVals',eqIdx,'seg_values',seg_values,'splitVals',splitVals)   
+                print(rank,'distributeVals',eqIdx,'splitVals',splitVals)   
         return splitVals

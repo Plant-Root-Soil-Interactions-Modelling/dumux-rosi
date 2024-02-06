@@ -30,13 +30,14 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 # outer BC of bulk soil: value at point of  measurment (Xm aboveground)
 
 class AirSegment():#solve later the atmospheric flow also via dumux?
-    def __init__(self, a_in:float = 1., a_out:float = 1.1):
+    def __init__(self, a_in:float = 1., a_out:float = 1.1, length = 1.):
         
         self.a_in = a_in #cm
         
         self.a_out = a_out
         self.points = np.array([a_in,self.a_out ]) #need at least 2 nodes == 1 cell
         self.grid = FVGrid1Dcyl(self.points)
+        self.length = length
         
         #to use?
         self.n = self.grid.n_cells
@@ -124,6 +125,9 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def getCellSurfacesCyl_(self):
         """nompi version of  """
         return np.array([np.pi * (self.a_out*self.a_out - self.a_in*self.a_in)])  # cm2
+    
+    def getCellVolumes(self):
+        return self.getCellSurfacesCyl() * self.length
         
 
 

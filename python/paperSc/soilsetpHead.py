@@ -104,6 +104,10 @@ s, soil = scenario.create_soil_model(soil_type, year, soil_,#comp,
                                          css1Function = css1Function_,
                                         paramIndx=paramIndx_,
                                         noAds = noAds)
+
+
+
+
 ##
 #reset wat and sol content according to the last values in paramIndxnoAds14760dx_2dumux_10c_9.5to10.5_20mn_0s_1_100
 # also get source
@@ -121,7 +125,7 @@ print('meanZ',meanZ)
 print('pheadinit_cm_all',s.to_head(pheadinit_Pa))
 
 s.base.setSolution(pheadinit_Pa,0 )
-for eqIdx in range(1,9):
+for eqIdx in range(1,2):
     solInit = pd.read_csv(data_dir +'Soil_solute_conc'+str(eqIdx)+'.txt').iloc[-1].to_numpy()
     s.base.setSolution(solInit,eqIdx )
     

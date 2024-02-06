@@ -64,7 +64,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
     try:
         if (rank == 0) or allranks:
             name2 = directory_+ name+ fileType
-            print('write_file_array',name2)
+            # print('write_file_array',name2)
             with open(name2, 'a') as log:
                 log.write(space.join([num for num in map(str, data)])  +'\n')
     except:
@@ -667,12 +667,12 @@ def phloemParam(r,weatherInit ):
     r.alpha = 0.4#0.2#/2
     r.theta = 0.6#0.9#/2
     r.k_meso = 1e-3#1e-4
-    r.setKrm2([[2e-5]])
-    r.setKrm1([[10e-2]])#([[2.5e-2]])
-    r.setRhoSucrose([[0.51],[0.65],[0.56]])#0.51
+    r.setKrm2([[2e-5]], False)
+    r.setKrm1([[10e-2]], False)#([[2.5e-2]])
+    r.setRhoSucrose([[0.51],[0.65],[0.56]], False)#0.51
     #([[14.4,9.0,0,14.4],[5.,5.],[15.]])
     rootFact = 2
-    r.setRmax_st([[2.4*rootFact,1.5*rootFact,0.6*rootFact,2.4*rootFact],[2.,2.],[8.]])#6.0#*6 for roots, *1 for stem, *24/14*1.5 for leaves
+    r.setRmax_st([[2.4*rootFact,1.5*rootFact,0.6*rootFact,2.4*rootFact],[2.,2.],[8.]], False)#6.0#*6 for roots, *1 for stem, *24/14*1.5 for leaves
     #r.setRmax_st([[12,9.0,6.0,12],[5.,5.],[15.]])
     r.KMrm = 0.1#VERY IMPORTANT TO KEEP IT HIGH
     #r.exud_k = np.array([2.4e-4])#*10#*(1e-1)
@@ -769,10 +769,10 @@ def setKrKx_phloem(r): #inC
     kr_r1 = 5e-2
     kr_r2 = 5e-2
     kr_r3 = 5e-2
-    l_kr =  0.8 #cm
+    l_kr = 1000# 0.8 #cm
     
-    r.setKr_st([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] , kr_length_= l_kr)
-    r.setKx_st([[kz_r0,kz_r12,kz_r12,kz_r0],[kz_s,kz_s ],[kz_l]])
+    r.setKr_st([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] , kr_length_= l_kr, verbose = False)
+    r.setKx_st([[kz_r0,kz_r12,kz_r12,kz_r0],[kz_s,kz_s ],[kz_l]], False)
     
     a_ST = [[0.00039,0.00035,0.00035,0.00039 ],[0.00019,0.00019],[0.00025]]
     Across_s_l   = numL*VascBundle_leaf *(a_ST[2][0]**2)*np.pi# (0.00025 **2)# * 2; rad_x_l_2   = (0.0005 **4) * 2   
@@ -790,7 +790,7 @@ def setKrKx_phloem(r): #inC
     #r.a_ST = a_ST #to check for water equilibrium assumption
     #tot surface/np.pi of sieve tube  (np.pi added after)
     #r.a_ST_eqs = [[rad_s_r0,rad_s_r12,rad_s_r12,rad_s_r0],[rad_s_s,rad_s_s],[rad_s_l]]
-    r.setAcross_st([[Across_s_r0,Across_s_r12,Across_s_r12,Across_s_r0],[Across_s_s,Across_s_s],[Across_s_l]])
+    r.setAcross_st([[Across_s_r0,Across_s_r12,Across_s_r12,Across_s_r0],[Across_s_s,Across_s_s],[Across_s_l]], False)
     return r
     
 def create_mapped_plant( nc, logbase, mode,initSim,
@@ -827,8 +827,8 @@ def create_mapped_plant( nc, logbase, mode,initSim,
         #    set_all_sd(rs, 0.)
             
         rs.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
-        rs.initialize()#stochastic = False)
-        rs.simulate(initSim, False)
+        rs.initialize(verbose = False)#stochastic = False)
+        rs.simulate(initSim,verbose= False)
         if plantType == "plant":
             r = PhloemFluxPython(rs,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
@@ -848,7 +848,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
         r = init_conductivities(r)
         r = phloemParam(r, weatherInit)
         rs.set_phloem_flux(r)
-        r.test()
+        #r.test()
         return rs, r
     else:
         r = init_conductivities_const(r)

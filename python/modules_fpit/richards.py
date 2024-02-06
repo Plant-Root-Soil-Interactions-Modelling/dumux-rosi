@@ -784,12 +784,12 @@ class RichardsWrapper(SolverWrapper):
     def getContent(self,idComp, isDissolved):
         #assert self.dimWorld != 1
         assert idComp > 0 # do not use for water content
-        vols = (1/  1e6)*self.getCellVolumes()#.flatten() #m3 scv            
+        vols = (1/  1e6)*self.getCellVolumes_()#.flatten() #m3 scv            
         
         if idComp <= self.numComp:
-            C_ = self.getSolution(idComp)#.flatten() # mol/mol or g/g 
+            C_ = self.getSolution_(idComp)#.flatten() # mol/mol or g/g 
         elif (idComp == (self.numComp +1)):
-            C_ = self.getCSS1_out()*1e6 # mol/m3
+            C_ = self.getCSS1_out_()*1e6 # mol/m3
         else:
             print('wrong idComp', idComp)
             raise Exception
@@ -803,12 +803,12 @@ class RichardsWrapper(SolverWrapper):
         if not isDissolved:
             if ((self.useMoles) and (idComp != (self.numComp +1))):
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
-            return np.multiply(vols , C_  ) 
-        watCont = self.getWaterContent()#.flatten() # m3 wat/m3 scv
+            return self._map(self.allgatherv(np.multiply(vols , C_  ) ),0)
+        watCont = self.getWaterContent_()#.flatten() # m3 wat/m3 scv
         if self.useMoles:
             C_ *= self.molarDensityWat_m3 # mol/m3 wat
             
-        return np.multiply(np.multiply(vols , watCont) , C_ )
+        return self._map(self.allgatherv(np.multiply(np.multiply(vols , watCont) , C_ )),0)
           
 
     def setSolution_(self, sol, eqIdx = 1):
