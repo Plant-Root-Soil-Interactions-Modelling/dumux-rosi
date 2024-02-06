@@ -30,7 +30,7 @@ namespace Dumux {
  */
 template <class Assembler, class LinearSolver,
           class Reassembler = PartialReassembler<Assembler>,
-          class Comm = Dune::CollectiveCommunication<Dune::MPIHelper::MPICommunicator> >
+          class Comm = Dune::Communication<Dune::MPIHelper::MPICommunicator> >
 class RichardsNewtonSolver : public NewtonSolver<Assembler, LinearSolver, Reassembler, Comm>
 {
     using Scalar = typename Assembler::Scalar;
