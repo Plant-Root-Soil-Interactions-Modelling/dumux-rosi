@@ -119,16 +119,16 @@ int main(int argc, char** argv) try
      */
 
     // create the finite volume grid geometry
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     /**
      * The type is dependent on the discretization (e.g. box, tpfa, ...),
      *
      * For Box method:
-     * Properties::FVGridGeometry is defined in problem.hh -> discretization/box.hh
+     * Properties::GridGeometry is defined in problem.hh -> discretization/box.hh
      * The type is BoxFVGridGeometry (in discretization/box/fvgridgeometry.hh)
      * specialization of BaseFVGridGeometry (discretization/basefvgridgeometry.hh)
      */
-    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
+    auto fvGridGeometry = std::make_shared<GridGeometry>(leafGridView);
     /**
      * holds the vertexMapper() and elementMapper().
      *
@@ -136,7 +136,7 @@ int main(int argc, char** argv) try
      * it seems i am only allowed to use fvGridGeometry->gridView() in the following
      * rendering leafGridView defined above, pointless
      */
-    fvGridGeometry->update(); // update all Mappers(do this again after grid adaption)
+    fvGridGeometry->update(leafGridView); // update all Mappers(do this again after grid adaption)
 
     // the problem (initial and boundary conditions)
     auto problem = std::make_shared<RichardsProblem<TypeTag>>(fvGridGeometry);
@@ -166,7 +166,7 @@ int main(int argc, char** argv) try
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     /**
      * The type is defined GridVariables in discretization/fvproperties.hh, as
-     * FVGridVariables<FVGridGeometry, GVV, GFVC>
+     * FVGridVariables<GridGeometry, GVV, GFVC>
      * where GVV = grid volume variables, and GFVC = grid flux variables cache. I have not found where these are set,
      * but I assume for box method types are BoxGridFluxVariablesCache.
      *
@@ -213,14 +213,17 @@ int main(int argc, char** argv) try
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; //  FVAssembler (in fvassembler.hh)
     std::shared_ptr<Assembler> assembler;
     if (tEnd>0) {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop, xOld); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
     }
 
     // the linear solver
-    using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available, files located in located in dumux/linear/*
+    using LinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometry>,
+            Dumux::LinearAlgebraTraitsFromAssembler<Assembler>>;
+
     auto linearSolver = std::make_shared<LinearSolver>(fvGridGeometry->gridView(), fvGridGeometry->dofMapper());
+
 
     // the non-linear solver
     using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;

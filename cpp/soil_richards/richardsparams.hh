@@ -35,8 +35,6 @@ public:
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
-
-
     using PcKrSwCurve = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
     using BasicParams = typename PcKrSwCurve::BasicParams;
     using EffToAbsParams = typename PcKrSwCurve::EffToAbsParams;
@@ -48,7 +46,7 @@ public:
     using PermeabilityType = Scalar; // export permeability type
 
     RichardsParams(std::shared_ptr<const GridGeometry> fvGridGeometry)
-    : FVSpatialParams<GridGeometry, Scalar, RichardsParams<GridGeometry, Scalar>>(fvGridGeometry)
+    : ParentType(fvGridGeometry)
     {
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */

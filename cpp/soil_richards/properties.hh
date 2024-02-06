@@ -12,7 +12,7 @@
 #ifndef DUMUX_RICHARDS_ANALYTICALPROPERTIES_HH
 #define DUMUX_RICHARDS_ANALYTICALPROPERTIES_HH
 
-#include <dune/grid/spgrid.hh>
+//#include <dune/grid/spgrid.hh>
 #if HAVE_DUNE_ALUGRID
 #include <dune/alugrid/grid.hh>
 #endif
@@ -21,6 +21,7 @@
 #endif
 
 #include <dumux/discretization/cctpfa.hh>
+#include <dumux/discretization/box.hh>
 
 #include <dumux/porousmediumflow/richards/model.hh>
 
@@ -30,8 +31,8 @@
 #include <dumux/material/fluidsystems/1pgas.hh>
 #include <dumux/material/fluidsystems/2pimmiscible.hh>
 
-#include "spatialparams.hh"
-#include "problem.hh"
+#include "richardsparams.hh"
+#include "richardsproblem.hh"
 
 //////////
 // Specify the properties for the analytical problem
@@ -40,28 +41,31 @@ namespace Dumux::Properties {
 
 // Create new type tags
 namespace TTag {
-struct RichardsAnalytical { using InheritsFrom = std::tuple<Richards>; };
 struct RichardsTT { using InheritsFrom = std::tuple<Richards>; };
-struct RichardsAnalyticalCC { using InheritsFrom = std::tuple<RichardsAnalytical, CCTpfaModel>; };
 struct RichardsBox { using InheritsFrom = std::tuple<RichardsTT, BoxModel>; };
 struct RichardsCC { using InheritsFrom = std::tuple<RichardsTT, CCTpfaModel>; };
 } // end namespace TTag
 
-// Use 2d YaspGrid
+// Set grid type
+#ifndef GRIDTYPE
 template<class TypeTag>
-struct Grid<TypeTag, TTag::RichardsAnalytical> { using type = Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming> ; };//Dune::YaspGrid<2>
+struct Grid<TypeTag, TTag::RichardsTT> { using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>; }; // using type = Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 3>;
+#else
+template<class TypeTag>
+struct Grid<TypeTag, TTag::RichardsTT> { using type = GRIDTYPE; };  // Use GRIDTYPE from CMakeLists.txt
+#endif
 
 // Set the physical problem to be solved
 template<class TypeTag>
-struct Problem<TypeTag, TTag::RichardsAnalytical> { using type = RichardsAnalyticalProblem<TypeTag>; };
+struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag>; };
 
 // Set the spatial parameters
 template<class TypeTag>
-struct SpatialParams<TypeTag, TTag::RichardsAnalytical>
+struct SpatialParams<TypeTag, TTag::RichardsTT>
 {
     using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RichardsAnalyticalSpatialParams<GridGeometry, Scalar>;
+    using type = RichardsParams<GridGeometry, Scalar>;
 };
 
 // Set the fluid system
@@ -69,7 +73,7 @@ struct SpatialParams<TypeTag, TTag::RichardsAnalytical>
 // the immiscible two-phase fluid system. The default fluid system (H2OAir)
 // would also work (and the reference solution was created with it)
 template<class TypeTag>
-struct FluidSystem<TypeTag, TTag::RichardsAnalytical>
+struct FluidSystem<TypeTag, TTag::RichardsTT>
 {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using L = FluidSystems::OnePLiquid<Scalar, Components::SimpleH2O<Scalar> >;
@@ -80,7 +84,7 @@ struct FluidSystem<TypeTag, TTag::RichardsAnalytical>
 // TODO: remove after release (3.6)
 // Set the primary variables type
 template<class TypeTag>
-struct PrimaryVariables<TypeTag, TTag::RichardsAnalytical>
+struct PrimaryVariables<TypeTag, TTag::RichardsTT>
 { using type = Dune::FieldVector<GetPropType<TypeTag, Properties::Scalar>, GetPropType<TypeTag, Properties::ModelTraits>::numEq()>; };
 
 } // end namespace Dumux::Properties

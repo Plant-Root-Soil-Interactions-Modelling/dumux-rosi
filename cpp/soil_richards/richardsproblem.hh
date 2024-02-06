@@ -53,11 +53,11 @@ public:
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
-	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>; 
+	using PcKrSwCurve = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
 	// VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
-	using BasicParams = typename MaterialLaw::BasicParams;
-    using EffToAbsParams = typename MaterialLaw::EffToAbsParams;
-    using RegularizationParams = typename MaterialLaw::RegularizationParams;
+	using BasicParams = typename PcKrSwCurve::BasicParams;
+    using EffToAbsParams = typename PcKrSwCurve::EffToAbsParams;
+    using RegularizationParams = typename PcKrSwCurve::RegularizationParams;
 
 	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
 
@@ -213,11 +213,11 @@ public:
 	}
 
 
-	MaterialLaw materialLaw(const Element& element) const {
+	PcKrSwCurve materialLaw(const Element& element) const {
 	    const BasicParams& basicParams = this->spatialParams().basicParams(element);
 	    const EffToAbsParams& effToAbsParams = this->spatialParams().effToAbsParams(element);
 	    const RegularizationParams& regularizationParams = this->spatialParams().regularizationParams(element);
-	    return MaterialLaw(basicParams, effToAbsParams, regularizationParams);
+	    return PcKrSwCurve(basicParams, effToAbsParams, regularizationParams);
 	}
 
 	/*!
@@ -242,7 +242,7 @@ public:
 			Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
 
-			MaterialLaw materialLaw_ = materialLaw(element);
+			PcKrSwCurve materialLaw_ = materialLaw(element);
 			Scalar p = materialLaw_.pc(s) + pRef_; // [Pa]
 			Scalar h = -toHead_(p); // cm
 			GlobalPosition ePos = element.geometry().center();
@@ -511,10 +511,10 @@ public:
 				try { // will throw an exception, if boundary type is Dirichlet
 					auto p = scvf.center();
 					if (onUpperBoundary_(p)) { // top
-						bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
+						//bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 						uc++;
 					} else if (onLowerBoundary_(p)) { // bottom
-						bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
+						//bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 						lc++;
 					}
 				} catch (...) {
@@ -524,6 +524,13 @@ public:
 		bc_flux_upper /= uc;
 		bc_flux_lower /= lc;
 	}
+
+//    NumEqVector neumann(const Element& element,
+//            const FVElementGeometry& fvGeometry,
+//            const ElementVolumeVariables& elemVolVars,
+//            const ElementFluxVariablesCache&  fluxCache,
+//            const SubControlVolumeFace& scvf)
+
 
 	/*!
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
