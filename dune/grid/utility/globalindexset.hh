@@ -96,8 +96,8 @@ namespace Dune
     typedef typename GridView::Grid Grid;
 
     typedef typename GridView::Grid::GlobalIdSet GlobalIdSet;
-    //typedef typename GridView::Grid::GlobalIdSet::IdType IdType;
-    typedef Dune::bigunsignedint<80> IdType;//std::size_t 
+    typedef typename GridView::Grid::GlobalIdSet::IdType IdType;
+    //typedef Dune::bigunsignedint<80> IdType;//std::size_t 
     typedef typename GridView::Traits::template Codim<0>::Iterator Iterator;
 
     typedef typename Grid::Communication Communication;
@@ -351,7 +351,7 @@ namespace Dune
 	  <<" nGlobalEntity_ "<<nGlobalEntity_<<std::endl;
         }
 		// for sharing the data
-	std::vector<int>  sortedGlobalIdSet(nGlobalEntity_);//gather data on all threads
+	std::vector<IdType>  sortedGlobalIdSet(nGlobalEntity_);//gather data on all threads
 	std::vector<int>  P(size,0);//specifies the displacement (relative to recvbuf ) at which to place the incoming data from process i
       std::vector<int> offset(size);//to fill out P
       std::fill(offset.begin(), offset.end(), 0);
@@ -375,7 +375,7 @@ namespace Dune
 	  }
 	  std::cout<<" offset[rank] "<<offset[rank]<<std::endl;
         }
-		std::vector<int>  sendbuf(offset[rank]);//array with id of owned entities
+		std::vector<IdType>  sendbuf(offset[rank]);//array with id of owned entities
 
 
 
@@ -473,7 +473,7 @@ namespace Dune
 
       // 2nd stage of global index calculation: communicate global index for non-owned entities
 		//int gatherv (const T* in, int sendlen, T* out, int* recvlen, int* displ) const
-		gridview_.comm(). template allgatherv<int>(sendbuf.data(), nLocalEntity,sortedGlobalIdSet.data(),offset.data(), P.data());
+		gridview_.comm(). template allgatherv<IdType>(sendbuf.data(), nLocalEntity,sortedGlobalIdSet.data(),offset.data(), P.data());
           if (verbose)
           {
 		std::cout<<"gatherv "<<rank<<" nLocalEntity "<<nLocalEntity<<" "<<P[rank]<<std::endl;
@@ -620,23 +620,23 @@ namespace Dune
       return (codim_==codim) ? nGlobalEntity_ : 0;
     }
 	
-    unsigned int getNglobalEntity() const
-    {
-      return nGlobalEntity_;
-    }
+    // unsigned int getNglobalEntity() const
+    // {
+      // return nGlobalEntity_;
+    // }
 	
-	// to get localGlobalMap_[lindex] = sortedGlobalIdSet[idx];
-	IndexMap getLocalGlobalMap() const
-	{
-		return localGlobalMap_;
-	}
+	// // to get localGlobalMap_[lindex] = sortedGlobalIdSet[idx];
+	// IndexMap getLocalGlobalMap() const
+	// {
+		// return localGlobalMap_;
+	// }
 
-	// globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[idx]));
-	//MapId2Index getGlobalIndex() const
-	std::map<Dune::bigunsignedint<80>,int> getGlobalIndex() const 
-	{
-		return globalIndex_;
-	}
+	// // globalIndex_.insert(std::make_pair(id,sortedGlobalIdSet[idx]));
+	// //MapId2Index getGlobalIndex() const
+	// MapId2Index getGlobalIndex() const 
+	// {
+		// return globalIndex_;
+	// }
 	
   protected:
     const GridView gridview_;
@@ -651,8 +651,8 @@ namespace Dune
 
     /** \brief Stores global index of entities with entity's globally unique id as key
      */
-    std::map<Dune::bigunsignedint<80>,int>   globalIndex_;
-	//MapId2Index globalIndex_;
+    //std::map<Dune::bigunsignedint<80>,int>   globalIndex_;
+	MapId2Index globalIndex_;
   };
 
 }  // namespace Dune
