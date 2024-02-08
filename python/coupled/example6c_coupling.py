@@ -8,7 +8,7 @@ from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
 from functional.root_conductivities import *  # hard coded conductivities
 import plantbox as pb
 import visualisation.vtk_plot as vp
-from rosi_richards import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSP  # RichardsSP  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
 import numpy as np
