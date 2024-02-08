@@ -2,6 +2,8 @@
 #define PYTHON_RICHARDS_H_
 
 #include "external/pybind11/include/pybind11/pybind11.h"
+#include "external/pybind11/include/pybind11/stl.h"
+
 namespace py = pybind11;
 
 #include <config.h> // configuration file
@@ -29,6 +31,8 @@ namespace py = pybind11;
 #if HAVE_UG
 #include <dune/grid/uggrid.hh>
 #endif
+
+#define PYBIND11_DETAILED_ERROR_MESSAGES
 
 /**
  * create type tags
@@ -88,8 +92,8 @@ using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
 PYBIND11_MODULE(rosi_richards, m) {
     init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "BaseRichardsSP");
     init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "RichardsSP");
-    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");
-    init_richards<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");
+//    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");
+//    init_richards<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");
 }
 
 #endif

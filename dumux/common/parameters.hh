@@ -112,15 +112,9 @@ public:
     static const LoggingParameterTree& getTree();
 
     //! the actual internal parameter tree storing all user-specfied runtime parameters
-    static Dune::ParameterTree& paramTree()
-    {
-        static Dune::ParameterTree tree;
-        return tree;
-    }
+    static Dune::ParameterTree& paramTree_();
 
 private:
-    //! the actual internal parameter tree storing all user-specfied runtime parameters
-    static Dune::ParameterTree& paramTree_();
 
     //! the parameter tree storing the Dumux global defaults for some parameters
     static Dune::ParameterTree& defaultParamTree_();

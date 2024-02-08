@@ -282,7 +282,7 @@ public:
      * Writes a parameter into the global Dumux parameter map
      */
     virtual void setParameter(std::string key, std::string value) {
-        auto& p = Dumux::Parameters::paramTree();
+        auto& p = Dumux::Parameters::paramTree_();
         p[key] = value;
     }
 
@@ -433,7 +433,7 @@ public:
         auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
         using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver,
 								 PartialReassembler<Assembler>,
-								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >; 
+								Dune::Communication<Dune::FakeMPIHelper::MPICommunicator> >;
         auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver,
 								Dune::FakeMPIHelper::getCommunication());//
         nonLinearSolver->setVerbosity(false);
@@ -670,12 +670,12 @@ public:
             auto e = gridGeometry->element(eIdx);
             auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
             fvGeometry.bindElement(e);
-			
+
             auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
             elemVolVars.bindElement(e, fvGeometry, x);
 			auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
 			elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
-			
+
             for (const auto& scvf : scvfs(fvGeometry)) {
                 if (scvf.boundary()) {
                     double n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
@@ -705,7 +705,7 @@ public:
                     elemVolVars.bindElement(e, fvGeometry, x);
 					auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
 					elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
-					
+
                     f += problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx]; // [kg / (m2 s)]
                 }
             }
