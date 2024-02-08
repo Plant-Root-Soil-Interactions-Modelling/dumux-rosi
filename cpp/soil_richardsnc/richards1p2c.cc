@@ -96,175 +96,175 @@ int main(int argc, char** argv)
      */
     GridManager<SoilGridType> gridManager;
     gridManager.init("Soil"); // "Soil" is the parameter group name
-    // /**
-     // * Opens the grid file, or constructs the grid form the .input file parameters
-     // */
+    /**
+     * Opens the grid file, or constructs the grid form the .input file parameters
+     */
 
 
-    // /////////////////////////////////////////////////////////////////
-    // // run steady state or dynamic non-linear problem on this grid
-    // /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    // run steady state or dynamic non-linear problem on this grid
+    /////////////////////////////////////////////////////////////////
 
 
-    // // we compute on the leaf grid view
-    // const auto& leafGridView = gridManager.grid().leafGridView();
-    // /**
-     // * we work only on the leafGridView and do not need the grid ever again,
-     // * leafGridView.grid() returns a const reference to the grid (in case we need data attached to the grid).
-     // *
-     // * Of dune type: GridFamily::Traits::LeafGridView
-     // *
-     // * Have not found where the type is set (grid dependent),
-     // * but probably implements DefaultLeafGridView (in dune/grid/common/defaultgridview.hh)
-     // */
+    // we compute on the leaf grid view
+    const auto& leafGridView = gridManager.grid().leafGridView();
+    /**
+     * we work only on the leafGridView and do not need the grid ever again,
+     * leafGridView.grid() returns a const reference to the grid (in case we need data attached to the grid).
+     *
+     * Of dune type: GridFamily::Traits::LeafGridView
+     *
+     * Have not found where the type is set (grid dependent),
+     * but probably implements DefaultLeafGridView (in dune/grid/common/defaultgridview.hh)
+     */
 
-    // // create the finite volume grid geometry
-    // using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
-    // /**
-     // * The type is dependent on the discretization (e.g. box, tpfa, ...),
-     // *
-     // * For Box method:
-     // * Properties::FVGridGeometry is defined in problem.hh -> discretization/box.hh
-     // * The type is BoxFVGridGeometry (in discretization/box/fvgridgeometry.hh)
-     // * specialization of BaseFVGridGeometry (discretization/basefvgridgeometry.hh)
-     // */
-    // auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
-    // /**
-     // * holds the vertexMapper() and elementMapper().
-     // *
-     // * ??? copies the leafGridView (but, how does it know when its updated?)
-     // * it seems i am only allowed to use fvGridGeometry->gridView() in the following
-     // * rendering leafGridView defined above, pointless
-     // */
-    // fvGridGeometry->update(leafGridView); // update all Mappers(do this again after grid adaption)
+    // create the finite volume grid geometry
+    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    /**
+     * The type is dependent on the discretization (e.g. box, tpfa, ...),
+     *
+     * For Box method:
+     * Properties::FVGridGeometry is defined in problem.hh -> discretization/box.hh
+     * The type is BoxFVGridGeometry (in discretization/box/fvgridgeometry.hh)
+     * specialization of BaseFVGridGeometry (discretization/basefvgridgeometry.hh)
+     */
+    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
+    /**
+     * holds the vertexMapper() and elementMapper().
+     *
+     * ??? copies the leafGridView (but, how does it know when its updated?)
+     * it seems i am only allowed to use fvGridGeometry->gridView() in the following
+     * rendering leafGridView defined above, pointless
+     */
+    fvGridGeometry->update(leafGridView); // update all Mappers(do this again after grid adaption)
 
-    // // the problem (initial and boundary conditions)
-    // using Problem = GetPropType<TypeTag, Properties::Problem>;
-    // auto problem = std::make_shared<Problem>(fvGridGeometry);
+    // the problem (initial and boundary conditions)
+    using Problem = GetPropType<TypeTag, Properties::Problem>;
+    auto problem = std::make_shared<Problem>(fvGridGeometry);
 
-    // // the solution vector
-    // using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
-    // SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
-    // problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
-    // auto xOld = x;
+    // the solution vector
+    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
+    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+    problem->applyInitialSolution(x); // Dumux way of saying x = problem->applyInitialSolution()
+    auto xOld = x;
 
-    // // the grid variables
-    // using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
-    // /**
-     // * The type is defined GridVariables in discretization/fvproperties.hh, as
-     // * FVGridVariables<FVGridGeometry, GVV, GFVC>
-     // * where GVV = grid volume variables, and GFVC = grid flux variables cache. I have not found where these are set,
-     // * but I assume for box method types are BoxGridFluxVariablesCache.
-     // *
-     // * FVGridVariables is defined in fvgridvariables.hh.
-     // *
-     // * Manages the grid volume variables, and the flux variable cache, stores a pointer to problem (why?)
-     // */
-    // auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
-    // gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
+    // the grid variables
+    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+    /**
+     * The type is defined GridVariables in discretization/fvproperties.hh, as
+     * FVGridVariables<FVGridGeometry, GVV, GFVC>
+     * where GVV = grid volume variables, and GFVC = grid flux variables cache. I have not found where these are set,
+     * but I assume for box method types are BoxGridFluxVariablesCache.
+     *
+     * FVGridVariables is defined in fvgridvariables.hh.
+     *
+     * Manages the grid volume variables, and the flux variable cache, stores a pointer to problem (why?)
+     */
+    auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
+    gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
 
-    // // get some time loop parameters  & instantiate time loop
-    // using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    // const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
-    // std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop; // defined in common/timeloop.hh, everything clear, easy to use.
-    // if (tEnd > 0) { // dynamic problem
-        // const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
-        // auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
-        // timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
-        // timeLoop->setMaxTimeStepSize(maxDt);
-        // try { // CheckPoints defined
-            // std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
-            // // insert check points
-            // for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
-                // timeLoop->setCheckPoint(p);
-            // }
-        // } catch(std::exception& e) {
-            // std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
-        // }
-    // } else { // static
-    // }
+    // get some time loop parameters  & instantiate time loop
+    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    const auto tEnd = getParam<Scalar>("TimeLoop.TEnd");
+    std::shared_ptr<CheckPointTimeLoop<Scalar>> timeLoop; // defined in common/timeloop.hh, everything clear, easy to use.
+    if (tEnd > 0) { // dynamic problem
+        const auto maxDt = getParam<Scalar>("TimeLoop.MaxTimeStepSize");
+        auto initialDt = getParam<Scalar>("TimeLoop.DtInitial"); // initial time step
+        timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(/*start time*/0., initialDt, tEnd);
+        timeLoop->setMaxTimeStepSize(maxDt);
+        try { // CheckPoints defined
+            std::vector<double> checkPoints = getParam<std::vector<double>>("TimeLoop.CheckTimes");
+            // insert check points
+            for (auto p : checkPoints) { // don't know how to use the setCheckPoint( initializer list )
+                timeLoop->setCheckPoint(p);
+            }
+        } catch(std::exception& e) {
+            std::cout<< "richards.cc: no check times (TimeLoop.CheckTimes) defined in the input file\n";
+        }
+    } else { // static
+    }
 
-    // // instantiate time loop & intialize the vtk output module
-    // using IOFields = GetPropType<TypeTag, Properties::IOFields>;
-    // VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
-    // using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
-    // vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
-    // IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
-    // vtkWriter.write(0.0);
-    // /**
-     // * home grown vkt output, rather uninteresting
-     // */
+    // instantiate time loop & intialize the vtk output module
+    using IOFields = GetPropType<TypeTag, Properties::IOFields>;
+    VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, x, problem->name());
+    using VelocityOutput = GetPropType<TypeTag, Properties::VelocityOutput>;
+    vtkWriter.addVelocityOutput(std::make_shared<VelocityOutput>(*gridVariables));
+    IOFields::initOutputModule(vtkWriter); //!< Add model specific output fields
+    vtkWriter.write(0.0);
+    /**
+     * home grown vkt output, rather uninteresting
+     */
 
-    // // the assembler with time loop for instationary or stationary problem (assembles resdiual, and Jacobian for Newton)
-    // using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; //  FVAssembler (in fvassembler.hh)
-    // std::shared_ptr<Assembler> assembler;
-    // if (tEnd>0) {
-        // assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
-    // } else {
-        // assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
-    // }
+    // the assembler with time loop for instationary or stationary problem (assembles resdiual, and Jacobian for Newton)
+    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>; //  FVAssembler (in fvassembler.hh)
+    std::shared_ptr<Assembler> assembler;
+    if (tEnd>0) {
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+    } else {
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
+    }
 
-    // // the linear solver
-    // using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
-    // using LinearSolver = ILUBiCGSTABIstlSolver<LinearSolverTraits<GridGeometry>, LinearAlgebraTraitsFromAssembler<Assembler>>;
-	// //using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available, files located in located in dumux/linear/*
-    // auto linearSolver = std::make_shared<LinearSolver>(fvGridGeometry->gridView(), fvGridGeometry->dofMapper());
+    // the linear solver
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using LinearSolver = ILUBiCGSTABIstlSolver<LinearSolverTraits<GridGeometry>, LinearAlgebraTraitsFromAssembler<Assembler>>;
+	//using LinearSolver = Dumux::AMGBackend<TypeTag>; // the only linear solver available, files located in located in dumux/linear/*
+    auto linearSolver = std::make_shared<LinearSolver>(fvGridGeometry->gridView(), fvGridGeometry->dofMapper());
 
-    // // the non-linear solver
-    // using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
-    // NonLinearSolver nonLinearSolver = NonLinearSolver(assembler, linearSolver);
+    // the non-linear solver
+    using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
+    NonLinearSolver nonLinearSolver = NonLinearSolver(assembler, linearSolver);
 
-    // // std::cin.ignore();  // wait for key (debugging)
-    // if (tEnd>0)  { // dynamic
-        // timeLoop->start();
+    // std::cin.ignore();  // wait for key (debugging)
+    if (tEnd>0)  { // dynamic
+        timeLoop->start();
 
-        // do {
-            // // set previous solution for storage evaluations
-            // assembler->setPreviousSolution(xOld);
-            // // solve the non-linear system with time step control
-            // nonLinearSolver.solve(x, *timeLoop);
-            // // make the new solution the old solution
-            // xOld = x;
-            // gridVariables->advanceTimeStep();
-            // // advance to the time loop to the next step
-            // timeLoop->advanceTimeStep();
-            // // write vtk output (only at check points)
-            // if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
-                // vtkWriter.write(timeLoop->time());
-            // }
-            // // report statistics of this time step
-            // timeLoop->reportTimeStep();
-            // // set new dt as suggested by the newton solver
-            // timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
-            // // pass current time to the problem
-            // problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
-            // problem->postTimeStep(x, *gridVariables);
-            // problem->writeBoundaryFluxes();
+        do {
+            // set previous solution for storage evaluations
+            assembler->setPreviousSolution(xOld);
+            // solve the non-linear system with time step control
+            nonLinearSolver.solve(x, *timeLoop);
+            // make the new solution the old solution
+            xOld = x;
+            gridVariables->advanceTimeStep();
+            // advance to the time loop to the next step
+            timeLoop->advanceTimeStep();
+            // write vtk output (only at check points)
+            if ((timeLoop->isCheckPoint()) || (timeLoop->finished())) {
+                vtkWriter.write(timeLoop->time());
+            }
+            // report statistics of this time step
+            timeLoop->reportTimeStep();
+            // set new dt as suggested by the newton solver
+            timeLoop->setTimeStepSize(nonLinearSolver.suggestTimeStepSize(timeLoop->timeStepSize()));
+            // pass current time to the problem
+            problem->setTime(timeLoop->time(), timeLoop->timeStepSize());
+            problem->postTimeStep(x, *gridVariables);
+            problem->writeBoundaryFluxes();
 
-        // } while (!timeLoop->finished());
+        } while (!timeLoop->finished());
 
-        // timeLoop->finalize(fvGridGeometry->gridView().comm());
+        timeLoop->finalize(fvGridGeometry->gridView().comm());
 
-    // } else { // static
-        // // set previous solution for storage evaluations
-        // assembler->setPreviousSolution(xOld);
-        // // solve the non-linear system
-        // nonLinearSolver.solve(x);
-        // vtkWriter.write(1);
-        // problem->postTimeStep(x, *gridVariables);
-        // problem->writeBoundaryFluxes();
-    // }
+    } else { // static
+        // set previous solution for storage evaluations
+        assembler->setPreviousSolution(xOld);
+        // solve the non-linear system
+        nonLinearSolver.solve(x);
+        vtkWriter.write(1);
+        problem->postTimeStep(x, *gridVariables);
+        problem->writeBoundaryFluxes();
+    }
 
-    // ////////////////////////////////////////////////////////////
-    // // finalize, print dumux message to say goodbye
-    // ////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+    // finalize, print dumux message to say goodbye
+    ////////////////////////////////////////////////////////////
 
-    // // print dumux end message
-    // if (mpiHelper.rank() == 0)
-    // {
-        // Parameters::print();
-        // DumuxMessage::print(/*firstCall=*/false);
-    // }
+    // print dumux end message
+    if (mpiHelper.rank() == 0)
+    {
+        Parameters::print();
+        DumuxMessage::print(/*firstCall=*/false);
+    }
 
     return 0;
 }
