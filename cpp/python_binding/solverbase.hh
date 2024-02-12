@@ -68,6 +68,13 @@ public:
     bool periodic = false; // periodic domain
     std::array<int, dim> numberOfCells;
 
+    //
+    std::shared_ptr<Dumux::CheckPointTimeLoop<double>> timeLoop;
+    using NonLinearSolver = Dumux::RichardsNewtonSolver<Assembler, LinearSolver>;
+    std::shared_ptr<Assembler> assembler;
+    std::shared_ptr<LinearSolver> linearSolver;
+    std::shared_ptr<NonLinearSolver> nonLinearSolver;
+
     SolverBase() {
         for (int i=0; i<dim; i++) { // initialize numberOfCells
             numberOfCells[i] = 0;
@@ -303,11 +310,12 @@ public:
      * (c) GridVariables
      * (d) resets simtime, and internal time step ddt
      * (e) creates global index maps
+     * (d) initializes the timeLoop and solvers
      *
      * The initialize values are set to the current solution,
      * i.e. can be analyzed using getSolution().
      */
-    virtual void initializeProblem() {
+    virtual void initializeProblem(double maxDt = -1) {
         problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
@@ -335,6 +343,22 @@ public:
             int gIdx = pointIdx->index(v);
             globalPointIdx[vIdx] = gIdx;
         }
+
+        if (ddt<1.e-6) { // happens at the first call
+            ddt = Dumux::getParam<double>("TimeLoop.DtInitial", 3600./10); // from params, or guess something
+        }
+
+        timeLoop = std::make_shared<Dumux::CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ 3600., false); // the main time loop is moved to Python
+        if (maxDt<0) { // per default value take from parameter tree
+            maxDt = Dumux::getParam<double>("TimeLoop.MaxTimeStepSize", 3600.); // if none, default is 1h
+        }
+        timeLoop->setMaxTimeStepSize(maxDt);
+
+        assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, x); // dynamic
+        linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+        nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        nonLinearSolver->setVerbosity(false);
+
 		problemInitialized = true;
     }
 
@@ -361,27 +385,12 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    virtual void solve(double dt, double maxDt = -1) {
+    virtual void solve(double dt) {
         checkGridInitialized();
         using namespace Dumux;
 
-        if (ddt<1.e-6) { // happens at the first call
-            ddt = getParam<double>("TimeLoop.DtInitial", dt/10); // from params, or guess something
-        }
-
-        std::shared_ptr<CheckPointTimeLoop<double>> timeLoop =
-            std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ dt, false); // the main time loop is moved to Python
-        if (maxDt<0) { // per default value take from parameter tree
-            maxDt = getParam<double>("TimeLoop.MaxTimeStepSize", dt); // if none, default is outer time step
-        }
-        timeLoop->setMaxTimeStepSize(maxDt);
-
         auto xOld = x;
-        auto assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, xOld); // dynamic
-        auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
-        using NonLinearSolver = RichardsNewtonSolver<Assembler, LinearSolver>;
-        auto nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
-        nonLinearSolver->setVerbosity(false);
+        timeLoop->reset(/*start time*/0., ddt, /*final time*/ dt, /*verbose*/ false);
 
         timeLoop->start();
         do {
@@ -897,10 +906,10 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getGridBounds", &Solver::getGridBounds)
             .def("setParameter", &Solver::setParameter)
             .def("getParameter", &Solver::getParameter)
-            .def("initializeProblem", &Solver::initializeProblem)
+            .def("initializeProblem", &Solver::initializeProblem, py::arg("maxDt") = -1)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
             // simulation
-            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1)
+            .def("solve", &Solver::solve, py::arg("dt"))
 			.def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1)
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)

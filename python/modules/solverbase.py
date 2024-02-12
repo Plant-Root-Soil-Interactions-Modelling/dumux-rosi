@@ -70,9 +70,11 @@ class SolverWrapper():
         """ Reads a parameter from the global Dumux parameter map, returns an empty string if value is not set """
         return self.base.getParameter(key)
 
-    def initializeProblem(self):
-        """ After the grid is created, the problem can be initialized """
-        self.base.initializeProblem()
+    def initializeProblem(self, maxDt = -1.):
+        """ After the grid is created, the problem can be initialized 
+        @param maxDt    maximal time step [days] 
+        """
+        self.base.initializeProblem(maxDt * 24.*3600.)
 
     def setInitialCondition(self, ic, eqIdx = 0):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
@@ -82,12 +84,11 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, maxDt = -1.):
+    def solve(self, dt:float):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
-        @param mxDt    maximal time step [days] 
         """
-        self.base.solve(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+        self.base.solve(dt * 24.*3600.)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """

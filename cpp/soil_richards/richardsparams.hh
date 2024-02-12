@@ -7,6 +7,7 @@
 #include <dumux/porousmediumflow/fvspatialparamsmp.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/vangenuchten.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/efftoabsdefaultpolicy.hh>
+#include <dumux/material/fluidmatrixinteractions/2p/materiallaw.hh>
 
 #include <dumux/material/components/simpleh2o.hh>
 //#include <dumux/material/fluidsystems/1pliquid.hh>
@@ -35,13 +36,14 @@ public:
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using Water = Components::SimpleH2O<Scalar>;
-    using PcKrSwCurve = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
+
+    using PcKrSwCurve = FluidMatrix::VanGenuchtenDefault<Scalar>;
     using BasicParams = typename PcKrSwCurve::BasicParams;
     using EffToAbsParams = typename PcKrSwCurve::EffToAbsParams;
+    using RegularizationParams = typename PcKrSwCurve::RegularizationParams;
+    // using MaterialLaw = FluidMatrix::TwoPMaterialLaw<Scalar, FluidMatrix::VanGenuchten, FluidMatrix::VanGenuchtenRegularization<Scalar>, FluidMatrix::TwoPEffToAbsDefaultPolicy>;
 
     enum { dimWorld = GridView::dimensionworld };
-
-    using RegularizationParams = typename PcKrSwCurve::RegularizationParams;
 
     using PermeabilityType = Scalar; // export permeability type
 
@@ -85,8 +87,10 @@ public:
             regularizationParams_.at(i).setPcHighSwe(1. - eps);
             regularizationParams_.at(i).setKrnLowSwe(eps);
             regularizationParams_.at(i).setKrwHighSwe(1 - eps);
+
+            materialLaw_.push_back(PcKrSwCurve(basicParams_.at(i), effToAbsParams_.at(i), regularizationParams_.at(i)));
         }
-        layerIdx_ = Dumux::getParam<int>("Soil.Grid.layerIdx", 1);
+        layerIdx_ = getParam<int>("Soil.Grid.layerIdx", 1);
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
 
         // std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
@@ -147,23 +151,12 @@ public:
         return regularizationParams_.at(index_(element));
     }
 
-
     template<class ElementSolution>
     auto fluidMatrixInteraction(const Element& element,
                                 const SubControlVolume& scv,
                                 const ElementSolution& elemSol) const {
-        return makeFluidMatrixInteraction(PcKrSwCurve(basicParams_.at(index_(element)), effToAbsParams_.at(index_(element)), regularizationParams_.at(index_(element))));
-    }
-
-
-    /*!
-     * \brief \copydoc FVSpatialParamsOneP::materialLawParams
-     */
-    template<class ElementSolution>
-    const BasicParams& basicParams(const Element& element,
-        const SubControlVolume& scv,
-        const ElementSolution& elemSol) const {
-        return basicParams_.at(index_(element));
+        //return makeFluidMatrixInteraction(PcKrSwCurve(basicParams_.at(index_(element)), effToAbsParams_.at(index_(element)), regularizationParams_.at(index_(element))));
+        return materialLaw_.at(index_(element));
     }
 
     //! pointer to the soils layer input file function
@@ -183,6 +176,7 @@ public:
     	    regularizationParams_.at(i).setPcHighSwe(1. - pcEps);
     	    regularizationParams_.at(i).setKrnLowSwe(krEps);
     	    regularizationParams_.at(i).setKrwHighSwe(1 - krEps);
+    	    materialLaw_.at(i) = PcKrSwCurve(basicParams_.at(i), effToAbsParams_.at(i), regularizationParams_.at(i)); // update material Law
     	}
     }
 
@@ -205,6 +199,7 @@ public:
         basicParams_.at(i).setAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
         basicParams_.at(i).setN(n); // N
         k_.push_back(ks*mu/(rho*g_)); // Convert to intrinsic permeability
+        materialLaw_.at(i) = PcKrSwCurve(basicParams_.at(i), effToAbsParams_.at(i), regularizationParams_.at(i)); // update material Law
     }
 
 private:
@@ -239,13 +234,13 @@ private:
     bool three_; // 3d
     InputFileFunction layer_;
     int layerIdx_; // index of layer data within the grid
-
     std::vector<Scalar> k_; // permeability [m²]
     std::vector<Scalar> kc_; // hydraulic conductivity [m/s]
 
     std::vector<BasicParams> basicParams_;
     std::vector<EffToAbsParams> effToAbsParams_;
     std::vector<RegularizationParams> regularizationParams_;
+    std::vector<PcKrSwCurve> materialLaw_;
 
     static constexpr Scalar g_ = 9.81; // cm / s^2
 
