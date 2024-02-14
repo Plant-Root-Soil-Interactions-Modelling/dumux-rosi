@@ -1,40 +1,67 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-//
-// SPDX-FileCopyrightInfo: Copyright © DuMux Project contributors, see AUTHORS.md in root folder
-// SPDX-License-Identifier: GPL-3.0-or-later
-//
+/*****************************************************************************
+ *   See the file COPYING for full copying permissions.                      *
+ *                                                                           *
+ *   This program is free software: you can redistribute it and/or modify    *
+ *   it under the terms of the GNU General Public License as published by    *
+ *   the Free Software Foundation, either version 3 of the License, or       *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   This program is distributed in the hope that it will be useful,         *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
+ *   GNU General Public License for more details.                            *
+ *                                                                           *
+ *   You should have received a copy of the GNU General Public License       *
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
+ *****************************************************************************/
 /*!
  * \file
  * \ingroup RichardsNCModel
  * \brief Base class for all models which use the Richards,
  *        n-component fully implicit model.
  *
- * This extension of Richards' equation, allows for
- * the wetting phase to consist of multiple components:
+ * In the unsaturated zone, Richards' equation
  *\f{eqnarray*}
  && \frac{\partial (\sum_w \varrho_w X_w^\kappa \phi S_w )}
  {\partial t}
- - \sum_w  \nabla \cdot \left\{ \varrho_w X_w^\kappa
- \frac{k_{rw}}{\mu_w} \mathbf{K}
- (\nabla  p_w - \varrho_{w}  \mathbf{g}) \right\}
+ - \sum_w  \text{div} \left\{ \varrho_w X_w^\kappa
+ \frac{k_{rw}}{\mu_w} \mbox{\bf K}
+ (\text{grad}\, p_w - \varrho_{w}  \mbox{\bf g}) \right\}
  \nonumber \\ \nonumber \\
-    &-& \sum_w \nabla \cdot \left\{{\bf D_{w, pm}^\kappa} \varrho_{w} \nabla  X^\kappa_{w} \right\}
+    &-& \sum_w \text{div} \left\{{\bf D_{w, pm}^\kappa} \varrho_{w} \text{grad}\, X^\kappa_{w} \right\}
  - \sum_w q_w^\kappa = 0 \qquad \kappa \in \{w, a,\cdots \} \, ,
- w \in \{w, g\},
+ w \in \{w, g\}
  \f}
- * where:
- * * \f$ \phi \f$ is the porosity of the porous medium,
- * * \f$ S_w \f$ represents the saturation of the wetting phase,
- * * \f$ \varrho_w \f$ is the mass density of the wetting phase,
- * * \f$ k_{rw} \f$ is the relative permeability of the wetting phase,
- * * \f$ \mu_w \f$ is the dynamic viscosity of the wetting phase,
- * * \f$ \mathbf{K} \f$ is the intrinsic permeability tensor,
- * * \f$ p_w \f$ is the pressure of the wetting phase,
- * * \f$ \mathbf{g} \f$ is the gravitational acceleration vector,
- * * \f$ \bf D_{w,pm}^{k} \f$ is the effective diffusivity of component \f$ \kappa \f$ in the wetting phase,
- * * \f$ X_w^k \f$ is the mass fraction of component \f$ \kappa \f$ in the wetting phase,
- * * \f$ q_w \f$ is a source or sink term in the wetting phase.
+ * is frequently used to
+ * approximate the water distribution above the groundwater level.
+ *
+ * In contrast to the full two-phase model, the Richards model assumes
+ * gas as the non-wetting fluid and that it exhibits a much lower
+ * viscosity than the (liquid) wetting phase. (For example at
+ * atmospheric pressure and at room temperature, the viscosity of air
+ * is only about \f$1\%\f$ of the viscosity of liquid water.) As a
+ * consequence, the \f$\frac{k_{r\alpha}}{\mu_\alpha}\f$ term
+ * typically is much larger for the gas phase than for the wetting
+ * phase. For this reason, the Richards model assumes that
+ * \f$\frac{k_{rn}}{\mu_n}\f$ is infinitely large. This implies that
+ * the pressure of the gas phase is equivalent to the static pressure
+ * distribution and that therefore, mass conservation only needs to be
+ * considered for the wetting phase.
+ *
+ * The model thus chooses the absolute pressure of the wetting phase
+ * \f$p_w\f$ as its only primary variable. The wetting phase
+ * saturation is calculated using the inverse of the capillary
+ * pressure, i.e.
+ \f[
+ S_w = p_c^{-1}(p_n - p_w)
+ \f]
+ * holds, where \f$p_n\f$ is a given reference pressure. Nota bene,
+ * that the last step is assumes that the capillary
+ * pressure-saturation curve can be uniquely inverted, so it is not
+ * possible to set the capillary pressure to zero when using the
+ * Richards model!
  */
 
 #ifndef DUMUX_RICHARDSNC_MODEL_HH
@@ -42,7 +69,13 @@
 
 #include <dumux/common/properties.hh>
 
+#include <dumux/porousmediumflow/compositional/localresidual.hh>
+
+//#include <dumux/material/spatialparams/fv1p.hh>
+
+//#include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
 #include <dumux/material/fluidmatrixinteractions/diffusivityconstanttortuosity.hh>
+
 #include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/constant.hh>
@@ -53,7 +86,7 @@
 #include <dumux/porousmediumflow/nonisothermal/model.hh>
 #include <dumux/porousmediumflow/nonisothermal/indices.hh>
 #include <dumux/porousmediumflow/nonisothermal/iofields.hh>
-#include <dumux/porousmediumflow/compositional/localresidual.hh>
+
 #include <dumux/porousmediumflow/richards/model.hh>
 
 #include <dumux/porousmediumflow/richardsnc/volumevariables.hh>
@@ -82,36 +115,8 @@ struct RichardsNCModelTraits
     static constexpr bool enableAdvection() { return true; }
     static constexpr bool enableMolecularDiffusion() { return true; }
     static constexpr bool enableEnergyBalance() { return false; }
-    static constexpr bool enableCompositionalDispersion() { return false; }
-    static constexpr bool enableThermalDispersion() { return false; }
 
     static constexpr bool useMoles() { return useMol; }
-};
-
-/*!
- * \ingroup RichardsNCModel
- * \brief Traits class for the Richards n-components model.
- *
- * \tparam PV The type used for primary variables
- * \tparam FSY The fluid system type
- * \tparam FST The fluid state type
- * \tparam PT The type used for permeabilities
- * \tparam MT The model traits
- * \tparam DT The diffusion type
- * \tparam EDM The effective diffusivity model
- */
-template<class PV, class FSY, class FST, class SSY, class SST, class PT, class MT, class DT, class EDM>
-struct RichardsNCVolumeVariablesTraits
-{
-    using PrimaryVariables = PV;
-    using FluidSystem = FSY;
-    using FluidState = FST;
-    using SolidSystem = SSY;
-    using SolidState = SST;
-    using PermeabilityType = PT;
-    using ModelTraits = MT;
-    using DiffusionType = DT;
-    using EffectiveDiffusivityModel = EDM;
 };
 
 namespace Properties {
@@ -170,16 +175,15 @@ private:
     using FST = GetPropType<TypeTag, Properties::FluidState>;
     using MT = GetPropType<TypeTag, Properties::ModelTraits>;
     using PT = typename GetPropType<TypeTag, Properties::SpatialParams>::PermeabilityType;
+
     static_assert(FSY::numComponents == MT::numFluidComponents(), "Number of components mismatch between model and fluid system");
     static_assert(FST::numComponents == MT::numFluidComponents(), "Number of components mismatch between model and fluid state");
     static_assert(FSY::numPhases == MT::numFluidPhases(), "Number of phases mismatch between model and fluid system");
     static_assert(FST::numPhases == MT::numFluidPhases(), "Number of phases mismatch between model and fluid state");
-    using DT = GetPropType<TypeTag, Properties::MolecularDiffusionType>;
-    using EDM = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
-    using NCTraits = RichardsNCVolumeVariablesTraits<PV, FSY, FST, SSY, SST, PT, MT, DT, EDM>;
 
+    using Traits = RichardsVolumeVariablesTraits<PV, FSY, FST, SSY, SST, PT, MT>;
 public:
-    using type = RichardsNCVolumeVariables<NCTraits>;
+    using type = RichardsNCVolumeVariables<Traits>;
 };
 
 /*!
@@ -213,6 +217,10 @@ template<class TypeTag>
 struct IOFields<TypeTag, TTag::RichardsNC> { using type = RichardsNCIOFields; };
 
 //! The model after Millington (1961) is used for the effective diffusivity
+//template<class TypeTag>
+//struct EffectiveDiffusivityModel<TypeTag, TTag::RichardsNC> { using type = DiffusivityMillingtonQuirk<GetPropType<TypeTag, Properties::Scalar>>; };
+//
+//
 template<class TypeTag>
 struct EffectiveDiffusivityModel<TypeTag, TTag::RichardsNC> { using type = DiffusivityConstantTortuosity<GetPropType<TypeTag, Properties::Scalar>>; };
 
@@ -233,30 +241,6 @@ private:
 public:
     using type = PorousMediumFlowNIModelTraits<IsothermalTraits>;
 };
-
-//! Set the volume variables property
-template<class TypeTag>
-struct VolumeVariables<TypeTag, TTag::RichardsNCNI>
-{
-private:
-    using PV = GetPropType<TypeTag, Properties::PrimaryVariables>;
-    using FSY = GetPropType<TypeTag, Properties::FluidSystem>;
-    using FST = GetPropType<TypeTag, Properties::FluidState>;
-    using SSY = GetPropType<TypeTag, Properties::SolidSystem>;
-    using SST = GetPropType<TypeTag, Properties::SolidState>;
-    using MT = GetPropType<TypeTag, Properties::ModelTraits>;
-    using PT = typename GetPropType<TypeTag, Properties::SpatialParams>::PermeabilityType;
-    using DT = GetPropType<TypeTag, Properties::MolecularDiffusionType>;
-    using EDM = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
-    using BaseTraits = RichardsNCVolumeVariablesTraits<PV, FSY, FST, SSY, SST, PT, MT, DT, EDM>;
-
-    using ETCM = GetPropType< TypeTag, Properties::ThermalConductivityModel>;
-    template<class BaseTraits, class ETCM>
-    struct NCNITraits : public BaseTraits { using EffectiveThermalConductivityModel = ETCM; };
-public:
-    using type = RichardsNCVolumeVariables<NCNITraits<BaseTraits, ETCM>>;
-};
-
 
 } // end namespace Properties
 } // end namespace Dumux

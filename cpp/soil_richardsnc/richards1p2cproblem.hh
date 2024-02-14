@@ -3,17 +3,6 @@
 #ifndef RICHARDS1P2C_PROBLEM_HH
 #define RICHARDS1P2C_PROBLEM_HH
 
-/* Define to the version of dune-spgrid */
-#define DUNE_SPGRID_VERSION "2.9-git"
-
-/* Define to the major version of dune-spgrid */
-#define DUNE_SPGRID_VERSION_MAJOR 2
-
-/* Define to the minor version of dune-spgrid */
-#define DUNE_SPGRID_VERSION_MINOR 9
-
-/* Define to the revision of dune-spgrid */
-#define DUNE_SPGRID_VERSION_REVISION 0
 
 #include <dumux/porousmediumflow/problem.hh> // base class
 #include <dumux/common/boundarytypes.hh>
@@ -34,35 +23,43 @@ class Richards1P2CProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
 
+    using ParentType = PorousMediumFlowProblem<TypeTag>;
+
 	// exports, used by the binding
 	using Grid = GetPropType<TypeTag, Properties::Grid>;
-	using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+																	   
 	using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
 	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
 	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
 	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
 
 	// other
-	using GridView = typename FVGridGeometry::GridView;
+	using GridView = typename GridGeometry::GridView;
 	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-    using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
-	using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
-	using FVElementGeometry = typename FVGridGeometry::LocalView;
-	using SubControlVolume = typename FVGridGeometry::SubControlVolume;
-	using SubControlVolumeFace = typename FVGridGeometry::SubControlVolumeFace;
+																		 
+	using NumEqVector = typename Dumux::NumEqVector<PrimaryVariables>;
+	using FVElementGeometry = typename GridGeometry::LocalView;
+	using SubControlVolume = typename GridGeometry::SubControlVolume;
+	using SubControlVolumeFace = typename GridGeometry::SubControlVolumeFace;
 	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
-	using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+	//using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    using ElementVolumeVariables = typename GridVariables::GridVolumeVariables::LocalView;
+    using ElementFluxVariablesCache = typename GridVariables::GridFluxVariablesCache::LocalView;
+
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-	
-	//class TwoPMaterialLaw : public Adapter<TwoPMaterialLaw<ScalarType, BaseLaw, Regularization, EffToAbsPolicy>, PcKrSw>
-	using MaterialLaw = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
-    using BasicParams = typename MaterialLaw::BasicParams;//Dumux::FluidMatrix::VanGenuchten::Params
-    //using Regularization = typename MaterialLaw::RegularizationParam;//Dumux::FluidMatrix::VanGenuchtenRegularization<double>::Params
-    using EffToAbsParams = typename MaterialLaw::EffToAbsParams;//Dumux::FluidMatrix::TwoPEffToAbsDefaultPolicy::Params
-    //using MaterialLawParams = typename Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>::Params;
-	
+
+																													   
+	using PcKrSwCurve = Dumux::FluidMatrix::VanGenuchtenDefault<Scalar>;
+	// VanGenuchtenNoReg<double>  // both of type TwoPMaterialLaw // using MaterialLaw = typename GetPropType<TypeTag, Properties::SpatialParams>::MaterialLaw;
+	using BasicParams = typename PcKrSwCurve::BasicParams;
+    using EffToAbsParams = typename PcKrSwCurve::EffToAbsParams;
+    using RegularizationParams = typename PcKrSwCurve::RegularizationParams;
+
+	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
+
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
 	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
@@ -101,7 +98,7 @@ public:
 	/*!
 	 * \brief Constructor: constructed in the main file
 	 */
-	Richards1P2CProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry)
+	Richards1P2CProblem(std::shared_ptr<const GridGeometry> fvGridGeometry)
 	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
@@ -294,6 +291,13 @@ public:
         return values;
     }
 
+	PcKrSwCurve materialLaw(const Element& element) const {
+	    const BasicParams& basicParams = this->spatialParams().basicParams(element);
+	    const EffToAbsParams& effToAbsParams = this->spatialParams().effToAbsParams(element);
+	    const RegularizationParams& regularizationParams = this->spatialParams().regularizationParams(element);
+	    return PcKrSwCurve(basicParams, effToAbsParams, regularizationParams);
+	}
+
 	/*!
 	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
 	 *
@@ -303,6 +307,7 @@ public:
 	NumEqVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
 			const ElementVolumeVariables& elemVolVars,
+			const ElementFluxVariablesCache&  fluxCache,
 			const SubControlVolumeFace& scvf) const {
 
 		NumEqVector flux;
@@ -317,13 +322,12 @@ public:
 
 			Scalar s = volVars.saturation(0);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
-			//MaterialLawParams params = this->spatialParams().materialLawParams(element);
-			BasicParams params = this->spatialParams().basicParams(element);
-			Scalar p = MaterialLaw::pc(s) + pRef_;//TODO still works? params, 
+			PcKrSwCurve materialLaw_ = materialLaw(element);
+			Scalar p = materialLaw_.pc(s) + pRef_;//TODO still works? params, 
 			Scalar h = -toHead_(p); // todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
-			Scalar krw = MaterialLaw::krw(s);//TODO still works? params, 
+			Scalar krw = materialLaw_.krw(s);//TODO still works? params, 
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
@@ -416,9 +420,9 @@ public:
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
-                static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
-				Scalar porosity = this->spatialParams().porosity(element);
-				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
+                //static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
+				//Scalar porosity = this->spatialParams().porosity(element);
+				Scalar de = EffectiveDiffusivityModel::effectiveDiffusionCoefficient(volVars,conti0EqIdx,soluteIdx,0);
 				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				break;
 
@@ -457,9 +461,9 @@ public:
 			case constantConcentration: {
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
-                static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
-				Scalar porosity = this->spatialParams().porosity(element);
-				Scalar de = EffectiveDiffusivityModel::effectiveDiffusivity(porosity, volVars.saturation(0) ,d);
+                //static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
+				//Scalar porosity = this->spatialParams().porosity(element);
+				Scalar de = EffectiveDiffusivityModel::effectiveDiffusionCoefficient(volVars,conti0EqIdx,soluteIdx,0);
 				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
 				break;
@@ -529,9 +533,9 @@ public:
 	 */
 	template<class PointSource>
 	void addPointSources(std::vector<PointSource>& pointSources) const {
-		if (couplingManager_!=nullptr) {
-			pointSources = couplingManager_->bulkPointSources();
-		}
+		// if (couplingManager_!=nullptr) {
+			// pointSources = couplingManager_->bulkPointSources();
+		// }
 	}
 
 	/*!
@@ -553,40 +557,40 @@ public:
 			const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
 
-		PrimaryVariables sourceValue(0.);
+		// PrimaryVariables sourceValue(0.);
 
-		if (couplingManager_!=nullptr) { // compute source at every integration point
+		// if (couplingManager_!=nullptr) { // compute source at every integration point
 
-			const Scalar soilP = couplingManager_->bulkPriVars(source.id())[pressureIdx];
-			const Scalar tipP = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
-			const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
-			const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-			const Scalar kr = spatialParams.kr(lowDimElementIdx);
-			const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
-			// relative soil permeability
-			const auto krel = 1.0;
-			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-			sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(tipP - soilP)*rho_;
-			sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
+			// const Scalar soilP = couplingManager_->bulkPriVars(source.id())[pressureIdx];
+			// const Scalar tipP = couplingManager_->lowDimPriVars(source.id())[pressureIdx];
+			// const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
+			// const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+			// const Scalar kr = spatialParams.kr(lowDimElementIdx);
+			// const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
+			// // relative soil permeability
+			// const auto krel = 1.0;
+			// // sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+			// sourceValue[h2OIdx] = 2 * M_PI *krel*rootRadius * kr *(tipP - soilP)*rho_;
+			// sourceValue[h2OIdx] *= source.quadratureWeight()*source.integrationElement();
 
-			Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
-			Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
-			Scalar passiveUptake;
-			if (sourceValue[h2OIdx]>0) {
-				passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * tipC;
-			} else {
-				passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * soilC;
-			}
-			// Active uptake based on Michaelis Menten
-			Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * rho_/(km_ + soilC * rho_); // todo times root element length
+			// Scalar tipC = couplingManager_ ->lowDimPriVars(source.id())[soluteIdx]; // units [1], fraction
+			// Scalar soilC = couplingManager_ ->bulkPriVars(source.id())[soluteIdx]; // units [1], fraction
+			// Scalar passiveUptake;
+			// if (sourceValue[h2OIdx]>0) {
+				// passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * tipC;
+			// } else {
+				// passiveUptake = 2 * M_PI * rootRadius * kr * (tipP - soilP) * rho_ * soilC;
+			// }
+			// // Active uptake based on Michaelis Menten
+			// Scalar activeUptake = -2 * M_PI * rootRadius * vMax_ * soilC * rho_/(km_ + soilC * rho_); // todo times root element length
 
-			// choose active or passive
-			sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
+			// // choose active or passive
+			// sourceValue[transportEqIdx] = (sigma_*activeUptake + (1.-sigma_)*passiveUptake) *source.quadratureWeight()*source.integrationElement();
 
-			source = sourceValue;
-		}
+			// source = sourceValue;
+		// }
 
-		source = sourceValue; // return value as reference
+		// source = sourceValue; // return value as reference
 	}
 
 	/*!

@@ -2,14 +2,17 @@
 #define PYTHON_RICHARDS_H_
 
 #include "external/pybind11/include/pybind11/pybind11.h"
+#include "external/pybind11/include/pybind11/stl.h"
 namespace py = pybind11;
 
 #include <config.h> // configuration file
 
+#include "../soil_richards/richardsparams.hh"							   
 #include "richards.hh" // includes solverbase
 
 #include "../soil_richardsnc/richards1p2cproblem.hh" // the problem class
 
+#include <dumux/common/properties.hh>
 #include <dumux/linear/istlsolvers.hh>
 #include <dumux/linear/linearsolvertraits.hh>
 #include <dumux/linear/linearalgebratraits.hh>
@@ -20,6 +23,7 @@ namespace py = pybind11;
 
 #include <dumux/porousmediumflow/richardsnc/model.hh> // the model
 
+#include <dune/grid/spgrid.hh>	  
 #if HAVE_DUNE_ALUGRID
 #include <dune/alugrid/grid.hh>
 #endif
@@ -27,6 +31,7 @@ namespace py = pybind11;
 #include <dune/grid/uggrid.hh>
 #endif
 
+#define PYBIND11_DETAILED_ERROR_MESSAGES		
 /**
  * create type tags
  */
@@ -35,8 +40,12 @@ namespace Dumux { namespace Properties {
 namespace TTag { // Create new type tags
 
 struct Richards2CTT { using InheritsFrom = std::tuple<RichardsNC>; }; // defaults, dumux/porousmediumflow/richards/model.hh
-struct RichardsNCSPCC { using InheritsFrom = std::tuple<Richards2CTT, CCTpfaModel>; };
-struct RichardsNCSPBox { using InheritsFrom = std::tuple<Richards2CTT, BoxModel>; };
+struct RichardsSPTT { using InheritsFrom = std::tuple<Richards2CTT>; }; // sp grid
+struct RichardsUGTT { using InheritsFrom = std::tuple<Richards2CTT>; }; // ug grid
+struct RichardsNCSPCC { using InheritsFrom = std::tuple<RichardsSPTT, CCTpfaModel>; };
+struct RichardsNCSPBox { using InheritsFrom = std::tuple<RichardsSPTT, BoxModel>; };
+struct RichardsUGCC { using InheritsFrom = std::tuple<RichardsUGTT, CCTpfaModel>; };
+struct RichardsUGBox { using InheritsFrom = std::tuple<RichardsUGTT, BoxModel>; };
 };
 
 
@@ -72,7 +81,7 @@ using GridGeometryRUGTT = Dumux::GetPropType<RUGTT, Dumux::Properties::GridGeome
 using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
 using RichardsUGLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRUGTT>,
 		Dumux::LinearAlgebraTraitsFromAssembler<RichardsUGAssembler>>;
-using RichardsUGProblem = Dumux::RichardsProblem<RUGTT>;
+using RichardsUGProblem = Dumux::Richards1P2CProblem<RUGTT>;
 
 
 PYBIND11_MODULE(rosi_richardsnc, m) {
