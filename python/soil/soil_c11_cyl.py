@@ -38,7 +38,7 @@ def solve(soil, simtimes, q_r, N):
     s.createGrid1d(np.linspace(r_root, r_out, N))  # [cm]
     # s.createGrid([0.02], [0.6], [N])  # [cm]
 
-    s.initializeProblem()  # TODO no grid causes crash
+    s.initializeProblem()
     s.setCriticalPressure(-np.inf)  # disable switch to dirichlet at critical pressure, otherwise we do not notice, when the switch happens
     idx_top = s.pickCell([r_root])  # index for sink
     x_ = s.getDofCoordinates()

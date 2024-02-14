@@ -29,8 +29,8 @@ public:
      * Adds inner and outer radius and element indices
      * TODO currently only for 1D
      */
-	virtual void initializeProblem() {
-		SolverBase<Problem, Assembler, LinearSolver, dim>::initializeProblem();
+	virtual void initializeProblem(double maxDt = -1) {
+		SolverBase<Problem, Assembler, LinearSolver, dim>::initializeProblem(maxDt);
 		auto minMax = this->getGridBounds();
 		rIn = minMax[0];
 		innerIdx = this->pick({ rIn });
@@ -105,7 +105,7 @@ void init_richards_cyl(py::module &m, std::string name) {
     using RichardsFoam = RichardsCyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
    .def(py::init<>())
-   .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0), 
+   .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0),
 											py::arg("verbose") = true, py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
 
@@ -119,7 +119,7 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK)
    .def("setRegularisation",&RichardsFoam::setRegularisation)
    .def("setTopBC",&RichardsFoam::setTopBC)
-   .def("setBotBC",&RichardsFoam::setBotBC)   
+   .def("setBotBC",&RichardsFoam::setBotBC)
    .def("setSTopBC",&RichardsFoam::setSTopBC)
    .def("setSBotBC",&RichardsFoam::setSBotBC)
 

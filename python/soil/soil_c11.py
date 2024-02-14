@@ -85,7 +85,7 @@ if __name__ == "__main__":
     loam = [0.08, 0.43, 0.04, 1.6, 50, "Loam"]
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
-    sim_times = np.linspace(0, 25, 2500)  # temporal resolution of 0.01 d
+    sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.01 d
     fig, ax = plt.subplots(2, 3, figsize = (14, 14))
 
     if rank == 0:

@@ -2,16 +2,19 @@
 #define PYTHON_RICHARDS_CYL_H_
 
 #include "external/pybind11/include/pybind11/pybind11.h"
+#include "external/pybind11/include/pybind11/stl.h"
+
 namespace py = pybind11;
 
 #include <config.h> // configuration file
 
 #include <dune/foamgrid/foamgrid.hh>
 //#include <dumux/io/grid/gridmanager_foam.hh>
-#include "richards_cyl.hh" // includes solverbase
 
 #include "../soil_richards/richardsproblem.hh" // the problem class
+#include "richards_cyl.hh" // includes solverbase
 
+#include <dumux/common/properties.hh>
 #include <dumux/linear/istlsolvers.hh>
 #include <dumux/linear/linearsolvertraits.hh>
 #include <dumux/linear/linearalgebratraits.hh>
@@ -22,9 +25,8 @@ namespace py = pybind11;
 
 #include <dumux/porousmediumflow/richardsCylindrical1d/model.hh>
 
-
-#include <dumux/multidomain/traits.hh>
-#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
+//#include <dumux/multidomain/traits.hh>
+//#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
 /**
  * create type tags
@@ -39,14 +41,21 @@ struct RichardsCylFoamCC { using InheritsFrom = std::tuple<RichardsCylFoamTT, CC
 
 };
 
+template<class TypeTag> // Set grid type
+struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>; }; //  Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 1>
+
 template<class TypeTag> // Set Problem
 struct Problem<TypeTag, TTag::RichardsTT> { using type = RichardsProblem<TypeTag>; };
 
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RichardsTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
 
-template<class TypeTag> // Set grid type
-struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>; }; //  Dune::SPGrid<GetPropType<TypeTag, Properties::Scalar>, 1>
+
+// TODO: remove after release (3.6)
+// Set the primary variables type
+template<class TypeTag>
+struct PrimaryVariables<TypeTag, TTag::RichardsTT>
+{ using type = Dune::FieldVector<GetPropType<TypeTag, Properties::Scalar>, GetPropType<TypeTag, Properties::ModelTraits>::numEq()>; };
 
 } }
 
@@ -56,9 +65,9 @@ struct Grid<TypeTag, TTag::RichardsCylFoamTT> { using type = Dune::FoamGrid<1,1>
  * pick assembler, linear solver and problem
  */
 using RCFoamTT = Dumux::Properties::TTag::RichardsCylFoamCC;
-using GridGeometryRCFoamTT = typename Dumux::GetPropType<RCFoamTT, Dumux::Properties::GridGeometry>;
+using GridGeometryRCFoamTT = Dumux::GetPropType<RCFoamTT, Dumux::Properties::GridGeometry>;
 using RichardsCylFoamAssembler = Dumux::FVAssembler<RCFoamTT, Dumux::DiffMethod::numeric>;
-using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRCFoamTT>,//RCFoamTT, 
+using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRCFoamTT>,//RCFoamTT,
 	Dumux::LinearAlgebraTraitsFromAssembler<RichardsCylFoamAssembler>>;
 using RichardsCylFoamProblem = Dumux::RichardsProblem<RCFoamTT>;
 
