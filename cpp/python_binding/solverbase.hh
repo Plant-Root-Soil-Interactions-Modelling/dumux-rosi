@@ -91,7 +91,8 @@ public:
      * SolverBase will optionally set most of them dynamically.
      */
     virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true, bool doMPI = true) {
-        std::vector<char*> cargs;
+        //doMPI_ = doMPI;
+		std::vector<char*> cargs;
         cargs.reserve(args_.size());
         for(size_t i = 0; i < args_.size(); i++) {
             cargs.push_back(const_cast<char*>(args_[i].c_str()));
