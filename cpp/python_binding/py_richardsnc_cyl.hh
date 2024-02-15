@@ -2,6 +2,7 @@
 #define PYTHON_RICHARDS_CYL_H_
 
 #include "external/pybind11/include/pybind11/pybind11.h"
+#include "external/pybind11/include/pybind11/stl.h"
 namespace py = pybind11;
 
 #include <config.h> // configuration file
@@ -11,6 +12,7 @@ namespace py = pybind11;
 
 #include "../soil_richardsnc/richards1p2cproblem.hh" // the problem class
 
+#include <dumux/common/properties.hh>
 #include <dumux/linear/istlsolvers.hh>
 #include <dumux/linear/linearsolvertraits.hh>
 #include <dumux/linear/linearalgebratraits.hh>
@@ -22,8 +24,8 @@ namespace py = pybind11;
 #include <dumux/porousmediumflow/richardsncCylindrical1d/model.hh>
 
 
-#include <dumux/multidomain/traits.hh>
-#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
+//#include <dumux/multidomain/traits.hh>
+//#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
 
 /**
  * create type tags
@@ -58,7 +60,7 @@ struct UseMoles<TypeTag, TTag::RichardsTT> { static constexpr bool value = false
  * pick assembler, linear solver and problem
  */
 using RNCCFoamTT = Dumux::Properties::TTag::RichardsNCCylFoamCC;
-using GridGeometryRNCCFoamTT = typename Dumux::GetPropType<RNCCFoamTT, Dumux::Properties::GridGeometry>;						
+using GridGeometryRNCCFoamTT = Dumux::GetPropType<RNCCFoamTT, Dumux::Properties::GridGeometry>;						
 using RichardsNCCylFoamAssembler = Dumux::FVAssembler<RNCCFoamTT, Dumux::DiffMethod::numeric>;
 using RichardsNCCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRNCCFoamTT>,//RCFoamTT, 
 	Dumux::LinearAlgebraTraitsFromAssembler<RichardsNCCylFoamAssembler>>;
