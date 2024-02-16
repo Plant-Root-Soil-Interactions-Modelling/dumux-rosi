@@ -23,8 +23,15 @@ message(${dune-uggrid_LIBRARIES})
 #cmake_print_variables(${dune-spgrid_LIBRARIES})
 #message("libraries")
 
+set(PYBIND11_DIR ${PROJECT_SOURCE_DIR}/../CPlantBox/src/external/pybind11)
+#message(${PYBIND11_DIR})
 
-add_subdirectory(pybind11)
+# Include Pybind11
+add_subdirectory(${PYBIND11_DIR} pybind11)
+#add_subdirectory(${pybind11_dir})
+#include_directories(${PYBIND11_DIR}/include)
+
+#add_subdirectory(pybind11)
 
 pybind11_add_module(rosi_richards SHARED py_richards.cc)
 target_link_dune_default_libraries(rosi_richards)  
