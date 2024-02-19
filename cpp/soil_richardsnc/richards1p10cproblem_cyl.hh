@@ -462,9 +462,15 @@ public:
 		 k_decay = getParam<double>("Soil.k_decay", k_decay_); // 
 		 k_decay2 = getParam<double>("Soil.k_decay2", k_decay2_);//
 		 f_sorp = getParam<double>("Soil.f_sorp", f_sorp);//[-]
-		 k_sorp = getParam<double>("Soil.k_sorp", k_sorp_)* m3_2_cm3;// mol/m3 water
+		 k_sorp = getParam<double>("Soil.k_sorp", k_sorp_) ;// mol/cm3 water or mol
 		 css1Function = getParam<double>("Soil.css1Function", 0);// 0: TraiRhizo, 1: linear css1, 2: no css1 
-		 CSSmax = getParam<double>("Soil.CSSmax", CSSmax_)* m3_2_cm3;//mol/m3
+		 CSSmax = getParam<double>("Soil.CSSmax", CSSmax_);//mol/cm3 zone 1 of mol
+         if (css1Function != 8){
+             CSSmax = CSSmax * m3_2_cm3; //mol/cm3 zone 1 to //mol/m3 zone 1
+             k_sorp = k_sorp * m3_2_cm3;//mol/cm3 water to mol/m3 water
+             
+             
+             }
 		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[s-1]
          
 		 
@@ -1294,11 +1300,11 @@ public:
 	
 	double computeRF(double C_S_W, double theta, double svc_volume) const
 	{
-		double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume);
+		double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume); // [ mol / m^3 zone 1]
 		return 1+(CSS1*f_sorp)/(C_S_W*theta);
 	}
 	double computeCSS1(double C_S_W, double theta, double svc_volume) const
-	{// [ mol / m^3]
+	{// [ mol / m^3 zone 1]
 		
 		switch(css1Function) {
 		  case 0:
@@ -1318,8 +1324,8 @@ public:
 			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp))/svc_volume;
 		  case 7://linear with depends on content
 			return CSSmax*(svc_volume*C_S_W*theta/k_sorp);
-		  case 8://linear with CSSmax is content
-			return CSSmax*C_S_W*theta/k_sorp;
+		  case 8://linear with CSSmax is content => [mol] * [mol C/m3 soil water] * [m3 soil water/m3 soil] * [m3 soil]/  [mol C] / [m3 soil] / [m3 soil zone 1/m3 soil]= [mol C/m3 soil zone 1] 
+			return CSSmax*C_S_W*theta/k_sorp /f_sorp;
 		  default:
 			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
 		}
@@ -1391,7 +1397,7 @@ public:
             svc_volume = scv.volume();
         }
 		
-			double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume);
+			double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume); // mol C/scv zone 1
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
@@ -1748,8 +1754,8 @@ private:
 	double  k_decay_= 0.75; //[-] Maintenance yield
 	double  k_decay2_= 0.5;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
 	std::vector<double>  k_growth_{ 0.8, 0.6};//[-] Growth yield on small polymers for the corresponding microbial groups
-	double k_sorp_ = 0.2;//mol/cm3
-	double CSSmax_ = 1.75;// [mol/cm3 soil solution] Maximum sorption capacity
+	double k_sorp_ = 0.2;//mol/cm3 or mol
+	double CSSmax_ = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
 	double alpha_ = 0.1; //[d-1]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
@@ -1766,9 +1772,9 @@ private:
 	double  k_decay ; //[-] Maintenance yield
 	double  k_decay2;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
 	std::vector<double>  k_growth;//[-] Growth yield on small polymers for the corresponding microbial groups
-	double k_sorp; //[mol/m3] Fraction of sorption stage 1
-	double f_sorp = 0.5;//[-]
-	double CSSmax;// [mol/m3 soil solution] Maximum sorption capacity
+	double k_sorp; //[mol/m3] or mol
+	double f_sorp = 0.5;//[-] fraction fo sorption zone 1
+	double CSSmax;// [mol/m3 soil scv zone 1] or mol Maximum sorption capacity
 	double alpha;//[s-1]	
 	
 	std::vector<double>  k_SBis ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group

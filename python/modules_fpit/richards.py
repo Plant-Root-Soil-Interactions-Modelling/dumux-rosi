@@ -496,6 +496,7 @@ class RichardsWrapper(SolverWrapper):
         return self.getTotCContent_each().sum(axis=0)
         
     def getCSS1_out_th(self):#mol C / cm3 scv
+        raise Exception
         if (self.css1Function == 0) or (self.css1Function == 4) :
             C_  = self.molarDensityWat_m3*np.array(self.getSolution(1))#.flatten()
             return self.CSSmax * (C_ /(C_ + self.k_sorp*1e6)) * self.f_sorp
@@ -524,7 +525,7 @@ class RichardsWrapper(SolverWrapper):
             watCont = self.getWaterContent()# m3/m3
             # mol = 
             C_  = self.molarDensityWat_m3*np.array(self.getSolution(1)) * vols * watCont
-            return self.CSSmax * C_ /( self.k_sorp*1e6) * self.f_sorp / (vols *1e6)
+            return self.CSSmax * C_ /( self.k_sorp)  / (vols *1e6) #* self.f_sorp
         else:
             raise Exception
             
@@ -532,11 +533,13 @@ class RichardsWrapper(SolverWrapper):
     #    return np.array(self.base.getCSS1_out())/1e6
         
     def getCSS1_out_(self):#mol C / cm3 scv
-        return self.f_sorp * np.array(self.base.computeCSS1s())/1e6
+        temp = np.array(self.base.computeCSS1s())#mol C / m3 scv zone 1
+        #print('getCSS1_out_', temp, self.f_sorp,self.CSSmax)
+        return self.f_sorp * temp /1e6
         
     def getCSS1_out(self):#mol C / cm3 scv
-        return self._map(self.allgatherv(self.getCSS1_out_()),0)
-        #return self.getCSS1_out_th()#so that css1 get redistributed with csw
+        temp = self._map(self.allgatherv(self.getCSS1_out_()),0)
+        return temp
         #else:
         #    return self.getCSS1_out_real()
         

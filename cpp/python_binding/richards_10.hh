@@ -103,7 +103,7 @@ public:
 													theta.at(rfIdx), 
 													svc_volume.at(rfIdx));//m3
 		}
-		return CSS1s;// mol/,3
+		return CSS1s;// mol/m3 zone 1
 	}
 	
 	// other values to reset?

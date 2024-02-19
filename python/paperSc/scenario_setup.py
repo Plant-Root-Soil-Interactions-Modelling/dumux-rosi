@@ -56,6 +56,7 @@ oldCSV = False
 def write_file_float(name, data, directory_, allranks = False):
     if (rank == 0) or allranks:
         name2 = directory_+ name+ '.txt'
+        #print('write_file_float',name2, allranks)
         with open(name2, 'a') as log:
             log.write(repr( data)  +'\n')
         
@@ -64,7 +65,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
     try:
         if (rank == 0) or allranks:
             name2 = directory_+ name+ fileType
-            # print('write_file_array',name2)
+            #print('write_file_array',name2)
             with open(name2, 'a') as log:
                 log.write(space.join([num for num in map(str, data)])  +'\n')
     except:
@@ -182,6 +183,7 @@ def getBiochemParam(s,paramIdx, noAds):
 
     s.K_L =  paramSet['K_L'] /s.mg_per_molC#[mol cm-3 soil]
     s.k_SO =  paramSet['k_O,S'] * s.mg_per_molC/paramSet['theta']
+    #s.thetaInit = paramSet['theta']
 
     s.k_RC =  paramSet['k_r,C']#1/d
     s.k_RO =  paramSet['k_r,O']#1/d
@@ -197,12 +199,10 @@ def getBiochemParam(s,paramIdx, noAds):
     s.k_decay = paramSet['Y'] # -
     s.k_growthC = paramSet['Y_C'] # -
     s.k_growthO = paramSet['Y_O'] #- 
-    if noAds:
-        s.CSSmax = 0.
-    else:
-        s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 bulk soil
     # can cause issue
-    s.k_sorp = paramSet['k_sorp'] /s.mg_per_molC# mol C/cm3 bulk soil
+    s.k_sorp = paramSet['k_sorp'] /s.mg_per_molC# mg C/cm 3 soil solution =>  mol C/cm3 soil solution
+    if s.css1Function == 8:
+        s.k_sorp *= paramSet['theta'] * s.cell_size # mol C/cm3 soil solution => mol
     
     s.alpha = 0.1# -
     s.f_sorp = 0.5
@@ -210,6 +210,13 @@ def getBiochemParam(s,paramIdx, noAds):
     s.C_aOLim=1.e-10 # so that microbe community can always regrow
     s.C_aCLim=1.e-10 # so that microbe community can always regrow
     
+    if noAds:
+        s.CSSmax = 0.
+    else:
+        s.CSSmax = paramSet['CSS_max']/s.mg_per_molC*0 # mol C/cm3 soil zone 1 to mol C/cm3 soil 
+        if s.css1Function == 8: #change cssmax to content
+            s.CSSmax *=  s.cell_size * s.f_sorp # mol C
+        
     return s
 
 def setBiochemParam(s):
@@ -245,9 +252,9 @@ def setBiochemParam(s):
     s.setParameter("Soil.micro_maxO", str(s.micro_maxO ))# 1/d
     s.setParameter("Soil.v_maxL", str(s.v_maxL))#[d-1]
 
-    s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3
+    s.setParameter("Soil.k_sorp", str(s.k_sorp)) # mol / cm3 soil water or mol
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
-    s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv]
+    s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv zone 1] or mol
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
     return s
 
@@ -265,7 +272,16 @@ def setIC(s, paramIdx, ICcc = None):
         C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
-        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp)) * (1 - s.f_sorp)#mol C/ cm3 scv
+        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
+        
+        if s.css1Function == 8: #change cssmax to content
+            #mol C/ cm3 scv zone 2 = mol C * [mol C / cm3 water ] * [cm3 water / cm3 soil] * [cm3 soils]/ [mol] /[ cm3 soil ] * [cm3 soil / cm3 soil zone 1] #at init css2_zone2 == css1_zone1
+            CSS2_init_zone2 = s.CSSmax * C_S * s.theta_init * s.cell_size / s.k_sorp / s.cell_size / s.f_sorp #
+            #mol C/ cm3 scv zone 2 to mol C/ cm3 scv
+            CSS2_init = CSS2_init_zone2 * (1 - s.f_sorp)
+        if s.css1Function == 3: # only pde
+            CSS2_init = C_S * (1 - s.f_sorp)
+            
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
         addedVar = 1.
         s.ICcc = np.array([C_S *unitConversion*addedVar,
@@ -276,6 +292,9 @@ def setIC(s, paramIdx, ICcc = None):
                             8.33333333333333e-06* unitConversion*addedVar,
                             CSS2_init*unitConversion*addedVar,
                            0.])# in mol/m3 water or mol/m3 scv
+        if rank == 0:
+            print('init s.ICcc', s.ICcc,'s.k_sorp',s.k_sorp,'s.CSSmax',s.CSSmax)
+            print('compute method' ,s.CSSmax, C_S , s.theta_init, s.cell_size , s.k_sorp , s.f_sorp)
     else:
         s.ICcc = ICcc
     
@@ -359,11 +378,16 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.dirResults = dirResults
     
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
-
+    s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
+    
     s.initialize()
     setDefault(s)
     setSoilParam(s,paramIndx)
-    getBiochemParam(s,paramIndx,noAds)
+    s.theta_init =  vg.water_content(p_mean_, s.vg_soil)
+    
+    s.css1Function = css1Function
+    s.setParameter( "Soil.css1Function", str(s.css1Function))
+    getBiochemParam(s,paramIndx,noAds )
     
     setBiochemParam(s)
     
@@ -375,7 +399,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     s.setParameter("Problem.reactionExclusive", "1")
 
-    s, s.vg_soil = setupOther(s, css1Function, p_mean_)
+    s, s.vg_soil = setupOther(s, p_mean_)
     return s, s.vg_soil
     
 def setShape1D(s,r_in, r_out,length,nCells = 10, doLogarithmic=True):
@@ -420,9 +444,8 @@ def setBC1D(s):
         s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
         s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
 
-def setupOther(s, css1Function, p_mean_):
-    s.css1Function = css1Function
-    s.setParameter( "Soil.css1Function", str(s.css1Function))
+def setupOther(s, p_mean_):
+    s.p_meanInit = p_mean_
 
 
     #cell_number = str(cell_number) 
@@ -769,7 +792,7 @@ def setKrKx_phloem(r): #inC
     kr_r1 = 5e-2
     kr_r2 = 5e-2
     kr_r3 = 5e-2
-    l_kr = 1000# 0.8 #cm
+    l_kr =  100#0.8 #cm
     
     r.setKr_st([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] , kr_length_= l_kr, verbose = False)
     r.setKx_st([[kz_r0,kz_r12,kz_r12,kz_r0],[kz_s,kz_s ],[kz_l]], False)
