@@ -83,7 +83,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     mpiVerbose = False
     noAds = (extraName == 'noAds')
     doSimple =False
-    doMinimumPrint = False# True
+    doMinimumPrint =  True
     doOldCell = False
     if doSimple:
         max_b =np.array( [5, 5, 0.] )# 
@@ -104,7 +104,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
-    results_dir="./results/newCSSbisnoAds"+extraName+str(spellData['scenario'])\
+    results_dir="./results/noCss1"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\

@@ -941,6 +941,15 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             # 3.1 data before, for post proccessing AND source adaptation
             ##
+            
+            
+            soil_solute_content_beforeReset = comm.bcast(np.array([np.array(
+                s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp+1)]),
+                                                root = 0) # mol
+            
+            water_content_beforeReset = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
+            soil_water_beforeReset = np.multiply(water_content_beforeReset, cell_volumes)  # water per cell [cm3]
+            
             if (n_iter > 0) :
                 if r.mpiVerbose or (max_rank == 1):
                     print('s.reset')
@@ -960,9 +969,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             buTotCBefore = sum(buTotCBeforeAll)
             
             
-            soil_solute_content = comm.bcast(np.array([np.array(
-                s.getContent(i+1, isDissolved = (i < r.numFluidComp))) for i in range(r.numComp+1)]),
-                                                root = 0) # mol
 
             
             if r.mpiVerbose:# or (max_rank == 1):
@@ -1008,7 +1014,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
             
             soil_sources_limited = np.concatenate((np.array([soil_fluxes_limited]),soil_source_sol ))
-            soil_contents = np.concatenate((np.array([soil_water]),soil_solute_content ))  # water_content
+            soil_contents = np.concatenate((np.array([soil_water_beforeReset]),soil_solute_content_beforeReset ))  # water_content
             assert soil_sources_limited.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
             assert soil_contents.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
             
