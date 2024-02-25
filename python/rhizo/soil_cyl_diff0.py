@@ -72,16 +72,19 @@ for i, dt in enumerate(np.diff(times)):
     if rank == 0:
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-    s.solve(dt, maxDt)
+    s.solve(dt)
 
     points = s.getDofCoordinates()
 
     x = s.getSolutionHead()
+    
     y = np.array(s.getSolution(1))  # solute concentration kg/m3 -> g/cm3
+    
 
     ax1.plot(points[:], x, col[i % len(col)], label = "dumux {:g} days".format(s.simTime))
     ax2.plot(points[:], y, col[i % len(col)], label = "dumux {:g} days".format(s.simTime))
 
+    # TODO: this throws an error, to fix
     f.append(s.getNeumann(idx))  # [kg/kg] -> 1/1000 [kg/m3] [] -> 1 [g/cm3] # solute concentration
 
 # os.chdir("../../../build-cmake/rosi_benchmarking/soil_richards/python")

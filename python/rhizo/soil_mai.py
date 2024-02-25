@@ -98,7 +98,7 @@ for i, dt in enumerate(np.diff(times)):
         print("*****", "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
     s.ddt = 1.e-3
-    s.solve(dt, maxDt)
+    s.solve(dt)
 
     points = s.getDofCoordinates()
 

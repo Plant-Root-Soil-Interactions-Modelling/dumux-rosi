@@ -79,7 +79,7 @@ struct PrimaryVariables<TypeTag, TTag::RichardsTT>
  using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // choose CC or Box
  using GridGeometryRSPTT = Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
  using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::analytic>;
- using RichardsSPLinearSolver = Dumux::UMFPackIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+ using RichardsSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
 		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>; // IstlSolverFactoryBackend (dynamic from input files)
  using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 

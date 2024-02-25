@@ -27,7 +27,7 @@ SPECIFIC_COMPILER=""
 
 SPECIFIC_GENERATOR=""
 # if you want to specify a specific make file generator (e.g. ninja), do it by setting (comment the above line)
-#SPECIFIC_GENERATOR="
+SPECIFIC_GENERATOR="
 # -DCMAKE_GENERATOR='Ninja'
 # -DCMAKE_MAKE_PROGRAM='/usr/bin/ninja'
 #"
