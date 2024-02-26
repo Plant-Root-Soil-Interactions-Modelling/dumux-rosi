@@ -1,6 +1,9 @@
 #ifndef PYTHON_SOLVER_BASE_H_
 #define PYTHON_SOLVER_BASE_H_
 
+#include <type_traits>
+#include <dumux/linear/istlsolvers.hh>
+
 // initialize
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
@@ -306,7 +309,8 @@ public:
     virtual std::string getParameter(std::string key) {
         return Dumux::getParam<std::string>(key, "");
     }
-
+	
+	
     /**
      * After the grid is created, the problem can be initialized
      *
@@ -361,8 +365,9 @@ public:
         timeLoop->setMaxTimeStepSize(maxDt);
 
         assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, x); // dynamic
-        linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
-
+        
+		linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+		
         nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
         nonLinearSolver->setVerbosity(false);
         nonLinearSolverNoMPI = std::make_shared<NonLinearSolverNoMPI>(assembler, linearSolver,
