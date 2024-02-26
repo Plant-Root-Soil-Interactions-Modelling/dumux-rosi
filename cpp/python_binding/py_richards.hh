@@ -17,6 +17,9 @@ namespace py = pybind11;
 #include <dumux/linear/istlsolvers.hh>
 #include <dumux/linear/linearsolvertraits.hh>
 #include <dumux/linear/linearalgebratraits.hh>
+#include <dumux/linear/pdesolver.hh>
+#include <dune/istl/umfpack.hh>
+#include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/assembly/fvassembler.hh>
 
 #include <dumux/discretization/cctpfa.hh>
@@ -24,6 +27,7 @@ namespace py = pybind11;
 
 #include <dumux/porousmediumflow/richards/model.hh> // the model
 
+#include <dune/common/parallel/mpicommunication.hh>
 
 #include <dune/grid/spgrid.hh>
 //#if HAVE_DUNE_ALUGRID
@@ -79,10 +83,34 @@ struct PrimaryVariables<TypeTag, TTag::RichardsTT>
  using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // choose CC or Box
  using GridGeometryRSPTT = Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
  using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::analytic>;
+ using RichardsSPAssemblerNum = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::numeric>;
+ 
  using RichardsSPLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
 		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>; // IstlSolverFactoryBackend (dynamic from input files)
+ using RichardsSPSeqLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::SeqLinearSolverTraits,
+		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+ using RichardsSPLinearSolverNum = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssemblerNum>>; // IstlSolverFactoryBackend (dynamic from input files)
+ 
  using RichardsSPProblem = Dumux::RichardsProblem<RSPTT>;
 
+ 
+ using RichardsILUIstlLinearSolver = Dumux::ILUBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>; 
+ // using RichardsSPAMGBiCGSTABIstlLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 // Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+ // using RichardsSPILUBiCGSTABIstlLinearSolver = Dumux::ILUBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 // Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+ using RichardsSPSSORCGIstlLinearSolver = Dumux::SSORCGIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+ using RichardsSPILURestartedGMResIstlLinearSolver = Dumux::ILURestartedGMResIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>;
+		 
+ // using RichardsSPUMFPackIstlLinearSolverNumeric = Dumux::UMFPackIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 // Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssemblerNumeric>>; // IstlSolverFactoryBackend (dynamic from input files)
+ // using RichardsSPAMGBiCGSTABIstlLinearSolverNumeric = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+		 // Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssemblerNumeric>>;
+		 
 //using RUGTT = Dumux::Properties::TTag::RichardsUGCC; // choose CC or Box
 //using GridGeometryRUGTT = Dumux::GetPropType<RUGTT, Dumux::Properties::GridGeometry>; // typename ????
 //using RichardsUGAssembler = Dumux::FVAssembler<RUGTT, Dumux::DiffMethod::numeric>;
@@ -93,6 +121,22 @@ struct PrimaryVariables<TypeTag, TTag::RichardsTT>
 PYBIND11_MODULE(rosi_richards, m) {
     init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "BaseRichardsSP");
     init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPLinearSolver>(m, "RichardsSP");
+	
+	init_solverbase<RichardsSPProblem, RichardsSPAssemblerNum, RichardsSPLinearSolverNum>(m, "BaseRichardsSPnum");
+    init_richards<RichardsSPProblem, RichardsSPAssemblerNum, RichardsSPLinearSolverNum>(m, "RichardsSPnum");
+	
+	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPSeqLinearSolver>(m, "BaseRichardsSPSeq");
+    init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPSeqLinearSolver>(m, "RichardsSPSeq");
+	
+	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsILUIstlLinearSolver>(m, "BaseRichardsSPILU");
+    init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsILUIstlLinearSolver>(m, "RichardsSPILU");
+	
+	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPSSORCGIstlLinearSolver>(m, "BaseRichardsSPSSORC");
+    init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPSSORCGIstlLinearSolver>(m, "RichardsSPSSORC");
+	
+	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPILURestartedGMResIstlLinearSolver>(m, "BaseRichardsSPILURes");
+    init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPILURestartedGMResIstlLinearSolver>(m, "RichardsSPILURes");
+    
 //    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");
 //    init_richards<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");
 }
