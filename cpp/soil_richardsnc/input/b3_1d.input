@@ -1,0 +1,46 @@
+[TimeLoop]
+TEnd = 864000 # 0 is steady state
+DtInitial =  1 # [s]
+MaxTimeStepSize = 864000 # 10 days [s] 
+[ Component ]
+BufferPower = "140."
+MolarMass = "1.8e-2"
+LiquidDiffusionCoefficient = "1.e-9"
+[ Problem ]
+EnableGravity = "false"
+Name = "noname"
+[ RootSystem ]
+[ RootSystem.Uptake ]
+Km = "0.0058"
+Vmax = "0.281664"
+[ Soil ]
+Output.File = "false"
+Problem.EnableGravity = "false"
+[ Soil.BC ]
+[ Soil.BC.Bot ]
+SType = "3"
+Type = "3"
+Value = "-0.1"
+CValue = "0.1"
+[ Soil.BC.Top ]
+CValue = "0."
+SType = "3"
+Type = "3"
+Value = "0.0"
+[ Soil.IC ]
+C = "0.01"
+P = "-100.0"
+[ Soil.VanGenuchten ]
+Alpha = "0.04"
+Ks = "50"
+N = "1.6"
+Qr = "0.045"
+Qs = "0.43"
+[Grid]
+Overlap = "1"
+[Flux]
+UpwindWeight = "0.5"
+[SpatialParams]
+Tortuosity = "0.001"
+[Soil]
+CriticalPressure = -15000 #[cm]

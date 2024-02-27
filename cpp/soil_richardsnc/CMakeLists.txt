@@ -10,11 +10,20 @@ target_compile_definitions(richardsnc1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 add_executable(richardsnc1d_cyl EXCLUDE_FROM_ALL richards1p2c_cyl.cc)
 target_compile_definitions(richardsnc1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
 
-add_executable(richardsnc_alu  richards1p2c.cc)
+add_executable(richardsnc_alu EXCLUDE_FROM_ALL richards1p2c.cc)
 target_compile_definitions(richardsnc_alu PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
 
-add_executable(richardsnc_ug richards1p2c.cc)
+add_executable(richardsnc_ug EXCLUDE_FROM_ALL richards1p2c.cc)
 target_compile_definitions(richardsnc_ug PUBLIC GRIDTYPE=Dune::UGGrid<3>)
+
+
+set(PYBIND11_DIR ${PROJECT_SOURCE_DIR}/../CPlantBox/src/external/pybind11)
+
+
+# Include Pybind11
+add_subdirectory(${PYBIND11_DIR} pybind11)
+add_executable(richardsnc1d_cyl_pybi EXCLUDE_FROM_ALL richards1d2c_PyBi.cc)
+target_link_libraries(richardsnc1d_cyl_pybi PUBLIC pybind11::embed)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)

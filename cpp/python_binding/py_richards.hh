@@ -1,8 +1,8 @@
 #ifndef PYTHON_RICHARDS_H_
 #define PYTHON_RICHARDS_H_
 
-#include "external/pybind11/include/pybind11/pybind11.h"
-#include "external/pybind11/include/pybind11/stl.h"
+#include "../../../CPlantBox/src/external/pybind11/include/pybind11/pybind11.h"
+#include "../../../CPlantBox/src/external/pybind11/include/pybind11/stl.h"
 
 namespace py = pybind11;
 

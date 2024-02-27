@@ -177,6 +177,7 @@ class SolverWrapper():
 
     def getNeumann(self, gIdx, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
+        print("gIdx, eqIdx",gIdx, eqIdx)
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self, eqIdx = 0):

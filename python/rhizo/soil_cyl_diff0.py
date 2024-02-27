@@ -66,7 +66,7 @@ idx = s.pick([0.02])
 print("boundary element ", idx)
 f = []
 maxDt = 0.01
-
+s.base.printParams()
 for i, dt in enumerate(np.diff(times)):
 
     if rank == 0:
