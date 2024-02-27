@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDS_PROBLEM_HH
-#define RICHARDS_PROBLEM_HH
+#ifndef RICHARDS_PROBLEM_SCHROEDER_HH
+#define RICHARDS_PROBLEM_SCHROEDER_HH
 
 #include <dumux/porousmediumflow/problem.hh> // base class
 

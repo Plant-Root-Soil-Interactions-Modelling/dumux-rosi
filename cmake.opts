@@ -16,14 +16,15 @@ GXX_RELEASE_OPTS=" \
     -O3 \
     -march=native \
     -funroll-loops \
+	-ftime-trace\
     -g0"
 
-SPECIFIC_COMPILER=""
+#SPECIFIC_COMPILER=""
 # if you want to specify a specific compiler, do it by setting (comment the above line)
-#SPECIFIC_COMPILER="
+SPECIFIC_COMPILER="
+ -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+"
 # -DCMAKE_C_COMPILER=/usr/bin/gcc-8
-# -DCMAKE_CXX_COMPILER=/usr/bin/g++-8
-#"
 
 #SPECIFIC_GENERATOR=""
 # if you want to specify a specific make file generator (e.g. ninja), do it by setting (comment the above line)

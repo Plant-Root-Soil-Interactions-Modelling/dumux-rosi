@@ -92,6 +92,13 @@ public:
 
     virtual ~SolverBase() { }
 
+    //! prints all used and unused parameters
+	void printParams()
+	{
+		Dumux::Parameters::print();
+	}
+    
+
     /**
      * Writes the Dumux welcome message, and creates the global Dumux parameter tree from defaults and the .input file
      *
@@ -546,9 +553,28 @@ public:
      * This is done for a single process, gathering and mapping is done in Python.
      */
     virtual std::vector<double> getCellVolumesCyl() {
+		DUNE_THROW(Dune::NotImplemented, "Do NOT use getCellVolumesCyl, use getCellSurfacesCyl instead and multiply by the length");
+
+		assert(false&&"Do NOT use getCellVolumesCyl, use getCellSurfacesCyl instead");//do I need to use dune-assert here?
         std::vector<double> vols;
         for (const auto& e : elements(gridGeometry->gridView())) {
             vols.push_back(e.geometry().volume()*2*e.geometry().center()[0]*3.1415);
+        }
+        return vols;
+    }
+
+/**
+     * The Surface [m2] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    virtual std::vector<double> getCellSurfacesCyl() {
+        std::vector<double> vols;
+		auto points = getPoints();//get the vertices == faces of 1D domain
+        for (int i = 0; i < (points.size()-1); i++) {
+			double rIn = points.at(i).at(0);
+			double rOut = points.at(i + 1).at(0);
+            vols.push_back((rOut*rOut - rIn*rIn)* M_PI);
         }
         return vols;
     }
@@ -616,6 +642,17 @@ public:
         }
     }
 
+	/**
+     * Set the current solution manualy
+     */
+    virtual void setSolution( std::vector<double> sol, int eqIdx = 0) {
+        int n = checkGridInitialized();
+        std::vector<int> dofIndices = getDofIndices() ;
+        for (int c = 0; c<n; c++) {
+            x[c][eqIdx] = sol[dofIndices[c]] ;
+        }
+    }
+
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
@@ -653,6 +690,7 @@ public:
     /**
      * Returns the maximal flux (over the boundary scvfs) of an element, given by its global element index,
      * for all mpi processes
+	 * ATT: this only gives the flux AT THE END of the solve() function
      */
     virtual double getNeumann(int gIdx, int eqIdx = 0) {
         double f = 0.;
@@ -665,7 +703,8 @@ public:
             auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
             elemVolVars.bindElement(e, fvGeometry, x);
 			auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
-			elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
+			//bindElement throws error. neumann() does not use elemFluxVars anyway
+			//elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
 
             for (const auto& scvf : scvfs(fvGeometry)) {
                 if (scvf.boundary()) {
@@ -695,7 +734,7 @@ public:
                     auto elemVolVars  = Dumux::localView(gridVariables->curGridVolVars());
                     elemVolVars.bindElement(e, fvGeometry, x);
 					auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
-					elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
+					//elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
 
                     f += problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx]; // [kg / (m2 s)]
                 }
@@ -888,6 +927,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getGridBounds", &Solver::getGridBounds)
             .def("setParameter", &Solver::setParameter)
             .def("getParameter", &Solver::getParameter)
+            .def("printParams", &Solver::printParams)
             .def("initializeProblem", &Solver::initializeProblem, py::arg("maxDt") = -1)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
             // simulation
@@ -900,12 +940,14 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getCells", &Solver::getCells)
             .def("getCellVolumes", &Solver::getCellVolumes)
             .def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
+            .def("getCellSurfacesCyl", &Solver::getCellSurfacesCyl)
             .def("getDofCoordinates", &Solver::getDofCoordinates)
             .def("getPointIndices", &Solver::getPointIndices)
             .def("getCellIndices", &Solver::getCellIndices)
             .def("getDofIndices", &Solver::getDofIndices)
             .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
-            .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
+            .def("getSolutionAt", &Solver::getSolutionAt, py::arg("gIdx"), py::arg("eqIdx") = 0)            
+			.def("setSolution", &Solver::setSolution)
             .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
             .def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
