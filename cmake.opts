@@ -31,7 +31,7 @@ SPECIFIC_GENERATOR=""
 #SPECIFIC_GENERATOR="
 # -DCMAKE_GENERATOR='Ninja'
 # -DCMAKE_MAKE_PROGRAM='/usr/bin/ninja'
-"
+#"
 
 OPM_FLAGS=""
 # to build opm it might be necessary to set manually the following variables (comment the above line)
