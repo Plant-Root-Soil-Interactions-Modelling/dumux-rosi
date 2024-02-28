@@ -7,7 +7,8 @@ import sys; sys.path.append("../../../../CPlantBox");  sys.path.append("../../..
 
 import numpy as np
 import matplotlib.pyplot as plt
-from functional.xylem_flux import sinusoidal2
+
+import timings_table as timings
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -45,77 +46,83 @@ def get_cumulative(method, plant, dim, soil, outer_method, label):
     return np.array(cup_), np.array(cup2_)
 
 
-if __name__ == "__main__":
+def get_error_table(method, plant, dim, soil, outer_method, dimB = "1D"):
 
-    """
-    Maize
-    """
+    cup_AAA, cupW_AAA = get_cumulative(method, plant, dim, soil, outer_method, "(AAA)")
+    dim = [dimB] * 3  # xxB
+    cup_AAB, cupW_AAB = get_cumulative(method, plant, dim, soil, outer_method, "(AAB)")
+    outer_method = ["length"] * 3  # xBx
+    cup_ABB, cupW_ABB = get_cumulative(method, plant, dim, soil, outer_method, "(ABB)")
+    method = ["agg"] * 3  # Bxx
+    cup_BBB, cupW_BBB = get_cumulative(method, plant, dim, soil, outer_method, "(BBB)")
+    method = ["par"] * 3  # Bxx
+    cup_CBB, cupW_CBB = get_cumulative(method, plant, dim, soil, outer_method, "(CBB)")
+
+    print(plant[0] + ": percental error in cumulative uptake after 2 weeks (xxB = " + dimB + ")\n")
+    np.set_printoptions(precision = 0)
+    print("AAA")
+    c1_aab = -100.*(np.ones(np.shape(cup_AAB)) - np.divide(cup_AAB, cup_AAA))
+    print(c1_aab, "% AAB")
+    c1_abb = -100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAA))
+    print(c1_abb, "% ABB")
+    c1_bbb = -100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAA))
+    print(c1_bbb, "% BBB")
+    c1_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAA))
+    print(c1_cbb, "% CBB")
+    print("AAB")
+    c2_abb = -100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAB))
+    print(c2_abb, "% ABB")
+    c2_bbb = -100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAB))
+    print(c2_bbb, "% BBB")
+    c2_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAB))
+    print(c2_cbb, "% CBB")
+    print("ABB")
+    c3_bbb = -100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_ABB))
+    print(c3_bbb, "% BBB")
+    c3_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_ABB))
+    print(c3_cbb, "% CBB")
+    print("BBB")
+    c4_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_BBB))
+    print(c4_cbb, "% CBB\n\n")
+
+    table0 = np.zeros((5, 3 * 5))
+    table0[1:, 0:3] = np.array([c1_aab, c1_abb, c1_bbb, c1_cbb])
+    table0[2:, 3:6] = np.array([c2_abb, c2_bbb, c2_cbb])
+    table0[3:, 6:9] = np.array([c3_bbb, c3_cbb])
+    table0[4:, 9:12] = np.array([c4_cbb])
+
+    return table0
+
+
+def get_error_table_maize(dimB):
     plant = ["maize"] * 3
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     method = ["sra"] * 3  # Axx
     dim = ["3D"] * 3
     outer_method = ["voronoi"] * 3
-    cup_AAA, cupW_AAA = get_cumulative(method, plant, dim, soil, outer_method, "(AAA)")
-    dim = ["1D"] * 3  # xxB
-    cup_AAB, cupW_AAB = get_cumulative(method, plant, dim, soil, outer_method, "(AAB)")
-    outer_method = ["length"] * 3  # xBx
-    cup_ABB, cupW_ABB = get_cumulative(method, plant, dim, soil, outer_method, "(ABB)")
-    method = ["agg"] * 3  # Bxx
-    cup_BBB, cupW_BBB = get_cumulative(method, plant, dim, soil, outer_method, "(BBB)")
-    method = ["par"] * 3  # Bxx
-    cup_CBB, cupW_CBB = get_cumulative(method, plant, dim, soil, outer_method, "(CBB)")
+    return get_error_table(method, plant, dim, soil, outer_method, dimB)
 
-    print("\nMaize: percental error in cumulative uptake compared to AAA after 2 weeks")
-    np.set_printoptions(precision = 0)
-    print("AAA")
-    print(-100.*(np.ones(np.shape(cup_AAB)) - np.divide(cup_AAB, cup_AAA)), "% AAB")
-    print(-100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAA)), "% ABB")
-    print(-100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAA)), "% BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAA)), "% CBB")
-    print()
-    print("AAB")
-    print(-100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAB)), "% ABB")
-    print(-100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAB)), "% BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAB)), "% CBB")
-    print("ABB")
-    print(-100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_ABB)), "% BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_ABB)), "% CBB")
-    print("BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_BBB)), "% CBB")
 
-    """
-    Spring Barley
-    """
+def get_error_table_springbarley():
     plant = ["springbarley"] * 3
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     method = ["sra"] * 3  # Axx
     dim = ["3D"] * 3
     outer_method = ["voronoi"] * 3
-    cup_AAA, cupW_AAA = get_cumulative(method, plant, dim, soil, outer_method, "(AAA)")
-    dim = ["1D"] * 3  # xxB
-    cup_AAB, cupW_AAB = get_cumulative(method, plant, dim, soil, outer_method, "(AAB)")
-    outer_method = ["length"] * 3  # xBx
-    cup_ABB, cupW_ABB = get_cumulative(method, plant, dim, soil, outer_method, "(ABB)")
-    method = ["agg"] * 3  # Bxx
-    cup_BBB, cupW_BBB = get_cumulative(method, plant, dim, soil, outer_method, "(BBB)")
-    method = ["par"] * 3  # Bxx
-    cup_CBB, cupW_CBB = get_cumulative(method, plant, dim, soil, outer_method, "(CBB)")
+    return get_error_table(method, plant, dim, soil, outer_method)
 
-    print("\n\nSpring barley: percental error in cumulative uptake compared to AAA after 2 weeks")
-    np.set_printoptions(precision = 0)
-    print("AAA")
-    print(-100.*(np.ones(np.shape(cup_AAB)) - np.divide(cup_AAB, cup_AAA)), "% AAB")
-    print(-100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAA)), "% ABB")
-    print(-100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAA)), "% BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAA)), "% CBB")
-    print()
-    print("AAB")
-    print(-100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAB)), "% ABB")
-    print(-100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAB)), "% BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAB)), "% CBB")
-    print("ABB")
-    print(-100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_ABB)), "% BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_ABB)), "% CBB")
-    print("BBB")
-    print(-100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_BBB)), "% CBB")
+
+if __name__ == "__main__":
+
+    table_error = get_error_table_maize("1D")
+    table_speedup = timings.table_maize("1D")
+    np.savetxt("table_maize_1D.csv", table_error + table_speedup, delimiter = ";")
+
+    # table_error = get_error_table_maize("2D")
+    # table_speedup = timings.table_maize("2D")
+    # np.savetxt("table__maize_2D.csv", table_error + table_speedup, delimiter = ",")
+
+    table_error3 = get_error_table_springbarley()
+    table_speedup3 = timings.table_springbarley()
+    np.savetxt("table_springbarley_1D.csv", table_error3 + table_speedup3, delimiter = ";")
 

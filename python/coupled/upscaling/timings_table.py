@@ -29,72 +29,63 @@ def get_timings(job_list):
     return times[0]
 
 
-if __name__ == "__main__":
+def get_speedup_table(plant, dim, method, outer, dimB = "1D"):
+    soils = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    t_AAA = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
+    dim = dimB
+    t_AAB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
+    outer = 'length'
+    t_ABB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
+    method = 'agg'
+    t_BBB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
+    method = 'par'
+    t_CBB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
+    print(plant + ": speed ups for 2 weeks of simulation time (xxB = " + dimB + ")\n")
+    np.set_printoptions(precision = 0)
+    print("AAA")
+    print(np.divide(t_AAA, t_AAB), "AAB")
+    print(np.divide(t_AAA, t_ABB), "ABB")
+    print(np.divide(t_AAA, t_BBB), "BBB")
+    print(np.divide(t_AAA, t_CBB), "CBB")
+    row_AAA = np.array([np.divide(t_AAA, t_AAB), np.divide(t_AAA, t_ABB), np.divide(t_AAA, t_BBB), np.divide(t_AAA, t_CBB)])
+    print("AAB")
+    print(np.divide(t_AAB, t_ABB), "ABB")
+    print(np.divide(t_AAB, t_BBB), "BBB")
+    print(np.divide(t_AAB, t_CBB), "CBB")
+    row_AAB = np.array([np.divide(t_AAB, t_ABB), np.divide(t_AAB, t_BBB), np.divide(t_AAB, t_CBB)])
+    print("ABB")
+    print(np.divide(t_ABB, t_BBB), "BBB")
+    print(np.divide(t_ABB, t_CBB), "CBB")
+    row_ABB = np.array([np.divide(t_ABB, t_BBB), np.divide(t_ABB, t_CBB)])
+    print("BBB")
+    print(np.divide(t_BBB, t_CBB), "CBB\n\n")
+    row_BBB = np.array([np.divide(t_BBB, t_CBB)])
+    table0 = np.zeros((5, 3 * 5))
+    table0[0, 3:] = row_AAA.flat
+    table0[1, 6:] = row_AAB.flat
+    table0[2, 9:] = row_ABB.flat
+    table0[3, 12:] = row_BBB.flat
 
-    """ speed up table """
-    print("\nMaize")
+    return table0
+
+
+def table_maize(dimB):
     plant = 'maize'
     dim = '3D'
     method = 'sra'
     outer = 'voronoi'
-    soils = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    t_AAA = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    dim = '2D'
-    t_AAB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    outer = 'length'
-    t_ABB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    method = 'agg'
-    t_BBB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    method = 'par'
-    t_CBB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    print("\nMaize: speed ups in wall time for 2 weeks of simulation time")
-    np.set_printoptions(precision = 0)
-    print("AAA")
-    print(np.divide(t_AAA, t_AAB), "AAB")
-    print(np.divide(t_AAA, t_ABB), "ABB")
-    print(np.divide(t_AAA, t_BBB), "BBB")
-    print(np.divide(t_AAA, t_CBB), "CBB")
-    print()
-    print("AAB")
-    print(np.divide(t_AAB, t_ABB), "ABB")
-    print(np.divide(t_AAB, t_BBB), "BBB")
-    print(np.divide(t_AAB, t_CBB), "CBB")
-    print("ABB")
-    print(np.divide(t_ABB, t_BBB), "BBB")
-    print(np.divide(t_ABB, t_CBB), "CBB")
-    print("BBB")
-    print(np.divide(t_BBB, t_CBB), "CBB")
+    return get_speedup_table(plant, dim, method, outer, dimB)
 
-    print("\nSpring barley")
+
+def table_springbarley():
     plant = 'springbarley'
     dim = '3D'
     method = 'sra'
     outer = 'voronoi'
-    soils = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    t_AAA = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    dim = '1D'
-    t_AAB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    outer = 'length'
-    t_ABB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    method = 'agg'
-    t_BBB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    method = 'par'
-    t_CBB = np.array([get_timings([[method, plant, dim, soils[i], outer]]) for i in range(0, 3)])
-    print("\nSpring barley: speed ups in wall time for 2 weeks of simulation time")
-    np.set_printoptions(precision = 0)
-    print("AAA")
-    print(np.divide(t_AAA, t_AAB), "AAB")
-    print(np.divide(t_AAA, t_ABB), "ABB")
-    print(np.divide(t_AAA, t_BBB), "BBB")
-    print(np.divide(t_AAA, t_CBB), "CBB")
-    print()
-    print("AAB")
-    print(np.divide(t_AAB, t_ABB), "ABB")
-    print(np.divide(t_AAB, t_BBB), "BBB")
-    print(np.divide(t_AAB, t_CBB), "CBB")
-    print("ABB")
-    print(np.divide(t_ABB, t_BBB), "BBB")
-    print(np.divide(t_ABB, t_CBB), "CBB")
-    print("BBB")
-    print(np.divide(t_BBB, t_CBB), "CBB")
+    return get_speedup_table(plant, dim, method, outer)
+
+
+if __name__ == "__main__":
+    table_maize("1D")
+    table_springbarley()
 
