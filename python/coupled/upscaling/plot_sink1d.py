@@ -18,6 +18,8 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6, 13], ls = [ "-", ":", "-.", "-", ":", "-."]):
 
+    # soil_ = ["Loam", "Clay", "Sandy loam"] # todo make dictionary map lower case name to upper case
+
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
     # check with scenario_setup
@@ -50,7 +52,7 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     data = [np.load(n_ + ".npy")  for n_ in fnames]
 
     """ sink plot """
-    ax[0].set_title(soil[0])
+    ax[0].set_title(soil[0][7:])
     ax[0].set_ylabel("depth [cm]")
     ax[0].set_xlabel("sink term at noon [1/day]")
     ax[1].set_xlabel("sink term at night [1/day]")
@@ -127,7 +129,7 @@ if __name__ == "__main__":
 
     """ maize """
     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-    method = ["sra"] * 3
+    method = ["sra"] * 3  # Axx
     plant = ["maize"] * 3
     soil = ["hydrus_sandyloam"] * 3
     outer_method = ["voronoi", "length", "surface"]  # , "voronoi"]

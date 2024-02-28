@@ -108,11 +108,11 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ["sra"]  # 'sra', sraOld, agg, par
+    method = ["sra, agg, par"]  # 'sra', sraOld, agg, par
     plant = ['maize']  # 'springbarley', 'soybean', 'maize'
-    dim = ["3D"]  # "1D", "2D"
+    dim = ["2D"]  # "1D", "2D"
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
-    outer_radius = ['surface']  # 'length', 'surface', 'volume', 'voronoi'
+    outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
 
     # method = ['agg']  # 'sra', sraOld, agg
     # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'

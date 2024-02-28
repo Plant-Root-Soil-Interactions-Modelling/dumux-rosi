@@ -187,6 +187,7 @@ public:
                 p["Grid.Periodic"] = "false false false";
             }
         }
+        std::cout << 'p[Grid.Periodic]' << p["Grid.Periodic"] << "\n" << std::flush;
         createGrid();
     }
 

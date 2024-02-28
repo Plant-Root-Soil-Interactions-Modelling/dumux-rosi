@@ -72,7 +72,7 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
     for i in range(0, n):
         t = data[i][0]
         y = data[i][2]
-        ax[i].plot(t, y, 'g' + ls, label = " actual transpiration " + label)  # actual transpiration  according to soil model
+        ax[i].plot(t, y, 'g' + ls, label = " actual " + label)  # actual transpiration  according to soil model
         ax[i].set_title(soil_[i])
         # ax[i].set_title(titles[i])
         ax[i].set_ylabel("[cm$^3$ day$^{-1}$]")
@@ -80,7 +80,13 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
         dt = np.diff(t)
         so = np.array(y)
         cup = np.cumsum(np.multiply(so[:-1], dt))
-        ax2[i].plot(t[1:], cup, 'c' + ls, label = "cumulative transpiration " + label)  # cumulative transpiration (neumann)
+        if ls == ":":
+            ls_ = 'b' + ls
+        elif ls == "--":
+            ls_ = 'c' + ls
+        else:
+            ls_ = 'c' + ls
+        ax2[i].plot(t[1:], cup, ls_, label = "cumulative " + label)  # cumulative transpiration (neumann)
         ax2[i].set_ylabel("cumulative [cm$^3$]")
         ax2[i].legend(loc = 'lower right')
         print(i, "cumulative uptake " + label, cup[-1], "cm3")
@@ -94,9 +100,9 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
 
 if __name__ == "__main__":
 
-    """
-    Reference solution 3d, 2d, 1d
-    """
+    # """
+    # AAA vs ABA
+    # """
     # Maize
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
@@ -106,18 +112,71 @@ if __name__ == "__main__":
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     outer_method = ["voronoi"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
-    cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(voronoi ref)")
+    cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAA)")
     outer_method = ["length"] * 3
-    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(uniform length)")
-    outer_method = ["length"] * 3
-    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(unfiorm surface)")
+    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ABA length)")
+    outer_method = ["volume"] * 3
+    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(ABA surface)")
+    # outer_method = ["volume"] * 3
+    # cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(ABA volume)")
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
-    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length",
-          100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for surface")
-    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for length"
-          , 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
-    plt.savefig('transpiration_AAx_maize.png')
+    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length")
+    print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for surface")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for length")
+    print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
+    plt.savefig('transpiration_AxA_maize.png')
 
+    # Springbarley
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3
+    plant = ["springbarley"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAA)")
+    outer_method = ["length"] * 3
+    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ABA length)")
+    outer_method = ["surface"] * 3
+    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(ABA surface)")
+    # outer_method = ["volume"] * 3
+    # cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(ABA volume)")
+    print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length")
+    print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for surface")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for length")
+    print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
+    plt.savefig('transpiration_AxA_springbarley.png')
+
+    # """
+    # AAB vs ABB
+    # """
+    # # Maize
+    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    # method = ["sra"] * 3
+    # plant = ["maize"] * 3
+    # dim = ["1D"] * 3
+    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    # outer_method = ["voronoi"] * 3
+    # plot_potential(ax, method, plant, dim, soil, outer_method)
+    # cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAB)")
+    # outer_method = ["length"] * 3
+    # cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(ABB length)")
+    # outer_method = ["surface"] * 3
+    # cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ABB surface)")
+    # outer_method = ["volume"] * 3
+    # cup3_, cup3W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "-.", "(ABB volume)")
+    # print("\nMaize: percental error in cumulative uptake comapared to reference solution")
+    # print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length")
+    # print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for surface")
+    # print("1 week ", 100.*(np.ones(np.shape(cup3W_)) - np.divide(cup3W_, cupW_ref)), "% for volume")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for length")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup3_)) - np.divide(cup3_, cup_ref)), "% for volume\n")
+    # plt.savefig('transpiration_AxB_maize.png')
+    #
     # # Springbarley
     # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
@@ -127,17 +186,21 @@ if __name__ == "__main__":
     # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     # outer_method = ["voronoi"] * 3
     # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(3D ref)")
+    # cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAB)")
     # outer_method = ["length"] * 3
-    # cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(2D ref)")
+    # cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(ABB length)")
     # outer_method = ["surface"] * 3
-    # cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(1D ref)")
+    # cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(ABB surface)")
+    # outer_method = ["volume"] * 3
+    # cup3_, cup3W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "-.", "(ABB volume)")
     # print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
-    # print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length",
-    #       100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for surface")
-    # print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for length"
-    #       , 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
-    # plt.savefig('transpiration_AAx_springbarley.png')
+    # print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for length")
+    # print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for surface")
+    # print("1 week ", 100.*(np.ones(np.shape(cup3W_)) - np.divide(cup3W_, cupW_ref)), "% for volume")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for length")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup3_)) - np.divide(cup3_, cup_ref)), "% for volume\n")
+    # plt.savefig('transpiration_AxB_springbarley.png')
 
     plt.tight_layout()
     plt.show()
