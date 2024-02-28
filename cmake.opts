@@ -16,7 +16,6 @@ GXX_RELEASE_OPTS=" \
     -O3 \
     -march=native \
     -funroll-loops \
-	-ftime-trace\
     -g0"
 
 SPECIFIC_COMPILER=""
