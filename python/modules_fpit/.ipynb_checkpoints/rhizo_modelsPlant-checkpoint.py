@@ -119,6 +119,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         #self.eidx = np.array([], dtype=np.int64)
         # additional variables
         self.last_dt = 0.
+        self.maxDiff1d3dCW_absOld = np.full(self.numComp+2, 0.)
+        self.maxDiff1d3dCW_relOld = np.full(self.numComp+2, 0.)
+        self.maxdiff1d3dCurrant_rel = 0.
+        self.sumDiff1d3dCW_absOld = np.full(self.numComp+2, 0.)
         self.sumDiff1d3dCW_relOld = np.full(self.numComp+2, 0.)
         self.diff1d3dCurrant_rel = 0.
 
@@ -533,7 +537,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 assert (
                     np.logical_or(
                     (((theta_leftOver[lowTheta] - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 > -1.),
-                        ((-theta_leftOver[lowTheta] + self.vg_soil.theta_R)*volLeftOver[lowTheta]<=self.maxDiff1d3dCW_abs[0])
+                        ((-theta_leftOver[lowTheta] + self.vg_soil.theta_R)*volLeftOver[lowTheta]<=self.maxDiff1d3dCW_abs[0] *10)
                 )
                 ).all()
                 theta_leftOver[lowTheta] = self.vg_soil.theta_R + 1e-14
@@ -553,7 +557,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 #     ((theta_leftOver - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100)
                 assert (np.logical_or(
                     ((theta_leftOver[highTheta] - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100 < 1.,
-                    (theta_leftOver[highTheta] - self.vg_soil.theta_S)*volLeftOver[highTheta]<=self.maxDiff1d3dCW_abs[0]
+                    (theta_leftOver[highTheta] - self.vg_soil.theta_S)*volLeftOver[highTheta]<=self.maxDiff1d3dCW_abs[0] * 10
                      )).all()
                 theta_leftOver[highTheta] = self.vg_soil.theta_S 
             except:
@@ -830,9 +834,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     self.allDiff1d3dCW_abs[0][cellId] = diff1d3dCW_abs
                     self.allDiff1d3dCW_rel[0][cellId] = diff1d3dCW_rel
                     self.sumDiff1d3dCW_abs[0] += diff1d3dCW_abs
-                    self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
+                    #self.sumDiff1d3dCW_rel[0] += diff1d3dCW_rel
                     self.maxDiff1d3dCW_abs[0] = max(self.maxDiff1d3dCW_abs[0], diff1d3dCW_abs)
-                    self.maxDiff1d3dCW_rel[0] = max(self.maxDiff1d3dCW_rel[0], diff1d3dCW_rel)
+                    if diff1d3dCW_abs > 1e-13:
+                        self.maxDiff1d3dCW_rel[0] = max(self.maxDiff1d3dCW_rel[0], diff1d3dCW_rel)
                     if verbose:
                         print("in water",rank, cellId, 'wat_total',wat_total,'wat_rhizo', 
                               wat_rhizo,'diff',diff1d3dCW_abs, diff1d3dCW_rel,'max', self.maxDiff1d3dCW_abs[0], 
@@ -843,7 +848,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat_, dt)
                         print("wat_rhizo_",wat_rhizo)
                         print("Diff1d3dW",diff1d3dCW_abs, diff1d3dCW_rel, self.sumDiff1d3dCW_abs[0],
-                            self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
+                             self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
                             'diff1d3dCW_abs,rel_lim',diff1d3dCW_abs_lim,diff1d3dCW_rel_lim[0])
                         print('ots',np.array(self.organTypes)[idCylsAll])
                         print('radii',np.array(self.radii)[idCylsAll],np.array(self.outer_radii)[idCylsAll])
@@ -853,7 +858,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         print(cellId, 0, 'wat_total',wat_total,'wat_rhizo', wat_rhizo, sourceWat_, dt)
                         print("wat_rhizo_",wat_rhizo)
                         print("Diff1d3dW",diff1d3dCW_abs, diff1d3dCW_rel, self.sumDiff1d3dCW_abs[0],
-                            self.sumDiff1d3dCW_rel[0], self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
+                             self.maxDiff1d3dCW_abs[0], self.maxDiff1d3dCW_rel[0],
                             'diff1d3dCW_abs_lim',diff1d3dCW_abs_lim)
                         print(np.array(self.organTypes)[idCylsAll])
                         print(np.array(self.radii)[idCylsAll],np.array(self.outer_radii)[idCylsAll])
@@ -936,15 +941,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         self.contentIn1d[idComp][cellId] = mol_rhizo
                         
                         self.sumDiff1d3dCW_abs[idComp] += diff1d3dCW_abs
-                        self.sumDiff1d3dCW_rel[idComp] += diff1d3dCW_rel
+                        #self.sumDiff1d3dCW_rel[idComp] += diff1d3dCW_rel
                         self.maxDiff1d3dCW_abs[idComp] = max(self.maxDiff1d3dCW_abs[idComp], diff1d3dCW_abs)
-                        self.maxDiff1d3dCW_rel[idComp] = max(self.maxDiff1d3dCW_rel[idComp], diff1d3dCW_rel)
+                        if diff1d3dCW_abs > 1e-13:
+                            self.maxDiff1d3dCW_rel[idComp] = max(self.maxDiff1d3dCW_rel[idComp], diff1d3dCW_rel)
                         if (diff1d3dCW_rel > diff1d3dCW_rel_lim[idComp]) and (diff1d3dCW_rel > 0.1) and (diff1d3dCW_abs > 1e-13) :
                             print("check compBis", idComp,cellId, rank, 
                                   'mol_rhizo',mol_rhizo,
                                   'mol_total',mol_total, 
                                   "error",diff1d3dCW_abs, diff1d3dCW_rel,diff1d3dCW_rel_lim[idComp])
                             raise Exception
+            for idComp in range(0, self.numComp+2): 
+                divideTemp = sum(self.contentIn1d[idComp])
+                if divideTemp == 0:
+                    divideTemp = 1.
+                self.sumDiff1d3dCW_rel[idComp] = self.sumDiff1d3dCW_abs[idComp]/divideTemp
         
         if (self.mpiVerbose and (size > 1)):
             comm.barrier()

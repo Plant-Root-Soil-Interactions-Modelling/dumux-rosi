@@ -81,9 +81,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     css1Function_ = 3 # 8
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
-    noAds = (extraName == 'noAds')
+    noAds = True#(extraName == 'noAds')
     doSimple =False
-    doMinimumPrint =  True
+    doMinimumPrint =  False
     doOldCell = False
     if doSimple:
         max_b =np.array( [5, 5, 0.] )# 
@@ -104,7 +104,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
-    results_dir="./results/noCss1"+extraName+str(spellData['scenario'])\
+    results_dir="./results/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -204,6 +204,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     rs.leftSpell = (rs.spellData['scenario'] == 'baseline')
     rs.diff1d3dCurrant = np.Inf
     rs.diff1d3dCurrant_rel = np.Inf
+    rs.maxdiff1d3dCurrant = np.Inf
+    rs.maxdiff1d3dCurrant_rel = np.Inf
 
 
     net_sol_flux =  np.array([np.array([]),np.array([])])
@@ -225,14 +227,18 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     buTotCSoilInit = sum(s.getTotCContent())
     buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))
 
-    start_time_global = timeit.default_timer()
-    time_rhizo_cumul = 0
-    time_3ds_cumul = 0
+    r.time_start_global = timeit.default_timer()
+    r.time_rhizo_cumul = 0
+    r.time_3ds_cumul = 0
     r.time_plant_cumulW = 0
     r.time_plant_cumulS = 0
 
     r.time_rhizo_i = 0
     r.time_3ds_i = 0
+    r.time_plant_cumul = 0
+    
+    
+    
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
     
@@ -387,21 +393,40 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         rs.err = 1.
         max_err = 1.
         rs.diff1d3dCurrant_rel = 1e6
-        def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,real_dtinner: float,name="continueLoop", isInner = False,doPrint = True, fileType = '.csv' ):
+        rs.maxdiff1d3dCurrant_rel = 1e6
+        def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
+                         real_dtinner: float,name="continueLoop", isInner = False,doPrint = True, 
+                         fileType = '.csv' , plant = None):
+            
+            plant.time_rhizo_cumul += plant.time_rhizo_i
+            plant.time_3ds_cumul += plant.time_3ds_i
+            plant.time_rhizo_i = 0
+            plant.time_3ds_i = 0
+            plant.time_plant_cumul = plant.time_plant_cumulW + plant.time_plant_cumulS 
+            
+            write_file_array("fpit_totalComputetime",
+                             np.array([timeit.default_timer() - plant.time_start_global,
+                            plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
+                             directory_ =results_dir)
             # sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:(rs.numFluidComp+1)]
             # sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
             n_iter_min = 4
             cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or failedLoop
                     or (np.floor(rs.diff1d3dCurrant_rel*10.)/10.>0.1) 
+                    or (np.floor(rs.maxdiff1d3dCurrant_rel)>1) 
                     or (min(rs.new_soil_solute.reshape(-1)) < 0)  
-                    or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < k_iter)#(max(abs(sumDiff1d3dCW_rel))>1)) 
+                    or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < k_iter)
+            #(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
             comm.barrier()
             if rank == 0:#mpiVerbose:# or (max_rank == 1):
                 print('continue loop?',rank,'n_iter',n_iter,'cL',cL,'failedLoop',failedLoop, ' np.floor(rs.err)',
-                np.floor(rs.err),  'solve_gave_up',rs.solve_gave_up,'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, 'k_iter',k_iter)
+                np.floor(rs.err),  'solve_gave_up',rs.solve_gave_up,
+                'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, 
+                'maxdiff1d3dCurrant_rel',rs.maxdiff1d3dCurrant_rel, 
+                'k_iter',k_iter)
             comm.barrier()
             cL = comm.bcast(cL,root = 0)
             failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
@@ -415,23 +440,28 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 if not os.path.isfile(results_dir+name+fileType):
                     write_file_array(name, np.array(['n_iter', 'err', 
                                                      #'rhizoMassWError_abs','rhizoMassCError_abs','maxAbsErrDiffBCs',
-                                                     'diff1d3dCurrant_rel','solve_gave_up', 'min__soil_solute',
+                                                     'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
+                                                     'solve_gave_up', 'min__soil_solute',
                                                              'dt_inner','real_dtinner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
                     if not doMinimumPrint:
                         write_file_array(name+"Bool", np.array(['n_iter',  'err', 
                                                                 #'rhizoMassWError_abs','rhizoMassCError_abs','maxAbsErrDiffBCs',
-                                                                'diff1d3dCurrant_rel',
-                                                                'solve_gave_up',  'min__soil_solute',
+                                                                'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
+                                                     'solve_gave_up',  'min__soil_solute',
                                                                  'dt_inner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
                     
                 write_file_array(name, np.array([n_iter, rs.err, 
                                                  #rs.rhizoMassWError_abs,rs.rhizoMassCError_abs,max(abs(rs.errDiffBCs)),
-                                                 rs.diff1d3dCurrant_rel,rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)),
+                                                 rs.diff1d3dCurrant_rel,rs.maxdiff1d3dCurrant_rel,
+                                                 rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)),
                                                              dt_inner, real_dtinner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
                 if not doMinimumPrint:
-                    write_file_array(name+"2", rs.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = fileType)
+                    write_file_array(name+"2", 
+                                     np.concatenate((rs.sumDiff1d3dCW_rel,rs.maxDiff1d3dCW_rel)),  
+                                     directory_ =results_dir, fileType = fileType)
                     write_file_array(name+"Bool", np.array([n_iter, (np.floor(rs.err) > max_err), 
                                                             (np.floor(rs.diff1d3dCurrant_rel*10.)/10. > 0.1),
+                                                            (np.floor(rs.maxdiff1d3dCurrant_rel) >1),
                                                             #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), 
                                                             #(max(abs(rs.errDiffBCs*0)) > 1e-5), 
                                                             rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)) < 0.,
@@ -455,7 +485,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                                     results_dir = results_dir,
                                                         k_iter_ = k_iter,lightType_=lightType, outer_n_iter = n_iter,
                                                                    continueLoop= continueLoop, doMinimumPrint = doMinimumPrint)
-            cL = continueLoop(rs,n_iter, dt_inner,failedLoop,real_dtinner,name="Outer_data",isInner = False)
+            cL = continueLoop(rs,n_iter, dt_inner,failedLoop,real_dtinner,name="Outer_data",isInner = False,
+                             plant = r)
             n_iter += 1
             try:
                 assert (abs(real_dtinner - dt) < dt_inner ) or failedLoop                
@@ -463,6 +494,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 print('real_dtinner',real_dtinner ,dt, dt_inner , failedLoop)
                 write_file_array("real_dtinner_error", np.array([real_dtinner ,dt, dt_inner , failedLoop,abs((real_dtinner - dt)/dt*100.),rs_age]), 
                                  directory_ =results_dir, fileType = '.csv') 
+                raise Exception
                 
                 
             nOld = int(dt/dt_inner)
@@ -499,7 +531,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                     seg_fluxes =None, diff1d3dCW_abs_lim = np.Inf, takeFlux = False)
                 # to get correct error values for sumDiff1d3dCW_relOld
                 
-        cL_ = continueLoop(rs,0, dt_inner,failedLoop,real_dtinner,name="TestOuter_data")
+        cL_ = continueLoop(rs,0, dt_inner,failedLoop,real_dtinner,name="TestOuter_data", plant = r)
         if cL_:
             raise Exception#only left the loop because reached the max number of iteration.
         
@@ -514,11 +546,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         if mpiVerbose:# or (max_rank == 1):
             print(rank, 'left cyl3.simulate_const')
         comm.barrier()
-        time_rhizo_cumul += r.time_rhizo_i
-        time_3ds_cumul += r.time_3ds_i
-        r.time_rhizo_i = 0
-        r.time_3ds_i = 0
-        time_plant_cumul = r.time_plant_cumulW + r.time_plant_cumulS 
 
         if True:
             if mpiVerbose:# or (max_rank == 1):
@@ -597,8 +624,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             
         if mpiVerbose:# or (max_rank == 1):
             print(rank, 'got s.errorCumul')
-        write_file_array("totalComputetime",np.array([timeit.default_timer() - start_time_global,
-                            time_plant_cumul,time_rhizo_cumul ,time_3ds_cumul]) , directory_ =results_dir)
+        
         write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
         write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
         write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# 
@@ -676,11 +702,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             
             print("startpm",rank)
 
-            start_time_plant = timeit.default_timer()
+            r.time_start_plant = timeit.default_timer()
 
             r.startPM(startphloem, endphloem, stepphloem, ( rs.weatherX["TairC"]  +273.15) , verbose_phloem, filename)
 
-            r.time_plant_cumulS += (timeit.default_timer() - start_time_plant)
+            r.time_plant_cumulS += (timeit.default_timer() - r.time_start_plant)
 
 
             Nt = len(rs.nodes)
@@ -902,7 +928,7 @@ if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
     # python3 XcGrowth.py 12 dumux_10c 25 98 baseline
     # python3 XcGrowth.py 10 dumux_10c 25 3 none
-    # python3 XcGrowth.py 17.9 dumux_10c 25 98 lateDry
+    # python3 XcGrowth.py 10 dumux_10c 11 11 none
     if rank == 0:
         print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5

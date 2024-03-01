@@ -297,7 +297,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         rsx_set = r.get_inner_heads(weather=r.weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         rsx_old = rsx_set.copy()
 
-        if( ((np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.))):# supposedly == to the last r.diff1d3dCurrant_rel, except when we use reset (faile)
+        if( ((np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.) \
+                or (np.floor(max(r.maxDiff1d3dCW_rel - r.maxDiff1d3dCW_relOld)) > 1.))):# supposedly == to the last r.diff1d3dCurrant_rel, except when we use reset (faile)
             issueComp = np.where(np.floor((r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.)
             if (r.sumDiff1d3dCW_abs[issueComp] > 1e-13).any():
                 print('r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relOld',r.sumDiff1d3dCW_rel , r.sumDiff1d3dCW_relOld, r.diff1d3dCurrant_rel,
@@ -316,12 +317,26 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                  directory_ =results_dir, fileType = '.csv') 
                 write_file_array("error_sumDiff1d3dCW_abs", r.sumDiff1d3dCW_abs, 
                                  directory_ =results_dir, fileType = '.csv') 
-                write_file_array("error_sumDiff1d3dCW_abs", r.sumDiff1d3dCW_abs, 
-                                 directory_ =results_dir, fileType = '.csv') 
                 write_file_float("error_diff1d3dCurrant_rel",
                                  r.diff1d3dCurrant_rel, 
                                  directory_ =results_dir) 
 
+                write_file_array("error_maxDiff1d3dCW_relOld",
+                                 r.maxDiff1d3dCW_relOld, 
+                                 directory_ =results_dir, 
+                                 fileType = '.csv') 
+                write_file_array("error_maxDiff1d3dCW_absOld",
+                                 r.maxDiff1d3dCW_absOld, 
+                                 directory_ =results_dir, 
+                                 fileType = '.csv') 
+                write_file_array("error_maxDiff1d3dCW_rel", r.maxDiff1d3dCW_rel, 
+                                 directory_ =results_dir, fileType = '.csv') 
+                write_file_array("error_maxDiff1d3dCW_abs", r.maxDiff1d3dCW_abs, 
+                                 directory_ =results_dir, fileType = '.csv') 
+                write_file_float("error_maxdiff1d3dCurrant_rel",
+                                 r.maxdiff1d3dCurrant_rel, 
+                                 directory_ =results_dir) 
+                                 
                 write_file_array("fpit_sol_content_diff1d3dabs"+str(0), r.allDiff1d3dCW_abs[0], 
                                  directory_ =results_dir, fileType = '.csv')
                 write_file_array("fpit_sol_content_diff1d3drel"+str(0), r.allDiff1d3dCW_rel[0], 
@@ -333,15 +348,30 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         write_file_array("error_sol_content_diff1d3drel"+str(nc+1), 
                                          r.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
                 raise Exception
-            
-        r.sumDiff1d3dCW_absOld = r.sumDiff1d3dCW_abs # to go from cumulative to instantenuous 1d3d error
-        r.sumDiff1d3dCW_relOld = r.sumDiff1d3dCW_rel # to go from cumulative to instantenuous 1d3d error
+          
+        
         if not doMinimumPrint:
             write_file_array("N_sumDiff1d3dCW_relOld", r.sumDiff1d3dCW_relOld, directory_ =results_dir, fileType = '.csv') 
             write_file_array("N_sumDiff1d3dCW_absOld", r.sumDiff1d3dCW_absOld, directory_ =results_dir, fileType = '.csv') 
             write_file_array("N_sumDiff1d3dCW_rel", r.sumDiff1d3dCW_rel, directory_ =results_dir, fileType = '.csv') 
             write_file_array("N_sumDiff1d3dCW_abs", r.sumDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
+            
+            write_file_array("N_maxDiff1d3dCW_relOld", r.maxDiff1d3dCW_relOld, directory_ =results_dir, fileType = '.csv') 
+            write_file_array("N_maxDiff1d3dCW_absOld", r.maxDiff1d3dCW_absOld, directory_ =results_dir, fileType = '.csv') 
+            write_file_array("N_maxDiff1d3dCW_rel", r.maxDiff1d3dCW_rel, directory_ =results_dir, fileType = '.csv') 
+            write_file_array("N_maxDiff1d3dCW_abs", r.maxDiff1d3dCW_abs, directory_ =results_dir, fileType = '.csv') 
+            
+            write_file_float("N_maxdiff1d3dCurrant_rel", r.maxdiff1d3dCurrant_rel, directory_ =results_dir)
             write_file_float("N_diff1d3dCurrant_rel", r.diff1d3dCurrant_rel, directory_ =results_dir) 
+        
+          
+        r.sumDiff1d3dCW_absOld = r.sumDiff1d3dCW_abs # to go from cumulative to instantenuous 1d3d error
+        r.sumDiff1d3dCW_relOld = r.sumDiff1d3dCW_rel # to go from cumulative to instantenuous 1d3d error
+        
+        r.maxDiff1d3dCW_absOld = r.maxDiff1d3dCW_abs # to go from cumulative to instantenuous 1d3d error
+        r.maxDiff1d3dCW_relOld = r.maxDiff1d3dCW_rel # to go from cumulative to instantenuous 1d3d error
+        
+        
         
         waterContentOld = r.getWaterVolumesCyl(doSum = False, reOrder = True)
         # weightBefore = True
@@ -351,8 +381,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         r.errDiffBCs = np.array([1.])
         r.solve_gave_up = False
         r.diff1d3dCurrant_rel =1e6
+        r.maxdiff1d3dCurrant_rel =1e6
         
-        while  continueLoop(r,n_iter, dt,False,float(Ni) * dt,'fpit_loopdata', isInner = True):
+        while  continueLoop(r,n_iter, dt,False,float(Ni) * dt,'fpit_loopdata', isInner = True, plant = rs):
             #( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) 
             #or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1.) 
             #or  r.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter) :
@@ -370,7 +401,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             # send soil concentration to plant:
             
-            start_time_plant = timeit.default_timer()
+            rs.time_start_plant = timeit.default_timer()
             comm.barrier()
 
             if r.SRIBefore or (r.beforeAtNight and (r.weatherX["Qlight"] == 0.)) :
@@ -502,7 +533,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             seg_sol_fluxes = Q_Exud /dt# mol/day for segments
             seg_mucil_fluxes = Q_mucil/dt
             
-            rs.time_plant_cumulW += (timeit.default_timer() - start_time_plant)
+            rs.time_plant_cumulW += (timeit.default_timer() - rs.time_start_plant)
 
             
             if r.mpiVerbose:# or (max_rank == 1):
@@ -575,6 +606,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
             if r.mpiVerbose:# or (max_rank == 1):
                 print(rank, 'splitSoilValsB')
+                
+            if len(emptyCells) > 0:
+                outer_R_bc_wat[emptyCells] = 0.
+                for nc in range(r.numFluidComp):
+                    outer_R_bc_sol[nc][emptyCells] = 0.# only use BC for cells with 
+                
             if rank == 0:
                 #print(rank, 'get proposed_fluxes', max(abs(outer_R_bc_wat )) ,max(abs(outer_R_bc_sol[0] )), max(abs(outer_R_bc_sol[1] )))
                 if max(abs(outer_R_bc_wat )) > 0:
@@ -737,7 +774,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             if r.mpiVerbose:# or (max_rank == 1):
                 print('2.3B simulation')
-            start_time_rhizo = timeit.default_timer()
+            rs.time_start_rhizo = timeit.default_timer()
             if r.mpiVerbose or (max_rank == 1):
                 print("solve 1d soil", rank)
                 
@@ -752,7 +789,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
                 print("solve 1d soil_finished", rank)
                 comm.barrier()
-            rs.time_rhizo_i += (timeit.default_timer() - start_time_rhizo)
+            rs.time_rhizo_i += (timeit.default_timer() - rs.time_start_rhizo)
             
             if False:
                 for lId, cyl in enumerate(r.cyls):
@@ -969,7 +1006,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             buTotCBefore = sum(buTotCBeforeAll)
             
             
-
+            
             
             if r.mpiVerbose:# or (max_rank == 1):
                 comm.barrier()
@@ -1014,7 +1051,14 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 comm.barrier()
             
             soil_sources_limited = np.concatenate((np.array([soil_fluxes_limited]),soil_source_sol ))
-            soil_contents = np.concatenate((np.array([soil_water_beforeReset]),soil_solute_content_beforeReset ))  # water_content
+            
+            # when setting source: we limit according to the content at the end 
+            # of the time step for water and 
+            # solutes affected by flow.
+            # for solutes not affected by flow, we limit by the content at the beginning
+            soil_contents = np.concatenate((np.array([soil_water_beforeReset]),
+                                            soil_solute_content_beforeReset[:2],
+                                           buTotCBeforeEach[2:] ))  # water_content
             assert soil_sources_limited.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
             assert soil_contents.shape == (s.numComp+s.numFluidComp, s.numberOfCellsTot)
             
@@ -1022,6 +1066,21 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
                 SSL = soil_sources_limited[idComp].copy()
                 soil_contents_temp = soil_contents[idComp].copy()
+                if idComp == 0:
+                    soil_contents_temp = (np.array(soil_water) +
+                                         np.maximum(outer_R_bc_wat, outer_R_bc_wat*0 ))
+                    #np.where(np.array(soil_water_beforeReset) >= soil_water,
+                    #                              np.array(soil_water_beforeReset),
+                    #                                soil_water) 
+                else:#if idComp in [1, 2]:
+                    soil_contents_temp = (buTotCBeforeEach[idComp-1] +
+                                             np.maximum(outer_R_bc_sol[idComp-1],
+                                                         outer_R_bc_sol[idComp-1]*0 ) )
+                    #np.where(
+                    #    soil_solute_content_beforeReset[idComp-1] >= buTotCBeforeEach[idComp-1],
+                    #                             soil_solute_content_beforeReset[idComp-1], 
+                    #          buTotCBeforeEach[idComp-1]) 
+                
                 if idComp == 1:# add source of css1
                     SSL += soil_sources_limited[s.numComp+1].copy()
                     soil_contents_temp += soil_contents[s.numComp+1].copy()
@@ -1074,7 +1133,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             # 3.3 solve 3DS
             ##    
             
-            start_time_3ds = timeit.default_timer()
+            rs.time_start_3ds = timeit.default_timer()
             if r.mpiVerbose or (max_rank == 1):# or (rank == 0):
                 print("solve 3d soil", rank)
             k_soil_solve = 0
@@ -1150,7 +1209,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             if r.mpiVerbose:# or (max_rank == 1):
                 print("done")
-            rs.time_3ds_i += (timeit.default_timer() - start_time_3ds)
+            rs.time_3ds_i += (timeit.default_timer() - rs.time_start_3ds)
             
             ##
             # 3.4 data after, for post proccessing 
@@ -1288,10 +1347,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 
                 
             
-            if len(emptyCells) > 0:
-                outer_R_bc_wat[emptyCells] = 0.
-                for nc in range(r.numFluidComp):
-                    outer_R_bc_sol[nc][emptyCells] = 0.# only use BC for cells with roots.
                 
             for nc in range(r.numFluidComp, r.numComp):
                 outer_R_bc_sol[nc][:] = 0.# to not have balance error as 3d flux
@@ -1412,10 +1467,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             compErrorAboveLim = np.where(r.sumDiff1d3dCW_abs > 1e-13) 
             try:
+                # to not depend on cumulative error
                 r.diff1d3dCurrant = max(np.append((r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absOld)[compErrorAboveLim],0.)) 
-                # to not depend on cumulative error
                 r.diff1d3dCurrant_rel =max(np.append((r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)[compErrorAboveLim],0.))
-                # to not depend on cumulative error
+                
+                r.maxdiff1d3dCurrant = max(np.append((r.maxDiff1d3dCW_abs - r.maxDiff1d3dCW_absOld)[compErrorAboveLim],0.)) 
+                r.maxdiff1d3dCurrant_rel =max(np.append((r.maxDiff1d3dCW_rel - r.maxDiff1d3dCW_relOld)[compErrorAboveLim],0.))
             except:
                 print('r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absOld',r.sumDiff1d3dCW_abs - r.sumDiff1d3dCW_absOld,
                      r.sumDiff1d3dCW_abs, r.sumDiff1d3dCW_absOld,compErrorAboveLim)
@@ -1646,7 +1703,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             comm.barrier()
         
         
-        failedLoop = continueLoop(r,0, dt, False,Ni * dt,'fpit_testdata')
+        failedLoop = continueLoop(r,0, dt, False,Ni * dt,'fpit_testdata', plant = rs)
         if r.mpiVerbose:# or (max_rank == 1):
             print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
             comm.barrier()

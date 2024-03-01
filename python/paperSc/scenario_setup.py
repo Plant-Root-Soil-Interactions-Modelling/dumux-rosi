@@ -204,7 +204,7 @@ def getBiochemParam(s,paramIdx, noAds):
     if s.css1Function == 8:
         s.k_sorp *= paramSet['theta'] * s.cell_size # mol C/cm3 soil solution => mol
     
-    s.alpha = 0.1# -
+    s.alpha = 0.1 # -
     s.f_sorp = 0.5
     s.k_phi = 0.1
     s.C_aOLim=1.e-10 # so that microbe community can always regrow
@@ -212,6 +212,7 @@ def getBiochemParam(s,paramIdx, noAds):
     
     if noAds:
         s.CSSmax = 0.
+        s.alpha = 0.
     else:
         s.CSSmax = paramSet['CSS_max']/s.mg_per_molC*0 # mol C/cm3 soil zone 1 to mol C/cm3 soil 
         if s.css1Function == 8: #change cssmax to content
@@ -281,7 +282,8 @@ def setIC(s, paramIdx, ICcc = None):
             CSS2_init = CSS2_init_zone2 * (1 - s.f_sorp)
         if s.css1Function == 3: # only pde
             CSS2_init = C_S * (1 - s.f_sorp)
-            
+        if s.noAds:
+            CSS2_init = 0.
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
         addedVar = 1.
         s.ICcc = np.array([C_S *unitConversion*addedVar,
@@ -379,7 +381,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
-    
+    s.noAds = noAds
     s.initialize()
     setDefault(s)
     setSoilParam(s,paramIndx)
