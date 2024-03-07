@@ -5,6 +5,7 @@
 #include <dumux/linear/istlsolvers.hh>
 
 // initialize
+#include <stdlib.h>
 #include <dumux/common/initialize.hh>
 #include <dune/common/parallel/mpihelper.hh> // in dune parallelization is realized with MPI
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
@@ -107,7 +108,10 @@ public:
      * SolverBase will optionally set most of them dynamically.
      */
     virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true, bool doMPI = true) {
-        //doMPI_ = doMPI;
+    
+		int success = setenv("DUMUX_NUM_THREADS","1",0);// will not overwrite the DUMUX_NUM_THREADS value if it already exists.
+		assert((success==0)&&"default definition of DUMUX_NUM_THREADS failed");
+        
 		std::vector<char*> cargs;
         cargs.reserve(args_.size());
         for(size_t i = 0; i < args_.size(); i++) {
