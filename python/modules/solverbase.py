@@ -169,7 +169,13 @@ class SolverWrapper():
     def getSolution_(self, eqIdx = 0):
         """nompi version of  """
         self.checkGridInitialized()
-        return np.array(self.base.getSolution(eqIdx))
+        return np.array(self.base.getSolution(eqIdx))    
+        
+    def setSolution(self, x, eqIdx = 0):
+        """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
+        model dependent units [Pa, ...]"""
+        self.checkGridInitialized()
+        self.base.setSolution(x, eqIdx)
 
     def getSolutionAt(self, gIdx, eqIdx = 0):
         """Returns the current solution at a cell index, model dependent units [Pa, ...]"""
