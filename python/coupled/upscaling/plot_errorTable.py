@@ -118,9 +118,9 @@ if __name__ == "__main__":
     table_speedup = timings.table_maize("1D")
     np.savetxt("table_maize_1D.csv", table_error + table_speedup, delimiter = ";")
 
-    # table_error = get_error_table_maize("2D")
-    # table_speedup = timings.table_maize("2D")
-    # np.savetxt("table__maize_2D.csv", table_error + table_speedup, delimiter = ",")
+    table_error = get_error_table_maize("2D")
+    table_speedup = timings.table_maize("2D")
+    np.savetxt("table_maize_2D.csv", table_error + table_speedup, delimiter = ",")
 
     table_error3 = get_error_table_springbarley()
     table_speedup3 = timings.table_springbarley()
