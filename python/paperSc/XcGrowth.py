@@ -78,7 +78,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 3 # 8
+    css1Function_ = 9#3
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
     noAds = True#(extraName == 'noAds')
@@ -97,14 +97,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         min_b = np.array([-3./2, -12./2, -40.])
         cell_number =np.array( [3,12,40]) # 1cm3 
         max_b =np.array( [3./2, 12./2, 0.])
-    
-        
+       
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
     #+lightType+l_ks+str(int(static_plant))+str(int(weightBefore))\
     #+str(int(SRIBefore))+str(int(beforeAtNight))+str(int(adaptRSI_))\
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
-    results_dir="./results/"+extraName+str(spellData['scenario'])\
+    # 1d1dFHung
+    results_dir="./results/PDECSa"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -928,7 +928,7 @@ if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
     # python3 XcGrowth.py 12 dumux_10c 25 98 baseline
     # python3 XcGrowth.py 10 dumux_10c 25 3 none
-    # python3 XcGrowth.py 10 dumux_10c 11 11 none
+    # python3 XcGrowth.py 9 dumux_10c 11 5 none
     if rank == 0:
         print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5

@@ -69,7 +69,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
             with open(name2, 'a') as log:
                 log.write(space.join([num for num in map(str, data)])  +'\n')
     except:
-        print(name, data,data.shape)
+        print('write_file_array',name, data,data.shape)
         raise Exception
 
 def vg_SPP(i = int(1)):
@@ -205,7 +205,7 @@ def getBiochemParam(s,paramIdx, noAds):
         s.k_sorp *= paramSet['theta'] * s.cell_size # mol C/cm3 soil solution => mol
     
     s.alpha = 0.1 # -
-    s.f_sorp = 0.5
+    s.f_sorp = 0# 0.5
     s.k_phi = 0.1
     s.C_aOLim=1.e-10 # so that microbe community can always regrow
     s.C_aCLim=1.e-10 # so that microbe community can always regrow
@@ -214,10 +214,22 @@ def getBiochemParam(s,paramIdx, noAds):
         s.CSSmax = 0.
         s.alpha = 0.
     else:
-        s.CSSmax = paramSet['CSS_max']/s.mg_per_molC*0 # mol C/cm3 soil zone 1 to mol C/cm3 soil 
+        s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 soil zone 1 to mol C/cm3 soil 
         if s.css1Function == 8: #change cssmax to content
             s.CSSmax *=  s.cell_size * s.f_sorp # mol C
         
+    
+    kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
+    yr_per_d = 1/365 # [yr/d]
+    m3_per_cm3 = 1e-6; # m3/cm3
+    cm3_per_m3 = 1e6; # cm3/m3
+    
+    # [kg/g] * [g/mol] = kg/mol
+    mol_per_kgC = (1/1000) * s.molarMassC
+    # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
+    s.kads = kads * yr_per_d * cm3_per_m3 * mol_per_kgC
+    kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
+    s.kdes = kdes * yr_per_d
     return s
 
 def setBiochemParam(s):
@@ -257,6 +269,8 @@ def setBiochemParam(s):
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv zone 1] or mol
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
+    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol/d]
+    s.setParameter("Soil.kdes", str(s.kdes)) #[1/d]
     return s
 
 def setIC3D(s, paramIdx, ICcc = None):
@@ -273,26 +287,28 @@ def setIC(s, paramIdx, ICcc = None):
         C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
-        CSS2_init = s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
+        s.CSS2_init,s.ratioInit  = s.getCSS2Init(C_S)#s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
+        print('C_S,CSS2_init',C_S,s.CSS2_init,'CSSmax', s.CSSmax ,'ratio', (C_S/(C_S+ s.k_sorp)))
         
         if s.css1Function == 8: #change cssmax to content
             #mol C/ cm3 scv zone 2 = mol C * [mol C / cm3 water ] * [cm3 water / cm3 soil] * [cm3 soils]/ [mol] /[ cm3 soil ] * [cm3 soil / cm3 soil zone 1] #at init css2_zone2 == css1_zone1
             CSS2_init_zone2 = s.CSSmax * C_S * s.theta_init * s.cell_size / s.k_sorp / s.cell_size / s.f_sorp #
             #mol C/ cm3 scv zone 2 to mol C/ cm3 scv
             CSS2_init = CSS2_init_zone2 * (1 - s.f_sorp)
-        if s.css1Function == 3: # only pde
-            CSS2_init = C_S * (1 - s.f_sorp)
         if s.noAds:
             CSS2_init = 0.
+        #if s.css1Function == 3: # only pde
+        #    CSS2_init = C_S * (1 - s.f_sorp)
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
         addedVar = 1.
+        s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
                            C_L*unitConversion*addedVar,
                             9.16666666666667e-07* unitConversion*addedVar,
                             8.33333333333333e-06* unitConversion*addedVar,
                             8.33333333333333e-07* unitConversion*addedVar,
                             8.33333333333333e-06* unitConversion*addedVar,
-                            CSS2_init*unitConversion*addedVar,
+                            s.CSS2_init*unitConversion*addedVar,
                            0.])# in mol/m3 water or mol/m3 scv
         if rank == 0:
             print('init s.ICcc', s.ICcc,'s.k_sorp',s.k_sorp,'s.CSSmax',s.CSSmax)
@@ -348,14 +364,18 @@ def setSoilParam(s,paramIdx):
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
     s.setVGParameters([s.soil])
+    
     return s
+
+def DtCSS2_(CSS1, CSW, CSS2):
+    return 0.1/(24.*60.*60.) * (CSW - CSS2)
 
 def create_soil_model3D(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
                     times = None, 
                         net_inf = None, usemoles = True, dirResults = "",
                       #"./results/parallel"+str(max_rank)+"/",
                         p_mean_ = -100,css1Function = 0,paramIndx =0,
-                     noAds = False, ICcc = None):
+                     noAds = False, ICcc = None, DtCSS2 = DtCSS2_):
     create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
                     times , net_inf , usemoles , dirResults,
                         p_mean_,css1Function,paramIndx ,
@@ -365,7 +385,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
                         net_inf = None, usemoles = True, dirResults = "",
                       #"./results/parallel"+str(max_rank)+"/",
                         p_mean_ = -100,css1Function = 0,paramIndx =0,
-                     noAds = False, ICcc = None):
+                     noAds = False, ICcc = None, DtCSS2 = DtCSS2_):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil demoType is fixed and homogeneous 
@@ -378,6 +398,18 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         dirResults = "./results/parallel"+str(max_rank)+"/"
     s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
     s.dirResults = dirResults
+    
+    m3_per_cm3 = 1e-6; # m3/cm3
+    cm3_per_m3 = 1e6; # cm3/m3
+    
+    def getCSS2Init(CSW):
+        print('getCSS2Init','ccsmax',s.CSSmax * cm3_per_m3, 
+              'ratio',(CSW/(CSW+ s.k_sorp)),
+              'css2init',s.CSSmax * (CSW/(CSW+ s.k_sorp))* cm3_per_m3)
+        return s.CSSmax * (CSW/(CSW+ s.k_sorp)), (CSW/(CSW+ s.k_sorp))
+    s.getCSS2Init = getCSS2Init# lambda CSW: s.CSSmax * (CSW/(CSW+ s.k_sorp))#mol C/ cm3 scv
+    #s.getCSS2Init(C_S_W)#s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
+    
     
     #@see dumux-rosi\cpp\python_binding\solverbase.hh
     s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
@@ -402,6 +434,28 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     s.setParameter("Problem.reactionExclusive", "1")
 
     s, s.vg_soil = setupOther(s, p_mean_)
+    
+    if False:
+        DtCSS2 =  lambda CSS1, CSW, CSS2: s.kads * CSW * (s.CSSmax * cm3_per_m3 - CSS2) - s.kdes * CSS2
+    else:
+        # [1/d] * [d/s] * ([mol/cm3 soil scv zone 1] * [cm3/m3] * [mol/m3]/([mol/m3]+ [mol/cm3] * [cm3/m3]) - [mol/m3])
+        # mol/m3/s
+        def DtCSS2( CSS1, CSW, CSS2):
+            if False :
+                print('in DtCSS2', CSS1, CSW, 'CSS2',CSS2,'oldcss2',s.CSS2_init * cm3_per_m3,
+                  's.CSSmax',s.CSSmax * cm3_per_m3 , 
+                  'new ratio',(CSW/(CSW+s.k_sorp * cm3_per_m3)),
+                  'newCSS2eq', (s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3))),
+                  'diffCSS2', (s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3))- CSS2),
+                  'ff',s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3)) - s.CSS2_init* cm3_per_m3,
+                         'old vs new',CSS2 - s.CSS2_init * cm3_per_m3,
+                  CSW - s.CSW_init,
+                  (CSW/(CSW+s.k_sorp * cm3_per_m3)) - s.ratioInit )
+            return  s.alpha /(24.*60.*60.) * (s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3))- CSS2)
+        #DtCSS2 =  lambda CSS1, CSW, CSS2:
+        
+    s.DtCSS2 = DtCSS2
+    #s.setComputeDtCSS2(DtCSS2)  # maps segments
     return s, s.vg_soil
     
 def setShape1D(s,r_in, r_out,length,nCells = 10, doLogarithmic=True):

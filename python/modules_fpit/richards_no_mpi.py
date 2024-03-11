@@ -55,7 +55,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map((self.base.getSolutionHead(eqIdx)), 0)
+        return self._map((self.base.getSolutionHead(eqIdx)), 0)        
 
     def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
         return X_rhizo

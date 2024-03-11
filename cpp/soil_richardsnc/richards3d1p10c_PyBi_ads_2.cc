@@ -136,33 +136,33 @@ int main(int argc, char** argv) //try
 	s.initialize(args_);
 	
 	std::cout<<"to create grid"<<std::endl;
+    
+	double bulkSoilDensity = (2650. / 60.08e-3) * (1 - getParam<int>("Soil.VanGenuchten.Qs")) ;
+    double CS_init_mFr =  getParam<double>("Soil.IC.C1");//mol/mol
+	double CS_init = CS_init_mFr * bulkSoilDensity;//mol/m3
+    double CSS2Init = s.computeInitCSS2(0., CS_init);// mol/m3
 	
 	std::array<double, 3> boundsMin{-0.05, -0.05, -0.1}; 
 	std::array<double, 3> boundsMax{0.05, 0.05, 0.}; 
-	int nCellX = getParam<int>("Soil.nCellX",1);
-	int nCellY = getParam<int>("Soil.nCellY",1);
-	int nCellZ = getParam<int>("Soil.nCellZ",1);
+	int nCellX = getParam<int>("Soil.nCellX",2);
+	int nCellY = getParam<int>("Soil.nCellY",2);
+	int nCellZ = getParam<int>("Soil.nCellZ",2);
 	std::array<int, 3> numberOfCells{nCellX,nCellY,nCellZ};//{1,1,1};
     s.createGrid(boundsMin,boundsMax, numberOfCells)  ;// [m]
 	// Soil.Grid.Cells
 	std::cout<<"grid created"<<std::endl;
 	std::cout<<"to initializeProblem"<<std::endl;
-    
+    double f_sorp = 0;
     
     s.initializeProblem();
-	std::map<int, double> sourceMap;// mol/s
-	double flux = getParam<double>("Soil.sourceCs");
-	sourceMap[0] = flux; //2.2486750867416232e-07; mol/m3/s
-	s.setSource( sourceMap, 1);
-	std::cout<<"initializeProblem created "<<s.numComp()<<std::endl;
-	double f_sorp = getParam<double>("Soil.f_sorp");//[-]
-		 
-    int getFluxcss1 = getParam<double>("Soil.getFluxcss1");
+	
     //double molarMassWat = 18.; // [g/mol]
     //double densityWat_m3 = 1e6 ;//[g/m3]
     //[mol/m3] = [g/m3] /  [g/mol] 
     double molarDensityWat_m3 =  s.molarDensityWat_m3;//densityWat_m3 / molarMassWat;
 	std::vector<double> C_S_fr = s.getSolution(1);//mol/mol
+	std::vector<double> C_SS2_fr = s.getSolution(7);//mol/mol
+    
 	std::vector<double> C_S_W(C_S_fr.size());//mol/m3 wat
 	std::vector<double> CSS1_init = s.computeCSS1s();//(C_S_fr.size());//mol/m3 scv
 	std::vector<double> C_S(C_S_fr.size());//mol
@@ -191,6 +191,8 @@ int main(int argc, char** argv) //try
 	std::vector<std::vector<double> > flux10c = getFluxOrSource_10c(s,false);
     std::vector<std::vector<double> > bulkSoil_sources = getFluxOrSource_10c(s, true);
 	C_S_fr = s.getSolution(1);
+	C_SS2_fr = s.getSolution(7);//mol/mol
+    
 	std::vector<double> C_S_tot_end(C_S_fr.size());//mol
 	watCont = s.getWaterContent();//m3 wat
 	std::vector<double> C_tot_end(C_S_fr.size());//mol
@@ -209,7 +211,7 @@ int main(int argc, char** argv) //try
 		std::cout<<"cellId "<<cs<<", C_S "<<C_S.at(cs) <<" CSS1 "<<C_SS1.at(cs) 
 		<<" tot "<< C_tot_end.at(cs) <<std::endl;
 		double flux_css1 = 0;
-		if(getFluxcss1)
+		if(false)//getFluxcss1)
 		{
 			flux_css1 = f_sorp *computeCSS1(flux10c.at(cs)[1], 1., cellVol.at(cs));
 		}

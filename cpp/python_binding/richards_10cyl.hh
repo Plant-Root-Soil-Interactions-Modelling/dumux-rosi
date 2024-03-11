@@ -20,7 +20,21 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
     using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards10Cyl() { }
 	
-	
+	void setComputeDtCSS2(const std::function<double(double,double,double)>& s)
+    {
+        this->problem->computeDtCSS2 = s;
+    }
+    
+	double computeDtCSS2(double CSS1, double CSW, double CSS2)
+    {
+        return this->problem->computeDtCSS2(CSS1, CSW, CSS2);
+    }
+    
+	double computeInitCSS2(double CSS1, double CSW)
+    {
+        return this->problem->computeInitCSS2_(CSS1, CSW);
+    }
+    
 	void setFaceGlobalIndexSet(std::map<int,int>  faceIdx)
 	{
 		this->problem->setFaceGlobalIndexSet(faceIdx);// = faceIdx;
@@ -134,6 +148,9 @@ void init_richards_10cyl(py::module &m, std::string name) {
 													py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
 
+   .def("setComputeDtCSS2",&RichardsFoam::setComputeDtCSS2)
+   .def("computeDtCSS2",&RichardsFoam::computeDtCSS2)
+   .def("computeInitCSS2",&RichardsFoam::computeInitCSS2)
    .def("setVerbose",&RichardsFoam::setVerbose)
    .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsFoam::setCriticalPressure)

@@ -125,6 +125,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.sumDiff1d3dCW_absOld = np.full(self.numComp+2, 0.)
         self.sumDiff1d3dCW_relOld = np.full(self.numComp+2, 0.)
         self.diff1d3dCurrant_rel = 0.
+        
+        self.do1d1dFlow = False
+        self.flow1d1d_w = np.zeros(1)
+        self.flow1d1d_sol = np.zeros(1)
+        self.flow1d1d_mucil = np.zeros(1)
+        
 
     def reset(self):
         for cyl in self.cyls:
@@ -192,6 +198,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             self.repartitionSoilOld = repartitionSoil
             self.repartitionAirOld = repartitionAir
             self.organTypes =np.array( self.organTypes)
+            
             try:
                 assert sum(repartitionSoil) == len(self.seg_length) - len(self.airSegs )
                 assert sum(self.toAddSoil) == (len(self.seg_length) - len(self.airSegs ) - self.nsSoilOld )
@@ -212,6 +219,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             comm.barrier()
             print("broadcastPlantShape:bcasts", rank)
             comm.barrier()
+            
+        self.nodesPos = comm.bcast(np.array(self.rs.get_nodes()), root = 0) 
         self.airSegs = comm.bcast(self.airSegs , root = 0) 
         self.toAddSoil = comm.bcast(self.toAddSoil, root = 0) 
         self.toAddAir = comm.bcast(self.toAddAir, root = 0) 
@@ -2047,6 +2056,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.css1Function = self.soilModel.css1Function
             cyl.ddt = 1.e-5
             cyl.gId = gId    
+            cyl.l = self.seg_length[gId]    
+            cyl.a_in = a_in    
+            cyl.a_out = a_out
+            cyl.DtCSS2 = self.soilModel.DtCSS2
+            #cyl.base.setComputeDtCSS2(cyl.DtCSS2)  # maps segments
             ThetaCyl = cyl.getWaterContent()
             setDefault(cyl)
             try:
@@ -2331,10 +2345,13 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 self.seg_fluxes_limited_mucil_In[lId] = proposed_inner_fluxes_mucil[gId] # [mol/day]
                 
             else:
+                
                 l = cyl.segLength#self.seg_length[gId]
                 QflowIn = proposed_inner_fluxes[gId] 
                 qIn = QflowIn/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
                 QflowOut = proposed_outer_fluxes[gId] 
+                if self.do1d1dFlow:
+                    QflowOut += self.flow1d1d_w[gId]
                 cyl.setInnerFluxCyl(qIn)  
                 if self.useOuterFluxCyl_w:
                     qOut = QflowOut/(2 * np.pi * self.outer_radii[gId] * l)# [cm3/day] -> [cm /day]
@@ -2348,7 +2365,12 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             print('distributeSourceEnd_error',sum(qOut) , QflowOut,sum(qOut) - QflowOut)
                             raise Exception
                         
-                    
+                if False:
+                    print('solve',rank,'gId',gId, self.flow1d1d_w[gId] , 
+                      #self.flow1d1d_sol[gId], self.flow1d1d_mucil[gId],
+                     proposed_outer_fluxes[gId],'qOut',qOut
+                      #,proposed_outer_fluxes_sol[gId],proposed_outer_fluxes_mucil[gId]
+                     )
                     
                      
                 if not isinstance(proposed_inner_fluxes_sol,float):  # [mol/day]
@@ -2368,6 +2390,10 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     topVal_mucil = proposed_outer_fluxes_mucil[gId]
                 else:
                     topVal_mucil = proposed_outer_fluxes_mucil
+                    
+                if self.do1d1dFlow:
+                    topVal += self.flow1d1d_sol[gId]
+                    topVal_mucil += self.flow1d1d_mucil[gId]
                     
                 typeBC = np.full(self.numComp,3)
                 
@@ -2520,7 +2546,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             cyl.setParameter("Newton.MaxSteps", "18")
                             cyl.setParameter("Newton.MaxTimeStepDivisions", "10")
                         except Exception as e:     
-                            print('solve Failed:', e,'n_iter_solve',n_iter_solve,
+                            print('solve Failed:', e,'rank',rank,'gId',gId,
+                                  'n_iter_solve',n_iter_solve,
                                  (QflowIn_temp < 0 or QflowOut_temp < 0), 
                                   (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.))
                             cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
@@ -2782,38 +2809,152 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             print("get_water_volume:GOTwater_volume", rank)
             comm.barrier()
         return water_volume
-    def mypop(self,thearray, theid):
-        return np.concatenate((thearray[:theid],thearray[(theid+1):]),axis=None)
-    def getSolFlow(self, valW,valSol,theid):
-        diffusion = getdiffusion1d1d(valSol,theid)
-        flow = self.mypop(seg_values_root, theid)-seg_values_root[theid]  # if > 0 goes toward the id
-        pass
-        
     
-    def do1d1dFlow(self, soilVals,seg_valuesW,seg_valuesSol,seg_valuesmucil,verbose=True):
+    def getDeff(self,Ds,phi,theta):
+        return Ds* (theta**(10/3)) / (phi**2)
+    
+    def do1d1dFlows(self, soilVals,#wat. pot. (cm)
+                        seg_valuesW,# theta (cm3/cm3)
+                        seg_valuesSol,# mol/cm3 wat
+                        seg_valuesmucil,# mol/cm3 wat
+                        verbose=False):
         # manually set 1d-1d flow
         cellIds = self.getCellIds()
-        flow1d1d_w = np.zeros(seg_values.shape)
-        flow1d1d_sol = np.zeros(seg_values.shape)
-        flow1d1d_mucil = np.zeros(seg_values.shape)
-        for cellid in cellIds:
+        self.flow1d1d_w = np.zeros(seg_valuesW.shape)
+        self.flow1d1d_sol = np.zeros(seg_valuesW.shape)
+        self.flow1d1d_mucil = np.zeros(seg_valuesW.shape)
+        
+            
+        Ds = self.soilModel.Ds *(24*3600) *10000 # m^2/s to cm^2/d
+        Dl = self.soilModel.Dl *(24*3600) *10000 # m^2/s to cm^2/d
+        #Dynamic viscosity: 1e-3 [Pa s]
+        #cm_per_hPa = 1/0.9806806
+        #viscosity =  1e-3 /(24*3600)/100 * cm_per_hPa # cm*d
+        for cyl in self.cylsSoil:
+            gId = cyl.gId
+            cellid = self.seg2cell[gId]
+            pHeadMean = soilVals[cellid]
+            thetaMean = vg.water_content( soilVals[cellid], self.vg_soil)
+            # hydraulic conductivity [cm/day]
+            Kf = vg.hydraulic_conductivity(pHeadMean, self.vg_soil)# 
+            
+            # get all seg ids
             segIds = self.cell2seg[cellid]
-            ots = organTypes[segIds]
-            rootIds = np.array([sid for sid in segIds if (organTypes[sid] == 2)])
-            if len(rootIds) > 0:
-                seg_values_root = seg_valuesW[rootIds]
-                meanDc = self.sizeSoilCell[cellid]/2
+            #ots = self.organTypes[segIds]
+            rootIds = np.array([sid for sid in segIds if ((self.organTypes[sid] == 2) and (sid != gId))])
+            if verbose:
+                print('\n\n1d1dflow', gId,cellid ,rootIds,segIds,'Kf',Kf,'cm/d')#,Kf*viscosity)
+            #print('viscosity',viscosity/cm_per_hPa,'hPa*d')
+            if len(rootIds) > 0:# at least 1 other segment
                 
-                meankr = vg.hydraulic_conductivity(soilVals[cellid], self.vg_soil)
-                flow1d1d_ = np.array([sum(self.mypop(seg_values_root, theid)-seg_values_root[theid]) for theid in range(len(rootIds))])
-                flow1d1d_ *= meankr/meanDc
-                flow1d1d[rootIds] = flow1d1d_
+                #use position of node y
+                pos0 =   np.array(self.nodesPos[gId+1])#cm
+                posX =   np.array(self.nodesPos[rootIds+1])#cm
+                if verbose:
+                    print('posX_cm',pos0,posX)
+                dist =( (pos0-posX)**2).sum(axis=1)**(1/2) #cm
+                if verbose:
+                    print('dist_cm',dist)
+                pHead0 = vg.pressure_head(seg_valuesW[gId],self.soilModel.vg_soil)  #cm
+                pHeadX = np.array([
+                    vg.pressure_head(thetaCyl_,
+                                    self.soilModel.vg_soil) for thetaCyl_ in seg_valuesW[rootIds]]) #cm
+                if verbose:
+                    print('pHead0_cm',pHead0,pHeadX,pHeadX - pHead0 )
+                #exchange surface == 1/4 side surface of segs
+                Surf = np.minimum(cyl.l*cyl.a_out,
+                                  self.seg_length[rootIds]*self.outer_radii[rootIds] )*np.pi/2 
+                # if flow1d1d_w > 0, gain for the cylinder
+                flow1d1d_w = Kf * ( pHeadX - pHead0 )/dist *Surf #cm3/d
+                self.flow1d1d_w[gId] = sum(flow1d1d_w)
+                if verbose:
+                    print('Surf_cm2',Surf/(np.pi/2 ),cyl.l*cyl.a_out,
+                                  self.seg_length[rootIds]*self.outer_radii[rootIds] )
+                if verbose:
+                    print('flow1d1d_w',flow1d1d_w)
                 
-                assert sum(flow1d1d_) == 0.
+                CC = np.where(flow1d1d_w > 0,seg_valuesSol[rootIds],seg_valuesSol[gId])
+                if verbose:
+                    print('CC',CC,seg_valuesSol[gId],seg_valuesSol[rootIds])
                 
-                flow1d1d_Sol = np.array([sum(getSolFlow(seg_values_root,seg_valuesSol[rootsIds],theid)) for theid in range(len(rootIds))])
+                self.flow1d1d_sol[gId] =sum(flow1d1d_w * CC)
+                phi = self.soilModel.vg_soil.theta_S
                 
+                diffS = self.getDeff(Ds,phi,thetaMean)                                                           
+                # if flow1d1d_sol > 0, gain for the cylinder                               
+                self.flow1d1d_sol[gId] += sum(diffS/dist * (seg_valuesSol[rootIds] - seg_valuesSol[gId])*Surf)
+                if verbose:
+                    print('self.flow1d1d_sol[gId]',self.flow1d1d_sol[gId],
+                      self.flow1d1d_sol[gId],'diffS',diffS)
+                diffL=  self.getDeff(Dl,phi,thetaMean)
+                # cm^2/d /cm * [mol/cm^3] / cm = mol/cm^3/d
+                # if flow1d1d_mucil > 0, gain for the cylinder 
+                self.flow1d1d_mucil[gId] = sum(
+                    diffL/dist * (seg_valuesmucil[rootIds] -seg_valuesmucil[gId] )*Surf)
+                                                            
+                if verbose:
+                    print('self.flow1d1d_mucil[gId]',self.flow1d1d_mucil[gId],
+                      self.flow1d1d_w[gId])
                     
+                if verbose:
+                    print('set1d1d',rank,'gId',gId, self.flow1d1d_w[gId] , 
+                     'pHead0',pHead0,pHeadX,pHeadX - pHead0 ,'rootIds',rootIds, 
+                      'watvol0',
+                      seg_valuesW[gId]*np.pi*cyl.l*((cyl.a_out-cyl.a_in)**2), 
+                      seg_valuesW[rootIds]*np.pi*self.seg_length[rootIds] *((self.outer_radii[rootIds]-np.array(self.radii)[rootIds])**2),
+                      'cylvol',np.pi*cyl.l*((cyl.a_out-cyl.a_in)**2),
+                         np.pi*self.seg_length[rootIds] *((self.outer_radii[rootIds]-np.array(self.radii)[rootIds])**2), 
+                      flush=True)
+        self.flow1d1d_wG = comm.gather(self.flow1d1d_w,root=0)  
+        self.flow1d1d_solG = comm.gather(self.flow1d1d_sol,root=0)  
+        self.flow1d1d_mucilG = comm.gather(self.flow1d1d_mucil,root=0) 
+        if verbose:
+            print(repr(self.flow1d1d_w))
+            print(repr(self.flow1d1d_sol))
+            print(repr(self.flow1d1d_mucil))
+            
+        gotError = 0
+        #print('self.flow1d1d_wG',np.array(self.flow1d1d_wG))
+        if rank == 0:
+            self.flow1d1d_w = np.array(self.flow1d1d_wG).sum(axis=0)  
+            self.flow1d1d_sol = np.array(self.flow1d1d_solG).sum(axis=0)  
+            self.flow1d1d_mucil = np.array(self.flow1d1d_mucilG).sum(axis=0) 
+            #print('self.flow1d1d_w',np.array(self.flow1d1d_w))
+            assert self.flow1d1d_w.shape == seg_valuesW.shape
+            assert self.flow1d1d_sol.shape == seg_valuesW.shape
+            assert self.flow1d1d_mucil.shape == seg_valuesW.shape
+        
+            for cc in cellIds:
+                segs = self.cell2seg[cc]
+                if verbose:
+                    print('\n\ncell',cc,segs)
+                    print('W',repr(self.flow1d1d_w[segs]),sum(self.flow1d1d_w[segs]))
+                    print('sol',repr(self.flow1d1d_sol[segs]),sum(self.flow1d1d_sol[segs]))
+                    print('mucil',repr(self.flow1d1d_mucil[segs]),sum(self.flow1d1d_mucil[segs]))
+                divw = 1 if np.max(abs(self.flow1d1d_w[segs])) == 0 else np.max(self.flow1d1d_w[segs])
+                divsol = 1 if np.max(abs(self.flow1d1d_sol[segs])) == 0 else np.max(self.flow1d1d_sol[segs])
+                divmucil = 1 if np.max(abs(self.flow1d1d_mucil[segs]) )== 0 else np.max(self.flow1d1d_mucil[segs])
+
+                vals = np.array([sum(self.flow1d1d_w[segs]),
+                             sum(self.flow1d1d_sol[segs]),
+                             sum(self.flow1d1d_mucil[segs])])
+                divs = np.array([divw,divsol,divmucil])
+                try:
+                    assert max(abs(vals/divs)) < 0.1
+                except:
+                    print(vals/divs,'vals',vals,'divs',divs)
+                    print('maxs', np.max(abs(self.flow1d1d_w[segs])) , 
+                          np.max(abs(self.flow1d1d_sol[segs])) , 
+                          np.max(abs(self.flow1d1d_mucil[segs]))) 
+                    print('FAILED')
+                    gotError = 1
+                    
+        gotError = comm.bcast(gotError,root=0)
+        if gotError:
+            raise Exception
+                    
+                
+                            
                 
             
     

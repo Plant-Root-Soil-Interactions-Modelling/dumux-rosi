@@ -429,7 +429,7 @@ public:
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 		
-		double m3_2_cm3 = 1e6;
+		double m3_2_cm3 = 1e6;// cm3/m3
 		 v_maxL = getParam<double>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
 		 K_L = getParam<double>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
 		 
@@ -471,8 +471,10 @@ public:
              
              
              }
-		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[s-1]
-         
+         // [1/d] * [d/s] = [1/s]
+		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[d-1] => [s-1]
+		 kads = getParam<double>("Soil.kads", kads_) * m3_2_cm3 /(24.*60.*60.);//[cm3/mol/d] => [m3/mol/s]
+		 kdes = getParam<double>("Soil.kdes", kdes_)/(24.*60.*60.);//[d-1] => [s-1]         
 		 
 		 m_maxBis = std::vector<double>{getParam<double>("Soil.m_maxOBis", m_max[0]*(24.*60.*60.))/(24.*60.*60.),
 							getParam<double>("Soil.m_maxCBis", m_max[1]*(24.*60.*60.))/(24.*60.*60.)};	//Maximum reaction rate 
@@ -1326,6 +1328,8 @@ public:
 			return CSSmax*(svc_volume*C_S_W*theta/k_sorp);
 		  case 8://linear with CSSmax is content => [mol] * [mol C/m3 soil water] * [m3 soil water/m3 soil] * [m3 soil]/  [mol C] / [m3 soil] / [m3 soil zone 1/m3 soil]= [mol C/m3 soil zone 1] 
 			return CSSmax*C_S_W*theta/k_sorp /f_sorp;
+		  case 9:
+			return 0.;//only pde
 		  default:
 			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
 		}
@@ -1449,19 +1453,12 @@ public:
 		
 		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
 		//[mol solute / m3 scv /s] 
-		if(f_sorp < 1.)
-		{
-			if (css1Function != 3)//nonlinear, none, linear
-			{
-				setReac_CSS2(alpha*(CSS1-CSS2), dofIndex) ;//already in /m3 scv (as * (1-f_sorp) done)
-			}else{//only via pde
-				setReac_CSS2(alpha*(C_S_W-CSS2), dofIndex) ;
-			}
-		}else{setReac_CSS2(0., dofIndex) ;}
-            
+        double dtCSS2 = computeDtCSS2(CSS1, C_S_W, CSS2);
+        setReac_CSS2(dtCSS2, dofIndex);
+
 		
 		//[mol solute / m3 scv/s] 
-		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S - Reac_CSS2[dofIndex])* pos0 ;
+		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S - dtCSS2)* pos0 ;
 		q[mucilIdx]  += (-F_depoly +  k_decay2 * F_decay) * pos0;
 		
 		q[CoAIdx] += (  - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
@@ -1470,7 +1467,7 @@ public:
 		q[CcAIdx] += (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0;
 		q[CcDIdx] += (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0;
 		
-		q[CSS2Idx] +=  Reac_CSS2[dofIndex] * pos0 ;
+		q[CSS2Idx] +=  dtCSS2 * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
 			
 			if(verbose)
@@ -1482,21 +1479,6 @@ public:
 			setSorp(Reac_CSS2[dofIndex], scv.dofIndex());
 			setTheta(theta, scv.dofIndex());
 			setCSS1(CSS1*f_sorp, scv.dofIndex());
-		// if((massOrMoleFraction(volVars,0, soluteIdx, true)<-1.e-20)&&(dimWorld > 1))
-		// {
-				// std::cout<<dimWorld<<" "<<massOrMoleFraction(volVars,0, soluteIdx, true)<<" "<<theta<<", source ";
-			// for(int i = 0;i < numComponents_;i++)
-			// {			
-				// // if (q[i] != 0)
-				// // {
-					// std::cout<<", "<<i<<" "<<q[i];
-					// // if((source_[i] != nullptr) &&(source_[i]->at(eIdx)!= 0))
-					// // {
-						// // std::cout<<", sourceStart "<<source_[i]->at(eIdx);
-					// // }
-				// //}											 
-			// }std::cout<<std::endl;
-		// }
 
 	}
 
@@ -1673,7 +1655,43 @@ public:
 	bool computedCellVolumesCyl = false;
 	std::map<int,int>  faceIdx;
     
+    
+    std::function<double(double,double,double)> computeDtCSS2 =
+        std::bind(&Richards1P10CProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3); 
+    double computeInitCSS2_(double CSS1, double CSW) // mol/m3/s
+    {
+        if(css1Function == 1){return CSS1;}
+        if(css1Function == 3)
+        {
+            if(verbose>1)
+            {
+                std::cout<<"computeInitCSS2_ "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<( CSSmax * CSW/(CSW+k_sorp))<<std::endl;
+            }
+            return CSSmax * CSW/(CSW+k_sorp);
+        }
+        if(css1Function == 9){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
+        DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+        return 0.;
+    }
+    double computeDtCSS2_(double CSS1, double CSW, double CSS2) // mol/m3/s
+    {
+        if(css1Function == 1){return alpha * (CSS1-CSS2);}
+        if(css1Function == 3)
+        {
+            if(verbose>1)
+            {
+                std::cout<<"computeDtCSS2_ "<<kads<<" "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<CSS2<<std::endl;
+            }
+            return kads * (CSSmax * CSW/(CSW+k_sorp )- CSS2);
+        }
+        if(css1Function == 9){return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;}
+        DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+        return 0.;
+    }
+    
 private:
+
+
 
 	//! cm pressure head -> Pascal
 	Scalar toPa_(Scalar ph) const {
@@ -1757,6 +1775,8 @@ private:
 	double k_sorp_ = 0.2;//mol/cm3 or mol
 	double CSSmax_ = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
 	double alpha_ = 0.1; //[d-1]
+    double kads_;//[cm3/mol/d]
+    double kdes_;//[d-1]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
@@ -1776,6 +1796,8 @@ private:
 	double f_sorp = 0.5;//[-] fraction fo sorption zone 1
 	double CSSmax;// [mol/m3 soil scv zone 1] or mol Maximum sorption capacity
 	double alpha;//[s-1]	
+    double kads;//[m3/mol/s]
+    double kdes;//[s-1]
 	
 	std::vector<double>  k_SBis ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
 	std::vector<double>  m_maxBis ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups

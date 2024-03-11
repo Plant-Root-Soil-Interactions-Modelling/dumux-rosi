@@ -25,8 +25,11 @@ class SolverWrapper():
         self.bulkDensity_m3 =0 #mol / m3 bulk soil
         self.molarMassWat = 18. # [g/mol]
         self.densityWat_m3 = 1e6 #[g/m3]
+        self.m3_per_cm3 = 1e-6 #m3/cm3
+        self.cm3_per_m3 = 1e6 #cm3/m3
         # [mol/m3] = [g/m3] /  [g/mol] 
         self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
+        self.molarDensityWat_cm3 =  self.molarDensityWat_m3 /1e6 # [mol wat/cm3 wat] 
         
 
     def initialize(self, args_ = [""], verbose = False):
