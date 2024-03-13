@@ -473,7 +473,12 @@ public:
              }
          // [1/d] * [d/s] = [1/s]
 		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[d-1] => [s-1]
-		 kads = getParam<double>("Soil.kads", kads_) * m3_2_cm3 /(24.*60.*60.);//[cm3/mol/d] => [m3/mol/s]
+         
+		 kads = getParam<double>("Soil.kads", kads_)  /(24.*60.*60.);//[cm3/mol/d] => [m3/mol/s] or [1/d] => [1/s] 
+         if(css1Function == 9)
+         {
+             kads *= 1/m3_2_cm3;//[cm3/mol/s] => [m3/mol/s] 
+         }
 		 kdes = getParam<double>("Soil.kdes", kdes_)/(24.*60.*60.);//[d-1] => [s-1]         
 		 
 		 m_maxBis = std::vector<double>{getParam<double>("Soil.m_maxOBis", m_max[0]*(24.*60.*60.))/(24.*60.*60.),
@@ -782,10 +787,6 @@ public:
 		{
 			 std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
 		}
-		// if(toFile)
-		// {
-			 // myfile_<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
-		// }
 		for(int i = soluteIdx; i<numComponents_;i++)//solutes
 		{
 			v[i] = initialSoil_.at(i).f(z,eIdx);
@@ -793,19 +794,11 @@ public:
 			{
 				 std::cout<<" result : "<<v[i];
 			}
-			// if(toFile)
-			// {
-				 // myfile_<<" result : "<<v[i];
-			// }
 		}
 		if(verbose>1)
 		{
 			 std::cout<<std::endl;
 		}
-		// if(toFile)
-		// {
-			 // myfile_<<std::endl;
-		// }
 		
 		return v;
 	}
@@ -1658,7 +1651,7 @@ public:
     
     std::function<double(double,double,double)> computeDtCSS2 =
         std::bind(&Richards1P10CProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3); 
-    double computeInitCSS2_(double CSS1, double CSW) // mol/m3/s
+    double computeInitCSS2_(double CSS1, double CSW) // mol/m3
     {
         if(css1Function == 1){return CSS1;}
         if(css1Function == 3)
@@ -1667,9 +1660,14 @@ public:
             {
                 std::cout<<"computeInitCSS2_ "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<( CSSmax * CSW/(CSW+k_sorp))<<std::endl;
             }
+            //  ([mol C/m3 soil] * ([mol C/m3 water]/([mol C/m3 water] + [mol C/m3 water]))
             return CSSmax * CSW/(CSW+k_sorp);
         }
-        if(css1Function == 9){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
+        if(css1Function == 9)
+        {
+            //( [m3 water/mol/s] * [mol C/m3 water] * [mol C/m3 soil] )/( [m3 water/mol/s] * [mol C/m3 water] + [1/s])
+            return (kads * CSW * CSSmax)/(kads * CSW + kdes);
+        }
         DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
         return 0.;
     }
@@ -1682,9 +1680,14 @@ public:
             {
                 std::cout<<"computeDtCSS2_ "<<kads<<" "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<CSS2<<std::endl;
             }
+            // [1/s] * ([mol C/m3 soil] * ([mol C/m3 water]/([mol C/m3 water] + [mol C/m3 water])) - [mol C/m3 soil])
             return kads * (CSSmax * CSW/(CSW+k_sorp )- CSS2);
         }
-        if(css1Function == 9){return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;}
+        if(css1Function == 9)
+        {
+            // [m3 water/mol/s] * [mol C/m3 water] * [mol C/m3 soil] - [1/s] * [mol C/m3 soil]
+            return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;
+        }
         DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
         return 0.;
     }
@@ -1775,7 +1778,7 @@ private:
 	double k_sorp_ = 0.2;//mol/cm3 or mol
 	double CSSmax_ = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
 	double alpha_ = 0.1; //[d-1]
-    double kads_;//[cm3/mol/d]
+    double kads_;//[cm3/mol/d] or [1/d]
     double kdes_;//[d-1]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
@@ -1796,7 +1799,7 @@ private:
 	double f_sorp = 0.5;//[-] fraction fo sorption zone 1
 	double CSSmax;// [mol/m3 soil scv zone 1] or mol Maximum sorption capacity
 	double alpha;//[s-1]	
-    double kads;//[m3/mol/s]
+    double kads;//[m3/mol/s] or [1/s]
     double kdes;//[s-1]
 	
 	std::vector<double>  k_SBis ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group

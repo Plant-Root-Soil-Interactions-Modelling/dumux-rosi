@@ -227,6 +227,9 @@ def getBiochemParam(s,paramIdx, noAds):
     mol_per_kgC = (1/1000) * s.molarMassC
     # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
     s.kads = kads * yr_per_d * cm3_per_m3 * mol_per_kgC
+    if s.css1Function == 3: #change kads to 1/d:
+        C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
+        s.kads *= C_S # [cm3/mol/d] => [1/d]
     kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
     s.kdes = kdes * yr_per_d
     return s
@@ -268,7 +271,7 @@ def setBiochemParam(s):
     s.setParameter("Soil.f_sorp", str(s.f_sorp)) #[-]
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv zone 1] or mol
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
-    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol/d]
+    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol/d] or [1/d]
     s.setParameter("Soil.kdes", str(s.kdes)) #[1/d]
     return s
 
@@ -407,7 +410,12 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
             print('getCSS2Init','ccsmax',s.CSSmax * cm3_per_m3, 
               'ratio',(CSW/(CSW+ s.k_sorp)),
               'css2init',s.CSSmax * (CSW/(CSW+ s.k_sorp))* cm3_per_m3)
-        return s.CSSmax * (CSW/(CSW+ s.k_sorp)), (CSW/(CSW+ s.k_sorp))
+        if s.css1Function== 3:
+            return s.CSSmax * (CSW/(CSW+ s.k_sorp)), (CSW/(CSW+ s.k_sorp))
+        elif s.css1Function== 9:
+            return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes), (s.kads * CSW)/(s.kads * CSW + s.kdes) 
+        else:
+            raise Exception
     s.getCSS2Init = getCSS2Init# lambda CSW: s.CSSmax * (CSW/(CSW+ s.k_sorp))#mol C/ cm3 scv
     #s.getCSS2Init(C_S_W)#s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
     
