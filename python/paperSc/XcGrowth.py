@@ -78,10 +78,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 9#3
+    css1Function_ = 9
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
-    noAds = True#(extraName == 'noAds')
+    noAds = False
     doSimple =False
     doMinimumPrint =  False
     doOldCell = False
@@ -104,7 +104,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/PDECSa"+extraName+str(spellData['scenario'])\
+    results_dir="./results/PDECSb"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -152,7 +152,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     """ rhizosphere model parameters """
     recreateComsol = False
 
-    periodic = False
+    periodic = True
     nc = 10
 
     logbase = 0.5  # according to Mai et al. (2019)

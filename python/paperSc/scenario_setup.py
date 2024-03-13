@@ -218,7 +218,6 @@ def getBiochemParam(s,paramIdx, noAds):
         if s.css1Function == 8: #change cssmax to content
             s.CSSmax *=  s.cell_size * s.f_sorp # mol C
         
-    
     kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
     yr_per_d = 1/365 # [yr/d]
     m3_per_cm3 = 1e-6; # m3/cm3
@@ -288,7 +287,8 @@ def setIC(s, paramIdx, ICcc = None):
         C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
 
         s.CSS2_init,s.ratioInit  = s.getCSS2Init(C_S)#s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
-        print('C_S,CSS2_init',C_S,s.CSS2_init,'CSSmax', s.CSSmax ,'ratio', (C_S/(C_S+ s.k_sorp)))
+        if rank == 0:
+            print('C_S,CSS2_init',C_S,s.CSS2_init,'CSSmax', s.CSSmax ,'ratio', (C_S/(C_S+ s.k_sorp)))
         
         if s.css1Function == 8: #change cssmax to content
             #mol C/ cm3 scv zone 2 = mol C * [mol C / cm3 water ] * [cm3 water / cm3 soil] * [cm3 soils]/ [mol] /[ cm3 soil ] * [cm3 soil / cm3 soil zone 1] #at init css2_zone2 == css1_zone1
@@ -403,7 +403,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     cm3_per_m3 = 1e6; # cm3/m3
     
     def getCSS2Init(CSW):
-        print('getCSS2Init','ccsmax',s.CSSmax * cm3_per_m3, 
+        if rank == 0:
+            print('getCSS2Init','ccsmax',s.CSSmax * cm3_per_m3, 
               'ratio',(CSW/(CSW+ s.k_sorp)),
               'css2init',s.CSSmax * (CSW/(CSW+ s.k_sorp))* cm3_per_m3)
         return s.CSSmax * (CSW/(CSW+ s.k_sorp)), (CSW/(CSW+ s.k_sorp))

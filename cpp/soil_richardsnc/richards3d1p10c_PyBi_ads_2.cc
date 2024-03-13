@@ -137,7 +137,7 @@ int main(int argc, char** argv) //try
 	
 	std::cout<<"to create grid"<<std::endl;
     
-	double bulkSoilDensity = (2650. / 60.08e-3) * (1 - getParam<int>("Soil.VanGenuchten.Qs")) ;
+	double bulkSoilDensity = (2650. / 60.08e-3) * (1 - getParam<double>("Soil.VanGenuchten.Qs")) ;
     double CS_init_mFr =  getParam<double>("Soil.IC.C1");//mol/mol
 	double CS_init = CS_init_mFr * bulkSoilDensity;//mol/m3
     double CSS2Init = s.computeInitCSS2(0., CS_init);// mol/m3

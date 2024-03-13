@@ -2000,6 +2000,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
             cyl.setParameter("Soil.k_sorp", str(self.soilModel.k_sorp)) # mol / cm3 or mol
             cyl.setParameter("Soil.f_sorp", str(self.soilModel.f_sorp)) #[-]
+
+            cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
+            cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]
             if (self.soilModel.css1Function == 8):
                 cyl_vol = (a_out**2 - a_in**2) * lId * np.pi
                 cssmax_ = self.soilModel.CSSmax * (cyl_vol / self.soilModel.cell_size) # fraction of cssmax in this cylinder
