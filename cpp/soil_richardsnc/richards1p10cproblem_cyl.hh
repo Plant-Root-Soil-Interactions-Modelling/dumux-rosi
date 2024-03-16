@@ -1778,8 +1778,8 @@ private:
 	double k_sorp_ = 0.2;//mol/cm3 or mol
 	double CSSmax_ = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
 	double alpha_ = 0.1; //[d-1]
-    double kads_;//[cm3/mol/d] or [1/d]
-    double kdes_;//[d-1]
+    double kads_ = 23265;//[cm3/mol/d] or [1/d]
+    double kdes_=4;//[d-1]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 

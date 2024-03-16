@@ -67,7 +67,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #initsim =float(sys.argv[1])# initsim = 9.5
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 1/3/24
-    p_mean = -100
+    #p_mean = -100
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -78,7 +78,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     static_plant = False
     useOuterFluxCyl_w = False
     useOuterFluxCyl_sol = False
-    css1Function_ = 3
+    css1Function_ = 9
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
     noAds = False
@@ -104,7 +104,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/PDECSa"+extraName+str(spellData['scenario'])\
+    results_dir="./results/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -159,10 +159,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     """ initialize """
 
-
+    weatherInit = scenario_setup.weather(1., spellData)
     s, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
                 min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
-                usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean, 
+                usemoles = usemoles, dirResults = results_dir, p_mean_ = weatherInit['p_mean'], 
                                          css1Function = css1Function_,
                                         paramIndx=paramIndx_,
                                         noAds = noAds)

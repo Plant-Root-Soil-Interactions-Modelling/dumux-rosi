@@ -477,7 +477,7 @@ public:
 		 kads = getParam<double>("Soil.kads", kads_)  /(24.*60.*60.);//[cm3/mol/d] => [m3/mol/s] or [1/d] => [1/s] 
          if(css1Function == 9)
          {
-             kads *= 1/m3_2_cm3;//[cm3/mol/s] => [m3/mol/s] 
+             kads *= 1/m3_2_cm3;//[cm3/mol/s] / [cm3/m3] => [m3/mol/s] 
          }
 		 kdes = getParam<double>("Soil.kdes", kdes_)/(24.*60.*60.);//[d-1] => [s-1]         
 		 
@@ -1778,8 +1778,8 @@ private:
 	double k_sorp_ = 0.2;//mol/cm3 or mol
 	double CSSmax_ = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
 	double alpha_ = 0.1; //[d-1]
-    double kads_;//[cm3/mol/d] or [1/d]
-    double kdes_;//[d-1]
+    double kads_ = 23265;//[cm3/mol/d] or [1/d]
+    double kdes_=4;//[d-1]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 

@@ -148,7 +148,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     r.enteredSpell = True
                     if r.spellData['condition'] == 'wet':#normally not needed
                         doChange = False
-                pheadinit_cm =  s.p_meanInit#vg.pressure_head(, s.vg_soil) # r.weatherX['theta'], s.vg_soil) 
+                pheadinit_cm =  vg.pressure_head(r.weatherX['theta'], s.vg_soil) 
 
                 cellsZ = comm.bcast(np.array( [ loc[2] for loc in s.getCellCenters()]))#cm
                 meanZ = np.average(cellsZ)
@@ -781,7 +781,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 print('2.3B simulation')
             rs.time_start_rhizo = timeit.default_timer()
             if r.mpiVerbose or (max_rank == 1) or (rank == 0):
-                print("\n\n\nsolve 1d soil", rank)
+                print("solve 1d soil", rank)
                 
             #seg_fluxes_limited
             

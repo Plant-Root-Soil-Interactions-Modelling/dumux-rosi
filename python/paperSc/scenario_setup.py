@@ -76,8 +76,8 @@ def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
         
     soil = {}
-    soil[0] = [0.045,np.nan, 0.04, 1.6, 50]# [0.041, 0.494, 0.0256, 1.49, 245]
-    soil[1] = [0.03, np.nan, 0.038, 2, 1864]
+    soil[0] = [0.08, 0.43, 0.04, 1.6, 50]#[0.045,np.nan, 0.04, 1.6, 50]# [0.041, 0.494, 0.0256, 1.49, 245]
+    soil[1] = None#[0.03, np.nan, 0.038, 2, 1864]
     return soil[i]
 
 
@@ -163,7 +163,7 @@ def getBiochemParam(s,paramIdx, noAds):
         paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').iloc[paramIdx].to_dict()
     else:
         paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
-    
+    #paramSet['theta'] = 0.4 #init 
     s.mg_per_molC = 12000
     s.betaC = paramSet['beta_C'] # -
     s.betaO = paramSet['beta_O'] # -
@@ -213,6 +213,9 @@ def getBiochemParam(s,paramIdx, noAds):
     if noAds:
         s.CSSmax = 0.
         s.alpha = 0.
+    elif s.css1Function == 9:
+        s.Qmmax = 0.45 * 0.079 # max ratio OC-soil, see 10.1016/j.soilbio.2020.107912
+        s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol
     else:
         s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 soil zone 1 to mol C/cm3 soil 
         if s.css1Function == 8: #change cssmax to content
@@ -291,7 +294,7 @@ def setIC(s, paramIdx, ICcc = None):
 
         s.CSS2_init,s.ratioInit  = s.getCSS2Init(C_S)#s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
         if rank == 0:
-            print('C_S,CSS2_init',C_S,s.CSS2_init,'CSSmax', s.CSSmax ,'ratio', (C_S/(C_S+ s.k_sorp)))
+            print('C_S,CSS2_init',C_S,s.CSS2_init,'CSSmax', s.CSSmax ,'ratio', s.ratioInit)
         
         if s.css1Function == 8: #change cssmax to content
             #mol C/ cm3 scv zone 2 = mol C * [mol C / cm3 water ] * [cm3 water / cm3 soil] * [cm3 soils]/ [mol] /[ cm3 soil ] * [cm3 soil / cm3 soil zone 1] #at init css2_zone2 == css1_zone1
@@ -346,18 +349,15 @@ def setDefault(s):
 
 def setSoilParam(s,paramIdx):
     # paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
-    if oldCSV:
-        paramSet = pd.read_csv('./TraiRhizoparam_ordered.csv').loc[paramIdx]
-    else:
-        paramSet = pd.read_csv('./output_random_rows.csv').loc[paramIdx]
-    s.bulkDensity =  paramSet['ro_B']*1000 #g/cm3 => kg/m3
+    
+    #s.bulkDensity =  paramSet['ro_B']*1000 #g/cm3 => kg/m3
     s.solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     s.solidMolarMass = 60.08e-3 # [kg/mol] 
 
     # theta_r, theta_s, alpha, n, Ks
-    s.soil = [0.045, np.nan, 0.04, 1.6, 50]
+    s.soil =  [0.08, 0.43, 0.04, 1.6, 50]#[0.045, np.nan, 0.04, 1.6, 50]
 
-    s.soil[1] = 1- s.bulkDensity/s.solidDensity #== size of air volume
+    #s.soil[1] = 1- s.bulkDensity/s.solidDensity #== size of air volume
     s.vg_soil = vg.Parameters(s.soil) 
     # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
     s.solidMolDensity = s.solidDensity/s.solidMolarMass
@@ -379,7 +379,7 @@ def create_soil_model3D(soil_type, year, soil_, min_b , max_b , cell_number, dem
                       #"./results/parallel"+str(max_rank)+"/",
                         p_mean_ = -100,css1Function = 0,paramIndx =0,
                      noAds = False, ICcc = None, DtCSS2 = DtCSS2_):
-    create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
+    return create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoType, 
                     times , net_inf , usemoles , dirResults,
                         p_mean_,css1Function,paramIndx ,
                      noAds , ICcc )
@@ -406,16 +406,24 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     cm3_per_m3 = 1e6; # cm3/m3
     
     def getCSS2Init(CSW):
-        if rank == 0:
-            print('getCSS2Init','ccsmax',s.CSSmax * cm3_per_m3, 
-              'ratio',(CSW/(CSW+ s.k_sorp)),
-              'css2init',s.CSSmax * (CSW/(CSW+ s.k_sorp))* cm3_per_m3)
         if s.css1Function== 3:
+            if rank == 0:
+                print('getCSS2Init',s.css1Function,'ccsmax',s.CSSmax ,#* cm3_per_m3, 
+                      's.kads',s.kads,
+                  'ratio',(CSW/(CSW+ s.k_sorp)),
+                  'css2init',s.CSSmax * (CSW/(CSW+ s.k_sorp)),#* cm3_per_m3
+                     )
             return s.CSSmax * (CSW/(CSW+ s.k_sorp)), (CSW/(CSW+ s.k_sorp))
         elif s.css1Function== 9:
+            if rank == 0:
+                print('getCSS2Init',s.css1Function,'ccsmax',s.CSSmax,# * cm3_per_m3,
+                      's.kads',s.kads,'s.kdes',s.kdes,
+                  'ratio',(s.kads * CSW)/(s.kads * CSW + s.kdes) ,
+                  'css2init',(s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes), (s.kads * CSW)/(s.kads * CSW + s.kdes) )
             return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes), (s.kads * CSW)/(s.kads * CSW + s.kdes) 
         else:
             raise Exception
+    
     s.getCSS2Init = getCSS2Init# lambda CSW: s.CSSmax * (CSW/(CSW+ s.k_sorp))#mol C/ cm3 scv
     #s.getCSS2Init(C_S_W)#s.CSSmax * (C_S/(C_S+ s.k_sorp))#mol C/ cm3 scv # * (1 - s.f_sorp)
     
@@ -427,6 +435,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     setDefault(s)
     setSoilParam(s,paramIndx)
     s.theta_init =  vg.water_content(p_mean_, s.vg_soil)
+    assert s.theta_init == 0.4
     
     s.css1Function = css1Function
     s.setParameter( "Soil.css1Function", str(s.css1Function))
@@ -435,7 +444,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     setBiochemParam(s)
     
     setIC3D(s, paramIndx, ICcc)
-    s.createGrid(min_b, max_b, cell_number, False)  # [cm] 
+    s.createGrid(min_b, max_b, cell_number, True)  # [cm] 
     cell_number_ = cell_number
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)   
@@ -465,6 +474,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
         
     s.DtCSS2 = DtCSS2
     #s.setComputeDtCSS2(DtCSS2)  # maps segments
+    if rank == 0:
+        s.base.printParams()
     return s, s.vg_soil
     
 def setShape1D(s,r_in, r_out,length,nCells = 10, doLogarithmic=True):
@@ -577,7 +588,7 @@ def setupOther(s, p_mean_):
     cidx = np.array(s.base.getCellIndices())
     cidx_sorted = np.sort(cidx)
     if (cidx != cidx_sorted).any():
-        print('too many threads for  the number of cells: ,',cidx,cidx_sorted)
+        print(rank, 'too many threads for  the number of cells: ,',cidx,cidx_sorted)
         raise Exception
     if False:
         for ncomp in range(s.numComp):
@@ -616,7 +627,7 @@ def setupOther(s, p_mean_):
                     "1.Component.LiquidDiffusionCoefficient", str(s.Ds),
                     "2.Component.LiquidDiffusionCoefficient", str(s.Dl),
                     "Newton.MaxRelativeShift",str(s.MaxRelativeShift),
-                    'wiltingPoint',s.wilting_point, 'bulkDensity',s.bulkDensity,
+                    'wiltingPoint',s.wilting_point, #'bulkDensity',s.bulkDensity,
                     'bulkDensity_m3',s.bulkDensity_m3,'solidDensity',s.solidDensity, 
                     'solidMolarMass',s.solidMolarMass,
                     ' solidMolDensity', s.solidMolDensity, 
@@ -685,6 +696,7 @@ def weather(simDuration, spellData, hp:float=1):
         if simDuration == 0.:
             raise Exception
         Qnigh = 0; Qday = 960e-6 #458*2.1
+        loam = [0.08, 0.43, 0.04, 1.6, 50]
         
         if  ((spellData['condition'] == "wet") or (simDuration <= spellData['spellStart']) or (simDuration > spellData['spellEnd'])):
             Tnigh = 15.8; Tday = 22
@@ -737,11 +749,11 @@ def weather(simDuration, spellData, hp:float=1):
             #raise Exception
             
 
-        # pmean = theta2H(vgSoil, thetaInit)
+        pmean = theta2H(loam, thetaInit)
 
         weatherVar = {'TairC' : TairC_,'TairK' : TairC_ + 273.15,'Pair':Pair,"es":es,
                         'Qlight': Q_,'rbl':rbl,'rcanopy':rcanopy,'rair':rair,"ea":ea,
-                        'cs':cs, 'RH':RH_, 'theta':thetaInit}
+                        'cs':cs, 'RH':RH_, 'p_mean':pmean,'theta':thetaInit}
         #print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
         return weatherVar
 

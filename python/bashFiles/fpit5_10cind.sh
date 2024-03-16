@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=10cind
+#SBATCH --job-name=1d1d10c
 #SBATCH --cpus-per-task=1
 #SBATCH --ntasks=5
 #SBATCH --nodes=1
