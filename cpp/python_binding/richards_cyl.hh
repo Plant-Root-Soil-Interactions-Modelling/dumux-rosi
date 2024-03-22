@@ -19,7 +19,7 @@ public:
     /**
      * Calls parent, additionally turns gravity off
      */
-    void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true, bool doMPI = true) override {
+    virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true, bool doMPI = true) override {
     	Richards<Problem, Assembler, LinearSolver, dim>::initialize(args_, verbose, doMPI);
         this->setParameter("Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem
         this->setParameter("Soil.Problem.EnableGravity", "false"); // important in 1d axial-symmetric problem
@@ -37,7 +37,27 @@ public:
 		rOut = minMax[1];
     	outerIdx = this->pick({ rOut });
 	}
-
+    
+    void clearSaveBC() {    
+        BC_in_vals.clear();
+        BC_out_vals.clear();
+        BC_time.clear();
+        BC_ddt.clear();
+    }
+    void doSaveBC(double ddt_current) {
+		int numC = this->numComp();
+        std::vector<double> BC_in_vals_i(numC);
+        std::vector<double> BC_out_vals_i(numC);
+        for(int nc = 0.; nc < numC; nc++)
+        {
+            BC_in_vals_i.at(nc) = this->getInnerFlux(nc)/this->rIn;// [ mol / (m^2 \cdot s)]_axissymmetric / [axyssimetric factor] = [ mol / (m^2 * s)]
+            BC_out_vals_i.at(nc) = this->getOuterFlux(nc)/this->rOut;// [ mol / (m^2 \cdot s)]_axissymmetric  / [axyssimetric factor] = [ mol / (m^2 * s)]
+        }
+        BC_in_vals.push_back(BC_in_vals_i);
+        BC_out_vals.push_back(BC_out_vals_i);
+        BC_ddt.push_back(ddt_current);
+    }
+	
     /**
      * [ kg / (m^2 \cdot s)]
      */
@@ -62,8 +82,8 @@ public:
     /**
      * Gets the concentration at the inner boundary [cm]
      */
-    double getInnerSolutes(int shift = 0) {
-        return this->getSolutionHeadAt(innerIdx+shift,1);
+    double getInnerSolutes(int shift = 0, int compId = 1) {
+        return this->getSolutionAt(innerIdx+shift,compId);
     }
 
     /**
@@ -95,12 +115,16 @@ public:
     double rIn = 0.;
     double rOut = 0.;
 
+    std::vector<std::vector<double>> BC_in_vals;
+    std::vector<std::vector<double>> BC_out_vals;
+    std::vector<double> BC_time;
+    std::vector<double> BC_ddt;
 };
 
 /**
  * pybind11
  */
-template<class Problem, class Assembler, class LinearSolver, int dim = 3>
+template<class Problem, class Assembler, class LinearSolver, int dim = 1>
 void init_richards_cyl(py::module &m, std::string name) {
     using RichardsFoam = RichardsCyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
@@ -118,6 +142,7 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getVelocity1D", &RichardsFoam::getVelocity1D)
    .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK)
    .def("setRegularisation",&RichardsFoam::setRegularisation)
+   
    .def("setTopBC",&RichardsFoam::setTopBC)
    .def("setBotBC",&RichardsFoam::setBotBC)
    .def("setSTopBC",&RichardsFoam::setSTopBC)
@@ -126,8 +151,15 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
-   .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0)
+   .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 1)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
+
+   .def("numComp",&RichardsFoam::numComp)
+
+    .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
+    .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 
+    .def_readwrite("BC_time", &RichardsFoam::BC_time) 
+    .def_readwrite("BC_ddt", &RichardsFoam::BC_ddt) 
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)

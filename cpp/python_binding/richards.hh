@@ -12,6 +12,7 @@
 
 
 
+
 /**
  * Adds solver functionality, that specifically makes sense for Richards equation
  */
@@ -111,6 +112,31 @@ public:
      * TODO setLayers(std::map<int, int> l)
      */
 
+	
+    virtual std::vector<double> getAvgDensity() {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> avgD;
+        avgD.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+			
+			
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+				double avgD_ = elemVolVars[scv].density();//absolute saturation
+                t += avgD_;
+				
+            }
+            avgD.push_back(t/c); // mean value
+        }
+        return avgD;
+    }
+	
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
@@ -287,6 +313,12 @@ public:
     	this->problem->bcSBotType_ = types;
     	this->problem->bcSBotValue_ = values;
     }
+	
+	
+    double molarMassWat = 18.; // [g/mol]
+    double densityWat_m3 = 1e6 ;//[g/m3]
+    //[mol/m3] = [g/m3] /  [g/mol] 
+    double molarDensityWat_m3 =  densityWat_m3 / molarMassWat;
 
 protected:
 
@@ -337,6 +369,8 @@ void init_richards(py::module &m, std::string name) {
    .def("setTopBC",&Richards_::setTopBC)
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)
+   .def("setSBotBC",&Richards_::setSBotBC)
+   .def("getAvgDensity",&Richards_::getAvgDensity)
    .def("setSBotBC",&Richards_::setSBotBC);
 }
 
