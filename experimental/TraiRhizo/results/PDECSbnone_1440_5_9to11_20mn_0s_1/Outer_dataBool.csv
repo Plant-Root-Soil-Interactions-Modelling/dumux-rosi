@@ -1,4 +1,0 @@
-n_iter,err,diff1d3dCurrant_rel,maxdiff1d3dCurrant_rel,solve_gave_up,min__soil_solute,dt_inner,failedLoop,cL
-0.0,0.0,0.0,0.0,0.0,0.0,0.013888888888888888,0.0,0.0
-0.0,0.0,0.0,0.0,0.0,0.0,0.013888888888888888,0.0,0.0
-0.0,0.0,0.0,0.0,0.0,0.0,0.013888888888888888,0.0,0.0
