@@ -1,6 +1,7 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
+import os
 import plantbox as pb  # CPlantBox
 from rosi_richardsnc import RichardsNCSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
@@ -16,6 +17,21 @@ import timeit
 import matplotlib.pyplot as plt
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
+
+def write_file_array(name, data, space =","):
+    name2 = './results/coupled_mai/'+ name+ '.txt'
+    with open(name2, 'a') as log:
+        log.write(space.join([num for num in map(str, data)])  +'\n')
+results_dir="./results/coupled_mai/"
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
+else:
+    test = os.listdir(results_dir)
+    for item in test:
+        try:
+            os.remove(results_dir+item)
+        except:
+            pass
 """ 
 Parameters  
 """
@@ -25,7 +41,8 @@ name = "bauw_coupled_rhizo"
 min_b = [-4., -4., -15.]  # cm
 max_b = [4., 4., 0.]  # cm
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
+cell_number = [2, 2, 2]  
+#[7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 # loam = [0.03, 0.345, 0.01, 2.5, 28.6]
@@ -47,7 +64,7 @@ logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 7  # 0.65  # 0.25  # [day]
+sim_time = 1  # 0.65  # 0.25  # [day]
 dt = 30 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
@@ -217,6 +234,8 @@ for i in range(0, NT):
         water_cyl.append(np.sum(rs.get_water_volume()))  # cm3
 
         if rank == 0:
+            write_file_array("solute_conc",solute_conc)
+            write_file_array("water_content",water_content)
             out_times.append(t)
             collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, False))
             min_rsx.append(np.min(np.array(rsx)))

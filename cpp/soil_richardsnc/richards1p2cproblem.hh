@@ -422,7 +422,7 @@ public:
 				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
                 //static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				//Scalar porosity = this->spatialParams().porosity(element);
-				Scalar de = EffectiveDiffusivityModel::effectiveDiffusionCoefficient(volVars,conti0EqIdx,soluteIdx,0);
+				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
 				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				break;
 
@@ -463,7 +463,7 @@ public:
 				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
                 //static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				//Scalar porosity = this->spatialParams().porosity(element);
-				Scalar de = EffectiveDiffusivityModel::effectiveDiffusionCoefficient(volVars,conti0EqIdx,soluteIdx,0);
+				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
 				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
 				break;

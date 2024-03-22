@@ -19,9 +19,10 @@ class SolverWrapper():
         """ @param base is the C++ base class that is wrapped. """
         self.base = base
 
-    def initialize(self, args_ = [""], verbose = True):
+
+    def initialize(self, args_ = [""], verbose = False,doMPI_=True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
-        self.base.initialize(args_, verbose)
+        self.base.initialize(args_, verbose,doMPI=doMPI_)
 
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
@@ -84,11 +85,11 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float):
+    def solve(self, dt:float, doMPIsolve_=True, saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         """
-        self.base.solve(dt * 24.*3600.)  # days -> s
+        self.base.solve(dt * 24.*3600.,doMPIsolve=doMPIsolve_, saveInnerDumuxValues = saveInnerFluxes_)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """

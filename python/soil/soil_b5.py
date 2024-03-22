@@ -36,12 +36,12 @@ def solve(simtimes):
 
     # s.setSTopBC([1], [1.e-4])  # 1 == Dirchlet, change for t>1 days
     # s.setSBotBC([6], [0.])  # 6 == outflow
-    s.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+    s.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
     s.setParameter("Soil.BC.Top.CValue", "1.e-4")  # michaelisMenten=8 (SType = Solute Type)
-    s.setParameter("Soil.BC.Bot.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
+    s.setParameter("Soil.BC.Bot.SType", "6")  # michaelisMenten=8 (SType = Solute Type)
     s.setParameter("Soil.BC.Bot.CValue", "0.")
 
-    s.initializeProblem()
+    s.initializeProblem(maxDt = 0.01)
 
     if rank == 0:
         print(s)
@@ -56,10 +56,10 @@ def solve(simtimes):
         for i in range(0, int(dt)):
 
             time = simtimes[r] + i
-            print(time)
+            print('time',time)
 
-            if time >= 5:
-                s.setSoluteTopBC([1], [0.])
+            #if time >= 5:
+            #    s.setSoluteTopBC([1], [0.])
 
             if rank == 0:
                 print("*****", "#", i, "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")

@@ -120,7 +120,7 @@ public:
                 }
             }
         }
-        cout();
+        //cout();
     }
 
     /**
@@ -209,6 +209,22 @@ public:
             return fs*yy_[0];
         }
         case table: {
+			if(nameY_ != "Soil.IC.P")// to avoid error in case of small extrapolation
+			{
+				auto table = &table_[0];
+				auto ip = x;
+				const auto& range = table->first;
+				const auto& values = table->second;
+
+				// check bounds
+				if (ip > range.back()) return values.back();
+				if (ip < range[0]) return values[0];
+
+				// if we are within bounds find the index of the lower bound
+				const auto lookUpIndex = std::distance(range.begin(), std::lower_bound(range.begin(), range.end(), ip));
+				if (lookUpIndex == 0)
+					return values[0];
+			}
             return fs*Dumux::interpolate<Dumux::InterpolationPolicy::LinearTable>(x, table_[0]);
         }
         case data: {

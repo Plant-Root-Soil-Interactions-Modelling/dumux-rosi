@@ -44,7 +44,7 @@ public:
 };
 // For a dummy manager
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::Richards2CTT> {
+struct CouplingManager<TypeTag, TTag::RichardsNCTT> {
     using type = DummyCouplingManager;
 };
 

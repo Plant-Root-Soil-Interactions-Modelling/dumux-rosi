@@ -12,9 +12,9 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     def __init__(self, base):
         super().__init__(base)
 
-    def initialize(self, args_ = [""], verbose = True, doMPI = False):
+    def initialize(self, args_ = [""], verbose = True, doMPI_ = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
-        self.base.initialize(args_, verbose, doMPI)
+        self.base.initialize(args_, verbose,doMPI=doMPI_)
         
     def solve(self, dt:float, maxDt = -1.):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
