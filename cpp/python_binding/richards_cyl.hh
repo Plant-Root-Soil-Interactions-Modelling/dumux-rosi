@@ -38,6 +38,14 @@ public:
     	outerIdx = this->pick({ rOut });
 	}
     
+	
+    /**
+     * for 1d3d coupling, useful to get from dumux 
+	 * the boundary flows at each time step
+	 * more accurate than getNeumann()
+	 * currently only implemented for richards_cyl
+     */
+	 
     void clearSaveBC() {    
         BC_in_vals.clear();
         BC_out_vals.clear();

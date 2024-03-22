@@ -466,8 +466,7 @@ public:
 			}
 
             xOld = x; // make the new solution the old solution
-			// for 1d3d coupling, useful to get from dumux the flux data
-			// more accurate than getNeumann()
+			
             if(saveInnerDumuxValues)
             {
                 doSaveBC(timeLoop->timeStepSize() );
@@ -1007,11 +1006,26 @@ protected:
     double simTimeBackUp;
     double simTimeBackUpManual;
 	
+	
+    /**
+     * @see richards_cyl::clearSaveBC
+     */	 
     virtual void clearSaveBC() {}
+	
+    /**
+     * @see richards_cyl::doSaveBC
+     */	 
     virtual void doSaveBC(double ddt_current) {}
     
+	
+    /**
+     * for 1d3d coupling (and to compute the error),
+	 * useful to get from dumux 
+	 * the inter-cell flow and sources
+	 * only implemented for richards10c(_cyl)
+     */
     void doSaveInnerFluxesAndSources(double ddt_current) {
-		//need to save it per face and not per cell i think (for when we have mpi)
+		//need to save it per face and not per cell (for when we have mpi)
         std::vector<std::vector<double>> inFluxes_i = getFlux();//per face
         std::vector<int> face2CellId_i = getFluxScvf_idx();//per face
         std::vector<std::vector<double>> inSources_i = getSource();//per cell
@@ -1025,7 +1039,7 @@ protected:
 	
 	
     std::vector<std::vector<double>> getFlux() {		
-    	std::vector<NumEqVector> flux_ = getProblemFlux();//this->problem->getFlux10c_(); // 
+    	std::vector<NumEqVector> flux_ = getProblemFlux();
 		int numComp_ = numComp();
 		std::vector<double> flx_row(numComp_);
 		std::vector<std::vector<double>> flux(flux_.size(), flx_row);
