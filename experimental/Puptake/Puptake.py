@@ -222,10 +222,10 @@ for i in range(0, NT):
     Q_inW, Q_outW, Q_inS, Q_outS  = rs.getSavedBCs()# cm3/d, g/d
     
     
-    realized_inner_fluxes = rs.get_inner_fluxes() # Q_inW#get_inner_fluxes only works if time step is small enough
+    realized_inner_fluxes =  Q_inW#get_inner_fluxes only works if time step is small enough
     realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root = 0)
     
-    realized_mass_fluxes =  rs.get_inner_mass_fluxes() #Q_inS# get_inner_mass_fluxes only works if time step is small enough
+    realized_mass_fluxes =  Q_inS# get_inner_mass_fluxes only works if time step is small enough
     realized_mass_fluxes = comm.bcast(realized_mass_fluxes, root = 0)
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
     """ 3a. macroscopic soil model """
