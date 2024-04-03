@@ -90,7 +90,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                 self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
         elif self.mode == "dumux_nc":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
+                self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
         elif self.mode == "python" or self.mode == "python_exact":
             for i in eidx:
                 x0 = x[self.seg2cell[i]]
@@ -112,13 +112,15 @@ class RhizoMappedSegments(pb.MappedSegments):
             cyl.setHomogeneousIC(x)  # cm pressure head
             cyl.setICZ_solute(c)  # [kg/m2]
             cyl.setInnerBC("pressure", 0.)  # [cm/day]
-            cyl.setInnerBC_solute("constantConcentration", c[0])  # [kg/m2]
+            cyl.setInnerBC_solute("fluxCyl", 0.)  # [kg/m2]
             cyl.setOuterBC("fluxCyl", 0.)
             cyl.setOuterBC_solute("fluxCyl", 0.)
 
-            cyl.setParameter("Component.MolarMass", "6.2e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever (nitrate 62,0049 g/mol)
+            cyl.setParameter("Component.MolarMass", "6.2e-2")  #  (nitrate 62,0049 g/mol)
             cyl.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
             # # cyl.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
+            #to use?
+            #cyl.setParameter("Component.Decay", "1.e-5")  # buffer power = \rho * Kd [1]          
 
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
             cyl.setParameter("Newton.MaxAbsoluteResidual", "1.e-10")
@@ -238,9 +240,9 @@ class RhizoMappedSegments(pb.MappedSegments):
         """ solute concentration at the root surface interface [g / cm3]"""
         rsx = np.zeros((len(self.cyls),))
         if self.mode.startswith("dumux"):
-#             for i, cyl in enumerate(self.cyls):  # run cylindrical models
-#                 rsx[i] = cyl.getInnerHead()  # [cm]
-            pass  # currently zero flux !!!!!!
+            for i, cyl in enumerate(self.cyls):  # run cylindrical models
+                 rsx[i] = cyl.getInnerHead()  # [cm]
+            #pass  # currently zero flux !!!!!!
         else:
             print("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(rsx, root = 0)))  # gathers and maps correctly
@@ -312,6 +314,11 @@ class RhizoMappedSegments(pb.MappedSegments):
                 l = self.seg_length[j]
                 cyl.setInnerMatricPotential(rx[i])
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
+                if not isinstance(argv[2],float): 
+                    cyl.setSoluteBotBC(3, argv[2][i]) #setInnerBC_solute("constantFluxCyl", argv[2][i])
+                else:
+                    cyl.setSoluteBotBC(3, argv[2]) #cyl.setInnerBC_solute("constantFluxCyl", argv[2])
+                cyl.setSoluteTopBC(3,argv[3]) #setOuterBC_solute("constantFluxCyl", argv[3])
                 try:
                     cyl.solve(dt)
                 except:

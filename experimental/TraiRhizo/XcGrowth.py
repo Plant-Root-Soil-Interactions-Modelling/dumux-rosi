@@ -81,7 +81,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     lightType =""#+- "nolight" # or ""
     mpiVerbose = False
     noAds = False
-    doSimple =False
+    doSimple =True
     doMinimumPrint =  False
     doOldCell = False
     if doSimple:
@@ -272,8 +272,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     dt_inner = float(dt)#/float(2.)
     start = True
     rs.new_soil_solute = np.array([0.])
-    while rs_age < simMax:
-
+    ggg = True
+    while ggg: #rs_age < simMax:
+        ggg = False
         rs_age += dt
         comm.barrier()
         if mpiVerbose:# or (max_rank == 1):
@@ -468,7 +469,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                                             rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)) < 0.,
                                                                  dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
             
-            return cL
+            return ((n_iter < 1) and (isInner))  #cL
         failedLoop = False
         cL = True
         while cL or failedLoop:
@@ -877,7 +878,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #print('checkMassOMoleBalance2_747')
     rs.checkMassOMoleBalance2()
     #vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
-
+    periodic = False
     if True:
 
         for konz in np.array([True]):#, False]):
@@ -889,9 +890,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 extraArrayName_ = "theta (cm3/cm3)"
             print("idcomp", 0, rank)
             rp = rs.get_concentration(0, konz)
+            s.results_dir = results_dir
+            print('rp',rp)
 
             vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
-                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_)  # VTK vizualisation
+                    filename="soil_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
+                    interactiveImage=False)  # VTK vizualisation
             print("idcomp_done", 0, rank)
             for i in range(1, rs.numComp+1):
                 print("idcomp", i, rank)
@@ -912,10 +916,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                        rs.get_concentration(i , konz), s, 
                                        periodic, min_b, max_b, 
                                        cell_number, 
-                        soil_type+genotype+"_rx", 
+                        filename="C"+str(i), 
                                        sol_ind =-1,
                                        extraArray = extraArray_, 
-                        extraArrayName = extraArrayName_)  # VTK vizualisation
+                        extraArrayName = extraArrayName_,
+                    interactiveImage=False)  # VTK vizualisation
                 print("idcomp_done", i, rank)
     # to plot: cumulative An, Exud, mucil and each element in the soil
     # Also images of the 3D soil.
@@ -944,7 +949,7 @@ if __name__ == '__main__':
     extraName ="" # noAds?
     if len(sys.argv)>6:
         extraName = sys.argv[6]
-    
+    import PIL
     doProfile = ( extraName == "cProfile")
     
     scenario = "baseline"

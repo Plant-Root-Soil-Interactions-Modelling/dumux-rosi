@@ -15,15 +15,47 @@ class SolverWrapper():
         e.g. MPI communication, writeVTK, interpolate        
     """
 
-    def __init__(self, base):
+    def __init__(self, base, segLength = None):
         """ @param base is the C++ base class that is wrapped. """
         self.base = base
+        self.solidDensity = 0
+        self.solidMolarMass=0
+        self.solidMolDensity=0
+        self.bulkDensity_m3 =0 #mol / m3 bulk soil
+        self.molarMassWat = 18. # [g/mol]
+        self.densityWat_m3 = 1e6 #[g/m3]
+        self.m3_per_cm3 = 1e-6 #m3/cm3
+        self.cm3_per_m3 = 1e6 #cm3/m3
+        # [mol/m3] = [g/m3] /  [g/mol] 
+        self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
+        self.molarDensityWat_cm3 =  self.molarDensityWat_m3 /1e6 # [mol wat/cm3 wat] 
+        self.segLength = segLength
 
 
     def initialize(self, args_ = [""], verbose = False,doMPI_=True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose,doMPI=doMPI_)
 
+    @property
+    def dimWorld(self):
+        """Get the current voltage."""
+        return self.base.dimWorld
+        
+    @property
+    def numComp(self):
+        """Get the current voltage."""
+        return self.base.numComp() -1   
+        
+    def reset(self):
+        """ reset solution vector to value before solve function """
+        self.base.reset()
+        
+    def resetManual(self):
+        """ reset solution vector to value before solve function """
+        self.base.resetManual()
+    def saveManual(self):
+        """ reset solution vector to value before solve function """
+        self.base.saveManual()
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
         self.base.createGrid(modelParamGroup)
@@ -36,6 +68,13 @@ class SolverWrapper():
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
+        self.numberOfCellsTot = np.prod(self.numberOfCells)
+        if self.dimWorld == 3:
+            self.numberOfFacesTot = self.numberOfCellsTot * 6
+        elif self.dimWorld == 1:
+            self.numberOfFacesTot = self.numberOfCellsTot * 2
+        else:
+            raise Exception
 
     def createGrid1d(self, points):
         """ todo
@@ -44,6 +83,8 @@ class SolverWrapper():
         for v in points:
             p.append([v / 100.])  # cm -> m
         self.base.createGrid1d(p)
+        self.numberOfCellsTot = len(points) -1
+        self.numberOfFacesTot = self.numberOfCellsTot * 2
 
 #     def createGrid3d(self, points, p0):
 #         """ todo
@@ -76,6 +117,23 @@ class SolverWrapper():
         @param maxDt    maximal time step [days] 
         """
         self.base.initializeProblem(maxDt * 24.*3600.)
+        self.dofIndices_   = self.base.getDofIndices()
+        self.pointIndices_ = self.base.getPointIndices()
+        self.cellIndices_  = self.base.getCellIndices()
+        
+        self.dofIndices   = self.allgatherv(self.dofIndices_, X_rhizo_type_default = np.int64)
+        self.pointIndices = self.allgatherv(self.pointIndices_, X_rhizo_type_default = np.int64)
+        self.cellIndices  = self.allgatherv(self.cellIndices_, X_rhizo_type_default = np.int64)
+        
+        if self.dimWorld == 3:
+            self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
+            self.CellVolumes = self._map(self.allgatherv(self.CellVolumes_), 2)   
+        elif self.dimWorld == 1:
+            self.CellVolumes_ = (np.array( self.getCellSurfacesCyl()) )*  self.segLength  # cm3
+            self.CellVolumes = self._map(self.allgatherv(self.CellVolumes_), 2)  
+        else:
+            raise Exception
+            
 
     def setInitialCondition(self, ic, eqIdx = 0):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
@@ -98,7 +156,7 @@ class SolverWrapper():
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getPoints(), root = 0)), 1) * 100.  # m -> cm
+        return self._map(self.allgatherv(self.base.getPoints()), 1) * 100.  # m -> cm  # m -> cm
 
     def getPoints_(self):
         """nompi version of """
@@ -108,7 +166,7 @@ class SolverWrapper():
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
+        return self._map(self.allgatherv(self.base.getCellCenters()), 2) * 100.  # m -> cm
 
     def getCellCenters_(self):
         """nompi version of """
@@ -118,7 +176,7 @@ class SolverWrapper():
     def getDofCoordinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getDofCoordinates(), root = 0)), 0) * 100.  # m -> cm
+        return self._map(self.allgatherv(self.base.getDofCoordinates()), 0) * 100.  # m -> cm
 
     def getDofCoordinates_(self):
         """nompi version of """
@@ -127,45 +185,77 @@ class SolverWrapper():
 
     def getCells(self):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
-        return self._map(self._flat0(comm.gather(self.base.getCells(), root = 0)), 2, np.int64)
+        return self._map(self.allgatherv(self.base.getCells(), X_rhizo_type_default = np.int64), 2, np.int64)
 
     def getCells_(self):
         """nompi version of """
         return np.array(self.base.getCells(), dtype = np.int64)
 
+    def getCellSurfacesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map(self.allgatherv(self.base.getCellSurfacesCyl()), 2) * 1.e4  # m3 -> cm3
+
+    def getCellSurfacesCyl_(self):
+        """nompi version of  """
+        assert size == 1
+        return np.array(self.base.getCellSurfacesCyl()) * 1.e4  # m2 -> cm2
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m3 -> cm3
+        return self.CellVolumes
 
     def getCellVolumes_(self):
         """nompi version of  """
-        return np.array(self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
+        return self.CellVolumes_  # m3 -> cm3
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self._flat0(comm.gather(self.base.getCellVolumesCyl(), root = 0)), 2) * 1.e6  # m3 -> cm3
+        return self.CellVolumes # m3 -> cm3
 
     def getCellVolumesCyl_(self):
         """nompi version of  """
-        return np.array(self.base.getCellVolumesCyl()) * 1.e6  # m3 -> cm3
+        return self.CellVolumes_  # m3 -> cm3
 
     # def quad, int or something (over all domain)
 
+    def getCellIndices(self):
+        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
+        if rank > 0:
+            return []
+        else:
+            return self.cellIndices
+        
+    def getPointIndices(self):
+        """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
+        if rank > 0:
+            return []
+        else:
+            return self.pointIndices
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
-        self.checkGridInitialized()
-        return self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
+        if rank > 0:
+            return []
+        else:
+            return self.dofIndices
 
+    def getCellIndices_(self):
+        """nompi version of  """
+        self.checkGridInitialized()
+        return self.cellIndices
+    
+    def getPointIndices_(self):
+        """nompi version of  """
+        self.checkGridInitialized()
+        return self.pointIndices
     def getDofIndices_(self):
         """nompi version of  """
         self.checkGridInitialized()
-        return np.array(self.base.getDofIndices(), dtype = np.int64)
+        return self.dofIndices
 
     def getSolution(self, eqIdx = 0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getSolution(eqIdx), root = 0)), 0)
+        return self._map(self.allgatherv(self.base.getSolution(eqIdx)),0)
 
     def getSolution_(self, eqIdx = 0):
         """nompi version of  """
@@ -184,7 +274,6 @@ class SolverWrapper():
 
     def getNeumann(self, gIdx, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
-        print("gIdx, eqIdx",gIdx, eqIdx)
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self, eqIdx = 0):
@@ -210,7 +299,7 @@ class SolverWrapper():
     def getNetFlux(self, eqIdx = 0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root = 0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+        return self._map(self.allgatherv(self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def getNetFlux_(self, eqIdx = 0):
         """nompi version of """
@@ -225,6 +314,18 @@ class SolverWrapper():
         """ Picks a cell and returns its global element cell index """
         return self.base.pick(np.array(x) / 100.)  # cm -> m
 
+    def pick_(self,coordCell):
+        bounds = self.getGridBounds(); min_b = bounds[:3]; max_b = bounds[3:]
+        cell_number_ = self.numberOfCells
+        ratioDist = (coordCell - min_b)/(max_b - min_b)
+        if ((ratioDist > 1.) |(ratioDist < 0.) ).any():#not in the domain
+            return -1
+        id_rows = ratioDist*cell_number_
+        onCellOuterFace = np.where((id_rows == np.round(id_rows)) & (id_rows > 0) )[0]
+        id_rows[onCellOuterFace] -= 1
+        id_rows= np.floor(id_rows)
+        id_cell = id_rows[2]*(cell_number_[0]*cell_number_[1])+id_rows[1]*cell_number_[0]+id_rows[0]
+        return int(id_cell) 
     def __str__(self):
         """ Solver representation as string """
         return str(self.base)
@@ -330,17 +431,87 @@ class SolverWrapper():
             writer.SetDataModeToBinary()
             writer.SetCompressorTypeToZLib()
             writer.Write()
+            
+    
+    def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
+        verbose_ = False
+        try:
+            assert isinstance(X_rhizo, (list, type(np.array([]))))
+        except:
+            print('allgatherv_type error',rank,type(X_rhizo),X_rhizo )
+            raise Exception
+            
+        X_rhizo = np.array(X_rhizo)
+            
+        if len((X_rhizo).shape) == 2:
+            local_size = (X_rhizo).shape[0] * (X_rhizo).shape[1]
+            shape0 = (X_rhizo).shape[0]#max(np.array(comm.allgather((X_rhizo).shape[0])))
+            shape1 = (X_rhizo).shape[1]#
+            # print('shape0',shape0)
+            X_rhizo_type = type(X_rhizo[0][0])
+        elif len((X_rhizo).shape) == 1:
+            local_size = (X_rhizo).shape[0]
+            shape0 = (X_rhizo).shape[0]
+            shape1 = 0
+            if len(X_rhizo) > 0:
+                X_rhizo_type = type(X_rhizo[0])
+            else:
+                X_rhizo_type = X_rhizo_type_default
+        else:
+            raise Exception  
+        
+        
+        X_rhizo = np.array(X_rhizo, dtype = np.float64)
+        all_sizes = np.array(comm.allgather(local_size))
+        work_size = sum(all_sizes)
+        all_X_rhizo = np.zeros(work_size)
+
+        offsets = np.zeros(len(all_sizes), dtype=np.int64)
+        offsets[1:]=np.cumsum(all_sizes)[:-1]
+        all_sizes =tuple(all_sizes)
+        offsets =tuple( offsets)
+        # print("offsets",offsets,all_sizes)
+        
+        if verbose_ and (self.mpiVerbose and (size > 1)):
+            comm.barrier()
+            print('before allgatherv',rank,'all_sizes',all_sizes,
+                  'offsets',offsets,'work_size',work_size,#'X_rhizo'X_rhizo,[all_X_rhizo,all_sizes,offsets],
+                  'shape0',shape0,'shape1',shape1, '(X_rhizo).shape',(X_rhizo).shape)
+            comm.barrier()
+
+        comm.Allgatherv( [X_rhizo.reshape(-1), MPI.DOUBLE],[all_X_rhizo,all_sizes,offsets,MPI.DOUBLE])
+        
+        all_X_rhizo = np.array(all_X_rhizo, dtype =X_rhizo_type)
+        
+        if keepShape:
+            if shape1 > 0:
+                all_X_rhizo = all_X_rhizo.reshape( size,shape0,shape1)
+            else:
+                all_X_rhizo = all_X_rhizo.reshape(size, shape0)
+        else:
+            if shape1 > 0:
+                #print('allgathervCa, before reshape, in if shape1 > 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
+                all_X_rhizo = all_X_rhizo.reshape(-1,shape1)
+            else:
+                #print('allgathervCb, before reshape, in if shape1 <= 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
+                all_X_rhizo = all_X_rhizo.reshape(-1)
+        
+        if verbose_ and (self.mpiVerbose and (size > 1)):
+            comm.barrier()
+            print('allgathervC, after reshape',rank, 'keepShape',keepShape,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1 )
+            comm.barrier()
+        return all_X_rhizo
 
     def _map(self, x, type_, dtype = np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
         @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
         if type_ == 0:  # auto (dof)
-            indices = self._flat0(comm.gather(self.base.getDofIndices(), root = 0))
+            indices = self.getDofIndices() 
         elif type_ == 1:  # points
-            indices = self._flat0(comm.gather(self.base.getPointIndices(), root = 0))
+            indices = self.getPointIndices() 
         elif type_ == 2:  # cells
-            indices = self._flat0(comm.gather(self.base.getCellIndices(), root = 0))
+            indices =  self.getCellIndices()
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
         if len(indices) > 0:  # only for rank 0 not empty

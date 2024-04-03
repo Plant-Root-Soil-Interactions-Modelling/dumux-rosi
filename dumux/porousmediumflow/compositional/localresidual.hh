@@ -105,9 +105,10 @@ public:
             	auto eqIdx = conti0EqIdx + compIdx;
             	Scalar b = problem.bufferPower(scv, volVars, compIdx);
                 if (eqIdx != replaceCompEqIdx) {
-                    storage[eqIdx] += (volVars.porosity()*volVars.saturation(phaseIdx)+b)
+                    storage[eqIdx] += std::max(0.,//manually force it to remain above 0.
+					(volVars.porosity()*volVars.saturation(phaseIdx)+b)
                                       * massOrMoleDensity(volVars, phaseIdx)
-                                      * massOrMoleFraction(volVars, phaseIdx, compIdx);
+                                      * massOrMoleFraction(volVars, phaseIdx, compIdx));
                 }
             }
 

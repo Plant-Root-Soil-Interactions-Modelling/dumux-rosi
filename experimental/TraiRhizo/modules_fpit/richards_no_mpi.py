@@ -121,10 +121,10 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         return self._map((self.base.getSolution(eqIdx)), 0)
     
     
-    def getSavedBC(self,  rIn, rOut ):
-    
+    def getSavedBC(self,  rIn, rOut, length = None ):    
         assert self.dimWorld != 3
-        length = self.segLength
+        if length is None:
+            length = self.segLength
         verbose = False
         BC_in_vals = np.array(self.base.BC_in_vals) #[ mol / (m^2 \cdot s)]
         BC_out_vals = np.array(self.base.BC_out_vals) #[ mol / (m^2 \cdot s)]
@@ -142,15 +142,19 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         if  verbose:
             print('q_out_m',q_out_m)
         if not self.useMoles:
-            raise Exception # unitConversions = 1/  10000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+                
+            unitConversionsW =- 1/  1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / [kg/m3] * [s/d] * [cm/m] -> cm / day
+            unitConversionsS = -1 * 1000 / 10000 * 24 * 3600 #  [kg m-2 s-1] * [g/kg] * [cm2/m2] * [s/d] -> g/cm2/d
+            unitConversions = np.full(len(q_in_m), unitConversionsS)
+            unitConversions[0] = unitConversionsW
         else:
             molarMassWat = 18. # [g/mol]
             densityWat = 1. #[g/cm3]
             # [mol/cm3] = [g/cm3] /  [g/mol] 
             molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
             unitConversionW =- (1/1e4) * (24.* 3600.)  / molarDensityWat; # [m2/cm2]*[s/d] * [cm3/mol]
-            unitConversion =- (1/1e4) * (24.* 3600.) ; # [m2/cm2]*[s/d]
-            unitConversions = np.full(len(q_in_m), unitConversion)
+            unitConversionsS =- (1/1e4) * (24.* 3600.) ; # [m2/cm2]*[s/d]
+            unitConversions = np.full(len(q_in_m), unitConversionsS)
             unitConversions[0] = unitConversionW
         # water: [mol m-2 s-1]*[m2/cm2]*[s/d] * [cm3/mol] * cm2-> [cm3/d] 
         # solute: [mol m-2 s-1]*[m2/cm2]*[s/d] * cm2 -> [mol/d] 

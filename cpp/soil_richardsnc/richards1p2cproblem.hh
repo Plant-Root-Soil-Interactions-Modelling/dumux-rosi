@@ -67,10 +67,10 @@ public:
 	static constexpr bool isBox = GridGeometry::discMethod == DiscretizationMethods::box;
 
 	enum {
-		pressureIdx = 0, // index of primary variables
+		pressureIdx = Indices::pressureIdx, // index of primary variables
 		h2OIdx = 0, // fluid index
 		soluteIdx = 1, // solute index
-		conti0EqIdx = 0, // indices of the equations
+		conti0EqIdx = Indices::conti0EqIdx, // indices of the equations
 		transportEqIdx = 1,
 
 		dimWorld = GridView::dimensionworld,
@@ -302,7 +302,7 @@ public:
 	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
 	 *
 	 * called by BoxLocalResidual::evalFlux,
-	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$// effective diffusion coefficient !!!!!!!!!!!!
+	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
 	 */
 	NumEqVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
@@ -326,7 +326,7 @@ public:
 			Scalar p = materialLaw_.pc(s) + pRef_;//TODO still works? params, 
 			Scalar h = -toHead_(p); // todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
-			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
+			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm (*2 ?)
 			Scalar krw = materialLaw_.krw(s);//TODO still works? params, 
 
 			if (onUpperBoundary_(pos)) { // top bc

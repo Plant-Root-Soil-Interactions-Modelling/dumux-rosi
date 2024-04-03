@@ -181,6 +181,7 @@ for i in range(0, NT):
     #
     # TODO: outer solute fluxes
     #
+    print('getWaterContentOld',rs.cyls[0].getWaterContent().flatten())
     if rs.mode == "dumux_nc":
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root = 0)
         rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # mass fluxes?
@@ -192,6 +193,8 @@ for i in range(0, NT):
     realized_mass_fluxes = rs.get_inner_mass_fluxes()
     realized_mass_fluxes = comm.bcast(realized_mass_fluxes, root = 0)
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
+    print('getWaterContent',rs.cyls[0].getWaterContent().flatten(), proposed_inner_fluxes[0], dt)
+    raise Exception
 
     """ 3a. macroscopic soil model """
     wall_soil_model = timeit.default_timer()
@@ -199,7 +202,7 @@ for i in range(0, NT):
     water_content = comm.bcast(water_content, root = 0)
     soil_water = np.multiply(water_content, cell_volumes)
     solute_conc = np.array(s.getSolution(1))  # solute concentration
-    solutes = np.multiply(solute_conc, cell_volumes)  # water per cell [cm3]
+    solutes = np.multiply(solute_conc, soil_water)  # water per cell [cm3]
     soil_fluxes = r.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
     soil_mass_fluxes = r.sumSegFluxes(realized_mass_fluxes)  # [cm3/day]  per soil cell
@@ -216,7 +219,7 @@ for i in range(0, NT):
 
     solute_conc = np.array(s.getSolution(1))  # solute concentration
     solute_conc = comm.bcast(solute_conc, root = 0)
-    new_solutes = np.multiply(solute_conc, cell_volumes)  # water per cell [cm3]
+    new_solutes = np.multiply(solute_conc, new_soil_water)  # water per cell [cm3]
     net_mass_flux = new_solutes - solutes
     for k, root_flux in soil_mass_fluxes.items():
         net_mass_flux[k] -= root_flux * dt

@@ -9,12 +9,13 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     rewrites all methods using MPI to single process ones
     """
 
-    def __init__(self, base):
-        super().__init__(base)
+    def __init__(self, base, segLength = None):
+        super().__init__(base, segLength)
 
     def initialize(self, args_ = [""], verbose = True, doMPI_ = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose,doMPI=doMPI_)
+        
         
     def solve(self, dt:float, maxDt = -1.):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
@@ -23,11 +24,19 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """
         self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
         
+    def getCellSurfacesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map((self.base.getCellSurfacesCyl()), 2) * 1.e4  # m2 -> cm2
+        
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkGridInitialized()
         return self._map((self.base.getSolutionHead(eqIdx)), 0)
+        
+    
+    def getContent(self,idComp):
+        return self.getContent_(idComp)
 
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
@@ -53,14 +62,6 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
         return self._map((self.base.getCells()), 2, np.int64)
 
-    def getCellVolumes(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumes()), 2) * 1.e6  # m3 -> cm3
-
-    def getCellVolumesCyl(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map((self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
-
     def getDofIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
         self.checkGridInitialized()
@@ -70,7 +71,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkGridInitialized()
-        return self._map((self.base.getSolution(eqIdx), 0))
+        return self._map(self.base.getSolution(eqIdx), 0)
 
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
@@ -87,19 +88,19 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkGridInitialized()
         return self._map((self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
-    def _map(self, x, type, dtype=np.float64):
+    def _map(self, x, type_, dtype=np.float64):
         """Converts rows of x to numpy array and maps it to the right indices         
         @param type 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
-        if type == 0:  # auto (dof)
-            indices = (self.base.getDofIndices())
-        elif type == 1:  # points
-            indices = (self.base.getPointIndices())
-        elif type == 2:  # cells
-            indices = (self.base.getCellIndices())
+        if type_ == 0:  # auto (dof)
+            indices = self.getDofIndices() 
+        elif type_ == 1:  # points
+            indices = self.getPointIndices() 
+        elif type_ == 2:  # cells
+            indices =  self.getCellIndices()
         else:
             raise Exception('PySolverBase._map: type must be 0, 1, or 2.')
-        if indices:  # only for rank 0 not empty
+        if len(indices) > 0:  # only for rank 0 not empty
             assert len(indices) == len(x), "_map: indices and values have different length"
             ndof = max(indices) + 1
             if isinstance(x[0], list):

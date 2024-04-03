@@ -9,8 +9,8 @@ class RichardsWrapper(SolverWrapper):
     Wraps passing parameters to Dumux for VanGenuchtenParameter, IC, BC, 
     """
 
-    def __init__(self, base):
-        super().__init__(base)
+    def __init__(self, base, segLength = None):
+        super().__init__(base, segLength)
         self.soils = []
         self.param_group = "Soil."
 
@@ -18,10 +18,28 @@ class RichardsWrapper(SolverWrapper):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
         self.param_group = group
 
+    def getContent_(self,idComp):
+        assert idComp > 0 # do not use for water content
+        vols =  self.getCellVolumes_().flatten() #cm3 scv            
+        
+        C_ = self.getSolution_(idComp)# g/g = g/cm3 wat
+            
+        try:
+            assert (C_ >= 0.).all()
+        except:
+            print('getContent',min( vols),max( vols),min( C_),max( C_))
+            raise Exception
+        watCont = self.getWaterContent_().flatten() # cm3 wat/cm3 scv 
+        return np.multiply(np.multiply(vols , watCont) , C_ )
+        
+            
+    def getContent(self,idComp):
+        return self._map(self.allgatherv(self.getContent_(idComp)),0)
+          
     @staticmethod
     def dumux_str(l):
         """ to pass lists to dumux parameter tree as string """
-        if type(l).__name__ == "float" or type(l).__name__ == "int":
+        if type(l).__name__ == "float" or type(l).__name__ == "int" or type(l).__name__ == 'float64':
             return str(l)
         else:
             s = ""
@@ -285,6 +303,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getInnerFlux(self, eq_idx = 0):
         """ [cm3 / cm2 / day] """
+        
         return self.base.getInnerFlux(eq_idx) * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
 
     def setOuterFluxCyl(self, flux):
@@ -310,11 +329,11 @@ class RichardsWrapper(SolverWrapper):
         """ more appropriate name for cylindrical coordinates, calls setToptBC, @see setToptBC """
         self.setTopBC(type_top, value_top)
 
-    def setInnerBC_solute(self, type_bot:str, value_bot = 0.):
+    def setInnerBC_solute(self, type_bot, value_bot):
         """ more appropriate name for cylindrical coordinates, calls setBotBC, @see setBotBC """
         self.setBotBC_solute(type_bot, value_bot)
 
-    def setOuterBC_solute(self, type_top:str, value_top = 0.):
+    def setOuterBC_solute(self, type_top , value_top ):
         """ more appropriate name for cylindrical coordinates, calls setToptBC, @see setToptBC """
         self.setTopBC_solute(type_top, value_top)
 
@@ -394,6 +413,13 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         return self.base.getWaterVolume() * 1.e6  # m3 -> cm3
 
+    def getWaterVolumes(self):
+        """Returns total water volume of the domain [cm3]"""
+        self.checkGridInitialized()
+        vols = self.getCellVolumes().flatten() #cm3 scv 
+        watCont = self.getWaterContent().flatten()  # cm3 wat/cm3 scv
+        return np.multiply(vols , watCont  )
+        
     def getVeclocity1D(self):
         """Returns the Darcy velocities [cm/day] TODO not working! """
         self.checkGridInitialized()

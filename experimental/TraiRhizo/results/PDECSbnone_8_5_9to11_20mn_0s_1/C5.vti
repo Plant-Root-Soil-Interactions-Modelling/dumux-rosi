@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <ImageData WholeExtent="0 2 0 2 0 2" Origin="-5 -5 -5" Spacing="5 5 2.5" Direction="1 0 0 0 1 0 0 0 1">
+    <Piece Extent="0 2 0 2 0 2"                                                       >
+      <PointData>
+      </PointData>
+      <CellData Scalars="[C5] (mol/cm3)">
+        <DataArray type="Float64" Name="water content" format="appended" RangeMin="0.24550739003"        RangeMax="0.24824178725"        offset="0"                   />
+        <DataArray type="Float64" Name="pressure head" format="appended" RangeMin="-101.25488921"        RangeMax="-98.751704191"        offset="112"                 />
+        <DataArray type="Float64" Name="[C5] (mol/cm3)" format="appended" RangeMin="1.3016042201e-08"     RangeMax="1.3016478731e-08"     offset="224"                 >
+        </DataArray>
+      </CellData>
+    </Piece>
+  </ImageData>
+  <AppendedData encoding="base64">
+   _AQAAAACAAABAAAAAQgAAAA==eJz7sDwhLe7YefsVK74ttATSqUUMp9yAtFPAA65kIK2mxWL8Oee8fcjuLseTQHrv1pehn4D03IVTpr0D0gBDsCHvAQAAAACAAABAAAAAQgAAAA==eJz7xJ4morIh4oCmCuPGFCDdGa8/yRdIiyx58loaSJ/Yc+Isc0DkAbZfN6UCgHTx5b/xrEA6dLqMIQ+QBgDBLB2iAQAAAACAAABAAAAAOwAAAA==eJzb49365uFnb7uD0uJtj4D09sKeMBC9KDHlOkh8kXih2FIg/V/d4TiIZkjlFAfROfrTtEE0AEU4H4I=
+  </AppendedData>
+</VTKFile>

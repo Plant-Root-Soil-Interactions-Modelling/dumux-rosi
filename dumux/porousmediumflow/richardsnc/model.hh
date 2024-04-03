@@ -46,7 +46,7 @@
 #include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/constant.hh>
-#include <dumux/material/fluidsystems/liquidphase2c.hh>
+#include "../../material/fluidsystems/liquidphase2c.hh"
 #include <dumux/material/fluidstates/compositional.hh>
 
 #include <dumux/porousmediumflow/properties.hh>
@@ -73,6 +73,7 @@ template<int nComp, bool useMol, int repCompEqIdx = nComp>
 struct RichardsNCModelTraits
 {
     using Indices = RichardsNCIndices;
+
 
     static constexpr int numEq() { return nComp; }
     static constexpr int numFluidPhases() { return 1; }
@@ -147,7 +148,7 @@ struct ModelTraits<TypeTag, TTag::RichardsNC> { using type = GetPropType<TypeTag
 
 //! Define that per default mole fractions are used in the balance equations
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RichardsNC> { static constexpr bool value = true; };
+struct UseMoles<TypeTag, TTag::RichardsNC> { static constexpr bool value = false; };
 
 //! Use the dedicated local residual
 template<class TypeTag>
