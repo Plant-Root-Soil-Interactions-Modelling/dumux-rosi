@@ -150,7 +150,7 @@ struct ModelTraits<TypeTag, TTag::RichardsNC> { using type = GetPropType<TypeTag
 
 //! Define that per default mole fractions are used in the balance equations
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::RichardsNC> { static constexpr bool value = true; };
+struct UseMoles<TypeTag, TTag::RichardsNC> { static constexpr bool value = false; };
 
 //! Use the dedicated local residual
 template<class TypeTag>
