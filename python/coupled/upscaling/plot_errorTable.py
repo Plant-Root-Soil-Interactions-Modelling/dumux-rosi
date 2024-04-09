@@ -23,7 +23,7 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
 def get_cumulative(method, plant, dim, soil, outer_method, label):
-
+    """ cumulative transpiration over simulation time and half simulation time""" 
     fnames = []
     for i in range(0, len(plant)):
         name = method[i] + "_" + plant[i] + "_" + dim[i] + "_" + soil[i] + "_" + outer_method[i]
@@ -62,27 +62,37 @@ def get_error_table(method, plant, dim, soil, outer_method, dimB = "1D"):
     np.set_printoptions(precision = 0)
     print("AAA")
     c1_aab = -100.*(np.ones(np.shape(cup_AAB)) - np.divide(cup_AAB, cup_AAA))
+    # c1_aab = cup_AAB - cup_AAA 
     print(c1_aab, "% AAB")
     c1_abb = -100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAA))
+    # c1_abb = cup_ABB - cup_AAA
     print(c1_abb, "% ABB")
     c1_bbb = -100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAA))
+    # c1_bbb = cup_BBB - cup_AAA
     print(c1_bbb, "% BBB")
     c1_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAA))
+    # c1_cbb = cup_CBB - cup_AAA
     print(c1_cbb, "% CBB")
     print("AAB")
     c2_abb = -100.*(np.ones(np.shape(cup_ABB)) - np.divide(cup_ABB, cup_AAB))
+    # c2_abb = cup_ABB - cup_AAB
     print(c2_abb, "% ABB")
     c2_bbb = -100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_AAB))
+    # c2_bbb = cup_BBB - cup_AAB
     print(c2_bbb, "% BBB")
     c2_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_AAB))
+    # c2_cbb = cup_CBB - cup_AAB    
     print(c2_cbb, "% CBB")
     print("ABB")
     c3_bbb = -100.*(np.ones(np.shape(cup_BBB)) - np.divide(cup_BBB, cup_ABB))
+    # c3_bbb = cup_BBB - cup_ABB    
     print(c3_bbb, "% BBB")
     c3_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_ABB))
+    # c3_cbb = cup_CBB - cup_ABB    
     print(c3_cbb, "% CBB")
     print("BBB")
     c4_cbb = -100.*(np.ones(np.shape(cup_CBB)) - np.divide(cup_CBB, cup_BBB))
+    # c4_cbb = cup_CBB - cup_BBB    
     print(c4_cbb, "% CBB\n\n")
 
     table0 = np.zeros((5, 3 * 5))
@@ -118,11 +128,11 @@ if __name__ == "__main__":
     table_speedup = timings.table_maize("1D")
     np.savetxt("table_maize_1D.csv", table_error + table_speedup, delimiter = ";")
 
-    table_error = get_error_table_maize("2D")
-    table_speedup = timings.table_maize("2D")
-    np.savetxt("table_maize_2D.csv", table_error + table_speedup, delimiter = ",")
-
-    table_error3 = get_error_table_springbarley()
-    table_speedup3 = timings.table_springbarley()
-    np.savetxt("table_springbarley_1D.csv", table_error3 + table_speedup3, delimiter = ";")
+    # table_error = get_error_table_maize("2D")
+    # table_speedup = timings.table_maize("2D")
+    # np.savetxt("table_maize_2D.csv", table_error + table_speedup, delimiter = ",")
+    #
+    # table_error3 = get_error_table_springbarley()
+    # table_speedup3 = timings.table_springbarley()
+    # np.savetxt("table_springbarley_1D.csv", table_error3 + table_speedup3, delimiter = ";")
 
