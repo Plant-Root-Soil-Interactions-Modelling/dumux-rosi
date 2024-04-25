@@ -14,9 +14,9 @@ import vtk
 import numpy as np
 import matplotlib.pyplot as plt
 
-SMALL_SIZE = 16
-MEDIUM_SIZE = 16
-BIGGER_SIZE = 16
+SMALL_SIZE = 20
+MEDIUM_SIZE = 20
+BIGGER_SIZE = 20
 plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
 plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
 plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
@@ -50,9 +50,13 @@ def suf_per_layer(plant, soil):
     z_ = np.linspace(-0.5, -n + 0.5, n)
     suf_ = ana.distribution("SUF", 0., float(-n), int(n), False)
 
+    rld_ = ana.distribution("surface", 0., float(-n), int(n), False)
+
     r_.rs.write(plant + ".rsml")
 
-    return np.array(suf_), z_, krs
+    layer_vol = np.prod(max_b - min_b) / n
+
+    return np.array(suf_), np.array(rld_) / layer_vol, z_, krs
 
 
 if __name__ == "__main__":
@@ -64,12 +68,18 @@ if __name__ == "__main__":
 
         for soil in ["hydrus_sandyloam"]:  # , "hydrus_clay", "hydrus_sandyloam"]: # result is soil independent
 
-            suf, z_, krs = suf_per_layer(plant, soil)
+            suf, rld, z_, krs = suf_per_layer(plant, soil)
 
-            ax[0].plot(suf, z_, "-*", label = plant)
+            ax_ = ax[0].twiny()
+
+            ax[0].plot(suf, z_, "-*")
+            ax_.plot(rld, z_, ":*", color = "g")
+
             ax[0].set_ylabel("depth [cm]")
-            ax[0].set_xlabel("root system surface uptake fraction (SUF) per 1 cm layer [1]")
-            # ax[0].legend()
+            ax[0].set_xlabel("standard uptake fraction [1]")
+            ax_.set_xlabel("root length density [cm cm$^{-3}]$")
+
+            fig.legend(['SUF', 'RLD'], bbox_to_anchor = (0.95, 0.3))
 
             print()
             print(plant, soil, "SUF from", np.min(suf), "to", np.max(suf), "mean", np.mean(suf), "sum", np.sum(suf), suf.shape)

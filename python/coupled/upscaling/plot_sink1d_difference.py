@@ -49,7 +49,8 @@ def plot_sink_diff(ax, method0, method1, plant, soil, outer_method, plot_times =
     n = len(fnames)
     data = [np.load(n_ + ".npy")  for n_ in fnames]
     sink_diff_ = data[0] - data[1]
-    soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_diff_.shape[1])  # segment mids
+    print(sink_diff_.shape[1])
+    soil_z_ = np.linspace(-l + dx / 2., -dx / 2., int(sink_diff_.shape[1] / 5))  # segment mids
 
     """ sink plot """
     ax[0].set_title(soil_names[soil])
@@ -62,33 +63,22 @@ def plot_sink_diff(ax, method0, method1, plant, soil, outer_method, plot_times =
     """ noon """
     peak_id = np.round(sink_diff_.shape[0] / days * np.array([0.5 + j for j in plot_times]))
     peak_id = peak_id.astype(int)
-
     for ind, j in enumerate(peak_id):
         lstr = "day {:g}".format(plot_times[ind])
-        # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-        # ax[0].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
-        print(sink_diff_[j,:].shape, soil_z_.shape)
-        width = 1. / len(plot_times)
-        ax[0].barh(soil_z_ + np.ones(soil_z_.shape) * ind * width, sink_diff_[j,:], width, align = 'center', label = lstr)
-
+        width = 5. / len(plot_times)
+        diff = np.array([np.mean(sink_diff_[j, k:k + 5]) for k in range(0, sink_diff_.shape[1], 5)])
+        ax[0].barh(soil_z_ + np.ones(soil_z_.shape) * ind * width, diff, width, align = 'center', label = lstr)
     ax[0].legend()
 
-    # """ midnight """
-    # for i in range(0, n):
-    #
-    #     sink_ = data[i]
-    #     soil_z_ = np.linspace(-l + dx / 2., -dx / 2., sink_.shape[1])  # segment mids
-    #
-    #     redistribution_id = np.round(sink_.shape[0] / days * np.array([j for j in plot_times]))
-    #     redistribution_id = redistribution_id.astype(int)
-    #
-    #     for ind, j in enumerate(redistribution_id):
-    #         # lstr = "{:g}d ({:s})".format(plot_times[ind], outer_method[i])
-    #         lstr = "day {:g} ({:s})".format(plot_times[ind], label_[i])  # method[i], int(ind == 0) +
-    #         ax[1].plot(sink_[j,:] / cell_volume, soil_z_, label = lstr, color = col[ind], linestyle = ls[i])
-    #
-    #     ax[1].set_ylim([-ylim, 0.])
-    #     ax[1].legend()
+    """ midnight """
+    redistribution_id = np.round(sink_diff_.shape[0] / days * np.array([j for j in plot_times]))
+    redistribution_id = redistribution_id.astype(int)
+    for ind, j in enumerate(redistribution_id):
+        lstr = "day {:g}".format(plot_times[ind])
+        width = 5. / len(plot_times)
+        diff = np.array([np.mean(sink_diff_[j, k:k + 5]) for k in range(0, sink_diff_.shape[1], 5)])
+        ax[1].barh(soil_z_ + np.ones(soil_z_.shape) * ind * width, diff, width, align = 'center', label = lstr)
+    ax[1].legend()
 
 
 if __name__ == "__main__":
@@ -102,12 +92,10 @@ if __name__ == "__main__":
         soil = s
         outer_method = "length"
         plot_sink_diff(ax, method0, method1, plant, soil, outer_method, [0, 2, 6, 13])  #
-        # ax[0].set_xlim([0., 0.1])
-        # ax[1].set_xlim([-0.014, 0.007])
         ax[0].set_ylim([-110, 0.])
+        ax[1].set_ylim([-110, 0.])
         plt.tight_layout()
         plt.savefig('sink_CBB_springbarley_' + s[7:] + '.png')
-
     for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
         fig, ax = plt.subplots(2, 1, figsize = (10, 18))
         method0 = "sra"
@@ -116,8 +104,8 @@ if __name__ == "__main__":
         soil = s
         outer_method = "length"
         plot_sink_diff(ax, method0, method1, plant, soil, outer_method, [0, 2, 6, 13])  #
-        # ax[1].set_xlim([-0.0055, 0.0055])
         ax[0].set_ylim([-95, 0.])
+        ax[1].set_ylim([-95, 0.])
         plt.tight_layout()
         plt.savefig('sink_BBB_maize_' + s[7:] + '_diff.png')
 
@@ -130,20 +118,20 @@ if __name__ == "__main__":
     #     soil = s
     #     outer_method = "length"
     #     plot_sink_diff(ax, method0, method1, plant, soil, outer_method, [0, 2, 6, 13])
-    #     ax[0].set_xlim([0., 0.1])
-    #     ax[1].set_xlim([-0.014, 0.007])
+    #     ax[0].set_ylim([-110, 0.])
+    #     ax[1].set_ylim([-110, 0.])
     #     plt.tight_layout()
     #     plt.savefig('sink_CBB_springbarley_' + s[7:] + '.png')
     # for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:
     #     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-    #     method0 = ["sra"]
-    #     method1 = ["par"]
-    #     plant = ["maize"]
-    #     soil = [s]
-    #     outer_method = ["length"]
+    #     method0 = "sra"
+    #     method1 = "par"
+    #     plant = "maize"
+    #     soil = s
+    #     outer_method = "length"
     #     plot_sink_diff(ax, method0, method1, plant, soil, outer_method, [0, 2, 6, 13])
-    #     ax[0].set_xlim([0., 0.055])
-    #     ax[1].set_xlim([-0.0055, 0.0055])
+    #     ax[0].set_ylim([-95, 0.])
+    #     ax[1].set_ylim([-95, 0.])
     #     plt.tight_layout()
     #     plt.savefig('sink_CBB_maize_' + s[7:] + '_diff.png')
 
