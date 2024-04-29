@@ -29,7 +29,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         #print(rank, 'initialize problem')
         self.base.initializeProblem()
         #print(rank, 'initialized problem')
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             print(rank, 'initialized problem')
         
         self.dofIndices_   = self.base.getDofIndices()

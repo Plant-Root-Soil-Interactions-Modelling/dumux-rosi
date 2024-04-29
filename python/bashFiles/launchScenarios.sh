@@ -1,11 +1,19 @@
 #!/bin/bash
 
 
-sbatch fpit100_10cind.sh 10 25 0 none noAds
-sbatch fpit101_10cind.sh 10 25 0 none
-sbatch fpit101_10cind.sh 10 25 0 baseline noAds 	
-sbatch fpit101_10cind.sh 10 25 0 baseline	
-sbatch fpit101_10cind.sh 10 25 0 earlyDry noAds 	
-sbatch fpit128_10cind.sh 10 25 0 earlyDry 		
-sbatch fpit128_10cind.sh 10 25 0 lateDry noAds 		
-sbatch fpit101_10cind.sh 10 25 0 lateDry 	
+# pset 19
+sbatch fpit128cpu256.sh 10 25 19 baseline
+sbatch fpit128cpu256.sh 10 25 19 earlyDry
+sbatch fpit128cpu256.sh 10 25 19 lateDry
+# pset 47
+sbatch fpit128cpu256.sh 10 25 47 baseline
+sbatch fpit128cpu256.sh 10 25 47 earlyDry
+sbatch fpit128cpu256.sh 10 25 47 lateDry 
+# pset 76 
+sbatch fpit128cpu256.sh 10 25 76 baseline
+sbatch fpit128cpu256.sh 10 25 76 earlyDry
+sbatch fpit128cpu256.sh 10 25 76 lateDry
+# pset 83
+sbatch fpit128cpu256.sh 10 25 83 baseline 
+sbatch fpit128cpu256.sh 10 25 83 earlyDry
+sbatch fpit128cpu256.sh 10 25 83 lateDry  

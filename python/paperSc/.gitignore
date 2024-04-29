@@ -8,3 +8,5 @@ template/
 PLOTS/
 tests/
 Optimization_RS/
+*.pkl
+*.txt

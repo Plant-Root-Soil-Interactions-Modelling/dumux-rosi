@@ -11,6 +11,9 @@
 #SBATCH --mail-user=m.giraud@fz-juelich.de
 
 
+export OMPI_MCA_btl=^openib
+module load openmpi/4.1.4
+
 cd $HOME/DumuxDune27/DUMUX/dumux-rosi/python/paperSc 
 
 

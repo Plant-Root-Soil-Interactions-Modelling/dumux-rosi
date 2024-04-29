@@ -16,7 +16,7 @@ class RichardsWrapper(SolverWrapper):
         self.soils = []
         self.param_group = "Soil."
         self.useMoles = usemoles
-        self.mpiVerbose = False
+        self.mpiVerboseInner = False
         self.molarMassC = 12.011 # g/mol
 
     def setParameterGroup(self, group:str):
@@ -387,7 +387,7 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getSolutionHead", rank)
             comm.barrier()
@@ -406,7 +406,7 @@ class RichardsWrapper(SolverWrapper):
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getKrw", rank)
             comm.barrier()
@@ -416,7 +416,7 @@ class RichardsWrapper(SolverWrapper):
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getSaturation", rank)
             comm.barrier()
@@ -425,7 +425,7 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getWaterContent", rank)
             comm.barrier()

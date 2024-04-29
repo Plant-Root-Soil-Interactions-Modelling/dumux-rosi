@@ -80,22 +80,24 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     useOuterFluxCyl_sol = False
     css1Function_ = 9
     lightType =""#+- "nolight" # or ""
-    mpiVerbose = False
+    mpiVerbose = True
+    mpiVerboseInner = False
     noAds = False
     doSimple =False
-    doMinimumPrint =  False
+    doMinimumPrint =  True
+    
     doOldCell = False
     if doSimple:
         max_b =np.array( [5, 5, 0.] )# 
         min_b = np.array([-5, -5, -5.])# 
-        cell_number = np.array([2,2,2])#
+        cell_number = np.array([3,3,3])#
     elif doOldCell:
         max_b =np.array( [5, 5, 0.]) # 
         min_b = np.array([-5, -5, -10.])# 
         cell_number =np.array([5,5,20])#
     else:
-        min_b = np.array([-3./2, -12./2, -40.])
-        cell_number =np.array( [3,12,40]) # 1cm3 
+        min_b = np.array([-3./2, -12./2, -30.])
+        cell_number =np.array( [3,12,30]) # 1cm3 
         max_b =np.array( [3./2, 12./2, 0.])
        
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
@@ -104,7 +106,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/Sc4_"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -198,7 +200,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     rs.useOuterFluxCyl_w = useOuterFluxCyl_w
     rs.useOuterFluxCyl_sol = useOuterFluxCyl_sol
     s.mpiVerbose = mpiVerbose
+    s.mpiVerboseInner = mpiVerboseInner
     rs.mpiVerbose = mpiVerbose
+    rs.mpiVerboseInner = mpiVerboseInner
     rs.spellData = spellData
     rs.enteredSpell = (rs.spellData['scenario'] == 'none') or (rs.spellData['scenario'] == 'baseline')
     rs.leftSpell = (rs.spellData['scenario'] == 'baseline')
@@ -242,7 +246,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     Q_Exud_inflate = 0.; Q_Mucil_inflate = 0.
     rs.results_dir = results_dir
     
-    if mpiVerbose:# or (max_rank == 1):
+    if mpiVerbose and rank == 0:# or (max_rank == 1):
         print('start loop', rank)
     secId = None
     Q_Exud_i = None
@@ -275,13 +279,13 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
         rs_age += dt
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank == 0:# or (max_rank == 1):
             print(rank,"Day", rs_age)
         comm.barrier()
         seg2cell_old = rs.seg2cell
         Ntbu = Nt
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank == 0:# or (max_rank == 1):
             print(rank,'simulating')
         comm.barrier()
         if (rank == 0) and (not static_plant) :
@@ -306,14 +310,43 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 print(len(cell2segVals), len(set(cell2segVals)))
                 raise Exception
 
+                
+        if (rank == 0):# and (not doMinimumPrint):
+            write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
+            write_file_array("subTypes", np.array(r.rs.subTypes), directory_ =results_dir)
+            length_Segs = np.array(r.rs.segLength())
+            write_file_array("length_Segs", length_Segs, directory_ =results_dir)
+            orgs = r.plant.getOrgans(-1, False)
+            parentorgid = np.array([org.getParent().getId() for org in orgs])
+            parentNidx = np.array([org.getParent().getNodeId(org.parentNI) for org in orgs])
+            id_orgs = np.array([org.getId() for org in orgs])
+            ot_orgs = np.array([org.organType() for org in orgs])
+            st_orgs = np.array([org.getParameter("subType") for org in orgs])
+            lenOrg = np.array([org.getLength(False) for org in orgs])   
+            write_file_array("id_orgs", id_orgs, directory_ =results_dir)
+            write_file_array("ot_orgs", ot_orgs, directory_ =results_dir)
+            write_file_array("st_orgs", st_orgs, directory_ =results_dir)  
+            write_file_array("lenOrg", lenOrg, directory_ =results_dir) 
+            write_file_array("parentNidx", parentNidx, directory_ =results_dir) 
+            
+            write_file_array("nodes_X",
+                             np.array([tempnode[0] for tempnode in r.get_nodes()]), 
+                             directory_ =results_dir)
+            write_file_array("nodes_Y", np.array([tempnode[1] for tempnode in r.get_nodes()]), directory_ =results_dir)
+            write_file_array("nodes_Z", np.array([tempnode[2] for tempnode in r.get_nodes()]), directory_ =results_dir)
+            idPerNode = np.concatenate([
+                np.full(org.getNumberOfNodes()-1,org.getId()) for org in orgs]).reshape(-1)
+            globalNodeId = np.concatenate([org.getNodeIds()[1:] for org in orgs]).reshape(-1)
+            write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
+            write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
 
         comm.barrier()
-        if mpiVerbose or (rank == 0):
+        if mpiVerbose and (rank == 0):
             print(rank,'simulated')
         comm.barrier()
         rs.update()
         comm.barrier()
-        if mpiVerbose or (rank == 0):
+        if mpiVerbose and (rank == 0):
             print(rank,'updated')
         comm.barrier()
         if start:
@@ -344,34 +377,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                      rs.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
                                      directory_ =results_dir, fileType = '.csv') 
             
-        if (rank == 0):# and (not doMinimumPrint):
-            write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
-            write_file_array("subTypes", np.array(r.rs.subTypes), directory_ =results_dir)
-            length_Segs = np.array(r.rs.segLength())
-            write_file_array("length_Segs", length_Segs, directory_ =results_dir)
-            orgs = r.plant.getOrgans(-1, False)
-            parentorgid = np.array([org.getParent().getId() for org in orgs])
-            parentNidx = np.array([org.getParent().getNodeId(org.parentNI) for org in orgs])
-            id_orgs = np.array([org.getId() for org in orgs])
-            ot_orgs = np.array([org.organType() for org in orgs])
-            st_orgs = np.array([org.getParameter("subType") for org in orgs])
-            lenOrg = np.array([org.getLength(False) for org in orgs])   
-            write_file_array("id_orgs", id_orgs, directory_ =results_dir)
-            write_file_array("ot_orgs", ot_orgs, directory_ =results_dir)
-            write_file_array("st_orgs", st_orgs, directory_ =results_dir)  
-            write_file_array("lenOrg", lenOrg, directory_ =results_dir) 
-            write_file_array("parentNidx", parentNidx, directory_ =results_dir) 
-            
-            write_file_array("nodes_X",
-                             np.array([tempnode[0] for tempnode in r.get_nodes()]), 
-                             directory_ =results_dir)
-            write_file_array("nodes_Y", np.array([tempnode[1] for tempnode in r.get_nodes()]), directory_ =results_dir)
-            write_file_array("nodes_Z", np.array([tempnode[2] for tempnode in r.get_nodes()]), directory_ =results_dir)
-            idPerNode = np.concatenate([
-                np.full(org.getNumberOfNodes()-1,org.getId()) for org in orgs]).reshape(-1)
-            globalNodeId = np.concatenate([org.getNodeIds()[1:] for org in orgs]).reshape(-1)
-            write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
-            write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
 
             
         
@@ -383,7 +388,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
 
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'to cyl3.simulate_const')
         comm.barrier()
         n_iter = 0
@@ -516,7 +521,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 #currentN = int(np.ceil(dt / dt_inner))
                 comm.barrier()
                 
-                if mpiVerbose:# or (max_rank == 1):
+                if mpiVerbose and rank==0:# or (max_rank == 1):
                     print(rank, "error too high, decrease N, dt from", nOld, dt/float(nOld),"to",nNew, dt_inner)
                 #dt_inner = dt/(float(currentN*2.))
                 #dt_inner = max(1./(24.*3600.), dt_inner) # minimum: 1 second
@@ -543,12 +548,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 
                 
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'left cyl3.simulate_const')
         comm.barrier()
 
         if True:
-            if mpiVerbose:# or (max_rank == 1):
+            if mpiVerbose and rank==0:# or (max_rank == 1):
                 print(rank,"theta")
             comm.barrier()#
             write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
@@ -556,7 +561,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("watVol", np.array(s.getWaterVolumes()), directory_ =results_dir, fileType = '.csv') 
             for i in range(rs.numFluidComp):
                 comm.barrier()
-                if mpiVerbose:# or (max_rank == 1):
+                if mpiVerbose and rank==0:# or (max_rank == 1):
                     print(rank,"Soil_solute_conc"+str(i+1))
                 comm.barrier()
                 write_file_array("Soil_solute_conc"+str(i+1), 
@@ -564,14 +569,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                  directory_ =results_dir, fileType = '.csv') 
             for i in range(rs.numFluidComp, rs.numComp):
                 comm.barrier()
-                if mpiVerbose:# or (max_rank == 1):
+                if mpiVerbose and rank==0:# or (max_rank == 1):
                     print(rank,"Soil_solute_conc"+str(i+1))
                 comm.barrier()
                 write_file_array("Soil_solute_conc"+str(i+1), 
                                  np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , 
                                  directory_ =results_dir, fileType = '.csv') 
             comm.barrier()
-            if mpiVerbose:# or (max_rank == 1):
+            if mpiVerbose and rank==0:# or (max_rank == 1):
                 print(rank,"Soil_solute_conc"+str(rs.numComp+1))
             comm.barrier()
             write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten(),#[ mol / cm^3]
@@ -579,7 +584,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                              directory_ =results_dir, fileType = '.csv') 
            
         comm.barrier() 
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'did s.data writing')
         comm.barrier()
         errLeuning_abs = abs(sum(r.outputFlux))
@@ -590,17 +595,17 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         
 
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'getTotCContent')
         buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'getWaterContent')
         comm.barrier()
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'get s.errorCumul')
         comm.barrier()
         if rank == 0:
@@ -622,13 +627,13 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             s.bulkMassErrorWaterCumul_abs = None
             s.bulkMassErrorWaterCumul_rel = None
             
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'got s.errorCumul')
         
         write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
         write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
         write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# 
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'write some otehr stuff')
         if (mode != "dumux_w"):
             if not doMinimumPrint:
@@ -652,7 +657,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
             write_file_array("trans", r.Ev, directory_ =results_dir, fileType = '.csv')
             write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'finished other data writing')
         if False:
             try:
@@ -689,7 +694,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                     print('issue phead',gId,rank, pHead, sol0 )
                     raise Exception
 
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'do C growth?',  (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
 
         if (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
@@ -809,7 +814,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             Q_Mucil_i_seg = None
         
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'share Q_Exud_i_seg')
         comm.barrier()
 
@@ -817,7 +822,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
 
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'print data to linux')
         comm.barrier()
         if (rank == 0) and (mode != "dumux_w")  :
@@ -864,19 +869,20 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                              directory_ =results_dir)#mmol/cm3
         
         comm.barrier()
-        if mpiVerbose:# or (max_rank == 1):
+        if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'print data to linux')
         comm.barrier()
 
 
     """ output """
-    if mpiVerbose:# or (max_rank == 1):
+    if mpiVerbose and rank==0:# or (max_rank == 1):
         print('finished simulation')
     sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
     #print('checkMassOMoleBalance2_747')
     rs.checkMassOMoleBalance2()
     #vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
-
+    periodic = False
+    
     if True:
 
         for konz in np.array([True]):#, False]):
@@ -888,9 +894,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 extraArrayName_ = "theta (cm3/cm3)"
             print("idcomp", 0, rank)
             rp = rs.get_concentration(0, konz)
+            s.results_dir = results_dir
+
 
             vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
-                    soil_type+genotype+"_rx", sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_)  # VTK vizualisation
+                    filename="soil_rx",sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
+                    interactiveImage=False)  # VTK vizualisation
             print("idcomp_done", 0, rank)
             for i in range(1, rs.numComp+1):
                 print("idcomp", i, rank)
@@ -911,10 +920,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                        rs.get_concentration(i , konz), s, 
                                        periodic, min_b, max_b, 
                                        cell_number, 
-                        soil_type+genotype+"_rx", 
+                        filename="C"+str(i), 
                                        sol_ind =-1,
                                        extraArray = extraArray_, 
-                        extraArrayName = extraArrayName_)  # VTK vizualisation
+                        extraArrayName = extraArrayName_,
+                    interactiveImage=False)  # VTK vizualisation
                 print("idcomp_done", i, rank)
     # to plot: cumulative An, Exud, mucil and each element in the soil
     # Also images of the 3D soil.
@@ -928,7 +938,9 @@ if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
     # python3 XcGrowth.py 12 dumux_10c 25 98 baseline
     # python3 XcGrowth.py 10 dumux_10c 25 3 none
-    # python3 XcGrowth.py 9 dumux_10c 11 5 none
+    # python3 XcGrowth.py 9 dumux_10c 9.001 5 none
+    # python3 XcGrowth.py 9 dumux_10c 9.06 0 customDry xx 9.02 0.02
+    # python3 XcGrowth.py 10 dumux_10c 10.06 0 customDry xx 10.02 0.02
     if rank == 0:
         print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5
@@ -941,8 +953,8 @@ if __name__ == '__main__':
     if len(sys.argv)>4:
         paramIndx_base = int(sys.argv[4])
     extraName ="" # noAds?
-    if len(sys.argv)>6:
-        extraName = sys.argv[6]
+    #if len(sys.argv)>6:
+    #    extraName = sys.argv[6]
     
     doProfile = ( extraName == "cProfile")
     

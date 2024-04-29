@@ -188,15 +188,15 @@ def getBiochemParam(s,paramIdx, noAds):
     s.k_RC =  paramSet['k_r,C']#1/d
     s.k_RO =  paramSet['k_r,O']#1/d
 
-    s.m_maxC =  paramSet['m_max,C']#1/d
-    s.m_maxO =  paramSet['m_max,O']#1/d
-    s.k_decay2 =  paramSet['p_L'] # -
+    s.m_maxC =  paramSet['m_max,C']#1/d,  Maximum maintenance rate coefficient for the corresponding microbial groups
+    s.m_maxO =  paramSet['m_max,O']#1/d,  Maximum maintenance rate coefficient for the corresponding microbial groups
+    s.k_decay2 =  paramSet['p_L'] # - , Proportion of large polymers formed from dead microbial biomass due to maintenance
 
     s.micro_maxC =  paramSet['u_max,C']#1/d
     s.micro_maxO =  paramSet['u_max,O']#1/d
 
     s.v_maxL = paramSet['v_max,L'] #1/d
-    s.k_decay = paramSet['Y'] # -
+    s.k_decay = paramSet['Y'] # -, Maintenance yield
     s.k_growthC = paramSet['Y_C'] # -
     s.k_growthO = paramSet['Y_O'] #- 
     # can cause issue
@@ -214,8 +214,11 @@ def getBiochemParam(s,paramIdx, noAds):
         s.CSSmax = 0.
         s.alpha = 0.
     elif s.css1Function == 9:
-        s.Qmmax = 0.45 * 0.079 # max ratio OC-soil, see 10.1016/j.soilbio.2020.107912
-        s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol
+        s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
+        # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
+        CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/12.011)
+        s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
+        #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
     else:
         s.CSSmax = paramSet['CSS_max']/s.mg_per_molC # mol C/cm3 soil zone 1 to mol C/cm3 soil 
         if s.css1Function == 8: #change cssmax to content
@@ -363,6 +366,7 @@ def setSoilParam(s,paramIdx):
     s.solidMolDensity = s.solidDensity/s.solidMolarMass
     # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
     s.bulkDensity_m3 = s.solidMolDensity*(1.- s.vg_soil.theta_S)
+    s.bulkMassDensity_gpercm3 = s.solidDensity*(1.- s.vg_soil.theta_S)*1000/1e6
 
     s.setParameter( "Soil.MolarMass", str(s.solidMolarMass))
     s.setParameter( "Soil.solidDensity", str(s.solidDensity))
@@ -435,7 +439,7 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     setDefault(s)
     setSoilParam(s,paramIndx)
     s.theta_init =  vg.water_content(p_mean_, s.vg_soil)
-    assert s.theta_init == 0.4
+    #assert s.theta_init == 0.4
     
     s.css1Function = css1Function
     s.setParameter( "Soil.css1Function", str(s.css1Function))
@@ -444,7 +448,8 @@ def create_soil_model(soil_type, year, soil_, min_b , max_b , cell_number, demoT
     setBiochemParam(s)
     
     setIC3D(s, paramIndx, ICcc)
-    s.createGrid(min_b, max_b, cell_number, True)  # [cm] 
+    s.isPeriodic = True
+    s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     cell_number_ = cell_number
     cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
     s.setParameter( "Soil.Grid.Cells", cell_number)   
@@ -551,26 +556,41 @@ def setupOther(s, p_mean_):
         
     
     # IC
-    if s.dimWorld == 3:
+    if True:
+        if s.dimWorld == 3:
+            if isinstance(p_mean_,(int,float)):
+                #print('set pmean float',p_mean_)
+                s.setHomogeneousIC(p_mean_, equilibrium = True)  # cm pressure head
+            elif isinstance(p_mean_,type(np.array([]))):
+                pass
+            else:
+                print(type(p_mean_))
+                raise Exception
+        
+
+
+    s.initializeProblem()
+    
+    
+    if True:    
         if isinstance(p_mean_,(int,float)):
-            #print('set pmean float',p_mean_)
-            s.setHomogeneousIC(p_mean_, equilibrium = True)  # cm pressure head
-        elif isinstance(p_mean_,type(np.array([]))):
             pass
+        elif isinstance(p_mean_,type(np.array([]))):
+            s.setInitialConditionHead(p_mean_)
         else:
             print(type(p_mean_))
             raise Exception
-        
-    s.initializeProblem()
+    else:    
+        xWat = comm.bcast( s.getSolutionHead(),root=0)
+        h = np.array([i for i in range(len(xWat))])*-100
+        s.setInitialConditionHead(h)  # cm
+        xWat = comm.bcast( s.getSolutionHead(),root=0)
+        if rank == 0:
+            print('hp',xWat,h, xWat[4], h[4])
+
+        assert (h == xWat).all()
     
         
-    if isinstance(p_mean_,(int,float)):
-        pass
-    elif isinstance(p_mean_,type(np.array([]))):
-        s.setInitialConditionHead(p_mean_)
-    else:
-        print(type(p_mean_))
-        raise Exception
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
@@ -584,11 +604,30 @@ def setupOther(s, p_mean_):
             print("soil_sol_fluxes", solute_conc)
             print("min(solute_conc)",min(solute_conc))
             raise Exception
-        
-    cidx = np.array(s.base.getCellIndices())
-    cidx_sorted = np.sort(cidx)
-    if (cidx != cidx_sorted).any():
-        print(rank, 'too many threads for  the number of cells: ,',cidx,cidx_sorted)
+    
+    
+    comm.barrier()
+    if False:    
+        cidx = np.array(s.base.getCellIndices())
+        cidx_sorted = np.sort(cidx)
+
+        allCenters = comm.gather(s.base.getCellCenters(),root=0)
+        allcidx = comm.gather(s.base.getCellIndices(),root=0)
+
+        if rank==0:
+            print('all centers',repr(allCenters))
+            print('all cidx',repr(cidx))
+            # 1: make sure same id = same coord
+            # make sure ordered from bottom right to upper left
+        if (cidx != cidx_sorted).any():# or s.isPeriodic:
+
+            print(rank,'getGlobal2localCellIdx',s.base.getGlobal2localCellIdx())
+            #print(rank,'getLocal2globalPointIdx',s.base.getLocal2globalPointIdx())
+            print(rank,'getCellCenters',s.base.getCellCenters())
+            print(rank, 'too many threads for  the number of cells: ,',cidx,cidx_sorted)
+            raise Exception
+
+
         raise Exception
     if False:
         for ncomp in range(s.numComp):
@@ -704,7 +743,8 @@ def weather(simDuration, spellData, hp:float=1):
             #specificHumidity = 0.0097
             RHday = 0.6; RHnigh = 0.88
             Pair = 1010.00 #hPa
-            thetaInit = 0.4#
+            #thetaInit = 0.4#
+            pmean = -100.
             cs = 350e-6
         elif spellData['condition'] == "dry":
             Tnigh = 20.7; Tday = 30.27
@@ -712,8 +752,9 @@ def weather(simDuration, spellData, hp:float=1):
             #specificHumidity = 0.0097# 0.0111
             RHday = 0.44; RHnigh = 0.78
             Pair = 1070.00 #hPa
-            thetaInit = 28/100   
+            #thetaInit = 28/100   
             #thetaInit = 10.47/100
+            pmean = -450.
             cs = 350e-6
         else:
             print('spellData',spellData)
@@ -749,11 +790,12 @@ def weather(simDuration, spellData, hp:float=1):
             #raise Exception
             
 
-        pmean = theta2H(loam, thetaInit)
+        #pmean = min(theta2H(loam, thetaInit),-100.)
 
         weatherVar = {'TairC' : TairC_,'TairK' : TairC_ + 273.15,'Pair':Pair,"es":es,
                         'Qlight': Q_,'rbl':rbl,'rcanopy':rcanopy,'rair':rair,"ea":ea,
-                        'cs':cs, 'RH':RH_, 'p_mean':pmean,'theta':thetaInit}
+                        'cs':cs, 'RH':RH_, 'p_mean':pmean#,'theta':thetaInit
+                     }
         #print("Env variables at", round(simDuration//1),"d",round((simDuration%1)*24),"hrs :\n", weatherVar)
         return weatherVar
 
