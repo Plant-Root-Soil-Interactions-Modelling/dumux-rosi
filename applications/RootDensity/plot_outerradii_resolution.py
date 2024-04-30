@@ -63,7 +63,7 @@ def get_outer_radii(rootsystem, type_str, dim):
 
 fig, axes = plt.subplots(2, 3, figsize = (18, 12))
 
-type_str = "voronoi"
+type_str = "length"
 topsoil = 30  # 10 * 2.54
 subsoil = 150  # 30 * 2.54
 
@@ -93,6 +93,7 @@ for i, dim in enumerate(dim_):
     # ax.hist(outer_r, bins = 40, rwidth = 0.9)
     ax.hist([outer1, outer2], weights = [length1, length2], bins = 20, rwidth = 0.9, label = ["Top soil", "Sub soil"], stacked = True)
     ax.set_ylim(0, 440)
+    ax.set_xlim(0., 2.)
     ax.set_title(titles[i])
 
     if i == 0:

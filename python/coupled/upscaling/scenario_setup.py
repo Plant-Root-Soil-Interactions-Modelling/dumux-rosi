@@ -67,7 +67,7 @@ def maize_(dim:str):
     if dim == "1D":
         cell_number = np.array([1, 1, 150])
     elif dim == "2D":
-        cell_number = np.array([38, 1, 150])
+        cell_number = np.array([76, 1, 150])
     else:
         cell_number = np.array([76, 16, 150])
     return min_b, max_b, cell_number

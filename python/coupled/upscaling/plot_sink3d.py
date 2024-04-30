@@ -157,8 +157,8 @@ if __name__ == "__main__":
         plant = ["springbarley"]
         soil = [s]
         outer_method = ["voronoi"]  # xAx
-        plot_sink3d(ax, method, plant, soil, outer_method, ["AAA"], [0, 2, 6, 13], ls = ["--"])
-        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13])
+        plot_sink3d(ax, method, plant, soil, outer_method, ["AAA"], [0, 2, 6, 13])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13], ls = ["--"])
         ax[0].set_xlim([0., 0.1])
         ax[1].set_xlim([-0.012, 0.0075])
         plt.tight_layout()
@@ -169,8 +169,8 @@ if __name__ == "__main__":
         plant = ["maize"]
         soil = [s]
         outer_method = ["voronoi"]  # xAx
-        plot_sink3d(ax, method, plant, soil, outer_method, ["AAA"], [0, 2, 6, 13], ls = ["--"])
-        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13])
+        plot_sink3d(ax, method, plant, soil, outer_method, ["AAA"], [0, 2, 6, 13])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13], ls = ["--"])
         ax[0].set_xlim([0., 0.058])
         ax[1].set_xlim([-0.006, 0.006])
         plt.tight_layout()
@@ -184,9 +184,9 @@ if __name__ == "__main__":
         plant = ["springbarley"]
         soil = [s]
         outer_method = ["voronoi"]  # xAx
-        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13], ls = ["--"])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13])
         outer_method = ["length"]  # xBx
-        plot_sink1d(ax, method, plant, soil, outer_method, ["ABB"], [0, 2, 6, 13])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["ABB"], [0, 2, 6, 13], ls = ["--"])
         ax[0].set_xlim([0., 0.1])
         ax[1].set_xlim([-0.01, 0.007])
         plt.tight_layout()
@@ -197,9 +197,9 @@ if __name__ == "__main__":
         plant = ["maize"]
         soil = [s]
         outer_method = ["voronoi"]  # xAx
-        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13], ls = ["--"])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13])
         outer_method = ["length"]  # xBx
-        plot_sink1d(ax, method, plant, soil, outer_method, ["ABB"], [0, 2, 6, 13])
+        plot_sink1d(ax, method, plant, soil, outer_method, ["ABB"], [0, 2, 6, 13], ls = ["--"])
         ax[0].set_xlim([0., 0.06])
         ax[1].set_xlim([-0.006, 0.006])
         plt.tight_layout()

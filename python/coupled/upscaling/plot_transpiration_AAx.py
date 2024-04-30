@@ -107,10 +107,10 @@ if __name__ == "__main__":
     outer_method = ["voronoi"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
     cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAA)")
-    dim = ["2D"] * 3
-    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(AAB 1D)")
     dim = ["1D"] * 3
-    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(AAB 2D)")
+    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(AAB 1D)")
+    dim = ["2D"] * 3
+    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(AAB 2D)")
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
     print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 1D")
     print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 2D")
