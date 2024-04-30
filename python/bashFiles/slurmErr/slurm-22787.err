@@ -1,0 +1,9 @@
+mpirun: Forwarding signal 18 to job
+slurmstepd: error: *** JOB 22787 ON node01 CANCELLED AT 2024-04-30T16:55:59 ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 1 with PID 1704977 on node node01 exited on signal 15 (Terminated).
+--------------------------------------------------------------------------

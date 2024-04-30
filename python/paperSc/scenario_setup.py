@@ -57,20 +57,27 @@ def write_file_float(name, data, directory_, allranks = False):
     if (rank == 0) or allranks:
         name2 = directory_+ name+ '.txt'
         #print('write_file_float',name2, allranks)
-        with open(name2, 'a') as log:
+        modeOp = 'a'
+        if  False:#'fpit' in name:
+            modeOp = 'w'
+        with open(name2, modeOp) as log:
             log.write(repr( data)  +'\n')
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
-    np.array(data).reshape(-1)
-    try:
-        if (rank == 0) or allranks:
-            name2 = directory_+ name+ fileType
-            #print('write_file_array',name2)
-            with open(name2, 'a') as log:
-                log.write(space.join([num for num in map(str, data)])  +'\n')
-    except:
-        print('write_file_array',name, data,data.shape)
-        raise Exception
+    if (rank == 0) or allranks:
+        try:
+
+                np.array(data).reshape(-1)
+                modeOp = 'a'
+                if False:#'fpit' in name:
+                    modeOp = 'w'
+                name2 = directory_+ name+ fileType
+                #print('write_file_array',name2)
+                with open(name2, modeOp) as log:
+                    log.write(space.join([num for num in map(str, data)])  +'\n')
+        except:
+            print('write_file_array',name, data,data.shape)
+            raise Exception
 
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """

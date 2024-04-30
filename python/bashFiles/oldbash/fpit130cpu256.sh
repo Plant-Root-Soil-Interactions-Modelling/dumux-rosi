@@ -9,6 +9,8 @@
 #SBATCH --mem=200G
 #SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END,FAIL,ALL
 #SBATCH --mail-user=m.giraud@fz-juelich.de
+#SBATCH --output=./slurmOut/slurm-%j.out
+#SBATCH --error=./slurmErr/slurm-%j.err
 
 
 export OMPI_MCA_btl=^openib

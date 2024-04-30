@@ -64,6 +64,11 @@ class SolverBase {
 public:
 
     using VectorType = std::array<double, dim>;
+    using NumEqVector = typename Problem::NumEqVector;
+	
+    int numComp(){return nEV.size();}
+    NumEqVector nEV;
+	
     bool isBox = Problem::isBox; // numerical method
     int dimWorld = dim;
     double simTime = 0;
@@ -81,6 +86,15 @@ public:
         }
         setParameter("Grid.Overlap","1");
     }
+	void printParams()
+	{
+		Dumux::Parameters::print();
+	}
+	void reportParams()
+	{
+		const auto& myParams = Dumux::Parameters::paramTree();
+		myParams.report();
+	}
 
     virtual ~SolverBase() { }
 
@@ -330,7 +344,9 @@ public:
         verbose =  Dumux::getParam<int>("Problem.verbose",0);
         int verboseIndexSet =  Dumux::getParam<int>("Problem.verboseIndexSet",0);
         
-        problem = std::make_shared<Problem>(gridGeometry);
+		
+		
+		problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
 
@@ -344,6 +360,7 @@ public:
         if(verboseIndexSet){std::cout<<"getpointIdx"<<std::endl;}
         pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim, verboseIndexSet); // global index mappers
         
+		
         if(verboseIndexSet){std::cout<<"getcellIdx"<<std::endl;}
         cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0, verboseIndexSet);
         if(verboseIndexSet){std::cout<<"GOTcellIdx"<<std::endl;}
@@ -355,6 +372,26 @@ public:
             int gIdx = cellIdx->index(e);
             localCellIdx[gIdx] = eIdx;
         }
+		
+		
+        if(verboseIndexSet){std::cout<<"getfaceIdx"<<std::endl;}
+		faceGlobalIndexSet = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 1, verboseIndexSet); // global index mappers
+        facemap = faceGlobalIndexSet->getLocalGlobalMap();
+		faceGIdxs = faceGlobalIndexSet->getGlobalIndex();
+		//for(size_t faceGIdxs_)
+		auto nface = faceGlobalIndexSet->getNglobalEntity();
+		//setFaceGlobalIndexSet(facemap);
+		// gridGeometry->numScvf()
+		// globalFaceIdx.clear(); // number of faces
+       // // globalFaceIdx.resize(gridGeometry->gridView().size(1)); // number of faces
+		// // size_t nFaces = fvGridGeometry->numScvf(); both give the same result?
+		// // for (const auto& scvf : scvfs(fvGeometry))
+        // for (const auto& f : Dune::scvfs(gridGeometry->gridView(1))) {
+            // int fIdx = f.index();
+            // int gIdx = globalFaceIdx->index(f);
+            // globalFaceIdx[gIdx] = eIdx;
+        // }
+		
         //std::cout<<"getglobalPointIdx"<<std::endl;
         globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
         for (const auto& v : Dune::vertices(gridGeometry->gridView())) {
@@ -362,8 +399,9 @@ public:
             int gIdx = pointIdx->index(v);
             globalPointIdx[vIdx] = gIdx;
         }
-        //std::cout<<"finished filling the maps"<<std::endl;
     }
+
+	void virtual setFaceGlobalIndexSet(std::map<int, int> faceGlobalIndexSet){}
 
     /**
      * Sets the initial conditions, for a MPI process
@@ -388,9 +426,11 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    virtual void solve(double dt, double maxDt = -1, bool solverVerbose = false) {
+    virtual void solve(double dt, double maxDt = -1, bool solverVerbose = false, bool saveInnerFluxesAndSources = false) {
         checkInitialized();
         using namespace Dumux;
+        clearSaveBC();
+        clearInnerFluxesAndSources();
 
         //problem->verbose =  getParam<int>("Problem.verbose", 0);
         if (ddt<1.e-6) { // happens at the first call
@@ -412,7 +452,8 @@ public:
         if(verbose){std::cout<<rank<<" timeLoop->start();"<<std::endl;}
         timeLoop->start();
 		
-		xBackUp = x;
+		xBackUp = x; saveInnerVals();  simTimeBackUp = simTime ;
+		
         auto xOld = x;
         double minddt = std::min(1.,dt);//in case we have very small simulation time
         do {
@@ -423,13 +464,23 @@ public:
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
             ddt = timeLoop->timeStepSize();//limited ddt to stay below dt
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
-            if(verbose){std::cout<<rank<<" before assembler->setPreviousSolution, ddt: "<<ddt<<std::endl;}
+            if(verbose){std::cout<<rank<<" before assembler->setPreviousSolution, ddt: "<<ddt<<" timeLoop->timeStepSize() "<<timeLoop->timeStepSize()
+				<<" timeLoop->time() "<<timeLoop->time()<<std::endl;}
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
             if(verbose){std::cout<<rank<<" nonLinearSolver->solve"<<std::endl;}
-            nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control
+            nonLinearSolver->solve(x, *timeLoop); // solve the non-linear system with time step control. so time step may decrease here
+            if(verbose){std::cout<<rank<<" after nonLinearSolver->solve, ddt: "<<ddt<<" timeLoop->timeStepSize() "<<timeLoop->timeStepSize()
+				<<" timeLoop->time() "<<timeLoop->time()<<std::endl;}
 
             xOld = x; // make the new solution the old solution
             if(verbose){std::cout<<rank<<" gridVariables->advanceTimeStep"<<std::endl;}
+			
+            if(saveInnerFluxesAndSources)
+            {
+				if(verbose){std::cout<<rank<<" before doSaveInnerFluxesAndSources, ddt: "<<ddt<<" timeLoop->timeStepSize() "<<timeLoop->timeStepSize()
+				<<" timeLoop->time() "<<timeLoop->time()<<std::endl;}
+				doSaveInnerFluxesAndSources(timeLoop->timeStepSize() );
+            }
             gridVariables->advanceTimeStep();
 
             timeLoop->advanceTimeStep(); // advance to the time loop to the next step
@@ -446,11 +497,12 @@ public:
      * Assembler needs a TimeLoop, so i have to create it in each solve call.
      * (could be improved, but overhead is likely to be small)
      */
-    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false, bool saveBC = false) {
+    void solveNoMPI(double dt, double maxDt = -1, bool solverVerbose = false, bool saveBC = false, bool saveInnerFluxesAndSources = false) {
 		
         checkInitialized();
         using namespace Dumux;
         clearSaveBC();
+        clearInnerFluxesAndSources();
         //problem->verbose =  getParam<int>("Problem.verbose", 0);
         
         if (ddt<1.e-6) { // happens at the first call
@@ -475,7 +527,8 @@ public:
 		//std::cout<<"1cyl, timeLoop->start();"<<std::endl;
         timeLoop->start();
 		
-		xBackUp = x;
+		xBackUp = x; saveInnerVals(); simTimeBackUp = simTime ;
+		
         auto xOld = x;
         double minddt = std::min(1.,dt);//in case we have very small simulation time
         do {
@@ -494,7 +547,11 @@ public:
             //std::cout<<"1cyl, gridVariables->advanceTimeStep"<<std::endl;
             if(saveBC)
             {
-                doSaveBC(timeLoop->time() );
+                doSaveBC(timeLoop->timeStepSize() );
+            }
+            if(saveInnerFluxesAndSources)
+            {
+                doSaveInnerFluxesAndSources(timeLoop->timeStepSize() );
             }
             gridVariables->advanceTimeStep();
 
@@ -506,21 +563,6 @@ public:
         simTime += dt;
     }
 	
-    virtual void clearSaveBC() {}
-    virtual void doSaveBC(double currentTime) {}
-    
-    virtual void reset() {
-        checkInitialized();
-		x = xBackUp;
-	}
-    virtual void resetManual() {
-        checkInitialized();
-		x = xBackUpManual;
-	}
-    virtual void saveManual() {
-        checkInitialized();
-		xBackUpManual = x;
-	}
     /**
      * Finds the steady state of the problem.
      *
@@ -682,6 +724,7 @@ public:
         }
         return indices;
     }
+
 
     /**
      * Return the indices of the grid elements for a single mpi process.
@@ -967,6 +1010,75 @@ public:
     virtual std::vector<int> getLocal2globalPointIdx() {
         return globalPointIdx;
     }
+    std::vector<std::vector<std::vector<double>>> inSources;//[time][cellidx][eqIdx]
+    std::vector<std::vector<std::vector<double>>> inFluxes;//[time][cellidx][eqIdx]
+    std::vector<std::vector<int>> face2CellIds;
+	std::vector<double> inFluxes_time;
+    std::vector<double> inFluxes_ddt;
+	
+    virtual void reset() {
+        checkInitialized();
+		x = xBackUp;
+		simTime = simTimeBackUp;
+		resetInnerVals();
+	}
+    virtual void resetManual() {
+        checkInitialized();
+		x = xBackUpManual;
+		resetInnerValsManual();
+	}
+    virtual void saveManual() {
+        checkInitialized();
+		xBackUpManual = x;
+		simTimeBackUpManual = simTime ;
+		saveInnerValsManual();
+	}
+    virtual void save() {
+        checkInitialized();
+		xBackUp = x;
+	}
+    
+    virtual void resetInnerVals() {}
+	virtual void saveInnerVals() {}
+    virtual void resetInnerValsManual() {}
+    virtual void saveInnerValsManual() {}
+	
+	
+    std::vector<std::vector<double>> getFlux_10c() {		
+    	std::vector<NumEqVector> flux_10c_ = getProblemFlux_10c();//this->problem->getFlux10c_(); // 
+		int numComp_ = numComp();
+		std::vector<double> f10c_row(numComp_);
+		std::vector<std::vector<double>> flux_10c(flux_10c_.size(), f10c_row);
+		
+		for(int faceIdx_ = 0; faceIdx_ < flux_10c.size(); faceIdx_ ++)
+		{
+			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
+			{
+				flux_10c.at(faceIdx_).at(eqIdx) = flux_10c_.at(faceIdx_)[eqIdx];
+			}
+		}
+		return flux_10c;
+    }
+	
+    std::vector<std::vector<double>> getSource_10c() {		
+    	std::vector<NumEqVector> source_10c_ = getProblemSource_10c();//this->problem->getFlux10c_(); // 
+		int numComp_ = numComp();
+		std::vector<double> f10c_row(numComp_);
+		std::vector<std::vector<double>> source_10c(source_10c_.size(), f10c_row);
+		
+		for(int cellIdx = 0; cellIdx < source_10c.size(); cellIdx ++)
+		{
+			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
+			{
+				source_10c.at(cellIdx).at(eqIdx) = source_10c_.at(cellIdx)[eqIdx];
+			}
+		}
+		return source_10c;
+    }
+	
+	std::map<int,int> facemap;
+	std::map<long unsigned,int>  faceGIdxs;
+	//std::map<unsigned int, int, std::less<unsigned int>, std::allocator<std::pair<const unsigned int, int> > >
 protected:
 
     using Grid = typename Problem::Grid;
@@ -986,12 +1098,61 @@ protected:
 
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx; // global index mappers
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx; // global index mappers
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> faceGlobalIndexSet; // global index mappers
     std::map<int, int> localCellIdx; // global to local index mapper
+    //std::map<int, int> g2lFaceIdx; // global to local index mapper
     std::vector<int> globalPointIdx; // local to global index mapper
 
     SolutionVector x;
     SolutionVector xBackUp;
     SolutionVector xBackUpManual;
+    double simTimeBackUp;
+    double simTimeBackUpManual;
+	
+    virtual void clearSaveBC() {}
+    virtual void doSaveBC(double ddt_current) {}
+    
+    void doSaveInnerFluxesAndSources(double ddt_current) {
+		//need to save it per face and not per cell i think (for when we have mpi)
+        std::vector<std::vector<double>> inFluxes_i = getFlux_10c();//per face
+        std::vector<int> face2CellId_i = idxScv4FluxScv_10c();//per face
+        std::vector<std::vector<double>> inSources_i = getSource_10c();//per cell
+		
+		inSources.push_back(inSources_i);
+        face2CellIds.push_back(face2CellId_i);
+        inFluxes.push_back(inFluxes_i);
+        //inFluxes_time.push_back(currentTime );
+        inFluxes_ddt.push_back(ddt_current);
+		resetSetFaceFlux();
+    }
+	
+	void virtual resetSetFaceFlux(){}
+	
+	virtual std::vector<int> idxScv4FluxScv_10c()
+	{
+		std::vector<int> face2CellId;
+		return face2CellId;
+	}
+	virtual std::vector<NumEqVector> getProblemFlux_10c()
+	{
+		std::vector<NumEqVector> flux_10c_;
+		return flux_10c_;
+	}
+	virtual std::vector<NumEqVector> getProblemSource_10c()
+	{
+		std::vector<NumEqVector> source_10c_;
+		return source_10c_;
+	}
+	
+    void clearInnerFluxesAndSources() {    
+        inSources.clear();
+        inFluxes.clear();
+		face2CellIds.clear();
+        inFluxes_time.clear();
+        inFluxes_ddt.clear();
+    }
+	
+	
 
 };
 
@@ -1003,6 +1164,7 @@ void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
+			.def("numComp",  &Solver::numComp)
             .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0), 
 													py::arg("verbose") = true,py::arg("doMPI") = true)
             .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid) // overloads, defaults , py::arg("modelParamGroup") = ""
@@ -1018,10 +1180,12 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("reset", &Solver::reset)
 			.def("resetManual", &Solver::resetManual)
 			.def("saveManual", &Solver::saveManual)
+			.def("save", &Solver::save)
             // simulation 
-            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false)
+            .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false, 
+				py::arg("saveInnerFluxes") = false)
             .def("solveNoMPI", &Solver::solveNoMPI, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false,
-                py::arg("saveBC") = false)
+                py::arg("saveBC") = false, py::arg("saveInnerFluxes") = false)//, bool  = false
             .def("solveSteadyState", &Solver::solveSteadyState)
             // post processing (vtk naming)
             .def("getPoints", &Solver::getPoints) //
@@ -1045,7 +1209,16 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
-            // members
+            .def("reportParams", &Solver::reportParams)
+            .def("printParams", &Solver::printParams)
+            // members //
+			.def_readonly("facemap", &Solver::facemap)
+			.def_readonly("faceGIdxs", &Solver::faceGIdxs)
+			.def_readonly("face2CellIds", &Solver::face2CellIds)
+            .def_readonly("inSources", &Solver::inSources) // read only
+            .def_readonly("inFluxes", &Solver::inFluxes) // read only
+            .def_readonly("inFluxes_time", &Solver::inFluxes_time) // read only
+            .def_readonly("inFluxes_ddt", &Solver::inFluxes_ddt) // read only
             .def_readonly("dimWorld", &Solver::dimWorld) // read only
             .def_readonly("simTime", &Solver::simTime) // read only
             .def_readwrite("verbose", &Solver::verbose) // initial internal time step

@@ -106,7 +106,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/Sc4_"+extraName+str(spellData['scenario'])\
+    results_dir="./results/FabFour/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -114,10 +114,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                     +str(int((dt*24*60 - int(dt*24*60))*60))+"s_"\
                     +str(max_rank)+"/"
     
-    comm.barrier()
+    #comm.barrier()
     if rank == 0:
         print('results_dir','DumuxDune27',results_dir, flush = True)
-    comm.barrier()
+    #comm.barrier()
     if rank == 0:
         for extraText in ["","cyl_val/","printData/"]:
             if not os.path.exists(results_dir+extraText):
@@ -129,7 +129,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                         os.remove(results_dir+extraText+item)
                     except:
                         pass
-    comm.barrier()
+    #comm.barrier()
     """
      Cylindric rhizosphere models, C exudate from finite volumes
     """
@@ -278,16 +278,16 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     while rs_age < simMax:
 
         rs_age += dt
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank == 0:# or (max_rank == 1):
             print(rank,"Day", rs_age)
-        comm.barrier()
+        #comm.barrier()
         seg2cell_old = rs.seg2cell
         Ntbu = Nt
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank == 0:# or (max_rank == 1):
             print(rank,'simulating')
-        comm.barrier()
+        #comm.barrier()
         if (rank == 0) and (not static_plant) :
 
             rs.simulate(dt, verbose = False)#(rank == 0))  # because of dumux.pick(), blocks if I do not let all threads do the simulate.
@@ -340,15 +340,15 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
             write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
 
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and (rank == 0):
             print(rank,'simulated')
-        comm.barrier()
+        #comm.barrier()
         rs.update()
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and (rank == 0):
             print(rank,'updated')
-        comm.barrier()
+        #comm.barrier()
         if start:
             nots = len(np.array(rs.organTypes))
             rs.checkMassOMoleBalance2(None,None, dt,
@@ -382,15 +382,15 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         
                            
 
-        comm.barrier()
+        #comm.barrier()
 
 
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
 
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'to cyl3.simulate_const')
-        comm.barrier()
+        #comm.barrier()
         n_iter = 0
         rs.rhizoMassWError_abs = 1.
         rs.rhizoMassCError_abs = 1.
@@ -409,7 +409,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             plant.time_3ds_i = 0
             plant.time_plant_cumul = plant.time_plant_cumulW + plant.time_plant_cumulS 
             
-            write_file_array("fpit_totalComputetime",
+            write_file_array("totalComputetime",
                              np.array([timeit.default_timer() - plant.time_start_global,
                             plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
                              directory_ =results_dir)
@@ -418,27 +418,27 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
             n_iter_min = 4
             cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or failedLoop
-                    or (np.floor(rs.diff1d3dCurrant_rel*10.)/10.>0.1) 
-                    or (np.floor(rs.maxdiff1d3dCurrant_rel)>1) 
+                    or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
+                    or (np.floor(rs.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
                     or (min(rs.new_soil_solute.reshape(-1)) < 0)  
                     or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < k_iter)
             #(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
-            comm.barrier()
+            #comm.barrier()
             if rank == 0:#mpiVerbose:# or (max_rank == 1):
                 print('continue loop?',rank,'n_iter',n_iter,'cL',cL,'failedLoop',failedLoop, ' np.floor(rs.err)',
                 np.floor(rs.err),  'solve_gave_up',rs.solve_gave_up,
                 'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, 
                 'maxdiff1d3dCurrant_rel',rs.maxdiff1d3dCurrant_rel, 
                 'k_iter',k_iter)
-            comm.barrier()
+            #comm.barrier()
             cL = comm.bcast(cL,root = 0)
             failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
-            comm.barrier()
+            #comm.barrier()
             #if mpiVerbose and (max_rank > 1):
             #    print('continue loopBis?',rank,cL,failedLoop_)
-            comm.barrier()
+            #comm.barrier()
             assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
             
             if doPrint:
@@ -519,14 +519,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             dt_inner = dt/float(nNew)
             if cL or failedLoop:
                 #currentN = int(np.ceil(dt / dt_inner))
-                comm.barrier()
+                #comm.barrier()
                 
                 if mpiVerbose and rank==0:# or (max_rank == 1):
                     print(rank, "error too high, decrease N, dt from", nOld, dt/float(nOld),"to",nNew, dt_inner)
                 #dt_inner = dt/(float(currentN*2.))
                 #dt_inner = max(1./(24.*3600.), dt_inner) # minimum: 1 second
                 # print(rank, "error too high, decrease N from", dt/float(currentN),"to",min(1/(24*3600), dt_inner))
-                comm.barrier()
+                #comm.barrier()
                 s.base.resetManual()# <= that actually only works for the last solve. I need a better method to reset to the beginning of the whole stuff
                 rs.resetManual()
                 rs.leftSpell = rs.leftSpellBU
@@ -547,46 +547,46 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         seg_fluxes_ = seg_fluxes__
                 
                 
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'left cyl3.simulate_const')
-        comm.barrier()
+        #comm.barrier()
 
         if True:
             if mpiVerbose and rank==0:# or (max_rank == 1):
                 print(rank,"theta")
-            comm.barrier()#
+            #comm.barrier()#
             write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
             write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir, fileType = '.csv') 
             write_file_array("watVol", np.array(s.getWaterVolumes()), directory_ =results_dir, fileType = '.csv') 
             for i in range(rs.numFluidComp):
-                comm.barrier()
+                #comm.barrier()
                 if mpiVerbose and rank==0:# or (max_rank == 1):
                     print(rank,"Soil_solute_conc"+str(i+1))
-                comm.barrier()
+                #comm.barrier()
                 write_file_array("Soil_solute_conc"+str(i+1), 
                                  np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, # mol C/mol w * molW/m3 W * m3 W/cm3 W
                                  directory_ =results_dir, fileType = '.csv') 
             for i in range(rs.numFluidComp, rs.numComp):
-                comm.barrier()
+                #comm.barrier()
                 if mpiVerbose and rank==0:# or (max_rank == 1):
                     print(rank,"Soil_solute_conc"+str(i+1))
-                comm.barrier()
+                #comm.barrier()
                 write_file_array("Soil_solute_conc"+str(i+1), 
                                  np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , 
                                  directory_ =results_dir, fileType = '.csv') 
-            comm.barrier()
+            #comm.barrier()
             if mpiVerbose and rank==0:# or (max_rank == 1):
                 print(rank,"Soil_solute_conc"+str(rs.numComp+1))
-            comm.barrier()
+            #comm.barrier()
             write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten(),#[ mol / cm^3]
                              # [:-1]* rs.bulkDensity_m3 /1e6 ,
                              directory_ =results_dir, fileType = '.csv') 
            
-        comm.barrier() 
+        #comm.barrier() 
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'did s.data writing')
-        comm.barrier()
+        #comm.barrier()
         errLeuning_abs = abs(sum(r.outputFlux))
         if organism == "plant":
             TranspirationCumul += sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
@@ -594,20 +594,20 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             TranspirationCumul += sum(r.outputFlux)
         
 
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'getTotCContent')
         buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'getWaterContent')
-        comm.barrier()
+        #comm.barrier()
         buWAfter = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))    
 
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'get s.errorCumul')
-        comm.barrier()
+        #comm.barrier()
         if rank == 0:
             if (mode != "dumux_w"):
                 s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
@@ -627,14 +627,18 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             s.bulkMassErrorWaterCumul_abs = None
             s.bulkMassErrorWaterCumul_rel = None
             
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'got s.errorCumul')
         
+        #comm.barrier()
         write_file_array("time", np.array([rs_age,r.Qlight]), directory_ =results_dir)
         write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
         write_file_array("maxErrors1ds3ds", np.concatenate((rs.maxDiff1d3dCW_abs, rs.maxDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')# 
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'write some otehr stuff')
+        #comm.barrier()
         if (mode != "dumux_w"):
             if not doMinimumPrint:
                 write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
@@ -657,8 +661,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
             write_file_array("trans", r.Ev, directory_ =results_dir, fileType = '.csv')
             write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'finished other data writing')
+        #comm.barrier()
         if False:
             try:
                 assert abs(s.bulkMassCErrorPlant_abs)  < 1e-5
@@ -693,10 +699,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 if max(pHead) > 0:
                     print('issue phead',gId,rank, pHead, sol0 )
                     raise Exception
-
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'do C growth?',  (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
 
+        #comm.barrier()
         if (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
 
             startphloem=rs_age
@@ -714,6 +721,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             r.time_plant_cumulS += (timeit.default_timer() - r.time_start_plant)
 
 
+            print("endtpm",rank)
+            
             Nt = len(rs.nodes)
             if r.withInitVal and (len(Q_ST_init) ==0) :
                 Q_ST_init = np.array(r.Q_init[0:Nt])/1e3
@@ -812,25 +821,27 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         elif rank > 0:
             Q_Exud_i_seg = None
             Q_Mucil_i_seg = None
-        
-        comm.barrier()
+            
+        print(rank, 'share Q_Exud_i_segA')
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'share Q_Exud_i_seg')
-        comm.barrier()
+        #comm.barrier()
 
         Q_Exud_i_seg = comm.bcast(Q_Exud_i_seg, root = 0) 
         Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
 
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'print data to linux')
-        comm.barrier()
+        #comm.barrier()
         if (rank == 0) and (mode != "dumux_w")  :
             print("\n\n\n\t\tat ", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn",  
                   round(r.Qlight *1e6),"mumol m-2 s-1")
             print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(error_st_abs, error_st_rel))
             print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(errLeuning_abs))
-            print("C_ST (mmol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(C_ST), min(C_ST), len(np.where(C_ST == min(C_ST) )[0]), max(C_ST)))        
+            print("C_ST (mmol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(C_ST), min(C_ST),
+                                                                                                      len(np.where(C_ST == min(C_ST) )[0]), max(C_ST)))        
             print("C_me (mmol ml-1):\n\tmean {:.2e}\tmin  {:5.2e}\tmax  {:5.2e}".format(np.mean(C_meso), min(C_meso), max(C_meso)))        
             print('Q_X (mmol Suc): \n\tST   {:.2e}\tmeso {:5.2e}\tin   {:5.2e}'.format(sum(Q_ST), sum(Q_meso), Q_in))
             print('\tRm   {:.2e}\tGr   {:.2e}\tExud {:5.2e}'.format(sum(Q_Rm), sum(Q_Gr), sum(Q_Exud)))
@@ -868,10 +879,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("C_rsi", np.array(r.Csoil_seg ), 
                              directory_ =results_dir)#mmol/cm3
         
-        comm.barrier()
+        #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'print data to linux')
-        comm.barrier()
+        #comm.barrier()
 
 
     """ output """

@@ -1033,6 +1033,11 @@ public:
 		simTimeBackUpManual = simTime ;
 		saveInnerValsManual();
 	}
+    virtual void save() {
+        checkInitialized();
+		xBackUp = x;
+	}
+    
     virtual void resetInnerVals() {}
 	virtual void saveInnerVals() {}
     virtual void resetInnerValsManual() {}
@@ -1175,6 +1180,7 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("reset", &Solver::reset)
 			.def("resetManual", &Solver::resetManual)
 			.def("saveManual", &Solver::saveManual)
+			.def("save", &Solver::save)
             // simulation 
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("maxDt") = -1, py::arg("solverVerbose") = false, 
 				py::arg("saveInnerFluxes") = false)

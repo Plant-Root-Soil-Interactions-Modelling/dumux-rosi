@@ -51,11 +51,14 @@ class SolverWrapper():
         self.base.reset()
         
     def resetManual(self):
-        """ reset solution vector to value before solve function """
+        """ reset outer solution vector to value before solve function """
         self.base.resetManual()
     def saveManual(self):
-        """ reset solution vector to value before solve function """
+        """ reset outer solution vector to value before solve function """
         self.base.saveManual()
+    def save(self):
+        """ reset solution vector to value before solve function """
+        self.base.save()
     def setVerbose(self, verbose:int):
         """ set verbose level """
         self.base.setVerbose(verbose)
