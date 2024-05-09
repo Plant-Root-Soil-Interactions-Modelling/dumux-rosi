@@ -66,11 +66,11 @@ public:
 	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
 	static constexpr bool isBox = GridGeometry::discMethod == DiscretizationMethods::box;
 
-	enum {
-		pressureIdx = 0, // index of primary variables
+	enum {		
+    pressureIdx = Indices::pressureIdx, // index of primary variables
 		h2OIdx = 0, // fluid index
 		soluteIdx = 1, // solute index
-		conti0EqIdx = 0, // indices of the equations
+		conti0EqIdx = Indices::conti0EqIdx, // indices of the equations
 		transportEqIdx = 1,
 
 		dimWorld = GridView::dimensionworld,
@@ -102,6 +102,9 @@ public:
 	: PorousMediumFlowProblem<TypeTag>(fvGridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
+
+		verbose = Dumux::getParam<int>("Problem.Verbose", verbose);
+		k_dz = Dumux::getParam<Scalar>("Problem.Factor_dz", k_dz);
 
 		source_.resize(2); // 2 equations (currently hard coded, where can I get the value?)
 		source_[0] = nullptr;
@@ -156,12 +159,15 @@ public:
 		// Output
 		std::string filestr = this->name() + ".csv"; // output file
 		// myfile_.open(filestr.c_str());
-		std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
-				<< ", gravitation " << gravityOn_ <<", Critical pressure "
-				<< criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_ << ", Freundlich " << freundlichK_ << ", " <<
-				freundlichN_ << "\n" << std::flush;
-	}
+            if(verbose >= 1)
+            {
+            std::cout << "Richards1P2CProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+                    <<  bcBotType_ << ", " << bcBotValues_.at(0)  << " bcSTopType " << bcSTopType_[0] << "; bcSBotType " << bcSBotType_[0]
+                    << ", gravitation " << gravityOn_ <<", Critical pressure "
+                    << criticalPressure_ << "\n" << "Sorption:" << "buffer power "<< b_ << ", Freundlich " << freundlichK_ << ", " <<
+                    freundlichN_ << "\n" << std::flush;
+            }
+        }
 
 	/**
 	 * \brief Eventually, closes output file
@@ -302,7 +308,7 @@ public:
 	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
 	 *
 	 * called by BoxLocalResidual::evalFlux,
-	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$// effective diffusion coefficient !!!!!!!!!!!!
+	 * negative = influx, mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
 	 */
 	NumEqVector neumann(const Element& element,
 			const FVElementGeometry& fvGeometry,
@@ -326,7 +332,8 @@ public:
 			Scalar p = materialLaw_.pc(s) + pRef_;//TODO still works? params, 
 			Scalar h = -toHead_(p); // todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
-			Scalar dz = 100 * 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
+            // distance between center of inner cell and root surface * empirical factor (k_dz)
+			Scalar dz = 100 * k_dz * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m->cm
 			Scalar krw = materialLaw_.krw(s);//TODO still works? params, 
 
 			if (onUpperBoundary_(pos)) { // top bc
@@ -677,7 +684,10 @@ public:
 				source += pointSources;
 			}
 		}
-		std::cout << "Global integrated source (soil): " << source[h2OIdx] << " (kg/s) / " << source[h2OIdx]*3600*24*1000 << " (g/day)" << '\n';
+        if(verbose >=1)
+        {
+            std::cout << "Global integrated source (soil): " << source[h2OIdx] << " (kg/s) / " << source[h2OIdx]*3600*24*1000 << " (g/day)" << '\n';
+        }
 	}
 
 	/**
@@ -718,6 +728,12 @@ public:
 	std::vector<double> bcSBotValue_= std::vector<double>(1);
 
 
+    int verbose = 1;// level of verbosity
+    // for perirhizal model:
+    // factor by which to multiply the distance between the center of the inner cell
+    // see @neumann()
+    Scalar k_dz = 2;// [-]
+    
 private:
 
 	//! cm pressure head -> Pascal

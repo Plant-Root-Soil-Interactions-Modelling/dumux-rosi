@@ -16,7 +16,20 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 
     using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards10Cyl() { }
-	
+	 /**
+     * The volume [m3] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    virtual std::vector<double> getCellVolumesCyl() {
+		int numCells = this->checkGridInitialized();
+        std::vector<double> volumes;
+		volumes.resize(numCells);
+        for (int i =0; i<volumes.size(); i++)
+            volumes.at(i) = this->problem->getCellVolumesCyl(i);
+        return volumes;
+    }
+    
 	void setComputeDtCSS2(const std::function<double(double,double,double)>& s)
     {
         this->problem->computeDtCSS2 = s;
