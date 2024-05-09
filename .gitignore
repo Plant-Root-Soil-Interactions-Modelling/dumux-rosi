@@ -23,8 +23,6 @@ build-*
 # something python related
 *.pyc
 __pycache__
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
 
 # shared libraries
 *.so
