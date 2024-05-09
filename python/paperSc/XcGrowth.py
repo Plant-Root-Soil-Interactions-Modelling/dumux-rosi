@@ -66,7 +66,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     #initsim =float(sys.argv[1])# initsim = 9.5
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
-    dt = 1/3/24
+    dt = 20/60/24
     #p_mean = -100
     k_iter = 20
     l_ks =  "dx_2"#"root", "dx", "dx_2"
@@ -96,8 +96,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         min_b = np.array([-5, -5, -10.])# 
         cell_number =np.array([5,5,20])#
     else:
-        min_b = np.array([-3./2, -12./2, -30.])
-        cell_number =np.array( [3,12,30]) # 1cm3 
+        min_b = np.array([-3./2, -12./2, -41.])
+        cell_number =np.array( [3,12,41]) # 1cm3 
         max_b =np.array( [3./2, 12./2, 0.])
        
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
@@ -106,7 +106,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/FabFour/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/newMucil4p/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -218,6 +218,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     Q_ST_init = np.array([])
     Nt = len(rs.nodes)
+    Q_Exud    = np.zeros(Nt)
+    Q_Mucil   = np.zeros(Nt)
     Q_Exudbu    = np.zeros(Nt)
     Q_Mucilbu   = np.zeros(Nt)
     Q_in  = 0
@@ -226,7 +228,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     r.maxLoop = 5000
     #simMax = initsim + 3
 
-    TranspirationCumul = 0
+    r.TranspirationCumul = 0
+    r.TranspirationCumul_eval = 0
     cell_volumes = s.getCellVolumes()  # cm3
     buTotCSoilInit = sum(s.getTotCContent())
     buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))
@@ -339,6 +342,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             globalNodeId = np.concatenate([org.getNodeIds()[1:] for org in orgs]).reshape(-1)
             write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
             write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
+            volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
+            write_file_array("volOrg", volOrg, directory_ =results_dir)
 
         #comm.barrier()
         if mpiVerbose and (rank == 0):
@@ -386,6 +391,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
 
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
+        try:
+            assert abs(Q_Exud_inflate- sum(Q_Exud)) < 1e-16
+            assert abs(Q_Mucil_inflate -sum(Q_Mucil)) <1e-16
+        except:
+            print('issue Q_Exud_inflate',rank, 
+                  Q_Exud_inflate, sum(Q_Exud),abs(Q_Exud_inflate- sum(Q_Exud)), 
+                  Q_Mucil_inflate, sum(Q_Mucil),abs(Q_Mucil_inflate- sum(Q_Exud)) )
+            raise Exception
 
         #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
@@ -476,6 +489,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         failedLoop = False
         cL = True
         while cL or failedLoop:
+            r.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
             s.base.saveManual()# <= that actually only works for the last solve. I need a better method to reset to the beginning of the whole stuff
             rs.saveManual()
             rs.leftSpellBU = rs.leftSpell
@@ -589,9 +603,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         #comm.barrier()
         errLeuning_abs = abs(sum(r.outputFlux))
         if organism == "plant":
-            TranspirationCumul += sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
+            r.TranspirationCumul += r.TranspirationCumul_inner #sum(np.array(r.Ev) * dt) #transpiration [cm3/day] * day
+            if rs.enteredSpell and (not rs.leftSpell):
+                r.TranspirationCumul_eval += r.TranspirationCumul_inner
+            elif rs.leftSpell:
+                r.TranspirationCumul_eval = 0.
+                
         else:
-            TranspirationCumul += sum(r.outputFlux)
+            r.TranspirationCumul += sum(r.outputFlux)
         
 
         #comm.barrier()
@@ -618,8 +637,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             else:
                 s.bulkMassErrorCumul_abs = np.nan
                 s.bulkMassErrorCumul_rel =np.nan
-                
-            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - TranspirationCumul))
+            # because we have a free flow BC at the bottom, that could increase the error
+            # ideally, I should add the flow at the bellow BC here
+            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - r.TranspirationCumul_eval))
             s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
         else:
             s.bulkMassErrorCumul_abs = None
@@ -655,11 +675,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                                 s.bulkMassCError1ds_abs, s.bulkMassCError1ds_rel, 
                                                 s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
                                                 s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
-                                                s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]), directory_ =results_dir, fileType = '.csv')#cumulative
+                                                s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]),
+                             directory_ =results_dir, fileType = '.csv')#cumulative
             write_file_array("errorMassRhizo", np.array([rs.rhizoMassCError_abs, rs.rhizoMassCError_rel,
                                                         rs.rhizoMassWError_abs, rs.rhizoMassWError_rel]), directory_ =results_dir)# not cumulativecumulative (?)
 
-            write_file_array("trans", r.Ev, directory_ =results_dir, fileType = '.csv')
+            write_file_float("trans", r.TranspirationCumul, directory_ =results_dir)
             write_file_array("transrate",r.Jw, directory_ =results_dir, fileType = '.csv')
         #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
@@ -727,10 +748,15 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             if r.withInitVal and (len(Q_ST_init) ==0) :
                 Q_ST_init = np.array(r.Q_init[0:Nt])/1e3
                 Q_meso_init = np.array(r.Q_init[Nt:(Nt*2)])/1e3
+                
+            # the backups
+            
+            Q_Exudbu = Q_Exud            
+            Q_Mucilbu = Q_Mucil
 
             # att: that will be the cumulative value
             #  MMOL(/cm3) => mol(/cm3)
-            inflateVal = 1#1e3
+            #inflateVal = 1#1e3
             Q_ST    = np.array(r.Q_out[0:Nt])/1e3
             Q_meso  = np.array(r.Q_out[Nt:(Nt*2)])/1e3
             Q_Rm    = np.array(r.Q_out[(Nt*2):(Nt*3)])/1e3
@@ -758,8 +784,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             Q_Exudbu     =   np.concatenate((Q_Exudbu, np.full(Nt - Ntbu, 0.))) 
             Q_Mucilbu       =   np.concatenate((Q_Mucilbu, np.full(Nt - Ntbu, 0.))) 
 
-            Q_Exud_i      = (Q_Exud    - Q_Exudbu)*inflateVal
-            Q_Mucil_i     = (Q_Mucil   - Q_Mucilbu)*inflateVal
+            Q_Exud_i      = (Q_Exud    - Q_Exudbu)#*inflateVal
+            Q_Mucil_i     = (Q_Mucil   - Q_Mucilbu)#*inflateVal
 
             # can get negative respiration at night
             #try:
@@ -771,7 +797,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             try:
                 assert  (error_st_rel< 1.) or abs(Q_in) < 1e-13
             except:    
-                print(error_st_abs, Q_in, error_st_rel)
+                print('error_st_abs',rank,error_st_abs, Q_in, error_st_rel)
                 raise Exception
 
             assert Q_Exud_i[0] == 0#no exudation in seed node I guess
@@ -812,7 +838,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             # Q_Exud_i[np.where(Q_Exud_i > 0.)] = 1.
             #r.outputFlux = np.array(r.outputFlux)/ 10
             try:
-                assert min(Q_Exud_i_seg) >= 0.
+                assert min(Q_Exud_i_seg) >= -1e-13
+                Q_Exud_i_seg[np.where(Q_Exud_i_seg<0)] = 0.
             except:
                 print(C_ST, r.Csoil_node, Q_Exud_i_seg,Q_Exud)
                 raise Exception
@@ -821,13 +848,17 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         elif rank > 0:
             Q_Exud_i_seg = None
             Q_Mucil_i_seg = None
+            Q_Exud = None
+            Q_Mucil = None
             
-        print(rank, 'share Q_Exud_i_segA')
+        #print(rank, 'share Q_Exud_i_segA')
         #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'share Q_Exud_i_seg')
         #comm.barrier()
 
+        Q_Exud = comm.bcast(Q_Exud, root = 0) 
+        Q_Mucil = comm.bcast(Q_Mucil, root = 0) 
         Q_Exud_i_seg = comm.bcast(Q_Exud_i_seg, root = 0) 
         Q_Mucil_i_seg = comm.bcast(Q_Mucil_i_seg, root = 0) 
 
@@ -840,10 +871,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                   round(r.Qlight *1e6),"mumol m-2 s-1")
             print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(error_st_abs, error_st_rel))
             print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(errLeuning_abs))
-            print("C_ST (mmol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(C_ST), min(C_ST),
+            print("C_ST (mol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(C_ST), min(C_ST),
                                                                                                       len(np.where(C_ST == min(C_ST) )[0]), max(C_ST)))        
-            print("C_me (mmol ml-1):\n\tmean {:.2e}\tmin  {:5.2e}\tmax  {:5.2e}".format(np.mean(C_meso), min(C_meso), max(C_meso)))        
-            print('Q_X (mmol Suc): \n\tST   {:.2e}\tmeso {:5.2e}\tin   {:5.2e}'.format(sum(Q_ST), sum(Q_meso), Q_in))
+            print("C_me (mol ml-1):\n\tmean {:.2e}\tmin  {:5.2e}\tmax  {:5.2e}".format(np.mean(C_meso), min(C_meso), max(C_meso)))        
+            print('Q_X (mol Suc): \n\tST   {:.2e}\tmeso {:5.2e}\tin   {:5.2e}'.format(sum(Q_ST), sum(Q_meso), Q_in))
             print('\tRm   {:.2e}\tGr   {:.2e}\tExud {:5.2e}'.format(sum(Q_Rm), sum(Q_Gr), sum(Q_Exud)))
 
             if min(C_ST) < 0.0:
@@ -878,6 +909,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_float("Q_Ag", Q_in, directory_ =results_dir)
             write_file_array("C_rsi", np.array(r.Csoil_seg ), 
                              directory_ =results_dir)#mmol/cm3
+            
+            
         
         #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
@@ -907,7 +940,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             rp = rs.get_concentration(0, konz)
             s.results_dir = results_dir
 
-
+            # adapt to have plot_plants_and soil
             vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
                     filename="soil_rx",sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
                     interactiveImage=False)  # VTK vizualisation

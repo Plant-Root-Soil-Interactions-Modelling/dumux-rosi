@@ -1,22 +1,22 @@
 #!/bin/bash
 
 
-# pset 19
-sbatch fpit128cpu128.sh 10 25 19 baseline
-sbatch fpit128cpu128.sh 10 25 19 earlyDry
-sbatch fpit128cpu128.sh 10 25 19 lateDry
-# pset 47
-sbatch fpit128cpu128.sh 10 25 47 baseline
-sbatch fpit128cpu256.sh 10 25 47 earlyDry
-sbatch fpit128cpu256.sh 10 25 47 lateDry 
-# pset 76 
-sbatch fpit128cpu256.sh 10 25 76 baseline
-sbatch fpit128cpu256.sh 10 25 76 earlyDry
-sbatch fpit128cpu256.sh 10 25 76 lateDry
-# pset 83
-sbatch fpit128cpu256.sh 10 25 83 baseline 
-sbatch fpit128cpu256.sh 10 25 83 earlyDry
-sbatch fpit128cpu256.sh 10 25 83 lateDry  
+# pset 17
+sbatch fpit128cpu128.sh 10 25 17 baseline
+sbatch fpit128cpu128.sh 10 25 17 earlyDry
+sbatch fpit128cpu128.sh 10 25 17 lateDry
+# pset 38
+sbatch fpit128cpu128.sh 10 25 38 baseline
+sbatch fpit128cpu256mem.sh 10 25 38 earlyDry
+sbatch fpit128cpu256mem.sh 10 25 38 lateDry 
+# pset 44 
+sbatch fpit128cpu256.sh 10 25 44 baseline
+sbatch fpit128cpu256.sh 10 25 44 earlyDry
+sbatch fpit128cpu256.sh 10 25 44 lateDry
+# pset 85
+sbatch fpit128cpu256.sh 10 25 85 baseline 
+sbatch fpit128cpu256.sh 10 25 85 earlyDry
+sbatch fpit128cpu256.sh 10 25 85 lateDry  
 
-
-# sbatch --nodelist=node02 fpit128cpu256.sh 10 25 76 earlyDry
+# sbatch fpit128cpu128.sh 10 25 17 none
+# sbatch --nodelist=node02 fpit128cpu256.sh 10 25 44 earlyDry

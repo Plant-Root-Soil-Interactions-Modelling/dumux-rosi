@@ -300,7 +300,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         #comm.barrier()
         if self.newEidx is None:
             self.newEidx = np.array(range(len(self.eidx), len(self.radii)), np.int64)  # segment indices for process
-        print('self.newEidx, self.eidx',rank,self.newEidx, self.eidx)
+        #print('self.newEidx, self.eidx',rank,self.newEidx, self.eidx)
         self.eidx = np.concatenate((self.eidx,np.array(self.newEidx, dtype = np.int64)), dtype = np.int64)
         #raise Exception
         if ((self.mpiVerboseInner and (size > 1)) or (rank == 0)):

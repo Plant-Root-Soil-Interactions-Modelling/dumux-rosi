@@ -260,6 +260,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     # ATT to keep?
                     s.save()# <= so that stay in the current weather state
                     r.save()  
+                    outer_R_bc_wat = np.full(cell_volumes.shape, 0.)
                     write_file_array("aftChpHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
 
                     for lId, cyl in enumerate(r.cyls):
@@ -500,7 +501,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         seg_fluxes = np.array(rs.outputFlux)# [cm3/day] 
                     else:
                         seg_fluxes = np.full(len(np.array(rs.outputFlux)),0.)
-                        outer_R_bc_wat = np.full(cell_volumes.shape, 0.)  
+                          
                         
                     TransRate = sum(np.array(rs.Ev)) #transpiration [cm3/day] 
                     if not doMinimumPrint:
@@ -1837,7 +1838,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             write_file_array("N_error", r.errs, directory_ =results_dir) 
             write_file_array("N_error", r.errs, directory_ =results_dir, fileType = '.csv') 
             write_file_array("N_n_iter",np.array([ n_iter,N ]), directory_ =results_dir)
-        
+
             
         ####
         #   error rates    
@@ -1880,6 +1881,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         
         
         failedLoop = continueLoop(r,0, dt, False,Ni * dt,'inner_testdata', plant = rs)
+        
+        if (rank == 0):
+            rs.TranspirationCumul_inner += sum(np.array(rs.Ev) * dt) #transpiration [cm3/day] * day
+        
         if r.mpiVerbose:# or (max_rank == 1):
             if rank == 0:
                 print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
