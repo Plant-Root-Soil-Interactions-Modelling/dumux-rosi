@@ -70,6 +70,8 @@ public:
     using NumEqVector = typename Problem::NumEqVector;
 	
     int numComp(){return nEV.size();}
+    int numFluidComp(){return Problem::FluidSystem::numComponents;}
+    
     NumEqVector nEV;
     bool isBox = Problem::isBox; // numerical method
     int dimWorld = dim;
@@ -1108,6 +1110,7 @@ void init_solverbase(py::module &m, std::string name) {
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
 			.def("numComp",  &Solver::numComp)
+			.def("numFluidComp",  &Solver::numFluidComp)
             .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0),
 													py::arg("verbose") = true,py::arg("doMPI") = true)
             .def("createGrid", (void (Solver::*)(std::string)) &Solver::createGrid) // overloads, defaults , py::arg("modelParamGroup") = ""

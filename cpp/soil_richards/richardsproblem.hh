@@ -74,6 +74,9 @@ public:
 	};
 
 	enum { isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box };
+    
+    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+    static constexpr int numFluidComps = FluidSystem::numComponents;
 
 	enum BCTypes {
 		constantPressure = 1,
