@@ -17,27 +17,16 @@ from scenario_setup import weather, resistance2conductance
 from decimal import *
 from functional.xylem_flux import sinusoidal2, sinusoidal
 
-from helpfull import write_file_array, write_file_float
+from helpfull import write_file_array, write_file_float, continueLoop
 
 
-def continueLoop_(rs,n_iter, dt_inner,failedLoop,real_dtinner, name):
-    sumDiff1d3dCW_rel = rs.sumDiff1d3dCW_rel[:rs.numFluidComp]
-    sumDiff1d3dCW_rel = np.where(np.isnan(sumDiff1d3dCW_rel),0.,sumDiff1d3dCW_rel)
-    cL = ((np.floor(rs.err) > max_err) or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs)) > 1.) or  rs.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter)
-
-    #comm.barrier()
-    print('continue loop?',rank,cL)
-    #comm.barrier()
-    return cL
         
 def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     r = [],
                     outer_R_bc_sol=[], #mol
                     outer_R_bc_wat = [], seg_fluxes=[],
-                    results_dir = './results/', plantType = "plant",
-                  k_iter_ = 100,
+                   plantType = "plant",
                    outer_n_iter = 0,# never using that. Y do i send it?
-                   continueLoop =continueLoop_,
                    doMinimumPrint=True):
     """     
     simulates the coupled scenario       
@@ -52,7 +41,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     trans_f
     rs_age
     """
-    
+    results_dir = s.results_dir
     subtypes = np.asarray(rs.rs.subTypes, int)
     organTypes = np.asarray(rs.rs.organTypes, int)
 
@@ -104,9 +93,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     assert len(rs.rs.segments) == (len(rs.rs.nodes) -1)
     seg2cell = rs.rs.seg2cell
     cell2seg = rs.rs.cell2seg
-    cellIds = r.cellWithRoots # np.fromiter(cell2seg.keys(), dtype=int)
-    #cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments
-    #cellIds_root =rs.cellWithRoots #only cells which contain root segments
+    cellIds = r.cellWithRoots 
     emptyCells = np.array(list(set([xsoil for xsoil in range(s.numberOfCellsTot)]) - set(cellIds))) # -1 (air) not included
     if not doMinimumPrint:
         write_file_array('emptyCells',emptyCells,directory_ =results_dir, fileType = '.csv')
@@ -122,12 +109,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
         
-        if r.mpiVerbose:# or (max_rank == 1):
-            #comm.barrier()
-            if rank == 0:
-                print("simualtion loop, Ni, N:",Ni, N,rs_age_i_dt)
-            #comm.barrier()
-            
         hp_ = max([tempnode[2] for tempnode in rs.get_nodes()]) /100. #canopy height
         r.weatherX = weather(simDuration = rs_age_i_dt, hp =  hp_, spellData= r.spellData)
         if True:
@@ -321,8 +302,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         outer_R_bc_sol_old = outer_R_bc_sol.copy()
         n_iter = 0
         r.err = 1.e6 
-        max_err = 1.# ???
-        max_iter = k_iter_#100 #??
+        max_err = r.max_err 
+        max_iter = r.k_iter  
         rsx_set = r.get_inner_heads(weather=r.weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         rsx_old = rsx_set.copy()
 
@@ -412,17 +393,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         r.maxdiff1d3dCurrant_rel =1e6
         
         while  continueLoop(r,n_iter, dt,False,float(Ni) * dt,'inner_loopdata', isInner = True, plant = rs):
-            #( (np.floor(r.err) > max_err) or (abs(r.rhizoMassWError_abs) > 1e-13) 
-            #or (abs(r.rhizoMassCError_abs) > 1e-9) or (max(abs(r.errDiffBCs)) > 1.) 
-            #or  r.solve_gave_up or (max(abs(sumDiff1d3dCW_rel))>1)) and (n_iter < max_iter) :
+            
             r.solve_gave_up = False
             """ 1. xylem model """
             
-            if r.mpiVerbose:# or (max_rank == 1):
-                #comm.barrier()
-                if rank == 0:
-                    print('1. xylem model', rank)
-                #comm.barrier()
             
             ##
             # 1.1 plant water flow and photosynthesis

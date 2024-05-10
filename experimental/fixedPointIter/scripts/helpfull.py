@@ -85,3 +85,81 @@ def setupDir(results_dir):
                         os.remove(results_dir+extraText+item)
                     except:
                         pass
+                    
+def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
+                         real_dtinner: float,name="continueLoop", isInner = False,doPrint = True, 
+                         fileType = '.csv' , plant = None):
+    results_dir = rs.results_dir
+    plant.time_rhizo_cumul += plant.time_rhizo_i
+    plant.time_3ds_cumul += plant.time_3ds_i
+    plant.time_rhizo_i = 0
+    plant.time_3ds_i = 0
+    plant.time_plant_cumul = plant.time_plant_cumulW + plant.time_plant_cumulS 
+
+    write_file_array("totalComputetime",
+                     np.array([timeit.default_timer() - plant.time_start_global,
+                    plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
+                     directory_ = results_dir)
+
+    n_iter_min = 1 # 4
+    cL = ((np.floor(rs.err) > rs.max_err) or  rs.solve_gave_up or failedLoop
+            or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
+            or (np.floor(rs.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
+            or (min(rs.new_soil_solute.reshape(-1)) < 0)  
+            or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < rs.k_iter)
+
+    if rank == 0:#mpiVerbose:# or (max_rank == 1):
+        print('continue loop?',rank,'n_iter',n_iter,'cL',cL,'failedLoop',failedLoop, ' np.floor(rs.err)',
+        np.floor(rs.err),  'solve_gave_up',rs.solve_gave_up,
+        'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, 
+        'maxdiff1d3dCurrant_rel',rs.maxdiff1d3dCurrant_rel, 
+        'k_iter',rs.k_iter)
+
+    cL = comm.bcast(cL,root = 0)
+    failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
+    assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
+
+    if doPrint:
+        if not os.path.isfile(results_dir+name+fileType):
+            write_file_array(name, np.array(['n_iter', 'err', 
+                                             'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
+                                             'solve_gave_up', 'min__soil_solute',
+                                                     'dt_inner','real_dtinner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
+            if not rs.doMinimumPrint:
+                write_file_array(name+"Bool", np.array(['n_iter',  'err', 
+
+                                                        'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
+                                             'solve_gave_up',  'min__soil_solute',
+                                                         'dt_inner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
+
+        write_file_array(name, np.array([n_iter, rs.err, 
+                                         rs.diff1d3dCurrant_rel,rs.maxdiff1d3dCurrant_rel,
+                                         rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)),
+                                                     dt_inner, real_dtinner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
+        if not rs.doMinimumPrint:
+            write_file_array(name+"2", 
+                             np.concatenate((rs.sumDiff1d3dCW_rel,rs.maxDiff1d3dCW_rel)),  
+                             directory_ =results_dir, fileType = fileType)
+            write_file_array(name+"Bool", np.array([n_iter, (np.floor(rs.err) > rs.max_err), 
+                                                    (np.floor(rs.diff1d3dCurrant_rel*10.)/10. > 0.1),
+                                                    (np.floor(rs.maxdiff1d3dCurrant_rel) >1),
+                                                    #(abs(rs.rhizoMassWError_abs) > 1e-13), (abs(rs.rhizoMassCError_abs) > 1e-9), 
+                                                    #(max(abs(rs.errDiffBCs*0)) > 1e-5), 
+                                                    rs.solve_gave_up, min(rs.new_soil_solute.reshape(-1)) < 0.,
+                                                         dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
+
+    return cL
+
+def checkseg2cellMapping(seg2cell_old, plantModel):
+    # make sure that, once a segment is created, it stays in the same soil voxel
+    for segid in seg2cell_old.keys():
+        assert seg2cell_old[segid] == plantModel.seg2cell[segid]
+
+    # also segs are in only one voxel
+    cell2segVals = np.concatenate((list(plantModel.cell2seg.values()))).flatten()
+    if len(cell2segVals) != len(set(cell2segVals)):#make sure all values are unique
+        print(plantModel.seg2cell)
+        print(plantModel.cell2seg)
+        print(cell2segVals)
+        print(len(cell2segVals), len(set(cell2segVals)))
+        raise Exception

@@ -39,12 +39,19 @@ from functional.plant_conductivities import init_conductivities
 
 from helpfull import *
 from weather import *
-from XylemPhloemPhotosynthesis import *
+from XylemFlux import *
+from PhloemPhotosynthesis import *
 
 
 
 
-def getBiochemParam(s,paramIdx, noAds):    
+def getBiochemParam(s,paramIdx):    
+    """ define TraiRhizo biochemical parameters 
+        @param: the dumux soil object
+        @ param: index of the TraiRhizo parameter set to use
+        
+    """
+    # file containing the TraiRhizo parameter sets
     paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
     
     s.mg_per_molC = 12000
@@ -91,7 +98,7 @@ def getBiochemParam(s,paramIdx, noAds):
     s.C_aOLim=1.e-10 # so that microbe community can always regrow
     s.C_aCLim=1.e-10 # so that microbe community can always regrow
     
-    if noAds:
+    if s.noAds:
         s.CSSmax = 0.
         s.alpha = 0.
     else:
@@ -118,6 +125,9 @@ def getBiochemParam(s,paramIdx, noAds):
     return s
 
 def setBiochemParam(s):
+    """ send the TraiRhizo biochemical parameters to dumux
+        @param: the dumux soil object
+    """
 
     s.setParameter( "Soil.css1Function", str(s.css1Function))
     s.setParameter("Soil.C_aOLim", str(s.C_aOLim)) #[molC/cm3 scv]
@@ -157,26 +167,48 @@ def setBiochemParam(s):
     s.setParameter("Soil.alpha", str(s.alpha)) #[1/d]
     s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol/d] or [1/d]
     s.setParameter("Soil.kdes", str(s.kdes)) #[1/d]
+    
+    if s.dimWorld == 3:
+        # 1 == True
+        # if we define a source or sink for the cell 
+        # (from the results of the 1d models),
+        # do not compute on top of biochemical reactions in dumux
+        s.setParameter("Problem.reactionExclusive", "1")
+    
     return s
+
+
+def getCSS(s, CSW):
+    """ @return concentration of adsobed carbon in the soil
+        according to @param CSW [mol C / cm3 water], the concentration
+        of small solutes in the soil water
+        @param: s the dumux soil object
+    """
+    return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) 
+    
 
 def setIC3D(s, paramIdx, ICcc = None):
     return setIC(s, paramIdx, ICcc)
 
 def setIC(s, paramIdx, ICcc = None):
+    """ Defined the initial concentraition of the solutes
+        [mol C / cm3 water] for disolved solutes and [mol C / cm3 scv]
+        for solutes in the soil phase
+        @param: s the dumux soil object
+        @param: paramIdx index of the TraiRhizo parameter set
+        @param: ICcc (optional) predefined initial conditions
+    """
     if ICcc is None:
         paramSet = pd.read_csv('./output_random_rows.csv').loc[paramIdx]
-        C_S = paramSet['CS_init'] /s.mg_per_molC## in mol/cm3 water
-        C_L = paramSet['CL_init'] /s.mg_per_molC## in mol/cm3 water
+        C_S = paramSet['CS_init'] /s.mg_per_molC## small C solutes in mol/cm3 water
+        C_L = paramSet['CL_init'] /s.mg_per_molC## large C solutes in mol/cm3 water
 
-        s.CSS2_init,s.ratioInit  = s.getCSS2Init(C_S) #mol C/ cm3 scv
-        if rank == 0:
-            print('C_S,CSS2_init',C_S,s.CSS2_init,'CSSmax', s.CSSmax ,'ratio', s.ratioInit)
+        # concentraiton of adsobed C_S
+        s.CSS_init  = getCSS(s, C_S) #mol C/ cm3 scv
         
-        if s.noAds:
-            CSS2_init = 0.
             
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        addedVar = 1.
+        addedVar = 1. # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
                            C_L*unitConversion*addedVar,
@@ -184,38 +216,47 @@ def setIC(s, paramIdx, ICcc = None):
                             8.33333333333333e-06* unitConversion*addedVar,
                             8.33333333333333e-07* unitConversion*addedVar,
                             8.33333333333333e-06* unitConversion*addedVar,
-                            s.CSS2_init*unitConversion*addedVar,
+                            s.CSS_init*unitConversion*addedVar,
                            0.])# in mol/m3 water or mol/m3 scv
         if rank == 0:
-            print('init s.ICcc', s.ICcc,'s.k_sorp',s.k_sorp,'s.CSSmax',s.CSSmax)
-            print('compute method' ,s.CSSmax, C_S , s.theta_init, s.cell_size , s.k_sorp , s.f_sorp)
+            print('init s.ICcc', s.ICcc)
     else:
         s.ICcc = ICcc
     
     for i in range(s.numSoluteComp):
         #mol/m3 to mol/mol
         molarC = s.ICcc[i] / s.phaseDensity(isDissolved = (i < s.numDissolvedSoluteComp)) 
-        s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))
+        s.setParameter( "Soil.IC.C"+str(i+1), str(molarC ))# send data to dumux
     return s
 
 
 def setDefault(s):
+    """ Defined some usefull default parameters
+    """
     molarMassWat = 18. # [g/mol]
     densityWat = 1. #[g/cm3]
     # [mol/cm3] = [g/cm3] /  [g/mol] 
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
+    # low MaxRelativeShift == higher precision in dumux
     s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
-    s.setParameter("Newton.EnableChop", "true")# force solute mole fraction > 0 and water in possible pressure ranges
-    # s.setParameter("Problem.verbose_local_residual", "true")# for debug
+    
+    # force solute mole fraction > 0 and water in possible pressure ranges
+    s.setParameter("Newton.EnableChop", "true")
+    
+    # UpwindWeight = 1, better when we have high solute gradient.
+    # UpwindWeight = 0.5, better when have high water flow and low solute gradient
     s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
     
     return s
 
-def getSoilTextureAndShape():    
+def getSoilTextureAndShape():  
+    """ soil shape and texture data
+        to adapt according to the soil represented
+    """
     min_b = np.array([-3./2, -12./2, -41.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
     cell_number =np.array( [3,12,41]) # 1cm3 #np.array([3,3,3])
@@ -231,8 +272,10 @@ def getSoilTextureAndShape():
     
     return soilTextureAndShape
 
-def setSoilParam(s,paramIdx):
-    
+def setSoilParam(s):    
+    """ save the soil parameters
+        @param: the dumux soil object
+    """
     soilTexture = getSoilTextureAndShape()
     s.solidDensity = soilTexture['solidDensity'] #[kg/m^3 solid] 
     s.solidMolarMass = soilTexture['solidMolarMass']# [kg/mol] 
@@ -251,160 +294,99 @@ def setSoilParam(s,paramIdx):
     
     return s
 
-def DtCSS2_(CSS1, CSW, CSS2):
-    return 0.1/(24.*60.*60.) * (CSW - CSS2)
 
-def create_soil_model3D( demoType, 
-                    times = None, usemoles = True, dirResults = "",
+def create_soil_model3D( demoType,  usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
-                     noAds = False, ICcc = None, DtCSS2 = DtCSS2_):
-    return create_soil_model( demoType, 
-                    times , usemoles , dirResults,
+                     noAds = False, ICcc = None):
+    return create_soil_model( demoType, usemoles , results_dir,
                         p_mean_,paramIndx ,
                      noAds , ICcc )
 
-def create_soil_model( demoType, 
-                    times = None, usemoles = True, dirResults = "",
+def create_soil_model( demoType, usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
-                     noAds = False, ICcc = None, DtCSS2 = DtCSS2_):
+                     noAds = False, ICcc = None):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         soil demoType is fixed and homogeneous 
-        domain is periodic (if 2d or 3d)
-        initial potentials are linear from @param p_top to @param p_bot
-        
+        domain is periodic 
+        initial potentials are linear and mean potential is @p_mean_
+        @ param: noAds: turn off adsorption?
+        @param: paramIndx index of the TraiRhizo parameter set to use
+        @param: ICcc (optional) initial concentraiton values for the solute components
+        @param: usemoles [bool] dumux uses moles (True) or grammes (False)
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
-    if len(dirResults) == 0:
-        dirResults = "./results/parallel"+str(max_rank)+"/"
+        
     s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
-    s.dirResults = dirResults
+    s.results_dir = results_dir   
     
-    m3_per_cm3 = 1e-6; # m3/cm3
-    cm3_per_m3 = 1e6; # cm3/m3
-    
-    def getCSS2Init(CSW):
-        return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes), (s.kads * CSW)/(s.kads * CSW + s.kdes) 
-    
-    s.getCSS2Init = getCSS2Init
-    
-    
-    #@see dumux-rosi\cpp\python_binding\solverbase.hh
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
     s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
-    s.noAds = noAds
-    s.initialize()
+    s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
+    s.noAds = noAds # no adsorption?
+    
+    s.initialize() 
     setDefault(s)
-    setSoilParam(s,paramIndx)
-    s.theta_init =  vg.water_content(p_mean_, s.vg_soil)
-    #assert s.theta_init == 0.4
     
-    getBiochemParam(s,paramIndx,noAds )
-    
+    setSoilParam(s)
+    getBiochemParam(s,paramIndx)
     setBiochemParam(s)
-    
     setIC3D(s, paramIndx, ICcc)
     s.isPeriodic = True
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
-    cell_number_ = cell_number
-    cell_number= s.dumux_str(cell_number)#.replace("[", "");cell_number=cell_number.replace("]", "");cell_number=cell_number.replace(",", "");
-    s.setParameter( "Soil.Grid.Cells", cell_number)   
-    
-    s.setParameter("Problem.reactionExclusive", "1")
-
     s, s.vg_soil = setupOther(s, p_mean_)
-    
-    if False:
-        DtCSS2 =  lambda CSS1, CSW, CSS2: s.kads * CSW * (s.CSSmax * cm3_per_m3 - CSS2) - s.kdes * CSS2
-    else:
-        # [1/d] * [d/s] * ([mol/cm3 soil scv zone 1] * [cm3/m3] * [mol/m3]/([mol/m3]+ [mol/cm3] * [cm3/m3]) - [mol/m3])
-        # mol/m3/s
-        def DtCSS2( CSS1, CSW, CSS2):
-            return  s.alpha /(24.*60.*60.) * (s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3))- CSS2)
-        
-    s.DtCSS2 = DtCSS2
     
     if rank == 0:
         s.base.printParams()
+    
+    # just print once as will not change during simulation
+    write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =s.results_dir) # cm3 
+    write_file_array("cellIds", np.array(s.cellIndices), directory_ =s.results_dir) # cm3
+    
     return s, s.vg_soil
     
-def setShape1D(s,r_in, r_out,length,nCells = 10, doLogarithmic=True):
-    
-    logbase = 0.5
-    s.r_in = r_in
-    s.r_out = r_out
-    if doLogarithmic:
-        s.points = np.logspace(np.log(r_in) / np.log(logbase), np.log(r_out) / np.log(logbase), nCells, base = logbase)
-        
-    else:
-        s.points = [r_in + (r_out - r_in)/(nCells-1) * i for i in range(nCells) ]
-        
-    s.createGrid1d(s.points)
-    nCells -= 1
-    s.setParameter( "Soil.Grid.Cells", str(nCells))
-    s.setParameter( "Problem.segLength", str(length))
-    return s
-
-def setBC1D(s):    
-    s.setInnerBC("fluxCyl",  s.win)  # [cm/day] #Y 0 pressure?
-    s.setOuterBC("fluxCyl",0.)
-    
-    s.setParameter( "Soil.BC.Bot.C1Type", str(3))
-    s.setParameter( "Soil.BC.Top.C1Type", str(3))
-    s.setParameter( "Soil.BC.Bot.C1Value", str(s.exuds_in)) 
-    s.setParameter( "Soil.BC.Top.C1Value", str(0.)) 
-
-
-    s.setParameter( "Soil.BC.Bot.C2Type", str(3))
-    s.setParameter( "Soil.BC.Top.C2Type", str(3))
-    s.setParameter( "Soil.BC.Bot.C2Value", str(s.exudl_in)) 
-    s.setParameter( "Soil.BC.Top.C2Value", str(0.)) 
-
-    for i in range(s.numFluidComp, s.numComp):
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(3))
-        s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(3))
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
-        s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 )) 
 
 def setupOther(s, p_mean_):
+    """ define remaining soil parameters """
     s.p_meanInit = p_mean_
-    # BC
-    if s.dimWorld == 1:
-        s.setParameter("Soil.IC.P", s.dumux_str(p_mean_))
-        s.setInnerBC("fluxCyl",  s.win)  # [cm/day] #Y 0 pressure?
-        s.setOuterBC("fluxCyl", 0.)
-    if s.dimWorld == 3:
-        s.setTopBC("noFlux")
-        s.setBotBC("noFlux") #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
-        indxFluxSolute = 2
     
-        for i in range(1, s.numComp):
-            s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(indxFluxSolute))
-            s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(indxFluxSolute))
+    # BC
+    if s.dimWorld == 1: # 1d model
+        s.setParameter("Soil.IC.P", s.dumux_str(p_mean_))
+        s.setInnerBC("fluxCyl",  s.win)  # [cm/day]
+        s.setOuterBC("fluxCyl", 0.)
+    if s.dimWorld == 3:# 3d model
+        s.setTopBC("noFlux")
+        #in acc. with Jorda et al. (2022), however, they assume inflow if h>0
+        # also easier for checking mass balance
+        s.setBotBC("noFlux") 
+    
+        for i in range(1, s.numComp):# no flux
+            s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
+            s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(0)) 
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Value", str(0 ))       
         
     
     # IC
-    if True:
-        if s.dimWorld == 3:
-            if isinstance(p_mean_,(int,float)):
-                #print('set pmean float',p_mean_)
-                s.setHomogeneousIC(p_mean_, equilibrium = True)  # cm pressure head
-            elif isinstance(p_mean_,type(np.array([]))):
-                pass
-            else:
-                print(type(p_mean_))
-                raise Exception
-        
-
-
+    # if p_mean_ is float or int, define before initializeProblem
+    if s.dimWorld == 3:
+        if isinstance(p_mean_,(int,float)):
+            #print('set pmean float',p_mean_)
+            s.setHomogeneousIC(p_mean_, equilibrium = True)  # cm pressure head
+        elif isinstance(p_mean_,type(np.array([]))):
+            pass
+        else:
+            print(type(p_mean_))
+            raise Exception
+            
     s.initializeProblem()
     
      
+    # if p_mean_ is np.array, define after initializeProblem
     if isinstance(p_mean_,(int,float)):
         pass
     elif isinstance(p_mean_,type(np.array([]))):
@@ -413,39 +395,17 @@ def setupOther(s, p_mean_):
         print(type(p_mean_))
         raise Exception
     
-        
+    # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.wilting_point = -15000
-    s.setCriticalPressure(s.wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
+    s.setCriticalPressure(s.wilting_point)  
     s.ddt = 1.e-5  # [day] initial Dumux time step
     return s, s.vg_soil
-
-def set_all_sd(rs, s):
-    """ # sets all standard deviation to a percantage, i.e. value*s """
-    for p in rs.getRootRandomParameter():
-        p.a_s = p.a * s
-        p.lbs = p.lb * s
-        p.las = p.la * s
-        p.lns = p.ln * s
-        p.lmaxs = p.lmax * s
-        p.rs = p.r * s
-        p.thetas = p.theta * s
-        p.rlts = p.rlt * s  # no used
-        p.ldelays = p.ldelay * s
-    seed = rs.getRootSystemParameter()  # SeedRandomParameter
-    seed.firstBs = seed.firstB * s
-    seed.delayBs = seed.delayB * s
-    seed.maxBs = seed.maxB * s
-    seed.firstSBs = seed.firstSB * s
-    seed.delaySBs = seed.delaySB * s
-    seed.delayRCs = seed.delayRC * s
-    seed.nCs = seed.nCs * s
-    seed.nzs = seed.nzs * s
-    # todo seed position s
 
 
     
 def create_mapped_plant( mode,initSim, soil_model, fname, path, 
-                stochastic = False, mods = None, plantType = "plant",l_ks_ = "dx_2",
+                stochastic = False, 
+                        plantType = "plant",
                         usemoles = True, limErr1d3d = 1e-11, spellData =None):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
@@ -462,7 +422,7 @@ def create_mapped_plant( mode,initSim, soil_model, fname, path,
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         rs = RhizoMappedSegments(  mode, soil_model,  usemoles, seedNum = seed, 
-                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
+                                 limErr1d3dAbs = limErr1d3d)
     elif fname.endswith(".xml"):
         seed = 1
         weatherInit = weather(initSim,spellData)
@@ -470,33 +430,40 @@ def create_mapped_plant( mode,initSim, soil_model, fname, path,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(  mode, soil_model,  usemoles, seedNum = seed, 
-                                 limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
+        rs = RhizoMappedSegments(  mode, 
+                                 soilModel = soil_model, 
+                                 usemoles=usemoles,
+                                 seedNum = seed, 
+                                 limErr1d3dAbs = limErr1d3d)
 
         rs.setSeed(seed)
         rs.readParameters(path + fname)
-        #if not stochastic:
-        #    set_all_sd(rs, 0.)
-            
         rs.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
-        rs.initialize(verbose = False)#stochastic = False)
+        rs.initialize(verbose = False)
         rs.simulate(initSim,verbose= False)
         if plantType == "plant":
             r = PhloemFluxPython(rs,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
             r = XylemFluxPython(rs)
+            
+    
     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
                             pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
-                            cut = False, noChanges = True)
+                            cut = False, # do not cut plant segments according to the voxel size
+                            noChanges = True) # segments remain in the voxel they first appeared in
     
-    picker = lambda x, y, z: soil_model.pick_([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-    r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+    #  function that return the index of a given position in the soil grid 
+    picker = lambda x, y, z: soil_model.pick_([x,y, z])  
+    # maps segments, maps root segements and soil grid indices to each other in both directions
+    r.rs.setSoilGrid(picker)
+    
+    
+    # set kr and kx for root system or plant
     if plantType == "plant":    
         r = init_conductivities(r)
         r = phloemParam(r, weatherInit)
         rs.set_phloem_flux(r)
-        #r.test()
         return rs, r
     else:
         r = init_conductivities_const(r)

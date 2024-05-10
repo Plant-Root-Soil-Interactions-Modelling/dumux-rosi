@@ -35,9 +35,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
 
     # TODO copy mapped segments constructors (!)...
 
-    def __init__(self,   mode, soil,
-                usemoles, seedNum=None,results_dir = './results/' ,limErr1d3dAbs = 1e-11,
-                l_ks = "dx_2"):
+    def __init__(self,   mode, soilModel,
+                usemoles, seedNum=None,limErr1d3dAbs = 1e-11):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         if not seedNum is None:
             super().__init__(seednum = seedNum)
@@ -48,7 +47,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.logbase = 0.5
         self.mode = mode  # more precise RichardsCylFoam, mode="dumux"
         #print(self.mode)
-        self.results_dir = results_dir
+        self.results_dir = soilModel.results_dir
         # changes with growing plant (to update)
         # for soil 1ds
         self.nsSoilOld = 0
@@ -66,7 +65,6 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.seg2cell_old = {}
         self.cell2seg_old = {}
         self.limErr1d3dAbs = limErr1d3dAbs
-        self.l_ks = l_ks        
         
         self.cyls = []
         self.cylsSoil = []
@@ -80,7 +78,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.cylSoilidx_all = []
         self.eidx_all = []
         self.dx2 = []
-        self.soilModel = soil
+        self.soilModel = soilModel
         self.useMoles = usemoles
         self.solve_gave_up = False
         self.sizeSoilCell = []
@@ -106,21 +104,20 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
         self.bulkDensity_m3 = self.solidMolDensity*(1.- self.soilModel.vg_soil.theta_S) #porosity == theta_s
         
-        # when put some components to 0
-        self.canBeNull = np.where(self.soilModel.ICcc == 0.)[0] + 1
         
-        # self.setSoilData()# initial soil condition
             
         self.dx2 = []
-        #self.eidx = np.array([], dtype=np.int64)
+        
         # additional variables
         self.last_dt = 0.
         self.maxDiff1d3dCW_absOld = np.full(self.numComp, 0.)
         self.maxDiff1d3dCW_relOld = np.full(self.numComp, 0.)
-        self.maxdiff1d3dCurrant_rel = 0.
+        self.maxdiff1d3dCurrant_rel = np.Inf
+        self.maxdiff1d3dCurrant = np.Inf
         self.sumDiff1d3dCW_absOld = np.full(self.numComp, 0.)
         self.sumDiff1d3dCW_relOld = np.full(self.numComp, 0.)
         self.diff1d3dCurrant_rel = 0.
+        self.diff1d3dCurrant = np.Inf
         
         self.do1d1dFlow = True
         self.flow1d1d_w = np.zeros(1)
@@ -1869,12 +1866,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
             self.points.append(points)
             
-            if self.l_ks == "dx_2":
-                cyl.setParameter("Soil.BC.dzScaling", "1")
-            elif self.l_ks == "dx":
-                cyl.setParameter("Soil.BC.dzScaling", "2")
-            else:
-                raise Exception
+            cyl.setParameter("Soil.BC.dzScaling", "1")
             cyl.seg_length = self.seg_length[gId]
             cyl.setParameter( "Soil.css1Function", str(self.soilModel.css1Function))
             cyl.setParameter("Problem.verbose", "0")
@@ -1975,7 +1967,6 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.l = self.seg_length[gId]    
             cyl.a_in = a_in    
             cyl.a_out = a_out
-            cyl.DtCSS2 = self.soilModel.DtCSS2
             ThetaCyl = cyl.getWaterContent()
             setDefault(cyl)
             try:
