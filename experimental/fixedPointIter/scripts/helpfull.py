@@ -9,7 +9,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import timeit
 
-def suggestNumStepsChange(nOld, numIter_, targetIter_, results_dir):# taken from dumux
+def suggestNumStepsChange(dt, dt_inner, failedLoop,  targetIter_, results_dir):# taken from dumux
     """
      * \brief Suggest a new number of time steps
      *
@@ -21,14 +21,36 @@ def suggestNumStepsChange(nOld, numIter_, targetIter_, results_dir):# taken from
         // that we want to avoid failing in the next iteration
         // nNew > nOld ==> dtnew < dtOld
     """
+    nOld = int(dt/dt_inner)
+    if failedLoop:# if the inner computation failed, we also need to decrease the timestep
+        numIter_ = perirhizalModel.k_iter
+    else:
+        numIter_ = nOld
+        
     if (numIter_ > targetIter_) :
         percent = float(numIter_ - targetIter_)/float(targetIter_)
         change = 1.0 + percent
     else:
         percent = float(targetIter_ - numIter_)/float(targetIter_)
         change = 1 /(1.0 + percent/1.2)
-    return int(np.ceil(nOld * change))
+    nNew = int(np.ceil(nOld * change))
+    
+    try:
+        assert nOld == int(nOld)
+        assert nNew == int(nNew)
+    except:
+        print('nNew iisue',nNew , int(nNew), nOld,dt,dt_inner,
+              (nOld == int(nOld)), (nNew == int(nNew)))
 
+        write_file_array("nNew_error", np.array([nNew , int(nNew), nOld,dt,dt_inner,
+                                                 (nOld == int(nOld)), (nNew == int(nNew)),
+                                                 real_dtinner ,dt, dt_inner , failedLoop,
+                                                 abs((real_dtinner - dt)/dt*100.),rs_age]), 
+                         directory_ =results_dir, fileType = '.csv') 
+
+    dt_inner = dt/float(nNew)
+    
+    return dt_inner
 
 
 def div0(a, b, c):   # function to avoid division by 0    
@@ -101,7 +123,7 @@ def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
                     plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
                      directory_ = results_dir)
 
-    n_iter_min = 1 # 4
+    n_iter_min = 1 # empirical minimum number of loop to reduce error
     cL = ((np.floor(rs.err) > rs.max_err) or  rs.solve_gave_up or failedLoop
             or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
             or (np.floor(rs.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
@@ -163,3 +185,49 @@ def checkseg2cellMapping(seg2cell_old, plantModel):
         print(cell2segVals)
         print(len(cell2segVals), len(set(cell2segVals)))
         raise Exception
+
+def resetAndSaveData1(perirhizalModel):
+    perirhizalModel.rhizoMassWError_abs = 1.
+    perirhizalModel.rhizoMassCError_abs = 1.
+    perirhizalModel.errDiffBCs = 1.
+    perirhizalModel.err = 1.
+    perirhizalModel.max_err = 1.
+    perirhizalModel.diff1d3dCurrant_rel = 1e6
+    perirhizalModel.maxdiff1d3dCurrant_rel = 1e6
+
+    n_iter = 0 # number of iteration in the loop
+    failedLoop = False # had non-convergence error in dumux
+    keepGoing = True # stay in the fixed point iteration
+    
+    return n_iter, failedLoop, keepGoing
+
+def resetAndSaveData2(plantModel, perirhizalModel, s):
+    plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
+
+    # save data before entering iteration loop
+    s.saveManual()
+    perirhizalModel.saveManual()
+    perirhizalModel.leftSpellBU = perirhizalModel.leftSpell
+    perirhizalModel.enteredSpellBU = perirhizalModel.enteredSpell
+
+def resetAndSaveData3(plantModel, perirhizalModel, s):
+    s.resetManual()
+    perirhizalModel.resetManual()
+    perirhizalModel.leftSpell = perirhizalModel.leftSpellBU
+    perirhizalModel.enteredSpell = perirhizalModel.enteredSpellBU
+
+    # to get the error values for the old solution vector
+    perirhizalModel.checkMassOMoleBalance2()
+    
+    
+
+def getCumulativeTranspiration(plantModel, perirhizalModel):
+    if perirhizalModel.doPhotosynthesis:
+        plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
+        if perirhizalModel.enteredSpell and (not perirhizalModel.leftSpell):
+            plantModel.TranspirationCumul_eval += plantModel.TranspirationCumul_inner
+        elif perirhizalModel.leftSpell:
+            plantModel.TranspirationCumul_eval = 0.
+
+    else:
+        plantModel.TranspirationCumul += sum(plantModel.outputFlux)

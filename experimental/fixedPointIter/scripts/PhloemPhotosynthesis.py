@@ -10,6 +10,8 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
 from helpfull import write_file_array, write_file_float, div0, div0f
 
+import functional.van_genuchten as vg
+
 class phloemDataStorage():
     def __init__(self, PerhirizalModel, phloemModel):
         self.phloemModel = phloemModel
@@ -128,9 +130,11 @@ class phloemDataStorage():
                 print(len(airSegsId), len(self.phloemModel.k_mucil_))
                 raise Exception
 
-            try:
+            try: # currently, only have a release of carbon
                 assert min(self.Q_Exud_i_seg) >= -1e-13
                 self.Q_Exud_i_seg[np.where(self.Q_Exud_i_seg<0)] = 0.
+                assert min(self.Q_Mucil_i_seg) >= -1e-13
+                self.Q_Mucil_i_seg[np.where(self.Q_Mucil_i_seg<0)] = 0.
             except:
                 print(self.C_ST, self.phloemModel.Csoil_node, self.Q_Exud_i_seg,self.Q_Exud)
                 raise Exception
@@ -147,6 +151,57 @@ class phloemDataStorage():
         self.Q_Mucil = comm.bcast(self.Q_Mucil, root = 0) 
         self.Q_Exud_i_seg = comm.bcast(self.Q_Exud_i_seg, root = 0) 
         self.Q_Mucil_i_seg = comm.bcast(self.Q_Mucil_i_seg, root = 0) 
+        
+def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt):
+    try:                    
+        plantModel.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
+                    sxx_=fpit_Helper.rsx_input, 
+                    cells_ = False,#(i == 0),#for 1st computation, use cell data
+                    ea_ = perirhizalModel.weatherX["ea"],#not used
+                    es_=perirhizalModel.weatherX["es"],#not used
+                    verbose_ = False, doLog_ = False,
+                    TairC_= perirhizalModel.weatherX["TairC"],#not used
+                                soil_k_ = soilK, # [day-1]
+                    outputDir_= "./results/rhizoplantExud")
+        if (perirhizalModel.spellData['scenario'] == 'none') or ((perirhizalModel.spellData['scenario'] != 'baseline') and (rs_age_i_dt > perirhizalModel.spellData['spellStart']) and (rs_age_i_dt <= perirhizalModel.spellData['spellEnd'])):
+            seg_fluxes = np.array(plantModel.outputFlux)# [cm3/day] 
+        else:
+            seg_fluxes = np.full(len(np.array(plantModel.outputFlux)),0.)
+
+
+        TransRate = sum(np.array(plantModel.Ev)) #transpiration [cm3/day] 
+        if not doMinimumPrint:
+            write_file_array("fpit_Ev",np.array(plantModel.Ev),directory_ =results_dir, fileType = '.csv')
+            write_file_array("fpit_Jw",np.array(plantModel.Jw),directory_ =results_dir, fileType = '.csv')
+            write_file_array("fpit_fw",np.array(plantModel.fw),directory_ =results_dir, fileType = '.csv')#pg
+            write_file_array("fpit_pg",np.array(plantModel.pg),directory_ =results_dir, fileType = '.csv')
+            write_file_array("fpit_n_iter",np.array([ n_iter,plantModel.loop , perirhizalModel.solve_gave_up]), directory_ =results_dir, fileType = '.csv') 
+
+            write_file_array('fpit_transRate',np.array([TransRate,TransRate*dt]), directory_ =results_dir, fileType = '.csv' )
+            write_file_array("fpit_errPhoto", np.array(plantModel.maxErr) , directory_ =results_dir, fileType = '.csv') 
+            write_file_array("fpit_errPhotoAbs", np.array(plantModel.maxErrAbs) , directory_ =results_dir, fileType = '.csv') 
+            write_file_array("fpit_organTypes", organTypes, directory_ =results_dir, fileType = '.csv') 
+
+        if (plantType == "plant") and (rank == 0):
+            leavesSegs = np.where(organTypes ==4)
+            fluxes_leaves = seg_fluxes[leavesSegs]
+            if (min(plantModel.Ev) < 0) or (min(plantModel.Jw) < 0) or (min(fluxes_leaves)<-1e-15):
+                print("leaf looses water", min(plantModel.Ev),min(plantModel.Jw), min(fluxes_leaves))
+                print("seg_fluxes",seg_fluxes,"leavesSegs", leavesSegs)                
+                raise Exception
+    except:
+        plantModel.minLoop = 2
+        plantModel.maxLoop = 5
+        plantModel.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
+                    sxx_=fpit_Helper.rsx_input, 
+                    cells_ = False,#(i == 0),#for 1st computation, use cell data
+                    ea_ = perirhizalModel.weatherX["ea"],#not used
+                    es_=perirhizalModel.weatherX["es"],#not used
+                    verbose_ = True, doLog_ = True,
+                    TairC_= perirhizalModel.weatherX["TairC"],#not used
+                                soil_k_ = soilK, # [day-1]
+                    outputDir_= ".")
+        raise Exception
         
 
 def phloemParam(r,weatherInit ):
@@ -273,3 +328,91 @@ def setKrKx_phloem(r): #inC
     Perimeter_s_r3  =  numr3 *VascBundle_root *(a_ST[0][2])* 2 * np.pi
     r.setAcross_st([[Across_s_r0,Across_s_r12,Across_s_r12,Across_s_r0],[Across_s_s,Across_s_s],[Across_s_l]], False)
     return r
+
+
+def resistance2conductance(resistance,r, weatherX):
+    resistance = resistance* (1/100) #[s/m] * [m/cm] = [s/cm]
+    resistance = resistance * r.R_ph * weatherX["TairK"] / r.Patm # [s/cm] * [K] * [hPa cm3 K−1 mmol−1] * [hPa] = [s] * [cm2 mmol−1]
+    resistance = resistance * (1000) * (1/10000)# [s cm2 mmol−1] * [mmol/mol] * [m2/cm2] = [s m2 mol−1]
+    return 1/resistance
+
+def computeAtmosphereData(plantModel, perirhizalModel):
+    """
+        story for photynthesis model the data needed for computation but
+        no required as input parameter of the plantModel.solve() function
+    """
+    # atmosphereic pressure
+    plantModel.Patm = perirhizalModel.weatherX["Pair"]
+
+    ##resistances
+    plantModel.g_bl = resistance2conductance(perirhizalModel.weatherX["rbl"],
+                                             plantModel, perirhizalModel.weatherX) / plantModel.a2_bl
+    plantModel.g_canopy = resistance2conductance(perirhizalModel.weatherX["rcanopy"],
+                                                 plantModel, perirhizalModel.weatherX) / plantModel.a2_canopy
+    plantModel.g_air = resistance2conductance(perirhizalModel.weatherX["rair"],
+                                              plantModel, perirhizalModel.weatherX) / plantModel.a2_air     
+    plantModel.Qlight = perirhizalModel.weatherX["Qlight"]
+    
+def noTranspiration(perirhizalModel, rs_age_i_dt, dt):
+    """
+        do we have NO transpiration?
+        at night when doPhotosynthesis == True
+    """
+    if perirhizalModel.doPhotosynthesis:
+        return (perirhizalModel.weatherX["Qlight"] == 0.)
+    else:
+        # TODO: check. depends how transpiration is computed for root systems
+        return (sinusoidal2(rs_age_i_dt, dt) == 0)
+    
+def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt):
+    """
+        
+        do plant water flow
+        either photosynthesis or xylem flow
+        return the plant-exterior water exchange
+    """
+    s = fpit_Helper.s # soil model
+    
+    # when there is no transpiration (night time), we use the plant wat. pot.
+    # at the beginning of the time step (rsx_init). Otherwise does not converge
+    if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel) ) :
+        fpit_Helper.rsx_input = fpit_Helper.rsx_init
+    else:
+        fpit_Helper.rsx_input = fpit_Helper.rsx_old
+        
+    dist_factor =  perirhizalModel.getDeltaR() # distance between centter of perihirzal zone inner cells and root surface [cm]
+    if rank == 0:
+        soilKIn =np.divide(vg.hydraulic_conductivity(fpit_Helper.rsx_input, 
+                                                     perirhizalModel.vg_soil),
+                           dist_factor) # if water enters the root
+        soilKOut = s.vg_soil.Ksat  /dist_factor# if water leaves the root # [cm/d]  / [cm]  = day-1
+        
+        soilK = soilKIn 
+        if( len(seg_fluxes) > 0.):# and not (perirhizalModel.beforeAtNight and (perirhizalModel.weatherX["Qlight"] == 0.)):
+            soilK[np.where(seg_fluxes> 0. ) ] = soilKOut[np.where(seg_fluxes > 0. ) ]
+
+        if len(perirhizalModel.airSegs) > 0:   # infinit resistance for shoot segments and roots aboveground
+            soilK[perirhizalModel.airSegs] = np.Inf
+
+    if perirhizalModel.doPhotosynthesis:
+        if (rank == 0):
+            seg_fluxes = computePhotosynthesis(plantModel, perirhizalModel, fpit_Helper, rs_age_i_dt, soilK)
+        else:
+            seg_fluxes = None
+    else: # just xylem flow
+        if (rank == 0):
+            transpiration = plantModel.maxTranspiration *  sinusoidal2(rs_age_i_dt, dt)
+            rx = plantModel.solve(rs_age_i_dt, 
+                         -transpiration, 0., 
+                         fpit_Helper.rsx_input, cells = False, 
+                          soil_k = soilK)
+            plantModel.psiXyl = rx
+            seg_fluxes = np.array(plantModel.segFluxes(rs_age_i_dt, rx, rsx_input, 
+                                               False, False, #approx, cells
+                                               []))     
+        else :
+            plantModel.psiXyl = None
+            seg_fluxes = None
+            
+    fpit_Helper.seg_fluxes = comm.bcast(seg_fluxes,root=0)  # plant-exterior water exchanges
+    plantModel.psiXyl = comm.bcast(plantModel.psiXyl, root = 0) # plant water potential

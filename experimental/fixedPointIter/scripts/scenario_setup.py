@@ -38,8 +38,7 @@ from datetime import *
 from functional.plant_conductivities import init_conductivities
 
 from helpfull import *
-from weather import *
-from XylemFlux import *
+from weatherFunctions import *
 from PhloemPhotosynthesis import *
 
 
@@ -295,20 +294,19 @@ def setSoilParam(s):
     return s
 
 
-def create_soil_model3D( demoType,  usemoles, results_dir ,
+def create_soil_model3D( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None):
-    return create_soil_model( demoType, usemoles , results_dir,
+    return create_soil_model( usemoles , results_dir,
                         p_mean_,paramIndx ,
                      noAds , ICcc )
 
-def create_soil_model( demoType, usemoles, results_dir ,
+def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
-        soil demoType is fixed and homogeneous 
-        domain is periodic 
+        homogeneous domain 
         initial potentials are linear and mean potential is @p_mean_
         @ param: noAds: turn off adsorption?
         @param: paramIndx index of the TraiRhizo parameter set to use
@@ -403,7 +401,7 @@ def setupOther(s, p_mean_):
 
 
     
-def create_mapped_plant( mode,initSim, soil_model, fname, path, 
+def create_mapped_plant(initSim, soil_model, fname, path, 
                 stochastic = False, 
                         plantType = "plant",
                         usemoles = True, limErr1d3d = 1e-11, spellData =None):
@@ -430,8 +428,7 @@ def create_mapped_plant( mode,initSim, soil_model, fname, path,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(  mode, 
-                                 soilModel = soil_model, 
+        rs = RhizoMappedSegments(soilModel = soil_model, 
                                  usemoles=usemoles,
                                  seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d)

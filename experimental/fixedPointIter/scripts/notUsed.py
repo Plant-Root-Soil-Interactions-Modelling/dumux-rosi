@@ -80,3 +80,11 @@ def set_all_sd(rs, s):
     seed.nCs = seed.nCs * s
     seed.nzs = seed.nzs * s
     # todo seed position s
+
+    
+    
+def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
+    """ Hydraulic conductivities  kr [1/day], kx [cm3/day] """
+    r.setKr([0, kr_const, kr_const, kr_const, kr_const, kr_const])
+    r.setKx([1.e3, kx_const, kx_const, kx_const, kx_const, kx_const])
+    return r
