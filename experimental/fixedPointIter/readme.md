@@ -1,10 +1,10 @@
-# tell tobias
+# tell 
 empirical min loop number
 wehre/when might error be thrown
 
 see where time checks are
 
-currently plant-soil solute flow defined outside of iteration loop. will be different for Tobias
+currently plant-soil solute flow defined outside of iteration loop. will be different for N or P simulation
 
 9c:
 1		2	3	4	5	6	7	8		9
