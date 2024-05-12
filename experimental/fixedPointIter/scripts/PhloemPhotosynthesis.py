@@ -152,7 +152,9 @@ class phloemDataStorage():
         self.Q_Exud_i_seg = comm.bcast(self.Q_Exud_i_seg, root = 0) 
         self.Q_Mucil_i_seg = comm.bcast(self.Q_Mucil_i_seg, root = 0) 
         
-def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt):
+def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt, soilK):
+    
+    organTypes = np.asarray(plantModel.rs.organTypes, int)
     try:                    
         plantModel.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
                     sxx_=fpit_Helper.rsx_input, 
@@ -163,6 +165,7 @@ def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt):
                     TairC_= perirhizalModel.weatherX["TairC"],#not used
                                 soil_k_ = soilK, # [day-1]
                     outputDir_= "./results/rhizoplantExud")
+        
         if (perirhizalModel.spellData['scenario'] == 'none') or ((perirhizalModel.spellData['scenario'] != 'baseline') and (rs_age_i_dt > perirhizalModel.spellData['spellStart']) and (rs_age_i_dt <= perirhizalModel.spellData['spellEnd'])):
             seg_fluxes = np.array(plantModel.outputFlux)# [cm3/day] 
         else:
@@ -170,7 +173,7 @@ def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt):
 
 
         TransRate = sum(np.array(plantModel.Ev)) #transpiration [cm3/day] 
-        if not doMinimumPrint:
+        if not perirhizalModel.doMinimumPrint:
             write_file_array("fpit_Ev",np.array(plantModel.Ev),directory_ =results_dir, fileType = '.csv')
             write_file_array("fpit_Jw",np.array(plantModel.Jw),directory_ =results_dir, fileType = '.csv')
             write_file_array("fpit_fw",np.array(plantModel.fw),directory_ =results_dir, fileType = '.csv')#pg
@@ -182,7 +185,7 @@ def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt):
             write_file_array("fpit_errPhotoAbs", np.array(plantModel.maxErrAbs) , directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_organTypes", organTypes, directory_ =results_dir, fileType = '.csv') 
 
-        if (plantType == "plant") and (rank == 0):
+        if perirhizalModel.doPhotosynthesis and (rank == 0):
             leavesSegs = np.where(organTypes ==4)
             fluxes_leaves = seg_fluxes[leavesSegs]
             if (min(plantModel.Ev) < 0) or (min(plantModel.Jw) < 0) or (min(fluxes_leaves)<-1e-15):
@@ -202,6 +205,8 @@ def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt):
                                 soil_k_ = soilK, # [day-1]
                     outputDir_= ".")
         raise Exception
+        
+    return seg_fluxes
         
 
 def phloemParam(r,weatherInit ):
@@ -372,10 +377,10 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
         return the plant-exterior water exchange
     """
     s = fpit_Helper.s # soil model
-    
+    seg_fluxes = fpit_Helper.seg_fluxes
     # when there is no transpiration (night time), we use the plant wat. pot.
     # at the beginning of the time step (rsx_init). Otherwise does not converge
-    if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel) ) :
+    if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel, rs_age_i_dt, dt) ) :
         fpit_Helper.rsx_input = fpit_Helper.rsx_init
     else:
         fpit_Helper.rsx_input = fpit_Helper.rsx_old
@@ -407,7 +412,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                          fpit_Helper.rsx_input, cells = False, 
                           soil_k = soilK)
             plantModel.psiXyl = rx
-            seg_fluxes = np.array(plantModel.segFluxes(rs_age_i_dt, rx, rsx_input, 
+            seg_fluxes = np.array(plantModel.segFluxes(rs_age_i_dt, rx, fpit_Helper.rsx_input, 
                                                False, False, #approx, cells
                                                []))     
         else :

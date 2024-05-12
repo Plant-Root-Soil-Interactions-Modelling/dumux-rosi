@@ -123,7 +123,7 @@ def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
                     plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
                      directory_ = results_dir)
 
-    n_iter_min = 1 # empirical minimum number of loop to reduce error
+    n_iter_min = 4 # empirical minimum number of loop to reduce error
     cL = ((np.floor(rs.err) > rs.max_err) or  rs.solve_gave_up or failedLoop
             or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
             or (np.floor(rs.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 

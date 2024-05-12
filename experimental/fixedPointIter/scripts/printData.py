@@ -11,6 +11,7 @@ import timeit
 
 from air_modelsPlant import AirSegment
 from helpfull import write_file_array, write_file_float, div0, div0f
+import vtk_plot_adapted as vp
 
 def initialPrint(plant):
     """ put headings on files which will be filled later """
@@ -165,8 +166,8 @@ def printPhloemFlowOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel
     write_file_float("Q_Mucil_i", sum(phloemDataStorage.Q_Mucil_i_seg), directory_ =results_dir)
     write_file_float("Q_Exud", phloemDataStorage.Q_Exud, directory_ =results_dir)
     write_file_float("Q_Mucil", phloemDataStorage.Q_Mucil, directory_ =results_dir)
-    write_file_float("Q_Exud_tot", phloemDataStorage.Q_Exud_inflate, directory_ =results_dir)
-    write_file_float("Q_Mucil_tot", phloemDataStorage.Q_Mucil_inflate, directory_ =results_dir)
+    write_file_float("Q_Exud_tot", phloemDataStorage.Q_Exud_cumul, directory_ =results_dir)
+    write_file_float("Q_Mucil_tot", phloemDataStorage.Q_Mucil_cumul, directory_ =results_dir)
     
     write_file_float("Q_Ag", phloemDataStorage.Q_in, directory_ =results_dir)
     write_file_array("psiXyl", plantModel.psiXyl, directory_ =results_dir)
@@ -264,6 +265,7 @@ def doVTPplots(perirhizalModel, s, soilTextureAndShape):
         interface
     """
     results_dir = perirhizalModel.results_dir
+    cell_volumes = s.getCellVolumes()
     # otherwise the shoot looks weird
     periodic = False
     
@@ -271,10 +273,11 @@ def doVTPplots(perirhizalModel, s, soilTextureAndShape):
     extraArray_ = perirhizalModel.soilModel.getWaterContent()
     extraArrayName_ = "theta (cm3/cm3)"
     
-    rp = perirhizalModel.get_concentration(0, konz)
+    getConcentration = True # True: get concentration, False: get content
+    rsi_Conce = perirhizalModel.get_concentration(0, getConcentration)
     
-    # TODO: adapt to have plot_plants_and soil
-    vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),extraArrayName_,rp, s, periodic, 
+    # TODO: adapt to have plot_plants_and_soil (i.e., with leaf surface)
+    vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
                            soilTextureAndShape['min_b'],
                            soilTextureAndShape['max_b'],
                            soilTextureAndShape['cell_number'], 
@@ -286,7 +289,7 @@ def doVTPplots(perirhizalModel, s, soilTextureAndShape):
         print("idcomp", i, rank)
         extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6
 
-        if not konz:
+        if not getConcentration:
             extraArrayName_ = "C"+str(i)+" mol"
         else:
             extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
@@ -298,7 +301,7 @@ def doVTPplots(perirhizalModel, s, soilTextureAndShape):
 
         vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),
                                extraArrayName_ ,
-                               perirhizalModel.get_concentration(i , konz), s, 
+                               perirhizalModel.get_concentration(i , getConcentration), s, 
                                periodic,
                            soilTextureAndShape['min_b'],
                            soilTextureAndShape['max_b'],
@@ -345,6 +348,7 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper):
     """
         TODO: fix name objects
     """
+    results_dir = perirhizalModel.results_dir
     write_file_array("inner_error", perirhizalModel.errs, directory_ =results_dir, fileType = '.csv') 
     if False:# (not doMinimumPrint): this part still needs to be updated
         write_file_array("fpit_errbulkMass",
