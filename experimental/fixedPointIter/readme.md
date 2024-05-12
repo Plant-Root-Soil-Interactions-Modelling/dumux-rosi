@@ -20,7 +20,7 @@ We get therefore up 9 components. The full model is called "10c" as we count the
 
 # launch a simulation
 A simulation can be launch by going in the scripts folder and running:
-python3 XcGrowth.py <startSim> <endSim>
+`python3 XcGrowth.py startSim endSim`
 in top of the XcGrowth::XcGrowth() function are other simulation parameters. e.g., doPhotosynthesis.
 # remarks 
 - 'cyl' = 'cylinders' = '1d models' = perirhizal zone around the root
