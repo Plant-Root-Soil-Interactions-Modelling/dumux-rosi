@@ -32,6 +32,7 @@ soil and the 1d models
 - we set an empirical minimum number of loops (4). During our simulation, we usually saw a significant
 decrease of the errors during the first 4 loops. Might need to adapt that for another setup
 - currently plant-soil solute flow defined outside of iteration loop. will be different for N or P simulation
+- - it works with the CPB master branch
 
 
 # TODOs
