@@ -23,8 +23,8 @@ class phloemDataStorage():
         self.Q_Exudbu    = np.zeros(self.Nt)
         self.Q_Mucilbu   = np.zeros(self.Nt)
         self.Q_in  = 0
-        self.Q_Exud_inflate = 0.; 
-        self.Q_Mucil_inflate = 0.
+        self.Q_Exud_cumul = 0.; 
+        self.Q_Mucil_cumul = 0.
         self.Q_Exud_i = None
         self.Q_Exud_i_seg = np.array([]); 
         self.Q_Mucil_i_seg = np.array([])  

@@ -14,25 +14,28 @@ from helpfull import write_file_array, write_file_float, div0, div0f
 
 def initialPrint(plant):
     """ put headings on files which will be filled later """
-    errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errC1ds", "errC3ds",
-                     "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(abs(r.OutLim1DS))",
-                     "max(abs(r.InOutBC_Cdiff))",
-                     "max(r.maxDiff1d3dCW_abs)",
-                     "errWrsi",
-                     "bulkMassErrorWater_abs","bulkMassErrorWater_absLim",
-                     "rhizoMassWError_absLim","rhizoMassWError_abs",
-                     "bulkMassErrorC_abs","bulkMassCErrorPlant",
-                     "rhizoMassCError_absLim","rhizoMassCError_abs",
-                     "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))",
-                     "sum(abs(diffouter_R_bc_wat))",
-                     "sum(abs(diffBCS1dsFluxOut_sol))",
-                     "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
-                     "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel",'err'])
-    write_file_array("OuterSuccess_error", errs, directory_ =plant.results_dir, fileType = '.csv')
+    columnNames = np.array([# convergence metrics
+                "errRxPlant","errW1ds","errW3ds","errC1ds","errC3ds","errWrsi",
+                "errBCS1dsFluxIn","errBCS1dsFluxOut","errBCS1dsFluxOut_sol","errBCS1dsFluxOut_mucil",
+                "errOuter_R_bc_wat","errOuter_R_bc_sol",
+                # realised vs prescribed fluxes and sinks
+                "SinkLim3DS",
+                "SinkLim1DS","OutLim1DS",
+                "OutBCsol_diff","OutBCmucil_diff","InBCsol_diff","InBC_mucildiff",
+                # 1d-3d differences/errors
+                "sumDiff1d3dCW_abs","diff1d3dCurrant","diff1d3dCurrant_rel",
+                "maxDiff1d3dCW_abs","maxdiff1d3dCurrant","maxdiff1d3dCurrant_rel",
+                # mass balance error 3d model
+                "bulkMassErrorWater_abs","bulkMassErrorWater_rel",
+                "bulkMassCErrorPlant_abs","bulkMassCError1ds_abs",
+                "bulkMassCErrorPlant_rel","bulkMassCError1ds_rel",
+                # mass balance error 1d models
+                "rhizoMassWError_relLim","rhizoMassCError_relLim",
+                "rhizoMassWError_rel","rhizoMassCError_rel",
+                # summary metric
+                "err"])
+    write_file_array("inner_error", columnNames, directory_ =plant.results_dir, fileType = '.csv')
     
-    if not plant.doMinimumPrint:# print data during fixed-point iteration?
-        write_file_array("N_error", errs, directory_ =plant.results_dir, fileType = '.csv')
-        write_file_array("fpit_error", errs, directory_ =plant.results_dir, fileType = '.csv') 
         
 def printPlantShape(rs,r):
     """ store plant shape data after doing growth simulation"""
@@ -108,6 +111,9 @@ def printDiff1d3d(perirhizalModel, s):
 
             
 def printTimeAndError(rs, rs_age):
+    """
+        get sum of the (resp. max) error/difference between 1d and 3d model for each element (water + solutes)
+    """
     results_dir = rs.results_dir
     write_file_array("time", np.array([rs_age,0.]), directory_ =results_dir)
     write_file_array("sumErrors1ds3ds", np.concatenate((rs.sumDiff1d3dCW_abs, rs.sumDiff1d3dCW_rel)), directory_ =results_dir, fileType = '.csv')
@@ -211,25 +217,25 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
         define and save other error rates
     """
     results_dir = perirhizalModel.results_dir
-    write_file_array("OuterSuccess_error", perirhizalModel.errs, 
+    write_file_array("endFpitLoop_error", perirhizalModel.errs, 
                      directory_ =results_dir, fileType = '.csv') 
-    write_file_array("OuterSuccess_data", 
+    write_file_array("endFpitLoop_data", 
                      np.array([perirhizalModel.n_iter, perirhizalModel.err, 
                                perirhizalModel.rhizoMassWError_abs,
                                perirhizalModel.dt_inner]), 
                      directory_ =results_dir, fileType = '.csv')
 
-    buTotCAfter = sum(s.getTotCContent())   #0 get stuck here
+    totC3dAfter = sum(s.getTotCContent())  
 
-    buWAfter = sum(np.multiply(np.array(s.getWaterContent()), s.getCellVolumes()))    
+    soil_water3dAfter = sum(np.multiply(np.array(s.getWaterContent()), s.getCellVolumes()))    
 
     if rank == 0:
         if perirhizalModel.doSoluteFlow:
-            s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( s.buTotCSoilInit + 
-                                        phloemData.Q_Exud_inflate + 
-                                        phloemData.Q_Mucil_inflate)))
-            if buTotCAfter != 0:
-                s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
+            s.bulkMassErrorCumul_abs = abs((totC3dAfter - ( s.totC3dInit + 
+                                        phloemData.Q_Exud + 
+                                        phloemData.Q_Mucil)))
+            if totC3dAfter != 0:
+                s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/totC3dAfter*100)
             else:
                 s.bulkMassErrorCumul_rel =np.nan
         else:
@@ -237,8 +243,8 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
             s.bulkMassErrorCumul_rel =np.nan
         # if we have a free flow BC at the bottom, that could increase the error
         # ideally, I should add the flow at the bellow BC here
-        s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( s.buWSoilInit - plantModel.TranspirationCumul_eval))
-        s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
+        s.bulkMassErrorWaterCumul_abs = abs(soil_water3dAfter - ( s.buWSoilInit - plantModel.TranspirationCumul_eval))
+        s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/soil_water3dAfter*100)
     else:
         s.bulkMassErrorCumul_abs = None
         s.bulkMassErrorCumul_rel = None
@@ -247,14 +253,10 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
 
     if perirhizalModel.doSoluteFlow:
         #absolute and relative (%) error
-        write_file_array("errorsBulkSoil", np.array([s.bulkMassCErrorPlant_abs, s.bulkMassCErrorPlant_rel, #not cumulative 
-                                            s.bulkMassCError1ds_abs, s.bulkMassCError1ds_rel, 
+        write_file_array("errorsBulkSoilCumulative", np.array([
                                             s.bulkMassErrorCumul_abs,s.bulkMassErrorCumul_rel,#cumulative
-                                            s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel, #not cumulative
                                             s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]),
                          directory_ =results_dir, fileType = '.csv')#cumulative
-        write_file_array("errorMassRhizo", np.array([perirhizalModel.rhizoMassCError_abs, perirhizalModel.rhizoMassCError_rel,
-                                                    perirhizalModel.rhizoMassWError_abs, perirhizalModel.rhizoMassWError_rel]), directory_ =results_dir)# not cumulativecumulative (?)
 
 
 def doVTPplots(perirhizalModel, s, soilTextureAndShape):
@@ -340,8 +342,11 @@ def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc
     
     
 def printFPitData(perirhizalModel, s, plantModel, fpit_Helper):
+    """
+        TODO: fix name objects
+    """
     write_file_array("inner_error", perirhizalModel.errs, directory_ =results_dir, fileType = '.csv') 
-    if  (not doMinimumPrint):
+    if False:# (not doMinimumPrint): this part still needs to be updated
         write_file_array("fpit_errbulkMass",
                          np.array([s.bulkMassCErrorPlant_abs,
                                    s.bulkMassCErrorPlant_rel, #not cumulative

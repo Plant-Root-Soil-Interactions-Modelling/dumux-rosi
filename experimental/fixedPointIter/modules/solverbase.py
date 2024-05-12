@@ -72,6 +72,26 @@ class SolverWrapper():
         """Get the number of disolved solutes."""
         return self.base.numFluidComp() - 1
         
+    def setMaxTimeStepSize(self, maxDt):
+        """
+            change the maximum inner time step which can be tested by dumux
+        """
+        self.base.setMaxTimeStepSize(maxDt)
+        
+    def createLinearSolver():
+        """
+            manually (re)create nonlinear solver. 
+            useful to implement new solver parameters
+        """
+        self.base.createLinearSolver()
+    
+    def createNewtonSolver():
+        """
+            manually (re)create nonlinear solver. 
+            useful to implement new solver parameters
+        """
+        self.base.createNewtonSolver()
+        
     def save(self):
         """ 
             saves the current value of the solution vector.

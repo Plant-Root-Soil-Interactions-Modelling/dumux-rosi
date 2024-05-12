@@ -28,7 +28,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                    Q_plant,
                     perirhizalModel = [],
                     outer_R_bc_sol=[], #mol
-                    outer_R_bc_wat = [], 
+                    outer_R_bc_wat = [], # cm3 water
                    seg_fluxes=[],
                    plantType = "plant",
                    doMinimumPrint=True):
@@ -47,7 +47,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     computed at last time fixed-point iteration (first guess for new loop):
         outer_R_bc_sol: inter-cell flow of solutes in 3d soil
         outer_R_bc_wat: inter-cell flow of water in 3d soil
-        seg_fluxes: plant-soil water exchanges (to compute krs)
+        seg_fluxes: plant-soil water exchanges (used to compute soil kr)
     plantType: "plant" or root system ("RS")
     doMinimumPrint: print extra information to file? (for debugging)
     """
@@ -76,22 +76,22 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     ###              flow, 1st guess for iteration loop
     ######
     # get root exudation and mucilage release
-    Q_Exud = Q_plant[0].copy(); Q_mucil = Q_plant[1].copy() #mol/day    
-    if len(Q_Exud) > 0: # resize vector if needed
-        Q_Exud.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
-        Q_mucil.resize(len(organTypes), refcheck=False)
+    Q_Exud_i = Q_plant[0].copy(); Q_mucil_i = Q_plant[1].copy() #mol  
+    if len(Q_Exud_i) > 0: # resize vector if needed
+        Q_Exud_i.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
+        Q_mucil_i.resize(len(organTypes), refcheck=False)
         try:
             # make sure that no exudation in shoot segments or roots aboveground
-            assert (Q_Exud[airSegsId] == 0).all()
-            assert (Q_mucil[airSegsId] == 0).all()
+            assert (Q_Exud_i[airSegsId] == 0).all()
+            assert (Q_mucil_i[airSegsId] == 0).all()
         except:
-            print(Q_Exud[airSegsId] )
-            print(Q_mucil[airSegsId])
+            print(Q_Exud_i[airSegsId] )
+            print(Q_mucil_i[airSegsId])
             print(organTypes[airSegsId])
             raise Exception
     else:# first loop: create array of 0
-        Q_Exud = np.full(len(organTypes),0.)
-        Q_mucil = np.full(len(organTypes),0.)
+        Q_Exud_i = np.full(len(organTypes),0.)
+        Q_mucil_i = np.full(len(organTypes),0.)
 
     # first loop: create array of 0
     if(len(outer_R_bc_sol[0]) == 0):
@@ -125,7 +125,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         ####
         # simple class to store fixed-point iteration data and some usefull functions
         fpit_Helper = fixedPointIterationHelper(s, perirhizalModel, plantModel, outer_R_bc_wat, 
-                                                outer_R_bc_sol, cylVol, Q_Exud, Q_mucil, dt, emptyCells)
+                                                outer_R_bc_sol, cylVol, Q_Exud_i, Q_mucil_i, dt, emptyCells)
         
             
         
@@ -233,7 +233,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             #######
             #
-            # 1d1dFlow
+            # 1d1dFlow (do after the reset of the soil data)
             #
             #######
             
@@ -241,7 +241,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                 fpit_Helper.do1d1dFlow()
             
             ##
-            # 3.2 adapt and set sources
+            # 3.2 adapt and set sources for 3d soil using data from 1d models
             # TODO: take into account BC != 0 (rain, evaporation)
             ##          
             
@@ -281,7 +281,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # 3.5.A get 1DS outer BC (from limited-flux: used at next iteration)
             ##
             
-            # get flux and source data directly from dumux
+            # get flux and source data directly from dumux. 
+            # TODO: do the same to get directly change rate of 1d model
             outer_R_bc = -s.getFlux_10c() 
             bulkSoil_sources = s.getSource_10c()
             
@@ -306,7 +307,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             fpit_Helper.computeConvergence() # evaluate convergence and get other error metrics
             
-            
+            # print extra data for troubleshooting
+            # TODO: finish adapting the name of the objects to print
             printData.printFPitData()
             
             
