@@ -494,6 +494,42 @@ public:
     void solveNoMPI(double dt, bool saveInnerDumuxValues = false) {
 		solve(dt, false, saveInnerDumuxValues);
     }
+	
+	
+    /**
+	 * Change the maximum step size of the time loop
+     */
+	void setMaxTimeStepSize(double maxDt)
+	{
+        checkGridInitialized();
+		if(maxDt > 0.)
+		{
+			timeLoop->setMaxTimeStepSize(maxDt);
+		}
+	}
+	
+    /**
+	 * manually (re)create linear solver. 
+	 * useful to implement new solver parameters
+     */
+	void createLinearSolver()
+	{
+		linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+	}
+	
+    /**
+	 * manually (re)create nonlinear solver. 
+	 * useful to implement new solver parameters
+     */
+	void createNewtonSolver()
+	{
+		// also reset assembler?
+        nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        nonLinearSolver->setVerbosity(false);
+        nonLinearSolverNoMPI = std::make_shared<NonLinearSolverNoMPI>(assembler, linearSolver,
+								Dune::FakeMPIHelper::getCommunication());
+        nonLinearSolverNoMPI->setVerbosity(false);
+	}
 
     /**
      * Finds the steady state of the problem.
@@ -1122,6 +1158,9 @@ void init_solverbase(py::module &m, std::string name) {
             .def("setParameter", &Solver::setParameter)
             .def("getParameter", &Solver::getParameter)
             .def("printParams", &Solver::printParams)
+			.def("setMaxTimeStepSize",&Solver::setMaxTimeStepSize)
+			.def("createLinearSolver",&Solver::createLinearSolver)
+			.def("createNewtonSolver",&Solver::createNewtonSolver)
             .def("initializeProblem", &Solver::initializeProblem, py::arg("maxDt") = -1)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
 			.def("reset", &Solver::reset)

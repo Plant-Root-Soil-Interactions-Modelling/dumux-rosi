@@ -147,7 +147,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
-    s.buTotCSoilInit = sum(s.getTotCContent()) # mol
+    s.totC3dInit = sum(s.getTotCContent()) # mol
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
 
     # to get time spent in each part of the code. TODO: currently, does not work well
@@ -201,8 +201,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
         if perirhizalModel.doPhloemFlow:
             # go from current to cumulative exudation and mucilage release
-            phloemData.Q_Exud_inflate += sum(phloemData.Q_Exud_i_seg); 
-            phloemData.Q_Mucil_inflate += sum(phloemData.Q_Mucil_i_seg)
+            phloemData.Q_Exud_cumul += sum(phloemData.Q_Exud_i_seg); 
+            phloemData.Q_Mucil_cumul += sum(phloemData.Q_Mucil_i_seg)
 
         perirhizalModel.n_iter, failedLoop, keepGoing = helpfull.resetAndSaveData1(perirhizalModel)
         
@@ -300,7 +300,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
 if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the solving object.
     # python3 XcGrowth.py 9 10 0 customDry 9.02 0.02
-    # python3 XcGrowth.py 9 10 1640 lateDry
+    # python3 XcGrowth.py 9 10 20 lateDry
     # python3 XcGrowth.py 12 25 98 baseline
     # python3 XcGrowth.py 9 10 0 none 
     
