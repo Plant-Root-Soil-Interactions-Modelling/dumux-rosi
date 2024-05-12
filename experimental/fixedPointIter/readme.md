@@ -39,7 +39,6 @@ decrease of the errors during the first 4 loops. Might need to adapt that for an
 - check/adapt the file to make it work for growing root systems
 - implement solute uptake (N or P)
 - add unit information
-- test for a small simulation of 1h to see if vtp plot works
 - separate phloem and plant water flow in different files, adapt transpiration
 - make messages print to consol more readable
 - mute dumux printing when creating 1d models
