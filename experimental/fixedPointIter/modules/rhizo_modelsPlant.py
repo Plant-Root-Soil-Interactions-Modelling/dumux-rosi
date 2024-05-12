@@ -2330,7 +2330,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                             if n_iter_solve == 0:
                                 cyl.setParameter("Newton.MaxSteps", "200")
                                 cyl.setParameter("Newton.MaxTimeStepDivisions", "100")
-                                cyl.reset();didReset = True
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
                             elif n_iter_solve == 1:
                                 print(rank,
                                       'soil.solve() failed. making the computation more precise')
@@ -2338,7 +2340,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
                                 cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
                                 cyl.setParameter("Newton.MaxRelativeShift", str(self.soilModel.MaxRelativeShift/10.))# 
-                                cyl.reset();didReset = True
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
                             elif (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.): #
                                 cyl.reset();didReset = True # do reset before re.-distributing the sink
                                 if (n_iter_solve < 20):  
@@ -2407,7 +2411,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 maxRelShift *= 10.
                                 # newton parameters are re-read at each 'solve()' calls
                                 cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                                cyl.reset();didReset = True
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
                             else:
                                 if True:#verbose:
                                     print(rank,
@@ -2422,7 +2428,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                              str(self.soilModel.MaxRelativeShift))
                                 redoSolve = False
                                 self.solve_gave_up = True
-                                cyl.reset();didReset = True
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
                             
                             
                             assert didReset
@@ -2756,7 +2764,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 if verbose:
                                     print('get preassuree head',seg_values_root,self.vg_soil.theta_S,self.vg_soil.theta_R)
                                 seg_values_root = np.array([ vg.pressure_head(svr, self.vg_soil) for svr in seg_values_root])
-                                seg_values_root = seg_values_root - min(seg_values_root) +1e-14
+                                seg_values_root = seg_values_root  - min(seg_values_root) - np.mean(seg_values_root)+1e-14
                             weightVals = np.full(len(segIds), 0.)
 
                             if (ots != 2).any():

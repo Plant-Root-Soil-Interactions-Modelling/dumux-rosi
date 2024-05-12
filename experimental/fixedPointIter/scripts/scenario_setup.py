@@ -6,13 +6,14 @@ import sys;
 sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../modules/");
 sys.path.append("/data");
-sys.path.append("../../../CPlantBox/src/python_modules");
-sys.path.append("../../../CPlantBox/src/functional/");
-sys.path.append("../../../CPlantBox/src/rsml/");
-sys.path.append("../../../CPlantBox/src/visualisation/")
-sys.path.append("../../../CPlantBox/src/structural/")
-sys.path.append("../../../CPlantBox/src/external/")
-sys.path.append("../../../CPlantBox/");
+# sys.path.append("../../../CPlantBox/src/python_modules");
+# sys.path.append("../../../CPlantBox/src/functional/");
+# sys.path.append("../../../CPlantBox/src/rsml/");
+# sys.path.append("../../../CPlantBox/src/visualisation/")
+# sys.path.append("../../../CPlantBox/src/structural/")
+# sys.path.append("../../../CPlantBox/src/external/")
+# sys.path.append("../../../CPlantBox/");
+sys.path.append("../../../../CPlantBox/modelparameter/functional/plant_hydraulics");
 
 import numpy as np
 import pandas as pd
@@ -35,7 +36,7 @@ import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
 from functional.xylem_flux import *
 from datetime import *
-from functional.plant_conductivities import init_conductivities
+from wheat_Giraud2023adapted import setKrKx_xylem as init_conductivities
 
 from helpfull import *
 from weatherFunctions import *
@@ -458,7 +459,7 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     
     # set kr and kx for root system or plant
     if plantType == "plant":    
-        r = init_conductivities(r)
+        r = init_conductivities(TairC = 20, RH = 0.4, r = r)
         r = phloemParam(r, weatherInit)
         rs.set_phloem_flux(r)
         return rs, r

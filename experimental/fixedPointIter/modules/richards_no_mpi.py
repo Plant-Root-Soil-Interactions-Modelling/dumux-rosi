@@ -288,8 +288,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         if source != 0.:# [cm3/day] or [mol/day]
             if selectCell == None:
                 if eqIdx == 0:
-                    seg_values_ = self.getSolutionHead()#self.getWaterVolumes()#getWaterVolumesCyl(length)
-                    seg_values = seg_values_ - min(seg_values_) +1e-14
+                    seg_values_ = self.getSolutionHead()
+                    seg_values = seg_values_ - min(seg_values_)- np.mean(seg_values_) +1e-14
                 else:
                     isDissolved = (eqIdx <= numDissolvedSoluteComp)
                     seg_values = self.getContentCyl(eqIdx, isDissolved)

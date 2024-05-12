@@ -13,7 +13,7 @@ sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
 import plantbox as pb  # CPlantBox
-import visualisation.vtk_plot as vp
+import vtk_plot_adapted as vp
 import scenario_setup
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
@@ -63,7 +63,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = scenario_setup.weather(1., spellData)
        
     # directory where the results will be printed
-    results_dir="./results/newMucil4p/"+str(spellData['scenario'])\
+    results_dir="./results/ongoingCleanUp/"+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -310,17 +310,17 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
     initsim =float(sys.argv[1])
     
     simMax = initsim + 3.
-    if len(sys.argv)>3:
+    if len(sys.argv)>2:
         simMax = float(sys.argv[2])
     paramIndx_base = 0
-    if len(sys.argv)>4:
+    if len(sys.argv)>3:
         paramIndx_base = int(sys.argv[3])
         
     
     doProfile = False
     
-    scenario = "baseline"
-    if len(sys.argv)>5:
+    scenario = "none"
+    if len(sys.argv)>4:
         scenario = sys.argv[4]
     
     if scenario == "none":

@@ -11,6 +11,8 @@ sys.path.append("../../../CPlantBox/src/visualisation/")
 sys.path.append("../../../CPlantBox/src/structural/")
 sys.path.append("../../../CPlantBox/src/external/")
 sys.path.append("../../../CPlantBox/");
+sys.path.append("../../../CPlantBox/modelparameter/functional/plant_hydraulics");
+
 
 import numpy as np
 import pandas as pd
@@ -35,7 +37,7 @@ import van_genuchten as vg
 #import evapotranspiration as evap
 from functional.xylem_flux import *
 from datetime import *
-from functional.plant_conductivities import init_conductivities
+from plant_conductivities import setKrKx_xylem as init_conductivities
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -886,7 +888,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
     # print('seedval at rank',rank,  rs.getSeedVal())
     # if rank == 0:
     if plantType == "plant":    
-        r = init_conductivities(r)
+        r = init_conductivities(TairC = 20, RH = 0.4, r = r)
         r = phloemParam(r, weatherInit)
         rs.set_phloem_flux(r)
         #r.test()
