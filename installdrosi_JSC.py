@@ -12,13 +12,13 @@ import subprocess
 
 
 def show_message(message):
-    print("*" * 80) 
+    print("*" * 120) 
     print(message)
-    print("*" * 80)
+    print("*" * 120)
 
 
 def run_command(command):
-    with open("../installdumux.log", "a") as log:
+    with open("../installDumuxRosi.log", "a") as log:
         popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         for line in popen.stdout:
             log.write(line)
@@ -46,9 +46,22 @@ def git_clone(url, branch=None):
 
 
 # clear the log file
-open('installdumux.log', 'w').close()
+open('installdumux_JSC.log', 'w').close()
 
 show_message("TO USE ONLY ON THE JÜLICH SUPERCOMPUTER \nDo not forget to check for loaded modules and environments")
+show_message("""
+run the following commands in the terminal:
+module --force purge
+module load Stages/2023
+module load GCC
+module load ParaStationMPI
+module load Python 
+module load OpenCV
+module load CMake
+module load SciPy-Stack
+module load VTK
+
+""")
 
 #################################################################
 #################################################################
@@ -102,73 +115,27 @@ show_message("(1/3) Step completed. All prerequistes found.")
 ## (2/3) Clone modules
 #################################################################
 #################################################################
-# make a new folder containing everything
-os.makedirs("./DUMUX", exist_ok=True)
-os.chdir("DUMUX")
 
-show_message("(2/3) Cloning repositories. This may take a while. Make sure to be connected to the internet...")
+url= 'https://raw.githubusercontent.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi/master/installdumux.py'
+subprocess.run(["wget", url, "-P", "."], check=True)
 
-dune_version=2.7
-dumux_version=3.0
-# the core modules
-for module in ['common', 'geometry', 'grid', 'localfunctions', 'istl' ]:
-    if not os.path.exists("dune-{}".format(module)):
-        git_clone('https://gitlab.dune-project.org/core/dune-{}.git'.format(module), "releases/{}".format(dune_version))
-    else:
-        print("-- Skip cloning dune-{} because the folder already exists.".format(module))
-        
+subprocess.run(["python3","installdumux.py"], check=True)
 
-# the extensions
-for module in ['foamgrid','grid-glue', 'alugrid', 'spgrid' ]:
-    if not os.path.exists("dune-{}".format(module)):
-        git_clone('https://gitlab.dune-project.org/extensions/dune-{}.git'.format(module), "releases/{}".format(dune_version))
-    else:
-        print("-- Skip cloning dune-{} because the folder already exists.".format(module))
-    
-# staging    
-for module in ['uggrid' ]:
-    if not os.path.exists("dune-{}".format(module)):
-        git_clone('https://gitlab.dune-project.org/staging/dune-{}.git'.format(module), "releases/{}".format(dune_version))
-    else:
-        print("-- Skip cloning dune-{} because the folder already exists.".format(module))
+os.chdir("./dumux")
 
-# pybind
-for module in ['pybindxi' ]:
-    if not os.path.exists("dune-{}".format(module)):
-        git_clone('https://github.com/dune-community/dune-{}.git'.format(module), branch = 'master')
-    else:
-        print("-- Skip cloning dune-{} because the folder already exists.".format(module))
-
-# dumux and course
-if not os.path.exists("dumux"):
-    git_clone('https://git.iws.uni-stuttgart.de/dumux-repositories/dumux.git', "releases/{}".format(dumux_version))
-else:
-    print("-- Skip cloning dumux because the folder already exists.")
-
-#if not os.path.exists("dumux-course"):
-#    git_clone('https://git.iws.uni-stuttgart.de/dumux-repositories/dumux-course.git', "releases/{}".format(dumux_version))
-#else:
- #   print("-- Skip cloning dumux-course because the folder already exists.")
-
+subprocess.run(["python3","dumux/bin/installexternal.py","ug","spgrid","foamgrid"], check=True)
 
 # dumux-rosi
 if not os.path.exists("dumux-rosi"):
-    git_clone('https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi.git', branch = 'master')
+    subprocess.run(['git', 'clone', '--depth','1', '-b', 'master', 'https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi.git'])
 else:
     print("-- Skip cloning dumux-rosi because the folder already exists.")
 
 # CPlantBox
 if not os.path.exists("CPlantBox"):
-    git_clone('https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox.git', branch = 'master')
-    os.chdir("CPlantBox")
-    subprocess.run(['cmake', '.']) 
-    subprocess.run(['make']) 
-    os.chdir("..")
+    subprocess.run(['git', 'clone', '--depth','1', '-b', 'master', 'https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox.git'])
 else:
     print("-- Skip cloning CPlantBox because the folder already exists.")
-
-
-show_message("(2/3) Step completed. All repositories have been cloned into a containing folder.")
 
 #################################################################
 #################################################################
@@ -177,24 +144,19 @@ show_message("(2/3) Step completed. All repositories have been cloned into a con
 #################################################################
 show_message("(3/3) Configure and build dune modules and dumux using dunecontrol. This may take several minutes...")
 
+os.chdir("CPlantBox")
 
-#copy cplantbox so file to dumux-rosi folder
-for f_name in os.listdir("CPlantBox"):
-    if f_name.startswith('plantbox.cpython') and f_name.endswith('.so'):
-        shutil.copyfile("CPlantBox/{0}".format(f_name), "dumux-rosi/{0}".format(f_name))
-    
+
+subprocess.run(['git', 'submodule', 'update',  '--recursive', '--init'])
+subprocess.run(['cmake', '.']) 
+subprocess.run(['make'])  
+os.chdir("..")
 
 # run dunecontrol
-if not os.path.isfile("cmake.opts"):
-    shutil.move("dumux/cmake.opts", "cmake.opts")
-else:
-    print("-- The file cmake.opts already exists. The existing file will be used to configure dumux.")
+subprocess.run(["./dune-common/bin/dunecontrol", "--opts=dumux-rosi/cmake.opts", "all"])
+
+print("(3/3) Step completed. Succesfully configured and built CPlantBox, dune and dumux.")
 
 
-subprocess.check_output(["./dune-common/bin/dunecontrol", "--opts=cmake.opts", "all"])
-#./dune-common/bin/dunecontrol --opts=cmake.opts all
-show_message("(3/3) Step completed. Succesfully configured and built CPlantBox, dune and dumux.")
-
-
-show_message("to test installation, run n\ cd DUMUX/dumux-rosi/python/coupled \n python3 example7b_coupling.py")
+print("to test installation, run n\ cd dumux/dumux-rosi/python/coupled \n python3 example7b_coupling.py")
  
