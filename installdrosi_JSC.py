@@ -52,7 +52,7 @@ show_message("TO USE ONLY ON THE JÜLICH SUPERCOMPUTER \nDo not forget to check 
 show_message("""
 run the following commands in the terminal:
 module --force purge
-module load Stages/2023
+module load Stages/2024
 module load GCC
 module load ParaStationMPI
 module load Python 
@@ -158,5 +158,5 @@ subprocess.run(["./dune-common/bin/dunecontrol", "--opts=dumux-rosi/cmake.opts",
 print("(3/3) Step completed. Succesfully configured and built CPlantBox, dune and dumux.")
 
 
-print("to test installation, run n\ cd dumux/dumux-rosi/python/coupled \n python3 example7b_coupling.py")
+print("to test installation, run \n cd dumux/dumux-rosi/python/coupled \n python3 example7b_coupling.py")
  
