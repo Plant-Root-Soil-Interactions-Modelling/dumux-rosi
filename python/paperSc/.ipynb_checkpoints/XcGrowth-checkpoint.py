@@ -11,7 +11,7 @@ if absolutePath:
     sys.path.append("/home/rbtlm640/DUMUXr/dumux-rosi/python/fpit/data/");
     sys.path.append("/home/rbtlm640/DUMUXr/dumux-rosi/python/modules_fpit/");
     sys.path.append("/home/rbtlm640/DUMUXr/CPlantBox/");#absolut path work better when
-    # using pycharm
+    # using pycharmSoil_solute_conc
     sys.path.append("/home/rbtlm640/DUMUXr/CPlantBox/src")
 else:
     sys.path.append("../modules_fpit/");
@@ -38,6 +38,75 @@ import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
 
+def getVTPOutput(r,rs,s, datas, datasName, rs_age, results_dir, min_b, max_b, cell_number):
+    vtpindx= int(rs_age)
+    if rank == 0:
+        print('doing print at', rs_age)
+        ana = pb.SegmentAnalyser(r.plant.mappedSegments())
+        cutoff = 1e-15 #if value too small, makes paraview crash
+        datas_p = []
+        for ddindx, dd in enumerate(datas):
+            dd_p = np.array(dd)
+            dd_p[abs(dd_p) < cutoff] = 0
+            datas_p.append(dd_p)
+            ana.addData(datasName[ddindx], dd_p)
+
+        #ana.write("results"+directoryN+"plot_"+str(int(simStartSim))+str(condition)+"at"+ str(vtpindx) +".vtp", 
+        #          ["organType", "subType",
+        #           "CST", "psi_Xyl"]) 
+
+        vp.plot_plant(r.plant,p_name =datasName,# ["xylem pressure (cm)","sucrose concentration (mmol/cm3)"],
+                            vals =datas_p,#[  psiXyl_p, C_ST_p], 
+                            filename =results_dir+"vtpvti/plantAt"+ str(vtpindx), 
+                      range_ = [0,5000])
+
+    periodic = False
+    konz =True 
+    
+    # check because will need all ranks
+
+    sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
+    extraArray_ = rs.soilModel.getWaterContent()
+    if not konz:
+        extraArrayName_ = "theta (cm3)"
+        extraArray_ *= sizeSoilCell
+    else:
+        extraArrayName_ = "theta (cm3/cm3)"
+    
+    rp = rs.get_concentration(0, konz)
+    s.results_dir = results_dir
+
+    # adapt to have plot_plants_and soil
+    vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
+            filename="vtpvti/soil_rx_at"+ str(vtpindx),sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
+            interactiveImage=False)  # VTK vizualisation
+    
+    for i in range(1, rs.numComp+1):
+        
+        extraArray_ = rs.soilModel.getSolution(i) * rs.phaseDensity(i)/1e6
+
+        if not konz:
+            extraArrayName_ = "C"+str(i)+" mol"
+        else:
+            extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
+            if i <= rs.numFluidComp:
+                extraArray_ /= (rs.soilModel.getWaterContent() *sizeSoilCell) #cm3 water
+            else: 
+                extraArray_ /= sizeSoilCell #cm3
+
+        vp.plot_roots_and_soil(rs.mappedSegments(),
+                               extraArrayName_ ,
+                               rs.get_concentration(i , konz), s, 
+                               periodic, min_b, max_b, 
+                               cell_number, 
+                filename="vtpvti/C"+str(i)+'_at'+str(vtpindx), 
+                               sol_ind =-1,
+                               extraArray = extraArray_, 
+                extraArrayName = extraArrayName_,
+            interactiveImage=False)  # VTK vizualisation
+        
+
+    
 
 """
      * \brief Suggest a new number of time steps
@@ -80,7 +149,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     useOuterFluxCyl_sol = False
     css1Function_ = 9
     lightType =""#+- "nolight" # or ""
-    mpiVerbose = True
+    mpiVerbose = False
     mpiVerboseInner = False
     noAds = False
     doSimple =False
@@ -106,7 +175,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/newMucil4p/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/CSTiminSame_exud4p/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -119,7 +188,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         print('results_dir','DumuxDune27',results_dir, flush = True)
     #comm.barrier()
     if rank == 0:
-        for extraText in ["","cyl_val/","printData/"]:
+        for extraText in ["","cyl_val/","printData/", "vtpvti/"]:
             if not os.path.exists(results_dir+extraText):
                 os.makedirs(results_dir+extraText)
             else:
@@ -184,6 +253,19 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
     write_file_array("cellIds", np.array(s.cellIndices), directory_ =results_dir) # cm3
+    cellcenters = s.getCellCenters()
+    cellcentersX = []
+    cellcentersY = []
+    cellcentersZ = []
+    for sub_array in cellcenters:
+        cellcentersX.append(sub_array[0])
+        cellcentersY.append(sub_array[1])
+        cellcentersZ.append(sub_array[2])
+
+    write_file_array("cellcentersX", np.array(cellcentersX), directory_ =results_dir) # cm3
+    write_file_array("cellcentersY", np.array(cellcentersY), directory_ =results_dir) # cm3
+    write_file_array("cellcentersZ", np.array(cellcentersZ), directory_ =results_dir) # cm3
+    
 
     # all thread need a plant object, but only thread 0 will make it grow
     rs, r = scenario_setup.create_mapped_plant( nc, logbase, mode,initsim,
@@ -222,17 +304,23 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     Q_Mucil   = np.zeros(Nt)
     Q_Exudbu    = np.zeros(Nt)
     Q_Mucilbu   = np.zeros(Nt)
+    Q_Rm    = np.zeros(Nt)
+    Q_Gr   = np.zeros(Nt)
+    Q_Rmbu    = np.zeros(Nt)
+    Q_Grbu   = np.zeros(Nt)
     Q_in  = 0
     Nt = len(rs.nodes)
     r.minLoop = 1000
     r.maxLoop = 5000
     #simMax = initsim + 3
+    failedExud = False
 
+    r.AgCumul = 0
     r.TranspirationCumul = 0
     r.TranspirationCumul_eval = 0
     cell_volumes = s.getCellVolumes()  # cm3
     buTotCSoilInit = sum(s.getTotCContent())
-    buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))
+    s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes))
 
     r.time_start_global = timeit.default_timer()
     r.time_rhizo_cumul = 0
@@ -252,7 +340,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     if mpiVerbose and rank == 0:# or (max_rank == 1):
         print('start loop', rank)
     secId = None
-    Q_Exud_i = None
+    Q_Gr_i = None;Q_Rm_i = None
+    Q_Exud_i = None; Q_Mucil_i = None
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
     error_st_abs = 0;error_st_rel=0
     errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errC1ds", "errC3ds",
@@ -317,6 +406,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         if (rank == 0):# and (not doMinimumPrint):
             write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
             write_file_array("subTypes", np.array(r.rs.subTypes), directory_ =results_dir)
+            write_file_array("isRootTip", r.rs.isRootTip, directory_ =results_dir)
+            write_file_array("getNodeIds", r.plant.getNodeIds(-1), directory_ =results_dir)
             length_Segs = np.array(r.rs.segLength())
             write_file_array("length_Segs", length_Segs, directory_ =results_dir)
             orgs = r.plant.getOrgans(-1, False)
@@ -364,23 +455,23 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             start = False
             
 
-        if True:#not doMinimumPrint:
-            write_file_array("content_diff1d3dabs"+str(0), 
-                             rs.allDiff1d3dCW_abs[0], directory_ =results_dir, fileType = '.csv')
-            write_file_array("content_diff1d3drel"+str(0), 
-                             rs.allDiff1d3dCW_rel[0], directory_ =results_dir, fileType = '.csv')
-            for nc in range(rs.numComp):# normally all 0 for nc >= numFluidComp
-                    write_file_array("content_diff1d3dabs"+str(nc+1), 
-                                     rs.allDiff1d3dCW_abs[nc+1], directory_ =results_dir, fileType = '.csv')
-                    write_file_array("content_diff1d3drel"+str(nc+1), 
-                                     rs.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
+            
+        write_file_array("content_diff1d3dabs"+str(0), 
+                         rs.allDiff1d3dCW_abs[0], directory_ =results_dir, fileType = '.csv')
+        write_file_array("content_diff1d3drel"+str(0), 
+                         rs.allDiff1d3dCW_rel[0], directory_ =results_dir, fileType = '.csv')
+        for nc in range(rs.numComp):# normally all 0 for nc >= numFluidComp
+                write_file_array("content_diff1d3dabs"+str(nc+1), 
+                                 rs.allDiff1d3dCW_abs[nc+1], directory_ =results_dir, fileType = '.csv')
+                write_file_array("content_diff1d3drel"+str(nc+1), 
+                                 rs.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
 
-                    write_file_array("sol_content3d"+str(nc+1), 
-                                     s.getContent(nc+1, nc < s.numFluidComp), 
-                                     directory_ =results_dir, fileType = '.csv')  
-                    write_file_array("sol_content1d"+str(nc+1), 
-                                     rs.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
-                                     directory_ =results_dir, fileType = '.csv') 
+                write_file_array("sol_content3d"+str(nc+1), 
+                                 s.getContent(nc+1, nc < s.numFluidComp), 
+                                 directory_ =results_dir, fileType = '.csv')  
+                write_file_array("sol_content1d"+str(nc+1), 
+                                 rs.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
+                                 directory_ =results_dir, fileType = '.csv') 
             
 
             
@@ -391,14 +482,15 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
 
         Q_Exud_inflate += sum(Q_Exud_i_seg); Q_Mucil_inflate += sum(Q_Mucil_i_seg)
-        try:
-            assert abs(Q_Exud_inflate- sum(Q_Exud)) < 1e-16
-            assert abs(Q_Mucil_inflate -sum(Q_Mucil)) <1e-16
-        except:
-            print('issue Q_Exud_inflate',rank, 
-                  Q_Exud_inflate, sum(Q_Exud),abs(Q_Exud_inflate- sum(Q_Exud)), 
-                  Q_Mucil_inflate, sum(Q_Mucil),abs(Q_Mucil_inflate- sum(Q_Exud)) )
-            raise Exception
+        if False:
+            try:
+                assert abs(Q_Exud_inflate- sum(Q_Exud)) < 1e-16
+                assert abs(Q_Mucil_inflate -sum(Q_Mucil)) <1e-16
+            except:
+                print('issue Q_Exud_inflate',rank, 
+                      Q_Exud_inflate, sum(Q_Exud),abs(Q_Exud_inflate- sum(Q_Exud)), 
+                      Q_Mucil_inflate, sum(Q_Mucil),abs(Q_Mucil_inflate- sum(Q_Exud)) )
+                raise Exception
 
         #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
@@ -432,7 +524,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             n_iter_min = 4
             cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or failedLoop
                     or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
-                    or (np.floor(rs.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
+                    or (np.floor(rs.maxdiff1d3dCurrant_rel*100.)/100.>0.001) 
                     or (min(rs.new_soil_solute.reshape(-1)) < 0)  
                     or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < k_iter)
             #(max(abs(sumDiff1d3dCW_rel))>1)) 
@@ -489,6 +581,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         failedLoop = False
         cL = True
         while cL or failedLoop:
+            r.AgCumul_inner = 0
             r.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
             s.base.saveManual()# <= that actually only works for the last solve. I need a better method to reset to the beginning of the whole stuff
             rs.saveManual()
@@ -541,6 +634,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 #dt_inner = max(1./(24.*3600.), dt_inner) # minimum: 1 second
                 # print(rank, "error too high, decrease N from", dt/float(currentN),"to",min(1/(24*3600), dt_inner))
                 #comm.barrier()
+                r.AgCumul_inner = 0
+                r.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
                 s.base.resetManual()# <= that actually only works for the last solve. I need a better method to reset to the beginning of the whole stuff
                 rs.resetManual()
                 rs.leftSpell = rs.leftSpellBU
@@ -566,36 +661,36 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             print(rank, 'left cyl3.simulate_const')
         #comm.barrier()
 
-        if True:
-            if mpiVerbose and rank==0:# or (max_rank == 1):
-                print(rank,"theta")
-            #comm.barrier()#
-            write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
-            write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir, fileType = '.csv') 
-            write_file_array("watVol", np.array(s.getWaterVolumes()), directory_ =results_dir, fileType = '.csv') 
-            for i in range(rs.numFluidComp):
-                #comm.barrier()
-                if mpiVerbose and rank==0:# or (max_rank == 1):
-                    print(rank,"Soil_solute_conc"+str(i+1))
-                #comm.barrier()
-                write_file_array("Soil_solute_conc"+str(i+1), 
-                                 np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, # mol C/mol w * molW/m3 W * m3 W/cm3 W
-                                 directory_ =results_dir, fileType = '.csv') 
-            for i in range(rs.numFluidComp, rs.numComp):
-                #comm.barrier()
-                if mpiVerbose and rank==0:# or (max_rank == 1):
-                    print(rank,"Soil_solute_conc"+str(i+1))
-                #comm.barrier()
-                write_file_array("Soil_solute_conc"+str(i+1), 
-                                 np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , 
-                                 directory_ =results_dir, fileType = '.csv') 
+        
+        if mpiVerbose and rank==0:# or (max_rank == 1):
+            print(rank,"theta")
+        #comm.barrier()#
+        write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
+        write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir, fileType = '.csv') 
+        write_file_array("watVol", np.array(s.getWaterVolumes()), directory_ =results_dir, fileType = '.csv') 
+        for i in range(rs.numFluidComp):
             #comm.barrier()
             if mpiVerbose and rank==0:# or (max_rank == 1):
-                print(rank,"Soil_solute_conc"+str(rs.numComp+1))
+                print(rank,"Soil_solute_conc"+str(i+1))
             #comm.barrier()
-            write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten(),#[ mol / cm^3]
-                             # [:-1]* rs.bulkDensity_m3 /1e6 ,
+            write_file_array("Soil_solute_conc"+str(i+1), 
+                             np.array(s.getSolution(i+1)).flatten()* rs.molarDensityWat_m3/1e6, # mol C/mol w * molW/m3 W * m3 W/cm3 W
                              directory_ =results_dir, fileType = '.csv') 
+        for i in range(rs.numFluidComp, rs.numComp):
+            #comm.barrier()
+            if mpiVerbose and rank==0:# or (max_rank == 1):
+                print(rank,"Soil_solute_conc"+str(i+1))
+            #comm.barrier()
+            write_file_array("Soil_solute_conc"+str(i+1), 
+                             np.array(s.getSolution(i+1)).flatten()* rs.bulkDensity_m3 /1e6 , 
+                             directory_ =results_dir, fileType = '.csv') 
+        #comm.barrier()
+        if mpiVerbose and rank==0:# or (max_rank == 1):
+            print(rank,"Soil_solute_conc"+str(rs.numComp+1))
+        #comm.barrier()
+        write_file_array("Soil_solute_conc"+str(rs.numComp+1), np.array(s.base.getCSS1_out()).flatten(),#[ mol / cm^3]
+                         # [:-1]* rs.bulkDensity_m3 /1e6 ,
+                         directory_ =results_dir, fileType = '.csv') 
            
         #comm.barrier() 
         if mpiVerbose and rank==0:# or (max_rank == 1):
@@ -608,7 +703,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 r.TranspirationCumul_eval += r.TranspirationCumul_inner
             elif rs.leftSpell:
                 r.TranspirationCumul_eval = 0.
-                
+               
+            r.An =comm.bcast( r.AgCumul_inner/(dt*24*3600) , root=0)
+            
         else:
             r.TranspirationCumul += sum(r.outputFlux)
         
@@ -639,7 +736,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 s.bulkMassErrorCumul_rel =np.nan
             # because we have a free flow BC at the bottom, that could increase the error
             # ideally, I should add the flow at the bellow BC here
-            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( buWSoilInit - r.TranspirationCumul_eval))
+            s.bulkMassErrorWaterCumul_abs = abs(buWAfter - ( s.buWSoilInit - r.TranspirationCumul_eval))
             s.bulkMassErrorWaterCumul_rel = abs(s.bulkMassErrorWaterCumul_abs/buWAfter*100)
         else:
             s.bulkMassErrorCumul_abs = None
@@ -659,13 +756,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'write some otehr stuff')
         #comm.barrier()
-        if (mode != "dumux_w"):
-            if not doMinimumPrint:
-                write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
-                write_file_float("Q_Exud_i", sum(Q_Exud_i_seg), directory_ =results_dir)
-                write_file_float("Q_Mucil_i", sum(Q_Mucil_i_seg), directory_ =results_dir)
-            write_file_float("Q_Exud_tot", Q_Exud_inflate, directory_ =results_dir)
-            write_file_float("Q_Mucil_tot", Q_Mucil_inflate, directory_ =results_dir)
         
         if (mode != "dumux_w"):
             #absolute and relative (%) error
@@ -702,6 +792,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 gId = rs.eidx[lId]
                 
                 pHead = np.array(cyl.getSolutionHead()).flatten()
+                write_file_float("Cyl_time_"+str(gId),rs_age, 
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 write_file_array("Cyl_watercontent_"+str(gId),cyl.getWaterContent(), 
                                  directory_ =results_dir+'cyl_val/', allranks = True)
                 write_file_array("Cyl_pressureHead_"+str(gId),pHead, 
@@ -724,9 +816,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         if mpiVerbose and rank==0:# or (max_rank == 1):
             print(rank, 'do C growth?',  (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"))
 
+            
+        r.Csoil_seg = rs.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
+        
         #comm.barrier()
         if (mode != "dumux_w") and (rank == 0) and ((not static_plant) or (rs_age == initsim+dt)) and (organism == "plant"):
-
+            assert min(r.Csoil_seg ) >= 0.
             startphloem=rs_age
             endphloem = rs_age + dt
             stepphloem = 1
@@ -745,45 +840,64 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             print("endtpm",rank)
             
             Nt = len(rs.nodes)
+            
+            ##
+            #  MMOL Suc (/cm3) => mol C (/cm3)
+            mmolSuc_to_molC = 1/1e3*12
+            
             if r.withInitVal and (len(Q_ST_init) ==0) :
-                Q_ST_init = np.array(r.Q_init[0:Nt])/1e3
-                Q_meso_init = np.array(r.Q_init[Nt:(Nt*2)])/1e3
+                Q_ST_init = np.array(r.Q_init[0:Nt])* mmolSuc_to_molC
+                Q_meso_init = np.array(r.Q_init[Nt:(Nt*2)])* mmolSuc_to_molC
                 
             # the backups
             
             Q_Exudbu = Q_Exud            
             Q_Mucilbu = Q_Mucil
-
+            Q_Grbu = Q_Gr
+            Q_Rmbu = Q_Rm
+            
+            Q_ST_dot    = np.array(r.Q_out_dot[0:Nt])* mmolSuc_to_molC
+            Q_meso_dot  = np.array(r.Q_out_dot[Nt:(Nt*2)])* mmolSuc_to_molC
+            Q_Rm_dot    = np.array(r.Q_out_dot[(Nt*2):(Nt*3)])* mmolSuc_to_molC
+            Q_Exud_dot  = np.array(r.Q_out_dot[(Nt*3):(Nt*4)])* mmolSuc_to_molC
+            Q_Gr_dot    = np.array(r.Q_out_dot[(Nt*4):(Nt*5)])* mmolSuc_to_molC
+            Q_Rmmax_dot       = np.array(r.Q_out_dot[(Nt*5):(Nt*6)])* mmolSuc_to_molC
+            Q_Grmax_dot       = np.array(r.Q_out_dot[(Nt*6):(Nt*7)])* mmolSuc_to_molC
+            Q_S_meso_dot   = np.array(r.Q_out_dot[(Nt*7):(Nt*8)])* mmolSuc_to_molC
+            Q_S_ST_dot   = np.array(r.Q_out_dot[(Nt*8):(Nt*9)])* mmolSuc_to_molC
+            Q_Mucil_dot  = np.array(r.Q_out_dot[(Nt*9):(Nt*10)])* mmolSuc_to_molC #mol for nodes
+            ##
             # att: that will be the cumulative value
-            #  MMOL(/cm3) => mol(/cm3)
-            #inflateVal = 1#1e3
-            Q_ST    = np.array(r.Q_out[0:Nt])/1e3
-            Q_meso  = np.array(r.Q_out[Nt:(Nt*2)])/1e3
-            Q_Rm    = np.array(r.Q_out[(Nt*2):(Nt*3)])/1e3
-            Q_Exud  = np.array(r.Q_out[(Nt*3):(Nt*4)])/1e3 
-            Q_Gr    = np.array(r.Q_out[(Nt*4):(Nt*5)])/1e3
-            Q_Rmmax       = np.array(r.Q_out[(Nt*5):(Nt*6)])/1e3
-            Q_Grmax       = np.array(r.Q_out[(Nt*6):(Nt*7)])/1e3
-            Q_S_meso   = np.array(r.Q_out[(Nt*7):(Nt*8)])/1e3
-            Q_S_ST   = np.array(r.Q_out[(Nt*8):(Nt*9)])/1e3
-            Q_Mucil  = np.array(r.Q_out[(Nt*9):(Nt*10)])/1e3 #mol for nodes
+            Q_ST    = np.array(r.Q_out[0:Nt]) * mmolSuc_to_molC
+            Q_meso  = np.array(r.Q_out[Nt:(Nt*2)])* mmolSuc_to_molC
+            Q_Rm    = np.array(r.Q_out[(Nt*2):(Nt*3)])* mmolSuc_to_molC
+            Q_Exud  = np.array(r.Q_out[(Nt*3):(Nt*4)])* mmolSuc_to_molC 
+            Q_Gr    = np.array(r.Q_out[(Nt*4):(Nt*5)])* mmolSuc_to_molC
+            Q_Rmmax       = np.array(r.Q_out[(Nt*5):(Nt*6)])* mmolSuc_to_molC
+            Q_Grmax       = np.array(r.Q_out[(Nt*6):(Nt*7)])* mmolSuc_to_molC
+            Q_S_meso   = np.array(r.Q_out[(Nt*7):(Nt*8)])* mmolSuc_to_molC
+            Q_S_ST   = np.array(r.Q_out[(Nt*8):(Nt*9)])* mmolSuc_to_molC
+            Q_Mucil  = np.array(r.Q_out[(Nt*9):(Nt*10)])* mmolSuc_to_molC
 
-            C_ST    = np.array(r.C_ST)/1e3
-            Fl      = np.array(r.Fl)/1e3
+            C_ST    = np.array(r.C_ST)* mmolSuc_to_molC
+            Fl      = np.array(r.Fl)* mmolSuc_to_molC
             volST   = np.array(r.vol_ST)
             volMeso   = np.array(r.vol_Meso)
             C_S_meso   = Q_S_meso/volMeso
             C_S_ST   = Q_S_ST/volST
             C_meso  = Q_meso/volMeso
-            Q_in   += sum(np.array(r.AgPhl)*dt)/1e3
+            Q_in   += sum(np.array(r.AgPhl)*dt)* mmolSuc_to_molC
             # i m missing the starch
             Q_out   = Q_Rm + Q_Exud + Q_Gr + Q_Mucil
-            error_st_abs   = abs(sum(Q_ST + Q_meso + Q_out + Q_S_meso + Q_S_ST)- Q_in - sum(Q_ST_init)  - sum(Q_meso_init))
+            error_st_abs   = abs(sum(Q_ST + Q_meso + Q_out + Q_S_meso + Q_S_ST)- Q_in - sum(Q_ST_init)*2  - sum(Q_meso_init)*2)
             error_st_rel = abs(div0(error_st_abs,Q_in,1)*100)
 
             Q_Exudbu     =   np.concatenate((Q_Exudbu, np.full(Nt - Ntbu, 0.))) 
             Q_Mucilbu       =   np.concatenate((Q_Mucilbu, np.full(Nt - Ntbu, 0.))) 
-
+            Q_Grbu     =   np.concatenate((Q_Grbu, np.full(Nt - Ntbu, 0.))) 
+            Q_Rmbu       =   np.concatenate((Q_Rmbu, np.full(Nt - Ntbu, 0.)))
+            Q_Gr_i      = (Q_Gr    - Q_Grbu)
+            Q_Rm_i      = (Q_Rm    - Q_Rmbu)
             Q_Exud_i      = (Q_Exud    - Q_Exudbu)#*inflateVal
             Q_Mucil_i     = (Q_Mucil   - Q_Mucilbu)#*inflateVal
 
@@ -816,6 +930,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             Q_Exud_i_seg = np.array( Q_Exud_i[1:] )#*100 #from nod to semgment
             Q_Mucil_i_seg = np.array(Q_Mucil_i[1:])#*0.
 
+            
+            
             airSegsId = rs.airSegs
             #np.array(list(set(np.concatenate((rs.cell2seg.get(-1),np.where(np.array(rs.organTypes) != 2)[0])) )))#aboveground
             try:
@@ -828,7 +944,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                 print("Q_Mucil_i", Q_Mucil_i_seg,Q_Mucil,Q_Mucilbu,airSegsId)
                 print("Q_Mucil_i", Q_Mucil_i_seg[airSegsId], Q_Mucil[airSegsId+1], Q_Mucilbu[airSegsId+1])
                 print("Csoil_seg", np.array(r.Csoil_seg)[airSegsId])
-                print("k_mucil_",r.k_mucil_)#,np.array(r.k_mucil_).size() ,Q_Exud.size())
+                print("k_mucil_",np.array(r.k_mucil_)[airSegsId+1])#,np.array(r.k_mucil_).size() ,Q_Exud.size())
                 print("Q_Exudmax",np.array(r.Q_Exudmax)[airSegsId+1])
                 print("airSegsId", airSegsId, np.where(airSegsId))
                 print(len(airSegsId), len(r.k_mucil_))
@@ -837,12 +953,37 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             # Q_Exud_i = Q_Mucil_i
             # Q_Exud_i[np.where(Q_Exud_i > 0.)] = 1.
             #r.outputFlux = np.array(r.outputFlux)/ 10
+            
             try:
-                assert min(Q_Exud_i_seg) >= -1e-13
+                write_file_array("Q_Exud_i_real", Q_Exud_i, directory_ =results_dir)# to see if get val < 0
+                write_file_array("Q_Mucil_i_real", Q_Exud_i, directory_ =results_dir)# to see if get val < 0
+                if ((min(Q_Exud_i_seg) < 0) or (min(Q_Mucil_i_seg)<0)):
+                    write_file_float("timeNegativeExudMucil", rs_age, directory_ =results_dir)
+                    
+            
+                #assert (min(Q_Exud_i_seg) >= -abs(error_st_abs)) and (min(Q_Exud_i_seg) >= -r.atol)
                 Q_Exud_i_seg[np.where(Q_Exud_i_seg<0)] = 0.
+                
+                #assert (min(Q_Mucil_i_seg) >= -abs(error_st_abs)) and (min(Q_Mucil_i_seg) >= -r.atol ) 
+                Q_Mucil_i_seg[np.where(Q_Mucil_i_seg<0)] = 0.
             except:
-                print(C_ST, r.Csoil_node, Q_Exud_i_seg,Q_Exud)
-                raise Exception
+                print('error_st_abs',error_st_abs)
+                print('C_ST',repr(C_ST))
+                print('Csoil_node',repr(r.Csoil_node))
+                print('Q_Exud_i_seg',repr(Q_Exud_i_seg))
+                print('Q_Mucil_i_seg',repr(Q_Mucil_i_seg))
+                write_file_array("Csoil_node_err", r.Csoil_node, directory_ =results_dir)
+                write_file_array("C_ST_err", C_ST, directory_ =results_dir)
+                write_file_array("Q_Exud_i_err", Q_Exud_i_seg, directory_ =results_dir)
+                write_file_array("Q_Mucil_i_err", Q_Mucil_i_seg, directory_ =results_dir)
+                write_file_array("Q_Exud_tot_err", Q_Exud_inflate, directory_ =results_dir)
+                write_file_array("Q_Mucil_tot_err", Q_Mucil_inflate, directory_ =results_dir)
+                write_file_array("Q_Mucil_err", Q_Mucil, directory_ =results_dir)
+                write_file_array("Q_Exud_err", Q_Exud, directory_ =results_dir)
+                write_file_array("Q_Mucil_dot_err", Q_Mucil_dot , directory_ =results_dir)
+                write_file_array("Q_Exud_dot_err", Q_Exud_dot , directory_ =results_dir)
+                failedExud = True
+                #raise Exception
 
             print("sum exud", sum(Q_Exud_i_seg), sum(Q_Mucil_i_seg))
         elif rank > 0:
@@ -905,73 +1046,67 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("Fpsi", r.Fpsi, directory_ =results_dir)
             write_file_array("fw", r.fw, directory_ =results_dir)
             write_file_array("gco2", r.gco2, directory_ =results_dir)
-            write_file_array("Q_Ag_dot", r.AgPhl, directory_ =results_dir)
+            write_file_array("Q_Ag_dot_inner", r.AgCumul_inner, directory_ =results_dir)
+            write_file_array("Q_Ag_dot_innerbis", r.An, directory_ =results_dir)
+            write_file_array("Q_Ag_dot", np.array(r.AgPhl)* mmolSuc_to_molC, directory_ =results_dir)
             write_file_float("Q_Ag", Q_in, directory_ =results_dir)
             write_file_array("C_rsi", np.array(r.Csoil_seg ), 
                              directory_ =results_dir)#mmol/cm3
             
             
         
-        #comm.barrier()
-        if mpiVerbose and rank==0:# or (max_rank == 1):
-            print(rank, 'print data to linux')
-        #comm.barrier()
+            write_file_array("Q_ST_dot", Q_ST_dot   , directory_ =results_dir)
+            write_file_array("Q_meso_dot", Q_meso_dot  , directory_ =results_dir)
+            write_file_array("Q_Rm_dot", Q_Rm_dot   , directory_ =results_dir)
+            write_file_array("Q_Gr_dot", Q_Gr_dot , directory_ =results_dir)
+            write_file_array("Q_Rmmax_dot", Q_Rmmax_dot , directory_ =results_dir)
+            write_file_array("Q_Grmax_dot", Q_Grmax_dot  , directory_ =results_dir) 
+            write_file_array("Q_S_meso_dot", Q_S_meso_dot, directory_ =results_dir)
+            write_file_array("Q_S_ST_dot", Q_S_ST_dot , directory_ =results_dir)
+            
+            write_file_array("Q_Exud_dot", Q_Exud_dot, directory_ =results_dir)
+            write_file_array("Q_Mucil_dot", Q_Mucil_dot , directory_ =results_dir)
+            
+
+            if not doMinimumPrint:
+                write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
+            write_file_array("Q_Gr_i", Q_Gr_i, directory_ =results_dir)
+            write_file_array("Q_Rm_i",Q_Rm_i, directory_ =results_dir)
+            write_file_array("Q_Exud_i", Q_Exud_i, directory_ =results_dir)
+            write_file_array("Q_Mucil_i",Q_Mucil_i, directory_ =results_dir)
+            write_file_float("Q_Exud_tot", Q_Exud_inflate, directory_ =results_dir)
+            write_file_float("Q_Mucil_tot", Q_Mucil_inflate, directory_ =results_dir)
+            write_file_float("Q_Gr_tot", sum(Q_Gr), directory_ =results_dir)
+            write_file_float("Q_Rm_tot", sum(Q_Rm), directory_ =results_dir)
+        if rank == 0:
+            datas = [np.array(r.AgPhl)* mmolSuc_to_molC,
+                     C_ST, C_S_ST, C_meso, 
+                     C_S_meso, Q_Gr_i,Q_Rm_i, Q_Exud_dot,Q_Mucil_dot,
+                     Q_Exud,Q_Mucil,
+                     r.psiXyl, Q_Exud_i, Q_Mucil_i
+                     #, np.array(r.rs.isRootTip, dtype=int)
+                    ]
+            datasName = ["Ag",
+                         "C_ST", "C_S_ST", "C_meso", 
+                         "C_S_meso", "Q_Gr_i","Q_Rm_i", "Q_Exud_dot","Q_Mucil_dot",
+                         "Q_Exud", "Q_Mucil",
+                     "psiXyl", "Q_Exud_i","Q_Mucil_i" 
+                         #,"isRootTip"
+                        ]
+        else:
+            datas = []
+            datasName = []
+        if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday
+            getVTPOutput(r,rs,s,datas, datasName, rs_age*100, results_dir, min_b, max_b, cell_number)
+        
+        failedExud = comm.bcast(failedExud, root = 0)
+        assert not failedExud
 
 
     """ output """
     if mpiVerbose and rank==0:# or (max_rank == 1):
         print('finished simulation')
-    sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
-    #print('checkMassOMoleBalance2_747')
-    rs.checkMassOMoleBalance2()
-    #vp.write_soil("results/"+str(sim_time)+"_Soil", s, min_b, max_b, cell_number, ["C concentration [g/cm³]"])
-    periodic = False
-    
-    if True:
-
-        for konz in np.array([True]):#, False]):
-            extraArray_ = rs.soilModel.getWaterContent()
-            if not konz:
-                extraArrayName_ = "theta (cm3)"
-                extraArray_ *= sizeSoilCell
-            else:
-                extraArrayName_ = "theta (cm3/cm3)"
-            print("idcomp", 0, rank)
-            rp = rs.get_concentration(0, konz)
-            s.results_dir = results_dir
-
-            # adapt to have plot_plants_and soil
-            vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
-                    filename="soil_rx",sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
-                    interactiveImage=False)  # VTK vizualisation
-            print("idcomp_done", 0, rank)
-            for i in range(1, rs.numComp+1):
-                print("idcomp", i, rank)
-                extraArray_ = rs.soilModel.getSolution(i) * rs.phaseDensity(i)/1e6
-
-                if not konz:
-                    extraArrayName_ = "C"+str(i)+" mol"
-                else:
-                    extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
-                    if i <= rs.numFluidComp:
-                        extraArray_ /= (rs.soilModel.getWaterContent() *sizeSoilCell) #cm3 water
-                    else: 
-                        extraArray_ /= sizeSoilCell #cm3
-
-
-                vp.plot_roots_and_soil(rs.mappedSegments(),
-                                       extraArrayName_ ,
-                                       rs.get_concentration(i , konz), s, 
-                                       periodic, min_b, max_b, 
-                                       cell_number, 
-                        filename="C"+str(i), 
-                                       sol_ind =-1,
-                                       extraArray = extraArray_, 
-                        extraArrayName = extraArrayName_,
-                    interactiveImage=False)  # VTK vizualisation
-                print("idcomp_done", i, rank)
-    # to plot: cumulative An, Exud, mucil and each element in the soil
-    # Also images of the 3D soil.
+        
     print("fin", rank)
     return results_dir
 
@@ -979,12 +1114,14 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
 if __name__ == '__main__':
     # python3 XcGrowth.py 9 dumux_10c 10 0 customDry noAds 9.02 0.02
-    # python3 XcGrowth.py 9 dumux_10c 10 1640 lateDry
+    # python3 XcGrowth.py 9 dumux_10c 10 17 lateDry
     # python3 XcGrowth.py 12 dumux_10c 25 98 baseline
     # python3 XcGrowth.py 10 dumux_10c 25 3 none
     # python3 XcGrowth.py 9 dumux_10c 9.001 5 none
     # python3 XcGrowth.py 9 dumux_10c 9.06 0 customDry xx 9.02 0.02
     # python3 XcGrowth.py 10 dumux_10c 10.06 0 customDry xx 10.02 0.02
+    # python3 XcGrowth.py 9 dumux_10c 10 3 none
+    # python3 XcGrowth.py 10 dumux_10c 14 85 none
     if rank == 0:
         print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5

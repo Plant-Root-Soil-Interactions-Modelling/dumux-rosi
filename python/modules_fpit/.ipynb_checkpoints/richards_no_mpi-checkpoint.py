@@ -29,7 +29,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         #print(rank, 'initialize problem')
         self.base.initializeProblem()
         #print(rank, 'initialized problem')
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             print(rank, 'initialized problem')
         
         self.dofIndices_   = self.base.getDofIndices()
@@ -288,7 +288,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             if selectCell == None:
                 if eqIdx == 0:
                     seg_values_ = self.getSolutionHead()#self.getWaterVolumes()#getWaterVolumesCyl(length)
-                    seg_values = seg_values_ - min(seg_values_) +1e-14
+                    seg_values = seg_values_ - min(seg_values_)- np.mean(seg_values_) +1e-14
                 else:
                     isDissolved = (eqIdx <= numFluidComp)
                     seg_values = self.getContentCyl(eqIdx, isDissolved)

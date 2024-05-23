@@ -3037,6 +3037,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             splitVals = np.full(len(self.organTypes), 0.)
             if (soilVals[cellIds] != 0.).any():
                 for cellid in cellIds:
+                    verbose = False# (cellid == 1204) and isWater
                     segIds = self.cell2seg[cellid]
                     if soilVals[cellid] != 0:#
                         assert (splitVals[segIds] == 0.).all()
@@ -3048,7 +3049,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                 if verbose:
                                     print('get preassuree head',seg_values_root,self.vg_soil.theta_S,self.vg_soil.theta_R)
                                 seg_values_root = np.array([ vg.pressure_head(svr, self.vg_soil) for svr in seg_values_root])
-                                seg_values_root = seg_values_root - min(seg_values_root) +1e-14
+                                if verbose:
+                                    print('got pressure_head', seg_values_root, min(seg_values_root))
+                                seg_values_root = seg_values_root  - min(seg_values_root) - np.mean(seg_values_root)+1e-14 #- min(seg_values_root)
                             weightVals = np.full(len(segIds), 0.)
 
                             if (ots != 2).any():
@@ -3074,7 +3077,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                                     print("soilVals[cellid] > 0A", seg_values_voxel[segIds],
                                           (seg_values[segIds] == 0.).all(),
                                           min(abs(seg_values_root)) == 0.,
-                                          weightVals, seg_values_root)
+                                          'weightVals',weightVals, 'seg_values_root',seg_values_root)
                                 if (seg_values[segIds] == 0.).all():# all seg_values == 0
                                     seg_values_voxel[rootIds] = float(len(seg_values_root))
                                     weightVals[np.where(ots == 2)] = 1./float(len(seg_values_root))

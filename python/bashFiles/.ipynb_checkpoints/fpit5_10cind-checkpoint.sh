@@ -22,7 +22,8 @@ cd $HOME/DumuxDune27/DUMUX/dumux-rosi/python/paperSc
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 DUMUX_NUM_THREADS=5 mpirun -n 5 python3 XcGrowth.py $1 dumux_10c $2 $3 $4 $5
 
-# $1 : start, $2: end, $3: param ind, $4 scenario, $5 noAds or nothing, $6 start spell, $7 end spell
+# $1 : start, $2: end, $3: param ind, $4 scenario, 
+# optional: $5 noAds or nothing, $6 start spell, $7 end spell
 
 # python3 XcGrowth.py 9 dumux_10c 9.06 0 customDry noAds 9.02 0.02
 # sbatch fpit2_10cind.sh 9 10 0 customDry noAds 9.02 0.02

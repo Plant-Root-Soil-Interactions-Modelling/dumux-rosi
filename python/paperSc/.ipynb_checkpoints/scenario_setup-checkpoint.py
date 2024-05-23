@@ -1,7 +1,8 @@
 """ 
 Functions to simplify setup of the scenarios for the INARI project
 """
-
+import numpy as np
+import numbers
 import sys;
 sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../modules/");
@@ -30,6 +31,10 @@ from rosi_richards10c import Richards10CSP  # C++ part (Dumux binding), macrosco
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
+
+def is_number(obj):
+    # Check for standard Python numeric types (int, float) and NumPy numeric types
+    return isinstance(obj, (numbers.Number, np.number))
 
 import plantbox as pb  # CPlantBox
 import van_genuchten as vg
@@ -64,20 +69,23 @@ def write_file_float(name, data, directory_, allranks = False):
             log.write(repr( data)  +'\n')
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt', allranks = False ):
-    if (rank == 0) or allranks:
-        try:
+    if is_number(data):
+        write_file_float(name, data, directory_ = directory_, allranks = allranks)
+    else:
+        if (rank == 0) or allranks:
+            try:
 
-                np.array(data).reshape(-1)
-                modeOp = 'a'
-                if False:#'fpit' in name:
-                    modeOp = 'w'
-                name2 = directory_+ name+ fileType
-                #print('write_file_array',name2)
-                with open(name2, modeOp) as log:
-                    log.write(space.join([num for num in map(str, data)])  +'\n')
-        except:
-            print('write_file_array',name, data,data.shape)
-            raise Exception
+                    np.array(data).reshape(-1)
+                    modeOp = 'a'
+                    if False:#'fpit' in name:
+                        modeOp = 'w'
+                    name2 = directory_+ name+ fileType
+                    #print('write_file_array',name2)
+                    with open(name2, modeOp) as log:
+                        log.write(space.join([num for num in map(str, data)])  +'\n')
+            except:
+                print('write_file_array',name, data,data.shape)
+                raise Exception
 
 def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """
@@ -767,7 +775,7 @@ def weather(simDuration, spellData, hp:float=1):
             print('spellData',spellData)
             raise Exception
             
-        coefhours = sinusoidal(simDuration)/2
+        coefhours = sinusoidal(simDuration+0.5)/2
         RH_ = RHnigh + (RHday - RHnigh) * coefhours
         TairC_ = Tnigh + (Tday - Tnigh) * coefhours
         Q_ = Qnigh + (Qday - Qnigh) * coefhours
@@ -816,11 +824,13 @@ def phloemParam(r,weatherInit ):
     r.alpha = 0.4#0.2#/2
     r.theta = 0.6#0.9#/2
     r.k_meso = 1e-3#1e-4
+    
+    r.Gr4Exud = True
     r.setKrm2([[2e-5]], False)
     r.setKrm1([[10e-2]], False)#([[2.5e-2]])
     r.setRhoSucrose([[0.51],[0.65],[0.56]], False)#0.51
     #([[14.4,9.0,0,14.4],[5.,5.],[15.]])
-    rootFact = 2
+    rootFact =1# 2
     r.setRmax_st([[2.4*rootFact,1.5*rootFact,0.6*rootFact,2.4*rootFact],[2.,2.],[8.]], False)#6.0#*6 for roots, *1 for stem, *24/14*1.5 for leaves
     #r.setRmax_st([[12,9.0,6.0,12],[5.,5.],[15.]])
     r.KMrm = 0.1#VERY IMPORTANT TO KEEP IT HIGH
@@ -829,13 +839,14 @@ def phloemParam(r,weatherInit ):
     r.sameVolume_meso_st = False
     r.sameVolume_meso_seg = True
     r.withInitVal =True
-    r.initValST = 0.6#0.0
-    r.initValMeso = 0.9#0.0
+    r.initValST = 0.4#0.0 # mmol suc /cm3
+    r.initValMeso = 0.06#0.0
     r.beta_loading = 0.6
     r.Vmaxloading = 0.05 #mmol/d, needed mean loading rate:  0.3788921068507634
     r.Mloading = 0.2
     r.Gr_Y = 0.8
-    r.CSTimin = 0.4
+    r.CSTimin = 0.2#0.4/2
+    r.CSTimin_exud = 0.2#0.3#/2
     r.surfMeso=0.0025
     r.leafGrowthZone = 2 # cm
     r.StemGrowthPerPhytomer = True # 
@@ -851,11 +862,10 @@ def phloemParam(r,weatherInit ):
     r.maxLoop = 10000
     r.minLoop=900
     
-    r.C_targ = r.CSTimin
-    r.C_targMesophyll = r.CSTimin
-    r.k_S_ST = 5/25 *2 #daudet2002
-    r.k_S_Mesophyll = 5/25*0 #daudet2002
-    r.k_mucil = 1
+    r.C_targ = r.initValST#0.4#r.CSTimin
+    r.C_targMesophyll = 0.06#r.CSTimin
+    r.k_S_ST = 5/25 *100#*2 #daudet2002
+    r.k_S_Mesophyll = 5/25*100 #daudet2002
    
 
 
@@ -867,8 +877,8 @@ def phloemParam(r,weatherInit ):
     r.expression = 6
     r.update_viscosity = True
     r.solver = 1
-    r.atol = 1e-12
-    r.rtol = 1e-8
+    r.atol =1e-12# 1e-15
+    r.rtol =1e-8# 1e-10
     #r.doNewtonRaphson = False;r.doOldEq = False
     SPAD= 41.0
     chl_ = (0.114 *(SPAD**2)+ 7.39 *SPAD+ 10.6)/10
@@ -920,7 +930,23 @@ def setKrKx_phloem(r): #inC
     kr_r3 = 5e-2
     l_kr =  100#0.8 #cm
     
-    r.setKr_st([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] , kr_length_= l_kr, verbose = False)
+    ratio_decrease = 1.5/100 # same as for xylem
+    
+    
+    r.k_mucil = 5#10 #1 # Y? to get 1/10-1/100 of exudation
+    
+    r.setKr_mucilRootTip([r.k_mucil, r.k_mucil, r.k_mucil, r.k_mucil] )
+    if False: # to implement
+        r.setKr_stTables([[[kr_r0,kr_r0,kr_r0*ratio_decrease,kr_r0*ratio_decrease],
+                        [kr_r1,kr_r1,kr_r1*ratio_decrease,kr_r1*ratio_decrease],
+                        [kr_r2,kr_r2,kr_r2*ratio_decrease,kr_r2*ratio_decrease],
+                        [kr_r0,kr_r0,kr_r0*ratio_decrease,kr_r0*ratio_decrease]],
+                        [[kr_s],[kr_s] ],[[kr_l]]],
+                [[[0,0.8,1,10000],[0,0.8,1,10000],[0,0.8,1,10000],[0,0.8,1,10000]],
+                [[0],[0]],[[0]]],verbose = False, ageBased = False) 
+            
+    #r.setKr_st([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] , kr_length_= l_kr, verbose = False)
+    r.setKr_stRootTip([[kr_r0,kr_r1 ,kr_r2 ,kr_r0],[kr_s,kr_s ],[kr_l]] )
     r.setKx_st([[kz_r0,kz_r12,kz_r12,kz_r0],[kz_s,kz_s ],[kz_l]], False)
     
     a_ST = [[0.00039,0.00035,0.00035,0.00039 ],[0.00019,0.00019],[0.00025]]
@@ -990,6 +1016,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
     picker = lambda x, y, z: soil_model.pick_([x,y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     #assert rs.getSeedVal() == seed
+    #print('type(r.rs)',type(r.rs), r.rs.isRootTip)
     # print('seedval at rank',rank,  rs.getSeedVal())
     assert rs.getSeedVal() == seed
     # if rank == 0:

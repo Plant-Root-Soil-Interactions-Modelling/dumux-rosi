@@ -131,7 +131,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
         hp_ = max([tempnode[2] for tempnode in rs.get_nodes()]) /100. #canopy height
         r.weatherX = weather(simDuration = rs_age_i_dt, hp =  hp_, spellData= r.spellData)
-        if True:
+        if not doMinimumPrint:
             write_file_array('change_soil',np.array([rs_age_i_dt, (r.spellData['scenario'] != 'none'),
                                                      (r.spellData['scenario'] != 'baseline'),
                                                (rs_age_i_dt > r.spellData['spellStart']) , 
@@ -259,33 +259,34 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                 raise Exception
                     # ATT to keep?
                     s.save()# <= so that stay in the current weather state
+                    s.buWSoilInit = sum(np.multiply(comm.bcast(np.array(s.getWaterContent()), root=0), cell_volumes)) # to evaluate cumulative water balance error
                     r.save()  
                     outer_R_bc_wat = np.full(cell_volumes.shape, 0.)
                     write_file_array("aftChpHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
+                    if not doMinimumPrint:
+                        for lId, cyl in enumerate(r.cyls):
+                            if not isinstance(cyl, AirSegment):
+                                gId = r.eidx[lId]
 
-                    for lId, cyl in enumerate(r.cyls):
-                        if not isinstance(cyl, AirSegment):
-                            gId = r.eidx[lId]
-
-                            pHead = np.array(cyl.getSolutionHead()).flatten()
-                            write_file_array("aftChCyl_watercontent_"+str(gId),cyl.getWaterContent(), 
-                                             directory_ =results_dir+'cyl_val/', allranks = True)
-                            write_file_array("aftChCyl_pressureHead_"+str(gId),pHead, 
-                                             directory_ =results_dir+'cyl_val/', allranks = True)
-                            write_file_array("aftChCyl_coord_"+str(gId),
-                                             cyl.getDofCoordinates().flatten(), 
-                                             directory_ =results_dir+'cyl_val/', allranks = True)
-                            write_file_array("aftChCyl_cellVol_"+str(gId),
-                                             cyl.getCellVolumes().flatten(), 
-                                             directory_ =results_dir+'cyl_val/', allranks = True)
-                            for ccc in range(r.numComp):
-                                sol0 = np.array(cyl.getContent(ccc +1, ccc < 2 )).flatten()
-                                write_file_array("aftChCyl_content"+str(ccc+1)+"_"+str(gId)+"", 
-                                             sol0, 
-                                             directory_ =results_dir+'cyl_val/', allranks = True)
-                            if max(pHead) > 0:
-                                print('issue phead',gId,rank, pHead, sol0 )
-                                raise Exception
+                                pHead = np.array(cyl.getSolutionHead()).flatten()
+                                write_file_array("aftChCyl_watercontent_"+str(gId),cyl.getWaterContent(), 
+                                                 directory_ =results_dir+'cyl_val/', allranks = True)
+                                write_file_array("aftChCyl_pressureHead_"+str(gId),pHead, 
+                                                 directory_ =results_dir+'cyl_val/', allranks = True)
+                                write_file_array("aftChCyl_coord_"+str(gId),
+                                                 cyl.getDofCoordinates().flatten(), 
+                                                 directory_ =results_dir+'cyl_val/', allranks = True)
+                                write_file_array("aftChCyl_cellVol_"+str(gId),
+                                                 cyl.getCellVolumes().flatten(), 
+                                                 directory_ =results_dir+'cyl_val/', allranks = True)
+                                for ccc in range(r.numComp):
+                                    sol0 = np.array(cyl.getContent(ccc +1, ccc < 2 )).flatten()
+                                    write_file_array("aftChCyl_content"+str(ccc+1)+"_"+str(gId)+"", 
+                                                 sol0, 
+                                                 directory_ =results_dir+'cyl_val/', allranks = True)
+                                if max(pHead) > 0:
+                                    print('issue phead',gId,rank, pHead, sol0 )
+                                    raise Exception
 
                 rsumDiff1d3dCW_abs = r.sumDiff1d3dCW_abs
                 r.checkMassOMoleBalance2(None,None, dt=dt,
@@ -312,7 +313,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rs.Qlight = 0.
         else:
             raise Exception
-        rs.Csoil_seg = r.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
+        
+        
         solution0_3ds_old = np.array(s.getSolution(0))
         solution0_1ds_old = np.array([cyl.getSolution(0) for cyl in r.cyls],dtype=object)
         
@@ -484,7 +486,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if( plantType == "plant") and (rank == 0):
                 
                 try:                    
-                    assert min(rs.Csoil_seg ) >= 0.
+                    
                     if not doMinimumPrint:
                         write_file_array("fpit_rsxUsed",np.array(rsx_set),directory_ =results_dir, fileType = '.csv')
                         write_file_float("fpit_weatherX",r.weatherX,directory_ =results_dir)
@@ -674,8 +676,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 if r.do1d1dFlow:
                     r.do1d1dFlows(soilVals = soilVals_,#wat. pot. (cm)
                             seg_valuesW = thetaCyl,#theta (cm/cm)
-                            seg_valuesSol = comp1content,# mol/cm3 wat
-                            seg_valuesmucil = comp2content,# mol/cm3 wat
+                            seg_valuesSol = comp1content/waterContent,# mol/cm3 wat
+                            seg_valuesmucil = comp2content/waterContent,# mol/cm3 wat
                             verbose=False)
             else:
                 r.flow1d1d_w = np.zeros(thetaCyl.shape)
@@ -1082,11 +1084,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             if not do1d1dBeforeReset:
                 soilVals_ = comm.bcast( np.array(s.getSolutionHead()),root= 0)
+                rhizoWAfter_1d1d = rhizoWAfter_
+                rhizoWAfter_1d1d[np.where(rhizoWAfter_1d1d == 0.)]=1 # for airsegments
                 if r.do1d1dFlow:
                     r.do1d1dFlows(soilVals = soilVals_,#wat. pot. (cm)
                             seg_valuesW =  rhizoWBefore_/cylVol,#wat. pot. (cm)
-                            seg_valuesSol = comp1content,# mol/cm3 wat
-                            seg_valuesmucil = comp2content,# mol/cm3 wat
+                            seg_valuesSol = comp1content/rhizoWAfter_,# mol/cm3 wat
+                            seg_valuesmucil = comp2content/rhizoWAfter_,# mol/cm3 wat
                             verbose=False)
                 if not ((r.spellData['scenario'] == 'none') or ((r.spellData['scenario'] != 'baseline') and (rs_age_i_dt > r.spellData['spellStart']) and (rs_age_i_dt <= r.spellData['spellEnd']))):
                     r.flow1d1d_w = np.zeros(thetaCyl.shape)
@@ -1612,6 +1616,17 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             theta3ds = s.getWaterContent()# proposed_outer_mucil_fluxes
             
             write_file_array("inner_error", r.errs, directory_ =results_dir, fileType = '.csv') 
+
+            write_file_array("fpit_flow1d1dw", 
+                             r.flow1d1d_w, 
+                             directory_ =results_dir, fileType = '.csv') 
+            write_file_array("fpit_flow1d1dsol", 
+                             r.flow1d1d_sol, 
+                             directory_ =results_dir, fileType = '.csv') 
+            write_file_array("fpit_flow1d1dmucil", 
+                             r.flow1d1d_mucil, 
+                             directory_ =results_dir, fileType = '.csv') 
+            write_file_array("inner_errDiffBCs", r.errDiffBCs, directory_ =results_dir, fileType = '.csv') 
             if  (not doMinimumPrint):#(n_iter % skip == 0) and 
                     write_file_array("fpit_errbulkMass",
                                      np.array([s.bulkMassCErrorPlant_abs,
@@ -1627,7 +1642,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     write_file_array("fpit_errorMassRhizo", np.array([r.rhizoMassCError_abs, r.rhizoMassCError_rel,
                                                             r.rhizoMassWError_abs, r.rhizoMassWError_rel]), 
                                      directory_ =results_dir, fileType = '.csv')# not cumulativecumulative (?)
-                    write_file_array("fpit_errDiffBCs", r.errDiffBCs, directory_ =results_dir, fileType = '.csv') 
+                    
                     write_file_array("fpit_diffBCS1dsFluxOut_sol", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                     write_file_array("fpit_diffBCS1dsFluxOut_mucil", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                     
@@ -1637,15 +1652,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                      sources_wat, 
                                      directory_ =results_dir, fileType = '.csv') 
                     
-                    write_file_array("fpit_flow1d1dw", 
-                                     r.flow1d1d_w, 
-                                     directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_flow1d1dsol", 
-                                     r.flow1d1d_sol, 
-                                     directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_flow1d1dmucil", 
-                                     r.flow1d1d_mucil, 
-                                     directory_ =results_dir, fileType = '.csv') 
                     
                     write_file_array("fpit_diffBCS1dsFluxInBis", 
                                      abs((
@@ -1831,7 +1837,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 #comm.barrier()
             n_iter += 1
             n_iter_inner_max = max(n_iter_inner_max,n_iter)
-
+            
         if rank == 0 and not doMinimumPrint:
             write_file_array("N_seg_fluxes",np.array(rs.outputFlux), directory_ =results_dir)
             write_file_array("N_soil_fluxes",soil_fluxes, directory_ =results_dir)
@@ -1884,7 +1890,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         
         if (rank == 0):
             rs.TranspirationCumul_inner += sum(np.array(rs.Ev) * dt) #transpiration [cm3/day] * day
+            rs.AgCumul_inner += np.array(rs.An) * (dt*24*3600) # //[mol CO2 m-2 s-1] to [mol CO2 m-2]
         
+        write_file_float("N_Transpiration_inner", sum(np.array(rs.Ev) * dt), directory_ =results_dir)
+        write_file_float("N_TranspirationCumul_inner", rs.TranspirationCumul_inner, directory_ =results_dir)
+        write_file_array("N_Q_Ag_dot_inner", rs.AgCumul_inner/ (dt*24*3600), directory_ =results_dir)
+        write_file_array("N_Q_Ag_dot_innerbis", rs.An, directory_ =results_dir)
         if r.mpiVerbose:# or (max_rank == 1):
             if rank == 0:
                 print('left iteration', rank, n_iter,Ni,'/',N, r.err, max(r.maxDiff1d3dCW_abs), r.rhizoMassWError_abs,'failed?', failedLoop)
