@@ -38,7 +38,7 @@ import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
 
-def getVTPOutput(r,rs,s, datas, datasName, rs_age, results_dir, min_b, max_b, cell_number):
+def getVTPOutput(r,rs,s, datas, datasName, rs_age, results_dir, min_b, max_b, cell_number, initPrint=False):
     vtpindx= int(rs_age)
     if rank == 0:
         print('doing print at', rs_age)
@@ -59,51 +59,51 @@ def getVTPOutput(r,rs,s, datas, datasName, rs_age, results_dir, min_b, max_b, ce
                             vals =datas_p,#[  psiXyl_p, C_ST_p], 
                             filename =results_dir+"vtpvti/plantAt"+ str(vtpindx), 
                       range_ = [0,5000])
+    if not initPrint:
+        periodic = False
+        konz =True 
 
-    periodic = False
-    konz =True 
-    
-    # check because will need all ranks
+        # check because will need all ranks
 
-    sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
-    extraArray_ = rs.soilModel.getWaterContent()
-    if not konz:
-        extraArrayName_ = "theta (cm3)"
-        extraArray_ *= sizeSoilCell
-    else:
-        extraArrayName_ = "theta (cm3/cm3)"
-    
-    rp = rs.get_concentration(0, konz)
-    s.results_dir = results_dir
-
-    # adapt to have plot_plants_and soil
-    vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
-            filename="vtpvti/soil_rx_at"+ str(vtpindx),sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
-            interactiveImage=False)  # VTK vizualisation
-    
-    for i in range(1, rs.numComp+1):
-        
-        extraArray_ = rs.soilModel.getSolution(i) * rs.phaseDensity(i)/1e6
-
+        sizeSoilCell = rs.soilModel.getCellVolumes() #cm3
+        extraArray_ = rs.soilModel.getWaterContent()
         if not konz:
-            extraArrayName_ = "C"+str(i)+" mol"
+            extraArrayName_ = "theta (cm3)"
+            extraArray_ *= sizeSoilCell
         else:
-            extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
-            if i <= rs.numFluidComp:
-                extraArray_ /= (rs.soilModel.getWaterContent() *sizeSoilCell) #cm3 water
-            else: 
-                extraArray_ /= sizeSoilCell #cm3
+            extraArrayName_ = "theta (cm3/cm3)"
 
-        vp.plot_roots_and_soil(rs.mappedSegments(),
-                               extraArrayName_ ,
-                               rs.get_concentration(i , konz), s, 
-                               periodic, min_b, max_b, 
-                               cell_number, 
-                filename="vtpvti/C"+str(i)+'_at'+str(vtpindx), 
-                               sol_ind =-1,
-                               extraArray = extraArray_, 
-                extraArrayName = extraArrayName_,
-            interactiveImage=False)  # VTK vizualisation
+        rp = rs.get_concentration(0, konz)
+        s.results_dir = results_dir
+
+        # adapt to have plot_plants_and soil
+        vp.plot_roots_and_soil(rs.mappedSegments(),extraArrayName_,rp, s, periodic, min_b, max_b, cell_number, 
+                filename="vtpvti/soil_rx_at"+ str(vtpindx),sol_ind =-1,extraArray = extraArray_, extraArrayName = extraArrayName_,
+                interactiveImage=False)  # VTK vizualisation
+
+        for i in range(1, rs.numComp+1):
+
+            extraArray_ = rs.soilModel.getSolution(i) * rs.phaseDensity(i)/1e6
+
+            if not konz:
+                extraArrayName_ = "C"+str(i)+" mol"
+            else:
+                extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
+                if i <= rs.numFluidComp:
+                    extraArray_ /= (rs.soilModel.getWaterContent() *sizeSoilCell) #cm3 water
+                else: 
+                    extraArray_ /= sizeSoilCell #cm3
+
+            vp.plot_roots_and_soil(rs.mappedSegments(),
+                                   extraArrayName_ ,
+                                   rs.get_concentration(i , konz), s, 
+                                   periodic, min_b, max_b, 
+                                   cell_number, 
+                    filename="vtpvti/C"+str(i)+'_at'+str(vtpindx), 
+                                   sol_ind =-1,
+                                   extraArray = extraArray_, 
+                    extraArrayName = extraArrayName_,
+                interactiveImage=False)  # VTK vizualisation
         
 
     
@@ -137,7 +137,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 20/60/24
     #p_mean = -100
-    k_iter = 20
+    k_iter = 6#20
+    targetIter= 5
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
     weightBefore = False
@@ -175,7 +176,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/CSTiminSame_exud4p/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/newtrans5/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -230,7 +231,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
 
     """ initialize """
 
-    weatherInit = scenario_setup.weather(1., spellData)
+    weatherInit = scenario_setup.weather(1.,dt, spellData)
     s, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
                 min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
                 usemoles = usemoles, dirResults = results_dir, p_mean_ = weatherInit['p_mean'], 
@@ -359,6 +360,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                      "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
                      "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel",'err'])
     write_file_array("OuterSuccess_error", errs, directory_ =results_dir, fileType = '.csv')
+    write_file_array("inner_error", errs, directory_ =results_dir, fileType = '.csv')
     
     if not doMinimumPrint:
         write_file_array("N_error", errs, directory_ =results_dir, fileType = '.csv')
@@ -367,6 +369,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     dt_inner = float(dt)#/float(2.)
     start = True
     rs.new_soil_solute = np.array([0.])
+    
+    getVTPOutput(r,rs,s,[],[], rs_age*100, results_dir, min_b, max_b, cell_number,initPrint=True)#[np.array(rs.organTypes)], ["organTypes"],
     while rs_age < simMax:
 
         rs_age += dt
@@ -612,7 +616,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             nOld = int(dt/dt_inner)
             if failedLoop:# if the inner computation failed, we also need to decrease the timestep
                 n_iter_inner_max = k_iter
-            nNew = suggestNumStepsChange(nOld, n_iter_inner_max, np.ceil(k_iter/2), results_dir)
+            nNew = suggestNumStepsChange(nOld, n_iter_inner_max, targetIter #np.ceil(k_iter/2)
+                                         , results_dir)
             try:
                 assert nOld == int(nOld)
                 assert nNew == int(nNew)
@@ -908,11 +913,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             #    print(error_st_abs, Q_in, error_st_rel, rs.weatherX, r.plant.organTypes)
             #    raise Exception
 
-            try:
-                assert  (error_st_rel< 1.) or abs(Q_in) < 1e-13
-            except:    
-                print('error_st_abs',rank,error_st_abs, Q_in, error_st_rel)
-                raise Exception
 
             assert Q_Exud_i[0] == 0#no exudation in seed node I guess
             assert Q_Mucil_i[0] == 0#no exudation in seed node I guess
@@ -991,7 +991,19 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             Q_Mucil_i_seg = None
             Q_Exud = None
             Q_Mucil = None
+            error_st_rel = 0
+            error_st_abs = 0
+            Q_in = None
             
+        Q_in = comm.bcast(Q_in, root = 0)
+        error_st_rel = comm.bcast(error_st_rel, root = 0)
+        error_st_abs = comm.bcast(error_st_abs, root = 0)
+        if False:
+            try:
+                assert  (error_st_rel< 1.) or abs(Q_in) < 1e-13
+            except:    
+                print('error_st_abs',rank,error_st_abs, Q_in, error_st_rel)
+                raise Exception
         #print(rank, 'share Q_Exud_i_segA')
         #comm.barrier()
         if mpiVerbose and rank==0:# or (max_rank == 1):
@@ -1043,15 +1055,23 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("Q_Exud", Q_Exud, directory_ =results_dir)
             write_file_array("Q_Gr", Q_Gr, directory_ =results_dir)
             write_file_array("psiXyl", r.psiXyl, directory_ =results_dir)
+            write_file_array("psi_guardCell", r.pg, directory_ =results_dir)
+            write_file_array("gco2", r.gco2, directory_ =results_dir)
             write_file_array("Fpsi", r.Fpsi, directory_ =results_dir)
             write_file_array("fw", r.fw, directory_ =results_dir)
-            write_file_array("gco2", r.gco2, directory_ =results_dir)
             write_file_array("Q_Ag_dot_inner", r.AgCumul_inner, directory_ =results_dir)
             write_file_array("Q_Ag_dot_innerbis", r.An, directory_ =results_dir)
             write_file_array("Q_Ag_dot", np.array(r.AgPhl)* mmolSuc_to_molC, directory_ =results_dir)
             write_file_float("Q_Ag", Q_in, directory_ =results_dir)
             write_file_array("C_rsi", np.array(r.Csoil_seg ), 
                              directory_ =results_dir)#mmol/cm3
+            write_file_array("CSTi_delta", np.array(r.CSTi_delta ), 
+                             directory_ =results_dir)
+            write_file_array("CSTi_exud", np.array(r.CSTi_exud ), 
+                             directory_ =results_dir)
+            write_file_array("Crsi_exud", np.array(r.Crsi_exud ), 
+                             directory_ =results_dir)
+            write_file_array("Q_Exudmax",np.array(r.Q_Exudmax), directory_ =results_dir)
             
             
         

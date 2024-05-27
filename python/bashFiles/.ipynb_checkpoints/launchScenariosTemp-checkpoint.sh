@@ -1,6 +1,11 @@
 #!/bin/bash
 
 
-sbatch fpit128cpu256mem.sh 10 14 21 baseline
-sbatch fpit128cpu256mem.sh 10 14 47 baseline
-sbatch fpit128cpu256mem.sh 10 14 85 baseline 
+# pset 5
+sbatch fpit128cpu128.sh 10 25 5 baseline  
+sbatch fpit128cpu128.sh 10 25 5 earlyDry
+sbatch fpit128cpu128.sh 10 25 5 lateDry
+# pset 61
+#sbatch fpit128cpu128.sh 10 25 61 baseline  
+#sbatch fpit128cpu256mem.sh 10 25 61 earlyDry 
+#sbatch fpit128cpu256mem.sh 10 25 61 lateDry  

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# pset 7
+# pset 5
 sbatch fpit128cpu128.sh 10 25 5 baseline
 sbatch fpit128cpu128.sh 10 25 5 earlyDry
 sbatch fpit128cpu128.sh 10 25 5 lateDry

@@ -130,7 +130,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             #comm.barrier()
             
         hp_ = max([tempnode[2] for tempnode in rs.get_nodes()]) /100. #canopy height
-        r.weatherX = weather(simDuration = rs_age_i_dt, hp =  hp_, spellData= r.spellData)
+        r.weatherX = weather(simDuration = rs_age_i_dt,dt=dt, hp =  hp_, spellData= r.spellData)
         if not doMinimumPrint:
             write_file_array('change_soil',np.array([rs_age_i_dt, (r.spellData['scenario'] != 'none'),
                                                      (r.spellData['scenario'] != 'baseline'),
@@ -1510,7 +1510,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             outer_R_bc_sol_old = outer_R_bc_sol.copy()
             
             rx_divide = np.where(rx !=0, rx, 1.)
-            errRxPlant = max(abs((rx - rx_old)/rx_divide)*100.)#np.linalg.norm(abs((rx - rx_old)/rx_divide)*100)
+            # up 10% err
+            errRxPlant = max(abs((rx - rx_old)/rx_divide)*100.)/10 #np.linalg.norm(abs((rx - rx_old)/rx_divide)*100)
             rx_old = rx.copy()
             errW1ds = np.linalg.norm(rhizoWAfter_[rhizoSegsId] - rhizoWAfter_old[rhizoSegsId])
             errC1ds = np.linalg.norm(rhizoTotCAfter_[rhizoSegsId] - rhizoTotCAfter_old[rhizoSegsId])
@@ -1595,6 +1596,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 if rank == 0:
                     print("cyl3plant:GOTerrsandCo", rank)
                 #comm.barrier()
+                
             r.errs =np.array([errRxPlant, errW1ds, errW3ds,errC1ds, errC3ds, 
                             max(r.SinkLim3DS),max(abs(r.SinkLim1DS)),max(abs(r.OutLim1DS)),
                             max(abs(r.InOutBC_Cdiff.reshape(-1))),

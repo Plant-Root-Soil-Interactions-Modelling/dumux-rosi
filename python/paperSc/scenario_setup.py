@@ -746,7 +746,13 @@ def resistance2conductance(resistance,r, weatherX):
     resistance = resistance * (1000) * (1/10000)# [s cm2 mmol−1] * [mmol/mol] * [m2/cm2] = [s m2 mol−1]
     return 1/resistance
     
-def weather(simDuration, spellData, hp:float=1):
+
+def sinusoidal3(t, dt):
+    """ sinusoidal functgion from 5:00 - 23:00, 0 otherwise (max is 1)"""
+    #return (np.maximum(0.,  np.pi * (np.cos(2 * np.pi * (t - 0.5)) + np.cos(2 * np.pi * ((t + dt) - 0.5))) / 2))/np.pi
+    return ((np.maximum(0.,  0.75+((np.cos(2 * np.pi * (t - 0.5)) + np.cos(2 * np.pi * ((t + dt) - 0.5)) )/ 2))))/1.75
+
+def weather(simDuration, dt,spellData, hp:float=1):
         if simDuration == 0.:
             raise Exception
         Qnigh = 0; Qday = 960e-6 #458*2.1
@@ -775,7 +781,7 @@ def weather(simDuration, spellData, hp:float=1):
             print('spellData',spellData)
             raise Exception
             
-        coefhours = sinusoidal(simDuration+0.5)/2
+        coefhours = sinusoidal3(simDuration+0.5, dt)# sinusoidal(simDuration+0.5)/2
         RH_ = RHnigh + (RHday - RHnigh) * coefhours
         TairC_ = Tnigh + (Tday - Tnigh) * coefhours
         Q_ = Qnigh + (Qday - Qnigh) * coefhours
@@ -826,12 +832,17 @@ def phloemParam(r,weatherInit ):
     r.k_meso = 1e-3#1e-4
     
     r.Gr4Exud = True
-    r.setKrm2([[2e-5]], False)
-    r.setKrm1([[10e-2]], False)#([[2.5e-2]])
-    r.setRhoSucrose([[0.51],[0.65],[0.56]], False)#0.51
+    r.setKrm2([[2e-5]], False) # trans 5 : /10
+    r.setKrm1([[10e-2]], False)#([[2.5e-2]]) #trans 5 : /10
+    #r.setRhoSucrose([[0.51],[0.65],[0.56]], False)#0.51
+    r.setRhoSucrose([[0.5],[0.5],[0.5]], False)
     #([[14.4,9.0,0,14.4],[5.,5.],[15.]])
-    rootFact =1# 2
-    r.setRmax_st([[2.4*rootFact,1.5*rootFact,0.6*rootFact,2.4*rootFact],[2.,2.],[8.]], False)#6.0#*6 for roots, *1 for stem, *24/14*1.5 for leaves
+    rootFact = 2
+    stemFact = 2
+    leafFact = 2
+    r.setRmax_st([[2.4*rootFact,1.5*rootFact,0.6*rootFact,2.4*rootFact],
+                  [2.*stemFact,2.*stemFact],
+                  [8.*leafFact]], False)#6.0#*6 for roots, *1 for stem, *24/14*1.5 for leaves
     #r.setRmax_st([[12,9.0,6.0,12],[5.,5.],[15.]])
     r.KMrm = 0.1#VERY IMPORTANT TO KEEP IT HIGH
     #r.exud_k = np.array([2.4e-4])#*10#*(1e-1)
@@ -850,13 +861,14 @@ def phloemParam(r,weatherInit ):
     r.surfMeso=0.0025
     r.leafGrowthZone = 2 # cm
     r.StemGrowthPerPhytomer = True # 
-    r.psi_osmo_proto = -10000*1.0197 #schopfer2006
+    #r.psi_osmo_proto = -10000*1.0197 #schopfer2006
+    r.psiMin = 2500*1.0197
     
     r.fwr = 1e-16
-    r.fw_cutoff =  0.09497583
-    r.sh = 4e-4
-    r.gm=0.01
-    r.p_lcrit =  -15000*0.6
+    r.fw_cutoff =   0.04072 # 0.09497583
+    r.sh =5e-4# 4.655e-4# 4e-4
+    r.gm=0.03#0.01
+    r.p_lcrit = -8375#-8847# from calibration using data of corso2020 #-15000*0.6
     
     r.limMaxErr = 1/100
     r.maxLoop = 10000
@@ -933,7 +945,7 @@ def setKrKx_phloem(r): #inC
     ratio_decrease = 1.5/100 # same as for xylem
     
     
-    r.k_mucil = 5#10 #1 # Y? to get 1/10-1/100 of exudation
+    r.k_mucil = 1#5#10 #1 # Y? to get 1/10-1/100 of exudation
     
     r.setKr_mucilRootTip([r.k_mucil, r.k_mucil, r.k_mucil, r.k_mucil] )
     if False: # to implement
@@ -987,7 +999,7 @@ def create_mapped_plant( nc, logbase, mode,initSim,
                                  limErr1d3dAbs = limErr1d3d, l_ks=l_ks_)
     elif fname.endswith(".xml"):
         seed = 1
-        weatherInit = weather(initSim,spellData)
+        weatherInit = weather(initSim,0,spellData)
         if plantType == "plant":
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
