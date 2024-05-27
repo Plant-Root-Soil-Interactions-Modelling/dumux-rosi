@@ -343,6 +343,12 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
         if (rank == 0):
             plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
+            plantModel.AnCumul_inner += np.array(plantModel.An ) * (dt*24*3600) # //[mol CO2 m-2 s-1] to [mol CO2 m-2]
+                
+            write_file_float("N_Transpiration_inner", sum(np.array(plantModel.Ev) * dt), directory_ =results_dir)
+            write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
+            write_file_array("N_Q_Ag_dot_inner", plantModel.AgCumul_inner/ (dt*24*3600), directory_ =results_dir)
+            write_file_array("N_Q_Ag_dot_innerbis", plantModel.An, directory_ =results_dir)
         
         failedLoop = continueLoop(perirhizalModel,0, dt, False,Ni * dt,'inner_testdata', plant = plantModel)
         

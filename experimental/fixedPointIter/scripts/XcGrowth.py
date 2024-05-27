@@ -263,7 +263,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         
         printData.printTimeAndError(perirhizalModel, rs_age)
         
-        helpfull.getCumulativeTranspiration(plantModel, perirhizalModel)
+        helpfull.getCumulativeTranspirationAg(plantModel, perirhizalModel, dt)
         
         printData.getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData)
         

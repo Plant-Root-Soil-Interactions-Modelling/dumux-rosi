@@ -48,9 +48,11 @@ class phloemDataStorage():
             self.Nt = len(perirhizalModel.nodes)
             Nt = self.Nt
             
+            #  MMOL Suc (/cm3) => mol C (/cm3)
+            mmolSuc_to_molC = 1/1e3*12
             if self.phloemModel.withInitVal and (len(self.Q_ST_init) ==0) :
-                self.Q_ST_init = np.array(self.phloemModel.Q_init[0:Nt])/1e3
-                self.Q_meso_init = np.array(self.phloemModel.Q_init[Nt:(Nt*2)])/1e3
+                self.Q_ST_init = np.array(self.phloemModel.Q_init[0:Nt])* mmolSuc_to_molC
+                self.Q_meso_init = np.array(self.phloemModel.Q_init[Nt:(Nt*2)])* mmolSuc_to_molC
 
             # the backups
 
@@ -58,26 +60,25 @@ class phloemDataStorage():
             self.Q_Mucilbu = self.Q_Mucil
 
             # att: that will be the cumulative value
-            #  MMOL(/cm3) => mol(/cm3)
-            self.Q_ST    = np.array(self.phloemModel.Q_out[0:Nt])/1e3
-            self.Q_meso  = np.array(self.phloemModel.Q_out[Nt:(Nt*2)])/1e3
-            self.Q_Rm    = np.array(self.phloemModel.Q_out[(Nt*2):(Nt*3)])/1e3
-            self.Q_Exud  = np.array(self.phloemModel.Q_out[(Nt*3):(Nt*4)])/1e3 
-            self.Q_Gr    = np.array(self.phloemModel.Q_out[(Nt*4):(Nt*5)])/1e3
-            self.Q_Rmmax       = np.array(self.phloemModel.Q_out[(Nt*5):(Nt*6)])/1e3
-            self.Q_Grmax       = np.array(self.phloemModel.Q_out[(Nt*6):(Nt*7)])/1e3
-            self.Q_S_meso   = np.array(self.phloemModel.Q_out[(Nt*7):(Nt*8)])/1e3
-            self.Q_S_ST   = np.array(self.phloemModel.Q_out[(Nt*8):(Nt*9)])/1e3
-            self.Q_Mucil  = np.array(self.phloemModel.Q_out[(Nt*9):(Nt*10)])/1e3 #mol for nodes
+            self.Q_ST    = np.array(self.phloemModel.Q_out[0:Nt])* mmolSuc_to_molC
+            self.Q_meso  = np.array(self.phloemModel.Q_out[Nt:(Nt*2)])* mmolSuc_to_molC
+            self.Q_Rm    = np.array(self.phloemModel.Q_out[(Nt*2):(Nt*3)])* mmolSuc_to_molC
+            self.Q_Exud  = np.array(self.phloemModel.Q_out[(Nt*3):(Nt*4)])* mmolSuc_to_molC
+            self.Q_Gr    = np.array(self.phloemModel.Q_out[(Nt*4):(Nt*5)])* mmolSuc_to_molC
+            self.Q_Rmmax       = np.array(self.phloemModel.Q_out[(Nt*5):(Nt*6)])* mmolSuc_to_molC
+            self.Q_Grmax       = np.array(self.phloemModel.Q_out[(Nt*6):(Nt*7)])* mmolSuc_to_molC
+            self.Q_S_meso   = np.array(self.phloemModel.Q_out[(Nt*7):(Nt*8)])* mmolSuc_to_molC
+            self.Q_S_ST   = np.array(self.phloemModel.Q_out[(Nt*8):(Nt*9)])* mmolSuc_to_molC
+            self.Q_Mucil  = np.array(self.phloemModel.Q_out[(Nt*9):(Nt*10)])* mmolSuc_to_molC #mol for nodes
 
-            self.C_ST    = np.array(self.phloemModel.C_ST)/1e3
-            self.Fl      = np.array(self.phloemModel.Fl)/1e3
+            self.C_ST    = np.array(self.phloemModel.C_ST)* mmolSuc_to_molC
+            self.Fl      = np.array(self.phloemModel.Fl)* mmolSuc_to_molC
             self.volST   = np.array(self.phloemModel.vol_ST)
             self.volMeso   = np.array(self.phloemModel.vol_Meso)
             self.C_S_meso   = self.Q_S_meso/self.volMeso
             self.C_S_ST   = self.Q_S_ST/self.volST
             self.C_meso  = self.Q_meso/self.volMeso
-            self.Q_in   += sum(np.array(self.phloemModel.AgPhl)*dt)/1e3
+            self.Q_in   += sum(np.array(self.phloemModel.AgPhl)*dt)* mmolSuc_to_molC
             # i m missing the starch
             self.Q_out   = self.Q_Rm + self.Q_Exud + self.Q_Gr + self.Q_Mucil
             self.error_st_abs   = abs(sum(self.Q_ST + self.Q_meso + self.Q_out + self.Q_S_meso + self.Q_S_ST)- self.Q_in - sum(self.Q_ST_init)  - sum(self.Q_meso_init))

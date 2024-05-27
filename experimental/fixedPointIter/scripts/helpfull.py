@@ -203,6 +203,7 @@ def resetAndSaveData1(perirhizalModel):
 
 def resetAndSaveData2(plantModel, perirhizalModel, s):
     plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
+    plantModel.AgCumul_inner = 0 # reset transpiration of inner time step to 0
 
     # save data before entering iteration loop
     s.saveManual()
@@ -211,6 +212,8 @@ def resetAndSaveData2(plantModel, perirhizalModel, s):
     perirhizalModel.enteredSpellBU = perirhizalModel.enteredSpell
 
 def resetAndSaveData3(plantModel, perirhizalModel, s):
+    plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
+    plantModel.AgCumul_inner = 0 # reset transpiration of inner time step to 0
     s.resetManual()
     perirhizalModel.resetManual()
     perirhizalModel.leftSpell = perirhizalModel.leftSpellBU
@@ -221,13 +224,15 @@ def resetAndSaveData3(plantModel, perirhizalModel, s):
     
     
 
-def getCumulativeTranspiration(plantModel, perirhizalModel):
+def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
     if perirhizalModel.doPhotosynthesis:
         plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
         if perirhizalModel.enteredSpell and (not perirhizalModel.leftSpell):
             plantModel.TranspirationCumul_eval += plantModel.TranspirationCumul_inner
         elif perirhizalModel.leftSpell:
             plantModel.TranspirationCumul_eval = 0.
+        
+        plantModel.An =comm.bcast( plantModel.AgCumul_inner/(dt*24*3600) , root=0)
 
     else:
         plantModel.TranspirationCumul += sum(plantModel.outputFlux)
