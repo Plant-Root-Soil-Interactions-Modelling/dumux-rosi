@@ -107,7 +107,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
         
-        perirhizalModel.weatherX = weatherFunctions.weather(simDuration = rs_age_i_dt, 
+        perirhizalModel.weatherX = weatherFunctions.weather(simDuration = rs_age_i_dt, dt = dt,
                                            hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
                                            spellData= perirhizalModel.spellData)
         
@@ -116,11 +116,6 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
             PhloemPhotosynthesis.computeAtmosphereData(plantModel, perirhizalModel)
             
-            
-        if perirhizalModel.doPhloemFlow: # data needed for phloem balance
-            plantModel.Csoil_seg = perirhizalModel.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
-            
-        
         ####
         #       reset inner loop data (create XXX_old vals to evaluate convergence)
         ####

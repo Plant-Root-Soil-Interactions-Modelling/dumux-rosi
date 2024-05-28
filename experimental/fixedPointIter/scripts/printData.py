@@ -8,6 +8,7 @@ import sys;
 import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import timeit
+import plantbox as pb
 
 from air_modelsPlant import AirSegment
 from helpfull import write_file_array, write_file_float, div0, div0f
@@ -259,59 +260,75 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
                                             s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]),
                          directory_ =results_dir, fileType = '.csv')#cumulative
 
+        
 
-def doVTPplots(perirhizalModel, s, soilTextureAndShape):
+def doVTPplots(vtpindx, perirhizalModel, plantModel, s, 
+                soilTextureAndShape,datas = [], datasName=[], initPrint=False):
     """ vtp plots for water and C components in 3d soil and at root-soil
-        interface
+        interface 
     """
     results_dir = perirhizalModel.results_dir
-    cell_volumes = s.getCellVolumes()
-    # otherwise the shoot looks weird
-    periodic = False
-    
-    
-    extraArray_ = perirhizalModel.soilModel.getWaterContent()
-    extraArrayName_ = "theta (cm3/cm3)"
-    
-    getConcentration = True # True: get concentration, False: get content
-    rsi_Conce = perirhizalModel.get_concentration(0, getConcentration)
-    
-    # TODO: adapt to have plot_plants_and_soil (i.e., with leaf surface)
-    vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
-                           soilTextureAndShape['min_b'],
-                           soilTextureAndShape['max_b'],
-                           soilTextureAndShape['cell_number'], 
-            filename="soil_rx",sol_ind =-1,
-                           extraArray = extraArray_, extraArrayName = extraArrayName_,
-            interactiveImage=False)  # VTK vizualisation
-    print("idcomp_done", 0, rank)
-    for i in range(1, perirhizalModel.numComp):
-        print("idcomp", i, rank)
-        extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6
-
-        if not getConcentration:
-            extraArrayName_ = "C"+str(i)+" mol"
-        else:
-            extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
-            if i <= perirhizalModel.numDissolvedSoluteComp:
-                extraArray_ /= (perirhizalModel.soilModel.getWaterContent() *cell_volumes) #cm3 water
-            else: 
-                extraArray_ /= cell_volumes #cm3
-
-
-        vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),
-                               extraArrayName_ ,
-                               perirhizalModel.get_concentration(i , getConcentration), s, 
-                               periodic,
-                           soilTextureAndShape['min_b'],
-                           soilTextureAndShape['max_b'],
+    if rank == 0:
+        ana = pb.SegmentAnalyser(plantModel.plant.mappedSegments())
+        cutoff = 1e-15 #if value too small, makes paraview crash
+        datas_p = []
+        for ddindx, dd in enumerate(datas):
+            dd_p = np.array(dd)
+            dd_p[abs(dd_p) < cutoff] = 0
+            datas_p.append(dd_p)
+            ana.addData(datasName[ddindx], dd_p)
+        
+        vp.plot_plant(plantModel.plant,p_name =datasName,
+                            vals =datas_p, 
+                            filename =results_dir+"vtpvti/plantAt"+ str(vtpindx), 
+                      range_ = [0,5000])
+    if not initPrint:
+        cell_volumes = s.getCellVolumes()
+        # otherwise the shoot looks weird
+        periodic = False
+        
+        
+        extraArray_ = perirhizalModel.soilModel.getWaterContent()
+        extraArrayName_ = "theta (cm3/cm3)"
+        
+        getConcentration = True # True: get concentration, False: get content
+        rsi_Conce = perirhizalModel.get_concentration(0, getConcentration)
+        
+        # TODO: adapt to have plot_plants_and_soil (i.e., with leaf surface)
+        vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
+                               soilTextureAndShape['min_b'],
+                               soilTextureAndShape['max_b'],
                                soilTextureAndShape['cell_number'], 
-                filename="C"+str(i), 
-                               sol_ind =-1,
-                               extraArray = extraArray_, 
-                extraArrayName = extraArrayName_,
-            interactiveImage=False)  # VTK vizualisation
-        print("idcomp_done", i, rank)
+                filename="soil_rx",sol_ind =-1,
+                               extraArray = extraArray_, extraArrayName = extraArrayName_,
+                interactiveImage=False)  # VTK vizualisation
+                
+        for i in range(1, perirhizalModel.numComp):
+            print("idcomp", i, rank)
+            extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6
+
+            if not getConcentration:
+                extraArrayName_ = "C"+str(i)+" mol"
+            else:
+                extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
+                if i <= perirhizalModel.numDissolvedSoluteComp:
+                    extraArray_ /= (perirhizalModel.soilModel.getWaterContent() *cell_volumes) #cm3 water
+                else: 
+                    extraArray_ /= cell_volumes #cm3
+
+
+            vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),
+                                   extraArrayName_ ,
+                                   perirhizalModel.get_concentration(i , getConcentration), s, 
+                                   periodic,
+                               soilTextureAndShape['min_b'],
+                               soilTextureAndShape['max_b'],
+                                   soilTextureAndShape['cell_number'], 
+                    filename="C"+str(i), 
+                                   sol_ind =-1,
+                                   extraArray = extraArray_, 
+                    extraArrayName = extraArrayName_,
+                interactiveImage=False)  # VTK vizualisation
         
         
 def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc_molFr):

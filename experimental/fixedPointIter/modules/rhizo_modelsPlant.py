@@ -21,7 +21,7 @@ from scipy import sparse
 import scipy.sparse.linalg as LA
 
 from scipy.interpolate import PchipInterpolator,  CubicSpline
-
+from helpfull import StdoutRedirector
 
 class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     """
@@ -1767,20 +1767,25 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         a_in = self.radii[gId]
         a_out = self.outer_radii[gId]
         lId =int( np.where(self.eidx == gId)[0])
-        #print('to wrap', rank,gId, a_in,a_out )
+        
         if a_in < a_out:
-            cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
-            cyl.initialize(verbose = False)
+            with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+                cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
+                cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
             
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), 
                                  self.NC, base = lb)
-            cyl.createGrid1d(points)# cm
+            
+            with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+                cyl.createGrid1d(points)# cm
+                
             if len(self.dx2) > lId:
                 self.dx2[lId] = 0.5 * (points[1] - points[0]) #when updating
             else:
-                self.dx2.append(0.5 * (points[1] - points[0]))#what is this?
+                self.dx2.append(0.5 * (points[1] - points[0]))
+                
             self.points.append(points)
             
             cyl.setParameter("Soil.BC.dzScaling", "1")
@@ -1800,8 +1805,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
             cyl.setOuterBC("fluxCyl", 0.)
             #cyl.setOuterBC_solute("fluxCyl", 0.)
             
-            cyl.setParameter( "Soil.MolarMass", str(self.soilModel.solidMolarMass))
-            cyl.setParameter( "Soil.solidDensity", str(self.soilModel.solidDensity))
+            cyl.setParameter("Soil.MolarMass", str(self.soilModel.solidMolarMass))
+            cyl.setParameter("Soil.solidDensity", str(self.soilModel.solidDensity))
             cyl.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
             cyl.setParameter("Soil.betaC", str(self.soilModel.betaC ))
             cyl.setParameter("Soil.betaO", str(self.soilModel.betaO))

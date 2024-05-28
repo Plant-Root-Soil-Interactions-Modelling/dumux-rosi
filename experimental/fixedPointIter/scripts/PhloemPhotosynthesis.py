@@ -33,6 +33,8 @@ class phloemDataStorage():
     def setNtbu(self):
         self.Ntbu = self.Nt
     def computePhloemFlow(self,rs_age, dt,perirhizalModel):
+    
+        self.plantModel.Csoil_seg = self.perirhizalModel.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
         
         if rank == 0:
             startphloem=rs_age

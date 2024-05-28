@@ -424,7 +424,7 @@ def create_mapped_plant(initSim, soil_model, fname, path,
                                  limErr1d3dAbs = limErr1d3d)
     elif fname.endswith(".xml"):
         seed = 1
-        weatherInit = weather(initSim,spellData)
+        weatherInit = weather(initSim,0, spellData)
         if plantType == "plant":
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:

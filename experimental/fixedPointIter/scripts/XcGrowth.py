@@ -30,8 +30,10 @@ import printData
 def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    # max number of iteration for the fixed-point iteration
-    k_iter = 20
+    # min, max, objective number of iteration for the fixed-point iteration
+    minIter = 4 # empirical minimum number of loop to reduce error
+    k_iter = 6
+    targetIter= 5
     # plant or root system
     organism = "plant"# "RS"#
     # which functional modules to implement
@@ -60,7 +62,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
-    weatherInit = scenario_setup.weather(1., spellData)
+    weatherInit = scenario_setup.weather(1.,dt, spellData)
        
     # directory where the results will be printed
     results_dir="./results/ongoingCleanUp/"+str(spellData['scenario'])\
@@ -112,7 +114,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     perirhizalModel.doPhloemFlow = doPhloemFlow
     perirhizalModel.doSoluteFlow = doSoluteFlow
     perirhizalModel.doMinimumPrint = doMinimumPrint
+    perirhizalModel.minIter=minIter
     perirhizalModel.k_iter=k_iter
+    perirhizalModel.targetIter=targetIter
     perirhizalModel.beforeAtNight = beforeAtNight
     rs_age = initsim # age before implementation of the funcional modules
     s.mpiVerbose = mpiVerbose
@@ -169,7 +173,10 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     """ prints """
     printData.initialPrint(perirhizalModel)
     
-        
+    printData.doVTPplots(0, perirhizalModel, plantModel,s, soilTextureAndShape, 
+                            datas=[], datasName=[],initPrint=True)
+    
+    
     while rs_age < simMax:
 
         rs_age += dt
@@ -242,7 +249,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 
                 
             perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, failedLoop,
-                                             np.ceil(perirhizalModel.k_iter/2), results_dir)
+                                             targetIter, results_dir)
             
             if keepGoing or failedLoop:
                 
@@ -282,16 +289,38 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         if (rank == 0) and doPhloemFlow:
             printData.printPhloemFlowOutput(rs_age, perirhizalModel, phloemData, plantModel)
             
+        if rank == 0:
+            datas = [np.array(plantModel.AgPhl)* mmolSuc_to_molC,
+                     plantModel.psiXyl, 
+                     phloemData.C_ST, phloemData.C_S_ST, 
+                     phloemData.C_meso, phloemData.C_S_meso, 
+                     #phloemData.Q_Exud,phloemData.Q_Mucil,
+                     #phloemData.Q_Gr,phloemData.Q_Rm, 
+                     phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
+                     phloemData.Q_Gr_i,phloemData.Q_Rm_i
+                    ]
+            datasName = ["Ag", "psiXyl",
+                         "C_ST", "C_S_ST", 
+                         "C_meso", "C_S_meso", 
+                         "Q_Exud", "Q_Mucil",
+                         "Q_Gr","Q_Rm",
+                         "Q_Exud_i","Q_Mucil_i" ,
+                         "Q_Gr_i","Q_Rm_i"
+                        ]
+                        
+        if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+            printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
+                                perirhizalModel, plantModel,s, soilTextureAndShape, 
+                                datas, datasName, initPrint=False)
+            
     """ wrap up """
-    print('finished simulation :D')
     
     
     perirhizalModel.checkMassOMoleBalance2()
     
-    printData.doVTPplots(perirhizalModel, s, soilTextureAndShape)
     
     
-    print("fin", rank)
+    print("finished simulation :D", rank,"(parting is such sweet sorrow)")
     # for some reason, we get an error when the program stops
     # memory leak?
     return results_dir

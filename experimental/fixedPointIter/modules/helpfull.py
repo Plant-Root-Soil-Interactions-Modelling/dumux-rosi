@@ -8,6 +8,24 @@ import sys;
 import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import timeit
+import ctypes
+
+class StdoutRedirector:
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.libc = ctypes.CDLL(None)
+        self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
+
+    def __enter__(self):
+        self.old_stdout_fd = os.dup(1)
+        self.file = open(self.filepath, 'a')
+        self.file_fd = self.file.fileno()
+        os.dup2(self.file_fd, 1)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.dup2(self.old_stdout_fd, 1)
+        os.close(self.old_stdout_fd)
+        self.file.close()
 
 def suggestNumStepsChange(dt, dt_inner, failedLoop,  targetIter_, results_dir):# taken from dumux
     """
@@ -97,7 +115,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
 def setupDir(results_dir):
     """if results directory already exists, make it empty"""
     if rank == 0:
-        for extraText in ["","cyl_val/","printData/"]:
+        for extraText in ["","cyl_val/","printData/", "vtpvti/"]:
             if not os.path.exists(results_dir+extraText):
                 os.makedirs(results_dir+extraText)
             else:
@@ -107,6 +125,13 @@ def setupDir(results_dir):
                         os.remove(results_dir+extraText+item)
                     except:
                         pass
+
+
+
+def sinusoidal3(t, dt):
+    """ sinusoidal functgion from 5:00 - 23:00, 0 otherwise (max is 1)"""
+    return ((np.maximum(0.,  0.75+((np.cos(2 * np.pi * (t - 0.5)) + np.cos(2 * np.pi * ((t + dt) - 0.5)) )/ 2))))/1.75
+
                     
 def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
                          real_dtinner: float,name="continueLoop", isInner = False,doPrint = True, 
@@ -123,12 +148,12 @@ def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
                     plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
                      directory_ = results_dir)
 
-    n_iter_min = 4 # empirical minimum number of loop to reduce error
+
     cL = ((np.floor(rs.err) > rs.max_err) or  rs.solve_gave_up or failedLoop
             or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
             or (np.floor(rs.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
             or (min(rs.new_soil_solute.reshape(-1)) < 0)  
-            or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < rs.k_iter)
+            or ((n_iter < rs.minIter) and (isInner)))  and (n_iter < rs.k_iter)
 
     if rank == 0:#mpiVerbose:# or (max_rank == 1):
         print('continue loop?',rank,'n_iter',n_iter,'cL',cL,'failedLoop',failedLoop, ' np.floor(rs.err)',
