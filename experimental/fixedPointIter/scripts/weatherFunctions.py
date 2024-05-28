@@ -11,9 +11,10 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
     
 from functional.xylem_flux import sinusoidal
+from helpfull import sinusoidal3
 
     
-def weather(simDuration, spellData, hp:float=1):
+def weather(simDuration, dt, spellData, hp:float=1):
         if simDuration == 0.:
             raise Exception
         Qnigh = 0; Qday = 960e-6 
@@ -34,7 +35,7 @@ def weather(simDuration, spellData, hp:float=1):
             print('spellData',spellData)
             raise Exception
             
-        coefhours = sinusoidal(simDuration)/2
+        coefhours = sinusoidal3(simDuration + 0.5, dt)
         RH_ = RHnigh + (RHday - RHnigh) * coefhours
         TairC_ = Tnigh + (Tday - Tnigh) * coefhours
         Q_ = Qnigh + (Qday - Qnigh) * coefhours
@@ -163,6 +164,7 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
                     
             s.save()# <= so that stay in the current weather state
             perirhizalModel.save() 
+            s.buWSoilInit = sum(np.multiply(comm.bcast(np.array(s.getWaterContent()), root=0), cell_volumes)) # to evaluate cumulative water balance error
             # reset the inter-cell water fluxes to 0
             outer_R_bc_wat = np.full(cell_volumes.shape, 0.)
             

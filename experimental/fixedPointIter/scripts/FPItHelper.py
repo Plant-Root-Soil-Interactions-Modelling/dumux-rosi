@@ -80,7 +80,6 @@ class fixedPointIterationHelper():
         self.n_iter = 0 # number of iteration
         self.err = 1.e6 
         self.max_err = self.perirhizalModel.max_err 
-        self.max_iter = self.perirhizalModel.k_iter  
         self.perirhizalModel.rhizoMassWError_abs =1.# 
         self.perirhizalModel.rhizoMassCError_abs =1.# 
         self.perirhizalModel.errDiffBCs = np.array([1.])
