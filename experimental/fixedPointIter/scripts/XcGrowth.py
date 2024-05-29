@@ -1,6 +1,7 @@
 """ 
     plant + 3d soil + perirhizal zone for water and/or solute(s)  
 """
+
 import matplotlib; matplotlib.use('agg')
 import sys;
 import os
@@ -199,7 +200,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         perirhizalModel.update() # update shape data in the rhizosphere model
         
         if start: # for first loop, do extra printing to have initial error
-            perirhizalModel.checkMassOMoleBalance2( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
+            perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
             start = False
         # print differences between 1d and 3d soil models
@@ -279,7 +280,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                     
         plantModel.time_start_plant = timeit.default_timer()
         if ((not static_plant) or (rs_age == initsim+dt)) and doPhloemFlow:
-            phloemData.computePhloemFlow(rs_age, dt, perirhizalModel)        
+            phloemData.computePhloemFlow(rs_age, dt)        
         plantModel.time_plant_cumulS += (timeit.default_timer() - plantModel.time_start_plant)
             
         if doPhloemFlow:
@@ -290,7 +291,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             printData.printPhloemFlowOutput(rs_age, perirhizalModel, phloemData, plantModel)
             
         if rank == 0:
-            datas = [np.array(plantModel.AgPhl)* mmolSuc_to_molC,
+            datas = [np.array(plantModel.AgPhl)* phloemData.mmolSuc_to_molC,
                      plantModel.psiXyl, 
                      phloemData.C_ST, phloemData.C_S_ST, 
                      phloemData.C_meso, phloemData.C_S_meso, 
@@ -316,7 +317,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     """ wrap up """
     
     
-    perirhizalModel.checkMassOMoleBalance2()
+    perirhizalModel.check1d3dDiff()
     
     
     

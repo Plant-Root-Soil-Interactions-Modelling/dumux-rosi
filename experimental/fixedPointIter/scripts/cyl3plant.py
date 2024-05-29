@@ -178,7 +178,6 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                     print("solve 1d soil ") 
                     
             perirhizalModel.solve(dt, 
-                                  fpit_Helper.n_iter,
                                   fpit_Helper.seg_fluxes , # inner BC water
                                   fpit_Helper.proposed_outer_fluxes, # outer BC water
                                   fpit_Helper.seg_sol_fluxes, # inner BC solute 1
@@ -265,7 +264,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # 3.4 data after, for post proccessing 
             ##
             
-            perirhizalModel.checkMassOMoleBalance2() # just to get error value, will not throw an error
+            perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
             
             
             fpit_Helper.storeNewMassData3d()
@@ -299,7 +298,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             """ 4. prints and evaluation of the iteration """
             
-            perirhizalModel.checkMassOMoleBalance2() # just to get error value, will not throw an error
+            perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
             
             fpit_Helper.computeConvergence() # evaluate convergence and get other error metrics
             
@@ -333,7 +332,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         ####
     
         # error 3DS-1DS
-        perirhizalModel.checkMassOMoleBalance2()
+        perirhizalModel.check1d3dDiff()
         
         
         if (rank == 0):
@@ -342,7 +341,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                 
             write_file_float("N_Transpiration_inner", sum(np.array(plantModel.Ev) * dt), directory_ =results_dir)
             write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
-            write_file_array("N_Q_Ag_dot_inner", plantModel.AgCumul_inner/ (dt*24*3600), directory_ =results_dir)
+            write_file_array("N_Q_Ag_dot_inner", plantModel.AnCumul_inner/ (dt*24*3600), directory_ =results_dir)
             write_file_array("N_Q_Ag_dot_innerbis", plantModel.An, directory_ =results_dir)
         
         failedLoop = continueLoop(perirhizalModel,0, dt, False,Ni * dt,'inner_testdata', plant = plantModel)

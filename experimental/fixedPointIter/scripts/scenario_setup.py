@@ -415,12 +415,12 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     cell_number = soilTextureAndShape['cell_number']
     
     if fname.endswith(".rsml"):
-        r = XylemFluxPython(fname)
+        plantModel = XylemFluxPython(fname)
         if plantType == "plant":
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(  mode, soil_model,  usemoles, seedNum = seed, 
+        perirhizalModel = RhizoMappedSegments(  mode, soil_model,  usemoles, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d)
     elif fname.endswith(".xml"):
         seed = 1
@@ -429,23 +429,23 @@ def create_mapped_plant(initSim, soil_model, fname, path,
             from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         else:
             from rhizo_modelsRS import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-        rs = RhizoMappedSegments(soilModel = soil_model, 
+        perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                                  usemoles=usemoles,
                                  seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d)
 
-        rs.setSeed(seed)
-        rs.readParameters(path + fname)
-        rs.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
-        rs.initialize(verbose = False)
-        rs.simulate(initSim,verbose= False)
+        perirhizalModel.setSeed(seed)
+        perirhizalModel.readParameters(path + fname)
+        perirhizalModel.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
+        perirhizalModel.initialize(verbose = False)
+        perirhizalModel.simulate(initSim,verbose= False)
         if plantType == "plant":
-            r = PhloemFluxPython(rs,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
+            plantModel = PhloemFluxPython(perirhizalModel,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
-            r = XylemFluxPython(rs)
+            plantModel = XylemFluxPython(perirhizalModel)
             
     
-    r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
+    plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
                             pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
                             cut = False, # do not cut plant segments according to the voxel size
@@ -454,18 +454,18 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     #  function that return the index of a given position in the soil grid 
     picker = lambda x, y, z: soil_model.pick_([x,y, z])  
     # maps segments, maps root segements and soil grid indices to each other in both directions
-    r.rs.setSoilGrid(picker)
+    plantModel.rs.setSoilGrid(picker)
     
     
     # set kr and kx for root system or plant
     if plantType == "plant":    
-        r = init_conductivities(TairC = 20, RH = 0.4, r = r)
-        r = phloemParam(r, weatherInit)
-        rs.set_phloem_flux(r)
-        return rs, r
+        plantModel = init_conductivities(TairC = 20, RH = 0.4, r = plantModel)
+        plantModel = phloemParam(plantModel, weatherInit)
+        perirhizalModel.set_phloem_flux(plantModel)
+        return perirhizalModel, plantModel
     else:
-        r = init_conductivities_const(r)
-        return rs, r
+        plantModel = init_conductivities_const(plantModel)
+        return perirhizalModel, plantModel
     
 
 

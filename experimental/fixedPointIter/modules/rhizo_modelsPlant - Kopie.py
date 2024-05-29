@@ -19,8 +19,9 @@ from scipy import sparse
 import scipy.sparse.linalg as LA
 
 from scipy.interpolate import PchipInterpolator,  CubicSpline
+from helpfull import StdoutRedirector
 
-class RhizoMappedSegments(pb.MappedPlant):
+class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     """
         Adds 1-dimensional rhizospere models to each root segment of a MappedSegments (or later MappedPlant)    
         
@@ -776,139 +777,154 @@ class RhizoMappedSegments(pb.MappedPlant):
         return contentOrKonz
         
         
-    def update_concentration(self, totContent, changeRatio, gradient, phaseVolOrMolFrOldold, volumes, isWater, verbose=False):
+    def updateConcentration(self,totContent,changeRatio, gradient, theta_old_, volumes,isWater, verbose_ = False):
+        """ give the new theta or solute mole fraction to get specific total content and gradient
+            volumes: either bulk soil or water volumes
         """
-        Update the concentration to get specific total content and gradient.
-        @param totContent: new total content of the element in the cylinder (cm3 water or mol solute)
-        @param changeRatio: ratio between toContent and old total content of the element (for trouble shooting)
-        @param gradient: old concentration gradient
-        @param phaseVolOrMolFrOldold: old water content (cm3/cm3) or volume of bulk soil
-        @param volumes: volume of each cell of the cylinder (cm3)
-        @param isWater : water element (True) or solute (False)
-        @param verbose
-        """
-
-        def print_verbose(*args):
-            if verbose:
-                print(rank, *args)
-
-        def solve_concentration_matrix(matrix, aB):
-            SPmatrix = sparse.csc_matrix(sparse.coo_matrix(matrix))
-            return LA.spsolve(SPmatrix, aB, use_umfpack=True)
-
-        def validate_concentration(val_new, totContent, gradient, volumes):
-            """ check that tot content and gradient is correct """
-            try:
-                assert abs(sum(val_new * volumes) - totContent) < 1e-13
-                assert (abs((val_new[1:] - val_new[:-1]) - gradient) < 1e-13).all()
-            except:
-                print_verbose('update_concentration error', 'val_new', val_new, 'totContent', totContent, 'gradient', gradient, 
-                'phaseVolOrMolFrOldold', phaseVolOrMolFrOldold, 'volumes', volumes, 'changeRatio', changeRatio)
-                raise Exception
-
-        def adapt_values(val_new, minVal, maxVal, volumes):
-            n_iter = 0
-            while (max(val_new - maxVal) > 0 or max(minVal - val_new) > 0) and n_iter <= 5:
-                n_iter += 1
-                if (val_new - maxVal > 0).any():
-                    val_new = handle_excess(val_new, maxVal, volumes)
-                if (minVal - val_new > 0).any():
-                    val_new = handle_deficit(val_new, minVal, volumes)
-            return val_new
-
-        def handle_excess(val_new, maxVal, volumes):
-            if (val_new - maxVal > 0).any():
-                if max(val_new - maxVal) < 1e-14:
-                    val_new = np.minimum(val_new, maxVal)
-                else:
-                    val_new = redistribute_excess(val_new, maxVal, volumes)
-            return val_new
-
-        def handle_deficit(val_new, minVal, volumes):
-            if (minVal - val_new > 0).any():
-                if max(minVal - val_new) < 1e-14:
-                    val_new = np.maximum(val_new, minVal)
-                else:
-                    val_new = redistribute_deficit(val_new, minVal, volumes)
-            return val_new
-
-        def redistribute_excess(val_new, maxVal, volumes):
-            tempContent = val_new.copy()
-            idtemp = np.where(val_new > maxVal)
-            extraElement = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
-            val_new[idtemp] = maxVal
-
-            n_iter_ = 0
-            while extraElement > 1e-20 and n_iter_ <= 5:
-                n_iter_ += 1
-                print_verbose('update_concentration: take out extra element content', extraElement)
-                canAdd = (maxVal - val_new) * volumes
-                assert sum(canAdd) >= extraElement
-                idtemp = np.where(canAdd > 0)
-                totCtemp = sum(val_new * volumes)
-                val_new[idtemp] = np.minimum(maxVal * volumes[idtemp], (val_new[idtemp] * volumes[idtemp] + extraElement / len(idtemp)) / volumes[idtemp])
-                extraElement -= sum(val_new * volumes) - totCtemp
-            return val_new
-
-        def redistribute_deficit(val_new, minVal, volumes):
-            tempContent = val_new.copy()
-            idtemp = np.where(val_new < minVal)
-            missingElement = sum((minVal - val_new[idtemp]) * volumes[idtemp])
-            val_new[idtemp] = minVal
-
-            n_iter_ = 0
-            while missingElement > 1e-20 and n_iter_ <= 5:
-                n_iter_ += 1
-                print_verbose('update_concentration: add missing water', missingElement)
-                canTake = (val_new - minVal) * volumes
-                assert sum(canTake) >= missingElement
-                idtemp = np.where(canTake > 0)
-                totCtemp = sum(val_new * volumes)
-                val_new[idtemp] = np.maximum(minVal, (val_new[idtemp] * volumes[idtemp] - missingElement / len(volumes[idtemp])) / volumes[idtemp])
-                missingElement -= totCtemp - sum(val_new * volumes)
-            return val_new
-
-        # Verbose initial information
-        print_verbose('isWater', isWater, 'update_concentration error', 'totContent', totContent, 'gradient', gradient, 'phaseVolOrMolFrOldold', phaseVolOrMolFrOldold, 'volumes', volumes, 'changeRatio', changeRatio)
-
-        # Create and solve concentration matrix
-        matrix_size = self.NC - 1
-        matrix = np.diag(np.full(matrix_size - 1, -1.), k=1) + np.diag(np.full(matrix_size, 1.), k=0)
-        matrix[-1, :] = volumes
-        aB = np.append(-gradient, totContent)
-        val_new = solve_concentration_matrix(matrix, aB)
+        verbose = verbose_#self.mpiVerboseInner# and (size > 1)) or verbose:
+            
+        if verbose:
+            print(rank,'isWater',isWater, 'updateConcentration error', 'totContent',totContent, 
+                  'gradient',gradient, 'theta_old',theta_old_, 'volumes',volumes,'changeRatio',changeRatio ) 
         
-        print_verbose('val_new', val_new)
-        validate_concentration(val_new, totContent, gradient, volumes)
-
-        # Set bounds based on water or solute
+        # compute concentration using matrices
+        matrix_size = self.NC -1
+        sub_diag_values = -1.
+        main_diag_values = 1.
+        matrix = np.diag(np.full(matrix_size-1,sub_diag_values), k=1) + np.diag(np.full(matrix_size,main_diag_values), k=0) 
+        matrix[-1,] = volumes
+        aB = - gradient 
+        aB = np.append(aB,totContent)
+        SPmatrix = sparse.csc_matrix(sparse.coo_matrix(matrix))
+        val_new = LA.spsolve(SPmatrix, aB, use_umfpack = True) #either that or mol fraction
+        if verbose:
+            print(rank, 'val_new',val_new) 
+        try:
+            assert abs(sum(val_new *volumes ) - totContent) < 1e-13 #check tot content ok
+            assert (abs(((val_new[1:] - val_new[:-1] )) - gradient) < 1e-13).all() #check gradient ok / (cellCenters[1:] - cellCenters[:-1])
+        except:
+            print(rank,'isWater',isWater, 'updateConcentration error', 'val_new',val_new,'totContent',totContent, 
+                  'gradient',gradient, 'theta_old',theta_old_, 'volumes',volumes,'changeRatio',changeRatio )
+            raise Exception
         if isWater:
-            maxVal = self.vg_soil.theta_S
-            minVal = self.theta_wilting_point
-        else:
+            maxVal = self.vg_soil.theta_S # keep that or set lower higher bound?
+            minVal = self.theta_wilting_point # self.vg_soil.theta_R# do not use thetar => lead to -Inf pressure head
+        else: # solutes
             maxVal = np.Inf
             minVal = 0.
-        # check that the mean concentration respects the boundary 
-        assert ( (minVal - totContent/sum(volumes)) < 1e-14) 
-        assert ( (totContent/sum(volumes) - maxVal) < 1e-14) 
-            
-
-        # Verbose before changes
-        print_verbose('BEFORE possible changes. new content', val_new * volumes, 'totContent', totContent, 'sum new content', sum(val_new * volumes), 'sum(val_new * volumes) - totContent', sum(val_new * volumes) - totContent)
-
-        # Adapt values if necessary
-        val_new = adapt_values(val_new, minVal, maxVal, volumes)
-
-        # Final verbose and checks
-        print_verbose('AFTER possible changes. new content', val_new * volumes, 'totContent', totContent, 'sum new content', sum(val_new * volumes), 'change ratio error', sum(val_new * volumes) - totContent)
+        try:
+            assert ( (minVal - totContent/sum(volumes)) < 1e-14) 
+            assert ( (totContent/sum(volumes) - maxVal) < 1e-14) 
+        except:
+            print('(totContent/sum(volumes) < minVal) or (totContent/sum(volumes) > maxVal)',totContent,volumes,totContent/sum(volumes),'limits',minVal,maxVal,'diffs', minVal - totContent/sum(volumes),(totContent/sum(volumes) - maxVal ))
+            raise Exception
+        if verbose:
+            print('BEFORE possible changes. new content',val_new* volumes, 'totContent',totContent,
+                  'sum new content',sum(val_new* volumes),
+                  'sum(val_new* volumes)-totContent', sum(val_new* volumes)-totContent,
+                 'max(val_new) - maxVal ',max(val_new - maxVal))
+        n_iter = 0
         
-        # check that concentration in each cell respects the boundary and totcontent is still correct
+        try:
+            assert (val_new > minVal).all()
+            assert (val_new <= maxVal).all()
+            assert abs(sum(val_new* volumes)-totContent) < 1e-14
+        except:
+            
+            # update concentration manually if mass balance is incorect
+            
+            if verbose:
+                print(rank, 'updateConcentration: need to adapt val_new', val_new, 'to', minVal, maxVal,totContent, volumes  )
+            n_iter = 0
+            while  ((max(val_new - maxVal) >  0) or  (  max(minVal - val_new) > 0)) and (n_iter <= 5):
+                n_iter += 1
+                if (val_new - maxVal > 0).any():
+                    if (max(val_new - maxVal) < 1e-14):
+                        val_new = np.minimum(val_new, maxVal)
+                    else:
+                        tempContent = val_new.copy()
+                        idtemp = np.where(val_new >  maxVal)
+                        extraElement = sum((val_new[idtemp] - maxVal) * volumes[idtemp])
+                        val_new[idtemp] = maxVal
+
+                        n_iter_ = 0
+                        while  (extraElement >  1e-20) and (n_iter_ <= 5):
+                            n_iter_ += 1
+                            if verbose:
+                                print(rank, 'updateConcentration: take out extra element content', extraElement )
+                            canAdd = (maxVal - val_new)* volumes 
+                            assert sum(canAdd) >= extraElement 
+                            idtemp = np.where(canAdd > 0 )
+                            totCtemp = sum(val_new*volumes) 
+                            val_new[idtemp] = np.minimum(maxVal*volumes[idtemp],(val_new[idtemp]*volumes[idtemp]+extraElement/len(idtemp))/volumes[idtemp])
+                            extraElement -=  (sum(val_new*volumes) - totCtemp) #extraElement/len(idtemp)
+                        if verbose:
+                            print(rank, 'updateConcentration: finished taking out extra element content', extraElement , val_new, 
+                              sum(val_new * volumes), sum(tempContent * volumes),sum(val_new * volumes) - sum(tempContent * volumes))
+                        try:
+                            assert abs(sum(val_new * volumes) - sum(tempContent * volumes)) < 1e-14
+                        except:
+                            print('abs(sum(val_new * volumes) - sum(tempContent * volumes)) > 1e-14', abs(sum(val_new * volumes) - sum(tempContent * volumes)),
+                                  sum(val_new * volumes), sum(tempContent * volumes), val_new * volumes,tempContent * volumes, 'totContent',totContent)
+                            raise Exception
+                        
+                if (minVal - val_new  > 0).any():
+                    if (  max(minVal -val_new) <  1e-14 ):
+                        if verbose:
+                            print('max(minVal -val_new) <  1e-14', max(minVal -val_new),np.maximum(val_new, minVal))
+                        val_new = np.maximum(val_new, minVal)
+                    else:
+                        tempContent = val_new.copy()
+                        if verbose:
+                            print('sum(tempContent* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempContent* volumes)-totContent)
+                        idtemp = np.where(val_new <  minVal )
+                        if verbose:
+                            print('np.where(val_new <  minVal)',val_new,idtemp)
+                        missingElement = sum((minVal - val_new[idtemp]) * volumes[idtemp])
+
+                        val_new[idtemp] = minVal
+                        if verbose:
+                            print('val_new[idtemp] = minVal',val_new)
+
+                        n_iter_ = 0
+                        while  (missingElement > 1e-20) and (n_iter_ <= 5):
+                                n_iter_ += 1
+                                if verbose:
+                                    print(rank, 'updateConcentration: add missing water', missingElement,(minVal - val_new[idtemp]) * volumes[idtemp],(minVal - val_new) * volumes)
+                                canTake = (val_new - minVal )* volumes 
+                                if verbose:
+                                    print('canTake',canTake , (val_new - minVal )* volumes )
+                                assert sum(canTake) >= missingElement 
+                                idtemp = np.where(canTake > 0 )
+                                if verbose:
+                                    print('np.where(canTake > 0 )',idtemp,val_new[idtemp])
+                                totCtemp = sum(val_new*volumes) 
+                                val_new[idtemp] = np.maximum(minVal,(val_new[idtemp]*volumes[idtemp] - missingElement/len(volumes[idtemp]))/volumes[idtemp])# # might be too high in some places
+                                missingElement -= ( totCtemp - sum(val_new*volumes) )
+
+                        if verbose:
+                            print(rank, 'updateConcentration: finished adding missing element content', missingElement , val_new, 
+                              sum(val_new * volumes), sum(tempContent * volumes),sum(val_new * volumes) - sum(tempContent * volumes))
+                            print('sum(tempContent* volumes)-totContent', sum(val_new* volumes)-totContent, sum(tempContent* volumes)-totContent)
+                            print('val_new',val_new,'tempContent',tempContent,
+                              'diff good',abs(sum(val_new * volumes) - sum(tempContent * volumes)),'diff bad',abs(sum(val_new) - sum(tempContent)) )
+                        try:
+                            assert abs(sum(val_new * volumes) - sum(tempContent * volumes)) < 1e-14
+                        except:
+                            print('abs(sum(val_new * volumes) - sum(tempContent * volumes)) < 1e-14', abs(sum(val_new * volumes) - sum(tempContent * volumes)),
+                                  sum(val_new * volumes), sum(tempContent * volumes), val_new * volumes,tempContent * volumes)
+                            raise Exception
+
+        
+        if verbose:
+            print('AFTER possible changes. new content',val_new* volumes, 'totContent',totContent,
+                  'sum new content',sum(val_new* volumes),
+                  'change ratio error', sum(val_new* volumes)-totContent,'n_iter',n_iter)
+        # final check  
         assert (val_new >= minVal).all()
         assert (val_new <= maxVal).all()
-        assert abs(sum(val_new * volumes) - totContent) < 1e-14
-
+        assert abs(sum(val_new* volumes)-totContent) < 1e-14
         return val_new
-
     
     def interAndExtraPolation_(self,pt,pointsOld_, chip, spl):
         if (pt >= min(pointsOld_)) and (pt <= max(pointsOld_)): #interpolation
@@ -922,32 +938,44 @@ class RhizoMappedSegments(pb.MappedPlant):
         return np.array([self.interAndExtraPolation_(pt, pointsOld, chip, spl) for pt in pointsNew])
 
             
-    def updateOld(self, lId, cyl, smaller=False, thetaLeftOver=0., konzLeftOver=None, verbose=False):
+    def updateOld(self, lId,  cyl,smaller = False,
+                  thetaLeftOver = 0., #cm3/cm3 scv
+                  konzLeftOver = None,#mol/cm3 scv 
+                  verbose = False):
+        """ update distribution of cylinder if it s volume has changed
+            @param: lId: local cylinder id
+            @param: cyl: cylinder object
+            @
         """
-        Update distribution of a cylinder if its volume has changed.
+        if konzLeftOver is None:
+            konzLeftOver = np.zeros(self.numSoluteComp)
+        alwaysUpdateWat = True
         
-        Parameters:
-            lId: Local cylinder id.
-            cyl: Cylinder object.
-            smaller: Apply to the cylinder which has shrunk (True) or grown (False).
-            thetaLeftOver: Mean theta in the newly available space (if smaller is False).
-            konzLeftOver: Mean solute concentration in the newly available space (if smaller is False).
-        """
-        konzLeftOver = konzLeftOver if konzLeftOver is not None else np.zeros(self.numSoluteComp)
         gId = self.eidx[lId]
         assert gId == cyl.gId
         cellId = self.seg2cell[gId]
-        verbose = self.mpiVerboseInner
-
-        segsId = np.array([ids for ids in self.cell2seg[cellId] if self.organTypes[ids] == 2])
-        oldPoints = np.array(cyl.getPoints()).flatten()
-        lb = self.logbase
-        a_in = self.radii[gId]
-        a_out = self.outer_radii[gId]
+        verbose = self.mpiVerboseInner #True#(cellId== 916)#(cellId == 332) #or (cellId == 257)
+        
+        segsId =  np.array(self.cell2seg[cellId])
+        segsId = np.array([ids for ids in segsId if self.organTypes[ids]==2 ])# only root organs
+        try:
+            hasNewSegs =(np.array([ bool(rootId not in self.cylSoilidx_all) for rootId in segsId]).any())
+        except:
+            print(rank, 'error with ahsnewsegs', lId, gId,  np.array(self.cell2seg[cellId]), np.array(self.organTypes)[np.array(self.cell2seg[cellId])])
+            print(rank, segsId,self.cylSoilidx, self.cylSoilidx_all)
+            raise Exception
+        oldPoints = np.array(cyl.getPoints()).flatten() # cm
+        lb = self.logbase            
+        a_in = self.radii[gId] # cm
+        a_out = self.outer_radii[gId]  # cm
 
         if not ((self.seg2cell[gId] >= 0) and (self.organTypes[gId] == 2)):
             points = np.array([a_in,a_out ])
-            assert len(points) == len(oldPoints)
+            try:
+                assert len(points) == len(oldPoints)
+            except:
+                print('wrong number of points', points, oldPoints, gId, self.seg2cell[gId], self.organTypes[gId])
+                raise Exception
         else:
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb) # cm
 
@@ -956,17 +984,49 @@ class RhizoMappedSegments(pb.MappedPlant):
             volNew = self.getVolumes(points, self.seg_length[gId] ) # cm^3
             deltaVol = sum(volNew) - sum(volOld) 
             
+            if verbose:
+                print('updateOld, gId', gId,'rank',rank, self.seg2cell[gId], 'deltaVol',sum(volNew),
+                      sum(volOld),deltaVol,'leftover',thetaLeftOver, #cm3/cm3 scv
+                  konzLeftOver,'smaller',smaller,
+                      (deltaVol >0) and (not smaller),(deltaVol <0) and smaller,
+                     (((deltaVol >0) and (not smaller)) or ((deltaVol <0) and smaller)) and (abs(deltaVol) > 1e-12) )
+            
             
             if (((deltaVol >0) and (not smaller)) or ((deltaVol <0) and smaller)) and (abs(deltaVol) > 1e-20):
-                assert (thetaLeftOver > -self.maxDiff1d3dCW_abs[0]) or (deltaVol <= 0.)
-                    
+                try:
+                    assert (thetaLeftOver > -self.maxDiff1d3dCW_abs[0]) or (deltaVol <= 0.)
+                except:
+                    print('error in updateOld', gId, cellId, deltaVol, smaller,'leftover', thetaLeftOver,konzLeftOver)
+                    raise Exception
+                #max(abs(points - oldPoints)) > 1e-16:#new vertex distribution
+                if verbose:
+                    print(rank, 'updateOld', cellId, lId, gId)#, 'hasNewSegs',hasNewSegs )
                 ## old shape:
                 centersOld = np.array(cyl.getCellCenters()).flatten();
+                assert len(centersOld)==9      # cm 
                 centersNew = (points[1:] + points[:-1])/2  # cm
                 ## change ratio
-                changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
-
-                    
+                if hasNewSegs or alwaysUpdateWat:# currently, only new segments can gain content from old segmetns.
+                    #changeRatio_ =(sum(volNew) - sum(volOld))/vol3d[cellId]
+                    changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
+                else:
+                    #changeRatio_ =0.
+                    changeRatio = 1.
+                if False:
+                    try:
+                        #assert ((changeRatio <= 1.) and (changeRatio > 0.))
+                        assert changeRatio > 0.
+                    except:
+                        print('volNew', volNew,'volOld',volOld)
+                        print("points",oldPoints, points)
+                        print('lengths', self.seg_length_old[gId],self.seg_length[gId])
+                        print('radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
+                        raise Exception
+                if verbose:
+                    print('\t',gId,'volNew', volNew,'volOld',volOld, 'deltaVol',deltaVol)
+                    print('\t',gId,"points",oldPoints, points,'thetaLeftOver,deltaVol',thetaLeftOver,deltaVol)
+                    print('\t',gId,'lengths', self.seg_length_old[gId],self.seg_length[gId])
+                    print('\t',gId,'radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
                 ##  water:
                 theta_old = cyl.getWaterContent() # cm3/cm3
                 gradientOld = (theta_old[1:] - theta_old[:-1])#/(centersOld[1:] - centersOld[:-1])           
@@ -975,30 +1035,47 @@ class RhizoMappedSegments(pb.MappedPlant):
                 wOld = sum(theta_old*volOld)
                 maxVal = self.vg_soil.theta_S  # keep that or set lower higher bound?
                 minVal = self.theta_wilting_point
-                
-                
-                changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
-                
-                assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
-                assert wOld > 0.
-                assert max(thetaLeftOver*deltaVol,0.) >= 0.
-
+                #changeRatioW_ = changeRatio_ * contentW[cellId]/wOld + 1.
+                try:
+                    #changeRatioW = max(min(changeRatioW_, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
+                    changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
+                    
+                    assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
+                    assert (changeRatioW > 0.)
+                except:
+                    print('volNew', volNew,'volOld',volOld)
+                    print("points",oldPoints, points)
+                    print('lengths', self.seg_length_old[gId],self.seg_length[gId])
+                    print('radii', self.radii[gId], self.outer_radii[gId],self.outer_radii_old[gId])
+                    print('theta', theta_old)#,'changeRatioW_',changeRatioW_,contentW.shape)
+                    raise Exception
+                try:
+                    assert wOld*changeRatioW > 0.
+                    assert max(thetaLeftOver*deltaVol,0.) >= 0.
+                except:
+                    print('error new vals in updateOld',wOld,changeRatioW , thetaLeftOver,deltaVol)
+                    raise Exception
                 try:
                     try:
-                        # get theta for each cell
-                        theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
+                        theta_new = self.updateConcentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
-                                                         gradient =gradientNew, phaseVolOrMolFrOldold = theta_old, volumes = volNew,isWater = True,
-                                                            verbose = verbose)
+                                                         gradient =gradientNew, theta_old_ = theta_old, volumes = volNew,isWater = True,
+                                                            verbose_ = verbose)
                     except:
-                        print('1st faile of update_concentration for water, try again, try again with verbose = True. rank', rank)
-                        theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
+                        print('1st faile of updateConcentration for water, try again, try again with verbose = True. rank', rank)
+                        theta_new = self.updateConcentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
-                                                         gradient =gradientNew, phaseVolOrMolFrOldold = theta_old, volumes = volNew,isWater = True,
-                                                            verbose = True)
+                                                         gradient =gradientNew, theta_old_ = theta_old, volumes = volNew,isWater = True,
+                                                            verbose_ = True)
+                    #newHead = np.full(theta_new.shape, np.nan)
+                    #idtocompute = np.where(~np.isnan(theta_leftOver))
+                    #newHead[idtocompute] = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new[idtocompute]])# cm
                     newHead = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])# cm
                 except:
-                         
+                    print('issue updateConcentration, gradientNew', wOld,changeRatioW,gradientNew,points[1:-1],
+                          oldPoints[1:-1], 'gradientOld',gradientOld,'volNew',volNew )
+                    raise Exception
+                if verbose:            
                     print('\t',gId,"x_old",theta_old* volOld,volOld )
                     print('\t',gId,"xnew", theta_new* volNew,volNew )
                     print('\t',gId,"newHead", newHead )
@@ -1006,8 +1083,8 @@ class RhizoMappedSegments(pb.MappedPlant):
                     print('\t',gId,"gradient",gradientOld, gradientNew)
                     print('\t',gId,"theta",theta_new, theta_old)
                     print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S,self.theta_wilting_point)   
-                    print('\t',gId,"changeRatio",changeRatio, changeRatioW)                      
-                    raise Exception
+                    print('\t',gId,"changeRatio",changeRatio, changeRatioW)    
+                
                     
                 ## new contents:  
                 molFrOld =np.array( [np.array(cyl.getSolution(nC+1)) for nC in range(self.numSoluteComp)])   #mol/mol 
@@ -1022,36 +1099,59 @@ class RhizoMappedSegments(pb.MappedPlant):
                         else:
                             molarPhaseOld = volOld/1e6 * self.phaseDensity(nComp )
                             molarPhaseNew = volNew/1e6 * self.phaseDensity(nComp ) 
-                        gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])   
+                        gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])#/(centersOld[1:] - centersOld[:-1])   
                         gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                         cOld = sum(molFrOld[nComp -1] *   molarPhaseOld  )    
                         
-                        assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved )))< 1e-13
-                        
                         try:
+                            assert abs(cOld - sum(cyl.getContentCyl(nComp, isDissolved )))< 1e-13
+                        except:
+                            print('contentoldA',cyl.getContentCyl(nComp, isDissolved), 
+                                    sum(cyl.getContentCyl(nComp, isDissolved)))
+                            print('contentoldB',molFrOld[nComp -1] *   molarPhaseOld, cOld,'diff', 
+                                  cOld - sum(cyl.getContentCyl(nComp, isDissolved )))
+                            print('watcontA',cyl.getWaterContent(), cyl.getCellVolumes() / 1e6 )
+                            print('watcontB',theta_old,volOld/1e6, self.phaseDensity(nComp ) , cyl.phaseDensity(nComp ))
+                            print('molFrOld',molFrOld[nComp -1])
+                            print('molarPhaseOld', molarPhaseOld,np.multiply(cyl.getCellVolumes() / 1e6 , 
+                                                    cyl.getWaterContent()) *cyl.molarDensityWat_m3)
+                            raise Exception
+                        try:
+                            #changeRatio = changeRatio_ * contentC[nComp-1][cellId] /cOld + 1
+                            #assert changeRatio > 0
                             try:
-                                #get mole fraction for each cell
                                 molFrNew.append(
-                                    self.update_concentration(totContent = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
+                                    self.updateConcentration(totContent = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                        phaseVolOrMolFrOldold = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False, verbose = False))                             
+                                        theta_old_ = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False, verbose_ = False))                             
                             except:
-                                print('1st faile of update_concentration for comp no',nComp,', try again, try again with verbose = True. rank', rank,
+                                print('1st faile of updateConcentration for comp no',nComp,', try again, try again with verbose = True. rank', rank,
                                      'max(konzLeftOver[nComp -1]*deltaVol,0.)',max(konzLeftOver[nComp -1]*deltaVol,0.))
                                 molFrNew.append(
-                                    self.update_concentration(totContent = cOld*changeRatio + max(konzLeftOver[nComp -1]*deltaVol,0.),
+                                    self.updateConcentration(totContent = cOld*changeRatio + max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                        phaseVolOrMolFrOldold = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False, verbose = True)) 
-                                        
+                                        theta_old_ = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False, verbose_ = True))  
                         except:
-                            print('update_concentration failed','cOld',cOld,#'contentC[nComp-1][cellId] ',contentC[nComp-1][cellId] ,
+                            print('updateConcentration failed','cOld',cOld,#'contentC[nComp-1][cellId] ',contentC[nComp-1][cellId] ,
                                   'changeRatio',changeRatio,'gradientNew',gradientNew,'molarPhaseNew',
                                  molarPhaseNew,'molFrOld[nComp -1]',molFrOld[nComp -1],'molFrOld',molFrOld[nComp -1] ,
                                   'molarPhaseOld',   molarPhaseOld,'sum(volNew)',sum(volNew),
-                                  'sum(volOld)',sum(volOld) )
+                                  'sum(volOld)',sum(volOld),'vol3d[cellId]',vol3d[cellId] )
                             raise Exception
-                        # final checks that the content is as expected after the updates
+                        if verbose:            
+                            print('\t',gId,'nComp', nComp, "cOld",cOld,molFrOld[nComp -1],molarPhaseOld )
+                            print('\t',gId,"molFrNew", molFrNew[nComp -1], 
+                                        "cNew", molFrNew[nComp -1]* molarPhaseNew, 
+                                        sum(molFrNew[nComp -1]* molarPhaseNew) )
+                            print('\t',gId,"gradient", gradientOld, gradientNew,'ratio', 
+                            sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld),
+                                 'changeRatio',changeRatio,#'changeRatio_',changeRatio_,
+                                  'cOld',cOld) #'contentWC[nComp][cellId]',contentWC[nComp][cellId],
+                            print('\t',gId,"error",nComp,  
+                                  abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio),
+                                    abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13)
                         try:
+                            # assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)/sum(molFrOld[nComp -1] *   molarPhaseOld) -changeRatio) < 1e-13) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-18))
                             assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)- cOld*changeRatio - max(konzLeftOver[nComp -1]*deltaVol,0.)) < 1e-14) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-14)) or (abs(abs(sum(molFrNew[nComp -1]* molarPhaseNew)/ (cOld*changeRatio  + max(konzLeftOver[nComp -1]*deltaVol,0.)))*100 -100) < 1e-5)
                         except:
                             print('\t',rank,gId,"error",nComp, 'totContent', cOld*changeRatio,'changeRatio',changeRatio,
@@ -1064,7 +1164,6 @@ class RhizoMappedSegments(pb.MappedPlant):
                     else:
                         molFrNew.append(molFrOld[nComp -1])
                         
-                # create new cylinder from the data
                 self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                             x = newHead,# cm
                                                             cAll = molFrNew, # mol/mol water or mol/mol scv
@@ -1203,16 +1302,17 @@ class RhizoMappedSegments(pb.MappedPlant):
         lId =int( np.where(self.eidx == gId)[0])
         
         if a_in < a_out:
-        
-            cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
-            cyl.initialize(verbose = False)
+            with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+                cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
+                cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
             
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), 
                                  self.NC, base = lb)
             
-            cyl.createGrid1d(points)# cm
+            with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+                cyl.createGrid1d(points)# cm
                 
             if len(self.dx2) > lId:
                 self.dx2[lId] = 0.5 * (points[1] - points[0]) #when updating
@@ -1427,100 +1527,8 @@ class RhizoMappedSegments(pb.MappedPlant):
 
 
 
-    def _initialize_flux_storage(self):
-        """Initialize flux storage arrays for post-processing."""
-        self.seg_fluxes_limited = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_Out = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_sol_Out = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_mucil_Out = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_sol_In = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_mucil_In = np.full(len(self.cyls), np.nan)
-        
-            
-    def _handle_air_segment(self, cyl, gId, inner_fluxes, outer_fluxes, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil):
-        """Handle the case where the segment is an AirSegment."""
-        cyl.setInnerFluxCyl(inner_fluxes[gId])
-        self.seg_fluxes_limited[gId] = inner_fluxes[gId]
-        self.seg_fluxes_limited_Out[gId] = outer_fluxes[gId]
-        self.seg_fluxes_limited_sol_Out[gId] = outer_fluxes_sol[gId]
-        self.seg_fluxes_limited_sol_In[gId] = inner_fluxes_sol[gId]
-        self.seg_fluxes_limited_mucil_Out[gId] = outer_fluxes_mucil[gId]
-        self.seg_fluxes_limited_mucil_In[gId] = inner_fluxes_mucil[gId]
-        
-        
-    def _get_solute_values(self, gId, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil):
-        """Retrieve solute values for the segment."""
-        botVal = inner_fluxes_sol[gId] if not isinstance(inner_fluxes_sol, float) else inner_fluxes_sol
-        topVal = outer_fluxes_sol[gId] if not isinstance(outer_fluxes_sol, float) else outer_fluxes_sol
-        botVal_mucil = inner_fluxes_mucil[gId] if not isinstance(inner_fluxes_mucil, float) else inner_fluxes_mucil
-        topVal_mucil = outer_fluxes_mucil[gId] if not isinstance(outer_fluxes_mucil, float) else outer_fluxes_mucil
-
-        if self.do1d1dFlow:
-            topVal += self.flow1d1d_sol[gId]
-            topVal_mucil += self.flow1d1d_mucil[gId]
-        return botVal, topVal, botVal_mucil, topVal_mucil 
-        
-        
-    def _calculate_initial_flows(self, gId, cyl,inner_fluxes, outer_fluxes):
-        """Calculate initial flows for the segment."""
-        l = cyl.segLength
-        QflowIn = inner_fluxes[gId]
-        qIn = QflowIn / (2 * np.pi * self.radii[gId] * l)
-        QflowOut = outer_fluxes[gId]
-        if self.do1d1dFlow:
-            QflowOut += self.flow1d1d_w[gId]
-        
-        
-        return QflowIn, qIn, QflowOut
-        
-            
-    def _set_boundary_conditions(self, cyl, gId,  botVal, botVal_mucil, topVal, topVal_mucil):
-        """Set boundary conditions for the segment."""
-        l = cyl.segLength
-        typeBC = np.full(self.numSoluteComp, 3)
-        valueBotBC = np.full(self.numSoluteComp, 0.)
-        valueBotBC[0] = botVal / (2 * np.pi * self.radii[gId] * l)
-        valueBotBC[1] = botVal_mucil / (2 * np.pi * self.radii[gId] * l)
-        topVals = np.array([topVal, topVal_mucil])
-        return typeBC, valueBotBC, topVals                    
-                     
-            
-    def _distribute_source(self, cyl, topVals, numDissolvedSoluteComp):
-        """Distribute source values across the cells."""
-        valueTopBC = np.zeros((numDissolvedSoluteComp, cyl.numberOfCellsTot))
-        for nc in range(numDissolvedSoluteComp):
-            if (cyl.getContent(nc + 1, isDissolved=(nc < numDissolvedSoluteComp)) == 0.).all():
-                cellIndx4Distrib = 0
-            else:
-                cellIndx4Distrib = None
-            valueTopBC[nc] = cyl.distributeSource(topVals[nc], nc + 1, numDissolvedSoluteComp, cellIndx4Distrib)
-        return valueTopBC
-          
-    
-    def _finalize_solution(self, gId, QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp):
-        """Finalize the solution of the segment."""
-        self.seg_fluxes_limited[gId] = QflowIn_temp
-        self.seg_fluxes_limited_Out[gId] = QflowOut_temp
-        self.seg_fluxes_limited_sol_Out[gId] = QCflowOut_temp[0]
-        self.seg_fluxes_limited_sol_In[gId] = QCflowIn_temp[0]
-        self.seg_fluxes_limited_mucil_Out[gId] = QCflowOut_temp[1]
-        self.seg_fluxes_limited_mucil_In[gId] = QCflowIn_temp[1]        
-            
-    
-    def _run_solver(self, cyl, dt, lId, gId, QflowIn, QflowOut, botVal, topVal, botVal_mucil, topVal_mucil, typeBC, valueBotBC, valueTopBC):
-        """Run the solver for the segment."""
-
-        QflowIn_temp = QflowIn
-        QflowOut_temp = QflowOut
-        QCflowIn_temp = np.array([botVal, botVal_mucil])
-        QCflowOut_temp = np.array([topVal, topVal_mucil])
-
-        QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp = self._attempt_solution(cyl, dt, gId, lId, QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp, typeBC, valueBotBC, valueTopBC)
-
-        self._finalize_solution(gId, QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp)
-    
-    def solve(self, dt, *argv):
-        """ set bc and sinks for cyl and solves it """
+    def solve(self, dt, n_iter, *argv):#dt, seg_rx, proposed_outer_fluxes,kex,proposed_outer_sol_fluxes
+        """ set bc for cyl and solves it """
         
         #inner = bot = plant
         #outer = top = soil
@@ -1531,8 +1539,13 @@ class RhizoMappedSegments(pb.MappedPlant):
         proposed_inner_fluxes_mucil = argv[4]
         proposed_outer_fluxes_mucil = argv[5]
         
-        
-        self._initialize_flux_storage()
+        self.diffW = 0.
+        self.seg_fluxes_limited = np.full(len(self.cyls), np.nan) # store for post processing
+        self.seg_fluxes_limited_Out = np.full(len(self.cyls), np.nan) # store for post processing
+        self.seg_fluxes_limited_sol_Out = np.full(len(self.cyls), np.nan) # store for post processing
+        self.seg_fluxes_limited_mucil_Out = np.full(len(self.cyls), np.nan) # store for post processing
+        self.seg_fluxes_limited_sol_In = np.full(len(self.cyls), np.nan) # store for post processing
+        self.seg_fluxes_limited_mucil_In = np.full(len(self.cyls), np.nan) # store for post processing
         
         for lId, cyl in enumerate(self.cyls):  # run cylindrical models
             verbose = False
@@ -1540,235 +1553,328 @@ class RhizoMappedSegments(pb.MappedPlant):
             if verbose:
                 print(rank, "cyl no ",lId+1,"/",len(self.cyls),'gId')
             if isinstance(cyl, AirSegment):  
-                self._handle_air_segment(cyl, gId, proposed_inner_fluxes, proposed_outer_fluxes,
-                                     proposed_inner_fluxes_sol, proposed_outer_fluxes_sol,
-                                     proposed_inner_fluxes_mucil, proposed_outer_fluxes_mucil)
+                cyl.setInnerFluxCyl(proposed_inner_fluxes[gId])
+                self.seg_fluxes_limited[lId] = proposed_inner_fluxes[gId] # [cm3/day]
+                self.seg_fluxes_limited_Out[lId] = proposed_outer_fluxes[gId] # [cm3/day]
+                
+                self.seg_fluxes_limited_sol_Out[lId] = proposed_outer_fluxes_sol[gId] # [mol/day]
+                self.seg_fluxes_limited_sol_In[lId] = proposed_inner_fluxes_sol[gId] # [mol/day]
+                
+                self.seg_fluxes_limited_mucil_Out[lId] = proposed_outer_fluxes_mucil[gId] # [mol/day]
+                self.seg_fluxes_limited_mucil_In[lId] = proposed_inner_fluxes_mucil[gId] # [mol/day]
                 
             else:
-                self._handle_non_air_segment(cyl, gId, lId, dt, proposed_inner_fluxes, proposed_outer_fluxes,
-                                         proposed_inner_fluxes_sol, proposed_outer_fluxes_sol,
-                                         proposed_inner_fluxes_mucil, proposed_outer_fluxes_mucil)
-  
-
-
-    def _handle_non_air_segment(self, cyl, gId, lId, dt, inner_fluxes, outer_fluxes, inner_fluxes_sol,
-            outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil):
-
-        botVal, topVal, botVal_mucil, topVal_mucil = self._get_solute_values(gId, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil)    
-
-        QflowIn, qIn, QflowOut = self._calculate_initial_flows(gId,cyl, inner_fluxes, outer_fluxes)
-        cyl.setInnerFluxCyl(qIn)  
-        
-        
-        qOut = cyl.distributeSource(QflowOut, 0,self.numDissolvedSoluteComp)
-        if QflowOut!=0.:
-            try:
-                assert (abs(sum(qOut) - QflowOut) < 1e-13) or (abs((sum(qOut) - QflowOut)/QflowOut) < 1e-13)
-            except:
-                print('distributeSourceEnd_error',sum(qOut) , QflowOut,sum(qOut) - QflowOut)
-                raise Exception
                 
-        
-        typeBC, valueBotBC,  topVals = self._set_boundary_conditions(cyl, gId,  botVal, botVal_mucil, topVal, topVal_mucil)    
-            
-        cyl.setSoluteBotBC(typeBC, valueBotBC)
-
-        valueTopBC = self._distribute_source(cyl, topVals, self.numDissolvedSoluteComp)
-        
-        self._run_solver(cyl, dt, lId, gId, QflowIn, QflowOut, botVal, topVal, botVal_mucil, topVal_mucil, typeBC, valueBotBC, valueTopBC)
-     
+                l = cyl.segLength#self.seg_length[gId]
+                QflowIn = proposed_inner_fluxes[gId] 
+                qIn = QflowIn/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
+                QflowOut = proposed_outer_fluxes[gId] 
+                if self.do1d1dFlow:
+                    QflowOut += self.flow1d1d_w[gId]
+                cyl.setInnerFluxCyl(qIn)  
                 
-    def _check_Ccontent(self, cyl):
-        for ncomp in range(self.numSoluteComp):
-            try:
-                assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
-            except:
-                errorCOnly = True
-                print(rank, '(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()', 
-                      ncomp, np.array(cyl.getSolution(ncomp + 1)).flatten(), 
-                      (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all())
-                return  False
-        return True
-        
-    def _reset_newton_solver(self, cyl,MaxRelativeShift=None,
-                                EnableResidualCriterion=None, 
-                                EnableAbsoluteResidualCriterion=None,
-                                SatisfyResidualAndShiftCriterion=None, 
-                                max_steps=None, 
-                                max_divisions=None):
-        if MaxRelativeShift is not None:
-            cyl.setParameter("Newton.MaxRelativeShift", str(MaxRelativeShift))
-        if EnableResidualCriterion is not None:
-            cyl.setParameter("Newton.EnableResidualCriterion", str(EnableResidualCriterion)) 
-        if EnableAbsoluteResidualCriterion is not None:
-            cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", str(EnableAbsoluteResidualCriterion))
-        if SatisfyResidualAndShiftCriterion is not None:
-            cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", str(SatisfyResidualAndShiftCriterion))
-        if max_steps is not None:
-            cyl.setParameter("Newton.MaxSteps", str(max_steps))
-        if max_divisions is not None:
-            cyl.setParameter("Newton.MaxTimeStepDivisions", str(max_divisions))
-        cyl.createNewtonSolver()
-                
-    def _attempt_solution(self, cyl, dt: float, gId: int, lId: int, QflowIn_temp, QflowOut_temp, 
-                        QCflowIn_temp, QCflowOut_temp, typeBC, valueBotBC, valueTopBC):
-        """
-        Attempt the solution of the segment, retrying with different inputs if necessary.
-
-        Parameters:
-        dt: float
-            Time step (seconds)
-        gId: int
-            Global ID of the segment
-        lId: int
-            Local ID of the segment
-        QflowIn_temp: array-like
-            Temporary inner flux (flux)
-        QflowOut_temp: array-like
-            Temporary outer flux (flux)
-        QCflowIn_temp: array-like
-            Temporary inner solute fluxes (solute flux)
-        QCflowOut_temp: array-like
-            Temporary outer solute fluxes (solute flux)
-        typeBC: array-like
-            Boundary condition types
-        valueBotBC: array-like
-            Bottom boundary condition values (solute flux)
-        valueTopBC: array-like
-            Top boundary condition values (solute flux)
-        buWBefore: float
-            Initial water volume before solving (volume)
-        buCCBefore: array-like
-            Initial content before solving (content)
-        buTotCBefore: float
-            Total content before solving (content)
-        """               
-                
-        maxRelShift = self.soilModel.MaxRelativeShift
-
-        assert self._check_Ccontent(cyl)
-        
-        redoSolve = True
-        n_iter_solve = 0
-        
-        while redoSolve:
-            verbose = True
-            try:
-                cyl.ddt =min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
-                
-                didReset = False
-                cyl.solve(dt)
-                Q_in_m, Q_out_m = cyl.getSavedBC(self.radii[gId], 
-                                                 np.array( self.outer_radii)[gId])     
-                
-                assert (Q_out_m == 0.).all()
-                     
-                
-                errorCOnly = not self._check_Ccontent(cyl)
+                qOut = cyl.distributeSource(QflowOut, 0,self.numDissolvedSoluteComp)
+                if QflowOut!=0.:
+                    try:
+                        assert (abs(sum(qOut) - QflowOut) < 1e-13) or (abs((sum(qOut) - QflowOut)/QflowOut) < 1e-13)
+                    except:
+                        print('distributeSourceEnd_error',sum(qOut) , QflowOut,sum(qOut) - QflowOut)
+                        raise Exception
                         
-                redoSolve = False
-                
-                # newton parameters are re-read at each 'createNewtonSolver' calls
-                self._reset_newton_solver( cyl,
-                                MaxRelativeShift = self.soilModel.MaxRelativeShift,
-                                EnableResidualCriterion="false", 
-                                EnableAbsoluteResidualCriterion="false",
-                                SatisfyResidualAndShiftCriterion="false", 
-                                max_steps=18, max_divisions=10)
-                
-            except Exception as e:     
-                print('solve Failed:', e,'rank',rank,'gId',gId,
-                      'n_iter_solve',n_iter_solve,
-                     (QflowIn_temp < 0 or QflowOut_temp < 0), 
-                      (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.))
-                cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
-                cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
-                cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
-                if n_iter_solve == 0:
-                    cyl.setParameter("Newton.MaxSteps", "200")
-                    cyl.setParameter("Newton.MaxTimeStepDivisions", "100")
-                    cyl.reset();
-                    cyl.createNewtonSolver()
-                    didReset = True
-                elif n_iter_solve == 1:
-                    print(rank,
-                          'soil.solve() failed. making the computation more precise')
-                    cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
-                    cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-                    cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
-                    cyl.setParameter("Newton.MaxRelativeShift", str(self.soilModel.MaxRelativeShift/10.))# 
-                    cyl.reset();
-                    cyl.createNewtonSolver()
-                    didReset = True
-                elif ((QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.)): #
-                    cyl.reset();didReset = True # do reset before re.-distributing the sink
-                    QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp, valueBotBC, valueTopBC = self._adjust_fluxes(cyl, QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp, 
-                            typeBC, valueBotBC, valueTopBC, gId, lId, n_iter_solve)
-                            
-                elif (maxRelShift < 1e-5) :#random upper limit
-                    maxRelShift *= 10.
-                    cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
-                    cyl.reset();
-                    cyl.createNewtonSolver()
-                    didReset = True
+
+                    
+                     
+                if not isinstance(proposed_inner_fluxes_sol,float):  # [mol/day]
+                    botVal = proposed_inner_fluxes_sol[gId]
                 else:
-                    print(rank,
-                      'gId',gId,'lId',lId,'ERROR, GIVING UP. errorCOnly',errorCOnly,
-                      'qflowIn',qIn,valueBotBC,
-                      ' qflowout',qOut,valueTopBC)
-                    print("\ttheta_new",gId, cyl.getWaterContent())
-                    print("\thead_new", gId,cyl.getSolutionHead())
-                    cyl.setParameter("Newton.MaxRelativeShift",
-                                 str(self.soilModel.MaxRelativeShift))
-                    redoSolve = False
-                    self.solve_gave_up = True
-                    cyl.reset();
-                    cyl.createNewtonSolver()
-                    didReset = True
-                
-                
-                assert didReset
-                assert self._check_Ccontent(cyl)
+                    botVal = proposed_inner_fluxes_sol
+                if not isinstance(proposed_outer_fluxes_sol,float):  # [mol/day]
+                    topVal = proposed_outer_fluxes_sol[gId]
+                else:
+                    topVal = proposed_outer_fluxes_sol
+                if not isinstance(proposed_inner_fluxes_mucil,float):  # [mol/day]
+                    botVal_mucil = proposed_inner_fluxes_mucil[gId]
+                else:
+                    botVal_mucil = proposed_inner_fluxes_mucil
                     
-                n_iter_solve += 1
-                
-        return Q_in_m[0], QflowOut_temp, Q_in_m[1:], QCflowOut_temp         
-
-
-     
-    def _adjust_fluxes(self, cyl, QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp, 
-                   typeBC, valueBotBC, valueTopBC, gId, lId, n_iter_solve):
-        if (n_iter_solve < 20):                   
-            divVale = 0.9
-        else:
-            divVale = 0.
-        # water
-        if (not errorCOnly) or (min(QCflowOut_temp) >0. and min(QCflowIn_temp)>0.):
-            if (QflowIn_temp < 0 or QflowOut_temp < 0) and (QflowIn_temp <= QflowOut_temp):
-                QflowIn_temp *=divVale
-                qIn = QflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
-                cyl.setInnerFluxCyl(qIn) 
-                
-            elif (QflowIn_temp < 0 or QflowOut_temp < 0):
-                QflowOut_temp *= divVale
-                qOut = cyl.distributeSource(QflowOut_temp, 0, l, self.numDissolvedSoluteComp)
+                if not isinstance(proposed_outer_fluxes_mucil,float):  # [mol/day]
+                    topVal_mucil = proposed_outer_fluxes_mucil[gId]
+                else:
+                    topVal_mucil = proposed_outer_fluxes_mucil
                     
-        # solutes
-        if (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.) and (min(QCflowIn_temp) <= min(QCflowOut_temp)):
-            QCflowIn_temp[np.where(QCflowIn_temp == min(QCflowIn_temp))] *=divVale
-            valueBotBC[:self.numDissolvedSoluteComp] = QCflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
-            cyl.setSoluteBotBC(typeBC, valueBotBC)
-            
-        elif (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
-            QCflowOut_temp[np.where(QCflowOut_temp == min(QCflowOut_temp))] *= divVale # or id where getSolution < 0
-            valueTopBC = cyl.distributeSources(QCflowOut_temp, 
-                                      np.array([nc+1 for nc in range(self.numFluidComp)]), 
-                                                   self.numDissolvedSoluteComp)
-                                                   
-        return QflowIn_temp, QflowOut_temp, QCflowIn_temp, QCflowOut_temp, valueBotBC, valueTopBC
+                if self.do1d1dFlow:
+                    topVal += self.flow1d1d_sol[gId]
+                    topVal_mucil += self.flow1d1d_mucil[gId]
+                    
+                typeBC = np.full(self.numSoluteComp,3)
+                
+                topVals = np.array([ topVal, topVal_mucil])
+                valueTopBC = np.full(self.numSoluteComp,0.)
+                valueBotBC = np.full(self.numSoluteComp,0.)
+
+                valueBotBC[0] = botVal / (2 * np.pi * self.radii[gId] * l) # [mol/day] -> [mol/cm2 /day]
+                valueBotBC[1] = botVal_mucil / (2 * np.pi * self.radii[gId] * l) # [mol/day] -> [mol/cm2 /day]
+                    
+                    
+                cyl.setSoluteBotBC(typeBC, valueBotBC)
+
+                valueTopBC = np.zeros((self.numDissolvedSoluteComp,cyl.numberOfCellsTot))
+                for nc in range(self.numDissolvedSoluteComp):
+                    if (cyl.getContent(nc+1, isDissolved = (nc < self.numDissolvedSoluteComp))  == 0.).all():
+                        cellIndx4Distrib = 0
+                    else:
+                        cellIndx4Distrib = None
+                    valueTopBC[nc] = cyl.distributeSource(topVals[nc],nc+1 , 
+                                                   self.numDissolvedSoluteComp, cellIndx4Distrib)
+
+                
+                
+                buWBefore_ = cyl.getWaterVolumesCyl()
+                buWBefore = sum( buWBefore_ )
+                WaterContentOld = cyl.getWaterContent()
+                SolutionHeadOld = cyl.getSolutionHead()
+                buCCBefore_ = cyl.getContentCyl(1, True)
+                buTotCBefore = self.getTotCContent(cyl)
+                solsBefore = [np.array(cyl.getSolution(ooo + 1)).flatten() for ooo in range(self.numSoluteComp)]
+                
+                QflowIn_temp = QflowIn
+                QflowOut_temp = QflowOut
+                QCflowIn_temp =np.array([botVal,botVal_mucil])
+                QCflowOut_temp =np.array([topVal,topVal_mucil])
+                QflowIn_limited = 0
+                QflowOut_limited = 0
+                Q_in_m = np.zeros(3)
+                Q_out_m = np.zeros(3)
+                
+                
+                maxDt_temp = 250./(24.*3600.)
+                maxRelShift = self.soilModel.MaxRelativeShift
+
+                if verbose:
+                    print('before solve:init [ topVal, topVal_mucil]',
+                          np.array([ topVal, topVal_mucil]),'init QflowOut',QflowOut)
+                    print('before solve: cyl.getSolutionHead()',np.array(cyl.getSolutionHead()))
+                for ncomp in range(self.numSoluteComp):
+                    try:
+                        if verbose:
+                            print('before solve: cyl.getSolution(ncomp + 1)',ncomp + 1,np.array(cyl.getSolution(ncomp + 1)).flatten())
+                        assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
+                    except:
+                        print('(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()',np.array(cyl.getSolution(ncomp + 1)).flatten(),
+                             cyl.getContentCyl(ncomp + 1, (ncomp < self.numDissolvedSoluteComp)))
+                        raise Exception
+                try:
+                                        
+                    redoSolve = True
+                    n_iter_solve = 0
+                    
+                    while redoSolve:
+                        verbose = True
+                        try:
+                            errorCOnly = False
+                            cyl.ddt =min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
+                            
+                            didReset = False
+                            cyl.solve(dt)
+                            # newton parameters are re-read at each 'solve()' calls
+                            Q_in_m, Q_out_m = cyl.getSavedBC(self.radii[gId], 
+                                                             np.array( self.outer_radii)[gId])     
+                            
+                            assert Q_out_m[0] == 0.
+                            Q_out_m[0] = QflowOut_temp
+                            assert (Q_out_m[1:] == 0.).all()
+                            Q_out_m[1:(self.numFluidComp)] = QCflowOut_temp
+                                
+                            QflowIn_limited = Q_in_m[0]
+                            QflowOut_limited = Q_out_m[0]
+                            
+                            
+                            buWAfter_ =  cyl.getWaterVolumesCyl()
+                            buWAfter = sum(buWAfter_ )
+                            buCCAfter_ = cyl.getContentCyl(1, True)
+                            buTotCAfter = self.getTotCContent(cyl)
+                            diffWproposed = buWAfter - ( buWBefore + (QflowIn + QflowOut) * dt)
+                            diffWtemp = buWAfter - ( buWBefore + (QflowIn_temp + QflowOut_temp) * dt)
+                            diffWlimited = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
+
+                            for ncomp in range(self.numSoluteComp):
+                                try:
+                                    assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
+                                except:
+                                    errorCOnly = True
+                                    print(rank,
+                                    '(np.array(cyl.getSolution(ncomp + 1)).flatten() < 0).any()', 
+                                          ncomp,np.array(cyl.getSolution(ncomp + 1)).flatten() ,
+                                         (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all())
+                                    raise Exception
+                            cyl.setParameter("Newton.MaxRelativeShift",
+                                             str(self.soilModel.MaxRelativeShift))
+                            redoSolve = False
+                            cyl.setParameter("Newton.EnableResidualCriterion", "false") 
+                            cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
+                            cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
+                            
+                            cyl.setParameter("Newton.MaxSteps", "18")
+                            cyl.setParameter("Newton.MaxTimeStepDivisions", "10")
+                        except Exception as e:     
+                            print('solve Failed:', e,'rank',rank,'gId',gId,
+                                  'n_iter_solve',n_iter_solve,
+                                 (QflowIn_temp < 0 or QflowOut_temp < 0), 
+                                  (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.))
+                            cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
+                            cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
+                            cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
+                            if n_iter_solve == 0:
+                                cyl.setParameter("Newton.MaxSteps", "200")
+                                cyl.setParameter("Newton.MaxTimeStepDivisions", "100")
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
+                            elif n_iter_solve == 1:
+                                print(rank,
+                                      'soil.solve() failed. making the computation more precise')
+                                cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
+                                cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+                                cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
+                                cyl.setParameter("Newton.MaxRelativeShift", str(self.soilModel.MaxRelativeShift/10.))# 
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
+                            elif (QflowIn_temp < 0 or QflowOut_temp < 0) or (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.): #
+                                cyl.reset();didReset = True # do reset before re.-distributing the sink
+                                if (n_iter_solve < 20):  
+                                    divVale = 0.9
+                                    if verbose:
+                                        print(rank,
+                                          lId,gId,'errorCOnly',errorCOnly,
+                                          'qflowIn',qIn,valueBotBC,
+                                          'or qflowout',qOut,valueTopBC,
+                                          'too low, and/or','maxDt',maxDt_temp,'too high.',
+                                          'Decrease manually the lowests and maxDt_temp by',
+                                              divVale,
+                                             'QCflowOut_temp, QCflowIn_temp',
+                                              QCflowOut_temp , QCflowIn_temp)
+                                else:
+                                    divVale = 0.
+                                    if verbose:
+                                        print('cannot solve',rank,
+                                                          lId,gId,'errorCOnly',errorCOnly,
+                                                          'qflowIn',qIn,valueBotBC,
+                                                          'or qflowout',qOut,valueTopBC,
+                                                          'too low, and/or','maxDt',maxDt_temp,'too high.',
+                                                          'Decrease manually the lowests and maxDt_temp by',divVale,
+                                                             'QCflowOut_temp, QCflowIn_temp',QCflowOut_temp , QCflowIn_temp)
+                                
+                                
+                                # water
+                                if (not errorCOnly) or (min(QCflowOut_temp) >0. and min(QCflowIn_temp)>0.):
+                                    if verbose:
+                                        print('adapt water', errorCOnly, min(QCflowOut_temp), min(QCflowIn_temp)>0.)
+                                    if (QflowIn_temp < 0 or QflowOut_temp < 0) and (QflowIn_temp <= QflowOut_temp):
+                                        QflowIn_temp *=divVale
+                                        qIn = QflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
+                                        cyl.setInnerFluxCyl(qIn) 
+                                        
+                                    elif (QflowIn_temp < 0 or QflowOut_temp < 0):
+                                        QflowOut_temp *= divVale
+                                        qOut = cyl.distributeSource(QflowOut_temp, 0, l, self.numDissolvedSoluteComp)
+                                            
+                                # solutes
+                                if (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.) and (min(QCflowIn_temp) <= min(QCflowOut_temp)):
+                                    if verbose:
+                                        print('(min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.) and (min(QCflowIn_temp) <= min(QCflowOut_temp))')
+                                    QCflowIn_temp[np.where(QCflowIn_temp == min(QCflowIn_temp))] *=divVale
+                                    valueBotBC[:self.numDissolvedSoluteComp] = QCflowIn_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
+                                    cyl.setSoluteBotBC(typeBC, valueBotBC)
+                                    if verbose:
+                                        print('new SoluteBotBC', valueBotBC)
+                                elif (min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.):
+                                    if verbose:
+                                        print('(min(QCflowOut_temp) <0. or min(QCflowIn_temp)<0.)')
+                                    QCflowOut_temp[np.where(QCflowOut_temp == min(QCflowOut_temp))] *= divVale # or id where getSolution < 0
+                                    valueTopBC = cyl.distributeSources(QCflowOut_temp, 
+                                                              np.array([nc+1 for nc in range(self.numFluidComp)]), 
+                                                                           self.numDissolvedSoluteComp)
+                                    if verbose:
+                                        print('new SoluteTopBC', valueTopBC)
+                                        
+                            elif (maxRelShift < 1e-5) :#random upper limit
+                                if verbose:
+                                    print(rank, lId,gId,' with qflowIn',qIn,
+                                          ' or qflowout',qOut,'maxDt',maxDt_temp,'dt',dt,
+                                      '. Increase NewtonMaxRelativeShift from',
+                                          maxRelShift,'to',maxRelShift*10.)
+                                maxRelShift *= 10.
+                                # newton parameters are re-read at each 'solve()' calls
+                                cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
+                            else:
+                                if True:#verbose:
+                                    print(rank,
+                                      'gId',gId,'lId',lId,'ERROR, GIVING UP. errorCOnly',errorCOnly,
+                                      'qflowIn',qIn,valueBotBC,
+                                      ' qflowout',qOut,valueTopBC)
+                                    print("\ttheta_old",gId, WaterContentOld)
+                                    print("\thead_old",gId, SolutionHeadOld)
+                                    print("\ttheta_new",gId, cyl.getWaterContent())
+                                    print("\thead_new", gId,cyl.getSolutionHead())
+                                cyl.setParameter("Newton.MaxRelativeShift",
+                                             str(self.soilModel.MaxRelativeShift))
+                                redoSolve = False
+                                self.solve_gave_up = True
+                                cyl.reset();
+                                cyl.resetNonlinearSolver()
+                                didReset = True
+                            
+                            
+                            assert didReset
+                            for ncomp in range(self.numSoluteComp):
+                                try:
+                                    assert (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all()
+                                except:
+                                    raise Exception
+                            n_iter_solve += 1
+                            
+                    verbose = False   
+                    buWAfter_ =  cyl.getWaterVolumesCyl()
+                    buWAfter = sum(buWAfter_ )
+                    buCCAfter_ = cyl.getContentCyl(1, True)
+                    buTotCAfter = self.getTotCContent(cyl)
+                    diffW = buWAfter - ( buWBefore + (QflowIn_limited + QflowOut_limited) * dt)
+                    diffC = (sum(buTotCAfter) - ( sum(buTotCBefore) \
+                                    + (sum(QCflowOut_temp) + sum(QCflowIn_temp)) * dt))
+                    self.diffW = max(diffW,abs(self.diffW))
+
+                    self.seg_fluxes_limited[lId] = QflowIn_limited
+                    self.seg_fluxes_limited_sol_In[lId] = Q_in_m[1]
+                    self.seg_fluxes_limited_mucil_In[lId] = Q_in_m[2]
+                    
+                    self.seg_fluxes_limited_Out[lId] =  QflowOut_limited
+                    
+                    self.seg_fluxes_limited_sol_Out[lId] = Q_out_m[1] 
+                    self.seg_fluxes_limited_mucil_Out[lId] = Q_out_m[2] 
+                        
+                    
+                except:
+                    print( "gId",gId,"l",l,"a_in", self.radii[gId] ,"a_out",self.outer_radii[gId],'maxRelShift',maxRelShift )
+                    print("water conservation ",lId, "before", buWBefore , "all cells",buWBefore_)
+                    print("QWflowIn", QflowIn ,"QWflowOut", QflowOut,"qWflowIn", qIn ,"qWflowOut", qOut, "dt", dt)
+                    print("theta_old", WaterContentOld)
+                    print("head_old", SolutionHeadOld)
+                    print("theta_new", cyl.getWaterContent())
+                    print("head_new", cyl.getSolutionHead())
+                    print("QCflowIn", botVal, botVal_mucil ,"QCflowOut", topVal, topVal_mucil)
+                    print("qCIn",valueBotBC,"qCOut",valueTopBC, 'diffC', 
+                          ( sum(buTotCBefore) + (botVal + topVal + botVal_mucil+ topVal_mucil) * dt))
+                    myStr = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
+                    myStr = myStr.format(QflowIn,QflowOut, self.radii[gId], self.outer_radii[gId])
+                    raise Exception(myStr)
+            if verbose:
+                print(rank, "FINISHED cyl no ",lId,"/",len(self.cyls),'gId', isinstance(cyl, AirSegment))
         
-
-
+            
         
     def getTotCContent(self, cyl):
         if isinstance(cyl, AirSegment):
@@ -1795,7 +1901,9 @@ class RhizoMappedSegments(pb.MappedPlant):
             
         Ds = self.soilModel.Ds *(24*3600) *10000 # m^2/s to cm^2/d
         Dl = self.soilModel.Dl *(24*3600) *10000 # m^2/s to cm^2/d
-        
+        #Dynamic viscosity: 1e-3 [Pa s]
+        #cm_per_hPa = 1/0.9806806
+        #viscosity =  1e-3 /(24*3600)/100 * cm_per_hPa # cm*d
         for cyl in self.cylsSoil:
             gId = cyl.gId
             cellid = self.seg2cell[gId]
@@ -1806,29 +1914,42 @@ class RhizoMappedSegments(pb.MappedPlant):
             
             # get all seg ids
             segIds = self.cell2seg[cellid]
+            #ots = self.organTypes[segIds]
             rootIds = np.array([sid for sid in segIds if ((self.organTypes[sid] == 2) and (sid != gId))])
-            
+            if verbose:
+                print('\n\n1d1dflow', gId,cellid ,rootIds,segIds,'Kf',Kf,'cm/d')#,Kf*viscosity)
+            #print('viscosity',viscosity/cm_per_hPa,'hPa*d')
             if len(rootIds) > 0:# at least 1 other segment
                 
                 #use position of node y
                 pos0 =   np.array(self.nodesPos[gId+1])#cm
                 posX =   np.array(self.nodesPos[rootIds+1])#cm
-                
+                if verbose:
+                    print('posX_cm',pos0,posX)
                 dist =( (pos0-posX)**2).sum(axis=1)**(1/2) #cm
-                
+                if verbose:
+                    print('dist_cm',dist)
                 pHead0 = vg.pressure_head(seg_valuesW[gId],self.soilModel.vg_soil)  #cm
                 pHeadX = np.array([
                     vg.pressure_head(thetaCyl_,
                                     self.soilModel.vg_soil) for thetaCyl_ in seg_valuesW[rootIds]]) #cm
-                
+                if verbose:
+                    print('pHead0_cm',pHead0,pHeadX,pHeadX - pHead0 )
                 #exchange surface == 1/4 side surface of segs
                 Surf = np.minimum(cyl.l*cyl.a_out,
                                   self.seg_length[rootIds]*self.outer_radii[rootIds] )*np.pi/2 
                 # if flow1d1d_w > 0, gain for the cylinder
                 flow1d1d_w = Kf * ( pHeadX - pHead0 )/dist *Surf #cm3/d
                 self.flow1d1d_w[gId] = sum(flow1d1d_w)
+                if verbose:
+                    print('Surf_cm2',Surf/(np.pi/2 ),cyl.l*cyl.a_out,
+                                  self.seg_length[rootIds]*self.outer_radii[rootIds] )
+                if verbose:
+                    print('flow1d1d_w',flow1d1d_w)
                 
                 CC = np.where(flow1d1d_w > 0,seg_valuesSol[rootIds],seg_valuesSol[gId])
+                if verbose:
+                    print('CC',CC,seg_valuesSol[gId],seg_valuesSol[rootIds])
                 
                 self.flow1d1d_sol[gId] =sum(flow1d1d_w * CC)
                 phi = self.soilModel.vg_soil.theta_S
@@ -1836,27 +1957,54 @@ class RhizoMappedSegments(pb.MappedPlant):
                 diffS = self.getDeff(Ds,phi,thetaMean)                                                           
                 # if flow1d1d_sol > 0, gain for the cylinder                               
                 self.flow1d1d_sol[gId] += sum(diffS/dist * (seg_valuesSol[rootIds] - seg_valuesSol[gId])*Surf)
-                
+                if verbose:
+                    print('self.flow1d1d_sol[gId]',self.flow1d1d_sol[gId],
+                      self.flow1d1d_sol[gId],'diffS',diffS)
                 diffL=  self.getDeff(Dl,phi,thetaMean)
                 # cm^2/d /cm * [mol/cm^3] / cm = mol/cm^3/d
                 # if flow1d1d_mucil > 0, gain for the cylinder 
                 self.flow1d1d_mucil[gId] = sum(
                     diffL/dist * (seg_valuesmucil[rootIds] -seg_valuesmucil[gId] )*Surf)
-                                   
+                                                            
+                if verbose:
+                    print('self.flow1d1d_mucil[gId]',self.flow1d1d_mucil[gId],
+                      self.flow1d1d_w[gId])
+                    
+                if verbose:
+                    print('set1d1d',rank,'gId',gId, self.flow1d1d_w[gId] , 
+                     'pHead0',pHead0,pHeadX,pHeadX - pHead0 ,'rootIds',rootIds, 
+                      'watvol0',
+                      seg_valuesW[gId]*np.pi*cyl.l*((cyl.a_out-cyl.a_in)**2), 
+                      seg_valuesW[rootIds]*np.pi*self.seg_length[rootIds] *((self.outer_radii[rootIds]-np.array(self.radii)[rootIds])**2),
+                      'cylvol',np.pi*cyl.l*((cyl.a_out-cyl.a_in)**2),
+                         np.pi*self.seg_length[rootIds] *((self.outer_radii[rootIds]-np.array(self.radii)[rootIds])**2), 
+                      flush=True)
         self.flow1d1d_wG = comm.gather(self.flow1d1d_w,root=0)  
         self.flow1d1d_solG = comm.gather(self.flow1d1d_sol,root=0)  
         self.flow1d1d_mucilG = comm.gather(self.flow1d1d_mucil,root=0) 
-        
+        if verbose:
+            print(repr(self.flow1d1d_w))
+            print(repr(self.flow1d1d_sol))
+            print(repr(self.flow1d1d_mucil))
+            
         gotError = 0
-        
+        #print('self.flow1d1d_wG',np.array(self.flow1d1d_wG))
         if rank == 0:
             self.flow1d1d_w = np.array(self.flow1d1d_wG).sum(axis=0)  
             self.flow1d1d_sol = np.array(self.flow1d1d_solG).sum(axis=0)  
             self.flow1d1d_mucil = np.array(self.flow1d1d_mucilG).sum(axis=0) 
-            
+            #print('self.flow1d1d_w',np.array(self.flow1d1d_w))
+            assert self.flow1d1d_w.shape == seg_valuesW.shape
+            assert self.flow1d1d_sol.shape == seg_valuesW.shape
+            assert self.flow1d1d_mucil.shape == seg_valuesW.shape
         
             for cc in cellIds:
                 segs = self.cell2seg[cc]
+                if verbose:
+                    print('\n\ncell',cc,segs)
+                    print('W',repr(self.flow1d1d_w[segs]),sum(self.flow1d1d_w[segs]))
+                    print('sol',repr(self.flow1d1d_sol[segs]),sum(self.flow1d1d_sol[segs]))
+                    print('mucil',repr(self.flow1d1d_mucil[segs]),sum(self.flow1d1d_mucil[segs]))
                 divw = 1 if np.max(abs(self.flow1d1d_w[segs])) == 0 else np.max(self.flow1d1d_w[segs])
                 divsol = 1 if np.max(abs(self.flow1d1d_sol[segs])) == 0 else np.max(self.flow1d1d_sol[segs])
                 divmucil = 1 if np.max(abs(self.flow1d1d_mucil[segs]) )== 0 else np.max(self.flow1d1d_mucil[segs])
@@ -1865,153 +2013,189 @@ class RhizoMappedSegments(pb.MappedPlant):
                              sum(self.flow1d1d_sol[segs]),
                              sum(self.flow1d1d_mucil[segs])])
                 divs = np.array([divw,divsol,divmucil])
-                
-                gotError =  max(abs(vals/divs)) > 0.1
-                
+                try:
+                    assert max(abs(vals/divs)) < 0.1
+                except:
+                    print(vals/divs,'vals',vals,'divs',divs)
+                    print('maxs', np.max(abs(self.flow1d1d_w[segs])) , 
+                          np.max(abs(self.flow1d1d_sol[segs])) , 
+                          np.max(abs(self.flow1d1d_mucil[segs]))) 
+                    print('FAILED')
+                    gotError = 1
                     
-        assert not comm.bcast(gotError,root=0)
+        gotError = comm.bcast(gotError,root=0)
+        if gotError:
+            raise Exception
                     
                 
                             
                 
             
     
-    def splitSoilVals(self, soilVals, seg_values, verbose=False, isWater=False):
-        """ 
-        Split soilFlux array according to the values in seg_values.
-        
-        Parameters:
-        - soilVals: array-like, fluxes which can be <, =, or > 0
-        - seg_values: array-like, contents which are >= 0
-        - verbose: bool, whether to print detailed debug information
-        - isWater: bool, whether the operation is related to water
-        """
+    def splitSoilVals(self, soilVals, #fluxes: can be <, =, or > 0
+                      seg_values, # contents: are >= 0.
+                      troubleShootId = -1, verbose = False, isWater = False):
+        """ split soilFlux array according to the values in seg_values """
+        #verbose = False
         try:
-            cellIds = self.getCellIds()    
+            if troubleShootId <0. :
+                #cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
+                cellIds = self.getCellIds()# np.array([x for x in cellIds if x >= 0])#take out air segments
+            else:
+                cellIds = np.array([troubleShootId])
+                verbose = True            
 
             if verbose:
-                print('enter splitSoilVals', repr(soilVals), repr(seg_values), isWater)
-                print('seg2cell', repr(self.cell2seg), 'cellIds', repr(cellIds))
-
+                print('enter splitsoilval',repr(soilVals), repr(seg_values), isWater)
+                print('seg2cell',repr(self.cell2seg),'cellIds',repr(cellIds))
+            
             assert min(seg_values) >= 0.
             assert seg_values.shape == (len(self.organTypes), )
+            # sum seg_values per voxel
             organTypes = np.array(self.organTypes)
 
             if verbose:
-                print('organTypes', repr(organTypes))
-
+                print('organTypes',repr(organTypes))
+                
             if (organTypes != 2).any():
-                assert (seg_values[np.where(organTypes != 2)] == 0.).all()
+                try:
+                    assert (seg_values[np.where(organTypes != 2)] == 0.).all()
+                except:
+                    print(seg_values, organTypes)
+                    print(seg_values[np.where(organTypes != 2)])
+                    raise Exception
+
 
             seg_values_voxel = np.full(len(self.organTypes), 0.)
             splitVals = np.full(len(self.organTypes), 0.)
-            
             if (soilVals[cellIds] != 0.).any():
                 for cellid in cellIds:
-                    self._split_soil_val_for_cell(cellid, soilVals, seg_values, seg_values_voxel, splitVals, organTypes, verbose, isWater)
+                    segIds = self.cell2seg[cellid]
+                    if soilVals[cellid] != 0:#
+                        assert (splitVals[segIds] == 0.).all()
+                        ots = organTypes[segIds]
+                        rootIds = np.array([sid for sid in segIds if (organTypes[sid] == 2)])
+                        if len(rootIds) > 0:
+                            seg_values_root = seg_values[rootIds]
+                            if isWater:
+                                if verbose:
+                                    print('get preassuree head',seg_values_root,self.vg_soil.theta_S,self.vg_soil.theta_R)
+                                seg_values_root = np.array([ vg.pressure_head(svr, self.vg_soil) for svr in seg_values_root])
+                                seg_values_root = seg_values_root  - min(seg_values_root) - np.mean(seg_values_root)+1e-14
+                            weightVals = np.full(len(segIds), 0.)
 
-            self._verify_splits(soilVals, cellIds, splitVals, organTypes, seg_values, verbose)
-            
+                            if (ots != 2).any():
+                                try:
+                                    assert (seg_values[segIds][np.where(ots != 2)] == 0.).all()
+                                except:
+                                    print(cellid, segIds, ots, seg_values[segIds])
+                                    raise Exception
+                            if verbose:
+                                print("soilVals[cellid]", cellid, soilVals[cellid],
+                                      seg_values_voxel[segIds],segIds,
+                                     seg_values[segIds])
+                            if soilVals[cellid] < 0:# goes away from the 1d models
+                                seg_values_voxel[rootIds] = sum(seg_values_root)
+                                weightVals[np.where(ots == 2)] = seg_values_root / seg_values_voxel[rootIds]
+
+                                if verbose:
+                                    print("sum(seg_values[segIds])", seg_values_voxel[segIds],
+                                          repr(weightVals), sum(weightVals[np.where(ots == 2)]),
+                                         (sum(weightVals) - 1.) )
+                            else:# goes toward  the 1d models
+                                if verbose: 
+                                    print("soilVals[cellid] > 0A", seg_values_voxel[segIds],
+                                          (seg_values[segIds] == 0.).all(),
+                                          min(abs(seg_values_root)) == 0.,
+                                          weightVals, seg_values_root)
+                                if (seg_values[segIds] == 0.).all():# all seg_values == 0
+                                    seg_values_voxel[rootIds] = float(len(seg_values_root))
+                                    weightVals[np.where(ots == 2)] = 1./float(len(seg_values_root))
+                                    if verbose: 
+                                        print("(seg_values[segIds] == 0.).all()",
+                                              float(len(seg_values_root)), 
+                                              seg_values_voxel[rootIds] ,
+                                              weightVals[np.where(ots == 2)] )
+                                else:
+                                    if min(abs(seg_values_root)) == 0.:# at least 1 seg_values = 0 
+                                        if verbose: 
+                                            print("if min(abs(seg_values_root))A",
+                                                  seg_values_root,
+                                                 np.where(seg_values_root== 0.), 
+                                                  seg_values_root[np.where(seg_values_root == 0.)],
+                                                 np.maximum(seg_values_root,1.e-14))
+                                        seg_values_root = np.maximum(seg_values_root,1.e-14)
+                                        #[np.where(seg_values_root == 0.)] = 1.e-14 # to avoid /0
+                                        if verbose:# none == 0
+                                            print("if min(abs(seg_values_root))B", seg_values_root)
+                                        assert min(abs(seg_values_root)) != 0.
+                                    seg_values_voxel[rootIds] = sum(1/seg_values_root)
+                                    weightVals[np.where(ots == 2)] = (1 /seg_values_root) / seg_values_voxel[rootIds]
+                                if verbose: 
+                                    print("soilVals[cellid] < 0B", seg_values_voxel[segIds], 
+                                          weightVals, seg_values[rootIds], seg_values_root)
+                                    #soilVals[cellid] < 0B [1.e+14 1.e+14 0.e+00] [1.0000000e+00 8.9776452e-15] [0.20625049 0.20703416] [1.00000000e-14 1.11387784e+00
+
+                            splitVals[segIds] = weightVals * soilVals[cellid]
+                            if verbose:
+                                print("splitVals[segIds]",splitVals[segIds])
+                                print("sum(weightVals)", sum(weightVals), sum(splitVals[segIds]))
+                            try:
+                                assert ((sum(weightVals) - 1.) < 1e-13) or ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13)
+                            except:
+                                print('ERROR SPLIT VALSA')
+                                print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals))
+                                print(splitVals[segIds], soilVals[cellid])
+                                print(sum(splitVals[segIds]), soilVals[cellid])
+                                print(sum(splitVals[segIds]) - soilVals[cellid])
+                                print(((sum(weightVals) - 1.) < 1e-13) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) < 1e-13))
+                                print(((sum(weightVals) - 1.) ) , ( abs(sum(splitVals[segIds]) - soilVals[cellid]) ) , (abs((sum(splitVals[segIds]) - soilVals[cellid])/(soilVals[cellid])) ))
+                                raise Exception
+
+                try:
+                    if True:# anyway sum(splitVals)~0, sum(soilVals[cellIds])~0
+                        if abs(sum(soilVals[cellIds])) > 1e-16:
+                            assert abs((sum(splitVals) - sum(soilVals[cellIds]))/sum(soilVals[cellIds]))*100. < 0.1 
+                        else:
+                            assert abs((sum(splitVals) - sum(soilVals[cellIds]))) < 1e-16
+                except:
+                    print('ERROR SPLIT VALSB')
+                    print('abs((sum(splitVals) - sum(soilVals[cellIds]))/sum(soilVals[cellIds]))*100. >= 0.1')
+                    print(sum(splitVals), sum(soilVals),  sum(soilVals[cellIds]))
+                    print('splitVals',splitVals,'soilVals',soilVals ,'seg_values',seg_values)
+                    print(sum(splitVals) -  sum(soilVals[cellIds]))
+                    splitVals_ = 0.
+                    soilVals_ = 0.
+                    for cellid in cellIds:
+                        segIds = self.cell2seg[cellid]
+                        splitVals_ += sum(splitVals[segIds])
+                        soilVals_ +=  soilVals[cellid]
+                        print(cellid,segIds,sum(splitVals[segIds]), soilVals[cellid],'organTypes[segIds]',organTypes[segIds],
+                            "current",splitVals_,  soilVals_,splitVals_-  soilVals_,
+                            "to",sum(splitVals),sum(soilVals[cellIds]),sum(splitVals)-sum(soilVals[cellIds]),
+                            (sum(splitVals)-sum(soilVals[cellIds]))/sum(soilVals[cellIds]),
+                            sum(soilVals))
+                    raise Exception
+
+                try:
+                    assert (splitVals[np.where(organTypes != 2)] == 0.).all()
+                except:
+                    print('ERROR SPLIT VALSC')
+                    print("np.where(organTypes != 2)", np.where(organTypes != 2))
+                    print("splitVals",splitVals,organTypes )
+                    print(splitVals[np.where(organTypes != 2)] )
+                    print("seg_values",seg_values)
+                    print(seg_values[np.where(organTypes != 2)] )
+                    raise Exception
             return splitVals
-
         except:
-            if not verbose:
-                print('\n\nrelaunch splitSoilVals with verbose = True')
-                self.splitSoilVals(soilVals, seg_values, verbose=True, isWater=isWater)
-            raise Exception
-
-    def _split_soil_val_for_cell(self, cellid, soilVals, seg_values, seg_values_voxel, splitVals, organTypes, verbose, isWater):
-        segIds = self.cell2seg[cellid]
-        if soilVals[cellid] != 0:
-            assert (splitVals[segIds] == 0.).all()
-            ots = organTypes[segIds]
-            rootIds = np.array([sid for sid in segIds if (organTypes[sid] == 2)])
             
-            if len(rootIds) > 0:
-                seg_values_root = seg_values[rootIds]
-                if isWater:
-                    if verbose:
-                        print('get pressure head', seg_values_root, self.vg_soil.theta_S, self.vg_soil.theta_R)
-                    seg_values_root = np.array([vg.pressure_head(svr, self.vg_soil) for svr in seg_values_root])
-                    seg_values_root = seg_values_root - min(seg_values_root) - np.mean(seg_values_root) + 1e-14
-                weightVals = np.full(len(segIds), 0.)
-
-                if (ots != 2).any():
-                    assert (seg_values[segIds][np.where(ots != 2)] == 0.).all()
-                
-                if verbose:
-                    print("soilVals[cellid]", cellid, soilVals[cellid], seg_values_voxel[segIds], segIds, seg_values[segIds])
-
-                if soilVals[cellid] < 0:
-                    self._handle_negative_soil_val(cellid, soilVals, seg_values_root, seg_values_voxel, splitVals, segIds, rootIds, ots, weightVals, verbose)
-                else:
-                    self._handle_positive_soil_val(cellid, soilVals, seg_values_root, seg_values_voxel, splitVals, segIds, rootIds, ots, weightVals, verbose)
-
-                splitVals[segIds] = weightVals * soilVals[cellid]
-                if verbose:
-                    print("splitVals[segIds]", splitVals[segIds])
-                    print("sum(weightVals)", sum(weightVals), sum(splitVals[segIds]))
-                assert ((sum(weightVals) - 1.) < 1e-13) or (abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (abs((sum(splitVals[segIds]) - soilVals[cellid]) / soilVals[cellid]) < 1e-13)
-
-    def _handle_negative_soil_val(self, cellid, soilVals, seg_values_root, seg_values_voxel, splitVals, segIds, rootIds, ots, weightVals, verbose):
-        seg_values_voxel[rootIds] = sum(seg_values_root)
-        weightVals[np.where(ots == 2)] = seg_values_root / seg_values_voxel[rootIds]
-
-        if verbose:
-            print("sum(seg_values[segIds])", seg_values_voxel[segIds], repr(weightVals), sum(weightVals[np.where(ots == 2)]), (sum(weightVals) - 1.))
-
-    def _handle_positive_soil_val(self, cellid, soilVals, seg_values_root, seg_values_voxel, splitVals, segIds, rootIds, ots, weightVals, verbose):
-        if verbose:
-            print("soilVals[cellid] > 0A", seg_values_voxel[segIds], min(abs(seg_values_root)) == 0., weightVals, seg_values_root)
-        if (seg_values_root == 0.).all():
-            seg_values_voxel[rootIds] = float(len(seg_values_root))
-            weightVals[np.where(ots == 2)] = 1. / float(len(seg_values_root))
-            if verbose:
-                print("(seg_values[segIds] == 0.).all()", float(len(seg_values_root)), seg_values_voxel[rootIds], weightVals[np.where(ots == 2)])
-        else:
-            if min(abs(seg_values_root)) == 0.:
-                if verbose:
-                    print("if min(abs(seg_values_root))A", seg_values_root, np.where(seg_values_root == 0.), seg_values_root[np.where(seg_values_root == 0.)], np.maximum(seg_values_root, 1.e-14))
-                seg_values_root = np.maximum(seg_values_root, 1.e-14)
-                if verbose:
-                    print("if min(abs(seg_values_root))B", seg_values_root)
-                assert min(abs(seg_values_root)) != 0.
-            seg_values_voxel[rootIds] = sum(1 / seg_values_root)
-            weightVals[np.where(ots == 2)] = (1 / seg_values_root) / seg_values_voxel[rootIds]
-        if verbose:
-            print("soilVals[cellid] < 0B", seg_values_voxel[segIds], weightVals,  seg_values_root)
-
-    def _verify_splits(self, soilVals, cellIds, splitVals, organTypes, seg_values, verbose):
-        try:
-            if abs(sum(soilVals[cellIds])) > 1e-16:
-                assert abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. < 0.1 
-            else:
-                assert abs((sum(splitVals) - sum(soilVals[cellIds]))) < 1e-16
-        except:
-            print('ERROR SPLIT VALSB')
-            print('abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. >= 0.1')
-            print(sum(splitVals), sum(soilVals), sum(soilVals[cellIds]))
-            print('splitVals', splitVals, 'soilVals', soilVals, 'seg_values', seg_values)
-            print(sum(splitVals) - sum(soilVals[cellIds]))
-            splitVals_ = 0.
-            soilVals_ = 0.
-            for cellid in cellIds:
-                segIds = self.cell2seg[cellid]
-                splitVals_ += sum(splitVals[segIds])
-                soilVals_ += soilVals[cellid]
-                print(cellid, segIds, sum(splitVals[segIds]), soilVals[cellid], 'organTypes[segIds]', organTypes[segIds], "current", splitVals_, soilVals_, splitVals_ - soilVals_, "to", sum(splitVals), sum(soilVals[cellIds]), sum(splitVals) - sum(soilVals[cellIds]), (sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds]), sum(soilVals))
-            raise Exception
-
-        try:
-            assert (splitVals[np.where(organTypes != 2)] == 0.).all()
-        except:
-            print('ERROR SPLIT VALSC')
-            print("np.where(organTypes != 2)", np.where(organTypes != 2))
-            print("splitVals", splitVals, organTypes)
-            print(splitVals[np.where(organTypes != 2)])
-            print("seg_values", seg_values)
-            print(seg_values[np.where(organTypes != 2)])
-            raise Exception
+            if verbose == False:
+                print('\n\nrelaunch splitsoilVals with verbose = True')
+                self.splitSoilVals(soilVals, #fluxes: can be <, =, or > 0
+                      seg_values, # contents: are >= 0.
+                      troubleShootId = -1, verbose = True, isWater = isWater)
+            raise Exception 
     
     def _map(self, x):
         """Converts @param x to a numpy array and maps it to the right indices                 """

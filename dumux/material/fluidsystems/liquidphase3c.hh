@@ -417,14 +417,13 @@ public:
     template <class FluidState>
     static Scalar binaryDiffusionCoefficient(const FluidState &fluidState, int phaseIdx, int compIIdx, int compJIdx)
     {
-        //return diffusionCoefficient(fluidState, phaseIdx, compJIdx);
         assert(phaseIdx == compIIdx);
 		
         if (compJIdx == secondCompIdx)
             return BinaryCoefficientsSecondComponent::liquidDiffCoeff(fluidState.temperature(phaseIdx), fluidState.pressure(phaseIdx));
         else if (compJIdx == thirdCompIdx)
             return BinaryCoefficientsThirdComponent::liquidDiffCoeff(fluidState.temperature(phaseIdx), fluidState.pressure(phaseIdx));
-        //
+        return -1;
     }
 	
 
