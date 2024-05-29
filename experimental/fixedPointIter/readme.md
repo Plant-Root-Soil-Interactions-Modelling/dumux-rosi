@@ -32,8 +32,10 @@ soil and the 1d models
 - we set an empirical minimum number of loops (4). During our simulation, we usually saw a significant
 decrease of the errors during the first 4 loops. Might need to adapt that for another setup
 - currently plant-soil solute flow defined outside of iteration loop. will be different for N or P simulation
+
 - it works with the CPB master branch
 - currently, cpp printing when creating a 1d model is redirected to the file 'stdcout_cpp.txt', if there are a lot of 1d model being created, it might be better to just catch the sdt::cout call without printing it afterwards to no end up with a very long file.
+
 
 
 # TODOs
@@ -44,3 +46,4 @@ decrease of the errors during the first 4 loops. Might need to adapt that for an
 - separate phloem and plant water flow in different files, adapt transpiration
 - make messages print to consol more readable
 - merge fpit_clean with master branch, and merge file in fixedPointIter/modules with the default ones of the master branch
+
