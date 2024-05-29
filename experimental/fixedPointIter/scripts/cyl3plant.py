@@ -178,7 +178,6 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                     print("solve 1d soil ") 
                     
             perirhizalModel.solve(dt, 
-                                  fpit_Helper.n_iter,
                                   fpit_Helper.seg_fluxes , # inner BC water
                                   fpit_Helper.proposed_outer_fluxes, # outer BC water
                                   fpit_Helper.seg_sol_fluxes, # inner BC solute 1

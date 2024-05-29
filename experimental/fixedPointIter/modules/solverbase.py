@@ -4,6 +4,7 @@ import scipy
 from scipy.interpolate import griddata
 from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
 
+from helpfull import StdoutRedirector
 
 class SolverWrapper():
     """ Additional functionality to the C++ Python binding. 
@@ -35,6 +36,7 @@ class SolverWrapper():
         # [mol/m3] = [g/m3] /  [g/mol] 
         self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
         self.molarDensityWat_cm3 =  self.molarDensityWat_m3 /1e6 # [mol wat/cm3 wat] 
+        self.results_dir = "./results/"
         
 
     def initialize(self, args_ = [""], verbose = False,doMPI_=True):
@@ -45,7 +47,8 @@ class SolverWrapper():
             If the python code is run in parallel, we can use doMPI_=False for the
             1d models only (FoamGrid). Does not work for the other (3d) grids.
         """
-        self.base.initialize(args_, verbose, doMPI=doMPI_)
+        with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+            self.base.initialize(args_, verbose, doMPI=doMPI_)
     
     @property
     def dimWorld(self):
@@ -78,19 +81,20 @@ class SolverWrapper():
         """
         self.base.setMaxTimeStepSize(maxDt)
         
-    def createLinearSolver():
+    def createLinearSolver(self):
         """
             manually (re)create nonlinear solver. 
             useful to implement new solver parameters
         """
         self.base.createLinearSolver()
     
-    def createNewtonSolver():
+    def createNewtonSolver(self):
         """
             manually (re)create nonlinear solver. 
             useful to implement new solver parameters
         """
-        self.base.createNewtonSolver()
+        with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+            self.base.createNewtonSolver()
         
     def save(self):
         """ 
@@ -225,7 +229,8 @@ class SolverWrapper():
         p = []
         for v in points:
             p.append([v / 100.])  # cm -> m
-        self.base.createGrid1d(p)
+        with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
+            self.base.createGrid1d(p)
         self.numberOfCellsTot = len(points) -1
         self.numberOfFacesTot = self.numberOfCellsTot * 2
 

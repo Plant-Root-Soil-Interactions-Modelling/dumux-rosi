@@ -168,8 +168,6 @@ class fixedPointIterationHelper():
         
         # when there is not transpiration, use data at the beginning of the time step for water flow
         if (perirhizalModel.beforeAtNight and PhloemPhotosynthesis.noTranspiration(perirhizalModel, rs_age_i_dt, dt)):
-            print('use old thetacyl val')
-            raise Exception
             self.thetaCyl = self.thetaCylOld
         else:
             # get data before doing the 'reset' => values at the end of the time step
@@ -435,6 +433,7 @@ class fixedPointIterationHelper():
 
                 s.setParameter("Newton.MaxSteps", "18")
                 s.setParameter("Newton.MaxTimeStepDivisions", "10")
+                s.createNewtonSolver() # re-create Newton solver to implement the new newton parameters
                 
             except Exception as err:
                 s.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
@@ -471,7 +470,7 @@ class fixedPointIterationHelper():
                     # newton parameters are re-read at each 'solve()' calls
                     s.setParameter("Newton.MaxRelativeShift", str(maxRelShift))
                 s.reset() # reset solution vector
-                s.resetNonlinearSolver() # re-create Newton solver to implement the new newton parameters
+                s.createNewtonSolver() # re-create Newton solver to implement the new newton parameters
                 k_soil_solve += 1
                 
         
