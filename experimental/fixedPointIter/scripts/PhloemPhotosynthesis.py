@@ -13,15 +13,20 @@ from helpfull import write_file_array, write_file_float, div0, div0f
 import functional.van_genuchten as vg
 
 class phloemDataStorage():
-    def __init__(self, PerhirizalModel, phloemModel):
-        self.phloemModel = phloemModel
-        self.PerhirizalModel = PerhirizalModel
-        self.Nt = len(PerhirizalModel.nodes)
+    def __init__(self, perirhizalModel, plantModel):
+        self.plantModel = plantModel
+        self.perirhizalModel = perirhizalModel
+        self.plantModel = plantModel
+        self.Nt = len(perirhizalModel.nodes)
         self.Q_ST_init = np.array([])
         self.Q_Exud    = np.zeros(self.Nt)
         self.Q_Mucil   = np.zeros(self.Nt)
+        self.Q_Gr    = np.zeros(self.Nt)
+        self.Q_Rm   = np.zeros(self.Nt)
         self.Q_Exudbu    = np.zeros(self.Nt)
         self.Q_Mucilbu   = np.zeros(self.Nt)
+        self.Q_Grbu    = np.zeros(self.Nt)
+        self.Q_Rmbu   = np.zeros(self.Nt)
         self.Q_in  = 0
         self.Q_Exud_cumul = 0.; 
         self.Q_Mucil_cumul = 0.
@@ -30,9 +35,13 @@ class phloemDataStorage():
         self.Q_Mucil_i_seg = np.array([])  
         self.error_st_abs = 0;
         self.error_st_rel=0
+        #  MMOL Suc (/cm3) => mol C (/cm3)
+        self.mmolSuc_to_molC = 1/1e3*12
+        
     def setNtbu(self):
         self.Ntbu = self.Nt
-    def computePhloemFlow(self,rs_age, dt,perirhizalModel):
+        
+    def computePhloemFlow(self,rs_age, dt):
     
         self.plantModel.Csoil_seg = self.perirhizalModel.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
         
@@ -41,56 +50,62 @@ class phloemDataStorage():
             endphloem = rs_age + dt
             stepphloem = 1
             verbose_phloem = True
-            filename = perirhizalModel.results_dir +"inPM"+str(rank)+".txt"
+            filename =  self.perirhizalModel.results_dir +"inPM"+str(rank)+".txt"
 
             print("startpm",rank)
-            self.phloemModel.startPM(startphloem, endphloem, stepphloem, ( perirhizalModel.weatherX["TairC"]  +273.15) , verbose_phloem, filename)
+            self.plantModel.startPM(startphloem, endphloem, stepphloem, (  self.perirhizalModel.weatherX["TairC"]  +273.15) , verbose_phloem, filename)
             print("endtpm",rank)
 
-            self.Nt = len(perirhizalModel.nodes)
+            self.Nt = len( self.perirhizalModel.nodes)
             Nt = self.Nt
             
             #  MMOL Suc (/cm3) => mol C (/cm3)
-            mmolSuc_to_molC = 1/1e3*12
-            if self.phloemModel.withInitVal and (len(self.Q_ST_init) ==0) :
-                self.Q_ST_init = np.array(self.phloemModel.Q_init[0:Nt])* mmolSuc_to_molC
-                self.Q_meso_init = np.array(self.phloemModel.Q_init[Nt:(Nt*2)])* mmolSuc_to_molC
+            mmolSuc_to_molC = self.mmolSuc_to_molC
+            if self.plantModel.withInitVal and (len(self.Q_ST_init) ==0) :
+                self.Q_ST_init = np.array(self.plantModel.Q_init[0:Nt])* mmolSuc_to_molC
+                self.Q_meso_init = np.array(self.plantModel.Q_init[Nt:(Nt*2)])* mmolSuc_to_molC
 
             # the backups
 
             self.Q_Exudbu = self.Q_Exud            
             self.Q_Mucilbu = self.Q_Mucil
+            self.Q_Grbu = self.Q_Gr            
+            self.Q_Rmbu = self.Q_Rm
 
             # att: that will be the cumulative value
-            self.Q_ST    = np.array(self.phloemModel.Q_out[0:Nt])* mmolSuc_to_molC
-            self.Q_meso  = np.array(self.phloemModel.Q_out[Nt:(Nt*2)])* mmolSuc_to_molC
-            self.Q_Rm    = np.array(self.phloemModel.Q_out[(Nt*2):(Nt*3)])* mmolSuc_to_molC
-            self.Q_Exud  = np.array(self.phloemModel.Q_out[(Nt*3):(Nt*4)])* mmolSuc_to_molC
-            self.Q_Gr    = np.array(self.phloemModel.Q_out[(Nt*4):(Nt*5)])* mmolSuc_to_molC
-            self.Q_Rmmax       = np.array(self.phloemModel.Q_out[(Nt*5):(Nt*6)])* mmolSuc_to_molC
-            self.Q_Grmax       = np.array(self.phloemModel.Q_out[(Nt*6):(Nt*7)])* mmolSuc_to_molC
-            self.Q_S_meso   = np.array(self.phloemModel.Q_out[(Nt*7):(Nt*8)])* mmolSuc_to_molC
-            self.Q_S_ST   = np.array(self.phloemModel.Q_out[(Nt*8):(Nt*9)])* mmolSuc_to_molC
-            self.Q_Mucil  = np.array(self.phloemModel.Q_out[(Nt*9):(Nt*10)])* mmolSuc_to_molC #mol for nodes
+            self.Q_ST    = np.array(self.plantModel.Q_out[0:Nt])* mmolSuc_to_molC
+            self.Q_meso  = np.array(self.plantModel.Q_out[Nt:(Nt*2)])* mmolSuc_to_molC
+            self.Q_Rm    = np.array(self.plantModel.Q_out[(Nt*2):(Nt*3)])* mmolSuc_to_molC
+            self.Q_Exud  = np.array(self.plantModel.Q_out[(Nt*3):(Nt*4)])* mmolSuc_to_molC
+            self.Q_Gr    = np.array(self.plantModel.Q_out[(Nt*4):(Nt*5)])* mmolSuc_to_molC
+            self.Q_Rmmax       = np.array(self.plantModel.Q_out[(Nt*5):(Nt*6)])* mmolSuc_to_molC
+            self.Q_Grmax       = np.array(self.plantModel.Q_out[(Nt*6):(Nt*7)])* mmolSuc_to_molC
+            self.Q_S_meso   = np.array(self.plantModel.Q_out[(Nt*7):(Nt*8)])* mmolSuc_to_molC
+            self.Q_S_ST   = np.array(self.plantModel.Q_out[(Nt*8):(Nt*9)])* mmolSuc_to_molC
+            self.Q_Mucil  = np.array(self.plantModel.Q_out[(Nt*9):(Nt*10)])* mmolSuc_to_molC #mol for nodes
 
-            self.C_ST    = np.array(self.phloemModel.C_ST)* mmolSuc_to_molC
-            self.Fl      = np.array(self.phloemModel.Fl)* mmolSuc_to_molC
-            self.volST   = np.array(self.phloemModel.vol_ST)
-            self.volMeso   = np.array(self.phloemModel.vol_Meso)
+            self.C_ST    = np.array(self.plantModel.C_ST)* mmolSuc_to_molC
+            self.Fl      = np.array(self.plantModel.Fl)* mmolSuc_to_molC
+            self.volST   = np.array(self.plantModel.vol_ST)
+            self.volMeso   = np.array(self.plantModel.vol_Meso)
             self.C_S_meso   = self.Q_S_meso/self.volMeso
             self.C_S_ST   = self.Q_S_ST/self.volST
             self.C_meso  = self.Q_meso/self.volMeso
-            self.Q_in   += sum(np.array(self.phloemModel.AgPhl)*dt)* mmolSuc_to_molC
-            # i m missing the starch
+            self.Q_in   += sum(np.array(self.plantModel.AgPhl)*dt)* mmolSuc_to_molC
+            
             self.Q_out   = self.Q_Rm + self.Q_Exud + self.Q_Gr + self.Q_Mucil
             self.error_st_abs   = abs(sum(self.Q_ST + self.Q_meso + self.Q_out + self.Q_S_meso + self.Q_S_ST)- self.Q_in - sum(self.Q_ST_init)  - sum(self.Q_meso_init))
             self.error_st_rel = abs(div0(self.error_st_abs,self.Q_in,1)*100)
 
             self.Q_Exudbu     =   np.concatenate((self.Q_Exudbu, np.full(self.Nt - self.Ntbu, 0.))) 
             self.Q_Mucilbu       =   np.concatenate((self.Q_Mucilbu, np.full(self.Nt - self.Ntbu, 0.))) 
+            self.Q_Rmbu     =   np.concatenate((self.Q_Rmbu, np.full(self.Nt - self.Ntbu, 0.))) 
+            self.Q_Grbu       =   np.concatenate((self.Q_Grbu, np.full(self.Nt - self.Ntbu, 0.))) 
 
             self.Q_Exud_i      = (self.Q_Exud    - self.Q_Exudbu)
             self.Q_Mucil_i     = (self.Q_Mucil   - self.Q_Mucilbu)
+            self.Q_Gr_i      = (self.Q_Gr    - self.Q_Grbu)
+            self.Q_Rm_i      = (self.Q_Rm    - self.Q_Rmbu)
 
 
             try:
@@ -101,36 +116,36 @@ class phloemDataStorage():
 
             assert self.Q_Exud_i[0] == 0#no exudation in seed node 
             assert self.Q_Mucil_i[0] == 0#no exudation in seed node  
-            assert np.array(self.phloemModel.Csoil_node)[0] == 0
+            assert np.array(self.plantModel.Csoil_node)[0] == 0
 
 
             try:
-                assert (np.array(self.phloemModel.Csoil_seg ) == np.array(self.phloemModel.Csoil_node)[1:]).all()
+                assert (np.array(self.plantModel.Csoil_seg ) == np.array(self.plantModel.Csoil_node)[1:]).all()
             except:
-                print(np.array(self.phloemModel.Csoil_seg ), np.array(self.phloemModel.Csoil_node))
-                print( (np.array(self.phloemModel.Csoil_seg ) == np.array(self.phloemModel.Csoil_node)[1:]),
-                         (np.array(self.phloemModel.Csoil_seg ) == np.array(self.phloemModel.Csoil_node)[1:]).all())
+                print(np.array(self.plantModel.Csoil_seg ), np.array(self.plantModel.Csoil_node))
+                print( (np.array(self.plantModel.Csoil_seg ) == np.array(self.plantModel.Csoil_node)[1:]),
+                         (np.array(self.plantModel.Csoil_seg ) == np.array(self.plantModel.Csoil_node)[1:]).all())
                 raise Exception
 
             self.Q_Exud_i_seg = np.array( self.Q_Exud_i[1:] )  #from nod to semgment
             self.Q_Mucil_i_seg = np.array(self.Q_Mucil_i[1:]) 
 
-            airSegsId = self.PerhirizalModel.airSegs
+            airSegsId = self.perirhizalModel.airSegs
 
             try:
                 assert (self.Q_Exud_i_seg[airSegsId] == 0).all()
                 assert (self.Q_Mucil_i_seg[airSegsId] == 0).all()
-                assert (np.array(self.phloemModel.k_mucil_)[airSegsId+1] == 0).all()
-                assert (np.array(self.phloemModel.Q_Exudmax)[airSegsId+1] == 0).all()
+                assert (np.array(self.plantModel.k_mucil_)[airSegsId+1] == 0).all()
+                assert (np.array(self.plantModel.Q_Exudmax)[airSegsId+1] == 0).all()
             except:
                 print("Q_Exud_i_seg", self.Q_Exud_i_seg[airSegsId] )
                 print("Q_Mucil_i", self.Q_Mucil_i_seg,Q_Mucil,self.Q_Mucilbu,airSegsId)
                 print("Q_Mucil_i",self.Q_Mucil_i_seg[airSegsId], self.Q_Mucil[airSegsId+1], self.Q_Mucilbu[airSegsId+1])
-                print("Csoil_seg", np.array(self.phloemModel.Csoil_seg)[airSegsId])
-                print("k_mucil_",self.phloemModel.k_mucil_)
-                print("Q_Exudmax",np.array(self.phloemModel.Q_Exudmax)[airSegsId+1])
+                print("Csoil_seg", np.array(self.plantModel.Csoil_seg)[airSegsId])
+                print("k_mucil_",self.plantModel.k_mucil_)
+                print("Q_Exudmax",np.array(self.plantModel.Q_Exudmax)[airSegsId+1])
                 print("airSegsId", airSegsId, np.where(airSegsId))
-                print(len(airSegsId), len(self.phloemModel.k_mucil_))
+                print(len(airSegsId), len(self.plantModel.k_mucil_))
                 raise Exception
 
             try: # currently, only have a release of carbon
@@ -139,15 +154,19 @@ class phloemDataStorage():
                 assert min(self.Q_Mucil_i_seg) >= -1e-13
                 self.Q_Mucil_i_seg[np.where(self.Q_Mucil_i_seg<0)] = 0.
             except:
-                print(self.C_ST, self.phloemModel.Csoil_node, self.Q_Exud_i_seg,self.Q_Exud)
+                print(self.C_ST, self.plantModel.Csoil_node, self.Q_Exud_i_seg,self.Q_Exud)
                 raise Exception
 
             print("sum exud", sum(self.Q_Exud_i_seg), sum(self.Q_Mucil_i_seg))
         else:
             self.Q_Exud_i_seg = None
             self.Q_Mucil_i_seg = None
+            self.Q_Gr_i = None;
+            self.Q_Rm_i = None
             self.Q_Exud = None
             self.Q_Mucil = None 
+            self.Q_Gr  = None;
+            self.Q_Rm  = None
             
     def bcastData(self):
         self.Q_Exud = comm.bcast(self.Q_Exud, root = 0) 
@@ -156,7 +175,7 @@ class phloemDataStorage():
         self.Q_Mucil_i_seg = comm.bcast(self.Q_Mucil_i_seg, root = 0) 
         
 def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt, soilK):
-    
+
     organTypes = np.asarray(plantModel.rs.organTypes, int)
     try:                    
         plantModel.solve_photosynthesis(sim_time_ = rs_age_i_dt, 
@@ -379,6 +398,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
         either photosynthesis or xylem flow
         return the plant-exterior water exchange
     """
+    
     s = fpit_Helper.s # soil model
     seg_fluxes = fpit_Helper.seg_fluxes
     # when there is no transpiration (night time), we use the plant wat. pot.

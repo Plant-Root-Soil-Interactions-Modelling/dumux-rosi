@@ -234,8 +234,8 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
     if rank == 0:
         if perirhizalModel.doSoluteFlow:
             s.bulkMassErrorCumul_abs = abs((totC3dAfter - ( s.totC3dInit + 
-                                        phloemData.Q_Exud + 
-                                        phloemData.Q_Mucil)))
+                                        sum(phloemData.Q_Exud) + 
+                                        sum(phloemData.Q_Mucil))))
             if totC3dAfter != 0:
                 s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/totC3dAfter*100)
             else:

@@ -490,8 +490,8 @@ class fixedPointIterationHelper():
 
         # return component content per voxel according to 1d model data 
         # used to compute 3d sink
-        self.soil_solute1d_perVoxelBefore = np.array( [np.array(perirhizalModel.getC_rhizo(s.numberOfCellsTot, 
-                                                                     idComp = idc + 1, konz = False
+        self.soil_solute1d_perVoxelBefore = np.array( [np.array(perirhizalModel.getC_rhizo(
+                                                                        idComp = idc + 1, konz = False
                                                                     )) for idc in range(perirhizalModel.numSoluteComp)])
         
     def storeNewMassData1d(self):
@@ -508,7 +508,7 @@ class fixedPointIterationHelper():
         self.rhizoTotCAfter = sum(self.rhizoTotCAfter_eachCyl) 
         # return component content per voxel according to 1d model data 
         # used to compute 3d sink
-        self.soil_solute1d_perVoxelAfter = np.array( [np.array(perirhizalModel.getC_rhizo(s.numberOfCellsTot, 
+        self.soil_solute1d_perVoxelAfter = np.array( [np.array(perirhizalModel.getC_rhizo(
                                                                               idComp = idc + 1, konz = False
                                                                              )) for idc in range(perirhizalModel.numSoluteComp)])
         
