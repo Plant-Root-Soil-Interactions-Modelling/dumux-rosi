@@ -473,7 +473,7 @@ class RhizoMappedSegments(pb.MappedRootSystem):#XylemFluxPython):#
         if verbose:
             print("checkMassOMoleBalance2", rank)
         if diff1d3dCW_abs_lim is None:
-           diff1d3dCW_abs_lim = self.limErr1d3dAbs
+            diff1d3dCW_abs_lim = self.limErr1d3dAbs
         
         cellIds = np.fromiter(self.cell2seg.keys(), dtype=int)
         cellIds =  np.array([x for x in cellIds if x >= 0])#take out air segments

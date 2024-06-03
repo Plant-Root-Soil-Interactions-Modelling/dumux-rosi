@@ -1647,9 +1647,9 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 #changeRatioW_ = changeRatio_ * contentW[cellId]/wOld + 1.
                 try:
                     #changeRatioW = max(min(changeRatioW_, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
-                    changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
-                    
-                    assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
+                    if smaller:
+                        changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
+                        assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
                     assert (changeRatioW > 0.)
                 except:
                     print('volNew', volNew,'volOld',volOld)

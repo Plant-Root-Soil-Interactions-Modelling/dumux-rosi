@@ -1511,7 +1511,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             
             rx_divide = np.where(rx !=0, rx, 1.)
             # up 10% err
-            errRxPlant = max(abs((rx - rx_old)/rx_divide)*100.)/10 #np.linalg.norm(abs((rx - rx_old)/rx_divide)*100)
+            errRxPlant = max(abs((rx - rx_old)/rx_divide)*100.) #np.linalg.norm(abs((rx - rx_old)/rx_divide)*100)
             rx_old = rx.copy()
             errW1ds = np.linalg.norm(rhizoWAfter_[rhizoSegsId] - rhizoWAfter_old[rhizoSegsId])
             errC1ds = np.linalg.norm(rhizoTotCAfter_[rhizoSegsId] - rhizoTotCAfter_old[rhizoSegsId])
