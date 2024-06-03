@@ -32,9 +32,11 @@ soil and the 1d models
 - we set an empirical minimum number of loops (4). During our simulation, we usually saw a significant
 decrease of the errors during the first 4 loops. Might need to adapt that for another setup
 - currently plant-soil solute flow defined outside of iteration loop. will be different for N or P simulation
+
 - it works with the CPB master branch
 - currently, cpp printing when creating a 1d model is redirected to the file 'stdcout_cpp.txt', if there are a lot of 1d model being created, it might be better to just catch the sdt::cout call without printing it afterwards to no end up with a very long file.
 - for 1ds and 3ds computation: manually adapt sink before hand to never send or take more than they can deal with
+
 
 
 # TODOs
@@ -73,3 +75,4 @@ Do we switch to dirichlet BC when needed? y do psi remain so high when pwu shoul
 - controle the splitsoil val as well for water content (not done already?)
 - for splitsoilval, need to do reset and then get also as input the futur plant water uptake
 - check that splitSoilval works even if a thetaCyl is < 0 (i think already ok)
+
