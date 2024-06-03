@@ -937,7 +937,8 @@ public:
 						{
 							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<bcBotValues_[pressureIdx]<<" "<<
                             f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
-							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
+							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz
+							" criticalPressure_ "<<criticalPressure_<<" gravityOn_ "<<gravityOn_<<std::endl;
 						}
 						f = std::min(f, omax);
 					}

@@ -18,7 +18,7 @@ class StdoutRedirector:
 
     def __enter__(self):
         self.old_stdout_fd = os.dup(1)
-        self.file = open(self.filepath, 'a')
+        self.file = open(self.filepath, 'w')
         self.file_fd = self.file.fileno()
         os.dup2(self.file_fd, 1)
 
@@ -29,6 +29,7 @@ class StdoutRedirector:
 
 def suggestNumStepsChange(dt, dt_inner, failedLoop,  targetIter_, results_dir):# taken from dumux
     """
+    adapted from dumux function
      * \brief Suggest a new number of time steps
      *
      * The default behavior is to suggest the old time-step number
@@ -155,7 +156,7 @@ def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
             or (min(rs.new_soil_solute.reshape(-1)) < 0)  
             or ((n_iter < rs.minIter) and (isInner)))  and (n_iter < rs.k_iter)
 
-    if rank == 0:#mpiVerbose:# or (max_rank == 1):
+    if (rank == 0) and isInner:
         print('continue loop?',rank,'n_iter',n_iter,'cL',cL,'failedLoop',failedLoop, ' np.floor(rs.err)',
         np.floor(rs.err),  'solve_gave_up',rs.solve_gave_up,
         'diff1d3dCurrant_rel',rs.diff1d3dCurrant_rel, 
@@ -198,6 +199,9 @@ def continueLoop(rs,n_iter, dt_inner: float,failedLoop: bool,
     return cL
 
 def checkseg2cellMapping(seg2cell_old, plantModel):
+    """
+        some checks to do during the troubleshooting period
+    """
     # make sure that, once a segment is created, it stays in the same soil voxel
     for segid in seg2cell_old.keys():
         assert seg2cell_old[segid] == plantModel.seg2cell[segid]
@@ -245,19 +249,19 @@ def resetAndSaveData3(plantModel, perirhizalModel, s):
     perirhizalModel.enteredSpell = perirhizalModel.enteredSpellBU
 
     # to get the error values for the old solution vector
-    perirhizalModel.checkMassOMoleBalance2()
+    perirhizalModel.check1d3dDiff()
     
     
 
 def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
+    """
+        save sumulative transpiration and assimilated carbon during inner fixed point iteration
+    """
+    plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
     if perirhizalModel.doPhotosynthesis:
-        plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
         if perirhizalModel.enteredSpell and (not perirhizalModel.leftSpell):
             plantModel.TranspirationCumul_eval += plantModel.TranspirationCumul_inner
         elif perirhizalModel.leftSpell:
             plantModel.TranspirationCumul_eval = 0.
         
         plantModel.An =comm.bcast( plantModel.AnCumul_inner/(dt*24*3600) , root=0)
-
-    else:
-        plantModel.TranspirationCumul += sum(plantModel.outputFlux)
