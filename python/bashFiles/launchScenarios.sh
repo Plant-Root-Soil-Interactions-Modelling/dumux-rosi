@@ -21,3 +21,4 @@ sbatch fpit128cpu256.sh 10 25 61 lateDry  --nodelist=node09
 # sbatch fpit128cpu128.sh 10 25 17 none
 # sbatch --nodelist=node02 fpit128cpu256.sh 10 25 49 earlyDry
 # sbatch fpit128cpu128.sh 10 25 61 earlyDry 
+# sbatch fpit128cpu128.sh 10 25 61 earlyDry

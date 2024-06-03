@@ -127,7 +127,7 @@ def suggestNumStepsChange(nOld, numIter_, targetIter_, results_dir):# taken from
         percent = float(targetIter_ - numIter_)/float(targetIter_)
         change = 1 /(1.0 + percent/1.2)
     #if not doMinimumPrint:
-    #    write_file_array("suggestNumStepsChange",np.array([nOld, numIter_, targetIter_, percent,change, np.ceil(nOld * change)]), directory_ =results_dir, fileType = '.csv') 
+    write_file_array("suggestNumStepsChange",np.array([nOld, numIter_, targetIter_, percent,change, np.ceil(nOld * change)]), directory_ =results_dir, fileType = '.csv') 
     return int(np.ceil(nOld * change))
     
 
@@ -166,8 +166,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         min_b = np.array([-5, -5, -10.])# 
         cell_number =np.array([5,5,20])#
     else:
-        min_b = np.array([-3./2, -12./2, -41.])
-        cell_number =np.array( [3,12,41]) # 1cm3 
+        min_b = np.array([-3./2, -12./2, -40.])#41
+        cell_number =np.array( [3,12,41]) # 1cm3 np.array( [3,6,40]) #
         max_b =np.array( [3./2, 12./2, 0.])
        
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
@@ -176,7 +176,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/newtrans4/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/newtrans7/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\

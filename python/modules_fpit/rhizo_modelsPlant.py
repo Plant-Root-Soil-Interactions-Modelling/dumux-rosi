@@ -1647,9 +1647,11 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                 #changeRatioW_ = changeRatio_ * contentW[cellId]/wOld + 1.
                 try:
                     #changeRatioW = max(min(changeRatioW_, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
-                    changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
-                    
-                    assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
+                    if smaller:
+                        changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
+                        assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
+                    else:
+                        changeRatioW = changeRatio
                     assert (changeRatioW > 0.)
                 except:
                     print('volNew', volNew,'volOld',volOld)
@@ -3046,12 +3048,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         if len(rootIds) > 0:
                             seg_values_root = seg_values[rootIds]
                             if isWater:
-                                if verbose:
-                                    print('get preassuree head',seg_values_root,self.vg_soil.theta_S,self.vg_soil.theta_R)
-                                seg_values_root = np.array([ vg.pressure_head(svr, self.vg_soil) for svr in seg_values_root])
-                                if verbose:
-                                    print('got pressure_head', seg_values_root, min(seg_values_root))
-                                seg_values_root = seg_values_root  - min(seg_values_root) - np.mean(seg_values_root)+1e-14 #- min(seg_values_root)
+
+                                if (soilVals[cellid] > 0):# space available
+                                    availableSpaceOrWater = (self.vg_soil.theta_S-seg_values_root)*seg_volume_root
+                                else:
+                                    availableSpaceOrWater = (seg_values_root-self.theta_wilting_point)*seg_volume_root
+                                    
+                                if min(availableSpaceOrWater)<0:
+                                    availableSpaceOrWater = helpfull.adapt_values(availableSpaceOrWater/seg_volume_root,
+                                                0,
+                                                np.Inf,#/dt/abs(source), 
+                                                seg_volume_root, divideEqually = True, 
+                                                verbose= verbose) *seg_volume_root
+
+                                weightVals = availableSpaceOrWater /sum(availableSpaceOrWater)
+            
                             weightVals = np.full(len(segIds), 0.)
 
                             if (ots != 2).any():
