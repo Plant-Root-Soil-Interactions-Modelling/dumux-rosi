@@ -36,8 +36,7 @@ import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
 from functional.xylem_flux import *
 from datetime import *
-from wheat_Giraud2023adapted import setKrKx_xylem, init_conductivities
-
+from wheat_Giraud2023adapted import setKrKx_xylem 
 from helpfull import *
 from weatherFunctions import *
 from PhloemPhotosynthesis import *
@@ -95,8 +94,8 @@ def getBiochemParam(s,paramIdx):
     s.alpha = 0.1 # -
     s.f_sorp = 0# 0.5
     s.k_phi = 0.1
-    s.C_aOLim=1.e-10* float(s.doSoluteFlow) # so that microbe community can always regrow
-    s.C_aCLim=1.e-10* float(s.doSoluteFlow) # so that microbe community can always regrow
+    s.C_aOLim=1.e-10 * float(s.doSoluteFlow) # so that microbe community can always regrow
+    s.C_aCLim=1.e-10 * float(s.doSoluteFlow) # so that microbe community can always regrow
     
     if s.noAds:
         s.CSSmax = 0.
@@ -208,7 +207,7 @@ def setIC(s, paramIdx, ICcc = None):
         
             
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        addedVar = 1.* float(s.doSoluteFlow) # empirical factor
+        addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
                            C_L*unitConversion*addedVar,
@@ -240,7 +239,7 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
-    s.MaxRelativeShift = 1e-8
+    s.MaxRelativeShift = 1e-12
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
     
@@ -249,7 +248,7 @@ def setDefault(s):
     
     # UpwindWeight = 1, better when we have high solute gradient.
     # UpwindWeight = 0.5, better when have high water flow and low solute gradient
-    s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
+    s.setParameter("Flux.UpwindWeight", "0.5")#very important because we get high solute gradient.
     
     return s
 
@@ -257,13 +256,13 @@ def getSoilTextureAndShape():
     """ soil shape and texture data
         to adapt according to the soil represented
     """
-    min_b = np.array([-3./2, -12./2, -41.]) # np.array( [5, 5, 0.] )
+    min_b = np.array([-3./2, -12./2, -40.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number =np.array( [3,12,41]) # 1cm3 #np.array([3,3,3])
+    cell_number = np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
-    soilVG = [0.08, 0.43, 0.04, 1.6, 50]
+    soilVG = [0.049, 0.352, 0.019, 4.887, 421.67]
     soilTextureAndShape = {'min_b' : min_b,'max_b' : max_b,
                            'cell_number':cell_number,
                            "solidDensity":solidDensity,
@@ -300,7 +299,7 @@ def create_soil_model3D( usemoles, results_dir ,
                      noAds = False, ICcc = None, doSoluteFlow = True):
     return create_soil_model( usemoles , results_dir,
                         p_mean_,paramIndx ,
-                     noAds , ICcc, doSoluteFlow = True )
+                     noAds , ICcc , doSoluteFlow)
 
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
@@ -347,6 +346,7 @@ def create_soil_model( usemoles, results_dir ,
     write_file_array("cellIds", np.array(s.cellIndices), directory_ =s.results_dir) # cm3
     
     return s
+    
 
 def setupOther(s, p_mean_):
     """ define remaining soil parameters """
@@ -401,6 +401,13 @@ def setupOther(s, p_mean_):
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  
     s.ddt = 1.e-5  # [day] initial Dumux time step
+    s.bulkMassErrorWater_rel = 0.
+    s.bulkMassErrorWater_relLim = 0.
+    s.totC3dInit = sum(s.getTotCContent()) # mol
+    
+    # initial soil water and solute content
+    cell_volumes = s.getCellVolumes()  # cm3
+    s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
     return s
 
 
@@ -454,15 +461,32 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     # maps segments, maps root segements and soil grid indices to each other in both directions
     plantModel.rs.setSoilGrid(picker)
     
-    plantModel.wilting_point = -15000
+    plantModel.wilting_point = -15000.
     # set kr and kx for root system or plant
-    plantModel = init_conductivities(r = plantModel, age_dependent = not static_plant)#setKrKx_xylem(TairC = 20, RH = 0.4, r = plantModel)
+    import wheat1997_conductivities
+    wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
     if doPhloemFlow:   
-                                                                              
         plantModel = phloemParam(plantModel, weatherInit)
     perirhizalModel.set_plantModel(plantModel)
+    perirhizalModel.rhizoMassWError_rel = 0.
+    perirhizalModel.rhizoMassWError_relLim = 0.
+    perirhizalModel.new_soil_solute = np.array([0.])
+    
+    
+    # to get time spent in each part of the code. TODO: currently, does not work well
+    plantModel.time_start_global = timeit.default_timer()
+    plantModel.time_rhizo_cumul = 0
+    plantModel.time_3ds_cumul = 0
+    plantModel.time_plant_cumulW = 0
+    plantModel.time_plant_cumulS = 0
+    plantModel.time_rhizo_i = 0
+    plantModel.time_3ds_i = 0
+    plantModel.time_plant_cumul = 0
+    # cumulative transpiration
+    plantModel.TranspirationCumul = 0 # real cumulative transpiration
+    plantModel.TranspirationCumul_eval = 0 # cumulative transpiration during period with dinamic soil (for mass balance check)
+    
     return perirhizalModel, plantModel
-         
     
 
 

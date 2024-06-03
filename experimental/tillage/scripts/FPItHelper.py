@@ -135,20 +135,23 @@ class fixedPointIterationHelper():
         if rank == 0:
             if max(abs(outer_R_bc_wat )) > 0:
                 assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
-                proposed_outer_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_wat / dt,self.thetaCyl, 
+                proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
+                                                        seg_values=self.thetaCyl_4splitSoilVals, 
+                                                       seg_volume= self.cylVol,
                                                        isWater = True, 
                                                                       verbose = False) #cm3/day
+                                                 
             else:
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
 
             if max(abs(outer_R_bc_sol[0] )) > 0:
-                proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[0] / dt, self.comp1content)#mol/day
+                proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[0] / dt, self.comp1content, self.cylVol)#mol/day
             else:
                 proposed_outer_sol_fluxes = np.full(self.numSegs, 0.)
                 
                 
             if max(abs(outer_R_bc_sol[1] )) > 0:
-                proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[1] / dt, self.comp2content)
+                proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[1] / dt, self.comp2content, self.cylVol)
             else:
                 proposed_outer_mucil_fluxes = np.full(self.numSegs, 0.)
                 
@@ -168,16 +171,18 @@ class fixedPointIterationHelper():
         
         # when there is not transpiration, use data at the beginning of the time step for water flow
         if (perirhizalModel.beforeAtNight and PhloemPhotosynthesis.noTranspiration(perirhizalModel, rs_age_i_dt, dt)):
-            self.thetaCyl = self.thetaCylOld
+            self.thetaCyl_4splitSoilVals = self.thetaCylOld
         else:
             # get data before doing the 'reset' => values at the end of the time step
-            self.thetaCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3 water
+            # self.thetaCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3 water
+            # get all potentially available water == water after reset + water taken up by plant
+            self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + self.seg_fluxes * dt )/self.cylVol
        
         # get data before doing the 'reset' => values at the end of the time step
         self.comp1content = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
         self.comp2content = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
 
-        assert (self.thetaCyl >= 0.).all()
+        # assert (self.thetaCyl_4splitSoilVals >= 0.).all() # because of seg_fluxes, could have thetaCyl_4splitSoilVals < 0
         assert (self.comp1content >= 0.).all()
         assert (self.comp2content >= 0.).all()
         
@@ -306,7 +311,10 @@ class fixedPointIterationHelper():
             net_PWU_limited = None
 
         self.net_PWU_limited = comm.bcast(net_PWU_limited, root=0)
-        
+        #print('compute1dChangesWater', 'seg_', sum(self.seg_fluxes), sum(net_PWU),sum(self.seg_fluxes)- sum(net_PWU),
+        #                    'seg_fluxes_limited', sum(self.seg_fluxes_limited), sum(net_PWU_limited) ,
+        #                    sum(self.seg_fluxes_limited)- sum(net_PWU_limited) ,
+        #                  'diff',  sum(net_PWU_limited)- sum(net_PWU),sum(self.seg_fluxes)- sum(self.seg_fluxes_limited))
         perirhizalModel.SinkLim3DS =max( abs((self.net_PWU_limited - self.net_PWU)/ 
                                             np.where(self.net_PWU,self.net_PWU,1.))*100.) # at the end of the fixed point iteration, should be ~ 0 
                                             
@@ -405,10 +413,10 @@ class fixedPointIterationHelper():
             try:
                 decreaseMaxRelShift = False
                 if rank==0:
-                    print("entering the s.solve", rank)
+                    print("solve 3d soil")
                 s.solve(dt)  # in modules/solverbase.py
                 if  rank==0:
-                    print("leaving the s.solve", rank)
+                    print("solve 3d soil finished")
                 
                 # if we got solute content < 0, throw exception
                 solComp = [s.getSolution(ncom+1) for ncom in range(s.numSoluteComp)]
@@ -571,6 +579,8 @@ class fixedPointIterationHelper():
         errorsEachW = self.rhizoWAfter_eachCyl - ( 
             self.rhizoWBefore_eachCyl + (self.seg_fluxes_limited+ self.seg_fluxes_limited_Out)*dt)
         
+        #print('massBalanceError1d', sum(self.seg_fluxes_limited), sum( self.seg_fluxes),sum( self.proposed_outer_fluxes), sum(self.seg_fluxes_limited_Out) )
+        
         # store absolute total error for limited flow
         perirhizalModel.rhizoMassWError_absLim = sum(abs(errorsEachW[rhizoSegsId]))
         
@@ -588,6 +598,10 @@ class fixedPointIterationHelper():
         # (I'm not sure when/if thread 0 is the only one with the important infor)
         # perirhizalModel.rhizoMassWError_abs = comm.bcast(perirhizalModel.rhizoMassWError_abs,root= 0)
         # perirhizalModel.rhizoMassCError_abs = comm.bcast(perirhizalModel.rhizoMassCError_abs,root= 0)
+        
+        if rank == 0:
+            print(f'relative error balance soil 1d (%)?\n\t\tfrom PWU: {perirhizalModel.rhizoMassWError_rel:.2e}, from PWU-limited: {perirhizalModel.rhizoMassWError_relLim:.2e}, from PCU: {perirhizalModel.rhizoMassCError_rel:.2e}, from PCU-limited: {perirhizalModel.rhizoMassCError_relLim:.2e}'
+                )
 
         
     def storeOldMassData3d(self):
@@ -630,10 +644,13 @@ class fixedPointIterationHelper():
             
     def massBalanceError3d(self, dt):
         s = self.s
-        # according to plant data
-        s.bulkMassErrorWater_absLim = abs(sum(self.soil_water3dAfter) - (sum(self.soil_water3dBefore ) + sum(self.net_PWU_limited)*dt))
-        s.bulkMassErrorWater_abs = abs(sum(self.soil_water3dAfter) - (sum(self.soil_water3dBefore ) + sum(self.net_PWU)*dt))
+        # according to plant data # I need to add the water flux to be sure
+        s.bulkMassErrorWater_absLim = sum(abs(self.soil_water3dAfter - self.soil_water3dBefore  -self.sources_wat_from3d-self.outer_R_bc_wat))
+        
+        s.bulkMassErrorWater_abs = sum(abs(self.soil_water3dAfter -  self.soil_water3dBefore-self.net_PWU*dt-self.outer_R_bc_wat))
+        s.bulkMassErrorWater_relLim = abs(s.bulkMassErrorWater_absLim /sum(self.soil_water3dAfter) )*100
         s.bulkMassErrorWater_rel = abs(s.bulkMassErrorWater_abs /sum(self.soil_water3dAfter) )*100
+        s.bulkMassErrorWaterSink_abs = self.net_PWU_limited*dt- self.sources_wat_from3d # sink sent to dumux == sink implemented?
 
 
         s.bulkMassCErrorPlant_abs = abs(self.totC3dAfter - ( self.totC3dBefore + sum(self.Q_Exud_i) + sum(self.Q_mucil_i)))
@@ -652,12 +669,9 @@ class fixedPointIterationHelper():
 
 
         if rank == 0:
-            print("errorbalance soil 3d?",
-              ', s.bulkMassErrorWater_rel ',s.bulkMassErrorWater_rel ,
-                ',s.bulkMassCErrorPlant_rel',s.bulkMassCErrorPlant_rel,
-                ', s.bulkMassCError1ds_rel',s.bulkMassCError1ds_rel
+            print(f"relative error balance soil 3d (%)?\n\t\tfrom PWU {s.bulkMassErrorWater_rel:.2e}, from PWU-limited {s.bulkMassErrorWater_relLim:.2e},from PCU {s.bulkMassCErrorPlant_rel:.2e}, from 1ds C-change {s.bulkMassCError1ds_rel:.2e}"
                 )
-
+                
         ### for each voxel
         s.bulkMassErrorWaterAll_abs = abs(self.soil_water3dAfter - (self.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))
         s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /self.soil_water3dAfter )*100
@@ -673,11 +687,11 @@ class fixedPointIterationHelper():
         s.bulkMassCError1dsAll_abs = abs(self.totC3dAfter_eachVoxeleachComp - (self.totC3dBefore_eachVoxeleachComp + 
                                                     self.sources_sol_from3d + self.outer_R_bc_sol))
 
+
         totC3dAfter_eachVoxeleachCompTemp = np.where(self.totC3dAfter_eachVoxeleachComp != 0,
                                                   self.totC3dAfter_eachVoxeleachComp,
                                                   1)
         s.bulkMassCError1dsAll_rel = abs(s.bulkMassCError1dsAll_abs*100/totC3dAfter_eachVoxeleachCompTemp)
-        
 
         try:
             assert s.bulkMassCError1dsAll_rel.shape == (s.numSoluteComp, s.numberOfCellsTot )
@@ -711,23 +725,12 @@ class fixedPointIterationHelper():
         errWrsi =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
         errWrsi[abs(rsx - self.rsx_old)<= 5]= 0.
         errWrsi = max(errWrsi)
-        
-        self.rsx_old = rsx
+        self.rsx_old = rsx;
 
         # convergence BC flow 1d models
         diffBCS1dsFluxIn =   np.array(self.seg_fluxes)  - self.seg_fluxes_old   #only for water as plant exud is outside of loop
-        diffBCS1dsFluxOut =   self.proposed_outer_fluxes  - self.proposed_outer_fluxes_old 
+        self.diffBCS1dsFluxOut =   self.proposed_outer_fluxes  - self.proposed_outer_fluxes_old 
         
-        write_file_array("fpit_proposed_outer_fluxes", self.proposed_outer_fluxes,
-                         directory_ =perirhizalModel.results_dir, fileType = '.csv')
-        write_file_array("fpit_diffBCS1dsFluxOut", diffBCS1dsFluxOut,
-                         directory_ =perirhizalModel.results_dir, fileType = '.csv')
-        write_file_array("fpit_outer_R_bc_wat", self.outer_R_bc_wat,
-                         directory_ =perirhizalModel.results_dir, fileType = '.csv')
-        write_file_array("fpit_seg_fluxes", self.seg_fluxes,
-                         directory_ =perirhizalModel.results_dir, fileType = '.csv')#
-        write_file_array("fpit_thetaCyl", self.thetaCyl,
-                         directory_ =perirhizalModel.results_dir, fileType = '.csv')
                          
         diffBCS1dsFluxOut_sol =   self.proposed_outer_sol_fluxes  - self.proposed_outer_sol_fluxes_old 
         diffBCS1dsFluxOut_mucil =   self.proposed_outer_mucil_fluxes  - self.proposed_outer_mucil_fluxes_old
@@ -736,7 +739,7 @@ class fixedPointIterationHelper():
             diffBCS1dsFluxIn/ np.where(np.array(self.seg_fluxes),
                                        np.array(self.seg_fluxes),1.))*100))
         errBCS1dsFluxOut = max(abs((
-            diffBCS1dsFluxOut/ np.where(self.proposed_outer_fluxes,
+            self.diffBCS1dsFluxOut/ np.where(self.proposed_outer_fluxes,
                                         self.proposed_outer_fluxes,1.))*100))
         
         errBCS1dsFluxOut_sol = max(abs((
@@ -784,10 +787,12 @@ class fixedPointIterationHelper():
         perirhizalModel.err = comm.bcast(max(errRxPlant,self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds,
                                 s.bulkMassErrorWater_rel, 
                                s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel,
-                               perirhizalModel.rhizoMassWError_rel),root= 0)
+                               perirhizalModel.rhizoMassWError_rel,
+                               perirhizalModel.SinkLim3DS,
+                        perirhizalModel.SinkLim1DS),root= 0)
         # one array to do printing
         perirhizalModel.errs =np.array([
-                        # convergence metrics
+                        # non-convergence metrics
                         errRxPlant, self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds, errWrsi,
                         errBCS1dsFluxIn, errBCS1dsFluxOut,errBCS1dsFluxOut_sol, errBCS1dsFluxOut_mucil,
                         errOuter_R_bc_wat, errOuter_R_bc_sol,
@@ -800,6 +805,7 @@ class fixedPointIterationHelper():
                         max(perirhizalModel.maxDiff1d3dCW_abs), perirhizalModel.maxdiff1d3dCurrant,perirhizalModel.maxdiff1d3dCurrant_rel, 
                         # mass balance error 3d model
                         s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel,
+                        s.bulkMassErrorWater_absLim,s.bulkMassErrorWater_relLim,
                         s.bulkMassCErrorPlant_abs, s.bulkMassCError1ds_abs,
                         s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel,  
                        # mass balance error 1d models

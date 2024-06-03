@@ -20,6 +20,10 @@ class phloemDataStorage():
         self.plantModel = plantModel
         self.Nt = len(perirhizalModel.nodes)
         self.Q_ST_init = np.array([])
+        self.C_S_meso    = np.zeros(self.Nt)
+        self.C_meso    = np.zeros(self.Nt)
+        self.C_S_ST    = np.zeros(self.Nt)
+        self.C_ST    = np.zeros(self.Nt)
         self.Q_Exud    = np.zeros(self.Nt)
         self.Q_Mucil   = np.zeros(self.Nt)
         self.Q_Gr    = np.zeros(self.Nt)
@@ -31,7 +35,11 @@ class phloemDataStorage():
         self.Q_in  = 0
         self.Q_Exud_cumul = 0.; 
         self.Q_Mucil_cumul = 0.
-        self.Q_Exud_i = None
+        self.Q_Exud_i =  np.zeros(self.Nt)
+        self.Q_Mucil_i =  np.zeros(self.Nt)
+        self.Q_Gr_i =  np.zeros(self.Nt)
+        self.Q_Rm_i =  np.zeros(self.Nt)
+        
         self.Q_Exud_i_seg = np.array([]); 
         self.Q_Mucil_i_seg = np.array([])  
         self.error_st_abs = 0;
@@ -416,32 +424,36 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                            dist_factor) # if water enters the root
         soilKOut = s.vg_soil.Ksat  /dist_factor# if water leaves the root # [cm/d]  / [cm]  = day-1
         
-        soilK = soilKIn 
+        fpit_Helper.soilK =  soilKIn 
         if( len(seg_fluxes) > 0.):# and not (perirhizalModel.beforeAtNight and (perirhizalModel.weatherX["Qlight"] == 0.)):
-            soilK[np.where(seg_fluxes> 0. ) ] = soilKOut[np.where(seg_fluxes > 0. ) ]
+            fpit_Helper.soilK[np.where(seg_fluxes> 0. ) ] = soilKOut[np.where(seg_fluxes > 0. ) ] # where plant releases water
+            #soilK[np.where(seg_fluxes< 0. ) ] = soilKIn[np.where(seg_fluxes < 0. ) ]
 
         if len(perirhizalModel.airSegs) > 0:   # infinit resistance for shoot segments and roots aboveground
-            soilK[perirhizalModel.airSegs] = np.Inf
+            fpit_Helper.soilK[perirhizalModel.airSegs] = np.Inf
+        
 
     if perirhizalModel.doPhotosynthesis:
         if (rank == 0):
-            seg_fluxes = computePhotosynthesis(plantModel, perirhizalModel, fpit_Helper, rs_age_i_dt, soilK)
+            seg_fluxes = computePhotosynthesis(plantModel, perirhizalModel, fpit_Helper, rs_age_i_dt, fpit_Helper.soilK)
         else:
             seg_fluxes = None
     else: # just xylem flow
         if (rank == 0):
-            transpiration = plantModel.maxTranspiration * (rs_age_i_dt/plantModel.maxTranspirationAge) *  sinusoidal2(rs_age_i_dt, dt)
+            transpiration = plantModel.maxTranspiration *  min(rs_age_i_dt/plantModel.maxTranspirationAge,1.)  *sinusoidal2(rs_age_i_dt, dt)
+            
             rx = plantModel.solve(rs_age_i_dt, 
                          [-transpiration],
                          sx= fpit_Helper.rsx_input[0], 
                          sxx= fpit_Helper.rsx_input, 
                          cells = False, 
                          wilting_point = plantModel.wilting_point,
-                          soil_k = soilK)
+                          soil_k = fpit_Helper.soilK)
             plantModel.psiXyl = rx
-            seg_fluxes = np.array(plantModel.segFluxes(rs_age_i_dt, rx, fpit_Helper.rsx_input, 
-                                               False, False, #approx, cells
-                                               []))     
+            seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
+            rx = list(rx), sx= list(fpit_Helper.rsx_input), 
+                                               approx=False, cells=False, #approx, cells
+                                               soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate  
         else :
             plantModel.psiXyl = None
             seg_fluxes = None

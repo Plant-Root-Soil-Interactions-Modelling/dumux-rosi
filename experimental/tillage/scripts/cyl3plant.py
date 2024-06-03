@@ -22,7 +22,9 @@ from FPItHelper import fixedPointIterationHelper
 import weatherFunctions
 import PhloemPhotosynthesis
 import printData
+import scenario_setup
 
+from functional.xylem_flux import sinusoidal2
 
         
 def simulate_const(s, plantModel, sim_time, dt, rs_age, 
@@ -103,6 +105,9 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     for Ni in range(N):
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
+        if rank==0:
+            transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
+            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, transpiration: {transpiration:.2e} cm3/d")
         
         
         perirhizalModel.weatherX = weatherFunctions.weather(simDuration = rs_age_i_dt, dt = dt,
@@ -123,7 +128,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
             
         
-        while  continueLoop(perirhizalModel,fpit_Helper.n_iter, dt,
+        while  continueLoop(perirhizalModel,s,fpit_Helper.n_iter, dt,
                             False,float(Ni) * dt,'inner_loopdata', isInner = True, 
                             plant = plantModel):
             
@@ -172,8 +177,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             plantModel.time_start_rhizo = timeit.default_timer()
 
             
-            if rank == 0:
-                    print("solve 1d soil ") 
+            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
+                    print("solve all 1d soils ") 
                     
             perirhizalModel.solve(dt, 
                                   fpit_Helper.seg_fluxes , # inner BC water
@@ -184,8 +189,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                   fpit_Helper.proposed_outer_mucil_fluxes # outer BC solute 2
                                  ) # cm3/day or mol/day
             
-            if rank == 0:
-                    print("solve 1d soil finished")
+            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
+                    print("solve all 1d soils finished")
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
             
@@ -247,13 +252,13 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             ##    
             
             plantModel.time_start_3ds = timeit.default_timer()
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and (rank == 0):
+            if (perirhizalModel.mpiVerbose ) and (rank == 0):
                 print("solve 3d soil" )
                 
             fpit_Helper.solve3DS(dt)
             
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and (rank == 0):
+            if (perirhizalModel.mpiVerbose ) and (rank == 0):
                 print("solve 3d soil finished" )
                 
             plantModel.time_3ds_i += (timeit.default_timer() - plantModel.time_start_3ds)
@@ -276,8 +281,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # get flux and source data directly from dumux. 
             # TODO: do the same to get directly change rate of 1d model
-            outer_R_bc = -s.getFlux_10c() 
-            bulkSoil_sources = s.getSource_10c()
+            outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+            bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source
             
             fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 
             fpit_Helper.sources_wat_from3d =  bulkSoil_sources[0]# cm3
@@ -302,7 +307,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # print extra data for troubleshooting
             # TODO: finish adapting the name of the objects to print
-            printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper)
+            printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt)
             
             
             ##
@@ -323,6 +328,21 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # for adaptation of the next inner time step (@see helpfull::suggestNumStepsChange())
             n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter)
             # end inner loop
+            if rank == 0:   
+                is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569
+                datas = [is569,
+                         plantModel.psiXyl, 
+                          fpit_Helper.rsx_old, 
+                          np.array(fpit_Helper.seg_fluxes), 
+                         fpit_Helper.proposed_outer_fluxes
+                        ]
+                datasName = [ 'is569',"psiXyl",
+                             "rsi", "flux_in", 
+                             "flux_out"
+                            ]
+            printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx/number of vtp plot
+                                perirhizalModel, plantModel,s, scenario_setup.getSoilTextureAndShape(), 
+                                datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
 
             
         ####
@@ -348,7 +368,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                 
             write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
         
-        failedLoop = continueLoop(perirhizalModel,0, dt, False,Ni * dt,'inner_testdata', plant = plantModel)
+        # did we leave the inner loop because n_iter == k_iter (failedLoop = True)?
+        failedLoop = continueLoop(perirhizalModel,s,0, dt, False,Ni * dt,'inner_testdata', plant = plantModel)
         
         if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
             if rank == 0:
