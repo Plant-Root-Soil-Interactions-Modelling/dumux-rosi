@@ -23,7 +23,7 @@ def weather(simDuration, dt, spellData, hp:float=1):
             Tnigh = 15.8; Tday = 22
             RHday = 0.6; RHnigh = 0.88
             Pair = 1010.00 #hPa
-            pmean = -100.
+            pmean = -700.
             cs = 350e-6
         elif spellData['condition'] == "dry":
             Tnigh = 20.7; Tday = 30.27

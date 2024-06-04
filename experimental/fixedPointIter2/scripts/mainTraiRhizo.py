@@ -10,46 +10,47 @@ import timeit
 import numpy as np
 
 sys.path.append("../modules/");
-sys.path.append("../inputData/");
+sys.path.append("../inputDataTraiRhizo/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
+sys.path.append("../../../build-cmake/cpp/python_binding/");
 import plantbox as pb  # CPlantBox
 import vtk_plot_adapted as vp
-import scenario_setup
+
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
 import cyl3plant as cyl3
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
 from helpfull import continueLoop
-from weatherFunctions import *
+import weatherFunctions 
 from PhloemPhotosynthesis import *
 import printData
+import scenario_setup
 
     
 
-def XcGrowth(initsim, simMax,paramIndx_,spellData):
-
-    path = "../inputData/"
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter file
-    dx = 0.2 # todo implement
-    dxMin = 0.25
+def XcGrowth(initsim, simMax,paramIndx_,spellData): 
+    path = "../../../../CPlantBox/modelparameter/structural/plant/"
+    xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 1/60/60/24 # dt
+    dt_inner_init =  dt # 1/60/24 #
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
-    k_iter = 6 # max num of iteration for loops
-    targetIter= 5 # target n_iter for adjusting time step of inner loop
+    k_iter_2initVal = 131 # max num of iteration for loops
+    k_iter = 100 # max num of iteration for loops
+    targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
-    doSoluteFlow = False # only water (False) or with solutes (True)
-    noAds = True # stop adsorption?
-    doPhloemFlow = False
-    doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
+    doSoluteFlow = True # only water (False) or with solutes (True)
+    noAds = False # stop adsorption?
+    doPhloemFlow = True
+    doPhotosynthesis = True # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
     # at the beginning of the time step. Otherwise does not converge
-    beforeAtNight = True  
+    do1d1dFlow = True
+    beforeAtNight = False #True  
     # static or growing organism
     static_plant = False
     # print debug messages in cyl3plant faile
@@ -62,6 +63,17 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
+    rsiCompMethod =4# 0.5 = mixed, 0 = init, 1 = end, -1: use mean of the last 2 iterations
+    # 2 : last two mean method
+    # 3 : mean(oldmean, lastval)
+    # 4 : mean(allvals)
+    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). f
+    # for eahc seg, not just the whole set
+    # 6: keep min obtained ksoil
+    # 7 : get mean/integrated krsoil from dumux. likewise, use mean/integrated psi gotten in dumux.
+    # or run plant model
+    # 8 call cpb 
+    
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
     maxTranspiration = 12#6. # cm3/day, used if not doPhotosynthesis 
@@ -69,10 +81,10 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
-    weatherInit = scenario_setup.weather(1.,dt, spellData)
+    weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/ongoingCleanUp/"+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -109,6 +121,13 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # store parameters
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
+    
+    perirhizalModel.do1d1dFlow = do1d1dFlow
+    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
+    perirhizalModel.weather = weatherFunctions.weather 
+    perirhizalModel.weatherChange = weatherFunctions.weatherChange 
+    perirhizalModel.k_iter_2initVal = k_iter_2initVal
+    perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
     perirhizalModel.doPhloemFlow = doPhloemFlow
     perirhizalModel.doSoluteFlow = doSoluteFlow
@@ -210,10 +229,11 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)
             
-            keepGoing = continueLoop(perirhizalModel,s,perirhizalModel.n_iter, 
-                                     perirhizalModel.dt_inner,
-                                     failedLoop,real_dtinner,name="Outer_data",
-                                     isInner = False,
+            keepGoing = continueLoop(perirhizalModel=perirhizalModel,s=s,n_iter=perirhizalModel.n_iter, 
+                                     dt_inner=perirhizalModel.dt_inner,
+                                     failedLoop=failedLoop,real_dtinner=real_dtinner,name="Outer_data",
+                                     isInner = False,doPrint = True, 
+                         fileType = '.csv' ,
                              plant = plantModel)
             perirhizalModel.n_iter += 1
             
@@ -239,12 +259,16 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 
                 helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
                 
-                
+                raise Exception
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
-        keepGoing_ = continueLoop(perirhizalModel,0, perirhizalModel.dt_inner,
-                                  failedLoop,real_dtinner,
-                                  name="TestOuter_data", plant = plantModel)
+        
+        keepGoing_ = continueLoop(perirhizalModel=perirhizalModel,s=s,n_iter=0, 
+                                     dt_inner=perirhizalModel.dt_inner,
+                                     failedLoop=failedLoop,real_dtinner=real_dtinner,name="TestOuter_data",
+                                     isInner = False,doPrint = True, 
+                         fileType = '.csv' ,
+                             plant = plantModel)
         if keepGoing_:
             print("None convergence error: only left the loop because reached the max number of iteration.")
             raise Exception  
@@ -255,7 +279,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         
         printData.getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData)
         
-        printData.printCylData(perirhizalModel)
+        printData.printCylData(perirhizalModel,rs_age )
         
                     
         plantModel.time_start_plant = timeit.default_timer()

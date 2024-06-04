@@ -67,7 +67,8 @@ class SolverBase {
 public:
 
     using VectorType = std::array<double, dim>;
-    using NumEqVector = typename Problem::NumEqVector;
+    using NumEqVector = typename Problem::NumEqVector;	
+    using GlobalPosition = typename Problem::GlobalPosition; 
 	
     int numComp(){return nEV.size();}
     int numFluidComp(){return Problem::FluidSystem::numComponents;}
@@ -1134,6 +1135,18 @@ protected:
     }
 	
 	void virtual resetSetFaceFlux(){}
+	
+	
+	//! true if on the point lies on the upper boundary
+	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] > this->gridGeometry->bBoxMax()[dimWorld - 1] - eps_;
+	}
+
+	//! true if on the point lies on the upper boundary
+	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] < this->gridGeometry->bBoxMin()[dimWorld - 1] + eps_;
+	}
+	static constexpr double eps_ = 1.e-7;
 	
 };
 

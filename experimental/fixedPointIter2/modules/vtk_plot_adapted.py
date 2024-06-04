@@ -79,9 +79,8 @@ def plot_plant(plant, p_name, vals=[], render = True, interactiveImage = True, f
         for i in range(len(vals)):
             vals_ = vals[-1-i]
             p_name_leaf = p_name[-1-i]
-            #print(p_name_leaf, vals_)
             if len(vals_) == numnodes:
-                param = vals_[globalIdx_y] #select data for leaf
+                param = np.array(vals_)[globalIdx_y] #select data for leaf
             else :
                 if len(vals_) == (numnodes-1):
                     #print(vals_,globalIdx_y, type(globalIdx_y))
