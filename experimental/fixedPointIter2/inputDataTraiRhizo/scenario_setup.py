@@ -4,16 +4,6 @@ Functions to simplify setup of the scenarios for the INARI project
 
 import sys;
 sys.path.append("../../../build-cmake/cpp/python_binding/");
-sys.path.append("../modules/");
-sys.path.append("/data");
-# sys.path.append("../../../CPlantBox/src/python_modules");
-# sys.path.append("../../../CPlantBox/src/functional/");
-# sys.path.append("../../../CPlantBox/src/rsml/");
-# sys.path.append("../../../CPlantBox/src/visualisation/")
-# sys.path.append("../../../CPlantBox/src/structural/")
-# sys.path.append("../../../CPlantBox/src/external/")
-# sys.path.append("../../../CPlantBox/");
-sys.path.append("../../../../CPlantBox/modelparameter/functional/plant_hydraulics");
 
 import numpy as np
 import pandas as pd
@@ -36,10 +26,10 @@ import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
 from functional.xylem_flux import *
 from datetime import *
-from wheat_Giraud2023adapted import setKrKx_xylem 
+import plantParameters
 from helpfull import *
-from weatherFunctions import *
 from PhloemPhotosynthesis import *
+import weatherFunctions
 
 
 
@@ -239,7 +229,7 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
-    s.MaxRelativeShift = 1e-12
+    s.MaxRelativeShift = 1e-8
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
     
@@ -258,11 +248,11 @@ def getSoilTextureAndShape():
     """
     min_b = np.array([-3./2, -12./2, -40.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
+    cell_number = np.array([3,3,3])#np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
-    soilVG = [0.049, 0.352, 0.019, 4.887, 421.67]
+    soilVG = [0.08, 0.43, 0.04, 1.6, 50]
     soilTextureAndShape = {'min_b' : min_b,'max_b' : max_b,
                            'cell_number':cell_number,
                            "solidDensity":solidDensity,
@@ -353,7 +343,7 @@ def setupOther(s, p_mean_):
     s.p_meanInit = p_mean_
     
     
-    s.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
+    s.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step?
     
     # BC
     if s.dimWorld == 1: # 1d model
@@ -402,9 +392,8 @@ def setupOther(s, p_mean_):
     s.setCriticalPressure(s.wilting_point)  
     s.ddt = 1.e-5  # [day] initial Dumux time step
     s.bulkMassErrorWater_rel = 0.
-    s.bulkMassErrorWater_relLim = 0.
-    s.totC3dInit = sum(s.getTotCContent()) # mol
-    
+    s.bulkMassErrorWater_relLim = 0.    
+    s.totC3dInit = sum(s.getTotCContent()) # mol    
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
@@ -432,7 +421,7 @@ def create_mapped_plant(initSim, soil_model, fname, path,
                                  limErr1d3dAbs = limErr1d3d)
     elif fname.endswith(".xml"):
         seed = 1
-        weatherInit = weather(initSim,0, spellData)
+        weatherInit = weatherFunctions.weather(initSim,0, spellData)
         from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                                  usemoles=usemoles,
@@ -463,10 +452,10 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     
     plantModel.wilting_point = -15000.
     # set kr and kx for root system or plant
-    import wheat1997_conductivities
-    wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
+    
+    plantParameters.init_conductivities(r = plantModel)
     if doPhloemFlow:   
-        plantModel = phloemParam(plantModel, weatherInit)
+        plantModel = plantParameters.phloemParam(plantModel, weatherInit)
     perirhizalModel.set_plantModel(plantModel)
     perirhizalModel.rhizoMassWError_rel = 0.
     perirhizalModel.rhizoMassWError_relLim = 0.

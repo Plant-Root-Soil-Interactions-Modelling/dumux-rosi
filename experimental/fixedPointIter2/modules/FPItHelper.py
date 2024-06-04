@@ -18,7 +18,7 @@ class fixedPointIterationHelper():
         inner iteration loop
     """
     def __init__(self, s, perirhizalModel, plantModel, 
-                seg_fluxes,
+                seg_fluxes, 
                  outer_R_bc_wat, outer_R_bc_sol, 
                  cylVol, 
                  Q_Exud_i, Q_mucil_i, dt, emptyCells):
@@ -65,6 +65,7 @@ class fixedPointIterationHelper():
         self.rsx_init  = comm.bcast(self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX), root=0) # store value at beginning time step
         self.rsx_input = self.rsx_init # rsx used as input
         self.rsx_old = self.rsx_input.copy() # rsx used to compute convergence rate
+        self.rsx_olds = []#[self.rsx_input.copy()] # rsx used to compute convergence rate
         
         # exchanges between cylinders in same 3d soil voxel
         self.perirhizalModel.flow1d1d_w = np.zeros(self.numSegs)
@@ -145,13 +146,17 @@ class fixedPointIterationHelper():
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
 
             if max(abs(outer_R_bc_sol[0] )) > 0:
-                proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[0] / dt, self.comp1content, self.cylVol)#mol/day
+                proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[0] / dt, 
+                                                self.comp1content, 
+                                                self.cylVol)#mol/day
             else:
                 proposed_outer_sol_fluxes = np.full(self.numSegs, 0.)
                 
                 
             if max(abs(outer_R_bc_sol[1] )) > 0:
-                proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[1] / dt, self.comp2content, self.cylVol)
+                proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[1] / dt, 
+                                                                self.comp2content, 
+                                                                self.cylVol)
             else:
                 proposed_outer_mucil_fluxes = np.full(self.numSegs, 0.)
                 
@@ -176,7 +181,9 @@ class fixedPointIterationHelper():
             # get data before doing the 'reset' => values at the end of the time step
             # self.thetaCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3 water
             # get all potentially available water == water after reset + water taken up by plant
-            self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + self.seg_fluxes * dt )/self.cylVol
+            seg_fluxes_root  = self.seg_fluxes.copy()
+            seg_fluxes_root[np.where(np.array(perirhizalModel.organTypes)!=2)]  = 0.
+            self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + (seg_fluxes_root + perirhizalModel.flow1d1d_w)* dt )/self.cylVol
        
         # get data before doing the 'reset' => values at the end of the time step
         self.comp1content = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
@@ -194,12 +201,13 @@ class fixedPointIterationHelper():
         """
         perirhizalModel = self.perirhizalModel
         soilVals_ = comm.bcast( np.array(self.s.getSolutionHead()),root= 0) #<= data beginning time step
-        
+        rhizoWAfter_eachCyl_divide = self.rhizoWAfter_eachCyl.copy()
+        rhizoWAfter_eachCyl_divide[np.where(rhizoWAfter_eachCyl_divide==0.)] = 1. # air segments
         if perirhizalModel.do1d1dFlow:
-            perirhizalModel.do1d1dFlows(soilVals = soilVals_,#wat. pot. (cm)
-                    seg_valuesW =  self.rhizoWBefore_eachCyl/self.cylVol,#wat. pot. (cm) <= data beginning time step
-                    seg_valuesSol = self.comp1content/self.rhizoWBefore_eachCyl,# mol/cm3 wat <= data end time step
-                    seg_valuesmucil = self.comp2content/self.rhizoWBefore_eachCyl,# mol/cm3 wat <= data end time step
+            perirhizalModel.do1d1dFlow_(soilVals = soilVals_,#wat. pot. (cm)
+                    seg_valuesW =  self.rhizoWBefore_eachCyl/self.cylVol,#self.rhizoWBefore_eachCyl/self.cylVol,#wat. pot. (cm) <= data beginning time step
+                    seg_valuesSol = self.comp1content/rhizoWAfter_eachCyl_divide,# mol/cm3 wat <= data end time step
+                    seg_valuesmucil = self.comp2content/rhizoWAfter_eachCyl_divide,# mol/cm3 wat <= data end time step
                     verbose=False)
             
         # when we don t have a dynamic soil for water, set the inter-cylinder flow to 0
@@ -558,8 +566,10 @@ class fixedPointIterationHelper():
         errorsEachC = self.rhizoTotCAfter_eachCyl - ( self.rhizoTotCBefore_eachCyl + 
                                                      (self.seg_sol_fluxes+ 
                                                       self.proposed_outer_sol_fluxes+ 
+                                                      perirhizalModel.flow1d1d_sol +
                                                       self.seg_mucil_fluxes+ 
-                                                      self.proposed_outer_mucil_fluxes)*dt)
+                                                      self.proposed_outer_mucil_fluxes+ 
+                                                      perirhizalModel.flow1d1d_mucil )*dt)
         
         perirhizalModel.rhizoMassCError_abs  = sum(abs(errorsEachC[rhizoSegsId]))
         
@@ -577,9 +587,8 @@ class fixedPointIterationHelper():
         # get error according to the 'limited' (== realised ) boundary fluxes
         # should be always ~ 0 
         errorsEachW = self.rhizoWAfter_eachCyl - ( 
-            self.rhizoWBefore_eachCyl + (self.seg_fluxes_limited+ self.seg_fluxes_limited_Out)*dt)
+            self.rhizoWBefore_eachCyl + (self.seg_fluxes_limited + self.seg_fluxes_limited_Out)*dt)
         
-        #print('massBalanceError1d', sum(self.seg_fluxes_limited), sum( self.seg_fluxes),sum( self.proposed_outer_fluxes), sum(self.seg_fluxes_limited_Out) )
         
         # store absolute total error for limited flow
         perirhizalModel.rhizoMassWError_absLim = sum(abs(errorsEachW[rhizoSegsId]))
@@ -587,7 +596,7 @@ class fixedPointIterationHelper():
         
         # get error according to the proposed (==prescribed) flux
         # need to be ~ 0 when leaving fixed point iteration 
-        errorsEachW = self.rhizoWAfter_eachCyl - ( self.rhizoWBefore_eachCyl + (self.seg_fluxes+ self.proposed_outer_fluxes)*dt)
+        errorsEachW = self.rhizoWAfter_eachCyl - ( self.rhizoWBefore_eachCyl + (self.seg_fluxes+ self.proposed_outer_fluxes+ perirhizalModel.flow1d1d_w)*dt)
         perirhizalModel.rhizoMassWError_abs  = sum(abs(errorsEachW[rhizoSegsId]))
         
         # store relative total error 
@@ -721,11 +730,21 @@ class fixedPointIterationHelper():
         
         # convergence wat. pot. at root-soil interface            
         rsx =comm.bcast( perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX), root = 0)  # works for all threads
+        rsx_divide = np.where(abs(rsx) > abs(self.rsx_input),rsx,self.rsx_input)
+        errWrsiRealInput =  abs((rsx - self.rsx_input)/rsx_divide)*100.
+        errWrsiRealInput[abs(rsx - self.rsx_input)<= 5]= 0.
+        errWrsiRealInputf = max(errWrsiRealInput)
+        if rank == 0:
+            print("errWrsiRealInput:",errWrsiRealInputf)
+        perirhizalModel.errWrsiRealInput = errWrsiRealInputf
+        
         rsx_divide = np.where(rsx!=0.,rsx,1.)
         errWrsi =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
         errWrsi[abs(rsx - self.rsx_old)<= 5]= 0.
         errWrsi = max(errWrsi)
         self.rsx_old = rsx;
+        self.rsx_olds.append(self.rsx_old)
+        perirhizalModel.errWrsi = errWrsi
 
         # convergence BC flow 1d models
         diffBCS1dsFluxIn =   np.array(self.seg_fluxes)  - self.seg_fluxes_old   #only for water as plant exud is outside of loop
@@ -788,12 +807,13 @@ class fixedPointIterationHelper():
                                 s.bulkMassErrorWater_rel, 
                                s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel,
                                perirhizalModel.rhizoMassWError_rel,
-                               perirhizalModel.SinkLim3DS,
-                        perirhizalModel.SinkLim1DS),root= 0)
+                               #perirhizalModel.SinkLim3DS,
+                        #perirhizalModel.SinkLim1DS
+                        ),root= 0)
         # one array to do printing
         perirhizalModel.errs =np.array([
                         # non-convergence metrics
-                        errRxPlant, self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds, errWrsi,
+                        errRxPlant, self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds, errWrsi,errWrsiRealInputf,
                         errBCS1dsFluxIn, errBCS1dsFluxOut,errBCS1dsFluxOut_sol, errBCS1dsFluxOut_mucil,
                         errOuter_R_bc_wat, errOuter_R_bc_sol,
                         # realised vs prescribed fluxes and sinks
@@ -801,8 +821,8 @@ class fixedPointIterationHelper():
                         perirhizalModel.SinkLim1DS,perirhizalModel.OutLim1DS, 
                         perirhizalModel.InOutBC_Cdiff[0],perirhizalModel.InOutBC_Cdiff[1],perirhizalModel.InOutBC_Cdiff[2],perirhizalModel.InOutBC_Cdiff[3],
                        # 1d-3d differences/errors
-                        max(perirhizalModel.sumDiff1d3dCW_abs), perirhizalModel.diff1d3dCurrant,perirhizalModel.diff1d3dCurrant_rel, 
-                        max(perirhizalModel.maxDiff1d3dCW_abs), perirhizalModel.maxdiff1d3dCurrant,perirhizalModel.maxdiff1d3dCurrant_rel, 
+                        max(perirhizalModel.sumDiff1d3dCW_abs),max(perirhizalModel.sumDiff1d3dCW_rel), perirhizalModel.diff1d3dCurrant,perirhizalModel.diff1d3dCurrant_rel, 
+                        max(perirhizalModel.maxDiff1d3dCW_abs), max(perirhizalModel.maxDiff1d3dCW_rel), perirhizalModel.maxdiff1d3dCurrant,perirhizalModel.maxdiff1d3dCurrant_rel, 
                         # mass balance error 3d model
                         s.bulkMassErrorWater_abs,s.bulkMassErrorWater_rel,
                         s.bulkMassErrorWater_absLim,s.bulkMassErrorWater_relLim,

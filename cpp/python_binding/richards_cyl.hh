@@ -14,6 +14,8 @@ template<class Problem, class Assembler, class LinearSolver, int dim = 1>
 class RichardsCyl : public Richards<Problem, Assembler, LinearSolver, dim> {
 public:
 
+    using GlobalPosition = typename Problem::GlobalPosition; 
+	
     virtual ~RichardsCyl() { }
 
     /**
@@ -51,21 +53,80 @@ public:
         BC_out_vals.clear();
         BC_time.clear();
         BC_ddt.clear();
+        potential_in_vals.clear();
+        kr_in_vals.clear();
     }
     void doSaveBC(double ddt_current) {
 		int numC = this->numComp();
         std::vector<double> BC_in_vals_i(numC);
         std::vector<double> BC_out_vals_i(numC);
+        std::vector<double> potential_in_vals_i(numC);
+		
+            
         for(int nc = 0.; nc < numC; nc++)
         {
+			potential_in_vals_i.at(nc) = this->getInnerPot(nc);// cm or mol/mol
             BC_in_vals_i.at(nc) = this->getInnerFlux(nc)/this->rIn;// [ mol / (m^2 \cdot s)]_axissymmetric / [axyssimetric factor] = [ mol / (m^2 * s)]
             BC_out_vals_i.at(nc) = this->getOuterFlux(nc)/this->rOut;// [ mol / (m^2 \cdot s)]_axissymmetric  / [axyssimetric factor] = [ mol / (m^2 * s)]
         }
         BC_in_vals.push_back(BC_in_vals_i);
         BC_out_vals.push_back(BC_out_vals_i);
-        BC_ddt.push_back(ddt_current);
+		potential_in_vals.push_back(potential_in_vals_i);
+        BC_ddt.push_back(ddt_current);// s
+		kr_in_vals.push_back(this->getInnerKrw());//  [1/s]
     }
 	
+	
+    /**
+     * soil conductance at inner face
+     */
+    virtual double getInnerKrw() {
+        double Krmean = 0.;
+		int gIdx = innerIdx;
+        if (this->localCellIdx.count(gIdx)>0) {
+            int eIdx = this->localCellIdx[gIdx];
+            auto e = this->gridGeometry->element(eIdx);
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(e);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(e, fvGeometry, this->x);
+			
+			int c = 0; double t = 0.;
+			GlobalPosition ePos = e.geometry().center();
+				
+			double kc = this->problem->spatialParams().hydraulicConductivity(e); //  [m/s]
+			auto materialLaw_ = this->problem->materialLaw(e);
+			int h2OIdx = 0;
+            for (const auto& scvf : scvfs(fvGeometry)) {
+				GlobalPosition pos = scvf.center();
+				if ( this->onUpperBoundary_(pos) || this->onLowerBoundary_(pos) ) {
+					c++;
+					double dz = std::fabs(ePos[this->dimWorld - 1] - pos[this->dimWorld - 1]); // m	
+					//auto& volVars = elemVolVars[scvf.insideScvIdx()];
+					double s =  elemVolVars[scvf.insideScvIdx()].saturation(h2OIdx);
+					double krw = materialLaw_.krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
+					
+					t += krw * kc/dz; // 1/s
+				}
+
+            }
+			Krmean = t/c; // mean value
+        }
+        return Krmean; // so clever
+    }
+	
+    /**
+     * [ kg / (m^2 \cdot s)]
+     */
+    double getInnerPot(int eqIdx = 0) {
+		if (eqIdx == 0)
+		{
+			return this->getSolutionHeadAt(innerIdx); //  [ cm]
+		} else{
+			return this->getSolutionAt(innerIdx,eqIdx); //  [mol/mol] or [kg/kg]
+		}
+    }
+
     /**
      * [ kg / (m^2 \cdot s)]
      */
@@ -125,8 +186,10 @@ public:
 
     std::vector<std::vector<double>> BC_in_vals;
     std::vector<std::vector<double>> BC_out_vals;
+    std::vector<std::vector<double>> potential_in_vals;
     std::vector<double> BC_time;
     std::vector<double> BC_ddt;
+    std::vector<double> kr_in_vals;
 };
 
 /**
@@ -168,6 +231,8 @@ void init_richards_cyl(py::module &m, std::string name) {
     .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 
     .def_readwrite("BC_time", &RichardsFoam::BC_time) 
     .def_readwrite("BC_ddt", &RichardsFoam::BC_ddt) 
+    .def_readwrite("kr_in_vals", &RichardsFoam::kr_in_vals) 
+    .def_readwrite("potential_in_vals", &RichardsFoam::potential_in_vals) 
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)

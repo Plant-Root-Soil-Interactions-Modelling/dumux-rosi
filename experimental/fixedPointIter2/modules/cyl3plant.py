@@ -13,17 +13,13 @@ import plantbox as pb
 import timeit
 import visualisation.vtk_plot as vp
 import functional.van_genuchten as vg
-from scenario_setup import weather
 from decimal import *
 from functional.xylem_flux import sinusoidal2, sinusoidal
 
 from helpfull import write_file_array, write_file_float, continueLoop
 from FPItHelper import fixedPointIterationHelper
-import weatherFunctions
 import PhloemPhotosynthesis
 import printData
-import scenario_setup
-
 from functional.xylem_flux import sinusoidal2
 
         
@@ -105,16 +101,18 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     for Ni in range(N):
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
-        if rank==0:
-            transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
-            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, transpiration: {transpiration:.2e} cm3/d")
         
-        
-        perirhizalModel.weatherX = weatherFunctions.weather(simDuration = rs_age_i_dt, dt = dt,
+        perirhizalModel.weatherX = perirhizalModel.weather(simDuration = rs_age_i_dt, dt = dt,
                                            hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
                                            spellData= perirhizalModel.spellData)
+        if rank==0:
+            # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
+            # , transpiration: {transpiration:.2e} cm3/d
+            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
         
-        weatherFunctions.weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
+        
+        
+        perirhizalModel.weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
         
         if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
             PhloemPhotosynthesis.computeAtmosphereData(plantModel, perirhizalModel)
@@ -129,7 +127,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
         
         while  continueLoop(perirhizalModel,s,fpit_Helper.n_iter, dt,
-                            False,float(Ni) * dt,'inner_loopdata', isInner = True, 
+                            False,real_dtinner=float(Ni) * dt,name='inner_loopdata', isInner = True, 
                             plant = plantModel):
             
             perirhizalModel.solve_gave_up = False # we reset solve_gave_up (== did dumux fail?) each time
@@ -235,7 +233,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             #
             #######
             
-            if False:# for now, don t use 1d1d flow
+            if perirhizalModel.do1d1dFlow:
                 fpit_Helper.do1d1dFlow()
             
             ##
@@ -328,21 +326,26 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # for adaptation of the next inner time step (@see helpfull::suggestNumStepsChange())
             n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter)
             # end inner loop
-            if rank == 0:   
-                is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569
-                datas = [is569,
-                         plantModel.psiXyl, 
-                          fpit_Helper.rsx_old, 
-                          np.array(fpit_Helper.seg_fluxes), 
-                         fpit_Helper.proposed_outer_fluxes
-                        ]
-                datasName = [ 'is569',"psiXyl",
-                             "rsi", "flux_in", 
-                             "flux_out"
+            
+            if not perirhizalModel.doMinimumPrint:
+                datas = []
+                datasName = [ ]
+                if rank == 0:   
+                    #is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569 # to check where a specific (problematic) segment is
+                    datas = [#is569,
+                             plantModel.psiXyl, 
+                              fpit_Helper.rsx_old, 
+                              np.array(fpit_Helper.seg_fluxes), 
+                             fpit_Helper.proposed_outer_fluxes
                             ]
-            printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx/number of vtp plot
-                                perirhizalModel, plantModel,s, scenario_setup.getSoilTextureAndShape(), 
-                                datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
+                    datasName = [ #'is569',
+                                "psiXyl",
+                                 "rsi", "flux_in", 
+                                 "flux_out"
+                                ]
+                printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx of vtp plot
+                                    perirhizalModel, plantModel,s, perirhizalModel.getSoilTextureAndShape(), 
+                                    datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
 
             
         ####

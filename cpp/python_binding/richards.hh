@@ -128,7 +128,7 @@ public:
 			
             for (const auto& scv : scvs(fvGeometry)) {
                 c++;
-				double avgD_ = elemVolVars[scv].density();//absolute saturation
+				double avgD_ = elemVolVars[scv].density(); 
                 t += avgD_;
 				
             }
@@ -160,6 +160,7 @@ public:
         }
         return theta;
     }
+
 
 
     /**
@@ -313,6 +314,8 @@ public:
     	this->problem->bcSBotType_ = types;
     	this->problem->bcSBotValue_ = values;
     }
+	
+	
 	
 	
     double molarMassWat = 18.; // [g/mol]

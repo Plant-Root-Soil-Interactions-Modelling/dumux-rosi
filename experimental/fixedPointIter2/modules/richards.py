@@ -397,6 +397,7 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
         theta= (self._map(self.allgatherv(self.base.getWaterContent()), 2))
+        
         if len(theta) > 0:
             assert min(theta) >= self.vg_soil.theta_R # better install a systematic heck no? and/or put it at the end of each solve function
             assert max(theta) <= self.vg_soil.theta_S

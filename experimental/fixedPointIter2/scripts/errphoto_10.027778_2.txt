@@ -1,0 +1,212 @@
+psi err 
+
+0, ot 2, errPsi(0) 0.203807, psiXyl -2421.29, psiXyl_old -2011.36 size 172, errRatio flux 0.24073, outputFlux -0.000520383, outputFlux_old -0.000395111, errFlux(5) 0.317054, sum(errFlux(7)) 0.317054
+1, ot 2, errPsi(0) 0.203807, psiXyl -2415.72, psiXyl_old -2007.13 size 172, errRatio flux 0.241927, outputFlux -0.000255888, outputFlux_old -0.000193982, errFlux(5) 0.319134, sum(errFlux(7)) 0.636188
+2, ot 2, errPsi(0) 0.203807, psiXyl -2408.32, psiXyl_old -2001.52 size 172, errRatio flux 0.241871, outputFlux -0.000254831, outputFlux_old -0.000193194, errFlux(5) 0.319134, sum(errFlux(7)) 0.955225
+3, ot 2, errPsi(0) 0.203807, psiXyl -2401.08, psiXyl_old -1996.04 size 172, errRatio flux 0.24266, outputFlux -0.000252906, outputFlux_old -0.000191535, errFlux(5) 0.320411, sum(errFlux(7)) 1.27564
+4, ot 2, errPsi(0) 0.203807, psiXyl -2393.87, psiXyl_old -1990.57 size 172, errRatio flux 0.277405, outputFlux -0.014696, outputFlux_old -0.0106192, errFlux(5) 0.383901, sum(errFlux(7)) 1.65954
+5, ot 2, errPsi(0) 0.203807, psiXyl -2389.76, psiXyl_old -1987.33 size 172, errRatio flux 0.241899, outputFlux -0.000255917, outputFlux_old -0.000194011, errFlux(5) 0.383901, sum(errFlux(7)) 1.97862
+6, ot 2, errPsi(0) 0.203807, psiXyl -2408.58, psiXyl_old -2001.78 size 172, errRatio flux 0.24183, outputFlux -0.000254874, outputFlux_old -0.000193238, errFlux(5) 0.383901, sum(errFlux(7)) 2.29759
+7, ot 2, errPsi(0) 0.203807, psiXyl -2401.74, psiXyl_old -1996.7 size 172, errRatio flux 0.241848, outputFlux -0.000253755, outputFlux_old -0.000192385, errFlux(5) 0.383901, sum(errFlux(7)) 2.61658
+8, ot 2, errPsi(0) 0.203807, psiXyl -2394.81, psiXyl_old -1991.52 size 172, errRatio flux 0.290972, outputFlux -0.0140107, outputFlux_old -0.00993401, errFlux(5) 0.410382, sum(errFlux(7)) 3.02696
+9, ot 2, errPsi(0) 0.203807, psiXyl -2390.95, psiXyl_old -1988.52 size 172, errRatio flux 0.240781, outputFlux -0.000518647, outputFlux_old -0.000393766, errFlux(5) 0.410382, sum(errFlux(7)) 3.34411
+10, ot 2, errPsi(0) 0.203807, psiXyl -2410.53, psiXyl_old -2003.15 size 172, errRatio flux 0.241738, outputFlux -0.000255325, outputFlux_old -0.000193604, errFlux(5) 0.410382, sum(errFlux(7)) 3.66291
+11, ot 2, errPsi(0) 0.203807, psiXyl -2403.52, psiXyl_old -1997.93 size 172, errRatio flux 0.241957, outputFlux -0.000253982, outputFlux_old -0.00019253, errFlux(5) 0.410382, sum(errFlux(7)) 3.9821
+12, ot 2, errPsi(0) 0.203807, psiXyl -2396.42, psiXyl_old -1992.59 size 172, errRatio flux 0.242081, outputFlux -0.000252756, outputFlux_old -0.000191569, errFlux(5) 0.410382, sum(errFlux(7)) 4.3015
+13, ot 2, errPsi(0) 0.203807, psiXyl -2389.39, psiXyl_old -1987.3 size 172, errRatio flux 0.279382, outputFlux -0.0145485, outputFlux_old -0.0104839, errFlux(5) 0.410382, sum(errFlux(7)) 4.6892
+14, ot 2, errPsi(0) 0.203807, psiXyl -2385.38, psiXyl_old -1984.14 size 172, errRatio flux 0.240481, outputFlux -0.00025666, outputFlux_old -0.000194938, errFlux(5) 0.410382, sum(errFlux(7)) 5.00582
+15, ot 2, errPsi(0) 0.203807, psiXyl -2403.28, psiXyl_old -1997.69 size 172, errRatio flux 0.240493, outputFlux -0.000255528, outputFlux_old -0.000194075, errFlux(5) 0.410382, sum(errFlux(7)) 5.32246
+16, ot 2, errPsi(0) 0.203807, psiXyl -2396.13, psiXyl_old -1992.3 size 172, errRatio flux 0.242474, outputFlux -0.000252347, outputFlux_old -0.000191159, errFlux(5) 0.410382, sum(errFlux(7)) 5.64255
+17, ot 2, errPsi(0) 0.203807, psiXyl -2389.24, psiXyl_old -1987.15 size 172, errRatio flux 0.285784, outputFlux -0.0142226, outputFlux_old -0.010158, errFlux(5) 0.410382, sum(errFlux(7)) 6.04269
+18, ot 2, errPsi(0) 0.203807, psiXyl -2385.31, psiXyl_old -1984.08 size 172, errRatio flux 0.240608, outputFlux -0.000517551, outputFlux_old -0.000393024, errFlux(5) 0.410382, sum(errFlux(7)) 6.35953
+19, ot 2, errPsi(0) 0.203807, psiXyl -2405.78, psiXyl_old -1999.5 size 172, errRatio flux 0.240504, outputFlux -0.000255953, outputFlux_old -0.000194395, errFlux(5) 0.410382, sum(errFlux(7)) 6.67619
+20, ot 2, errPsi(0) 0.203807, psiXyl -2398.78, psiXyl_old -1994.26 size 172, errRatio flux 0.242286, outputFlux -0.000252974, outputFlux_old -0.000191682, errFlux(5) 0.410382, sum(errFlux(7)) 6.99595
+21, ot 2, errPsi(0) 0.203807, psiXyl -2392.32, psiXyl_old -1989.54 size 172, errRatio flux 0.289391, outputFlux -0.0140694, outputFlux_old -0.00999781, errFlux(5) 0.410382, sum(errFlux(7)) 7.4032
+22, ot 2, errPsi(0) 0.203807, psiXyl -2388.56, psiXyl_old -1986.64 size 172, errRatio flux 0.240522, outputFlux -0.000255933, outputFlux_old -0.000194376, errFlux(5) 0.410382, sum(errFlux(7)) 7.71989
+23, ot 2, errPsi(0) 0.203807, psiXyl -2398.78, psiXyl_old -1994.26 size 172, errRatio flux 0.2405, outputFlux -0.000254853, outputFlux_old -0.000193561, errFlux(5) 0.410382, sum(errFlux(7)) 8.03655
+24, ot 2, errPsi(0) 0.203807, psiXyl -2392.03, psiXyl_old -1989.25 size 172, errRatio flux 0.291347, outputFlux -0.0139749, outputFlux_old -0.00990338, errFlux(5) 0.411127, sum(errFlux(7)) 8.44767
+25, ot 2, errPsi(0) 0.203807, psiXyl -2388.15, psiXyl_old -1986.23 size 172, errRatio flux 0.240647, outputFlux -0.000516156, outputFlux_old -0.000391944, errFlux(5) 0.411127, sum(errFlux(7)) 8.76459
+26, ot 2, errPsi(0) 0.203807, psiXyl -2401.43, psiXyl_old -1996.12 size 172, errRatio flux 0.242675, outputFlux -0.000253058, outputFlux_old -0.000191647, errFlux(5) 0.411127, sum(errFlux(7)) 9.08502
+27, ot 2, errPsi(0) 0.203807, psiXyl -2394.75, psiXyl_old -1991.2 size 172, errRatio flux 0.243079, outputFlux -0.000251546, outputFlux_old -0.000190401, errFlux(5) 0.411127, sum(errFlux(7)) 9.40616
+28, ot 2, errPsi(0) 0.203807, psiXyl -2387.8, psiXyl_old -1985.98 size 172, errRatio flux 0.283701, outputFlux -0.0143173, outputFlux_old -0.0102555, errFlux(5) 0.411127, sum(errFlux(7)) 9.80223
+29, ot 2, errPsi(0) 0.203807, psiXyl -2383.79, psiXyl_old -1982.83 size 172, errRatio flux 0.240562, outputFlux -0.00025528, outputFlux_old -0.000193869, errFlux(5) 0.411127, sum(errFlux(7)) 10.119
+30, ot 2, errPsi(0) 0.203807, psiXyl -2394.44, psiXyl_old -1990.89 size 172, errRatio flux 0.24051, outputFlux -0.000254234, outputFlux_old -0.000193088, errFlux(5) 0.411127, sum(errFlux(7)) 10.4357
+31, ot 2, errPsi(0) 0.203807, psiXyl -2387.58, psiXyl_old -1985.76 size 172, errRatio flux 0.291498, outputFlux -0.0139343, outputFlux_old -0.00987252, errFlux(5) 0.411428, sum(errFlux(7)) 10.8471
+32, ot 2, errPsi(0) 0.203807, psiXyl -2383.73, psiXyl_old -1982.77 size 172, errRatio flux 0.240699, outputFlux -0.000514887, outputFlux_old -0.000390954, errFlux(5) 0.411428, sum(errFlux(7)) 11.1641
+33, ot 2, errPsi(0) 0.203807, psiXyl -2397.51, psiXyl_old -1993.05 size 172, errRatio flux 0.243247, outputFlux -0.000251933, outputFlux_old -0.000190651, errFlux(5) 0.411428, sum(errFlux(7)) 11.4855
+34, ot 2, errPsi(0) 0.203807, psiXyl -2390.59, psiXyl_old -1987.88 size 172, errRatio flux 0.243043, outputFlux -0.000251057, outputFlux_old -0.00019004, errFlux(5) 0.411428, sum(errFlux(7)) 11.8066
+35, ot 2, errPsi(0) 0.203807, psiXyl -2383.74, psiXyl_old -1982.76 size 172, errRatio flux 0.290967, outputFlux -0.0139305, outputFlux_old -0.0098772, errFlux(5) 0.411428, sum(errFlux(7)) 12.217
+36, ot 2, errPsi(0) 0.203807, psiXyl -2379.9, psiXyl_old -1979.78 size 172, errRatio flux 0.243377, outputFlux -0.000251799, outputFlux_old -0.000190517, errFlux(5) 0.411428, sum(errFlux(7)) 12.5386
+37, ot 2, errPsi(0) 0.203807, psiXyl -2390.5, psiXyl_old -1987.79 size 172, errRatio flux 0.243364, outputFlux -0.000250726, outputFlux_old -0.000189708, errFlux(5) 0.411428, sum(errFlux(7)) 12.8603
+38, ot 2, errPsi(0) 0.203807, psiXyl -2383.61, psiXyl_old -1982.63 size 172, errRatio flux 0.291575, outputFlux -0.0139015, outputFlux_old -0.00984817, errFlux(5) 0.411582, sum(errFlux(7)) 13.2719
+39, ot 2, errPsi(0) 0.203807, psiXyl -2379.69, psiXyl_old -1979.57 size 172, errRatio flux 0.241214, outputFlux -0.000512789, outputFlux_old -0.000389097, errFlux(5) 0.411582, sum(errFlux(7)) 13.5898
+40, ot 2, errPsi(0) 0.203807, psiXyl -2394.01, psiXyl_old -1990.28 size 172, errRatio flux 0.243544, outputFlux -0.00025118, outputFlux_old -0.000190007, errFlux(5) 0.411582, sum(errFlux(7)) 13.9117
+41, ot 2, errPsi(0) 0.203807, psiXyl -2386.84, psiXyl_old -1984.84 size 172, errRatio flux 0.280143, outputFlux -0.0145057, outputFlux_old -0.010442, errFlux(5) 0.411582, sum(errFlux(7)) 14.3009
+42, ot 2, errPsi(0) 0.203807, psiXyl -2382.82, psiXyl_old -1981.68 size 172, errRatio flux 0.242921, outputFlux -0.000251824, outputFlux_old -0.00019065, errFlux(5) 0.411582, sum(errFlux(7)) 14.6217
+43, ot 2, errPsi(0) 0.203807, psiXyl -2387.61, psiXyl_old -1985.61 size 172, errRatio flux 0.291716, outputFlux -0.0139302, outputFlux_old -0.00986655, errFlux(5) 0.411863, sum(errFlux(7)) 15.0336
+44, ot 2, errPsi(0) 0.203807, psiXyl -2383.71, psiXyl_old -1982.57 size 172, errRatio flux 0.24124, outputFlux -0.000511888, outputFlux_old -0.0003884, errFlux(5) 0.411863, sum(errFlux(7)) 15.3515
+45, ot 2, errPsi(0) 0.203807, psiXyl -2390.95, psiXyl_old -1987.82 size 172, errRatio flux 0.245742, outputFlux -0.000248559, outputFlux_old -0.000187478, errFlux(5) 0.411863, sum(errFlux(7)) 15.6773
+46, ot 2, errPsi(0) 0.203807, psiXyl -2383.92, psiXyl_old -1982.52 size 172, errRatio flux 0.284954, outputFlux -0.0142393, outputFlux_old -0.0101818, errFlux(5) 0.411863, sum(errFlux(7)) 16.0759
+47, ot 2, errPsi(0) 0.203807, psiXyl -2379.96, psiXyl_old -1979.42 size 172, errRatio flux 0.244154, outputFlux -0.000250176, outputFlux_old -0.000189094, errFlux(5) 0.411863, sum(errFlux(7)) 16.3989
+48, ot 2, errPsi(0) 0.203807, psiXyl -2383.89, psiXyl_old -1982.49 size 172, errRatio flux 0.283773, outputFlux -0.0142986, outputFlux_old -0.010241, errFlux(5) 0.411863, sum(errFlux(7)) 16.7951
+49, ot 2, errPsi(0) 0.203807, psiXyl -2379.96, psiXyl_old -1979.42 size 172, errRatio flux 0.241563, outputFlux -0.00051051, outputFlux_old -0.00038719, errFlux(5) 0.411863, sum(errFlux(7)) 17.1136
+50, ot 2, errPsi(0) 0.203807, psiXyl -2388.31, psiXyl_old -1985.67 size 172, errRatio flux 0.24525, outputFlux -0.000248757, outputFlux_old -0.000187749, errFlux(5) 0.411863, sum(errFlux(7)) 17.4385
+51, ot 2, errPsi(0) 0.203807, psiXyl -2381.46, psiXyl_old -1980.55 size 172, errRatio flux 0.287848, outputFlux -0.0140792, outputFlux_old -0.0100265, errFlux(5) 0.411863, sum(errFlux(7)) 17.8427
+52, ot 2, errPsi(0) 0.203807, psiXyl -2377.53, psiXyl_old -1977.48 size 172, errRatio flux 0.244233, outputFlux -0.000249793, outputFlux_old -0.000188785, errFlux(5) 0.411863, sum(errFlux(7)) 18.1659
+53, ot 2, errPsi(0) 0.203807, psiXyl -2381.84, psiXyl_old -1980.93 size 172, errRatio flux 0.29123, outputFlux -0.0139157, outputFlux_old -0.00986301, errFlux(5) 0.411863, sum(errFlux(7)) 18.5768
+54, ot 2, errPsi(0) 0.203807, psiXyl -2378.25, psiXyl_old -1978.19 size 172, errRatio flux 0.24163, outputFlux -0.000509827, outputFlux_old -0.000386638, errFlux(5) 0.411863, sum(errFlux(7)) 18.8954
+55, ot 2, errPsi(0) 0.203807, psiXyl -2386.13, psiXyl_old -1983.86 size 172, errRatio flux 0.28855, outputFlux -0.0140926, outputFlux_old -0.0100262, errFlux(5) 0.411863, sum(errFlux(7)) 19.301
+56, ot 2, errPsi(0) 0.203807, psiXyl -2382.34, psiXyl_old -1980.93 size 172, errRatio flux 0.28768, outputFlux -0.0141352, outputFlux_old -0.0100688, errFlux(5) 0.411863, sum(errFlux(7)) 19.7048
+57, ot 2, errPsi(0) 0.203807, psiXyl -2382.37, psiXyl_old -1980.96 size 172, errRatio flux 0.241571, outputFlux -0.000509561, outputFlux_old -0.000386465, errFlux(5) 0.411863, sum(errFlux(7)) 20.0234
+58, ot 2, errPsi(0) 0.203807, psiXyl -2384.29, psiXyl_old -1982.27 size 172, errRatio flux 0.291936, outputFlux -0.0139206, outputFlux_old -0.00985665, errFlux(5) 0.412301, sum(errFlux(7)) 20.4357
+59, ot 2, errPsi(0) 0.203807, psiXyl -2380.58, psiXyl_old -1979.42 size 172, errRatio flux 0.290832, outputFlux -0.0139734, outputFlux_old -0.00990948, errFlux(5) 0.412301, sum(errFlux(7)) 20.8458
+60, ot 2, errPsi(0) 0.203807, psiXyl -2380.55, psiXyl_old -1979.38 size 172, errRatio flux 0.241549, outputFlux -0.000509367, outputFlux_old -0.00038633, errFlux(5) 0.412301, sum(errFlux(7)) 21.1642
+61, ot 2, errPsi(0) 0.203807, psiXyl -2382.87, psiXyl_old -1980.97 size 172, errRatio flux 0.24155, outputFlux -0.0005092, outputFlux_old -0.000386202, errFlux(5) 0.412301, sum(errFlux(7)) 21.4827
+62, ot 2, errPsi(0) 0.203807, psiXyl -2381.45, psiXyl_old -1979.68 size 172, errRatio flux 0.241616, outputFlux -0.000508899, outputFlux_old -0.000385941, errFlux(5) 0.412301, sum(errFlux(7)) 21.8013
+63, ot 2, errPsi(0) 0.203807, psiXyl -2380.08, psiXyl_old -1978.45 size 172, errRatio flux 0.239633, outputFlux -0.000512949, outputFlux_old -0.00039003, errFlux(5) 0.412301, sum(errFlux(7)) 22.1165
+64, ot 2, errPsi(0) 0.203807, psiXyl -2378.68, psiXyl_old -1977.16 size 172, errRatio flux 0.239756, outputFlux -0.000512528, outputFlux_old -0.000389647, errFlux(5) 0.412301, sum(errFlux(7)) 22.4318
+65, ot 2, errPsi(0) 0.203807, psiXyl -2377.33, psiXyl_old -1975.94 size 172, errRatio flux 0.239875, outputFlux -0.000512117, outputFlux_old -0.000389273, errFlux(5) 0.412301, sum(errFlux(7)) 22.7474
+66, ot 2, errPsi(0) 0.203807, psiXyl -2375.99, psiXyl_old -1974.72 size 172, errRatio flux 0.239995, outputFlux -0.000511707, outputFlux_old -0.0003889, errFlux(5) 0.412301, sum(errFlux(7)) 23.0632
+67, ot 2, errPsi(0) 0.203807, psiXyl -2374.65, psiXyl_old -1973.5 size 172, errRatio flux 0.240115, outputFlux -0.000511299, outputFlux_old -0.000388528, errFlux(5) 0.412301, sum(errFlux(7)) 23.3792
+68, ot 2, errPsi(0) 0.203807, psiXyl -2373.32, psiXyl_old -1972.29 size 172, errRatio flux 0.31009, outputFlux -0.0263881, outputFlux_old -0.0182054, errFlux(5) 0.449465, sum(errFlux(7)) 23.8286
+69, ot 2, errPsi(0) 0.203807, psiXyl -2372.22, psiXyl_old -1971.25 size 172, errRatio flux 0.240773, outputFlux -0.000520442, outputFlux_old -0.000395133, errFlux(5) 0.449465, sum(errFlux(7)) 24.1458
+70, ot 2, errPsi(0) 0.203807, psiXyl -2416.44, psiXyl_old -2007.61 size 172, errRatio flux 0.2422, outputFlux -0.000255754, outputFlux_old -0.000193811, errFlux(5) 0.449465, sum(errFlux(7)) 24.4654
+71, ot 2, errPsi(0) 0.203807, psiXyl -2409.5, psiXyl_old -2002.45 size 172, errRatio flux 0.241841, outputFlux -0.000255028, outputFlux_old -0.000193352, errFlux(5) 0.449465, sum(errFlux(7)) 24.7844
+72, ot 2, errPsi(0) 0.203807, psiXyl -2402.55, psiXyl_old -1997.24 size 172, errRatio flux 0.291339, outputFlux -0.0140629, outputFlux_old -0.00996583, errFlux(5) 0.449465, sum(errFlux(7)) 25.1955
+73, ot 2, errPsi(0) 0.203807, psiXyl -2398.63, psiXyl_old -1994.19 size 172, errRatio flux 0.242184, outputFlux -0.000255771, outputFlux_old -0.000193827, errFlux(5) 0.449465, sum(errFlux(7)) 25.5151
+74, ot 2, errPsi(0) 0.203807, psiXyl -2408.99, psiXyl_old -2001.93 size 172, errRatio flux 0.242046, outputFlux -0.000254813, outputFlux_old -0.000193137, errFlux(5) 0.449465, sum(errFlux(7)) 25.8344
+75, ot 2, errPsi(0) 0.203807, psiXyl -2401.64, psiXyl_old -1996.34 size 172, errRatio flux 0.274384, outputFlux -0.0149319, outputFlux_old -0.0108349, errFlux(5) 0.449465, sum(errFlux(7)) 26.2125
+76, ot 2, errPsi(0) 0.203807, psiXyl -2397.61, psiXyl_old -1993.17 size 172, errRatio flux 0.240915, outputFlux -0.000518814, outputFlux_old -0.000393824, errFlux(5) 0.449465, sum(errFlux(7)) 26.5299
+77, ot 2, errPsi(0) 0.203807, psiXyl -2412.03, psiXyl_old -2004.18 size 172, errRatio flux 0.242061, outputFlux -0.000255289, outputFlux_old -0.000193493, errFlux(5) 0.449465, sum(errFlux(7)) 26.8493
+78, ot 2, errPsi(0) 0.203807, psiXyl -2404.71, psiXyl_old -1998.63 size 172, errRatio flux 0.242459, outputFlux -0.00025377, outputFlux_old -0.000192242, errFlux(5) 0.449465, sum(errFlux(7)) 27.1693
+79, ot 2, errPsi(0) 0.203807, psiXyl -2397.51, psiXyl_old -1993.17 size 172, errRatio flux 0.281113, outputFlux -0.0145396, outputFlux_old -0.0104523, errFlux(5) 0.449465, sum(errFlux(7)) 27.5604
+80, ot 2, errPsi(0) 0.203807, psiXyl -2393.52, psiXyl_old -1990.04 size 172, errRatio flux 0.242025, outputFlux -0.000255327, outputFlux_old -0.000193532, errFlux(5) 0.449465, sum(errFlux(7)) 27.8797
+81, ot 2, errPsi(0) 0.203807, psiXyl -2404.95, psiXyl_old -1998.87 size 172, errRatio flux 0.242295, outputFlux -0.000253941, outputFlux_old -0.000192412, errFlux(5) 0.449465, sum(errFlux(7)) 28.1995
+82, ot 2, errPsi(0) 0.203807, psiXyl -2397.99, psiXyl_old -1993.65 size 172, errRatio flux 0.291275, outputFlux -0.0140324, outputFlux_old -0.00994509, errFlux(5) 0.449465, sum(errFlux(7)) 28.6104
+83, ot 2, errPsi(0) 0.203807, psiXyl -2394.04, psiXyl_old -1990.56 size 172, errRatio flux 0.240916, outputFlux -0.000517646, outputFlux_old -0.000392936, errFlux(5) 0.449465, sum(errFlux(7)) 28.9278
+84, ot 2, errPsi(0) 0.203807, psiXyl -2408.05, psiXyl_old -2001.05 size 172, errRatio flux 0.242387, outputFlux -0.000254411, outputFlux_old -0.000192745, errFlux(5) 0.449465, sum(errFlux(7)) 29.2478
+85, ot 2, errPsi(0) 0.203807, psiXyl -2401.1, psiXyl_old -1995.87 size 172, errRatio flux 0.240647, outputFlux -0.000255144, outputFlux_old -0.000193744, errFlux(5) 0.449465, sum(errFlux(7)) 29.5647
+86, ot 2, errPsi(0) 0.203807, psiXyl -2394.17, psiXyl_old -1990.68 size 172, errRatio flux 0.291614, outputFlux -0.0139867, outputFlux_old -0.00990797, errFlux(5) 0.449465, sum(errFlux(7)) 29.9763
+87, ot 2, errPsi(0) 0.203807, psiXyl -2390.22, psiXyl_old -1987.6 size 172, errRatio flux 0.242594, outputFlux -0.000254193, outputFlux_old -0.000192528, errFlux(5) 0.449465, sum(errFlux(7)) 30.2966
+88, ot 2, errPsi(0) 0.203807, psiXyl -2400.72, psiXyl_old -1995.49 size 172, errRatio flux 0.243249, outputFlux -0.000252415, outputFlux_old -0.000191016, errFlux(5) 0.449465, sum(errFlux(7)) 30.6181
+89, ot 2, errPsi(0) 0.203807, psiXyl -2393.5, psiXyl_old -1990.01 size 172, errRatio flux 0.279878, outputFlux -0.0145731, outputFlux_old -0.0104944, errFlux(5) 0.449465, sum(errFlux(7)) 31.0067
+90, ot 2, errPsi(0) 0.203807, psiXyl -2389.49, psiXyl_old -1986.86 size 172, errRatio flux 0.241117, outputFlux -0.000516206, outputFlux_old -0.00039174, errFlux(5) 0.449465, sum(errFlux(7)) 31.3244
+91, ot 2, errPsi(0) 0.203807, psiXyl -2404.62, psiXyl_old -1998.36 size 172, errRatio flux 0.242863, outputFlux -0.00025346, outputFlux_old -0.000191904, errFlux(5) 0.449465, sum(errFlux(7)) 31.6452
+92, ot 2, errPsi(0) 0.203807, psiXyl -2397.51, psiXyl_old -1992.99 size 172, errRatio flux 0.27967, outputFlux -0.0146212, outputFlux_old -0.0105321, errFlux(5) 0.449465, sum(errFlux(7)) 32.0335
+93, ot 2, errPsi(0) 0.203807, psiXyl -2393.57, psiXyl_old -1989.91 size 172, errRatio flux 0.242427, outputFlux -0.000253916, outputFlux_old -0.00019236, errFlux(5) 0.449465, sum(errFlux(7)) 32.3535
+94, ot 2, errPsi(0) 0.203807, psiXyl -2398.33, psiXyl_old -1993.81 size 172, errRatio flux 0.291319, outputFlux -0.0140365, outputFlux_old -0.00994742, errFlux(5) 0.449465, sum(errFlux(7)) 32.7645
+95, ot 2, errPsi(0) 0.203807, psiXyl -2394.99, psiXyl_old -1991.34 size 172, errRatio flux 0.241186, outputFlux -0.000515206, outputFlux_old -0.000390945, errFlux(5) 0.449465, sum(errFlux(7)) 33.0824
+96, ot 2, errPsi(0) 0.203807, psiXyl -2401.58, psiXyl_old -1995.93 size 172, errRatio flux 0.243638, outputFlux -0.000252273, outputFlux_old -0.00019081, errFlux(5) 0.449465, sum(errFlux(7)) 33.4045
+97, ot 2, errPsi(0) 0.203807, psiXyl -2395.21, psiXyl_old -1991.31 size 172, errRatio flux 0.289802, outputFlux -0.0140887, outputFlux_old -0.0100058, errFlux(5) 0.449465, sum(errFlux(7)) 33.8126
+98, ot 2, errPsi(0) 0.203807, psiXyl -2391.58, psiXyl_old -1988.54 size 172, errRatio flux 0.24283, outputFlux -0.000253113, outputFlux_old -0.00019165, errFlux(5) 0.449465, sum(errFlux(7)) 34.1333
+99, ot 2, errPsi(0) 0.203807, psiXyl -2395.18, psiXyl_old -1991.28 size 172, errRatio flux 0.289358, outputFlux -0.0141103, outputFlux_old -0.0100274, errFlux(5) 0.449465, sum(errFlux(7)) 34.5404
+100, ot 2, errPsi(0) 0.203807, psiXyl -2391.63, psiXyl_old -1988.59 size 172, errRatio flux 0.241331, outputFlux -0.000514195, outputFlux_old -0.000390104, errFlux(5) 0.449465, sum(errFlux(7)) 34.8585
+101, ot 2, errPsi(0) 0.203807, psiXyl -2398.87, psiXyl_old -1993.71 size 172, errRatio flux 0.243642, outputFlux -0.000251964, outputFlux_old -0.000190575, errFlux(5) 0.449465, sum(errFlux(7)) 35.1807
+102, ot 2, errPsi(0) 0.203807, psiXyl -2391.83, psiXyl_old -1988.41 size 172, errRatio flux 0.282062, outputFlux -0.0144578, outputFlux_old -0.0103798, errFlux(5) 0.449465, sum(errFlux(7)) 35.5735
+103, ot 2, errPsi(0) 0.203807, psiXyl -2387.87, psiXyl_old -1985.31 size 172, errRatio flux 0.243546, outputFlux -0.000252063, outputFlux_old -0.000190674, errFlux(5) 0.449465, sum(errFlux(7)) 35.8955
+104, ot 2, errPsi(0) 0.203807, psiXyl -2391.85, psiXyl_old -1988.43 size 172, errRatio flux 0.281015, outputFlux -0.0145117, outputFlux_old -0.0104337, errFlux(5) 0.449465, sum(errFlux(7)) 36.2863
+105, ot 2, errPsi(0) 0.203807, psiXyl -2387.84, psiXyl_old -1985.28 size 172, errRatio flux 0.241412, outputFlux -0.000513475, outputFlux_old -0.000389516, errFlux(5) 0.449465, sum(errFlux(7)) 36.6046
+106, ot 2, errPsi(0) 0.203807, psiXyl -2396.64, psiXyl_old -1991.85 size 172, errRatio flux 0.281762, outputFlux -0.0145222, outputFlux_old -0.0104304, errFlux(5) 0.449465, sum(errFlux(7)) 36.9969
+107, ot 2, errPsi(0) 0.203807, psiXyl -2392.65, psiXyl_old -1988.73 size 172, errRatio flux 0.280633, outputFlux -0.0145807, outputFlux_old -0.0104888, errFlux(5) 0.449465, sum(errFlux(7)) 37.387
+108, ot 2, errPsi(0) 0.203807, psiXyl -2392.57, psiXyl_old -1988.65 size 172, errRatio flux 0.241732, outputFlux -0.000512401, outputFlux_old -0.000388537, errFlux(5) 0.449465, sum(errFlux(7)) 37.7058
+109, ot 2, errPsi(0) 0.203807, psiXyl -2394.81, psiXyl_old -1990.28 size 172, errRatio flux 0.284483, outputFlux -0.0143744, outputFlux_old -0.0102851, errFlux(5) 0.449465, sum(errFlux(7)) 38.1034
+110, ot 2, errPsi(0) 0.203807, psiXyl -2390.84, psiXyl_old -1987.17 size 172, errRatio flux 0.285076, outputFlux -0.0143445, outputFlux_old -0.0102552, errFlux(5) 0.449465, sum(errFlux(7)) 38.5021
+111, ot 2, errPsi(0) 0.203807, psiXyl -2390.84, psiXyl_old -1987.17 size 172, errRatio flux 0.241792, outputFlux -0.00051203, outputFlux_old -0.000388225, errFlux(5) 0.449465, sum(errFlux(7)) 38.821
+112, ot 2, errPsi(0) 0.203807, psiXyl -2393.38, psiXyl_old -1988.98 size 172, errRatio flux 0.241793, outputFlux -0.000511861, outputFlux_old -0.000388097, errFlux(5) 0.449465, sum(errFlux(7)) 39.1399
+113, ot 2, errPsi(0) 0.203807, psiXyl -2392, psiXyl_old -1987.73 size 172, errRatio flux 0.241739, outputFlux -0.000511809, outputFlux_old -0.000388084, errFlux(5) 0.449465, sum(errFlux(7)) 39.4587
+114, ot 2, errPsi(0) 0.203807, psiXyl -2390.68, psiXyl_old -1986.53 size 172, errRatio flux 0.241565, outputFlux -0.000512016, outputFlux_old -0.000388331, errFlux(5) 0.449465, sum(errFlux(7)) 39.7772
+115, ot 2, errPsi(0) 0.203807, psiXyl -2389.32, psiXyl_old -1985.3 size 172, errRatio flux 0.241681, outputFlux -0.000511609, outputFlux_old -0.000387963, errFlux(5) 0.449465, sum(errFlux(7)) 40.0959
+116, ot 2, errPsi(0) 0.203807, psiXyl -2388.01, psiXyl_old -1984.12 size 172, errRatio flux 0.241901, outputFlux -0.000510986, outputFlux_old -0.000387378, errFlux(5) 0.449465, sum(errFlux(7)) 40.415
+117, ot 2, errPsi(0) 0.203807, psiXyl -2386.81, psiXyl_old -1983.05 size 172, errRatio flux 0.23993, outputFlux -0.000515025, outputFlux_old -0.000391455, errFlux(5) 0.449465, sum(errFlux(7)) 40.7307
+118, ot 2, errPsi(0) 0.203807, psiXyl -2385.55, psiXyl_old -1981.91 size 172, errRatio flux 0.240043, outputFlux -0.000514628, outputFlux_old -0.000391095, errFlux(5) 0.449465, sum(errFlux(7)) 41.0466
+119, ot 2, errPsi(0) 0.203807, psiXyl -2384.22, psiXyl_old -1980.7 size 172, errRatio flux 0.240162, outputFlux -0.00051422, outputFlux_old -0.000390724, errFlux(5) 0.449465, sum(errFlux(7)) 41.3626
+120, ot 2, errPsi(0) 0.203807, psiXyl -2382.89, psiXyl_old -1979.49 size 172, errRatio flux 0.317014, outputFlux -0.0259644, outputFlux_old -0.0177333, errFlux(5) 0.464159, sum(errFlux(7)) 41.8268
+121, ot 2, errPsi(0) 0.203865, psiXyl -2381.81, psiXyl_old -1978.47 size 172, errRatio flux 0.240763, outputFlux -0.000520924, outputFlux_old -0.000395505, errFlux(5) 0.464159, sum(errFlux(7)) 42.1439
+122, ot 2, errPsi(0) 0.203865, psiXyl -2419.16, psiXyl_old -2009.61 size 172, errRatio flux 0.280857, outputFlux -0.0147407, outputFlux_old -0.0106006, errFlux(5) 0.464159, sum(errFlux(7)) 42.5345
+123, ot 2, errPsi(0) 0.203865, psiXyl -2415.19, psiXyl_old -2006.51 size 172, errRatio flux 0.281851, outputFlux -0.0146886, outputFlux_old -0.0105486, errFlux(5) 0.464159, sum(errFlux(7)) 42.9269
+124, ot 2, errPsi(0) 0.203865, psiXyl -2415.32, psiXyl_old -2006.64 size 172, errRatio flux 0.240902, outputFlux -0.000520223, outputFlux_old -0.0003949, errFlux(5) 0.464159, sum(errFlux(7)) 43.2443
+125, ot 2, errPsi(0) 0.203865, psiXyl -2417.34, psiXyl_old -2008.04 size 172, errRatio flux 0.291982, outputFlux -0.0141702, outputFlux_old -0.0100328, errFlux(5) 0.464159, sum(errFlux(7)) 43.6567
+126, ot 2, errPsi(0) 0.203865, psiXyl -2413.62, psiXyl_old -2005.2 size 172, errRatio flux 0.292003, outputFlux -0.0141691, outputFlux_old -0.0100317, errFlux(5) 0.464159, sum(errFlux(7)) 44.0691
+127, ot 2, errPsi(0) 0.203865, psiXyl -2413.37, psiXyl_old -2004.95 size 172, errRatio flux 0.241031, outputFlux -0.000519696, outputFlux_old -0.000394433, errFlux(5) 0.464159, sum(errFlux(7)) 44.3867
+128, ot 2, errPsi(0) 0.203888, psiXyl -2415.98, psiXyl_old -2006.82 size 172, errRatio flux 0.24139, outputFlux -0.000518755, outputFlux_old -0.000393533, errFlux(5) 0.464159, sum(errFlux(7)) 44.7049
+129, ot 2, errPsi(0) 0.203945, psiXyl -2414.63, psiXyl_old -2005.6 size 172, errRatio flux 0.241472, outputFlux -0.000518411, outputFlux_old -0.00039323, errFlux(5) 0.464159, sum(errFlux(7)) 45.0232
+130, ot 2, errPsi(0) 0.204001, psiXyl -2413.31, psiXyl_old -2004.41 size 172, errRatio flux 0.241534, outputFlux -0.000518113, outputFlux_old -0.000392971, errFlux(5) 0.464159, sum(errFlux(7)) 45.3417
+131, ot 2, errPsi(0) 0.204058, psiXyl -2411.98, psiXyl_old -2003.21 size 172, errRatio flux 0.241658, outputFlux -0.000517683, outputFlux_old -0.000392581, errFlux(5) 0.464159, sum(errFlux(7)) 45.6603
+132, ot 2, errPsi(0) 0.204123, psiXyl -2410.59, psiXyl_old -2001.95 size 172, errRatio flux 0.242085, outputFlux -0.000516612, outputFlux_old -0.000391548, errFlux(5) 0.464159, sum(errFlux(7)) 45.9797
+133, ot 2, errPsi(0) 0.204188, psiXyl -2409.22, psiXyl_old -2000.7 size 172, errRatio flux 0.242125, outputFlux -0.000516368, outputFlux_old -0.000391342, errFlux(5) 0.464159, sum(errFlux(7)) 46.2992
+134, ot 2, errPsi(0) 0.204253, psiXyl -2407.85, psiXyl_old -1999.45 size 172, errRatio flux 0.242143, outputFlux -0.000516174, outputFlux_old -0.000391186, errFlux(5) 0.464159, sum(errFlux(7)) 46.6187
+135, ot 2, errPsi(0) 0.204306, psiXyl -2406.61, psiXyl_old -1998.34 size 172, errRatio flux 0.242108, outputFlux -0.000516096, outputFlux_old -0.000391145, errFlux(5) 0.464159, sum(errFlux(7)) 46.9382
+136, ot 2, errPsi(0) 0.204354, psiXyl -2405.43, psiXyl_old -1997.28 size 172, errRatio flux 0.332763, outputFlux -0.0250269, outputFlux_old -0.0166989, errFlux(5) 0.498717, sum(errFlux(7)) 47.4369
+137, ot 2, errPsi(0) 0.20442, psiXyl -2404.44, psiXyl_old -1996.35 size 172, errRatio flux 0.240799, outputFlux -0.000521003, outputFlux_old -0.000395546, errFlux(5) 0.498717, sum(errFlux(7)) 47.7541
+138, ot 2, errPsi(0) 0.20442, psiXyl -2419.95, psiXyl_old -2010.15 size 172, errRatio flux 0.241005, outputFlux -0.000520396, outputFlux_old -0.000394978, errFlux(5) 0.498717, sum(errFlux(7)) 48.0716
+139, ot 2, errPsi(0) 0.20442, psiXyl -2418.61, psiXyl_old -2008.93 size 172, errRatio flux 0.241057, outputFlux -0.000520125, outputFlux_old -0.000394745, errFlux(5) 0.498717, sum(errFlux(7)) 48.3892
+140, ot 2, errPsi(0) 0.20442, psiXyl -2417.29, psiXyl_old -2007.74 size 172, errRatio flux 0.240986, outputFlux -0.000520122, outputFlux_old -0.00039478, errFlux(5) 0.498717, sum(errFlux(7)) 48.7067
+141, ot 2, errPsi(0) 0.20442, psiXyl -2415.96, psiXyl_old -2006.53 size 172, errRatio flux 0.241099, outputFlux -0.000519723, outputFlux_old -0.000394418, errFlux(5) 0.498717, sum(errFlux(7)) 49.0244
+142, ot 2, errPsi(0) 0.20442, psiXyl -2414.63, psiXyl_old -2005.32 size 172, errRatio flux 0.331955, outputFlux -0.0251589, outputFlux_old -0.0168072, errFlux(5) 0.498717, sum(errFlux(7)) 49.5213
+143, ot 2, errPsi(0) 0.20442, psiXyl -2413.68, psiXyl_old -2004.43 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 49.5213
+144, ot 3, errPsi(0) 0.20442, psiXyl -2422.43, psiXyl_old -2012.46 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 49.5213
+145, ot 4, errPsi(0) 0.20442, psiXyl -2425.54, psiXyl_old -2015.24 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 49.5213
+146, ot 4, errPsi(0) 0.20442, psiXyl -2428.64, psiXyl_old -2018.03 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 49.5213
+147, ot 4, errPsi(0) 0.20442, psiXyl -2431.75, psiXyl_old -2020.81 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 49.5213
+148, ot 4, errPsi(0) 0.20442, psiXyl -2434.86, psiXyl_old -2023.6 size 172, errRatio flux 0.288461, outputFlux 0.079109, outputFlux_old 0.0562891, errFlux(5) 0.498717, sum(errFlux(7)) 49.9267
+149, ot 4, errPsi(0) 0.20442, psiXyl -2437.81, psiXyl_old -2026.24 size 172, errRatio flux 0.28881, outputFlux 0.0790628, outputFlux_old 0.0562287, errFlux(5) 0.498717, sum(errFlux(7)) 50.3328
+150, ot 4, errPsi(0) 0.20442, psiXyl -2440.59, psiXyl_old -2028.76 size 172, errRatio flux 0.289111, outputFlux 0.0790227, outputFlux_old 0.0561764, errFlux(5) 0.498717, sum(errFlux(7)) 50.7395
+151, ot 4, errPsi(0) 0.20442, psiXyl -2443.2, psiXyl_old -2031.15 size 172, errRatio flux 0.289363, outputFlux 0.0789886, outputFlux_old 0.0561322, errFlux(5) 0.498717, sum(errFlux(7)) 51.1467
+152, ot 4, errPsi(0) 0.20442, psiXyl -2445.62, psiXyl_old -2033.39 size 172, errRatio flux 0.289566, outputFlux 0.0789605, outputFlux_old 0.0560962, errFlux(5) 0.498717, sum(errFlux(7)) 51.5543
+153, ot 4, errPsi(0) 0.20442, psiXyl -2447.87, psiXyl_old -2035.49 size 172, errRatio flux 0.289719, outputFlux 0.0789384, outputFlux_old 0.0560685, errFlux(5) 0.498717, sum(errFlux(7)) 51.9622
+154, ot 4, errPsi(0) 0.20442, psiXyl -2449.97, psiXyl_old -2037.49 size 172, errRatio flux 0.28982, outputFlux 0.0789224, outputFlux_old 0.056049, errFlux(5) 0.498717, sum(errFlux(7)) 52.3703
+155, ot 4, errPsi(0) 0.20442, psiXyl -2451.85, psiXyl_old -2039.31 size 172, errRatio flux 0.28987, outputFlux 0.0789124, outputFlux_old 0.056038, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+156, ot 4, errPsi(0) 0.20442, psiXyl -2453.53, psiXyl_old -2040.97 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+157, ot 3, errPsi(0) 0.20442, psiXyl -2423.42, psiXyl_old -2013.45 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+158, ot 3, errPsi(0) 0.20442, psiXyl -2423.94, psiXyl_old -2013.97 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+159, ot 3, errPsi(0) 0.20442, psiXyl -2424.93, psiXyl_old -2014.96 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+160, ot 3, errPsi(0) 0.20442, psiXyl -2425.03, psiXyl_old -2015.06 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+161, ot 3, errPsi(0) 0.20442, psiXyl -2425.13, psiXyl_old -2015.16 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+162, ot 3, errPsi(0) 0.20442, psiXyl -2422.31, psiXyl_old -2012.37 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+163, ot 4, errPsi(0) 0.20442, psiXyl -2424.44, psiXyl_old -2014.46 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+164, ot 4, errPsi(0) 0.20442, psiXyl -2426.57, psiXyl_old -2016.55 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+165, ot 4, errPsi(0) 0.20442, psiXyl -2428.7, psiXyl_old -2018.64 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 52.7785
+166, ot 4, errPsi(0) 0.20442, psiXyl -2430.83, psiXyl_old -2020.73 size 172, errRatio flux 0.286841, outputFlux 0.0793012, outputFlux_old 0.0565544, errFlux(5) 0.498717, sum(errFlux(7)) 53.1807
+167, ot 4, errPsi(0) 0.20442, psiXyl -2432.87, psiXyl_old -2022.75 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 53.1807
+168, ot 3, errPsi(0) 0.20442, psiXyl -2423.3, psiXyl_old -2013.37 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 53.1807
+169, ot 3, errPsi(0) 0.20442, psiXyl -2423.82, psiXyl_old -2013.88 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 53.1807
+170, ot 3, errPsi(0) 0.20442, psiXyl -2424.81, psiXyl_old -2014.88 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 53.1807
+171, ot 3, errPsi(0) 0.20442, psiXyl -2424.91, psiXyl_old -2014.98 size 172, errRatio flux nan, outputFlux 0, outputFlux_old 0, errFlux(5) 0.498717, sum(errFlux(7)) 53.1807
+172, ot 3, errPsi(0) 0.20442, psiXyl -2425.01, psiXyl_old -2015.07 size 172
+
+
+
+0 abs: 0 0 0 0 0.0228744 0 0.411171 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+0 maxErr 0 0 0 0 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+1 abs: 0 0 0 0 0.0228744 0 0.411171 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+1 maxErr 0 0 0 0 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+2 abs: 0 0 0 0 0.0228744 0 0.411171 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+2 maxErr 0 0 0 0 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+3 abs: 0 0 0 0 0.0228744 0 0.411171 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+3 maxErr 0 0 0 0 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+4 abs: 2.23213e-08 0.000862096 6.95152e-07 573.728 0.0228744 0 0.411171 2.23213e-08 an: 1.23593e-05 an_old: 1.23817e-05 gco2: 0.114507 gco2_old> 0.115369 ci: 0.000231087 ci_old:0.000231782 -2999.01 -2425.28
+4 maxErr 0.00180603 0.00752878 0.00300819 0.191306 0.498717 0 an: 1.23593e-05 an_old: 1.23817e-05 gco2: 0.114507 gco2_old> 0.115369 ci: 0.000231087 ci_old:0.000231782 -2999.01 -2425.28
+5 abs: 2.23626e-08 0.000863637 6.96426e-07 574.113 0.0228744 0 0.411171 4.46839e-08 an: 1.23592e-05 an_old: 1.23816e-05 gco2: 0.114502 gco2_old> 0.115366 ci: 0.000231083 ci_old:0.00023178 -3001.55 -2427.44
+5 maxErr 0.00180938 0.00754252 0.00301374 0.191306 0.498717 0 an: 1.23592e-05 an_old: 1.23816e-05 gco2: 0.114502 gco2_old> 0.115366 ci: 0.000231083 ci_old:0.00023178 -3001.55 -2427.44
+6 abs: 2.24007e-08 0.000865057 6.97601e-07 574.443 0.0228744 0 0.411171 6.70846e-08 an: 1.23591e-05 an_old: 1.23815e-05 gco2: 0.114498 gco2_old> 0.115363 ci: 0.00023108 ci_old:0.000231777 -3003.96 -2429.52
+6 maxErr 0.00181248 0.0075552 0.00301887 0.191306 0.498717 0 an: 1.23591e-05 an_old: 1.23815e-05 gco2: 0.114498 gco2_old> 0.115363 ci: 0.00023108 ci_old:0.000231777 -3003.96 -2429.52
+7 abs: 2.24355e-08 0.000866349 6.98671e-07 574.717 0.0228744 0 0.411171 8.95201e-08 an: 1.2359e-05 an_old: 1.23815e-05 gco2: 0.114494 gco2_old> 0.115361 ci: 0.000231077 ci_old:0.000231775 -3006.24 -2431.52
+7 maxErr 0.00181531 0.00756674 0.00302355 0.191306 0.498717 0 an: 1.2359e-05 an_old: 1.23815e-05 gco2: 0.114494 gco2_old> 0.115361 ci: 0.000231077 ci_old:0.000231775 -3006.24 -2431.52
+8 abs: 2.24668e-08 0.000867514 6.99638e-07 574.935 0.0228744 0 0.411171 1.11987e-07 an: 1.23589e-05 an_old: 1.23814e-05 gco2: 0.114491 gco2_old> 0.115358 ci: 0.000231074 ci_old:0.000231773 -3008.37 -2433.44
+8 maxErr 0.00181786 0.00757716 0.00302777 0.191306 0.498717 0 an: 1.23589e-05 an_old: 1.23814e-05 gco2: 0.114491 gco2_old> 0.115358 ci: 0.000231074 ci_old:0.000231773 -3008.37 -2433.44
+9 abs: 2.2495e-08 0.000868555 7.00503e-07 575.097 0.0228744 0 0.411171 1.34482e-07 an: 1.23588e-05 an_old: 1.23813e-05 gco2: 0.114487 gco2_old> 0.115356 ci: 0.000231071 ci_old:0.000231771 -3010.39 -2435.29
+9 maxErr 0.00182015 0.00758648 0.00303155 0.191306 0.498717 0 an: 1.23588e-05 an_old: 1.23813e-05 gco2: 0.114487 gco2_old> 0.115356 ci: 0.000231071 ci_old:0.000231771 -3010.39 -2435.29
+10 abs: 2.25196e-08 0.000869466 7.01263e-07 575.202 0.0228744 0 0.411171 1.57002e-07 an: 1.23588e-05 an_old: 1.23813e-05 gco2: 0.114484 gco2_old> 0.115353 ci: 0.000231068 ci_old:0.00023177 -3012.26 -2437.06
+10 maxErr 0.00182216 0.00759465 0.00303487 0.191306 0.498717 0 an: 1.23588e-05 an_old: 1.23813e-05 gco2: 0.114484 gco2_old> 0.115353 ci: 0.000231068 ci_old:0.00023177 -3012.26 -2437.06
+11 abs: 2.25406e-08 0.000870236 7.01906e-07 575.25 0.0228744 0 0.411171 1.79542e-07 an: 1.23587e-05 an_old: 1.23812e-05 gco2: 0.114481 gco2_old> 0.115351 ci: 0.000231066 ci_old:0.000231768 -3013.97 -2438.72
+11 maxErr 0.00182387 0.00760157 0.00303769 0.191306 0.498717 0 an: 1.23587e-05 an_old: 1.23812e-05 gco2: 0.114481 gco2_old> 0.115351 ci: 0.000231066 ci_old:0.000231768 -3013.97 -2438.72
+12 abs: 2.25406e-08 0.000870236 7.01906e-07 575.25 0.0228744 0 0.411171 1.79542e-07 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+12 maxErr 0.00182387 0.00760157 0.00303769 0.191306 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+13 abs: 2.25406e-08 0.000870236 7.01906e-07 575.25 0.0228744 0 0.411171 1.79542e-07 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+13 maxErr 0.00182387 0.00760157 0.00303769 0.191306 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+14 abs: 2.25406e-08 0.000870236 7.01906e-07 575.25 0.0228744 0 0.411171 1.79542e-07 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+14 maxErr 0.00182387 0.00760157 0.00303769 0.191306 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+15 abs: 2.25406e-08 0.000870236 7.01906e-07 575.25 0.0228744 0 0.411171 1.79542e-07 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+15 maxErr 0.00182387 0.00760157 0.00303769 0.191306 0.498717 0 an: 0 an_old: 0 gco2: 0 gco2_old> 0 ci: 0 ci_old:0 0 0
+16 abs: 2.25406e-08 0.000870236 7.01906e-07 575.25 0.0228744 0 0.411171 2.01767e-07 an: 1.23595e-05 an_old: 1.23817e-05 gco2: 0.114512 gco2_old> 0.115371 ci: 0.000231091 ci_old:0.000231783 -2995.9 -2424
+16 maxErr 0.00182387 0.00760157 0.00303769 0.191306 0.498717 0 an: 1.23595e-05 an_old: 1.23817e-05 gco2: 0.114512 gco2_old> 0.115371 ci: 0.000231091 ci_old:0.000231783 -2995.9 -2424

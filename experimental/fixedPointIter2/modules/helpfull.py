@@ -11,6 +11,11 @@ import timeit
 import ctypes
 import numbers
 
+
+def is_number(obj):
+    # Check for standard Python numeric types (int, float) and NumPy numeric types
+    return isinstance(obj, (numbers.Number, np.number))
+
 class StdoutRedirector:
     def __init__(self, filepath):
         self.filepath = filepath
@@ -165,13 +170,14 @@ def continueLoop(perirhizalModel,s,n_iter, dt_inner: float,failedLoop: bool,
     cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or  perirhizalModel.solve_gave_up or failedLoop
             or (s.bulkMassErrorWater_rel > s.bulkMassErrorWater_relLim*10)
             or (perirhizalModel.rhizoMassWError_rel > perirhizalModel.rhizoMassWError_relLim*10)
+            or (perirhizalModel.errWrsi > 11.)
             or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
             or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
             or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)  
             or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
 
     if (rank == 0) and isInner:
-        print(f'continue loop? {bool(cL)}\n\t\tn_iter: {n_iter}, non-convergence and error metric: {perirhizalModel.err:.2e}, solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}\n\t\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\t\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+        print(f'continue loop? {bool(cL)}\n\t\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}, {perirhizalModel.errWrsi:.2e}, solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}\n\t\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\t\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
 
     cL = comm.bcast(cL,root = 0)
     failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))

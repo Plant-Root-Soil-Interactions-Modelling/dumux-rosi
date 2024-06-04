@@ -1,3 +1,7 @@
+import sys
+
+
+sys.path.append("../../../build-cmake/cpp/python_binding/");
 
 import plantbox as pb
 import functional.xylem_flux as xylem_flux
@@ -113,6 +117,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.diff1d3dCurrant_rel = 0.
         self.diff1d3dCurrant = np.Inf
         self.solve_gave_up = False
+        self.errWrsi = 1000
         
         
         # 1d1d flow
@@ -1472,7 +1477,6 @@ class RhizoMappedSegments(pb.MappedPlant):
             inner_fluxes: initial PWU [cm3 day-1] 
             outer_fluxes: initial (limited) soil water exchange [cm day-1] 
         """
-        outer_fluxesbu = outer_fluxes
         l = cyl.segLength
         gId = cyl.gId
         
@@ -1482,16 +1486,19 @@ class RhizoMappedSegments(pb.MappedPlant):
         cyl.setInnerFluxCyl(qIn)
         
         # 1d-1d and 1d-3d soil water exchange
-        outer_fluxes = outer_fluxes[gId]        
+        outer_fluxesbu = outer_fluxes[gId]   
+        outer_fluxes = outer_fluxes[gId]    
         if self.do1d1dFlow:
             outer_fluxes += self.flow1d1d_w[gId]
+            outer_fluxesbu += self.flow1d1d_w[gId]
         # might have QflowOutLim != outer_fluxes if abs(outer_fluxes) is too high
         QflowOutCellLim = cyl.distributeSource(dt, outer_fluxes,inner_fluxes*dt, 0,self.numDissolvedSoluteComp)
         outer_fluxes = sum(QflowOutCellLim)  # get outer_fluxes limited  
-        divideQout = outer_fluxesbu[gId] if outer_fluxesbu[gId] != 0 else 1
-        if verbose or (abs((outer_fluxes - outer_fluxesbu[gId])/ divideQout)*100 > 1.):
+        divideQout = outer_fluxesbu if outer_fluxesbu != 0 else 1
+        if verbose or (abs((outer_fluxes - (outer_fluxesbu))/ divideQout)*100 > 1.):
             print('rhizo_modelsPlant::_calculate_and_set_initial_water_flows, gId',gId,' qIn',qIn, 
-            inner_fluxes,'qout', outer_fluxes,'qout init',outer_fluxesbu[gId] ,'shape', self.radii[gId] , 'length', l )
+            inner_fluxes,'qout', outer_fluxes,'qout init',outer_fluxesbu,'shape', self.radii[gId] , 'length', l )
+            raise Exception
             
         return inner_fluxes, outer_fluxes
         
@@ -1830,7 +1837,7 @@ class RhizoMappedSegments(pb.MappedPlant):
     def getDeff(self,Ds,phi,theta):
         return Ds* (theta**(10/3)) / (phi**2)
     
-    def do1d1dFlows(self, soilVals,#wat. pot. (cm)
+    def do1d1dFlow_(self, soilVals,#wat. pot. (cm)
                         seg_valuesW,# theta (cm3/cm3)
                         seg_valuesSol,# mol/cm3 wat
                         seg_valuesmucil,# mol/cm3 wat
@@ -1972,7 +1979,7 @@ class RhizoMappedSegments(pb.MappedPlant):
     def _split_soil_val_for_cell(self, cellid, soilVals, seg_values,seg_volume, seg_values_voxel, splitVals, organTypes, verbose, isWater):
         
         segIds = self.cell2seg[cellid]
-        doPrint = ((569 in segIds) or (22 in segIds) or (23 in segIds) ) # cellid == 39
+        doPrint = False #((569 in segIds) or (22 in segIds) or (23 in segIds) ) # cellid == 39
         if soilVals[cellid] != 0:
             assert (splitVals[segIds] == 0.).all()
             ots = organTypes[segIds]
