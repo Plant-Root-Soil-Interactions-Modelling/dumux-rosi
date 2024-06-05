@@ -67,12 +67,12 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # 2 : last two mean method
     # 3 : mean(oldmean, lastval)
     # 4 : mean(allvals)
-    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). f
+    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). 
     # for eahc seg, not just the whole set
     # 6: keep min obtained ksoil
     # 7 : get mean/integrated krsoil from dumux. likewise, use mean/integrated psi gotten in dumux.
     # or run plant model
-    # 8 call cpb 
+    # 8 call cpb in dumux ? inner fixed-point iteration?
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
@@ -84,7 +84,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/99p/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -294,24 +294,27 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         if (rank == 0):
             printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             
-        if rank == 0:
-            datas = [
-                     plantModel.psiXyl, 
-                     phloemData.C_ST, phloemData.C_S_ST, 
-                     phloemData.C_meso, phloemData.C_S_meso, 
-                     phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
-                     phloemData.Q_Gr_i,phloemData.Q_Rm_i
-                    ]
-            datasName = [ "psiXyl",
-                         "C_ST", "C_S_ST", 
-                         "C_meso", "C_S_meso", 
-                         "Q_Exud", "Q_Mucil",
-                         "Q_Gr","Q_Rm",
-                         "Q_Exud_i","Q_Mucil_i" ,
-                         "Q_Gr_i","Q_Rm_i"
-                        ]
-                        
         if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+            if rank == 0:
+                datas = [
+                         plantModel.psiXyl, 
+                         phloemData.C_ST, phloemData.C_S_ST, 
+                         phloemData.C_meso, phloemData.C_S_meso, 
+                         phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
+                         phloemData.Q_Gr_i,phloemData.Q_Rm_i
+                        ]
+                datasName = [ "psiXyl",
+                             "C_ST", "C_S_ST", 
+                             "C_meso", "C_S_meso", 
+                             "Q_Exud", "Q_Mucil",
+                             "Q_Gr","Q_Rm",
+                             "Q_Exud_i","Q_Mucil_i" ,
+                             "Q_Gr_i","Q_Rm_i"
+                            ]
+            else:
+                datas = []
+                datasName = []
+
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)

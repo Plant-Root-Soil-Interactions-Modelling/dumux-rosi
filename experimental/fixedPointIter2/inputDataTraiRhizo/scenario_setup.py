@@ -238,7 +238,7 @@ def setDefault(s):
     
     # UpwindWeight = 1, better when we have high solute gradient.
     # UpwindWeight = 0.5, better when have high water flow and low solute gradient
-    s.setParameter("Flux.UpwindWeight", "0.5")#very important because we get high solute gradient.
+    s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
     
     return s
 
@@ -307,6 +307,7 @@ def create_soil_model( usemoles, results_dir ,
         
     s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
     s.results_dir = results_dir   
+    s.pindx = paramIndx
     
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']

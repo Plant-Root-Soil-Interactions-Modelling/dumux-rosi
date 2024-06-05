@@ -93,7 +93,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     
     #solute
     #get
-    def getInnerSolutes(self,shift=0, compId = 1, isDissolved = True):
+    def getInnerSolutes(self,shift=0, compId = 1):
         return 0
     def get_inner_concentration(self):
         return 0
@@ -105,7 +105,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         return np.array([0])
     def getSolution(self,val):
         return np.array([0])
-    def getContentCyl(self,idComp, isDissolved):
+    def getContent(self,idComp):
         return np.array([0])
     #set
     def setOuterBC_solute(self,*arg):

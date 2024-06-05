@@ -37,6 +37,7 @@ class SolverWrapper():
         self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
         self.molarDensityWat_cm3 =  self.molarDensityWat_m3 /1e6 # [mol wat/cm3 wat] 
         self.results_dir = "./results/"
+        self.pindx = 0
         
 
     def initialize(self, args_ = [""], verbose = False,doMPI_=True):
@@ -47,9 +48,15 @@ class SolverWrapper():
             If the python code is run in parallel, we can use doMPI_=False for the
             1d models only (FoamGrid). Does not work for the other (3d) grids.
         """
-        with StdoutRedirector(self.results_dir + 'stdcout_cpp'+str(rank)+'.txt'):
-            self.base.initialize(args_, verbose, doMPI=doMPI_)
-    
+        try:
+            with StdoutRedirector() as redirector:
+                self.base.initialize(args_, verbose, doMPI=doMPI_)
+        except Exception as e:
+            target_filepath = self.results_dir + 'stdcout_cpp'+str(self.pindx)+"_"+str(rank)+'.txt'
+            with open(target_filepath, 'w') as f:
+                f.write(redirector.buffer)
+            raise Exception
+            
     @property
     def dimWorld(self):
         """Get the dimention of the dumux domain (1d, 2d, 3d) """
@@ -93,9 +100,16 @@ class SolverWrapper():
             manually (re)create nonlinear solver. 
             useful to implement new solver parameters
         """
-        with StdoutRedirector(self.results_dir + 'stdcout_cpp'+str(rank)+'.txt'):
-            self.base.createNewtonSolver()
-        
+        try:
+            with StdoutRedirector() as redirector:
+                self.base.createNewtonSolver()
+        except Exception as e:
+            target_filepath = self.results_dir + 'stdcout_cpp'+str(self.pindx)+"_"+str(rank)+'.txt'
+            with open(target_filepath, 'w') as f:
+                f.write(redirector.buffer)
+            raise Exception
+            
+            
     def save(self):
         """ 
             saves the current value of the solution vector.
@@ -229,8 +243,15 @@ class SolverWrapper():
         p = []
         for v in points:
             p.append([v / 100.])  # cm -> m
-        with StdoutRedirector(self.results_dir + 'stdcout_cpp.txt'):
-            self.base.createGrid1d(p)
+        try:
+            with StdoutRedirector() as redirector:
+                self.base.createGrid1d(p)
+        except Exception as e:
+            target_filepath = self.results_dir + 'stdcout_cpp'+str(self.pindx)+"_"+str(rank)+'.txt'
+            with open(target_filepath, 'w') as f:
+                f.write(redirector.buffer)
+            raise Exception
+            
         self.numberOfCellsTot = len(points) -1
         self.numberOfFacesTot = self.numberOfCellsTot * 2
 
@@ -265,9 +286,15 @@ class SolverWrapper():
         """ After the grid is created, the problem can be initialized 
             @param: maxDt : maximum inner-time step that dumux can use [d]            
         """
-        with StdoutRedirector(self.results_dir + 'stdcout_cpp'+str(rank)+'.txt'):
-            self.base.initializeProblem(maxDt * 24.*3600.)
-        
+        try:
+            with StdoutRedirector() as redirector:
+                self.base.initializeProblem(maxDt * 24.*3600.)
+        except Exception as e:
+            target_filepath = self.results_dir + 'stdcout_cpp'+str(self.pindx)+"_"+str(rank)+'.txt'
+            with open(target_filepath, 'w') as f:
+                f.write(redirector.buffer)
+            raise Exception
+            
         ##       saves shape data of the grid  
         # local indices
         self.dofIndices_   = self.base.getDofIndices()

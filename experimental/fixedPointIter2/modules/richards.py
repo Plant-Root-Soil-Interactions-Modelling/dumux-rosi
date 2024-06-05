@@ -321,13 +321,15 @@ class RichardsWrapper(SolverWrapper):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
         self.base.setSBotBC(type_bot, value_bot)
 
-    def getInnerHead(self, shift = 0):
+    def getInnerHead(self):
         """Gets the pressure head at the inner boundary [cm] """
+        shift = 0
         return self.base.getInnerHead(shift)  # -> richards_cyl.hh
 
-    def getInnerSolutes(self, shift = 0, compId = 1, isDissolved = True):
+    def getInnerSolutes(self, compId = 1):
         """Gets the concentration at the inner boundary [mol/cm3] """    
         CC = np.array(self.getSolution_(compId)).flatten()[0] #mol/mol
+        isDissolved = compId <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         if self.useMoles:
             if isDissolved:
                 CC *= self.molarDensityWat_m3/1e6 #mol/cm3 scv
@@ -436,14 +438,9 @@ class RichardsWrapper(SolverWrapper):
             
     def getTotCContent_each(self):
         """ copmute the total content per solute class in each cell of the domain """
-        if self.dimWorld == 3:
-            vols = self.getCellVolumes()#.flatten() #cm3 scv   
-            totC = np.array([self.getContent(i+1, (i < self.numDissolvedSoluteComp)) for i in range(self.numSoluteComp)])
+        vols = self.getCellVolumes()#.flatten() #cm3 scv   
+        totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)])
             
-        elif self.dimWorld == 1:
-            vols = self.getCellVolumes()#cm3 scv
-            totC = np.array([self.getContentCyl(i+1, (i < self.numDissolvedSoluteComp)) for i in range(self.numSoluteComp)])
-        # mol/mol * (mol/m3) = mol/m3 
         
         if rank == 0:
             try:
@@ -580,11 +577,11 @@ class RichardsWrapper(SolverWrapper):
         
         return inSources_tot
             
-    def getConcentration(self,idComp, isDissolved):      
+    def getConcentration(self,idComp):      
         """ returns the concentraiton of a component (solute)
             @param idcomp: index of the component (> 0) [int]
-            @param isDissolved: is the component in the water phase (True) [bool]
         """
+        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         C_ = self.getSolution(idComp) # mol/mol wat or mol/mol scv
         if not isDissolved:
             if self.useMoles:
@@ -594,12 +591,12 @@ class RichardsWrapper(SolverWrapper):
             C_ *= self.molarDensityWat_m3 # mol/m3 wat            
         return C_ /1e6 #mol/cm3 scv
         
-    def getContent(self,idComp, isDissolved):
+    def getContent(self,idComp):
         """ returns the content of a component (solute)
             @param idcomp: index of the component (> 0) [int]
-            @param isDissolved: is the component in the water phase (True) [bool]
         """
         assert idComp > 0 # do not use for water content
+        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         vols = (1/  1e6)*self.getCellVolumes_() #m3 scv            
         
         if idComp <= self.numComp:

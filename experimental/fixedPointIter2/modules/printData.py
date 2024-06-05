@@ -92,7 +92,7 @@ def printDiff1d3d(perirhizalModel, s):
                              perirhizalModel.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
 
             write_file_array("sol_content3d"+str(nc+1), 
-                             s.getContent(nc+1, nc < s.numDissolvedSoluteComp), 
+                             s.getContent(nc+1), 
                              directory_ =results_dir, fileType = '.csv')  
             write_file_array("sol_content1d"+str(nc+1), 
                              perirhizalModel.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
@@ -212,7 +212,7 @@ def printCylData(perirhizalModel, rs_age):
                              directory_ =results_dir+'cyl_val/', allranks = True)
             if perirhizalModel.doSoluteFlow:
                 for ccc in range(perirhizalModel.numSoluteComp):
-                    sol0 = np.array(cyl.getContent(ccc +1, ccc < perirhizalModel.numDissolvedSoluteComp)).flatten()
+                    sol0 = np.array(cyl.getContent(ccc +1)).flatten()
                     write_file_array("Cyl_content"+str(ccc+1)+"_"+str(gId)+"", 
                                  sol0, 
                                  directory_ =results_dir+'cyl_val/', allranks = True)
@@ -509,7 +509,7 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                                  directory_ =results_dir, fileType = '.csv')
 
                 write_file_array("fpit_sol_content3d"+str(nc+1), 
-                                 s.getContent(nc+1, nc < s.numDissolvedSoluteComp),
+                                 s.getContent(nc+1),
                                  directory_ =results_dir, fileType = '.csv')  
                 write_file_float("fpit_sol_content1d"+str(nc+1), 
                                  sum(perirhizalModel.getContentCyl(idComp = nc+1, doSum = False, reOrder = True)), 

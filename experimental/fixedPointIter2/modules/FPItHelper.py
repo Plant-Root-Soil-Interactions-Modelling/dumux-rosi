@@ -138,7 +138,7 @@ class fixedPointIterationHelper():
                 assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
                 proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
                                                         seg_values=self.thetaCyl_4splitSoilVals, 
-                                                       seg_volume= self.cylVol,
+                                                       seg_volume= self.cylVol,dt = dt,
                                                        isWater = True, 
                                                                       verbose = False) #cm3/day
                                                  
@@ -146,17 +146,17 @@ class fixedPointIterationHelper():
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
 
             if max(abs(outer_R_bc_sol[0] )) > 0:
-                proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[0] / dt, 
-                                                self.comp1content, 
-                                                self.cylVol)#mol/day
+                proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[0] / dt, 
+                                                seg_values=self.comp1content, dt = dt,
+                                                seg_volume=self.cylVol, isWater = False)#mol/day
             else:
                 proposed_outer_sol_fluxes = np.full(self.numSegs, 0.)
                 
                 
             if max(abs(outer_R_bc_sol[1] )) > 0:
-                proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(outer_R_bc_sol[1] / dt, 
-                                                                self.comp2content, 
-                                                                self.cylVol)
+                proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[1] / dt, 
+                                                                seg_values=self.comp2content, dt = dt,
+                                                                seg_volume=self.cylVol, isWater = False)
             else:
                 proposed_outer_mucil_fluxes = np.full(self.numSegs, 0.)
                 

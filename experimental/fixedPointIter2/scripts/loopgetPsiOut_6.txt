@@ -1,1 +1,0 @@
-photosynthesus::getPsiOut: segIdx 171 organType 3, psi_s -615676 

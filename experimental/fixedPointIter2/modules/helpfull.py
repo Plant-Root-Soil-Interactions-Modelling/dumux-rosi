@@ -10,29 +10,39 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
 import ctypes
 import numbers
+import tempfile
 
 
 def is_number(obj):
     # Check for standard Python numeric types (int, float) and NumPy numeric types
     return isinstance(obj, (numbers.Number, np.number))
 
+
 class StdoutRedirector:
-    def __init__(self, filepath):
-        self.filepath = filepath
+    def __init__(self):
         self.libc = ctypes.CDLL(None)
         self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
+        self.buffer = None
 
     def __enter__(self):
         self.old_stdout_fd = os.dup(1)
-        self.file = open(self.filepath, 'w')
-        self.file_fd = self.file.fileno()
-        os.dup2(self.file_fd, 1)
+        self.temp_file = tempfile.NamedTemporaryFile(delete=False)
+        self.temp_file_fd = self.temp_file.fileno()
+        os.dup2(self.temp_file_fd, 1)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         os.dup2(self.old_stdout_fd, 1)
         os.close(self.old_stdout_fd)
-        self.file.close()
+        self.temp_file.close()
 
+        if exc_type is not None:
+            self.buffer = open(self.temp_file.name, 'r').read()
+            with open(self.filepath, 'w') as f:
+                f.write(self.buffer)
+        os.remove(self.temp_file.name)
+        
+        
 def suggestNumStepsChange(dt, failedLoop, perirhizalModel, n_iter_inner_max):# taken from dumux
     """
      * \brief Suggest a new number of time steps
@@ -404,3 +414,81 @@ def adapt_values( val_new, minVal, maxVal, volumes, divideEqually, verbose=False
     assert (val_new >= minVal).all()
     assert (val_new <= maxVal).all()
     return val_new
+
+
+def distributeValSolute_(seg_values_content, volumes, source, dt, verbose: bool):
+
+    # adapt solute sink if needed
+    sourceInit = source
+    source = max(-sum(seg_values_content)/dt,source)
+    if abs((sourceInit - source)/sourceInit)*100 > 1.:
+        verbose =True
+        print("distributeVals sourceInit > source", 'dt',dt,
+              'old source',sourceInit ,'new source',source,
+              'theta',seg_values_perVol_,'cylVol',
+             volumes)
+        
+    if (sum(seg_values_content) == 0.):# should normally only happen with source >= 0
+        weightVals =np.full(len(seg_values_content), 1 /len(seg_values_content))
+    elif source < 0:# goes away from the 1d models
+
+        if min(seg_values_content)<0:
+            seg_values_content = adapt_values(
+                seg_values_content/volumes,
+                        0,
+                        np.Inf, 
+                        volumes, divideEqually = False, 
+                        verbose= verbose) *volumes
+
+        weightVals = seg_values_content /sum(seg_values_content)
+        if verbose:
+            print("sum(seg_values[segIds])", seg_values, weightVals)
+            
+    else:# goes toward  the 1d models
+        if min(abs(seg_values_content)) == 0.:# at least 1 seg_values = 0 but not all
+            seg_values_content = np.maximum(seg_values_content,1.e-14)
+            assert min(abs(seg_values_content)) != 0.
+        weightVals = (1 / seg_values_content) / sum(1/seg_values_content)
+    return weightVals * source
+    
+    
+def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_wilting_point, verbose):    
+    if verbose:            
+        print('rhichardnompi::distribVals: before adapt',seg_values_perVol_, sum(seg_values_perVol_*cylVol))
+    
+    if (source > 0):# space available
+        availableSpaceOrWater = (vg_soil.theta_S-seg_values_perVol_)*volumes
+        # adapt source to not add more than the 1ds can manage:
+        source = min(sum(availableSpaceOrWater)/dt,source)
+    else:
+        availableSpaceOrWater = (seg_values_perVol_- theta_wilting_point)*volumes
+        # adapt source to not take more than the 1ds can manage:
+        sourceInit = source
+        source = max(-sum(availableSpaceOrWater)/dt,source)
+        if abs((sourceInit - source)/sourceInit)*100 > 1.:
+            verbose =True
+            print("distributeVals sourceInit > source", 'dt',dt,
+                  'old source',sourceInit ,'new source',source,
+                  'theta',seg_values_perVol_,'cylVol',
+                 volumes)
+
+    if sum(availableSpaceOrWater) > 0:
+        if verbose:
+            print('helpfull::distributeValWater_: after availableSpaceOrWater',
+                  repr(availableSpaceOrWater))                   
+        if min(availableSpaceOrWater)<0:
+            availableSpaceOrWater = adapt_values(availableSpaceOrWater/volumes,
+                        0,
+                        np.Inf,#/dt/abs(source), 
+                        volumes, divideEqually = False, 
+                        verbose= verbose) *volumes
+
+
+        if verbose:
+            print('rhichardnompi::distribVals: after weightVals ', 
+                        sum(availableSpaceOrWater /sum(availableSpaceOrWater)),
+                  repr(availableSpaceOrWater /sum(availableSpaceOrWater)))
+
+        return (availableSpaceOrWater /sum(availableSpaceOrWater)) * source # mol/day
+    else: # no water or space available
+        return np.full(len(availableSpaceOrWater),0.)

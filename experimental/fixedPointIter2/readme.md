@@ -50,7 +50,7 @@ decrease of the errors during the first 4 loops. Might need to adapt that for an
 - retry implementing the 1d1d flow
 - re-implement last update for my full setup
 - try using the kr and psoil at each inner-dumux time step.
-- check that threads sent to dumux is updated
+- stop sending cpp output to file via StdoutRedirector
 - [.. to be completed by users..]
 
 # Other

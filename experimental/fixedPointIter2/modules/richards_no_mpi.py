@@ -63,9 +63,6 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.checkGridInitialized()
         return self._map((self.base.getKrw()), 0)
 
-    def getContentCyl(self,idComp, isDissolved,gId = None ):
-        return self.getContent(idComp, isDissolved)
-
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
@@ -237,37 +234,33 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
         
         
-    def distributeSources(self, dt,source,inner_fluxs, eqIdx, numDissolvedSoluteComp: int, selectCell = None):
+    def distributeSources(self, dt,source,inner_fluxs, eqIdx):
         """ when we have a source in for a 1d model (exchange with bulk soil),
             divid the source between the cell of the 1d model according to the water
             or solute content
             @param sources: sources to divide between the cells for water [list, cm3/day] and/or solutes [list, mol/day]
             @param inner_fluxs: negative or positive flux at the root surface for water [list, cm3] and/or solutes [list, mol]
             @param eqIdx: index of the components [list of int]
-            @param numDissolvedSoluteComp: number of solutes which are disolved
-            @param selectCell: optional, manually set the index of the cell the source will be applied to [int]
         """
         splitVals = list()
         # iterate through each component
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
             splitVals.append(self.distributeSource(dt, src,inner_fluxs[i],
-                                    eqIdx[i], numDissolvedSoluteComp, selectCell))
+                                    eqIdx[i]))
         return np.array(splitVals, dtype = object)
             
-    def distributeSource(self,dt, source: float,inner_flux:float, eqIdx: int, numDissolvedSoluteComp: int, selectCell = None):
+    def distributeSource(self,dt, source: float,inner_flux:float, eqIdx: int):
         """ when we have a source in for a 1d model (exchange with bulk soil),
             divid the source between the cell of the 1d model according to the water
             or solute content
             @param sources: sources to divide between the cells for water [cm3/day] or solute [mol/day]
             @param inner_flux: negative or positive flux at the root surface for water [cm3] or solute [mol]
             @param eqIdx: index of the components [int]
-            @param numDissolvedSoluteComp: number of solutes which are disolved
-            @param selectCell: optional, manually set the index of the cell the source will be applied to [int]
         """
         assert self.dimWorld != 3
         
         # distribute the value between the cells
-        splitVals = self.distributeVals(dt, source, inner_flux, eqIdx, numDissolvedSoluteComp, selectCell)       
+        splitVals = self.distributeVals(dt, source, inner_flux, eqIdx)       
         # send the source data to dumux
         if source != 0.:# [cm3/day] or [mol/day]
             test_values = list(splitVals.copy())
@@ -287,106 +280,31 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     
 
     
-    def distributeVals(self, dt, source: float, inner_flux: float, eqIdx: int, numDissolvedSoluteComp: int, selectCell = None):
+    def distributeVals(self, dt, source: float, inner_flux: float, eqIdx: int):
         """ when we have a source in for a 1d model (exchange with bulk soil),
             divid the source between the cell of the 1d model according to the water
             or solute content
             @param sources: sources to divide between the cells for water [cm3/day] or solute [mol/day]
             @param inner_flux: negative or positive flux at the root surface for water [cm3/day] or solute [mol/day]
             @param eqIdx: index of the components [int]
-            @param numDissolvedSoluteComp: number of solutes which are disolved
-            @param selectCell: optional, manually set the index of the cell the source will be applied to [int]
         """
         # to do: will this still work even if theta < wilting point during solve() calls?
         
         splitVals = np.array([0.])
         verbose = False#self.gId == 541
         if source != 0.:# [cm3/day] or [mol/day]
-            np.set_printoptions(precision=20)
-            if verbose:
-                print("\n\n\n start distributeVals", 'dt',dt,'source',source,'inner_flux',inner_flux, 'theta',
-                    repr(self.getWaterContent()),'cylVol',repr(self.getCellVolumes()),
-                    'thetawilt',self.theta_wilting_point, 'vgsoil',[self.vg_soil.theta_R, self.vg_soil.theta_S, 
-                self.vg_soil.alpha, self.vg_soil.n, self.vg_soil.Ksat])
-            if selectCell == None:
-                cylVol = self.getCellVolumes()
-                if eqIdx == 0:# compute the amount of water potentially available in each cell
-                    
-                    seg_values_perVol_ =np.maximum( self.getWaterContent(), 0.)  # cm3/cm3
-                    if verbose:
-                        print('rhichardnompi::distribVals: init',seg_values_perVol_,inner_flux/cylVol[0] )
-                    seg_values_perVol_[0] += inner_flux/cylVol[0] # add root water release or uptake
-                                
-                    if verbose:
-                        print('rhichardnompi::distribVals: before adapt',seg_values_perVol_, sum(seg_values_perVol_*cylVol))
-                    # Adapt values if necessary
-                                        
-                    if (source > 0):# space available
-                        availableSpaceOrWater = (self.vg_soil.theta_S-seg_values_perVol_)*cylVol
-                        # adapt source to not add more than the 1ds can manage:
-                        source = min(sum(availableSpaceOrWater)/dt,source)
-                    else:
-                        availableSpaceOrWater = (seg_values_perVol_-self.theta_wilting_point)*cylVol
-                        # adapt source to not take more than the 1ds can manage:
-                        sourceInit = source
-                        source = max(-sum(availableSpaceOrWater)/dt,source)
-                        if abs((sourceInit - source)/sourceInit)*100 > 1.:
-                            verbose =True
-                            print("distributeVals sourceInit > source", 'dt',dt,'old source',sourceInit ,'new source',source,
-                            'inner_flux',inner_flux, 'theta',repr(self.getWaterContent()),'cylVol',repr(self.getCellVolumes()))
-
-                    if sum(availableSpaceOrWater) > 0:
-                        if verbose:
-                            print('rhichardnompi::distribVals: after availableSpaceOrWater ',repr(availableSpaceOrWater))                   
-                        if min(availableSpaceOrWater)<0:
-                          availableSpaceOrWater = helpfull.adapt_values(availableSpaceOrWater/cylVol,
-                                        0,
-                                        np.Inf,#/dt/abs(source), 
-                                        cylVol, divideEqually = False, 
-                                        verbose= verbose) *cylVol
-
-                        weightVals = availableSpaceOrWater /sum(availableSpaceOrWater)
-                                        
-                        if verbose:
-                            print('rhichardnompi::distribVals: after weightVals ', repr(weightVals),#seg_values
-                                        sum(weightVals),repr(availableSpaceOrWater))
-                                        
-                        
-                    else: # no water or space available
-                        return np.full(len(availableSpaceOrWater),0.)
-                    
-
-                else:
-                    isDissolved = (eqIdx <= numDissolvedSoluteComp)
-                    seg_values_content = np.maximum(self.getContentCyl(eqIdx, isDissolved), 0.) # during the solve() loop, we might still get seg_values <0 
-                    seg_values =  np.maximum(self.getConcentration(eqIdx, isDissolved), 0.)
-                
-
-                    if (sum(seg_values) == 0.):# should normally only happen with source >= 0
-                        weightVals =np.full(len(seg_values), 1 /len(seg_values))
-                    elif source < 0:# goes away from the 1d models
-                        weightVals = seg_values /sum(seg_values)
-                        if verbose:
-                            print("sum(seg_values[segIds])", seg_values, weightVals)
-                    else:# goes toward  the 1d models
-                        if min(abs(seg_values)) == 0.:# at least 1 seg_values = 0 but not all
-                            seg_values = np.maximum(seg_values,1.e-14)
-                            assert min(abs(seg_values)) != 0.
-                        weightVals = (1 / seg_values) / sum(1/seg_values)
+            
+            if eqIdx == 0:# compute the amount of water potentially available in each cell
+                splitVals = self.distributeValWater(dt, source, inner_flux, verbose)
             else:
-                assert isinstance(selectCell, int) and (selectCell >= 0) and (selectCell < self.numberOfCellsTot)
-                weightVals = np.zeros(self.numberOfCellsTot)
-                weightVals[selectCell] = 1.
-                
-            splitVals = weightVals * source # mol/day
+                splitVals = self.distributeValSolute(eqIdx, dt, source, inner_flux, verbose)
             
             try:
                 assert (((splitVals >= 0).all()) or ((splitVals <= 0).all()))
                 assert abs(sum(abs(splitVals)) - abs(source)) < 1e-13
                 assert len(splitVals) == self.numberOfCellsTot
             except:
-                print('(sum(weightVals) - 1.) < 1e-13',rank,weightVals, sum(weightVals),(sum(weightVals) - 1.) ,(sum(weightVals) - 1.) < 1e-13)
-                print('splitVals',splitVals, self.numberOfCellsTot, len(splitVals) == self.numberOfCellsTot)
+                print('splitVals',splitVals)
                 print('troubleshoot data', 'source=',source, ';dt=',dt, ';inner_flux=',inner_flux,
                 ';theta=',repr( self.getWaterContent()),';cylVol=',repr(self.getCellVolumes()), 
                 [self.vg_soil.theta_R, self.vg_soil.theta_S, 
@@ -395,3 +313,34 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             if verbose:
                 print(rank,'distributeVals',eqIdx,'splitVals',splitVals)   
         return splitVals
+    
+    
+    def distributeValSolute(self,eqIdx, dt, source: float, inner_flux: float, verbose):
+        seg_values_content = np.maximum(self.getContent(eqIdx), 0.) # during the solve() loop, we might still get seg_values <0 
+
+        seg_values_content[0] += inner_flux # add root solute release or uptake
+        cylVol = self.getCellVolumes()
+        
+        return helpfull.distributeValSolute_(seg_values_content.copy(),cylVol.copy(), source, dt, verbose )  # mol/day
+        
+    def distributeValWater(self, dt, source: float, inner_flux: float, verbose):
+        cylVol = self.getCellVolumes()
+        seg_values_perVol_ =np.maximum( self.getWaterContent(), 0.)  # cm3/cm3
+        if verbose:            
+            np.set_printoptions(precision=20)
+            print("\n\n\n start distributeVals", 'dt',dt,
+                  'source',source,'inner_flux',inner_flux, 'theta',
+                    repr(self.getWaterContent()),'cylVol',
+                  repr(self.getCellVolumes()),
+                    'thetawilt',self.theta_wilting_point, 
+                  'vgsoil',[self.vg_soil.theta_R, self.vg_soil.theta_S, 
+                self.vg_soil.alpha, self.vg_soil.n, self.vg_soil.Ksat])
+            print('rhichardnompi::distribVals: init',seg_values_perVol_,inner_flux/cylVol[0] )
+        # Adapt values if necessary
+        
+        seg_values_perVol_[0] += inner_flux/cylVol[0] # add root water release or uptake
+        
+        
+        return helpfull.distributeValWater_(seg_values_perVol_.copy(), cylVol.copy(), source, dt, 
+                                            self.vg_soil, self.theta_wilting_point,verbose)
+        
