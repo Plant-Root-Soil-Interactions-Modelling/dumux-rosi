@@ -22,6 +22,7 @@ import psutil
 from air_modelsPlant import AirSegment
 from scipy import sparse
 import scipy.sparse.linalg as LA
+import helpfull
 
 from scipy.interpolate import PchipInterpolator,  CubicSpline
 
@@ -126,7 +127,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         self.sumDiff1d3dCW_relOld = np.full(self.numComp+2, 0.)
         self.diff1d3dCurrant_rel = 0.
         
-        self.do1d1dFlow = True
+        self.do1d1dFlow = False #True
         self.flow1d1d_w = np.zeros(1)
         self.flow1d1d_sol = np.zeros(1)
         self.flow1d1d_mucil = np.zeros(1)
@@ -1650,6 +1651,8 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                     if smaller:
                         changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
                         assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
+                    else:
+                        changeRatioW = changeRatio
                     assert (changeRatioW > 0.)
                 except:
                     print('volNew', volNew,'volOld',volOld)
@@ -2994,13 +2997,143 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         if gotError:
             raise Exception
                     
+
+    def splitSoilVals(self, soilVals, seg_values, seg_volume, dt, 
+                      verbose=False, isWater=False):
+        """ 
+        Split soilFlux array according to the values in seg_values.
+        
+        Parameters:
+        - soilVals: array-like, fluxes which can be <, =, or > 0
+        - seg_values: array-like, concentration
+        - verbose: bool, whether to print detailed debug information
+        - isWater: bool, whether the operation is related to water
+        """
+        try:
+            cellIds = self.getCellIds()    
+            organTypes = np.array(self.organTypes)
+            if verbose:
+                print('enter splitSoilVals', repr(soilVals), repr(seg_values), isWater)
+                print('seg2cell', repr(self.cell2seg), 'cellIds', repr(cellIds))
+
+            # assert min(seg_values) >= 0. # as we have initial concentration + flow, could have value < 0
+            assert seg_values.shape == (len(organTypes), )
+            if verbose:
+                print('organTypes', repr(organTypes))
+
+            if (organTypes != 2).any():
+                assert (seg_values[np.where(organTypes != 2)] == 0.).all()
+
+            splitVals = np.full(len(organTypes), 0.)
+            
+            if (soilVals[cellIds] != 0.).any():
+                for cellid in cellIds:
+                    splitVals = self._split_soil_val_for_cell(cellid, soilVals, seg_values,seg_volume, 
+                                                  splitVals, verbose, isWater, dt)
+
+            self._verify_splits(soilVals, cellIds, splitVals,seg_values, verbose)
+            
+            return splitVals
+
+        except:
+            if not verbose:
+                print('\n\nrelaunch splitSoilVals with verbose = True')
+                self.splitSoilVals(soilVals, seg_values, seg_volume,  verbose=True, isWater=isWater)
+            raise Exception
+
+        
+            
+    def _split_soil_val_for_cell(self, cellid, soilVals, seg_values,seg_volume, 
+                                 splitVals, verbose, isWater, dt):
+        
+        segIds = self.cell2seg[cellid]
+        doPrint = False #((569 in segIds) or (22 in segIds) or (23 in segIds) ) # cellid == 39
+        organTypes = np.array(self.organTypes)
+
+        if soilVals[cellid] != 0:
+            ots = organTypes[segIds]
+            rootIds = np.array([sid for sid in segIds if (organTypes[sid] == 2)])
+            assert (splitVals[segIds] == 0.).all()
+            if (ots != 2).any():
+                assert (seg_values[segIds][np.where(ots != 2)] == 0.).all()
+                    
+            if len(rootIds) > 0:
+                seg_values_root = seg_values[rootIds]
+                seg_volume_root = seg_volume[rootIds]
+                if isWater:
+                    splitVals_ = helpfull.distributeValWater_(seg_values_root.copy(),
+                                            seg_volume_root.copy(), 
+                                             soilVals[cellid], 
+                                            dt, self.vg_soil, 
+                                            self.theta_wilting_point,verbose)                
+                else:
+                    splitVals_ = helpfull.distributeValSolute_(
+                                            seg_values_root.copy() *  seg_volume_root.copy(), 
+                                            seg_volume_root.copy(), soilVals[cellid], dt, verbose)
+
                 
+                if verbose:
+                    print("soilVals[cellid]", cellid, soilVals[cellid],
+                          segIds, seg_values[segIds])
+
+
+                splitVals[rootIds] = splitVals_
+                if verbose:
+                    print("splitVals[segIds]", splitVals[segIds], sum(splitVals[segIds]))
+                    
+                assert ((abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (
+                    abs((sum(splitVals[segIds]) - soilVals[cellid]) / soilVals[cellid]) < 1e-13))
+                
+                if isWater and doPrint:
+                    print('splitSoilVal', cellid, soilVals[cellid] ,sum(weightVals)-1,sum(splitVals[segIds]) - soilVals[cellid])
+                    lst = [rootIds,seg_values_root,seg_volume_root, splitVals[rootIds] ]
+                    df = pd.DataFrame(np.vstack(lst)).T
+                    df.columns =["rootIds","seg_values_root","seg_volume_root", "splitVals[rootIds]" ]
+                    df.to_csv(self.results_dir +'splitSoilVal'+str(cellid)+'.csv', index=False, mode='a')
+        return splitVals
+                    
+
+
+    def _verify_splits(self, soilVals, cellIds, splitVals,  seg_values, verbose):
+        organTypes = np.array(self.organTypes)
+        try:
+            if abs(sum(soilVals[cellIds])) > 1e-16:
+                assert abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. < 0.1 
+            else:
+                assert abs((sum(splitVals) - sum(soilVals[cellIds]))) < 1e-15
+        except:
+            print('ERROR SPLIT VALSB')
+            print('abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. >= 0.1')
+            print(sum(splitVals), sum(soilVals), sum(soilVals[cellIds]))
+            #print('splitVals', splitVals, 'soilVals', soilVals, 'seg_values', seg_values)
+            print(sum(splitVals) - sum(soilVals[cellIds]))
+            splitVals_ = 0.
+            soilVals_ = 0.
+            for cellid in cellIds:
+                segIds = self.cell2seg[cellid]
+                splitVals_ += sum(splitVals[segIds])
+                soilVals_ += soilVals[cellid]
+                print(cellid, segIds, sum(splitVals[segIds]), soilVals[cellid], #'organTypes[segIds]', organTypes[segIds],
+                "current", splitVals_, soilVals_, splitVals_ - soilVals_, "to", sum(splitVals), sum(soilVals[cellIds]), sum(splitVals) - sum(soilVals[cellIds])#, (sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds]), sum(soilVals)
+                )
+            raise Exception
+
+        try:
+            assert (splitVals[np.where(organTypes != 2)] == 0.).all()
+        except:
+            print('ERROR SPLIT VALSC')
+            print("np.where(organTypes != 2)", np.where(organTypes != 2))
+            print("splitVals", splitVals, organTypes)
+            print(splitVals[np.where(organTypes != 2)])
+            print("seg_values", seg_values)
+            print(seg_values[np.where(organTypes != 2)])
+            raise Exception                
                             
                 
             
     
-    def splitSoilVals(self, soilVals, #fluxes: can be <, =, or > 0
-                      seg_values, # contents: are >= 0.
+    def splitSoilVals_(self, soilVals, #fluxes: can be <, =, or > 0
+                      seg_values, # concentrations: are >= 0.
                       troubleShootId = -1, verbose = False, isWater = False):
         """ split soilFlux array according to the values in seg_values """
         #verbose = False
@@ -3046,12 +3179,21 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
                         if len(rootIds) > 0:
                             seg_values_root = seg_values[rootIds]
                             if isWater:
-                                if verbose:
-                                    print('get preassuree head',seg_values_root,self.vg_soil.theta_S,self.vg_soil.theta_R)
-                                seg_values_root = np.array([ vg.pressure_head(svr, self.vg_soil) for svr in seg_values_root])
-                                if verbose:
-                                    print('got pressure_head', seg_values_root, min(seg_values_root))
-                                seg_values_root = seg_values_root  - min(seg_values_root) - np.mean(seg_values_root)+1e-14 #- min(seg_values_root)
+
+                                if (soilVals[cellid] > 0):# space available
+                                    availableSpaceOrWater = (self.vg_soil.theta_S-seg_values_root)*seg_volume_root
+                                else:
+                                    availableSpaceOrWater = (seg_values_root-self.theta_wilting_point)*seg_volume_root
+                                    
+                                if min(availableSpaceOrWater)<0:
+                                    availableSpaceOrWater = helpfull.adapt_values(availableSpaceOrWater/seg_volume_root,
+                                                0,
+                                                np.Inf,#/dt/abs(source), 
+                                                seg_volume_root, divideEqually = True, 
+                                                verbose= verbose) *seg_volume_root
+
+                                weightVals = availableSpaceOrWater /sum(availableSpaceOrWater)
+            
                             weightVals = np.full(len(segIds), 0.)
 
                             if (ots != 2).any():

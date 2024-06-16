@@ -322,6 +322,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         new_soil_water_old = 0
         soil_solute_content_new_old = 0
         rhizoWAfter_old = np.full(len(organTypes),0.)
+        
+        rhizoWAfter_ = r.getWaterVolumesCyl(doSum = False, reOrder = True)
         rhizoTotCAfter_old = np.full(len(organTypes),0.)
         seg_fluxes_old = 0 
         proposed_outer_fluxes_old = 0
@@ -333,8 +335,9 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
         r.err = 1.e6 
         max_err = 1.# ???
         max_iter = k_iter_#100 #??
-        rsx_set = r.get_inner_heads(weather=r.weatherX)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
+        rsx_set =comm.bcast( r.get_inner_heads(weather=r.weatherX), root = 0)# matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         rsx_old = rsx_set.copy()
+        rsx_olds = []
 
         if( ((np.floor(max(r.sumDiff1d3dCW_rel - r.sumDiff1d3dCW_relOld)) > 1.) \
                 or (np.floor(max(r.maxDiff1d3dCW_rel - r.maxDiff1d3dCW_relOld)) > 1.))):# supposedly == to the last r.diff1d3dCurrant_rel, except when we use reset (faile)
@@ -444,8 +447,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             rs.time_start_plant = timeit.default_timer()
             #comm.barrier()
 
-            if r.SRIBefore or (r.beforeAtNight and (r.weatherX["Qlight"] == 0.)) :
+            if False:# r.SRIBefore or (r.beforeAtNight and (r.weatherX["Qlight"] == 0.)) :
                 rsx_set = rsx_old_
+            if r.doMean and n_iter > 4:
+                rsx_set = comm.bcast(np.array(rsx_olds).mean(axis=0), root = 0)
 
             # s.vg_soil.Ksat [cm/d] conductivity AT SATURATION. decrease with wat. content, via krw value 
             krw = r.getKrw()# - 
@@ -687,26 +692,40 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             if not ((r.spellData['scenario'] == 'none') or ((r.spellData['scenario'] != 'baseline') and (rs_age_i_dt > r.spellData['spellStart']) and (rs_age_i_dt <= r.spellData['spellEnd']))):
                 r.flow1d1d_w = np.zeros(thetaCyl.shape)
                     
+            
             if rank == 0:
                 if max(abs(outer_R_bc_wat )) > 0:
                     assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
-                    proposed_outer_fluxes = r.splitSoilVals(outer_R_bc_wat / dt,thetaCyl,#preassureHeads,
-                                                           isWater = True, verbose = False) #cm3/day
+                    seg_fluxes_root = seg_fluxes.copy()
+                    seg_fluxes_root[np.array(r.organTypes)!=2] = 0.
+                    potentaillyAvailableWater = (waterContentOld +  (seg_fluxes_root + r.flow1d1d_w)* dt )/cylVol
+                    proposed_outer_fluxes = r.splitSoilVals(
+                        outer_R_bc_wat / dt,seg_values = potentaillyAvailableWater,
+                        seg_volume=cylVol, dt =dt,
+                        isWater = True, verbose = False) #cm3/day
                     #print(rank, 'got water')
                 else:
                     proposed_outer_fluxes = np.full(len(organTypes), 0.)   
                 if r.mpiVerbose:# or (max_rank == 1):
                     if rank == 0:
                         print(rank, 'got proposed_outer_fluxes')
+                rhizoWAfter_4splitVals = rhizoWAfter_.copy()
+                rhizoWAfter_4splitVals[np.array(r.organTypes)!=2] = 1. # to avoid division by 0
                 if max(abs(outer_R_bc_sol[0] )) > 0:
-                    proposed_outer_sol_fluxes = r.splitSoilVals(outer_R_bc_sol[0] / dt, comp1content)#mol/day
+                    proposed_outer_sol_fluxes = r.splitSoilVals(outer_R_bc_sol[0] / dt,
+                                                                seg_volume = rhizoWAfter_4splitVals,
+                                                                dt =dt,
+                                                                seg_values =comp1content/rhizoWAfter_4splitVals)#mol/day
                 else:
                     proposed_outer_sol_fluxes = np.full(len(organTypes), 0.)
                 if r.mpiVerbose:# or (max_rank == 1):
                     if rank == 0:
                         print(rank, 'got proposed_outer_sol_fluxes')
                 if max(abs(outer_R_bc_sol[1] )) > 0:
-                    proposed_outer_mucil_fluxes = r.splitSoilVals(outer_R_bc_sol[1] / dt, comp2content)
+                    proposed_outer_mucil_fluxes = r.splitSoilVals(outer_R_bc_sol[1] / dt,
+                                                                seg_volume = rhizoWAfter_4splitVals,
+                                                                  dt =dt,
+                                                                  seg_values = comp2content/rhizoWAfter_4splitVals)
                 else:
                     proposed_outer_mucil_fluxes = np.full(len(organTypes), 0.)
                 if r.mpiVerbose:# or (max_rank == 1):
@@ -1205,13 +1224,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                         test_values.remove(value)
                         break                        
                 #write_file_float("setsource_"+str(idComp), res, directory_ =results_dir) #mol/day
-                if not doMinimumPrint:
+                if True: #not doMinimumPrint:
                     write_file_array("setsourceLim1_"+str(idComp),  soil_sources_limited[idComp], 
                                      directory_ =results_dir, fileType =".csv") 
                     write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
                 #print('res',soil_sources_limited[idComp],res)
                 s.setSource(res.copy(), eq_idx = idComp)  # [mol/day], in modules/richards.py
-            if not doMinimumPrint:
+            if True: # not doMinimumPrint:
                 write_file_array("setsourceLim1_"+str(s.numComp+1),  soil_sources_limited[s.numComp+1], 
                                      directory_ =results_dir, fileType =".csv") 
             
@@ -1335,6 +1354,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             s.bulkMassErrorWater_absLim = abs(sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes_limited)*dt))
             s.bulkMassErrorWater_abs = abs(sum(new_soil_water) - (sum(soil_water) + sum(soil_fluxes)*dt))
+            s.bulkMassErrorWater_relLim  = abs(s.bulkMassErrorWater_absLim  /sum(new_soil_water) )*100
             s.bulkMassErrorWater_rel = abs(s.bulkMassErrorWater_abs /sum(new_soil_water) )*100
             
             s.bulkMassCErrorPlant_absReal = buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil))
@@ -1469,7 +1489,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                                     verbose_ = False) # just to get error value, will not throw an error
             rx = np.array(rs.psiXyl)
             
-            rsx = r.get_inner_heads(weather=r.weatherX)  # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models (not extrapolation to the interface!) [cm]
+            rsx = comm.bcast(r.get_inner_heads(weather=r.weatherX) ,root=0) # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models (not extrapolation to the interface!) [cm]
             if rank == 0:
                 rsx_divide = np.where(rsx!=0.,rsx,1.)
                 errWrsiAll = abs((rsx - rsx_old)/rsx_divide)*100.
@@ -1483,11 +1503,18 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                 raise Exception
             
                 
-            if adaptRSI:
-                rsx_set = (rsx+rsx_old)/2
-            else:
-                rsx_set = rsx
+            write_file_array("fpit_psi_sri_set", 
+                             rsx_set, directory_ =results_dir, fileType = '.csv') 
+            rsx_divide = np.where(abs(rsx) < abs(rsx_set),
+                                  rsx,rsx_set)
+            errWrsiRealInput =  abs((rsx - rsx_set)/rsx_divide)*100.
+            errWrsiRealInput[abs(rsx - rsx_set)<= 5]= 0.
+            errWrsiRealInputf = max(errWrsiRealInput)
+            if rank == 0:
+                print("errWrsiRealInput:",errWrsiRealInputf)
+            rsx_set = rsx
             rsx_old = rsx_set.copy()
+            rsx_olds.append(rsx)
             
             
             diffBCS1dsFluxIn =   np.array(rs.outputFlux)  - seg_fluxes_old   #only for water as plant exud is outside of loop
@@ -1563,8 +1590,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.rhizoMassWError_abs = comm.bcast(r.rhizoMassWError_abs,root= 0)
             r.rhizoMassCError_abs = comm.bcast(r.rhizoMassCError_abs,root= 0)
             
-            r.err = comm.bcast(max(errRxPlant,r.rhizoMassWError_rel,  errW3ds,errC1ds, errC3ds, #errWrsi
-                                   s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel),root= 0)
+            r.err = comm.bcast(max(errRxPlant,
+                                   r.rhizoMassWError_rel, r.rhizoMassCError_rel, errWrsiRealInputf,errWrsi,errW1ds,
+                                   errW3ds,errC1ds, errC3ds, 
+                                  s.bulkMassErrorWater_rel, s.bulkMassCErrorPlant_rel, 
+                                   s.bulkMassCError1ds_rel),root= 0)
             r.maxDiff1d3dCW_abs =np.array( comm.bcast(r.maxDiff1d3dCW_abs,root= 0))
             
             compErrorAboveLim = np.where(r.sumDiff1d3dCW_abs > 1e-13) 
@@ -1597,21 +1627,31 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     print("cyl3plant:GOTerrsandCo", rank)
                 #comm.barrier()
                 
-            r.errs =np.array([errRxPlant, errW1ds, errW3ds,errC1ds, errC3ds, 
+            r.bulkMassErrorWater_rel = s.bulkMassErrorWater_rel
+            r.bulkMassErrorWater_relLim = s.bulkMassErrorWater_relLim
+            r.errs =np.array([errRxPlant, errW1ds, errW3ds,errWrsiRealInputf,errWrsi,errC1ds, errC3ds, 
                             max(r.SinkLim3DS),max(abs(r.SinkLim1DS)),max(abs(r.OutLim1DS)),
                             max(abs(r.InOutBC_Cdiff.reshape(-1))),
                             max(r.maxDiff1d3dCW_abs), 
-                            errWrsi,#maxDiff1d3dCW_absBU, 
+                            #maxDiff1d3dCW_absBU, 
                             s.bulkMassErrorWater_abs,s.bulkMassErrorWater_absLim,
-                            r.rhizoMassWError_absLim,r.rhizoMassWError_abs,
+                            r.rhizoMassWError_abs,r.rhizoMassWError_absLim,
                             s.bulkMassCError1ds_abs,s.bulkMassCErrorPlant_abs,
-                            r.rhizoMassCError_absLim,r.rhizoMassCError_abs,
+                            r.rhizoMassCError_abs,r.rhizoMassCError_absLim,
+                              
+                              
+                            s.bulkMassErrorWater_rel,s.bulkMassErrorWater_relLim,
+                            r.rhizoMassWError_rel,r.rhizoMassWError_relLim,
+                            s.bulkMassCError1ds_rel,s.bulkMassCErrorPlant_rel,
+                            r.rhizoMassCError_rel,r.rhizoMassCError_relLim,
+                              
+                              
                             sum(abs(diffBCS1dsFluxIn)), 
                             sum(abs(diffBCS1dsFluxOut)),
                             sum(abs(diffouter_R_bc_wat)),
                             sum(abs(diffBCS1dsFluxOut_sol.reshape(-1))),sum(abs(diffBCS1dsFluxOut_mucil)),
                               sum(abs(diffouter_R_bc_sol.reshape(-1))), 
-                           r.diff1d3dCurrant,r.diff1d3dCurrant_rel, r.rhizoMassWError_rel,r.err ])
+                           r.diff1d3dCurrant,r.diff1d3dCurrant_rel,r.err ])
             
             rhizoWaterPerVoxel = r.getWaterVolumesCyl(doSum = False, reOrder = True)
             
@@ -1629,7 +1669,11 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                              r.flow1d1d_mucil, 
                              directory_ =results_dir, fileType = '.csv') 
             write_file_array("inner_errDiffBCs", r.errDiffBCs, directory_ =results_dir, fileType = '.csv') 
-            if  (not doMinimumPrint):#(n_iter % skip == 0) and 
+
+            write_file_array("fpit_psi_sri_real", rsx, directory_ =results_dir, fileType = '.csv')
+            
+            if True: #  (not doMinimumPrint) or (n_iter > 40):#(n_iter % skip == 0) and 
+                    
                     write_file_array("fpit_errbulkMass",
                                      np.array([s.bulkMassCErrorPlant_abs,
                                                s.bulkMassCErrorPlant_rel, #not cumulative
@@ -1644,7 +1688,6 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     write_file_array("fpit_errorMassRhizo", np.array([r.rhizoMassCError_abs, r.rhizoMassCError_rel,
                                                             r.rhizoMassWError_abs, r.rhizoMassWError_rel]), 
                                      directory_ =results_dir, fileType = '.csv')# not cumulativecumulative (?)
-                    
                     write_file_array("fpit_diffBCS1dsFluxOut_sol", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                     write_file_array("fpit_diffBCS1dsFluxOut_mucil", diffBCS1dsFluxOut, directory_ =results_dir, fileType = '.csv') 
                     
@@ -1818,9 +1861,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
                     
                     write_file_array("fpit_outer_R_bc_watBis", outer_R_bc_wat[cellIds], directory_ =results_dir, fileType = '.csv') 
                     write_file_array("fpit_psi_sri_error", errWrsiAll, directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_psi_sri_errorRoot", errWrsiAll[rhizoSegsId], directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_psi_sri_set", rsx_set, directory_ =results_dir, fileType = '.csv') 
-                    write_file_array("fpit_psi_sri_real", rsx, directory_ =results_dir, fileType = '.csv') 
+                    write_file_array("fpit_psi_sri_errorRoot", errWrsiAll[rhizoSegsId], directory_ =results_dir, fileType = '.csv')  
                     write_file_array("fpit_new_soil_water", new_soil_water, directory_ =results_dir, fileType = '.csv') 
                     write_file_array("fpit_rhizoWaterPerVoxel", rhizoWaterPerVoxel, directory_ =results_dir, fileType = '.csv') 
                     write_file_array("fpit_rx", rx, directory_ =results_dir, fileType = '.csv') 

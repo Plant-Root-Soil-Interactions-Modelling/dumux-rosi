@@ -85,12 +85,16 @@ if __name__ == '__main__':
     noAds = False
     doSimple =False
     doMinimumPrint =  True
-
-    min_b = np.array([-3./2, -12./2, -41.])
-    cell_number =np.array( [3,12,41]) # 1cm3 
-    max_b =np.array( [3./2, 12./2, 0.])
-       
-    results_dir="./results/soilshape/"+str(int(np.prod(cell_number)))+"/"
+    if True:
+        min_b = np.array([-3./2, -12./2, -40.])
+        cell_number =np.array( [3,12,41]) # 1cm3 
+        max_b =np.array( [3./2, 12./2, 0.])
+    else:
+        min_b = np.array([0,0,0])
+        cell_number =np.array( [1,1,1]) # 1cm3 
+        max_b =np.array( [1,1,1])
+    
+    results_dir="./results/soilshape/"+str(int(np.prod(cell_number)))+"bis/"
     
     #comm.barrier()
     if rank == 0:
@@ -121,7 +125,7 @@ if __name__ == '__main__':
                 min_b, max_b, cell_number, demoType = None, times = None, net_inf = None,
                 usemoles = True, dirResults = results_dir, p_mean_ = -100, 
                                          css1Function = 9,
-                                        paramIndx=0,
+                                        paramIndx=5,
                                         noAds = noAds)
 
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
@@ -138,4 +142,6 @@ if __name__ == '__main__':
     write_file_array("cellcentersX", np.array(cellcentersX), directory_ =results_dir) # cm3
     write_file_array("cellcentersY", np.array(cellcentersY), directory_ =results_dir) # cm3
     write_file_array("cellcentersZ", np.array(cellcentersZ), directory_ =results_dir) # cm3
+    allcconcent= [s.getContent(nc, nc<=2).mean() for nc in range(1,9)]
+    print(allcconcent, sum(allcconcent) )
     

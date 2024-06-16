@@ -251,11 +251,11 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     Q_Exud_i = None
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
     error_st_abs = 0;error_st_rel=0
-    errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errC1ds", "errC3ds",
+    errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errWrsiRealInput","errWrsi","errC1ds", "errC3ds",
                      "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(abs(r.OutLim1DS))",
                      "max(abs(r.InOutBC_Cdiff))",
                      "max(r.maxDiff1d3dCW_abs)",
-                     "errWrsi",# "maxDiff1d3dCW_absBU",
+                     # "maxDiff1d3dCW_absBU",
                      "bulkMassErrorWater_abs","bulkMassErrorWater_absLim",
                      "rhizoMassWError_absLim","rhizoMassWError_abs",
                      "bulkMassErrorC_abs","bulkMassCErrorPlant",

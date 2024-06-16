@@ -137,8 +137,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 20/60/24
     #p_mean = -100
-    k_iter = 6#20
-    targetIter= 5
+    k_iter =50 # 6#20
+    targetIter= 40 #
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
     weightBefore = False
@@ -155,6 +155,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     noAds = False
     doSimple =False
     doMinimumPrint =  True
+    doMean = True
     
     doOldCell = False
     if doSimple:
@@ -166,8 +167,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         min_b = np.array([-5, -5, -10.])# 
         cell_number =np.array([5,5,20])#
     else:
-        min_b = np.array([-3./2, -12./2, -40.])#41
-        cell_number =np.array( [3,12,41]) # 1cm3 np.array( [3,6,40]) #
+        min_b = np.array([-3./2, -12./2, -41.])
+        cell_number =np.array( [3,12,41]) # 1cm3 
         max_b =np.array( [3./2, 12./2, 0.])
        
     #+str(int(useOuterFluxCyl_w))+str(int(useOuterFluxCyl_sol)) \
@@ -176,7 +177,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/newtrans7/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/testspeed/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -239,6 +240,9 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                         paramIndx=paramIndx_,
                                         noAds = noAds)
 
+
+    
+
     if organism == "plant":
         path = "../../../CPlantBox/modelparameter/structural/plant/"
         xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter file
@@ -250,7 +254,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         xml_name = "../../grids/RootSystem8.rsml"
     else:
         raise Exception
-    
 
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =results_dir) # cm3 
     write_file_array("cellIds", np.array(s.cellIndices), directory_ =results_dir) # cm3
@@ -275,7 +278,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                                             recreateComsol_ = recreateComsol,
                                             usemoles = usemoles,l_ks_ = l_ks,
                                             limErr1d3d = 5e-13, spellData = spellData)  # pass parameter file for dynamic growth
-
+    rs.doMean = doMean
     rs.weightBefore = weightBefore
     rs.SRIBefore = SRIBefore
     rs.beforeAtNight = beforeAtNight
@@ -345,20 +348,27 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     Q_Exud_i = None; Q_Mucil_i = None
     Q_Exud_i_seg = np.array([]); Q_Mucil_i_seg = np.array([])
     error_st_abs = 0;error_st_rel=0
-    errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errC1ds", "errC3ds",
+    errs = np.array(["errRxPlant", "errW1ds", "errW3ds","errWrsiRealInput","errWrsi","errC1ds", "errC3ds",
                      "max(r.SinkLim3DS)","max(r.SinkLim1DS)","max(abs(r.OutLim1DS))",
                      "max(abs(r.InOutBC_Cdiff))",
                      "max(r.maxDiff1d3dCW_abs)",
-                     "errWrsi",# "maxDiff1d3dCW_absBU",
+                     # "maxDiff1d3dCW_absBU",
+                     
                      "bulkMassErrorWater_abs","bulkMassErrorWater_absLim",
-                     "rhizoMassWError_absLim","rhizoMassWError_abs",
-                     "bulkMassErrorC_abs","bulkMassCErrorPlant",
-                     "rhizoMassCError_absLim","rhizoMassCError_abs",
+                     "rhizoMassWError_abs","rhizoMassWError_absLim",
+                     "bulkMassErrorC_abs","bulkMassCErrorPlant_abs",
+                     "rhizoMassCError_abs","rhizoMassCError_absLim",
+                     
+                     "bulkMassErrorWater_rel","bulkMassErrorWater_relLim",
+                     "rhizoMassWError_rel","rhizoMassWError_relLim",
+                     "bulkMassErrorC_rel","bulkMassCErrorPlant_rel",
+                     "rhizoMassCError_rel","rhizoMassCError_relLim",
+                     
                      "sum(abs(diffBCS1dsFluxIn))", "sum(abs(diffBCS1dsFluxOut))",
                      "sum(abs(diffouter_R_bc_wat))",
                      "sum(abs(diffBCS1dsFluxOut_sol))",
                      "sum(abs(diffBCS1dsFluxOut_mucil))","sum(abs(diffouter_R_bc_sol))",
-                     "diff1d3dCurrant","diff1d3dCurrant_rel","rhizoMassWError_rel",'err'])
+                     "diff1d3dCurrant","diff1d3dCurrant_rel",'err'])
     write_file_array("OuterSuccess_error", errs, directory_ =results_dir, fileType = '.csv')
     write_file_array("inner_error", errs, directory_ =results_dir, fileType = '.csv')
     
@@ -369,6 +379,10 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     dt_inner = float(dt)#/float(2.)
     start = True
     rs.new_soil_solute = np.array([0.])
+    rs.bulkMassErrorWater_rel = 0.
+    rs.rhizoMassWError_rel = 0.
+    rs.bulkMassErrorWater_relLim = 0.
+    rs.rhizoMassWError_relLim = 0.
     
     getVTPOutput(r,rs,s,[],[], rs_age*100, results_dir, min_b, max_b, cell_number,initPrint=True)#[np.array(rs.organTypes)], ["organTypes"],
     while rs_age < simMax:
@@ -465,18 +479,18 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         write_file_array("content_diff1d3drel"+str(0), 
                          rs.allDiff1d3dCW_rel[0], directory_ =results_dir, fileType = '.csv')
         for nc in range(rs.numComp):# normally all 0 for nc >= numFluidComp
-                write_file_array("content_diff1d3dabs"+str(nc+1), 
+            write_file_array("content_diff1d3dabs"+str(nc+1), 
                                  rs.allDiff1d3dCW_abs[nc+1], directory_ =results_dir, fileType = '.csv')
-                write_file_array("content_diff1d3drel"+str(nc+1), 
+            write_file_array("content_diff1d3drel"+str(nc+1), 
                                  rs.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
 
-                write_file_array("sol_content3d"+str(nc+1), 
+            write_file_array("sol_content3d"+str(nc+1), 
                                  s.getContent(nc+1, nc < s.numFluidComp), 
                                  directory_ =results_dir, fileType = '.csv')  
-                write_file_array("sol_content1d"+str(nc+1), 
+            write_file_array("sol_content1d"+str(nc+1), 
                                  rs.getContentCyl(idComp = nc+1, doSum = False, reOrder = True), 
-                                 directory_ =results_dir, fileType = '.csv') 
-            
+                                 directory_ =results_dir, fileType = '.csv')
+
 
             
         
@@ -527,6 +541,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             #  or (abs(rs.rhizoMassWError_abs) > 1e-13) or (abs(rs.rhizoMassCError_abs) > 1e-9) or (max(abs(rs.errDiffBCs*0)) > 1.)
             n_iter_min = 4
             cL = ((np.floor(rs.err) > max_err) or  rs.solve_gave_up or failedLoop
+            or (rs.bulkMassErrorWater_rel > rs.bulkMassErrorWater_relLim*10)
+            or (rs.rhizoMassWError_rel > rs.rhizoMassWError_relLim*10)
                     or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
                     or (np.floor(rs.maxdiff1d3dCurrant_rel*100.)/100.>0.001) 
                     or (min(rs.new_soil_solute.reshape(-1)) < 0)  
@@ -1088,8 +1104,6 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
             write_file_array("Q_Mucil_dot", Q_Mucil_dot , directory_ =results_dir)
             
 
-            if not doMinimumPrint:
-                write_file_array("TotSoilC", s.getTotCContent(), directory_ =results_dir)
             write_file_array("Q_Gr_i", Q_Gr_i, directory_ =results_dir)
             write_file_array("Q_Rm_i",Q_Rm_i, directory_ =results_dir)
             write_file_array("Q_Exud_i", Q_Exud_i, directory_ =results_dir)
@@ -1142,6 +1156,7 @@ if __name__ == '__main__':
     # python3 XcGrowth.py 10 dumux_10c 10.06 0 customDry xx 10.02 0.02
     # python3 XcGrowth.py 9 dumux_10c 10 3 none
     # python3 XcGrowth.py 10 dumux_10c 14 85 none
+    # python3 XcGrowth.py 9 dumux_10c 25 5 earlyDry
     if rank == 0:
         print('sys.argv',sys.argv)
     initsim =float(sys.argv[1])# initsim = 9.5
