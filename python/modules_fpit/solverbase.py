@@ -25,8 +25,11 @@ class SolverWrapper():
         self.bulkDensity_m3 =0 #mol / m3 bulk soil
         self.molarMassWat = 18. # [g/mol]
         self.densityWat_m3 = 1e6 #[g/m3]
+        self.m3_per_cm3 = 1e-6 #m3/cm3
+        self.cm3_per_m3 = 1e6 #cm3/m3
         # [mol/m3] = [g/m3] /  [g/mol] 
         self.molarDensityWat_m3 =  self.densityWat_m3 / self.molarMassWat # [mol wat/m3 wat] 
+        self.molarDensityWat_cm3 =  self.molarDensityWat_m3 /1e6 # [mol wat/cm3 wat] 
         
 
     def initialize(self, args_ = [""], verbose = False):
@@ -48,11 +51,14 @@ class SolverWrapper():
         self.base.reset()
         
     def resetManual(self):
-        """ reset solution vector to value before solve function """
+        """ reset outer solution vector to value before solve function """
         self.base.resetManual()
     def saveManual(self):
-        """ reset solution vector to value before solve function """
+        """ reset outer solution vector to value before solve function """
         self.base.saveManual()
+    def save(self):
+        """ reset solution vector to value before solve function """
+        self.base.save()
     def setVerbose(self, verbose:int):
         """ set verbose level """
         self.base.setVerbose(verbose)
@@ -97,7 +103,7 @@ class SolverWrapper():
         offsets =tuple( offsets)
         # print("offsets",offsets,all_sizes)
         
-        if verbose_ and (self.mpiVerbose and (size > 1)):
+        if verbose_ and (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print('before allgatherv',rank,'all_sizes',all_sizes,
                   'offsets',offsets,'work_size',work_size,#'X_rhizo'X_rhizo,[all_X_rhizo,all_sizes,offsets],
@@ -121,7 +127,7 @@ class SolverWrapper():
                 #print('allgathervCb, before reshape, in if shape1 <= 0',rank,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1, shape1 > 0)
                 all_X_rhizo = all_X_rhizo.reshape(-1)
         
-        if verbose_ and (self.mpiVerbose and (size > 1)):
+        if verbose_ and (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print('allgathervC, after reshape',rank, 'keepShape',keepShape,'shapes',all_X_rhizo.shape,(X_rhizo).shape,'shape0',shape0,'shape1',shape1 )
             comm.barrier()
@@ -189,7 +195,7 @@ class SolverWrapper():
         #print(rank, 'initialize problem')
         self.base.initializeProblem()
         #print(rank, 'initialized problem')
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             print(rank, 'initialized problem')
         
         self.dofIndices_   = self.base.getDofIndices()
@@ -226,7 +232,7 @@ class SolverWrapper():
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getPoints", rank)
             comm.barrier()
@@ -241,7 +247,7 @@ class SolverWrapper():
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getCellCenters", rank)
             comm.barrier()
@@ -256,7 +262,7 @@ class SolverWrapper():
     def getDofCoordinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getDofCoordinates", rank)
             comm.barrier()
@@ -270,7 +276,7 @@ class SolverWrapper():
 
     def getCells(self):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getCells", rank)
             comm.barrier()
@@ -283,7 +289,7 @@ class SolverWrapper():
 
     def getCellSurfacesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getCellSurfacesCyl", rank)
             comm.barrier()
@@ -296,7 +302,7 @@ class SolverWrapper():
         
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        #if (self.mpiVerbose and (size > 1)):
+        #if (self.mpiVerboseInner and (size > 1)):
         #    comm.barrier()
         #    print("solverbase::getCellVolumes", rank)
         #    comm.barrier()
@@ -308,7 +314,7 @@ class SolverWrapper():
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getCellVolumesCyl", rank)
             comm.barrier()
@@ -361,7 +367,7 @@ class SolverWrapper():
         model dependent units [Pa, ...]"""
         self.checkInitialized()
         
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getSolution", rank)
             comm.barrier()
@@ -384,7 +390,7 @@ class SolverWrapper():
     def getNeumann(self, gIdx, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         assert not self.useMoles
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getNeumann", rank)
             comm.barrier()
@@ -393,7 +399,7 @@ class SolverWrapper():
     def getAllNeumann(self, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         assert not self.useMoles
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getAllNeumann", rank)
             comm.barrier()
@@ -420,7 +426,7 @@ class SolverWrapper():
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
         assert not self.useMoles
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::getNetFlux", rank)
             comm.barrier()
@@ -551,7 +557,7 @@ class SolverWrapper():
         @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
         """
         verbose_ = False
-        if verbose_ and (self.mpiVerbose and (size > 1)):
+        if verbose_ and (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::_map", rank)
             comm.barrier()
@@ -591,7 +597,7 @@ class SolverWrapper():
 
     def _flat0(self, xx):
         """flattens the gathered list in rank 0, empty list for other ranks """
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("solverbase::_flat0", rank,xx)
             comm.barrier()

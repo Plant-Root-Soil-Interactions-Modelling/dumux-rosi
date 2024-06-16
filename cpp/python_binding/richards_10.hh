@@ -23,6 +23,21 @@ public:
     using NumEqVector = typename Problem::NumEqVector;
 	
 	
+	void setComputeDtCSS2(const std::function<double(double,double,double)>& s)
+    {
+        this->problem->computeDtCSS2 = s;
+    }
+    
+	double computeDtCSS2(double CSS1, double CSW, double CSS2)
+    {
+        return this->problem->computeDtCSS2(CSS1, CSW, CSS2);
+    }
+    
+	double computeInitCSS2(double CSS1, double CSW)
+    {
+        return this->problem->computeInitCSS2_(CSS1, CSW);
+    }
+    
 	void setFaceGlobalIndexSet(std::map<int,int>  faceIdx)
 	{
 		this->problem->setFaceGlobalIndexSet(faceIdx);// = faceIdx;
@@ -136,6 +151,9 @@ void init_richards_10(py::module &m, std::string name) {
    .def("initialize", &Richards_::initialize, py::arg("args_") = std::vector<std::string>(0), 
 													py::arg("verbose") = true,py::arg("doMPI") = true)
    .def("setSource", &Richards_::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
+   .def("setComputeDtCSS2",&Richards_::setComputeDtCSS2)
+   .def("computeDtCSS2",&Richards_::computeDtCSS2)
+   .def("computeInitCSS2",&Richards_::computeInitCSS2)
    .def("applySource", &Richards_::applySource)
    .def("setCriticalPressure", &Richards_::setCriticalPressure)
    .def("setInitialConditionHead", &Richards_::setInitialConditionHead)

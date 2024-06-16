@@ -29,7 +29,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         #print(rank, 'initialize problem')
         self.base.initializeProblem()
         #print(rank, 'initialized problem')
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             print(rank, 'initialized problem')
         
         self.dofIndices_   = self.base.getDofIndices()
@@ -55,7 +55,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        return self._map((self.base.getSolutionHead(eqIdx)), 0)
+        return self._map((self.base.getSolutionHead(eqIdx)), 0)        
 
     def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
         return X_rhizo
@@ -288,7 +288,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             if selectCell == None:
                 if eqIdx == 0:
                     seg_values_ = self.getSolutionHead()#self.getWaterVolumes()#getWaterVolumesCyl(length)
-                    seg_values = seg_values_ - min(seg_values_) +1e-14
+                    seg_values = seg_values_ - min(seg_values_)- np.mean(seg_values_) +1e-14
                 else:
                     isDissolved = (eqIdx <= numFluidComp)
                     seg_values = self.getContentCyl(eqIdx, isDissolved)

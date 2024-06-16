@@ -16,11 +16,23 @@ class RichardsWrapper(SolverWrapper):
         self.soils = []
         self.param_group = "Soil."
         self.useMoles = usemoles
-        self.mpiVerbose = False
+        self.mpiVerboseInner = False
+        self.molarMassC = 12.011 # g/mol
 
     def setParameterGroup(self, group:str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
         self.param_group = group
+        
+    def setComputeDtCSS2(self,DtCSS2):        
+        return self.base.setComputeDtCSS2(DtCSS2)  
+        
+    def computeDtCSS2(self,CSS1, CSW, CSS2):    
+        # mol/m3/s * m3/cm3 * s/d => mol/cm3/d 
+        return  self.base.computeDtCSS2(CSS1, CSW, CSS2) * self.m3_per_cm3 * (24*3600)    
+    
+    def computeInitCSS2(self,CSS1, CSW):    
+        # mol/m3 * m3/cm3 => mol/cm3 
+        return  self.base.computeInitCSS2(CSS1, CSW) * self.m3_per_cm3 
 
     @staticmethod
     def dumux_str(l):
@@ -94,7 +106,7 @@ class RichardsWrapper(SolverWrapper):
             assert(len(c) == len(z))  # sample points
             self.setParameter(self.param_group + "IC.CZ", self.dumux_str(np.array(z) / 100.))
 
-    def setHomogeneousIC(self, p:float, equilibrium = False):
+    def setHomogeneousIC(self, p:float, equilibrium = False, doReturn = False):
         """ sets homogeneous initial condions 
         
         @param p              mean matric potential [cm] pressure head
@@ -375,7 +387,7 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getSolutionHead", rank)
             comm.barrier()
@@ -394,7 +406,7 @@ class RichardsWrapper(SolverWrapper):
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getKrw", rank)
             comm.barrier()
@@ -404,7 +416,7 @@ class RichardsWrapper(SolverWrapper):
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getSaturation", rank)
             comm.barrier()
@@ -413,7 +425,7 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkInitialized()
-        if (self.mpiVerbose and (size > 1)):
+        if (self.mpiVerboseInner and (size > 1)):
             comm.barrier()
             print("richards::getWaterContent", rank)
             comm.barrier()
@@ -538,7 +550,8 @@ class RichardsWrapper(SolverWrapper):
         return self.f_sorp * temp /1e6
         
     def getCSS1_out(self):#mol C / cm3 scv
-        return self._map(self.allgatherv(self.getCSS1_out_()),0)
+        temp = self._map(self.allgatherv(self.getCSS1_out_()),0)
+        return temp
         #else:
         #    return self.getCSS1_out_real()
         

@@ -5,6 +5,7 @@ results/
 results_water_only/
 230426/
 template/
-PLOTS/
 tests/
 Optimization_RS/
+*.pkl
+*.txt

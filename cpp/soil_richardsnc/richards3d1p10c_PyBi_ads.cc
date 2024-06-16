@@ -147,6 +147,8 @@ int main(int argc, char** argv) //try
 	// Soil.Grid.Cells
 	std::cout<<"grid created"<<std::endl;
 	std::cout<<"to initializeProblem"<<std::endl;
+    
+    
     s.initializeProblem();
 	std::map<int, double> sourceMap;// mol/s
 	double flux = getParam<double>("Soil.sourceCs");

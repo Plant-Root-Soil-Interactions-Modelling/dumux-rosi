@@ -7,6 +7,7 @@ build-*
 # hidden files
 .cproject
 .project
+corso2020output.csv # do not share raw data of corso2020
 
 # latex clutter
 *.pdf
@@ -24,6 +25,7 @@ build-*
 *.pyc
 __pycache__
 .ipynb_checkpoints
+*/.ipynb_checkpoints/*
 
 # shared libraries
 *.so

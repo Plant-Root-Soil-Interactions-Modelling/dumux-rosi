@@ -54,6 +54,8 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         pass
     def saveManual(self):
         pass
+    def save(self):
+        pass
     #water
     #get
     def getInnerHead(self,shift=0, val:float=-90000):  # [cm]
