@@ -1002,6 +1002,11 @@ public:
 		resetInnerValsManual();
 	}
 	
+    virtual void save() {
+        checkGridInitialized();
+		xBackUp = x;
+	}
+    
 	// save/store value to reset them with resetManual()   
     virtual void saveManual() {
         checkGridInitialized();
@@ -1179,6 +1184,7 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("reset", &Solver::reset)
 			.def("resetManual", &Solver::resetManual)
 			.def("saveManual", &Solver::saveManual)
+			.def("save", &Solver::save)
             // simulation
             .def("solve", &Solver::solve, py::arg("dt"), py::arg("doMPIsolve")=true, 
 					py::arg("saveInnerDumuxValues")=false)

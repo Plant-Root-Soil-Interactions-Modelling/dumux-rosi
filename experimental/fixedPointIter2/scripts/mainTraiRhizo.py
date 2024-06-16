@@ -34,6 +34,7 @@ import scenario_setup
 def XcGrowth(initsim, simMax,paramIndx_,spellData): 
     path = "../../../../CPlantBox/modelparameter/structural/plant/"
     xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
+    MaxRelativeShift = 1e-8 if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #
@@ -49,7 +50,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     doPhotosynthesis = True # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
     # at the beginning of the time step. Otherwise does not converge
-    do1d1dFlow = True
+    do1d1dFlow = False
     beforeAtNight = False #True  
     # static or growing organism
     static_plant = False
@@ -84,7 +85,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/99p/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/paperSc/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -105,7 +106,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                results_dir = results_dir, 
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
-                                        noAds = noAds, doSoluteFlow = doSoluteFlow)
+                                        noAds = noAds, doSoluteFlow = doSoluteFlow,
+                                        MaxRelativeShift = MaxRelativeShift)
 
     
 
@@ -123,9 +125,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     plantModel.maxTranspirationAge = maxTranspirationAge
     
     perirhizalModel.do1d1dFlow = do1d1dFlow
-    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
-    perirhizalModel.weather = weatherFunctions.weather 
-    perirhizalModel.weatherChange = weatherFunctions.weatherChange 
+    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
     perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
@@ -259,7 +259,6 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 
                 helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
                 
-                raise Exception
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
         

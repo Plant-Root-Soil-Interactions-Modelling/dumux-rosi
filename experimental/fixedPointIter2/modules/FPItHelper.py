@@ -48,6 +48,7 @@ class fixedPointIterationHelper():
         self.soil_water3dAfter_old = 0 # 
         self.totC3dAfter_eachVoxeleachComp_old = 0 # colute content [mol]
         self.rhizoWAfter_eachCyl_old = np.full(self.numSegs,0.) # water content in 1d models at the end of the time step
+        self.rhizoWAfter_eachCyl = self.perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model
         self.rhizoTotCAfter_eachCyl_old = np.full(self.numSegs,0.) # solute content in 1d models at the end of the time step
         self.seg_fluxes_old = 0 # plant-soil water exchanges
         self.proposed_outer_fluxes_old = 0 # 3d to 1d water flux
@@ -132,7 +133,8 @@ class fixedPointIterationHelper():
             outer_R_bc_wat[self.emptyCells] = 0.
             for nc in range(perirhizalModel.numDissolvedSoluteComp):
                 outer_R_bc_sol[nc][self.emptyCells] = 0.# only use BC for cells with at least one root
-                
+        
+        
         if rank == 0:
             if max(abs(outer_R_bc_wat )) > 0:
                 assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
@@ -144,19 +146,24 @@ class fixedPointIterationHelper():
                                                  
             else:
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
+                
+            rhizoWAfter_eachCyl4splitVals = self.rhizoWAfter_eachCyl.copy()
+            rhizoWAfter_eachCyl4splitVals[np.array(perirhizalModel.organTypes) !=2]=1. # to avoind division by 0.
 
             if max(abs(outer_R_bc_sol[0] )) > 0:
                 proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[0] / dt, 
-                                                seg_values=self.comp1content, dt = dt,
-                                                seg_volume=self.cylVol, isWater = False)#mol/day
+                                                seg_values=self.comp1content/rhizoWAfter_eachCyl4splitVals, dt = dt,
+                                                seg_volume= rhizoWAfter_eachCyl4splitVals.copy(), isWater = False)#mol/day
             else:
                 proposed_outer_sol_fluxes = np.full(self.numSegs, 0.)
                 
                 
             if max(abs(outer_R_bc_sol[1] )) > 0:
                 proposed_outer_mucil_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[1] / dt, 
-                                                                seg_values=self.comp2content, dt = dt,
-                                                                seg_volume=self.cylVol, isWater = False)
+                                              seg_values=self.comp2content/ rhizoWAfter_eachCyl4splitVals, 
+                                                                            dt = dt,
+                                               seg_volume=rhizoWAfter_eachCyl4splitVals.copy(),
+                                                                            isWater = False)
             else:
                 proposed_outer_mucil_fluxes = np.full(self.numSegs, 0.)
                 
@@ -418,11 +425,13 @@ class fixedPointIterationHelper():
         maxRelShift = s.MaxRelativeShift
         while redoSolve:
             s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
+            s.setMaxTimeStepSize(s.maxDt) # reset each time
             try:
                 decreaseMaxRelShift = False
                 if rank==0:
                     print("solve 3d soil")
-                s.solve(dt)  # in modules/solverbase.py
+                #s.solve(dt)  # in modules/solverbase.py
+                helpfull.run_with_timeout(60.*15.,s.solve,dt) # time out error after Xmn
                 if  rank==0:
                     print("solve 3d soil finished")
                 
@@ -730,7 +739,8 @@ class fixedPointIterationHelper():
         
         # convergence wat. pot. at root-soil interface            
         rsx =comm.bcast( perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX), root = 0)  # works for all threads
-        rsx_divide = np.where(abs(rsx) > abs(self.rsx_input),rsx,self.rsx_input)
+        rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
+                                  rsx,self.rsx_input)
         errWrsiRealInput =  abs((rsx - self.rsx_input)/rsx_divide)*100.
         errWrsiRealInput[abs(rsx - self.rsx_input)<= 5]= 0.
         errWrsiRealInputf = max(errWrsiRealInput)

@@ -37,20 +37,20 @@ decrease of the errors during the first 4 loops. Might need to adapt that for an
 - for 1ds and 3ds computation: manually adapt sink before hand to never send or take more than they can deal with
 - for splitsoilval and set sink3d: look at "potentially available water": water beginning of time step + [a] pwu for splitsoilval, [b] max(Q3d3d, 0.) for set sink 3d
 - resolution: higher dx makes it harder to solve but lower dx does not really help either. dxmin overwise not enought water.
+- ATT: where the old dumux threw a non-convergence error, this one can give back bad (eg. negative values) better do more check on the simulation outputs.
 
 
 # TODOs
-- implement solute uptake (N or P)
+- merge exudation_analysis_plant3 with master
+- implement plant solute uptake (N or P)
 - finish adding unit information + funciton description
-- separate phloem and plant water flow in different files, adapt transpiration
-- make messages print to consol more readable
 - merge fpit_clean with master branch, and merge file in fixedPointIter/modules with the default ones of the master branch
 - create test units for setup
-- limit in dumux the sink/source term (like for the bcs)
+- limit in dumux the sink/source term (like for the bcs)?
 - retry implementing the 1d1d flow
-- re-implement last update for my full setup
 - try using the kr and psoil at each inner-dumux time step.
-- stop sending cpp output to file via StdoutRedirector
+- implement analytic dumux solution for richardsnc problems
+- setup the other solvers for dumux10c
 - [.. to be completed by users..]
 
 # Other
@@ -59,6 +59,8 @@ decrease of the errors during the first 4 loops. Might need to adapt that for an
 - reset the update kr and kx for cplant box (use the adapted cplant box.
 
 ## implementation tillage:
+- use the mappedplant class. check that the obtained plant is the same as when using the rootsystem class.
+- set eps for vangenuchten functinos to 1e-10. see if creates issues.
 - because of the soil van genuchten parameters, a small change in water content leads to big change in soil watre potential.
  might level of precision in python might become an issue? 
  level precision 1e-14 seems enough > max level of precision python (15–17)

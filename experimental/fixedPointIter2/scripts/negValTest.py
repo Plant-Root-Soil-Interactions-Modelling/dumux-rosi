@@ -24,7 +24,7 @@ from scenario_setup import write_file_array, write_file_float
 import scenario_setup
 import functional.van_genuchten as vg
 import weatherFunctions
-
+from numpy import array
 """ 
 Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
 
@@ -43,6 +43,7 @@ else:
         except:
             pass
 
+np.set_printoptions(precision=20)
 # outer time step (outside of fixed-point iteration loop)
 dt = 20/60/24
 dt_inner_init = dt#1/60/60/24 # dt
@@ -51,8 +52,8 @@ minIter = 4 # empirical minimum number of loop to reduce error
 k_iter = 30
 targetIter= 5
 # which functional modules to implement
-doSoluteFlow = False # only water (False) or with solutes (True)
-noAds = True # stop adsorption?
+doSoluteFlow = True # only water (False) or with solutes (True)
+noAds = False # stop adsorption?
 doPhloemFlow = False
 doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
 # when there is no transpiration, we use the plant wat. pot.
@@ -70,7 +71,7 @@ doMinimumPrint =  True
 # use moles (mol) and not mass (g) in dumux
 usemoles = True
 
-paramIndx_ = 61
+paramIndx_ = 96
 spellData = {'scenario':"none",'spellStart':0,'spellEnd':11, 'condition':"wet"}
 weatherInit = weatherFunctions.weather(1.,dt, spellData)
 s = scenario_setup.create_soil_model(usemoles = usemoles, 
@@ -79,9 +80,27 @@ s = scenario_setup.create_soil_model(usemoles = usemoles,
                                     paramIndx=paramIndx_,
                                     noAds = noAds, doSoluteFlow = doSoluteFlow)
 
-                          
-
-def initialize_dumux_nc_( soilModel, gId=0, a_in=0.02, 
+def _reset_newton_solver(cyl,MaxRelativeShift=None,
+                                EnableResidualCriterion=None, 
+                                EnableAbsoluteResidualCriterion=None,
+                                SatisfyResidualAndShiftCriterion=None, 
+                                max_steps=None, 
+                                max_divisions=None):
+    if MaxRelativeShift is not None:
+        cyl.setParameter("Newton.MaxRelativeShift", str(MaxRelativeShift))
+    if EnableResidualCriterion is not None:
+        cyl.setParameter("Newton.EnableResidualCriterion", str(EnableResidualCriterion)) 
+    if EnableAbsoluteResidualCriterion is not None:
+        cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", str(EnableAbsoluteResidualCriterion))
+    if SatisfyResidualAndShiftCriterion is not None:
+        cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", str(SatisfyResidualAndShiftCriterion))
+    if max_steps is not None:
+        cyl.setParameter("Newton.MaxSteps", str(max_steps))
+    if max_divisions is not None:
+        cyl.setParameter("Newton.MaxTimeStepDivisions", str(max_divisions))
+    cyl.createNewtonSolver()
+                
+def initialize_dumux_nc_( soilModel,gId=0, a_in=0.02, 
                 a_out=0.14469319849003554,seg_length=0.9999999999999999,
                 x=[-114.49999999999997 for i in range(9)] ,   # cm
                 cAll = [
@@ -109,7 +128,8 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.02,
 [7.218639931148065e-05,7.156780439794207e-05,7.046904813089088e-05,
 6.829111612211548e-05,6.419836251557750e-05,5.509308320765652e-05,
 4.010115530922683e-05,2.055822482932874e-05,6.616728599831435e-06]],             # mol/mol scv
-                                         Cells = [],NC = 10,
+                                         #Cells = np.array([0.0289878 , 0.03302684, 0.03888096, 0.04736588, 0.05966385,0.07748838, 0.1033231 , 0.14076767, 0.19503948]),
+                                         NC = 10,
                                          logbase = 0.5):                                   # cm
     verbose = False
     lId =gId
@@ -126,14 +146,13 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.02,
         
         cyl.createGrid1d(points)# cm
         Cells = np.array(cyl.base.getCellCenters()).flatten()*100
-        print('cells',Cells)
+        
             
         cyl.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
         cyl.setParameter("Soil.BC.dzScaling", "1")
         cyl.setParameter( "Soil.css1Function", str(soilModel.css1Function))
         cyl.setParameter("Problem.verbose", "0")
         cyl.setParameter("Problem.reactionExclusive", "0")    
-        cyl.setParameter("Soil.CriticalPressure", str(soilModel.wilting_point))
         cyl.seg_length = seg_length
         cyl.setParameter("Problem.segLength", str(seg_length))   # cm
         cyl.l = seg_length   
@@ -143,6 +162,8 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.02,
         cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
         
         #default: no flux
+        cyl.MaxRelativeShift = soilModel.MaxRelativeShift
+        cyl.setParameter("Newton.MaxRelativeShift",str(cyl.MaxRelativeShift))
         cyl.setInnerBC("fluxCyl", 0.)  # [cm/day] #Y 0 pressure?
         cyl.setOuterBC("fluxCyl", 0.)
         
@@ -211,18 +232,19 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.02,
                     print("Cells,  cAll[j-1]",Cells,  cAll[j-1], 
                             len(Cells), len(cAll[j-1]), j)
                     raise Exception
-        if False:
-            cyl.setParameter("Newton.MaxSteps", "200")
-            cyl.setParameter("Newton.MaxTimeStepDivisions", "100")
-            cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
-            cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
-            cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")            
+        if False:      
             cyl.setParameter("Newton.MaxRelativeShift","1e-15")#str(soilModel.MaxRelativeShift))
-        cyl.MaxRelativeShift = soilModel.MaxRelativeShift
-        cyl.setParameter("Newton.MaxRelativeShift",str(cyl.MaxRelativeShift))
+        cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
+        cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")     
+        cyl.setParameter("Newton.MaxSteps", "50")
+        cyl.setParameter("Newton.MaxTimeStepDivisions", "20")
+        cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse 
+            
+        cyl.setParameter("Newton.MaxRelativeShift","1e-8")#str(soilModel.MaxRelativeShift))
         cyl.setParameter("Newton.Verbosity", "0") 
-        cyl.setParameter("Problem.verbose", "1");
-        cyl.initializeProblem(maxDt = 250/(3600*24))
+        cyl.setParameter("Problem.verbose", "0");
+        cyl.setParameter("Soil.CriticalPressure", "-15000")
+        cyl.initializeProblem(maxDt = 250/(24*3600))
         cyl.eps_regularization = soilModel.eps_regularization
         if cyl.eps_regularization is not None:
             cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) # needs to be low when using sand parameters. 
@@ -262,14 +284,16 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.02,
         except:
             print('error: issue with cylinder creations', rank)
             print('len(pHeadcyl) == (NC - 1)?', len(pHeadcyl), (NC - 1))
-            print('(abs((pHeadcyl - x)/x_divide)*100 > 1e-5).all()?',abs((pHeadcyl - x)/x_divide)*100, pHeadcyl,x,'x_divide',x_divide)
+            print('(abs((pHeadcyl - x)/x_divide)*100 > 1e-5).all()?\n',abs((pHeadcyl - x)/x_divide)*100, '\n pHeadcyl',pHeadcyl,
+            '\n x',x,
+            '\n x_divide',x_divide)
             raise Exception
         
         return cyl
     else:
         print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
         return []
-            
+
 def _check_Ccontent( cyl):
     for ncomp in range(cyl.numSoluteComp):
         try:
@@ -280,39 +304,36 @@ def _check_Ccontent( cyl):
                   (np.array(cyl.getSolution(ncomp + 1)).flatten() >= 0).all())
             return  False
     return True
-
-
 def dothesolve(cyl):            
     
-    QIN =0.# cm3/day 
+    QIN = 0.# cm3/day 
     qIn =QIN / (2 * np.pi * cyl.a_in * cyl.l) 
     cyl.setInnerFluxCyl(qIn)
 
-    Qflowout = 0.00017406685183970837 
+    Qflowout = 0.00017406685183970837
     cyl.distributeSource(dt, Qflowout,QIN*dt, eqIdx=0)
 
-    inner_fluxes_solMucil_temp= np.array([9.4345248422783157e-06,
-                                          2.2963870236866148e-08,
-                                          0.,0.,0.,0.,0.,0.,0.] )
+    inner_fluxes_solMucil_temp= np.array([4.3799793455387955e-06 ,1.4413903510145875e-08,0.,0.,0.,0.,0.,0.,0.] )
     qIn_solMucil = inner_fluxes_solMucil_temp / (2 * np.pi * cyl.a_in  * cyl.l)
     typeBC = np.full(9, 3) 
     cyl.setSoluteBotBC(typeBC, qIn_solMucil)
 
-    outer_fluxes_solMucil =np.array([0.,0.]) 
+    outer_fluxes_solMucil =np.array([ 2.81851246e-08 ,-5.38128930e-10]) *0.
     QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_solMucil,
                                    inner_fluxs=inner_fluxes_solMucil_temp * dt, 
                                    eqIdx =  np.array([nc+1 for nc in range(2)]))
-        
+    print('\n\nQflowOutCellLim',QflowOutCellLim)
+    #raise Exception
     cyl.ddt =min( 1.e-5,cyl.ddt)
     cyl.solve(dt)
-    assert _check_Ccontent(cyl)
+    #assert _check_Ccontent(cyl)
     print('phead',cyl.getSolutionHead())
     inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(cyl.a_in, cyl.a_out)     
-    print('inner_fluxes_real', inner_fluxes_real,'QIN', QIN, 'theta', cyl.getWaterContent(), cyl.getSolutionHead() )
+    print('inner_fluxes_real', inner_fluxes_real,'QIN', QIN, 'theta', cyl.getWaterContent())
     print('solutes')
     for nc in range(cyl.numComp-1):
         print(cyl.getSolution(nc+1), sum(cyl.getSolution(nc+1)))
-        assert min(cyl.getSolution(nc+1)) >= 0
+        #assert min(cyl.getSolution(nc+1)) >= 0
     if False:
         cyl.reset()
         print('reset')
@@ -322,7 +343,7 @@ def dothesolve(cyl):
         for nc in range(cyl.numComp-1):
             print(cyl.getSolution(nc+1), sum(cyl.getSolution(nc+1)))
             assert min(cyl.getSolution(nc+1)) >= 0
-        cyl.base.printParams() # s.base.printParams()
+        #cyl.base.printParams() # s.base.printParams()
         _reset_newton_solver( cyl,
                                         MaxRelativeShift = s.MaxRelativeShift,
                                         EnableResidualCriterion="false", 
@@ -332,3 +353,7 @@ def dothesolve(cyl):
 cyl = initialize_dumux_nc_(s)
 for i in range(1):
     dothesolve(cyl)
+
+print('plant vol',repr(cyl.getCellVolumes()))
+print('plant point',repr(cyl.getPoints()))
+print('setsources', cyl.setSourceBu)

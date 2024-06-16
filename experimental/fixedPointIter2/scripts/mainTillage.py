@@ -9,8 +9,10 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
 import numpy as np
 
+path = "../inputDataTillage/"
+sys.path.append(path);
 sys.path.append("../modules/");
-sys.path.append("../inputData/");
+
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
@@ -31,7 +33,6 @@ import printData
 
 def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
-    path = "../inputData/"
     xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter file
     dx = 0.2 # todo implement
     dxMin = 0.25
@@ -84,7 +85,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/ongoingCleanUp/lowpsi"+str(rsiCompMethod*10)+str(spellData['scenario'])\
+    results_dir="./results/tillage/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -257,7 +258,6 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 
                 helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
                 
-                raise Exception
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
         
@@ -307,8 +307,11 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                          "Q_Gr","Q_Rm",
                          "Q_Exud_i","Q_Mucil_i" ,
                          "Q_Gr_i","Q_Rm_i"
-                        ]
-                        
+                        ]                        
+        else:
+            datas = []
+            datasName = []
+
         if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 

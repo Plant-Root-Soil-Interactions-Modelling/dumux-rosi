@@ -45,6 +45,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.CellVolumes_ = np.array( self.base.getCellVolumes()).reshape(-1) * 1.e6  # m2 -> cm2
         self.CellVolumes = self._map(self.CellVolumes_ , 0)  # m2 -> cm2
         
+        self.setSourceBu = [[] for i in range(self.numFluidComp)]
+        
     def solve(self, dt:float, saveInnerDumuxValues_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
@@ -258,6 +260,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             @param eqIdx: index of the components [int]
         """
         assert self.dimWorld != 3
+        assert eqIdx < self.numFluidComp
         
         # distribute the value between the cells
         splitVals = self.distributeVals(dt, source, inner_flux, eqIdx)       
@@ -272,10 +275,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
                     test_values.remove(value)
                     break                        
             self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
-        else:
+        else: # need to reset to 0 or will use the old source value
             res = dict()
             res[0] = 0.
             self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
+        self.setSourceBu[eqIdx] = res.copy()
         return splitVals
     
 

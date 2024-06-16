@@ -168,8 +168,6 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
         
         write_file_float("Q_Exud_i", sum(phloemDataStorage.Q_Exud_i_seg), directory_ =results_dir)
         write_file_float("Q_Mucil_i", sum(phloemDataStorage.Q_Mucil_i_seg), directory_ =results_dir)
-        write_file_float("Q_Exud", phloemDataStorage.Q_Exud, directory_ =results_dir)
-        write_file_float("Q_Mucil", phloemDataStorage.Q_Mucil, directory_ =results_dir)
         write_file_float("Q_Exud_tot", phloemDataStorage.Q_Exud_cumul, directory_ =results_dir)
         write_file_float("Q_Mucil_tot", phloemDataStorage.Q_Mucil_cumul, directory_ =results_dir)
         
@@ -366,6 +364,7 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
     """
     results_dir = perirhizalModel.results_dir
     write_file_array("inner_error", perirhizalModel.errs, directory_ =results_dir, fileType = '.csv') 
+    results_dir = results_dir+'fpit/'
     if not perirhizalModel.doMinimumPrint:
         for lId, cyl in enumerate(perirhizalModel.cyls):
             if not isinstance(cyl, AirSegment):
@@ -373,9 +372,9 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
 
                 pHead = np.array(cyl.getSolutionHead()).flatten()
                 write_file_array("fpit_Cyl_watercontent_"+str(gId),cyl.getWaterContent(), 
-                                 directory_ =results_dir+'/fpit/cyl_val/', allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 write_file_array("fpit_Cyl_pressureHead_"+str(gId),pHead, 
-                                 directory_ =results_dir+'/fpit/cyl_val/', allranks = True)
+                                 directory_ =results_dir+'cyl_val/', allranks = True)
                 if max(pHead) > 0:
                     print('issue phead',gId,rank, pHead, sol0 )
                     raise Exception
@@ -385,7 +384,7 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
         if rank == 0.:
         
             write_file_array("fpit_kr_soil", fpit_Helper.soilK,
-                         directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                         directory_ =results_dir, fileType = '.csv') 
                          
             krplant =np.array([ plantModel.kr_f(rs_age_i_dt - plantModel.rs.nodeCTs[int(plantModel.rs.segments[seg_ind].y)], 
                         int(plantModel.rs.subTypes[seg_ind]), 
@@ -393,20 +392,20 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                         seg_ind, 
                         cells = False) for seg_ind in range(len(plantModel.rs.segments))])  # c++ conductivity call back functions
             write_file_array("fpit_kr_plant",krplant,
-                         directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                         directory_ =results_dir, fileType = '.csv') 
                          
                          
             write_file_array("fpit_seg_fluxes_limited", perirhizalModel.seg_fluxes_limited,
-                         directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                         directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_seg_fluxes", np.array(fpit_Helper.seg_fluxes),
-                         directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                         directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_seg_fluxes_limited_Out",perirhizalModel.seg_fluxes_limited_Out,
-                         directory_ =results_dir+'/fpit/', fileType = '.csv')
+                         directory_ =results_dir, fileType = '.csv')
             write_file_array("fpit_proposed_outer_fluxes", fpit_Helper.proposed_outer_fluxes,
-                         directory_ =results_dir+'/fpit/', fileType = '.csv')
+                         directory_ =results_dir, fileType = '.csv')
 
-            write_file_array("fpit_psi_sri_input", fpit_Helper.rsx_input, directory_ =results_dir+'/fpit/', fileType = '.csv') 
-            write_file_array("fpit_psi_sri_real", fpit_Helper.rsx_old, directory_ =results_dir+'/fpit/', fileType = '.csv')   
+            write_file_array("fpit_psi_sri_input", fpit_Helper.rsx_input, directory_ =results_dir, fileType = '.csv') 
+            write_file_array("fpit_psi_sri_real", fpit_Helper.rsx_old, directory_ =results_dir, fileType = '.csv')   
         
             write_file_array("fpit_errbulkMass",
                          np.array([s.bulkMassCErrorPlant_abs,
@@ -419,52 +418,52 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                                    s.bulkMassErrorWater_relLim,
                                    s.errSoil_source_sol_abs, 
                                    s.errSoil_source_sol_rel]), 
-                         directory_ =results_dir+'/fpit/', fileType = '.csv')   
+                         directory_ =results_dir, fileType = '.csv')   
             write_file_array("fpit_errorMassRhizo", np.array([perirhizalModel.rhizoMassCError_abs, perirhizalModel.rhizoMassCError_rel,
                                                 perirhizalModel.rhizoMassWError_abs, perirhizalModel.rhizoMassWError_rel]), 
-                         directory_ =results_dir+'/fpit/', fileType = '.csv')# not cumulativecumulative (?)  
+                         directory_ =results_dir, fileType = '.csv')# not cumulativecumulative (?)  
 
 
 
             write_file_array("fpit_sol_content_diff1d3dabs"+str(0), perirhizalModel.allDiff1d3dCW_abs[0],
-                         directory_ =results_dir+'/fpit/', fileType = '.csv')
+                         directory_ =results_dir, fileType = '.csv')
             write_file_array("fpit_sol_content_diff1d3drel"+str(0), perirhizalModel.allDiff1d3dCW_rel[0], 
-                         directory_ =results_dir+'/fpit/', fileType = '.csv')
+                         directory_ =results_dir, fileType = '.csv')
 
-            write_file_array("fpit_outer_R_bc_wat", fpit_Helper.outer_R_bc_wat, directory_ =results_dir+'/fpit/', fileType = '.csv') 
-            write_file_array("fpit_rx", fpit_Helper.rx_old, directory_ =results_dir+'/fpit/', fileType = '.csv') 
+            write_file_array("fpit_outer_R_bc_wat", fpit_Helper.outer_R_bc_wat, directory_ =results_dir, fileType = '.csv') 
+            write_file_array("fpit_rx", fpit_Helper.rx_old, directory_ =results_dir, fileType = '.csv') 
 
                          
             write_file_array("thetaCyl_4splitSoilVals", fpit_Helper.thetaCyl_4splitSoilVals,
-                             directory_ =perirhizalModel.results_dir+'/fpit/', fileType = '.csv')
+                             directory_ =perirhizalModel.results_dir, fileType = '.csv')
                              
                              
             write_file_array("fpit_diffBCS1dsFluxOut", fpit_Helper.diffBCS1dsFluxOut,
-                             directory_ =perirhizalModel.results_dir+'/fpit/', fileType = '.csv')
+                             directory_ =perirhizalModel.results_dir, fileType = '.csv')
                              
             write_file_array("fpit_flow1d1dw", 
                              perirhizalModel.flow1d1d_w, 
-                             directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                             directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_flow1d1dsol", 
                              perirhizalModel.flow1d1d_sol, 
-                             directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                             directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_flow1d1dmucil", 
                              perirhizalModel.flow1d1d_mucil, 
-                             directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                             directory_ =results_dir, fileType = '.csv') 
         if False:# (not doMinimumPrint): this part still needs to be updated
                 
             write_file_array("fpit_soil_fluxes_limited", soil_fluxes_limited, 
-                             directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                             directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_soil_fluxes", soil_fluxes,
-                             directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                             directory_ =results_dir, fileType = '.csv') 
                          
 
 
             if (plantType != "plant") :
-                write_file_array('fpit_transRate',np.array([transpiration]), directory_ =results_dir+'/fpit/',
+                write_file_array('fpit_transRate',np.array([transpiration]), directory_ =results_dir,
                                  fileType = '.csv' )
                 write_file_array("fpit_n_iter",np.array([ n_iter, perirhizalModel.solve_gave_up ]), 
-                                 directory_ =results_dir+'/fpit/', fileType = '.csv') 
+                                 directory_ =results_dir, fileType = '.csv') 
 
 
 

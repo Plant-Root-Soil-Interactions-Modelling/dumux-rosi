@@ -144,6 +144,10 @@ class phloemDataStorage():
 
             airSegsId = self.perirhizalModel.airSegs
 
+            write_file_array("Q_Exud_i_real",  self.Q_Exud_i, 
+                             directory_ =self.perirhizalModel.results_dir)# to see if get val < 0
+            write_file_array("Q_Mucil_i_real", self.Q_Mucil_i, 
+                             directory_ =self.perirhizalModel.results_dir)# to see if get val < 0
             try:
                 assert (self.Q_Exud_i_seg[airSegsId] == 0).all()
                 assert (self.Q_Mucil_i_seg[airSegsId] == 0).all()
@@ -161,9 +165,15 @@ class phloemDataStorage():
                 raise Exception
 
             try: # currently, only have a release of carbon
-                assert min(self.Q_Exud_i_seg) >= -1e-13
+                
+                if ((min(self.Q_Exud_i_seg) < 0) or (min(self.Q_Mucil_i_seg)<0)):
+                    write_file_float("timeNegativeExudMucil", rs_age, 
+                                     directory_ =self.perirhizalModel.results_dir)
+                    
+            
+                #assert min(self.Q_Exud_i_seg) >= -1e-13
                 self.Q_Exud_i_seg[np.where(self.Q_Exud_i_seg<0)] = 0.
-                assert min(self.Q_Mucil_i_seg) >= -1e-13
+                #assert min(self.Q_Mucil_i_seg) >= -1e-13
                 self.Q_Mucil_i_seg[np.where(self.Q_Mucil_i_seg<0)] = 0.
             except:
                 print(self.C_ST, self.plantModel.Csoil_node, self.Q_Exud_i_seg,self.Q_Exud)

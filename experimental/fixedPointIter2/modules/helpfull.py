@@ -11,7 +11,27 @@ import timeit
 import ctypes
 import numbers
 import tempfile
+import signal
 
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException
+
+# Set the timeout handler
+signal.signal(signal.SIGALRM, timeout_handler)
+
+
+def run_with_timeout(timeout, func, *args, **kwargs):
+    # Start the timer
+    signal.alarm(timeout)
+    try:
+        result = func(*args, **kwargs)
+    finally:
+        # Disable the alarm
+        signal.alarm(0)
+    return result
 
 def is_number(obj):
     # Check for standard Python numeric types (int, float) and NumPy numeric types
@@ -300,9 +320,9 @@ def adapt_values( val_new, minVal, maxVal, volumes, divideEqually, verbose=False
     @param verbose
     """
     if isinstance(minVal, numbers.Number):
-      minVal=np.full(len(val_new), minVal)
+        minVal=np.full(len(val_new), minVal)
     if isinstance(maxVal, numbers.Number):
-      maxVal=np.full(len(val_new), maxVal)
+        maxVal=np.full(len(val_new), maxVal)
 
     def print_verbose(*args):
         if verbose:

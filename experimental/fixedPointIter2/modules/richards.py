@@ -400,18 +400,37 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         theta= (self._map(self.allgatherv(self.base.getWaterContent()), 2))
         
-        if len(theta) > 0:
-            assert min(theta) >= self.vg_soil.theta_R # better install a systematic heck no? and/or put it at the end of each solve function
-            assert max(theta) <= self.vg_soil.theta_S
+        try:
+            if len(theta) > 0:
+                assert min(theta) >= self.vg_soil.theta_R
+                assert max(theta) <= self.vg_soil.theta_S
+        except:
+            print('getting out of range theta')
+            print(repr(theta), 'miin and max', min(theta), max(theta))
+            sat = self.getSaturation_()
+            print('saturation', repr(sat), min(sat), max(sat))
+            phead = self.getSolutionHead_()
+            print('phead', repr(self.getSolutionHead_()), min(phead), max(phead))
+            write_file_array('thetaerror',theta, directory_ =self.results_dir, fileType = '.csv')
+            raise Exception
         return theta
 
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
         self.checkGridInitialized()
         theta = np.array(self.base.getWaterContent())
-        if len(theta) > 0:
-            assert min(theta) >= self.vg_soil.theta_R
-            assert max(theta) <= self.vg_soil.theta_S
+        try:
+            if len(theta) > 0:
+                assert min(theta) >= self.vg_soil.theta_R
+                assert max(theta) <= self.vg_soil.theta_S
+        except:
+            print('getting out of range theta', rank)
+            print(repr(theta), 'min and max', min(theta), max(theta))
+            sat = self.getSaturation_()
+            print('saturation', repr(sat), min(sat), max(sat))
+            phead = self.getSolutionHead_()
+            print('phead', repr(self.getSolutionHead_()), min(phead), max(phead))
+            raise Exception
         return theta
 
     def getWaterVolume(self):

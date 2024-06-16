@@ -6,13 +6,6 @@ import sys;
 sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../modules/");
 sys.path.append("/data");
-# sys.path.append("../../../CPlantBox/src/python_modules");
-# sys.path.append("../../../CPlantBox/src/functional/");
-# sys.path.append("../../../CPlantBox/src/rsml/");
-# sys.path.append("../../../CPlantBox/src/visualisation/")
-# sys.path.append("../../../CPlantBox/src/structural/")
-# sys.path.append("../../../CPlantBox/src/external/")
-# sys.path.append("../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/modelparameter/functional/plant_hydraulics");
 
 import numpy as np
@@ -32,13 +25,14 @@ from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
 
+
 import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
 from functional.xylem_flux import *
 from datetime import *
-from wheat_Giraud2023adapted import setKrKx_xylem 
+import wheat1997_conductivities 
 from helpfull import *
-from weatherFunctions import *
+import weatherFunctions 
 from PhloemPhotosynthesis import *
 
 
@@ -250,6 +244,22 @@ def setDefault(s):
     # UpwindWeight = 0.5, better when have high water flow and low solute gradient
     s.setParameter("Flux.UpwindWeight", "0.5")#very important because we get high solute gradient.
     
+    
+    s.EnableResidualCriterion = False
+    s.setParameter("Newton.EnableResidualCriterion", 
+                     str( s.EnableResidualCriterion ))
+    s.EnableAbsoluteResidualCriterion = False
+    s.setParameter("Newton.EnableAbsoluteResidualCriterion", 
+                     str( s.EnableAbsoluteResidualCriterion ))
+    s.SatisfyResidualAndShiftCriterion = False
+    s.setParameter("Newton.SatisfyResidualAndShiftCriterion",
+                     str( s.SatisfyResidualAndShiftCriterion) )  
+    s.MaxTimeStepDivisions = 10
+    s.setParameter("Newton.MaxTimeStepDivisions",
+                     str( s.MaxTimeStepDivisions) )  
+    s.MaxSteps = 18
+    s.setParameter("Newton.MaxSteps",
+                     str( s.MaxSteps) )  
     return s
 
 def getSoilTextureAndShape():  
@@ -385,7 +395,10 @@ def setupOther(s, p_mean_):
             print(type(p_mean_))
             raise Exception
             
-    s.initializeProblem()
+    s.maxDt =  250/(3600*24)
+    s.initializeProblem(s.maxDt)
+    s.eps_regularization = 1e-10
+    s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be low when using sand parameters. 
     
      
     # if p_mean_ is np.array, define after initializeProblem
@@ -404,19 +417,9 @@ def setupOther(s, p_mean_):
     s.bulkMassErrorWater_rel = 0.
     s.bulkMassErrorWater_relLim = 0.
     pressureinit = s.getSolutionHead()
-    print('expected pressure',p_mean_)
-    print('expected theta', vg.water_content( p_mean_, s.vg_soil))
-    print('obtained pressure', min(pressureinit), max(pressureinit),  max(pressureinit)- min(pressureinit))
-    sat = s.getSaturation()
-    print('obtained saturation', min(sat), max(sat),'obtained theta (from saturation)', 
-                min(sat)*s.vg_soil.theta_S, max(sat)*s.vg_soil.theta_S)
+    
     thetainit = s.getWaterContent_()
-    print('obtained theta ', min(thetainit), 'difference',min(thetainit)- vg.water_content( p_mean_, s.vg_soil) )
     s.totC3dInit = sum(s.getTotCContent()) # mol
-    print('Phead from obtained saturation and theta')
-    print(vg.pressure_head( min(sat)*s.vg_soil.theta_S, s.vg_soil))
-    print(vg.pressure_head(  min(thetainit), s.vg_soil))
-    raise Exception
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
@@ -430,7 +433,7 @@ def create_mapped_plant(initSim, soil_model, fname, path,
                         usemoles = True, limErr1d3d = 1e-11, spellData =None):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
-    
+    from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
@@ -438,14 +441,12 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     
     if fname.endswith(".rsml"):
         plantModel = XylemFluxPython(fname)
-        from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
         
         perirhizalModel = RhizoMappedSegments(  mode, soil_model,  usemoles, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d)
     elif fname.endswith(".xml"):
         seed = 1
-        weatherInit = weather(initSim,0, spellData)
-        from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
+        weatherInit = weatherFunctions.weather(initSim,0, spellData)
         perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                                  usemoles=usemoles,
                                  seedNum = seed, 
@@ -475,7 +476,6 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     
     plantModel.wilting_point = -15000.
     # set kr and kx for root system or plant
-    import wheat1997_conductivities
     wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
     if doPhloemFlow:   
         plantModel = phloemParam(plantModel, weatherInit)
