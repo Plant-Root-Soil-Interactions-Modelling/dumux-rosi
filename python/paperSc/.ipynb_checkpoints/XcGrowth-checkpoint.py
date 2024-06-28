@@ -137,7 +137,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #mode = sys.argv[2] #"dumux_w" "dumux_3c" "dumux_10c" 
     dt = 20/60/24
     #p_mean = -100
-    k_iter =50 # 6#20
+    k_iter = 100 #50 
     targetIter= 40 #
     l_ks =  "dx_2"#"root", "dx", "dx_2"
     organism = "plant"# "RS"#
@@ -177,7 +177,7 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     #+organism+str(k_iter)+"k_"+str(css1Function_)
     #+str(int(mpiVerbose))+l_ks+mode
     # 1d1dFHung
-    results_dir="./results/testspeed/"+extraName+str(spellData['scenario'])\
+    results_dir="./results/trairhizo/"+extraName+str(spellData['scenario'])\
     +"_"+str(int(np.prod(cell_number)))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -383,11 +383,13 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
     rs.rhizoMassWError_rel = 0.
     rs.bulkMassErrorWater_relLim = 0.
     rs.rhizoMassWError_relLim = 0.
+    rs.idloop = -1
     
     getVTPOutput(r,rs,s,[],[], rs_age*100, results_dir, min_b, max_b, cell_number,initPrint=True)#[np.array(rs.organTypes)], ["organTypes"],
     while rs_age < simMax:
 
         rs_age += dt
+        rs.idloop += 1
         #comm.barrier()
         if mpiVerbose and rank == 0:# or (max_rank == 1):
             print(rank,"Day", rs_age)
@@ -546,7 +548,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
                     or (np.floor(rs.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
                     or (np.floor(rs.maxdiff1d3dCurrant_rel*100.)/100.>0.001) 
                     or (min(rs.new_soil_solute.reshape(-1)) < 0)  
-                    or ((n_iter < n_iter_min) and (isInner)))  and (n_iter < k_iter)
+                    or ((n_iter < n_iter_min) and (isInner))
+            )  and (n_iter < k_iter)
             #(max(abs(sumDiff1d3dCW_rel))>1)) 
             #rs.diff1d3dCurrant_rel
 
@@ -748,6 +751,12 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         if rank == 0:
             if (mode != "dumux_w"):
                 s.bulkMassErrorCumul_abs = abs((buTotCAfter - ( buTotCSoilInit + Q_Exud_inflate + Q_Mucil_inflate)))#so that only works if infalte
+                write_file_array("bulkMassErrorCumul_abs_analysis",
+                                 np.array([s.bulkMassErrorCumul_abs,
+                                           buTotCAfter,buTotCSoilInit,
+                                           Q_Exud_inflate,
+                                           Q_Mucil_inflate]), 
+                                 directory_ =results_dir)
                 if buTotCAfter != 0:
                     s.bulkMassErrorCumul_rel = abs(s.bulkMassErrorCumul_abs/buTotCAfter*100)
                 else:
@@ -1130,7 +1139,8 @@ def XcGrowth(initsim, mode,simMax,extraName,paramIndx_,spellData):
         else:
             datas = []
             datasName = []
-        if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday
+        # midnight and midday
+        if (int(rs_age *1000)/1000-int(rs_age) == 0.5) or (int(rs_age *1000)/1000-int(rs_age) == 0.) :
             getVTPOutput(r,rs,s,datas, datasName, rs_age*100, results_dir, min_b, max_b, cell_number)
         
         failedExud = comm.bcast(failedExud, root = 0)
@@ -1168,11 +1178,11 @@ if __name__ == '__main__':
     paramIndx_base = 0
     if len(sys.argv)>4:
         paramIndx_base = int(sys.argv[4])
-    extraName ="" # noAds?
-    #if len(sys.argv)>6:
-    #    extraName = sys.argv[6]
+    extraName = ""#"cProfile"# "" # noAds?
+    if len(sys.argv)>6:
+        extraName = sys.argv[6]
     
-    doProfile = ( extraName == "cProfile")
+    doProfile =  ( extraName == "cProfile")
     
     scenario = "baseline"
     if len(sys.argv)>5:

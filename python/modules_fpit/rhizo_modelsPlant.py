@@ -275,7 +275,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         @param x        is the solution (or initial condition) of the soil model
         @param newEidx  in case of mpi the cylinder indices per process
         """
-        self.printData('updateWbefore')
+        #self.printData('updateWbefore')
         
         if ((self.mpiVerboseInner and (size > 1)) or (rank == 0)):
             
@@ -457,7 +457,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
         # self.setIdCyllMPI()
         # idCylsAll, idCyls = self.getIdCyllMPI(cellId)
             
-        self.printData('updateWafter')
+        #self.printData('updateWafter')
         
         self.checkVolumeBalance(finishedUpdate = True)
         

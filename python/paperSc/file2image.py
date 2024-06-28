@@ -30,6 +30,7 @@ import os
 from scenario_setup import write_file_array, write_file_float, div0, div0f
 
 #DumuxDune27/DUMUX/dumux-rosi/python/paperSc/results/newMucil4p/baseline_1476_17_10to25_20mn_0s_128/C3_17b.vtp
-results_dir="./results/newMucil4p/baseline_1476_17_10to25_20mn_0s_128/"
-vp.plot_roots_and_soil_files(filename = "C3_17b", 
-pname = "[C3] (mol/cm3)",path = results_dir)  # VTK vizualisation
+#results_dir="./results/newMucil4p/baseline_1476_17_10to25_20mn_0s_128/"
+results_dir="./results/testspeed/thr4baseline_1476_5_10to25_20mn_0s_32/vtpvti/"
+vp.plot_roots_and_soil_files(filename = "C3_25b", 
+pname = "[C3] (mol/cm3)",path = results_dir, interactiveImage = False)  # VTK vizualisation
