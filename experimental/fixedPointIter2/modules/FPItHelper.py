@@ -21,7 +21,7 @@ class fixedPointIterationHelper():
                 seg_fluxes, 
                  outer_R_bc_wat, outer_R_bc_sol, 
                  cylVol, 
-                 Q_Exud_i, Q_mucil_i, dt, emptyCells):
+                 Q_Exud_i, Q_mucil_i, dt,sim_time, emptyCells):
         self.s = s
         self.perirhizalModel = perirhizalModel
         self.plantModel = plantModel
@@ -37,8 +37,9 @@ class fixedPointIterationHelper():
         # plant-soil solute flow, defined outside of iteration loop
         self.Q_Exud_i = Q_Exud_i
         self.Q_mucil_i = Q_mucil_i
-        self.seg_sol_fluxes = Q_Exud_i /dt# mol/day for segments
-        self.seg_mucil_fluxes = Q_mucil_i/dt
+        self.seg_sol_fluxes = Q_Exud_i /sim_time# mol/day for segments
+        self.seg_mucil_fluxes = Q_mucil_i/sim_time
+        self.sim_time = sim_time
         self.initializeOldData(seg_fluxes, outer_R_bc_wat, outer_R_bc_sol)
         
     def initializeOldData(self, seg_fluxes, outer_R_bc_wat, outer_R_bc_sol):
@@ -295,10 +296,10 @@ class fixedPointIterationHelper():
         assert sources_sol_from1d.shape == (self.perirhizalModel.numSoluteComp, self.s.numberOfCellsTot)
         
         # store error
-        self.s.errSoil_source_sol_abs = sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/dt
+        self.s.errSoil_source_sol_abs = sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time
         
         if (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/dt != 0.:
-            s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/dt)*100)
+            s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time)*100)
         else:
             s.errSoil_source_sol_rel = np.nan
         self.sources_sol_from1d = sources_sol_from1d

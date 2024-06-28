@@ -122,8 +122,10 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         #       reset inner loop data (create XXX_old vals to evaluate convergence)
         ####
         # simple class to store fixed-point iteration data and some usefull functions
-        fpit_Helper = fixedPointIterationHelper(s, perirhizalModel, plantModel, seg_fluxes, outer_R_bc_wat, 
-                                                outer_R_bc_sol, cylVol, Q_Exud_i, Q_mucil_i, dt, emptyCells)
+        fpit_Helper = fixedPointIterationHelper(s, perirhizalModel, plantModel, 
+                                                seg_fluxes, outer_R_bc_wat, 
+                                                outer_R_bc_sol, cylVol, Q_Exud_i, Q_mucil_i,
+                                                dt,sim_time, emptyCells)
         
             
         
