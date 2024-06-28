@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=checksri
+#SBATCH --job-name=fpit
 #SBATCH --cpus-per-task=1
 #SBATCH --ntasks=32
 #SBATCH --nodes=1
@@ -20,7 +20,7 @@ cd $HOME/DumuxDune27/DUMUX/dumux-rosi/python/paperSc
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=4 mpirun -n 32 python3 XcGrowth.py $1 dumux_10c $2 $3 $4 $5
+DUMUX_NUM_THREADS=4 mpirun -n 32 python3 XcGrowth.py $1 dumux_10c $2 $3 $4 
 
 # $1 : start, $2: end, $3: param ind, $4 scenario, $5 noAds or nothing
 

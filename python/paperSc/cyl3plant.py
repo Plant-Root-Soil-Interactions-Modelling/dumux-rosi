@@ -80,7 +80,7 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
     global_isRootSeg = r.getXcyl(X_rhizo=local_isRootSeg,idCyll_=None, doSum = False, reOrder = True)
     #assert (global_isRootSeg[rhizoSegsId]).all()
     
-    Q_Exud = Q_plant[0].copy(); Q_mucil = Q_plant[1].copy() #mol/day
+    Q_Exud = Q_plant[0].copy(); Q_mucil = Q_plant[1].copy() #mol
     if len(Q_Exud) > 0:
 
         Q_Exud.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
@@ -577,8 +577,8 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             ##
             
             
-            seg_sol_fluxes = Q_Exud /dt# mol/day for segments
-            seg_mucil_fluxes = Q_mucil/dt
+            seg_sol_fluxes = Q_Exud /sim_time # mol/day for segments
+            seg_mucil_fluxes = Q_mucil/sim_time
             
             rs.time_plant_cumulW += (timeit.default_timer() - rs.time_start_plant)
 
@@ -1053,12 +1053,12 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             assert soil_source_sol.shape == (r.numComp+1, s.numberOfCellsTot)
 
             # mabe check here that sum(soil_source_sol) == Qmucil + Qexud
-            s.errSoil_source_sol_abs = sum(soil_source_sol.flatten()) - (sum(Q_Exud) + sum(Q_mucil))/dt
+            s.errSoil_source_sol_abs = sum(soil_source_sol.flatten()) - (sum(Q_Exud) + sum(Q_mucil))/sim_time
             if False:#rank == 0:
                 print('\n\n\nsoil_source_sol',s.errSoil_source_sol_abs,'sum', sum(soil_source_sol.flatten()),
-                (sum(Q_Exud) + sum(Q_mucil))/dt,'\n\n\n')#soil_source_sol.flatten(),
-            if (sum(Q_Exud) + sum(Q_mucil))/dt != 0.:
-                s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(Q_Exud) + sum(Q_mucil))/dt)*100)
+                (sum(Q_Exud) + sum(Q_mucil))/sim_time,'\n\n\n')#soil_source_sol.flatten(),
+            if (sum(Q_Exud) + sum(Q_mucil))/sim_time != 0.:
+                s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(Q_Exud) + sum(Q_mucil))/sim_time)*100)
             else:
                 s.errSoil_source_sol_rel = np.nan
                 
@@ -1357,8 +1357,13 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             s.bulkMassErrorWater_relLim  = abs(s.bulkMassErrorWater_absLim  /sum(new_soil_water) )*100
             s.bulkMassErrorWater_rel = abs(s.bulkMassErrorWater_abs /sum(new_soil_water) )*100
             
-            s.bulkMassCErrorPlant_absReal = buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil))
-            s.bulkMassCErrorPlant_abs = abs(buTotCAfter - ( buTotCBefore + sum(Q_Exud) + sum(Q_mucil)))
+            s.bulkMassCErrorPlant_absReal = buTotCAfter - ( buTotCBefore +( sum(Q_Exud) + sum(Q_mucil))/sim_time*dt)
+            s.bulkMassCErrorPlant_abs = abs(buTotCAfter - ( buTotCBefore + ( sum(Q_Exud) + sum(Q_mucil))/sim_time*dt))
+            write_file_array("bulkMassErrorCumul_abs_analysis_fpit",
+                                 np.array([s.bulkMassCErrorPlant_absReal,
+                                           buTotCAfter,buTotCBefore,
+                                           sum(Q_Exud),
+                                           sum(Q_mucil)]), directory_ =results_dir)
             if buTotCAfter > 0:
                 s.bulkMassCErrorPlant_rel = abs(s.bulkMassCErrorPlant_abs/buTotCAfter*100)
             else:
@@ -1591,7 +1596,10 @@ def simulate_const(s, rs, sim_time, dt, rs_age, Q_plant,
             r.rhizoMassCError_abs = comm.bcast(r.rhizoMassCError_abs,root= 0)
             
             r.err = comm.bcast(max(errRxPlant,
-                                   r.rhizoMassWError_rel, r.rhizoMassCError_rel, errWrsiRealInputf,errWrsi,errW1ds,
+                                   r.rhizoMassWError_rel, 
+                                   r.rhizoMassCError_rel, 
+                                   errWrsiRealInputf,# max: 1% or 5% error
+                                   errWrsi,errW1ds,
                                    errW3ds,errC1ds, errC3ds, 
                                   s.bulkMassErrorWater_rel, s.bulkMassCErrorPlant_rel, 
                                    s.bulkMassCError1ds_rel),root= 0)
