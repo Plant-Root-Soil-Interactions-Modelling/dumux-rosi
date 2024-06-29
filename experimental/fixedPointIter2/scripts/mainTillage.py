@@ -36,9 +36,10 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter file
     dx = 0.2 # todo implement
     dxMin = 0.25
+    MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 1/60/24 # dt
+    dt_inner_init = 10/60/24 # dt
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
@@ -51,6 +52,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
     # at the beginning of the time step. Otherwise does not converge
+    do1d1dFlow = False
     beforeAtNight = False #True  
     # static or growing organism
     static_plant = False
@@ -60,7 +62,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  True
+    doMinimumPrint =  False
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
@@ -78,20 +80,19 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
     maxTranspiration = 12#6. # cm3/day, used if not doPhotosynthesis 
-    maxTranspirationAge = 25. # day, age at which trans = maxTRans
+    maxTranspirationAge = 8. # day, age at which trans = maxTRans
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
-    # directory where the results will be printed
-    results_dir="./results/tillage/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
-    +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
-                    +"_"+str(paramIndx_)\
-                    +"_"+str(int(initsim))+"to"+str(int(simMax))\
-                    +"_"+str(int(dt_inner_init*24*60))+"mn_"\
-                    +str(int((dt_inner_init*24*60 - int(dt_inner_init*24*60))*60))+"s_"\
-                    +str(max_rank)+"/"
+    # directory where the results will be printed #+"_"+str(paramIndx_)\
+    results_dir=("./results/tillage/ylim/"+str(rsiCompMethod*10)+str(spellData['scenario'])
+                 +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
+                    +"_"+str(int(initsim))+"to"+str(int(simMax))
+                    +"_"+str(int(dt_inner_init*24*60))+"mn_"
+                    +str(int((dt_inner_init*24*60 - int(dt_inner_init*24*60))*60))+"s_"
+                    +str(max_rank)+"/")
     
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -106,7 +107,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                results_dir = results_dir, 
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
-                                        noAds = noAds, doSoluteFlow = doSoluteFlow)
+                                        noAds = noAds, doSoluteFlow = doSoluteFlow,
+                                        MaxRelativeShift = MaxRelativeShift)
 
     
 
@@ -123,8 +125,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
     
+    perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
-    perirhizalModel.weather = weatherFunctions.weather 
     perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
@@ -292,30 +294,37 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         if (rank == 0):
             printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             
-        if rank == 0:
-            datas = [
-                     plantModel.psiXyl, 
-                     phloemData.C_ST, phloemData.C_S_ST, 
-                     phloemData.C_meso, phloemData.C_S_meso, 
-                     phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
-                     phloemData.Q_Gr_i,phloemData.Q_Rm_i
-                    ]
-            datasName = [ "psiXyl",
-                         "C_ST", "C_S_ST", 
-                         "C_meso", "C_S_meso", 
-                         "Q_Exud", "Q_Mucil",
-                         "Q_Gr","Q_Rm",
-                         "Q_Exud_i","Q_Mucil_i" ,
-                         "Q_Gr_i","Q_Rm_i"
-                        ]                        
-        else:
-            datas = []
-            datasName = []
+        
 
-        if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        if True:#int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+            if rank == 0:
+                datas = [
+                         plantModel.psiXyl
+                        ]
+                datasName = [ "psiXyl"]   
+                if doPhloemFlow:
+                    datas += [ 
+                        phloemData.C_ST, phloemData.C_S_ST, 
+                         phloemData.C_meso, phloemData.C_S_meso, 
+                         phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
+                         phloemData.Q_Gr_i,phloemData.Q_Rm_i
+                        ]
+                    datasName += [
+                             "C_ST", "C_S_ST", 
+                             "C_meso", "C_S_meso", 
+                             "Q_Exud", "Q_Mucil",
+                             "Q_Gr","Q_Rm",
+                             "Q_Exud_i","Q_Mucil_i" ,
+                             "Q_Gr_i","Q_Rm_i"
+                            ] 
+            else:
+                datas = []
+                datasName = []
+                
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
+            
             
     """ wrap up """
     

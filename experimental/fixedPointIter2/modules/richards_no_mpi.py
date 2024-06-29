@@ -11,7 +11,7 @@ import functional.van_genuchten as vg
 
 class RichardsNoMPIWrapper(RichardsWrapper):
     """ 
-    rewrites all methods using MPI to single process ones
+        rewrites all methods using MPI to single process ones
     """
 
     def __init__(self, base, usemoles):
@@ -299,17 +299,18 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         if source != 0.:# [cm3/day] or [mol/day]
             
             if eqIdx == 0:# compute the amount of water potentially available in each cell
-                splitVals = self.distributeValWater(dt, source, inner_flux, verbose)
+                splitVals, source_ = self.distributeValWater(dt, source, inner_flux, verbose)
             else:
-                splitVals = self.distributeValSolute(eqIdx, dt, source, inner_flux, verbose)
+                splitVals, source_ = self.distributeValSolute(eqIdx, dt, source, inner_flux, verbose)
             
             try:
                 assert (((splitVals >= 0).all()) or ((splitVals <= 0).all()))
-                assert abs(sum(abs(splitVals)) - abs(source)) < 1e-13
+                assert abs(sum(abs(splitVals)) - abs(source_)) < 1e-13
                 assert len(splitVals) == self.numberOfCellsTot
             except:
                 print('splitVals',splitVals)
-                print('troubleshoot data', 'source=',source, ';dt=',dt, ';inner_flux=',inner_flux,
+                print('troubleshoot data', 'source=',source, 'source_=',source_,
+                      ';dt=',dt, ';inner_flux=',inner_flux,
                 ';theta=',repr( self.getWaterContent()),';cylVol=',repr(self.getCellVolumes()), 
                 [self.vg_soil.theta_R, self.vg_soil.theta_S, 
                 self.vg_soil.alpha, self.vg_soil.n, self.vg_soil.Ksat], self.theta_wilting_point)

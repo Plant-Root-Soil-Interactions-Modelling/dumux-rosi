@@ -34,7 +34,7 @@ import scenario_setup
 def XcGrowth(initsim, simMax,paramIndx_,spellData): 
     path = "../../../../CPlantBox/modelparameter/structural/plant/"
     xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
-    MaxRelativeShift = 1e-8 if paramIndx_ != 44 else 1e-10
+    MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #

@@ -117,7 +117,8 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.diff1d3dCurrant_rel = 0.
         self.diff1d3dCurrant = np.Inf
         self.solve_gave_up = False
-        self.errWrsi = 1000
+        self.errWrsi = 1000.
+        self.errWrsiRealInput = 1000.
         
         
         # 1d1d flow
@@ -1566,8 +1567,10 @@ class RhizoMappedSegments(pb.MappedPlant):
         """
 
 
-        inner_fluxes_water, outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil = self._attempt_solution(cyl, dt, lId, inner_fluxes_water, 
-        outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil, verbose)
+        inner_fluxes_water, outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil = self._attempt_solution(cyl, dt, 
+                                                    lId, inner_fluxes_water, 
+                                                    outer_fluxes_water,   inner_fluxes_solMucil, 
+                                                    outer_fluxes_solMucil, verbose)
 
         self._finalize_solution(lId, inner_fluxes_water, outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil)
     
@@ -1705,13 +1708,13 @@ class RhizoMappedSegments(pb.MappedPlant):
         
         redoSolve = True
         n_iter_solve = 0
-        verbose = False#gId == 0
+        verbose = False
         if verbose:
             print('start solve, water in ',inner_fluxes_water_temp,'water out', outer_fluxes_water_temp, 
                         repr(cyl.getWaterContent()), 
                         repr(cyl.getSolutionHead()),'shape', repr(cyl.getPoints()),repr( cyl.CellVolumes), a_in, a_out, l, 'dt', dt)
-        inner_fluxes_real = np.nan
-        outer_fluxes_real = np.nan
+        inner_fluxes_real = np.full(self.numFluidComp, np.nan)
+        outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
         while redoSolve:
         
@@ -1757,6 +1760,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                       ' Qflowout',outer_fluxes_water_temp,'inner_fluxes_real',inner_fluxes_real)
                 print('inner_fluxes_solMucil_temp',
                       inner_fluxes_solMucil_temp, 'outer_fluxes_solMucil_temp',outer_fluxes_solMucil_temp)
+                
                 cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
                 cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
                 cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
@@ -1835,10 +1839,12 @@ class RhizoMappedSegments(pb.MappedPlant):
             
             assert self._check_Ccontent(cyl)
             assert self._check_Wcontent(cyl)
-        if False:# verbose
+        if verbose:
             print('finished solve 1ds gId', cyl.gId, repr(cyl.getWaterContent()), 
-                    repr(cyl.getSolutionHead()),'inner_fluxes_real',inner_fluxes_real[0], 'inner_fluxes_water_temp',
-                    inner_fluxes_water_temp, repr(cyl.getCellVolumes()))
+                    repr(cyl.getSolutionHead()),
+                  'inner_fluxes_real',inner_fluxes_real, 
+                  'inner_fluxes_water_temp', inner_fluxes_water_temp, 
+                  repr(cyl.getCellVolumes()))
             
         return inner_fluxes_real[0], outer_fluxes_water_temp, inner_fluxes_real[1:], outer_fluxes_solMucil_temp        
      
@@ -1990,9 +1996,6 @@ class RhizoMappedSegments(pb.MappedPlant):
         assert not comm.bcast(gotError,root=0)
                     
                 
-                            
-                
-            
     
     def splitSoilVals(self, soilVals, seg_values, seg_volume, dt, verbose=False, isWater=False):
         """ 
@@ -2019,26 +2022,31 @@ class RhizoMappedSegments(pb.MappedPlant):
             if (organTypes != 2).any():
                 assert (seg_values[np.where(organTypes != 2)] == 0.).all()
 
-            splitVals = np.full(len(organTypes), 0.)
+            splitVals = np.zeros(len(organTypes))
+            soilVals_ = np.zeros(soilVals.shape) # adapted soil vals
             
             if (soilVals[cellIds] != 0.).any():
                 for cellid in cellIds:
-                    splitVals = self._split_soil_val_for_cell(cellid, soilVals, seg_values,seg_volume, 
+                    splitVals, soilVals_ = self._split_soil_val_for_cell(cellid, soilVals, soilVals_, 
+                                                                         seg_values,seg_volume, 
                                                   splitVals, verbose, isWater, dt)
 
-            self._verify_splits(soilVals, cellIds, splitVals,seg_values, verbose)
+            # evaluate according to soilVals_ and not soilVals as the source might be adapted
+            self._verify_splits(soilVals_, cellIds, splitVals,seg_values, verbose)
             
             return splitVals
 
         except:
+            raise Exception
             if not verbose:
-                print('\n\nrelaunch splitSoilVals with verbose = True')
-                self.splitSoilVals(soilVals, seg_values, seg_volume,  verbose=True, isWater=isWater)
+                print('\n\nrelaunch splitSoilVals with verbose = True',isWater)
+                #write_file_array("splitSoilValserror", SSL, directory_ =results_dir, fileType =".csv") 
+                self.splitSoilVals(soilVals, seg_values, seg_volume,dt,  verbose=True, isWater=isWater)
             raise Exception
 
         
             
-    def _split_soil_val_for_cell(self, cellid, soilVals, seg_values,seg_volume, 
+    def _split_soil_val_for_cell(self, cellid, soilVals, soilVals_, seg_values,seg_volume, 
                                  splitVals, verbose, isWater, dt):
         
         segIds = self.cell2seg[cellid]
@@ -2056,13 +2064,21 @@ class RhizoMappedSegments(pb.MappedPlant):
                 seg_values_root = seg_values[rootIds]
                 seg_volume_root = seg_volume[rootIds]
                 if isWater:
-                    splitVals_ = helpfull.distributeValWater_(seg_values_root.copy(),
+                    try:
+                        splitVals_, soilVal = helpfull.distributeValWater_(seg_values_root.copy(),
                                             seg_volume_root.copy(), 
                                              soilVals[cellid], 
                                             dt, self.vg_soil, 
-                                            self.theta_wilting_point,verbose)                
+                                            self.theta_wilting_point,verbose) 
+                    except:
+                        print('rhizo_modelsPlant::_split_soil_val_for_cell, distributeValWater_ failed', seg_values_root.copy(),
+                                            seg_volume_root.copy(), 
+                                             soilVals[cellid], 'cellid',cellid,
+                                            dt, 
+                                            self.theta_wilting_point)
+                        raise Exception
                 else:
-                    splitVals_ = helpfull.distributeValSolute_(
+                    splitVals_, soilVal = helpfull.distributeValSolute_(
                                             seg_values_root.copy() *  seg_volume_root.copy(), 
                                             seg_volume_root.copy(), soilVals[cellid], dt, verbose)
 
@@ -2072,12 +2088,13 @@ class RhizoMappedSegments(pb.MappedPlant):
                           segIds, seg_values[segIds])
 
 
+                soilVals_[cellid] = soilVal
                 splitVals[rootIds] = splitVals_
                 if verbose:
                     print("splitVals[segIds]", splitVals[segIds], sum(splitVals[segIds]))
                     
-                assert ((abs(sum(splitVals[segIds]) - soilVals[cellid]) < 1e-13) or (
-                    abs((sum(splitVals[segIds]) - soilVals[cellid]) / soilVals[cellid]) < 1e-13))
+                assert ((abs(sum(splitVals[segIds]) - soilVals_[cellid]) < 1e-13) or (
+                    abs((sum(splitVals[segIds]) - soilVals_[cellid]) / soilVals_[cellid]) < 1e-13))
                 
                 if isWater and doPrint:
                     print('splitSoilVal', cellid, soilVals[cellid] ,sum(weightVals)-1,sum(splitVals[segIds]) - soilVals[cellid])
@@ -2085,7 +2102,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                     df = pd.DataFrame(np.vstack(lst)).T
                     df.columns =["rootIds","seg_values_root","seg_volume_root", "splitVals[rootIds]" ]
                     df.to_csv(self.results_dir +'splitSoilVal'+str(cellid)+'.csv', index=False, mode='a')
-        return splitVals
+        return splitVals, soilVals_
                     
 
 

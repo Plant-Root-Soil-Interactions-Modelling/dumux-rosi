@@ -25,7 +25,7 @@ signal.signal(signal.SIGALRM, timeout_handler)
 
 def run_with_timeout(timeout, func, *args, **kwargs):
     # Start the timer
-    signal.alarm(timeout)
+    signal.alarm(int(timeout))
     try:
         result = func(*args, **kwargs)
     finally:
@@ -207,7 +207,9 @@ def continueLoop(perirhizalModel,s,n_iter, dt_inner: float,failedLoop: bool,
             or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
 
     if (rank == 0) and isInner:
-        print(f'continue loop? {bool(cL)}\n\t\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}, {perirhizalModel.errWrsi:.2e}, solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}\n\t\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\t\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+        print(f'continue loop? {bool(cL)}\n\t\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}, solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}\n\t\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\t\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+        print('\t\tD(psi_rsi)',f'{perirhizalModel.errWrsi:.2e},',
+              "psi_{rsi,in} vs psi_{rsi,out}:",f'{perirhizalModel.errWrsiRealInput:.2e}')
 
     cL = comm.bcast(cL,root = 0)
     failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
@@ -445,7 +447,7 @@ def distributeValSolute_(seg_values_content, volumes, source, dt, verbose: bool)
         verbose =True
         print("distributeVals sourceInit > source", 'dt',dt,
               'old source',sourceInit ,'new source',source,
-              'theta',seg_values_perVol_,'cylVol',
+              'Qsolute',seg_values_content,'cylVol',
              volumes)
         
     if (sum(seg_values_content) == 0.):# should normally only happen with source >= 0
@@ -469,7 +471,7 @@ def distributeValSolute_(seg_values_content, volumes, source, dt, verbose: bool)
             seg_values_content = np.maximum(seg_values_content,1.e-14)
             assert min(abs(seg_values_content)) != 0.
         weightVals = (1 / seg_values_content) / sum(1/seg_values_content)
-    return weightVals * source
+    return weightVals * source, source
     
     
 def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_wilting_point, verbose):    
@@ -490,7 +492,10 @@ def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_
             print("distributeVals sourceInit > source", 'dt',dt,
                   'old source',sourceInit ,'new source',source,
                   'theta',seg_values_perVol_,'cylVol',
-                 volumes)
+                 volumes,'availableSpaceOrWater',availableSpaceOrWater,
+                  'vg_soil.theta_S',vg_soil.theta_S,
+                  'theta_wilting_point',theta_wilting_point)
+            #raise Exception
 
     if sum(availableSpaceOrWater) > 0:
         if verbose:
@@ -509,6 +514,6 @@ def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_
                         sum(availableSpaceOrWater /sum(availableSpaceOrWater)),
                   repr(availableSpaceOrWater /sum(availableSpaceOrWater)))
 
-        return (availableSpaceOrWater /sum(availableSpaceOrWater)) * source # mol/day
+        return (availableSpaceOrWater /sum(availableSpaceOrWater)) * source, source # mol/day
     else: # no water or space available
-        return np.full(len(availableSpaceOrWater),0.)
+        return np.full(len(availableSpaceOrWater),0.), source

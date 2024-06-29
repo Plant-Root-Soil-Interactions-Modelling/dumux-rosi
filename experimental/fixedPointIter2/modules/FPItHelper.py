@@ -11,6 +11,7 @@ import timeit
 from air_modelsPlant import AirSegment
 from helpfull import write_file_array, write_file_float, div0, div0f
 import PhloemPhotosynthesis
+import helpfull
 
 class fixedPointIterationHelper():
     """
@@ -139,11 +140,16 @@ class fixedPointIterationHelper():
         if rank == 0:
             if max(abs(outer_R_bc_wat )) > 0:
                 assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
-                proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
+                try:
+                    proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
                                                         seg_values=self.thetaCyl_4splitSoilVals, 
                                                        seg_volume= self.cylVol,dt = dt,
                                                        isWater = True, 
                                                                       verbose = False) #cm3/day
+                except:
+                    print('thetaCyl_4splitSoilVals',min(self.thetaCyl_4splitSoilVals),max(self.thetaCyl_4splitSoilVals),
+                          'self.thetaCylOld',min(self.thetaCylOld),max(self.thetaCylOld))
+                    raise Exception                   
                                                  
             else:
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
@@ -192,6 +198,12 @@ class fixedPointIterationHelper():
             seg_fluxes_root  = self.seg_fluxes.copy()
             seg_fluxes_root[np.where(np.array(perirhizalModel.organTypes)!=2)]  = 0.
             self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + (seg_fluxes_root + perirhizalModel.flow1d1d_w)* dt )/self.cylVol
+            #because of unlimited flow (seg_fluxes_root + perirhizalModel.flow1d1d_w), might get values out of the [theta_r, theta_s] bounds
+            self.thetaCyl_4splitSoilVals = np.maximum(np.minimum(
+                                                    self.thetaCyl_4splitSoilVals, 
+                                                      perirhizalModel.vg_soil.theta_S),
+                                                     perirhizalModel.theta_wilting_point)
+            
        
         # get data before doing the 'reset' => values at the end of the time step
         self.comp1content = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
@@ -814,10 +826,13 @@ class fixedPointIterationHelper():
         perirhizalModel.solve_gave_up = (np.array(comm.bcast(comm.gather(perirhizalModel.solve_gave_up ,root = 0),root = 0))).any()
         
         # one metric to decide if we stay in the iteration loop or not
+        
         perirhizalModel.err = comm.bcast(max(errRxPlant,self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds,
+                                             errWrsi,errWrsiRealInputf,
                                 s.bulkMassErrorWater_rel, 
                                s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel,
                                perirhizalModel.rhizoMassWError_rel,
+                               perirhizalModel.rhizoMassCError_rel,
                                #perirhizalModel.SinkLim3DS,
                         #perirhizalModel.SinkLim1DS
                         ),root= 0)

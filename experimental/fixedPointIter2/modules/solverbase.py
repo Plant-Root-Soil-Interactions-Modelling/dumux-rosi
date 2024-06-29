@@ -155,7 +155,6 @@ class SolverWrapper():
             @param data2share: (local) vector of the thread to share
             @param keepShape: the output vector has to be of the same shape as data2share
             @data2share_type_default: type of the data in data2share
-
         """
         try:
             assert isinstance(data2share, (list, type(np.array([]))))
@@ -176,7 +175,7 @@ class SolverWrapper():
             shape1 = (data2share).shape[1]
             data2share_type = type(data2share[0][0])
         elif len((data2share).shape) == 1:
-            local_size = (data2share).shape[0]
+            local_size = (data2share).shape[0] 
             shape0 = (data2share).shape[0]
             shape1 = 0
             if len(data2share) > 0:

@@ -129,6 +129,7 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
     results_dir = perirhizalModel.results_dir
     
     print("\n\n\n\t\t", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn")
+    write_file_float("trans", plantModel.TranspirationCumul, directory_ =results_dir)
     if perirhizalModel.doPhloemFlow:
         print(round(plantModel.Qlight *1e6),"mumol m-2 s-1")
         print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(phloemDataStorage.error_st_abs,
@@ -179,7 +180,6 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
         write_file_array("Q_Ag_dot", plantModel.AgPhl, directory_ =results_dir)
         write_file_array("C_rsi", np.array(plantModel.Csoil_seg ), 
                          directory_ =results_dir)#mmol/cm3
-        write_file_float("trans", plantModel.TranspirationCumul, directory_ =results_dir)
         write_file_array("transrate",plantModel.Jw, directory_ =results_dir, fileType = '.csv')
         
         write_file_array("errorsPlant", np.array([phloemDataStorage.error_st_abs,
@@ -298,6 +298,7 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                 filename="vtpvti/soil_rx"+ str(vtpindx),sol_ind =-1,
                                extraArray = extraArray_, extraArrayName = extraArrayName_,
                 interactiveImage=False)  # VTK vizualisation
+        
         if doSolutes:        
             for i in range(1, perirhizalModel.numComp):
                 extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6
@@ -390,7 +391,8 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                         int(plantModel.rs.subTypes[seg_ind]), 
                         2, 
                         seg_ind, 
-                        cells = False) for seg_ind in range(len(plantModel.rs.segments))])  # c++ conductivity call back functions
+                        # cells = False to add
+                        ) for seg_ind in range(len(plantModel.rs.segments))])  # c++ conductivity call back functions
             write_file_array("fpit_kr_plant",krplant,
                          directory_ =results_dir, fileType = '.csv') 
                          

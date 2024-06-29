@@ -232,9 +232,6 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
-    # low MaxRelativeShift == higher precision in dumux
-    s.MaxRelativeShift = 1e-12
-    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
     
     # force solute mole fraction > 0 and water in possible pressure ranges
@@ -266,9 +263,9 @@ def getSoilTextureAndShape():
     """ soil shape and texture data
         to adapt according to the soil represented
     """
-    min_b = np.array([-3./2, -12./2, -40.]) # np.array( [5, 5, 0.] )
-    max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
+    min_b =np.array( [-1., -1., -5.] )# np.array([-3./2, -12./2, -40.]) # 
+    max_b =np.array( [1., 1., 0.]) #  np.array([-5, -5, -5.])
+    cell_number = np.array( [1,1,5])# np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
@@ -313,7 +310,8 @@ def create_soil_model3D( usemoles, results_dir ,
 
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
-                     noAds = False, ICcc = None, doSoluteFlow = True):
+                     noAds = False, ICcc = None, doSoluteFlow = True,
+                     MaxRelativeShift = 1e-8):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         homogeneous domain 
@@ -327,6 +325,8 @@ def create_soil_model( usemoles, results_dir ,
         
     s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
     s.results_dir = results_dir   
+    # low MaxRelativeShift == higher precision in dumux
+    s.MaxRelativeShift = MaxRelativeShift 
     
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']

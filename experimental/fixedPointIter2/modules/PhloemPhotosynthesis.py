@@ -309,7 +309,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
     elif perirhizalModel.rsiCompMethod <= 1:
         fpit_Helper.rsx_input = fpit_Helper.rsx_old * ( perirhizalModel.rsiCompMethod) + fpit_Helper.rsx_init * (1. - perirhizalModel.rsiCompMethod)
     else:
-        if fpit_Helper.n_iter < 2:
+        if fpit_Helper.n_iter < 4:
             fpit_Helper.rsx_input = fpit_Helper.rsx_old
             
         elif  perirhizalModel.rsiCompMethod == 2: # mean of the last 2 values

@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-#SBATCH --job-name=4_32till
+#SBATCH --job-name=4_32trR
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=64
+#SBATCH --ntasks=32
 #SBATCH --nodes=1
-#SBATCH --partition=cpu256
+#SBATCH --partition=cpu128
 #SBATCH --time=20-00:00:00
 #SBATCH --mem=50G
 #SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END,FAIL,ALL
@@ -18,10 +18,10 @@ module load openmpi/4.1.4
 
 cd $HOME/dumux38TraiRhizo/dumux/dumux-rosi/experimental/fixedPointIter2/scripts 
 
-
+#echo $1 $2 $3 $4 $5 $6
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=4 mpirun -n 64 python3 mainTillage.py $1 $2 0 none
+DUMUX_NUM_THREADS=4 mpirun -n 32 python3 mainTraiRhizo.py $1 $2 $3 $4 $5 $6
 
 # $1 : start, $2: end, $3: param ind, $4 scenario, 
 # optional : $5: spellStart, $6: spellduration

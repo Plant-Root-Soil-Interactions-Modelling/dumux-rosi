@@ -334,7 +334,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                 datas = []
                 datasName = [ ]
                 if rank == 0:   
-                    #is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569 # to check where a specific (problematic) segment is
+                    # to check where a specific (problematic) segment is
+                    #is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569 
                     datas = [#is569,
                              plantModel.psiXyl, 
                               fpit_Helper.rsx_old, 
