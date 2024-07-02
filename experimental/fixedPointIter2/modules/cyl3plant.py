@@ -332,7 +332,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter)
             # end inner loop
             
-            if not perirhizalModel.doMinimumPrint:
+            if False:#not perirhizalModel.doMinimumPrint:
                 datas = []
                 datasName = [ ]
                 if rank == 0:   

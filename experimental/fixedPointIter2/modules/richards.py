@@ -357,13 +357,13 @@ class RichardsWrapper(SolverWrapper):
             source_map[cellId] = value * unitConversion     
         self.base.setSource(source_map, eq_idx) # 
 
-    def applySource(self, dt, source_map, crit_p):
-        """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
-        self.checkGridInitialized()
-        assert not self.useMoles
-        for key, value in source_map.items():
-            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
-        self.base.applySource(dt * 24.*3600., source_map, self.to_pa(crit_p))
+    # def applySource(self, dt, source_map, crit_p):
+    #     """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
+    #     self.checkGridInitialized()
+    #     assert not self.useMoles
+    #     for key, value in source_map.items():
+    #         source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
+    #     self.base.applySource(dt * 24.*3600., source_map, self.to_pa(crit_p))
 
     def setCriticalPressure(self, critical):
         """ Sets the critical pressure to limit flow for boundary conditions constantFlow, constantFlowCyl, and atmospheric """

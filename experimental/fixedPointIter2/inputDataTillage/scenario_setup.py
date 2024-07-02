@@ -396,7 +396,8 @@ def setupOther(s, p_mean_):
             print(type(p_mean_))
             raise Exception
             
-    s.maxDt =  250/(3600*24)
+    s.maxDt =  250./(3600.*24.) # [s]
+    s.maxDt_1DS = s.maxDt/10. # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
     s.eps_regularization = 1e-10
     s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be low when using sand parameters. 

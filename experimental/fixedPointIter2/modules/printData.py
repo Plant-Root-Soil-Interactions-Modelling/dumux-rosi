@@ -214,8 +214,11 @@ def printCylData(perirhizalModel, rs_age):
                     write_file_array("Cyl_content"+str(ccc+1)+"_"+str(gId)+"", 
                                  sol0, 
                                  directory_ =results_dir+'cyl_val/', allranks = True)
+                    if min(sol0) < 0.:
+                        print('issue sol0',sol0, 'solid',ccc+1)
+                        raise Exception
             if max(pHead) > 0:
-                print('issue phead',gId,rank, pHead, sol0 )
+                print('issue phead',gId,rank, pHead )
                 raise Exception
                 
 def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
@@ -377,7 +380,7 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                 write_file_array("fpit_Cyl_pressureHead_"+str(gId),pHead, 
                                  directory_ =results_dir+'cyl_val/', allranks = True)
                 if max(pHead) > 0:
-                    print('issue phead',gId,rank, pHead, sol0 )
+                    print('issue phead',gId,rank, pHead)
                     raise Exception
                     
 

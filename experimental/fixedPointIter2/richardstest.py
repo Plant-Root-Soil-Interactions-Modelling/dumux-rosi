@@ -24,7 +24,7 @@ import numpy as np
 s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid([-5., -5., -200.], [5., 5., 0.], [5,5,5])  # [cm]
-p_mean_ = -15000
+p_mean_ = 0
 s.soil = [0.049, 0.352, 0.019, 4.887, 421.67]
 s.vg_soil = vg.Parameters(s.soil) 
 s.setHomogeneousIC(p_mean_, equilibrium = False)  # cm pressure head

@@ -345,7 +345,7 @@ public:
 		doSoluteFlow =   getParam<bool>("Problem.doSoluteFlow", doSoluteFlow);
 		reactionExclusive=   getParam<bool>("Problem.reactionExclusive",(dimWorld > 1));
 				dzScaling = getParam<int>("Soil.BC.dzScaling", 2); 
-		
+		dobioChemicalReaction_ = getParam<bool>("Problem.dobioChemicalReaction",true);
 		
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
@@ -513,11 +513,15 @@ public:
 
 	double getCellVolumesCyl(int dofIndex) const
 	{
+		
 		if(!computedCellVolumesCyl) // if we want to change the segLEngth without recreating the object?
 		{
-			const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
-			this->setVolumesCyl(computeCellVolumesCyl_());
-			const_cast<bool&>(computedCellVolumesCyl )  = true;
+			DUNE_THROW(Dune::InvalidStateException, "getCellVolumesCyl: cellVolumesCyl not set");
+			// only use Dumux::getParam in the initialization function: these are global parameter
+			// common for all 1d models and for all 3d models (but different between 1d and 3d models--don t know why)
+			// const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
+			// this->setVolumesCyl(computeCellVolumesCyl_());
+			// const_cast<bool&>(computedCellVolumesCyl )  = true;
 		}
 		return cellVolumesCyl.at(dofIndex);
 	}
@@ -876,7 +880,7 @@ public:
                         
 						if ((f!= 0)&&verbose)
 						{
-							std::cout<<"onLowerBoundary_constantFluxCyl, finput: "<<bcTopValues_[pressureIdx]
+							std::cout<<"onUpperBoundary_constantFluxCyl, finput: "<<bcTopValues_[pressureIdx]
                             <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
@@ -1070,7 +1074,7 @@ public:
                         Scalar omax = (de * (massOrMolFraction*rhoW - minCvalue*rhoW) / dz + flux[h2OIdx] * massOrMolFraction);
 						if (verbose)
 						{
-							std::cout<<"onLowerBoundary_constantFluxCyl, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow "<<
+							std::cout<<"onLowerBoundary_constantFluxCyl, solute, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow "<<
                             soluteFlow<<", omax: "<<omax<<" min "<<std::min(soluteFlow, omax)<<", massOrMolFraction: "<<massOrMolFraction
 							<<" unitConversion "<<unitConversion<<" pos[0] "<<pos[0]<<std::endl;
 						}
@@ -1115,7 +1119,7 @@ public:
 			const SubControlVolume &scv) const {
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
-		bool dobioChemicalReaction = true; //by default, do biochemical reactions
+		bool dobioChemicalReaction = dobioChemicalReaction_; //by default, do biochemical reactions
 		double pos0; 
         double svc_volume;
         int dofIndex = scv.dofIndex();
@@ -1176,6 +1180,16 @@ public:
 		}
 		
 		setSource(source/pos0, dofIndex);// [ mol / (m^3 \cdot s)]
+	
+		if(verbose)
+		{
+			std::cout << "source() ";
+			for(int i = 0;i < numComponents_;i++)
+			{
+				std::cout<<source[i]<<" ";
+			}			
+			std::cout << std::endl;
+		}
 		
 		return source;
 	}
@@ -1350,7 +1364,7 @@ public:
 		q[CSS2Idx] +=  dtCSS2 * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
 			
-			if(verbose)
+			if(verbose>1)
 			{
                 std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
                 <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
@@ -1615,7 +1629,7 @@ private:
 								 
 
 	bool gravityOn_;
-
+	bool dobioChemicalReaction_;
 	// Source
 	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;

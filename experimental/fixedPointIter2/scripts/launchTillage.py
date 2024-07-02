@@ -4,7 +4,7 @@ os.chdir('/home/rbtlm640/dumux10c38/dumux/dumux-rosi/experimental/fixedPointIter
 sys.path.append('')
 import mainTillage
 
-spellData = {'scenario': 'none', 'spellStart': 12, 'spellEnd': 13,'condition': 'wet'}
-results_dir = mainTillage.XcGrowth(9.5, 10.,0,spellData )
+spellData = {'scenario': 'none', 'spellStart': 92, 'spellEnd': 93,'condition': 'wet'}
+results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
 
 

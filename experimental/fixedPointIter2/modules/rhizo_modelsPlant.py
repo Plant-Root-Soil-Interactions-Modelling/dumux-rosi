@@ -425,6 +425,8 @@ class RhizoMappedSegments(pb.MappedPlant):
             creates new 1d models or update the sape of existing 1d models
         """
         self.printData('updateBefore')
+
+
         try:
             maxlim1d3d = max(self.maxDiff1d3dCW_abs[0]*10,self.limErr1d3dAbs)
         except:
@@ -449,7 +451,8 @@ class RhizoMappedSegments(pb.MappedPlant):
             if not isinstance(cyl, AirSegment) :
                 #update cylinder which have shrunk
                 self.updateOld(i, cyl,smaller = True)
-                
+
+
         try:
             
             # compute the leftover volume after cylinder shrinkage
@@ -499,13 +502,16 @@ class RhizoMappedSegments(pb.MappedPlant):
                         self.updateOld(i, cyl,smaller = False, 
                                        thetaLeftOver = theta_leftover[self.seg2cell[cyl.gId]],
                                        konzLeftOver = conc_leftover[self.seg2cell[cyl.gId]])
+
                     except:
                         print('error when creating smaller cylB',i, cyl.gId,
                               theta_leftover[self.seg2cell[cyl.gId]],conc_leftover[self.seg2cell[cyl.gId]] )
                         raise Exception
-                    
+
+
             for gId in self.newEidx:#only initialize the new eidx
                 self.initialize_(gId,WatPsi_leftover,molFr_leftover)
+
         except:
             self.printData('updateAfter')
             raise Exception
@@ -533,7 +539,8 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.nsSoilOld = sum(self.repartitionSoilOld )
         self.nsSoilOld = comm.bcast(self.nsSoilOld, root = 0)  
         self.nsAirOld = sum(self.repartitionAirOld )
-        self.nsAirOld = comm.bcast(self.nsAirOld, root = 0)  
+        self.nsAirOld = comm.bcast(self.nsAirOld, root = 0)
+
         
     
     def printData(self, title):
@@ -1192,15 +1199,14 @@ class RhizoMappedSegments(pb.MappedPlant):
                 self.dx2[lId] = 0.5 * (points[1] - points[0]) #when updating
             else:
                 self.dx2.append(0.5 * (points[1] - points[0]))
-                
+
+            cyl.setParameter("Problem.segLength", str(self.seg_length[gId]))  # cm
             cyl.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
             cyl.setParameter("Soil.BC.dzScaling", "1")
-            cyl.seg_length = self.seg_length[gId]
             cyl.setParameter( "Soil.css1Function", str(self.soilModel.css1Function))
             cyl.setParameter("Problem.verbose", "0")
             cyl.setParameter("Problem.reactionExclusive", "0")
             cyl.setParameter("Soil.CriticalPressure", str(self.soilModel.wilting_point))
-            cyl.setParameter("Problem.segLength", str(self.seg_length[gId]))   # cm
             cyl.setParameter( "Soil.Grid.Cells",str( self.NC-1)) # -1 to go from vertices to cell (dof)
             if verbose:
                 print("Soil.IC.P", cyl.dumux_str(x), Cells)
@@ -1294,7 +1300,7 @@ class RhizoMappedSegments(pb.MappedPlant):
             cyl.setParameter("Newton.MaxSteps",
                              str( cyl.MaxSteps) )  
             cyl.setParameter("Newton.Verbosity", "0") 
-            cyl.initializeProblem(maxDt = self.soilModel.maxDt)
+            cyl.initializeProblem(maxDt = self.soilModel.maxDt_1DS)#self.soilModel.maxDt)
             cyl.eps_regularization = self.soilModel.eps_regularization
             if cyl.eps_regularization is not None:
                 cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) # needs to be low when using sand parameters. 
@@ -1308,11 +1314,10 @@ class RhizoMappedSegments(pb.MappedPlant):
             cyl.CSSmax = self.soilModel.CSSmax               
             cyl.f_sorp =self.soilModel.f_sorp    
             cyl.css1Function = self.soilModel.css1Function
-            cyl.ddt = 1.e-5
+            cyl.ddt = 1.e-3
             cyl.gId = gId    
             cyl.theta_wilting_point = self.theta_wilting_point    
-            cyl.vg_soil = self.vg_soil   
-            cyl.l = self.seg_length[gId]    
+            cyl.vg_soil = self.vg_soil
             cyl.a_in = a_in    
             cyl.a_out = a_out
             ThetaCyl = cyl.getWaterContent()
@@ -1327,16 +1332,29 @@ class RhizoMappedSegments(pb.MappedPlant):
             
             if verbose:
                 print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl()),self.seg_length[gId],
-                  pHeadcyl , x,pHeadcyl - x,'Cells',Cells, a_in, a_out, cyl.l)
+                  pHeadcyl , x,pHeadcyl - x,'Cells',Cells, a_in, a_out, cyl.segLength)
             try:
+                x_divide = np.where(np.array(x)!=0,x,1)
+                thetainit = cyl.getWaterContent()
+                thetainitth = np.array([vg.water_content( p_mean_, self.vg_soil) for
+                                        p_mean_ in pHeadcyl])
+                theta_divide = np.where(thetainitth!=0,thetainitth,1)
+
+                assert abs(self.seg_length[gId] -
+                           cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -
+                           cyl.segLength)/cyl.segLength) < 1e-5
+                # we could have some issue because of the water
+                # retention curve regularisation in dumux
                 assert len(pHeadcyl) == (self.NC - 1)
-                x_divide = np.where(x!=0,x,1)
                 assert (np.logical_or( (abs((pHeadcyl - x)/x_divide)*100 < 1e-5) , 
                                        (abs(pHeadcyl - x) < 1e-9) )).all()
+                assert (np.logical_or( (abs((thetainit - thetainitth)/theta_divide)*100 < 1e-5) ,
+                                       (abs(thetainit- thetainitth) < 1e-9) )).all()
             except:
                 print('error: issue with cylinder creations', rank)
                 print('len(pHeadcyl) == (self.NC - 1)?', len(pHeadcyl), (self.NC - 1))
                 print('(abs((pHeadcyl - x)/x_divide)*100 > 1e-5).all()?',abs((pHeadcyl - x)/x_divide)*100, pHeadcyl,x,'x_divide',x_divide)
+                print('theta',thetainit,thetainitth)
                 raise Exception
             
             return cyl
@@ -1496,7 +1514,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                       ' qIn',qIn_solMucil, 
                 inner_fluxes_solMucil,'qout', QflowOutCellLim,outer_fluxes_solMucil,
                       'qout init',outer_fluxes_solMucilbu,'shape', self.radii[gId],  
-                      np.array( self.outer_radii)[gId] , 'length', cyl.l )
+                      np.array( self.outer_radii)[gId] , 'length', cyl.segLength )
                 raise Exception
         return  inner_fluxes_solMucil, outer_fluxes_solMucil                    
                      
@@ -1583,7 +1601,8 @@ class RhizoMappedSegments(pb.MappedPlant):
             proposed_inner_fluxes_mucil : net plant large C molecule releases,  [mol C day-1] 
             proposed_outer_fluxes_mucil: 1d-3d or 1d-1d large C molecul exchanges,  [mol C day-1] 
         """
-        
+
+
         #inner = bot = plant
         #outer = top = soil
         proposed_inner_fluxes = argv[0]
@@ -1652,11 +1671,14 @@ class RhizoMappedSegments(pb.MappedPlant):
             maxVal = self.vg_soil.theta_S
             minVal = self.theta_wilting_point
             theta = cyl.getWaterContent()
+            phead = cyl.getSolutionHead()
             assert min(theta)>= minVal
             assert max(theta)<= maxVal
+            assert max(phead)<= 0.
         except:
             print(rank, 'min(theta)< minVal or max(theta)>maxVal', 
-                  cyl.gId, theta)
+                  cyl.gId, theta,
+                  'or phead > 0',phead)
             return  False
         return True
         
@@ -1702,7 +1724,10 @@ class RhizoMappedSegments(pb.MappedPlant):
         a_in = self.radii[gId]
         a_out = np.array( self.outer_radii)[gId]
         l = cyl.segLength
-        
+        if not (abs(self.seg_length[gId]-
+                   cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+            print('wrong segLength')
+            raise Exception
         assert self._check_Ccontent(cyl)
         assert self._check_Wcontent(cyl)
 
@@ -1725,8 +1750,9 @@ class RhizoMappedSegments(pb.MappedPlant):
         while redoSolve:
         
             try:
-                cyl.ddt =min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
-                cyl.setMaxTimeStepSize(self.soilModel.maxDt)
+                # reseting cyl.ddt to 1.e-5 was actually creating problems for sand VG
+                cyl.ddt = 1e-3#min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
+                cyl.setMaxTimeStepSize(self.soilModel.maxDt_1DS/10.)
                 
                 didReset = False
                 #cyl.solve(dt)
@@ -1757,7 +1783,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                 
             except Exception as e: 
                 np.set_printoptions(precision=20)
-                
+                cyl.setVerbose(1)
                 #cyl.base.printParams()
                 print('solve Failed:', e,'rank',rank,'gId',gId,'lId',lId,
                       'n_iter_solve',n_iter_solve,'theta',cyl.getWaterContent())
@@ -1786,7 +1812,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                     cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
                     cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
                     cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "true")
-                    if  errorWOnly or errorCOnly:
+                    if errorWOnly or errorCOnly:
                         maxRelShift /= 10
                         cyl.setParameter("Newton.MaxRelativeShift", str(maxRelShift))# 
                     cyl.reset();
@@ -1854,10 +1880,12 @@ class RhizoMappedSegments(pb.MappedPlant):
                   'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
                    cyl.getCellVolumes()))
 
+        cyl.setVerbose(0)
         if (self.n_iter >= 90) and (gId == 0):
             print('did 1d flow (n_iter >= 90) and (gId == 0)')
             print(vg.hydraulic_conductivity( cyl.getSolutionHead()[0] ,self.vg_soil),
                   (cyl.getPoints[1]-cyl.getPoints[0])/2.)
+
 
         return inner_fluxes_real[0], outer_fluxes_water_temp, inner_fluxes_real[1:], outer_fluxes_solMucil_temp        
      
