@@ -33,7 +33,8 @@ import printData
 
 def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter file
+    xml_name = "wheat_1997_for_australia_dxmin_simple.xml"  # root growth model parameter
+    # file
     dx = 0.2 # todo implement
     dxMin = 0.25
     MaxRelativeShift = 1e-8 

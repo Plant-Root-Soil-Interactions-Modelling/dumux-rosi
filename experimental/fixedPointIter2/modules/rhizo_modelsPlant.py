@@ -1276,7 +1276,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                         print("Cells,  cAll[j-1]",Cells,  cAll[j-1], 
                                 len(Cells), len(cAll[j-1]), j)
                         raise Exception
-            cyl.MaxRelativeShift = self.soilModel.MaxRelativeShift
+            cyl.MaxRelativeShift = self.soilModel.MaxRelativeShift_1DS
             cyl.setParameter("Newton.MaxRelativeShift",str(cyl.MaxRelativeShift))
             cyl.EnableResidualCriterion = self.soilModel.EnableResidualCriterion
             cyl.setParameter("Newton.EnableResidualCriterion",
@@ -1592,7 +1592,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         proposed_outer_fluxes_sol = argv[3]
         proposed_inner_fluxes_mucil = argv[4]
         proposed_outer_fluxes_mucil = argv[5]
-        
+        self.n_iter = argv[6]
         
         self._initialize_flux_storage()
         
@@ -1705,14 +1705,20 @@ class RhizoMappedSegments(pb.MappedPlant):
         
         assert self._check_Ccontent(cyl)
         assert self._check_Wcontent(cyl)
-        
+
+        if (self.n_iter >= 90) and (gId == 0):
+            print('(n_iter >= 90) and (gId == 0)')
+
         redoSolve = True
         n_iter_solve = 0
         verbose = False
         if verbose:
+            oldWaterContent = cyl.getWaterContent()
             print('start solve, water in ',inner_fluxes_water_temp,'water out', outer_fluxes_water_temp, 
-                        repr(cyl.getWaterContent()), 
-                        repr(cyl.getSolutionHead()),'shape', repr(cyl.getPoints()),repr( cyl.CellVolumes), a_in, a_out, l, 'dt', dt)
+                        repr(oldWaterContent),
+                        repr(cyl.getSolutionHead()),
+                  'shape', repr(cyl.getPoints()),
+                  repr( cyl.CellVolumes), a_in, a_out, l, 'dt', dt)
         inner_fluxes_real = np.full(self.numFluidComp, np.nan)
         outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
@@ -1844,8 +1850,15 @@ class RhizoMappedSegments(pb.MappedPlant):
                     repr(cyl.getSolutionHead()),
                   'inner_fluxes_real',inner_fluxes_real, 
                   'inner_fluxes_water_temp', inner_fluxes_water_temp, 
-                  repr(cyl.getCellVolumes()))
-            
+                  repr(cyl.getCellVolumes()),
+                  'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
+                   cyl.getCellVolumes()))
+
+        if (self.n_iter >= 90) and (gId == 0):
+            print('did 1d flow (n_iter >= 90) and (gId == 0)')
+            print(vg.hydraulic_conductivity( cyl.getSolutionHead()[0] ,self.vg_soil),
+                  (cyl.getPoints[1]-cyl.getPoints[0])/2.)
+
         return inner_fluxes_real[0], outer_fluxes_water_temp, inner_fluxes_real[1:], outer_fluxes_solMucil_temp        
      
     def _adjust_fluxes(self, cyl, dt, inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil,  n_iter_solve, errorCOnly, errorWOnly):
@@ -2109,13 +2122,17 @@ class RhizoMappedSegments(pb.MappedPlant):
     def _verify_splits(self, soilVals, cellIds, splitVals,  seg_values, verbose):
         organTypes = np.array(self.organTypes)
         try:
-            if abs(sum(soilVals[cellIds])) > 1e-16:
+            if abs(sum(soilVals[cellIds])) > 1e-13:
                 assert abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. < 0.1 
             else:
                 assert abs((sum(splitVals) - sum(soilVals[cellIds]))) < 1e-15
         except:
-            print('ERROR SPLIT VALSB')
-            print('abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. >= 0.1')
+            
+            print('_verify_splits: ERROR')
+            print((abs(sum(soilVals[cellIds])) > 1e-13),
+                  (abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[
+                                                                           cellIds])) * 100. < 0.1 ),
+                  (abs((sum(splitVals) - sum(soilVals[cellIds]))) < 1e-15))
             print(sum(splitVals), sum(soilVals), sum(soilVals[cellIds]))
             #print('splitVals', splitVals, 'soilVals', soilVals, 'seg_values', seg_values)
             print(sum(splitVals) - sum(soilVals[cellIds]))

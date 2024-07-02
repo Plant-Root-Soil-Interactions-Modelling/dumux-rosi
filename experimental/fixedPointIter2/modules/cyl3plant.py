@@ -187,7 +187,9 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                   fpit_Helper.seg_sol_fluxes, # inner BC solute 1
                                   fpit_Helper.proposed_outer_sol_fluxes, # outer BC solute 1
                                   fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
-                                  fpit_Helper.proposed_outer_mucil_fluxes # outer BC solute 2
+                                  fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
+                                  # solute 2
+                                  fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
             
             if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:

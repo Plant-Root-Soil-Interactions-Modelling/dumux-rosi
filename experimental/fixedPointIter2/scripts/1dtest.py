@@ -1,5 +1,6 @@
 import sys;
-
+import os
+os.chdir('experimental/fixedPointIter2/scripts')
 sys.path.append("../modules/");
 sys.path.append("../inputDataTraiRhizo/");
 sys.path.append("../../../../CPlantBox/");
@@ -305,6 +306,7 @@ def dothesolve(cyl):
         
     cyl.ddt =min( 1.e-5,cyl.ddt)
     cyl.solve(dt)
+    
     assert _check_Ccontent(cyl)
     print('phead',cyl.getSolutionHead())
     inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(cyl.a_in, cyl.a_out)     

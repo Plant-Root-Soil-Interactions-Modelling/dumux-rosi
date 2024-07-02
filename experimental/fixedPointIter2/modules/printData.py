@@ -406,6 +406,20 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
             write_file_array("fpit_proposed_outer_fluxes", fpit_Helper.proposed_outer_fluxes,
                          directory_ =results_dir, fileType = '.csv')
 
+            write_file_array("fpit_errorsEach1DSWLim",
+                             perirhizalModel.errorsEachWLim,
+                             directory_ =results_dir, fileType = '.csv')
+            write_file_array("fpit_errorsEach1DSW",
+                             perirhizalModel.errorsEachW,
+                             directory_ =results_dir, fileType = '.csv')
+
+            write_file_array("fpit_psi_sri_oldvsnew",
+                             perirhizalModel.errWrsis,
+                             directory_ =results_dir, fileType = '.csv')
+
+            write_file_array("fpit_psi_sri_realvsinput",
+                             perirhizalModel.errWrsiRealInputs,
+                             directory_ =results_dir, fileType = '.csv')
             write_file_array("fpit_psi_sri_input", fpit_Helper.rsx_input, directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_psi_sri_real", fpit_Helper.rsx_old, directory_ =results_dir, fileType = '.csv')   
         

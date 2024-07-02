@@ -349,7 +349,10 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
 
         if len(perirhizalModel.airSegs) > 0:   # infinit resistance for shoot segments and roots aboveground
             fpit_Helper.soilK[perirhizalModel.airSegs] = np.Inf
-        
+
+
+    if (fpit_Helper.n_iter >= 90) :
+        print('in phloemphotosynthesis, (n_iter >= 90)')
 
     if perirhizalModel.doPhotosynthesis:
         if (rank == 0):
@@ -371,7 +374,10 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
             seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
             rx = list(rx), sx= list(fpit_Helper.rsx_input), 
                                                approx=False, cells=False, #approx, cells
-                                               soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate  
+                                               soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate
+
+            if (fpit_Helper.n_iter >= 90):
+                print('did water flow, (n_iter >= 90)')
         else :
             plantModel.psiXyl = None
             seg_fluxes = None

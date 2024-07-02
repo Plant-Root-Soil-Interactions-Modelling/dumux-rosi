@@ -52,7 +52,9 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """                            
-        self.base.solveNoMPI(dt * 24.*3600., saveInnerDumuxValues = saveInnerDumuxValues_)  # days -> s
+        self.base.solveNoMPI(dt * 24.*3600., saveInnerDumuxValues =
+        saveInnerDumuxValues_)  # days -> s
+
 
     def getSolutionHead(self, eqIdx=0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 

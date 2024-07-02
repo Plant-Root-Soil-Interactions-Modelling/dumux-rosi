@@ -614,12 +614,12 @@ class fixedPointIterationHelper():
         
         # store absolute total error for limited flow
         perirhizalModel.rhizoMassWError_absLim = sum(abs(errorsEachW[rhizoSegsId]))
-        
-        
+        perirhizalModel.errorsEachWLim = errorsEachW
+
         # get error according to the proposed (==prescribed) flux
         # need to be ~ 0 when leaving fixed point iteration 
-        errorsEachW = self.rhizoWAfter_eachCyl - ( self.rhizoWBefore_eachCyl + (self.seg_fluxes+ self.proposed_outer_fluxes+ perirhizalModel.flow1d1d_w)*dt)
-        perirhizalModel.rhizoMassWError_abs  = sum(abs(errorsEachW[rhizoSegsId]))
+        perirhizalModel.errorsEachW = self.rhizoWAfter_eachCyl - ( self.rhizoWBefore_eachCyl + (self.seg_fluxes+ self.proposed_outer_fluxes+ perirhizalModel.flow1d1d_w)*dt)
+        perirhizalModel.rhizoMassWError_abs  = sum(abs(perirhizalModel.errorsEachW[rhizoSegsId]))
         
         # store relative total error 
         perirhizalModel.rhizoMassWError_relLim = abs(perirhizalModel.rhizoMassWError_absLim/sum(self.rhizoWAfter_eachCyl)*100)
@@ -754,17 +754,17 @@ class fixedPointIterationHelper():
         rsx =comm.bcast( perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX), root = 0)  # works for all threads
         rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
                                   rsx,self.rsx_input)
-        errWrsiRealInput =  abs((rsx - self.rsx_input)/rsx_divide)*100.
-        errWrsiRealInput[abs(rsx - self.rsx_input)<= 5]= 0.
-        errWrsiRealInputf = max(errWrsiRealInput)
+        perirhizalModel.errWrsiRealInputs =  abs((rsx - self.rsx_input)/rsx_divide)*100.
+        perirhizalModel.errWrsiRealInputs[abs(rsx - self.rsx_input)<= 5]= 0.
+        errWrsiRealInputf = max(perirhizalModel.errWrsiRealInputs)
         if rank == 0:
             print("errWrsiRealInput:",errWrsiRealInputf)
         perirhizalModel.errWrsiRealInput = errWrsiRealInputf
         
         rsx_divide = np.where(rsx!=0.,rsx,1.)
-        errWrsi =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
-        errWrsi[abs(rsx - self.rsx_old)<= 5]= 0.
-        errWrsi = max(errWrsi)
+        perirhizalModel.errWrsis =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
+        perirhizalModel.errWrsis[abs(rsx - self.rsx_old)<= 5]= 0.
+        errWrsi = max(perirhizalModel.errWrsis)
         self.rsx_old = rsx;
         self.rsx_olds.append(self.rsx_old)
         perirhizalModel.errWrsi = errWrsi

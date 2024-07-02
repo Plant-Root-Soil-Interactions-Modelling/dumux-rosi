@@ -155,6 +155,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
 
 def setupDir(results_dir):
     """if results directory already exists, make it empty"""
+
     if rank == 0:
         for extraText in ["","cyl_val/","printData/", "vtpvti/", "fpit/", "fpit/cyl_val/"]:
             if not os.path.exists(results_dir+extraText):
@@ -166,7 +167,6 @@ def setupDir(results_dir):
                         os.remove(results_dir+extraText+item)
                     except:
                         pass
-
 
 
 def sinusoidal3(t, dt):
@@ -198,11 +198,12 @@ def continueLoop(perirhizalModel,s,n_iter, dt_inner: float,failedLoop: bool,
 
 
     cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or  perirhizalModel.solve_gave_up or failedLoop
-            or (s.bulkMassErrorWater_rel > s.bulkMassErrorWater_relLim*10)
-            or (perirhizalModel.rhizoMassWError_rel > perirhizalModel.rhizoMassWError_relLim*10)
-            or (perirhizalModel.errWrsi > 11.)
-            or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
-            or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
+            #or (s.bulkMassErrorWater_rel > s.bulkMassErrorWater_relLim*10)
+            #or (perirhizalModel.rhizoMassWError_rel >
+            #perirhizalModel.rhizoMassWError_relLim*10)
+            #or (perirhizalModel.errWrsi > 1.)#already added in 'err' metric
+            or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.01)
+            or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.01)
             or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)  
             or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
 

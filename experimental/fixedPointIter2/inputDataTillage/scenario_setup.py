@@ -326,7 +326,8 @@ def create_soil_model( usemoles, results_dir ,
     s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
     s.results_dir = results_dir   
     # low MaxRelativeShift == higher precision in dumux
-    s.MaxRelativeShift = MaxRelativeShift 
+    s.MaxRelativeShift = MaxRelativeShift
+    s.MaxRelativeShift_1DS = 1e-12
     
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
