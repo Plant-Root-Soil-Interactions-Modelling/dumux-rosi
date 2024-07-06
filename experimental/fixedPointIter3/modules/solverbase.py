@@ -227,19 +227,7 @@ class SolverWrapper():
             @param numberOfCells    resoultion [1]
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
-        
-        
-        try:
-            with StdoutRedirector() as redirector:
-                self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., 
-                                     np.array(numberOfCells), periodic
-                                    )  # cm -> m
-        except Exception as e:
-            target_filepath = self.results_dir + 'stdcout_cpp'+str(self.pindx)+"_"+str(rank)+'.txt'
-            with open(target_filepath, 'w') as f:
-                f.write(redirector.buffer)
-            raise Exception
-            
+        self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
         self.numberOfCellsTot = np.prod(self.numberOfCells)
         if self.dimWorld == 3:
             self.numberOfFacesTot = self.numberOfCellsTot * 6

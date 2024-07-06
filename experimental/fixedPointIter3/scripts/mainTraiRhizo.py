@@ -9,16 +9,15 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
 import numpy as np
 
-path = "../inputDataTillage/"
-sys.path.append(path);
 sys.path.append("../modules/");
-
+sys.path.append("../inputDataTraiRhizo/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
+sys.path.append("../../../build-cmake/cpp/python_binding/");
 import plantbox as pb  # CPlantBox
 import vtk_plot_adapted as vp
-import scenario_setup
+
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
 import cyl3plant as cyl3
@@ -28,29 +27,27 @@ from helpfull import continueLoop
 import weatherFunctions 
 from PhloemPhotosynthesis import *
 import printData
+import scenario_setup
 
     
 
-def XcGrowth(initsim, simMax,paramIndx_,spellData):
-
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
-    # file
-    dx = 0.2 # todo implement
-    dxMin = 0.25
-    MaxRelativeShift = 1e-8 
+def XcGrowth(initsim, simMax,paramIndx_,spellData): 
+    path = "../../../../CPlantBox/modelparameter/structural/plant/"
+    xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
+    MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 1/60/24 # dt
+    dt_inner_init =  dt # 1/60/24 #
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
     k_iter = 100 # max num of iteration for loops
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
-    doSoluteFlow = False # only water (False) or with solutes (True)
-    noAds = True # stop adsorption?
-    doPhloemFlow = False
-    doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
+    doSoluteFlow = True # only water (False) or with solutes (True)
+    noAds = False # stop adsorption?
+    doPhloemFlow = True
+    doPhotosynthesis = True # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
     # at the beginning of the time step. Otherwise does not converge
     do1d1dFlow = False
@@ -63,7 +60,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  False
+    doMinimumPrint =  True
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
@@ -71,29 +68,30 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # 2 : last two mean method
     # 3 : mean(oldmean, lastval)
     # 4 : mean(allvals)
-    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). f
+    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). 
     # for eahc seg, not just the whole set
     # 6: keep min obtained ksoil
     # 7 : get mean/integrated krsoil from dumux. likewise, use mean/integrated psi gotten in dumux.
     # or run plant model
-    # 8 call cpb 
+    # 8 call cpb in dumux ? inner fixed-point iteration?
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
     maxTranspiration = 12#6. # cm3/day, used if not doPhotosynthesis 
-    maxTranspirationAge = 8. # day, age at which trans = maxTRans
+    maxTranspirationAge = 25. # day, age at which trans = maxTRans
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
-    # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/ylim/"+str(rsiCompMethod*10)+str(spellData['scenario'])
-                 +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
-                    +"_"+str(int(initsim))+"to"+str(int(simMax))
-                    +"_"+str(int(dt_inner_init*24*60))+"mn_"
-                    +str(int((dt_inner_init*24*60 - int(dt_inner_init*24*60))*60))+"s_"
-                    +str(max_rank)+"/")
+    # directory where the results will be printed
+    results_dir="./results/TraiRhizo/paperSc/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
+    +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
+                    +"_"+str(paramIndx_)\
+                    +"_"+str(int(initsim))+"to"+str(int(simMax))\
+                    +"_"+str(int(dt_inner_init*24*60))+"mn_"\
+                    +str(int((dt_inner_init*24*60 - int(dt_inner_init*24*60))*60))+"s_"\
+                    +str(max_rank)+"/"
     
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -127,7 +125,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     plantModel.maxTranspirationAge = maxTranspirationAge
     
     perirhizalModel.do1d1dFlow = do1d1dFlow
-    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
+    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
     perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
@@ -280,7 +278,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         
         printData.getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData)
         
-        printData.printCylData(perirhizalModel, rs_age)
+        printData.printCylData(perirhizalModel,rs_age )
         
                     
         plantModel.time_start_plant = timeit.default_timer()
@@ -295,37 +293,30 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         if (rank == 0):
             printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             
-        
-
-        if True:#int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
-                         plantModel.psiXyl
-                        ]
-                datasName = [ "psiXyl"]   
-                if doPhloemFlow:
-                    datas += [ 
-                        phloemData.C_ST, phloemData.C_S_ST, 
+                         plantModel.psiXyl, 
+                         phloemData.C_ST, phloemData.C_S_ST, 
                          phloemData.C_meso, phloemData.C_S_meso, 
                          phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
                          phloemData.Q_Gr_i,phloemData.Q_Rm_i
                         ]
-                    datasName += [
+                datasName = [ "psiXyl",
                              "C_ST", "C_S_ST", 
                              "C_meso", "C_S_meso", 
                              "Q_Exud", "Q_Mucil",
                              "Q_Gr","Q_Rm",
                              "Q_Exud_i","Q_Mucil_i" ,
                              "Q_Gr_i","Q_Rm_i"
-                            ] 
+                            ]
             else:
                 datas = []
                 datasName = []
-                
+
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
-            
             
     """ wrap up """
     

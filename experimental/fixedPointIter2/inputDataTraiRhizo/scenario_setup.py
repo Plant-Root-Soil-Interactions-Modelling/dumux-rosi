@@ -228,8 +228,8 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
-    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
+    s.setParameter("Newton.Verbosity", "0") 
     
     # force solute mole fraction > 0 and water in possible pressure ranges
     s.setParameter("Newton.EnableChop", "true")
@@ -254,6 +254,7 @@ def setDefault(s):
     s.MaxSteps = 18
     s.setParameter("Newton.MaxSteps",
                      str( s.MaxSteps) )  
+    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     
     return s
 
@@ -326,6 +327,7 @@ def create_soil_model( usemoles, results_dir ,
     s.pindx = paramIndx
     
     s.MaxRelativeShift = MaxRelativeShift # 1e-10
+    s.MaxRelativeShift_1DS = MaxRelativeShift
     
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']

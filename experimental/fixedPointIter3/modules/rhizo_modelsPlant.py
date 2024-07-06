@@ -89,7 +89,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.eidx = np.array([], dtype = np.int64) # id of 1d segments on that thread
         self.cyls = [] # local cylinders
         self.outer_radii = None # outer radius of the 1d models (cm)
-        self.rhizoVol = [] # volume of 1d models (cm3)
+        self.rhizoVol = None # volume of 1d models (cm3)
         self.dx2 = [] # distance between inner cell center and surface of plant segment (cm)
         # 1d soil models
         self.NC = 10 # number of faces of the 1d meshes, == dof + 1
@@ -105,8 +105,6 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.nsAirOld = 0 # total number of 1d air segs at the last time step
         self.toAddAir = np.array([]) # number of 1d air segs  to add for each threads
         self.repartitionAirOld = np.array([0 for i in range( max_rank)])  # old division of the 1d air models between the threads
-        self.cellIdleftover = np.array([]) # ids of cels with cyl that have decreased (for
-        # the leftover functions)
         
         # error rates and fails
         self.limErr1d3dAbs = limErr1d3dAbs
@@ -383,7 +381,6 @@ class RhizoMappedSegments(pb.MappedPlant):
         #backups
         self.outer_radii_old = self.outer_radii
         self.seg_length_old = self.seg_length
-        self.rhizoVol_old = self.rhizoVol
         self.seg2cell_old = self.seg2cell
         self.cell2seg_old = self.cell2seg
         if rank == 0:
@@ -421,27 +418,8 @@ class RhizoMappedSegments(pb.MappedPlant):
         # id of 3d soil cells with at least one root
         self.cellWithRoots = np.unique([self.seg2cell[cylid] for cylid in self.rhizoSegsId]).reshape(-1)
 
-    def getCellIdleftover(self):
-        cellIds = self.getCellIds()
-        self.cellIdleftover = []
-        for cid in cellIds:
-            segIds = self.cell2seg[cid]
-            cylSoil = np.intersect1d(segIds, self.rhizoSegsId)
-            cylSoilOld = np.intersect1d(segIds, self.cylSoilidx_all)
-
-            assert len(cylSoil) >= len(cylSoilOld)
-
-            if len(cylSoil) > len(cylSoilOld):
-                self.cellIdleftover.append(cid)
-            else: # no new segments but they might have changed shape
-                oldVol = self.rhizoVol_old[cylSoilOld]
-                newVol = self.rhizoVol[cylSoil]
-                Dvol = oldVol - newVol
-
-                if ( (max(abs(Dvol)) > 1e-16) and (max(Dvol)> sum(oldVol - newVol) ) ) :
-                    self.cellIdleftover.append(cid)
-        self.cellIdleftover = np.array(self.cellIdleftover)
-
+        
+        
     def update(self):
         """ 
             creates new 1d models or update the sape of existing 1d models
@@ -449,15 +427,16 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.printData('updateBefore')
 
 
-        if self.debugMode:
-            for cyl in self.cyls:                  
-                gId = cyl.gId
-                if self.changedLen(cyl):     
-                    print('wrong segLength', gId, str(self.seg_length[gId]),
-                          self.seg_length[gId], cyl.segLength,
-                          (self.seg_length[gId] - cyl.segLength),
-                          (self.seg_length[gId] - cyl.segLength) / cyl.segLength)
-                    raise Exception
+        if self.debugMode: #  and (len(self.cyls)>0)
+            for cyl in self.cyls:
+                if not isinstance(cyl, AirSegment):
+                    gId = cyl.gId
+                    if not (abs(self.seg_length[gId]-
+                               cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+                        print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
+                              (self.seg_length[gId] -  cyl.segLength),
+                             (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
+                        raise Exception
 
         try:
             maxlim1d3d = max(self.maxDiff1d3dCW_abs[0]*10,self.limErr1d3dAbs)
@@ -478,23 +457,27 @@ class RhizoMappedSegments(pb.MappedPlant):
         wat_total = comm.bcast(self.soilModel.getWaterContent() , root = 0) # m3/m3 #self.soilWatVol_old
         mol_total = comm.bcast([self.soilModel.getContent(ncomp) for ncomp in range(1, self.numComp)], root = 0) 
 
-        # update the shape only of air segments and rhizoseg with almost same shape
-
-        self.getCellIdleftover()
-        for i, cyl in enumerate(self.cyls):
-            if not isinstance(cyl, AirSegment) :
-                #update cylinder which have shrunk
-                self.updateOld(i, cyl,shapeOnly = True)
-            else:
-                cyl.segLength = self.seg_length[cyl.gId]
-
+        
         for i, cyl in enumerate(self.cyls):
             if not isinstance(cyl, AirSegment) :
                 #update cylinder which have shrunk
                 self.updateOld(i, cyl,smaller = True)
+            else:
+                cyl.segLength = self.seg_length[cyl.gId]
+
 
 
         try:
+            if self.debugMode and (len(self.cyls)>0) :
+                for cyl in self.cyls:
+                    if not isinstance(cyl, AirSegment) :
+                        gId = cyl.gId
+                        if not (abs(self.seg_length[gId]-
+                                   cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+                            print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
+                                  (self.seg_length[gId] -  cyl.segLength),
+                                 (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
+                            raise Exception
             
             
             # compute the leftover volume after cylinder shrinkage
@@ -551,27 +534,30 @@ class RhizoMappedSegments(pb.MappedPlant):
                         raise Exception
 
 
-            if self.debugMode  :
-                for cyl in self.cyls:                                                       
-                    gId = cyl.gId
-                    if self.changedLen(cyl):       
-                        print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
-                              (self.seg_length[gId] -  cyl.segLength),
-                             (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
-                        raise Exception
+            if self.debugMode: #  and (len(self.cyls)>0)
+                for cyl in self.cyls:
+                    if not isinstance(cyl, AirSegment):
+                        gId = cyl.gId
+                        if not (abs(self.seg_length[gId]-
+                                   cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+                            print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
+                                  (self.seg_length[gId] -  cyl.segLength),
+                                 (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
+                            raise Exception
 
             for gId in self.newEidx:#only initialize the new eidx
                 self.initialize_(gId,WatPsi_leftover,molFr_leftover)
 
-
-            if self.debugMode :
-                for cyl in self.cyls:           
-                    gId = cyl.gId
-                    if self.changedLen(cyl):
-                        print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
-                              (self.seg_length[gId] -  cyl.segLength),
-                             (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
-                        raise Exception
+            if self.debugMode: #  and (len(self.cyls)>0)
+                for cyl in self.cyls:
+                    if not isinstance(cyl, AirSegment):
+                        gId = cyl.gId
+                        if not (abs(self.seg_length[gId]-
+                                   cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+                            print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
+                                  (self.seg_length[gId] -  cyl.segLength),
+                                 (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
+                            raise Exception
 
 
         except:
@@ -595,6 +581,15 @@ class RhizoMappedSegments(pb.MappedPlant):
             self.check1d3dDiff(diff1d3dCW_abs_lim = max(self.maxDiff1d3dCW_abs[0]*2,
                                                                   self.limErr1d3dAbs),
                                          diff1d3dCW_rel_lim = self.maxDiff1d3dCW_rel*2 )
+            for cyl in self.cyls:
+                if not isinstance(cyl, AirSegment) :
+                    gId = cyl.gId
+                    if not (abs(self.seg_length[gId]-
+                               cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+                        print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
+                              (self.seg_length[gId] -  cyl.segLength),
+                             (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
+                        raise Exception
             
         
         
@@ -628,6 +623,13 @@ class RhizoMappedSegments(pb.MappedPlant):
                     write_file_array(title+str(cellId)+'cont'+str(ncomp),cont, 
                                  directory_ = self.results_dir +"printData/", fileType = '.csv' )
         
+        cyltemp =  np.array([cyl for cyl in self.cyls if not isinstance(cyl, AirSegment)])
+        cyllengths = np.array([cyl.segLength for cyl in cyltemp])
+        cylgIds = np.array([cyl.gId for cyl in cyltemp])
+        df_from_arr = pd.DataFrame(data=[cylgIds, cyllengths])
+        df_from_arr.to_csv(
+            self.results_dir +"printData/cylgIdLen"+ title +str(
+            rank)+".csv",mode ='a',index=False)
     
     
     
@@ -641,13 +643,12 @@ class RhizoMappedSegments(pb.MappedPlant):
         CC_leftover = np.full((len(cellIds), self.numSoluteComp),np.nan)
         konz_leftover = np.zeros((len(cellIds), self.numSoluteComp))
         for i, cid in enumerate(cellIds):
-            if cid in self.cellIdleftover:
-                pm = phaseMol[cid]
-                c_content = c_content_leftover[cid]
-                CC_leftover[i][np.where(pm != 0)] = c_content[np.where(pm != 0)]/pm[np.where(pm != 0)]
-
-                if volLeftOver[cid] != 0:
-                    konz_leftover[i,:] = c_content/volLeftOver[cid]
+            pm = phaseMol[cid]
+            c_content = c_content_leftover[cid]
+            CC_leftover[i][np.where(pm != 0)] = c_content[np.where(pm != 0)]/pm[np.where(pm != 0)]
+            
+            if volLeftOver[cid] != 0:
+                konz_leftover[i,:] = c_content/volLeftOver[cid]
             
         
         assert CC_leftover.shape == (len(cellIds), self.numSoluteComp)
@@ -661,9 +662,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                         volLeftOver,     #cm3, len(cellIds)
                         cellIds):   
         verbose =  False#(rank == 0) #(idCell== 916) and 
-        theta_leftOver = np.array([watVol_leftover[idvol]/vol if (cellIds[idvol] in self.cellIdleftover)
-                                   else np.nan
-                                   for idvol, vol in enumerate(volLeftOver) ])
+        theta_leftOver = np.array([watVol_leftover[idvol]/vol if vol > 0 else np.nan for idvol, vol in enumerate(volLeftOver) ])
         
         lowTheta = np.where(theta_leftOver <= self.vg_soil.theta_R )
         if len(volLeftOver[lowTheta]) > 0:
@@ -944,16 +943,8 @@ class RhizoMappedSegments(pb.MappedPlant):
         spl =  CubicSpline(pointsOld, valOld, bc_type='not-a-knot') #extrapolation  
         return np.array([self.interAndExtraPolation_(pt, pointsOld, chip, spl) for pt in pointsNew])
 
-    def changedLen(self,cyl):
-        gId = cyl.gId
-        return (abs(self.seg_length[gId] -
-             cyl.segLength) >= 1e-15 or abs((self.seg_length[gId] -
-                                             cyl.segLength) / cyl.segLength) >= 1e-5)
-
-
-    def updateOld(self, lId, cyl, smaller=False, shapeOnly=False,
-                  thetaLeftOver=0., konzLeftOver=None,
-                  verbose=False):
+            
+    def updateOld(self, lId, cyl, smaller=False, thetaLeftOver=0., konzLeftOver=None, verbose=False):
         """
         Update distribution of a cylinder if its volume has changed.
         
@@ -987,37 +978,20 @@ class RhizoMappedSegments(pb.MappedPlant):
             volNew = self.getVolumes(points, self.seg_length[gId] ) # cm^3
             deltaVol = sum(volNew) - sum(volOld) 
             
-            ## shape:
-            centersNew = (points[1:] + points[:-1]) / 2  # cm
+            
+            if (((deltaVol >0) and (not smaller)) or ((deltaVol <0) and smaller)) and (abs(deltaVol) > 1e-20):
+                assert (thetaLeftOver > -self.maxDiff1d3dCW_abs[0]) or (deltaVol <= 0.)
+                    
+                ## old shape:
+                centersOld = np.array(cyl.getCellCenters()).flatten();
+                centersNew = (points[1:] + points[:-1])/2  # cm
+                ## change ratio
+                changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
 
-                                                         
-                                                   
-            changeShapeAndConc = ((((deltaVol > 0) and (not smaller)) or (
-                    (deltaVol < 0) and  smaller)
-                          )  and (cellId in self.cellIdleftover)) and (not shapeOnly)
-
-
-            changeShape = (shapeOnly and ((deltaVol != 0.)  or self.changedLen(cyl)
-                                          ) and (cellId not in self.cellIdleftover))
-
-
-            if changeShapeAndConc or changeShape:
-
-
-                changeRatio = 1.
-                if changeShapeAndConc:
-                    assert (thetaLeftOver > -self.maxDiff1d3dCW_abs[0]) or (deltaVol <= 0.)
-
-                             
-                                   
-                                                               
-                    ## change ratio
-                    changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
-
-
+                    
                 ##  water:
                 theta_old = cyl.getWaterContent() # cm3/cm3
-                gradientOld = (theta_old[1:] - theta_old[:-1])
+                gradientOld = (theta_old[1:] - theta_old[:-1])#/(centersOld[1:] - centersOld[:-1])           
                 gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                 
                 wOld = sum(theta_old*volOld)
@@ -1138,25 +1112,24 @@ class RhizoMappedSegments(pb.MappedPlant):
                                                             x = newHead,# cm
                                                             cAll = molFrNew, # mol/mol water or mol/mol scv
                                                             Cells = centersNew) # cm
-                                                            
+
+                        
                 
                 
             
+    
     def get_Vol_leftoverI(self, idCell):# cm3
         """ difference between volume of cylinder and volume of 3d soil voxel  """
         verbose = (rank == 0)  and self.mpiVerboseInner #(idCell== 916) and (rank == 0)#
         idCylsAll = 0
         idCyls =[]
-
-
+        newVol = 0
         vol_rhizo = 0
-        if (idCell in self.cell2seg) and (idCell in self.cellIdleftover):
-            idCylsAll, idCyls =   self.getIdCyllMPI(idCell, True, doSum = True)
+        if idCell in self.cell2seg:
+            idCylsAll, idCyls =   self.getIdCyllMPI(idCell, True, doSum = True)  
 
-            # we have old segments and leftover space (to avoid division by 0 later)
-            if idCylsAll > 0:
+            if idCylsAll > 0: # we have old segments
                 vol_rhizo= self.getVolumesCyl(idCyls) #m3
-
         newVol = self.sizeSoilCell[idCell] - vol_rhizo
         if verbose:
             print('get_Vol_leftoverI',rank, idCell,newVol, self.sizeSoilCell[idCell], vol_rhizo,  len(idCyls), idCylsAll)
@@ -1177,7 +1150,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         idSegs = []
         idCyls = []
         idCylsAll = 0
-        if (idCell in self.cell2seg) and (idCell in self.cellIdleftover):
+        if idCell in self.cell2seg:
             idSegs = self.cell2seg[idCell]#all segments in the cell
             idSegs=np.array( [ids for ids in idSegs if (self.organTypes[ids] == 2)])#only root segments
             idCylsAll, idCyls =   self.getIdCyllMPI(idCell, True, doSum = True)   # id of segments which already have a 1d model
@@ -1207,10 +1180,10 @@ class RhizoMappedSegments(pb.MappedPlant):
         """
         mol_total = mol_total[idCell] # mol
         mol_rhizo = 0
-                      
+        mol_rhizo_ = 0
         idCyls = []
         idCylsAll = 0
-        if (idCell in self.cell2seg) and (idCell in self.cellIdleftover):
+        if idCell in self.cell2seg:
             idSegs = self.cell2seg[idCell]#all segments in the cell
             idSegs=np.array( [ids for ids in idSegs if (self.organTypes[ids] == 2)])#only root segments
             idCylsAll, idCyls =  self.getIdCyllMPI(idCell, True, doSum = True)   
@@ -1415,6 +1388,12 @@ class RhizoMappedSegments(pb.MappedPlant):
                 print('end initialize_',gId,self.seg2cell[gId],'wat vol?',sum(cyl.getWaterVolumesCyl()),self.seg_length[gId],
                   pHeadcyl , x,pHeadcyl - x,'Cells',Cells, a_in, a_out, cyl.segLength)
             
+            if not (abs(self.seg_length[gId]-
+                       cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+                print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId],str(self.seg_length[gId]), cyl.segLength,
+                      (self.seg_length[gId] -  cyl.segLength),
+                     (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
+                raise Exception
                 
             try:
                 x_divide = np.where(np.array(x)!=0,x,1)
@@ -1803,14 +1782,13 @@ class RhizoMappedSegments(pb.MappedPlant):
         """          
                 
         maxRelShift = cyl.MaxRelativeShift
-        initialDdt = cyl.ddt
         gId = cyl.gId
         a_in = self.radii[gId]
         a_out = np.array( self.outer_radii)[gId]
         l = cyl.segLength
-        
-        if self.changedLen(cyl):
-            print('wrong segLengthG',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
+        if not (abs(self.seg_length[gId]-
+                   cyl.segLength) < 1e-16 or abs((self.seg_length[gId] -  cyl.segLength) / cyl.segLength) < 1e-5):
+            print('wrong segLength',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
                   (self.seg_length[gId] -  cyl.segLength),
                  (self.seg_length[gId] -  cyl.segLength) / cyl.segLength)
             raise Exception
@@ -1835,8 +1813,8 @@ class RhizoMappedSegments(pb.MappedPlant):
         
             try:
                 # reseting cyl.ddt to 1.e-5 was actually creating problems for sand VG
-                # cyl.ddt = 1e-3#min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
-                #cyl.setMaxTimeStepSize(self.soilModel.maxDt_1DS/10.)
+                cyl.ddt = 1e-3#min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
+                cyl.setMaxTimeStepSize(self.soilModel.maxDt_1DS/10.)
                 
                 didReset = False
                 #cyl.solve(dt)
@@ -1870,31 +1848,18 @@ class RhizoMappedSegments(pb.MappedPlant):
                 
                 #cyl.base.printParams()
                 print('solve Failed:', e,'rank',rank,'gId',gId,'lId',lId,
-                      'n_iter_solve',n_iter_solve)
-                
+                      'n_iter_solve',n_iter_solve,'theta',cyl.getWaterContent())
+                print(rank,'errorWOnly',errorWOnly,'errorCOnly',errorCOnly,
+                      'QflowIn',inner_fluxes_water_temp, 
+                      ' Qflowout',outer_fluxes_water_temp,'inner_fluxes_real',inner_fluxes_real)
+                print('inner_fluxes_solMucil_temp',
+                      inner_fluxes_solMucil_temp, 'outer_fluxes_solMucil_temp',outer_fluxes_solMucil_temp)
                 
                 cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
                 cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
                 cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
                 cyl.setParameter("Newton.MaxTimeStepDivisions", "10")
                 if n_iter_solve == 0:
-                    print(rank,'initialDdt',initialDdt,
-                          'errorWOnly',errorWOnly,'errorCOnly',errorCOnly,
-                      'QflowIn',inner_fluxes_water_temp, 
-                      ' Qflowout',outer_fluxes_water_temp,'inner_fluxes_real',inner_fluxes_real)
-                    print('inner_fluxes_solMucil_temp',
-                      inner_fluxes_solMucil_temp, 'outer_fluxes_solMucil_temp',outer_fluxes_solMucil_temp)
-                    
-                    print('plant point',repr(cyl.getPoints()), 'length',cyl.segLength)
-                    # just reset and see if the updated cyl.ddt is enough to solve the issue
-                    cyl.reset();
-                    print('pheadold',cyl.getSolutionHead())
-                    
-                    for ncomp in range(self.numSoluteComp):
-                        print('solute nc',ncomp,repr(np.array(cyl.getSolution(ncomp + 1))))
-                    didReset = True
-                    
-                if n_iter_solve == 1:
                     cyl.setParameter("Newton.MaxSteps", "200")
                     cyl.setParameter("Newton.MaxTimeStepDivisions", "25")
                     if  errorWOnly or errorCOnly:
@@ -1903,7 +1868,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                     cyl.reset();
                     cyl.createNewtonSolver()
                     didReset = True
-                elif n_iter_solve == 2:
+                elif n_iter_solve == 1:
                     print(rank,
                           'soil.solve() failed. making the computation more precise')
                     cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
@@ -1931,6 +1896,12 @@ class RhizoMappedSegments(pb.MappedPlant):
                       'gId',gId,'ERROR, GIVING UP. errorCOnly',errorCOnly,errorWOnly,
                       'QflowIn',inner_fluxes_water_temp, 
                       ' Qflowout',outer_fluxes_water_temp)
+                    print("\ttheta_new",gId, repr(cyl.getWaterContent()))
+                    print("\thead_new", gId,repr(cyl.getSolutionHead()))
+                    print("\tsolute new")
+
+                    for ncomp in range(self.numSoluteComp):
+                        print(repr(np.array(cyl.getSolution(ncomp + 1))))
                         
                     cyl.setParameter("Newton.MaxRelativeShift",
                                  str(cyl.MaxRelativeShift))
@@ -1939,6 +1910,18 @@ class RhizoMappedSegments(pb.MappedPlant):
                     cyl.reset();
                     cyl.createNewtonSolver()
                     didReset = True
+                    print("\ttheta_old",gId,repr( cyl.getWaterContent()))
+                    print("\thead_old", gId,repr(cyl.getSolutionHead()))
+                    print('plant vol',repr(cyl.getCellVolumes()))
+                    print('plant point',repr(cyl.getPoints()))
+                    print("\tsolute old")
+
+                    for ncomp in range(self.numSoluteComp):
+                        print(repr(np.array(cyl.getSolution(ncomp + 1))))
+
+                    print('plant shape',  cyl.segLength, self.radii[gId], np.array(self.outer_radii)[gId])
+                    print('setsources', cyl.setSourceBu)
+                    cyl.base.printParams()
                     
                 
                 
