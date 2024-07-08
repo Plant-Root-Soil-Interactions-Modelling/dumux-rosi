@@ -443,7 +443,7 @@ public:
 
         auto xOld = x;
 		xBackUp = x; saveInnerVals();  simTimeBackUp = simTime ;
-        double maxDt = timeLoop->; 
+        
         timeLoop->reset(/*start time*/0., ddt, /*final time*/ dt, /*verbose*/ false);
         timeLoop->setMaxTimeStepSize(maxDt_); // set maxDt after reset()
 
