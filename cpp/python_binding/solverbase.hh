@@ -76,6 +76,7 @@ public:
 	
     double simTime = 0;
     double ddt = -1; // internal time step, minus indicates that its uninitialized
+    double maxDt_ = -1; // max time step 
     int maxRank = -1; // max mpi rank
     int rank = -1; // mpi rank
 	bool problemInitialized = false;
@@ -396,6 +397,7 @@ public:
         timeLoop = std::make_shared<Dumux::CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ 3600., false); // the main time loop is moved to Python
         
         timeLoop->setMaxTimeStepSize(maxDt);
+    	maxDt_ = maxDt; // save to re-set at each solve() function
 
         assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, x); // dynamic
         
@@ -441,7 +443,9 @@ public:
 
         auto xOld = x;
 		xBackUp = x; saveInnerVals();  simTimeBackUp = simTime ;
+        double maxDt = timeLoop->; 
         timeLoop->reset(/*start time*/0., ddt, /*final time*/ dt, /*verbose*/ false);
+        timeLoop->setMaxTimeStepSize(maxDt_); // set maxDt after reset()
 
         timeLoop->start();
 		double minddt = std::min(1.,dt);//in case we have a time step < 1s																	
@@ -455,6 +459,8 @@ public:
 			}
             ddt = std::max(ddt, minddt); // limit minimal suggestion
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+		
+            ddt = timeLoop->timeStepSize(); // selected ddt 
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
