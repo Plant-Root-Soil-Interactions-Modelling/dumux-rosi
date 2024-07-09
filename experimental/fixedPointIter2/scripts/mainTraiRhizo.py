@@ -85,7 +85,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/issuelength/bis"+str(rsiCompMethod*10)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/paperSc/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -256,7 +256,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 if rank==0:
                     print("error too high, decrease dt to",perirhizalModel.dt_inner)
                 # reset data to the beginning of the iteration loops
-                
+                raise Exception
                 helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
                 
         # manually set n_iter to 0 to see if continueLoop() still yields fales.

@@ -817,7 +817,7 @@ public:
 		 *  WATER
 		 */
 		double f = 0.; // return value [kg m-2 s-1)] or [mol m-2 s-1]
-		int pos0 = 1;
+		double pos0 = 1;
 		if(dimWorld == 1){pos0 =pos[0]; }
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 

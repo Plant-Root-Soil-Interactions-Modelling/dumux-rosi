@@ -396,7 +396,7 @@ def setupOther(s, p_mean_):
             print(type(p_mean_))
             raise Exception
     s.maxDt =  250/(3600*24)
-    s.maxDt_1DS = s.maxDt/10. # [s], lower maxDt for 1D models
+    s.maxDt_1DS = s.maxDt # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
     
     s.eps_regularization = None # pcEps, krEps
@@ -414,7 +414,7 @@ def setupOther(s, p_mean_):
     # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  
-    s.ddt = 1.e-5  # [day] initial Dumux time step
+    s.ddt = 1.e-3  # [day] initial Dumux time step
     s.bulkMassErrorWater_rel = 0.
     s.bulkMassErrorWater_relLim = 0.    
     s.totC3dInit = sum(s.getTotCContent()) # mol    

@@ -1802,8 +1802,13 @@ class RhizoMappedSegments(pb.MappedPlant):
             inner_fluxes_real: inner BC as implemented in dumux [cm3 day-1]  or [mol C day-1] 
         """          
                 
-        maxRelShift = cyl.MaxRelativeShift
-        initialDdt = cyl.ddt
+        maxRelShift = float(cyl.MaxRelativeShift)
+        
+        # use first ddt during last simulation
+        if len(cyl.base.BC_ddt)>0:
+            cyl.ddt = cyl.base.BC_ddt[0]/24./60./60.
+            
+        initialDdt = float(cyl.ddt)
         gId = cyl.gId
         a_in = self.radii[gId]
         a_out = np.array( self.outer_radii)[gId]
@@ -1868,17 +1873,22 @@ class RhizoMappedSegments(pb.MappedPlant):
             except Exception as e: 
                 np.set_printoptions(precision=20)
                 
-                #cyl.base.printParams()
+                
                 print('solve Failed:', e,'rank',rank,'gId',gId,'lId',lId,
                       'n_iter_solve',n_iter_solve)
                 
+                # newton parameters are re-read at each 'createNewtonSolver' calls
+                self._reset_newton_solver( cyl,
+                                EnableResidualCriterion=cyl.EnableResidualCriterion,#"true", 
+                                EnableAbsoluteResidualCriterion=cyl.EnableAbsoluteResidualCriterion,#"true",
+                                SatisfyResidualAndShiftCriterion=cyl.SatisfyResidualAndShiftCriterion,#"true", 
+                                          max_divisions=cyl.MaxTimeStepDivisions#20
+                                         )
                 
-                cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
-                cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
-                cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
-                cyl.setParameter("Newton.MaxTimeStepDivisions", "10")
                 if n_iter_solve == 0:
-                    print(rank,'initialDdt',initialDdt,
+                    # just reset and see if the updated cyl.ddt is enough to solve the issue
+                    # get info for debug and reset
+                    print(rank,'dt',dt,'initialDdt',initialDdt,
                           'errorWOnly',errorWOnly,'errorCOnly',errorCOnly,
                       'QflowIn',inner_fluxes_water_temp, 
                       ' Qflowout',outer_fluxes_water_temp,'inner_fluxes_real',inner_fluxes_real)
@@ -1886,15 +1896,20 @@ class RhizoMappedSegments(pb.MappedPlant):
                       inner_fluxes_solMucil_temp, 'outer_fluxes_solMucil_temp',outer_fluxes_solMucil_temp)
                     
                     print('plant point',repr(cyl.getPoints()), 'length',cyl.segLength)
-                    # just reset and see if the updated cyl.ddt is enough to solve the issue
                     cyl.reset();
                     print('pheadold',cyl.getSolutionHead())
-                    
+                    print('solute old')
                     for ncomp in range(self.numSoluteComp):
-                        print('solute nc',ncomp,repr(np.array(cyl.getSolution(ncomp + 1))))
+                        print(repr(np.array(cyl.getSolution(ncomp + 1))), ',')
+                    cyl.base.printParams()
                     didReset = True
                     
-                if n_iter_solve == 1:
+                if n_iter_solve == 1: # try with small init ddt
+                    cyl.ddt = min( 1.e-3,cyl.ddt)
+                    cyl.reset();
+                    didReset = True
+                    
+                if n_iter_solve == 2:
                     cyl.setParameter("Newton.MaxSteps", "200")
                     cyl.setParameter("Newton.MaxTimeStepDivisions", "25")
                     if  errorWOnly or errorCOnly:
@@ -1903,7 +1918,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                     cyl.reset();
                     cyl.createNewtonSolver()
                     didReset = True
-                elif n_iter_solve == 2:
+                elif n_iter_solve == 3:
                     print(rank,
                           'soil.solve() failed. making the computation more precise')
                     cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
@@ -1915,7 +1930,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                     cyl.reset();
                     cyl.createNewtonSolver()
                     didReset = True
-                elif (n_iter_solve < 5) and (( inner_fluxes_water_temp < 0 or outer_fluxes_water_temp < 0) or (min(outer_fluxes_solMucil_temp) <0. or min(inner_fluxes_solMucil_temp)<0.)): #
+                elif (n_iter_solve < 8) and (( inner_fluxes_water_temp < 0 or outer_fluxes_water_temp < 0) or (min(outer_fluxes_solMucil_temp) <0. or min(inner_fluxes_solMucil_temp)<0.)): #
                     cyl.reset();didReset = True # do reset before re.-distributing the sink
                     inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp = self._adjust_fluxes(cyl,dt,  inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp,n_iter_solve, errorCOnly, errorWOnly)
                             
@@ -1963,19 +1978,15 @@ class RhizoMappedSegments(pb.MappedPlant):
 
         return inner_fluxes_real[0], outer_fluxes_water_temp, inner_fluxes_real[1:], outer_fluxes_solMucil_temp        
      
-    def _adjust_fluxes(self, cyl, dt, inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil,  n_iter_solve, errorCOnly, errorWOnly):
+    def _adjust_fluxes(self, cyl, dt, inner_fluxes_water_temp, outer_fluxes_water_temp, 
+                       inner_fluxes_solMucil_temp, outer_fluxes_solMucil,  n_iter_solve, 
+                       errorCOnly, errorWOnly):
         l = cyl.segLength
         gId = cyl.gId
-        if (n_iter_solve < 5):                   
+        if (n_iter_solve < 8):                   
             divVale = 0.9
         else:
-            print(rank,
-              'gId',gId,'lId',lId,'ERROR, GIVING UP. errorCOnly',errorCOnly,errorWOnly,
-              'QflowIn',inner_fluxes_water_temp, 
-              ' Qflowout',outer_fluxes_water_temp)
-            print("\ttheta_new",gId, cyl.getWaterContent())
-            print("\thead_new", gId,cyl.getSolutionHead())
-            print('plant shape',  cyl.segLength, self.radii[gId], np.array(self.outer_radii)[gId],repr(cyl.getCellVolumes()), repr(cyl.getPoints()))
+            print(rank,'gId',gId,'lId',lId,'ERROR, setting fluxes to 0. errorCOnly',errorCOnly,errorWOnly)
             divVale = 0.
         # water
         if (not errorCOnly) or (errorWOnly) or (min(outer_fluxes_solMucil) >0. and min(inner_fluxes_solMucil_temp)>0.):
@@ -1983,12 +1994,10 @@ class RhizoMappedSegments(pb.MappedPlant):
                 inner_fluxes_water_temp *=divVale
                 qIn = inner_fluxes_water_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
                 cyl.setInnerFluxCyl(qIn) 
-                print('_adjust_fluxes qIn',qIn,inner_fluxes_water_temp )
                 
             elif (inner_fluxes_water_temp < 0 or outer_fluxes_water_temp < 0):
                 outer_fluxes_water_temp *= divVale
                 qOut = cyl.distributeSource(dt, outer_fluxes_water_temp,inner_fluxes_water_temp * dt,eqIdx = 0)
-                print('_adjust_fluxes qOut',qOut,outer_fluxes_water_temp )
                 outer_fluxes_water_temp = sum(qOut) # maybe outer_fluxes_water_temp was re-adjusted inside distributeSource
                     
         # solutes

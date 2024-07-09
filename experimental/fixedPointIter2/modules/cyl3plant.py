@@ -178,8 +178,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             plantModel.time_start_rhizo = timeit.default_timer()
 
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils ") 
+            if rank == 0:
+                print("solve all 1d soils ") 
                     
             perirhizalModel.solve(dt, 
                                   fpit_Helper.seg_fluxes , # inner BC water
@@ -192,8 +192,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                   fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils finished")
+            if rank == 0:
+                print("solve all 1d soils finished")
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
             
