@@ -459,6 +459,7 @@ public:
 				ddt = nonLinearSolverNoMPI->suggestTimeStepSize(timeLoop->timeStepSize());
 			}
             ddt = std::max(ddt, minddt); // limit minimal suggestion
+            
             timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver, limit according to simTime
 			ddt = timeLoop->timeStepSize(); // time step to use
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?

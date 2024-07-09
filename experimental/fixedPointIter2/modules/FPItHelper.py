@@ -439,6 +439,7 @@ class fixedPointIterationHelper():
         perirhizalModel=self.perirhizalModel
         s = self.s
         
+        
         k_soil_solve = 0
         redoSolve = True
         maxRelShift = s.MaxRelativeShift
@@ -455,7 +456,8 @@ class fixedPointIterationHelper():
         #      s.getParameter("Newton.MaxSteps"))
         while redoSolve:
             #s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
-            s.setMaxTimeStepSize(s.maxDt) # reset each time
+            #s.setMaxTimeStepSize(s.maxDt) # reset each time
+            
             try:
                 decreaseMaxRelShift = False
                 if rank==0:
