@@ -20,7 +20,7 @@ class RichardsWrapper(SolverWrapper):
         self.soils = []
         self.param_group = "Soil."
         self.useMoles = usemoles
-        self.molarMassC = 12.011 # g/mol
+        # self.molarMassC = 12.011 # g/mol
 
     def setParameterGroup(self, group:str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """

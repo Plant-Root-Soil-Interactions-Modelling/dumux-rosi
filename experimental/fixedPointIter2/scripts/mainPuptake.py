@@ -9,7 +9,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
 import numpy as np
 
-path = "../inputDataTillage/"
+path = "../inputDataPuptake/"
 sys.path.append(path);
 sys.path.append("../modules/");
 
@@ -33,14 +33,14 @@ import printData
 
 def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
+    xml_name = "P3.xml"  # root growth model parameter
     # file
     dx = 0.2 # todo implement
     dxMin = 0.25
     MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 1/60/24 # dt
+    dt_inner_init = 20/60/24 # dt
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
@@ -83,14 +83,14 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
     maxTranspiration = 12#6. # cm3/day, used if not doPhotosynthesis 
-    maxTranspirationAge = 8. # day, age at which trans = maxTRans
+    maxTranspirationAge = 25. # day, age at which trans = maxTRans
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/ylim/"+str(rsiCompMethod*10)+str(spellData['scenario'])
+    results_dir=("./results/pdef/"+str(rsiCompMethod*10)+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"

@@ -55,6 +55,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.numSoluteComp = soilModel.numSoluteComp
         self.numComp = soilModel.numComp
         self.debugMode = True
+        self.dobioChemicalReaction = True
         
         
         # constants
@@ -1266,6 +1267,7 @@ class RhizoMappedSegments(pb.MappedPlant):
             else:
                 self.dx2.append(0.5 * (points[1] - points[0]))
 
+            cyl.setParameter("Problem.dobioChemicalReaction",str(int(self.dobioChemicalReaction)))  
             cyl.setParameter("Problem.segLength", str(self.seg_length[gId]))  # cm
             cyl.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
             cyl.setParameter("Soil.BC.dzScaling", "1")

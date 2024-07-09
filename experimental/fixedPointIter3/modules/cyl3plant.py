@@ -24,6 +24,100 @@ from functional.xylem_flux import sinusoidal2
 
 from weatherFunctions import weather, weatherChange
 
+
+def innerLoop(plantModel, fpit_Helper, perirhizalModel , sim_time, dt):
+    N = int(np.ceil(sim_time / dt))  # number of iterations
+    for Ni in range(N):
+
+        rs_age_i_dt = rs_age + Ni * dt  # current simulation time
+        while helpfull.continueInnerLoop(perirhizalModel,fpit_Helper.n_iter_inner, dt,
+                                False,real_dtinner=float(Ni) * dt, name='inner2_loopdata', isInner = True, 
+                                plant = plantModel):
+                                
+            
+            perirhizalModel.solve_gave_up = False # we reset solve_gave_up (== did dumux fail?) each time
+
+            """ 1. xylem model """
+            ##
+            # 1.1 plant water flow (and photosynthesis)
+            ##
+            
+            
+            plantModel.time_start_plant = timeit.default_timer() # to compute time spent in water flow simulation
+            
+            
+            PhloemPhotosynthesis.computeWaterFlow(fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
+            
+            # store time spent in computing plant water flow
+            plantModel.time_plant_cumulW += (timeit.default_timer() - plantModel.time_start_plant)
+            
+
+            """ 2. local 1D soil models (1DS)"""
+            ##
+            # 2.1 distribute 3D flows between the 1DS
+            #     use value per 1DS !!AT THE END OF THE TIME STEP!! => weight for @splitSoilVals()
+            ##
+            
+            fpit_Helper.distribute3dto1dFlows(rs_age_i_dt, dt)
+            
+            
+            ##
+            # 2.2 reset 1d models + store data before solve, for post proccessing
+            # 
+            ##
+            
+            if (fpit_Helper.n_iter > 0) : 
+                perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
+                    
+            fpit_Helper.storeOldMassData1d()
+                
+            
+
+            ##
+            # 2.3 simulation 1d models
+            ##
+            plantModel.time_start_rhizo = timeit.default_timer()
+
+            
+            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
+                    print("solve all 1d soils ") 
+                    
+            perirhizalModel.solve(dt, 
+                                  fpit_Helper.seg_fluxes , # inner BC water
+                                  fpit_Helper.proposed_outer_fluxes, # outer BC water
+                                  fpit_Helper.seg_sol_fluxes, # inner BC solute 1
+                                  fpit_Helper.proposed_outer_sol_fluxes, # outer BC solute 1
+                                  fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
+                                  fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
+                                  # solute 2
+                                  fpit_Helper.n_iter
+                                 ) # cm3/day or mol/day
+            
+            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
+                    print("solve all 1d soils finished")
+                    
+            plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
+            
+
+            fpit_Helper.storeLimitedFluxes() # store actual BC of 1d models (to compare with prescribed BC)
+            
+            
+            
+            ##
+            # 2.4 data after, for post processing
+            # maybe move this part to within the solve function to go less often through the list of 1DS
+            ##
+            
+            fpit_Helper.storeNewMassData1d()
+             
+            
+            
+            ##
+            # 2.5 error rates
+            ##
+            fpit_Helper.massBalanceError1d(dt)
+
+
 def simulate_const(s, plantModel, sim_time, dt, rs_age, 
                    Q_plant,
                     perirhizalModel = [],
@@ -128,94 +222,54 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                                 dt,sim_time, emptyCells)
         
             
-        
-        while  continueLoop(perirhizalModel,s,fpit_Helper.n_iter, dt,
-                            False,real_dtinner=float(Ni) * dt,name='inner_loopdata', isInner = True, 
+        dt_inner = fpit_Helper.dt_inner
+        while  continueLoop(perirhizalModel,s,fpit_Helper.n_iter, dt_inner,
+                            False,real_dtinner=float(Ni) * dt_inner,name='inner_loopdata', isInner = True, 
                             plant = plantModel):
             
-            perirhizalModel.solve_gave_up = False # we reset solve_gave_up (== did dumux fail?) each time
+            # nested inner loop
+            while keepGoing or failedInnerLoop:
             
-            
-            """ 1. xylem model """
-            ##
-            # 1 plant water flow (and photosynthesis)
-            ##
-            
-            
-            plantModel.time_start_plant = timeit.default_timer() # to compute time spent in water flow simulation
-            
-            
-            PhloemPhotosynthesis.computeWaterFlow(fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
-            
-            # store time spent in computing plant water flow
-            plantModel.time_plant_cumulW += (timeit.default_timer() - plantModel.time_start_plant)
-            
-
-            """ 2. local 1D soil models (1DS)"""
-            ##
-            # 2.1 distribute 3D flows between the 1DS
-            #     use value per 1DS !!AT THE END OF THE TIME STEP!! => weight for @splitSoilVals()
-            ##
-            
-            fpit_Helper.distribute3dto1dFlows(rs_age_i_dt, dt)
-            
-            
-            ##
-            # 2.2 reset 1d models + store data before solve, for post proccessing
-            # 
-            ##
-            
-            if (fpit_Helper.n_iter > 0) : 
-                perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
-                    
-            fpit_Helper.storeOldMassData1d()
+                real_dtinner,failedInnerLoop, n_iter_inner_max  = innerLoop(plantModel, fpit_Helper, 
+                                                                    perirhizalModel , dt, dt_inner)
                 
+                
+                keepGoing = helpfull.continueInnerLoop(perirhizalModel=perirhizalModel,
+                                        n_iter=perirhizalModel.n_iter_inner, 
+                                     dt_inner=perirhizalModel.dt_inner2,
+                                     failedLoop=failedInnerLoop,real_dtinner=real_dtinner,name="Outer_data_fpit2",
+                                     isInner = False,doPrint = True, 
+                         fileType = '.csv' ,
+                             plant = plantModel)
+                perirhizalModel.n_iter_inner += 1
             
-
-            ##
-            # 2.3 simulation 1d models
-            ##
-            plantModel.time_start_rhizo = timeit.default_timer()
-
-            
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils ") 
+                # we leave the loop either because dumux threw an error or because
+                # we reached dt_inner
+                try:
+                    assert (abs(real_dtinner - dt_inner2) < perirhizalModel.dt_inner2 ) or failedInnerLoop                
+                except:
+                    print('real_dtinner',real_dtinner ,dt_inner2, perirhizalModel.dt_inner2 , failedInnerLoop)
+                    write_file_array("real_dtinner_error", np.array([real_dtinner ,dt_inner2,
+                                                                     perirhizalModel.dt_inner2 , failedInnerLoop,abs((real_dtinner - dt_inner2)/dt_inner2*100.),rs_age]), 
+                                     directory_ =results_dir, fileType = '.csv') 
+                    raise Exception
                     
-            perirhizalModel.solve(dt, 
-                                  fpit_Helper.seg_fluxes , # inner BC water
-                                  fpit_Helper.proposed_outer_fluxes, # outer BC water
-                                  fpit_Helper.seg_sol_fluxes, # inner BC solute 1
-                                  fpit_Helper.proposed_outer_sol_fluxes, # outer BC solute 1
-                                  fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
-                                  fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
-                                  # solute 2
-                                  fpit_Helper.n_iter
-                                 ) # cm3/day or mol/day
-            
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils finished")
                     
-            plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
-            
-
-            fpit_Helper.storeLimitedFluxes() # store actual BC of 1d models (to compare with prescribed BC)
-            
-            
-            
-            ##
-            # 2.4 data after, for post proccessing
-            # maybe move this part to within the solve function to go less often through the list of 1DS
-            ##
-            
-            fpit_Helper.storeNewMassData1d()
-             
-            
-            
-            ##
-            # 2.5 error rates
-            ##
-            fpit_Helper.massBalanceError1d(dt)
-            
+                perirhizalModel.dt_inner2 = suggestNumStepsChange(dt_inner2,  failedInnerLoop, perirhizalModel, n_iter_inner_max)
+                
+                if keepGoing or failedInnerLoop:
+                    
+                    if rank==0:
+                        print("error too high, decrease dt_inner2 to",perirhizalModel.dt_inner2)
+                    # reset data to the beginning of the iteration loops
+                    
+            assert helpfull.continueInnerLoop(perirhizalModel=perirhizalModel,
+                                        n_iter=perirhizalModel.n_iter_inner, 
+                                     dt_inner=perirhizalModel.dt_inner2,
+                                     failedLoop=failedInnerLoop,real_dtinner=real_dtinner,name="Outer_data_fpit2",
+                                     isInner = False,doPrint = True, 
+                         fileType = '.csv' ,
+                             plant = plantModel)
                 
             """ 3. global soil models (3DS)"""
             

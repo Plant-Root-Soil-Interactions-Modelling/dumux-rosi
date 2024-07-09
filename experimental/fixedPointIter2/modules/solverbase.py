@@ -266,15 +266,6 @@ class SolverWrapper():
         self.numberOfCellsTot = len(points) -1
         self.numberOfFacesTot = self.numberOfCellsTot * 2
 
-#     def createGrid3d(self, points, p0):
-#         """ todo
-#         """
-#         p, p0_ = [], []
-#         for v in points:
-#             p.append(list(v / 100.))  # cm -> m
-#         for v in p0:
-#             p0_.append(list(v / 100.))  # cm -> m
-#         self.base.createGrid3d(p, p0_)
 
     def readGrid(self, file:str):
         """ Creates a grid from a file (e.g. dgf or msh)"""

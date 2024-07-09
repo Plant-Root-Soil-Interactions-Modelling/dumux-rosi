@@ -27,7 +27,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
     def initialize(self, args_ = [""], verbose = False, doMPI = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
-        self.base.initialize(args_, verbose, doMPI)
+        super().initialize(args_, verbose, doMPI)
         
         
     def initializeProblem(self, maxDt = -1.):

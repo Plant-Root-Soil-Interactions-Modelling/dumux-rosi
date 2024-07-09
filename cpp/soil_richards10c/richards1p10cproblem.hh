@@ -347,6 +347,11 @@ public:
 				dzScaling = getParam<int>("Soil.BC.dzScaling", 2); 
 		dobioChemicalReaction_ = getParam<bool>("Problem.dobioChemicalReaction",true);
 		
+		
+		// Uptake params
+		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
+		km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1e6 )*1e6;  // [mol cm-3] -> [mol m-3]
+		
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
 			//std::cout<<"PorousMediumFlowProblem ID"<<i<<" ";
@@ -1037,6 +1042,11 @@ public:
 					flux[i] = input*pos0;
 					break;
 				}
+				case michaelisMenten: {	
+					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
+					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					break;
+				}
 				default:
 					DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute) unknown: "+std::to_string(bcSTopType_.at(i_s)));
 				}
@@ -1094,6 +1104,11 @@ public:
 				case outflowCyl: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n"; rho_
 					flux[i] = f * massOrMolFraction*pos0;
+					break;
+				}
+				case michaelisMenten: {	
+					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
+					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
@@ -1671,6 +1686,10 @@ private:
 	double alpha_ = 0.1; //[d-1]
     double kads_ = 23265;//[cm3/mol/d] or [1/d]
     double kdes_=4;//[d-1]
+	
+	// active root solute uptake
+	Scalar vMax_; // Michaelis Menten Parameter [mol m-2 s-1]
+	Scalar km_;  // Michaelis Menten Parameter  [mol m-3]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 

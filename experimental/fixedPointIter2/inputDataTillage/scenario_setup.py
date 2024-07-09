@@ -232,6 +232,8 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
+    
+    s.setParameter("Problem.dobioChemicalReaction",False)
     s.setParameter("Problem.verbose", "0")
     
     s.setParameter("Newton.Verbosity", "0") 

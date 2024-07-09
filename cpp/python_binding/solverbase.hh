@@ -394,7 +394,7 @@ public:
             maxDt_ = Dumux::getParam<double>("TimeLoop.MaxTimeStepSize", 3600.); // if none, default is 1h
         }
         if (ddt<1.e-6) { // happens at the first call
-            ddt = Dumux::getParam<double>("TimeLoop.DtInitial",maxDt/10); // from params, or guess something
+            ddt = Dumux::getParam<double>("TimeLoop.DtInitial",maxDt_/10); // from params, or guess something
         }
 
         timeLoop = std::make_shared<Dumux::CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ 3600., false); // the main time loop is moved to Python
@@ -451,15 +451,16 @@ public:
         timeLoop->start();
 		double minddt = std::min(1.,dt);//in case we have a time step < 1s																	
         do {
-			// because suggestTimeStepSize() is used after timeStepSize(), the results could be > maxDt
-			// manually limit again according to maxDt?
+			// because suggestTimeStepSize() is used after timeStepSize(), the results could be > maxDt_
+			// manually limit again according to maxDt_?
 			if (doMPIsolve) {
 				ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
 			} else {
 				ddt = nonLinearSolverNoMPI->suggestTimeStepSize(timeLoop->timeStepSize());
 			}
             ddt = std::max(ddt, minddt); // limit minimal suggestion
-            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            
+            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver, limit according to simTime
 			ddt = timeLoop->timeStepSize(); // time step to use
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
 
