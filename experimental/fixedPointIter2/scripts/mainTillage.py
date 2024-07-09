@@ -48,6 +48,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = False # only water (False) or with solutes (True)
+    doBiochemicalReaction = False
+    doSoluteUptake = True # active uptake?
     noAds = True # stop adsorption?
     doPhloemFlow = False
     doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
@@ -126,6 +128,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
     
+    perirhizalModel.doBiochemicalReaction = doBiochemicalReaction  
+    perirhizalModel.doSoluteUptake = doSoluteUptake 
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
     perirhizalModel.k_iter_2initVal = k_iter_2initVal

@@ -155,7 +155,8 @@ class fixedPointIterationHelper():
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
                 
             rhizoWAfter_eachCyl4splitVals = self.rhizoWAfter_eachCyl.copy()
-            rhizoWAfter_eachCyl4splitVals[np.array(perirhizalModel.organTypes) !=2]=1. # to avoind division by 0.
+            if len(perirhizalModel.airSegs) > 0:
+                rhizoWAfter_eachCyl4splitVals[perirhizalModel.airSegs]=1. # to avoind division by 0.
 
             if max(abs(outer_R_bc_sol[0] )) > 0:
                 proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[0] / dt, 
@@ -196,14 +197,16 @@ class fixedPointIterationHelper():
             # self.thetaCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3 water
             # get all potentially available water == water after reset + water taken up by plant
             seg_fluxes_root  = self.seg_fluxes.copy()
-            seg_fluxes_root[np.where(np.array(perirhizalModel.organTypes)!=2)]  = 0.
+            if len(perirhizalModel.airSegs) > 0:
+                seg_fluxes_root[perirhizalModel.airSegs]  = 0.
             self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + (seg_fluxes_root + perirhizalModel.flow1d1d_w)* dt )/self.cylVol
             #because of unlimited flow (seg_fluxes_root + perirhizalModel.flow1d1d_w), might get values out of the [theta_r, theta_s] bounds
             self.thetaCyl_4splitSoilVals = np.maximum(np.minimum(
                                                     self.thetaCyl_4splitSoilVals, 
                                                       perirhizalModel.vg_soil.theta_S),
                                                      perirhizalModel.theta_wilting_point)
-            self.thetaCyl_4splitSoilVals[np.where(np.array(perirhizalModel.organTypes)!=2)]  = 0.
+            if len(perirhizalModel.airSegs) > 0:
+                self.thetaCyl_4splitSoilVals[perirhizalModel.airSegs]  = 0.
             
        
         # get data before doing the 'reset' => values at the end of the time step
@@ -403,7 +406,9 @@ class fixedPointIterationHelper():
                     print(soil_sources_limited[idComp], SSL,dt,  min(maxPotentialAvailable + SSL*dt) )
                     write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
                     raise Exception
-                    
+            if idComp < 2:
+                write_file_array("setsourceLim3_" + str(idComp), SSL,
+                                 directory_=results_dir, fileType=".csv")
             self.sendSource2dumux(SSL, idComp)
             
            
@@ -437,16 +442,28 @@ class fixedPointIterationHelper():
         k_soil_solve = 0
         redoSolve = True
         maxRelShift = s.MaxRelativeShift
+
+        # todo: probably to adapt
+        assert dt >= 10/(24*3600)
+        s.ddt = min(max(s.ddt, 1/(24*3600)), dt/10.)
+        #s.maxDt = max(min(s.maxDt, dt/4.), s.ddt)
+        assert dt > s.ddt
+        assert s.maxDt > s.ddt
+        #print('troubleshoot data',
+        #      'time',s.ddt, s.maxDt, dt)
+        #print('params',s.getParameter("Newton.MaxRelativeShift"),
+        #      s.getParameter("Newton.MaxSteps"))
         while redoSolve:
-            s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
+            #s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
             s.setMaxTimeStepSize(s.maxDt) # reset each time
             try:
                 decreaseMaxRelShift = False
                 if rank==0:
                     print("solve 3d soil")
                 #s.solve(dt)  # in modules/solverbase.py
-                helpfull.run_with_timeout(60.*15.,s.solve,dt) # time out error after Xmn
-                if  rank==0:
+
+                helpfull.run_with_timeout(60.*5,s.solve,dt) # time out error after Xmn
+                if rank==0:
                     print("solve 3d soil finished")
                 
                 # if we got solute content < 0, throw exception
@@ -470,7 +487,7 @@ class fixedPointIterationHelper():
                 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
                 s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
 
-                s.setParameter("Newton.MaxSteps", "18")
+                s.setParameter("Newton.MaxSteps", "100")
                 s.setParameter("Newton.MaxTimeStepDivisions", "10")
                 s.createNewtonSolver() # re-create Newton solver to implement the new newton parameters
                 
@@ -585,8 +602,9 @@ class fixedPointIterationHelper():
         
         
         # get error according to the proposed (==prescribed) flux
-        # need to be ~ 0 when leaving fixed point iteration 
-        errorsEachC = self.rhizoTotCAfter_eachCyl - ( self.rhizoTotCBefore_eachCyl + 
+        # need to be ~ 0 when leaving fixed point iteration
+        if not perirhizalModel.doSoluteUptake:
+            errorsEachC = self.rhizoTotCAfter_eachCyl - ( self.rhizoTotCBefore_eachCyl +
                                                      (self.seg_sol_fluxes+ 
                                                       self.proposed_outer_sol_fluxes+ 
                                                       perirhizalModel.flow1d1d_sol +
@@ -686,7 +704,7 @@ class fixedPointIterationHelper():
 
 
         s.bulkMassCErrorPlant_abs = abs(self.totC3dAfter - ( self.totC3dBefore + sum(self.Q_Exud_i) + sum(self.Q_mucil_i)))
-        if self.totC3dAfter > 0:
+        if (self.totC3dAfter > 0) and (not self.perirhizalModel.doSoluteUptake):
             s.bulkMassCErrorPlant_rel = abs(s.bulkMassCErrorPlant_abs/self.totC3dAfter*100)
         else:
             s.bulkMassCErrorPlant_rel = np.nan
@@ -707,10 +725,6 @@ class fixedPointIterationHelper():
         ### for each voxel
         s.bulkMassErrorWaterAll_abs = abs(self.soil_water3dAfter - (self.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))
         s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /self.soil_water3dAfter )*100
-
-
-
-
 
 
 

@@ -81,7 +81,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.solidMolarMass = self.soilModel.solidMolarMass#60.08e-3 # [kg/mol]           
         self.solidMolDensity = self.solidDensity/self.solidMolarMass # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
         self.bulkDensity_m3 = self.solidMolDensity*(1.- self.soilModel.vg_soil.theta_S) #porosity == theta_s # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
-        self.typeBC = np.full(self.numSoluteComp, 3) # set 1d axissymmetric flow at the inner boundary
+        
         
         
         # all 1d models
@@ -128,7 +128,14 @@ class RhizoMappedSegments(pb.MappedPlant):
         self.flow1d1d_w = np.zeros(1)
         self.flow1d1d_sol = np.zeros(1)
         self.flow1d1d_mucil = np.zeros(1)
-        
+    
+
+    @property    
+    def typeBC(self):
+        bcs = np.full(self.numSoluteComp, 3) # set 1d axissymmetric flow at the inner boundary
+        if self.doSoluteUptake:
+            bcs[0] = 8 # set 1d axissymmetric active uptake at inner boundary for solute no 1
+        return bcs
 
     def set_plantModel(self, plantModel):
         """ save the plant model"""
@@ -1300,7 +1307,6 @@ class RhizoMappedSegments(pb.MappedPlant):
             cyl.setParameter("Problem.verbose", "0")
             cyl.setParameter("Problem.reactionExclusive", "0")
             cyl.setParameter("Soil.CriticalPressure", str(self.soilModel.wilting_point))
-            cyl.setParameter( "Soil.Grid.Cells",str( self.NC-1)) # -1 to go from vertices to cell (dof)
             if verbose:
                 print("Soil.IC.P", cyl.dumux_str(x), Cells)
             cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
@@ -1375,6 +1381,22 @@ class RhizoMappedSegments(pb.MappedPlant):
                         print("Cells,  cAll[j-1]",Cells,  cAll[j-1], 
                                 len(Cells), len(cAll[j-1]), j)
                         raise Exception
+            
+            if self.doSoluteUptake:
+                Vmax = 3.844e-10*(24*3600)/1e4# (kg m–2 s–1) * (s/d) * (m2/cm2) => (
+                # kg cm–2 d–1)
+                Vmax = Vmax * 1000. / self.soilModel.molarMassC # (kg cm–2 d–1) * (g/kg) / (g/mol) => mol cm-2 d-1
+                cyl.setParameter("RootSystem.Uptake.Vmax", cyl.dumux_str(Vmax))  # mol /cm^2 / s - > mol /cm^2 / day 
+                km = 1.054e-4 * 1e-6 # (kg m–3) => kg cm-3
+                km = km * 1000. / self.soilModel.molarMassC # (kg cm-2 * (g/kg) / (g/mol)) 
+                cyl.setParameter("RootSystem.Uptake.Km", cyl.dumux_str(km))  # mol / cm3                
+                cyl.setParameter( "Soil.BC.Bot.C1Type", str(8))
+                          
+            # Maximum uptake rate (kg m–2 s–1)	3.844e-10	(Teo et al. (1992a)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
+            # Michaelis constant (kg m–3)	1.054e-4	(Teo et al. (1992b)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
+            
+            cyl.doBiochemicalReaction = self.doBiochemicalReaction
+            cyl.molarMassC = self.soilModel.molarMassC
             cyl.MaxRelativeShift = self.soilModel.MaxRelativeShift_1DS
             cyl.EnableResidualCriterion = self.soilModel.EnableResidualCriterion
             cyl.EnableAbsoluteResidualCriterion = self.soilModel.EnableAbsoluteResidualCriterion
@@ -1403,6 +1425,7 @@ class RhizoMappedSegments(pb.MappedPlant):
             cyl.a_out = a_out
             ThetaCyl = cyl.getWaterContent()
             setDefault(cyl)
+            cyl.createNewtonSolver() # make sure solver parameters are implemented.
             try:
                 assert (ThetaCyl >= self.vg_soil.theta_R).all()
                 assert (ThetaCyl <= self.vg_soil.theta_S).all()
@@ -1576,7 +1599,9 @@ class RhizoMappedSegments(pb.MappedPlant):
         qIn_solMucil = np.full(self.numSoluteComp, 0.)
         qIn_solMucil[0] = inner_fluxes_sol / (2 * np.pi * self.radii[gId] * l)
         qIn_solMucil[1] = inner_fluxes_mucil / (2 * np.pi * self.radii[gId] * l)
-        cyl.setSoluteBotBC(self.typeBC, qIn_solMucil)
+        
+        if (not self.doSoluteUptake) :
+            cyl.setSoluteBotBC(self.typeBC, qIn_solMucil)
         
         # soil-soil solute exchange
         outer_fluxes_solMucil = np.array([outer_fluxes_sol, outer_fluxes_mucil]) # todo: add 1d1d flow
@@ -1835,12 +1860,13 @@ class RhizoMappedSegments(pb.MappedPlant):
         
             try:
                 # reseting cyl.ddt to 1.e-5 was actually creating problems for sand VG
-                # cyl.ddt = 1e-3#min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
+                cyl.ddt = 1e-3#min( 1.e-5,cyl.ddt)#or just reset to 1e-5?
                 #cyl.setMaxTimeStepSize(self.soilModel.maxDt_1DS/10.)
                 
                 didReset = False
                 #cyl.solve(dt)
-                helpfull.run_with_timeout(60.*15., cyl.solve, dt) # after Xmn time out error, time out error
+                helpfull.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
+                # error, time out error
                 
                 # cm3 water or  mol C /cm3
                 inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(a_in, a_out)     
@@ -1871,8 +1897,9 @@ class RhizoMappedSegments(pb.MappedPlant):
                 #cyl.base.printParams()
                 print('solve Failed:', e,'rank',rank,'gId',gId,'lId',lId,
                       'n_iter_solve',n_iter_solve)
-                
-                
+
+                cyl.setParameter("Problem.verbose", "0")
+                cyl.setParameter("Newton.Verbosity", "0")
                 cyl.setParameter("Newton.EnableResidualCriterion", "false") # sometimes helps, sometimes makes things worse
                 cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
                 cyl.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
@@ -1992,7 +2019,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                 outer_fluxes_water_temp = sum(qOut) # maybe outer_fluxes_water_temp was re-adjusted inside distributeSource
                     
         # solutes
-        if (min(outer_fluxes_solMucil) <0. or min(inner_fluxes_solMucil_temp)<0.) and (min(inner_fluxes_solMucil_temp) <= min(outer_fluxes_solMucil)):
+        if (not self.doSoluteUptake) and (min(outer_fluxes_solMucil) <0. or min(inner_fluxes_solMucil_temp)<0.) and (min(inner_fluxes_solMucil_temp) <= min(outer_fluxes_solMucil)):
             inner_fluxes_solMucil_temp[np.where(inner_fluxes_solMucil_temp == min(inner_fluxes_solMucil_temp))] *=divVale
             valueBotBC[:self.numDissolvedSoluteComp] = inner_fluxes_solMucil_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
             cyl.setSoluteBotBC(self.typeBC, valueBotBC)

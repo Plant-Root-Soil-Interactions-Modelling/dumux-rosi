@@ -13,6 +13,10 @@ import numbers
 import tempfile
 import signal
 
+import threading
+import multiprocessing
+
+
 class TimeoutException(Exception):
     pass
 
@@ -22,6 +26,39 @@ def timeout_handler(signum, frame):
 # Set the timeout handler
 signal.signal(signal.SIGALRM, timeout_handler)
 
+
+def check_os():
+    if os.name == 'nt':
+        return "Windows"
+    elif os.name == 'posix':
+        return "Linux/Unix"
+    else:
+        return "Unknown OS"
+
+
+def run_with_timeout__(timeout, func, *args, **kwargs):
+    class FuncThread(threading.Thread):
+        def __init__(self):
+            super().__init__()
+            self.result = None
+            self.exception = None
+
+        def run(self):
+            try:
+                self.result = func(*args, **kwargs)
+            except Exception as e:
+                self.exception = e
+
+    thread = FuncThread()
+    thread.start()
+    thread.join(timeout)
+
+    if thread.is_alive():
+        raise TimeoutException("Function call timed out")
+    elif thread.exception:
+        raise thread.exception
+    else:
+        return thread.result
 
 def run_with_timeout(timeout, func, *args, **kwargs):
     # Start the timer
@@ -43,6 +80,7 @@ class StdoutRedirector:
         self.libc = ctypes.CDLL(None)
         self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
         self.buffer = None
+        self.filepath = None
 
     def __enter__(self):
         self.old_stdout_fd = os.dup(1)
@@ -56,12 +94,16 @@ class StdoutRedirector:
         os.close(self.old_stdout_fd)
         self.temp_file.close()
 
+        with open(self.temp_file.name, 'r') as temp_file:
+            self.buffer = temp_file.read()
+
+        os.remove(self.temp_file.name)
+
         if exc_type is not None:
-            self.buffer = open(self.temp_file.name, 'r').read()
             with open(self.filepath, 'w') as f:
                 f.write(self.buffer)
-        os.remove(self.temp_file.name)
-        
+
+        return False  # Do not suppress exceptions
         
 def suggestNumStepsChange(dt, failedLoop, perirhizalModel, n_iter_inner_max):# taken from dumux
     """

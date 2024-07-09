@@ -4,6 +4,9 @@ Functions to simplify setup of the scenarios for the INARI project
 
 import sys;
 sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../modules/");
+sys.path.append("/data");
+sys.path.append("../../../../CPlantBox/modelparameter/functional/plant_hydraulics");
 
 import numpy as np
 import pandas as pd
@@ -14,6 +17,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
+# from rosi_richards2c import Richards2CSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards10c_cyl import RichardsNCCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from rosi_richards10c import RichardsNCSPILU as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
@@ -21,14 +25,16 @@ from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
 
+
 import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
 from functional.xylem_flux import *
 from datetime import *
-import plantParameters
+#import pdef_conductivities
+import wheat1997_conductivities 
 from helpfull import *
+import weatherFunctions 
 from PhloemPhotosynthesis import *
-import weatherFunctions
 
 
 
@@ -41,8 +47,9 @@ def getBiochemParam(s,paramIdx):
     """
     # file containing the TraiRhizo parameter sets
     paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
-    s.molarMassC = 12.011
-    s.mg_per_molC = s.molarMassC * 1000.
+    
+    s.molarMassC = 30.9737624 # g/mol
+    s.mg_per_molC = s.molarMassC *1000. #g/mol * mg/g
     s.betaC = paramSet['beta_C'] # -
     s.betaO = paramSet['beta_O'] # -
 
@@ -83,8 +90,8 @@ def getBiochemParam(s,paramIdx):
     s.alpha = 0.1 # -
     s.f_sorp = 0# 0.5
     s.k_phi = 0.1
-    s.C_aOLim=1.e-10 * float(s.doSoluteFlow) # so that microbe community can always regrow
-    s.C_aCLim=1.e-10 * float(s.doSoluteFlow) # so that microbe community can always regrow
+    s.C_aOLim=  0. # so that microbe community can always regrow
+    s.C_aCLim=0. # so that microbe community can always regrow
     
     if s.noAds:
         s.CSSmax = 0.
@@ -188,17 +195,20 @@ def setIC(s, paramIdx, ICcc = None):
     """
     if ICcc is None:
         paramSet = pd.read_csv('./output_random_rows.csv').loc[paramIdx]
-        C_S = paramSet['CS_init'] /s.mg_per_molC## small C solutes in mol/cm3 water
-        C_L = paramSet['CL_init'] /s.mg_per_molC## large C solutes in mol/cm3 water
+        C_S_mg = 0.035 # mg P L–1, 10.1093/aob/mcaa120
+        #paramSet['CS_init'] /s.mg_per_molC## small C solutes in mol/cm3 water
+        # [mg P L–1] * [mol/mg] * [L/cm3] = mol P cm^-3
+        C_S = C_S_mg / s.mg_per_molC * 1e-3
+        C_L = 0. #paramSet['CL_init'] /s.mg_per_molC## large C solutes in mol/cm3 water
 
         # concentraiton of adsobed C_S
         s.CSS_init  = getCSS(s, C_S) #mol C/ cm3 scv
         
             
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
-        addedVar = 1. * float(s.doSoluteFlow) # empirical factor
+        addedVar = 0. # empirical factor
         s.CSW_init = C_S * unitConversion
-        s.ICcc = np.array([C_S *unitConversion*addedVar,
+        s.ICcc = np.array([C_S *unitConversion,
                            C_L*unitConversion*addedVar,
                             9.16666666666667e-07* unitConversion*addedVar,
                             8.33333333333333e-06* unitConversion*addedVar,
@@ -227,18 +237,18 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
-    # low MaxRelativeShift == higher precision in dumux
+    s.setParameter("Problem.dobioChemicalReaction",str(int(s.doBiochemicalReaction)))
     s.setParameter("Problem.verbose", "0")
-    s.setParameter("Newton.Verbosity", "0") 
     
+    s.setParameter("Newton.Verbosity", "0") 
     # force solute mole fraction > 0 and water in possible pressure ranges
     s.setParameter("Newton.EnableChop", "true")
     
     # UpwindWeight = 1, better when we have high solute gradient.
     # UpwindWeight = 0.5, better when have high water flow and low solute gradient
-    s.setParameter("Flux.UpwindWeight", "1")#very important because we get high solute gradient.
+    s.setParameter("Flux.UpwindWeight", "0.5")#very important because we get high solute gradient.
     
-
+    
     s.EnableResidualCriterion = False
     s.setParameter("Newton.EnableResidualCriterion", 
                      str( s.EnableResidualCriterion ))
@@ -251,7 +261,7 @@ def setDefault(s):
     s.MaxTimeStepDivisions = 10
     s.setParameter("Newton.MaxTimeStepDivisions",
                      str( s.MaxTimeStepDivisions) )  
-    s.MaxSteps = 18
+    s.MaxSteps = 100
     s.setParameter("Newton.MaxSteps",
                      str( s.MaxSteps) )  
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
@@ -264,11 +274,13 @@ def getSoilTextureAndShape():
     """
     min_b = np.array([-3./2, -12./2, -40.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array( [3,12,40]) #np.array([3,3,3])#np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
+    cell_number = np.array( [3,12,40])# np.array( [3,12,40]) #np.array([3,4,4])# np.array( [
+    # 1,1,1]) # 1cm3 #np.array([3,3,3])
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
     soilVG = [0.08, 0.43, 0.04, 1.6, 50]
+    # soilVG = [0.049, 0.352, 0.019, 4.887, 421.67]
     soilTextureAndShape = {'min_b' : min_b,'max_b' : max_b,
                            'cell_number':cell_number,
                            "solidDensity":solidDensity,
@@ -310,8 +322,8 @@ def create_soil_model3D( usemoles, results_dir ,
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None, doSoluteFlow = True,
-                       doBiochemicalReaction=True,
-                     MaxRelativeShift = 1e-8):
+                     MaxRelativeShift = 1e-8,doSoluteUptake = True,
+                                    doBiochemicalReaction = False):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         homogeneous domain 
@@ -322,23 +334,24 @@ def create_soil_model( usemoles, results_dir ,
         @param: usemoles [bool] dumux uses moles (True) or grammes (False)
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
-        
+
     s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
     s.results_dir = results_dir   
-    s.pindx = paramIndx
-    
-    s.MaxRelativeShift = MaxRelativeShift # 1e-10
-    s.MaxRelativeShift_1DS = MaxRelativeShift
-    
+    # low MaxRelativeShift == higher precision in dumux
+    s.MaxRelativeShift = MaxRelativeShift
+    s.MaxRelativeShift_1DS = 1e-12
+
+    s.noAds = noAds # no adsorption?
+    s.doSoluteFlow = doSoluteFlow
+    s.doBiochemicalReaction = doBiochemicalReaction
+    s.doSoluteUptake = doSoluteUptake
+
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
     s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
     s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
-    s.noAds = noAds # no adsorption?
-    s.doSoluteFlow = doSoluteFlow
-    s.setParameter("Problem.dobioChemicalReaction",str(doBiochemicalReaction))
     
     s.initialize() 
     setDefault(s)
@@ -397,12 +410,13 @@ def setupOther(s, p_mean_):
         else:
             print(type(p_mean_))
             raise Exception
-    s.maxDt =  250/(3600*24)
-    s.maxDt_1DS = s.maxDt # [s], lower maxDt for 1D models
+            
+    s.maxDt =  250./(3600.*24.) # [s]
+    s.maxDt_1DS = s.maxDt/10. # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
+    s.eps_regularization = 1e-10
+    s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be low when using sand parameters. 
     
-    s.eps_regularization = None # pcEps, krEps
-    #s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be l
      
     # if p_mean_ is np.array, define after initializeProblem
     if isinstance(p_mean_,(int,float)):
@@ -416,10 +430,13 @@ def setupOther(s, p_mean_):
     # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  
-    s.ddt = 1.e-3  # [day] initial Dumux time step
+    s.ddt = 1.e-5  # [day] initial Dumux time step
     s.bulkMassErrorWater_rel = 0.
-    s.bulkMassErrorWater_relLim = 0.    
-    s.totC3dInit = sum(s.getTotCContent()) # mol    
+    s.bulkMassErrorWater_relLim = 0.
+    pressureinit = s.getSolutionHead()
+    
+    thetainit = s.getWaterContent_()
+    s.totC3dInit = sum(s.getTotCContent()) # mol
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
@@ -476,10 +493,10 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     
     plantModel.wilting_point = -15000.
     # set kr and kx for root system or plant
-    
-    plantParameters.init_conductivities(r = plantModel)
+    #pdef_conductivities.init_conductivities(r = plantModel)
+    wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
     if doPhloemFlow:   
-        plantModel = plantParameters.phloemParam(plantModel, weatherInit)
+        plantModel = phloemParam(plantModel, weatherInit)
     perirhizalModel.set_plantModel(plantModel)
     perirhizalModel.rhizoMassWError_rel = 0.
     perirhizalModel.rhizoMassWError_relLim = 0.

@@ -1,9 +1,9 @@
 import sys;
 import os
-
+import numbers
 #os.chdir('experimental/fixedPointIter2/scripts')
 sys.path.append("../modules/");
-sys.path.append("../inputDataTraiRhizo/");
+sys.path.append("../inputDataPuptake/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 sys.path.append("../../../build-cmake/cpp/python_binding/");
@@ -27,9 +27,6 @@ from scenario_setup import write_file_array, write_file_float
 import scenario_setup
 import functional.van_genuchten as vg
 import weatherFunctions
-import helpfull
-import ctypes
-import tempfile
 
 """ 
 Cylindrical 1D model, diffusion only (DuMux), Michaelis Menten
@@ -49,6 +46,9 @@ else:
         except:
             pass
 
+
+# 0.035 mg P L–1
+
 # outer time step (outside of fixed-point iteration loop)
 dt = 20/60/24
 dt_inner_init = dt#1/60/60/24 # dt
@@ -58,8 +58,10 @@ k_iter = 30
 targetIter= 5
 # which functional modules to implement
 doSoluteFlow = True # only water (False) or with solutes (True)
-noAds = False # stop adsorption?
+noAds = True # stop adsorption?
 doPhloemFlow = False
+doBiochemicalReaction = False
+doSoluteUptake = True # active uptake?
 doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
 # when there is no transpiration, we use the plant wat. pot.
 # at the beginning of the time step. Otherwise does not converge
@@ -83,27 +85,24 @@ s = scenario_setup.create_soil_model(usemoles = usemoles,
                                            results_dir = results_dir, 
                                            p_mean_ = -weatherInit['p_mean'], 
                                     paramIndx=paramIndx_,
-                                    noAds = noAds, doSoluteFlow = doSoluteFlow)
-
+                                    noAds = noAds, doSoluteFlow = doSoluteFlow,
+                                    doBiochemicalReaction = doBiochemicalReaction)
 
                           
 
-def initialize_dumux_nc_( soilModel, gId=0, a_in=0.020000000000000004,
-                a_out=0.11748413307135575 ,seg_length=1.0 ,
-                x=[-118.50000000000006] ,   # cm
-                cAll = [0,0,0,0,0,0,0,0 ],             # mol/mol scv
+def initialize_dumux_nc_( soilModel, gId=0, a_in=0.04999999999999999,
+                a_out=0.5664008176051571 ,seg_length=1.0000000000000007 ,
+                x=[-103.49999999999768] ,   # cm
+                cAll = [],             # mol/mol scv
                                          Cells = [],NC = 10,
                                          logbase = 0.5):                                   # cm
     verbose = False
-    print('tocyl')
     lId =gId
     
     if a_in < a_out:
     
         cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), usemoles)  # only works for RichardsCylFoam compiled without MPI
-
-        cyl.initialize(verbose = False) # No parameter file found. Continuing without parameter file.
-
+        cyl.initialize(verbose = False)
         cyl.setVGParameters([soilModel.soil])
         lb =  logbase
         
@@ -112,7 +111,7 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.020000000000000004,
         
         cyl.createGrid1d(points)# cm
         Cells = np.array(cyl.base.getCellCenters()).flatten()*100
-
+        print('cells',Cells)
             
         cyl.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
         cyl.setParameter("Soil.BC.dzScaling", "1")
@@ -182,17 +181,11 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.020000000000000004,
             cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Value", str(0)) 
             cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Value", str(0 ))
 
-        cyl.setParameter("Soil.BC.Bot.C1Value",
-                         str(3.4804858286664018e-05)) #3.711657128431938e-5)) #
-        cyl.setParameter("Soil.BC.Bot.C2Value",
-                         str(2.6715815540790547e-08))
-        # mol/cm2/day
         for j in range( 1, soilModel.numComp):       
             cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
 
-        if (len(Cells) > 0) and (not helpfull.is_number(cAll[j-1])):#in case we update a
-            # cylinder,
-        # to allow dumux to do interpolation
+        if not isinstance(cAll[j-1], numbers.Number):#in case we update a cylinder, to allow dumux to do
+            # interpolation
             assert(len(cAll[j-1])==len(Cells))
             CellsStr = cyl.dumux_str(Cells/100)#cm -> m
             cyl.setParameter("Soil.IC.Z",CellsStr)# m
@@ -213,15 +206,24 @@ def initialize_dumux_nc_( soilModel, gId=0, a_in=0.020000000000000004,
         cyl.MaxTimeStepDivisions = soilModel.MaxTimeStepDivisions
         cyl.MaxSteps = soilModel.MaxSteps
 
+        if s.doSoluteUptake:
+            Vmax = 3.844e-10*(24*3600)/1e4 # (kg m–2 s–1) * (s/d) * (m2/cm2) => (kg cm–2 d–1)
+            Vmax = Vmax * 1000. / soilModel.molarMassC # (kg cm–2 d–1) * (g/kg) / (g/mol) => mol cm-2 d-1
+            cyl.setParameter("RootSystem.Uptake.Vmax", cyl.dumux_str(Vmax))  # mol /cm^2 / s - > mol /cm^2 / day 
+            km = 1.054e-4 * 1e-6 # (kg m–3) => kg cm-3
+            km = km * 1000. / soilModel.molarMassC # (kg cm-2 * (g/kg) / (g/mol))
+            cyl.setParameter("RootSystem.Uptake.Km", cyl.dumux_str(km))  # mol / cm3                
+            cyl.setParameter( "Soil.BC.Bot.C1Type", str(8))
+                
         cyl.maxDt = 250/(3600*24) # soilModel.maxDt_1DS
-        cyl.setParameter("Problem.verbose", "0")
-        cyl.setParameter("Newton.Verbosity", "0")
-        cyl.initializeProblem(maxDt=cyl.maxDt ) # ewton solver configured with the following options and parameters:
+        
+        cyl.initializeProblem(maxDt=cyl.maxDt )
 
 
         cyl.eps_regularization = soilModel.eps_regularization
         if cyl.eps_regularization is not None:
-            cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) # needs to be low when using sand parameters. 
+            cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) # needs to be low when using sand parameters.
+        cyl.doBiochemicalReaction = soilModel.doBiochemicalReaction
         cyl.setCriticalPressure(soilModel.wilting_point)  # cm pressure head
         cyl.bulkDensity_m3 = soilModel.bulkDensity_m3
         cyl.solidDensity =soilModel.solidDensity 
@@ -281,38 +283,14 @@ def _check_Ccontent( cyl):
 
 def dothesolve(cyl):            
 
-    if True:
-        QIN =0.# cm3/day
-        qIn =QIN / (2 * np.pi * cyl.a_in * cyl.l)
-        cyl.setInnerFluxCyl(qIn)
-
-        Qflowout = 1.6631506292796733e-16
-        cyl.distributeSource(dt, Qflowout,QIN*dt, eqIdx=0)
+    
 
 
-        inner_fluxes_solMucil_temp= np.array([1.2199537379109428e-06,
-                                              1.9722854340509624e-08,
-                                              0.,0.,0.,0.,0.,0.] )
-        outer_fluxes_solMucil =np.array([0.,0.])
-        QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_solMucil,
-                                       inner_fluxs=inner_fluxes_solMucil_temp * dt,
-                                       eqIdx =  np.array([nc+1 for nc in range(2)]))
-
-        qIn_solMucil = inner_fluxes_solMucil_temp / (2 * np.pi * cyl.a_in  * cyl.l)
-        typeBC = np.full(9, 3)
-        print(cyl.base.getSBotBCValue())
-        cyl.setSoluteBotBC(typeBC, qIn_solMucil)
-        #print(typeBC, qIn_solMucil)
-        print(cyl.base.getSBotBCValue())
-
-
-
-    cyl.ddt =  0.001
+    cyl.ddt = 1e-3#
+    print('neumann',cyl.base.getNeumann(0,1))
     cyl.solve(dt)
     print(cyl.base.BC_ddt)
     print(cyl.ddt*25*3600, cyl.maxDt *24*3600)
-    print(_check_Ccontent(cyl))
-    print('done')
     try:
         assert _check_Ccontent(cyl)
     except:
@@ -339,6 +317,9 @@ def dothesolve(cyl):
                                         EnableAbsoluteResidualCriterion="false",
                                         SatisfyResidualAndShiftCriterion="false", 
                                         max_steps=18, max_divisions=10)
-cyl = initialize_dumux_nc_(s)
+print('coucou')
+call_ = [0 for i in range(9)]
+call_[0] = s.getSolution(1)[0]
+cyl = initialize_dumux_nc_(s, cAll = call_)
 for i in range(1):
     dothesolve(cyl)
