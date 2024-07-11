@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plant name="P3" filetype="parameters">
+<plant name="P2" filetype="parameters">
 <organ type="seed" name="true" subType="0">
         <parameter name="maxTi" value="0"/>
         <!--Maximal number of tillers [1]-->
@@ -35,7 +35,7 @@
         <!--Growth function number [1]-->
         <parameter name="tropismT" value="1"/>
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
-        <parameter name="a" value="0.097454639" dev="0.009053988"/>
+        <parameter name="a" value="0.067381533" dev="0.00983697"/>
         <!--Root radius [cm]-->
         <parameter name="colorB" value="0.156863"/>
         <!--Root color, blue component [0.-1.]-->
@@ -73,7 +73,7 @@
         <!--Growth function number [1]-->
         <parameter name="tropismT" value="1"/>
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
-        <parameter name="a" value="0.081499634" dev="0.010655558"/>
+        <parameter name="a" value="0.066168179" dev="0.010326127"/>
         <!--Root radius [cm]-->
         <parameter name="colorB" value="0.156863"/>
         <!--Root color, blue component [0.-1.]-->
@@ -132,7 +132,7 @@
         <!--Maximal root length [cm]-->
         <parameter name="ln" value="0.76" dev="0.28"/>
         <!--Inter-lateral distance [cm]-->
-        <parameter name="r" value="5.147553412" dev="2.163734305"/>
+        <parameter name="r" value="2.706267561" dev="1.300615378"/>
         <!--Initial growth rate [cm day-1]-->
         <parameter name="rlt" value="1e+09" dev="1e+08"/>
         <!--Root life time [day]-->
@@ -170,7 +170,7 @@
         <!--Maximal root length [cm]-->
         <parameter name="ln" value="0.58" dev="0.49"/>
         <!--Inter-lateral distance [cm]-->
-        <parameter name="r" value="2.15" dev="0.83"/>
+        <parameter name="r" value="2.911806" dev="2.911806"/>
         <!--Initial growth rate [cm day-1]-->
         <parameter name="rlt" value="1e+09" dev="1e+08"/>
         <!--Root life time [day]-->

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plant name="P3" filetype="parameters">
+<plant name="P1" filetype="parameters">
 <organ type="seed" name="true" subType="0">
         <parameter name="maxTi" value="0"/>
         <!--Maximal number of tillers [1]-->
@@ -35,7 +35,7 @@
         <!--Growth function number [1]-->
         <parameter name="tropismT" value="1"/>
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
-        <parameter name="a" value="0.097454639" dev="0.009053988"/>
+        <parameter name="a" value="0.06382548" dev="0.017058147"/>
         <!--Root radius [cm]-->
         <parameter name="colorB" value="0.156863"/>
         <!--Root color, blue component [0.-1.]-->
@@ -73,7 +73,7 @@
         <!--Growth function number [1]-->
         <parameter name="tropismT" value="1"/>
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
-        <parameter name="a" value="0.081499634" dev="0.010655558"/>
+        <parameter name="a" value="0.061594511" dev="0.01584728"/>
         <!--Root radius [cm]-->
         <parameter name="colorB" value="0.156863"/>
         <!--Root color, blue component [0.-1.]-->
@@ -132,7 +132,7 @@
         <!--Maximal root length [cm]-->
         <parameter name="ln" value="0.76" dev="0.28"/>
         <!--Inter-lateral distance [cm]-->
-        <parameter name="r" value="5.147553412" dev="2.163734305"/>
+        <parameter name="r" value="2.672324686" dev="1.742290899"/>
         <!--Initial growth rate [cm day-1]-->
         <parameter name="rlt" value="1e+09" dev="1e+08"/>
         <!--Root life time [day]-->

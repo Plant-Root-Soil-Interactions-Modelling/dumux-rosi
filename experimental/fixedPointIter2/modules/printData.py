@@ -128,8 +128,15 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
     """ print and save outputs of phloem flow and photosynthesis"""
     results_dir = perirhizalModel.results_dir
     
-    print("\n\n\n\t\t", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn")
     write_file_float("trans", plantModel.TranspirationCumul, directory_ =results_dir)
+    write_file_array("seg_fluxes0", plantModel.seg_fluxes0 , directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes1", plantModel.seg_fluxes1 , directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes2", plantModel.seg_fluxes2, directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes0Cumul", plantModel.seg_fluxes0Cumul, directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes1Cumul", plantModel.seg_fluxes1Cumul, directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes2Cumul", plantModel.seg_fluxes2Cumul, directory_ =results_dir, fileType = '.csv')
+    
+    print("\n\n\n\t\t", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn")
     if perirhizalModel.doPhloemFlow:
         print(round(plantModel.Qlight *1e6),"mumol m-2 s-1")
         print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(phloemDataStorage.error_st_abs,
@@ -208,7 +215,7 @@ def printCylData(perirhizalModel, rs_age):
             write_file_array("Cyl_cellVol_"+str(gId),
                              cyl.getCellVolumes().flatten(), 
                              directory_ =results_dir+'cyl_val/', allranks = True)
-            if perirhizalModel.doSoluteFlow:
+            if (perirhizalModel.doSoluteFlow) or (perirhizalModel.doSoluteUptake):
                 for ccc in range(perirhizalModel.numSoluteComp):
                     sol0 = np.array(cyl.getContent(ccc +1)).flatten()
                     write_file_array("Cyl_content"+str(ccc+1)+"_"+str(gId)+"", 

@@ -369,10 +369,16 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                          wilting_point = plantModel.wilting_point,
                           soil_k = fpit_Helper.soilK)
             plantModel.psiXyl = rx
-            seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
-            rx = list(rx), sx= list(fpit_Helper.rsx_input), 
+
+            if (perirhizalModel.spellData['scenario'] == 'none') or ((perirhizalModel.spellData['scenario'] != 'baseline') and (rs_age_i_dt > perirhizalModel.spellData['spellStart']) and (rs_age_i_dt <= perirhizalModel.spellData['spellEnd'])):
+                seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
+                            rx = list(rx), sx= list(fpit_Helper.rsx_input), 
                                                approx=False, cells=False, #approx, cells
                                                soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate
+            else:
+                seg_fluxes = np.full((len(plantModel.psiXyl)-1),0.)
+            
+            
 
         else :
             plantModel.psiXyl = None

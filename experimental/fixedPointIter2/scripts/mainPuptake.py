@@ -31,9 +31,9 @@ import printData
 
     
 
-def XcGrowth(initsim, simMax,paramIndx_,spellData):
-
-    xml_name = "P3.xml"  # root growth model parameter
+def XcGrowth(initsim, simMax,Plevel,spellData):     
+    paramIndx_ = 0 # not used
+    xml_name = "P"+str(Plevel)+".xml"  # root growth model parameter
     # file
     dx = 0.2 # todo implement
     dxMin = 0.25
@@ -90,7 +90,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/pdef/"+str(rsiCompMethod*10)+str(spellData['scenario'])
+    results_dir=("./results/pdef/"+str(Plevel)+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"

@@ -363,6 +363,11 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
         
         if (rank == 0):
+            # root -soil exchange per root segment for water and solute 1 and 2
+            plantModel.seg_fluxes0Cumul_inner += perirhizalModel.seg_fluxes_limited * dt
+            plantModel.seg_fluxes1Cumul_inner += perirhizalModel.seg_fluxes_limited_sol_In * dt
+            plantModel.seg_fluxes2Cumul_inner += perirhizalModel.seg_fluxes_limited_mucil_In * dt
+                
             if perirhizalModel.doPhotosynthesis:
                 plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
                 plantModel.AnCumul_inner += np.array(plantModel.An ) * (dt*24*3600) # //[mol CO2 m-2 s-1] to [mol CO2 m-2]

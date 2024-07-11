@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=1_32till
+#SBATCH --job-name=4_32pdef
 #SBATCH --cpus-per-task=1
 #SBATCH --ntasks=32
 #SBATCH --nodes=1
@@ -21,10 +21,9 @@ cd $HOME/dumux38TraiRhizo/dumux/dumux-rosi/experimental/fixedPointIter2/scripts
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DUMUX_NUM_THREADS=1 mpirun -n 32 python3 mainTillage.py $1 $2 0 none
+DUMUX_NUM_THREADS=4 mpirun -n 32 python3 mainPuptake.py $1 $2 $3 $4
 
-# $1 : start, $2: end, $3: param ind, $4 scenario, 
-# optional : $5: spellStart, $6: spellduration
+# $1 : start, $2: end, $3: Plevel, scenario 
 
 # sbatch fpit1_10cind.sh 9.5 10.5 1640 none noAds
 # sbatch fpit1_10cind.sh 9 25 1640 baseline noAds

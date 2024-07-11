@@ -2,7 +2,7 @@
 #
 #SBATCH --job-name=2_32till
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=64
+#SBATCH --ntasks=32
 #SBATCH --nodes=1
 #SBATCH --partition=cpu128
 #SBATCH --time=20-00:00:00

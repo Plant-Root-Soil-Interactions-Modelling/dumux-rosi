@@ -498,6 +498,10 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     # cumulative transpiration
     plantModel.TranspirationCumul = 0 # real cumulative transpiration
     plantModel.TranspirationCumul_eval = 0 # cumulative transpiration during period with dinamic soil (for mass balance check)
+    # cumulative flow    
+    plantModel.seg_fluxes0Cumul = np.array([])
+    plantModel.seg_fluxes1Cumul = np.array([])
+    plantModel.seg_fluxes2Cumul = np.array([])
     
     return perirhizalModel, plantModel
     

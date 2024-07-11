@@ -31,7 +31,7 @@ import functional.van_genuchten as vg
 from functional.xylem_flux import *
 from datetime import *
 #import pdef_conductivities
-import wheat1997_conductivities 
+import maiz_conductivities 
 from helpfull import *
 import weatherFunctions 
 from PhloemPhotosynthesis import *
@@ -57,7 +57,8 @@ def getBiochemParam(s,paramIdx):
     s.C_S_W_thresC =  paramSet['C_thres,C']/s.mg_per_molC# mgC/cm3 water => mol/cm3 water
     s.C_S_W_thresO =  paramSet['C_thres,O']/s.mg_per_molC# mgC/cm3 water => mol/cm3 water
 
-    Ds = paramSet['DS_W'] #cm^2/d
+    # m^2/d => cm^2/d
+    Ds = 6.07e-10 *1e4 # from 10.1093/aob/mcaa120, Fig S7, S8 and eq 40 of article
     Dl = 0.003456 #cm^2/d
     s.Ds = Ds /(24*3600) /10000 # m^2/s
     s.Dl = Dl /(24*3600) /10000# m^2/s
@@ -68,7 +69,7 @@ def getBiochemParam(s,paramIdx):
 
     s.K_L =  paramSet['K_L'] /s.mg_per_molC#[mol cm-3 soil]
     s.k_SO =  paramSet['k_O,S'] * s.mg_per_molC/paramSet['theta']
-    #s.thetaInit = paramSet['theta']
+    
 
     s.k_RC =  paramSet['k_r,C']#1/d
     s.k_RO =  paramSet['k_r,O']#1/d
@@ -494,7 +495,7 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     plantModel.wilting_point = -15000.
     # set kr and kx for root system or plant
     #pdef_conductivities.init_conductivities(r = plantModel)
-    wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
+    maiz_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
     if doPhloemFlow:   
         plantModel = phloemParam(plantModel, weatherInit)
     perirhizalModel.set_plantModel(plantModel)
@@ -515,6 +516,10 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     # cumulative transpiration
     plantModel.TranspirationCumul = 0 # real cumulative transpiration
     plantModel.TranspirationCumul_eval = 0 # cumulative transpiration during period with dinamic soil (for mass balance check)
+    # cumulative flow    
+    plantModel.seg_fluxes0Cumul = np.array([])
+    plantModel.seg_fluxes1Cumul = np.array([])
+    plantModel.seg_fluxes2Cumul = np.array([])
     
     return perirhizalModel, plantModel
     
